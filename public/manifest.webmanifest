@@ -1,0 +1,9 @@
+{
+  "name": "BamSignal",
+  "short_name": "BamSignal",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#101923",
+  "theme_color": "#d6f951",
+  "description": "AI-assisted football prediction dashboard by BamSignal."
+}

@@ -197,7 +197,6 @@ nav a:hover {
 .theme-toggle,
 .primary-action,
 .secondary-action,
-.app-buttons button,
 .segmented button,
 .icon-button {
   align-items: center;
@@ -402,8 +401,7 @@ footer {
 
 .section-head h2,
 .info-panel h2,
-.league-band h2,
-.apps-band h2 {
+.league-band h2 {
   font-size: clamp(21px, 2.1vw, 30px);
   line-height: 1.1;
   margin: 0;
@@ -536,15 +534,13 @@ footer {
 
 .info-panel,
 .league-band,
-.apps-band,
 .evidence-board,
-.app-flow-panel,
-.admin-panel {
+.member-app-panel {
   padding: 18px;
 }
 
 .info-panel p,
-.apps-band p,
+.member-app-panel p,
 .responsible {
   color: var(--muted);
 }
@@ -559,11 +555,17 @@ footer {
 }
 
 .evidence-board,
-.app-flow-panel,
+.member-app-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
 .admin-panel {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  padding: 18px;
 }
 
 .evidence-head {
@@ -574,8 +576,7 @@ footer {
 }
 
 .evidence-head h2,
-.app-flow-panel h2,
-.admin-panel h2 {
+.member-app-panel h2 {
   font-size: clamp(21px, 2.1vw, 30px);
   line-height: 1.1;
   margin: 0;
@@ -673,10 +674,46 @@ footer {
   font-size: 20px;
 }
 
-.app-command {
+.member-app-panel {
+  align-items: start;
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+}
+
+.member-copy {
+  display: grid;
+  gap: 12px;
+}
+
+.member-copy p {
+  line-height: 1.55;
+  margin: 0;
+}
+
+.member-status {
+  background: color-mix(in srgb, var(--surface-2) 84%, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+}
+
+.member-status span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.member-status strong {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.member-rooms {
+  min-width: 0;
 }
 
 .auth-actions {
@@ -684,6 +721,19 @@ footer {
   flex-wrap: wrap;
   gap: 10px;
   margin: 16px 0;
+}
+
+.auth-hero {
+  margin-bottom: 0;
+}
+
+.payment-note {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  margin: -4px 0 12px;
+  padding: 10px;
 }
 
 .room-grid {
@@ -753,11 +803,19 @@ footer {
   padding: 0 12px;
 }
 
+.muted-join {
+  color: var(--muted);
+}
+
 .admin-form,
 .automation-list {
   display: grid;
   gap: 10px;
   margin-top: 16px;
+}
+
+.admin-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .admin-form label {
@@ -793,8 +851,7 @@ footer {
   flex: 0 0 auto;
 }
 
-.chip-cloud,
-.app-buttons {
+.chip-cloud {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -819,8 +876,7 @@ footer {
   color: var(--text);
 }
 
-.league-band,
-.apps-band {
+.league-band {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -830,26 +886,6 @@ footer {
 
 .league-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.apps-band {
-  align-items: center;
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.app-buttons button {
-  background: transparent;
-  border: 0;
-  color: var(--text);
-  height: 48px;
-  overflow: hidden;
-  padding: 0;
-}
-
-.app-buttons img {
-  display: block;
-  height: 48px;
-  width: auto;
 }
 
 .accordion-list {
@@ -1060,8 +1096,7 @@ footer strong {
   .hero,
   .two-column,
   .insight-stack,
-  .app-command,
-  .apps-band,
+  .member-app-panel,
   .detail-grid {
     grid-template-columns: 1fr;
   }
@@ -1136,7 +1171,8 @@ footer strong {
   .stat,
   .info-panel,
   .league-band,
-  .apps-band,
+  .member-app-panel,
+  .admin-panel,
   .detail-hero,
   .seo-panel,
   .detail-card {
@@ -1150,7 +1186,7 @@ footer strong {
 
   .hero p,
   .info-panel p,
-  .apps-band p,
+  .member-app-panel p,
   .detail-card p,
   .seo-panel p {
     font-size: 13px;
@@ -1174,8 +1210,12 @@ footer strong {
   .fixture-list,
   .two-column,
   .insight-stack,
-  .app-command {
+  .member-app-panel {
     gap: 10px;
+  }
+
+  .admin-form {
+    grid-template-columns: 1fr;
   }
 
   .fixture-card h3 {
@@ -1304,7 +1344,7 @@ footer strong {
   .section-head h2,
   .info-panel h2,
   .league-band h2,
-  .apps-band h2 {
+  .member-app-panel h2 {
     font-size: 20px;
   }
 

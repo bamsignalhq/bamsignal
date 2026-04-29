@@ -82,16 +82,13 @@ a {
   gap: 12px;
 }
 
-.brand-mark {
-  align-items: center;
-  background: var(--accent);
+.brand-logo {
   border-radius: var(--radius);
-  color: #101923;
-  display: grid;
-  font-weight: 900;
-  height: 38px;
-  place-items: center;
-  width: 38px;
+  display: block;
+  height: 42px;
+  object-fit: cover;
+  object-position: center;
+  width: 42px;
 }
 
 .brand strong,
@@ -181,8 +178,20 @@ nav a:hover {
 }
 
 .topbar h1 {
+  align-items: center;
+  display: flex;
+  gap: 10px;
   font-size: 24px;
   margin: 0;
+}
+
+.topbar-logo {
+  border-radius: 6px;
+  display: block;
+  height: 28px;
+  object-fit: cover;
+  object-position: center;
+  width: 28px;
 }
 
 .eyebrow {

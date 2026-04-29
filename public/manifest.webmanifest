@@ -5,5 +5,19 @@
   "display": "standalone",
   "background_color": "#101923",
   "theme_color": "#d6f951",
-  "description": "AI-assisted football prediction dashboard by BamSignal."
+  "description": "AI-assisted football prediction dashboard by BamSignal.",
+  "icons": [
+    {
+      "src": "/brand/icon-dark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand/icon-light.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }

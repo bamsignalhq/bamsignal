@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom/client";
 import {
   Activity,
@@ -168,6 +168,18 @@ function App() {
   const [theme, setTheme] = useState<Theme>("dark");
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeStatus, setActiveStatus] = useState<Fixture["status"] | "All">("All");
+  const logoSrc = theme === "dark" ? "/brand/logo-dark.jpg" : "/brand/logo-light.jpg";
+
+  useEffect(() => {
+    const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (favicon) {
+      favicon.href = theme === "dark" ? "/favicon-dark.png" : "/favicon-light.png";
+    }
+    document.querySelector("meta[name='theme-color']")?.setAttribute(
+      "content",
+      theme === "dark" ? "#101923" : "#f5f7fb"
+    );
+  }, [theme]);
 
   const filteredFixtures = useMemo(() => {
     if (activeStatus === "All") return fixtures;
@@ -182,7 +194,7 @@ function App() {
     <div className={`app ${theme}`}>
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
         <div className="brand">
-          <div className="brand-mark">BS</div>
+          <img className="brand-logo" src={logoSrc} alt="BamSignal logo" />
           <div>
             <strong>BamSignal</strong>
             <span>AI football edge</span>
@@ -224,7 +236,7 @@ function App() {
           </button>
           <div>
             <p className="eyebrow">Daily AI football predictions</p>
-            <h1>BamSignal</h1>
+            <h1><img className="topbar-logo" src={logoSrc} alt="" /> BamSignal</h1>
           </div>
           <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}

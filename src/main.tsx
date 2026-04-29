@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom/client";
+import { Capacitor } from "@capacitor/core";
 import {
   Activity,
   ArrowLeft,
@@ -33,7 +34,7 @@ import {
 import "./styles.css";
 
 type Theme = "dark" | "light";
-type Page = { kind: "home" } | { kind: "market"; slug: string } | { kind: "league"; slug: string } | { kind: "admin" };
+type Page = { kind: "home" } | { kind: "app" } | { kind: "market"; slug: string } | { kind: "league"; slug: string } | { kind: "admin" };
 
 const getTimedTheme = (): Theme => {
   const hour = new Date().getHours();
@@ -385,8 +386,10 @@ const leagueDetails = [
 function getInitialPage(): Page {
   const [, section, slug] = window.location.pathname.split("/");
   if (section === "admin") return { kind: "admin" };
+  if (section === "app") return { kind: "app" };
   if (section === "markets" && slug) return { kind: "market", slug };
   if (section === "leagues" && slug) return { kind: "league", slug };
+  if (Capacitor.getPlatform() !== "web") return { kind: "app" };
   return { kind: "home" };
 }
 
@@ -481,8 +484,8 @@ function App() {
           <a href="/#markets" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#markets"); }}>
             <BarChart3 size={18} /> Markets
           </a>
-          <a href="/#member-app" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#member-app"); }}>
-            <UserPlus size={18} /> Member App
+          <a href="/app" onClick={(event) => { event.preventDefault(); navigate({ kind: "app" }, "/app"); }}>
+            <UserPlus size={18} /> User Dashboard
           </a>
           <a href="/#faq" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#faq"); }}>
             <ShieldCheck size={18} /> FAQs
@@ -515,10 +518,14 @@ function App() {
           <HomePage
             activeStatus={activeStatus}
             filteredFixtures={filteredFixtures}
-            isAuthed={isAuthed}
-            isPremium={isPremium}
             topPick={topPick}
             setActiveStatus={setActiveStatus}
+            navigate={navigate}
+          />
+        ) : page.kind === "app" ? (
+          <UserDashboard
+            isAuthed={isAuthed}
+            isPremium={isPremium}
             setIsAuthed={setIsAuthed}
             setIsPremium={setIsPremium}
             navigate={navigate}
@@ -550,22 +557,14 @@ function App() {
 function HomePage({
   activeStatus,
   filteredFixtures,
-  isAuthed,
-  isPremium,
   topPick,
   setActiveStatus,
-  setIsAuthed,
-  setIsPremium,
   navigate
 }: {
   activeStatus: Fixture["status"] | "All";
   filteredFixtures: Fixture[];
-  isAuthed: boolean;
-  isPremium: boolean;
   topPick: Fixture;
   setActiveStatus: (status: Fixture["status"] | "All") => void;
-  setIsAuthed: (value: boolean) => void;
-  setIsPremium: (value: boolean) => void;
   navigate: (page: Page, path?: string) => void;
 }) {
   return (
@@ -668,12 +667,29 @@ function HomePage({
             </div>
           </section>
 
-          <MemberAppPanel
-            isAuthed={isAuthed}
-            isPremium={isPremium}
-            setIsAuthed={setIsAuthed}
-            setIsPremium={setIsPremium}
-          />
+          <section className="apps-band" id="apps">
+            <div>
+              <p className="eyebrow">Mobile apps</p>
+              <h2>Install BamSignal, then manage your picks inside the app.</h2>
+              <p>
+                The website stays public for research, education, and app discovery. Login, Paystack payment, VIP picks, and the Telegram VIP link live inside the user dashboard.
+              </p>
+              <button
+                className="secondary-action"
+                onClick={() => navigate({ kind: "app" }, "/app")}
+              >
+                <UserPlus size={16} /> Open user dashboard
+              </button>
+            </div>
+            <div className="app-buttons">
+              <button aria-label="Download on the App Store">
+                <img src="/app-store-badge.svg" alt="Download on the App Store" />
+              </button>
+              <button aria-label="Get it on Google Play">
+                <img src="/google-play-badge.svg" alt="Get it on Google Play" />
+              </button>
+            </div>
+          </section>
 
           <section className="league-band" id="leagues">
             <div>
@@ -786,24 +802,29 @@ function EvidenceBoard() {
   );
 }
 
-function MemberAppPanel({
+function UserDashboard({
   isAuthed,
   isPremium,
   setIsAuthed,
-  setIsPremium
+  setIsPremium,
+  navigate
 }: {
   isAuthed: boolean;
   isPremium: boolean;
   setIsAuthed: (value: boolean) => void;
   setIsPremium: (value: boolean) => void;
+  navigate: (page: Page, path?: string) => void;
 }) {
   return (
-    <section className="member-app-panel" id="member-app" aria-label="BamSignal member app home">
-      <div className="member-copy">
-        <p className="eyebrow">App home</p>
-        <h2>Your BamSignal room starts here.</h2>
+    <main className="dashboard-main">
+      <section className="dashboard-hero">
+        <button className="back-link" onClick={() => navigate({ kind: "home" })}>
+          <ArrowLeft size={16} /> Back to website
+        </button>
+        <p className="eyebrow">User dashboard</p>
+        <h2>{isAuthed ? "Your BamSignal room" : "Log in to enter BamSignal"}</h2>
         <p>
-          Sign in to see the free member picks. Pay through the BamSignal Paystack checkout and the app verifies your VIP status immediately after confirmation.
+          This area is for members only. Free users see two public games, while verified VIP users unlock premium high-odd picks and the private Telegram room.
         </p>
         {!isAuthed ? (
           <div className="auth-actions auth-hero">
@@ -820,66 +841,71 @@ function MemberAppPanel({
             <strong>{isPremium ? "Premium room open" : "2 free games unlocked"}</strong>
           </div>
         )}
-      </div>
+      </section>
 
       {isAuthed && (
-        <div className="member-rooms">
-          <div className="auth-actions">
-            {!isPremium && (
-              <a
-                className="primary-action"
-                href={paystackPaymentLink}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <CreditCard size={16} /> Pay with Paystack
-              </a>
-            )}
-            <button className="secondary-action" onClick={() => setIsPremium(true)}>
-              <ShieldCheck size={16} /> Confirm payment
-            </button>
-          </div>
-          {!isPremium && (
-            <p className="payment-note">
-              After Paystack confirms the payment callback, BamSignal updates your account and moves you into VIP automatically.
+        <section className="member-app-panel" aria-label="BamSignal member picks">
+          <div className="member-copy">
+            <p className="eyebrow">Payment status</p>
+            <h2>{isPremium ? "VIP is active" : "Upgrade to VIP"}</h2>
+            <p>
+              Pay with the Paystack link provided by BamSignal. Once payment is confirmed by the callback, your account is verified and moved into the VIP room.
             </p>
-          )}
-          <div className="room-grid">
-            <div className="room-card">
-              <span className="room-label">Freemium room</span>
-              <h3>Two public games</h3>
-              {freemiumGames.map((game) => (
-                <div className="room-pick" key={game.id}>
-                  <strong>{game.confidence}%</strong>
-                  <span>{game.home} vs {game.away}</span>
-                  <small>{game.pick}</small>
-                </div>
-              ))}
-            </div>
-            <div className={`room-card premium-room ${isPremium ? "open" : "locked"}`}>
-              <span className="room-label">Premium VIP room</span>
-              <h3>{isPremium ? "High-odd games unlocked" : "High-odd games locked"}</h3>
-              {premiumGames.map((game) => (
-                <div className="room-pick" key={game.match}>
-                  <strong>{game.confidence}%</strong>
-                  <span>{game.match}</span>
-                  <small className={!isPremium ? "blurred-tip" : ""}>{game.pick} at {game.odds}</small>
-                </div>
-              ))}
-              {isPremium ? (
-                <a className="vip-join" href="https://t.me/+U5i6lKAUDtZkODIx" target="_blank" rel="noreferrer">
-                  <Send size={16} /> Join VIP Telegram room
+            <div className="auth-actions">
+              {!isPremium && (
+                <a className="primary-action" href={paystackPaymentLink} target="_blank" rel="noreferrer">
+                  <CreditCard size={16} /> Pay with Paystack
                 </a>
-              ) : (
-                <span className="vip-join muted-join">
-                  <LockKeyhole size={16} /> VIP Telegram link appears after payment
-                </span>
               )}
+              <button className="secondary-action" onClick={() => setIsPremium(true)}>
+                <ShieldCheck size={16} /> Confirm payment
+              </button>
+            </div>
+            {!isPremium && (
+              <p className="payment-note">
+                VIP games stay hidden until payment is confirmed and your account is verified.
+              </p>
+            )}
+          </div>
+
+          <div className="member-rooms">
+            <div className="room-grid">
+              <div className="room-card">
+                <span className="room-label">Freemium room</span>
+                <h3>Two public games</h3>
+                {freemiumGames.map((game) => (
+                  <div className="room-pick" key={game.id}>
+                    <strong>{game.confidence}%</strong>
+                    <span>{game.home} vs {game.away}</span>
+                    <small>{game.pick}</small>
+                  </div>
+                ))}
+              </div>
+              <div className={`room-card premium-room ${isPremium ? "open" : "locked"}`}>
+                <span className="room-label">Premium VIP room</span>
+                <h3>{isPremium ? "High-odd games unlocked" : "High-odd games locked"}</h3>
+                {premiumGames.map((game) => (
+                  <div className="room-pick" key={game.match}>
+                    <strong>{game.confidence}%</strong>
+                    <span>{game.match}</span>
+                    <small className={!isPremium ? "blurred-tip" : ""}>{game.pick} at {game.odds}</small>
+                  </div>
+                ))}
+                {isPremium ? (
+                  <a className="vip-join" href="https://t.me/+U5i6lKAUDtZkODIx" target="_blank" rel="noreferrer">
+                    <Send size={16} /> Join VIP Telegram room
+                  </a>
+                ) : (
+                  <span className="vip-join muted-join">
+                    <LockKeyhole size={16} /> VIP Telegram link appears after payment
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </section>
       )}
-    </section>
+    </main>
   );
 }
 
@@ -916,7 +942,7 @@ function AdminPage({ navigate }: { navigate: (page: Page, path?: string) => void
   );
 }
 
-function DetailPage({ page, navigate }: { page: Exclude<Page, { kind: "home" } | { kind: "admin" }>; navigate: (page: Page, path?: string) => void }) {
+function DetailPage({ page, navigate }: { page: { kind: "market"; slug: string } | { kind: "league"; slug: string }; navigate: (page: Page, path?: string) => void }) {
   const detail = page.kind === "market"
     ? marketDetails.find((item) => item.slug === page.slug)
     : leagueDetails.find((item) => item.slug === page.slug);

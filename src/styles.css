@@ -534,12 +534,14 @@ footer {
 
 .info-panel,
 .league-band,
+.apps-band,
 .evidence-board,
 .member-app-panel {
   padding: 18px;
 }
 
 .info-panel p,
+.apps-band p,
 .member-app-panel p,
 .responsible {
   color: var(--muted);
@@ -555,6 +557,7 @@ footer {
 }
 
 .evidence-board,
+.dashboard-hero,
 .member-app-panel {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -576,6 +579,7 @@ footer {
 }
 
 .evidence-head h2,
+.dashboard-hero h2,
 .member-app-panel h2 {
   font-size: clamp(21px, 2.1vw, 30px);
   line-height: 1.1;
@@ -679,6 +683,22 @@ footer {
   display: grid;
   gap: 18px;
   grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+}
+
+.dashboard-main {
+  align-content: start;
+}
+
+.dashboard-hero {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.dashboard-hero p {
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
 }
 
 .member-copy {
@@ -851,7 +871,8 @@ footer {
   flex: 0 0 auto;
 }
 
-.chip-cloud {
+.chip-cloud,
+.app-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -876,7 +897,8 @@ footer {
   color: var(--text);
 }
 
-.league-band {
+.league-band,
+.apps-band {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -886,6 +908,36 @@ footer {
 
 .league-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.apps-band {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.apps-band .secondary-action {
+  margin-top: 16px;
+}
+
+.app-buttons {
+  align-content: center;
+  margin-top: 0;
+}
+
+.app-buttons button {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  height: 48px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.app-buttons img {
+  display: block;
+  height: 48px;
+  width: auto;
 }
 
 .accordion-list {
@@ -1096,6 +1148,7 @@ footer strong {
   .hero,
   .two-column,
   .insight-stack,
+  .apps-band,
   .member-app-panel,
   .detail-grid {
     grid-template-columns: 1fr;
@@ -1171,7 +1224,9 @@ footer strong {
   .stat,
   .info-panel,
   .league-band,
+  .apps-band,
   .member-app-panel,
+  .dashboard-hero,
   .admin-panel,
   .detail-hero,
   .seo-panel,
@@ -1186,6 +1241,8 @@ footer strong {
 
   .hero p,
   .info-panel p,
+  .apps-band p,
+  .dashboard-hero p,
   .member-app-panel p,
   .detail-card p,
   .seo-panel p {
@@ -1344,6 +1401,8 @@ footer strong {
   .section-head h2,
   .info-panel h2,
   .league-band h2,
+  .apps-band h2,
+  .dashboard-hero h2,
   .member-app-panel h2 {
     font-size: 20px;
   }

@@ -25,3 +25,4 @@ ios/App/App.xcodeproj/xcuserdata/
 .vercel
 logo_light/
 assets/generated/
+android-emulator-*.png

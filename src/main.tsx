@@ -612,7 +612,7 @@ function App() {
   const [dailyKey, setDailyKey] = useState(() => getDailyKey());
   const [showStartupSplash, setShowStartupSplash] = useState(() => isNative);
   const [adminContent, setAdminContent] = useState<AdminContent>(() => loadAdminContent());
-  const logoSrc = theme === "dark" ? "/brand/compact-logo-dark.jpg" : "/brand/compact-logo-light.jpg";
+  const logoSrc = theme === "dark" ? "/brand/icon-dark.png" : "/brand/icon-light.png";
   const appIconSrc = theme === "dark" ? "/brand/app-icon-dark.jpg" : "/brand/app-icon-light.jpg";
 
   const navigate = (nextPage: Page, path = "/") => {
@@ -736,6 +736,7 @@ function App() {
           )}
           <button className="topbar-brand" onClick={goHome} aria-label="Go to BamSignal home">
             <img className="topbar-logo" src={logoSrc} alt="BamSignal" />
+            <span className="brand-wordmark">BamSignal</span>
           </button>
           <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
@@ -1432,7 +1433,6 @@ function UserDashboard({
         <strong>{game.confidence}%</strong>
         <span>{title}</span>
         <small className={locked ? "blurred-tip" : ""}>{"odds" in game ? `${game.pick} at ${game.odds}` : detail}</small>
-        {locked && <em className="vip-reveal-chip"><Crown size={12} /> Reveal VIP Signal</em>}
       </div>
     );
   };
@@ -1925,12 +1925,6 @@ function FixtureCard({ fixture, locked }: { fixture: Fixture; locked?: boolean }
         <span>Primary pick</span>
         <strong className={locked ? "blurred-tip" : ""}>{fixture.pick}</strong>
       </div>
-      {locked && (
-        <div className="lock-strip">
-          <LockKeyhole size={14} />
-          <span>Reveal VIP Signal in the app or Telegram VIP</span>
-        </div>
-      )}
       {!locked && (
         <button className="booking-code-button" onClick={copyBookingCode}>
           <ClipboardCheck size={14} /> Get SportyBet Code <strong>{bookingCode}</strong>

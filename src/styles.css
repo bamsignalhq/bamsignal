@@ -179,15 +179,28 @@ nav a:hover {
 
 .topbar-brand {
   align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
   display: flex;
+  gap: 10px;
 }
 
 .topbar-logo {
   display: block;
-  height: 54px;
+  height: 46px;
   object-fit: contain;
   object-position: center;
-  width: 190px;
+  width: 46px;
+}
+
+.brand-wordmark {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .eyebrow {
@@ -266,10 +279,17 @@ main {
 }
 
 .hero-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 18px;
+  max-width: 680px;
+}
+
+.hero-actions .primary-action,
+.hero-actions .secondary-action {
+  justify-content: center;
+  width: 100%;
 }
 
 .booking-shortcut {
@@ -279,10 +299,11 @@ main {
 }
 
 .trust-mini-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 12px;
+  max-width: 680px;
 }
 
 .trust-mini-row span {
@@ -295,7 +316,10 @@ main {
   font-size: 12px;
   font-weight: 900;
   gap: 7px;
+  justify-content: center;
+  min-height: 38px;
   padding: 8px 10px;
+  text-align: center;
 }
 
 .primary-action,
@@ -885,15 +909,28 @@ footer {
 .auth-social-grid button {
   border-radius: var(--radius);
   justify-content: center;
+  padding-inline: 14px;
 }
 
 .provider-logo {
   height: 18px;
+  flex: 0 0 auto;
   width: 18px;
 }
 
 .apple-logo {
   color: var(--text);
+}
+
+.app.light .auth-social-grid button {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+  color: #101923;
+}
+
+.app.light .apple-logo {
+  color: #101923;
 }
 
 .auth-copy p,
@@ -1898,25 +1935,6 @@ footer {
   user-select: none;
 }
 
-.lock-strip {
-  align-items: center;
-  background: linear-gradient(135deg, color-mix(in srgb, #fbbf24 20%, var(--surface-2)), color-mix(in srgb, var(--accent) 16%, var(--surface)));
-  border: 1px solid color-mix(in srgb, #fbbf24 55%, var(--border));
-  border-radius: var(--radius);
-  box-shadow: 0 14px 36px color-mix(in srgb, #fbbf24 18%, transparent);
-  color: var(--text);
-  display: inline-flex;
-  font-size: 12px;
-  font-weight: 900;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 8px 10px;
-}
-
-.lock-strip svg {
-  color: #fbbf24;
-}
-
 .booking-code-button {
   align-items: center;
   background: color-mix(in srgb, var(--surface-2) 82%, var(--accent));
@@ -1935,22 +1953,6 @@ footer {
 
 .booking-code-button strong {
   color: var(--accent);
-}
-
-.vip-reveal-chip {
-  align-items: center;
-  background: color-mix(in srgb, #fbbf24 20%, var(--surface-2));
-  border: 1px solid color-mix(in srgb, #fbbf24 50%, var(--border));
-  border-radius: 999px;
-  color: var(--text);
-  display: inline-flex;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 900;
-  gap: 5px;
-  justify-self: start;
-  margin-top: 5px;
-  padding: 5px 8px;
 }
 
 .blurred-grid .probability strong,
@@ -2249,7 +2251,13 @@ footer strong {
 
   .hero-actions {
     gap: 8px;
+    grid-template-columns: 1fr;
     margin-top: 12px;
+  }
+
+  .trust-mini-row {
+    gap: 8px;
+    grid-template-columns: 1fr;
   }
 
   .primary-action,
@@ -2433,9 +2441,13 @@ footer strong {
 }
 
 .native-app .topbar-logo {
-  height: 34px;
-  max-width: 128px;
-  width: 128px;
+  height: 42px;
+  max-width: 42px;
+  width: 42px;
+}
+
+.native-app .brand-wordmark {
+  font-size: 22px;
 }
 
 .native-app .mobile-only {

@@ -833,9 +833,17 @@ footer {
 .auth-trust-row,
 .otp-channel-row,
 .auth-social-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 8px;
+}
+
+.auth-trust-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.otp-channel-row,
+.auth-social-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .auth-trust-row span,
@@ -845,6 +853,7 @@ footer {
   border-radius: 999px;
   display: inline-flex;
   gap: 7px;
+  justify-content: center;
   min-height: 34px;
   padding: 0 10px;
 }
@@ -853,8 +862,9 @@ footer {
   background: color-mix(in srgb, var(--surface-2) 78%, var(--accent));
   border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
   color: var(--text);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .otp-channel-row button,
@@ -872,14 +882,18 @@ footer {
   border-color: var(--accent);
 }
 
-.auth-social-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
 .auth-social-grid button {
   border-radius: var(--radius);
   justify-content: center;
+}
+
+.provider-logo {
+  height: 18px;
+  width: 18px;
+}
+
+.apple-logo {
+  color: var(--text);
 }
 
 .auth-copy p,
@@ -2029,19 +2043,28 @@ footer strong {
 
 .site-footer {
   align-items: flex-start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(150px, 0.8fr) minmax(220px, 1fr);
 }
 
-.site-footer div {
+.footer-brand,
+.footer-column {
   display: grid;
   gap: 6px;
-  max-width: 520px;
 }
 
 .site-footer nav {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: flex-end;
+}
+
+.footer-column > span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .site-footer a {
@@ -2277,6 +2300,14 @@ footer strong {
   footer {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .site-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer nav {
+    justify-content: flex-start;
   }
 
   .segmented {

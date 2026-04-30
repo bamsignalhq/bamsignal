@@ -16,9 +16,7 @@ import {
   Goal,
   Home,
   Instagram,
-  KeyRound,
   LockKeyhole,
-  Mail,
   Menu,
   MessageCircle,
   Moon,
@@ -828,7 +826,12 @@ function HomePage({
   };
   const copyTopBookingCode = async () => {
     const code = `SPORTY-${topPick.id}${topPick.confidence}`;
-    await navigator.clipboard?.writeText(code);
+    if (Capacitor.getPlatform() !== "web") {
+      await navigator.clipboard?.writeText(code);
+      return;
+    }
+    navigate({ kind: "home" }, "/#apps");
+    window.setTimeout(() => document.getElementById("apps")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   };
 
   return (
@@ -842,7 +845,7 @@ function HomePage({
               </p>
               <div className="hero-actions">
                 <a className="primary-action" href="#predictions">View Predictions</a>
-                <button className="secondary-action booking-shortcut" onClick={copyTopBookingCode}><ClipboardCheck size={18} /> Copy SportyBet Code</button>
+                <button className="secondary-action booking-shortcut" onClick={copyTopBookingCode}><ClipboardCheck size={18} /> Get SportyBet Code</button>
                 <a className="primary-action app-cta-pulse" href="#apps"><Smartphone size={18} /> Get the App</a>
               </div>
               <div className="trust-mini-row">
@@ -1087,6 +1090,25 @@ function SocialProofStrip() {
   );
 }
 
+function GoogleMark() {
+  return (
+    <svg className="provider-logo" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285f4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9c-.3 1.3-1 2.4-2.1 3.1v2.6h3.4c2-1.8 3.4-4.5 3.4-7.7Z" />
+      <path fill="#34a853" d="M12 23c2.8 0 5.2-.9 6.9-2.6l-3.4-2.6c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.3H2.7v2.7C4.4 20.7 7.9 23 12 23Z" />
+      <path fill="#fbbc05" d="M6.2 14.5c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.8H2.7C2 9.2 1.6 10.8 1.6 12.5s.4 3.3 1.1 4.7l3.5-2.7Z" />
+      <path fill="#ea4335" d="M12 6.2c1.5 0 2.9.5 4 1.6l3-3C17.2 3 14.8 2 12 2 7.9 2 4.4 4.3 2.7 7.8l3.5 2.7C7 8 9.3 6.2 12 6.2Z" />
+    </svg>
+  );
+}
+
+function AppleMark() {
+  return (
+    <svg className="provider-logo apple-logo" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M16.7 12.8c0-2.5 2.1-3.7 2.2-3.8-1.2-1.8-3-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.5 1.3-.1 1.8-.8 3.3-.8s2 .8 3.4.8c1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.8-1.1-2.8-4Zm-2.5-7.4c.7-.9 1.2-2.1 1.1-3.3-1.1 0-2.4.7-3.1 1.6-.7.8-1.3 2-1.1 3.2 1.2.1 2.4-.6 3.1-1.5Z" />
+    </svg>
+  );
+}
+
 function UserDashboard({
   isAuthed,
   isPremium,
@@ -1129,6 +1151,7 @@ function UserDashboard({
   const subscriptionLabel = subscriptionUntil
     ? subscriptionUntil.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })
     : "Not active";
+  const isWebAppRoute = Capacitor.getPlatform() === "web";
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -1154,10 +1177,18 @@ function UserDashboard({
     setIsAuthed(true);
     setAuthMessage("Secure login enabled. Next time, use your phone Face ID, PIN, or pattern.");
   };
-  const sendLoginOtp = (channel = otpChannel) => {
-    const identifier = (loginForm.identifier || userProfile.phone).trim();
+  const showPhoneVerification = (phoneValue = userProfile.phone) => {
+    const phone = phoneValue || signupForm.phone || loginForm.identifier;
+    setPendingOtpIdentifier(phone);
+    setOtpCode("");
+    setOtpInput("");
+    setAuthMode("otp");
+    setAuthMessage("Email confirmed. Now verify your phone once with WhatsApp or SMS, then future logins can use phone/email plus password or Face ID, PIN, or pattern.");
+  };
+  const sendLoginOtp = (channel = otpChannel, target = pendingOtpIdentifier || userProfile.phone) => {
+    const identifier = target.trim();
     if (!isPhoneIdentifier(identifier)) {
-      setAuthMessage("Enter a phone number first so BamSignal can send your Sendchamp OTP.");
+      setAuthMessage("Add a valid phone number so BamSignal can send your Sendchamp OTP.");
       return;
     }
     const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -1176,12 +1207,16 @@ function UserDashboard({
         beginTrustedSession(identifier);
         return;
       }
-      sendLoginOtp(adminContent.sendchampDefaultChannel);
+      setAuthMessage("Use your verified email first so BamSignal can connect this phone number securely.");
       return;
     }
     const email = identifier.toLowerCase();
     if (!verifiedEmails.includes(email)) {
       setAuthMessage("Verify your email before logging in. Use Create account to receive a code.");
+      return;
+    }
+    if (!verifiedPhones.includes(normalizePhone(userProfile.phone))) {
+      showPhoneVerification(userProfile.phone);
       return;
     }
     beginTrustedSession(email);
@@ -1190,6 +1225,10 @@ function UserDashboard({
     if (!pendingOtpIdentifier) {
       setAuthMode("login");
       setAuthMessage("Enter your phone number to request a fresh OTP.");
+      return;
+    }
+    if (!otpCode) {
+      setAuthMessage("Choose WhatsApp or SMS first so Sendchamp can send your OTP.");
       return;
     }
     if (otpInput !== otpCode) {
@@ -1201,6 +1240,11 @@ function UserDashboard({
     beginTrustedSession(pendingOtpIdentifier);
   };
   const socialSignIn = (provider: "Google" | "Apple") => {
+    if (!verifiedPhones.includes(normalizePhone(userProfile.phone))) {
+      showPhoneVerification(userProfile.phone);
+      setAuthMessage(`${provider} connected. Verify your phone once to finish member access.`);
+      return;
+    }
     beginTrustedSession(userProfile.email);
     setAuthMessage(`${provider} sign-in connected. In production, this uses the native ${provider} provider before opening your room.`);
   };
@@ -1236,8 +1280,7 @@ function UserDashboard({
     setUserProfile(pendingSignup);
     setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
     setLoginForm({ identifier: pendingSignup.phone || pendingSignup.email, password: "" });
-    setAuthMode("login");
-    setAuthMessage("Email verified. You can now log in securely.");
+    showPhoneVerification(pendingSignup.phone);
   };
 
   const confirmVipPayment = () => {
@@ -1250,6 +1293,35 @@ function UserDashboard({
 
   const sendReset = () => {
     setAuthMessage(resetEmail ? `Password reset link sent to ${resetEmail}.` : "Enter your email to receive a reset link.");
+  };
+
+  if (isWebAppRoute) {
+    const ua = navigator.userAgent.toLowerCase();
+    const isAndroidWeb = ua.includes("android");
+    const isiOSWeb = /iphone|ipad|ipod/.test(ua);
+    const downloadLabel = isAndroidWeb ? "Open Google Play" : isiOSWeb ? "Open App Store" : "Choose your app store";
+    return (
+      <main className="web-app-gate">
+        <section className="detail-hero">
+          <button className="back-link" onClick={() => navigate({ kind: "home" }, "/")}>
+            <ArrowLeft size={16} /> Back to website
+          </button>
+          <p className="eyebrow">BamSignal app access</p>
+          <h2>Member login lives inside the installed app.</h2>
+          <p>
+            For security, signup, login, Paystack confirmation, OTP checks, VIP games, and booking codes are handled inside the BamSignal mobile app only.
+          </p>
+          <div className="hero-actions">
+            <a className="primary-action app-cta-pulse" href="/#apps" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#apps"); }}>
+              <Smartphone size={18} /> {downloadLabel}
+            </a>
+            <a className="secondary-action" href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer">
+              <Send size={16} /> Telegram channel
+            </a>
+          </div>
+        </section>
+      </main>
+    );
   };
 
   if (!isAuthed) {
@@ -1275,15 +1347,11 @@ function UserDashboard({
               </div>
               <label>Phone number or email<input value={loginForm.identifier} onChange={(event) => setLoginForm({ ...loginForm, identifier: event.target.value })} type="text" inputMode="email" placeholder="0801 000 0000 or you@example.com" /></label>
               <label>Password<input value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} type="password" placeholder="Your password" /></label>
-              <div className="otp-channel-row" aria-label="Choose OTP channel">
-                <button className={otpChannel === "whatsapp" ? "active" : ""} onClick={() => setOtpChannel("whatsapp")} type="button"><MessageCircle size={14} /> WhatsApp OTP</button>
-                <button className={otpChannel === "sms" ? "active" : ""} onClick={() => setOtpChannel("sms")} type="button"><Phone size={14} /> SMS OTP</button>
-              </div>
               <button className="primary-action neon-action" onClick={signIn}><UserPlus size={16} /> Login securely</button>
               <button className="secondary-action" onClick={signIn}><ShieldCheck size={16} /> Use Face ID / PIN / Pattern</button>
               <div className="auth-social-grid">
-                <button onClick={() => socialSignIn("Google")}><Mail size={16} /> Continue with Google</button>
-                <button onClick={() => socialSignIn("Apple")}><KeyRound size={16} /> Continue with Apple</button>
+                <button onClick={() => socialSignIn("Google")}><GoogleMark /> Continue with Google</button>
+                <button onClick={() => socialSignIn("Apple")}><AppleMark /> Continue with Apple</button>
               </div>
               <div className="auth-switch-row">
                 <button className="text-action create-link" onClick={() => setAuthMode("signup")}>Create account</button>
@@ -1325,6 +1393,10 @@ function UserDashboard({
                 <span><ShieldCheck size={14} /> Number check</span>
               </div>
               <label>Phone number<input value={pendingOtpIdentifier} readOnly /></label>
+              <div className="otp-channel-row" aria-label="Choose OTP channel">
+                <button className={otpChannel === "whatsapp" ? "active" : ""} onClick={() => sendLoginOtp("whatsapp")} type="button"><MessageCircle size={14} /> Send WhatsApp code</button>
+                <button className={otpChannel === "sms" ? "active" : ""} onClick={() => sendLoginOtp("sms")} type="button"><Phone size={14} /> Send SMS code</button>
+              </div>
               <label>OTP code<input value={otpInput} onChange={(event) => setOtpInput(event.target.value)} inputMode="numeric" placeholder="Enter WhatsApp/SMS code" /></label>
               <button className="primary-action neon-action" onClick={verifyLoginOtp}><ShieldCheck size={16} /> Verify and enter</button>
               <div className="auth-switch-row">
@@ -1659,16 +1731,26 @@ function SiteFooter({ navigate }: { navigate: (page: Page, path?: string) => voi
 
   return (
     <footer className="site-footer">
-      <div>
+      <div className="footer-brand">
         <strong>BamSignal</strong>
         <span>18+ only. Please gamble responsibly. BamSignal is an informational prediction tool and does not guarantee betting outcomes.</span>
       </div>
-      <nav aria-label="BamSignal legal links">
-        <a href="/contact" onClick={(event) => { event.preventDefault(); navigate({ kind: "contact" }, "/contact"); }}>Contact</a>
-        {legalPages.map((page) => (
-          <a key={page.slug} href={`/legal/${page.slug}`} onClick={(event) => legalNav(event, page.slug)}>{page.title}</a>
-        ))}
-      </nav>
+      <div className="footer-column">
+        <span>Support</span>
+        <nav aria-label="BamSignal support links">
+          <a href="/contact" onClick={(event) => { event.preventDefault(); navigate({ kind: "contact" }, "/contact"); }}>Contact</a>
+          <a href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer">Telegram</a>
+          <a href="https://whatsapp.com/channel/0029Vb7wB96DZ4LdE2Nhlp3A" target="_blank" rel="noreferrer">WhatsApp</a>
+        </nav>
+      </div>
+      <div className="footer-column">
+        <span>Legal</span>
+        <nav aria-label="BamSignal legal links">
+          {legalPages.map((page) => (
+            <a key={page.slug} href={`/legal/${page.slug}`} onClick={(event) => legalNav(event, page.slug)}>{page.title}</a>
+          ))}
+        </nav>
+      </div>
     </footer>
   );
 }
@@ -1823,7 +1905,11 @@ function DetailPage({ page, navigate }: { page: { kind: "market"; slug: string }
 function FixtureCard({ fixture, locked }: { fixture: Fixture; locked?: boolean }) {
   const bookingCode = `${fixture.status === "Live" ? "LIVE" : "SB"}-${fixture.id}${fixture.confidence}`;
   const copyBookingCode = async () => {
-    await navigator.clipboard?.writeText(bookingCode);
+    if (Capacitor.getPlatform() !== "web") {
+      await navigator.clipboard?.writeText(bookingCode);
+      return;
+    }
+    document.getElementById("apps")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   return (
     <article className={`fixture-card ${locked ? "locked" : ""}`}>
@@ -1847,7 +1933,7 @@ function FixtureCard({ fixture, locked }: { fixture: Fixture; locked?: boolean }
       )}
       {!locked && (
         <button className="booking-code-button" onClick={copyBookingCode}>
-          <ClipboardCheck size={14} /> Copy SportyBet Code <strong>{bookingCode}</strong>
+          <ClipboardCheck size={14} /> Get SportyBet Code <strong>{bookingCode}</strong>
         </button>
       )}
       <div className={`probability-grid ${locked ? "blurred-grid" : ""}`}>

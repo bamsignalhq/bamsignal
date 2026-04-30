@@ -189,10 +189,10 @@ nav a:hover {
 
 .topbar-logo {
   display: block;
-  height: 46px;
+  height: 50px;
   object-fit: contain;
   object-position: center;
-  width: 46px;
+  width: 168px;
 }
 
 .brand-wordmark {
@@ -668,6 +668,38 @@ footer {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
+}
+
+.admin-work-nav {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: 8px;
+}
+
+.admin-work-nav button {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  gap: 7px;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+.admin-work-nav button.active {
+  background: color-mix(in srgb, var(--accent) 88%, #ffffff);
+  border-color: var(--accent);
+  color: #101923;
 }
 
 .evidence-head {
@@ -1836,6 +1868,10 @@ footer {
   margin-top: 12px;
 }
 
+.admin-form.single-row {
+  grid-template-columns: 1fr;
+}
+
 .admin-game-grid {
   display: grid;
   gap: 14px;
@@ -1925,6 +1961,51 @@ footer {
 .toggle-grid input {
   accent-color: var(--accent);
   flex: 0 0 auto;
+}
+
+.support-inbox-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.support-message-card,
+.empty-admin-state {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.support-message-card div {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.support-message-card strong {
+  color: var(--text);
+}
+
+.support-message-card span,
+.support-message-card small,
+.support-message-card p {
+  color: var(--muted);
+}
+
+.support-message-card p {
+  line-height: 1.5;
+  margin: 0;
+}
+
+.empty-admin-state {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  font-weight: 800;
 }
 
 .automation-list div {
@@ -2520,6 +2601,10 @@ footer strong {
     grid-template-columns: 1fr;
   }
 
+  .admin-work-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .fixture-card h3 {
     font-size: 16px;
     margin-top: 4px;
@@ -2756,10 +2841,10 @@ footer strong {
   padding-left: 0;
 }
 
-.native-app .topbar-logo {
+  .native-app .topbar-logo {
   height: 42px;
-  max-width: 42px;
-  width: 42px;
+  max-width: 128px;
+  width: 128px;
 }
 
 .native-app .brand-wordmark {

@@ -46,6 +46,7 @@ type Page =
   | { kind: "contact" }
   | { kind: "legal"; slug: string }
   | { kind: "admin" };
+type AdminTab = "overview" | "games" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type DashboardTab = "home" | "vip" | "profile";
 type UserProfile = {
@@ -86,7 +87,17 @@ type AdminContent = {
   sendchampDefaultChannel: "whatsapp" | "sms";
   sendchampWhatsappTemplate: string;
   sendchampSmsSender: string;
+  bookingButtonText: string;
   games: AdminGame[];
+};
+type SupportMessage = {
+  id: number;
+  name: string;
+  email: string;
+  topic: string;
+  message: string;
+  to: string;
+  createdAt: string;
 };
 
 const getTimedTheme = (): Theme => {
@@ -411,6 +422,7 @@ const defaultAdminContent: AdminContent = {
   sendchampDefaultChannel: "whatsapp",
   sendchampWhatsappTemplate: "bamsignal_login_otp",
   sendchampSmsSender: "BamSignal",
+  bookingButtonText: "Get SportyBet Code",
   games: defaultAdminGames
 };
 
@@ -655,7 +667,7 @@ const leagueDetails = [
 
 function getInitialPage(): Page {
   const [, section, slug] = window.location.pathname.split("/");
-  if (section === "admin") return { kind: "admin" };
+  if (section === "lex" && slug === "auth") return { kind: "admin" };
   if (section === "app") return { kind: "app" };
   if (section === "contact") return { kind: "contact" };
   if (section === "legal" && slug) return { kind: "legal", slug };
@@ -732,7 +744,7 @@ function App() {
   const [dailyKey, setDailyKey] = useState(() => getDailyKey());
   const [showStartupSplash, setShowStartupSplash] = useState(() => isNative);
   const [adminContent, setAdminContent] = useState<AdminContent>(() => loadAdminContent());
-  const logoSrc = theme === "dark" ? "/brand/icon-dark.png" : "/brand/icon-light.png";
+  const logoSrc = theme === "dark" ? "/brand/compact-logo-dark.jpg" : "/brand/compact-logo-light.jpg";
   const appIconSrc = theme === "dark" ? "/brand/app-icon-dark.jpg" : "/brand/app-icon-light.jpg";
 
   const navigate = (nextPage: Page, path = "/") => {
@@ -856,7 +868,6 @@ function App() {
           )}
           <button className="topbar-brand" onClick={goHome} aria-label="Go to BamSignal home">
             <img className="topbar-logo" src={logoSrc} alt="BamSignal" />
-            <span className="brand-wordmark">BamSignal</span>
           </button>
           <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
@@ -966,7 +977,7 @@ function HomePage({
               </p>
               <div className="hero-actions">
                 <a className="primary-action" href="#predictions">View Predictions</a>
-                <button className="secondary-action booking-shortcut" onClick={copyTopBookingCode}><ClipboardCheck size={18} /> Get SportyBet Code</button>
+                <button className="secondary-action booking-shortcut" onClick={copyTopBookingCode}><ClipboardCheck size={18} /> {adminContent.bookingButtonText}</button>
                 <a className="primary-action app-cta-pulse" href="#apps"><Smartphone size={18} /> Get the App</a>
               </div>
               <div className="trust-mini-row">
@@ -1024,7 +1035,7 @@ function HomePage({
             </div>
             <div className="fixture-list">
               {filteredFixtures.map((fixture, index) => (
-                <FixtureCard key={fixture.id} fixture={fixture} locked={index > 0} />
+                <FixtureCard key={fixture.id} fixture={fixture} locked={index > 0} bookingButtonText={adminContent.bookingButtonText} />
               ))}
             </div>
           </section>
@@ -1921,6 +1932,7 @@ function DisclaimerStrip() {
 
 function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?: string) => void; adminContent: AdminContent }) {
   const [form, setForm] = useState({ name: "", email: "", topic: "", message: "" });
+  const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [captcha, setCaptcha] = useState(() => {
     const left = Math.floor(Math.random() * 10) + 1;
     const right = Math.floor(Math.random() * 10) + 1;
@@ -1928,16 +1940,39 @@ function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?:
   });
   const [captchaAnswer, setCaptchaAnswer] = useState("");
   const verified = Number(captchaAnswer) === captcha.left + captcha.right;
-  const subject = encodeURIComponent(`BamSignal support: ${form.topic || "Contact message"}`);
-  const body = encodeURIComponent(
-    `Name: ${form.name}\nEmail: ${form.email}\nTopic: ${form.topic}\n\nMessage:\n${form.message}`
-  );
-  const mailto = `mailto:support@bamsignal.com?subject=${subject}&body=${body}`;
   const refreshCaptcha = () => {
     const left = Math.floor(Math.random() * 10) + 1;
     const right = Math.floor(Math.random() * 10) + 1;
     setCaptcha({ left, right });
     setCaptchaAnswer("");
+  };
+  const submitContactMessage = async () => {
+    if (!verified || !form.name || !form.email || !form.message) {
+      setSubmitState("error");
+      return;
+    }
+    setSubmitState("sending");
+    const payload: SupportMessage = {
+      id: Date.now(),
+      ...form,
+      to: "support@bamsignal.com",
+      createdAt: new Date().toISOString()
+    };
+    try {
+      const saved = window.localStorage.getItem("bamsignal-support-messages");
+      const messages = saved ? (JSON.parse(saved) as SupportMessage[]) : [];
+      window.localStorage.setItem("bamsignal-support-messages", JSON.stringify([payload, ...messages].slice(0, 50)));
+      await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(() => undefined);
+      setForm({ name: "", email: "", topic: "", message: "" });
+      refreshCaptcha();
+      setSubmitState("sent");
+    } catch {
+      setSubmitState("error");
+    }
   };
 
   return (
@@ -1964,10 +1999,14 @@ function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?:
               <button className="text-action" onClick={refreshCaptcha}>New question</button>
             </div>
             {verified ? (
-              <a className="primary-action neon-action" href={mailto}><Send size={16} /> Send message to support</a>
+              <button className="primary-action neon-action" onClick={submitContactMessage} disabled={submitState === "sending"}>
+                <Send size={16} /> {submitState === "sending" ? "Sending..." : "Send message to support"}
+              </button>
             ) : (
               <button className="secondary-action" disabled><ShieldCheck size={16} /> Solve math to send</button>
             )}
+            {submitState === "sent" && <p className="auth-message">Message sent to support@bamsignal.com and saved in the admin support inbox.</p>}
+            {submitState === "error" && <p className="auth-message">Please fill in your name, email, message, and solve the math check.</p>}
           </div>
         </div>
 
@@ -2060,6 +2099,15 @@ function AdminPage({
   adminContent: AdminContent;
   setAdminContent: (content: AdminContent) => void;
 }) {
+  const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>("overview");
+  const [supportMessages, setSupportMessages] = useState<SupportMessage[]>(() => {
+    try {
+      const saved = window.localStorage.getItem("bamsignal-support-messages");
+      return saved ? (JSON.parse(saved) as SupportMessage[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const updateAdLink = (index: number, value: string) => {
     const nextLinks = [...adminContent.adLinks];
     nextLinks[index] = value;
@@ -2095,6 +2143,14 @@ function AdminPage({
       ]
     });
   };
+  const refreshSupportInbox = () => {
+    try {
+      const saved = window.localStorage.getItem("bamsignal-support-messages");
+      setSupportMessages(saved ? (JSON.parse(saved) as SupportMessage[]) : []);
+    } catch {
+      setSupportMessages([]);
+    }
+  };
 
   return (
     <main>
@@ -2108,7 +2164,23 @@ function AdminPage({
           This private command center is where BamSignal prepares the day&apos;s free tips, VIP picks, booking codes, scheduled alerts, and channel broadcasts before they go to users.
         </p>
       </section>
-      <section className="admin-panel">
+      <nav className="admin-work-nav" aria-label="Admin work areas">
+        {[
+          { tab: "overview", label: "Overview", icon: <ClipboardCheck size={15} /> },
+          { tab: "games", label: "Games", icon: <Goal size={15} /> },
+          { tab: "content", label: "News & ads", icon: <BarChart3 size={15} /> },
+          { tab: "payments", label: "Payments", icon: <CreditCard size={15} /> },
+          { tab: "otp", label: "OTP", icon: <ShieldCheck size={15} /> },
+          { tab: "support", label: "Support inbox", icon: <MessageCircle size={15} /> }
+        ].map(({ tab, label, icon }) => (
+          <button key={tab} className={activeAdminTab === tab ? "active" : ""} onClick={() => { setActiveAdminTab(tab as AdminTab); if (tab === "support") refreshSupportInbox(); }}>
+            {icon}
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {activeAdminTab === "overview" && <section className="admin-panel">
         <div className="admin-form">
           <label>Game of the day<input value="Man City vs Tottenham" readOnly /></label>
           <label>Prediction<input value="Home win + over 1.5" readOnly /></label>
@@ -2123,8 +2195,9 @@ function AdminPage({
             </div>
           ))}
         </div>
-      </section>
-      <section className="admin-panel">
+      </section>}
+
+      {activeAdminTab === "games" && <section className="admin-panel">
         <div className="admin-panel-head">
           <div>
             <p className="eyebrow">Daily games command</p>
@@ -2132,6 +2205,9 @@ function AdminPage({
             <p className="admin-note">Freemium users only see the two low-odd games below 1.50. VIP users see the high-odd room, full recommendations, and booking codes.</p>
           </div>
           <button className="secondary-action" onClick={addAdminGame}><Goal size={16} /> Add game</button>
+        </div>
+        <div className="admin-form single-row">
+          <label>Public booking button text<input value={adminContent.bookingButtonText} onChange={(event) => setAdminContent({ ...adminContent, bookingButtonText: event.target.value })} placeholder="Get Bet9ja Code / Get SportyBet Code" /></label>
         </div>
         <div className="admin-game-grid">
           {adminContent.games.map((game, index) => (
@@ -2168,8 +2244,9 @@ function AdminPage({
             </article>
           ))}
         </div>
-      </section>
-      <section className="admin-panel">
+      </section>}
+
+      {activeAdminTab === "content" && <section className="admin-panel">
         <div>
           <p className="eyebrow">Public news and ads</p>
           <h2>News room and clean ad slots</h2>
@@ -2184,8 +2261,9 @@ function AdminPage({
             <label key={index}>Ad link {index + 1}<input value={link} onChange={(event) => updateAdLink(index, event.target.value)} placeholder="https://advertiser-or-affiliate-link.com" /></label>
           ))}
         </div>
-      </section>
-      <section className="admin-panel">
+      </section>}
+
+      {activeAdminTab === "payments" && <section className="admin-panel">
         <div>
           <p className="eyebrow">Payments and subscriptions</p>
           <h2>VIP access control</h2>
@@ -2198,8 +2276,9 @@ function AdminPage({
           <div><CalendarClock size={16} /><span>Expiry job should move users back to freemium when subscriptions end.</span></div>
           <div><Users size={16} /><span>Admin override room reserved for manual verification, refunds, and support fixes.</span></div>
         </div>
-      </section>
-      <section className="admin-panel">
+      </section>}
+
+      {activeAdminTab === "otp" && <section className="admin-panel">
         <div>
           <p className="eyebrow">Sendchamp OTP control</p>
           <h2>Phone verification settings</h2>
@@ -2216,7 +2295,35 @@ function AdminPage({
           <label>SMS sender name<input value={adminContent.sendchampSmsSender} onChange={(event) => setAdminContent({ ...adminContent, sendchampSmsSender: event.target.value })} placeholder="BamSignal" /></label>
           <label>API key storage<input value="SENDCHAMP_API_KEY env var only" readOnly /></label>
         </div>
-      </section>
+      </section>}
+
+      {activeAdminTab === "support" && <section className="admin-panel">
+        <div className="admin-panel-head">
+          <div>
+            <p className="eyebrow">Support inbox</p>
+            <h2>Messages sent to support@bamsignal.com</h2>
+            <p className="admin-note">Contact form submissions stay inside this admin inbox for review. Production email delivery can be connected to Resend, SendGrid, or your support mailbox provider.</p>
+          </div>
+          <button className="secondary-action" onClick={refreshSupportInbox}><MessageCircle size={16} /> Refresh inbox</button>
+        </div>
+        <div className="support-inbox-list">
+          {supportMessages.length ? supportMessages.map((item) => (
+            <article className="support-message-card" key={item.id}>
+              <div>
+                <strong>{item.topic || "Contact message"}</strong>
+                <span>{item.name} / {item.email}</span>
+              </div>
+              <p>{item.message}</p>
+              <small>To {item.to} / {new Date(item.createdAt).toLocaleString("en-NG")}</small>
+            </article>
+          )) : (
+            <div className="empty-admin-state">
+              <MessageCircle size={18} />
+              <span>No support messages yet.</span>
+            </div>
+          )}
+        </div>
+      </section>}
     </main>
   );
 }
@@ -2272,7 +2379,7 @@ function DetailPage({ page, navigate }: { page: { kind: "market"; slug: string }
   );
 }
 
-function FixtureCard({ fixture, locked }: { fixture: Fixture; locked?: boolean }) {
+function FixtureCard({ fixture, locked, bookingButtonText }: { fixture: Fixture; locked?: boolean; bookingButtonText: string }) {
   const bookingCode = `${fixture.status === "Live" ? "LIVE" : "SB"}-${fixture.id}${fixture.confidence}`;
   const copyBookingCode = async () => {
     if (Capacitor.getPlatform() !== "web") {
@@ -2297,7 +2404,7 @@ function FixtureCard({ fixture, locked }: { fixture: Fixture; locked?: boolean }
       </div>
       {!locked && (
         <button className="booking-code-button" onClick={copyBookingCode}>
-          <ClipboardCheck size={14} /> Get SportyBet Code <strong>{bookingCode}</strong>
+          <ClipboardCheck size={14} /> {bookingButtonText} <strong>{bookingCode}</strong>
         </button>
       )}
       <div className={`probability-grid ${locked ? "blurred-grid" : ""}`}>

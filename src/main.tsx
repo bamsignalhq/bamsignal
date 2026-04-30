@@ -519,7 +519,7 @@ function App() {
 
   useEffect(() => {
     if (!isNative) return undefined;
-    const splashTimer = window.setTimeout(() => setShowStartupSplash(false), 3600);
+    const splashTimer = window.setTimeout(() => setShowStartupSplash(false), 4200);
     return () => window.clearTimeout(splashTimer);
   }, [isNative]);
 
@@ -983,22 +983,15 @@ function UserDashboard({
             </button>
           )}
           <div className="auth-copy">
-            <p className="eyebrow">BamSignal app</p>
-            <h2>{authMode === "signup" ? "Create your account" : authMode === "reset" ? "Reset your password" : "Welcome back"}</h2>
-            <p>
-              {authMode === "signup"
-                ? "Create your free BamSignal account. You can upgrade to VIP from inside the app after login."
-                : authMode === "reset"
-                  ? "Enter your email and BamSignal will send a password reset link."
-                  : "Sign in to see current free picks, then unlock VIP games when your payment is confirmed."}
-            </p>
+            <span className="auth-secure-badge"><ShieldCheck size={14} /> Secure member access</span>
+            <h2>{authMode === "signup" ? "Create BamSignal account" : authMode === "reset" ? "Reset access" : "Welcome to BamSignal"}</h2>
           </div>
 
           {authMode === "login" && (
             <div className="auth-form">
               <label>Email<input value={loginForm.email} onChange={(event) => setLoginForm({ ...loginForm, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
               <label>Password<input value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} type="password" placeholder="Your password" /></label>
-              <button className="primary-action" onClick={signIn}><UserPlus size={16} /> Login</button>
+              <button className="primary-action neon-action" onClick={signIn}><UserPlus size={16} /> Login securely</button>
               <button className="secondary-action" onClick={signIn}><ShieldCheck size={16} /> Use Face ID / PIN / Pattern</button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={() => setAuthMode("signup")}>Create account</button>
@@ -1014,7 +1007,7 @@ function UserDashboard({
               <label>Phone number<input value={signupForm.phone} onChange={(event) => setSignupForm({ ...signupForm, phone: event.target.value })} type="tel" placeholder="+234..." /></label>
               <label>Password<input value={signupForm.password} onChange={(event) => setSignupForm({ ...signupForm, password: event.target.value })} type="password" placeholder="Create password" /></label>
               <label>Confirm password<input value={signupForm.confirmPassword} onChange={(event) => setSignupForm({ ...signupForm, confirmPassword: event.target.value })} type="password" placeholder="Repeat password" /></label>
-              <button className="primary-action" onClick={signUp}><ShieldCheck size={16} /> Create account</button>
+              <button className="primary-action neon-action" onClick={signUp}><ShieldCheck size={16} /> Create secure account</button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={() => setAuthMode("login")}>Already have an account? Login</button>
                 <button className="text-action" onClick={() => setAuthMode("reset")}>Reset password</button>
@@ -1025,7 +1018,7 @@ function UserDashboard({
           {authMode === "reset" && (
             <div className="auth-form">
               <label>Email<input value={resetEmail} onChange={(event) => setResetEmail(event.target.value)} type="email" placeholder="you@example.com" /></label>
-              <button className="primary-action" onClick={sendReset}><Send size={16} /> Send reset link</button>
+              <button className="primary-action neon-action" onClick={sendReset}><Send size={16} /> Send reset link</button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>
                 <button className="text-action" onClick={() => setAuthMode("signup")}>Create account</button>

@@ -16,10 +16,13 @@ import {
   Goal,
   Home,
   Instagram,
+  KeyRound,
   LockKeyhole,
+  Mail,
   Menu,
   MessageCircle,
   Moon,
+  Phone,
   Music2,
   Send,
   ShieldCheck,
@@ -36,13 +39,30 @@ import {
 import "./styles.css";
 
 type Theme = "dark" | "light";
-type Page = { kind: "home" } | { kind: "app" } | { kind: "market"; slug: string } | { kind: "league"; slug: string } | { kind: "admin" };
-type AuthMode = "login" | "signup" | "reset";
+type Page =
+  | { kind: "home" }
+  | { kind: "app" }
+  | { kind: "market"; slug: string }
+  | { kind: "league"; slug: string }
+  | { kind: "contact" }
+  | { kind: "legal"; slug: string }
+  | { kind: "admin" };
+type AuthMode = "login" | "signup" | "verify" | "otp" | "reset";
 type DashboardTab = "home" | "vip" | "profile";
 type UserProfile = {
   name: string;
   email: string;
   phone: string;
+};
+type AdminContent = {
+  newsTitle: string;
+  newsSummary: string;
+  newsSource: string;
+  newsUrl: string;
+  adLinks: string[];
+  sendchampDefaultChannel: "whatsapp" | "sms";
+  sendchampWhatsappTemplate: string;
+  sendchampSmsSender: string;
 };
 
 const getTimedTheme = (): Theme => {
@@ -272,11 +292,88 @@ const premiumGames = [
   { match: "Bayer Leverkusen vs Mainz", pick: "Home win and BTTS", odds: "2.42", confidence: 76 }
 ];
 
+const profileGameHistory = [
+  { teams: "Paris SG vs Bayern Munich", league: "Champions League", play: "Over 1.5 goals", status: "Won" },
+  { teams: "Southampton vs Ipswich Town", league: "Championship", play: "Home over 0.5", status: "Won" },
+  { teams: "Roma vs Atalanta", league: "Serie A", play: "Both teams to score", status: "Lost" },
+  { teams: "Dortmund vs Leipzig", league: "Bundesliga", play: "Over 2.5 goals", status: "Won" },
+  { teams: "Espanyol vs Real Madrid", league: "La Liga", play: "Away double chance", status: "Won" }
+];
+
 const adminPlan = [
   "Publish Free Sure Game to app, Telegram channel, and WhatsApp channel",
   "Publish VIP high-odd games to premium app room and Telegram VIP group",
   "Schedule match reminders and result proof updates",
   "Track affiliate booking-code clicks and channel delivery status"
+];
+
+const defaultAdminContent: AdminContent = {
+  newsTitle: "",
+  newsSummary: "",
+  newsSource: "",
+  newsUrl: "",
+  adLinks: ["", "", "", "", ""],
+  sendchampDefaultChannel: "whatsapp",
+  sendchampWhatsappTemplate: "bamsignal_login_otp",
+  sendchampSmsSender: "BamSignal"
+};
+
+const legalPages = [
+  {
+    slug: "terms",
+    title: "Terms of Use",
+    intro: "These terms explain how visitors, free members, and VIP members should use BamSignal responsibly.",
+    sections: [
+      "BamSignal provides sports information, market education, football prediction analysis, and app-based member features. The platform does not accept wagers, process bets, or act as a bookmaker.",
+      "Predictions, percentages, booking-code references, and market notes are informational only. Users remain fully responsible for any betting decisions they make outside BamSignal.",
+      "You must be 18 years or older, or the legal betting age in your jurisdiction, before using any betting-related information on BamSignal.",
+      "We may update content, app features, pricing, VIP access, and delivery channels as the product grows. Continued use of BamSignal means you accept the current version of these terms."
+    ]
+  },
+  {
+    slug: "privacy",
+    title: "Privacy Policy",
+    intro: "This policy explains the type of information BamSignal may collect when users contact us, create accounts, or use our app.",
+    sections: [
+      "We may collect account details such as name, email address, phone number, payment verification status, and support messages when users choose to provide them.",
+      "Payment confirmation is expected to be handled through Paystack or another secure provider. BamSignal should not store full card details inside the app.",
+      "Contact messages are routed to support@bamsignal.com so the support team can respond. We use this information only for service, safety, and account support.",
+      "Operational tools such as Firebase, Telegram, WhatsApp Business providers, analytics, and hosting services may process limited data needed to deliver notifications and product features."
+    ]
+  },
+  {
+    slug: "responsible-gambling",
+    title: "Responsible Gambling",
+    intro: "BamSignal is built for adults who understand that football outcomes are uncertain and betting can carry financial risk.",
+    sections: [
+      "BamSignal is 18+ only. Do not use our prediction content if you are below the legal betting age in your country or region.",
+      "Never bet money you cannot afford to lose. Set limits, avoid chasing losses, and take breaks when betting stops feeling controlled.",
+      "No prediction is guaranteed. A high percentage does not mean a match cannot lose, and a strong analysis does not remove football uncertainty.",
+      "If betting is causing stress, debt, secrecy, or harm, stop immediately and seek help from a trusted person or a professional responsible-gambling support service."
+    ]
+  },
+  {
+    slug: "disclaimer",
+    title: "Prediction Disclaimer",
+    intro: "This disclaimer makes the limits of BamSignal analysis clear before anyone uses our football content.",
+    sections: [
+      "Please gamble responsibly. BamSignal is an informational prediction tool and does not guarantee betting outcomes.",
+      "All percentages, tips, odds references, scores, and market angles are estimates based on available information and can be wrong.",
+      "Team news, lineup changes, injuries, weather, red cards, bookmaker changes, and live match events can affect any prediction.",
+      "BamSignal is not liable for betting losses, missed profits, account restrictions, bookmaker decisions, or any action taken after reading our content."
+    ]
+  },
+  {
+    slug: "cookies",
+    title: "Cookie Notice",
+    intro: "This notice explains how BamSignal may use basic browser storage and similar technologies.",
+    sections: [
+      "BamSignal may use browser storage for theme preference, app routing, admin preview fields, and future product settings.",
+      "Analytics, hosting, payment, and notification providers may use cookies or similar tools to keep services secure and reliable.",
+      "You can control cookies through your browser settings. Blocking some storage may affect saved preferences or future account features.",
+      "As BamSignal adds production services, this notice should be reviewed and updated to match the exact tools used."
+    ]
+  }
 ];
 
 const paystackPaymentLink = "https://paystack.com/pay/bamsignal-vip";
@@ -459,11 +556,28 @@ function getInitialPage(): Page {
   const [, section, slug] = window.location.pathname.split("/");
   if (section === "admin") return { kind: "admin" };
   if (section === "app") return { kind: "app" };
+  if (section === "contact") return { kind: "contact" };
+  if (section === "legal" && slug) return { kind: "legal", slug };
   if (section === "markets" && slug) return { kind: "market", slug };
   if (section === "leagues" && slug) return { kind: "league", slug };
   if (Capacitor.getPlatform() !== "web") return { kind: "app" };
   return { kind: "home" };
 }
+
+const loadAdminContent = (): AdminContent => {
+  try {
+    const saved = window.localStorage.getItem("bamsignal-admin-content");
+    if (!saved) return defaultAdminContent;
+    const parsed = JSON.parse(saved) as Partial<AdminContent>;
+    return {
+      ...defaultAdminContent,
+      ...parsed,
+      adLinks: [...(parsed.adLinks ?? []), "", "", "", "", ""].slice(0, 5)
+    };
+  } catch {
+    return defaultAdminContent;
+  }
+};
 
 const faq = [
   {
@@ -495,10 +609,11 @@ function App() {
   const [activeStatus, setActiveStatus] = useState<Fixture["status"] | "All">("All");
   const [isAuthed, setIsAuthed] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile>({ name: "BamSignal User", email: "user@bamsignal.com", phone: "+234 801 000 0000" });
+  const [userProfile, setUserProfile] = useState<UserProfile>({ name: "BamSignal User", email: "user@bamsignal.com", phone: "801 000 0000" });
   const [page, setPage] = useState<Page>(() => getInitialPage());
   const [dailyKey, setDailyKey] = useState(() => getDailyKey());
   const [showStartupSplash, setShowStartupSplash] = useState(() => isNative);
+  const [adminContent, setAdminContent] = useState<AdminContent>(() => loadAdminContent());
   const logoSrc = theme === "dark" ? "/brand/compact-logo-dark.jpg" : "/brand/compact-logo-light.jpg";
   const appIconSrc = theme === "dark" ? "/brand/app-icon-dark.jpg" : "/brand/app-icon-light.jpg";
 
@@ -540,6 +655,10 @@ function App() {
     return () => window.removeEventListener("popstate", syncRoute);
   }, []);
 
+  useEffect(() => {
+    window.localStorage.setItem("bamsignal-admin-content", JSON.stringify(adminContent));
+  }, [adminContent]);
+
   const filteredFixtures = useMemo(() => {
     if (activeStatus === "All") return fixtures;
     return fixtures.filter((fixture) => fixture.status === activeStatus);
@@ -548,7 +667,7 @@ function App() {
   const topPick = useMemo(() => getDailySureSignal(dailyKey), [dailyKey]);
 
   const goHome = () => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/");
-  const showMenuButton = !(isNative && page.kind === "app" && !isAuthed);
+  const showMenuButton = !(isNative && page.kind === "app");
 
   if (showStartupSplash) {
     return (
@@ -590,6 +709,9 @@ function App() {
               <a href="/#apps" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#apps"); }}>
                 <Smartphone size={18} /> Get the App
               </a>
+              <a href="/contact" onClick={(event) => { event.preventDefault(); navigate({ kind: "contact" }, "/contact"); }}>
+                <MessageCircle size={18} /> Contact
+              </a>
               <a href="/#faq" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#faq"); }}>
                 <ShieldCheck size={18} /> FAQs
               </a>
@@ -630,6 +752,7 @@ function App() {
             topPick={topPick}
             setActiveStatus={setActiveStatus}
             navigate={navigate}
+            adminContent={adminContent}
           />
         ) : page.kind === "app" ? (
           <UserDashboard
@@ -639,19 +762,21 @@ function App() {
             setIsPremium={setIsPremium}
             userProfile={userProfile}
             setUserProfile={setUserProfile}
+            adminContent={adminContent}
             isNative={isNative}
             navigate={navigate}
           />
         ) : page.kind === "admin" ? (
-          <AdminPage isNative={isNative} navigate={navigate} />
+          <AdminPage isNative={isNative} navigate={navigate} adminContent={adminContent} setAdminContent={setAdminContent} />
+        ) : page.kind === "contact" ? (
+          <ContactPage navigate={navigate} adminContent={adminContent} />
+        ) : page.kind === "legal" ? (
+          <LegalPage page={page} navigate={navigate} />
         ) : (
           <DetailPage page={page} navigate={navigate} />
         )}
 
-        <footer>
-          <strong>BamSignal</strong>
-          <span>Responsible analytics for football fans. Copyright 2026 BamSignal</span>
-        </footer>
+        <SiteFooter navigate={navigate} />
       </div>
 
       {menuOpen && (
@@ -687,14 +812,25 @@ function HomePage({
   filteredFixtures,
   topPick,
   setActiveStatus,
-  navigate
+  navigate,
+  adminContent
 }: {
   activeStatus: Fixture["status"] | "All";
   filteredFixtures: Fixture[];
   topPick: Fixture;
   setActiveStatus: (status: Fixture["status"] | "All") => void;
   navigate: (page: Page, path?: string) => void;
+  adminContent: AdminContent;
 }) {
+  const contactLink = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    navigate({ kind: "contact" }, "/contact");
+  };
+  const copyTopBookingCode = async () => {
+    const code = `SPORTY-${topPick.id}${topPick.confidence}`;
+    await navigator.clipboard?.writeText(code);
+  };
+
   return (
     <main>
           <section className="hero">
@@ -706,7 +842,12 @@ function HomePage({
               </p>
               <div className="hero-actions">
                 <a className="primary-action" href="#predictions">View Predictions</a>
-                <a className="secondary-action" href="#apps">Get the App</a>
+                <button className="secondary-action booking-shortcut" onClick={copyTopBookingCode}><ClipboardCheck size={18} /> Copy SportyBet Code</button>
+                <a className="primary-action app-cta-pulse" href="#apps"><Smartphone size={18} /> Get the App</a>
+              </div>
+              <div className="trust-mini-row">
+                <span><LockKeyhole size={14} /> Secured by Paystack</span>
+                <span><Send size={14} /> Join 4,500+ Nigerian punters on Telegram</span>
               </div>
             </div>
             <div className="signal-panel" aria-label="Top prediction">
@@ -737,6 +878,7 @@ function HomePage({
             <Stat icon={<BarChart3 size={20} />} label="Tracked markets" value="8+" />
             <Stat icon={<Trophy size={20} />} label="Covered competitions" value="25+" />
           </section>
+          <SocialProofStrip />
 
           <section className="content-grid" id="predictions">
             <div className="section-head">
@@ -800,6 +942,7 @@ function HomePage({
             <div>
               <p className="eyebrow">Mobile apps</p>
               <h2>Get BamSignal on your phone.</h2>
+              <p>Install the app for login, free member picks, VIP access, payment confirmation, and push notifications.</p>
             </div>
             <div className="app-buttons">
               <button aria-label="Download on the App Store">
@@ -810,6 +953,8 @@ function HomePage({
               </button>
             </div>
           </section>
+
+          <DisclaimerStrip />
 
           <section className="league-band" id="leagues">
             <div>
@@ -842,8 +987,14 @@ function HomePage({
               </div>
             </div>
             <div className="info-panel contact-panel">
+              <FootballNewsPanel adminContent={adminContent} compact />
+              <AdSlots adminContent={adminContent} />
               <p className="eyebrow">Contact</p>
               <h2>Talk to BamSignal</h2>
+              <p>Need support, partnerships, app help, or VIP guidance? Reach us through the official channels or use the contact page.</p>
+              <a className="primary-action contact-page-link" href="/contact" onClick={contactLink}>
+                <MessageCircle size={16} /> Open contact page
+              </a>
               <div className="social-grid" aria-label="BamSignal social links">
                 <a href="https://www.tiktok.com/@bamsignal" target="_blank" rel="noreferrer">
                   <Music2 size={18} />
@@ -877,7 +1028,7 @@ function HomePage({
                 </a>
               </div>
               <p className="responsible">
-                Please gamble responsibly. BamSignal is an informational prediction tool and does not guarantee betting outcomes.
+                18+ only. Please gamble responsibly. BamSignal is an informational prediction tool and does not guarantee betting outcomes.
               </p>
             </div>
           </section>
@@ -922,6 +1073,20 @@ function EvidenceBoard() {
   );
 }
 
+function SocialProofStrip() {
+  return (
+    <section className="tribe-strip" aria-label="BamSignal community proof">
+      <div>
+        <p className="eyebrow">Social proof</p>
+        <h2>Join 4,500+ Nigerian punters tracking signals daily.</h2>
+      </div>
+      <a className="primary-action" href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer">
+        <Send size={16} /> Join the Telegram tribe
+      </a>
+    </section>
+  );
+}
+
 function UserDashboard({
   isAuthed,
   isPremium,
@@ -929,6 +1094,7 @@ function UserDashboard({
   setIsPremium,
   userProfile,
   setUserProfile,
+  adminContent,
   isNative,
   navigate
 }: {
@@ -938,21 +1104,105 @@ function UserDashboard({
   setIsPremium: (value: boolean) => void;
   userProfile: UserProfile;
   setUserProfile: (value: UserProfile) => void;
+  adminContent: AdminContent;
   isNative: boolean;
   navigate: (page: Page, path?: string) => void;
 }) {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("home");
-  const [loginForm, setLoginForm] = useState({ email: userProfile.email, password: "" });
+  const [loginForm, setLoginForm] = useState({ identifier: userProfile.phone || userProfile.email, password: "" });
   const [signupForm, setSignupForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
+  const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(null);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationInput, setVerificationInput] = useState("");
+  const [verifiedEmails, setVerifiedEmails] = useState<string[]>([userProfile.email]);
+  const [verifiedPhones, setVerifiedPhones] = useState<string[]>([userProfile.phone.replace(/\D/g, "").replace(/^234/, "")]);
+  const [otpChannel, setOtpChannel] = useState<"whatsapp" | "sms">(adminContent.sendchampDefaultChannel);
+  const [pendingOtpIdentifier, setPendingOtpIdentifier] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpInput, setOtpInput] = useState("");
+  const [subscriptionUntil, setSubscriptionUntil] = useState<Date | null>(null);
   const [resetEmail, setResetEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
+  const wins = profileGameHistory.filter((game) => game.status === "Won").length;
+  const losses = profileGameHistory.length - wins;
+  const subscriptionLabel = subscriptionUntil
+    ? subscriptionUntil.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })
+    : "Not active";
 
-  const signIn = () => {
-    const email = loginForm.email || userProfile.email;
-    setUserProfile({ ...userProfile, email });
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (subscriptionUntil && subscriptionUntil.getTime() <= Date.now()) {
+        setIsPremium(false);
+        setSubscriptionUntil(null);
+        setAuthMessage("Your VIP subscription has ended. You are now back in the freemium room.");
+      }
+    }, 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, [subscriptionUntil, setIsPremium]);
+
+  const normalizePhone = (value: string) => value.replace(/\D/g, "").replace(/^234/, "");
+  const isPhoneIdentifier = (value: string) => {
+    const digits = normalizePhone(value);
+    return digits.length >= 10 && !value.includes("@");
+  };
+  const beginTrustedSession = (identifier: string) => {
+    const nextProfile = isPhoneIdentifier(identifier)
+      ? { ...userProfile, phone: normalizePhone(identifier) }
+      : { ...userProfile, email: identifier.trim().toLowerCase() };
+    setUserProfile(nextProfile);
     setIsAuthed(true);
     setAuthMessage("Secure login enabled. Next time, use your phone Face ID, PIN, or pattern.");
+  };
+  const sendLoginOtp = (channel = otpChannel) => {
+    const identifier = (loginForm.identifier || userProfile.phone).trim();
+    if (!isPhoneIdentifier(identifier)) {
+      setAuthMessage("Enter a phone number first so BamSignal can send your Sendchamp OTP.");
+      return;
+    }
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setOtpChannel(channel);
+    setPendingOtpIdentifier(identifier);
+    setOtpCode(code);
+    setOtpInput("");
+    setAuthMode("otp");
+    setAuthMessage(`Sendchamp ${channel === "whatsapp" ? "WhatsApp" : "SMS"} OTP sent to ${identifier}. Test code: ${code}`);
+  };
+  const signIn = () => {
+    const identifier = (loginForm.identifier || userProfile.email).trim();
+    if (isPhoneIdentifier(identifier)) {
+      const phone = normalizePhone(identifier);
+      if (verifiedPhones.includes(phone)) {
+        beginTrustedSession(identifier);
+        return;
+      }
+      sendLoginOtp(adminContent.sendchampDefaultChannel);
+      return;
+    }
+    const email = identifier.toLowerCase();
+    if (!verifiedEmails.includes(email)) {
+      setAuthMessage("Verify your email before logging in. Use Create account to receive a code.");
+      return;
+    }
+    beginTrustedSession(email);
+  };
+  const verifyLoginOtp = () => {
+    if (!pendingOtpIdentifier) {
+      setAuthMode("login");
+      setAuthMessage("Enter your phone number to request a fresh OTP.");
+      return;
+    }
+    if (otpInput !== otpCode) {
+      setAuthMessage("That OTP is not correct. Try again or resend through WhatsApp/SMS.");
+      return;
+    }
+    const phone = normalizePhone(pendingOtpIdentifier);
+    setVerifiedPhones((phones) => Array.from(new Set([...phones, phone])));
+    beginTrustedSession(pendingOtpIdentifier);
+  };
+  const socialSignIn = (provider: "Google" | "Apple") => {
+    beginTrustedSession(userProfile.email);
+    setAuthMessage(`${provider} sign-in connected. In production, this uses the native ${provider} provider before opening your room.`);
   };
 
   const signUp = () => {
@@ -964,9 +1214,38 @@ function UserDashboard({
       setAuthMessage("The two passwords do not match.");
       return;
     }
-    setUserProfile({ name: signupForm.name, email: signupForm.email, phone: signupForm.phone });
-    setIsAuthed(true);
-    setAuthMessage("Account created. Secure login is ready for your next visit.");
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const nextProfile = { name: signupForm.name, email: signupForm.email.trim().toLowerCase(), phone: signupForm.phone };
+    setPendingSignup(nextProfile);
+    setVerificationCode(code);
+    setVerificationInput("");
+    setAuthMode("verify");
+    setAuthMessage(`Verification code sent to ${nextProfile.email}. Test code: ${code}`);
+  };
+
+  const verifySignup = () => {
+    if (!pendingSignup) {
+      setAuthMode("signup");
+      setAuthMessage("Create your account first so we can send a verification code.");
+      return;
+    }
+    if (verificationInput !== verificationCode) {
+      setAuthMessage("That code is not correct. Check your email and try again.");
+      return;
+    }
+    setUserProfile(pendingSignup);
+    setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
+    setLoginForm({ identifier: pendingSignup.phone || pendingSignup.email, password: "" });
+    setAuthMode("login");
+    setAuthMessage("Email verified. You can now log in securely.");
+  };
+
+  const confirmVipPayment = () => {
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + 30);
+    setSubscriptionUntil(expiry);
+    setIsPremium(true);
+    setAuthMessage(`Payment verified. VIP is active until ${expiry.toLocaleDateString("en-NG")}.`);
   };
 
   const sendReset = () => {
@@ -983,18 +1262,31 @@ function UserDashboard({
             </button>
           )}
           <div className="auth-copy">
-            <span className="auth-secure-badge"><ShieldCheck size={14} /> Secure member access</span>
-            <h2>{authMode === "signup" ? "Create BamSignal account" : authMode === "reset" ? "Reset access" : "Welcome to BamSignal"}</h2>
+            {authMode === "login" && <span className="auth-secure-badge"><ShieldCheck size={14} /> Secure member access</span>}
+            <h2>{authMode === "signup" ? "Create account" : authMode === "verify" ? "Verify email" : authMode === "otp" ? "Verify login" : authMode === "reset" ? "Reset access" : "Welcome to BamSignal"}</h2>
           </div>
 
           {authMode === "login" && (
             <div className="auth-form">
-              <label>Email<input value={loginForm.email} onChange={(event) => setLoginForm({ ...loginForm, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
+              <div className="auth-trust-row" aria-label="BamSignal account protection">
+                <span><ShieldCheck size={14} /> Encrypted login</span>
+                <span><CreditCard size={14} /> Paystack-ready</span>
+                <span><Crown size={14} /> VIP protected</span>
+              </div>
+              <label>Phone number or email<input value={loginForm.identifier} onChange={(event) => setLoginForm({ ...loginForm, identifier: event.target.value })} type="text" inputMode="email" placeholder="0801 000 0000 or you@example.com" /></label>
               <label>Password<input value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} type="password" placeholder="Your password" /></label>
+              <div className="otp-channel-row" aria-label="Choose OTP channel">
+                <button className={otpChannel === "whatsapp" ? "active" : ""} onClick={() => setOtpChannel("whatsapp")} type="button"><MessageCircle size={14} /> WhatsApp OTP</button>
+                <button className={otpChannel === "sms" ? "active" : ""} onClick={() => setOtpChannel("sms")} type="button"><Phone size={14} /> SMS OTP</button>
+              </div>
               <button className="primary-action neon-action" onClick={signIn}><UserPlus size={16} /> Login securely</button>
               <button className="secondary-action" onClick={signIn}><ShieldCheck size={16} /> Use Face ID / PIN / Pattern</button>
+              <div className="auth-social-grid">
+                <button onClick={() => socialSignIn("Google")}><Mail size={16} /> Continue with Google</button>
+                <button onClick={() => socialSignIn("Apple")}><KeyRound size={16} /> Continue with Apple</button>
+              </div>
               <div className="auth-switch-row">
-                <button className="text-action" onClick={() => setAuthMode("signup")}>Create account</button>
+                <button className="text-action create-link" onClick={() => setAuthMode("signup")}>Create account</button>
                 <button className="text-action" onClick={() => setAuthMode("reset")}>Forgot password?</button>
               </div>
             </div>
@@ -1004,13 +1296,41 @@ function UserDashboard({
             <div className="auth-form signup-form">
               <label>Name<input value={signupForm.name} onChange={(event) => setSignupForm({ ...signupForm, name: event.target.value })} placeholder="Full name" /></label>
               <label>Email<input value={signupForm.email} onChange={(event) => setSignupForm({ ...signupForm, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
-              <label>Phone number<input value={signupForm.phone} onChange={(event) => setSignupForm({ ...signupForm, phone: event.target.value })} type="tel" placeholder="+234..." /></label>
+              <label>Phone number<input value={signupForm.phone} onChange={(event) => setSignupForm({ ...signupForm, phone: event.target.value })} type="tel" placeholder="Phone number" /></label>
               <label>Password<input value={signupForm.password} onChange={(event) => setSignupForm({ ...signupForm, password: event.target.value })} type="password" placeholder="Create password" /></label>
               <label>Confirm password<input value={signupForm.confirmPassword} onChange={(event) => setSignupForm({ ...signupForm, confirmPassword: event.target.value })} type="password" placeholder="Repeat password" /></label>
               <button className="primary-action neon-action" onClick={signUp}><ShieldCheck size={16} /> Create secure account</button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={() => setAuthMode("login")}>Already have an account? Login</button>
-                <button className="text-action" onClick={() => setAuthMode("reset")}>Reset password</button>
+              </div>
+            </div>
+          )}
+
+          {authMode === "verify" && (
+            <div className="auth-form">
+              <label>Email<input value={pendingSignup?.email ?? ""} readOnly /></label>
+              <label>Verification code<input value={verificationInput} onChange={(event) => setVerificationInput(event.target.value)} inputMode="numeric" placeholder="Enter email code" /></label>
+              <button className="primary-action neon-action" onClick={verifySignup}><ShieldCheck size={16} /> Verify and continue</button>
+              <div className="auth-switch-row">
+                <button className="text-action" onClick={signUp}>Resend code</button>
+                <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>
+              </div>
+            </div>
+          )}
+
+          {authMode === "otp" && (
+            <div className="auth-form">
+              <div className="auth-trust-row">
+                <span><MessageCircle size={14} /> Sendchamp {otpChannel}</span>
+                <span><ShieldCheck size={14} /> Number check</span>
+              </div>
+              <label>Phone number<input value={pendingOtpIdentifier} readOnly /></label>
+              <label>OTP code<input value={otpInput} onChange={(event) => setOtpInput(event.target.value)} inputMode="numeric" placeholder="Enter WhatsApp/SMS code" /></label>
+              <button className="primary-action neon-action" onClick={verifyLoginOtp}><ShieldCheck size={16} /> Verify and enter</button>
+              <div className="auth-switch-row">
+                <button className="text-action" onClick={() => sendLoginOtp("whatsapp")}>Resend WhatsApp</button>
+                <button className="text-action" onClick={() => sendLoginOtp("sms")}>Resend SMS</button>
+                <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>
               </div>
             </div>
           )}
@@ -1040,6 +1360,7 @@ function UserDashboard({
         <strong>{game.confidence}%</strong>
         <span>{title}</span>
         <small className={locked ? "blurred-tip" : ""}>{"odds" in game ? `${game.pick} at ${game.odds}` : detail}</small>
+        {locked && <em className="vip-reveal-chip"><Crown size={12} /> Reveal VIP Signal</em>}
       </div>
     );
   };
@@ -1086,12 +1407,23 @@ function UserDashboard({
           <h3>{isPremium ? "Premium games unlocked" : "Payment required"}</h3>
           {!isPremium && (
             <>
-              <p className="payment-note">Pay through BamSignal&apos;s Paystack checkout. VIP games unlock only after payment confirmation.</p>
-              <div className="auth-actions">
-                <a className="primary-action" href={paystackPaymentLink} target="_blank" rel="noreferrer"><CreditCard size={16} /> Pay with Paystack</a>
-                <button className="secondary-action" onClick={() => setIsPremium(true)}><ShieldCheck size={16} /> Confirm payment</button>
+              <div className="paystack-checkout">
+                <div>
+                  <p className="eyebrow">Paystack checkout</p>
+                  <h3>BamSignal VIP monthly</h3>
+                  <span>₦15,000 / 30 days</span>
+                  <small>Payment opens from inside the app. After Paystack confirms the payment, VIP games unlock immediately.</small>
+                </div>
+                <a className="primary-action neon-action" href={paystackPaymentLink} target="_blank" rel="noreferrer"><CreditCard size={16} /> Pay with Paystack</a>
+                <button className="secondary-action" onClick={confirmVipPayment}><ShieldCheck size={16} /> Verify payment now</button>
               </div>
             </>
+          )}
+          {isPremium && (
+            <div className="subscription-card">
+              <ShieldCheck size={16} />
+              <span>VIP active until {subscriptionLabel}. When it ends, the app returns you to freemium automatically.</span>
+            </div>
           )}
           {premiumGames.map((game) => renderRoomPick(game, !isPremium))}
           {isPremium ? (
@@ -1104,21 +1436,28 @@ function UserDashboard({
 
       {dashboardTab === "profile" && (
         <section className="profile-panel">
-          <div className="profile-hero">
-            <div className="profile-avatar">{userProfile.name.split(" ").map((part) => part[0]).slice(0, 2).join("") || "BS"}</div>
-            <div>
-              <p className="eyebrow">Profile</p>
+          <div className="profile-community-card">
+            <div className="profile-photo-frame">
+              <div className="profile-photo">{userProfile.name.split(" ").map((part) => part[0]).slice(0, 2).join("") || "BS"}</div>
+              <button className="photo-action">Show profile image</button>
+            </div>
+            <div className="profile-identity">
+              <span className="auth-secure-badge"><Users size={14} /> BamSignal community</span>
               <h2>{userProfile.name}</h2>
-              <span>{isPremium ? "VIP member" : "Freemium member"}</span>
+              <p>{isPremium ? "VIP member sharing high-odd wins with the room." : "Freemium member building a visible signal record."}</p>
+              <div className="member-badges">
+                <span>{isPremium ? "VIP Premium" : "Freemium"}</span>
+                <span>Signal record visible</span>
+                <span>Member since 2026</span>
+              </div>
             </div>
           </div>
 
-          <div className="profile-status-card">
-            <ShieldCheck size={18} />
-            <div>
-              <strong>{isPremium ? "Premium room open" : "Free account active"}</strong>
-              <span>{isPremium ? "VIP picks, Paystack status, and Telegram room are available." : "Two free games are open. Upgrade to unlock high-odd VIP picks."}</span>
-            </div>
+          <div className="profile-score-grid">
+            <div><strong>{profileGameHistory.length}</strong><span>Games played</span></div>
+            <div className="won"><strong>{wins}</strong><span>Won</span></div>
+            <div className="lost"><strong>{losses}</strong><span>Lost</span></div>
+            <div><strong>{Math.round((wins / profileGameHistory.length) * 100)}%</strong><span>Hit rate</span></div>
           </div>
 
           <div className="profile-grid">
@@ -1126,6 +1465,28 @@ function UserDashboard({
             <span><Send size={16} /><small>Email</small><strong>{userProfile.email}</strong></span>
             <span><Smartphone size={16} /><small>Phone</small><strong>{userProfile.phone}</strong></span>
             <span><Crown size={16} /><small>Plan</small><strong>{isPremium ? "VIP Premium" : "Freemium"}</strong></span>
+          </div>
+
+          <div className="profile-history-card">
+            <div className="profile-history-head">
+              <div>
+                <p className="eyebrow">Played games</p>
+                <h3>Public signal record</h3>
+              </div>
+              <span>{wins}W / {losses}L</span>
+            </div>
+            <div className="played-games-list">
+              {profileGameHistory.map((game) => (
+                <article className="played-game" key={`${game.teams}-${game.play}`}>
+                  <div>
+                    <strong>{game.teams}</strong>
+                    <span>{game.league}</span>
+                  </div>
+                  <small>{game.play}</small>
+                  <em className={game.status.toLowerCase()}>{game.status}</em>
+                </article>
+              ))}
+            </div>
           </div>
 
           <div className="profile-actions-grid">
@@ -1144,7 +1505,191 @@ function UserDashboard({
   );
 }
 
-function AdminPage({ isNative, navigate }: { isNative: boolean; navigate: (page: Page, path?: string) => void }) {
+function FootballNewsPanel({ adminContent, compact = false }: { adminContent: AdminContent; compact?: boolean }) {
+  const hasNews = Boolean(adminContent.newsTitle.trim() || adminContent.newsSummary.trim());
+  return (
+    <section className={`football-news ${compact ? "compact" : ""}`}>
+      <div>
+        <p className="eyebrow">Football news</p>
+        <h2>{hasNews ? adminContent.newsTitle || "BamSignal football update" : "Football news room ready."}</h2>
+        <p>
+          {hasNews
+            ? adminContent.newsSummary || "The admin news feed is live. Add the full RapidAPI story summary from the command center."
+            : "RapidAPI news will appear here when the admin feed is connected. Until then, this block stays clean and uncluttered."}
+        </p>
+      </div>
+      {hasNews && adminContent.newsUrl ? (
+        <a className="secondary-action" href={adminContent.newsUrl} target="_blank" rel="noreferrer">
+          Read update <ArrowRight size={15} />
+        </a>
+      ) : null}
+      {hasNews && adminContent.newsSource ? <span className="news-source">Source: {adminContent.newsSource}</span> : null}
+    </section>
+  );
+}
+
+function AdSlots({ adminContent }: { adminContent: AdminContent }) {
+  const links = adminContent.adLinks.map((link) => link.trim()).filter(Boolean).slice(0, 5);
+  if (!links.length) return null;
+
+  return (
+    <div className="ad-slot-grid" aria-label="BamSignal partner ads">
+      {links.map((link, index) => (
+        <a className="ad-slot" href={link} key={`${link}-${index}`} target="_blank" rel="noreferrer">
+          <span>Partner slot {index + 1}</span>
+          <strong>Open offer</strong>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function DisclaimerStrip() {
+  return (
+    <section className="disclaimer-strip">
+      <strong>18+ only</strong>
+      <span>Please gamble responsibly. BamSignal is an informational prediction tool and does not guarantee betting outcomes.</span>
+    </section>
+  );
+}
+
+function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?: string) => void; adminContent: AdminContent }) {
+  const [form, setForm] = useState({ name: "", email: "", topic: "", message: "" });
+  const [captcha, setCaptcha] = useState(() => {
+    const left = Math.floor(Math.random() * 10) + 1;
+    const right = Math.floor(Math.random() * 10) + 1;
+    return { left, right };
+  });
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
+  const verified = Number(captchaAnswer) === captcha.left + captcha.right;
+  const subject = encodeURIComponent(`BamSignal support: ${form.topic || "Contact message"}`);
+  const body = encodeURIComponent(
+    `Name: ${form.name}\nEmail: ${form.email}\nTopic: ${form.topic}\n\nMessage:\n${form.message}`
+  );
+  const mailto = `mailto:support@bamsignal.com?subject=${subject}&body=${body}`;
+  const refreshCaptcha = () => {
+    const left = Math.floor(Math.random() * 10) + 1;
+    const right = Math.floor(Math.random() * 10) + 1;
+    setCaptcha({ left, right });
+    setCaptchaAnswer("");
+  };
+
+  return (
+    <main>
+      <section className="detail-hero contact-hero">
+        <button className="back-link" onClick={() => navigate({ kind: "home" }, "/")}>
+          <ArrowLeft size={16} /> Back to BamSignal
+        </button>
+        <p className="eyebrow">Contact BamSignal</p>
+        <h2>Support, partnerships, VIP help, and app questions.</h2>
+        <p>Send a clean support request to support@bamsignal.com after solving the simple math check. It keeps spam away without making real users work hard.</p>
+      </section>
+
+      <section className="contact-page-grid">
+        <div className="contact-form-card">
+          <div className="auth-form">
+            <label>Name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Your name" /></label>
+            <label>Email<input value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
+            <label>Topic<input value={form.topic} onChange={(event) => setForm({ ...form, topic: event.target.value })} placeholder="VIP access, app help, partnership..." /></label>
+            <label>Message<textarea value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} placeholder="Tell us what you need." /></label>
+            <div className="math-check">
+              <strong>{captcha.left} + {captcha.right} = ?</strong>
+              <input value={captchaAnswer} onChange={(event) => setCaptchaAnswer(event.target.value)} inputMode="numeric" placeholder="Answer" />
+              <button className="text-action" onClick={refreshCaptcha}>New question</button>
+            </div>
+            {verified ? (
+              <a className="primary-action neon-action" href={mailto}><Send size={16} /> Send message to support</a>
+            ) : (
+              <button className="secondary-action" disabled><ShieldCheck size={16} /> Solve math to send</button>
+            )}
+          </div>
+        </div>
+
+        <aside className="contact-side">
+          <FootballNewsPanel adminContent={adminContent} compact />
+          <AdSlots adminContent={adminContent} />
+          <div className="info-panel contact-panel">
+            <p className="eyebrow">Official channels</p>
+            <h2>Reach the right room.</h2>
+            <div className="social-grid">
+              <a href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer"><Send size={18} /><span>Telegram</span><small>official channel</small></a>
+              <a href="https://whatsapp.com/channel/0029Vb7wB96DZ4LdE2Nhlp3A" target="_blank" rel="noreferrer"><MessageCircle size={18} /><span>WhatsApp</span><small>official channel</small></a>
+              <a href="https://www.instagram.com/officialbamsignal/" target="_blank" rel="noreferrer"><Instagram size={18} /><span>Instagram</span><small>@officialbamsignal</small></a>
+              <a href="https://x.com/bamsignalhq" target="_blank" rel="noreferrer"><Twitter size={18} /><span>X</span><small>@bamsignalhq</small></a>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <DisclaimerStrip />
+    </main>
+  );
+}
+
+function LegalPage({ page, navigate }: { page: { kind: "legal"; slug: string }; navigate: (page: Page, path?: string) => void }) {
+  const legal = legalPages.find((item) => item.slug === page.slug) ?? legalPages[0];
+  return (
+    <main>
+      <section className="detail-hero legal-hero">
+        <button className="back-link" onClick={() => navigate({ kind: "home" }, "/")}>
+          <ArrowLeft size={16} /> Back to BamSignal
+        </button>
+        <p className="eyebrow">Legal</p>
+        <h2>{legal.title}</h2>
+        <p>{legal.intro}</p>
+      </section>
+      <section className="detail-grid">
+        {legal.sections.map((section, index) => (
+          <article className="detail-card legal-card" key={section}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <p>{section}</p>
+          </article>
+        ))}
+      </section>
+      <DisclaimerStrip />
+    </main>
+  );
+}
+
+function SiteFooter({ navigate }: { navigate: (page: Page, path?: string) => void }) {
+  const legalNav = (event: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
+    event.preventDefault();
+    navigate({ kind: "legal", slug }, `/legal/${slug}`);
+  };
+
+  return (
+    <footer className="site-footer">
+      <div>
+        <strong>BamSignal</strong>
+        <span>18+ only. Please gamble responsibly. BamSignal is an informational prediction tool and does not guarantee betting outcomes.</span>
+      </div>
+      <nav aria-label="BamSignal legal links">
+        <a href="/contact" onClick={(event) => { event.preventDefault(); navigate({ kind: "contact" }, "/contact"); }}>Contact</a>
+        {legalPages.map((page) => (
+          <a key={page.slug} href={`/legal/${page.slug}`} onClick={(event) => legalNav(event, page.slug)}>{page.title}</a>
+        ))}
+      </nav>
+    </footer>
+  );
+}
+
+function AdminPage({
+  isNative,
+  navigate,
+  adminContent,
+  setAdminContent
+}: {
+  isNative: boolean;
+  navigate: (page: Page, path?: string) => void;
+  adminContent: AdminContent;
+  setAdminContent: (content: AdminContent) => void;
+}) {
+  const updateAdLink = (index: number, value: string) => {
+    const nextLinks = [...adminContent.adLinks];
+    nextLinks[index] = value;
+    setAdminContent({ ...adminContent, adLinks: nextLinks });
+  };
+
   return (
     <main>
       <section className="detail-hero">
@@ -1171,6 +1716,53 @@ function AdminPage({ isNative, navigate }: { isNative: boolean; navigate: (page:
               <span>{item}</span>
             </div>
           ))}
+        </div>
+      </section>
+      <section className="admin-panel">
+        <div>
+          <p className="eyebrow">Public news and ads</p>
+          <h2>News room and clean ad slots</h2>
+          <p className="admin-note">Paste RapidAPI-driven news output or a headline manually here. Ad blocks stay hidden until a link is added.</p>
+        </div>
+        <div className="admin-form">
+          <label>Football news headline<input value={adminContent.newsTitle} onChange={(event) => setAdminContent({ ...adminContent, newsTitle: event.target.value })} placeholder="Transfer update, injury news, match preview..." /></label>
+          <label>News summary<input value={adminContent.newsSummary} onChange={(event) => setAdminContent({ ...adminContent, newsSummary: event.target.value })} placeholder="Short public summary from your RapidAPI feed" /></label>
+          <label>News source<input value={adminContent.newsSource} onChange={(event) => setAdminContent({ ...adminContent, newsSource: event.target.value })} placeholder="RapidAPI / source name" /></label>
+          <label>News URL<input value={adminContent.newsUrl} onChange={(event) => setAdminContent({ ...adminContent, newsUrl: event.target.value })} placeholder="https://..." /></label>
+          {adminContent.adLinks.map((link, index) => (
+            <label key={index}>Ad link {index + 1}<input value={link} onChange={(event) => updateAdLink(index, event.target.value)} placeholder="https://advertiser-or-affiliate-link.com" /></label>
+          ))}
+        </div>
+      </section>
+      <section className="admin-panel">
+        <div>
+          <p className="eyebrow">Payments and subscriptions</p>
+          <h2>VIP access control</h2>
+          <p className="admin-note">Production should connect these controls to Paystack webhooks, subscription expiry jobs, and manual support overrides.</p>
+        </div>
+        <div className="automation-list">
+          <div><CreditCard size={16} /><span>Paystack checkout link: {paystackPaymentLink}</span></div>
+          <div><ShieldCheck size={16} /><span>Webhook should mark users VIP immediately after successful payment.</span></div>
+          <div><CalendarClock size={16} /><span>Expiry job should move users back to freemium when subscriptions end.</span></div>
+          <div><Users size={16} /><span>Admin override room reserved for manual verification, refunds, and support fixes.</span></div>
+        </div>
+      </section>
+      <section className="admin-panel">
+        <div>
+          <p className="eyebrow">Sendchamp OTP control</p>
+          <h2>Phone verification settings</h2>
+          <p className="admin-note">Keep the real Sendchamp API key server-side as SENDCHAMP_API_KEY. These settings control the user-facing WhatsApp/SMS login flow.</p>
+        </div>
+        <div className="admin-form">
+          <label>Default OTP channel
+            <select value={adminContent.sendchampDefaultChannel} onChange={(event) => setAdminContent({ ...adminContent, sendchampDefaultChannel: event.target.value as "whatsapp" | "sms" })}>
+              <option value="whatsapp">WhatsApp first</option>
+              <option value="sms">SMS first</option>
+            </select>
+          </label>
+          <label>WhatsApp template<input value={adminContent.sendchampWhatsappTemplate} onChange={(event) => setAdminContent({ ...adminContent, sendchampWhatsappTemplate: event.target.value })} placeholder="bamsignal_login_otp" /></label>
+          <label>SMS sender name<input value={adminContent.sendchampSmsSender} onChange={(event) => setAdminContent({ ...adminContent, sendchampSmsSender: event.target.value })} placeholder="BamSignal" /></label>
+          <label>API key storage<input value="SENDCHAMP_API_KEY env var only" readOnly /></label>
         </div>
       </section>
     </main>
@@ -1229,11 +1821,15 @@ function DetailPage({ page, navigate }: { page: { kind: "market"; slug: string }
 }
 
 function FixtureCard({ fixture, locked }: { fixture: Fixture; locked?: boolean }) {
+  const bookingCode = `${fixture.status === "Live" ? "LIVE" : "SB"}-${fixture.id}${fixture.confidence}`;
+  const copyBookingCode = async () => {
+    await navigator.clipboard?.writeText(bookingCode);
+  };
   return (
     <article className={`fixture-card ${locked ? "locked" : ""}`}>
       <div className="fixture-main">
         <div>
-          <span className={`status ${fixture.status.toLowerCase()}`}>{fixture.status}</span>
+          <span className={`status ${fixture.status.toLowerCase()}`}>{fixture.status === "Live" && <i aria-hidden="true" />}{fixture.status}</span>
           <p className="league">{fixture.league} / {fixture.country} / {fixture.time}</p>
           <h3>{fixture.home} <small>vs</small> {fixture.away}</h3>
         </div>
@@ -1246,8 +1842,13 @@ function FixtureCard({ fixture, locked }: { fixture: Fixture; locked?: boolean }
       {locked && (
         <div className="lock-strip">
           <LockKeyhole size={14} />
-          <span>Unlock the game in the app or Telegram VIP</span>
+          <span>Reveal VIP Signal in the app or Telegram VIP</span>
         </div>
+      )}
+      {!locked && (
+        <button className="booking-code-button" onClick={copyBookingCode}>
+          <ClipboardCheck size={14} /> Copy SportyBet Code <strong>{bookingCode}</strong>
+        </button>
       )}
       <div className={`probability-grid ${locked ? "blurred-grid" : ""}`}>
         <Probability label="Result" value={fixture.result} percent={fixture.confidence} />

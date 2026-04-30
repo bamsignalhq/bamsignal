@@ -47,6 +47,10 @@ a {
   min-height: 100vh;
 }
 
+.native-app {
+  min-height: 100svh;
+}
+
 .app.light {
   --bg: #f5f7fb;
   --bg-soft: #ffffff;
@@ -217,6 +221,12 @@ nav a:hover {
 
 .mobile-only {
   display: none;
+}
+
+.topbar-spacer {
+  display: block;
+  height: 44px;
+  width: 44px;
 }
 
 main {
@@ -737,7 +747,7 @@ footer {
 
 .auth-tabs button,
 .dashboard-tabs button {
-  background: transparent;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
   border: 0;
   border-radius: var(--radius);
   color: var(--muted);
@@ -748,15 +758,62 @@ footer {
   padding: 0 10px;
 }
 
+.dashboard-tabs button {
+  align-items: center;
+  border: 1px solid transparent;
+  display: inline-flex;
+  gap: 7px;
+  justify-content: center;
+}
+
+.dashboard-tabs button svg {
+  flex: 0 0 auto;
+}
+
+.dashboard-tabs .home {
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+}
+
+.dashboard-tabs .free {
+  border-color: color-mix(in srgb, var(--accent-2) 38%, transparent);
+}
+
+.dashboard-tabs .vip {
+  border-color: color-mix(in srgb, #fbbf24 42%, transparent);
+}
+
+.dashboard-tabs .profile {
+  border-color: color-mix(in srgb, #a78bfa 42%, transparent);
+}
+
 .auth-tabs button.active,
 .dashboard-tabs button.active {
   background: var(--accent);
   color: #101923;
 }
 
+.dashboard-tabs .free.active {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
+.dashboard-tabs .vip.active {
+  background: #fbbf24;
+  border-color: #fbbf24;
+}
+
+.dashboard-tabs .profile.active {
+  background: #a78bfa;
+  border-color: #a78bfa;
+}
+
 .auth-form {
   display: grid;
   gap: 12px;
+}
+
+.signup-form {
+  gap: 10px;
 }
 
 .two-up-form {
@@ -799,6 +856,14 @@ footer {
   font-weight: 800;
   justify-self: start;
   padding: 0;
+}
+
+.auth-switch-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
 }
 
 .member-copy {
@@ -1583,4 +1648,133 @@ footer strong {
     width: 42px;
     z-index: 45;
   }
+}
+
+.native-app .shell {
+  margin-left: 0;
+}
+
+.native-app footer,
+.native-app .apps-band {
+  display: none;
+}
+
+.native-app .topbar {
+  column-gap: 10px;
+  display: grid;
+  grid-template-columns: 46px 128px minmax(0, 1fr);
+  min-height: 104px;
+  padding: max(42px, env(safe-area-inset-top)) 12px 8px;
+}
+
+.native-app .sidebar {
+  box-shadow: 16px 0 60px rgba(0, 0, 0, 0.28);
+  transform: translateX(-110%);
+  transition: transform 0.2s ease;
+  z-index: 40;
+}
+
+.native-app .sidebar.open {
+  transform: translateX(0);
+}
+
+.native-app .topbar-brand {
+  justify-content: flex-start;
+  padding-left: 0;
+}
+
+.native-app .topbar-logo {
+  height: 34px;
+  max-width: 128px;
+  width: 128px;
+}
+
+.native-app .mobile-only {
+  display: inline-flex;
+}
+
+.native-app .icon-button,
+.native-app .theme-toggle {
+  height: 42px;
+  padding: 0;
+  width: 42px;
+}
+
+.native-app .theme-toggle span {
+  display: none;
+}
+
+.native-app .theme-toggle {
+  justify-self: end;
+}
+
+.native-app main {
+  gap: 10px;
+  padding: 10px 14px max(18px, env(safe-area-inset-bottom));
+}
+
+.native-app .auth-main {
+  align-content: center;
+  min-height: calc(100svh - 104px);
+}
+
+.native-app .auth-shell {
+  gap: 12px;
+  margin: 0;
+  max-width: none;
+  padding: 14px;
+}
+
+.native-app .auth-copy h2 {
+  font-size: 28px;
+}
+
+.native-app .auth-copy p {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.native-app .auth-form {
+  gap: 10px;
+}
+
+.native-app .auth-form input {
+  min-height: 44px;
+}
+
+.native-app .primary-action,
+.native-app .secondary-action {
+  min-height: 42px;
+}
+
+.native-app .dashboard-hero,
+.native-app .member-app-panel,
+.native-app .room-card,
+.native-app .profile-panel,
+.native-app .admin-panel,
+.native-app .detail-hero {
+  padding: 14px;
+}
+
+.native-app .dashboard-hero h2,
+.native-app .member-app-panel h2 {
+  font-size: 24px;
+}
+
+.native-app .dashboard-tabs {
+  top: 104px;
+}
+
+.native-app .room-grid,
+.native-app .profile-grid,
+.native-app .admin-form {
+  grid-template-columns: 1fr;
+}
+
+.native-app .member-app-panel {
+  grid-template-columns: 1fr;
+}
+
+.native-app .back-link {
+  margin-bottom: 8px;
 }

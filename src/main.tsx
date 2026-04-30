@@ -14,6 +14,7 @@ import {
   CreditCard,
   Crown,
   Goal,
+  Home,
   Instagram,
   LockKeyhole,
   Menu,
@@ -425,6 +426,7 @@ const faq = [
 ];
 
 function App() {
+  const isNative = Capacitor.getPlatform() !== "web";
   const [theme, setTheme] = useState<Theme>(() => getTimedTheme());
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeStatus, setActiveStatus] = useState<Fixture["status"] | "All">("All");
@@ -472,33 +474,46 @@ function App() {
     fixture.confidence > best.confidence ? fixture : best
   );
 
+  const goHome = () => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/");
+  const showMenuButton = !(isNative && page.kind === "app" && !isAuthed);
+
   return (
-    <div className={`app ${theme}`}>
+    <div className={`app ${theme} ${isNative ? "native-app" : "web-app"}`}>
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
         <div className="brand">
-          <button className="brand-button" onClick={() => navigate({ kind: "home" })}>
+          <button className="brand-button" onClick={goHome}>
             <img className="brand-logo" src={logoSrc} alt="BamSignal" />
           </button>
         </div>
         <nav>
-          <a href="/#predictions" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#predictions"); }}>
-            <Goal size={18} /> Football Predictions
-          </a>
-          <a href="/#tips" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#tips"); }}>
-            <Sparkles size={18} /> Betting Tips
-          </a>
-          <a href="/#leagues" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#leagues"); }}>
-            <Trophy size={18} /> Leagues
-          </a>
-          <a href="/#markets" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#markets"); }}>
-            <BarChart3 size={18} /> Markets
-          </a>
-          <a href="/#apps" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#apps"); }}>
-            <Smartphone size={18} /> Get the App
-          </a>
-          <a href="/#faq" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#faq"); }}>
-            <ShieldCheck size={18} /> FAQs
-          </a>
+          {isNative ? (
+            <>
+              <a href="/app" onClick={(event) => { event.preventDefault(); navigate({ kind: "app" }, "/app"); }}>
+                <Goal size={18} /> User Dashboard
+              </a>
+            </>
+          ) : (
+            <>
+              <a href="/#predictions" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#predictions"); }}>
+                <Goal size={18} /> Football Predictions
+              </a>
+              <a href="/#tips" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#tips"); }}>
+                <Sparkles size={18} /> Betting Tips
+              </a>
+              <a href="/#leagues" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#leagues"); }}>
+                <Trophy size={18} /> Leagues
+              </a>
+              <a href="/#markets" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#markets"); }}>
+                <BarChart3 size={18} /> Markets
+              </a>
+              <a href="/#apps" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#apps"); }}>
+                <Smartphone size={18} /> Get the App
+              </a>
+              <a href="/#faq" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#faq"); }}>
+                <ShieldCheck size={18} /> FAQs
+              </a>
+            </>
+          )}
         </nav>
         <div className="sidebar-card">
           <span>Sure Signal</span>
@@ -511,10 +526,14 @@ function App() {
 
       <div className="shell">
         <header className="topbar">
-          <button className="icon-button mobile-only" onClick={() => setMenuOpen(true)} aria-label="Open menu">
-            <Menu size={20} />
-          </button>
-          <button className="topbar-brand" onClick={() => navigate({ kind: "home" })} aria-label="Go to BamSignal home">
+          {showMenuButton ? (
+            <button className="icon-button mobile-only" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+              <Menu size={20} />
+            </button>
+          ) : (
+            <span className="topbar-spacer" aria-hidden="true" />
+          )}
+          <button className="topbar-brand" onClick={goHome} aria-label="Go to BamSignal home">
             <img className="topbar-logo" src={logoSrc} alt="BamSignal" />
           </button>
           <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
@@ -539,10 +558,11 @@ function App() {
             setIsPremium={setIsPremium}
             userProfile={userProfile}
             setUserProfile={setUserProfile}
+            isNative={isNative}
             navigate={navigate}
           />
         ) : page.kind === "admin" ? (
-          <AdminPage navigate={navigate} />
+          <AdminPage isNative={isNative} navigate={navigate} />
         ) : (
           <DetailPage page={page} navigate={navigate} />
         )}
@@ -812,6 +832,7 @@ function UserDashboard({
   setIsPremium,
   userProfile,
   setUserProfile,
+  isNative,
   navigate
 }: {
   isAuthed: boolean;
@@ -820,6 +841,7 @@ function UserDashboard({
   setIsPremium: (value: boolean) => void;
   userProfile: UserProfile;
   setUserProfile: (value: UserProfile) => void;
+  isNative: boolean;
   navigate: (page: Page, path?: string) => void;
 }) {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
@@ -858,18 +880,21 @@ function UserDashboard({
     return (
       <main className="auth-main">
         <section className="auth-shell">
-          <button className="back-link" onClick={() => navigate({ kind: "home" })}>
-            <ArrowLeft size={16} /> Back to website
-          </button>
+          {!isNative && (
+            <button className="back-link" onClick={() => navigate({ kind: "home" })}>
+              <ArrowLeft size={16} /> Back to website
+            </button>
+          )}
           <div className="auth-copy">
             <p className="eyebrow">BamSignal app</p>
             <h2>{authMode === "signup" ? "Create your account" : authMode === "reset" ? "Reset your password" : "Welcome back"}</h2>
-            <p>{authMode === "reset" ? "Enter your email and BamSignal will send a password reset link." : "Sign in once, then use your phone Face ID, PIN, or pattern for faster subsequent login."}</p>
-          </div>
-          <div className="auth-tabs">
-            <button className={authMode === "login" ? "active" : ""} onClick={() => setAuthMode("login")}>Login</button>
-            <button className={authMode === "signup" ? "active" : ""} onClick={() => setAuthMode("signup")}>Sign up</button>
-            <button className={authMode === "reset" ? "active" : ""} onClick={() => setAuthMode("reset")}>Reset</button>
+            <p>
+              {authMode === "signup"
+                ? "Create your free BamSignal account. You can upgrade to VIP from inside the app after login."
+                : authMode === "reset"
+                  ? "Enter your email and BamSignal will send a password reset link."
+                  : "Sign in to see current free picks, then unlock VIP games when your payment is confirmed."}
+            </p>
           </div>
 
           {authMode === "login" && (
@@ -878,18 +903,25 @@ function UserDashboard({
               <label>Password<input value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} type="password" placeholder="Your password" /></label>
               <button className="primary-action" onClick={signIn}><UserPlus size={16} /> Login</button>
               <button className="secondary-action" onClick={signIn}><ShieldCheck size={16} /> Use Face ID / PIN / Pattern</button>
-              <button className="text-action" onClick={() => setAuthMode("reset")}>Forgot password?</button>
+              <div className="auth-switch-row">
+                <button className="text-action" onClick={() => setAuthMode("signup")}>Create account</button>
+                <button className="text-action" onClick={() => setAuthMode("reset")}>Forgot password?</button>
+              </div>
             </div>
           )}
 
           {authMode === "signup" && (
-            <div className="auth-form two-up-form">
+            <div className="auth-form signup-form">
               <label>Name<input value={signupForm.name} onChange={(event) => setSignupForm({ ...signupForm, name: event.target.value })} placeholder="Full name" /></label>
               <label>Email<input value={signupForm.email} onChange={(event) => setSignupForm({ ...signupForm, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
               <label>Phone number<input value={signupForm.phone} onChange={(event) => setSignupForm({ ...signupForm, phone: event.target.value })} type="tel" placeholder="+234..." /></label>
               <label>Password<input value={signupForm.password} onChange={(event) => setSignupForm({ ...signupForm, password: event.target.value })} type="password" placeholder="Create password" /></label>
               <label>Confirm password<input value={signupForm.confirmPassword} onChange={(event) => setSignupForm({ ...signupForm, confirmPassword: event.target.value })} type="password" placeholder="Repeat password" /></label>
               <button className="primary-action" onClick={signUp}><ShieldCheck size={16} /> Create account</button>
+              <div className="auth-switch-row">
+                <button className="text-action" onClick={() => setAuthMode("login")}>Already have an account? Login</button>
+                <button className="text-action" onClick={() => setAuthMode("reset")}>Reset password</button>
+              </div>
             </div>
           )}
 
@@ -897,6 +929,10 @@ function UserDashboard({
             <div className="auth-form">
               <label>Email<input value={resetEmail} onChange={(event) => setResetEmail(event.target.value)} type="email" placeholder="you@example.com" /></label>
               <button className="primary-action" onClick={sendReset}><Send size={16} /> Send reset link</button>
+              <div className="auth-switch-row">
+                <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>
+                <button className="text-action" onClick={() => setAuthMode("signup")}>Create account</button>
+              </div>
             </div>
           )}
 
@@ -921,9 +957,11 @@ function UserDashboard({
   return (
     <main className="dashboard-main">
       <section className="dashboard-hero">
-        <button className="back-link" onClick={() => navigate({ kind: "home" })}>
-          <ArrowLeft size={16} /> Back to website
-        </button>
+        {!isNative && (
+          <button className="back-link" onClick={() => navigate({ kind: "home" })}>
+            <ArrowLeft size={16} /> Back to website
+          </button>
+        )}
         <p className="eyebrow">User dashboard</p>
         <h2>Welcome, {userProfile.name}</h2>
         <p>Track current predictions, free picks, VIP access, and your profile from one clean dashboard.</p>
@@ -935,12 +973,17 @@ function UserDashboard({
 
       <div className="dashboard-tabs">
         {[
-          ["home", "Home"],
-          ["free", "Free games"],
-          ["vip", "VIP"],
-          ["profile", "Profile"]
-        ].map(([tab, label]) => (
-          <button key={tab} className={dashboardTab === tab ? "active" : ""} onClick={() => setDashboardTab(tab as DashboardTab)}>
+          { tab: "home", label: "Home", icon: <Home size={16} /> },
+          { tab: "free", label: "Games", icon: <Goal size={16} /> },
+          { tab: "vip", label: "VIP", icon: <Crown size={16} /> },
+          { tab: "profile", label: "Profile", icon: <Users size={16} /> }
+        ].map(({ tab, label, icon }) => (
+          <button
+            key={tab}
+            className={`dashboard-tab ${tab} ${dashboardTab === tab ? "active" : ""}`}
+            onClick={() => setDashboardTab(tab as DashboardTab)}
+          >
+            {icon}
             {label}
           </button>
         ))}
@@ -1008,12 +1051,12 @@ function UserDashboard({
   );
 }
 
-function AdminPage({ navigate }: { navigate: (page: Page, path?: string) => void }) {
+function AdminPage({ isNative, navigate }: { isNative: boolean; navigate: (page: Page, path?: string) => void }) {
   return (
     <main>
       <section className="detail-hero">
-        <button className="back-link" onClick={() => navigate({ kind: "home" })}>
-          <ArrowLeft size={16} /> Back to BamSignal
+        <button className="back-link" onClick={() => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/")}>
+          <ArrowLeft size={16} /> {isNative ? "Back to user dashboard" : "Back to BamSignal"}
         </button>
         <p className="eyebrow">Admin command center</p>
         <h2>Input once. Publish everywhere.</h2>

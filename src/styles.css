@@ -1072,6 +1072,28 @@ footer {
   outline: none;
 }
 
+.secret-input-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  position: relative;
+}
+
+.secret-input-wrap input {
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.secret-toggle {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface-2) 84%, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--border) 82%, var(--accent));
+  border-left: 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--accent);
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+}
+
 .neon-action {
   border: 1px solid color-mix(in srgb, var(--accent) 55%, #ffffff);
   box-shadow:
@@ -1311,6 +1333,104 @@ footer {
   color: var(--muted);
 }
 
+.room-pick.managed {
+  border: 1px solid color-mix(in srgb, var(--border) 84%, var(--accent));
+  gap: 6px;
+}
+
+.room-pick-top {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.room-pick-top em {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  padding: 5px 8px;
+  white-space: nowrap;
+}
+
+.booking-code-list {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.booking-code-list button {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 5px;
+  justify-content: space-between;
+  min-height: 32px;
+  padding: 0 8px;
+  text-transform: capitalize;
+}
+
+.booking-code-list strong {
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.code-locked {
+  background: color-mix(in srgb, var(--surface-2) 76%, transparent);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 7px 8px;
+}
+
+.plan-grid,
+.vip-special-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.vip-plan-card,
+.vip-special-grid article {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border: 1px solid color-mix(in srgb, #fbbf24 34%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+}
+
+.vip-plan-card h3,
+.vip-plan-card p {
+  margin: 0;
+}
+
+.vip-plan-card > strong {
+  color: #fbbf24;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.vip-plan-card small,
+.vip-special-grid span {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.vip-special-grid article svg {
+  color: #fbbf24;
+}
+
 .vip-join {
   align-items: center;
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
@@ -1451,6 +1571,55 @@ footer {
 
 .profile-score-grid .lost {
   border-color: color-mix(in srgb, #f87171 42%, var(--border));
+}
+
+.profile-fintech-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profile-wallet-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface-2) 88%, var(--accent)), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 9px;
+  min-height: 132px;
+  padding: 12px;
+}
+
+.profile-wallet-card > div {
+  align-items: start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.profile-wallet-card span {
+  color: var(--muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.profile-wallet-card strong {
+  color: var(--text);
+  display: block;
+  font-size: 18px;
+  line-height: 1.1;
+  margin-top: 4px;
+}
+
+.profile-wallet-card svg {
+  color: var(--accent);
+}
+
+.profile-wallet-card small {
+  color: var(--muted);
+  line-height: 1.4;
 }
 
 .profile-hero {
@@ -1636,6 +1805,13 @@ footer {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.admin-panel-head {
+  align-items: start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
 .admin-form label {
   color: var(--muted);
   display: grid;
@@ -1653,6 +1829,102 @@ footer {
   color: var(--text);
   min-height: 38px;
   padding: 0 10px;
+}
+
+.admin-form.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.admin-game-grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.admin-game-card {
+  background: color-mix(in srgb, var(--surface-2) 76%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.admin-game-card.vip {
+  border-color: color-mix(in srgb, #fbbf24 42%, var(--border));
+}
+
+.admin-game-card.freemium {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+}
+
+.admin-game-head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.admin-game-head strong {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.admin-game-head span {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.booking-grid,
+.toggle-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.booking-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.booking-grid label,
+.toggle-grid label {
+  color: var(--muted);
+  display: grid;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.booking-grid input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  min-height: 34px;
+  padding: 0 9px;
+}
+
+.toggle-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.toggle-grid label {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px;
+  text-transform: none;
+}
+
+.toggle-grid input {
+  accent-color: var(--accent);
+  flex: 0 0 auto;
 }
 
 .automation-list div {
@@ -2356,7 +2628,23 @@ footer strong {
   .social-grid,
   .room-grid,
   .two-up-form,
-  .profile-grid {
+  .profile-grid,
+  .profile-fintech-grid,
+  .plan-grid,
+  .vip-special-grid,
+  .booking-grid,
+  .toggle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-panel-head,
+  .admin-game-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-form.compact,
+  .booking-code-list {
     grid-template-columns: 1fr;
   }
 

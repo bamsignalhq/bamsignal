@@ -13,6 +13,8 @@ import {
   ClipboardCheck,
   CreditCard,
   Crown,
+  Eye,
+  EyeOff,
   Goal,
   Home,
   Instagram,
@@ -55,6 +57,26 @@ type DeviceBinding = UserProfile & {
   pin: string;
   deviceId: string;
 };
+type AdminGame = {
+  id: number;
+  match: string;
+  league: string;
+  pick: string;
+  odds: number;
+  confidence: number;
+  tier: "freemium" | "vip";
+  showBookingCodes: boolean;
+  bookingCodes: {
+    sportybet: string;
+    bet9ja: string;
+    betking: string;
+    onexbet: string;
+  };
+  pushApp: boolean;
+  pushTelegram: boolean;
+  pushWhatsApp: boolean;
+  pushVipTelegram: boolean;
+};
 type AdminContent = {
   newsTitle: string;
   newsSummary: string;
@@ -64,6 +86,7 @@ type AdminContent = {
   sendchampDefaultChannel: "whatsapp" | "sms";
   sendchampWhatsappTemplate: string;
   sendchampSmsSender: string;
+  games: AdminGame[];
 };
 
 const getTimedTheme = (): Theme => {
@@ -286,11 +309,82 @@ const evidenceBoard: Evidence[] = [
   }
 ];
 
-const freemiumGames = fixtures.slice(0, 2);
-const premiumGames = [
-  { match: "Man City vs Tottenham", pick: "Home win + over 1.5", odds: "2.18", confidence: 82 },
-  { match: "Barcelona vs Villarreal", pick: "Barcelona team over 1.5", odds: "1.94", confidence: 79 },
-  { match: "Bayer Leverkusen vs Mainz", pick: "Home win and BTTS", odds: "2.42", confidence: 76 }
+const defaultAdminGames: AdminGame[] = [
+  {
+    id: 1,
+    match: "Paris SG vs Bayern Munich",
+    league: "Champions League",
+    pick: "Over 1.5 goals",
+    odds: 1.42,
+    confidence: 86,
+    tier: "freemium",
+    showBookingCodes: true,
+    bookingCodes: { sportybet: "SB-186", bet9ja: "B9-142", betking: "BK-186", onexbet: "1X-186" },
+    pushApp: true,
+    pushTelegram: true,
+    pushWhatsApp: true,
+    pushVipTelegram: false
+  },
+  {
+    id: 2,
+    match: "Southampton vs Ipswich Town",
+    league: "Championship",
+    pick: "Home over 0.5",
+    odds: 1.36,
+    confidence: 73,
+    tier: "freemium",
+    showBookingCodes: false,
+    bookingCodes: { sportybet: "SB-273", bet9ja: "B9-136", betking: "BK-273", onexbet: "1X-273" },
+    pushApp: true,
+    pushTelegram: true,
+    pushWhatsApp: true,
+    pushVipTelegram: false
+  },
+  {
+    id: 3,
+    match: "Man City vs Tottenham",
+    league: "Premier League",
+    pick: "Home win + over 1.5",
+    odds: 2.18,
+    confidence: 82,
+    tier: "vip",
+    showBookingCodes: true,
+    bookingCodes: { sportybet: "VIP-SB218", bet9ja: "VIP-B9218", betking: "VIP-BK218", onexbet: "VIP-1X218" },
+    pushApp: true,
+    pushTelegram: false,
+    pushWhatsApp: false,
+    pushVipTelegram: true
+  },
+  {
+    id: 4,
+    match: "Barcelona vs Villarreal",
+    league: "La Liga",
+    pick: "Barcelona team over 1.5",
+    odds: 1.94,
+    confidence: 79,
+    tier: "vip",
+    showBookingCodes: true,
+    bookingCodes: { sportybet: "VIP-SB194", bet9ja: "VIP-B9194", betking: "VIP-BK194", onexbet: "VIP-1X194" },
+    pushApp: true,
+    pushTelegram: false,
+    pushWhatsApp: false,
+    pushVipTelegram: true
+  },
+  {
+    id: 5,
+    match: "Bayer Leverkusen vs Mainz",
+    league: "Bundesliga",
+    pick: "Home win and BTTS",
+    odds: 2.42,
+    confidence: 76,
+    tier: "vip",
+    showBookingCodes: true,
+    bookingCodes: { sportybet: "VIP-SB242", bet9ja: "VIP-B9242", betking: "VIP-BK242", onexbet: "VIP-1X242" },
+    pushApp: true,
+    pushTelegram: false,
+    pushWhatsApp: false,
+    pushVipTelegram: true
+  }
 ];
 
 const profileGameHistory = [
@@ -316,7 +410,8 @@ const defaultAdminContent: AdminContent = {
   adLinks: ["", "", "", "", ""],
   sendchampDefaultChannel: "whatsapp",
   sendchampWhatsappTemplate: "bamsignal_login_otp",
-  sendchampSmsSender: "BamSignal"
+  sendchampSmsSender: "BamSignal",
+  games: defaultAdminGames
 };
 
 const legalPages = [
@@ -377,7 +472,12 @@ const legalPages = [
   }
 ];
 
-const paystackPaymentLink = "https://paystack.com/pay/bamsignal-vip";
+const paystackPaymentLink = "https://paystack.com/pay/bamsignal-vip-monthly";
+const weeklyPaystackPaymentLink = "https://paystack.com/pay/bamsignal-vip-weekly";
+const vipPlans = [
+  { id: "weekly", label: "Weekly VIP", price: "₦950", days: 7, link: weeklyPaystackPaymentLink },
+  { id: "monthly", label: "Monthly VIP", price: "₦2,950", days: 30, link: paystackPaymentLink }
+];
 
 const markets = [
   "Fulltime result",
@@ -573,7 +673,15 @@ const loadAdminContent = (): AdminContent => {
     return {
       ...defaultAdminContent,
       ...parsed,
-      adLinks: [...(parsed.adLinks ?? []), "", "", "", "", ""].slice(0, 5)
+      adLinks: [...(parsed.adLinks ?? []), "", "", "", "", ""].slice(0, 5),
+      games: parsed.games?.length ? parsed.games.map((game, index) => ({
+        ...defaultAdminGames[index % defaultAdminGames.length],
+        ...game,
+        bookingCodes: {
+          ...defaultAdminGames[index % defaultAdminGames.length].bookingCodes,
+          ...(game.bookingCodes ?? {})
+        }
+      })) : defaultAdminGames
     };
   } catch {
     return defaultAdminContent;
@@ -1156,15 +1264,36 @@ function UserDashboard({
   const [verifiedEmails, setVerifiedEmails] = useState<string[]>([userProfile.email]);
   const [pinInput, setPinInput] = useState("");
   const [setupPin, setSetupPin] = useState("");
+  const [visibleSecrets, setVisibleSecrets] = useState({
+    loginPassword: false,
+    signupPassword: false,
+    signupConfirm: false,
+    signupPin: false,
+    unlockPin: false,
+    setupPin: false
+  });
   const [subscriptionUntil, setSubscriptionUntil] = useState<Date | null>(null);
   const [resetEmail, setResetEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
+  const freemiumRoomGames = useMemo(
+    () => adminContent.games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2),
+    [adminContent.games]
+  );
+  const vipRoomGames = useMemo(
+    () => adminContent.games.filter((game) => game.tier === "vip"),
+    [adminContent.games]
+  );
   const wins = profileGameHistory.filter((game) => game.status === "Won").length;
   const losses = profileGameHistory.length - wins;
+  const hitRate = Math.round((wins / profileGameHistory.length) * 100);
   const subscriptionLabel = subscriptionUntil
     ? subscriptionUntil.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })
     : "Not active";
   const isWebAppRoute = Capacitor.getPlatform() === "web";
+  const toggleSecret = (key: keyof typeof visibleSecrets) => {
+    setVisibleSecrets((current) => ({ ...current, [key]: !current[key] }));
+  };
+  const secretInputType = (key: keyof typeof visibleSecrets) => visibleSecrets[key] ? "text" : "password";
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -1327,12 +1456,12 @@ function UserDashboard({
     bindDevice(profile, setupPin);
   };
 
-  const confirmVipPayment = () => {
+  const confirmVipPayment = (days = 30, label = "monthly") => {
     const expiry = new Date();
-    expiry.setDate(expiry.getDate() + 30);
+    expiry.setDate(expiry.getDate() + days);
     setSubscriptionUntil(expiry);
     setIsPremium(true);
-    setAuthMessage(`Payment verified. VIP is active until ${expiry.toLocaleDateString("en-NG")}.`);
+    setAuthMessage(`${label} payment verified. VIP is active until ${expiry.toLocaleDateString("en-NG")}.`);
   };
 
   const sendReset = () => {
@@ -1389,7 +1518,14 @@ function UserDashboard({
                 <strong>{deviceBinding.name}</strong>
                 <small>{deviceBinding.email || deviceBinding.phone}</small>
               </div>
-              <label>6-digit PIN<input value={pinInput} onChange={(event) => setPinInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" type="password" placeholder="Enter your PIN" /></label>
+              <label>6-digit PIN
+                <span className="secret-input-wrap">
+                  <input value={pinInput} onChange={(event) => setPinInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" type={secretInputType("unlockPin")} placeholder="Enter your PIN" />
+                  <button type="button" className="secret-toggle" onClick={() => toggleSecret("unlockPin")} aria-label={visibleSecrets.unlockPin ? "Hide PIN" : "Show PIN"}>
+                    {visibleSecrets.unlockPin ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </span>
+              </label>
               <button className="primary-action neon-action" onClick={unlockWithPin}><ShieldCheck size={16} /> Unlock with PIN</button>
               <button className="secondary-action" onClick={unlockWithNativeAuth}><ShieldCheck size={16} /> Use Face ID / Phone PIN / Pattern</button>
               <div className="auth-switch-row">
@@ -1407,7 +1543,14 @@ function UserDashboard({
                 <span><Crown size={14} /> VIP protected</span>
               </div>
               <label>Phone number or email<input value={loginForm.identifier} onChange={(event) => setLoginForm({ ...loginForm, identifier: event.target.value })} type="text" inputMode="email" placeholder="Phone number or email" /></label>
-              <label>Password<input value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} type="password" placeholder="Your password" /></label>
+              <label>Password
+                <span className="secret-input-wrap">
+                  <input value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} type={secretInputType("loginPassword")} placeholder="Your password" />
+                  <button type="button" className="secret-toggle" onClick={() => toggleSecret("loginPassword")} aria-label={visibleSecrets.loginPassword ? "Hide password" : "Show password"}>
+                    {visibleSecrets.loginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </span>
+              </label>
               <button className="primary-action neon-action" onClick={signIn}><UserPlus size={16} /> Login securely</button>
               {deviceBinding && <button className="secondary-action" onClick={() => setAuthMode("unlock")}><ShieldCheck size={16} /> Use bound-device login</button>}
               <div className="auth-social-grid">
@@ -1426,9 +1569,30 @@ function UserDashboard({
               <label>Name<input value={signupForm.name} onChange={(event) => setSignupForm({ ...signupForm, name: event.target.value })} placeholder="Full name" /></label>
               <label>Email<input value={signupForm.email} onChange={(event) => setSignupForm({ ...signupForm, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
               <label>Phone number<input value={signupForm.phone} onChange={(event) => setSignupForm({ ...signupForm, phone: event.target.value })} type="tel" placeholder="Phone number" /></label>
-              <label>Password<input value={signupForm.password} onChange={(event) => setSignupForm({ ...signupForm, password: event.target.value })} type="password" placeholder="Create password" /></label>
-              <label>Confirm password<input value={signupForm.confirmPassword} onChange={(event) => setSignupForm({ ...signupForm, confirmPassword: event.target.value })} type="password" placeholder="Repeat password" /></label>
-              <label>6-digit app PIN<input value={signupForm.pin} onChange={(event) => setSignupForm({ ...signupForm, pin: event.target.value.replace(/\D/g, "").slice(0, 6) })} inputMode="numeric" type="password" placeholder="Create 6-digit PIN" /></label>
+              <label>Password
+                <span className="secret-input-wrap">
+                  <input value={signupForm.password} onChange={(event) => setSignupForm({ ...signupForm, password: event.target.value })} type={secretInputType("signupPassword")} placeholder="Create password" />
+                  <button type="button" className="secret-toggle" onClick={() => toggleSecret("signupPassword")} aria-label={visibleSecrets.signupPassword ? "Hide password" : "Show password"}>
+                    {visibleSecrets.signupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </span>
+              </label>
+              <label>Confirm password
+                <span className="secret-input-wrap">
+                  <input value={signupForm.confirmPassword} onChange={(event) => setSignupForm({ ...signupForm, confirmPassword: event.target.value })} type={secretInputType("signupConfirm")} placeholder="Repeat password" />
+                  <button type="button" className="secret-toggle" onClick={() => toggleSecret("signupConfirm")} aria-label={visibleSecrets.signupConfirm ? "Hide password" : "Show password"}>
+                    {visibleSecrets.signupConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </span>
+              </label>
+              <label>6-digit app PIN
+                <span className="secret-input-wrap">
+                  <input value={signupForm.pin} onChange={(event) => setSignupForm({ ...signupForm, pin: event.target.value.replace(/\D/g, "").slice(0, 6) })} inputMode="numeric" type={secretInputType("signupPin")} placeholder="Create 6-digit PIN" />
+                  <button type="button" className="secret-toggle" onClick={() => toggleSecret("signupPin")} aria-label={visibleSecrets.signupPin ? "Hide PIN" : "Show PIN"}>
+                    {visibleSecrets.signupPin ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </span>
+              </label>
               <button className="primary-action neon-action" onClick={signUp}><ShieldCheck size={16} /> Create secure account</button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={() => setAuthMode("login")}>Already have an account? Login</button>
@@ -1467,7 +1631,14 @@ function UserDashboard({
                 <strong>{(pendingLoginProfile ?? userProfile).name}</strong>
                 <small>{(pendingLoginProfile ?? userProfile).email || (pendingLoginProfile ?? userProfile).phone}</small>
               </div>
-              <label>6-digit BamSignal PIN<input value={setupPin} onChange={(event) => setSetupPin(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" type="password" placeholder="Create 6-digit PIN" /></label>
+              <label>6-digit BamSignal PIN
+                <span className="secret-input-wrap">
+                  <input value={setupPin} onChange={(event) => setSetupPin(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" type={secretInputType("setupPin")} placeholder="Create 6-digit PIN" />
+                  <button type="button" className="secret-toggle" onClick={() => toggleSecret("setupPin")} aria-label={visibleSecrets.setupPin ? "Hide PIN" : "Show PIN"}>
+                    {visibleSecrets.setupPin ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </span>
+              </label>
               <button className="primary-action neon-action" onClick={finishPinSetup}><ShieldCheck size={16} /> Bind phone and enter</button>
               <button className="secondary-action" onClick={() => setAuthMode("login")}><ArrowLeft size={16} /> Use another account</button>
             </div>
@@ -1490,14 +1661,29 @@ function UserDashboard({
     );
   }
 
-  const renderRoomPick = (game: Fixture | (typeof premiumGames)[number], locked = false) => {
-    const title = "home" in game ? `${game.home} vs ${game.away}` : game.match;
-    const detail = "pick" in game ? game.pick : "";
+  const renderManagedGame = (game: AdminGame, locked = false) => {
+    const visibleCodes = !locked && (game.tier === "vip" || game.showBookingCodes);
+    const codeEntries = Object.entries(game.bookingCodes).filter(([, code]) => code.trim());
     return (
-      <div className="room-pick" key={title}>
-        <strong>{game.confidence}%</strong>
-        <span>{title}</span>
-        <small className={locked ? "blurred-tip" : ""}>{"odds" in game ? `${game.pick} at ${game.odds}` : detail}</small>
+      <div className={`room-pick managed ${locked ? "locked" : ""}`} key={game.id}>
+        <div className="room-pick-top">
+          <strong>{game.confidence}%</strong>
+          <em>{game.odds.toFixed(2)} odds</em>
+        </div>
+        <span>{game.match}</span>
+        <small>{game.league}</small>
+        <small className={locked ? "blurred-tip" : ""}>{game.pick}</small>
+        {visibleCodes ? (
+          <div className="booking-code-list">
+            {codeEntries.map(([bookie, code]) => (
+              <button key={`${game.id}-${bookie}`} onClick={() => navigator.clipboard?.writeText(code)}>
+                <ClipboardCheck size={13} /> {bookie === "onexbet" ? "1xBet" : bookie} <strong>{code}</strong>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <small className="code-locked">{game.tier === "freemium" ? "Booking code hidden by admin" : "VIP booking codes unlock after payment"}</small>
+        )}
       </div>
     );
   };
@@ -1529,11 +1715,11 @@ function UserDashboard({
             <p>Start with the free picks, then unlock the VIP room when your Paystack payment is verified.</p>
           </div>
           <div className="room-grid">
-            {fixtures.slice(0, 3).map((game, index) => renderRoomPick(game, index > 1))}
+            {freemiumRoomGames.map((game) => renderManagedGame(game))}
           </div>
           <div className="free-picks-strip">
-            <span className="room-label">Free member games</span>
-            {freemiumGames.map((game) => renderRoomPick(game))}
+            <span className="room-label">Two low-odd freemium games below 1.50</span>
+            {freemiumRoomGames.map((game) => renderManagedGame(game))}
           </div>
         </section>
       )}
@@ -1545,14 +1731,18 @@ function UserDashboard({
           {!isPremium && (
             <>
               <div className="paystack-checkout">
-                <div>
-                  <p className="eyebrow">Paystack checkout</p>
-                  <h3>BamSignal VIP monthly</h3>
-                  <span>₦15,000 / 30 days</span>
-                  <small>Payment opens from inside the app. After Paystack confirms the payment, VIP games unlock immediately.</small>
+                <div className="plan-grid">
+                  {vipPlans.map((plan) => (
+                    <article className="vip-plan-card" key={plan.id}>
+                      <p className="eyebrow">Paystack checkout</p>
+                      <h3>{plan.label}</h3>
+                      <strong>{plan.price}</strong>
+                      <small>{plan.days} days of VIP games, booking codes, premium app room, and Telegram VIP access.</small>
+                      <a className="primary-action neon-action" href={plan.link} target="_blank" rel="noreferrer"><CreditCard size={16} /> Pay {plan.price}</a>
+                      <button className="secondary-action" onClick={() => confirmVipPayment(plan.days, plan.label)}><ShieldCheck size={16} /> Verify {plan.id} payment</button>
+                    </article>
+                  ))}
                 </div>
-                <a className="primary-action neon-action" href={paystackPaymentLink} target="_blank" rel="noreferrer"><CreditCard size={16} /> Pay with Paystack</a>
-                <button className="secondary-action" onClick={confirmVipPayment}><ShieldCheck size={16} /> Verify payment now</button>
               </div>
             </>
           )}
@@ -1562,7 +1752,19 @@ function UserDashboard({
               <span>VIP active until {subscriptionLabel}. When it ends, the app returns you to freemium automatically.</span>
             </div>
           )}
-          {premiumGames.map((game) => renderRoomPick(game, !isPremium))}
+          <div className="vip-special-grid">
+            <article>
+              <Crown size={18} />
+              <strong>VIP app room</strong>
+              <span>High-odd signals, confidence notes, and booking codes stay inside your premium account.</span>
+            </article>
+            <article>
+              <Send size={18} />
+              <strong>Telegram VIP room</strong>
+              <span>Instant premium drops and quick in-play alerts appear for verified members only.</span>
+            </article>
+          </div>
+          {vipRoomGames.map((game) => renderManagedGame(game, !isPremium))}
           {isPremium ? (
             <a className="vip-join" href="https://t.me/+U5i6lKAUDtZkODIx" target="_blank" rel="noreferrer"><Send size={16} /> Join VIP Telegram room</a>
           ) : (
@@ -1594,7 +1796,34 @@ function UserDashboard({
             <div><strong>{profileGameHistory.length}</strong><span>Games played</span></div>
             <div className="won"><strong>{wins}</strong><span>Won</span></div>
             <div className="lost"><strong>{losses}</strong><span>Lost</span></div>
-            <div><strong>{Math.round((wins / profileGameHistory.length) * 100)}%</strong><span>Hit rate</span></div>
+            <div><strong>{hitRate}%</strong><span>Hit rate</span></div>
+          </div>
+
+          <div className="profile-fintech-grid">
+            <article className="profile-wallet-card">
+              <div>
+                <span>Membership wallet</span>
+                <strong>{isPremium ? "VIP active" : "Freemium active"}</strong>
+              </div>
+              <Crown size={18} />
+              <small>{isPremium ? `Renews or expires on ${subscriptionLabel}` : "Upgrade weekly for ₦950 or monthly for ₦2,950."}</small>
+            </article>
+            <article className="profile-wallet-card">
+              <div>
+                <span>Security status</span>
+                <strong>{deviceBinding ? "Device bound" : "OTP required"}</strong>
+              </div>
+              <ShieldCheck size={18} />
+              <small>New phones must pass password plus email OTP before PIN or phone auth is enabled.</small>
+            </article>
+            <article className="profile-wallet-card">
+              <div>
+                <span>Community rank</span>
+                <strong>Signal Builder</strong>
+              </div>
+              <Users size={18} />
+              <small>Your visible record helps the room trust your picks and celebrate wins.</small>
+            </article>
           </div>
 
           <div className="profile-grid">
@@ -1836,6 +2065,36 @@ function AdminPage({
     nextLinks[index] = value;
     setAdminContent({ ...adminContent, adLinks: nextLinks });
   };
+  const updateAdminGame = (index: number, patch: Partial<AdminGame>) => {
+    const games = adminContent.games.map((game, gameIndex) => gameIndex === index ? { ...game, ...patch } : game);
+    setAdminContent({ ...adminContent, games });
+  };
+  const updateBookingCode = (index: number, bookie: keyof AdminGame["bookingCodes"], value: string) => {
+    const games = adminContent.games.map((game, gameIndex) => gameIndex === index
+      ? { ...game, bookingCodes: { ...game.bookingCodes, [bookie]: value } }
+      : game);
+    setAdminContent({ ...adminContent, games });
+  };
+  const addAdminGame = () => {
+    setAdminContent({
+      ...adminContent,
+      games: [
+        ...adminContent.games,
+        {
+          ...defaultAdminGames[0],
+          id: Date.now(),
+          match: "New fixture",
+          league: "League",
+          pick: "Prediction",
+          odds: 1.45,
+          confidence: 70,
+          tier: "freemium",
+          showBookingCodes: false,
+          bookingCodes: { sportybet: "", bet9ja: "", betking: "", onexbet: "" }
+        }
+      ]
+    });
+  };
 
   return (
     <main>
@@ -1866,6 +2125,51 @@ function AdminPage({
         </div>
       </section>
       <section className="admin-panel">
+        <div className="admin-panel-head">
+          <div>
+            <p className="eyebrow">Daily games command</p>
+            <h2>Choose freemium, VIP, codes, and channel push.</h2>
+            <p className="admin-note">Freemium users only see the two low-odd games below 1.50. VIP users see the high-odd room, full recommendations, and booking codes.</p>
+          </div>
+          <button className="secondary-action" onClick={addAdminGame}><Goal size={16} /> Add game</button>
+        </div>
+        <div className="admin-game-grid">
+          {adminContent.games.map((game, index) => (
+            <article className={`admin-game-card ${game.tier}`} key={game.id}>
+              <div className="admin-game-head">
+                <strong>{game.tier === "vip" ? "VIP premium" : "Freemium"}</strong>
+                <span>{game.odds.toFixed(2)} odds / {game.confidence}%</span>
+              </div>
+              <div className="admin-form compact">
+                <label>Match<input value={game.match} onChange={(event) => updateAdminGame(index, { match: event.target.value })} /></label>
+                <label>League<input value={game.league} onChange={(event) => updateAdminGame(index, { league: event.target.value })} /></label>
+                <label>Prediction<input value={game.pick} onChange={(event) => updateAdminGame(index, { pick: event.target.value })} /></label>
+                <label>Tier
+                  <select value={game.tier} onChange={(event) => updateAdminGame(index, { tier: event.target.value as AdminGame["tier"] })}>
+                    <option value="freemium">Freemium low-odd</option>
+                    <option value="vip">VIP high-odd</option>
+                  </select>
+                </label>
+                <label>Odds<input value={game.odds} type="number" step="0.01" onChange={(event) => updateAdminGame(index, { odds: Number(event.target.value) || 1 })} /></label>
+                <label>Confidence %<input value={game.confidence} type="number" min="1" max="99" onChange={(event) => updateAdminGame(index, { confidence: Number(event.target.value) || 1 })} /></label>
+              </div>
+              <div className="booking-grid">
+                {(["sportybet", "bet9ja", "betking", "onexbet"] as const).map((bookie) => (
+                  <label key={`${game.id}-${bookie}`}>{bookie === "onexbet" ? "1xBet" : bookie}<input value={game.bookingCodes[bookie]} onChange={(event) => updateBookingCode(index, bookie, event.target.value)} placeholder={`${bookie} booking code`} /></label>
+                ))}
+              </div>
+              <div className="toggle-grid">
+                <label><input type="checkbox" checked={game.showBookingCodes} onChange={(event) => updateAdminGame(index, { showBookingCodes: event.target.checked })} /> Show booking codes to freemium</label>
+                <label><input type="checkbox" checked={game.pushApp} onChange={(event) => updateAdminGame(index, { pushApp: event.target.checked })} /> Push to app</label>
+                <label><input type="checkbox" checked={game.pushTelegram} onChange={(event) => updateAdminGame(index, { pushTelegram: event.target.checked })} /> Telegram channel</label>
+                <label><input type="checkbox" checked={game.pushWhatsApp} onChange={(event) => updateAdminGame(index, { pushWhatsApp: event.target.checked })} /> WhatsApp channel</label>
+                <label><input type="checkbox" checked={game.pushVipTelegram} onChange={(event) => updateAdminGame(index, { pushVipTelegram: event.target.checked })} /> VIP Telegram special</label>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+      <section className="admin-panel">
         <div>
           <p className="eyebrow">Public news and ads</p>
           <h2>News room and clean ad slots</h2>
@@ -1888,7 +2192,8 @@ function AdminPage({
           <p className="admin-note">Production should connect these controls to Paystack webhooks, subscription expiry jobs, and manual support overrides.</p>
         </div>
         <div className="automation-list">
-          <div><CreditCard size={16} /><span>Paystack checkout link: {paystackPaymentLink}</span></div>
+          <div><CreditCard size={16} /><span>Weekly VIP is ₦950: {weeklyPaystackPaymentLink}</span></div>
+          <div><CreditCard size={16} /><span>Monthly VIP is ₦2,950: {paystackPaymentLink}</span></div>
           <div><ShieldCheck size={16} /><span>Webhook should mark users VIP immediately after successful payment.</span></div>
           <div><CalendarClock size={16} /><span>Expiry job should move users back to freemium when subscriptions end.</span></div>
           <div><Users size={16} /><span>Admin override room reserved for manual verification, refunds, and support fixes.</span></div>

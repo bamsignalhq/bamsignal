@@ -49,6 +49,28 @@ type Page =
 type AdminTab = "overview" | "games" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type DashboardTab = "home" | "vip" | "profile";
+type BookmakerKey =
+  | "sportybet"
+  | "bet9ja"
+  | "betking"
+  | "onexbet"
+  | "betway"
+  | "merrybet"
+  | "nairabet"
+  | "msport"
+  | "paripesa"
+  | "bangbet"
+  | "betano"
+  | "accessbet";
+type BookingCodeEntry = {
+  id: number;
+  bookmaker: BookmakerKey;
+  code: string;
+  regularApp: boolean;
+  premiumApp: boolean;
+  regularTelegram: boolean;
+  premiumTelegram: boolean;
+};
 type UserProfile = {
   name: string;
   email: string;
@@ -67,12 +89,7 @@ type AdminGame = {
   confidence: number;
   tier: "freemium" | "vip";
   showBookingCodes: boolean;
-  bookingCodes: {
-    sportybet: string;
-    bet9ja: string;
-    betking: string;
-    onexbet: string;
-  };
+  bookingCodes: BookingCodeEntry[];
   pushApp: boolean;
   pushTelegram: boolean;
   pushWhatsApp: boolean;
@@ -99,6 +116,32 @@ type SupportMessage = {
   to: string;
   createdAt: string;
 };
+
+const bookmakers: { key: BookmakerKey; label: string }[] = [
+  { key: "sportybet", label: "SportyBet" },
+  { key: "bet9ja", label: "Bet9ja" },
+  { key: "betking", label: "BetKing" },
+  { key: "onexbet", label: "1xBet" },
+  { key: "betway", label: "Betway" },
+  { key: "merrybet", label: "MerryBet" },
+  { key: "nairabet", label: "NairaBet" },
+  { key: "msport", label: "MSport" },
+  { key: "paripesa", label: "PariPesa" },
+  { key: "bangbet", label: "Bangbet" },
+  { key: "betano", label: "Betano" },
+  { key: "accessbet", label: "AccessBET" }
+];
+
+const bookmakerLabel = (key: BookmakerKey) => bookmakers.find((bookmaker) => bookmaker.key === key)?.label ?? key;
+const makeBookingCode = (bookmaker: BookmakerKey, code: string, premium = false): BookingCodeEntry => ({
+  id: Date.now() + Math.floor(Math.random() * 10000),
+  bookmaker,
+  code,
+  regularApp: !premium,
+  premiumApp: premium,
+  regularTelegram: !premium,
+  premiumTelegram: premium
+});
 
 const getTimedTheme = (): Theme => {
   const hour = new Date().getHours();
@@ -330,7 +373,11 @@ const defaultAdminGames: AdminGame[] = [
     confidence: 86,
     tier: "freemium",
     showBookingCodes: true,
-    bookingCodes: { sportybet: "SB-186", bet9ja: "B9-142", betking: "BK-186", onexbet: "1X-186" },
+    bookingCodes: [
+      { ...makeBookingCode("sportybet", "SB-186"), id: 101 },
+      { ...makeBookingCode("bet9ja", "B9-142"), id: 102 },
+      { ...makeBookingCode("betking", "BK-186"), id: 103 }
+    ],
     pushApp: true,
     pushTelegram: true,
     pushWhatsApp: true,
@@ -345,7 +392,10 @@ const defaultAdminGames: AdminGame[] = [
     confidence: 73,
     tier: "freemium",
     showBookingCodes: false,
-    bookingCodes: { sportybet: "SB-273", bet9ja: "B9-136", betking: "BK-273", onexbet: "1X-273" },
+    bookingCodes: [
+      { ...makeBookingCode("sportybet", "SB-273"), id: 201 },
+      { ...makeBookingCode("bet9ja", "B9-136"), id: 202 }
+    ],
     pushApp: true,
     pushTelegram: true,
     pushWhatsApp: true,
@@ -360,7 +410,11 @@ const defaultAdminGames: AdminGame[] = [
     confidence: 82,
     tier: "vip",
     showBookingCodes: true,
-    bookingCodes: { sportybet: "VIP-SB218", bet9ja: "VIP-B9218", betking: "VIP-BK218", onexbet: "VIP-1X218" },
+    bookingCodes: [
+      { ...makeBookingCode("sportybet", "VIP-SB218", true), id: 301 },
+      { ...makeBookingCode("bet9ja", "VIP-B9218", true), id: 302 },
+      { ...makeBookingCode("onexbet", "VIP-1X218", true), id: 303 }
+    ],
     pushApp: true,
     pushTelegram: false,
     pushWhatsApp: false,
@@ -375,7 +429,10 @@ const defaultAdminGames: AdminGame[] = [
     confidence: 79,
     tier: "vip",
     showBookingCodes: true,
-    bookingCodes: { sportybet: "VIP-SB194", bet9ja: "VIP-B9194", betking: "VIP-BK194", onexbet: "VIP-1X194" },
+    bookingCodes: [
+      { ...makeBookingCode("betking", "VIP-BK194", true), id: 401 },
+      { ...makeBookingCode("betway", "VIP-BW194", true), id: 402 }
+    ],
     pushApp: true,
     pushTelegram: false,
     pushWhatsApp: false,
@@ -390,7 +447,10 @@ const defaultAdminGames: AdminGame[] = [
     confidence: 76,
     tier: "vip",
     showBookingCodes: true,
-    bookingCodes: { sportybet: "VIP-SB242", bet9ja: "VIP-B9242", betking: "VIP-BK242", onexbet: "VIP-1X242" },
+    bookingCodes: [
+      { ...makeBookingCode("sportybet", "VIP-SB242", true), id: 501 },
+      { ...makeBookingCode("msport", "VIP-MS242", true), id: 502 }
+    ],
     pushApp: true,
     pushTelegram: false,
     pushWhatsApp: false,
@@ -682,6 +742,36 @@ const loadAdminContent = (): AdminContent => {
     const saved = window.localStorage.getItem("bamsignal-admin-content");
     if (!saved) return defaultAdminContent;
     const parsed = JSON.parse(saved) as Partial<AdminContent>;
+    const normalizeCodes = (codes: unknown, fallback: BookingCodeEntry[]): BookingCodeEntry[] => {
+      if (Array.isArray(codes)) {
+        return codes.map((entry, index) => {
+          const item = entry as Partial<BookingCodeEntry>;
+          return {
+            id: item.id ?? Date.now() + index,
+            bookmaker: (item.bookmaker ?? "sportybet") as BookmakerKey,
+            code: item.code ?? "",
+            regularApp: item.regularApp ?? true,
+            premiumApp: item.premiumApp ?? false,
+            regularTelegram: item.regularTelegram ?? false,
+            premiumTelegram: item.premiumTelegram ?? false
+          };
+        });
+      }
+      if (codes && typeof codes === "object") {
+        return Object.entries(codes as Record<string, string>)
+          .filter(([, code]) => Boolean(code))
+          .map(([bookmaker, code], index) => ({
+            id: Date.now() + index,
+            bookmaker: bookmaker as BookmakerKey,
+            code,
+            regularApp: true,
+            premiumApp: false,
+            regularTelegram: false,
+            premiumTelegram: false
+          }));
+      }
+      return fallback;
+    };
     return {
       ...defaultAdminContent,
       ...parsed,
@@ -689,10 +779,7 @@ const loadAdminContent = (): AdminContent => {
       games: parsed.games?.length ? parsed.games.map((game, index) => ({
         ...defaultAdminGames[index % defaultAdminGames.length],
         ...game,
-        bookingCodes: {
-          ...defaultAdminGames[index % defaultAdminGames.length].bookingCodes,
-          ...(game.bookingCodes ?? {})
-        }
+        bookingCodes: normalizeCodes(game.bookingCodes, defaultAdminGames[index % defaultAdminGames.length].bookingCodes)
       })) : defaultAdminGames
     };
   } catch {
@@ -797,7 +884,7 @@ function App() {
   const topPick = useMemo(() => getDailySureSignal(dailyKey), [dailyKey]);
 
   const goHome = () => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/");
-  const showMenuButton = !(isNative && page.kind === "app");
+  const showMenuButton = !(isNative && page.kind === "app") && page.kind !== "admin";
 
   if (showStartupSplash) {
     return (
@@ -808,7 +895,7 @@ function App() {
   }
 
   return (
-    <div className={`app ${theme} ${isNative ? "native-app" : "web-app"}`}>
+    <div className={`app ${theme} ${isNative ? "native-app" : "web-app"} ${page.kind === "admin" ? "admin-route" : ""}`}>
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
         <div className="brand">
           <button className="brand-button" onClick={goHome}>
@@ -1423,7 +1510,7 @@ function UserDashboard({
     setLoginForm({ identifier: "", password: "" });
     setPendingLoginProfile(null);
     setAuthMode("login");
-    setAuthMessage("Enter phone/email and password to authorize this device with email OTP.");
+    setAuthMessage("");
   };
 
   const signUp = () => {
@@ -1674,7 +1761,7 @@ function UserDashboard({
 
   const renderManagedGame = (game: AdminGame, locked = false) => {
     const visibleCodes = !locked && (game.tier === "vip" || game.showBookingCodes);
-    const codeEntries = Object.entries(game.bookingCodes).filter(([, code]) => code.trim());
+    const appCodes = game.bookingCodes.filter((entry) => entry.code.trim() && (game.tier === "vip" ? entry.premiumApp : entry.regularApp));
     return (
       <div className={`room-pick managed ${locked ? "locked" : ""}`} key={game.id}>
         <div className="room-pick-top">
@@ -1684,11 +1771,11 @@ function UserDashboard({
         <span>{game.match}</span>
         <small>{game.league}</small>
         <small className={locked ? "blurred-tip" : ""}>{game.pick}</small>
-        {visibleCodes ? (
+        {visibleCodes && appCodes.length ? (
           <div className="booking-code-list">
-            {codeEntries.map(([bookie, code]) => (
-              <button key={`${game.id}-${bookie}`} onClick={() => navigator.clipboard?.writeText(code)}>
-                <ClipboardCheck size={13} /> {bookie === "onexbet" ? "1xBet" : bookie} <strong>{code}</strong>
+            {appCodes.map((entry) => (
+              <button key={`${game.id}-${entry.id}`} onClick={() => navigator.clipboard?.writeText(entry.code)}>
+                <ClipboardCheck size={13} /> {bookmakerLabel(entry.bookmaker)} <strong>{entry.code}</strong>
               </button>
             ))}
           </div>
@@ -2117,11 +2204,32 @@ function AdminPage({
     const games = adminContent.games.map((game, gameIndex) => gameIndex === index ? { ...game, ...patch } : game);
     setAdminContent({ ...adminContent, games });
   };
-  const updateBookingCode = (index: number, bookie: keyof AdminGame["bookingCodes"], value: string) => {
-    const games = adminContent.games.map((game, gameIndex) => gameIndex === index
-      ? { ...game, bookingCodes: { ...game.bookingCodes, [bookie]: value } }
+  const updateBookingEntry = (gameIndex: number, codeIndex: number, patch: Partial<BookingCodeEntry>) => {
+    const games = adminContent.games.map((game, index) => index === gameIndex
+      ? { ...game, bookingCodes: game.bookingCodes.map((entry, entryIndex) => entryIndex === codeIndex ? { ...entry, ...patch } : entry) }
       : game);
     setAdminContent({ ...adminContent, games });
+  };
+  const addBookingEntry = (gameIndex: number) => {
+    const games = adminContent.games.map((game, index) => index === gameIndex
+      ? { ...game, bookingCodes: [...game.bookingCodes, makeBookingCode("sportybet", "", game.tier === "vip")] }
+      : game);
+    setAdminContent({ ...adminContent, games });
+  };
+  const removeBookingEntry = (gameIndex: number, codeIndex: number) => {
+    const games = adminContent.games.map((game, index) => index === gameIndex
+      ? { ...game, bookingCodes: game.bookingCodes.filter((_, entryIndex) => entryIndex !== codeIndex) }
+      : game);
+    setAdminContent({ ...adminContent, games });
+  };
+  const publishGame = (game: AdminGame) => {
+    const targets = [
+      game.pushApp ? "app users" : "",
+      game.pushTelegram ? "regular Telegram" : "",
+      game.pushWhatsApp ? "WhatsApp channel" : "",
+      game.pushVipTelegram ? "VIP Telegram" : ""
+    ].filter(Boolean).join(", ");
+    window.alert(`${game.match} is ready to publish to ${targets || "selected channels"}. Backend broadcast hooks will send it live in production.`);
   };
   const addAdminGame = () => {
     setAdminContent({
@@ -2138,7 +2246,7 @@ function AdminPage({
           confidence: 70,
           tier: "freemium",
           showBookingCodes: false,
-          bookingCodes: { sportybet: "", bet9ja: "", betking: "", onexbet: "" }
+          bookingCodes: [makeBookingCode("sportybet", "")]
         }
       ]
     });
@@ -2164,21 +2272,23 @@ function AdminPage({
           This private command center is where BamSignal prepares the day&apos;s free tips, VIP picks, booking codes, scheduled alerts, and channel broadcasts before they go to users.
         </p>
       </section>
-      <nav className="admin-work-nav" aria-label="Admin work areas">
-        {[
-          { tab: "overview", label: "Overview", icon: <ClipboardCheck size={15} /> },
-          { tab: "games", label: "Games", icon: <Goal size={15} /> },
-          { tab: "content", label: "News & ads", icon: <BarChart3 size={15} /> },
-          { tab: "payments", label: "Payments", icon: <CreditCard size={15} /> },
-          { tab: "otp", label: "OTP", icon: <ShieldCheck size={15} /> },
-          { tab: "support", label: "Support inbox", icon: <MessageCircle size={15} /> }
-        ].map(({ tab, label, icon }) => (
-          <button key={tab} className={activeAdminTab === tab ? "active" : ""} onClick={() => { setActiveAdminTab(tab as AdminTab); if (tab === "support") refreshSupportInbox(); }}>
-            {icon}
-            {label}
-          </button>
-        ))}
-      </nav>
+      <div className="admin-command-layout">
+        <nav className="admin-work-nav" aria-label="Admin work areas">
+          {[
+            { tab: "overview", label: "Overview", icon: <ClipboardCheck size={15} /> },
+            { tab: "games", label: "Games", icon: <Goal size={15} /> },
+            { tab: "content", label: "News & ads", icon: <BarChart3 size={15} /> },
+            { tab: "payments", label: "Payments", icon: <CreditCard size={15} /> },
+            { tab: "otp", label: "OTP", icon: <ShieldCheck size={15} /> },
+            { tab: "support", label: "Support inbox", icon: <MessageCircle size={15} /> }
+          ].map(({ tab, label, icon }) => (
+            <button key={tab} className={activeAdminTab === tab ? "active" : ""} onClick={() => { setActiveAdminTab(tab as AdminTab); if (tab === "support") refreshSupportInbox(); }}>
+              {icon}
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="admin-workspace">
 
       {activeAdminTab === "overview" && <section className="admin-panel">
         <div className="admin-form">
@@ -2229,9 +2339,29 @@ function AdminPage({
                 <label>Odds<input value={game.odds} type="number" step="0.01" onChange={(event) => updateAdminGame(index, { odds: Number(event.target.value) || 1 })} /></label>
                 <label>Confidence %<input value={game.confidence} type="number" min="1" max="99" onChange={(event) => updateAdminGame(index, { confidence: Number(event.target.value) || 1 })} /></label>
               </div>
-              <div className="booking-grid">
-                {(["sportybet", "bet9ja", "betking", "onexbet"] as const).map((bookie) => (
-                  <label key={`${game.id}-${bookie}`}>{bookie === "onexbet" ? "1xBet" : bookie}<input value={game.bookingCodes[bookie]} onChange={(event) => updateBookingCode(index, bookie, event.target.value)} placeholder={`${bookie} booking code`} /></label>
+              <div className="booking-admin-head">
+                <strong>Booking codes</strong>
+                <button className="secondary-action" onClick={() => addBookingEntry(index)}><ClipboardCheck size={15} /> Add booking code</button>
+              </div>
+              <div className="booking-entry-grid">
+                {game.bookingCodes.map((entry, codeIndex) => (
+                  <article className="booking-entry-card" key={entry.id}>
+                    <label>Bookmaker
+                      <select value={entry.bookmaker} onChange={(event) => updateBookingEntry(index, codeIndex, { bookmaker: event.target.value as BookmakerKey })}>
+                        {bookmakers.map((bookmaker) => (
+                          <option value={bookmaker.key} key={bookmaker.key}>{bookmaker.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>Booking code<input value={entry.code} onChange={(event) => updateBookingEntry(index, codeIndex, { code: event.target.value })} placeholder="Paste booking code" /></label>
+                    <div className="code-destination-grid">
+                      <label><input type="checkbox" checked={entry.regularApp} onChange={(event) => updateBookingEntry(index, codeIndex, { regularApp: event.target.checked })} /> User app</label>
+                      <label><input type="checkbox" checked={entry.premiumApp} onChange={(event) => updateBookingEntry(index, codeIndex, { premiumApp: event.target.checked })} /> VIP app</label>
+                      <label><input type="checkbox" checked={entry.regularTelegram} onChange={(event) => updateBookingEntry(index, codeIndex, { regularTelegram: event.target.checked })} /> Regular Telegram</label>
+                      <label><input type="checkbox" checked={entry.premiumTelegram} onChange={(event) => updateBookingEntry(index, codeIndex, { premiumTelegram: event.target.checked })} /> Premium Telegram</label>
+                    </div>
+                    <button className="text-action" onClick={() => removeBookingEntry(index, codeIndex)}>Remove code</button>
+                  </article>
                 ))}
               </div>
               <div className="toggle-grid">
@@ -2241,6 +2371,7 @@ function AdminPage({
                 <label><input type="checkbox" checked={game.pushWhatsApp} onChange={(event) => updateAdminGame(index, { pushWhatsApp: event.target.checked })} /> WhatsApp channel</label>
                 <label><input type="checkbox" checked={game.pushVipTelegram} onChange={(event) => updateAdminGame(index, { pushVipTelegram: event.target.checked })} /> VIP Telegram special</label>
               </div>
+              <button className="primary-action neon-action" onClick={() => publishGame(game)}><Send size={16} /> Publish selected game now</button>
             </article>
           ))}
         </div>
@@ -2324,6 +2455,8 @@ function AdminPage({
           )}
         </div>
       </section>}
+        </div>
+      </div>
     </main>
   );
 }

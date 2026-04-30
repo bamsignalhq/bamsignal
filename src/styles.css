@@ -670,14 +670,36 @@ footer {
   padding: 18px;
 }
 
+.admin-route .sidebar,
+.admin-route footer {
+  display: none;
+}
+
+.admin-route .shell {
+  margin-left: 0;
+}
+
+.admin-command-layout {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+
+.admin-workspace {
+  min-width: 0;
+}
+
 .admin-work-nav {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   display: grid;
   gap: 8px;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   padding: 8px;
+  position: sticky;
+  top: 92px;
 }
 
 .admin-work-nav button {
@@ -691,7 +713,7 @@ footer {
   font-size: 12px;
   font-weight: 900;
   gap: 7px;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 38px;
   padding: 0 10px;
 }
@@ -1914,16 +1936,39 @@ footer {
 }
 
 .booking-grid,
-.toggle-grid {
+.toggle-grid,
+.booking-entry-grid,
+.code-destination-grid {
   display: grid;
   gap: 8px;
 }
 
-.booking-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.booking-admin-head {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
 }
 
-.booking-grid label,
+.booking-admin-head strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.booking-entry-grid {
+  grid-template-columns: 1fr;
+}
+
+.booking-entry-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+}
+
+.booking-entry-card label,
 .toggle-grid label {
   color: var(--muted);
   display: grid;
@@ -1933,13 +1978,30 @@ footer {
   text-transform: uppercase;
 }
 
-.booking-grid input {
+.booking-entry-card input,
+.booking-entry-card select {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--text);
   min-height: 34px;
   padding: 0 9px;
+}
+
+.code-destination-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.code-destination-grid label {
+  align-items: center;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  gap: 6px;
+  min-height: 36px;
+  padding: 7px;
+  text-transform: none;
 }
 
 .toggle-grid {
@@ -2601,8 +2663,13 @@ footer strong {
     grid-template-columns: 1fr;
   }
 
+  .admin-command-layout {
+    grid-template-columns: 1fr;
+  }
+
   .admin-work-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+    position: static;
   }
 
   .fixture-card h3 {
@@ -2718,7 +2785,8 @@ footer strong {
   .plan-grid,
   .vip-special-grid,
   .booking-grid,
-  .toggle-grid {
+  .toggle-grid,
+  .code-destination-grid {
     grid-template-columns: 1fr;
   }
 

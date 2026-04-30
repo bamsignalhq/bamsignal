@@ -40,6 +40,7 @@ import "./styles.css";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const demoOtpEnabled = import.meta.env.DEV;
 const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
@@ -136,6 +137,27 @@ type DailyGamesApiResponse = {
   freemium: ApiTip[];
   vip: ApiTip[];
 };
+const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
+  const bookingCodes = Object.entries(tip.booking_codes || {}).map(([bookmaker, code], codeIndex) => ({
+    ...makeBookingCode(bookmakerKeyFromName(bookmaker), String(code), tip.is_vip),
+    id: Number(`${Date.now()}${index}${codeIndex}`.slice(-9))
+  }));
+  return {
+    id: typeof tip.id === "number" ? tip.id : Date.now() + index,
+    match: tip.match_name,
+    league: tip.league || "Football",
+    pick: tip.prediction,
+    odds: Number(tip.odds),
+    confidence: Number(tip.confidence || (tip.is_vip ? 76 : 82)),
+    tier: tip.is_vip ? "vip" : "freemium",
+    showBookingCodes: !tip.is_vip && bookingCodes.length > 0,
+    bookingCodes,
+    pushApp: true,
+    pushTelegram: true,
+    pushWhatsApp: false,
+    pushVipTelegram: tip.is_vip
+  };
+};
 type AdminContent = {
   newsTitle: string;
   newsSummary: string;
@@ -183,6 +205,10 @@ const bookmakers: { key: BookmakerKey; label: string }[] = [
 ];
 
 const bookmakerLabel = (key: BookmakerKey) => bookmakers.find((bookmaker) => bookmaker.key === key)?.label ?? key;
+const bookmakerKeyFromName = (value: string): BookmakerKey => {
+  const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return bookmakers.find((bookmaker) => bookmaker.key.replace(/[^a-z0-9]/g, "") === normalized || bookmaker.label.toLowerCase().replace(/[^a-z0-9]/g, "") === normalized)?.key ?? "sportybet";
+};
 const makeBookingCode = (bookmaker: BookmakerKey, code: string, premium = false): BookingCodeEntry => ({
   id: Date.now() + Math.floor(Math.random() * 10000),
   bookmaker,
@@ -984,13 +1010,18 @@ function App() {
   const [activeStatus, setActiveStatus] = useState<Fixture["status"] | "All">("All");
   const [isAuthed, setIsAuthed] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile>({ name: "BamSignal User", email: "user@bamsignal.com", phone: "801 000 0000" });
+  const [userProfile, setUserProfile] = useState<UserProfile>({ name: "BamSignal Member", email: "", phone: "" });
   const [page, setPage] = useState<Page>(() => getInitialPage());
   const [dailyKey, setDailyKey] = useState(() => getDailyKey());
   const [showStartupSplash, setShowStartupSplash] = useState(() => isNative);
   const [adminContent, setAdminContent] = useState<AdminContent>(() => loadAdminContent());
+  const [dailyApiGames, setDailyApiGames] = useState<AdminGame[]>([]);
   const logoSrc = theme === "dark" ? "/brand/compact-logo-dark.jpg" : "/brand/compact-logo-light.jpg";
   const appIconSrc = theme === "dark" ? "/brand/app-icon-dark.jpg" : "/brand/app-icon-light.jpg";
+  const effectiveAdminContent = useMemo(() => dailyApiGames.length
+    ? { ...adminContent, games: dailyApiGames }
+    : adminContent,
+  [adminContent, dailyApiGames]);
 
   const navigate = (nextPage: Page, path = "/") => {
     window.history.pushState(null, "", path);
@@ -1043,6 +1074,21 @@ function App() {
   useEffect(() => {
     window.localStorage.setItem("bamsignal-admin-content", JSON.stringify(adminContent));
   }, [adminContent]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/daily-games")
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload: DailyGamesApiResponse | null) => {
+        if (cancelled || !payload?.ok) return;
+        const games = [...(payload.freemium || []), ...(payload.vip || [])].map(apiTipToAdminGame);
+        setDailyApiGames(games);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [dailyKey]);
 
   const filteredFixtures = useMemo(() => {
     if (activeStatus === "All") return fixtures;
@@ -1153,7 +1199,7 @@ function App() {
             topPick={topPick}
             setActiveStatus={setActiveStatus}
             navigate={navigate}
-            adminContent={adminContent}
+            adminContent={effectiveAdminContent}
           />
         ) : page.kind === "app" ? (
           <UserDashboard
@@ -1163,7 +1209,7 @@ function App() {
             setIsPremium={setIsPremium}
             userProfile={userProfile}
             setUserProfile={setUserProfile}
-            adminContent={adminContent}
+            adminContent={effectiveAdminContent}
             isNative={isNative}
             authIntent={getAuthIntent()}
             navigate={navigate}
@@ -1171,7 +1217,7 @@ function App() {
         ) : page.kind === "admin" ? (
           <AdminPage isNative={isNative} navigate={navigate} adminContent={adminContent} setAdminContent={setAdminContent} />
         ) : page.kind === "contact" ? (
-          <ContactPage navigate={navigate} adminContent={adminContent} />
+          <ContactPage navigate={navigate} adminContent={effectiveAdminContent} />
         ) : page.kind === "legal" ? (
           <LegalPage page={page} navigate={navigate} />
         ) : page.kind === "tips" ? (
@@ -1726,6 +1772,11 @@ function UserDashboard({
       return;
     }
 
+    if (!supabase && !demoOtpEnabled) {
+      setAuthMessage("Email OTP is being activated. Please try again shortly.");
+      return;
+    }
+
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setVerificationCode(code);
     setVerificationInput("");
@@ -1802,7 +1853,7 @@ function UserDashboard({
       return;
     }
     beginTrustedSession(profile);
-    setAuthMessage(`${provider} sign-in connected. In production, this uses the native ${provider} provider before opening your room.`);
+    setAuthMessage(`${provider} sign-in connected. Opening your BamSignal room.`);
   };
   const unlockWithPin = () => {
     if (!deviceBinding) {
@@ -1821,7 +1872,7 @@ function UserDashboard({
       return;
     }
     beginTrustedSession(deviceBinding);
-    setAuthMessage("Phone authentication accepted. In production this calls the native biometric/device lock prompt.");
+    setAuthMessage("Phone authentication accepted. Opening your BamSignal room.");
   };
   const useAnotherAccount = () => {
     setPinInput("");
@@ -1842,6 +1893,10 @@ function UserDashboard({
     }
     if (!/^\d{6}$/.test(signupForm.pin)) {
       setAuthMessage("Your BamSignal PIN must be exactly 6 digits.");
+      return;
+    }
+    if (!supabase && !demoOtpEnabled) {
+      setAuthMessage("Email signup is being activated. Please try again shortly.");
       return;
     }
     const nextProfile = { name: signupForm.name, email: signupForm.email.trim().toLowerCase(), phone: signupForm.phone };
@@ -2728,7 +2783,7 @@ function AdminPage({
       game.pushWhatsApp ? "WhatsApp channel" : "",
       game.pushVipTelegram ? "VIP Telegram" : ""
     ].filter(Boolean).join(", ");
-    window.alert(`${game.match} is ready to publish to ${targets || "selected channels"}. Backend broadcast hooks will send it live in production.`);
+    window.alert(`${game.match} is ready to publish to ${targets || "selected channels"}. Backend broadcast hooks will send it live when your channel keys are active.`);
   };
   const addAdminGame = () => {
     setAdminContent({

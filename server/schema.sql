@@ -12,16 +12,23 @@ create table if not exists users (
 create table if not exists tips (
   id uuid primary key default gen_random_uuid(),
   match_name text not null,
+  league text,
   prediction text not null,
   odds text not null,
+  confidence integer,
   is_vip boolean not null default false,
   booking_codes jsonb not null default '{}'::jsonb,
+  source text,
   status text not null default 'pending',
   starts_at timestamptz,
   settled_at timestamptz,
   result_payload jsonb,
   created_at timestamptz not null default now()
 );
+
+alter table tips add column if not exists league text;
+alter table tips add column if not exists confidence integer;
+alter table tips add column if not exists source text;
 
 create table if not exists affiliate_clicks (
   id bigserial primary key,

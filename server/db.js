@@ -38,15 +38,18 @@ export async function insertTip(tip) {
   }
 
   const result = await query(
-    `insert into tips (match_name, prediction, odds, is_vip, booking_codes, status, starts_at)
-     values ($1, $2, $3, $4, $5, 'pending', $6)
+    `insert into tips (match_name, league, prediction, odds, confidence, is_vip, booking_codes, source, status, starts_at)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9)
      returning *`,
     [
       tip.match_name,
+      tip.league || null,
       tip.prediction,
       tip.odds,
+      tip.confidence || null,
       tip.is_vip,
       tip.booking_codes,
+      tip.source || null,
       tip.starts_at || null
     ]
   );

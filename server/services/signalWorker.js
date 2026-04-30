@@ -119,6 +119,7 @@ function buildTipCandidates(fixtures) {
         confidence: market.confidence,
         is_vip: market.odds >= config.signalWorker.freeOddsMax,
         booking_codes: config.signalWorker.defaultBookingCodes,
+        source: config.signalWorker.fixtureApiUrl ? "fixture-api" : "fallback",
         starts_at: fixture.starts_at
       });
     }

@@ -14,7 +14,7 @@ const parseJson = (value, fallback = null) => {
 export const config = {
   port: Number(process.env.PORT || 5050),
   databaseUrl: process.env.DATABASE_URL,
-  publicAppUrl: process.env.PUBLIC_APP_URL || "http://localhost:5173",
+  publicAppUrl: process.env.PUBLIC_APP_URL || "https://bamsignal.com",
   paystackSecretKey: process.env.PAYSTACK_SECRET_KEY,
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN,

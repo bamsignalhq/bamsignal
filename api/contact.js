@@ -9,14 +9,36 @@ export default function handler(req, res) {
     return res.status(400).json({ ok: false, error: "Name, email, and message are required" });
   }
 
-  console.log("BamSignal support message", {
-    to,
-    name,
-    email,
-    topic: topic || "Contact message",
-    message,
-    receivedAt: new Date().toISOString()
-  });
+  if (process.env.RESEND_API_KEY) {
+    return fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: process.env.SUPPORT_EMAIL_FROM || "BamSignal <support@bamsignal.com>",
+        to,
+        reply_to: email,
+        subject: `BamSignal support: ${topic || "Contact message"}`,
+        text: [
+          `Name: ${name}`,
+          `Email: ${email}`,
+          `Topic: ${topic || "Contact message"}`,
+          "",
+          message
+        ].join("\n")
+      })
+    }).then(async (response) => {
+      if (!response.ok) {
+        const detail = await response.text();
+        return res.status(502).json({ ok: false, error: "Support email could not be sent", detail });
+      }
+      return res.status(200).json({ ok: true, to });
+    }).catch((error) => {
+      return res.status(500).json({ ok: false, error: error.message || "Support email failed" });
+    });
+  }
 
   return res.status(200).json({ ok: true, to });
 }

@@ -48,6 +48,7 @@ type Page =
   | { kind: "admin" };
 type AdminTab = "overview" | "games" | "login" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
+type AuthIntent = "login" | "signup" | "reset" | null;
 type DashboardTab = "home" | "vip" | "profile";
 type BookmakerKey =
   | "sportybet"
@@ -777,6 +778,11 @@ function getInitialPage(): Page {
   return { kind: "home" };
 }
 
+function getAuthIntent(): AuthIntent {
+  const intent = new URLSearchParams(window.location.search).get("auth");
+  return intent === "signup" || intent === "reset" || intent === "login" ? intent : null;
+}
+
 const loadAdminContent = (): AdminContent => {
   try {
     const saved = window.localStorage.getItem("bamsignal-admin-content");
@@ -886,6 +892,10 @@ function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const openMemberAuth = (intent: Exclude<AuthIntent, null>) => {
+    navigate({ kind: "app" }, `/app?auth=${intent}`);
+  };
+
   useEffect(() => {
     const timer = window.setInterval(() => {
       setTheme(getTimedTheme());
@@ -916,6 +926,12 @@ function App() {
     window.addEventListener("popstate", syncRoute);
     return () => window.removeEventListener("popstate", syncRoute);
   }, []);
+
+  useEffect(() => {
+    if (isNative || !("serviceWorker" in navigator)) return undefined;
+    navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    return undefined;
+  }, [isNative]);
 
   useEffect(() => {
     window.localStorage.setItem("bamsignal-admin-content", JSON.stringify(adminContent));
@@ -971,6 +987,12 @@ function App() {
               <a href="/#apps" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#apps"); }}>
                 <Smartphone size={18} /> Get the App
               </a>
+              <a href="/app?auth=login" onClick={(event) => { event.preventDefault(); openMemberAuth("login"); }}>
+                <LockKeyhole size={18} /> Member Login
+              </a>
+              <a href="/app?auth=signup" onClick={(event) => { event.preventDefault(); openMemberAuth("signup"); }}>
+                <UserPlus size={18} /> Create Account
+              </a>
               <a href="/contact" onClick={(event) => { event.preventDefault(); navigate({ kind: "contact" }, "/contact"); }}>
                 <MessageCircle size={18} /> Contact
               </a>
@@ -1001,6 +1023,16 @@ function App() {
           <button className="topbar-brand" onClick={goHome} aria-label="Go to BamSignal home">
             <img className="topbar-logo" src={logoSrc} alt="BamSignal" />
           </button>
+          {!isNative && page.kind !== "admin" && (
+            <div className="topbar-auth-actions" aria-label="BamSignal member access">
+              <button className="secondary-action" onClick={() => openMemberAuth("login")}>
+                <LockKeyhole size={15} /> Login
+              </button>
+              <button className="primary-action neon-action" onClick={() => openMemberAuth("signup")}>
+                <UserPlus size={15} /> Sign up
+              </button>
+            </div>
+          )}
           <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             <span>{theme === "dark" ? "Light" : "Dark"}</span>
@@ -1026,6 +1058,7 @@ function App() {
             setUserProfile={setUserProfile}
             adminContent={adminContent}
             isNative={isNative}
+            authIntent={getAuthIntent()}
             navigate={navigate}
           />
         ) : page.kind === "admin" ? (
@@ -1111,6 +1144,16 @@ function HomePage({
                 <a className="primary-action" href="#predictions">View Predictions</a>
                 <button className="secondary-action booking-shortcut" onClick={copyTopBookingCode}><ClipboardCheck size={18} /> {adminContent.bookingButtonText}</button>
                 <a className="primary-action app-cta-pulse" href="#apps"><Smartphone size={18} /> Get the App</a>
+              </div>
+              <div className="web-member-card">
+                <div>
+                  <strong>Member room is live on web and app.</strong>
+                  <span>Login for free signals, signup for first-time access, then install the PWA if you want BamSignal on your home screen.</span>
+                </div>
+                <div>
+                  <button className="secondary-action" onClick={() => navigate({ kind: "app" }, "/app?auth=login")}><LockKeyhole size={16} /> Login</button>
+                  <button className="primary-action neon-action" onClick={() => navigate({ kind: "app" }, "/app?auth=signup")}><UserPlus size={16} /> Sign up</button>
+                </div>
               </div>
               <div className="trust-mini-row">
                 <span><LockKeyhole size={14} /> Secured by Paystack</span>
@@ -1208,8 +1251,8 @@ function HomePage({
           <section className="apps-band" id="apps">
             <div>
               <p className="eyebrow">Mobile apps</p>
-              <h2>Get BamSignal on your phone.</h2>
-              <p>Install the app for login, free member picks, VIP access, payment confirmation, and push notifications.</p>
+              <h2>Use BamSignal anywhere.</h2>
+              <p>Install the iOS or Android app for push alerts, or use the web member room as a PWA when you want quick browser access.</p>
             </div>
             <div className="app-buttons">
               <button aria-label="Download on the App Store">
@@ -1382,6 +1425,7 @@ function UserDashboard({
   setUserProfile,
   adminContent,
   isNative,
+  authIntent,
   navigate
 }: {
   isAuthed: boolean;
@@ -1392,11 +1436,17 @@ function UserDashboard({
   setUserProfile: (value: UserProfile) => void;
   adminContent: AdminContent;
   isNative: boolean;
+  authIntent: AuthIntent;
   navigate: (page: Page, path?: string) => void;
 }) {
   const initialDeviceBinding = useMemo(() => loadDeviceBinding(), []);
+  const initialAuthMode = useMemo<AuthMode>(() => {
+    if (authIntent === "signup") return "signup";
+    if (authIntent === "reset") return "reset";
+    return initialDeviceBinding ? "unlock" : "login";
+  }, [authIntent, initialDeviceBinding]);
   const [deviceBinding, setDeviceBinding] = useState<DeviceBinding | null>(initialDeviceBinding);
-  const [authMode, setAuthMode] = useState<AuthMode>(() => initialDeviceBinding ? "unlock" : "login");
+  const [authMode, setAuthMode] = useState<AuthMode>(initialAuthMode);
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("home");
   const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
   const [signupForm, setSignupForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "", pin: "" });
@@ -1462,6 +1512,19 @@ function UserDashboard({
     setVisibleSecrets((current) => ({ ...current, [key]: !current[key] }));
   };
   const secretInputType = (key: keyof typeof visibleSecrets) => visibleSecrets[key] ? "text" : "password";
+
+  useEffect(() => {
+    if (isAuthed || !authIntent) return;
+    if (authIntent === "signup") {
+      setAuthMode("signup");
+      return;
+    }
+    if (authIntent === "reset") {
+      setAuthMode("reset");
+      return;
+    }
+    setAuthMode(deviceBinding ? "unlock" : "login");
+  }, [authIntent, deviceBinding, isAuthed]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -1636,35 +1699,6 @@ function UserDashboard({
     setAuthMessage(resetEmail ? `Password reset link sent to ${resetEmail}.` : "Enter your email to receive a reset link.");
   };
 
-  if (isWebAppRoute) {
-    const ua = navigator.userAgent.toLowerCase();
-    const isAndroidWeb = ua.includes("android");
-    const isiOSWeb = /iphone|ipad|ipod/.test(ua);
-    const downloadLabel = isAndroidWeb ? "Open Google Play" : isiOSWeb ? "Open App Store" : "Choose your app store";
-    return (
-      <main className="web-app-gate">
-        <section className="detail-hero">
-          <button className="back-link" onClick={() => navigate({ kind: "home" }, "/")}>
-            <ArrowLeft size={16} /> Back to website
-          </button>
-          <p className="eyebrow">BamSignal app access</p>
-          <h2>Member login lives inside the installed app.</h2>
-          <p>
-            For security, signup, login, Paystack confirmation, OTP checks, VIP games, and booking codes are handled inside the BamSignal mobile app only.
-          </p>
-          <div className="hero-actions">
-            <a className="primary-action app-cta-pulse" href="/#apps" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#apps"); }}>
-              <Smartphone size={18} /> {downloadLabel}
-            </a>
-            <a className="secondary-action" href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer">
-              <Send size={16} /> Telegram channel
-            </a>
-          </div>
-        </section>
-      </main>
-    );
-  };
-
   if (!isAuthed) {
     const showDynamicBanner = authMode === "login" || authMode === "reset" || authMode === "unlock";
     return (
@@ -1678,6 +1712,7 @@ function UserDashboard({
           <div className="auth-copy">
             {(authMode === "login" || authMode === "unlock") && <span className="auth-secure-badge"><ShieldCheck size={14} /> Secure member access</span>}
             <h2>{authMode === "signup" ? "Create account" : authMode === "verify" ? "Verify email" : authMode === "loginOtp" ? "Authorize login" : authMode === "pinSetup" ? "Create your PIN" : authMode === "unlock" ? "Welcome back" : authMode === "reset" ? "Reset access" : "Welcome to BamSignal"}</h2>
+            {isWebAppRoute && <p>Use the web member room for quick access, or install BamSignal as an app when you want faster daily check-ins.</p>}
           </div>
 
           {showDynamicBanner && <AuthDynamicBanner banner={activeAuthBanner} position="top" onAction={handleBannerAction} />}
@@ -1698,7 +1733,7 @@ function UserDashboard({
                 </span>
               </label>
               <button className="primary-action neon-action" onClick={unlockWithPin}><ShieldCheck size={16} /> Unlock with PIN</button>
-              <button className="secondary-action" onClick={unlockWithNativeAuth}><ShieldCheck size={16} /> Use Face ID / Phone PIN / Pattern</button>
+              {!isWebAppRoute && <button className="secondary-action" onClick={unlockWithNativeAuth}><ShieldCheck size={16} /> Use Face ID / Phone PIN / Pattern</button>}
               <div className="auth-switch-row">
                 <button className="text-action create-link" onClick={useAnotherAccount}>Use another account</button>
                 <button className="text-action" onClick={() => setAuthMode("reset")}>Forgot password?</button>

@@ -195,6 +195,20 @@ nav a:hover {
   width: 168px;
 }
 
+.topbar-auth-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 12px;
+}
+
+.topbar-auth-actions .primary-action,
+.topbar-auth-actions .secondary-action {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
 .brand-wordmark {
   color: var(--text);
   font-size: 24px;
@@ -304,6 +318,48 @@ main {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 12px;
   max-width: 680px;
+}
+
+.web-member-card {
+  align-items: center;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface-2) 82%, var(--accent)), var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 12px;
+  max-width: 680px;
+  padding: 12px;
+}
+
+.web-member-card strong,
+.web-member-card span {
+  display: block;
+}
+
+.web-member-card strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.web-member-card span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.web-member-card > div:last-child {
+  display: flex;
+  gap: 8px;
+}
+
+.web-member-card .primary-action,
+.web-member-card .secondary-action {
+  min-height: 38px;
+  padding: 0 12px;
 }
 
 .trust-mini-row span {
@@ -2689,6 +2745,10 @@ footer strong {
     width: 100%;
   }
 
+  .topbar-auth-actions {
+    display: none;
+  }
+
   .mobile-only {
     display: inline-flex;
   }
@@ -2812,6 +2872,16 @@ footer strong {
     gap: 8px;
     grid-template-columns: 1fr;
     margin-top: 12px;
+  }
+
+  .web-member-card {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .web-member-card > div:last-child {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .trust-mini-row {

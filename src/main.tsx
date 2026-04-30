@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { Capacitor } from "@capacitor/core";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   Activity,
   ArrowLeft,
@@ -36,6 +37,18 @@ import {
   Youtube
 } from "lucide-react";
 import "./styles.css";
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        persistSession: true
+      }
+    })
+  : null;
 
 type Theme = "dark" | "light";
 type Page =
@@ -106,6 +119,22 @@ type AdminGame = {
   pushTelegram: boolean;
   pushWhatsApp: boolean;
   pushVipTelegram: boolean;
+};
+type ApiTip = {
+  id?: string | number;
+  match_name: string;
+  league?: string;
+  prediction: string;
+  odds: string | number;
+  confidence?: number;
+  is_vip: boolean;
+  booking_codes?: Record<string, string>;
+};
+type DailyGamesApiResponse = {
+  ok: boolean;
+  date: string;
+  freemium: ApiTip[];
+  vip: ApiTip[];
 };
 type AdminContent = {
   newsTitle: string;
@@ -1604,6 +1633,36 @@ function UserDashboard({
   }, [authIntent, deviceBinding, isAuthed]);
 
   useEffect(() => {
+    if (!supabase) return undefined;
+    let mounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted || !data.session?.user || isAuthed) return;
+      const user = data.session.user;
+      beginTrustedSession({
+        name: String(user.user_metadata?.name || user.email?.split("@")[0] || "BamSignal User"),
+        email: user.email || userProfile.email,
+        phone: String(user.user_metadata?.phone || userProfile.phone)
+      });
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user || isAuthed) return;
+      const user = session.user;
+      beginTrustedSession({
+        name: String(user.user_metadata?.name || user.email?.split("@")[0] || "BamSignal User"),
+        email: user.email || userProfile.email,
+        phone: String(user.user_metadata?.phone || userProfile.phone)
+      });
+    });
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [isAuthed, userProfile.email, userProfile.phone]);
+
+  useEffect(() => {
     const timer = window.setInterval(() => {
       if (subscriptionUntil && subscriptionUntil.getTime() <= Date.now()) {
         setIsPremium(false);
@@ -1648,30 +1707,68 @@ function UserDashboard({
     setDeviceBinding(binding);
     beginTrustedSession(binding);
   };
-  const sendEmailOtp = (profile: UserProfile, nextMode: AuthMode) => {
+  const sendEmailOtp = async (profile: UserProfile, nextMode: AuthMode) => {
+    if (supabase && profile.email.includes("@")) {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: profile.email,
+        options: {
+          shouldCreateUser: false
+        }
+      });
+      if (error) {
+        setAuthMessage(error.message);
+        return;
+      }
+      setVerificationCode("");
+      setVerificationInput("");
+      setAuthMode(nextMode);
+      setAuthMessage(`6-digit email OTP sent to ${profile.email}.`);
+      return;
+    }
+
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setVerificationCode(code);
     setVerificationInput("");
     setAuthMode(nextMode);
     setAuthMessage(`6-digit login OTP sent to ${profile.email}. Test code: ${code}`);
   };
-  const signIn = () => {
+  const signIn = async () => {
     const identifier = loginForm.identifier.trim();
     if (!identifier || !loginForm.password) {
       setAuthMessage("Enter your phone number or email and password.");
       return;
     }
     const profile = resolveLoginProfile(identifier);
+    if (supabase && identifier.includes("@")) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: loginForm.password
+      });
+      if (error) {
+        setAuthMessage(error.message);
+        return;
+      }
+    }
     setPendingLoginProfile(profile);
-    sendEmailOtp(profile, "loginOtp");
+    await sendEmailOtp(profile, "loginOtp");
   };
-  const verifyLoginEmailOtp = () => {
+  const verifyLoginEmailOtp = async () => {
     if (!pendingLoginProfile) {
       setAuthMode("login");
       setAuthMessage("Enter your login details first.");
       return;
     }
-    if (verificationInput !== verificationCode) {
+    if (supabase && pendingLoginProfile.email.includes("@")) {
+      const { error } = await supabase.auth.verifyOtp({
+        email: pendingLoginProfile.email,
+        token: verificationInput,
+        type: "magiclink"
+      });
+      if (error) {
+        setAuthMessage(error.message);
+        return;
+      }
+    } else if (verificationInput !== verificationCode) {
       setAuthMessage("That email OTP is not correct. Check your email and try again.");
       return;
     }
@@ -1684,7 +1781,18 @@ function UserDashboard({
     setAuthMode("pinSetup");
     setAuthMessage("Email OTP confirmed. Create your 6-digit PIN to bind this phone.");
   };
-  const socialSignIn = (provider: "Google" | "Apple") => {
+  const socialSignIn = async (provider: "Google" | "Apple") => {
+    if (supabase) {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider === "Google" ? "google" : "apple",
+        options: {
+          redirectTo: `${window.location.origin}/app?auth=login`
+        }
+      });
+      if (error) setAuthMessage(error.message);
+      return;
+    }
+
     const profile = deviceBinding ?? userProfile;
     if (!deviceBinding) {
       setPendingLoginProfile(profile);
@@ -1723,7 +1831,7 @@ function UserDashboard({
     setAuthMessage("");
   };
 
-  const signUp = () => {
+  const signUp = async () => {
     if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password || !signupForm.pin) {
       setAuthMessage("Please fill in every signup field.");
       return;
@@ -1736,8 +1844,32 @@ function UserDashboard({
       setAuthMessage("Your BamSignal PIN must be exactly 6 digits.");
       return;
     }
-    const code = String(Math.floor(100000 + Math.random() * 900000));
     const nextProfile = { name: signupForm.name, email: signupForm.email.trim().toLowerCase(), phone: signupForm.phone };
+    if (supabase) {
+      const { error } = await supabase.auth.signUp({
+        email: nextProfile.email,
+        password: signupForm.password,
+        options: {
+          data: {
+            name: nextProfile.name,
+            phone: normalizePhone(nextProfile.phone) || nextProfile.phone
+          },
+          emailRedirectTo: `${window.location.origin}/app?auth=login`
+        }
+      });
+      if (error) {
+        setAuthMessage(error.message);
+        return;
+      }
+      setPendingSignup(nextProfile);
+      setVerificationCode("");
+      setVerificationInput("");
+      setAuthMode("verify");
+      setAuthMessage(`Verification code sent to ${nextProfile.email}.`);
+      return;
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
     setPendingSignup(nextProfile);
     setVerificationCode(code);
     setVerificationInput("");
@@ -1745,13 +1877,23 @@ function UserDashboard({
     setAuthMessage(`Verification code sent to ${nextProfile.email}. Test code: ${code}`);
   };
 
-  const verifySignup = () => {
+  const verifySignup = async () => {
     if (!pendingSignup) {
       setAuthMode("signup");
       setAuthMessage("Create your account first so we can send a verification code.");
       return;
     }
-    if (verificationInput !== verificationCode) {
+    if (supabase) {
+      const { error } = await supabase.auth.verifyOtp({
+        email: pendingSignup.email,
+        token: verificationInput,
+        type: "signup"
+      });
+      if (error) {
+        setAuthMessage(error.message);
+        return;
+      }
+    } else if (verificationInput !== verificationCode) {
       setAuthMessage("That code is not correct. Check your email and try again.");
       return;
     }
@@ -1772,7 +1914,14 @@ function UserDashboard({
     setAuthMessage(`${label} payment verified. VIP is active until ${expiry.toLocaleDateString("en-NG")}.`);
   };
 
-  const sendReset = () => {
+  const sendReset = async () => {
+    if (supabase && resetEmail) {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/app?auth=reset`
+      });
+      setAuthMessage(error ? error.message : `Password reset link sent to ${resetEmail}.`);
+      return;
+    }
     setAuthMessage(resetEmail ? `Password reset link sent to ${resetEmail}.` : "Enter your email to receive a reset link.");
   };
 

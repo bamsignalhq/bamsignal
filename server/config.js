@@ -28,6 +28,17 @@ export const config = {
     apiUrl: process.env.LIVE_SCORE_API_URL,
     apiKey: process.env.LIVE_SCORE_API_KEY
   },
+  signalWorker: {
+    enabled: process.env.SIGNAL_WORKER_ENABLED === "true",
+    secret: process.env.SIGNAL_WORKER_SECRET,
+    timezone: process.env.SIGNAL_WORKER_TIMEZONE || "Africa/Lagos",
+    cron: process.env.SIGNAL_WORKER_CRON || "0 9 * * *",
+    fixtureApiUrl: process.env.SIGNAL_FIXTURE_API_URL,
+    fixtureApiKey: process.env.SIGNAL_FIXTURE_API_KEY,
+    freeLimit: Number(process.env.SIGNAL_FREE_LIMIT || 2),
+    freeOddsMax: Number(process.env.SIGNAL_FREE_ODDS_MAX || 1.5),
+    defaultBookingCodes: parseJson(process.env.SIGNAL_DEFAULT_BOOKING_CODES, {})
+  },
   affiliateUrls: {
     "1xbet": process.env.AFFILIATE_1XBET_URL,
     betking: process.env.AFFILIATE_BETKING_URL,

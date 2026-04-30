@@ -1126,6 +1126,65 @@ footer {
   outline: none;
 }
 
+.auth-dynamic-banner {
+  align-items: center;
+  background:
+    radial-gradient(circle at 8% 12%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 36%),
+    color-mix(in srgb, var(--surface-2) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 10px;
+}
+
+.auth-dynamic-banner.bottom {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.auth-dynamic-banner img,
+.banner-mark {
+  align-items: center;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-radius: 12px;
+  display: flex;
+  height: 46px;
+  justify-content: center;
+  object-fit: cover;
+  width: 46px;
+}
+
+.banner-mark svg {
+  color: var(--accent);
+}
+
+.auth-dynamic-banner small,
+.auth-dynamic-banner p {
+  color: var(--muted);
+}
+
+.auth-dynamic-banner small {
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.auth-dynamic-banner strong {
+  color: var(--text);
+  display: block;
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.auth-dynamic-banner p {
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 3px 0 0;
+}
+
 .secret-input-wrap {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 42px;
@@ -1876,13 +1935,61 @@ footer {
 }
 
 .admin-form input,
-.admin-form select {
+.admin-form select,
+.admin-textarea-label textarea {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
   min-height: 38px;
   padding: 0 10px;
+}
+
+.banner-config-grid {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.banner-config-card {
+  background: color-mix(in srgb, var(--surface-2) 76%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.admin-textarea-label {
+  color: var(--muted);
+  display: grid;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.admin-textarea-label textarea {
+  min-height: 84px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.inline-admin-toggle {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  gap: 7px;
+  padding: 8px 10px;
+}
+
+.inline-admin-toggle input {
+  accent-color: var(--accent);
 }
 
 .admin-form.compact {
@@ -2797,7 +2904,9 @@ footer strong {
   }
 
   .admin-form.compact,
-  .booking-code-list {
+  .booking-code-list,
+  .auth-dynamic-banner,
+  .auth-dynamic-banner.bottom {
     grid-template-columns: 1fr;
   }
 

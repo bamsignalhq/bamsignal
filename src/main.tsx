@@ -46,7 +46,7 @@ type Page =
   | { kind: "contact" }
   | { kind: "legal"; slug: string }
   | { kind: "admin" };
-type AdminTab = "overview" | "games" | "content" | "payments" | "otp" | "support";
+type AdminTab = "overview" | "games" | "login" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type DashboardTab = "home" | "vip" | "profile";
 type BookmakerKey =
@@ -70,6 +70,14 @@ type BookingCodeEntry = {
   premiumApp: boolean;
   regularTelegram: boolean;
   premiumTelegram: boolean;
+};
+type LoginBanner = {
+  headline: string;
+  body: string;
+  imageUrl: string;
+  actionText: string;
+  actionUrl: string;
+  active?: boolean;
 };
 type UserProfile = {
   name: string;
@@ -105,6 +113,15 @@ type AdminContent = {
   sendchampWhatsappTemplate: string;
   sendchampSmsSender: string;
   bookingButtonText: string;
+  vipWeeklyPrice: number;
+  vipMonthlyPrice: number;
+  vipWeeklyLink: string;
+  vipMonthlyLink: string;
+  loginBanners: {
+    firstTimer: LoginBanner;
+    returning: LoginBanner;
+    weekendSpecial: LoginBanner & { active: boolean };
+  };
   games: AdminGame[];
 };
 type SupportMessage = {
@@ -483,6 +500,34 @@ const defaultAdminContent: AdminContent = {
   sendchampWhatsappTemplate: "bamsignal_login_otp",
   sendchampSmsSender: "BamSignal",
   bookingButtonText: "Get SportyBet Code",
+  vipWeeklyPrice: 950,
+  vipMonthlyPrice: 2950,
+  vipWeeklyLink: "https://paystack.com/pay/bamsignal-vip-weekly",
+  vipMonthlyLink: "https://paystack.com/pay/bamsignal-vip-monthly",
+  loginBanners: {
+    firstTimer: {
+      headline: "Start with 2 free low-risk signals",
+      body: "Create your account, verify once, then compare free picks before deciding if VIP is for you.",
+      imageUrl: "",
+      actionText: "Create secure account",
+      actionUrl: "signup"
+    },
+    returning: {
+      headline: "This week's value code is ready",
+      body: "Check the app for available booking codes, partner offers, and the latest free signal before kickoff.",
+      imageUrl: "",
+      actionText: "Open member room",
+      actionUrl: "login"
+    },
+    weekendSpecial: {
+      active: false,
+      headline: "Weekend banker board opens Friday",
+      body: "Turn this on from admin when the Friday-to-Sunday push is live for VIP and regular channels.",
+      imageUrl: "",
+      actionText: "View weekend signal",
+      actionUrl: "vip"
+    }
+  },
   games: defaultAdminGames
 };
 
@@ -544,12 +589,7 @@ const legalPages = [
   }
 ];
 
-const paystackPaymentLink = "https://paystack.com/pay/bamsignal-vip-monthly";
-const weeklyPaystackPaymentLink = "https://paystack.com/pay/bamsignal-vip-weekly";
-const vipPlans = [
-  { id: "weekly", label: "Weekly VIP", price: "₦950", days: 7, link: weeklyPaystackPaymentLink },
-  { id: "monthly", label: "Monthly VIP", price: "₦2,950", days: 30, link: paystackPaymentLink }
-];
+const formatNaira = (amount: number) => `₦${new Intl.NumberFormat("en-NG", { maximumFractionDigits: 0 }).format(amount)}`;
 
 const markets = [
   "Fulltime result",
@@ -776,6 +816,11 @@ const loadAdminContent = (): AdminContent => {
       ...defaultAdminContent,
       ...parsed,
       adLinks: [...(parsed.adLinks ?? []), "", "", "", "", ""].slice(0, 5),
+      loginBanners: {
+        firstTimer: { ...defaultAdminContent.loginBanners.firstTimer, ...(parsed.loginBanners?.firstTimer ?? {}) },
+        returning: { ...defaultAdminContent.loginBanners.returning, ...(parsed.loginBanners?.returning ?? {}) },
+        weekendSpecial: { ...defaultAdminContent.loginBanners.weekendSpecial, ...(parsed.loginBanners?.weekendSpecial ?? {}) }
+      },
       games: parsed.games?.length ? parsed.games.map((game, index) => ({
         ...defaultAdminGames[index % defaultAdminGames.length],
         ...game,
@@ -1388,6 +1433,31 @@ function UserDashboard({
     ? subscriptionUntil.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })
     : "Not active";
   const isWebAppRoute = Capacitor.getPlatform() === "web";
+  const vipPlans = useMemo(() => [
+    { id: "weekly", label: "Weekly VIP", price: formatNaira(adminContent.vipWeeklyPrice), days: 7, link: adminContent.vipWeeklyLink },
+    { id: "monthly", label: "Monthly VIP", price: formatNaira(adminContent.vipMonthlyPrice), days: 30, link: adminContent.vipMonthlyLink }
+  ], [adminContent.vipMonthlyLink, adminContent.vipMonthlyPrice, adminContent.vipWeeklyLink, adminContent.vipWeeklyPrice]);
+  const activeAuthBanner = useMemo(() => {
+    const isWeekend = new Date().getDay() === 5 || new Date().getDay() === 6 || new Date().getDay() === 0;
+    if (isWeekend && adminContent.loginBanners.weekendSpecial.active) return adminContent.loginBanners.weekendSpecial;
+    return deviceBinding ? adminContent.loginBanners.returning : adminContent.loginBanners.firstTimer;
+  }, [adminContent.loginBanners, deviceBinding]);
+  const handleBannerAction = (url: string) => {
+    if (url === "signup") {
+      setAuthMode("signup");
+      return;
+    }
+    if (url === "login") {
+      setAuthMode(deviceBinding ? "unlock" : "login");
+      return;
+    }
+    if (url === "vip") {
+      setAuthMode("login");
+      setAuthMessage("Log in first, then open the VIP tab to reveal the current offer.");
+      return;
+    }
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  };
   const toggleSecret = (key: keyof typeof visibleSecrets) => {
     setVisibleSecrets((current) => ({ ...current, [key]: !current[key] }));
   };
@@ -1596,6 +1666,7 @@ function UserDashboard({
   };
 
   if (!isAuthed) {
+    const showDynamicBanner = authMode === "login" || authMode === "reset" || authMode === "unlock";
     return (
       <main className="auth-main">
         <section className="auth-shell">
@@ -1608,6 +1679,8 @@ function UserDashboard({
             {(authMode === "login" || authMode === "unlock") && <span className="auth-secure-badge"><ShieldCheck size={14} /> Secure member access</span>}
             <h2>{authMode === "signup" ? "Create account" : authMode === "verify" ? "Verify email" : authMode === "loginOtp" ? "Authorize login" : authMode === "pinSetup" ? "Create your PIN" : authMode === "unlock" ? "Welcome back" : authMode === "reset" ? "Reset access" : "Welcome to BamSignal"}</h2>
           </div>
+
+          {showDynamicBanner && <AuthDynamicBanner banner={activeAuthBanner} position="top" onAction={handleBannerAction} />}
 
           {authMode === "unlock" && deviceBinding && (
             <div className="auth-form">
@@ -1754,6 +1827,7 @@ function UserDashboard({
           )}
 
           {authMessage && <p className="auth-message">{authMessage}</p>}
+          {showDynamicBanner && <AuthDynamicBanner banner={activeAuthBanner} position="bottom" onAction={handleBannerAction} />}
         </section>
       </main>
     );
@@ -1989,6 +2063,32 @@ function FootballNewsPanel({ adminContent, compact = false }: { adminContent: Ad
       ) : null}
       {hasNews && adminContent.newsSource ? <span className="news-source">Source: {adminContent.newsSource}</span> : null}
     </section>
+  );
+}
+
+function AuthDynamicBanner({
+  banner,
+  position,
+  onAction
+}: {
+  banner: LoginBanner;
+  position: "top" | "bottom";
+  onAction: (url: string) => void;
+}) {
+  return (
+    <aside className={`auth-dynamic-banner ${position}`}>
+      {banner.imageUrl ? <img src={banner.imageUrl} alt="" /> : <span className="banner-mark"><Sparkles size={18} /></span>}
+      <div>
+        <small>{position === "top" ? "This week on BamSignal" : "Admin-controlled weekly message"}</small>
+        <strong>{banner.headline}</strong>
+        <p>{banner.body}</p>
+      </div>
+      {banner.actionText ? (
+        <button className="text-action create-link" onClick={() => onAction(banner.actionUrl)}>
+          {banner.actionText}
+        </button>
+      ) : null}
+    </aside>
   );
 }
 
@@ -2259,6 +2359,18 @@ function AdminPage({
       setSupportMessages([]);
     }
   };
+  const updateLoginBanner = (
+    key: keyof AdminContent["loginBanners"],
+    patch: Partial<LoginBanner> & Partial<{ active: boolean }>
+  ) => {
+    setAdminContent({
+      ...adminContent,
+      loginBanners: {
+        ...adminContent.loginBanners,
+        [key]: { ...adminContent.loginBanners[key], ...patch }
+      }
+    });
+  };
 
   return (
     <main>
@@ -2277,6 +2389,7 @@ function AdminPage({
           {[
             { tab: "overview", label: "Overview", icon: <ClipboardCheck size={15} /> },
             { tab: "games", label: "Games", icon: <Goal size={15} /> },
+            { tab: "login", label: "Login banners", icon: <Sparkles size={15} /> },
             { tab: "content", label: "News & ads", icon: <BarChart3 size={15} /> },
             { tab: "payments", label: "Payments", icon: <CreditCard size={15} /> },
             { tab: "otp", label: "OTP", icon: <ShieldCheck size={15} /> },
@@ -2377,6 +2490,47 @@ function AdminPage({
         </div>
       </section>}
 
+      {activeAdminTab === "login" && <section className="admin-panel">
+        <div>
+          <p className="eyebrow">Remote login config</p>
+          <h2>Weekly login and reset-page banners</h2>
+          <p className="admin-note">Best practice: first-timers see conversion proof, returning users see weekly affiliate/game value, and weekend special overrides both from Friday to Sunday when active.</p>
+        </div>
+        <div className="banner-config-grid">
+          {([
+            ["firstTimer", "First-time users", "Product conversion and VIP proof"],
+            ["returning", "Returning users", "Affiliate bonus, weekly result proof, or big-game code"],
+            ["weekendSpecial", "Weekend special", "Friday-Sunday priority push"]
+          ] as const).map(([key, title, note]) => {
+            const banner = adminContent.loginBanners[key];
+            return (
+              <article className="banner-config-card" key={key}>
+                <div className="admin-game-head">
+                  <div>
+                    <strong>{title}</strong>
+                    <span>{note}</span>
+                  </div>
+                  {key === "weekendSpecial" && (
+                    <label className="inline-admin-toggle">
+                      <input type="checkbox" checked={adminContent.loginBanners.weekendSpecial.active} onChange={(event) => updateLoginBanner("weekendSpecial", { active: event.target.checked })} />
+                      Active
+                    </label>
+                  )}
+                </div>
+                <div className="admin-form compact">
+                  <label>Headline<input value={banner.headline} onChange={(event) => updateLoginBanner(key, { headline: event.target.value })} placeholder="Short, punchy headline" /></label>
+                  <label>Image URL<input value={banner.imageUrl} onChange={(event) => updateLoginBanner(key, { imageUrl: event.target.value })} placeholder="https://..." /></label>
+                  <label>Action text<input value={banner.actionText} onChange={(event) => updateLoginBanner(key, { actionText: event.target.value })} placeholder="Create secure account" /></label>
+                  <label>Action URL<input value={banner.actionUrl} onChange={(event) => updateLoginBanner(key, { actionUrl: event.target.value })} placeholder="signup, login, vip, or https://..." /></label>
+                </div>
+                <label className="admin-textarea-label">Body<textarea value={banner.body} onChange={(event) => updateLoginBanner(key, { body: event.target.value })} placeholder="One useful line that tells the user why this matters this week." /></label>
+                <AuthDynamicBanner banner={banner} position="bottom" onAction={() => undefined} />
+              </article>
+            );
+          })}
+        </div>
+      </section>}
+
       {activeAdminTab === "content" && <section className="admin-panel">
         <div>
           <p className="eyebrow">Public news and ads</p>
@@ -2400,9 +2554,15 @@ function AdminPage({
           <h2>VIP access control</h2>
           <p className="admin-note">Production should connect these controls to Paystack webhooks, subscription expiry jobs, and manual support overrides.</p>
         </div>
+        <div className="admin-form">
+          <label>Weekly VIP price (₦)<input value={adminContent.vipWeeklyPrice} type="number" min="0" onChange={(event) => setAdminContent({ ...adminContent, vipWeeklyPrice: Number(event.target.value) || 0 })} /></label>
+          <label>Monthly VIP price (₦)<input value={adminContent.vipMonthlyPrice} type="number" min="0" onChange={(event) => setAdminContent({ ...adminContent, vipMonthlyPrice: Number(event.target.value) || 0 })} /></label>
+          <label>Weekly Paystack link<input value={adminContent.vipWeeklyLink} onChange={(event) => setAdminContent({ ...adminContent, vipWeeklyLink: event.target.value })} placeholder="https://paystack.com/pay/..." /></label>
+          <label>Monthly Paystack link<input value={adminContent.vipMonthlyLink} onChange={(event) => setAdminContent({ ...adminContent, vipMonthlyLink: event.target.value })} placeholder="https://paystack.com/pay/..." /></label>
+        </div>
         <div className="automation-list">
-          <div><CreditCard size={16} /><span>Weekly VIP is ₦950: {weeklyPaystackPaymentLink}</span></div>
-          <div><CreditCard size={16} /><span>Monthly VIP is ₦2,950: {paystackPaymentLink}</span></div>
+          <div><CreditCard size={16} /><span>Weekly VIP is {formatNaira(adminContent.vipWeeklyPrice)}: {adminContent.vipWeeklyLink}</span></div>
+          <div><CreditCard size={16} /><span>Monthly VIP is {formatNaira(adminContent.vipMonthlyPrice)}: {adminContent.vipMonthlyLink}</span></div>
           <div><ShieldCheck size={16} /><span>Webhook should mark users VIP immediately after successful payment.</span></div>
           <div><CalendarClock size={16} /><span>Expiry job should move users back to freemium when subscriptions end.</span></div>
           <div><Users size={16} /><span>Admin override room reserved for manual verification, refunds, and support fixes.</span></div>

@@ -1,0 +1,8 @@
+android/
+ios/
+*.apk
+*.ipa
+*.xcarchive
+node_modules/
+.git/
+.DS_Store

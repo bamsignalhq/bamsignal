@@ -22,6 +22,7 @@ import {
   Music2,
   Send,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Sun,
   Trophy,
@@ -35,6 +36,13 @@ import "./styles.css";
 
 type Theme = "dark" | "light";
 type Page = { kind: "home" } | { kind: "app" } | { kind: "market"; slug: string } | { kind: "league"; slug: string } | { kind: "admin" };
+type AuthMode = "login" | "signup" | "reset";
+type DashboardTab = "home" | "free" | "vip" | "profile";
+type UserProfile = {
+  name: string;
+  email: string;
+  phone: string;
+};
 
 const getTimedTheme = (): Theme => {
   const hour = new Date().getHours();
@@ -422,6 +430,7 @@ function App() {
   const [activeStatus, setActiveStatus] = useState<Fixture["status"] | "All">("All");
   const [isAuthed, setIsAuthed] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile>({ name: "BamSignal User", email: "user@bamsignal.com", phone: "+234 801 000 0000" });
   const [page, setPage] = useState<Page>(() => getInitialPage());
   const logoSrc = theme === "dark" ? "/brand/compact-logo-dark.jpg" : "/brand/compact-logo-light.jpg";
 
@@ -484,8 +493,8 @@ function App() {
           <a href="/#markets" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#markets"); }}>
             <BarChart3 size={18} /> Markets
           </a>
-          <a href="/app" onClick={(event) => { event.preventDefault(); navigate({ kind: "app" }, "/app"); }}>
-            <UserPlus size={18} /> User Dashboard
+          <a href="/#apps" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#apps"); }}>
+            <Smartphone size={18} /> Get the App
           </a>
           <a href="/#faq" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#faq"); }}>
             <ShieldCheck size={18} /> FAQs
@@ -528,6 +537,8 @@ function App() {
             isPremium={isPremium}
             setIsAuthed={setIsAuthed}
             setIsPremium={setIsPremium}
+            userProfile={userProfile}
+            setUserProfile={setUserProfile}
             navigate={navigate}
           />
         ) : page.kind === "admin" ? (
@@ -578,6 +589,7 @@ function HomePage({
               </p>
               <div className="hero-actions">
                 <a className="primary-action" href="#predictions">View Predictions</a>
+                <a className="secondary-action" href="#apps">Get the App</a>
               </div>
             </div>
             <div className="signal-panel" aria-label="Top prediction">
@@ -670,16 +682,7 @@ function HomePage({
           <section className="apps-band" id="apps">
             <div>
               <p className="eyebrow">Mobile apps</p>
-              <h2>Install BamSignal, then manage your picks inside the app.</h2>
-              <p>
-                The website stays public for research, education, and app discovery. Login, Paystack payment, VIP picks, and the Telegram VIP link live inside the user dashboard.
-              </p>
-              <button
-                className="secondary-action"
-                onClick={() => navigate({ kind: "app" }, "/app")}
-              >
-                <UserPlus size={16} /> Open user dashboard
-              </button>
+              <h2>Get BamSignal on your phone.</h2>
             </div>
             <div className="app-buttons">
               <button aria-label="Download on the App Store">
@@ -807,14 +810,114 @@ function UserDashboard({
   isPremium,
   setIsAuthed,
   setIsPremium,
+  userProfile,
+  setUserProfile,
   navigate
 }: {
   isAuthed: boolean;
   isPremium: boolean;
   setIsAuthed: (value: boolean) => void;
   setIsPremium: (value: boolean) => void;
+  userProfile: UserProfile;
+  setUserProfile: (value: UserProfile) => void;
   navigate: (page: Page, path?: string) => void;
 }) {
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [dashboardTab, setDashboardTab] = useState<DashboardTab>("home");
+  const [loginForm, setLoginForm] = useState({ email: userProfile.email, password: "" });
+  const [signupForm, setSignupForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
+  const [resetEmail, setResetEmail] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
+
+  const signIn = () => {
+    const email = loginForm.email || userProfile.email;
+    setUserProfile({ ...userProfile, email });
+    setIsAuthed(true);
+    setAuthMessage("Secure login enabled. Next time, use your phone Face ID, PIN, or pattern.");
+  };
+
+  const signUp = () => {
+    if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password) {
+      setAuthMessage("Please fill in every signup field.");
+      return;
+    }
+    if (signupForm.password !== signupForm.confirmPassword) {
+      setAuthMessage("The two passwords do not match.");
+      return;
+    }
+    setUserProfile({ name: signupForm.name, email: signupForm.email, phone: signupForm.phone });
+    setIsAuthed(true);
+    setAuthMessage("Account created. Secure login is ready for your next visit.");
+  };
+
+  const sendReset = () => {
+    setAuthMessage(resetEmail ? `Password reset link sent to ${resetEmail}.` : "Enter your email to receive a reset link.");
+  };
+
+  if (!isAuthed) {
+    return (
+      <main className="auth-main">
+        <section className="auth-shell">
+          <button className="back-link" onClick={() => navigate({ kind: "home" })}>
+            <ArrowLeft size={16} /> Back to website
+          </button>
+          <div className="auth-copy">
+            <p className="eyebrow">BamSignal app</p>
+            <h2>{authMode === "signup" ? "Create your account" : authMode === "reset" ? "Reset your password" : "Welcome back"}</h2>
+            <p>{authMode === "reset" ? "Enter your email and BamSignal will send a password reset link." : "Sign in once, then use your phone Face ID, PIN, or pattern for faster subsequent login."}</p>
+          </div>
+          <div className="auth-tabs">
+            <button className={authMode === "login" ? "active" : ""} onClick={() => setAuthMode("login")}>Login</button>
+            <button className={authMode === "signup" ? "active" : ""} onClick={() => setAuthMode("signup")}>Sign up</button>
+            <button className={authMode === "reset" ? "active" : ""} onClick={() => setAuthMode("reset")}>Reset</button>
+          </div>
+
+          {authMode === "login" && (
+            <div className="auth-form">
+              <label>Email<input value={loginForm.email} onChange={(event) => setLoginForm({ ...loginForm, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
+              <label>Password<input value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} type="password" placeholder="Your password" /></label>
+              <button className="primary-action" onClick={signIn}><UserPlus size={16} /> Login</button>
+              <button className="secondary-action" onClick={signIn}><ShieldCheck size={16} /> Use Face ID / PIN / Pattern</button>
+              <button className="text-action" onClick={() => setAuthMode("reset")}>Forgot password?</button>
+            </div>
+          )}
+
+          {authMode === "signup" && (
+            <div className="auth-form two-up-form">
+              <label>Name<input value={signupForm.name} onChange={(event) => setSignupForm({ ...signupForm, name: event.target.value })} placeholder="Full name" /></label>
+              <label>Email<input value={signupForm.email} onChange={(event) => setSignupForm({ ...signupForm, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
+              <label>Phone number<input value={signupForm.phone} onChange={(event) => setSignupForm({ ...signupForm, phone: event.target.value })} type="tel" placeholder="+234..." /></label>
+              <label>Password<input value={signupForm.password} onChange={(event) => setSignupForm({ ...signupForm, password: event.target.value })} type="password" placeholder="Create password" /></label>
+              <label>Confirm password<input value={signupForm.confirmPassword} onChange={(event) => setSignupForm({ ...signupForm, confirmPassword: event.target.value })} type="password" placeholder="Repeat password" /></label>
+              <button className="primary-action" onClick={signUp}><ShieldCheck size={16} /> Create account</button>
+            </div>
+          )}
+
+          {authMode === "reset" && (
+            <div className="auth-form">
+              <label>Email<input value={resetEmail} onChange={(event) => setResetEmail(event.target.value)} type="email" placeholder="you@example.com" /></label>
+              <button className="primary-action" onClick={sendReset}><Send size={16} /> Send reset link</button>
+            </div>
+          )}
+
+          {authMessage && <p className="auth-message">{authMessage}</p>}
+        </section>
+      </main>
+    );
+  }
+
+  const renderRoomPick = (game: Fixture | (typeof premiumGames)[number], locked = false) => {
+    const title = "home" in game ? `${game.home} vs ${game.away}` : game.match;
+    const detail = "pick" in game ? game.pick : "";
+    return (
+      <div className="room-pick" key={title}>
+        <strong>{game.confidence}%</strong>
+        <span>{title}</span>
+        <small className={locked ? "blurred-tip" : ""}>{"odds" in game ? `${game.pick} at ${game.odds}` : detail}</small>
+      </div>
+    );
+  };
+
   return (
     <main className="dashboard-main">
       <section className="dashboard-hero">
@@ -822,87 +925,83 @@ function UserDashboard({
           <ArrowLeft size={16} /> Back to website
         </button>
         <p className="eyebrow">User dashboard</p>
-        <h2>{isAuthed ? "Your BamSignal room" : "Log in to enter BamSignal"}</h2>
-        <p>
-          This area is for members only. Free users see two public games, while verified VIP users unlock premium high-odd picks and the private Telegram room.
-        </p>
-        {!isAuthed ? (
-          <div className="auth-actions auth-hero">
-            <button className="primary-action" onClick={() => setIsAuthed(true)}>
-              <UserPlus size={16} /> Login
-            </button>
-            <button className="secondary-action" onClick={() => setIsAuthed(true)}>
-              <ShieldCheck size={16} /> Sign up
-            </button>
-          </div>
-        ) : (
-          <div className="member-status">
-            <span>{isPremium ? "VIP verified" : "Freemium verified"}</span>
-            <strong>{isPremium ? "Premium room open" : "2 free games unlocked"}</strong>
-          </div>
-        )}
+        <h2>Welcome, {userProfile.name}</h2>
+        <p>Track current predictions, free picks, VIP access, and your profile from one clean dashboard.</p>
+        <div className="member-status">
+          <span>{isPremium ? "VIP verified" : "Freemium verified"}</span>
+          <strong>{isPremium ? "Premium room open" : "2 free games unlocked"}</strong>
+        </div>
       </section>
 
-      {isAuthed && (
-        <section className="member-app-panel" aria-label="BamSignal member picks">
-          <div className="member-copy">
-            <p className="eyebrow">Payment status</p>
-            <h2>{isPremium ? "VIP is active" : "Upgrade to VIP"}</h2>
-            <p>
-              Pay with the Paystack link provided by BamSignal. Once payment is confirmed by the callback, your account is verified and moved into the VIP room.
-            </p>
-            <div className="auth-actions">
-              {!isPremium && (
-                <a className="primary-action" href={paystackPaymentLink} target="_blank" rel="noreferrer">
-                  <CreditCard size={16} /> Pay with Paystack
-                </a>
-              )}
-              <button className="secondary-action" onClick={() => setIsPremium(true)}>
-                <ShieldCheck size={16} /> Confirm payment
-              </button>
-            </div>
-            {!isPremium && (
-              <p className="payment-note">
-                VIP games stay hidden until payment is confirmed and your account is verified.
-              </p>
-            )}
-          </div>
+      <div className="dashboard-tabs">
+        {[
+          ["home", "Home"],
+          ["free", "Free games"],
+          ["vip", "VIP"],
+          ["profile", "Profile"]
+        ].map(([tab, label]) => (
+          <button key={tab} className={dashboardTab === tab ? "active" : ""} onClick={() => setDashboardTab(tab as DashboardTab)}>
+            {label}
+          </button>
+        ))}
+      </div>
 
-          <div className="member-rooms">
-            <div className="room-grid">
-              <div className="room-card">
-                <span className="room-label">Freemium room</span>
-                <h3>Two public games</h3>
-                {freemiumGames.map((game) => (
-                  <div className="room-pick" key={game.id}>
-                    <strong>{game.confidence}%</strong>
-                    <span>{game.home} vs {game.away}</span>
-                    <small>{game.pick}</small>
-                  </div>
-                ))}
-              </div>
-              <div className={`room-card premium-room ${isPremium ? "open" : "locked"}`}>
-                <span className="room-label">Premium VIP room</span>
-                <h3>{isPremium ? "High-odd games unlocked" : "High-odd games locked"}</h3>
-                {premiumGames.map((game) => (
-                  <div className="room-pick" key={game.match}>
-                    <strong>{game.confidence}%</strong>
-                    <span>{game.match}</span>
-                    <small className={!isPremium ? "blurred-tip" : ""}>{game.pick} at {game.odds}</small>
-                  </div>
-                ))}
-                {isPremium ? (
-                  <a className="vip-join" href="https://t.me/+U5i6lKAUDtZkODIx" target="_blank" rel="noreferrer">
-                    <Send size={16} /> Join VIP Telegram room
-                  </a>
-                ) : (
-                  <span className="vip-join muted-join">
-                    <LockKeyhole size={16} /> VIP Telegram link appears after payment
-                  </span>
-                )}
-              </div>
-            </div>
+      {dashboardTab === "home" && (
+        <section className="member-app-panel">
+          <div className="member-copy">
+            <p className="eyebrow">Current predictions</p>
+            <h2>Today&apos;s strongest signals</h2>
+            <p>Start with the free picks, then unlock the VIP room when your Paystack payment is verified.</p>
           </div>
+          <div className="room-grid">
+            {fixtures.slice(0, 3).map((game, index) => renderRoomPick(game, index > 1))}
+          </div>
+        </section>
+      )}
+
+      {dashboardTab === "free" && (
+        <section className="room-card">
+          <span className="room-label">Free games</span>
+          <h3>Free member picks</h3>
+          {freemiumGames.map((game) => renderRoomPick(game))}
+        </section>
+      )}
+
+      {dashboardTab === "vip" && (
+        <section className={`room-card premium-room ${isPremium ? "open" : "locked"}`}>
+          <span className="room-label">VIP premium games</span>
+          <h3>{isPremium ? "Premium games unlocked" : "Payment required"}</h3>
+          {!isPremium && (
+            <>
+              <p className="payment-note">Pay through BamSignal&apos;s Paystack checkout. VIP games unlock only after payment confirmation.</p>
+              <div className="auth-actions">
+                <a className="primary-action" href={paystackPaymentLink} target="_blank" rel="noreferrer"><CreditCard size={16} /> Pay with Paystack</a>
+                <button className="secondary-action" onClick={() => setIsPremium(true)}><ShieldCheck size={16} /> Confirm payment</button>
+              </div>
+            </>
+          )}
+          {premiumGames.map((game) => renderRoomPick(game, !isPremium))}
+          {isPremium ? (
+            <a className="vip-join" href="https://t.me/+U5i6lKAUDtZkODIx" target="_blank" rel="noreferrer"><Send size={16} /> Join VIP Telegram room</a>
+          ) : (
+            <span className="vip-join muted-join"><LockKeyhole size={16} /> VIP Telegram link appears after payment</span>
+          )}
+        </section>
+      )}
+
+      {dashboardTab === "profile" && (
+        <section className="profile-panel">
+          <p className="eyebrow">Profile</p>
+          <h2>Your details</h2>
+          <div className="profile-grid">
+            <span><Users size={16} /> {userProfile.name}</span>
+            <span>{userProfile.email}</span>
+            <span>{userProfile.phone}</span>
+            <span>{isPremium ? "VIP member" : "Freemium member"}</span>
+          </div>
+          <button className="secondary-action" onClick={() => { setIsAuthed(false); setIsPremium(false); }}>
+            Log out
+          </button>
         </section>
       )}
     </main>

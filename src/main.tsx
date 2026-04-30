@@ -20,7 +20,6 @@ import {
   Menu,
   MessageCircle,
   Moon,
-  Phone,
   Music2,
   Send,
   ShieldCheck,
@@ -45,12 +44,16 @@ type Page =
   | { kind: "contact" }
   | { kind: "legal"; slug: string }
   | { kind: "admin" };
-type AuthMode = "login" | "signup" | "verify" | "otp" | "reset";
+type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type DashboardTab = "home" | "vip" | "profile";
 type UserProfile = {
   name: string;
   email: string;
   phone: string;
+};
+type DeviceBinding = UserProfile & {
+  pin: string;
+  deviceId: string;
 };
 type AdminContent = {
   newsTitle: string;
@@ -574,6 +577,15 @@ const loadAdminContent = (): AdminContent => {
     };
   } catch {
     return defaultAdminContent;
+  }
+};
+
+const loadDeviceBinding = (): DeviceBinding | null => {
+  try {
+    const saved = window.localStorage.getItem("bamsignal-device-binding");
+    return saved ? (JSON.parse(saved) as DeviceBinding) : null;
+  } catch {
+    return null;
   }
 };
 
@@ -1131,19 +1143,19 @@ function UserDashboard({
   isNative: boolean;
   navigate: (page: Page, path?: string) => void;
 }) {
-  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const initialDeviceBinding = useMemo(() => loadDeviceBinding(), []);
+  const [deviceBinding, setDeviceBinding] = useState<DeviceBinding | null>(initialDeviceBinding);
+  const [authMode, setAuthMode] = useState<AuthMode>(() => initialDeviceBinding ? "unlock" : "login");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("home");
-  const [loginForm, setLoginForm] = useState({ identifier: userProfile.phone || userProfile.email, password: "" });
-  const [signupForm, setSignupForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
+  const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
+  const [signupForm, setSignupForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "", pin: "" });
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(null);
+  const [pendingLoginProfile, setPendingLoginProfile] = useState<UserProfile | null>(null);
   const [verificationCode, setVerificationCode] = useState("");
   const [verificationInput, setVerificationInput] = useState("");
   const [verifiedEmails, setVerifiedEmails] = useState<string[]>([userProfile.email]);
-  const [verifiedPhones, setVerifiedPhones] = useState<string[]>([userProfile.phone.replace(/\D/g, "").replace(/^234/, "")]);
-  const [otpChannel, setOtpChannel] = useState<"whatsapp" | "sms">(adminContent.sendchampDefaultChannel);
-  const [pendingOtpIdentifier, setPendingOtpIdentifier] = useState("");
-  const [otpCode, setOtpCode] = useState("");
-  const [otpInput, setOtpInput] = useState("");
+  const [pinInput, setPinInput] = useState("");
+  const [setupPin, setSetupPin] = useState("");
   const [subscriptionUntil, setSubscriptionUntil] = useState<Date | null>(null);
   const [resetEmail, setResetEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
@@ -1170,93 +1182,121 @@ function UserDashboard({
     const digits = normalizePhone(value);
     return digits.length >= 10 && !value.includes("@");
   };
-  const beginTrustedSession = (identifier: string) => {
-    const nextProfile = isPhoneIdentifier(identifier)
+  const resolveLoginProfile = (identifier: string): UserProfile => {
+    if (deviceBinding && (identifier.toLowerCase() === deviceBinding.email || normalizePhone(identifier) === normalizePhone(deviceBinding.phone))) {
+      return { name: deviceBinding.name, email: deviceBinding.email, phone: deviceBinding.phone };
+    }
+    return isPhoneIdentifier(identifier)
       ? { ...userProfile, phone: normalizePhone(identifier) }
       : { ...userProfile, email: identifier.trim().toLowerCase() };
+  };
+  const beginTrustedSession = (profile: UserProfile) => {
+    const nextProfile = { ...profile, phone: normalizePhone(profile.phone) || profile.phone };
     setUserProfile(nextProfile);
     setIsAuthed(true);
-    setAuthMessage("Secure login enabled. Next time, use your phone Face ID, PIN, or pattern.");
+    setAuthMessage("Secure login enabled. Next time, use your 6-digit PIN or your phone Face ID, PIN, or pattern.");
   };
-  const showPhoneVerification = (phoneValue = userProfile.phone) => {
-    const phone = phoneValue || signupForm.phone || loginForm.identifier;
-    setPendingOtpIdentifier(phone);
-    setOtpCode("");
-    setOtpInput("");
-    setAuthMode("otp");
-    setAuthMessage("Email confirmed. Now verify your phone once with WhatsApp or SMS, then future logins can use phone/email plus password or Face ID, PIN, or pattern.");
-  };
-  const sendLoginOtp = (channel = otpChannel, target = pendingOtpIdentifier || userProfile.phone) => {
-    const identifier = target.trim();
-    if (!isPhoneIdentifier(identifier)) {
-      setAuthMessage("Add a valid phone number so BamSignal can send your Sendchamp OTP.");
+  const bindDevice = (profile: UserProfile, pin: string) => {
+    if (!/^\d{6}$/.test(pin)) {
+      setAuthMessage("Create a 6-digit BamSignal PIN.");
       return;
     }
+    const binding: DeviceBinding = {
+      ...profile,
+      phone: normalizePhone(profile.phone) || profile.phone,
+      pin,
+      deviceId: `bamsignal-${Date.now()}`
+    };
+    window.localStorage.setItem("bamsignal-device-binding", JSON.stringify(binding));
+    setDeviceBinding(binding);
+    beginTrustedSession(binding);
+  };
+  const sendEmailOtp = (profile: UserProfile, nextMode: AuthMode) => {
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    setOtpChannel(channel);
-    setPendingOtpIdentifier(identifier);
-    setOtpCode(code);
-    setOtpInput("");
-    setAuthMode("otp");
-    setAuthMessage(`Sendchamp ${channel === "whatsapp" ? "WhatsApp" : "SMS"} OTP sent to ${identifier}. Test code: ${code}`);
+    setVerificationCode(code);
+    setVerificationInput("");
+    setAuthMode(nextMode);
+    setAuthMessage(`6-digit login OTP sent to ${profile.email}. Test code: ${code}`);
   };
   const signIn = () => {
-    const identifier = (loginForm.identifier || userProfile.email).trim();
-    if (isPhoneIdentifier(identifier)) {
-      const phone = normalizePhone(identifier);
-      if (verifiedPhones.includes(phone)) {
-        beginTrustedSession(identifier);
-        return;
-      }
-      setAuthMessage("Use your verified email first so BamSignal can connect this phone number securely.");
+    const identifier = loginForm.identifier.trim();
+    if (!identifier || !loginForm.password) {
+      setAuthMessage("Enter your phone number or email and password.");
       return;
     }
-    const email = identifier.toLowerCase();
-    if (!verifiedEmails.includes(email)) {
-      setAuthMessage("Verify your email before logging in. Use Create account to receive a code.");
-      return;
-    }
-    if (!verifiedPhones.includes(normalizePhone(userProfile.phone))) {
-      showPhoneVerification(userProfile.phone);
-      return;
-    }
-    beginTrustedSession(email);
+    const profile = resolveLoginProfile(identifier);
+    setPendingLoginProfile(profile);
+    sendEmailOtp(profile, "loginOtp");
   };
-  const verifyLoginOtp = () => {
-    if (!pendingOtpIdentifier) {
+  const verifyLoginEmailOtp = () => {
+    if (!pendingLoginProfile) {
       setAuthMode("login");
-      setAuthMessage("Enter your phone number to request a fresh OTP.");
+      setAuthMessage("Enter your login details first.");
       return;
     }
-    if (!otpCode) {
-      setAuthMessage("Choose WhatsApp or SMS first so Sendchamp can send your OTP.");
+    if (verificationInput !== verificationCode) {
+      setAuthMessage("That email OTP is not correct. Check your email and try again.");
       return;
     }
-    if (otpInput !== otpCode) {
-      setAuthMessage("That OTP is not correct. Try again or resend through WhatsApp/SMS.");
+    setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingLoginProfile.email])));
+    if (deviceBinding && (pendingLoginProfile.email === deviceBinding.email || normalizePhone(pendingLoginProfile.phone) === normalizePhone(deviceBinding.phone))) {
+      beginTrustedSession(deviceBinding);
       return;
     }
-    const phone = normalizePhone(pendingOtpIdentifier);
-    setVerifiedPhones((phones) => Array.from(new Set([...phones, phone])));
-    beginTrustedSession(pendingOtpIdentifier);
+    setSetupPin("");
+    setAuthMode("pinSetup");
+    setAuthMessage("Email OTP confirmed. Create your 6-digit PIN to bind this phone.");
   };
   const socialSignIn = (provider: "Google" | "Apple") => {
-    if (!verifiedPhones.includes(normalizePhone(userProfile.phone))) {
-      showPhoneVerification(userProfile.phone);
-      setAuthMessage(`${provider} connected. Verify your phone once to finish member access.`);
+    const profile = deviceBinding ?? userProfile;
+    if (!deviceBinding) {
+      setPendingLoginProfile(profile);
+      setSetupPin("");
+      setAuthMode("pinSetup");
+      setAuthMessage(`${provider} connected. Create your 6-digit PIN to bind this phone.`);
       return;
     }
-    beginTrustedSession(userProfile.email);
+    beginTrustedSession(profile);
     setAuthMessage(`${provider} sign-in connected. In production, this uses the native ${provider} provider before opening your room.`);
+  };
+  const unlockWithPin = () => {
+    if (!deviceBinding) {
+      setAuthMode("login");
+      return;
+    }
+    if (pinInput !== deviceBinding.pin) {
+      setAuthMessage("That PIN is not correct.");
+      return;
+    }
+    beginTrustedSession(deviceBinding);
+  };
+  const unlockWithNativeAuth = () => {
+    if (!deviceBinding) {
+      setAuthMode("login");
+      return;
+    }
+    beginTrustedSession(deviceBinding);
+    setAuthMessage("Phone authentication accepted. In production this calls the native biometric/device lock prompt.");
+  };
+  const useAnotherAccount = () => {
+    setPinInput("");
+    setLoginForm({ identifier: "", password: "" });
+    setPendingLoginProfile(null);
+    setAuthMode("login");
+    setAuthMessage("Enter phone/email and password to authorize this device with email OTP.");
   };
 
   const signUp = () => {
-    if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password) {
+    if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password || !signupForm.pin) {
       setAuthMessage("Please fill in every signup field.");
       return;
     }
     if (signupForm.password !== signupForm.confirmPassword) {
       setAuthMessage("The two passwords do not match.");
+      return;
+    }
+    if (!/^\d{6}$/.test(signupForm.pin)) {
+      setAuthMessage("Your BamSignal PIN must be exactly 6 digits.");
       return;
     }
     const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -1280,8 +1320,11 @@ function UserDashboard({
     }
     setUserProfile(pendingSignup);
     setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
-    setLoginForm({ identifier: pendingSignup.phone || pendingSignup.email, password: "" });
-    showPhoneVerification(pendingSignup.phone);
+    bindDevice(pendingSignup, signupForm.pin);
+  };
+  const finishPinSetup = () => {
+    const profile = pendingLoginProfile ?? userProfile;
+    bindDevice(profile, setupPin);
   };
 
   const confirmVipPayment = () => {
@@ -1335,9 +1378,26 @@ function UserDashboard({
             </button>
           )}
           <div className="auth-copy">
-            {authMode === "login" && <span className="auth-secure-badge"><ShieldCheck size={14} /> Secure member access</span>}
-            <h2>{authMode === "signup" ? "Create account" : authMode === "verify" ? "Verify email" : authMode === "otp" ? "Verify login" : authMode === "reset" ? "Reset access" : "Welcome to BamSignal"}</h2>
+            {(authMode === "login" || authMode === "unlock") && <span className="auth-secure-badge"><ShieldCheck size={14} /> Secure member access</span>}
+            <h2>{authMode === "signup" ? "Create account" : authMode === "verify" ? "Verify email" : authMode === "loginOtp" ? "Authorize login" : authMode === "pinSetup" ? "Create your PIN" : authMode === "unlock" ? "Welcome back" : authMode === "reset" ? "Reset access" : "Welcome to BamSignal"}</h2>
           </div>
+
+          {authMode === "unlock" && deviceBinding && (
+            <div className="auth-form">
+              <div className="bound-account-card">
+                <span>Bound to this phone</span>
+                <strong>{deviceBinding.name}</strong>
+                <small>{deviceBinding.email || deviceBinding.phone}</small>
+              </div>
+              <label>6-digit PIN<input value={pinInput} onChange={(event) => setPinInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" type="password" placeholder="Enter your PIN" /></label>
+              <button className="primary-action neon-action" onClick={unlockWithPin}><ShieldCheck size={16} /> Unlock with PIN</button>
+              <button className="secondary-action" onClick={unlockWithNativeAuth}><ShieldCheck size={16} /> Use Face ID / Phone PIN / Pattern</button>
+              <div className="auth-switch-row">
+                <button className="text-action create-link" onClick={useAnotherAccount}>Use another account</button>
+                <button className="text-action" onClick={() => setAuthMode("reset")}>Forgot password?</button>
+              </div>
+            </div>
+          )}
 
           {authMode === "login" && (
             <div className="auth-form">
@@ -1346,10 +1406,10 @@ function UserDashboard({
                 <span><CreditCard size={14} /> Paystack-ready</span>
                 <span><Crown size={14} /> VIP protected</span>
               </div>
-              <label>Phone number or email<input value={loginForm.identifier} onChange={(event) => setLoginForm({ ...loginForm, identifier: event.target.value })} type="text" inputMode="email" placeholder="0801 000 0000 or you@example.com" /></label>
+              <label>Phone number or email<input value={loginForm.identifier} onChange={(event) => setLoginForm({ ...loginForm, identifier: event.target.value })} type="text" inputMode="email" placeholder="Phone number or email" /></label>
               <label>Password<input value={loginForm.password} onChange={(event) => setLoginForm({ ...loginForm, password: event.target.value })} type="password" placeholder="Your password" /></label>
               <button className="primary-action neon-action" onClick={signIn}><UserPlus size={16} /> Login securely</button>
-              <button className="secondary-action" onClick={signIn}><ShieldCheck size={16} /> Use Face ID / PIN / Pattern</button>
+              {deviceBinding && <button className="secondary-action" onClick={() => setAuthMode("unlock")}><ShieldCheck size={16} /> Use bound-device login</button>}
               <div className="auth-social-grid">
                 <button onClick={() => socialSignIn("Google")}><GoogleMark /> Continue with Google</button>
                 <button onClick={() => socialSignIn("Apple")}><AppleMark /> Continue with Apple</button>
@@ -1368,6 +1428,7 @@ function UserDashboard({
               <label>Phone number<input value={signupForm.phone} onChange={(event) => setSignupForm({ ...signupForm, phone: event.target.value })} type="tel" placeholder="Phone number" /></label>
               <label>Password<input value={signupForm.password} onChange={(event) => setSignupForm({ ...signupForm, password: event.target.value })} type="password" placeholder="Create password" /></label>
               <label>Confirm password<input value={signupForm.confirmPassword} onChange={(event) => setSignupForm({ ...signupForm, confirmPassword: event.target.value })} type="password" placeholder="Repeat password" /></label>
+              <label>6-digit app PIN<input value={signupForm.pin} onChange={(event) => setSignupForm({ ...signupForm, pin: event.target.value.replace(/\D/g, "").slice(0, 6) })} inputMode="numeric" type="password" placeholder="Create 6-digit PIN" /></label>
               <button className="primary-action neon-action" onClick={signUp}><ShieldCheck size={16} /> Create secure account</button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={() => setAuthMode("login")}>Already have an account? Login</button>
@@ -1387,24 +1448,28 @@ function UserDashboard({
             </div>
           )}
 
-          {authMode === "otp" && (
+          {authMode === "loginOtp" && (
             <div className="auth-form">
-              <div className="auth-trust-row">
-                <span><MessageCircle size={14} /> Sendchamp {otpChannel}</span>
-                <span><ShieldCheck size={14} /> Number check</span>
-              </div>
-              <label>Phone number<input value={pendingOtpIdentifier} readOnly /></label>
-              <div className="otp-channel-row" aria-label="Choose OTP channel">
-                <button className={otpChannel === "whatsapp" ? "active" : ""} onClick={() => sendLoginOtp("whatsapp")} type="button"><MessageCircle size={14} /> Send WhatsApp code</button>
-                <button className={otpChannel === "sms" ? "active" : ""} onClick={() => sendLoginOtp("sms")} type="button"><Phone size={14} /> Send SMS code</button>
-              </div>
-              <label>OTP code<input value={otpInput} onChange={(event) => setOtpInput(event.target.value)} inputMode="numeric" placeholder="Enter WhatsApp/SMS code" /></label>
-              <button className="primary-action neon-action" onClick={verifyLoginOtp}><ShieldCheck size={16} /> Verify and enter</button>
+              <label>Email<input value={pendingLoginProfile?.email ?? ""} readOnly /></label>
+              <label>6-digit email OTP<input value={verificationInput} onChange={(event) => setVerificationInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="Enter email OTP" /></label>
+              <button className="primary-action neon-action" onClick={verifyLoginEmailOtp}><ShieldCheck size={16} /> Authorize this device</button>
               <div className="auth-switch-row">
-                <button className="text-action" onClick={() => sendLoginOtp("whatsapp")}>Resend WhatsApp</button>
-                <button className="text-action" onClick={() => sendLoginOtp("sms")}>Resend SMS</button>
+                <button className="text-action" onClick={() => pendingLoginProfile && sendEmailOtp(pendingLoginProfile, "loginOtp")}>Resend email OTP</button>
                 <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>
               </div>
+            </div>
+          )}
+
+          {authMode === "pinSetup" && (
+            <div className="auth-form">
+              <div className="bound-account-card">
+                <span>Account verified</span>
+                <strong>{(pendingLoginProfile ?? userProfile).name}</strong>
+                <small>{(pendingLoginProfile ?? userProfile).email || (pendingLoginProfile ?? userProfile).phone}</small>
+              </div>
+              <label>6-digit BamSignal PIN<input value={setupPin} onChange={(event) => setSetupPin(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" type="password" placeholder="Create 6-digit PIN" /></label>
+              <button className="primary-action neon-action" onClick={finishPinSetup}><ShieldCheck size={16} /> Bind phone and enter</button>
+              <button className="secondary-action" onClick={() => setAuthMode("login")}><ArrowLeft size={16} /> Use another account</button>
             </div>
           )}
 

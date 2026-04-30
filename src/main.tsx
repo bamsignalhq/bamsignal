@@ -38,7 +38,7 @@ import "./styles.css";
 type Theme = "dark" | "light";
 type Page = { kind: "home" } | { kind: "app" } | { kind: "market"; slug: string } | { kind: "league"; slug: string } | { kind: "admin" };
 type AuthMode = "login" | "signup" | "reset";
-type DashboardTab = "home" | "free" | "vip" | "profile";
+type DashboardTab = "home" | "vip" | "profile";
 type UserProfile = {
   name: string;
   email: string;
@@ -158,6 +158,69 @@ const fixtures: Fixture[] = [
     status: "Tomorrow"
   }
 ];
+
+const dailySureSignals: Fixture[] = [
+  fixtures[0],
+  {
+    id: 101,
+    league: "Premier League",
+    country: "England",
+    time: "17:30",
+    home: "Man City",
+    away: "Tottenham",
+    pick: "Home win + over 1.5 goals",
+    confidence: 84,
+    result: "Home win",
+    btts: 57,
+    over25: 68,
+    corners: 82,
+    score: "2-1",
+    status: "Today"
+  },
+  {
+    id: 102,
+    league: "La Liga",
+    country: "Spain",
+    time: "20:00",
+    home: "Barcelona",
+    away: "Villarreal",
+    pick: "Barcelona team over 1.5",
+    confidence: 82,
+    result: "Home win",
+    btts: 61,
+    over25: 64,
+    corners: 76,
+    score: "3-1",
+    status: "Today"
+  },
+  {
+    id: 103,
+    league: "Bundesliga",
+    country: "Germany",
+    time: "14:30",
+    home: "Bayer Leverkusen",
+    away: "Mainz",
+    pick: "Home win and BTTS",
+    confidence: 80,
+    result: "Home win",
+    btts: 66,
+    over25: 63,
+    corners: 79,
+    score: "2-1",
+    status: "Today"
+  }
+];
+
+const getDailyKey = () => new Date().toLocaleDateString("en-CA");
+
+const getDailySureSignal = (dailyKey: string) => {
+  const dayNumber = dailyKey.split("-").reduce((total, part) => total + Number(part), 0);
+  const dailyPool = dailySureSignals
+    .filter((fixture) => fixture.status === "Today" && fixture.confidence >= 80)
+    .sort((left, right) => right.confidence - left.confidence);
+  const candidates = dailyPool.length ? dailyPool : fixtures;
+  return candidates[dayNumber % candidates.length];
+};
 
 const evidenceBoard: Evidence[] = [
   {
@@ -434,7 +497,10 @@ function App() {
   const [isPremium, setIsPremium] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile>({ name: "BamSignal User", email: "user@bamsignal.com", phone: "+234 801 000 0000" });
   const [page, setPage] = useState<Page>(() => getInitialPage());
+  const [dailyKey, setDailyKey] = useState(() => getDailyKey());
+  const [showStartupSplash, setShowStartupSplash] = useState(() => isNative);
   const logoSrc = theme === "dark" ? "/brand/compact-logo-dark.jpg" : "/brand/compact-logo-light.jpg";
+  const appIconSrc = theme === "dark" ? "/brand/app-icon-dark.jpg" : "/brand/app-icon-light.jpg";
 
   const navigate = (nextPage: Page, path = "/") => {
     window.history.pushState(null, "", path);
@@ -444,9 +510,18 @@ function App() {
   };
 
   useEffect(() => {
-    const timer = window.setInterval(() => setTheme(getTimedTheme()), 60 * 1000);
+    const timer = window.setInterval(() => {
+      setTheme(getTimedTheme());
+      setDailyKey(getDailyKey());
+    }, 60 * 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!isNative) return undefined;
+    const splashTimer = window.setTimeout(() => setShowStartupSplash(false), 3600);
+    return () => window.clearTimeout(splashTimer);
+  }, [isNative]);
 
   useEffect(() => {
     const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
@@ -470,12 +545,18 @@ function App() {
     return fixtures.filter((fixture) => fixture.status === activeStatus);
   }, [activeStatus]);
 
-  const topPick = fixtures.reduce((best, fixture) =>
-    fixture.confidence > best.confidence ? fixture : best
-  );
+  const topPick = useMemo(() => getDailySureSignal(dailyKey), [dailyKey]);
 
   const goHome = () => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/");
   const showMenuButton = !(isNative && page.kind === "app" && !isAuthed);
+
+  if (showStartupSplash) {
+    return (
+      <div className={`app ${theme} native-app`}>
+        <NativeStartupSplash logoSrc={logoSrc} appIconSrc={appIconSrc} />
+      </div>
+    );
+  }
 
   return (
     <div className={`app ${theme} ${isNative ? "native-app" : "web-app"}`}>
@@ -582,6 +663,22 @@ function App() {
         </>
       )}
     </div>
+  );
+}
+
+function NativeStartupSplash({ logoSrc, appIconSrc }: { logoSrc: string; appIconSrc: string }) {
+  return (
+    <main className="startup-splash" aria-label="BamSignal loading screen">
+      <div className="startup-mark">
+        <img src={appIconSrc} alt="" />
+      </div>
+      <img className="startup-logo" src={logoSrc} alt="BamSignal" />
+      <div className="startup-copy">
+        <strong>Daily football signals</strong>
+        <span>Loading your BamSignal room</span>
+      </div>
+      <div className="startup-loader" aria-hidden="true"><i /></div>
+    </main>
   );
 }
 
@@ -956,25 +1053,9 @@ function UserDashboard({
 
   return (
     <main className="dashboard-main">
-      <section className="dashboard-hero">
-        {!isNative && (
-          <button className="back-link" onClick={() => navigate({ kind: "home" })}>
-            <ArrowLeft size={16} /> Back to website
-          </button>
-        )}
-        <p className="eyebrow">User dashboard</p>
-        <h2>Welcome, {userProfile.name}</h2>
-        <p>Track current predictions, free picks, VIP access, and your profile from one clean dashboard.</p>
-        <div className="member-status">
-          <span>{isPremium ? "VIP verified" : "Freemium verified"}</span>
-          <strong>{isPremium ? "Premium room open" : "2 free games unlocked"}</strong>
-        </div>
-      </section>
-
       <div className="dashboard-tabs">
         {[
           { tab: "home", label: "Home", icon: <Home size={16} /> },
-          { tab: "free", label: "Games", icon: <Goal size={16} /> },
           { tab: "vip", label: "VIP", icon: <Crown size={16} /> },
           { tab: "profile", label: "Profile", icon: <Users size={16} /> }
         ].map(({ tab, label, icon }) => (
@@ -999,14 +1080,10 @@ function UserDashboard({
           <div className="room-grid">
             {fixtures.slice(0, 3).map((game, index) => renderRoomPick(game, index > 1))}
           </div>
-        </section>
-      )}
-
-      {dashboardTab === "free" && (
-        <section className="room-card">
-          <span className="room-label">Free games</span>
-          <h3>Free member picks</h3>
-          {freemiumGames.map((game) => renderRoomPick(game))}
+          <div className="free-picks-strip">
+            <span className="room-label">Free member games</span>
+            {freemiumGames.map((game) => renderRoomPick(game))}
+          </div>
         </section>
       )}
 
@@ -1034,14 +1111,37 @@ function UserDashboard({
 
       {dashboardTab === "profile" && (
         <section className="profile-panel">
-          <p className="eyebrow">Profile</p>
-          <h2>Your details</h2>
-          <div className="profile-grid">
-            <span><Users size={16} /> {userProfile.name}</span>
-            <span>{userProfile.email}</span>
-            <span>{userProfile.phone}</span>
-            <span>{isPremium ? "VIP member" : "Freemium member"}</span>
+          <div className="profile-hero">
+            <div className="profile-avatar">{userProfile.name.split(" ").map((part) => part[0]).slice(0, 2).join("") || "BS"}</div>
+            <div>
+              <p className="eyebrow">Profile</p>
+              <h2>{userProfile.name}</h2>
+              <span>{isPremium ? "VIP member" : "Freemium member"}</span>
+            </div>
           </div>
+
+          <div className="profile-status-card">
+            <ShieldCheck size={18} />
+            <div>
+              <strong>{isPremium ? "Premium room open" : "Free account active"}</strong>
+              <span>{isPremium ? "VIP picks, Paystack status, and Telegram room are available." : "Two free games are open. Upgrade to unlock high-odd VIP picks."}</span>
+            </div>
+          </div>
+
+          <div className="profile-grid">
+            <span><Users size={16} /><small>Name</small><strong>{userProfile.name}</strong></span>
+            <span><Send size={16} /><small>Email</small><strong>{userProfile.email}</strong></span>
+            <span><Smartphone size={16} /><small>Phone</small><strong>{userProfile.phone}</strong></span>
+            <span><Crown size={16} /><small>Plan</small><strong>{isPremium ? "VIP Premium" : "Freemium"}</strong></span>
+          </div>
+
+          <div className="profile-actions-grid">
+            <button className="secondary-action"><Bell size={16} /> Notification settings</button>
+            <button className="secondary-action" onClick={() => setDashboardTab("vip")}><CreditCard size={16} /> Manage VIP</button>
+            <a className="secondary-action" href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer"><Send size={16} /> Telegram support</a>
+            <button className="secondary-action"><ShieldCheck size={16} /> Security login</button>
+          </div>
+
           <button className="secondary-action" onClick={() => { setIsAuthed(false); setIsPremium(false); }}>
             Log out
           </button>

@@ -41,6 +41,9 @@ type Theme = "dark" | "light";
 type Page =
   | { kind: "home" }
   | { kind: "app" }
+  | { kind: "tips" }
+  | { kind: "markets" }
+  | { kind: "leagues" }
   | { kind: "market"; slug: string }
   | { kind: "league"; slug: string }
   | { kind: "contact" }
@@ -766,12 +769,87 @@ const leagueDetails = [
   }
 ];
 
+const globalLeagueRegions = [
+  {
+    region: "England",
+    competitions: "Premier League, Championship, FA Cup, EFL Cup",
+    clubs: "Manchester United, Liverpool, Arsenal, Chelsea, Manchester City, Tottenham, Aston Villa, Newcastle, Everton, West Ham, Leeds, Leicester, Sunderland",
+    notes: "English football is useful for betting education because it has deep data, intense schedules, strong home crowds, cup rotation, and clubs with major European and domestic trophies."
+  },
+  {
+    region: "Spain",
+    competitions: "La Liga, Segunda Division, Copa del Rey, Supercopa",
+    clubs: "Real Madrid, Barcelona, Atletico Madrid, Sevilla, Valencia, Villarreal, Athletic Club, Real Sociedad, Real Betis, Celta Vigo",
+    notes: "Spanish matches often reward tactical patience. Beginners should watch possession control, away tempo, defensive blocks, and whether a club is managing minutes around Europe."
+  },
+  {
+    region: "Italy",
+    competitions: "Serie A, Serie B, Coppa Italia, Supercoppa",
+    clubs: "Juventus, Inter Milan, AC Milan, Napoli, Roma, Lazio, Atalanta, Fiorentina, Torino, Bologna, Parma, Sampdoria",
+    notes: "Italy is rich for tactical matchups, set pieces, wing-back systems, defensive organization, and BTTS or under/over reads that depend on game state."
+  },
+  {
+    region: "Germany",
+    competitions: "Bundesliga, 2. Bundesliga, DFB-Pokal, Supercup",
+    clubs: "Bayern Munich, Borussia Dortmund, Bayer Leverkusen, RB Leipzig, Eintracht Frankfurt, Stuttgart, Werder Bremen, Schalke, Hamburg, Borussia Monchengladbach",
+    notes: "German football is usually strong for goals, transitions, pressing, and corners. The main discipline is avoiding automatic over-picks when matchup tempo is slower than the league reputation."
+  },
+  {
+    region: "France",
+    competitions: "Ligue 1, Ligue 2, Coupe de France, Trophee des Champions",
+    clubs: "Paris Saint-Germain, Marseille, Lyon, Monaco, Lille, Lens, Rennes, Nice, Nantes, Saint-Etienne, Bordeaux",
+    notes: "French football can mix elite attacking talent with compact defensive teams. PSG fixtures need different treatment from mid-table tactical matches."
+  },
+  {
+    region: "Portugal and Netherlands",
+    competitions: "Primeira Liga, Eredivisie, domestic cups, European qualifiers",
+    clubs: "Benfica, Porto, Sporting CP, Braga, Ajax, PSV, Feyenoord, AZ Alkmaar, Twente, Utrecht",
+    notes: "These leagues are important for European value, youth-heavy squads, attacking styles, and club motivation around Champions League or Europa League qualification."
+  },
+  {
+    region: "Africa and Nigeria watchlist",
+    competitions: "NPFL, CAF Champions League, CAF Confederation Cup, national cups",
+    clubs: "Enyimba, Rivers United, Remo Stars, Rangers International, Shooting Stars, Kano Pillars, Al Ahly, Zamalek, Esperance, Wydad, Mamelodi Sundowns",
+    notes: "African football needs extra care because team news, travel, pitch conditions, and fixture confirmation can affect reliability. BamSignal should expand here carefully with verified data sources."
+  }
+];
+
+const bettingTipPrinciples = [
+  {
+    title: "Start from probability, not emotion",
+    text: "A good football tip is not a guess based on club popularity. It should explain why the percentage is strong, what can make it fail, and whether the odds are worth the risk. Nigerian punters should be especially careful with famous teams at very short prices because reputation does not always equal value."
+  },
+  {
+    title: "Separate low-risk picks from high-odd picks",
+    text: "Free picks should usually stay around safer lines such as over 1.5 goals, double chance, team over 0.5, or carefully selected fulltime results. VIP picks can carry higher odds, but they still need logic, staking discipline, and clear market reasoning."
+  },
+  {
+    title: "Use booking codes as convenience, not pressure",
+    text: "Booking codes help users play faster on SportyBet, Bet9ja, BetKing, 1xBet, Betway, and other bookies, but users should still read the match note. BamSignal should always make the analysis visible enough for trust and never act like a guaranteed outcome."
+  },
+  {
+    title: "Read the fixture calendar",
+    text: "A club playing after Champions League travel, a derby, or a long injury list can behave differently from its normal level. Friday nights, Saturday mornings, and Sunday evening fixtures often have different betting behavior in Nigeria, so admin scheduling matters."
+  },
+  {
+    title: "Track wins and losses openly",
+    text: "The Evidence Board matters because transparency keeps serious users. A strong product shows won, lost, pending, and voided results clearly, then uses that history to improve future signals."
+  },
+  {
+    title: "Respect responsible gambling",
+    text: "Betting should be for adults only. No platform can guarantee football outcomes. Good tips help users understand probability, but staking, discipline, and knowing when not to bet are part of the product's trust."
+  }
+];
+
 function getInitialPage(): Page {
   const [, section, slug] = window.location.pathname.split("/");
   if (section === "lex" && slug === "auth") return { kind: "admin" };
   if (section === "app") return { kind: "app" };
   if (section === "contact") return { kind: "contact" };
   if (section === "legal" && slug) return { kind: "legal", slug };
+  if (section === "betting-tips") return { kind: "tips" };
+  if (section === "markets" && !slug) return { kind: "markets" };
+  if (section === "leagues" && !slug) return { kind: "leagues" };
   if (section === "markets" && slug) return { kind: "market", slug };
   if (section === "leagues" && slug) return { kind: "league", slug };
   if (Capacitor.getPlatform() !== "web") return { kind: "app" };
@@ -975,13 +1053,13 @@ function App() {
               <a href="/#predictions" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#predictions"); }}>
                 <Goal size={18} /> Football Predictions
               </a>
-              <a href="/#tips" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#tips"); }}>
+              <a href="/betting-tips" onClick={(event) => { event.preventDefault(); navigate({ kind: "tips" }, "/betting-tips"); }}>
                 <Sparkles size={18} /> Betting Tips
               </a>
-              <a href="/#leagues" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#leagues"); }}>
+              <a href="/leagues" onClick={(event) => { event.preventDefault(); navigate({ kind: "leagues" }, "/leagues"); }}>
                 <Trophy size={18} /> Leagues
               </a>
-              <a href="/#markets" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#markets"); }}>
+              <a href="/markets" onClick={(event) => { event.preventDefault(); navigate({ kind: "markets" }, "/markets"); }}>
                 <BarChart3 size={18} /> Markets
               </a>
               <a href="/#apps" onClick={(event) => { event.preventDefault(); navigate({ kind: "home" }, "/#apps"); }}>
@@ -1067,6 +1145,12 @@ function App() {
           <ContactPage navigate={navigate} adminContent={adminContent} />
         ) : page.kind === "legal" ? (
           <LegalPage page={page} navigate={navigate} />
+        ) : page.kind === "tips" ? (
+          <BettingTipsPage navigate={navigate} />
+        ) : page.kind === "markets" ? (
+          <MarketsPage navigate={navigate} />
+        ) : page.kind === "leagues" ? (
+          <LeaguesPage navigate={navigate} />
         ) : (
           <DetailPage page={page} navigate={navigate} />
         )}
@@ -1127,8 +1211,7 @@ function HomePage({
       await navigator.clipboard?.writeText(code);
       return;
     }
-    navigate({ kind: "home" }, "/#apps");
-    window.setTimeout(() => document.getElementById("apps")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+    navigate({ kind: "app" }, "/app?auth=login");
   };
 
   return (
@@ -1145,15 +1228,9 @@ function HomePage({
                 <button className="secondary-action booking-shortcut" onClick={copyTopBookingCode}><ClipboardCheck size={18} /> {adminContent.bookingButtonText}</button>
                 <a className="primary-action app-cta-pulse" href="#apps"><Smartphone size={18} /> Get the App</a>
               </div>
-              <div className="web-member-card">
-                <div>
-                  <strong>Member room is live on web and app.</strong>
-                  <span>Login for free signals, signup for first-time access, then install the PWA if you want BamSignal on your home screen.</span>
-                </div>
-                <div>
-                  <button className="secondary-action" onClick={() => navigate({ kind: "app" }, "/app?auth=login")}><LockKeyhole size={16} /> Login</button>
-                  <button className="primary-action neon-action" onClick={() => navigate({ kind: "app" }, "/app?auth=signup")}><UserPlus size={16} /> Sign up</button>
-                </div>
+              <div className="web-member-card compact">
+                <button className="secondary-action" onClick={() => navigate({ kind: "app" }, "/app?auth=login")}><LockKeyhole size={16} /> Login</button>
+                <button className="primary-action neon-action" onClick={() => navigate({ kind: "app" }, "/app?auth=signup")}><UserPlus size={16} /> Sign up</button>
               </div>
               <div className="trust-mini-row">
                 <span><LockKeyhole size={14} /> Secured by Paystack</span>
@@ -1252,7 +1329,7 @@ function HomePage({
             <div>
               <p className="eyebrow">Mobile apps</p>
               <h2>Use BamSignal anywhere.</h2>
-              <p>Install the iOS or Android app for push alerts, or use the web member room as a PWA when you want quick browser access.</p>
+              <p>Install the iOS or Android app for push alerts, fast VIP access, and match-day notifications.</p>
             </div>
             <div className="app-buttons">
               <button aria-label="Download on the App Store">
@@ -1711,8 +1788,7 @@ function UserDashboard({
           )}
           <div className="auth-copy">
             {(authMode === "login" || authMode === "unlock") && <span className="auth-secure-badge"><ShieldCheck size={14} /> Secure member access</span>}
-            <h2>{authMode === "signup" ? "Create account" : authMode === "verify" ? "Verify email" : authMode === "loginOtp" ? "Authorize login" : authMode === "pinSetup" ? "Create your PIN" : authMode === "unlock" ? "Welcome back" : authMode === "reset" ? "Reset access" : "Welcome to BamSignal"}</h2>
-            {isWebAppRoute && <p>Use the web member room for quick access, or install BamSignal as an app when you want faster daily check-ins.</p>}
+            <h2>{authMode === "signup" ? "Create account" : authMode === "verify" ? "Verify email" : authMode === "loginOtp" ? "Authorize login" : authMode === "pinSetup" ? "Create your PIN" : authMode === "unlock" ? "Welcome back" : authMode === "reset" ? "Reset access" : "Your sure room is ready"}</h2>
           </div>
 
           {showDynamicBanner && <AuthDynamicBanner banner={activeAuthBanner} position="top" onAction={handleBannerAction} />}
@@ -2274,6 +2350,145 @@ function LegalPage({ page, navigate }: { page: { kind: "legal"; slug: string }; 
         ))}
       </section>
       <DisclaimerStrip />
+    </main>
+  );
+}
+
+function BettingTipsPage({ navigate }: { navigate: (page: Page, path?: string) => void }) {
+  return (
+    <main>
+      <section className="detail-hero seo-landing-hero">
+        <button className="back-link" onClick={() => navigate({ kind: "home" }, "/")}>
+          <ArrowLeft size={16} /> Back to BamSignal
+        </button>
+        <p className="eyebrow">Betting tips guide</p>
+        <h2>Football betting tips Nigerians can actually understand.</h2>
+        <p>
+          BamSignal betting tips explain the market, the risk, the match context, and the reason behind each signal.
+          The goal is simple: help users read football predictions with discipline before they copy any booking code.
+        </p>
+      </section>
+
+      <section className="seo-card-grid">
+        {bettingTipPrinciples.map((item, index) => (
+          <article className="detail-card" key={item.title}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="seo-panel">
+        <p className="eyebrow">How BamSignal builds tips</p>
+        <h2>Form, fixtures, odds, team news, motivation, and market strength all matter.</h2>
+        <p>
+          A strong betting tip starts with the fixture story. Is the favorite at home or travelling? Is the team rotating
+          after Europe? Does the underdog defend deep? Are both sides scoring regularly? Are corners driven by pressure,
+          or are goals more reliable? BamSignal turns those questions into clear signal percentages so beginners can
+          learn while experienced users move faster.
+        </p>
+        <p>
+          For growth, this page should become a long-term SEO pillar for searches around football betting tips,
+          sure games, prediction apps, booking codes, odds boost, free football tips, VIP tips, Paystack betting
+          subscription, SportyBet code, Bet9ja code, and Nigerian football prediction communities.
+        </p>
+      </section>
+    </main>
+  );
+}
+
+function MarketsPage({ navigate }: { navigate: (page: Page, path?: string) => void }) {
+  return (
+    <main>
+      <section className="detail-hero seo-landing-hero">
+        <button className="back-link" onClick={() => navigate({ kind: "home" }, "/")}>
+          <ArrowLeft size={16} /> Back to BamSignal
+        </button>
+        <p className="eyebrow">Football markets</p>
+        <h2>Every major football prediction market explained in plain language.</h2>
+        <p>
+          Markets are the language of football betting. BamSignal explains each market so a new user can understand
+          what must happen, why the signal may be strong, and when the safer option is better than the attractive odds.
+        </p>
+      </section>
+
+      <section className="seo-card-grid">
+        {marketDetails.map((market) => (
+          <article className="detail-card link-card" key={market.slug}>
+            <span>{market.name}</span>
+            <h3>{market.name} predictions</h3>
+            <p>{market.intro}</p>
+            <button className="text-action create-link" onClick={() => navigate({ kind: "market", slug: market.slug }, `/markets/${market.slug}`)}>
+              Read full guide <ArrowRight size={14} />
+            </button>
+          </article>
+        ))}
+      </section>
+
+      <section className="seo-panel">
+        <p className="eyebrow">Market selection</p>
+        <h2>The best pick is not always the biggest odd.</h2>
+        <p>
+          Fulltime result may be obvious in some matches, but double chance can be better when draw risk is high.
+          Over 1.5 goals can be smarter than over 2.5 when two teams create enough chances but the match is not fully open.
+          Corners can be stronger than goals when one side dominates territory but struggles to finish. BamSignal should
+          always let the market fit the match instead of forcing every fixture into the same betting style.
+        </p>
+      </section>
+    </main>
+  );
+}
+
+function LeaguesPage({ navigate }: { navigate: (page: Page, path?: string) => void }) {
+  return (
+    <main>
+      <section className="detail-hero seo-landing-hero">
+        <button className="back-link" onClick={() => navigate({ kind: "home" }, "/")}>
+          <ArrowLeft size={16} /> Back to BamSignal
+        </button>
+        <p className="eyebrow">League coverage</p>
+        <h2>Football leagues, clubs, trophies, and prediction context.</h2>
+        <p>
+          League knowledge matters because football is not played the same way everywhere. England, Spain, Italy,
+          Germany, France, Portugal, the Netherlands, Nigeria, and CAF competitions all carry different rhythms,
+          club cultures, travel demands, trophy pressure, and betting patterns.
+        </p>
+      </section>
+
+      <section className="seo-card-grid">
+        {leagueDetails.map((league) => (
+          <article className="detail-card link-card" key={league.slug}>
+            <span>{league.name}</span>
+            <h3>{league.name} predictions</h3>
+            <p>{league.intro}</p>
+            <button className="text-action create-link" onClick={() => navigate({ kind: "league", slug: league.slug }, `/leagues/${league.slug}`)}>
+              Read full guide <ArrowRight size={14} />
+            </button>
+          </article>
+        ))}
+      </section>
+
+      <section className="country-league-grid">
+        {globalLeagueRegions.map((item) => (
+          <article className="info-panel" key={item.region}>
+            <p className="eyebrow">{item.region}</p>
+            <h2>{item.competitions}</h2>
+            <p><strong>Clubs to know:</strong> {item.clubs}.</p>
+            <p>{item.notes}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="seo-panel">
+        <p className="eyebrow">Trophy context</p>
+        <h2>History changes pressure, motivation, and public odds.</h2>
+        <p>
+          Clubs with Champions League, Europa League, domestic league, and cup pedigree often attract heavy public money.
+          That can shorten odds even when the actual fixture is difficult. BamSignal uses league education to help users
+          understand when a historic club is genuinely strong and when the market is simply reacting to the badge.
+        </p>
+      </section>
     </main>
   );
 }

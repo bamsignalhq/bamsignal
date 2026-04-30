@@ -9,6 +9,8 @@ android/.gradle/
 android/build/
 android/app/build/
 android/local.properties
+android/key.properties
+android/app/*.jks
 android/.idea/deploymentTargetSelector.xml
 android/.idea/deviceManager.xml
 

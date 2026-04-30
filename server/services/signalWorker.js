@@ -1,6 +1,6 @@
 import axios from "axios";
 import { config } from "../config.js";
-import { insertTip, query } from "../db.js";
+import { ensureDailyGamesTable, insertTip, query, upsertDailyGames } from "../db.js";
 import { sendTipPush } from "../firebase.js";
 import { broadcastTip } from "../telegram.js";
 
@@ -68,7 +68,8 @@ function normalizeFixture(raw) {
     away: String(away || "Away Team"),
     league: String(league),
     starts_at: startsAt,
-    markets: Array.isArray(markets) ? markets : []
+    markets: Array.isArray(markets) ? markets : [],
+    raw
   };
 }
 
@@ -85,9 +86,14 @@ async function fetchCandidateFixtures() {
     return defaultFixtures;
   }
 
-  const response = await axios.get(config.signalWorker.fixtureApiUrl, {
+  const fixtureUrl = config.signalWorker.fixtureApiUrl.endsWith("/fixtures")
+    ? config.signalWorker.fixtureApiUrl
+    : `${config.signalWorker.fixtureApiUrl.replace(/\/$/, "")}/fixtures`;
+
+  const response = await axios.get(fixtureUrl, {
     headers: {
       Authorization: `Bearer ${config.signalWorker.fixtureApiKey}`,
+      "x-apisports-key": config.signalWorker.fixtureApiKey,
       "x-api-key": config.signalWorker.fixtureApiKey
     },
     params: {
@@ -120,7 +126,8 @@ function buildTipCandidates(fixtures) {
         is_vip: market.odds >= config.signalWorker.freeOddsMax,
         booking_codes: config.signalWorker.defaultBookingCodes,
         source: config.signalWorker.fixtureApiUrl ? "fixture-api" : "fallback",
-        starts_at: fixture.starts_at
+        starts_at: fixture.starts_at,
+        fixture_payload: fixture.raw || fixture
       });
     }
   }
@@ -175,6 +182,7 @@ async function publishDailyTip(tip, { broadcast = true } = {}) {
 export async function runDailySignalWorker(options = {}) {
   const fixtures = await fetchCandidateFixtures();
   const candidates = buildTipCandidates(fixtures);
+  const savedDailyGames = await upsertDailyGames(todayInLagos(), candidates);
   const results = [];
 
   for (const candidate of candidates) {
@@ -185,6 +193,7 @@ export async function runDailySignalWorker(options = {}) {
     ok: true,
     date: todayInLagos(),
     timezone: config.signalWorker.timezone,
+    stored: savedDailyGames.length,
     freemium: results.filter((item) => !item.tip.is_vip).length,
     vip: results.filter((item) => item.tip.is_vip).length,
     results
@@ -192,6 +201,26 @@ export async function runDailySignalWorker(options = {}) {
 }
 
 export async function getDailyGames() {
+  await ensureDailyGamesTable();
+
+  const dailyResult = await query(
+    `select *
+     from daily_games
+     where game_date = $1::date
+     order by is_vip asc, confidence desc nulls last, starts_at asc nulls last, created_at desc`,
+    [todayInLagos()]
+  );
+
+  if (dailyResult.rows.length) {
+    return {
+      ok: true,
+      date: todayInLagos(),
+      source: "daily_games",
+      freemium: dailyResult.rows.filter((tip) => !tip.is_vip),
+      vip: dailyResult.rows.filter((tip) => tip.is_vip)
+    };
+  }
+
   const result = await query(
     `select *
      from tips

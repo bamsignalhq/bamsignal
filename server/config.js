@@ -28,6 +28,7 @@ export const config = {
     apiUrl: process.env.LIVE_SCORE_API_URL,
     apiKey: process.env.LIVE_SCORE_API_KEY
   },
+  cronSecret: process.env.CRON_SECRET,
   signalWorker: {
     enabled: process.env.SIGNAL_WORKER_ENABLED === "true",
     secret: process.env.SIGNAL_WORKER_SECRET,

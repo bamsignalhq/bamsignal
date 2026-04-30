@@ -30,6 +30,28 @@ alter table tips add column if not exists league text;
 alter table tips add column if not exists confidence integer;
 alter table tips add column if not exists source text;
 
+create table if not exists daily_games (
+  id uuid primary key default gen_random_uuid(),
+  game_date date not null,
+  match_name text not null,
+  league text,
+  prediction text not null,
+  odds numeric(8, 2) not null,
+  confidence integer,
+  is_vip boolean not null default false,
+  booking_codes jsonb not null default '{}'::jsonb,
+  source text,
+  status text not null default 'pending',
+  starts_at timestamptz,
+  fixture_payload jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (game_date, match_name, prediction, is_vip)
+);
+
+create index if not exists daily_games_game_date_idx on daily_games (game_date);
+create index if not exists daily_games_visibility_idx on daily_games (game_date, is_vip);
+
 create table if not exists affiliate_clicks (
   id bigserial primary key,
   tip_id text not null,

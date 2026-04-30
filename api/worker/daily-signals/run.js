@@ -2,12 +2,13 @@ import { config } from "../../../server/config.js";
 import { runDailySignalWorker } from "../../../server/services/signalWorker.js";
 
 function isAuthorized(req) {
-  if (!config.signalWorker.secret) return false;
+  const allowedSecrets = [config.signalWorker.secret, config.cronSecret].filter(Boolean);
+  if (!allowedSecrets.length) return false;
   const authHeader = req.headers.authorization || "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  return req.headers["x-bamsignal-secret"] === config.signalWorker.secret
-    || req.query.secret === config.signalWorker.secret
-    || bearer === config.signalWorker.secret;
+  return allowedSecrets.includes(req.headers["x-bamsignal-secret"])
+    || allowedSecrets.includes(req.query.secret)
+    || allowedSecrets.includes(bearer);
 }
 
 export default async function handler(req, res) {

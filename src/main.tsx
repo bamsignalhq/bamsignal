@@ -3322,38 +3322,50 @@ function AdminPage({
     setAdminStatus(publishStatus);
     return nextGame;
   };
+  const getAdminAuthHeaders = async () => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (quickPublish.publishSecret) headers["x-bamsignal-secret"] = quickPublish.publishSecret;
+    const session = supabase ? await supabase.auth.getSession() : null;
+    const token = session?.data.session?.access_token;
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  };
+  const publishAdminGame = async (game: AdminGame, schedule = quickPublish.schedule) => {
+    const response = await fetch("/api/publish-tip", {
+      method: "POST",
+      headers: await getAdminAuthHeaders(),
+      body: JSON.stringify({
+        match_name: game.match,
+        league: game.league,
+        prediction: game.pick,
+        odds: game.odds,
+        confidence: game.confidence,
+        is_vip: game.tier === "vip",
+        booking_codes: game.bookingCodes.reduce<Record<string, string>>((codes, entry) => {
+          if (entry.code.trim()) codes[bookmakerLabel(entry.bookmaker)] = entry.code.trim();
+          return codes;
+        }, {}),
+        starts_at: schedule,
+        channels: {
+          app: game.pushApp,
+          telegram: game.pushTelegram,
+          whatsapp: game.pushWhatsApp,
+          vipTelegram: game.pushVipTelegram
+        }
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || result.errors?.join(" ") || "Publish failed");
+    return result;
+  };
   const publishQuickGame = async () => {
     const nextGame = saveQuickGameToApp("Saved locally. Publishing to backend...");
     setIsPublishing(true);
     try {
-      const response = await fetch("/api/publish-tip", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(quickPublish.publishSecret ? { "x-bamsignal-secret": quickPublish.publishSecret } : {})
-        },
-        body: JSON.stringify({
-          match_name: nextGame.match,
-          league: nextGame.league,
-          prediction: nextGame.pick,
-          odds: nextGame.odds,
-          confidence: nextGame.confidence,
-          is_vip: nextGame.tier === "vip",
-          booking_codes: parseAdminBookingCodes(quickPublish.bookingCodes),
-          starts_at: quickPublish.schedule,
-          channels: {
-            app: nextGame.pushApp,
-            telegram: nextGame.pushTelegram,
-            whatsapp: nextGame.pushWhatsApp,
-            vipTelegram: nextGame.pushVipTelegram
-          }
-        })
+      await publishAdminGame({
+        ...nextGame,
+        bookingCodes: adminBookingEntriesFromText(quickPublish.bookingCodes, nextGame.tier === "vip")
       });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setAdminStatus(result.error || "Saved to the app, but backend publish needs the admin publish secret/env setup.");
-        return;
-      }
       setAdminStatus(`Published ${nextGame.match}. App list, database, Telegram/Firebase hooks are updated where configured.`);
     } catch (error) {
       setAdminStatus(`Saved to app list. Backend publish failed: ${friendlyAuthError(error)}`);
@@ -3362,13 +3374,11 @@ function AdminPage({
     }
   };
   const publishGame = (game: AdminGame) => {
-    const targets = [
-      game.pushApp ? "app users" : "",
-      game.pushTelegram ? "regular Telegram" : "",
-      game.pushWhatsApp ? "WhatsApp channel" : "",
-      game.pushVipTelegram ? "VIP Telegram" : ""
-    ].filter(Boolean).join(", ");
-    window.alert(`${game.match} is ready to publish to ${targets || "selected channels"}. Backend broadcast hooks will send it live when your channel keys are active.`);
+    setIsPublishing(true);
+    publishAdminGame(game)
+      .then(() => setAdminStatus(`Published ${game.match}.`))
+      .catch((error) => setAdminStatus(`Publish failed: ${friendlyAuthError(error)}`))
+      .finally(() => setIsPublishing(false));
   };
   const addAdminGame = () => {
     setAdminContent({
@@ -3451,6 +3461,7 @@ function AdminPage({
           ))}
         </nav>
         <div className="admin-workspace">
+      {adminStatus && <p className="auth-message admin-global-status">{adminStatus}</p>}
 
       {activeAdminTab === "overview" && <section className="admin-panel">
         <div className="admin-panel-head">
@@ -3475,7 +3486,7 @@ function AdminPage({
           </label>
           <label>Odds<input value={quickPublish.odds} type="number" step="0.01" onChange={(event) => setQuickPublish({ ...quickPublish, odds: event.target.value })} placeholder="2.18" /></label>
           <label>Confidence %<input value={quickPublish.confidence} type="number" min="1" max="99" onChange={(event) => setQuickPublish({ ...quickPublish, confidence: event.target.value })} placeholder="82" /></label>
-          <label>Publish secret<input value={quickPublish.publishSecret} onChange={(event) => setQuickPublish({ ...quickPublish, publishSecret: event.target.value })} type="password" placeholder="Required for backend broadcast" /></label>
+          <label>Publish secret fallback<input value={quickPublish.publishSecret} onChange={(event) => setQuickPublish({ ...quickPublish, publishSecret: event.target.value })} type="password" placeholder="Optional if logged in as admin" /></label>
         </div>
         <div className="toggle-grid quick-publish-toggles">
           <label><input type="checkbox" checked={quickPublish.showBookingCodes} onChange={(event) => setQuickPublish({ ...quickPublish, showBookingCodes: event.target.checked })} /> Show booking codes in selected app room</label>
@@ -3490,7 +3501,6 @@ function AdminPage({
             {isPublishing ? <Loader2 className="spin" size={16} /> : <Send size={16} />} Publish now
           </button>
         </div>
-        {adminStatus && <p className="auth-message">{adminStatus}</p>}
         <div className="publish-preview-card">
           <p className="eyebrow">Preview</p>
           <strong>{quickPublish.match || "Game of the day"}</strong>
@@ -3571,9 +3581,16 @@ function AdminPage({
                 <label><input type="checkbox" checked={game.pushWhatsApp} onChange={(event) => updateAdminGame(index, { pushWhatsApp: event.target.checked })} /> WhatsApp channel</label>
                 <label><input type="checkbox" checked={game.pushVipTelegram} onChange={(event) => updateAdminGame(index, { pushVipTelegram: event.target.checked })} /> VIP Telegram special</label>
               </div>
-              <button className="primary-action neon-action" onClick={() => publishGame(game)}><Send size={16} /> Publish selected game now</button>
+              <button className="primary-action neon-action" onClick={() => publishGame(game)} disabled={isPublishing}>
+                {isPublishing ? <Loader2 className="spin" size={16} /> : <Send size={16} />} Publish selected game now
+              </button>
             </article>
           ))}
+        </div>
+        <div className="admin-action-row">
+          <button className="secondary-action" onClick={() => setAdminStatus("Games saved. User app/game rooms now use the latest admin configuration.")}>
+            <ClipboardCheck size={16} /> Save games setup
+          </button>
         </div>
       </section>}
 
@@ -3616,6 +3633,11 @@ function AdminPage({
             );
           })}
         </div>
+        <div className="admin-action-row">
+          <button className="primary-action neon-action" onClick={() => setAdminStatus("Login and reset banners saved.")}>
+            <ClipboardCheck size={16} /> Save login banners
+          </button>
+        </div>
       </section>}
 
       {activeAdminTab === "content" && <section className="admin-panel">
@@ -3632,6 +3654,11 @@ function AdminPage({
           {adminContent.adLinks.map((link, index) => (
             <label key={index}>Ad link {index + 1}<input value={link} onChange={(event) => updateAdLink(index, event.target.value)} placeholder="https://advertiser-or-affiliate-link.com" /></label>
           ))}
+        </div>
+        <div className="admin-action-row">
+          <button className="primary-action neon-action" onClick={() => setAdminStatus("News and ad slots saved. Public pages now use the latest content.")}>
+            <ClipboardCheck size={16} /> Save news and ads
+          </button>
         </div>
       </section>}
 
@@ -3654,6 +3681,11 @@ function AdminPage({
           <div><CalendarClock size={16} /><span>Expiry job should move users back to freemium when subscriptions end.</span></div>
           <div><Users size={16} /><span>Admin override room reserved for manual verification, refunds, and support fixes.</span></div>
         </div>
+        <div className="admin-action-row">
+          <button className="primary-action neon-action" onClick={() => setAdminStatus("Payment settings saved. VIP prices and Paystack links are updated in the app.")}>
+            <ClipboardCheck size={16} /> Save payment settings
+          </button>
+        </div>
       </section>}
 
       {activeAdminTab === "otp" && <section className="admin-panel">
@@ -3672,6 +3704,11 @@ function AdminPage({
           <label>WhatsApp template<input value={adminContent.sendchampWhatsappTemplate} onChange={(event) => setAdminContent({ ...adminContent, sendchampWhatsappTemplate: event.target.value })} placeholder="bamsignal_login_otp" /></label>
           <label>SMS sender name<input value={adminContent.sendchampSmsSender} onChange={(event) => setAdminContent({ ...adminContent, sendchampSmsSender: event.target.value })} placeholder="BamSignal" /></label>
           <label>API key storage<input value="SENDCHAMP_API_KEY env var only" readOnly /></label>
+        </div>
+        <div className="admin-action-row">
+          <button className="primary-action neon-action" onClick={() => setAdminStatus("OTP settings saved. Phone verification will use the selected channel when Sendchamp is active.")}>
+            <ClipboardCheck size={16} /> Save OTP settings
+          </button>
         </div>
       </section>}
 

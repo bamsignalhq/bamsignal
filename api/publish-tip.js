@@ -24,11 +24,40 @@ function todayInLagos() {
   }).format(new Date());
 }
 
-function isAuthorized(req) {
+async function verifySupabaseAdmin(req) {
+  const adminEmails = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+  if (!adminEmails.length) return false;
+
+  const authHeader = req.headers.authorization || "";
+  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!bearer || !supabaseUrl || !supabaseAnonKey) return false;
+
+  const response = await fetch(`${supabaseUrl.replace(/\/$/, "")}/auth/v1/user`, {
+    headers: {
+      apikey: supabaseAnonKey,
+      Authorization: `Bearer ${bearer}`
+    }
+  });
+  if (!response.ok) return false;
+  const user = await response.json();
+  return adminEmails.includes(String(user.email || "").toLowerCase());
+}
+
+async function isAuthorized(req) {
   const allowedSecrets = [config.signalWorker.secret, config.cronSecret].filter(Boolean);
-  if (!allowedSecrets.length) return { ok: false, status: 503, error: "Set SIGNAL_WORKER_SECRET or CRON_SECRET in Vercel before backend publishing." };
   const provided = req.headers["x-bamsignal-secret"] || req.query.secret;
-  if (!allowedSecrets.includes(provided)) return { ok: false, status: 401, error: "Admin publish secret is missing or incorrect." };
+  if (provided && allowedSecrets.includes(provided)) return { ok: true };
+  if (await verifySupabaseAdmin(req)) return { ok: true };
+  if (!allowedSecrets.length && !process.env.ADMIN_EMAILS) {
+    return { ok: false, status: 503, error: "Set ADMIN_EMAILS or SIGNAL_WORKER_SECRET in Vercel before backend publishing." };
+  }
+  if (!provided) return { ok: false, status: 401, error: "Log in as an admin account or enter the publish secret before publishing." };
+  if (!allowedSecrets.includes(provided)) return { ok: false, status: 401, error: "Admin publish secret is incorrect." };
   return { ok: true };
 }
 
@@ -50,7 +79,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const auth = isAuthorized(req);
+  const auth = await isAuthorized(req);
   if (!auth.ok) return res.status(auth.status).json({ ok: false, error: auth.error });
 
   const payload = parseBody(req);

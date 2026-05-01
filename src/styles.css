@@ -748,6 +748,10 @@ footer {
   min-width: 0;
 }
 
+.admin-global-status {
+  margin-bottom: 14px;
+}
+
 .admin-work-nav {
   background: var(--surface);
   border: 1px solid var(--border);

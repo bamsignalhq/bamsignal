@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/affiliate/:bookie/:tipId",
-      "destination": "/api/affiliate/:bookie/:tipId"
+      "destination": "/api/affiliate?bookie=:bookie&tipId=:tipId"
     },
     {
       "source": "/(.*)",

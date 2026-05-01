@@ -1,5 +1,5 @@
-import { config } from "../../server/config.js";
-import { query } from "../../server/db.js";
+import { config } from "../server/config.js";
+import { query } from "../server/db.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -7,9 +7,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const [bookieParam, tipParam] = Array.isArray(req.query.slug) ? req.query.slug : [];
-  const bookie = String(bookieParam || "").toLowerCase();
-  const tipId = String(tipParam || "unknown");
+  const bookie = String(req.query.bookie || "").toLowerCase();
+  const tipId = String(req.query.tipId || "unknown");
   const redirectUrl = config.affiliateUrls[bookie];
 
   try {

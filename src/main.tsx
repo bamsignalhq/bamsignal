@@ -79,7 +79,8 @@ type BookmakerKey =
   | "paripesa"
   | "bangbet"
   | "betano"
-  | "accessbet";
+  | "accessbet"
+  | "melbet";
 type BookingCodeEntry = {
   id: number;
   bookmaker: BookmakerKey;
@@ -201,7 +202,8 @@ const bookmakers: { key: BookmakerKey; label: string }[] = [
   { key: "paripesa", label: "PariPesa" },
   { key: "bangbet", label: "Bangbet" },
   { key: "betano", label: "Betano" },
-  { key: "accessbet", label: "AccessBET" }
+  { key: "accessbet", label: "AccessBET" },
+  { key: "melbet", label: "Melbet" }
 ];
 
 const bookmakerLabel = (key: BookmakerKey) => bookmakers.find((bookmaker) => bookmaker.key === key)?.label ?? key;
@@ -1992,7 +1994,7 @@ function UserDashboard({
           )}
           <div className="auth-copy">
             {(authMode === "login" || authMode === "unlock") && <span className="auth-secure-badge"><ShieldCheck size={14} /> Secure member access</span>}
-            <h2>{authMode === "signup" ? "Create account" : authMode === "verify" ? "Verify email" : authMode === "loginOtp" ? "Authorize login" : authMode === "pinSetup" ? "Create your PIN" : authMode === "unlock" ? "Welcome back" : authMode === "reset" ? "Reset access" : "Your sure room is ready"}</h2>
+            <h2>{authMode === "signup" ? "Create account" : authMode === "verify" ? "Verify email" : authMode === "loginOtp" ? "Authorize login" : authMode === "pinSetup" ? "Create your PIN" : authMode === "unlock" ? "Welcome back" : authMode === "reset" ? "Reset access" : "Signals start here"}</h2>
           </div>
 
           {showDynamicBanner && <AuthDynamicBanner banner={activeAuthBanner} position="top" onAction={handleBannerAction} />}

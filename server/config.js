@@ -45,6 +45,7 @@ export const config = {
     betking: process.env.AFFILIATE_BETKING_URL,
     sportybet: process.env.AFFILIATE_SPORTYBET_URL,
     bet9ja: process.env.AFFILIATE_BET9JA_URL,
-    betway: process.env.AFFILIATE_BETWAY_URL
+    betway: process.env.AFFILIATE_BETWAY_URL,
+    melbet: process.env.AFFILIATE_MELBET_URL
   }
 };

@@ -37,6 +37,8 @@ export async function insertTip(tip) {
     return { ...tip, id: `dry-run-${Date.now()}` };
   }
 
+  await ensureTipsTable();
+
   const result = await query(
     `insert into tips (match_name, league, prediction, odds, confidence, is_vip, booking_codes, source, status, starts_at)
      values ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9)
@@ -54,6 +56,32 @@ export async function insertTip(tip) {
     ]
   );
   return result.rows[0];
+}
+
+export async function ensureTipsTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists tips (
+      id uuid primary key default gen_random_uuid(),
+      match_name text not null,
+      league text,
+      prediction text not null,
+      odds numeric(8, 2) not null,
+      confidence integer,
+      is_vip boolean not null default false,
+      booking_codes jsonb not null default '{}'::jsonb,
+      source text,
+      status text not null default 'pending',
+      starts_at timestamptz,
+      result_payload jsonb,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    )
+  `);
+
+  await query("create index if not exists tips_created_at_idx on tips (created_at)");
+  await query("create index if not exists tips_visibility_idx on tips (is_vip, created_at desc)");
 }
 
 export async function ensureDailyGamesTable() {

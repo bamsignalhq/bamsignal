@@ -1,6 +1,6 @@
 import axios from "axios";
 import { config } from "../config.js";
-import { ensureDailyGamesTable, insertTip, query, upsertDailyGames } from "../db.js";
+import { ensureDailyGamesTable, ensureTipsTable, insertTip, query, upsertDailyGames } from "../db.js";
 import { sendTipPush } from "../firebase.js";
 import { broadcastTip } from "../telegram.js";
 
@@ -145,6 +145,8 @@ function buildTipCandidates(fixtures) {
 }
 
 async function alreadyPublishedToday(tip) {
+  await ensureTipsTable();
+
   const result = await query(
     `select * from tips
      where match_name = $1
@@ -220,6 +222,8 @@ export async function getDailyGames() {
       vip: dailyResult.rows.filter((tip) => tip.is_vip)
     };
   }
+
+  await ensureTipsTable();
 
   const result = await query(
     `select *

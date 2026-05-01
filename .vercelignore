@@ -8,3 +8,4 @@ dist/**
 *.ipa
 *.xcarchive
 .DS_Store
+store-screenshots/**

@@ -2044,7 +2044,7 @@ function UserDashboard({
   };
 
   if (!isAuthed) {
-    const showDynamicBanner = authMode === "login" || authMode === "reset" || authMode === "unlock";
+    const showDynamicBanner = authMode === "login" || authMode === "reset" || authMode === "unlock" || authMode === "verify";
     return (
       <main className="auth-main">
         <section className="auth-shell">

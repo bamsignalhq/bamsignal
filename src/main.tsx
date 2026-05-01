@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   Activity,
@@ -44,11 +46,13 @@ import "./styles.css";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const demoOtpEnabled = import.meta.env.DEV;
+const nativeAuthRedirectUrl = "com.bamsignal.app://auth-callback";
 const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        flowType: "pkce",
         persistSession: true
       }
     })
@@ -1951,6 +1955,37 @@ function UserDashboard({
     setVisibleSecrets((current) => ({ ...current, [key]: !current[key] }));
   };
   const secretInputType = (key: keyof typeof visibleSecrets) => visibleSecrets[key] ? "text" : "password";
+  const completeOAuthRedirect = async (url: string) => {
+    if (!supabase || !url.startsWith(nativeAuthRedirectUrl)) return;
+
+    try {
+      const parsedUrl = new URL(url);
+      const code = parsedUrl.searchParams.get("code");
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) setAuthMessage(friendlyAuthError(error));
+        else setAuthMessage("Provider login verified. Finishing secure setup...");
+        return;
+      }
+
+      const hashParams = new URLSearchParams(parsedUrl.hash.replace(/^#/, ""));
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        if (error) setAuthMessage(friendlyAuthError(error));
+        else setAuthMessage("Provider login verified. Finishing secure setup...");
+        return;
+      }
+
+      setAuthMessage("Provider login returned without a usable session. Please try again.");
+    } finally {
+      Browser.close().catch(() => undefined);
+    }
+  };
 
   useEffect(() => {
     if (isAuthed || !authIntent) return;
@@ -1964,6 +1999,24 @@ function UserDashboard({
     }
     setAuthMode(deviceBinding ? "unlock" : "login");
   }, [authIntent, deviceBinding, isAuthed]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined;
+    let mounted = true;
+    let removeListener: (() => void) | undefined;
+
+    CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+      if (!mounted) return;
+      completeOAuthRedirect(url);
+    }).then((listener) => {
+      removeListener = () => listener.remove();
+    });
+
+    return () => {
+      mounted = false;
+      removeListener?.();
+    };
+  }, []);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -2160,13 +2213,19 @@ function UserDashboard({
   };
   const socialSignIn = async (provider: "Google" | "Apple") => {
     if (supabase) {
-      const { error } = await supabase.auth.signInWithOAuth({
+      setAuthMessage(`Opening ${provider} secure sign-in...`);
+      const isNativeAuth = Capacitor.isNativePlatform();
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: provider === "Google" ? "google" : "apple",
         options: {
-          redirectTo: `${window.location.origin}/app?auth=login`
+          redirectTo: isNativeAuth ? nativeAuthRedirectUrl : `${window.location.origin}/app?auth=login`,
+          skipBrowserRedirect: isNativeAuth
         }
       });
       if (error) setAuthMessage(friendlyAuthError(error));
+      if (isNativeAuth && data.url) {
+        await Browser.open({ url: data.url, presentationStyle: "fullscreen" });
+      }
       return;
     }
 
@@ -2564,7 +2623,7 @@ function UserDashboard({
 
           {authMode === "loginOtp" && (
             <div className="auth-form">
-              <label>Email<input value={pendingLoginProfile?.email ?? ""} readOnly /></label>
+              <p className="auth-compact-note">Enter the newest 6-digit code from your email to trust this device.</p>
               <label>Email code<input value={verificationInput} onChange={(event) => setVerificationInput(sanitizeAuthCode(event.target.value))} inputMode="numeric" placeholder="Enter 6-digit code" /></label>
               <button className="primary-action neon-action" onClick={verifyLoginEmailOtp} disabled={authBusy === "loginOtp" || verificationInput.length !== 6}>
                 {authBusy === "loginOtp" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Authorize this device

@@ -207,6 +207,22 @@ type SupportMessage = {
   to: string;
   createdAt: string;
 };
+type QuickPublishForm = {
+  match: string;
+  league: string;
+  prediction: string;
+  odds: string;
+  confidence: string;
+  tier: "freemium" | "vip";
+  bookingCodes: string;
+  schedule: string;
+  pushApp: boolean;
+  pushTelegram: boolean;
+  pushWhatsApp: boolean;
+  pushVipTelegram: boolean;
+  showBookingCodes: boolean;
+  publishSecret: string;
+};
 
 const bookmakers: { key: BookmakerKey; label: string }[] = [
   { key: "sportybet", label: "SportyBet" },
@@ -958,6 +974,46 @@ const makeInviteCode = (profile: UserProfile) => {
 };
 
 const sanitizeAuthCode = (value: string) => value.replace(/\D/g, "").slice(0, 6);
+
+const parseAdminBookingCodes = (value: string) => value
+  .split("/")
+  .map((chunk) => chunk.trim())
+  .filter(Boolean)
+  .reduce<Record<string, string>>((codes, chunk) => {
+    const [bookmaker, ...codeParts] = chunk.split(":");
+    const label = bookmaker?.trim();
+    const code = codeParts.join(":").trim();
+    if (label && code) codes[label] = code;
+    return codes;
+  }, {});
+
+const adminBookingEntriesFromText = (value: string, isVip: boolean): BookingCodeEntry[] => {
+  const parsed = parseAdminBookingCodes(value);
+  const entries = Object.entries(parsed).map(([bookmaker, code], index) => ({
+    ...makeBookingCode(bookmakerKeyFromName(bookmaker), code, isVip),
+    id: Date.now() + index
+  }));
+  return entries.length ? entries : [makeBookingCode("sportybet", "", isVip)];
+};
+
+const quickPublishToAdminGame = (form: QuickPublishForm): AdminGame => {
+  const isVip = form.tier === "vip";
+  return {
+    id: Date.now(),
+    match: form.match.trim() || "New fixture",
+    league: form.league.trim() || "Football",
+    pick: form.prediction.trim() || "Prediction",
+    odds: Number(form.odds) || (isVip ? 2.05 : 1.45),
+    confidence: Number(form.confidence) || (isVip ? 78 : 84),
+    tier: form.tier,
+    showBookingCodes: form.showBookingCodes,
+    bookingCodes: adminBookingEntriesFromText(form.bookingCodes, isVip),
+    pushApp: form.pushApp,
+    pushTelegram: form.pushTelegram,
+    pushWhatsApp: form.pushWhatsApp,
+    pushVipTelegram: form.pushVipTelegram
+  };
+};
 
 const loadAdminContent = (): AdminContent => {
   try {
@@ -2975,6 +3031,35 @@ function AdminPage({
       return [];
     }
   });
+  const [quickPublish, setQuickPublish] = useState<QuickPublishForm>(() => {
+    try {
+      const saved = window.localStorage.getItem("bamsignal-admin-quick-publish");
+      if (saved) return JSON.parse(saved) as QuickPublishForm;
+    } catch {
+      undefined;
+    }
+    return {
+      match: "Man City vs Tottenham",
+      league: "Premier League",
+      prediction: "Home win + over 1.5",
+      odds: "2.18",
+      confidence: "82",
+      tier: "vip",
+      bookingCodes: "1xBet: BAM218 / BetKing: BK944",
+      schedule: "Saturday 10:00 AM WAT",
+      pushApp: true,
+      pushTelegram: false,
+      pushWhatsApp: false,
+      pushVipTelegram: true,
+      showBookingCodes: true,
+      publishSecret: ""
+    };
+  });
+  const [adminStatus, setAdminStatus] = useState("");
+  const [isPublishing, setIsPublishing] = useState(false);
+  useEffect(() => {
+    window.localStorage.setItem("bamsignal-admin-quick-publish", JSON.stringify(quickPublish));
+  }, [quickPublish]);
   const updateAdLink = (index: number, value: string) => {
     const nextLinks = [...adminContent.adLinks];
     nextLinks[index] = value;
@@ -3001,6 +3086,55 @@ function AdminPage({
       ? { ...game, bookingCodes: game.bookingCodes.filter((_, entryIndex) => entryIndex !== codeIndex) }
       : game);
     setAdminContent({ ...adminContent, games });
+  };
+  const saveQuickGameToApp = (publishStatus = "Saved to app game list.") => {
+    const nextGame = quickPublishToAdminGame(quickPublish);
+    const games = [
+      nextGame,
+      ...adminContent.games.filter((game) => !(game.match === nextGame.match && game.tier === nextGame.tier))
+    ];
+    setAdminContent({ ...adminContent, games });
+    setAdminStatus(publishStatus);
+    return nextGame;
+  };
+  const publishQuickGame = async () => {
+    const nextGame = saveQuickGameToApp("Saved locally. Publishing to backend...");
+    setIsPublishing(true);
+    try {
+      const response = await fetch("/api/publish-tip", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(quickPublish.publishSecret ? { "x-bamsignal-secret": quickPublish.publishSecret } : {})
+        },
+        body: JSON.stringify({
+          match_name: nextGame.match,
+          league: nextGame.league,
+          prediction: nextGame.pick,
+          odds: nextGame.odds,
+          confidence: nextGame.confidence,
+          is_vip: nextGame.tier === "vip",
+          booking_codes: parseAdminBookingCodes(quickPublish.bookingCodes),
+          starts_at: quickPublish.schedule,
+          channels: {
+            app: nextGame.pushApp,
+            telegram: nextGame.pushTelegram,
+            whatsapp: nextGame.pushWhatsApp,
+            vipTelegram: nextGame.pushVipTelegram
+          }
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setAdminStatus(result.error || "Saved to the app, but backend publish needs the admin publish secret/env setup.");
+        return;
+      }
+      setAdminStatus(`Published ${nextGame.match}. App list, database, Telegram/Firebase hooks are updated where configured.`);
+    } catch (error) {
+      setAdminStatus(`Saved to app list. Backend publish failed: ${friendlyAuthError(error)}`);
+    } finally {
+      setIsPublishing(false);
+    }
   };
   const publishGame = (game: AdminGame) => {
     const targets = [
@@ -3084,11 +3218,49 @@ function AdminPage({
         <div className="admin-workspace">
 
       {activeAdminTab === "overview" && <section className="admin-panel">
-        <div className="admin-form">
-          <label>Game of the day<input value="Man City vs Tottenham" readOnly /></label>
-          <label>Prediction<input value="Home win + over 1.5" readOnly /></label>
-          <label>Booking codes<input value="1xBet: BAM218 / BetKing: BK944" readOnly /></label>
-          <label>Schedule<input value="Saturday 10:00 AM WAT" readOnly /></label>
+        <div className="admin-panel-head">
+          <div>
+            <p className="eyebrow">Quick publish</p>
+            <h2>Game of the day</h2>
+            <p className="admin-note">Fill this once, choose where it should appear, then save it to the app or publish it through the backend broadcast hooks.</p>
+          </div>
+          <button className="secondary-action" onClick={() => setActiveAdminTab("games")}><Goal size={16} /> Open full game manager</button>
+        </div>
+        <div className="admin-form quick-publish-form">
+          <label>Game of the day<input value={quickPublish.match} onChange={(event) => setQuickPublish({ ...quickPublish, match: event.target.value })} placeholder="Man City vs Tottenham" /></label>
+          <label>League<input value={quickPublish.league} onChange={(event) => setQuickPublish({ ...quickPublish, league: event.target.value })} placeholder="Premier League" /></label>
+          <label>Prediction<input value={quickPublish.prediction} onChange={(event) => setQuickPublish({ ...quickPublish, prediction: event.target.value })} placeholder="Home win + over 1.5" /></label>
+          <label>Booking codes<input value={quickPublish.bookingCodes} onChange={(event) => setQuickPublish({ ...quickPublish, bookingCodes: event.target.value })} placeholder="1xBet: BAM218 / BetKing: BK944" /></label>
+          <label>Schedule<input value={quickPublish.schedule} onChange={(event) => setQuickPublish({ ...quickPublish, schedule: event.target.value })} placeholder="Saturday 10:00 AM WAT" /></label>
+          <label>Room
+            <select value={quickPublish.tier} onChange={(event) => setQuickPublish({ ...quickPublish, tier: event.target.value as "freemium" | "vip" })}>
+              <option value="freemium">Freemium low-odd room</option>
+              <option value="vip">VIP high-odd room</option>
+            </select>
+          </label>
+          <label>Odds<input value={quickPublish.odds} type="number" step="0.01" onChange={(event) => setQuickPublish({ ...quickPublish, odds: event.target.value })} placeholder="2.18" /></label>
+          <label>Confidence %<input value={quickPublish.confidence} type="number" min="1" max="99" onChange={(event) => setQuickPublish({ ...quickPublish, confidence: event.target.value })} placeholder="82" /></label>
+          <label>Publish secret<input value={quickPublish.publishSecret} onChange={(event) => setQuickPublish({ ...quickPublish, publishSecret: event.target.value })} type="password" placeholder="Required for backend broadcast" /></label>
+        </div>
+        <div className="toggle-grid quick-publish-toggles">
+          <label><input type="checkbox" checked={quickPublish.showBookingCodes} onChange={(event) => setQuickPublish({ ...quickPublish, showBookingCodes: event.target.checked })} /> Show booking codes in selected app room</label>
+          <label><input type="checkbox" checked={quickPublish.pushApp} onChange={(event) => setQuickPublish({ ...quickPublish, pushApp: event.target.checked })} /> Push to app</label>
+          <label><input type="checkbox" checked={quickPublish.pushTelegram} onChange={(event) => setQuickPublish({ ...quickPublish, pushTelegram: event.target.checked })} /> Regular Telegram</label>
+          <label><input type="checkbox" checked={quickPublish.pushWhatsApp} onChange={(event) => setQuickPublish({ ...quickPublish, pushWhatsApp: event.target.checked })} /> WhatsApp channel</label>
+          <label><input type="checkbox" checked={quickPublish.pushVipTelegram} onChange={(event) => setQuickPublish({ ...quickPublish, pushVipTelegram: event.target.checked })} /> VIP Telegram</label>
+        </div>
+        <div className="admin-action-row">
+          <button className="secondary-action" onClick={() => saveQuickGameToApp()}><ClipboardCheck size={16} /> Save to app game list</button>
+          <button className="primary-action neon-action" onClick={publishQuickGame} disabled={isPublishing}>
+            {isPublishing ? <Loader2 className="spin" size={16} /> : <Send size={16} />} Publish now
+          </button>
+        </div>
+        {adminStatus && <p className="auth-message">{adminStatus}</p>}
+        <div className="publish-preview-card">
+          <p className="eyebrow">Preview</p>
+          <strong>{quickPublish.match || "Game of the day"}</strong>
+          <span>{quickPublish.prediction || "Prediction"} / {quickPublish.odds || "0.00"} odds / {quickPublish.confidence || "0"}%</span>
+          <small>{quickPublish.tier === "vip" ? "VIP room" : "Freemium room"} / {quickPublish.bookingCodes || "No booking codes yet"}</small>
         </div>
         <div className="automation-list">
           {adminPlan.map((item, index) => (

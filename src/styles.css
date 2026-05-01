@@ -2144,6 +2144,43 @@ footer {
   grid-template-columns: 1fr;
 }
 
+.quick-publish-form {
+  align-items: end;
+}
+
+.quick-publish-toggles {
+  margin-top: 12px;
+}
+
+.admin-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.publish-preview-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, transparent), transparent),
+    var(--surface-2);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.publish-preview-card strong {
+  color: var(--text);
+  font-size: 20px;
+}
+
+.publish-preview-card span,
+.publish-preview-card small {
+  color: var(--muted);
+}
+
 .admin-game-grid {
   display: grid;
   gap: 14px;

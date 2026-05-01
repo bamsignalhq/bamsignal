@@ -612,7 +612,19 @@ const legalPages = [
       "We may collect account details such as name, email address, phone number, payment verification status, and support messages when users choose to provide them.",
       "Payment confirmation is expected to be handled through Paystack or another secure provider. BamSignal should not store full card details inside the app.",
       "Contact messages are routed to support@bamsignal.com so the support team can respond. We use this information only for service, safety, and account support.",
-      "Operational tools such as Firebase, Telegram, WhatsApp Business providers, analytics, and hosting services may process limited data needed to deliver notifications and product features."
+      "Operational tools such as Firebase, Telegram, WhatsApp Business providers, analytics, and hosting services may process limited data needed to deliver notifications and product features.",
+      "Users can request account and associated data deletion from the profile area inside the app or from the public account deletion page at /legal/account-deletion."
+    ]
+  },
+  {
+    slug: "account-deletion",
+    title: "Account Deletion",
+    intro: "This page explains how BamSignal users can request deletion of their account and associated account data.",
+    sections: [
+      "Inside the app, open Profile and choose Request account deletion. Outside the app, email support@bamsignal.com with the subject Account deletion request.",
+      "Include the email address or phone number connected to your BamSignal account so support can identify the account safely.",
+      "When deletion is confirmed, BamSignal will remove or anonymize account details such as name, email, phone number, membership status, and support records unless retention is required for fraud prevention, tax, payment dispute, legal, or security reasons.",
+      "Deletion requests are reviewed manually to protect users from accidental or unauthorized account removal. You may be asked to verify ownership before deletion is completed."
     ]
   },
   {
@@ -2349,6 +2361,7 @@ function UserDashboard({
             <button className="secondary-action" onClick={() => setDashboardTab("vip")}><CreditCard size={16} /> Manage VIP</button>
             <a className="secondary-action" href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer"><Send size={16} /> Telegram support</a>
             <button className="secondary-action"><ShieldCheck size={16} /> Security login</button>
+            <a className="secondary-action danger-action" href="/legal/account-deletion"><ShieldCheck size={16} /> Request account deletion</a>
           </div>
 
           <button className="secondary-action" onClick={() => { setIsAuthed(false); setIsPremium(false); }}>

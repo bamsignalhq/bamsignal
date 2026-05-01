@@ -4,48 +4,7 @@ import { ensureDailyGamesTable, ensureTipsTable, insertTip, query, upsertDailyGa
 import { sendTipPush } from "../firebase.js";
 import { broadcastTip } from "../telegram.js";
 
-const defaultFixtures = [
-  {
-    home: "Arsenal",
-    away: "Brighton",
-    league: "Premier League",
-    starts_at: new Date().toISOString(),
-    markets: [
-      { prediction: "Over 1.5 goals", odds: 1.34, confidence: 84 },
-      { prediction: "Arsenal win + over 1.5", odds: 2.05, confidence: 78 }
-    ]
-  },
-  {
-    home: "Barcelona",
-    away: "Villarreal",
-    league: "La Liga",
-    starts_at: new Date().toISOString(),
-    markets: [
-      { prediction: "Barcelona team over 0.5", odds: 1.28, confidence: 82 },
-      { prediction: "Barcelona team over 1.5", odds: 1.92, confidence: 76 }
-    ]
-  },
-  {
-    home: "Inter Milan",
-    away: "Fiorentina",
-    league: "Serie A",
-    starts_at: new Date().toISOString(),
-    markets: [
-      { prediction: "Inter double chance + over 1.5", odds: 1.47, confidence: 80 },
-      { prediction: "Inter win and BTTS", odds: 2.38, confidence: 73 }
-    ]
-  },
-  {
-    home: "Bayer Leverkusen",
-    away: "Mainz",
-    league: "Bundesliga",
-    starts_at: new Date().toISOString(),
-    markets: [
-      { prediction: "Home over 0.5 goals", odds: 1.22, confidence: 86 },
-      { prediction: "Home win and BTTS", odds: 2.42, confidence: 75 }
-    ]
-  }
-];
+const defaultFixtures = [];
 
 function todayInLagos() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -107,7 +66,7 @@ async function fetchCandidateFixtures() {
     const payload = response.data?.fixtures || response.data?.data || response.data?.response || response.data;
     return Array.isArray(payload) ? payload.map(normalizeFixture) : defaultFixtures;
   } catch (error) {
-    console.warn("Fixture API unavailable; using BamSignal fallback board", {
+    console.warn("Fixture API unavailable; no stale fallback board will be published", {
       code: error.code,
       message: error.message
     });
@@ -242,13 +201,12 @@ export async function getDailyGames() {
   );
 
   if (!result.rows.length) {
-    const dryTips = buildTipCandidates(defaultFixtures);
     return {
       ok: true,
       date: todayInLagos(),
-      source: "fallback",
-      freemium: dryTips.filter((tip) => !tip.is_vip),
-      vip: dryTips.filter((tip) => tip.is_vip)
+      source: "empty",
+      freemium: [],
+      vip: []
     };
   }
 

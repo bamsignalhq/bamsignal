@@ -91,7 +91,7 @@ type AdminTab = "overview" | "games" | "login" | "content" | "payments" | "otp" 
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type AuthIntent = "login" | "signup" | "reset" | null;
 type PendingEmailOtpType = "signup" | "magiclink";
-type DashboardTab = "home" | "vip" | "profile";
+type DashboardTab = "home" | "past" | "vip" | "profile";
 type BookmakerKey =
   | "sportybet"
   | "bet9ja"
@@ -162,6 +162,7 @@ type ApiTip = {
 type DailyGamesApiResponse = {
   ok: boolean;
   date: string;
+  source?: string;
   freemium: ApiTip[];
   vip: ApiTip[];
 };
@@ -186,6 +187,22 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
     pushVipTelegram: tip.is_vip
   };
 };
+
+const splitMatchName = (match: string) => {
+  const [home, away] = match.split(/\s+vs\s+/i);
+  return {
+    home: home?.trim() || match,
+    away: away?.trim() || "Opponent"
+  };
+};
+
+const gameKey = (game: AdminGame) => `${game.match.toLowerCase()}|${game.pick.toLowerCase()}|${game.tier}`;
+
+const orderGamesForDisplay = (games: AdminGame[]) => [
+  ...games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2),
+  ...games.filter((game) => game.tier === "vip"),
+  ...games.filter((game) => game.tier === "freemium" && game.odds >= 1.5)
+];
 type AdminContent = {
   newsTitle: string;
   newsSummary: string;
@@ -1306,12 +1323,20 @@ function App() {
   const [showStartupSplash, setShowStartupSplash] = useState(() => isNative);
   const [adminContent, setAdminContent] = useState<AdminContent>(() => loadAdminContent());
   const [dailyApiGames, setDailyApiGames] = useState<AdminGame[]>([]);
+  const [dailyGamesSource, setDailyGamesSource] = useState("loading");
+  const hasSavedAdminContent = useMemo(() => Boolean(window.localStorage.getItem("bamsignal-admin-content")), []);
   const logoSrc = theme === "dark" ? "/brand/compact-logo-dark.jpg" : "/brand/compact-logo-light.jpg";
   const appIconSrc = theme === "dark" ? "/brand/app-icon-dark.jpg" : "/brand/app-icon-light.jpg";
-  const effectiveAdminContent = useMemo(() => dailyApiGames.length
-    ? { ...adminContent, games: dailyApiGames }
-    : adminContent,
-  [adminContent, dailyApiGames]);
+  const effectiveAdminContent = useMemo(() => {
+    if (!hasSavedAdminContent) return { ...adminContent, games: orderGamesForDisplay(dailyApiGames) };
+    if (!dailyApiGames.length) return adminContent;
+    const manualGames = hasSavedAdminContent ? adminContent.games : [];
+    const merged = [...manualGames, ...dailyApiGames].reduce<AdminGame[]>((list, game) => {
+      if (!list.some((item) => gameKey(item) === gameKey(game))) list.push(game);
+      return list;
+    }, []);
+    return { ...adminContent, games: orderGamesForDisplay(merged) };
+  }, [adminContent, dailyApiGames, hasSavedAdminContent]);
 
   const navigate = (nextPage: Page, path = "/") => {
     window.history.pushState(null, "", path);
@@ -1372,9 +1397,10 @@ function App() {
       .then((payload: DailyGamesApiResponse | null) => {
         if (cancelled || !payload?.ok) return;
         const games = [...(payload.freemium || []), ...(payload.vip || [])].map(apiTipToAdminGame);
+        setDailyGamesSource(payload.source || "daily_games");
         setDailyApiGames(games);
       })
-      .catch(() => undefined);
+      .catch(() => setDailyGamesSource("offline"));
     return () => {
       cancelled = true;
     };
@@ -1385,7 +1411,10 @@ function App() {
     return fixtures.filter((fixture) => fixture.status === activeStatus);
   }, [activeStatus]);
 
-  const topPick = useMemo(() => getDailySureSignal(dailyKey), [dailyKey]);
+  const topPick = useMemo(() => {
+    const freePick = effectiveAdminContent.games.find((game) => game.tier === "freemium" && game.odds < 1.5);
+    return freePick || effectiveAdminContent.games[0] || null;
+  }, [effectiveAdminContent.games]);
 
   const goHome = () => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/");
   const isUserVault = page.kind === "app" && isAuthed;
@@ -1453,10 +1482,8 @@ function App() {
         </nav>
         <div className="sidebar-card">
           <span>Sure Signal</span>
-          <strong>{topPick.confidence}%</strong>
-          <p>
-            {topPick.home} vs {topPick.away}: {topPick.pick}
-          </p>
+          <strong>{topPick ? `${topPick.confidence}%` : "Live"}</strong>
+          <p>{topPick ? `${topPick.match}: ${topPick.pick}` : "Today's board is refreshing from API-Football."}</p>
         </div>
       </aside>}
 
@@ -1493,6 +1520,7 @@ function App() {
             activeStatus={activeStatus}
             filteredFixtures={filteredFixtures}
             topPick={topPick}
+            dailyGamesSource={dailyGamesSource}
             setActiveStatus={setActiveStatus}
             navigate={navigate}
             adminContent={effectiveAdminContent}
@@ -1563,23 +1591,30 @@ function HomePage({
   activeStatus,
   filteredFixtures,
   topPick,
+  dailyGamesSource,
   setActiveStatus,
   navigate,
   adminContent
 }: {
   activeStatus: Fixture["status"] | "All";
   filteredFixtures: Fixture[];
-  topPick: Fixture;
+  topPick: AdminGame | null;
+  dailyGamesSource: string;
   setActiveStatus: (status: Fixture["status"] | "All") => void;
   navigate: (page: Page, path?: string) => void;
   adminContent: AdminContent;
 }) {
+  const publicPredictions = adminContent.games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2);
+  const vipPreview = adminContent.games.filter((game) => game.tier === "vip").slice(0, 6);
+  const predictionBoard = [...publicPredictions, ...vipPreview];
+  const topTeams = topPick ? splitMatchName(topPick.match) : null;
   const contactLink = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     navigate({ kind: "contact" }, "/contact");
   };
   const copyTopBookingCode = async () => {
-    const code = `SPORTY-${topPick.id}${topPick.confidence}`;
+    const firstCode = topPick?.bookingCodes.find((entry) => entry.code.trim())?.code;
+    const code = firstCode || `BAMSIGNAL-${topPick?.confidence || "TODAY"}`;
     if (Capacitor.getPlatform() !== "web") {
       await navigator.clipboard?.writeText(code);
       return;
@@ -1611,24 +1646,34 @@ function HomePage({
               </div>
             </div>
             <div className="signal-panel" aria-label="Top prediction">
-              <div className="panel-topline">
-                <span>{topPick.league}</span>
-                <strong>{topPick.time}</strong>
-              </div>
-              <div className="teams">
-                <span>{topPick.home}</span>
-                <small>vs</small>
-                <span>{topPick.away}</span>
-              </div>
-              <div className="compact-pick">
-                <strong>{topPick.confidence}%</strong>
-                <span>{topPick.pick}</span>
-              </div>
-              <div className="mini-grid">
-                <span>BTTS <strong>{topPick.btts}%</strong></span>
-                <span>O2.5 <strong>{topPick.over25}%</strong></span>
-                <span>Corners <strong>{topPick.corners}%</strong></span>
-              </div>
+              {topPick && topTeams ? (
+                <>
+                  <div className="panel-topline">
+                    <span>{topPick.league}</span>
+                    <strong>Game of the day</strong>
+                  </div>
+                  <div className="teams">
+                    <span>{topTeams.home}</span>
+                    <small>vs</small>
+                    <span>{topTeams.away}</span>
+                  </div>
+                  <div className="compact-pick">
+                    <strong>{topPick.confidence}%</strong>
+                    <span>{topPick.pick}</span>
+                  </div>
+                  <div className="mini-grid">
+                    <span>Odds <strong>{topPick.odds.toFixed(2)}</strong></span>
+                    <span>Room <strong>{topPick.tier === "vip" ? "VIP" : "Free"}</strong></span>
+                    <span>Source <strong>{dailyGamesSource === "daily_games" ? "Live" : "Admin"}</strong></span>
+                  </div>
+                </>
+              ) : (
+                <div className="empty-signal-state">
+                  <Activity size={22} />
+                  <strong>Today's board is refreshing</strong>
+                  <span>API-Football or admin picks will appear here as soon as the daily worker stores them.</span>
+                </div>
+              )}
             </div>
           </section>
 
@@ -1659,9 +1704,15 @@ function HomePage({
               </div>
             </div>
             <div className="fixture-list">
-              {filteredFixtures.map((fixture, index) => (
-                <FixtureCard key={fixture.id} fixture={fixture} locked={index > 0} bookingButtonText={adminContent.bookingButtonText} />
-              ))}
+              {predictionBoard.length ? predictionBoard.map((game, index) => (
+                <PublicPredictionCard key={game.id} game={game} locked={index > 0} bookingButtonText={adminContent.bookingButtonText} />
+              )) : (
+                <div className="empty-signal-state wide">
+                  <CalendarClock size={22} />
+                  <strong>No stale fixtures shown</strong>
+                  <span>Waiting for API-Football or admin’s first update of the day.</span>
+                </div>
+              )}
             </div>
           </section>
 
@@ -1672,8 +1723,8 @@ function HomePage({
               <p>
                 BamSignal highlights the strongest probability differences, so a clear favorite or safer total-goals angle is easier to spot without opening every match.
               </p>
-              <div className="tip-row"><strong>Best pick</strong><span>{topPick.pick}</span></div>
-              <div className="tip-row"><strong>Correct score lean</strong><span>{topPick.score}</span></div>
+              <div className="tip-row"><strong>Best pick</strong><span>{topPick?.pick || "Refreshing"}</span></div>
+              <div className="tip-row"><strong>Game of the day</strong><span>{topPick?.match || "Waiting for today's verified pick"}</span></div>
               <div className="tip-row"><strong>Safer market</strong><span>Double chance and over 1.5</span></div>
             </div>
             <EvidenceBoard />
@@ -1942,6 +1993,15 @@ function UserDashboard({
     () => adminContent.games.filter((game) => game.tier === "vip"),
     [adminContent.games]
   );
+  const playedGames = useMemo(() => [
+    ...adminContent.games.map((game) => ({
+      teams: game.match,
+      league: game.league,
+      play: game.pick,
+      status: "Pending"
+    })),
+    ...profileGameHistory
+  ], [adminContent.games]);
   const wins = profileGameHistory.filter((game) => game.status === "Won").length;
   const losses = profileGameHistory.length - wins;
   const hitRate = Math.round((wins / profileGameHistory.length) * 100);
@@ -2624,10 +2684,6 @@ function UserDashboard({
                 {authBusy === "login" ? <Loader2 className="spin" size={16} /> : <UserPlus size={16} />} Login securely
               </button>
               {deviceBinding && <button className="secondary-action" onClick={() => setAuthMode("unlock")}><ShieldCheck size={16} /> Use bound-device login</button>}
-              <div className="auth-social-grid">
-                <button onClick={() => socialSignIn("Google")}><GoogleMark /> Continue with Google</button>
-                <button onClick={() => socialSignIn("Apple")}><AppleMark /> Continue with Apple</button>
-              </div>
               <div className="auth-switch-row">
                 <button className="text-action create-link" onClick={() => setAuthMode("signup")}>Create account</button>
                 <button className="text-action" onClick={() => setAuthMode("reset")}>Forgot password?</button>
@@ -2640,7 +2696,6 @@ function UserDashboard({
               <label>Name<input value={signupForm.name} onChange={(event) => setSignupForm({ ...signupForm, name: event.target.value })} placeholder="Full name" /></label>
               <label>Email<input value={signupForm.email} onChange={(event) => setSignupForm({ ...signupForm, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
               <label>Phone number<input value={signupForm.phone} onChange={(event) => setSignupForm({ ...signupForm, phone: event.target.value })} type="tel" placeholder="Phone number" /></label>
-              <label>Referral code <span className="optional-label">Optional</span><input value={signupForm.referralCode} onChange={(event) => setSignupForm({ ...signupForm, referralCode: event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 32) })} placeholder="Referral code" /></label>
               <label>Password
                 <span className="secret-input-wrap">
                   <input value={signupForm.password} onChange={(event) => setSignupForm({ ...signupForm, password: event.target.value })} type={secretInputType("signupPassword")} placeholder="Create password" />
@@ -2665,6 +2720,7 @@ function UserDashboard({
                   </button>
                 </span>
               </label>
+              <label>Referral code <span className="optional-label">Optional</span><input value={signupForm.referralCode} onFocus={() => setSignupForm({ ...signupForm, referralCode: signupForm.referralCode || getReferralCodeFromUrl() })} onChange={(event) => setSignupForm({ ...signupForm, referralCode: event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 32) })} placeholder="Optional" /></label>
               <button className="primary-action neon-action" onClick={signUp} disabled={authBusy === "signup"}>
                 {authBusy === "signup" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Create secure account
               </button>
@@ -2785,6 +2841,7 @@ function UserDashboard({
       <div className="dashboard-tabs">
         {[
           { tab: "home", label: "Home", icon: <Home size={16} /> },
+          { tab: "past", label: "Past Games", icon: <ClipboardCheck size={16} /> },
           { tab: "vip", label: "VIP", icon: <Crown size={16} /> },
           { tab: "profile", label: "Profile", icon: <Users size={16} /> }
         ].map(({ tab, label, icon }) => (
@@ -2807,10 +2864,6 @@ function UserDashboard({
             <p>Start with the free picks, then unlock the VIP room when your Paystack payment is verified.</p>
           </div>
           <div className="room-grid">
-            {freemiumRoomGames.map((game) => renderManagedGame(game))}
-          </div>
-          <div className="free-picks-strip">
-            <span className="room-label">Two low-odd freemium games below 1.50</span>
             {freemiumRoomGames.map((game) => renderManagedGame(game))}
           </div>
         </section>
@@ -2862,6 +2915,27 @@ function UserDashboard({
           ) : (
             <span className="vip-join muted-join"><LockKeyhole size={16} /> VIP Telegram link appears after payment</span>
           )}
+        </section>
+      )}
+
+      {dashboardTab === "past" && (
+        <section className="profile-history-card past-games-panel">
+          <div className="profile-history-head">
+            <div>
+              <p className="eyebrow">Past games</p>
+              <h3>Your played and tracked games</h3>
+            </div>
+            <span>{playedGames.length} records</span>
+          </div>
+          <div className="played-list">
+            {playedGames.map((game, index) => (
+              <div className="played-game" key={`${game.teams}-${game.play}-${index}`}>
+                <strong>{game.teams}</strong>
+                <small>{game.league} / {game.play}</small>
+                <span className={game.status.toLowerCase()}>{game.status}</span>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
@@ -3962,6 +4036,37 @@ function FixtureCard({ fixture, locked, bookingButtonText }: { fixture: Fixture;
         <Probability label="BTTS" value="Yes" percent={fixture.btts} />
         <Probability label="Over 2.5" value="Yes" percent={fixture.over25} />
         <Probability label="Corners 4+" value="Yes" percent={fixture.corners} />
+      </div>
+    </article>
+  );
+}
+
+function PublicPredictionCard({ game, locked, bookingButtonText }: { game: AdminGame; locked: boolean; bookingButtonText: string }) {
+  const teams = splitMatchName(game.match);
+  return (
+    <article className={`fixture-card ${locked ? "locked" : ""}`}>
+      <div className="fixture-main">
+        <div>
+          <span className={`status ${game.tier === "vip" ? "tomorrow" : "today"}`}>{game.tier === "vip" ? "VIP preview" : "Free pick"}</span>
+          <p className="league">{game.league} / {game.odds.toFixed(2)} odds</p>
+          <h3>{teams.home} <small>vs</small> {teams.away}</h3>
+        </div>
+        <div className="confidence-pill">{game.confidence}%</div>
+      </div>
+      <div className="prediction-row">
+        <span>Primary pick</span>
+        <strong className={locked ? "blurred-tip" : ""}>{game.pick}</strong>
+      </div>
+      {!locked && (
+        <button className="booking-code-button">
+          <ClipboardCheck size={14} /> {bookingButtonText}
+        </button>
+      )}
+      <div className={`probability-grid ${locked ? "blurred-grid" : ""}`}>
+        <Probability label="Confidence" value="Model" percent={game.confidence} />
+        <Probability label="Odds" value={game.odds.toFixed(2)} percent={Math.min(95, Math.round(game.odds * 32))} />
+        <Probability label="Room" value={game.tier === "vip" ? "VIP" : "Free"} percent={game.tier === "vip" ? 88 : 72} />
+        <Probability label="Codes" value={game.bookingCodes.length ? "Ready" : "Hidden"} percent={game.bookingCodes.length ? 82 : 45} />
       </div>
     </article>
   );

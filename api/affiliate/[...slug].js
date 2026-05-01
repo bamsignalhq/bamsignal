@@ -1,5 +1,5 @@
-import { config } from "../../../server/config.js";
-import { query } from "../../../server/db.js";
+import { config } from "../../server/config.js";
+import { query } from "../../server/db.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -7,8 +7,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const bookie = String(req.query.bookie || "").toLowerCase();
-  const tipId = String(req.query.tipId || "unknown");
+  const [bookieParam, tipParam] = Array.isArray(req.query.slug) ? req.query.slug : [];
+  const bookie = String(bookieParam || "").toLowerCase();
+  const tipId = String(tipParam || "unknown");
   const redirectUrl = config.affiliateUrls[bookie];
 
   try {
@@ -23,7 +24,7 @@ export default async function handler(req, res) {
       ]
     );
   } catch {
-    // Click tracking must never block the user from reaching the bookmaker.
+    // Click tracking must never block the redirect.
   }
 
   if (!redirectUrl) {

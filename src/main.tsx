@@ -51,6 +51,17 @@ const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey
     })
   : null;
 
+const friendlyAuthError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error || "");
+  if (/failed to fetch|fetch failed|network/i.test(message)) {
+    return "BamSignal could not reach Supabase Auth. Check internet connection, Supabase Auth URL settings, and that https://bamsignal.com is allowed in Supabase.";
+  }
+  if (/redirect|not allowed|url/i.test(message)) {
+    return "Supabase rejected the redirect URL. Add https://bamsignal.com/app and https://bamsignal.com/** to Supabase Auth redirect URLs.";
+  }
+  return message || "Authentication could not be completed. Please try again.";
+};
+
 type Theme = "dark" | "light";
 type Page =
   | { kind: "home" }
@@ -1776,7 +1787,7 @@ function UserDashboard({
         }
       });
       if (error) {
-        setAuthMessage(error.message);
+        setAuthMessage(friendlyAuthError(error));
         return;
       }
       setVerificationCode("");
@@ -1810,7 +1821,7 @@ function UserDashboard({
         password: loginForm.password
       });
       if (error) {
-        setAuthMessage(error.message);
+        setAuthMessage(friendlyAuthError(error));
         return;
       }
     }
@@ -1830,7 +1841,7 @@ function UserDashboard({
         type: "magiclink"
       });
       if (error) {
-        setAuthMessage(error.message);
+        setAuthMessage(friendlyAuthError(error));
         return;
       }
     } else if (verificationInput !== verificationCode) {
@@ -1854,7 +1865,7 @@ function UserDashboard({
           redirectTo: `${window.location.origin}/app?auth=login`
         }
       });
-      if (error) setAuthMessage(error.message);
+      if (error) setAuthMessage(friendlyAuthError(error));
       return;
     }
 
@@ -1927,7 +1938,7 @@ function UserDashboard({
         }
       });
       if (error) {
-        setAuthMessage(error.message);
+        setAuthMessage(friendlyAuthError(error));
         return;
       }
 
@@ -1968,7 +1979,7 @@ function UserDashboard({
         type: "signup"
       });
       if (error) {
-        setAuthMessage(error.message);
+        setAuthMessage(friendlyAuthError(error));
         return;
       }
     } else if (verificationInput !== verificationCode) {
@@ -1997,7 +2008,7 @@ function UserDashboard({
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo: `${window.location.origin}/app?auth=reset`
       });
-      setAuthMessage(error ? error.message : `Password reset link sent to ${resetEmail}.`);
+      setAuthMessage(error ? friendlyAuthError(error) : `Password reset link sent to ${resetEmail}.`);
       return;
     }
     setAuthMessage(resetEmail ? `Password reset link sent to ${resetEmail}.` : "Enter your email to receive a reset link.");

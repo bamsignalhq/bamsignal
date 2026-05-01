@@ -1968,34 +1968,39 @@ function UserDashboard({
   useEffect(() => {
     if (!supabase) return undefined;
     let mounted = true;
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted || !data.session?.user || isAuthed) return;
-      const user = data.session.user;
-      beginTrustedSession({
+    const handleVerifiedUser = (user: { email?: string; user_metadata?: Record<string, unknown> }) => {
+      const profile = {
         name: String(user.user_metadata?.name || user.email?.split("@")[0] || "BamSignal User"),
         email: user.email || userProfile.email,
         phone: String(user.user_metadata?.phone || userProfile.phone),
         avatar: userProfile.avatar
-      });
+      };
+      if (deviceBinding && (profile.email === deviceBinding.email || normalizePhone(profile.phone) === normalizePhone(deviceBinding.phone))) {
+        beginTrustedSession(deviceBinding);
+        return;
+      }
+      setUserProfile(profile);
+      setPendingLoginProfile(profile);
+      setSetupPin("");
+      setAuthMode("pinSetup");
+      setAuthMessage("Account verified. Create your 6-digit PIN to bind this phone.");
+    };
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted || !data.session?.user || isAuthed) return;
+      handleVerifiedUser(data.session.user);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session?.user || isAuthed) return;
-      const user = session.user;
-      beginTrustedSession({
-        name: String(user.user_metadata?.name || user.email?.split("@")[0] || "BamSignal User"),
-        email: user.email || userProfile.email,
-        phone: String(user.user_metadata?.phone || userProfile.phone),
-        avatar: userProfile.avatar
-      });
+      handleVerifiedUser(session.user);
     });
 
     return () => {
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, [isAuthed, userProfile.email, userProfile.phone, userProfile.avatar]);
+  }, [deviceBinding, isAuthed, userProfile.email, userProfile.phone, userProfile.avatar]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {

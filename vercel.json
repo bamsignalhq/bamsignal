@@ -4,6 +4,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/affiliate/:bookie/:tipId",
+      "destination": "/api/affiliate/:bookie/:tipId"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

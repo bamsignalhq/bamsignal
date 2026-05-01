@@ -157,3 +157,16 @@ export async function upsertDailyGames(gameDate, tips) {
 
   return saved;
 }
+
+export async function deleteDailyGamesBySource(gameDate, source) {
+  if (!pool || !source) return { rowCount: 0 };
+
+  await ensureDailyGamesTable();
+
+  return query(
+    `delete from daily_games
+     where game_date = $1::date
+       and source = $2`,
+    [gameDate, source]
+  );
+}

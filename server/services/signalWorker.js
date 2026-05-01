@@ -1,6 +1,6 @@
 import axios from "axios";
 import { config } from "../config.js";
-import { ensureDailyGamesTable, ensureTipsTable, insertTip, query, upsertDailyGames } from "../db.js";
+import { deleteDailyGamesBySource, ensureDailyGamesTable, ensureTipsTable, insertTip, query, upsertDailyGames } from "../db.js";
 import { sendTipPush } from "../firebase.js";
 import { broadcastTip } from "../telegram.js";
 
@@ -18,15 +18,17 @@ function todayInLagos() {
 function normalizeFixture(raw) {
   const home = raw.home || raw.home_team || raw.homeTeam?.name || raw.teams?.home?.name;
   const away = raw.away || raw.away_team || raw.awayTeam?.name || raw.teams?.away?.name;
-  const league = raw.league || raw.competition || raw.league?.name || raw.competition?.name || "Football";
+  const league = raw.league?.name || raw.competition?.name || raw.league || raw.competition || "Football";
   const startsAt = raw.starts_at || raw.start_time || raw.fixture?.date || raw.date || new Date().toISOString();
   const markets = raw.markets || raw.predictions || raw.odds || [];
+  const status = raw.status || raw.fixture?.status?.short || "NS";
 
   return {
     home: String(home || "Home Team"),
     away: String(away || "Away Team"),
     league: String(league),
     starts_at: startsAt,
+    status: String(status),
     markets: Array.isArray(markets) ? markets : [],
     raw
   };
@@ -76,8 +78,17 @@ async function fetchCandidateFixtures() {
 
 function buildTipCandidates(fixtures) {
   const tips = [];
+  const playableStatuses = new Set(["NS", "TBD", "1H", "HT", "2H", "ET", "P", "BT", "LIVE"]);
+  const now = Date.now();
 
   for (const fixture of fixtures.map(normalizeFixture)) {
+    const startsAtTime = new Date(fixture.starts_at).getTime();
+    const isFutureOrLive = Number.isNaN(startsAtTime) || startsAtTime >= now - 60 * 60 * 1000;
+
+    if (!playableStatuses.has(fixture.status.toUpperCase()) || !isFutureOrLive) {
+      continue;
+    }
+
     const markets = fixture.markets.length ? fixture.markets.map(normalizeMarket) : [
       normalizeMarket({}, 0),
       normalizeMarket({ prediction: "Home win + over 1.5", odds: 2.05, confidence: 74 }, 1)
@@ -151,6 +162,7 @@ async function publishDailyTip(tip, { broadcast = true } = {}) {
 export async function runDailySignalWorker(options = {}) {
   const fixtures = await fetchCandidateFixtures();
   const candidates = buildTipCandidates(fixtures);
+  await deleteDailyGamesBySource(todayInLagos(), "fixture-api");
   const savedDailyGames = await upsertDailyGames(todayInLagos(), candidates);
   const results = [];
 

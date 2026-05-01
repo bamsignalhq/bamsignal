@@ -370,6 +370,23 @@ main {
   color: var(--text);
 }
 
+.primary-action:disabled,
+.secondary-action:disabled,
+.auth-form button:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.spin {
+  animation: spin 0.82s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .danger-action {
   border-color: color-mix(in srgb, #ef4444 45%, var(--border));
   color: color-mix(in srgb, #ef4444 82%, var(--text));
@@ -1613,6 +1630,44 @@ footer {
   padding: 18px;
 }
 
+.user-vault-route .shell {
+  margin-left: 0;
+}
+
+.user-vault-route main {
+  padding: 18px;
+}
+
+.vault-topbar {
+  align-items: center;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 88%, var(--accent)), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: var(--radius);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.vault-topbar > div {
+  display: grid;
+  gap: 7px;
+}
+
+.vault-topbar strong {
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.vault-theme-toggle {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  height: 42px;
+  padding: 0;
+  width: 42px;
+}
+
 .profile-panel h2 {
   margin: 0;
 }
@@ -1652,16 +1707,36 @@ footer {
   width: 88px;
 }
 
+.profile-photo.has-avatar {
+  background: var(--surface-2);
+  overflow: hidden;
+  padding: 0;
+}
+
+.profile-photo img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
 .photo-action {
+  align-items: center;
   background: color-mix(in srgb, var(--surface-2) 82%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
   border-radius: 999px;
   color: var(--text);
   cursor: pointer;
+  display: inline-flex;
   font-size: 11px;
   font-weight: 900;
+  gap: 6px;
   min-height: 28px;
   padding: 0 10px;
+}
+
+.photo-action input {
+  display: none;
 }
 
 .profile-identity {
@@ -1727,6 +1802,31 @@ footer {
 
 .profile-score-grid .lost {
   border-color: color-mix(in srgb, #f87171 42%, var(--border));
+}
+
+.profile-share-card {
+  align-items: center;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent), transparent),
+    var(--surface-2);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 14px;
+}
+
+.profile-share-card h3,
+.profile-share-card p {
+  margin: 0;
+}
+
+.profile-share-card span {
+  color: var(--muted);
+  display: block;
+  line-height: 1.45;
+  margin-top: 4px;
 }
 
 .profile-fintech-grid {
@@ -3296,7 +3396,8 @@ footer strong {
 }
 
 .native-app .profile-community-card,
-.native-app .profile-score-grid {
+.native-app .profile-score-grid,
+.native-app .profile-share-card {
   grid-template-columns: 1fr;
 }
 

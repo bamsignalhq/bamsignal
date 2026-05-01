@@ -10,6 +10,7 @@ import {
   Bell,
   CalendarDays,
   CalendarClock,
+  Camera,
   ChevronDown,
   ClipboardCheck,
   CreditCard,
@@ -19,12 +20,14 @@ import {
   Goal,
   Home,
   Instagram,
+  Loader2,
   LockKeyhole,
   Menu,
   MessageCircle,
   Moon,
   Music2,
   Send,
+  Share2,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -58,6 +61,9 @@ const friendlyAuthError = (error: unknown) => {
   }
   if (/redirect|not allowed|url/i.test(message)) {
     return "Supabase rejected the redirect URL. Add https://bamsignal.com/app and https://bamsignal.com/** to Supabase Auth redirect URLs.";
+  }
+  if (/expired|invalid|token/i.test(message)) {
+    return "That code is not valid anymore. Use the newest 6-digit code from your email, or tap Resend code for a fresh one.";
   }
   return message || "Authentication could not be completed. Please try again.";
 };
@@ -113,6 +119,7 @@ type UserProfile = {
   name: string;
   email: string;
   phone: string;
+  avatar?: string;
 };
 type DeviceBinding = UserProfile & {
   pin: string;
@@ -941,6 +948,17 @@ function getAuthIntent(): AuthIntent {
   return intent === "signup" || intent === "reset" || intent === "login" ? intent : null;
 }
 
+const makeInviteCode = (profile: UserProfile) => {
+  const source = `${profile.email || profile.phone || profile.name}-bamsignal`;
+  let hash = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+  }
+  return `BAM${hash.toString(36).toUpperCase().slice(0, 6).padStart(6, "0")}`;
+};
+
+const sanitizeAuthCode = (value: string) => value.replace(/\D/g, "").slice(0, 6);
+
 const loadAdminContent = (): AdminContent => {
   try {
     const saved = window.localStorage.getItem("bamsignal-admin-content");
@@ -1035,7 +1053,14 @@ function App() {
   const [activeStatus, setActiveStatus] = useState<Fixture["status"] | "All">("All");
   const [isAuthed, setIsAuthed] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile>({ name: "BamSignal Member", email: "", phone: "" });
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    try {
+      const saved = window.localStorage.getItem("bamsignal-user-profile");
+      return saved ? (JSON.parse(saved) as UserProfile) : { name: "BamSignal Member", email: "", phone: "" };
+    } catch {
+      return { name: "BamSignal Member", email: "", phone: "" };
+    }
+  });
   const [page, setPage] = useState<Page>(() => getInitialPage());
   const [dailyKey, setDailyKey] = useState(() => getDailyKey());
   const [showStartupSplash, setShowStartupSplash] = useState(() => isNative);
@@ -1123,8 +1148,13 @@ function App() {
   const topPick = useMemo(() => getDailySureSignal(dailyKey), [dailyKey]);
 
   const goHome = () => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/");
-  const showMenuButton = !(isNative && page.kind === "app") && page.kind !== "admin";
+  const isUserVault = page.kind === "app" && isAuthed;
+  const showMenuButton = page.kind !== "app" && page.kind !== "admin";
   const showTopbarAuth = !isNative && page.kind !== "admin" && !(page.kind === "app" && isAuthed);
+
+  useEffect(() => {
+    window.localStorage.setItem("bamsignal-user-profile", JSON.stringify(userProfile));
+  }, [userProfile]);
 
   if (showStartupSplash) {
     return (
@@ -1135,8 +1165,8 @@ function App() {
   }
 
   return (
-    <div className={`app ${theme} ${isNative ? "native-app" : "web-app"} ${page.kind === "admin" ? "admin-route" : ""}`}>
-      <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
+    <div className={`app ${theme} ${isNative ? "native-app" : "web-app"} ${page.kind === "admin" ? "admin-route" : ""} ${isUserVault ? "user-vault-route" : ""}`}>
+      {!isUserVault && <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
         <div className="brand">
           <button className="brand-button" onClick={goHome}>
             <img className="brand-logo" src={logoSrc} alt="BamSignal" />
@@ -1188,10 +1218,10 @@ function App() {
             {topPick.home} vs {topPick.away}: {topPick.pick}
           </p>
         </div>
-      </aside>
+      </aside>}
 
       <div className="shell">
-        <header className="topbar">
+        {!isUserVault && <header className="topbar">
           {showMenuButton ? (
             <button className="icon-button mobile-only" onClick={() => setMenuOpen(true)} aria-label="Open menu">
               <Menu size={20} />
@@ -1216,7 +1246,7 @@ function App() {
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             <span>{theme === "dark" ? "Light" : "Dark"}</span>
           </button>
-        </header>
+        </header>}
 
         {page.kind === "home" ? (
           <HomePage
@@ -1239,6 +1269,8 @@ function App() {
             isNative={isNative}
             authIntent={getAuthIntent()}
             navigate={navigate}
+            theme={theme}
+            setTheme={setTheme}
           />
         ) : page.kind === "admin" ? (
           <AdminPage isNative={isNative} navigate={navigate} adminContent={adminContent} setAdminContent={setAdminContent} />
@@ -1256,7 +1288,7 @@ function App() {
           <DetailPage page={page} navigate={navigate} />
         )}
 
-        <SiteFooter navigate={navigate} />
+        {!isUserVault && <SiteFooter navigate={navigate} />}
       </div>
 
       {menuOpen && (
@@ -1604,7 +1636,9 @@ function UserDashboard({
   adminContent,
   isNative,
   authIntent,
-  navigate
+  navigate,
+  theme,
+  setTheme
 }: {
   isAuthed: boolean;
   isPremium: boolean;
@@ -1616,6 +1650,8 @@ function UserDashboard({
   isNative: boolean;
   authIntent: AuthIntent;
   navigate: (page: Page, path?: string) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 }) {
   const initialDeviceBinding = useMemo(() => loadDeviceBinding(), []);
   const initialAuthMode = useMemo<AuthMode>(() => {
@@ -1647,6 +1683,7 @@ function UserDashboard({
   const [resetEmail, setResetEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [isResendingCode, setIsResendingCode] = useState(false);
+  const [authBusy, setAuthBusy] = useState<"signup" | "verify" | "login" | "loginOtp" | "reset" | null>(null);
   const freemiumRoomGames = useMemo(
     () => adminContent.games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2),
     [adminContent.games]
@@ -1715,7 +1752,8 @@ function UserDashboard({
       beginTrustedSession({
         name: String(user.user_metadata?.name || user.email?.split("@")[0] || "BamSignal User"),
         email: user.email || userProfile.email,
-        phone: String(user.user_metadata?.phone || userProfile.phone)
+        phone: String(user.user_metadata?.phone || userProfile.phone),
+        avatar: userProfile.avatar
       });
     });
 
@@ -1725,7 +1763,8 @@ function UserDashboard({
       beginTrustedSession({
         name: String(user.user_metadata?.name || user.email?.split("@")[0] || "BamSignal User"),
         email: user.email || userProfile.email,
-        phone: String(user.user_metadata?.phone || userProfile.phone)
+        phone: String(user.user_metadata?.phone || userProfile.phone),
+        avatar: userProfile.avatar
       });
     });
 
@@ -1733,7 +1772,7 @@ function UserDashboard({
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, [isAuthed, userProfile.email, userProfile.phone]);
+  }, [isAuthed, userProfile.email, userProfile.phone, userProfile.avatar]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -1746,6 +1785,28 @@ function UserDashboard({
     return () => window.clearInterval(timer);
   }, [subscriptionUntil, setIsPremium]);
 
+  useEffect(() => {
+    if (!isAuthed) return undefined;
+    let inactivityTimer = 0;
+    const lockVault = () => {
+      supabase?.auth.signOut().catch(() => undefined);
+      setIsAuthed(false);
+      setAuthMode(deviceBinding ? "unlock" : "login");
+      setAuthMessage("For your protection, BamSignal locked after 20 minutes of inactivity.");
+    };
+    const refreshTimer = () => {
+      window.clearTimeout(inactivityTimer);
+      inactivityTimer = window.setTimeout(lockVault, 20 * 60 * 1000);
+    };
+    const activityEvents = ["pointerdown", "keydown", "touchstart", "scroll"];
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, refreshTimer, { passive: true }));
+    refreshTimer();
+    return () => {
+      window.clearTimeout(inactivityTimer);
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, refreshTimer));
+    };
+  }, [deviceBinding, isAuthed, setIsAuthed]);
+
   const normalizePhone = (value: string) => value.replace(/\D/g, "").replace(/^234/, "");
   const isPhoneIdentifier = (value: string) => {
     const digits = normalizePhone(value);
@@ -1753,7 +1814,7 @@ function UserDashboard({
   };
   const resolveLoginProfile = (identifier: string): UserProfile => {
     if (deviceBinding && (identifier.toLowerCase() === deviceBinding.email || normalizePhone(identifier) === normalizePhone(deviceBinding.phone))) {
-      return { name: deviceBinding.name, email: deviceBinding.email, phone: deviceBinding.phone };
+      return { name: deviceBinding.name, email: deviceBinding.email, phone: deviceBinding.phone, avatar: deviceBinding.avatar };
     }
     return isPhoneIdentifier(identifier)
       ? { ...userProfile, phone: normalizePhone(identifier) }
@@ -1795,7 +1856,7 @@ function UserDashboard({
       setVerificationCode("");
       setVerificationInput("");
       setAuthMode(nextMode);
-      setAuthMessage(`6-digit email OTP sent to ${profile.email}.`);
+      setAuthMessage("Verification code sent. Check your inbox.");
       return;
     }
 
@@ -1808,7 +1869,7 @@ function UserDashboard({
     setVerificationCode(code);
     setVerificationInput("");
     setAuthMode(nextMode);
-    setAuthMessage(`6-digit login OTP sent to ${profile.email}. Test code: ${code}`);
+    setAuthMessage(`Verification code sent. Test code: ${code}`);
   };
   const signIn = async () => {
     const identifier = loginForm.identifier.trim();
@@ -1816,19 +1877,24 @@ function UserDashboard({
       setAuthMessage("Enter your phone number or email and password.");
       return;
     }
+    setAuthBusy("login");
     const profile = resolveLoginProfile(identifier);
-    if (supabase && identifier.includes("@")) {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: profile.email,
-        password: loginForm.password
-      });
-      if (error) {
-        setAuthMessage(friendlyAuthError(error));
-        return;
+    try {
+      if (supabase && identifier.includes("@")) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: profile.email,
+          password: loginForm.password
+        });
+        if (error) {
+          setAuthMessage(friendlyAuthError(error));
+          return;
+        }
       }
+      setPendingLoginProfile(profile);
+      await sendEmailOtp(profile, "loginOtp");
+    } finally {
+      setAuthBusy(null);
     }
-    setPendingLoginProfile(profile);
-    await sendEmailOtp(profile, "loginOtp");
   };
   const verifyLoginEmailOtp = async () => {
     if (!pendingLoginProfile) {
@@ -1836,28 +1902,33 @@ function UserDashboard({
       setAuthMessage("Enter your login details first.");
       return;
     }
-    if (supabase && pendingLoginProfile.email.includes("@")) {
-      const { error } = await supabase.auth.verifyOtp({
-        email: pendingLoginProfile.email,
-        token: verificationInput,
-        type: "magiclink"
-      });
-      if (error) {
-        setAuthMessage(friendlyAuthError(error));
+    setAuthBusy("loginOtp");
+    try {
+      if (supabase && pendingLoginProfile.email.includes("@")) {
+        const { error } = await supabase.auth.verifyOtp({
+          email: pendingLoginProfile.email,
+          token: verificationInput.trim(),
+          type: "magiclink"
+        });
+        if (error) {
+          setAuthMessage(friendlyAuthError(error));
+          return;
+        }
+      } else if (verificationInput !== verificationCode) {
+        setAuthMessage("That code is not correct. Check your email and try again.");
         return;
       }
-    } else if (verificationInput !== verificationCode) {
-      setAuthMessage("That email OTP is not correct. Check your email and try again.");
-      return;
+      setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingLoginProfile.email])));
+      if (deviceBinding && (pendingLoginProfile.email === deviceBinding.email || normalizePhone(pendingLoginProfile.phone) === normalizePhone(deviceBinding.phone))) {
+        beginTrustedSession(deviceBinding);
+        return;
+      }
+      setSetupPin("");
+      setAuthMode("pinSetup");
+      setAuthMessage("Code confirmed. Create your 6-digit PIN to bind this phone.");
+    } finally {
+      setAuthBusy(null);
     }
-    setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingLoginProfile.email])));
-    if (deviceBinding && (pendingLoginProfile.email === deviceBinding.email || normalizePhone(pendingLoginProfile.phone) === normalizePhone(deviceBinding.phone))) {
-      beginTrustedSession(deviceBinding);
-      return;
-    }
-    setSetupPin("");
-    setAuthMode("pinSetup");
-    setAuthMessage("Email OTP confirmed. Create your 6-digit PIN to bind this phone.");
   };
   const socialSignIn = async (provider: "Google" | "Apple") => {
     if (supabase) {
@@ -1927,37 +1998,42 @@ function UserDashboard({
       return;
     }
     const nextProfile = { name: signupForm.name, email: signupForm.email.trim().toLowerCase(), phone: signupForm.phone };
+    setAuthBusy("signup");
     if (supabase) {
-      const { data, error } = await supabase.auth.signUp({
-        email: nextProfile.email,
-        password: signupForm.password,
-        options: {
-          data: {
-            name: nextProfile.name,
-            phone: normalizePhone(nextProfile.phone) || nextProfile.phone
-          },
-          emailRedirectTo: `${window.location.origin}/app?auth=login`
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: nextProfile.email,
+          password: signupForm.password,
+          options: {
+            data: {
+              name: nextProfile.name,
+              phone: normalizePhone(nextProfile.phone) || nextProfile.phone
+            },
+            emailRedirectTo: `${window.location.origin}/app?auth=login`
+          }
+        });
+        if (error) {
+          setAuthMessage(friendlyAuthError(error));
+          return;
         }
-      });
-      if (error) {
-        setAuthMessage(friendlyAuthError(error));
-        return;
-      }
 
-      setUserProfile(nextProfile);
-      if (data.session?.user) {
-        setVerifiedEmails((emails) => Array.from(new Set([...emails, nextProfile.email])));
-        bindDevice(nextProfile, signupForm.pin);
-        setAuthMessage("Account created. Welcome to your BamSignal room.");
-        return;
-      }
+        setUserProfile(nextProfile);
+        if (data.session?.user) {
+          setVerifiedEmails((emails) => Array.from(new Set([...emails, nextProfile.email])));
+          bindDevice(nextProfile, signupForm.pin);
+          setAuthMessage("Account created. Welcome to your BamSignal room.");
+          return;
+        }
 
-      setPendingSignup(nextProfile);
-      setVerificationCode("");
-      setVerificationInput("");
-      setAuthMode("verify");
-      setAuthMessage("Verification email sent. Use the code or confirmation button in your inbox.");
-      return;
+        setPendingSignup(nextProfile);
+        setVerificationCode("");
+        setVerificationInput("");
+        setAuthMode("verify");
+        setAuthMessage("Verification sent. Enter the latest 6-digit code from your email.");
+        return;
+      } finally {
+        setAuthBusy(null);
+      }
     }
 
     const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -1966,6 +2042,7 @@ function UserDashboard({
     setVerificationInput("");
     setAuthMode("verify");
     setAuthMessage(`Verification code sent. Test code: ${code}`);
+    setAuthBusy(null);
   };
 
   const resendSignupCode = async () => {
@@ -1986,7 +2063,7 @@ function UserDashboard({
         }
       });
       setIsResendingCode(false);
-      setAuthMessage(error ? friendlyAuthError(error) : "Verification email resent. Use the code or confirmation button in your inbox.");
+      setAuthMessage(error ? friendlyAuthError(error) : "Fresh 6-digit code sent. Use the newest email only.");
       return;
     }
     const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -2001,23 +2078,35 @@ function UserDashboard({
       setAuthMessage("Create your account first so we can send a verification code.");
       return;
     }
+    setAuthBusy("verify");
     if (supabase) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.user) {
+        setUserProfile(pendingSignup);
+        setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
+        bindDevice(pendingSignup, signupForm.pin);
+        setAuthBusy(null);
+        return;
+      }
       const { error } = await supabase.auth.verifyOtp({
         email: pendingSignup.email,
-        token: verificationInput,
+        token: verificationInput.trim(),
         type: "signup"
       });
       if (error) {
         setAuthMessage(friendlyAuthError(error));
+        setAuthBusy(null);
         return;
       }
     } else if (verificationInput !== verificationCode) {
       setAuthMessage("That code is not correct. Check your email and try again.");
+      setAuthBusy(null);
       return;
     }
     setUserProfile(pendingSignup);
     setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
     bindDevice(pendingSignup, signupForm.pin);
+    setAuthBusy(null);
   };
   const finishPinSetup = () => {
     const profile = pendingLoginProfile ?? userProfile;
@@ -2034,13 +2123,51 @@ function UserDashboard({
 
   const sendReset = async () => {
     if (supabase && resetEmail) {
+      setAuthBusy("reset");
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo: `${window.location.origin}/app?auth=reset`
       });
-      setAuthMessage(error ? friendlyAuthError(error) : `Password reset link sent to ${resetEmail}.`);
+      setAuthBusy(null);
+      setAuthMessage(error ? friendlyAuthError(error) : "Password reset link sent.");
       return;
     }
-    setAuthMessage(resetEmail ? `Password reset link sent to ${resetEmail}.` : "Enter your email to receive a reset link.");
+    setAuthMessage(resetEmail ? "Password reset link sent." : "Enter your email to receive a reset link.");
+  };
+
+  const uploadAvatar = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const avatar = String(reader.result || "");
+      const nextProfile = { ...userProfile, avatar };
+      setUserProfile(nextProfile);
+      if (deviceBinding) {
+        const nextBinding = { ...deviceBinding, avatar };
+        window.localStorage.setItem("bamsignal-device-binding", JSON.stringify(nextBinding));
+        setDeviceBinding(nextBinding);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const shareWinningProfile = async () => {
+    const inviteCode = makeInviteCode(userProfile);
+    const wonGames = profileGameHistory.filter((game) => game.status === "Won");
+    const shareText = [
+      `${userProfile.name}'s BamSignal winning record`,
+      `${wins} wins • ${hitRate}% hit rate`,
+      ...wonGames.slice(0, 4).map((game) => `${game.teams}: ${game.play}`),
+      `Invite code: ${inviteCode}`,
+      "Join BamSignal: https://bamsignal.com/app?auth=signup"
+    ].join("\n");
+
+    if (navigator.share) {
+      await navigator.share({ title: "BamSignal winning record", text: shareText, url: "https://bamsignal.com/app?auth=signup" });
+      return;
+    }
+    await navigator.clipboard?.writeText(shareText);
+    setAuthMessage("Winning profile copied with your invite code.");
   };
 
   if (!isAuthed) {
@@ -2100,7 +2227,9 @@ function UserDashboard({
                   </button>
                 </span>
               </label>
-              <button className="primary-action neon-action" onClick={signIn}><UserPlus size={16} /> Login securely</button>
+              <button className="primary-action neon-action" onClick={signIn} disabled={authBusy === "login"}>
+                {authBusy === "login" ? <Loader2 className="spin" size={16} /> : <UserPlus size={16} />} Login securely
+              </button>
               {deviceBinding && <button className="secondary-action" onClick={() => setAuthMode("unlock")}><ShieldCheck size={16} /> Use bound-device login</button>}
               <div className="auth-social-grid">
                 <button onClick={() => socialSignIn("Google")}><GoogleMark /> Continue with Google</button>
@@ -2142,7 +2271,9 @@ function UserDashboard({
                   </button>
                 </span>
               </label>
-              <button className="primary-action neon-action" onClick={signUp}><ShieldCheck size={16} /> Create secure account</button>
+              <button className="primary-action neon-action" onClick={signUp} disabled={authBusy === "signup"}>
+                {authBusy === "signup" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Create secure account
+              </button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={() => setAuthMode("login")}>Already have an account? Login</button>
               </div>
@@ -2151,9 +2282,11 @@ function UserDashboard({
 
           {authMode === "verify" && (
             <div className="auth-form">
-              <p className="auth-compact-note">Use the code from your email, or tap the email confirmation button.</p>
-              <label>Verification code<input value={verificationInput} onChange={(event) => setVerificationInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="Enter 6-digit code" /></label>
-              <button className="primary-action neon-action" onClick={verifySignup}><ShieldCheck size={16} /> Verify and continue</button>
+              <p className="auth-compact-note">Enter the newest 6-digit code from your email.</p>
+              <label>Verification code<input value={verificationInput} onChange={(event) => setVerificationInput(sanitizeAuthCode(event.target.value))} inputMode="numeric" placeholder="Enter 6-digit code" /></label>
+              <button className="primary-action neon-action" onClick={verifySignup} disabled={authBusy === "verify" || verificationInput.length !== 6}>
+                {authBusy === "verify" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Verify and continue
+              </button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={resendSignupCode} disabled={isResendingCode}>
                   {isResendingCode ? "Sending..." : "Resend code"}
@@ -2166,8 +2299,10 @@ function UserDashboard({
           {authMode === "loginOtp" && (
             <div className="auth-form">
               <label>Email<input value={pendingLoginProfile?.email ?? ""} readOnly /></label>
-              <label>6-digit email OTP<input value={verificationInput} onChange={(event) => setVerificationInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="Enter email OTP" /></label>
-              <button className="primary-action neon-action" onClick={verifyLoginEmailOtp}><ShieldCheck size={16} /> Authorize this device</button>
+              <label>Email code<input value={verificationInput} onChange={(event) => setVerificationInput(sanitizeAuthCode(event.target.value))} inputMode="numeric" placeholder="Enter 6-digit code" /></label>
+              <button className="primary-action neon-action" onClick={verifyLoginEmailOtp} disabled={authBusy === "loginOtp" || verificationInput.length !== 6}>
+                {authBusy === "loginOtp" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Authorize this device
+              </button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={() => pendingLoginProfile && sendEmailOtp(pendingLoginProfile, "loginOtp")}>Resend email OTP</button>
                 <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>
@@ -2198,7 +2333,9 @@ function UserDashboard({
           {authMode === "reset" && (
             <div className="auth-form">
               <label>Email<input value={resetEmail} onChange={(event) => setResetEmail(event.target.value)} type="email" placeholder="you@example.com" /></label>
-              <button className="primary-action neon-action" onClick={sendReset}><Send size={16} /> Send reset link</button>
+              <button className="primary-action neon-action" onClick={sendReset} disabled={authBusy === "reset"}>
+                {authBusy === "reset" ? <Loader2 className="spin" size={16} /> : <Send size={16} />} Send reset link
+              </button>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>
                 <button className="text-action" onClick={() => setAuthMode("signup")}>Create account</button>
@@ -2242,6 +2379,15 @@ function UserDashboard({
 
   return (
     <main className="dashboard-main">
+      <div className="vault-topbar">
+        <div>
+          <span className="auth-secure-badge"><ShieldCheck size={14} /> Private member vault</span>
+          <strong>{userProfile.name}</strong>
+        </div>
+        <button className="theme-toggle vault-theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </div>
       <div className="dashboard-tabs">
         {[
           { tab: "home", label: "Home", icon: <Home size={16} /> },
@@ -2329,8 +2475,13 @@ function UserDashboard({
         <section className="profile-panel">
           <div className="profile-community-card">
             <div className="profile-photo-frame">
-              <div className="profile-photo">{userProfile.name.split(" ").map((part) => part[0]).slice(0, 2).join("") || "BS"}</div>
-              <button className="photo-action">Show profile image</button>
+              <div className={`profile-photo ${userProfile.avatar ? "has-avatar" : ""}`}>
+                {userProfile.avatar ? <img src={userProfile.avatar} alt={`${userProfile.name} avatar`} /> : userProfile.name.split(" ").map((part) => part[0]).slice(0, 2).join("") || "BS"}
+              </div>
+              <label className="photo-action">
+                <Camera size={13} /> Upload avatar
+                <input type="file" accept="image/*" onChange={uploadAvatar} />
+              </label>
             </div>
             <div className="profile-identity">
               <span className="auth-secure-badge"><Users size={14} /> BamSignal community</span>
@@ -2339,9 +2490,18 @@ function UserDashboard({
               <div className="member-badges">
                 <span>{isPremium ? "VIP Premium" : "Freemium"}</span>
                 <span>Signal record visible</span>
-                <span>Member since 2026</span>
+                <span>Invite {makeInviteCode(userProfile)}</span>
               </div>
             </div>
+          </div>
+
+          <div className="profile-share-card">
+            <div>
+              <p className="eyebrow">Winning profile</p>
+              <h3>Share wins only</h3>
+              <span>Your share card includes won games, hit rate, and invite code. Losses stay private inside your vault.</span>
+            </div>
+            <button className="primary-action neon-action" onClick={shareWinningProfile}><Share2 size={16} /> Share profile</button>
           </div>
 
           <div className="profile-score-grid">

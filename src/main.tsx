@@ -1915,7 +1915,7 @@ function UserDashboard({
     }
     const nextProfile = { name: signupForm.name, email: signupForm.email.trim().toLowerCase(), phone: signupForm.phone };
     if (supabase) {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: nextProfile.email,
         password: signupForm.password,
         options: {
@@ -1930,11 +1930,20 @@ function UserDashboard({
         setAuthMessage(error.message);
         return;
       }
+
+      setUserProfile(nextProfile);
+      if (data.session?.user) {
+        setVerifiedEmails((emails) => Array.from(new Set([...emails, nextProfile.email])));
+        bindDevice(nextProfile, signupForm.pin);
+        setAuthMessage("Account created. Welcome to your BamSignal room.");
+        return;
+      }
+
       setPendingSignup(nextProfile);
       setVerificationCode("");
       setVerificationInput("");
       setAuthMode("verify");
-      setAuthMessage(`Verification code sent to ${nextProfile.email}.`);
+      setAuthMessage(`Check ${nextProfile.email}. Enter the 6-digit code if shown, or tap the confirmation link in the email.`);
       return;
     }
 
@@ -2103,8 +2112,9 @@ function UserDashboard({
           {authMode === "verify" && (
             <div className="auth-form">
               <label>Email<input value={pendingSignup?.email ?? ""} readOnly /></label>
-              <label>Verification code<input value={verificationInput} onChange={(event) => setVerificationInput(event.target.value)} inputMode="numeric" placeholder="Enter email code" /></label>
+              <label>Verification code<input value={verificationInput} onChange={(event) => setVerificationInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="Enter 6-digit code" /></label>
               <button className="primary-action neon-action" onClick={verifySignup}><ShieldCheck size={16} /> Verify and continue</button>
+              <p className="auth-hint">If your email has a confirmation link instead of a code, tap the link and BamSignal will open your account automatically.</p>
               <div className="auth-switch-row">
                 <button className="text-action" onClick={signUp}>Resend code</button>
                 <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>

@@ -1645,6 +1645,7 @@ function UserDashboard({
   const [subscriptionUntil, setSubscriptionUntil] = useState<Date | null>(null);
   const [resetEmail, setResetEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
+  const [isResendingCode, setIsResendingCode] = useState(false);
   const freemiumRoomGames = useMemo(
     () => adminContent.games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2),
     [adminContent.games]
@@ -1973,6 +1974,8 @@ function UserDashboard({
       return;
     }
     setVerificationInput("");
+    setIsResendingCode(true);
+    setAuthMessage("Resending verification code...");
     if (supabase) {
       const { error } = await supabase.auth.resend({
         type: "signup",
@@ -1981,11 +1984,13 @@ function UserDashboard({
           emailRedirectTo: `${window.location.origin}/app?auth=login`
         }
       });
+      setIsResendingCode(false);
       setAuthMessage(error ? friendlyAuthError(error) : "Verification code sent again. Check your inbox or spam folder.");
       return;
     }
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setVerificationCode(code);
+    setIsResendingCode(false);
     setAuthMessage(`Verification code sent again. Test code: ${code}`);
   };
 
@@ -2148,7 +2153,9 @@ function UserDashboard({
               <label>Verification code<input value={verificationInput} onChange={(event) => setVerificationInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="Enter 6-digit code" /></label>
               <button className="primary-action neon-action" onClick={verifySignup}><ShieldCheck size={16} /> Verify and continue</button>
               <div className="auth-switch-row">
-                <button className="text-action" onClick={resendSignupCode}>Resend code</button>
+                <button className="text-action" onClick={resendSignupCode} disabled={isResendingCode}>
+                  {isResendingCode ? "Sending..." : "Resend code"}
+                </button>
                 <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>
               </div>
             </div>

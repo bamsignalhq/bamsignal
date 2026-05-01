@@ -975,6 +975,169 @@ const makeInviteCode = (profile: UserProfile) => {
 
 const sanitizeAuthCode = (value: string) => value.replace(/\D/g, "").slice(0, 6);
 
+const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+  const image = new Image();
+  image.crossOrigin = "anonymous";
+  image.onload = () => resolve(image);
+  image.onerror = reject;
+  image.src = src;
+});
+
+const drawWrappedText = (
+  context: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number
+) => {
+  const words = text.split(" ");
+  let line = "";
+  let currentY = y;
+  for (const word of words) {
+    const testLine = `${line}${word} `;
+    if (context.measureText(testLine).width > maxWidth && line) {
+      context.fillText(line.trim(), x, currentY);
+      line = `${word} `;
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  context.fillText(line.trim(), x, currentY);
+  return currentY + lineHeight;
+};
+
+async function createWinningProfileCard(
+  profile: UserProfile,
+  wonGames: typeof profileGameHistory,
+  stats: { wins: number; hitRate: number; inviteCode: string; referralLink: string; referralPoints: number }
+) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1920;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  const gradient = context.createLinearGradient(0, 0, 1080, 1920);
+  gradient.addColorStop(0, "#101923");
+  gradient.addColorStop(0.55, "#172535");
+  gradient.addColorStop(1, "#0b111a");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 1080, 1920);
+
+  context.fillStyle = "rgba(212, 255, 51, 0.14)";
+  context.beginPath();
+  context.arc(870, 220, 240, 0, Math.PI * 2);
+  context.fill();
+
+  try {
+    const logo = await loadImage("/brand/compact-logo-dark.jpg");
+    context.drawImage(logo, 72, 72, 330, 92);
+  } catch {
+    context.fillStyle = "#d4ff33";
+    context.font = "900 54px Arial";
+    context.fillText("BamSignal", 72, 134);
+  }
+
+  context.fillStyle = "#d4ff33";
+  context.font = "900 34px Arial";
+  context.fillText("WINNING PROFILE", 72, 270);
+
+  context.fillStyle = "#ffffff";
+  context.font = "900 74px Arial";
+  drawWrappedText(context, profile.name || "BamSignal Member", 72, 360, 650, 82);
+
+  context.save();
+  context.beginPath();
+  context.arc(860, 390, 130, 0, Math.PI * 2);
+  context.clip();
+  if (profile.avatar) {
+    try {
+      const avatar = await loadImage(profile.avatar);
+      context.drawImage(avatar, 730, 260, 260, 260);
+    } catch {
+      context.fillStyle = "#d4ff33";
+      context.fillRect(730, 260, 260, 260);
+    }
+  } else {
+    context.fillStyle = "#d4ff33";
+    context.fillRect(730, 260, 260, 260);
+    context.fillStyle = "#101923";
+    context.font = "900 72px Arial";
+    context.textAlign = "center";
+    context.fillText((profile.name || "BS").split(" ").map((part) => part[0]).slice(0, 2).join(""), 860, 415);
+    context.textAlign = "left";
+  }
+  context.restore();
+  context.strokeStyle = "#d4ff33";
+  context.lineWidth = 8;
+  context.beginPath();
+  context.arc(860, 390, 134, 0, Math.PI * 2);
+  context.stroke();
+
+  const statCards = [
+    ["WINS", String(stats.wins)],
+    ["HIT RATE", `${stats.hitRate}%`],
+    ["BAMPOINTS", String(stats.referralPoints)]
+  ];
+  statCards.forEach(([label, value], index) => {
+    const x = 72 + index * 312;
+    context.fillStyle = "rgba(255, 255, 255, 0.08)";
+    context.strokeStyle = "rgba(212, 255, 51, 0.32)";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.roundRect(x, 610, 278, 162, 22);
+    context.fill();
+    context.stroke();
+    context.fillStyle = "#aeb8c7";
+    context.font = "900 28px Arial";
+    context.fillText(label, x + 28, 662);
+    context.fillStyle = label === "WINS" ? "#d4ff33" : "#ffffff";
+    context.font = "900 62px Arial";
+    context.fillText(value, x + 28, 735);
+  });
+
+  context.fillStyle = "#ffffff";
+  context.font = "900 44px Arial";
+  context.fillText("Last 5 winning signals", 72, 900);
+
+  let y = 980;
+  wonGames.slice(0, 5).forEach((game, index) => {
+    context.fillStyle = "rgba(255, 255, 255, 0.075)";
+    context.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    context.beginPath();
+    context.roundRect(72, y - 48, 936, 142, 20);
+    context.fill();
+    context.stroke();
+    context.fillStyle = "#d4ff33";
+    context.font = "900 28px Arial";
+    context.fillText(`0${index + 1}`, 104, y);
+    context.fillStyle = "#ffffff";
+    context.font = "900 33px Arial";
+    context.fillText(game.teams, 170, y);
+    context.fillStyle = "#aeb8c7";
+    context.font = "700 28px Arial";
+    context.fillText(`${game.league} / ${game.play}`, 170, y + 44);
+    y += 164;
+  });
+
+  context.fillStyle = "rgba(212, 255, 51, 0.12)";
+  context.strokeStyle = "rgba(212, 255, 51, 0.38)";
+  context.beginPath();
+  context.roundRect(72, 1650, 936, 156, 24);
+  context.fill();
+  context.stroke();
+  context.fillStyle = "#d4ff33";
+  context.font = "900 32px Arial";
+  context.fillText(`Invite code: ${stats.inviteCode}`, 112, 1715);
+  context.fillStyle = "#ffffff";
+  context.font = "700 29px Arial";
+  drawWrappedText(context, stats.referralLink, 112, 1764, 850, 36);
+
+  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png", 0.95));
+}
+
 const parseAdminBookingCodes = (value: string) => value
   .split("/")
   .map((chunk) => chunk.trim())
@@ -1740,6 +1903,7 @@ function UserDashboard({
   const [authMessage, setAuthMessage] = useState("");
   const [isResendingCode, setIsResendingCode] = useState(false);
   const [authBusy, setAuthBusy] = useState<"signup" | "verify" | "login" | "loginOtp" | "reset" | null>(null);
+  const [referralPoints, setReferralPoints] = useState(() => Number(window.localStorage.getItem("bamsignal-referral-points") || 0));
   const freemiumRoomGames = useMemo(
     () => adminContent.games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2),
     [adminContent.games]
@@ -1754,6 +1918,9 @@ function UserDashboard({
   const subscriptionLabel = subscriptionUntil
     ? subscriptionUntil.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })
     : "Not active";
+  const inviteCode = makeInviteCode(userProfile);
+  const referralLink = `https://bamsignal.com/app?auth=signup&ref=${inviteCode}`;
+  const referralVipCredit = Math.floor(referralPoints / 500);
   const isWebAppRoute = Capacitor.getPlatform() === "web";
   const vipPlans = useMemo(() => [
     { id: "weekly", label: "Weekly VIP", price: formatNaira(adminContent.vipWeeklyPrice), days: 7, link: adminContent.vipWeeklyLink },
@@ -2208,22 +2375,60 @@ function UserDashboard({
   };
 
   const shareWinningProfile = async () => {
-    const inviteCode = makeInviteCode(userProfile);
     const wonGames = profileGameHistory.filter((game) => game.status === "Won");
+    const nextPoints = referralPoints + 50;
     const shareText = [
       `${userProfile.name}'s BamSignal winning record`,
       `${wins} wins • ${hitRate}% hit rate`,
-      ...wonGames.slice(0, 4).map((game) => `${game.teams}: ${game.play}`),
+      ...wonGames.slice(0, 5).map((game) => `${game.teams}: ${game.play}`),
       `Invite code: ${inviteCode}`,
-      "Join BamSignal: https://bamsignal.com/app?auth=signup"
+      `Join with my link: ${referralLink}`,
+      "Referral reward: confirmed invites earn BamPoints toward VIP."
     ].join("\n");
+    const cardBlob = await createWinningProfileCard(userProfile, wonGames, {
+      wins,
+      hitRate,
+      inviteCode,
+      referralLink,
+      referralPoints: nextPoints
+    });
+    const files = cardBlob ? [new File([cardBlob], "bamsignal-winning-profile.png", { type: "image/png" })] : [];
 
-    if (navigator.share) {
-      await navigator.share({ title: "BamSignal winning record", text: shareText, url: "https://bamsignal.com/app?auth=signup" });
-      return;
+    const canShareFiles = files.length > 0 && typeof navigator.canShare === "function" && navigator.canShare({ files });
+    if (navigator.share && (!files.length || canShareFiles)) {
+      await navigator.share({
+        title: "BamSignal winning record",
+        text: shareText,
+        url: referralLink,
+        ...(files.length ? { files } : {})
+      });
+    } else if (cardBlob) {
+      const objectUrl = URL.createObjectURL(cardBlob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "bamsignal-winning-profile.png";
+      link.click();
+      URL.revokeObjectURL(objectUrl);
+      await navigator.clipboard?.writeText(shareText);
+    } else {
+      await navigator.clipboard?.writeText(shareText);
     }
-    await navigator.clipboard?.writeText(shareText);
-    setAuthMessage("Winning profile copied with your invite code.");
+    setReferralPoints(nextPoints);
+    window.localStorage.setItem("bamsignal-referral-points", String(nextPoints));
+    setAuthMessage("Winning profile shared. 50 BamPoints added; confirmed referrals can be converted toward VIP.");
+  };
+
+  const logout = async () => {
+    await supabase?.auth.signOut().catch(() => undefined);
+    setIsAuthed(false);
+    setIsPremium(false);
+    setPinInput("");
+    setVerificationInput("");
+    setPendingLoginProfile(null);
+    setPendingSignup(null);
+    setAuthMode(deviceBinding ? "unlock" : "login");
+    setAuthMessage("Logged out securely.");
+    navigate({ kind: "app" }, "/app?auth=login");
   };
 
   if (!isAuthed) {
@@ -2555,9 +2760,21 @@ function UserDashboard({
             <div>
               <p className="eyebrow">Winning profile</p>
               <h3>Share wins only</h3>
-              <span>Your share card includes won games, hit rate, and invite code. Losses stay private inside your vault.</span>
+              <span>Your share card includes your avatar, last 5 wins, invite code, and referral link. Losses stay private inside your vault.</span>
             </div>
             <button className="primary-action neon-action" onClick={shareWinningProfile}><Share2 size={16} /> Share profile</button>
+          </div>
+
+          <div className="referral-wallet-card">
+            <div>
+              <p className="eyebrow">Referral wallet</p>
+              <h3>{referralPoints} BamPoints</h3>
+              <span>Earn 50 BamPoints when you share your profile. Confirmed invited members can be credited toward VIP access.</span>
+            </div>
+            <div>
+              <strong>{referralVipCredit}</strong>
+              <small>VIP credit units</small>
+            </div>
           </div>
 
           <div className="profile-score-grid">
@@ -2591,6 +2808,14 @@ function UserDashboard({
               </div>
               <Users size={18} />
               <small>{hitRate}% hit rate across your visible record.</small>
+            </article>
+            <article className="profile-wallet-card">
+              <div>
+                <span>Invite code</span>
+                <strong>{inviteCode}</strong>
+              </div>
+              <Share2 size={18} />
+              <small>{referralLink}</small>
             </article>
           </div>
 
@@ -2631,7 +2856,7 @@ function UserDashboard({
             <a className="secondary-action danger-action" href="/legal/account-deletion"><ShieldCheck size={16} /> Request account deletion</a>
           </div>
 
-          <button className="secondary-action" onClick={() => { setIsAuthed(false); setIsPremium(false); }}>
+          <button className="secondary-action" onClick={logout}>
             Log out
           </button>
         </section>
@@ -3185,13 +3410,23 @@ function AdminPage({
       }
     });
   };
+  const logoutAdmin = () => {
+    setQuickPublish({ ...quickPublish, publishSecret: "" });
+    setAdminStatus("Admin session closed.");
+    navigate({ kind: "home" }, "/");
+  };
 
   return (
     <main>
       <section className="detail-hero">
-        <button className="back-link" onClick={() => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/")}>
-          <ArrowLeft size={16} /> {isNative ? "Back to user dashboard" : "Back to BamSignal"}
-        </button>
+        <div className="admin-hero-actions">
+          <button className="back-link" onClick={() => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/")}>
+            <ArrowLeft size={16} /> {isNative ? "Back to user dashboard" : "Back to BamSignal"}
+          </button>
+          <button className="secondary-action danger-action" onClick={logoutAdmin}>
+            <LockKeyhole size={16} /> Log out admin
+          </button>
+        </div>
         <p className="eyebrow">Admin command center</p>
         <h2>Input once. Publish everywhere.</h2>
         <p>

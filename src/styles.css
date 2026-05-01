@@ -721,6 +721,13 @@ footer {
   padding: 18px;
 }
 
+.admin-hero-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
 .admin-route .sidebar,
 .admin-route footer {
   display: none;
@@ -1829,10 +1836,51 @@ footer {
   margin-top: 4px;
 }
 
+.referral-wallet-card {
+  align-items: center;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, #fbbf24 18%, transparent), transparent),
+    var(--surface-2);
+  border: 1px solid color-mix(in srgb, #fbbf24 40%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 14px;
+}
+
+.referral-wallet-card h3,
+.referral-wallet-card p {
+  margin: 0;
+}
+
+.referral-wallet-card span,
+.referral-wallet-card small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.referral-wallet-card > div:last-child {
+  background: color-mix(in srgb, #fbbf24 16%, transparent);
+  border: 1px solid color-mix(in srgb, #fbbf24 38%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 2px;
+  min-width: 108px;
+  padding: 10px;
+  text-align: center;
+}
+
+.referral-wallet-card strong {
+  color: #fbbf24;
+  font-size: 30px;
+  line-height: 1;
+}
+
 .profile-fintech-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .profile-wallet-card {
@@ -3434,7 +3482,9 @@ footer strong {
 
 .native-app .profile-community-card,
 .native-app .profile-score-grid,
-.native-app .profile-share-card {
+.native-app .profile-share-card,
+.native-app .referral-wallet-card,
+.native-app .profile-fintech-grid {
   grid-template-columns: 1fr;
 }
 

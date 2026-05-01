@@ -1954,7 +1954,7 @@ function UserDashboard({
       setVerificationCode("");
       setVerificationInput("");
       setAuthMode("verify");
-      setAuthMessage(`Check ${nextProfile.email}. Enter the 6-digit code if shown, or tap the confirmation link in the email.`);
+      setAuthMessage("Verification code sent. Check your inbox or spam folder.");
       return;
     }
 
@@ -1963,7 +1963,30 @@ function UserDashboard({
     setVerificationCode(code);
     setVerificationInput("");
     setAuthMode("verify");
-    setAuthMessage(`Verification code sent to ${nextProfile.email}. Test code: ${code}`);
+    setAuthMessage(`Verification code sent. Test code: ${code}`);
+  };
+
+  const resendSignupCode = async () => {
+    if (!pendingSignup) {
+      setAuthMode("signup");
+      setAuthMessage("Create your account first so we can send a verification code.");
+      return;
+    }
+    setVerificationInput("");
+    if (supabase) {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: pendingSignup.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/app?auth=login`
+        }
+      });
+      setAuthMessage(error ? friendlyAuthError(error) : "Verification code sent again. Check your inbox or spam folder.");
+      return;
+    }
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    setVerificationCode(code);
+    setAuthMessage(`Verification code sent again. Test code: ${code}`);
   };
 
   const verifySignup = async () => {
@@ -2122,12 +2145,10 @@ function UserDashboard({
 
           {authMode === "verify" && (
             <div className="auth-form">
-              <label>Email<input value={pendingSignup?.email ?? ""} readOnly /></label>
               <label>Verification code<input value={verificationInput} onChange={(event) => setVerificationInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="Enter 6-digit code" /></label>
               <button className="primary-action neon-action" onClick={verifySignup}><ShieldCheck size={16} /> Verify and continue</button>
-              <p className="auth-hint">If your email has a confirmation link instead of a code, tap the link and BamSignal will open your account automatically.</p>
               <div className="auth-switch-row">
-                <button className="text-action" onClick={signUp}>Resend code</button>
+                <button className="text-action" onClick={resendSignupCode}>Resend code</button>
                 <button className="text-action" onClick={() => setAuthMode("login")}>Back to login</button>
               </div>
             </div>

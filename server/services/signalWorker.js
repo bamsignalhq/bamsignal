@@ -90,21 +90,29 @@ async function fetchCandidateFixtures() {
     ? config.signalWorker.fixtureApiUrl
     : `${config.signalWorker.fixtureApiUrl.replace(/\/$/, "")}/fixtures`;
 
-  const response = await axios.get(fixtureUrl, {
-    headers: {
-      Authorization: `Bearer ${config.signalWorker.fixtureApiKey}`,
-      "x-apisports-key": config.signalWorker.fixtureApiKey,
-      "x-api-key": config.signalWorker.fixtureApiKey
-    },
-    params: {
-      date: todayInLagos(),
-      timezone: config.signalWorker.timezone
-    },
-    timeout: 15000
-  });
+  try {
+    const response = await axios.get(fixtureUrl, {
+      headers: {
+        Authorization: `Bearer ${config.signalWorker.fixtureApiKey}`,
+        "x-apisports-key": config.signalWorker.fixtureApiKey,
+        "x-api-key": config.signalWorker.fixtureApiKey
+      },
+      params: {
+        date: todayInLagos(),
+        timezone: config.signalWorker.timezone
+      },
+      timeout: 15000
+    });
 
-  const payload = response.data?.fixtures || response.data?.data || response.data?.response || response.data;
-  return Array.isArray(payload) ? payload.map(normalizeFixture) : defaultFixtures;
+    const payload = response.data?.fixtures || response.data?.data || response.data?.response || response.data;
+    return Array.isArray(payload) ? payload.map(normalizeFixture) : defaultFixtures;
+  } catch (error) {
+    console.warn("Fixture API unavailable; using BamSignal fallback board", {
+      code: error.code,
+      message: error.message
+    });
+    return defaultFixtures;
+  }
 }
 
 function buildTipCandidates(fixtures) {

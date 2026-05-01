@@ -90,6 +90,7 @@ type Page =
 type AdminTab = "overview" | "games" | "login" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type AuthIntent = "login" | "signup" | "reset" | null;
+type PendingEmailOtpType = "signup" | "magiclink";
 type DashboardTab = "home" | "vip" | "profile";
 type BookmakerKey =
   | "sportybet"
@@ -127,6 +128,7 @@ type UserProfile = {
   email: string;
   phone: string;
   avatar?: string;
+  referralCode?: string;
 };
 type DeviceBinding = UserProfile & {
   pin: string;
@@ -971,6 +973,10 @@ function getAuthIntent(): AuthIntent {
   return intent === "signup" || intent === "reset" || intent === "login" ? intent : null;
 }
 
+function getReferralCodeFromUrl() {
+  return (new URLSearchParams(window.location.search).get("ref") || "").trim().slice(0, 32);
+}
+
 const makeInviteCode = (profile: UserProfile) => {
   const source = `${profile.email || profile.phone || profile.name}-bamsignal`;
   let hash = 0;
@@ -981,6 +987,14 @@ const makeInviteCode = (profile: UserProfile) => {
 };
 
 const sanitizeAuthCode = (value: string) => value.replace(/\D/g, "").slice(0, 6);
+
+const isExistingSignupError = (error: unknown) => /already|registered|exists|duplicate/i.test(
+  error instanceof Error ? error.message : String(error || "")
+);
+
+const isUnverifiedEmailError = (error: unknown) => /confirm|confirmed|verify|verified/i.test(
+  error instanceof Error ? error.message : String(error || "")
+);
 
 const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
   const image = new Image();
@@ -1889,8 +1903,17 @@ function UserDashboard({
   const [authMode, setAuthMode] = useState<AuthMode>(initialAuthMode);
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("home");
   const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
-  const [signupForm, setSignupForm] = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "", pin: "" });
+  const [signupForm, setSignupForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+    pin: "",
+    referralCode: getReferralCodeFromUrl()
+  });
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(null);
+  const [pendingSignupOtpType, setPendingSignupOtpType] = useState<PendingEmailOtpType>("signup");
   const [pendingLoginProfile, setPendingLoginProfile] = useState<UserProfile | null>(null);
   const [verificationCode, setVerificationCode] = useState("");
   const [verificationInput, setVerificationInput] = useState("");
@@ -2170,6 +2193,12 @@ function UserDashboard({
           password: loginForm.password
         });
         if (error) {
+          if (isUnverifiedEmailError(error)) {
+            setPendingLoginProfile(profile);
+            await sendEmailOtp(profile, "loginOtp");
+            setAuthMessage("Email verification is still pending. We sent a fresh code so you can finish login.");
+            return;
+          }
           setAuthMessage(friendlyAuthError(error));
           return;
         }
@@ -2287,7 +2316,12 @@ function UserDashboard({
       setAuthMessage("Email signup is being activated. Please try again shortly.");
       return;
     }
-    const nextProfile = { name: signupForm.name, email: signupForm.email.trim().toLowerCase(), phone: signupForm.phone };
+    const nextProfile = {
+      name: signupForm.name.trim(),
+      email: signupForm.email.trim().toLowerCase(),
+      phone: signupForm.phone.trim(),
+      referralCode: signupForm.referralCode.trim()
+    };
     setAuthBusy("signup");
     if (supabase) {
       try {
@@ -2297,12 +2331,33 @@ function UserDashboard({
           options: {
             data: {
               name: nextProfile.name,
-              phone: normalizePhone(nextProfile.phone) || nextProfile.phone
+              phone: normalizePhone(nextProfile.phone) || nextProfile.phone,
+              referral_code: nextProfile.referralCode || null
             },
             emailRedirectTo: `${window.location.origin}/app?auth=login`
           }
         });
         if (error) {
+          if (isExistingSignupError(error)) {
+            setUserProfile(nextProfile);
+            setPendingSignup(nextProfile);
+            setPendingSignupOtpType("magiclink");
+            setVerificationCode("");
+            setVerificationInput("");
+            setAuthMode("verify");
+            const { error: otpError } = await supabase.auth.signInWithOtp({
+              email: nextProfile.email,
+              options: {
+                shouldCreateUser: false,
+                emailRedirectTo: `${window.location.origin}/app?auth=login`
+              }
+            });
+            setAuthMessage(otpError
+              ? friendlyAuthError(otpError)
+              : "This account already exists but is not verified. We sent a fresh code; enter it to finish login."
+            );
+            return;
+          }
           setAuthMessage(friendlyAuthError(error));
           return;
         }
@@ -2316,6 +2371,7 @@ function UserDashboard({
         }
 
         setPendingSignup(nextProfile);
+        setPendingSignupOtpType("signup");
         setVerificationCode("");
         setVerificationInput("");
         setAuthMode("verify");
@@ -2328,6 +2384,7 @@ function UserDashboard({
 
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setPendingSignup(nextProfile);
+    setPendingSignupOtpType("signup");
     setVerificationCode(code);
     setVerificationInput("");
     setAuthMode("verify");
@@ -2345,13 +2402,21 @@ function UserDashboard({
     setIsResendingCode(true);
     setAuthMessage("Resending verification code...");
     if (supabase) {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email: pendingSignup.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/app?auth=login`
-        }
-      });
+      const { error } = pendingSignupOtpType === "signup"
+        ? await supabase.auth.resend({
+            type: "signup",
+            email: pendingSignup.email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/app?auth=login`
+            }
+          })
+        : await supabase.auth.signInWithOtp({
+            email: pendingSignup.email,
+            options: {
+              shouldCreateUser: false,
+              emailRedirectTo: `${window.location.origin}/app?auth=login`
+            }
+          });
       setIsResendingCode(false);
       setAuthMessage(error ? friendlyAuthError(error) : "Fresh 6-digit code sent. Use the newest email only.");
       return;
@@ -2381,7 +2446,7 @@ function UserDashboard({
       const { error } = await supabase.auth.verifyOtp({
         email: pendingSignup.email,
         token: verificationInput.trim(),
-        type: "signup"
+        type: pendingSignupOtpType
       });
       if (error) {
         setAuthMessage(friendlyAuthError(error));
@@ -2575,6 +2640,7 @@ function UserDashboard({
               <label>Name<input value={signupForm.name} onChange={(event) => setSignupForm({ ...signupForm, name: event.target.value })} placeholder="Full name" /></label>
               <label>Email<input value={signupForm.email} onChange={(event) => setSignupForm({ ...signupForm, email: event.target.value })} type="email" placeholder="you@example.com" /></label>
               <label>Phone number<input value={signupForm.phone} onChange={(event) => setSignupForm({ ...signupForm, phone: event.target.value })} type="tel" placeholder="Phone number" /></label>
+              <label>Referral code <span className="optional-label">Optional</span><input value={signupForm.referralCode} onChange={(event) => setSignupForm({ ...signupForm, referralCode: event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 32) })} placeholder="Referral code" /></label>
               <label>Password
                 <span className="secret-input-wrap">
                   <input value={signupForm.password} onChange={(event) => setSignupForm({ ...signupForm, password: event.target.value })} type={secretInputType("signupPassword")} placeholder="Create password" />
@@ -2672,7 +2738,7 @@ function UserDashboard({
           )}
 
           {authMessage && <p className="auth-message">{authMessage}</p>}
-          {showDynamicBanner && <AuthDynamicBanner banner={activeAuthBanner} position="bottom" onAction={handleBannerAction} />}
+          {showDynamicBanner && !isNative && authMode !== "login" && <AuthDynamicBanner banner={activeAuthBanner} position="bottom" onAction={handleBannerAction} />}
         </section>
       </main>
     );

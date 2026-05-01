@@ -22,7 +22,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await runDailySignalWorker({ broadcast: req.body?.broadcast !== false });
+    const broadcast = req.query.broadcast === "false" ? false : req.body?.broadcast !== false;
+    const result = await runDailySignalWorker({ broadcast });
     return res.status(200).json(result);
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Daily signal worker failed" });

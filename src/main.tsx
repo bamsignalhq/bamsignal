@@ -43,8 +43,11 @@ import {
 } from "lucide-react";
 import "./styles.css";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const productionSupabaseUrl = "https://nswiwxmavuqpuzlsascs.supabase.co";
+const productionSupabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zd2l3eG1hdnVxcHV6bHNhc2NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzg1MzksImV4cCI6MjA5MTc1NDUzOX0.5npMr6niRCG1n2EJL4B8ZSeeEel7ZZIVq6btbM3oghs";
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || productionSupabaseUrl;
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || productionSupabaseAnonKey;
 const demoOtpEnabled = import.meta.env.DEV;
 const nativeAuthRedirectUrl = "com.bamsignal.app://auth-callback";
 const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey

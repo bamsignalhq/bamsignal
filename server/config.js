@@ -46,6 +46,6 @@ export const config = {
     sportybet: process.env.AFFILIATE_SPORTYBET_URL,
     bet9ja: process.env.AFFILIATE_BET9JA_URL,
     betway: process.env.AFFILIATE_BETWAY_URL,
-    melbet: process.env.AFFILIATE_MELBET_URL
+    melbet: process.env.AFFILIATE_MELBET_URL || "https://melbet.org/en?tag=d_5550069m_45415c_"
   }
 };

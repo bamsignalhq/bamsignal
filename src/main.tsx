@@ -1124,6 +1124,7 @@ function App() {
 
   const goHome = () => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/");
   const showMenuButton = !(isNative && page.kind === "app") && page.kind !== "admin";
+  const showTopbarAuth = !isNative && page.kind !== "admin" && !(page.kind === "app" && isAuthed);
 
   if (showStartupSplash) {
     return (
@@ -1201,7 +1202,7 @@ function App() {
           <button className="topbar-brand" onClick={goHome} aria-label="Go to BamSignal home">
             <img className="topbar-logo" src={logoSrc} alt="BamSignal" />
           </button>
-          {!isNative && page.kind !== "admin" && (
+          {showTopbarAuth && (
             <div className="topbar-auth-actions" aria-label="BamSignal member access">
               <button className="secondary-action" onClick={() => openMemberAuth("login")}>
                 <LockKeyhole size={15} /> Login
@@ -1955,7 +1956,7 @@ function UserDashboard({
       setVerificationCode("");
       setVerificationInput("");
       setAuthMode("verify");
-      setAuthMessage("Verification code sent. Check your inbox or spam folder.");
+      setAuthMessage("Verification email sent. Use the code or confirmation button in your inbox.");
       return;
     }
 
@@ -1985,7 +1986,7 @@ function UserDashboard({
         }
       });
       setIsResendingCode(false);
-      setAuthMessage(error ? friendlyAuthError(error) : "Verification code sent again. Check your inbox or spam folder.");
+      setAuthMessage(error ? friendlyAuthError(error) : "Verification email resent. Use the code or confirmation button in your inbox.");
       return;
     }
     const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -2150,6 +2151,7 @@ function UserDashboard({
 
           {authMode === "verify" && (
             <div className="auth-form">
+              <p className="auth-compact-note">Use the code from your email, or tap the email confirmation button.</p>
               <label>Verification code<input value={verificationInput} onChange={(event) => setVerificationInput(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="Enter 6-digit code" /></label>
               <button className="primary-action neon-action" onClick={verifySignup}><ShieldCheck size={16} /> Verify and continue</button>
               <div className="auth-switch-row">
@@ -2352,27 +2354,27 @@ function UserDashboard({
           <div className="profile-fintech-grid">
             <article className="profile-wallet-card">
               <div>
-                <span>Membership wallet</span>
+                <span>Member status</span>
                 <strong>{isPremium ? "VIP active" : "Freemium active"}</strong>
               </div>
               <Crown size={18} />
-              <small>{isPremium ? `Renews or expires on ${subscriptionLabel}` : "Upgrade weekly for ₦950 or monthly for ₦2,950."}</small>
+              <small>{isPremium ? `Access until ${subscriptionLabel}` : `VIP from ${vipPlans[0]?.price ?? "₦950"} weekly.`}</small>
             </article>
             <article className="profile-wallet-card">
               <div>
-                <span>Security status</span>
-                <strong>{deviceBinding ? "Device bound" : "OTP required"}</strong>
+                <span>Login protection</span>
+                <strong>{deviceBinding ? "Trusted device" : "Verification ready"}</strong>
               </div>
               <ShieldCheck size={18} />
-              <small>New phones must pass password plus email OTP before PIN or phone auth is enabled.</small>
+              <small>{deviceBinding ? "PIN and phone auth are ready here." : "Verify once to enable quick login."}</small>
             </article>
             <article className="profile-wallet-card">
               <div>
-                <span>Community rank</span>
+                <span>Room badge</span>
                 <strong>Signal Builder</strong>
               </div>
               <Users size={18} />
-              <small>Your visible record helps the room trust your picks and celebrate wins.</small>
+              <small>{hitRate}% hit rate across your visible record.</small>
             </article>
           </div>
 

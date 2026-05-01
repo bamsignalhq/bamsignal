@@ -1260,6 +1260,14 @@ footer {
   padding: 10px;
 }
 
+.auth-compact-note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+  text-align: center;
+}
+
 .bound-account-card {
   background: color-mix(in srgb, var(--surface-2) 82%, var(--accent));
   border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));

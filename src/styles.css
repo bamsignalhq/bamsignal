@@ -1089,7 +1089,7 @@ footer {
   align-items: center;
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(128px, auto) minmax(0, 1fr);
 }
 
 .match-team {
@@ -1318,6 +1318,10 @@ footer {
   margin-top: 14px;
 }
 
+.league-table {
+  overflow-x: auto;
+}
+
 .stats-row,
 .event-row,
 .league-table-row {
@@ -1351,12 +1355,17 @@ footer {
   grid-template-columns: 58px minmax(0, 1fr) minmax(0, 1fr);
 }
 
+.event-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .event-row strong {
   color: var(--accent);
 }
 
 .league-table-row {
-  grid-template-columns: 52px minmax(0, 1fr) 52px 64px;
+  grid-template-columns: 48px minmax(0, 1fr) 46px 46px 46px 46px 50px 58px;
+  min-width: 640px;
 }
 
 .league-table-row span {
@@ -1369,6 +1378,10 @@ footer {
 .league-table-row .team-logo {
   height: 28px;
   width: 28px;
+}
+
+.form-fallback-row {
+  grid-template-columns: minmax(0, 1fr) auto !important;
 }
 
 .member-app-panel {
@@ -3795,12 +3808,27 @@ footer strong {
   }
 
   .match-scoreboard {
-    grid-template-columns: 1fr;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(82px, 0.7fr) minmax(0, 1fr);
+  }
+
+  .match-team .team-logo {
+    height: 42px;
+    width: 42px;
+  }
+
+  .match-team strong {
+    font-size: 14px;
   }
 
   .match-score {
-    justify-self: center;
-    order: -1;
+    border-radius: 14px;
+    min-width: 0;
+    padding: 10px 6px;
+  }
+
+  .match-score strong {
+    font-size: 26px;
   }
 
   .match-prediction-row {
@@ -3816,11 +3844,18 @@ footer strong {
     font-size: 11px;
   }
 
-  .event-row,
-  .league-table-row,
   .h2h-card > div {
     grid-template-columns: 1fr;
     text-align: left;
+  }
+
+  .event-list {
+    grid-template-columns: 1fr;
+  }
+
+  .event-row {
+    gap: 6px;
+    grid-template-columns: 48px minmax(0, 0.85fr) minmax(0, 1fr);
   }
 
   .stats-row {

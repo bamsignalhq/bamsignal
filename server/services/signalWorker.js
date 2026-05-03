@@ -347,6 +347,14 @@ function normalizeLeagueTeams(teams) {
   })).filter((row) => row.name);
 }
 
+function footballSeasonFromDate(dateValue) {
+  const date = dateValue ? new Date(dateValue) : new Date();
+  if (Number.isNaN(date.getTime())) return new Date().getUTCFullYear();
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + 1;
+  return month <= 7 ? year - 1 : year;
+}
+
 function normalizeH2h(matches, homeTeamId, awayTeamId) {
   return (Array.isArray(matches) ? matches : []).slice(0, 6).map((match) => ({
     id: match.fixture?.id,
@@ -361,6 +369,33 @@ function normalizeH2h(matches, homeTeamId, awayTeamId) {
     homeIsCurrent: Number(match.teams?.home?.id) === Number(homeTeamId),
     awayIsCurrent: Number(match.teams?.away?.id) === Number(awayTeamId)
   }));
+}
+
+function teamRecordFromPrediction(team, index) {
+  const fixtures = team?.league?.fixtures;
+  const wins = Number(fixtures?.wins?.total ?? 0);
+  const draws = Number(fixtures?.draws?.total ?? 0);
+  const lost = Number(fixtures?.loses?.total ?? 0);
+  const played = Number(fixtures?.played?.total ?? wins + draws + lost);
+  if (!team?.name || !played) return null;
+  return {
+    rank: index + 1,
+    name: team.name,
+    logo: team.logo,
+    points: wins * 3 + draws,
+    played,
+    won: wins,
+    drawn: draws,
+    lost,
+    goalsDiff: Number(team.league?.goals?.for?.total?.total ?? 0) - Number(team.league?.goals?.against?.total?.total ?? 0),
+    source: "team-record"
+  };
+}
+
+function normalizePredictionTeamRecords(prediction) {
+  return [prediction?.teams?.home, prediction?.teams?.away]
+    .map((team, index) => teamRecordFromPrediction(team, index))
+    .filter(Boolean);
 }
 
 function normalizeEvents(events) {
@@ -397,7 +432,7 @@ function getFixtureIdsFromRow(row) {
   return {
     fixtureId: Number(raw.fixture?.id || raw.id || raw.fixture_id || 0),
     leagueId: Number(raw.league?.id || raw.league_id || 0),
-    season: Number(raw.league?.season || new Date(row?.starts_at || Date.now()).getUTCFullYear()),
+    season: Number(raw.league?.season || footballSeasonFromDate(raw.fixture?.date || row?.starts_at)),
     homeTeamId: Number(raw.teams?.home?.id || raw.homeTeam?.id || raw.home_id || 0),
     awayTeamId: Number(raw.teams?.away?.id || raw.awayTeam?.id || raw.away_id || 0)
   };
@@ -672,17 +707,19 @@ export async function getMatchDetails(id) {
     ids.leagueId ? fetchFixtureApi("teams", { league: ids.leagueId, season: ids.season }) : [],
     ids.fixtureId ? fetchFixtureApi("odds", { fixture: ids.fixtureId, timezone: config.signalWorker.timezone }) : []
   ]);
+  const prediction = predictions[0] || null;
   const leagueTable = normalizeLeagueTable(standings);
+  const directH2h = normalizeH2h(h2h, ids.homeTeamId, ids.awayTeamId);
 
   return {
     ok: true,
     game: row,
     fixture: raw,
-    predictions: predictions[0] || null,
+    predictions: prediction,
     statistics: normalizeStats(statistics),
     events: normalizeEvents(events),
-    h2h: normalizeH2h(h2h, ids.homeTeamId, ids.awayTeamId),
-    standings: leagueTable.length ? leagueTable : normalizeLeagueTeams(leagueTeams),
+    h2h: directH2h.length ? directH2h : normalizeH2h(prediction?.h2h, ids.homeTeamId, ids.awayTeamId),
+    standings: leagueTable.length ? leagueTable : normalizeLeagueTeams(leagueTeams).length ? normalizeLeagueTeams(leagueTeams) : normalizePredictionTeamRecords(prediction),
     bookmakers: normalizeBookmakers(odds),
     refreshed_at: new Date().toISOString()
   };

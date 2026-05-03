@@ -220,7 +220,7 @@ type MatchDetailApi = {
   statistics?: { label: string; home: string | number; away: string | number }[];
   events?: { time?: number; extra?: number; team?: string; teamLogo?: string; player?: string; assist?: string; type?: string; detail?: string; comments?: string }[];
   h2h?: { id?: number; date?: string; league?: string; leagueLogo?: string; home?: string; away?: string; homeLogo?: string; awayLogo?: string; score?: string }[];
-  standings?: { rank?: number; name?: string; logo?: string; points?: number; played?: number; won?: number; drawn?: number; lost?: number; goalsDiff?: number }[];
+  standings?: { rank?: number; name?: string; logo?: string; points?: number; played?: number; won?: number; drawn?: number; lost?: number; goalsDiff?: number; source?: string }[];
   bookmakers?: { id?: number; name: string; markets: { name: string; values: { value: string; odd: string }[] }[] }[];
 };
 type DailyGamesApiResponse = {
@@ -318,6 +318,12 @@ type AdminContent = {
     melbet: string;
     onexbet: string;
     betking: string;
+  };
+  affiliateVisible: {
+    sportybet: boolean;
+    melbet: boolean;
+    onexbet: boolean;
+    betking: boolean;
   };
   sendchampDefaultChannel: "whatsapp" | "sms";
   sendchampWhatsappTemplate: string;
@@ -780,6 +786,12 @@ const defaultAdminContent: AdminContent = {
     melbet: "https://melbet.org/en?tag=d_5550069m_45415c_",
     onexbet: "",
     betking: ""
+  },
+  affiliateVisible: {
+    sportybet: false,
+    melbet: true,
+    onexbet: false,
+    betking: false
   },
   sendchampDefaultChannel: "whatsapp",
   sendchampWhatsappTemplate: "bamsignal_login_otp",
@@ -1421,6 +1433,7 @@ const loadAdminContent = (): AdminContent => {
       ...parsed,
       adLinks: [...(parsed.adLinks ?? []), "", "", "", "", ""].slice(0, 5),
       affiliateLinks: { ...defaultAdminContent.affiliateLinks, ...(parsed.affiliateLinks ?? {}) },
+      affiliateVisible: { ...defaultAdminContent.affiliateVisible, ...(parsed.affiliateVisible ?? {}) },
       loginBanners: {
         firstTimer: { ...defaultAdminContent.loginBanners.firstTimer, ...(parsed.loginBanners?.firstTimer ?? {}) },
         returning: { ...defaultAdminContent.loginBanners.returning, ...(parsed.loginBanners?.returning ?? {}) },
@@ -4070,9 +4083,13 @@ function AdminPage({
           <label>News source<input value={adminContent.newsSource} onChange={(event) => setAdminContent({ ...adminContent, newsSource: event.target.value })} placeholder="RapidAPI / source name" /></label>
           <label>News URL<input value={adminContent.newsUrl} onChange={(event) => setAdminContent({ ...adminContent, newsUrl: event.target.value })} placeholder="https://..." /></label>
           <label>SportyBet affiliate link<input value={adminContent.affiliateLinks.sportybet} onChange={(event) => setAdminContent({ ...adminContent, affiliateLinks: { ...adminContent.affiliateLinks, sportybet: event.target.value } })} placeholder="https://..." /></label>
+          <label className="inline-admin-toggle"><input type="checkbox" checked={adminContent.affiliateVisible.sportybet} onChange={(event) => setAdminContent({ ...adminContent, affiliateVisible: { ...adminContent.affiliateVisible, sportybet: event.target.checked } })} /> Show SportyBet publicly</label>
           <label>Melbet affiliate link<input value={adminContent.affiliateLinks.melbet} onChange={(event) => setAdminContent({ ...adminContent, affiliateLinks: { ...adminContent.affiliateLinks, melbet: event.target.value } })} placeholder="https://melbet.org/..." /></label>
+          <label className="inline-admin-toggle"><input type="checkbox" checked={adminContent.affiliateVisible.melbet} onChange={(event) => setAdminContent({ ...adminContent, affiliateVisible: { ...adminContent.affiliateVisible, melbet: event.target.checked } })} /> Show Melbet publicly</label>
           <label>1xBet affiliate link<input value={adminContent.affiliateLinks.onexbet} onChange={(event) => setAdminContent({ ...adminContent, affiliateLinks: { ...adminContent.affiliateLinks, onexbet: event.target.value } })} placeholder="https://..." /></label>
+          <label className="inline-admin-toggle"><input type="checkbox" checked={adminContent.affiliateVisible.onexbet} onChange={(event) => setAdminContent({ ...adminContent, affiliateVisible: { ...adminContent.affiliateVisible, onexbet: event.target.checked } })} /> Show 1xBet publicly</label>
           <label>BetKing affiliate link<input value={adminContent.affiliateLinks.betking} onChange={(event) => setAdminContent({ ...adminContent, affiliateLinks: { ...adminContent.affiliateLinks, betking: event.target.value } })} placeholder="https://..." /></label>
+          <label className="inline-admin-toggle"><input type="checkbox" checked={adminContent.affiliateVisible.betking} onChange={(event) => setAdminContent({ ...adminContent, affiliateVisible: { ...adminContent.affiliateVisible, betking: event.target.checked } })} /> Show BetKing publicly</label>
           {adminContent.adLinks.map((link, index) => (
             <label key={index}>Ad link {index + 1}<input value={link} onChange={(event) => updateAdLink(index, event.target.value)} placeholder="https://advertiser-or-affiliate-link.com" /></label>
           ))}
@@ -4408,7 +4425,7 @@ function MatchDetailPage({
             <EventsPanel events={detail.events || []} />
           </div>
           <aside className="match-side-column">
-            <BookmakerPanel affiliateLinks={adminContent.affiliateLinks} navigate={navigate} />
+            <BookmakerPanel affiliateLinks={adminContent.affiliateLinks} affiliateVisible={adminContent.affiliateVisible} />
             <StandingsPanel standings={detail.standings || []} league={raw.league?.name || game.league} />
             <HeadToHeadPanel detail={detail} homeName={homeName} awayName={awayName} />
           </aside>
@@ -4439,36 +4456,32 @@ function PredictionGroup({ title, rows }: { title: string; rows: { label: string
 
 function BookmakerPanel({
   affiliateLinks,
-  navigate
+  affiliateVisible
 }: {
   affiliateLinks: AdminContent["affiliateLinks"];
-  navigate: (page: Page, path?: string) => void;
+  affiliateVisible: AdminContent["affiliateVisible"];
 }) {
   const bookies = [
-    { key: "sportybet", name: "SportyBet", note: "Fast Naija booking-code flow", link: affiliateLinks.sportybet },
-    { key: "melbet", name: "Melbet", note: "BamSignal partner offer", link: affiliateLinks.melbet },
-    { key: "1xbet", name: "1xBet", note: "Accumulator and market depth", link: affiliateLinks.onexbet },
-    { key: "betking", name: "BetKing", note: "Popular odds boost destination", link: affiliateLinks.betking }
-  ];
+    { key: "sportybet", name: "SportyBet", note: "Fast Naija booking-code flow", link: affiliateLinks.sportybet, visible: affiliateVisible.sportybet },
+    { key: "melbet", name: "Melbet", note: "BamSignal partner offer", link: affiliateLinks.melbet, visible: affiliateVisible.melbet },
+    { key: "1xbet", name: "1xBet", note: "Accumulator and market depth", link: affiliateLinks.onexbet, visible: affiliateVisible.onexbet },
+    { key: "betking", name: "BetKing", note: "Popular odds boost destination", link: affiliateLinks.betking, visible: affiliateVisible.betking }
+  ].filter((bookmaker) => bookmaker.visible && bookmaker.link);
   return (
     <section className="match-section">
       <p className="eyebrow">Bookmaker board</p>
       <h2>Trusted bookies for Nigerian punters</h2>
       <p>Use official partner links when you want to open a bookmaker. Always compare odds and gamble responsibly.</p>
-      <div className="bookmaker-grid">
+      {bookies.length ? <div className="bookmaker-grid">
         {bookies.map((bookmaker, index) => (
           <article className="bookmaker-card" key={`${bookmaker.name}-${index}`}>
             <span>#{index + 1}</span>
             <h3>{bookmaker.name}</h3>
             <p>{bookmaker.note}</p>
-            {bookmaker.link ? (
-              <a className="secondary-action" href={bookmaker.link} target="_blank" rel="noreferrer">Open {bookmaker.name}</a>
-            ) : (
-              <button className="secondary-action" onClick={() => navigate({ kind: "app" }, "/app?auth=login")}>Open in app</button>
-            )}
+            <a className="secondary-action" href={bookmaker.link} target="_blank" rel="noreferrer">Open {bookmaker.name}</a>
           </article>
         ))}
-      </div>
+      </div> : <p className="muted-copy">Partner bookmaker links will appear here when available.</p>}
     </section>
   );
 }
@@ -4491,9 +4504,43 @@ function HeadToHeadPanel({ detail, homeName, awayName }: { detail: MatchDetailAp
             </div>
             <span>{match.league}</span>
           </article>
-        )) : <p className="muted-copy">Head-to-head records will appear when API-Football has enough recent meetings for these clubs.</p>}
+        )) : <RecentFormFallback detail={detail} homeName={homeName} awayName={awayName} />}
       </div>
     </section>
+  );
+}
+
+function RecentFormFallback({ detail, homeName, awayName }: { detail: MatchDetailApi; homeName: string; awayName: string }) {
+  const lastFiveForm = (team?: { last_5?: Record<string, unknown> }) => {
+    const form = team?.last_5?.form;
+    return typeof form === "string" ? form : "";
+  };
+  const homeForm = lastFiveForm(detail.predictions?.teams?.home);
+  const awayForm = lastFiveForm(detail.predictions?.teams?.away);
+
+  if (!homeForm && !awayForm) {
+    return <p className="muted-copy">No recent official head-to-head record is available from API-Football for these clubs yet.</p>;
+  }
+
+  return (
+    <>
+      <article className="h2h-card">
+        <small>Alternative API-Football signal</small>
+        <div className="form-fallback-row">
+          <strong>{homeName}</strong>
+          <b>{homeForm || "N/A"}</b>
+        </div>
+        <span>Recent form from the club data feed.</span>
+      </article>
+      <article className="h2h-card">
+        <small>Alternative API-Football signal</small>
+        <div className="form-fallback-row">
+          <strong>{awayName}</strong>
+          <b>{awayForm || "N/A"}</b>
+        </div>
+        <span>Recent form from the club data feed.</span>
+      </article>
+    </>
   );
 }
 
@@ -4535,20 +4582,26 @@ function EventsPanel({ events }: { events: NonNullable<MatchDetailApi["events"]>
 }
 
 function StandingsPanel({ standings, league }: { standings: NonNullable<MatchDetailApi["standings"]>; league: string }) {
+  const isTeamRecordFallback = standings.some((club) => club.source === "team-record");
   return (
     <section className="match-section">
       <p className="eyebrow">League table</p>
-      <h2>{league} standings</h2>
+      <h2>{isTeamRecordFallback ? `${league} team records` : `${league} standings`}</h2>
+      {isTeamRecordFallback && <p className="muted-copy">Full standings were not returned for this fixture, so BamSignal is showing verified league records for the two clubs from API-Football.</p>}
       <div className="league-table">
-        <div className="league-table-row head"><span>Pos</span><span>Club</span><span>P</span><span>Pts</span></div>
+        <div className="league-table-row head"><span>{isTeamRecordFallback ? "No." : "Pos"}</span><span>Club</span><span>P</span><span>W</span><span>D</span><span>L</span><span>GD</span><span>Pts</span></div>
         {standings.length ? standings.map((club) => (
           <div className="league-table-row" key={`${club.rank}-${club.name}`}>
             <strong>{club.rank}</strong>
             <span><TeamLogo src={club.logo} name={club.name || "Club"} /> {club.name}</span>
             <small>{typeof club.played === "number" ? club.played : "-"}</small>
+            <small>{typeof club.won === "number" ? club.won : "-"}</small>
+            <small>{typeof club.drawn === "number" ? club.drawn : "-"}</small>
+            <small>{typeof club.lost === "number" ? club.lost : "-"}</small>
+            <small>{typeof club.goalsDiff === "number" ? club.goalsDiff : "-"}</small>
             <b>{typeof club.points === "number" ? club.points : "-"}</b>
           </div>
-        )) : <p className="muted-copy">League table appears when standings are available for this competition.</p>}
+        )) : <p className="muted-copy">Official table data is not available for this competition yet. Club lists appear when API-Football returns league teams.</p>}
       </div>
     </section>
   );

@@ -37,6 +37,7 @@ export const config = {
     fixtureApiUrl: process.env.SIGNAL_FIXTURE_API_URL,
     fixtureApiKey: process.env.SIGNAL_FIXTURE_API_KEY,
     freeLimit: Number(process.env.SIGNAL_FREE_LIMIT || 2),
+    vipLimit: Number(process.env.SIGNAL_VIP_LIMIT || 12),
     freeOddsMax: Number(process.env.SIGNAL_FREE_ODDS_MAX || 1.5),
     defaultBookingCodes: parseJson(process.env.SIGNAL_DEFAULT_BOOKING_CODES, {})
   },

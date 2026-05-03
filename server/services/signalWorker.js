@@ -5,6 +5,48 @@ import { sendTipPush } from "../firebase.js";
 import { broadcastTip } from "../telegram.js";
 
 const defaultFixtures = [];
+const nigerianFavoriteLeagueIds = new Set([
+  2, 3, 848,
+  39, 40, 45, 48,
+  78, 81,
+  61, 66,
+  88,
+  94,
+  135, 137,
+  140, 143,
+  179,
+  203
+]);
+const nigerianFavoriteLeagueNames = [
+  "premier league",
+  "championship",
+  "fa cup",
+  "league cup",
+  "efl cup",
+  "la liga",
+  "serie a",
+  "bundesliga",
+  "ligue 1",
+  "champions league",
+  "europa league",
+  "conference league",
+  "eredivisie",
+  "primeira liga",
+  "super lig",
+  "scottish premiership"
+];
+const nigerianFavoriteCountries = new Set([
+  "england",
+  "spain",
+  "italy",
+  "germany",
+  "france",
+  "europe",
+  "netherlands",
+  "portugal",
+  "scotland",
+  "turkey"
+]);
 
 function todayInLagos() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -19,6 +61,8 @@ function normalizeFixture(raw) {
   const home = raw.home || raw.home_team || raw.homeTeam?.name || raw.teams?.home?.name;
   const away = raw.away || raw.away_team || raw.awayTeam?.name || raw.teams?.away?.name;
   const league = raw.league?.name || raw.competition?.name || raw.league || raw.competition || "Football";
+  const leagueId = Number(raw.league?.id || raw.competition?.id || raw.league_id || 0);
+  const country = raw.league?.country || raw.country || raw.competition?.country || "";
   const startsAt = raw.starts_at || raw.start_time || raw.fixture?.date || raw.date || new Date().toISOString();
   const markets = raw.markets || raw.predictions || raw.odds || [];
   const status = raw.status || raw.fixture?.status?.short || "NS";
@@ -27,6 +71,8 @@ function normalizeFixture(raw) {
     home: String(home || "Home Team"),
     away: String(away || "Away Team"),
     league: String(league),
+    league_id: leagueId,
+    country: String(country),
     starts_at: startsAt,
     status: String(status),
     markets: Array.isArray(markets) ? markets : [],
@@ -40,6 +86,50 @@ function normalizeMarket(market, fallbackIndex = 0) {
     odds: Number(market.odds || market.price || market.value || (fallbackIndex === 0 ? 1.35 : 2.05)),
     confidence: Number(market.confidence || market.probability || market.percent || (fallbackIndex === 0 ? 82 : 74))
   };
+}
+
+function isNigerianFavoriteEuropeanFixture(fixture) {
+  const leagueName = fixture.league.toLowerCase();
+  const country = fixture.country.toLowerCase();
+  const isFavoriteLeague = nigerianFavoriteLeagueIds.has(fixture.league_id)
+    || nigerianFavoriteLeagueNames.some((name) => leagueName.includes(name));
+  const isFavoriteCountry = nigerianFavoriteCountries.has(country);
+  const isYouthOrWomen = /\b(u17|u18|u19|u20|u21|women|w\b|reserve|reserves|ii\b|iii\b|regional|oberliga|landesliga)\b/i.test(
+    `${fixture.league} ${fixture.home} ${fixture.away}`
+  );
+
+  return isFavoriteLeague && isFavoriteCountry && !isYouthOrWomen;
+}
+
+function fixturePriority(fixture) {
+  const leagueName = fixture.league.toLowerCase();
+  const country = fixture.country.toLowerCase();
+  let score = 0;
+
+  if (leagueName.includes("champions league")) score += 120;
+  if (leagueName.includes("europa league")) score += 110;
+  if (leagueName.includes("premier league")) score += 105;
+  if (leagueName.includes("la liga")) score += 92;
+  if (leagueName.includes("serie a")) score += 90;
+  if (leagueName.includes("bundesliga")) score += 88;
+  if (leagueName.includes("ligue 1")) score += 76;
+  if (leagueName.includes("championship")) score += 68;
+  if (leagueName.includes("eredivisie")) score += 62;
+  if (leagueName.includes("primeira liga")) score += 60;
+  if (leagueName.includes("super lig")) score += 56;
+  if (country === "europe") score += 20;
+  if (["england", "spain", "italy", "germany", "france"].includes(country)) score += 12;
+  if (/\b(man|arsenal|chelsea|liverpool|tottenham|barcelona|real madrid|atletico|inter|milan|juventus|napoli|bayern|dortmund|leverkusen|psg|marseille)\b/i.test(`${fixture.home} ${fixture.away}`)) {
+    score += 24;
+  }
+
+  const startsAtTime = new Date(fixture.starts_at).getTime();
+  if (!Number.isNaN(startsAtTime)) {
+    const eveningInNigeria = new Date(startsAtTime).getUTCHours() >= 14;
+    if (eveningInNigeria) score += 8;
+  }
+
+  return score;
 }
 
 async function fetchCandidateFixtures() {
@@ -80,15 +170,23 @@ function buildTipCandidates(fixtures) {
   const tips = [];
   const playableStatuses = new Set(["NS", "TBD", "1H", "HT", "2H", "ET", "P", "BT", "LIVE"]);
   const now = Date.now();
+  const selectedFixtures = fixtures
+    .map(normalizeFixture)
+    .filter((fixture) => {
+      const startsAtTime = new Date(fixture.starts_at).getTime();
+      const isFutureOrLive = Number.isNaN(startsAtTime) || startsAtTime >= now - 60 * 60 * 1000;
+      return playableStatuses.has(fixture.status.toUpperCase())
+        && isFutureOrLive
+        && isNigerianFavoriteEuropeanFixture(fixture);
+    })
+    .sort((left, right) => {
+      const priorityDiff = fixturePriority(right) - fixturePriority(left);
+      if (priorityDiff) return priorityDiff;
+      return new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime();
+    })
+    .slice(0, Math.max(config.signalWorker.freeLimit + config.signalWorker.vipLimit, 1));
 
-  for (const fixture of fixtures.map(normalizeFixture)) {
-    const startsAtTime = new Date(fixture.starts_at).getTime();
-    const isFutureOrLive = Number.isNaN(startsAtTime) || startsAtTime >= now - 60 * 60 * 1000;
-
-    if (!playableStatuses.has(fixture.status.toUpperCase()) || !isFutureOrLive) {
-      continue;
-    }
-
+  for (const fixture of selectedFixtures) {
     const markets = fixture.markets.length ? fixture.markets.map(normalizeMarket) : [
       normalizeMarket({}, 0),
       normalizeMarket({ prediction: "Home win + over 1.5", odds: 2.05, confidence: 74 }, 1)
@@ -117,7 +215,8 @@ function buildTipCandidates(fixtures) {
 
   const vip = tips
     .filter((tip) => tip.is_vip)
-    .sort((a, b) => b.confidence - a.confidence);
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, config.signalWorker.vipLimit);
 
   return [...freemium, ...vip];
 }

@@ -641,6 +641,7 @@ const defaultAdminGames: AdminGame[] = [
     pushVipTelegram: true
   }
 ];
+const defaultAdminGameKeys = new Set(defaultAdminGames.map(gameKey));
 
 const profileGameHistory: PlayedGame[] = [
   { teams: "Paris SG vs Bayern Munich", league: "Champions League", play: "Over 1.5 goals", status: "Won", playedAt: daysAgo(1) },
@@ -1377,7 +1378,9 @@ function App() {
   const effectiveAdminContent = useMemo(() => {
     if (!hasSavedAdminContent) return { ...adminContent, games: orderGamesForDisplay(dailyApiGames) };
     if (!dailyApiGames.length) return adminContent;
-    const manualGames = hasSavedAdminContent ? adminContent.games : [];
+    const manualGames = hasSavedAdminContent
+      ? adminContent.games.filter((game) => !defaultAdminGameKeys.has(gameKey(game)))
+      : [];
     const merged = [...manualGames, ...dailyApiGames].reduce<AdminGame[]>((list, game) => {
       if (!list.some((item) => gameKey(item) === gameKey(game))) list.push(game);
       return list;
@@ -1439,17 +1442,24 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/daily-games")
-      .then((response) => response.ok ? response.json() : null)
-      .then((payload: DailyGamesApiResponse | null) => {
-        if (cancelled || !payload?.ok) return;
-        const games = [...(payload.freemium || []), ...(payload.vip || [])].map(apiTipToAdminGame);
-        setDailyGamesSource(payload.source || "daily_games");
-        setDailyApiGames(games);
-      })
-      .catch(() => setDailyGamesSource("offline"));
+    const refreshDailyGames = () => {
+      fetch(`/api/daily-games?t=${Date.now()}`, { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : null)
+        .then((payload: DailyGamesApiResponse | null) => {
+          if (cancelled || !payload?.ok) return;
+          const games = [...(payload.freemium || []), ...(payload.vip || [])].map(apiTipToAdminGame);
+          setDailyGamesSource(payload.source || "daily_games");
+          setDailyApiGames(games);
+        })
+        .catch(() => {
+          if (!cancelled) setDailyGamesSource("offline");
+        });
+    };
+    refreshDailyGames();
+    const refreshTimer = window.setInterval(refreshDailyGames, 60 * 1000);
     return () => {
       cancelled = true;
+      window.clearInterval(refreshTimer);
     };
   }, [dailyKey]);
 

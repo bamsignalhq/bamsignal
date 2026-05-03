@@ -1544,22 +1544,22 @@ const faq = [
   {
     question: "How does BamSignal create football predictions?",
     answer:
-      "BamSignal models team form, head-to-head history, league position, venue strength, scoring trends, and market movement to turn each fixture into clear probability ranges."
+      "BamSignal reads each fixture like a match analyst would: recent form, home and away strength, scoring rhythm, league position, injuries where available, head-to-head context, kickoff timing, and market movement. The goal is not to promise a win; it is to turn noisy football data into clear probability ranges so users can understand why a pick is strong or risky."
   },
   {
     question: "Which betting markets are covered?",
     answer:
-      "The dashboard covers fulltime result, first-half result, double chance, correct score, both teams to score, over/under goals, team goals, and corners."
+      "The main markets are fulltime result, first-half winner, double chance, both teams to score, over/under goals, team goals, corners, and correct score. Free users see low-odd public picks, while premium users get the deeper market edge, confidence logic, booking-code support, and VIP room access."
   },
   {
     question: "When are predictions posted?",
     answer:
-      "Sample fixtures are shown for today and tomorrow. In production, BamSignal can refresh daily and update during live matches as new match context arrives."
+      "Daily picks are designed to refresh before the busiest betting windows, with live and settled match data updating as the worker receives fresh information. Admin-posted games appear first when BamSignal publishes a special update, so the board can react quickly to strong matches, weekend fixtures, and important late information."
   },
   {
     question: "Is BamSignal a bookmaker?",
     answer:
-      "No. BamSignal is an analytics and prediction product. It does not place bets or guarantee outcomes."
+      "No. BamSignal does not accept bets, hold user balances, or guarantee outcomes. It is an informational prediction and match-intelligence product. Users who choose to bet must be 18+, compare odds carefully, and gamble responsibly."
   }
 ];
 
@@ -1827,7 +1827,7 @@ function App() {
           <DetailPage page={page} navigate={navigate} />
         )}
 
-        {!isUserVault && <SiteFooter navigate={navigate} />}
+        {!isUserVault && <SiteFooter navigate={navigate} logoSrc={logoSrc} />}
       </div>
 
       {menuOpen && (
@@ -1886,15 +1886,6 @@ function HomePage({
     event.preventDefault();
     navigate({ kind: "contact" }, "/contact");
   };
-  const copyTopBookingCode = async () => {
-    const firstCode = topPick?.bookingCodes.find((entry) => entry.code.trim())?.code;
-    const code = firstCode || `BAMSIGNAL-${topPick?.confidence || "TODAY"}`;
-    if (Capacitor.getPlatform() !== "web") {
-      await navigator.clipboard?.writeText(code);
-      return;
-    }
-    navigate({ kind: "app" }, "/app?auth=login");
-  };
 
   return (
     <main>
@@ -1907,16 +1898,11 @@ function HomePage({
               </p>
               <div className="hero-actions">
                 <a className="primary-action" href="#predictions">View Predictions</a>
-                <button className="secondary-action booking-shortcut" onClick={copyTopBookingCode}><ClipboardCheck size={18} /> {adminContent.bookingButtonText}</button>
                 <a className="primary-action app-cta-pulse" href="#apps"><Smartphone size={18} /> Get the App</a>
               </div>
-              <div className="web-member-card compact">
+              <div className="hero-auth-strip">
                 <button className="secondary-action" onClick={() => navigate({ kind: "app" }, "/app?auth=login")}><LockKeyhole size={16} /> Login</button>
                 <button className="primary-action neon-action" onClick={() => navigate({ kind: "app" }, "/app?auth=signup")}><UserPlus size={16} /> Sign up</button>
-              </div>
-              <div className="trust-mini-row">
-                <span><LockKeyhole size={14} /> Secured by Paystack</span>
-                <span><Send size={14} /> Join 4,500+ Nigerian punters on Telegram</span>
               </div>
             </div>
             <div
@@ -2085,45 +2071,20 @@ function HomePage({
               <AdSlots adminContent={adminContent} />
               <p className="eyebrow">Contact</p>
               <h2>Talk to BamSignal</h2>
-              <p>Need support, partnerships, app help, or VIP guidance? Reach us through the official channels or use the contact page.</p>
+              <p>Need app help, VIP guidance, partnership support, or account assistance? Start with the contact page, then use the official channels for quick updates.</p>
               <a className="primary-action contact-page-link" href="/contact" onClick={contactLink}>
                 <MessageCircle size={16} /> Open contact page
               </a>
-              <div className="social-grid" aria-label="BamSignal social links">
-                <a href="https://www.tiktok.com/@bamsignal" target="_blank" rel="noreferrer">
-                  <Music2 size={18} />
-                  <span>TikTok</span>
-                  <small>@bamsignal</small>
-                </a>
-                <a href="https://www.instagram.com/officialbamsignal/" target="_blank" rel="noreferrer">
-                  <Instagram size={18} />
-                  <span>Instagram</span>
-                  <small>@officialbamsignal</small>
-                </a>
-                <a href="https://x.com/bamsignalhq" target="_blank" rel="noreferrer">
-                  <Twitter size={18} />
-                  <span>X</span>
-                  <small>@bamsignalhq</small>
-                </a>
-                <a href="https://www.youtube.com/@officialbamsignal" target="_blank" rel="noreferrer">
-                  <Youtube size={18} />
-                  <span>YouTube</span>
-                  <small>@officialbamsignal</small>
-                </a>
+              <div className="contact-link-row" aria-label="BamSignal official channels">
                 <a href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer">
                   <Send size={18} />
-                  <span>Telegram</span>
-                  <small>official channel</small>
+                  Telegram
                 </a>
                 <a href="https://whatsapp.com/channel/0029Vb7wB96DZ4LdE2Nhlp3A" target="_blank" rel="noreferrer">
                   <MessageCircle size={18} />
-                  <span>WhatsApp</span>
-                  <small>official channel</small>
+                  WhatsApp
                 </a>
               </div>
-              <p className="responsible">
-                18+ only. Please gamble responsibly. BamSignal is an informational prediction tool and does not guarantee betting outcomes.
-              </p>
             </div>
           </section>
     </main>
@@ -3393,15 +3354,16 @@ function UserDashboard({
 
 function FootballNewsPanel({ adminContent, compact = false }: { adminContent: AdminContent; compact?: boolean }) {
   const hasNews = Boolean(adminContent.newsTitle.trim() || adminContent.newsSummary.trim());
+  if (compact && !hasNews) return null;
   return (
     <section className={`football-news ${compact ? "compact" : ""}`}>
       <div>
         <p className="eyebrow">Football news</p>
-        <h2>{hasNews ? adminContent.newsTitle || "BamSignal football update" : "Football news room ready."}</h2>
+        <h2>{hasNews ? adminContent.newsTitle || "BamSignal football update" : "Latest football updates"}</h2>
         <p>
           {hasNews
-            ? adminContent.newsSummary || "The admin news feed is live. Add the full RapidAPI story summary from the command center."
-            : "RapidAPI news will appear here when the admin feed is connected. Until then, this block stays clean and uncluttered."}
+            ? adminContent.newsSummary || "A short football update is available from the BamSignal desk."
+            : "News will appear here after the football news feed is connected."}
         </p>
       </div>
       {hasNews && adminContent.newsUrl ? (
@@ -3730,7 +3692,7 @@ function LeaguesPage({ navigate }: { navigate: (page: Page, path?: string) => vo
   );
 }
 
-function SiteFooter({ navigate }: { navigate: (page: Page, path?: string) => void }) {
+function SiteFooter({ navigate, logoSrc }: { navigate: (page: Page, path?: string) => void; logoSrc: string }) {
   const legalNav = (event: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
     event.preventDefault();
     navigate({ kind: "legal", slug }, `/legal/${slug}`);
@@ -3739,7 +3701,9 @@ function SiteFooter({ navigate }: { navigate: (page: Page, path?: string) => voi
   return (
     <footer className="site-footer">
       <div className="footer-brand">
-        <strong>BamSignal</strong>
+        <button className="footer-logo-button" onClick={() => navigate({ kind: "home" }, "/")} aria-label="Go to BamSignal home">
+          <img src={logoSrc} alt="BamSignal" />
+        </button>
         <span>18+ only. Please gamble responsibly. BamSignal is an informational prediction tool and does not guarantee betting outcomes.</span>
       </div>
       <div className="footer-column">

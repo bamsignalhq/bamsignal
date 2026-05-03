@@ -300,9 +300,9 @@ main {
 .hero-actions {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 18px;
-  max-width: 680px;
+  max-width: 460px;
 }
 
 .hero-actions .primary-action,
@@ -325,16 +325,19 @@ main {
   max-width: 680px;
 }
 
-.web-member-card {
+.web-member-card,
+.hero-auth-strip {
   align-items: center;
   display: flex;
   gap: 10px;
   margin-top: 12px;
-  max-width: 680px;
+  max-width: 460px;
 }
 
 .web-member-card .primary-action,
-.web-member-card .secondary-action {
+.web-member-card .secondary-action,
+.hero-auth-strip .primary-action,
+.hero-auth-strip .secondary-action {
   flex: 1;
   min-height: 38px;
   padding: 0 12px;
@@ -3387,6 +3390,38 @@ footer {
   white-space: nowrap;
 }
 
+.contact-link-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.contact-link-row a {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface-2) 86%, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: var(--radius);
+  color: var(--text);
+  display: inline-flex;
+  font-weight: 900;
+  gap: 8px;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 12px;
+  text-align: center;
+}
+
+.contact-link-row a:hover {
+  border-color: color-mix(in srgb, var(--accent) 68%, var(--border));
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--accent) 16%, transparent);
+  transform: translateY(-1px);
+}
+
+.contact-link-row svg {
+  color: var(--accent);
+}
+
 .fixture-card.locked {
   position: relative;
 }
@@ -3545,8 +3580,8 @@ footer strong {
 .site-footer {
   align-items: flex-start;
   display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(220px, 1.4fr) minmax(150px, 0.8fr) minmax(220px, 1fr);
+  gap: 24px;
+  grid-template-columns: minmax(260px, 1.3fr) minmax(140px, 0.6fr) minmax(260px, 1fr);
 }
 
 .footer-brand,
@@ -3559,6 +3594,22 @@ footer strong {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.footer-logo-button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  justify-self: start;
+  padding: 0;
+}
+
+.footer-logo-button img {
+  display: block;
+  height: 42px;
+  object-fit: contain;
+  object-position: left center;
+  width: 180px;
 }
 
 .footer-column > span {
@@ -3849,6 +3900,7 @@ footer strong {
   .seo-card-grid,
   .country-league-grid,
   .social-grid,
+  .contact-link-row,
   .room-grid,
   .two-up-form,
   .profile-grid,

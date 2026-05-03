@@ -333,6 +333,20 @@ function normalizeLeagueTable(standings) {
     : [];
 }
 
+function normalizeLeagueTeams(teams) {
+  return (Array.isArray(teams) ? teams : []).map((row, index) => ({
+    rank: index + 1,
+    name: row.team?.name || row.name,
+    logo: row.team?.logo || row.logo,
+    points: null,
+    played: null,
+    won: null,
+    drawn: null,
+    lost: null,
+    goalsDiff: null
+  })).filter((row) => row.name);
+}
+
 function normalizeH2h(matches, homeTeamId, awayTeamId) {
   return (Array.isArray(matches) ? matches : []).slice(0, 6).map((match) => ({
     id: match.fixture?.id,
@@ -649,14 +663,16 @@ export async function getMatchDetails(id) {
   const ids = getFixtureIdsFromRow(row);
   const h2hKey = ids.homeTeamId && ids.awayTeamId ? `${ids.homeTeamId}-${ids.awayTeamId}` : "";
 
-  const [predictions, statistics, events, h2h, standings, odds] = await Promise.all([
+  const [predictions, statistics, events, h2h, standings, leagueTeams, odds] = await Promise.all([
     ids.fixtureId ? fetchFixtureApi("predictions", { fixture: ids.fixtureId }) : [],
     ids.fixtureId ? fetchFixtureApi("fixtures/statistics", { fixture: ids.fixtureId }) : [],
     ids.fixtureId ? fetchFixtureApi("fixtures/events", { fixture: ids.fixtureId }) : [],
     h2hKey ? fetchFixtureApi("fixtures/headtohead", { h2h: h2hKey, last: 8 }) : [],
     ids.leagueId ? fetchFixtureApi("standings", { league: ids.leagueId, season: ids.season }) : [],
+    ids.leagueId ? fetchFixtureApi("teams", { league: ids.leagueId, season: ids.season }) : [],
     ids.fixtureId ? fetchFixtureApi("odds", { fixture: ids.fixtureId, timezone: config.signalWorker.timezone }) : []
   ]);
+  const leagueTable = normalizeLeagueTable(standings);
 
   return {
     ok: true,
@@ -666,7 +682,7 @@ export async function getMatchDetails(id) {
     statistics: normalizeStats(statistics),
     events: normalizeEvents(events),
     h2h: normalizeH2h(h2h, ids.homeTeamId, ids.awayTeamId),
-    standings: normalizeLeagueTable(standings),
+    standings: leagueTable.length ? leagueTable : normalizeLeagueTeams(leagueTeams),
     bookmakers: normalizeBookmakers(odds),
     refreshed_at: new Date().toISOString()
   };

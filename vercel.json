@@ -16,6 +16,10 @@
     {
       "path": "/api/worker/daily-signals/run",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/worker/results/run",
+      "schedule": "30 22 * * *"
     }
   ]
 }

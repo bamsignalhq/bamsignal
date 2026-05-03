@@ -313,6 +313,12 @@ type AdminContent = {
   newsSource: string;
   newsUrl: string;
   adLinks: string[];
+  affiliateLinks: {
+    sportybet: string;
+    melbet: string;
+    onexbet: string;
+    betking: string;
+  };
   sendchampDefaultChannel: "whatsapp" | "sms";
   sendchampWhatsappTemplate: string;
   sendchampSmsSender: string;
@@ -769,6 +775,12 @@ const defaultAdminContent: AdminContent = {
   newsSource: "",
   newsUrl: "",
   adLinks: ["", "", "", "", ""],
+  affiliateLinks: {
+    sportybet: "",
+    melbet: "https://melbet.org/en?tag=d_5550069m_45415c_",
+    onexbet: "",
+    betking: ""
+  },
   sendchampDefaultChannel: "whatsapp",
   sendchampWhatsappTemplate: "bamsignal_login_otp",
   sendchampSmsSender: "BamSignal",
@@ -1408,6 +1420,7 @@ const loadAdminContent = (): AdminContent => {
       ...defaultAdminContent,
       ...parsed,
       adLinks: [...(parsed.adLinks ?? []), "", "", "", "", ""].slice(0, 5),
+      affiliateLinks: { ...defaultAdminContent.affiliateLinks, ...(parsed.affiliateLinks ?? {}) },
       loginBanners: {
         firstTimer: { ...defaultAdminContent.loginBanners.firstTimer, ...(parsed.loginBanners?.firstTimer ?? {}) },
         returning: { ...defaultAdminContent.loginBanners.returning, ...(parsed.loginBanners?.returning ?? {}) },
@@ -1710,7 +1723,7 @@ function App() {
         ) : page.kind === "legal" ? (
           <LegalPage page={page} navigate={navigate} />
         ) : page.kind === "match" ? (
-          <MatchDetailPage matchId={page.id} navigate={navigate} />
+          <MatchDetailPage matchId={page.id} navigate={navigate} adminContent={effectiveAdminContent} />
         ) : page.kind === "tips" ? (
           <BettingTipsPage navigate={navigate} />
         ) : page.kind === "markets" ? (
@@ -4056,6 +4069,10 @@ function AdminPage({
           <label>News summary<input value={adminContent.newsSummary} onChange={(event) => setAdminContent({ ...adminContent, newsSummary: event.target.value })} placeholder="Short public summary from your RapidAPI feed" /></label>
           <label>News source<input value={adminContent.newsSource} onChange={(event) => setAdminContent({ ...adminContent, newsSource: event.target.value })} placeholder="RapidAPI / source name" /></label>
           <label>News URL<input value={adminContent.newsUrl} onChange={(event) => setAdminContent({ ...adminContent, newsUrl: event.target.value })} placeholder="https://..." /></label>
+          <label>SportyBet affiliate link<input value={adminContent.affiliateLinks.sportybet} onChange={(event) => setAdminContent({ ...adminContent, affiliateLinks: { ...adminContent.affiliateLinks, sportybet: event.target.value } })} placeholder="https://..." /></label>
+          <label>Melbet affiliate link<input value={adminContent.affiliateLinks.melbet} onChange={(event) => setAdminContent({ ...adminContent, affiliateLinks: { ...adminContent.affiliateLinks, melbet: event.target.value } })} placeholder="https://melbet.org/..." /></label>
+          <label>1xBet affiliate link<input value={adminContent.affiliateLinks.onexbet} onChange={(event) => setAdminContent({ ...adminContent, affiliateLinks: { ...adminContent.affiliateLinks, onexbet: event.target.value } })} placeholder="https://..." /></label>
+          <label>BetKing affiliate link<input value={adminContent.affiliateLinks.betking} onChange={(event) => setAdminContent({ ...adminContent, affiliateLinks: { ...adminContent.affiliateLinks, betking: event.target.value } })} placeholder="https://..." /></label>
           {adminContent.adLinks.map((link, index) => (
             <label key={index}>Ad link {index + 1}<input value={link} onChange={(event) => updateAdLink(index, event.target.value)} placeholder="https://advertiser-or-affiliate-link.com" /></label>
           ))}
@@ -4240,7 +4257,15 @@ const makePredictionRows = (detail: MatchDetailApi | null, game: AdminGame | nul
   };
 };
 
-function MatchDetailPage({ matchId, navigate }: { matchId: string; navigate: (page: Page, path?: string) => void }) {
+function MatchDetailPage({
+  matchId,
+  navigate,
+  adminContent
+}: {
+  matchId: string;
+  navigate: (page: Page, path?: string) => void;
+  adminContent: AdminContent;
+}) {
   const [detail, setDetail] = useState<MatchDetailApi | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -4277,6 +4302,7 @@ function MatchDetailPage({ matchId, navigate }: { matchId: string; navigate: (pa
   const score = typeof homeGoals === "number" && typeof awayGoals === "number" ? `${homeGoals} : ${awayGoals}` : "vs";
   const predictionRows = makePredictionRows(detail, game);
   const statusText = raw.fixture?.status?.long || game?.status || "Scheduled";
+  const isLockedDetail = game?.tier === "vip";
 
   if (loading) {
     return (
@@ -4337,34 +4363,56 @@ function MatchDetailPage({ matchId, navigate }: { matchId: string; navigate: (pa
             <span>{raw.league?.round || "League round"}</span>
             <span>{raw.fixture?.referee || "Referee TBC"}</span>
           </div>
-          <div className="three-way-grid">
-            <Probability label="Home" value={homeName} percent={predictionRows.result[0].left} />
-            <Probability label="Draw" value="X" percent={predictionRows.result[0].right} />
-            <Probability label="Away" value={awayName} percent={percentNumber(detail.predictions?.predictions?.percent?.away, Math.max(18, 100 - predictionRows.result[0].left - predictionRows.result[0].right))} />
+          {isLockedDetail ? (
+            <div className="locked-probability-strip">
+              <LockKeyhole size={16} />
+              <span>VIP probabilities and market edge are hidden inside the app.</span>
+            </div>
+          ) : (
+            <div className="three-way-grid">
+              <Probability label="Home" value={homeName} percent={predictionRows.result[0].left} />
+              <Probability label="Draw" value="X" percent={predictionRows.result[0].right} />
+              <Probability label="Away" value={awayName} percent={percentNumber(detail.predictions?.predictions?.percent?.away, Math.max(18, 100 - predictionRows.result[0].left - predictionRows.result[0].right))} />
+            </div>
+          )}
+        </div>
+
+        <div className="match-content-grid">
+          <div className="match-main-column">
+            <section className="match-section">
+              <p className="eyebrow">{homeName} vs {awayName} intelligence</p>
+              <h2>{isLockedDetail ? "VIP signal protected" : detail.predictions?.predictions?.advice || game.pick}</h2>
+              <p>
+                BamSignal combines API-Football fixture data, odds movement, team probability, recent form, and admin-selected signal logic.
+                {isLockedDetail ? " The exact VIP recommendation stays inside the app and VIP room." : " Use this page to understand the match before copying a booking code or joining VIP."}
+              </p>
+            </section>
+
+            {isLockedDetail ? (
+              <section className="match-section locked-intel-card">
+                <LockKeyhole size={22} />
+                <h3>Premium prediction hidden</h3>
+                <p>Club context, score, events, and league information stay public. The signal, market angle, and confidence logic are reserved for VIP users.</p>
+                <button className="primary-action neon-action" onClick={() => navigate({ kind: "app" }, "/app?auth=login")}>Open VIP room</button>
+              </section>
+            ) : (
+              <div className="prediction-matrix">
+                <PredictionGroup title="Result Predictions" rows={predictionRows.result} />
+                <PredictionGroup title="Over/Under Predictions" rows={predictionRows.totals} />
+                <PredictionGroup title="Score/Goals Predictions" rows={predictionRows.goals} />
+                <PredictionGroup title="Corner Predictions" rows={predictionRows.corners} />
+              </div>
+            )}
+
+            <StatsPanel stats={detail.statistics || []} homeName={homeName} awayName={awayName} />
+            <EventsPanel events={detail.events || []} />
           </div>
+          <aside className="match-side-column">
+            <BookmakerPanel affiliateLinks={adminContent.affiliateLinks} navigate={navigate} />
+            <StandingsPanel standings={detail.standings || []} league={raw.league?.name || game.league} />
+            <HeadToHeadPanel detail={detail} homeName={homeName} awayName={awayName} />
+          </aside>
         </div>
-
-        <section className="match-section">
-          <p className="eyebrow">{homeName} vs {awayName} prediction</p>
-          <h2>{detail.predictions?.predictions?.advice || game.pick}</h2>
-          <p>
-            BamSignal combines API-Football fixture data, odds movement, team probability, recent form, and admin-selected signal logic.
-            Use this page to understand the match before copying a booking code or joining VIP.
-          </p>
-        </section>
-
-        <div className="prediction-matrix">
-          <PredictionGroup title="Result Predictions" rows={predictionRows.result} />
-          <PredictionGroup title="Over/Under Predictions" rows={predictionRows.totals} />
-          <PredictionGroup title="Score/Goals Predictions" rows={predictionRows.goals} />
-          <PredictionGroup title="Corner Predictions" rows={predictionRows.corners} />
-        </div>
-
-        <BookmakerPanel bookmakers={detail.bookmakers || []} />
-        <HeadToHeadPanel detail={detail} homeName={homeName} awayName={awayName} />
-        <StatsPanel stats={detail.statistics || []} homeName={homeName} awayName={awayName} />
-        <EventsPanel events={detail.events || []} />
-        <StandingsPanel standings={detail.standings || []} league={raw.league?.name || game.league} />
       </section>
     </main>
   );
@@ -4389,26 +4437,35 @@ function PredictionGroup({ title, rows }: { title: string; rows: { label: string
   );
 }
 
-function BookmakerPanel({ bookmakers }: { bookmakers: MatchDetailApi["bookmakers"] }) {
-  const fallback = bookmakers?.length ? bookmakers : [
-    { name: "Melbet", markets: [{ name: "BamSignal code", values: [{ value: "Affiliate link ready", odd: "Live" }] }] },
-    { name: "1xBet", markets: [{ name: "Booking codes", values: [{ value: "Admin controlled", odd: "Ready" }] }] }
+function BookmakerPanel({
+  affiliateLinks,
+  navigate
+}: {
+  affiliateLinks: AdminContent["affiliateLinks"];
+  navigate: (page: Page, path?: string) => void;
+}) {
+  const bookies = [
+    { key: "sportybet", name: "SportyBet", note: "Fast Naija booking-code flow", link: affiliateLinks.sportybet },
+    { key: "melbet", name: "Melbet", note: "BamSignal partner offer", link: affiliateLinks.melbet },
+    { key: "1xbet", name: "1xBet", note: "Accumulator and market depth", link: affiliateLinks.onexbet },
+    { key: "betking", name: "BetKing", note: "Popular odds boost destination", link: affiliateLinks.betking }
   ];
   return (
     <section className="match-section">
       <p className="eyebrow">Bookmaker board</p>
-      <h2>Available markets and odds</h2>
+      <h2>Play through trusted Naija bookies</h2>
+      <p>No raw market leak here. Admin controls each affiliate destination from the command room.</p>
       <div className="bookmaker-grid">
-        {fallback.slice(0, 4).map((bookmaker, index) => (
+        {bookies.map((bookmaker, index) => (
           <article className="bookmaker-card" key={`${bookmaker.name}-${index}`}>
             <span>#{index + 1}</span>
             <h3>{bookmaker.name}</h3>
-            {(bookmaker.markets || []).slice(0, 3).map((market) => (
-              <div className="bookmaker-market" key={market.name}>
-                <strong>{market.name}</strong>
-                <small>{market.values.slice(0, 3).map((value) => `${value.value} ${value.odd}`).join(" / ")}</small>
-              </div>
-            ))}
+            <p>{bookmaker.note}</p>
+            {bookmaker.link ? (
+              <a className="secondary-action" href={bookmaker.link} target="_blank" rel="noreferrer">Open {bookmaker.name}</a>
+            ) : (
+              <button className="secondary-action" onClick={() => navigate({ kind: "admin" }, "/lex/auth")}>Add affiliate link</button>
+            )}
           </article>
         ))}
       </div>
@@ -4488,8 +4545,8 @@ function StandingsPanel({ standings, league }: { standings: NonNullable<MatchDet
           <div className="league-table-row" key={`${club.rank}-${club.name}`}>
             <strong>{club.rank}</strong>
             <span><TeamLogo src={club.logo} name={club.name || "Club"} /> {club.name}</span>
-            <small>{club.played || 0}</small>
-            <b>{club.points || 0}</b>
+            <small>{typeof club.played === "number" ? club.played : "-"}</small>
+            <b>{typeof club.points === "number" ? club.points : "-"}</b>
           </div>
         )) : <p className="muted-copy">League table appears when standings are available for this competition.</p>}
       </div>

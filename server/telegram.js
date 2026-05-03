@@ -86,20 +86,44 @@ export async function broadcastTip(tip) {
 }
 
 export async function postResultProof(tip) {
-  if (!bot || !config.telegram.freeChannelId) return { ok: false, skipped: true };
+  const chatId = tip.is_vip ? config.telegram.vipGroupId : config.telegram.freeChannelId;
+  if (!bot || !chatId) return { ok: false, skipped: true };
   const won = tip.status === "won";
+  const result = tip.result_payload?.score || tip.result_payload?.result || "";
   const message = [
     won ? "✅ <b>WON!</b>" : "❌ <b>Settled: Loss</b>",
     `⚽ ${escapeHtml(tip.match_name)}`,
     `Pick: <b>${escapeHtml(tip.prediction)}</b>`,
-    won ? "Our Sure Game hit again. Get more VIP signals in the BamSignal app." : "We show every result. Transparency builds trust."
-  ].join("\n");
+    result ? `Result: <b>${escapeHtml(result)}</b>` : "",
+    tip.is_vip ? "VIP result logged. BamSignal shows every premium outcome." : "",
+    won ? "Our signal hit. Get more structured picks in the BamSignal app." : "We show every result. Transparency builds trust."
+  ].filter(Boolean).join("\n");
 
-  const sent = await bot.telegram.sendMessage(config.telegram.freeChannelId, message, {
+  const sent = await bot.telegram.sendMessage(chatId, message, {
     parse_mode: "HTML",
     disable_web_page_preview: true
   });
-  return { ok: true, message_id: sent.message_id };
+  return { ok: true, message_id: sent.message_id, chat_id: chatId };
+}
+
+export async function postDailyGameResultProof(game) {
+  const chatId = game.is_vip ? config.telegram.vipGroupId : config.telegram.freeChannelId;
+  if (!bot || !chatId) return { ok: false, skipped: true };
+  const won = game.status === "won";
+  const result = game.result_payload?.score || game.result_payload?.result || "";
+  const message = [
+    won ? "✅ <b>BamSignal Result: WON</b>" : "❌ <b>BamSignal Result: Loss</b>",
+    `⚽ ${escapeHtml(game.match_name)}`,
+    `Pick: <b>${escapeHtml(game.prediction)}</b>`,
+    result ? `Result: <b>${escapeHtml(result)}</b>` : "",
+    game.is_vip ? "VIP group outcome posted for full transparency." : "Free channel outcome posted for full transparency."
+  ].join("\n");
+
+  const sent = await bot.telegram.sendMessage(chatId, message, {
+    parse_mode: "HTML",
+    disable_web_page_preview: true
+  });
+  return { ok: true, message_id: sent.message_id, chat_id: chatId };
 }
 
 export async function createVipInviteLink(userId) {

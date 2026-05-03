@@ -40,8 +40,8 @@ export async function insertTip(tip) {
   await ensureTipsTable();
 
   const result = await query(
-    `insert into tips (match_name, league, prediction, odds, confidence, is_vip, booking_codes, source, status, starts_at)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9)
+    `insert into tips (match_name, league, prediction, odds, confidence, is_vip, booking_codes, source, status, starts_at, fixture_payload)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9, $10)
      returning *`,
     [
       tip.match_name,
@@ -52,7 +52,8 @@ export async function insertTip(tip) {
       tip.is_vip,
       tip.booking_codes,
       tip.source || null,
-      tip.starts_at || null
+      tip.starts_at || null,
+      tip.fixture_payload || null
     ]
   );
   return result.rows[0];
@@ -74,11 +75,16 @@ export async function ensureTipsTable() {
       source text,
       status text not null default 'pending',
       starts_at timestamptz,
+      fixture_payload jsonb,
       result_payload jsonb,
+      settled_at timestamptz,
       created_at timestamptz not null default now(),
       updated_at timestamptz not null default now()
     )
   `);
+
+  await query("alter table tips add column if not exists fixture_payload jsonb");
+  await query("alter table tips add column if not exists settled_at timestamptz");
 
   await query("create index if not exists tips_created_at_idx on tips (created_at)");
   await query("create index if not exists tips_visibility_idx on tips (is_vip, created_at desc)");
@@ -102,6 +108,7 @@ export async function ensureDailyGamesTable() {
       status text not null default 'pending',
       starts_at timestamptz,
       fixture_payload jsonb,
+      result_payload jsonb,
       created_at timestamptz not null default now(),
       updated_at timestamptz not null default now(),
       unique (game_date, match_name, prediction, is_vip)
@@ -110,6 +117,7 @@ export async function ensureDailyGamesTable() {
 
   await query("create index if not exists daily_games_game_date_idx on daily_games (game_date)");
   await query("create index if not exists daily_games_visibility_idx on daily_games (game_date, is_vip)");
+  await query("alter table daily_games add column if not exists result_payload jsonb");
 }
 
 export async function upsertDailyGames(gameDate, tips) {

@@ -1332,7 +1332,7 @@ footer {
 }
 
 .stats-row {
-  grid-template-columns: minmax(0, 1fr) minmax(150px, 1.2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(74px, 0.7fr) minmax(150px, 1.6fr) minmax(74px, 0.7fr);
   text-align: center;
 }
 
@@ -3816,12 +3816,25 @@ footer strong {
     font-size: 11px;
   }
 
-  .stats-row,
   .event-row,
   .league-table-row,
   .h2h-card > div {
     grid-template-columns: 1fr;
     text-align: left;
+  }
+
+  .stats-row {
+    gap: 6px;
+    grid-template-columns: minmax(48px, 0.65fr) minmax(112px, 1.7fr) minmax(48px, 0.65fr);
+    text-align: center;
+  }
+
+  .stats-row strong {
+    font-size: 15px;
+  }
+
+  .stats-row span {
+    font-size: 12px;
   }
 
   .evidence-head,

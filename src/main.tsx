@@ -4366,7 +4366,7 @@ function MatchDetailPage({
           {isLockedDetail ? (
             <div className="locked-probability-strip">
               <LockKeyhole size={16} />
-              <span>VIP probabilities and market edge are hidden inside the app.</span>
+              <span>Become a premium member to access probabilities and market edge.</span>
             </div>
           ) : (
             <div className="three-way-grid">
@@ -4383,7 +4383,7 @@ function MatchDetailPage({
               <p className="eyebrow">{homeName} vs {awayName} intelligence</p>
               <h2>{isLockedDetail ? "VIP signal protected" : detail.predictions?.predictions?.advice || game.pick}</h2>
               <p>
-                BamSignal combines API-Football fixture data, odds movement, team probability, recent form, and admin-selected signal logic.
+                BamSignal combines API-Football fixture data, odds movement, team probability, recent form, and model signal logic.
                 {isLockedDetail ? " The exact VIP recommendation stays inside the app and VIP room." : " Use this page to understand the match before copying a booking code or joining VIP."}
               </p>
             </section>
@@ -4453,8 +4453,8 @@ function BookmakerPanel({
   return (
     <section className="match-section">
       <p className="eyebrow">Bookmaker board</p>
-      <h2>Play through trusted Naija bookies</h2>
-      <p>No raw market leak here. Admin controls each affiliate destination from the command room.</p>
+      <h2>Trusted bookies for Nigerian punters</h2>
+      <p>Use official partner links when you want to open a bookmaker. Always compare odds and gamble responsibly.</p>
       <div className="bookmaker-grid">
         {bookies.map((bookmaker, index) => (
           <article className="bookmaker-card" key={`${bookmaker.name}-${index}`}>
@@ -4464,7 +4464,7 @@ function BookmakerPanel({
             {bookmaker.link ? (
               <a className="secondary-action" href={bookmaker.link} target="_blank" rel="noreferrer">Open {bookmaker.name}</a>
             ) : (
-              <button className="secondary-action" onClick={() => navigate({ kind: "admin" }, "/lex/auth")}>Add affiliate link</button>
+              <button className="secondary-action" onClick={() => navigate({ kind: "app" }, "/app?auth=login")}>Open in app</button>
             )}
           </article>
         ))}

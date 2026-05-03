@@ -5,6 +5,7 @@ import { sendTipPush } from "../firebase.js";
 import { broadcastTip } from "../telegram.js";
 
 const defaultFixtures = [];
+const maxDailyPublishedTips = 20;
 const nigerianFavoriteLeagueIds = new Set([
   2, 3, 848,
   39, 40, 45, 48,
@@ -528,6 +529,8 @@ async function fetchCandidateFixtures() {
 
 async function buildTipCandidates(fixtures) {
   const tips = [];
+  const freeLimit = Math.min(config.signalWorker.freeLimit, maxDailyPublishedTips);
+  const vipLimit = Math.min(config.signalWorker.vipLimit, Math.max(maxDailyPublishedTips - freeLimit, 0));
   const playableStatuses = new Set(["NS", "TBD", "1H", "HT", "2H", "ET", "P", "BT", "LIVE"]);
   const now = Date.now();
   const selectedFixtures = fixtures
@@ -544,7 +547,7 @@ async function buildTipCandidates(fixtures) {
       if (priorityDiff) return priorityDiff;
       return new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime();
     })
-    .slice(0, Math.max(config.signalWorker.freeLimit + config.signalWorker.vipLimit, 1));
+    .slice(0, Math.max(freeLimit + vipLimit, 1));
 
   const selectedFixtureIds = selectedFixtures.map((fixture) => fixture.fixture_id).filter(Boolean);
   const oddsByFixtureId = await fetchOddsByFixtureIds(selectedFixtureIds);
@@ -572,12 +575,12 @@ async function buildTipCandidates(fixtures) {
   const freemium = tips
     .filter((tip) => !tip.is_vip && Number(tip.odds) < config.signalWorker.freeOddsMax)
     .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, config.signalWorker.freeLimit);
+    .slice(0, freeLimit);
 
   const vip = tips
     .filter((tip) => tip.is_vip)
     .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, config.signalWorker.vipLimit);
+    .slice(0, vipLimit);
 
   return [...freemium, ...vip];
 }

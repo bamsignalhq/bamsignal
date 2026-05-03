@@ -287,7 +287,7 @@ const formatMatchDateTime = (startsAt?: string) => {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Africa/Lagos"
+    timeZoneName: "short"
   }).format(date);
 };
 
@@ -4380,9 +4380,9 @@ function MatchDetailPage({
             </div>
           </div>
           <div className="match-meta-row">
-            <span>{raw.fixture?.venue?.name || "Venue pending"}</span>
-            <span>{raw.league?.round || "League round"}</span>
-            <span>{raw.fixture?.referee || "Referee TBC"}</span>
+            <span><b>Stadium</b>{raw.fixture?.venue?.name || "Pending"}</span>
+            <span><b>Round</b>{raw.league?.round || "Pending"}</span>
+            <span><b>Referee</b>{raw.fixture?.referee || "TBC"}</span>
           </div>
           {isLockedDetail ? (
             <div className="locked-probability-strip">
@@ -4403,7 +4403,7 @@ function MatchDetailPage({
             <section className="match-section">
               <p className="eyebrow">{homeName} vs {awayName} intelligence</p>
               <h2>{isLockedDetail ? "Match context" : detail.predictions?.predictions?.advice || game.pick}</h2>
-              <p>{isLockedDetail ? "Review score, form, events, table position, and recent meetings before opening the premium room." : "Use this page to understand the match before copying a booking code or joining VIP."}</p>
+              <p>{isLockedDetail ? "Review score, form, events, table position, and recent meetings before opening the premium room." : "Review the public match context, then open the app for booking codes and member picks."}</p>
             </section>
 
             {isLockedDetail ? (
@@ -4444,11 +4444,11 @@ function PredictionGroup({ title, rows }: { title: string; rows: { label: string
       <div className="match-prediction-list">
         {rows.map((row) => (
           <div className="match-prediction-row" key={`${title}-${row.market}`}>
-            <strong>{row.left}</strong>
+            <strong>{row.left}%</strong>
             <span>{row.label}</span>
             <b>{row.market}</b>
             <span>{row.value}</span>
-            <strong>{row.right}</strong>
+            <strong>{row.right}%</strong>
           </div>
         ))}
       </div>

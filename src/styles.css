@@ -1085,10 +1085,19 @@ footer {
 }
 
 .match-meta-row span {
+  align-items: center;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 999px;
+  display: inline-flex;
+  gap: 6px;
   padding: 7px 10px;
+}
+
+.match-meta-row b {
+  color: var(--accent);
+  font-size: 11px;
+  text-transform: uppercase;
 }
 
 .match-scoreboard {
@@ -1268,8 +1277,12 @@ footer {
 .h2h-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   margin-top: 14px;
+}
+
+.match-support-grid .h2h-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .bookmaker-card,
@@ -1278,6 +1291,11 @@ footer {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px;
+}
+
+.h2h-card {
+  display: grid;
+  gap: 8px;
 }
 
 .bookmaker-card > span {
@@ -1319,7 +1337,7 @@ footer {
   display: grid;
   gap: 8px;
   grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
-  margin: 10px 0;
+  margin: 0;
 }
 
 .h2h-card b {
@@ -3831,6 +3849,10 @@ footer strong {
   }
 
   .match-support-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .match-support-grid .h2h-grid {
     grid-template-columns: 1fr;
   }
 

@@ -933,7 +933,9 @@ footer {
 
 .dashboard-main {
   align-content: start;
-  padding-bottom: 96px;
+  padding-bottom: 28px;
+  padding-top: 78px;
+  position: relative;
 }
 
 .auth-main {
@@ -1430,17 +1432,19 @@ footer {
 
 .dashboard-tabs {
   backdrop-filter: blur(20px);
-  border-radius: 22px;
-  bottom: 14px;
+  border-radius: 18px;
+  bottom: auto;
   box-shadow:
     0 18px 42px rgba(0, 0, 0, 0.24),
     inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent);
-  left: 50%;
-  max-width: min(620px, calc(100vw - 28px));
+  left: auto;
+  max-width: calc(100vw - 36px);
   position: fixed;
-  transform: translateX(-50%);
-  width: 100%;
-  z-index: 5;
+  right: 18px;
+  top: 18px;
+  transform: none;
+  width: auto;
+  z-index: 25;
 }
 
 .member-rooms {
@@ -1565,6 +1569,82 @@ footer {
 
 .room-pick strong {
   color: var(--accent);
+}
+
+.confidence-signal {
+  align-items: end;
+  display: inline-grid;
+  gap: 4px;
+  grid-template-columns: repeat(3, 7px) auto;
+  min-width: max-content;
+}
+
+.confidence-signal span {
+  background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, #ffffff);
+  border-radius: 999px;
+  display: block;
+  opacity: 0.72;
+  width: 7px;
+}
+
+.confidence-signal span:nth-child(1) {
+  height: 12px;
+}
+
+.confidence-signal span:nth-child(2) {
+  height: 18px;
+}
+
+.confidence-signal span:nth-child(3) {
+  height: 24px;
+}
+
+.confidence-signal em {
+  color: var(--text);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 950;
+  line-height: 1;
+  padding-bottom: 2px;
+}
+
+.confidence-signal.low span.active {
+  background: #fb7185;
+  border-color: #fb7185;
+  box-shadow: 0 0 16px color-mix(in srgb, #fb7185 45%, transparent);
+}
+
+.confidence-signal.yellow span.active {
+  background: #facc15;
+  border-color: #facc15;
+  box-shadow: 0 0 16px color-mix(in srgb, #facc15 42%, transparent);
+}
+
+.confidence-signal.mixed span.active:nth-child(1),
+.confidence-signal.mixed span.active:nth-child(2) {
+  background: #facc15;
+  border-color: #facc15;
+}
+
+.confidence-signal.mixed span.active:nth-child(3) {
+  background: #22c55e;
+  border-color: #22c55e;
+  box-shadow: 0 0 18px color-mix(in srgb, #22c55e 48%, transparent);
+}
+
+.confidence-signal.green span.active {
+  background: #22c55e;
+  border-color: #22c55e;
+  box-shadow: 0 0 18px color-mix(in srgb, #22c55e 48%, transparent);
+}
+
+.confidence-signal.compact {
+  grid-template-columns: repeat(3, 6px) auto;
+}
+
+.confidence-signal.compact span {
+  width: 6px;
 }
 
 .room-pick span {
@@ -2122,7 +2202,7 @@ footer {
   border-radius: var(--radius);
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) auto;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) auto auto;
   padding: 10px;
 }
 
@@ -2158,6 +2238,11 @@ footer {
 .played-game em.lost {
   background: color-mix(in srgb, #f87171 18%, transparent);
   color: #fca5a5;
+}
+
+.played-game em.pending {
+  background: color-mix(in srgb, #facc15 18%, transparent);
+  color: #facc15;
 }
 
 .admin-form,
@@ -3516,6 +3601,11 @@ footer strong {
   padding: 14px;
 }
 
+.native-app .dashboard-main {
+  padding-bottom: 96px;
+  padding-top: 0;
+}
+
 .native-app .dashboard-hero h2,
 .native-app .member-app-panel h2 {
   font-size: 24px;
@@ -3530,8 +3620,13 @@ footer strong {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  left: 50%;
+  max-width: min(620px, calc(100vw - 28px));
   padding: 7px;
+  right: auto;
   top: auto;
+  transform: translateX(-50%);
+  width: 100%;
 }
 
 .native-app .dashboard-tabs button {
@@ -3561,7 +3656,7 @@ footer strong {
 
 .native-app .played-game {
   align-items: start;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
 .native-app .played-game small {

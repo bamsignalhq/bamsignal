@@ -311,6 +311,52 @@ type Evidence = {
   status: "Won" | "Lost";
   tier: "Free" | "VIP";
 };
+type PlayedGame = {
+  teams: string;
+  league: string;
+  play: string;
+  status: "Won" | "Lost" | "Pending";
+  playedAt: string;
+};
+
+const daysAgo = (days: number) => {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString();
+};
+
+const isWithinRollingDays = (dateValue: string, days: number) => {
+  const time = new Date(dateValue).getTime();
+  if (Number.isNaN(time)) return false;
+  return time >= Date.now() - days * 24 * 60 * 60 * 1000;
+};
+
+const getSignalTone = (confidence: number) => {
+  if (confidence >= 60) return "green";
+  if (confidence >= 50) return "mixed";
+  if (confidence >= 35) return "yellow";
+  return "low";
+};
+
+const getSignalBars = (confidence: number) => {
+  if (confidence >= 50) return 3;
+  if (confidence >= 35) return 2;
+  return 1;
+};
+
+function ConfidenceSignal({ confidence, compact = false }: { confidence: number; compact?: boolean }) {
+  const bars = getSignalBars(confidence);
+  const tone = getSignalTone(confidence);
+
+  return (
+    <div className={`confidence-signal ${tone} ${compact ? "compact" : ""}`} aria-label={`${confidence}% confidence signal`}>
+      <span className={bars >= 1 ? "active" : ""} />
+      <span className={bars >= 2 ? "active" : ""} />
+      <span className={bars >= 3 ? "active" : ""} />
+      <em>{confidence}%</em>
+    </div>
+  );
+}
 
 const fixtures: Fixture[] = [
   {
@@ -596,12 +642,13 @@ const defaultAdminGames: AdminGame[] = [
   }
 ];
 
-const profileGameHistory = [
-  { teams: "Paris SG vs Bayern Munich", league: "Champions League", play: "Over 1.5 goals", status: "Won" },
-  { teams: "Southampton vs Ipswich Town", league: "Championship", play: "Home over 0.5", status: "Won" },
-  { teams: "Roma vs Atalanta", league: "Serie A", play: "Both teams to score", status: "Lost" },
-  { teams: "Dortmund vs Leipzig", league: "Bundesliga", play: "Over 2.5 goals", status: "Won" },
-  { teams: "Espanyol vs Real Madrid", league: "La Liga", play: "Away double chance", status: "Won" }
+const profileGameHistory: PlayedGame[] = [
+  { teams: "Paris SG vs Bayern Munich", league: "Champions League", play: "Over 1.5 goals", status: "Won", playedAt: daysAgo(1) },
+  { teams: "Southampton vs Ipswich Town", league: "Championship", play: "Home over 0.5", status: "Won", playedAt: daysAgo(3) },
+  { teams: "Roma vs Atalanta", league: "Serie A", play: "Both teams to score", status: "Lost", playedAt: daysAgo(5) },
+  { teams: "Dortmund vs Leipzig", league: "Bundesliga", play: "Over 2.5 goals", status: "Won", playedAt: daysAgo(9) },
+  { teams: "Espanyol vs Real Madrid", league: "La Liga", play: "Away double chance", status: "Won", playedAt: daysAgo(13) },
+  { teams: "Arsenal vs Brentford", league: "Premier League", play: "Home win", status: "Won", playedAt: daysAgo(19) }
 ];
 
 const adminPlan = [
@@ -1539,6 +1586,7 @@ function App() {
             navigate={navigate}
             theme={theme}
             setTheme={setTheme}
+            dailyKey={dailyKey}
           />
         ) : page.kind === "admin" ? (
           <AdminPage isNative={isNative} navigate={navigate} adminContent={adminContent} setAdminContent={setAdminContent} />
@@ -1929,7 +1977,8 @@ function UserDashboard({
   authIntent,
   navigate,
   theme,
-  setTheme
+  setTheme,
+  dailyKey
 }: {
   isAuthed: boolean;
   isPremium: boolean;
@@ -1943,6 +1992,7 @@ function UserDashboard({
   navigate: (page: Page, path?: string) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  dailyKey: string;
 }) {
   const initialDeviceBinding = useMemo(() => loadDeviceBinding(), []);
   const initialAuthMode = useMemo<AuthMode>(() => {
@@ -1993,18 +2043,15 @@ function UserDashboard({
     () => adminContent.games.filter((game) => game.tier === "vip"),
     [adminContent.games]
   );
-  const playedGames = useMemo(() => [
-    ...adminContent.games.map((game) => ({
-      teams: game.match,
-      league: game.league,
-      play: game.pick,
-      status: "Pending"
-    })),
-    ...profileGameHistory
-  ], [adminContent.games]);
-  const wins = profileGameHistory.filter((game) => game.status === "Won").length;
-  const losses = profileGameHistory.length - wins;
-  const hitRate = Math.round((wins / profileGameHistory.length) * 100);
+  const playedGames = useMemo(
+    () => profileGameHistory
+      .filter((game) => isWithinRollingDays(game.playedAt, 14))
+      .sort((left, right) => new Date(right.playedAt).getTime() - new Date(left.playedAt).getTime()),
+    [dailyKey]
+  );
+  const wins = playedGames.filter((game) => game.status === "Won").length;
+  const losses = playedGames.filter((game) => game.status === "Lost").length;
+  const hitRate = playedGames.length ? Math.round((wins / playedGames.length) * 100) : 0;
   const subscriptionLabel = subscriptionUntil
     ? subscriptionUntil.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })
     : "Not active";
@@ -2567,7 +2614,7 @@ function UserDashboard({
   };
 
   const shareWinningProfile = async () => {
-    const wonGames = profileGameHistory.filter((game) => game.status === "Won");
+    const wonGames = playedGames.filter((game) => game.status === "Won");
     const nextPoints = referralPoints + 50;
     const shareText = [
       `${userProfile.name}'s BamSignal winning record`,
@@ -2806,7 +2853,7 @@ function UserDashboard({
     return (
       <div className={`room-pick managed ${locked ? "locked" : ""}`} key={game.id}>
         <div className="room-pick-top">
-          <strong>{game.confidence}%</strong>
+          <ConfidenceSignal confidence={game.confidence} />
           <em>{game.odds.toFixed(2)} odds</em>
         </div>
         <span>{game.match}</span>
@@ -2932,7 +2979,8 @@ function UserDashboard({
               <div className="played-game" key={`${game.teams}-${game.play}-${index}`}>
                 <strong>{game.teams}</strong>
                 <small>{game.league} / {game.play}</small>
-                <span className={game.status.toLowerCase()}>{game.status}</span>
+                <small>{new Date(game.playedAt).toLocaleDateString("en-NG", { month: "short", day: "numeric" })}</small>
+                <em className={game.status.toLowerCase()}>{game.status}</em>
               </div>
             ))}
           </div>
@@ -2985,7 +3033,7 @@ function UserDashboard({
           </div>
 
           <div className="profile-score-grid">
-            <div><strong>{profileGameHistory.length}</strong><span>Games played</span></div>
+            <div><strong>{playedGames.length}</strong><span>14-day games</span></div>
             <div className="won"><strong>{wins}</strong><span>Won</span></div>
             <div className="lost"><strong>{losses}</strong><span>Lost</span></div>
             <div><strong>{hitRate}%</strong><span>Hit rate</span></div>
@@ -3042,13 +3090,14 @@ function UserDashboard({
               <span>{wins}W / {losses}L</span>
             </div>
             <div className="played-games-list">
-              {profileGameHistory.map((game) => (
+              {playedGames.map((game) => (
                 <article className="played-game" key={`${game.teams}-${game.play}`}>
                   <div>
                     <strong>{game.teams}</strong>
                     <span>{game.league}</span>
                   </div>
                   <small>{game.play}</small>
+                  <small>{new Date(game.playedAt).toLocaleDateString("en-NG", { month: "short", day: "numeric" })}</small>
                   <em className={game.status.toLowerCase()}>{game.status}</em>
                 </article>
               ))}
@@ -3711,6 +3760,7 @@ function AdminPage({
         <div className="publish-preview-card">
           <p className="eyebrow">Preview</p>
           <strong>{quickPublish.match || "Game of the day"}</strong>
+          <ConfidenceSignal confidence={Number(quickPublish.confidence) || 0} />
           <span>{quickPublish.prediction || "Prediction"} / {quickPublish.odds || "0.00"} odds / {quickPublish.confidence || "0"}%</span>
           <small>{quickPublish.tier === "vip" ? "VIP room" : "Freemium room"} / {quickPublish.bookingCodes || "No booking codes yet"}</small>
         </div>
@@ -3741,7 +3791,8 @@ function AdminPage({
             <article className={`admin-game-card ${game.tier}`} key={game.id}>
               <div className="admin-game-head">
                 <strong>{game.tier === "vip" ? "VIP premium" : "Freemium"}</strong>
-                <span>{game.odds.toFixed(2)} odds / {game.confidence}%</span>
+                <span>{game.odds.toFixed(2)} odds</span>
+                <ConfidenceSignal confidence={game.confidence} compact />
               </div>
               <div className="admin-form compact">
                 <label>Match<input value={game.match} onChange={(event) => updateAdminGame(index, { match: event.target.value })} /></label>
@@ -4020,7 +4071,7 @@ function FixtureCard({ fixture, locked, bookingButtonText }: { fixture: Fixture;
           <p className="league">{fixture.league} / {fixture.country} / {fixture.time}</p>
           <h3>{fixture.home} <small>vs</small> {fixture.away}</h3>
         </div>
-        <div className="confidence-pill">{fixture.confidence}%</div>
+        <ConfidenceSignal confidence={fixture.confidence} />
       </div>
       <div className="prediction-row">
         <span>Primary pick</span>
@@ -4051,7 +4102,7 @@ function PublicPredictionCard({ game, locked, bookingButtonText }: { game: Admin
           <p className="league">{game.league} / {game.odds.toFixed(2)} odds</p>
           <h3>{teams.home} <small>vs</small> {teams.away}</h3>
         </div>
-        <div className="confidence-pill">{game.confidence}%</div>
+        <ConfidenceSignal confidence={game.confidence} />
       </div>
       <div className="prediction-row">
         <span>Primary pick</span>

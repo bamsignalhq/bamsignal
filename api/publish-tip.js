@@ -2,6 +2,7 @@ import { config } from "../server/config.js";
 import { insertTip, upsertDailyGames } from "../server/db.js";
 import { sendTipPush } from "../server/firebase.js";
 import { broadcastTip } from "../server/telegram.js";
+import { enrichTipWithFixture } from "../server/services/signalWorker.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -87,7 +88,7 @@ export default async function handler(req, res) {
   if (errors.length) return res.status(400).json({ ok: false, errors });
 
   try {
-    const tip = {
+    const tip = await enrichTipWithFixture({
       match_name: String(payload.match_name),
       league: payload.league ? String(payload.league) : "Football",
       prediction: String(payload.prediction),
@@ -97,7 +98,7 @@ export default async function handler(req, res) {
       booking_codes: payload.booking_codes,
       source: "admin",
       starts_at: payload.starts_at || null
-    };
+    });
 
     const [savedTip] = await Promise.all([
       insertTip(tip),

@@ -83,6 +83,79 @@ function normalizeFixture(raw) {
   };
 }
 
+function normalizeText(value) {
+  const normalized = String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  return normalized
+    .replace(/\bman city\b/g, "manchester city")
+    .replace(/\bman utd\b/g, "manchester united")
+    .replace(/\bman united\b/g, "manchester united")
+    .replace(/\bpsg\b/g, "paris saint germain")
+    .replace(/\bspurs\b/g, "tottenham")
+    .replace(/\binter\b/g, "inter milan");
+}
+
+function parseMatchTeams(matchName) {
+  const [home, away] = String(matchName || "").split(/\s+vs\s+/i);
+  return {
+    home: normalizeText(home),
+    away: normalizeText(away)
+  };
+}
+
+function fixtureMatchScore(fixture, tip) {
+  const teams = parseMatchTeams(tip.match_name);
+  const fixtureHome = normalizeText(fixture.home);
+  const fixtureAway = normalizeText(fixture.away);
+  const league = normalizeText(tip.league);
+  let score = 0;
+
+  if (teams.home && (fixtureHome.includes(teams.home) || teams.home.includes(fixtureHome))) score += 45;
+  if (teams.away && (fixtureAway.includes(teams.away) || teams.away.includes(fixtureAway))) score += 45;
+  if (teams.home && (fixtureAway.includes(teams.home) || teams.home.includes(fixtureAway))) score += 20;
+  if (teams.away && (fixtureHome.includes(teams.away) || teams.away.includes(fixtureHome))) score += 20;
+  if (league && normalizeText(fixture.league).includes(league)) score += 10;
+
+  return score;
+}
+
+async function findFixtureForTip(tip) {
+  if (!config.signalWorker.fixtureApiUrl || !config.signalWorker.fixtureApiKey) return null;
+  const fixtures = (await fetchCandidateFixtures()).map(normalizeFixture);
+  const ranked = fixtures
+    .map((fixture) => ({ fixture, score: fixtureMatchScore(fixture, tip) }))
+    .filter((item) => item.score >= 70)
+    .sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score;
+      return fixturePriority(right.fixture) - fixturePriority(left.fixture);
+    });
+  return ranked[0]?.fixture || null;
+}
+
+export async function enrichTipWithFixture(tip) {
+  if (tip.fixture_payload) return tip;
+  const fixture = await findFixtureForTip(tip);
+  if (!fixture) return tip;
+
+  const oddsByFixtureId = await fetchOddsByFixtureIds(fixture.fixture_id ? [fixture.fixture_id] : []);
+  const markets = oddsByFixtureId.get(fixture.fixture_id) || [];
+  const closestMarket = markets.find((market) => normalizeText(market.prediction) === normalizeText(tip.prediction)) || markets[0];
+
+  return {
+    ...tip,
+    league: fixture.league || tip.league,
+    odds: tip.odds || closestMarket?.odds?.toFixed?.(2) || closestMarket?.odds || "1.00",
+    confidence: tip.confidence || closestMarket?.confidence || null,
+    starts_at: fixture.starts_at || tip.starts_at || null,
+    fixture_payload: fixture.raw || fixture,
+    source: tip.source || "admin-enriched"
+  };
+}
+
 function normalizeMarket(market, fallbackIndex = 0) {
   return {
     prediction: String(market.prediction || market.pick || market.name || market.market || "Over 1.5 goals"),

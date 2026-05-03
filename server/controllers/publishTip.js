@@ -1,6 +1,7 @@
 import { insertTip } from "../db.js";
 import { sendTipPush } from "../firebase.js";
 import { broadcastTip } from "../telegram.js";
+import { enrichTipWithFixture } from "../services/signalWorker.js";
 
 function validateTip(payload) {
   const errors = [];
@@ -21,15 +22,17 @@ export async function publishTip(req, res, next) {
       return res.status(400).json({ ok: false, errors });
     }
 
-    const tip = await insertTip({
+    const enrichedTip = await enrichTipWithFixture({
       match_name: String(req.body.match_name),
+      league: req.body.league ? String(req.body.league) : "Football",
       prediction: String(req.body.prediction),
       odds: String(req.body.odds),
+      confidence: req.body.confidence ? Number(req.body.confidence) : null,
       is_vip: Boolean(req.body.is_vip),
       booking_codes: req.body.booking_codes,
       starts_at: req.body.starts_at || null,
-      stake_hint: req.body.stake_hint || null
     });
+    const tip = await insertTip(enrichedTip);
 
     const [telegram, firebase] = await Promise.allSettled([
       broadcastTip(tip),

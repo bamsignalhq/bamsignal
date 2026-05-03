@@ -291,6 +291,19 @@ const formatMatchDateTime = (startsAt?: string) => {
   }).format(date);
 };
 
+const gameBoardStatus = (game: AdminGame): Fixture["status"] => {
+  const normalized = (game.status || "").toLowerCase();
+  if (["1h", "2h", "ht", "et", "p", "bt", "live"].some((status) => normalized.includes(status))) return "Live";
+  const startsAt = game.startsAt ? new Date(game.startsAt) : null;
+  if (!startsAt || Number.isNaN(startsAt.getTime())) return "Today";
+  const now = new Date();
+  const startDay = new Date(startsAt.getFullYear(), startsAt.getMonth(), startsAt.getDate()).getTime();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const tomorrow = today + 24 * 60 * 60 * 1000;
+  if (startDay === tomorrow) return "Tomorrow";
+  return "Today";
+};
+
 const evidenceStatusLabel = (game: AdminGame) => {
   const normalized = (game.status || "").toLowerCase();
   if (normalized.includes("won")) return "Won";
@@ -1598,10 +1611,10 @@ function App() {
     };
   }, [dailyKey]);
 
-  const filteredFixtures = useMemo(() => {
-    if (activeStatus === "All") return fixtures;
-    return fixtures.filter((fixture) => fixture.status === activeStatus);
-  }, [activeStatus]);
+  const filteredGames = useMemo(() => {
+    if (activeStatus === "All") return effectiveAdminContent.games;
+    return effectiveAdminContent.games.filter((game) => gameBoardStatus(game) === activeStatus);
+  }, [activeStatus, effectiveAdminContent.games]);
 
   const topPick = useMemo(() => {
     const freePick = effectiveAdminContent.games.find((game) => game.tier === "freemium" && game.odds < 1.5);
@@ -1710,7 +1723,7 @@ function App() {
         {page.kind === "home" ? (
           <HomePage
             activeStatus={activeStatus}
-            filteredFixtures={filteredFixtures}
+            filteredGames={filteredGames}
             topPick={topPick}
             dailyGamesSource={dailyGamesSource}
             setActiveStatus={setActiveStatus}
@@ -1784,7 +1797,7 @@ function NativeStartupSplash({ logoSrc, appIconSrc }: { logoSrc: string; appIcon
 
 function HomePage({
   activeStatus,
-  filteredFixtures,
+  filteredGames,
   topPick,
   dailyGamesSource,
   setActiveStatus,
@@ -1792,15 +1805,16 @@ function HomePage({
   adminContent
 }: {
   activeStatus: Fixture["status"] | "All";
-  filteredFixtures: Fixture[];
+  filteredGames: AdminGame[];
   topPick: AdminGame | null;
   dailyGamesSource: string;
   setActiveStatus: (status: Fixture["status"] | "All") => void;
   navigate: (page: Page, path?: string) => void;
   adminContent: AdminContent;
 }) {
-  const publicPredictions = adminContent.games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2);
-  const vipPreview = adminContent.games.filter((game) => game.tier === "vip").slice(0, 6);
+  const boardSource = filteredGames.length || activeStatus !== "All" ? filteredGames : adminContent.games;
+  const publicPredictions = boardSource.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2);
+  const vipPreview = boardSource.filter((game) => game.tier === "vip").slice(0, 6);
   const predictionBoard = [...publicPredictions, ...vipPreview];
   const topTeams = topPick ? splitMatchName(topPick.match) : null;
   const contactLink = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -3791,15 +3805,27 @@ function AdminPage({
     if (!response.ok) throw new Error(result.error || result.errors?.join(" ") || "Publish failed");
     return result;
   };
+  const applyPublishedTipToAdminList = (tip: ApiTip) => {
+    const enrichedGame = apiTipToAdminGame(tip, Date.now());
+    setAdminContent({
+      ...adminContent,
+      games: [
+        enrichedGame,
+        ...adminContent.games.filter((game) => !(game.match === enrichedGame.match && game.tier === enrichedGame.tier))
+      ]
+    });
+    return enrichedGame;
+  };
   const publishQuickGame = async () => {
     const nextGame = saveQuickGameToApp("Saved locally. Publishing to backend...");
     setIsPublishing(true);
     try {
-      await publishAdminGame({
+      const result = await publishAdminGame({
         ...nextGame,
         bookingCodes: adminBookingEntriesFromText(quickPublish.bookingCodes, nextGame.tier === "vip")
       });
-      setAdminStatus(`Published ${nextGame.match}. App list, database, Telegram/Firebase hooks are updated where configured.`);
+      const enrichedGame = result.tip ? applyPublishedTipToAdminList(result.tip) : nextGame;
+      setAdminStatus(`Published ${enrichedGame.match}. Intelligence data is attached when a matching fixture is found.`);
     } catch (error) {
       setAdminStatus(`Saved to app list. Backend publish failed: ${friendlyAuthError(error)}`);
     } finally {
@@ -3809,7 +3835,10 @@ function AdminPage({
   const publishGame = (game: AdminGame) => {
     setIsPublishing(true);
     publishAdminGame(game)
-      .then(() => setAdminStatus(`Published ${game.match}.`))
+      .then((result) => {
+        const enrichedGame = result.tip ? applyPublishedTipToAdminList(result.tip) : game;
+        setAdminStatus(`Published ${enrichedGame.match}. Intelligence data is attached when available.`);
+      })
       .catch((error) => setAdminStatus(`Publish failed: ${friendlyAuthError(error)}`))
       .finally(() => setIsPublishing(false));
   };
@@ -4671,6 +4700,7 @@ function PublicPredictionCard({
   const teams = splitMatchName(game.match);
   const homeName = game.homeTeam || teams.home;
   const awayName = game.awayTeam || teams.away;
+  const boardStatus = gameBoardStatus(game);
   const openMatch = () => navigate({ kind: "match", id: String(game.id) }, `/match/${game.id}`);
   return (
     <article className={`fixture-card clickable ${locked ? "locked" : ""}`} role="button" tabIndex={0} onClick={openMatch} onKeyDown={(event) => {
@@ -4678,7 +4708,7 @@ function PublicPredictionCard({
     }}>
       <div className="fixture-main">
         <div>
-          <span className={`status ${game.tier === "vip" ? "tomorrow" : "today"}`}>{game.tier === "vip" ? "VIP preview" : "Free pick"}</span>
+          <span className={`status ${boardStatus.toLowerCase()}`}>{boardStatus === "Live" && <i aria-hidden="true" />}{boardStatus}</span>
           <div className="fixture-identity">
             <LeagueLogo src={game.leagueLogo} name={game.league} />
             <span>{game.league}</span>

@@ -142,6 +142,14 @@ type AdminGame = {
   odds: number;
   confidence: number;
   tier: "freemium" | "vip";
+  status?: string;
+  startsAt?: string;
+  leagueLogo?: string;
+  homeLogo?: string;
+  awayLogo?: string;
+  homeTeam?: string;
+  awayTeam?: string;
+  result?: string;
   showBookingCodes: boolean;
   bookingCodes: BookingCodeEntry[];
   pushApp: boolean;
@@ -158,6 +166,21 @@ type ApiTip = {
   confidence?: number;
   is_vip: boolean;
   booking_codes?: Record<string, string>;
+  status?: string;
+  starts_at?: string;
+  result_payload?: unknown;
+  fixture_payload?: {
+    raw?: {
+      teams?: {
+        home?: { name?: string; logo?: string };
+        away?: { name?: string; logo?: string };
+      };
+      league?: { name?: string; logo?: string; country?: string };
+      fixture?: { date?: string };
+      goals?: { home?: number | null; away?: number | null };
+      score?: { fulltime?: { home?: number | null; away?: number | null } };
+    };
+  };
 };
 type DailyGamesApiResponse = {
   ok: boolean;
@@ -167,6 +190,15 @@ type DailyGamesApiResponse = {
   vip: ApiTip[];
 };
 const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
+  const rawFixture = tip.fixture_payload?.raw;
+  const fixtureTeams = rawFixture?.teams;
+  const fixtureLeague = rawFixture?.league;
+  const [fallbackHome, fallbackAway] = tip.match_name.split(/\s+vs\s+/i);
+  const fulltime = rawFixture?.score?.fulltime;
+  const goals = rawFixture?.goals;
+  const homeGoals = fulltime?.home ?? goals?.home;
+  const awayGoals = fulltime?.away ?? goals?.away;
+  const hasScore = typeof homeGoals === "number" && typeof awayGoals === "number";
   const bookingCodes = Object.entries(tip.booking_codes || {}).map(([bookmaker, code], codeIndex) => ({
     ...makeBookingCode(bookmakerKeyFromName(bookmaker), String(code), tip.is_vip),
     id: Number(`${Date.now()}${index}${codeIndex}`.slice(-9))
@@ -179,6 +211,14 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
     odds: Number(tip.odds),
     confidence: Number(tip.confidence || (tip.is_vip ? 76 : 82)),
     tier: tip.is_vip ? "vip" : "freemium",
+    status: tip.status || "pending",
+    startsAt: tip.starts_at || rawFixture?.fixture?.date,
+    leagueLogo: fixtureLeague?.logo,
+    homeLogo: fixtureTeams?.home?.logo,
+    awayLogo: fixtureTeams?.away?.logo,
+    homeTeam: fixtureTeams?.home?.name || fallbackHome?.trim(),
+    awayTeam: fixtureTeams?.away?.name || fallbackAway?.trim(),
+    result: hasScore ? `${homeGoals}-${awayGoals}` : undefined,
     showBookingCodes: !tip.is_vip && bookingCodes.length > 0,
     bookingCodes,
     pushApp: true,
@@ -194,6 +234,29 @@ const splitMatchName = (match: string) => {
     home: home?.trim() || match,
     away: away?.trim() || "Opponent"
   };
+};
+
+const formatMatchDateTime = (startsAt?: string) => {
+  if (!startsAt) return "Time pending";
+  const date = new Date(startsAt);
+  if (Number.isNaN(date.getTime())) return "Time pending";
+  return new Intl.DateTimeFormat("en-NG", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Africa/Lagos"
+  }).format(date);
+};
+
+const evidenceStatusLabel = (game: AdminGame) => {
+  const normalized = (game.status || "").toLowerCase();
+  if (normalized.includes("won")) return "Won";
+  if (normalized.includes("lost")) return "Lost";
+  if (normalized.includes("void")) return "Void";
+  if (game.result && ["finished", "ft", "aet", "pen"].some((item) => normalized.includes(item))) return "Finished";
+  return game.startsAt ? "Scheduled" : "Pending";
 };
 
 const gameKey = (game: AdminGame) => `${game.match.toLowerCase()}|${game.pick.toLowerCase()}|${game.tier}`;
@@ -1763,7 +1826,7 @@ function HomePage({
             </div>
             <div className="fixture-list">
               {predictionBoard.length ? predictionBoard.map((game, index) => (
-                <PublicPredictionCard key={game.id} game={game} locked={index > 0} bookingButtonText={adminContent.bookingButtonText} />
+                <PublicPredictionCard key={game.id} game={game} locked={index > 1} bookingButtonText={adminContent.bookingButtonText} />
               )) : (
                 <div className="empty-signal-state wide">
                   <CalendarClock size={22} />
@@ -1785,7 +1848,7 @@ function HomePage({
               <div className="tip-row"><strong>Game of the day</strong><span>{topPick?.match || "Waiting for today's verified pick"}</span></div>
               <div className="tip-row"><strong>Safer market</strong><span>Double chance and over 1.5</span></div>
             </div>
-            <EvidenceBoard />
+            <EvidenceBoard games={adminContent.games} />
             <div className="info-panel markets-panel" id="markets">
               <p className="eyebrow">Markets</p>
               <h2>Every fixture, multiple angles.</h2>
@@ -1905,40 +1968,70 @@ function HomePage({
   );
 }
 
-function EvidenceBoard() {
-  const wins = evidenceBoard.filter((item) => item.status === "Won").length;
-  const hitRate = Math.round((wins / evidenceBoard.length) * 100);
+function EvidenceBoard({ games }: { games: AdminGame[] }) {
+  const platformGames = games
+    .filter((game) => game.startsAt || game.status)
+    .slice(0, 10);
+  const completedGames = platformGames.filter((game) => ["Won", "Lost"].includes(evidenceStatusLabel(game)));
+  const wins = completedGames.filter((game) => evidenceStatusLabel(game) === "Won").length;
+  const hitRate = completedGames.length ? Math.round((wins / completedGames.length) * 100) : 0;
 
   return (
     <section className="evidence-board" aria-label="BamSignal evidence board">
       <div className="evidence-head">
         <div>
           <p className="eyebrow">Evidence board</p>
-          <h2>Past games, clean results.</h2>
-          <p>Use this board to audit BamSignal picks. Wins and losses stay visible so users can judge consistency before joining VIP.</p>
+          <h2>Platform games and outcomes.</h2>
+          <p>Every BamSignal game appears here with its league, kickoff time, logos, pick, odds, and outcome once the result is settled.</p>
         </div>
         <div className="evidence-score">
-          <strong>{hitRate}%</strong>
-          <span>recent hit rate</span>
+          <strong>{completedGames.length ? `${hitRate}%` : "--"}</strong>
+          <span>{completedGames.length ? "settled hit rate" : "awaiting results"}</span>
         </div>
       </div>
       <div className="evidence-list">
-        {evidenceBoard.map((item) => (
-          <article className="evidence-row" key={item.match}>
-            <div>
-              <span className={`result-dot ${item.status.toLowerCase()}`}>{item.status}</span>
-              <h3>{item.match}</h3>
-              <p>{item.pick}</p>
-            </div>
-            <div className="evidence-meta">
-              <span>{item.tier}</span>
-              <strong>{item.odds}</strong>
-              <small>{item.result}</small>
-            </div>
+        {platformGames.length ? platformGames.map((game) => (
+          <EvidenceGameRow game={game} key={gameKey(game)} />
+        )) : (
+          <article className="empty-signal-state wide">
+            <CalendarClock size={22} />
+            <strong>No platform games yet</strong>
+            <span>Once the daily worker or admin publishes games, this board will start tracking them here.</span>
           </article>
-        ))}
+        )}
       </div>
     </section>
+  );
+}
+
+function EvidenceGameRow({ game }: { game: AdminGame }) {
+  const teams = splitMatchName(game.match);
+  const homeName = game.homeTeam || teams.home;
+  const awayName = game.awayTeam || teams.away;
+  const status = evidenceStatusLabel(game);
+  return (
+    <article className="evidence-row platform-evidence-row">
+      <div className="evidence-match-media">
+        <TeamLogo src={game.homeLogo} name={homeName} />
+        <span>vs</span>
+        <TeamLogo src={game.awayLogo} name={awayName} />
+      </div>
+      <div className="evidence-main">
+        <span className={`result-dot ${status.toLowerCase()}`}>{status}</span>
+        <h3>{homeName} <small>vs</small> {awayName}</h3>
+        <p>{game.pick}</p>
+        <div className="fixture-identity">
+          <LeagueLogo src={game.leagueLogo} name={game.league} />
+          <span>{game.league}</span>
+          <small>{formatMatchDateTime(game.startsAt)}</small>
+        </div>
+      </div>
+      <div className="evidence-meta">
+        <span>{game.tier === "vip" ? "VIP" : "Free"}</span>
+        <strong>{game.odds.toFixed(2)}</strong>
+        <small>{game.result || "Outcome pending"}</small>
+      </div>
+    </article>
   );
 }
 
@@ -4104,13 +4197,24 @@ function FixtureCard({ fixture, locked, bookingButtonText }: { fixture: Fixture;
 
 function PublicPredictionCard({ game, locked, bookingButtonText }: { game: AdminGame; locked: boolean; bookingButtonText: string }) {
   const teams = splitMatchName(game.match);
+  const homeName = game.homeTeam || teams.home;
+  const awayName = game.awayTeam || teams.away;
   return (
     <article className={`fixture-card ${locked ? "locked" : ""}`}>
       <div className="fixture-main">
         <div>
           <span className={`status ${game.tier === "vip" ? "tomorrow" : "today"}`}>{game.tier === "vip" ? "VIP preview" : "Free pick"}</span>
-          <p className="league">{game.league} / {game.odds.toFixed(2)} odds</p>
-          <h3>{teams.home} <small>vs</small> {teams.away}</h3>
+          <div className="fixture-identity">
+            <LeagueLogo src={game.leagueLogo} name={game.league} />
+            <span>{game.league}</span>
+            <small>{formatMatchDateTime(game.startsAt)}</small>
+          </div>
+          <div className="team-lineup">
+            <TeamLogo src={game.homeLogo} name={homeName} />
+            <h3>{homeName} <small>vs</small> {awayName}</h3>
+            <TeamLogo src={game.awayLogo} name={awayName} />
+          </div>
+          <p className="league">{game.odds.toFixed(2)} odds</p>
         </div>
         <ConfidenceSignal confidence={game.confidence} />
       </div>
@@ -4130,6 +4234,22 @@ function PublicPredictionCard({ game, locked, bookingButtonText }: { game: Admin
         <Probability label="Codes" value={game.bookingCodes.length ? "Ready" : "Hidden"} percent={game.bookingCodes.length ? 82 : 45} />
       </div>
     </article>
+  );
+}
+
+function TeamLogo({ src, name }: { src?: string; name: string }) {
+  return (
+    <span className="team-logo" aria-label={`${name} logo`}>
+      {src ? <img src={src} alt="" loading="lazy" /> : <b>{name.slice(0, 2).toUpperCase()}</b>}
+    </span>
+  );
+}
+
+function LeagueLogo({ src, name }: { src?: string; name: string }) {
+  return (
+    <span className="league-logo" aria-label={`${name} logo`}>
+      {src ? <img src={src} alt="" loading="lazy" /> : <Trophy size={14} />}
+    </span>
   );
 }
 

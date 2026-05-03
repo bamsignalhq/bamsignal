@@ -4387,7 +4387,7 @@ function MatchDetailPage({
           {isLockedDetail ? (
             <div className="locked-probability-strip">
               <LockKeyhole size={16} />
-              <span>Become a premium member to access probabilities and market edge.</span>
+              <span>Premium members see probabilities and market edge in the app.</span>
             </div>
           ) : (
             <div className="three-way-grid">
@@ -4402,20 +4402,12 @@ function MatchDetailPage({
           <div className="match-main-column">
             <section className="match-section">
               <p className="eyebrow">{homeName} vs {awayName} intelligence</p>
-              <h2>{isLockedDetail ? "VIP signal protected" : detail.predictions?.predictions?.advice || game.pick}</h2>
-              <p>
-                BamSignal combines API-Football fixture data, odds movement, team probability, recent form, and model signal logic.
-                {isLockedDetail ? " The exact VIP recommendation stays inside the app and VIP room." : " Use this page to understand the match before copying a booking code or joining VIP."}
-              </p>
+              <h2>{isLockedDetail ? "Match context" : detail.predictions?.predictions?.advice || game.pick}</h2>
+              <p>{isLockedDetail ? "Review score, form, events, table position, and recent meetings before opening the premium room." : "Use this page to understand the match before copying a booking code or joining VIP."}</p>
             </section>
 
             {isLockedDetail ? (
-              <section className="match-section locked-intel-card">
-                <LockKeyhole size={22} />
-                <h3>Premium prediction hidden</h3>
-                <p>Club context, score, events, and league information stay public. The signal, market angle, and confidence logic are reserved for VIP users.</p>
-                <button className="primary-action neon-action" onClick={() => navigate({ kind: "app" }, "/app?auth=login")}>Open VIP room</button>
-              </section>
+              null
             ) : (
               <div className="prediction-matrix">
                 <PredictionGroup title="Result Predictions" rows={predictionRows.result} />
@@ -4426,12 +4418,18 @@ function MatchDetailPage({
             )}
 
             <StatsPanel stats={detail.statistics || []} homeName={homeName} awayName={awayName} />
+            {isLockedDetail && (
+              <div className="match-support-grid">
+                <HeadToHeadPanel detail={detail} homeName={homeName} awayName={awayName} />
+                <LockedVipPrompt navigate={navigate} />
+              </div>
+            )}
             <EventsPanel events={detail.events || []} />
           </div>
           <aside className="match-side-column">
             <BookmakerPanel affiliateLinks={adminContent.affiliateLinks} affiliateVisible={adminContent.affiliateVisible} />
             <StandingsPanel standings={detail.standings || []} league={raw.league?.name || game.league} />
-            <HeadToHeadPanel detail={detail} homeName={homeName} awayName={awayName} />
+            {!isLockedDetail && <HeadToHeadPanel detail={detail} homeName={homeName} awayName={awayName} />}
           </aside>
         </div>
       </section>
@@ -4454,6 +4452,17 @@ function PredictionGroup({ title, rows }: { title: string; rows: { label: string
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+function LockedVipPrompt({ navigate }: { navigate: (page: Page, path?: string) => void }) {
+  return (
+    <section className="match-section locked-intel-card">
+      <LockKeyhole size={22} />
+      <h3>Premium prediction hidden</h3>
+      <p>Become a premium member to access probabilities, market edge, and the protected signal.</p>
+      <button className="primary-action neon-action" onClick={() => navigate({ kind: "app" }, "/app?auth=login")}>Open VIP room</button>
     </section>
   );
 }
@@ -4552,7 +4561,7 @@ function StatsPanel({ stats, homeName, awayName }: { stats: NonNullable<MatchDet
   return (
     <section className="match-section">
       <p className="eyebrow">Stats</p>
-      <h2>Live and final match numbers</h2>
+      <h2>Match stats</h2>
       <div className="stats-table">
         <div className="stats-row head"><strong>{homeName}</strong><span>Metric</span><strong>{awayName}</strong></div>
         {stats.length ? stats.map((item) => (
@@ -4590,7 +4599,7 @@ function StandingsPanel({ standings, league }: { standings: NonNullable<MatchDet
   return (
     <section className="match-section">
       <p className="eyebrow">League table</p>
-      <h2>{isTeamRecordFallback ? `${league} team records` : `${league} standings`}</h2>
+      <h2>{league} standings</h2>
       <div className="league-table">
         <div className="league-table-row head"><span>{isTeamRecordFallback ? "No." : "Pos"}</span><span>Club</span><span>P</span><span>W</span><span>D</span><span>L</span><span>GD</span><span>Pts</span></div>
         {standings.length ? standings.map((club) => (

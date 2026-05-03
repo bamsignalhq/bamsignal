@@ -1182,6 +1182,14 @@ footer {
   min-width: 0;
 }
 
+.match-support-grid {
+  align-items: stretch;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+  min-width: 0;
+}
+
 .match-side-column {
   position: sticky;
   top: 94px;
@@ -1191,6 +1199,7 @@ footer {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 42%),
     var(--surface);
+  align-content: center;
   display: grid;
   gap: 10px;
 }
@@ -3819,6 +3828,10 @@ footer strong {
 
   .match-side-column {
     position: static;
+  }
+
+  .match-support-grid {
+    grid-template-columns: 1fr;
   }
 
   .match-scoreboard {

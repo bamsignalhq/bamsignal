@@ -333,6 +333,16 @@ function normalizeLeagueTable(standings) {
     : [];
 }
 
+async function fetchLeagueStandings(leagueId, season) {
+  if (!leagueId || !season) return [];
+  const seasons = [season, season - 1, season + 1].filter((value, index, list) => value && list.indexOf(value) === index);
+  for (const seasonValue of seasons) {
+    const response = await fetchFixtureApi("standings", { league: leagueId, season: seasonValue });
+    if (normalizeLeagueTable(response).length) return response;
+  }
+  return [];
+}
+
 function normalizeLeagueTeams(teams) {
   return (Array.isArray(teams) ? teams : []).map((row, index) => ({
     rank: index + 1,
@@ -703,12 +713,13 @@ export async function getMatchDetails(id) {
     ids.fixtureId ? fetchFixtureApi("fixtures/statistics", { fixture: ids.fixtureId }) : [],
     ids.fixtureId ? fetchFixtureApi("fixtures/events", { fixture: ids.fixtureId }) : [],
     h2hKey ? fetchFixtureApi("fixtures/headtohead", { h2h: h2hKey, last: 8 }) : [],
-    ids.leagueId ? fetchFixtureApi("standings", { league: ids.leagueId, season: ids.season }) : [],
+    ids.leagueId ? fetchLeagueStandings(ids.leagueId, ids.season) : [],
     ids.leagueId ? fetchFixtureApi("teams", { league: ids.leagueId, season: ids.season }) : [],
     ids.fixtureId ? fetchFixtureApi("odds", { fixture: ids.fixtureId, timezone: config.signalWorker.timezone }) : []
   ]);
   const prediction = predictions[0] || null;
   const leagueTable = normalizeLeagueTable(standings);
+  const leagueClubList = normalizeLeagueTeams(leagueTeams);
   const directH2h = normalizeH2h(h2h, ids.homeTeamId, ids.awayTeamId);
 
   return {
@@ -719,7 +730,7 @@ export async function getMatchDetails(id) {
     statistics: normalizeStats(statistics),
     events: normalizeEvents(events),
     h2h: directH2h.length ? directH2h : normalizeH2h(prediction?.h2h, ids.homeTeamId, ids.awayTeamId),
-    standings: leagueTable.length ? leagueTable : normalizeLeagueTeams(leagueTeams).length ? normalizeLeagueTeams(leagueTeams) : normalizePredictionTeamRecords(prediction),
+    standings: leagueTable.length ? leagueTable : leagueClubList.length ? leagueClubList : normalizePredictionTeamRecords(prediction),
     bookmakers: normalizeBookmakers(odds),
     refreshed_at: new Date().toISOString()
   };

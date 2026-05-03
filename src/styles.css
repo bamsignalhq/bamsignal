@@ -39,8 +39,8 @@ a {
   --text: #f7fbff;
   --muted: #aab7c8;
   --faint: #748198;
-  --accent: #00e5ff;
-  --accent-2: #b388ff;
+  --accent: #d7ff3f;
+  --accent-2: #00d7c6;
   --gold: #f7c948;
   --danger: #fb7185;
   background:
@@ -64,8 +64,8 @@ a {
   --text: #101828;
   --muted: #5b6778;
   --faint: #7d8999;
-  --accent: #0891b2;
-  --accent-2: #7c3aed;
+  --accent: #8bb600;
+  --accent-2: #008c80;
   --gold: #b7791f;
   --danger: #dc2626;
 }
@@ -364,14 +364,15 @@ main {
 }
 
 .primary-action {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent-2) 42%, var(--accent)));
+  border-color: color-mix(in srgb, var(--accent) 76%, #ffffff);
   color: #101923;
   font-weight: 800;
 }
 
 .secondary-action {
-  background: transparent;
+  background: color-mix(in srgb, var(--surface-2) 80%, var(--accent) 8%);
+  border-color: color-mix(in srgb, var(--border) 78%, var(--accent));
   color: var(--text);
 }
 
@@ -1032,8 +1033,11 @@ footer {
   display: grid;
   gap: 18px;
   margin: 0 auto;
-  max-width: 1120px;
+  max-width: min(1120px, calc(100vw - 24px));
+  min-width: 0;
+  overflow: hidden;
   padding: 22px;
+  width: 100%;
 }
 
 .match-detail-shell.loading-state {
@@ -1059,6 +1063,8 @@ footer {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.08);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .match-hero-card {
@@ -1165,6 +1171,8 @@ footer {
   display: grid;
   gap: 16px;
   grid-template-columns: minmax(0, 1.45fr) minmax(310px, 0.75fr);
+  max-width: 100%;
+  min-width: 0;
 }
 
 .match-main-column,
@@ -1319,7 +1327,12 @@ footer {
 }
 
 .league-table {
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 2px;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .stats-row,
@@ -1366,6 +1379,7 @@ footer {
 .league-table-row {
   grid-template-columns: 48px minmax(0, 1fr) 46px 46px 46px 46px 50px 58px;
   min-width: 640px;
+  width: max-content;
 }
 
 .league-table-row span {

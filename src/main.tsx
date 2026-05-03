@@ -397,9 +397,13 @@ const makeBookingCode = (bookmaker: BookmakerKey, code: string, premium = false)
   premiumTelegram: premium
 });
 
-const getTimedTheme = (): Theme => {
-  const hour = new Date().getHours();
-  return hour >= 7 && hour < 19 ? "light" : "dark";
+const getSavedTheme = (): Theme => {
+  try {
+    const saved = window.localStorage.getItem("bamsignal-theme");
+    return saved === "light" ? "light" : "dark";
+  } catch {
+    return "dark";
+  }
 };
 
 type Fixture = {
@@ -1484,7 +1488,7 @@ const faq = [
 
 function App() {
   const isNative = Capacitor.getPlatform() !== "web";
-  const [theme, setTheme] = useState<Theme>(() => getTimedTheme());
+  const [theme, setTheme] = useState<Theme>(() => getSavedTheme());
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeStatus, setActiveStatus] = useState<Fixture["status"] | "All">("All");
   const [isAuthed, setIsAuthed] = useState(false);
@@ -1530,11 +1534,10 @@ function App() {
     navigate({ kind: "app" }, `/app?auth=${intent}`);
   };
 
+  const toggleTheme = () => setTheme((currentTheme) => currentTheme === "dark" ? "light" : "dark");
+
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setTheme(getTimedTheme());
-      setDailyKey(getDailyKey());
-    }, 60 * 1000);
+    const timer = window.setInterval(() => setDailyKey(getDailyKey()), 60 * 1000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -1545,6 +1548,7 @@ function App() {
   }, [isNative]);
 
   useEffect(() => {
+    window.localStorage.setItem("bamsignal-theme", theme);
     const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
     if (favicon) {
       favicon.href = theme === "dark" ? "/favicon-dark.png" : "/favicon-light.png";
@@ -1697,7 +1701,7 @@ function App() {
               </button>
             </div>
           )}
-          <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+          <button className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             <span>{theme === "dark" ? "Light" : "Dark"}</span>
           </button>
@@ -1726,7 +1730,7 @@ function App() {
             authIntent={getAuthIntent()}
             navigate={navigate}
             theme={theme}
-            setTheme={setTheme}
+            toggleTheme={toggleTheme}
             dailyKey={dailyKey}
           />
         ) : page.kind === "admin" ? (
@@ -2150,7 +2154,7 @@ function UserDashboard({
   authIntent,
   navigate,
   theme,
-  setTheme,
+  toggleTheme,
   dailyKey
 }: {
   isAuthed: boolean;
@@ -2164,7 +2168,7 @@ function UserDashboard({
   authIntent: AuthIntent;
   navigate: (page: Page, path?: string) => void;
   theme: Theme;
-  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
   dailyKey: string;
 }) {
   const initialDeviceBinding = useMemo(() => loadDeviceBinding(), []);
@@ -3054,7 +3058,7 @@ function UserDashboard({
           <span className="auth-secure-badge"><ShieldCheck size={14} /> Private member vault</span>
           <strong>{userProfile.name}</strong>
         </div>
-        <button className="theme-toggle vault-theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+        <button className="theme-toggle vault-theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
           {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
         </button>
       </div>
@@ -4587,7 +4591,6 @@ function StandingsPanel({ standings, league }: { standings: NonNullable<MatchDet
     <section className="match-section">
       <p className="eyebrow">League table</p>
       <h2>{isTeamRecordFallback ? `${league} team records` : `${league} standings`}</h2>
-      {isTeamRecordFallback && <p className="muted-copy">Full standings were not returned for this fixture, so BamSignal is showing verified league records for the two clubs from API-Football.</p>}
       <div className="league-table">
         <div className="league-table-row head"><span>{isTeamRecordFallback ? "No." : "Pos"}</span><span>Club</span><span>P</span><span>W</span><span>D</span><span>L</span><span>GD</span><span>Pts</span></div>
         {standings.length ? standings.map((club) => (

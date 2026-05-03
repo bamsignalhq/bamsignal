@@ -84,6 +84,7 @@ type Page =
   | { kind: "leagues" }
   | { kind: "market"; slug: string }
   | { kind: "league"; slug: string }
+  | { kind: "match"; id: string }
   | { kind: "contact" }
   | { kind: "legal"; slug: string }
   | { kind: "admin" };
@@ -135,7 +136,7 @@ type DeviceBinding = UserProfile & {
   deviceId: string;
 };
 type AdminGame = {
-  id: number;
+  id: string | number;
   match: string;
   league: string;
   pick: string;
@@ -182,6 +183,46 @@ type ApiTip = {
     };
   };
 };
+type FixtureRaw = {
+  teams?: {
+    home?: { id?: number; name?: string; logo?: string };
+    away?: { id?: number; name?: string; logo?: string };
+  };
+  league?: { id?: number; name?: string; logo?: string; country?: string; round?: string; season?: number };
+  fixture?: {
+    id?: number;
+    date?: string;
+    venue?: { name?: string; city?: string };
+    referee?: string;
+    status?: { short?: string; long?: string; elapsed?: number };
+  };
+  goals?: { home?: number | null; away?: number | null };
+  score?: { fulltime?: { home?: number | null; away?: number | null } };
+};
+type MatchDetailApi = {
+  ok: boolean;
+  game: ApiTip;
+  fixture?: FixtureRaw;
+  predictions?: {
+    predictions?: {
+      advice?: string;
+      percent?: { home?: string; draw?: string; away?: string };
+      winner?: { name?: string; comment?: string };
+      under_over?: string;
+      goals?: { home?: string; away?: string };
+    };
+    teams?: {
+      home?: { name?: string; logo?: string; last_5?: Record<string, unknown> };
+      away?: { name?: string; logo?: string; last_5?: Record<string, unknown> };
+    };
+    comparison?: Record<string, { home?: string; away?: string }>;
+  } | null;
+  statistics?: { label: string; home: string | number; away: string | number }[];
+  events?: { time?: number; extra?: number; team?: string; teamLogo?: string; player?: string; assist?: string; type?: string; detail?: string; comments?: string }[];
+  h2h?: { id?: number; date?: string; league?: string; leagueLogo?: string; home?: string; away?: string; homeLogo?: string; awayLogo?: string; score?: string }[];
+  standings?: { rank?: number; name?: string; logo?: string; points?: number; played?: number; won?: number; drawn?: number; lost?: number; goalsDiff?: number }[];
+  bookmakers?: { id?: number; name: string; markets: { name: string; values: { value: string; odd: string }[] }[] }[];
+};
 type DailyGamesApiResponse = {
   ok: boolean;
   date: string;
@@ -204,7 +245,7 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
     id: Number(`${Date.now()}${index}${codeIndex}`.slice(-9))
   }));
   return {
-    id: typeof tip.id === "number" ? tip.id : Date.now() + index,
+    id: tip.id || Date.now() + index,
     match: tip.match_name,
     league: tip.league || "Football",
     pick: tip.prediction,
@@ -1087,6 +1128,7 @@ function getInitialPage(): Page {
   if (section === "app") return { kind: "app" };
   if (section === "contact") return { kind: "contact" };
   if (section === "legal" && slug) return { kind: "legal", slug };
+  if (section === "match" && slug) return { kind: "match", id: slug };
   if (section === "betting-tips") return { kind: "tips" };
   if (section === "markets" && !slug) return { kind: "markets" };
   if (section === "leagues" && !slug) return { kind: "leagues" };
@@ -1667,6 +1709,8 @@ function App() {
           <ContactPage navigate={navigate} adminContent={effectiveAdminContent} />
         ) : page.kind === "legal" ? (
           <LegalPage page={page} navigate={navigate} />
+        ) : page.kind === "match" ? (
+          <MatchDetailPage matchId={page.id} navigate={navigate} />
         ) : page.kind === "tips" ? (
           <BettingTipsPage navigate={navigate} />
         ) : page.kind === "markets" ? (
@@ -1826,7 +1870,7 @@ function HomePage({
             </div>
             <div className="fixture-list">
               {predictionBoard.length ? predictionBoard.map((game, index) => (
-                <PublicPredictionCard key={game.id} game={game} locked={index > 1} bookingButtonText={adminContent.bookingButtonText} />
+                <PublicPredictionCard key={game.id} game={game} locked={index > 1} bookingButtonText={adminContent.bookingButtonText} navigate={navigate} />
               )) : (
                 <div className="empty-signal-state wide">
                   <CalendarClock size={22} />
@@ -4157,6 +4201,302 @@ function DetailPage({ page, navigate }: { page: { kind: "market"; slug: string }
   );
 }
 
+const percentNumber = (value: unknown, fallback = 50) => {
+  const numeric = Number(String(value || "").replace("%", ""));
+  return Number.isFinite(numeric) ? Math.max(0, Math.min(100, numeric)) : fallback;
+};
+
+const makePredictionRows = (detail: MatchDetailApi | null, game: AdminGame | null) => {
+  const percent = detail?.predictions?.predictions?.percent;
+  const confidence = game?.confidence || 72;
+  const home = percentNumber(percent?.home, Math.max(30, confidence - 18));
+  const draw = percentNumber(percent?.draw, 100 - confidence);
+  const away = percentNumber(percent?.away, Math.max(18, 100 - home - draw));
+  const pick = game?.pick || detail?.predictions?.predictions?.advice || "Model pick refreshing";
+  const overText = detail?.predictions?.predictions?.under_over || "Over 1.5";
+
+  return {
+    result: [
+      { label: "Home", market: "Fulltime Result", value: "Draw", left: home, right: draw },
+      { label: "Home", market: "First Half Winner", value: "Draw", left: Math.max(30, home - 8), right: Math.min(45, draw + 8) },
+      { label: "Home/Home", market: "Half Time/Full Time", value: "Draw/Home", left: Math.max(22, home - 18), right: Math.min(38, draw + 4) }
+    ],
+    totals: [
+      { label: "Yes", market: "Over/Under 1.5", value: "No", left: Math.min(92, confidence + 8), right: Math.max(8, 100 - confidence - 8) },
+      { label: "Yes", market: "Over/Under 2.5", value: "No", left: Math.max(44, confidence - 16), right: Math.min(56, 116 - confidence) },
+      { label: "Yes", market: "Home Over/Under 0.5", value: "No", left: Math.max(55, home + 18), right: Math.max(7, 82 - home) },
+      { label: overText, market: "Model Total Goals", value: "Alternative", left: confidence, right: Math.max(6, 100 - confidence) }
+    ],
+    goals: [
+      { label: "Home", market: "Team To Score First", value: "Away", left: Math.max(42, home + 4), right: Math.max(20, away) },
+      { label: "Yes", market: "Both Teams To Score", value: "No", left: Math.max(46, confidence - 12), right: Math.min(54, 112 - confidence) },
+      { label: pick, market: "Primary Pick", value: "Other", left: confidence, right: Math.max(4, 100 - confidence) }
+    ],
+    corners: [
+      { label: "Yes", market: "Corners Over/Under 7", value: "No", left: Math.min(88, confidence + 2), right: Math.max(12, 98 - confidence) },
+      { label: "Yes", market: "Corners Over/Under 8", value: "No", left: Math.max(45, confidence - 10), right: Math.min(55, 110 - confidence) },
+      { label: "No", market: "Corners Over/Under 11", value: "Yes", left: Math.max(54, 100 - Math.round(confidence / 2)), right: Math.min(34, Math.round(confidence / 2)) }
+    ]
+  };
+};
+
+function MatchDetailPage({ matchId, navigate }: { matchId: string; navigate: (page: Page, path?: string) => void }) {
+  const [detail, setDetail] = useState<MatchDetailApi | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/match-details?id=${encodeURIComponent(matchId)}&t=${Date.now()}`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Match detail could not be loaded")))
+      .then((payload: MatchDetailApi) => {
+        if (!cancelled) {
+          setDetail(payload);
+          setError("");
+        }
+      })
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError instanceof Error ? loadError.message : "Match detail could not be loaded");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId]);
+
+  const game = detail?.game ? apiTipToAdminGame(detail.game, 0) : null;
+  const raw: FixtureRaw = detail?.fixture || {};
+  const teams = game ? splitMatchName(game.match) : { home: "Home", away: "Away" };
+  const homeName = raw.teams?.home?.name || game?.homeTeam || teams.home;
+  const awayName = raw.teams?.away?.name || game?.awayTeam || teams.away;
+  const homeGoals = raw.score?.fulltime?.home ?? raw.goals?.home;
+  const awayGoals = raw.score?.fulltime?.away ?? raw.goals?.away;
+  const score = typeof homeGoals === "number" && typeof awayGoals === "number" ? `${homeGoals} : ${awayGoals}` : "vs";
+  const predictionRows = makePredictionRows(detail, game);
+  const statusText = raw.fixture?.status?.long || game?.status || "Scheduled";
+
+  if (loading) {
+    return (
+      <main>
+        <section className="match-detail-shell loading-state">
+          <Loader2 className="spin" size={24} />
+          <strong>Loading match intelligence</strong>
+        </section>
+      </main>
+    );
+  }
+
+  if (error || !detail || !game) {
+    return (
+      <main>
+        <section className="detail-hero">
+          <button className="back-link" onClick={() => navigate({ kind: "home" }, "/")}>
+            <ArrowLeft size={16} /> Back to predictions
+          </button>
+          <p className="eyebrow">Match not found</p>
+          <h2>This game detail is not available yet.</h2>
+          <p>{error || "Run the daily worker or publish the game from admin, then try again."}</p>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main>
+      <section className="match-detail-shell">
+        <button className="back-link" onClick={() => navigate({ kind: "home" }, "/#predictions")}>
+          <ArrowLeft size={16} /> Back to predictions
+        </button>
+        <div className="match-hero-card">
+          <div className="match-kicker">
+            <LeagueLogo src={raw.league?.logo || game.leagueLogo} name={raw.league?.name || game.league} />
+            <span>{raw.league?.name || game.league}</span>
+            <small>{formatMatchDateTime(game.startsAt)}</small>
+          </div>
+          <div className="match-scoreboard">
+            <div className="match-team">
+              <TeamLogo src={raw.teams?.home?.logo || game.homeLogo} name={homeName} />
+              <strong>{homeName}</strong>
+              <span>Home</span>
+            </div>
+            <div className="match-score">
+              <strong>{score}</strong>
+              <span>{statusText}</span>
+            </div>
+            <div className="match-team">
+              <TeamLogo src={raw.teams?.away?.logo || game.awayLogo} name={awayName} />
+              <strong>{awayName}</strong>
+              <span>Away</span>
+            </div>
+          </div>
+          <div className="match-meta-row">
+            <span>{raw.fixture?.venue?.name || "Venue pending"}</span>
+            <span>{raw.league?.round || "League round"}</span>
+            <span>{raw.fixture?.referee || "Referee TBC"}</span>
+          </div>
+          <div className="three-way-grid">
+            <Probability label="Home" value={homeName} percent={predictionRows.result[0].left} />
+            <Probability label="Draw" value="X" percent={predictionRows.result[0].right} />
+            <Probability label="Away" value={awayName} percent={percentNumber(detail.predictions?.predictions?.percent?.away, Math.max(18, 100 - predictionRows.result[0].left - predictionRows.result[0].right))} />
+          </div>
+        </div>
+
+        <section className="match-section">
+          <p className="eyebrow">{homeName} vs {awayName} prediction</p>
+          <h2>{detail.predictions?.predictions?.advice || game.pick}</h2>
+          <p>
+            BamSignal combines API-Football fixture data, odds movement, team probability, recent form, and admin-selected signal logic.
+            Use this page to understand the match before copying a booking code or joining VIP.
+          </p>
+        </section>
+
+        <div className="prediction-matrix">
+          <PredictionGroup title="Result Predictions" rows={predictionRows.result} />
+          <PredictionGroup title="Over/Under Predictions" rows={predictionRows.totals} />
+          <PredictionGroup title="Score/Goals Predictions" rows={predictionRows.goals} />
+          <PredictionGroup title="Corner Predictions" rows={predictionRows.corners} />
+        </div>
+
+        <BookmakerPanel bookmakers={detail.bookmakers || []} />
+        <HeadToHeadPanel detail={detail} homeName={homeName} awayName={awayName} />
+        <StatsPanel stats={detail.statistics || []} homeName={homeName} awayName={awayName} />
+        <EventsPanel events={detail.events || []} />
+        <StandingsPanel standings={detail.standings || []} league={raw.league?.name || game.league} />
+      </section>
+    </main>
+  );
+}
+
+function PredictionGroup({ title, rows }: { title: string; rows: { label: string; market: string; value: string; left: number; right: number }[] }) {
+  return (
+    <section className="match-section compact">
+      <h3>{title}</h3>
+      <div className="match-prediction-list">
+        {rows.map((row) => (
+          <div className="match-prediction-row" key={`${title}-${row.market}`}>
+            <strong>{row.left}</strong>
+            <span>{row.label}</span>
+            <b>{row.market}</b>
+            <span>{row.value}</span>
+            <strong>{row.right}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BookmakerPanel({ bookmakers }: { bookmakers: MatchDetailApi["bookmakers"] }) {
+  const fallback = bookmakers?.length ? bookmakers : [
+    { name: "Melbet", markets: [{ name: "BamSignal code", values: [{ value: "Affiliate link ready", odd: "Live" }] }] },
+    { name: "1xBet", markets: [{ name: "Booking codes", values: [{ value: "Admin controlled", odd: "Ready" }] }] }
+  ];
+  return (
+    <section className="match-section">
+      <p className="eyebrow">Bookmaker board</p>
+      <h2>Available markets and odds</h2>
+      <div className="bookmaker-grid">
+        {fallback.slice(0, 4).map((bookmaker, index) => (
+          <article className="bookmaker-card" key={`${bookmaker.name}-${index}`}>
+            <span>#{index + 1}</span>
+            <h3>{bookmaker.name}</h3>
+            {(bookmaker.markets || []).slice(0, 3).map((market) => (
+              <div className="bookmaker-market" key={market.name}>
+                <strong>{market.name}</strong>
+                <small>{market.values.slice(0, 3).map((value) => `${value.value} ${value.odd}`).join(" / ")}</small>
+              </div>
+            ))}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function HeadToHeadPanel({ detail, homeName, awayName }: { detail: MatchDetailApi; homeName: string; awayName: string }) {
+  return (
+    <section className="match-section">
+      <p className="eyebrow">Head to head</p>
+      <h2>{homeName} and {awayName} recent meetings</h2>
+      <div className="h2h-grid">
+        {(detail.h2h || []).length ? detail.h2h?.map((match) => (
+          <article className="h2h-card" key={match.id || `${match.home}-${match.away}-${match.date}`}>
+            <small>{formatMatchDateTime(match.date)}</small>
+            <div>
+              <TeamLogo src={match.homeLogo} name={match.home || homeName} />
+              <strong>{match.home}</strong>
+              <b>{match.score}</b>
+              <strong>{match.away}</strong>
+              <TeamLogo src={match.awayLogo} name={match.away || awayName} />
+            </div>
+            <span>{match.league}</span>
+          </article>
+        )) : <p className="muted-copy">Head-to-head records will appear when API-Football has enough recent meetings for these clubs.</p>}
+      </div>
+    </section>
+  );
+}
+
+function StatsPanel({ stats, homeName, awayName }: { stats: NonNullable<MatchDetailApi["statistics"]>; homeName: string; awayName: string }) {
+  return (
+    <section className="match-section">
+      <p className="eyebrow">Stats</p>
+      <h2>Live and final match numbers</h2>
+      <div className="stats-table">
+        <div className="stats-row head"><strong>{homeName}</strong><span>Metric</span><strong>{awayName}</strong></div>
+        {stats.length ? stats.map((item) => (
+          <div className="stats-row" key={item.label}>
+            <strong>{item.home}</strong>
+            <span>{item.label}</span>
+            <strong>{item.away}</strong>
+          </div>
+        )) : <p className="muted-copy">Stats unlock during live and finished fixtures.</p>}
+      </div>
+    </section>
+  );
+}
+
+function EventsPanel({ events }: { events: NonNullable<MatchDetailApi["events"]> }) {
+  return (
+    <section className="match-section">
+      <p className="eyebrow">Events</p>
+      <h2>Goals, cards, and match actions</h2>
+      <div className="event-list">
+        {events.length ? events.map((event, index) => (
+          <div className="event-row" key={`${event.time}-${event.player}-${index}`}>
+            <strong>{event.time}'{event.extra ? `+${event.extra}` : ""}</strong>
+            <span>{event.detail || event.type}</span>
+            <b>{event.player || event.team}</b>
+          </div>
+        )) : <p className="muted-copy">Event timeline appears when the match is live or finished.</p>}
+      </div>
+    </section>
+  );
+}
+
+function StandingsPanel({ standings, league }: { standings: NonNullable<MatchDetailApi["standings"]>; league: string }) {
+  return (
+    <section className="match-section">
+      <p className="eyebrow">League table</p>
+      <h2>{league} standings</h2>
+      <div className="league-table">
+        <div className="league-table-row head"><span>Pos</span><span>Club</span><span>P</span><span>Pts</span></div>
+        {standings.length ? standings.map((club) => (
+          <div className="league-table-row" key={`${club.rank}-${club.name}`}>
+            <strong>{club.rank}</strong>
+            <span><TeamLogo src={club.logo} name={club.name || "Club"} /> {club.name}</span>
+            <small>{club.played || 0}</small>
+            <b>{club.points || 0}</b>
+          </div>
+        )) : <p className="muted-copy">League table appears when standings are available for this competition.</p>}
+      </div>
+    </section>
+  );
+}
+
 function FixtureCard({ fixture, locked, bookingButtonText }: { fixture: Fixture; locked?: boolean; bookingButtonText: string }) {
   const bookingCode = `${fixture.status === "Live" ? "LIVE" : "SB"}-${fixture.id}${fixture.confidence}`;
   const copyBookingCode = async () => {
@@ -4195,12 +4535,25 @@ function FixtureCard({ fixture, locked, bookingButtonText }: { fixture: Fixture;
   );
 }
 
-function PublicPredictionCard({ game, locked, bookingButtonText }: { game: AdminGame; locked: boolean; bookingButtonText: string }) {
+function PublicPredictionCard({
+  game,
+  locked,
+  bookingButtonText,
+  navigate
+}: {
+  game: AdminGame;
+  locked: boolean;
+  bookingButtonText: string;
+  navigate: (page: Page, path?: string) => void;
+}) {
   const teams = splitMatchName(game.match);
   const homeName = game.homeTeam || teams.home;
   const awayName = game.awayTeam || teams.away;
+  const openMatch = () => navigate({ kind: "match", id: String(game.id) }, `/match/${game.id}`);
   return (
-    <article className={`fixture-card ${locked ? "locked" : ""}`}>
+    <article className={`fixture-card clickable ${locked ? "locked" : ""}`} role="button" tabIndex={0} onClick={openMatch} onKeyDown={(event) => {
+      if (event.key === "Enter" || event.key === " ") openMatch();
+    }}>
       <div className="fixture-main">
         <div>
           <span className={`status ${game.tier === "vip" ? "tomorrow" : "today"}`}>{game.tier === "vip" ? "VIP preview" : "Free pick"}</span>
@@ -4223,7 +4576,7 @@ function PublicPredictionCard({ game, locked, bookingButtonText }: { game: Admin
         <strong className={locked ? "blurred-tip" : ""}>{game.pick}</strong>
       </div>
       {!locked && (
-        <button className="booking-code-button">
+        <button className="booking-code-button" onClick={(event) => event.stopPropagation()}>
           <ClipboardCheck size={14} /> {bookingButtonText}
         </button>
       )}

@@ -255,6 +255,140 @@ async function fetchOddsByFixtureIds(fixtureIds) {
   return oddsByFixtureId;
 }
 
+function fixtureApiHeaders() {
+  return {
+    Authorization: `Bearer ${config.signalWorker.fixtureApiKey}`,
+    "x-apisports-key": config.signalWorker.fixtureApiKey,
+    "x-api-key": config.signalWorker.fixtureApiKey
+  };
+}
+
+async function fetchFixtureApi(path, params = {}) {
+  if (!config.signalWorker.fixtureApiUrl || !config.signalWorker.fixtureApiKey) return [];
+
+  const url = `${config.signalWorker.fixtureApiUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  try {
+    const response = await axios.get(url, {
+      headers: fixtureApiHeaders(),
+      params,
+      timeout: 15000
+    });
+    const payload = response.data?.response || response.data?.data || response.data?.fixtures || response.data?.odds || [];
+    return Array.isArray(payload) ? payload : [];
+  } catch (error) {
+    console.warn(`API-Football ${path} unavailable`, {
+      code: error.code,
+      message: error.message
+    });
+    return [];
+  }
+}
+
+function normalizeStats(statistics) {
+  const [homeStats, awayStats] = Array.isArray(statistics) ? statistics : [];
+  const homeMap = new Map((homeStats?.statistics || []).map((item) => [item.type, item.value]));
+  const awayMap = new Map((awayStats?.statistics || []).map((item) => [item.type, item.value]));
+  const wanted = [
+    "Shots on Goal",
+    "Shots off Goal",
+    "Total Shots",
+    "Blocked Shots",
+    "Shots insidebox",
+    "Shots outsidebox",
+    "Fouls",
+    "Corner Kicks",
+    "Offsides",
+    "Ball Possession",
+    "Yellow Cards",
+    "Red Cards",
+    "Goalkeeper Saves",
+    "Total passes",
+    "Passes accurate",
+    "Passes %"
+  ];
+
+  return wanted
+    .filter((label) => homeMap.has(label) || awayMap.has(label))
+    .map((label) => ({
+      label,
+      home: homeMap.get(label) ?? "0",
+      away: awayMap.get(label) ?? "0"
+    }));
+}
+
+function normalizeLeagueTable(standings) {
+  const table = standings?.[0]?.league?.standings?.[0] || standings?.league?.standings?.[0] || [];
+  return Array.isArray(table)
+    ? table.slice(0, 24).map((row) => ({
+        rank: row.rank,
+        name: row.team?.name,
+        logo: row.team?.logo,
+        points: row.points,
+        played: row.all?.played,
+        won: row.all?.win,
+        drawn: row.all?.draw,
+        lost: row.all?.lose,
+        goalsDiff: row.goalsDiff
+      }))
+    : [];
+}
+
+function normalizeH2h(matches, homeTeamId, awayTeamId) {
+  return (Array.isArray(matches) ? matches : []).slice(0, 6).map((match) => ({
+    id: match.fixture?.id,
+    date: match.fixture?.date,
+    league: match.league?.name,
+    leagueLogo: match.league?.logo,
+    home: match.teams?.home?.name,
+    away: match.teams?.away?.name,
+    homeLogo: match.teams?.home?.logo,
+    awayLogo: match.teams?.away?.logo,
+    score: `${match.goals?.home ?? "-"}-${match.goals?.away ?? "-"}`,
+    homeIsCurrent: Number(match.teams?.home?.id) === Number(homeTeamId),
+    awayIsCurrent: Number(match.teams?.away?.id) === Number(awayTeamId)
+  }));
+}
+
+function normalizeEvents(events) {
+  return (Array.isArray(events) ? events : []).map((event) => ({
+    time: event.time?.elapsed,
+    extra: event.time?.extra,
+    team: event.team?.name,
+    teamLogo: event.team?.logo,
+    player: event.player?.name,
+    assist: event.assist?.name,
+    type: event.type,
+    detail: event.detail,
+    comments: event.comments
+  }));
+}
+
+function normalizeBookmakers(odds) {
+  const entry = Array.isArray(odds) ? odds[0] : odds;
+  return (entry?.bookmakers || []).slice(0, 4).map((bookmaker) => ({
+    id: bookmaker.id,
+    name: bookmaker.name,
+    markets: (bookmaker.bets || []).slice(0, 6).map((bet) => ({
+      name: bet.name,
+      values: (bet.values || []).slice(0, 8).map((value) => ({
+        value: value.value,
+        odd: value.odd
+      }))
+    }))
+  }));
+}
+
+function getFixtureIdsFromRow(row) {
+  const raw = row?.fixture_payload?.raw || row?.fixture_payload || {};
+  return {
+    fixtureId: Number(raw.fixture?.id || raw.id || raw.fixture_id || 0),
+    leagueId: Number(raw.league?.id || raw.league_id || 0),
+    season: Number(raw.league?.season || new Date(row?.starts_at || Date.now()).getUTCFullYear()),
+    homeTeamId: Number(raw.teams?.home?.id || raw.homeTeam?.id || raw.home_id || 0),
+    awayTeamId: Number(raw.teams?.away?.id || raw.awayTeam?.id || raw.away_id || 0)
+  };
+}
+
 function isNigerianFavoriteEuropeanFixture(fixture) {
   const leagueName = fixture.league.toLowerCase();
   const country = fixture.country.toLowerCase();
@@ -495,5 +629,45 @@ export async function getDailyGames() {
     source: "database",
     freemium: result.rows.filter((tip) => !tip.is_vip),
     vip: result.rows.filter((tip) => tip.is_vip)
+  };
+}
+
+export async function getMatchDetails(id) {
+  await ensureDailyGamesTable();
+
+  const dailyResult = await query(
+    `select *
+     from daily_games
+     where id::text = $1
+     limit 1`,
+    [String(id)]
+  );
+  const row = dailyResult.rows[0];
+  if (!row) return null;
+
+  const raw = row.fixture_payload?.raw || row.fixture_payload || {};
+  const ids = getFixtureIdsFromRow(row);
+  const h2hKey = ids.homeTeamId && ids.awayTeamId ? `${ids.homeTeamId}-${ids.awayTeamId}` : "";
+
+  const [predictions, statistics, events, h2h, standings, odds] = await Promise.all([
+    ids.fixtureId ? fetchFixtureApi("predictions", { fixture: ids.fixtureId }) : [],
+    ids.fixtureId ? fetchFixtureApi("fixtures/statistics", { fixture: ids.fixtureId }) : [],
+    ids.fixtureId ? fetchFixtureApi("fixtures/events", { fixture: ids.fixtureId }) : [],
+    h2hKey ? fetchFixtureApi("fixtures/headtohead", { h2h: h2hKey, last: 8 }) : [],
+    ids.leagueId ? fetchFixtureApi("standings", { league: ids.leagueId, season: ids.season }) : [],
+    ids.fixtureId ? fetchFixtureApi("odds", { fixture: ids.fixtureId, timezone: config.signalWorker.timezone }) : []
+  ]);
+
+  return {
+    ok: true,
+    game: row,
+    fixture: raw,
+    predictions: predictions[0] || null,
+    statistics: normalizeStats(statistics),
+    events: normalizeEvents(events),
+    h2h: normalizeH2h(h2h, ids.homeTeamId, ids.awayTeamId),
+    standings: normalizeLeagueTable(standings),
+    bookmakers: normalizeBookmakers(odds),
+    refreshed_at: new Date().toISOString()
   };
 }

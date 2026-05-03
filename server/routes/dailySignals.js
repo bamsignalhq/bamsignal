@@ -1,6 +1,6 @@
 import express from "express";
 import { config } from "../config.js";
-import { getDailyGames, runDailySignalWorker } from "../services/signalWorker.js";
+import { getDailyGames, getMatchDetails, runDailySignalWorker } from "../services/signalWorker.js";
 
 export const dailySignalsRouter = express.Router();
 
@@ -23,6 +23,16 @@ dailySignalsRouter.get("/daily-games", async (_req, res, next) => {
     res.json(games);
   } catch (error) {
     next(error);
+  }
+});
+
+dailySignalsRouter.get("/match-details/:id", async (req, res, next) => {
+  try {
+    const details = await getMatchDetails(req.params.id);
+    if (!details) return res.status(404).json({ ok: false, error: "Match not found" });
+    return res.json(details);
+  } catch (error) {
+    return next(error);
   }
 });
 

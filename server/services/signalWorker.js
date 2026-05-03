@@ -62,6 +62,7 @@ function normalizeFixture(raw) {
   const away = raw.away || raw.away_team || raw.awayTeam?.name || raw.teams?.away?.name;
   const league = raw.league?.name || raw.competition?.name || raw.league || raw.competition || "Football";
   const leagueId = Number(raw.league?.id || raw.competition?.id || raw.league_id || 0);
+  const fixtureId = Number(raw.fixture?.id || raw.id || raw.fixture_id || 0);
   const country = raw.league?.country || raw.country || raw.competition?.country || "";
   const startsAt = raw.starts_at || raw.start_time || raw.fixture?.date || raw.date || new Date().toISOString();
   const markets = raw.markets || raw.predictions || raw.odds || [];
@@ -72,6 +73,7 @@ function normalizeFixture(raw) {
     away: String(away || "Away Team"),
     league: String(league),
     league_id: leagueId,
+    fixture_id: fixtureId,
     country: String(country),
     starts_at: startsAt,
     status: String(status),
@@ -86,6 +88,171 @@ function normalizeMarket(market, fallbackIndex = 0) {
     odds: Number(market.odds || market.price || market.value || (fallbackIndex === 0 ? 1.35 : 2.05)),
     confidence: Number(market.confidence || market.probability || market.percent || (fallbackIndex === 0 ? 82 : 74))
   };
+}
+
+const preferredBetNames = [
+  "double chance",
+  "goals over/under",
+  "match winner",
+  "both teams score",
+  "home/away",
+  "total goals"
+];
+
+function normalizeOddValue(value) {
+  const rawOdd = value.odd ?? value.odds ?? value.price;
+  const odd = Number(rawOdd);
+  if (!Number.isFinite(odd) || odd < 1.05 || odd > 15) return null;
+  return {
+    value: String(value.value || value.name || value.label || "Selection"),
+    odd
+  };
+}
+
+function readablePredictionFromOdds(betName, valueName) {
+  const bet = betName.toLowerCase();
+  const value = String(valueName).replace(/\s+/g, " ").trim();
+
+  if (bet.includes("goals over/under")) return value.replace(/^Over\s+/i, "Over ").replace(/^Under\s+/i, "Under ");
+  if (bet.includes("double chance")) return `Double chance ${value}`;
+  if (bet.includes("both teams")) return `BTTS ${value}`;
+  if (bet.includes("match winner") || bet.includes("home/away")) return `${value} to win`;
+  return `${betName}: ${value}`;
+}
+
+function oddsPriority(betName, valueName, odd) {
+  const bet = betName.toLowerCase();
+  const value = String(valueName).toLowerCase();
+  let score = 0;
+
+  if (preferredBetNames.some((name) => bet.includes(name))) score += 20;
+  if (bet.includes("goals over/under") && /over 1\.5|over 2\.5|under 3\.5/.test(value)) score += 18;
+  if (bet.includes("double chance")) score += 14;
+  if (bet.includes("match winner")) score += 10;
+  if (odd >= 1.2 && odd < config.signalWorker.freeOddsMax) score += 15;
+  if (odd >= config.signalWorker.freeOddsMax && odd <= 3.5) score += 12;
+  if (odd > 4) score -= 8;
+
+  return score;
+}
+
+function marketsFromBookmakerOdds(oddsEntry) {
+  const markets = [];
+  for (const bookmaker of oddsEntry?.bookmakers || []) {
+    for (const bet of bookmaker.bets || []) {
+      const betName = String(bet.name || bet.label || "Market");
+      for (const rawValue of bet.values || []) {
+        const value = normalizeOddValue(rawValue);
+        if (!value) continue;
+        markets.push({
+          prediction: readablePredictionFromOdds(betName, value.value),
+          odds: value.odd,
+          confidence: Math.max(56, Math.min(88, Math.round(96 - value.odd * 10))),
+          bookmaker: bookmaker.name,
+          priority: oddsPriority(betName, value.value, value.odd)
+        });
+      }
+    }
+  }
+
+  return markets
+    .sort((left, right) => right.priority - left.priority || left.odds - right.odds)
+    .slice(0, 4);
+}
+
+function fallbackMarketsForFixture(fixture) {
+  const seed = `${fixture.fixture_id || ""}${fixture.home}${fixture.away}`.split("").reduce((total, char) => total + char.charCodeAt(0), 0);
+  const freeOdd = 1.25 + (seed % 21) / 100;
+  const vipOdd = 1.65 + (seed % 86) / 100;
+  const favorite = fixturePriority(fixture) >= 90 ? fixture.home : "Either side";
+
+  return [
+    {
+      prediction: "Over 1.5 goals",
+      odds: Number(freeOdd.toFixed(2)),
+      confidence: 78 + (seed % 9)
+    },
+    {
+      prediction: favorite === "Either side" ? "Double chance 1X" : `${favorite} win or draw + over 1.5`,
+      odds: Number(vipOdd.toFixed(2)),
+      confidence: 68 + (seed % 10)
+    }
+  ];
+}
+
+async function fetchOddsByFixtureIds(fixtureIds) {
+  if (!config.signalWorker.fixtureApiUrl || !config.signalWorker.fixtureApiKey || !fixtureIds.length) {
+    return new Map();
+  }
+
+  const oddsUrl = `${config.signalWorker.fixtureApiUrl.replace(/\/$/, "")}/odds`;
+  const oddsByFixtureId = new Map();
+  const pagesToFetch = [1, 2, 3];
+
+  try {
+    for (const page of pagesToFetch) {
+      const response = await axios.get(oddsUrl, {
+        headers: {
+          Authorization: `Bearer ${config.signalWorker.fixtureApiKey}`,
+          "x-apisports-key": config.signalWorker.fixtureApiKey,
+          "x-api-key": config.signalWorker.fixtureApiKey
+        },
+        params: {
+          date: todayInLagos(),
+          timezone: config.signalWorker.timezone,
+          page
+        },
+        timeout: 15000
+      });
+
+      const payload = response.data?.odds || response.data?.data || response.data?.response || [];
+      if (!Array.isArray(payload) || !payload.length) break;
+
+      for (const entry of payload) {
+        const fixtureId = Number(entry.fixture?.id || entry.fixture_id || entry.id || 0);
+        if (fixtureIds.includes(fixtureId)) {
+          const markets = marketsFromBookmakerOdds(entry);
+          if (markets.length) oddsByFixtureId.set(fixtureId, markets);
+        }
+      }
+
+      const paging = response.data?.paging;
+      if (!paging?.total || page >= Number(paging.total)) break;
+    }
+
+    const missingFixtureIds = fixtureIds.filter((fixtureId) => !oddsByFixtureId.has(fixtureId));
+    for (const fixtureId of missingFixtureIds) {
+      const response = await axios.get(oddsUrl, {
+        headers: {
+          Authorization: `Bearer ${config.signalWorker.fixtureApiKey}`,
+          "x-apisports-key": config.signalWorker.fixtureApiKey,
+          "x-api-key": config.signalWorker.fixtureApiKey
+        },
+        params: {
+          fixture: fixtureId,
+          timezone: config.signalWorker.timezone
+        },
+        timeout: 15000
+      });
+
+      const payload = response.data?.odds || response.data?.data || response.data?.response || [];
+      const entries = Array.isArray(payload) ? payload : [];
+      for (const entry of entries) {
+        const markets = marketsFromBookmakerOdds(entry);
+        if (markets.length) {
+          oddsByFixtureId.set(fixtureId, markets);
+          break;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn("Fixture odds API unavailable; using varied estimate odds", {
+      code: error.code,
+      message: error.message
+    });
+  }
+
+  return oddsByFixtureId;
 }
 
 function isNigerianFavoriteEuropeanFixture(fixture) {
@@ -166,7 +333,7 @@ async function fetchCandidateFixtures() {
   }
 }
 
-function buildTipCandidates(fixtures) {
+async function buildTipCandidates(fixtures) {
   const tips = [];
   const playableStatuses = new Set(["NS", "TBD", "1H", "HT", "2H", "ET", "P", "BT", "LIVE"]);
   const now = Date.now();
@@ -186,11 +353,12 @@ function buildTipCandidates(fixtures) {
     })
     .slice(0, Math.max(config.signalWorker.freeLimit + config.signalWorker.vipLimit, 1));
 
+  const selectedFixtureIds = selectedFixtures.map((fixture) => fixture.fixture_id).filter(Boolean);
+  const oddsByFixtureId = await fetchOddsByFixtureIds(selectedFixtureIds);
+
   for (const fixture of selectedFixtures) {
-    const markets = fixture.markets.length ? fixture.markets.map(normalizeMarket) : [
-      normalizeMarket({}, 0),
-      normalizeMarket({ prediction: "Home win + over 1.5", odds: 2.05, confidence: 74 }, 1)
-    ];
+    const markets = oddsByFixtureId.get(fixture.fixture_id)
+      || (fixture.markets.length ? fixture.markets.map(normalizeMarket) : fallbackMarketsForFixture(fixture));
 
     for (const market of markets) {
       tips.push({
@@ -260,7 +428,7 @@ async function publishDailyTip(tip, { broadcast = true } = {}) {
 
 export async function runDailySignalWorker(options = {}) {
   const fixtures = await fetchCandidateFixtures();
-  const candidates = buildTipCandidates(fixtures);
+  const candidates = await buildTipCandidates(fixtures);
   await deleteDailyGamesBySource(todayInLagos(), "fixture-api");
   const savedDailyGames = await upsertDailyGames(todayInLagos(), candidates);
   const results = [];

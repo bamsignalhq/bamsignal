@@ -254,6 +254,24 @@ function fallbackMarketsForFixture(fixture) {
   ];
 }
 
+function tipMatchKey(tip) {
+  return `${normalizeText(tip.match_name)}|${tip.starts_at || ""}|${normalizeText(tip.league)}`;
+}
+
+function uniqueBestTipsByMatch(tips) {
+  const byMatch = new Map();
+  for (const tip of tips) {
+    const key = tipMatchKey(tip);
+    const existing = byMatch.get(key);
+    if (!existing || Number(tip.confidence || 0) > Number(existing.confidence || 0) || (
+      Number(tip.confidence || 0) === Number(existing.confidence || 0) && Number(tip.odds || 0) > Number(existing.odds || 0)
+    )) {
+      byMatch.set(key, tip);
+    }
+  }
+  return Array.from(byMatch.values());
+}
+
 async function fetchOddsByFixtureIds(fixtureIds) {
   if (!config.signalWorker.fixtureApiUrl || !config.signalWorker.fixtureApiKey || !fixtureIds.length) {
     return new Map();
@@ -645,14 +663,15 @@ async function buildTipCandidates(fixtures) {
     }
   }
 
-  const freemium = tips
+  const freemium = uniqueBestTipsByMatch(tips
     .filter((tip) => !tip.is_vip && Number(tip.odds) < config.signalWorker.freeOddsMax)
-    .sort((a, b) => b.confidence - a.confidence)
+    .sort((a, b) => b.confidence - a.confidence))
     .slice(0, freeLimit);
+  const freeMatchKeys = new Set(freemium.map(tipMatchKey));
 
-  const vip = tips
-    .filter((tip) => tip.is_vip)
-    .sort((a, b) => b.confidence - a.confidence)
+  const vip = uniqueBestTipsByMatch(tips
+    .filter((tip) => tip.is_vip && !freeMatchKeys.has(tipMatchKey(tip)))
+    .sort((a, b) => b.confidence - a.confidence))
     .slice(0, vipLimit);
 
   return [...freemium, ...vip];

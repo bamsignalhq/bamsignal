@@ -309,11 +309,75 @@ const evidenceStatusLabel = (game: AdminGame) => {
   if (normalized.includes("won")) return "Won";
   if (normalized.includes("lost")) return "Lost";
   if (normalized.includes("void")) return "Void";
-  if (game.result && ["finished", "ft", "aet", "pen"].some((item) => normalized.includes(item))) return "Finished";
+  if (game.result && ["finished", "ft", "aet", "pen"].some((item) => normalized.includes(item))) {
+    const evaluated = evaluateGamePick(game);
+    if (typeof evaluated === "boolean") return evaluated ? "Won" : "Lost";
+    return "Finished";
+  }
   return game.startsAt ? "Scheduled" : "Pending";
 };
 
+const evaluateGamePick = (game: AdminGame): boolean | null => {
+  const scoreMatch = String(game.result || "").match(/(\d+)\s*-\s*(\d+)/);
+  if (!scoreMatch) return null;
+  const homeGoals = Number(scoreMatch[1]);
+  const awayGoals = Number(scoreMatch[2]);
+  const total = homeGoals + awayGoals;
+  const pick = game.pick.toLowerCase();
+  const teams = splitMatchName(game.match);
+  const homeName = (game.homeTeam || teams.home).toLowerCase();
+  const awayName = (game.awayTeam || teams.away).toLowerCase();
+
+  if (pick.includes("over 1.5")) return total > 1.5;
+  if (pick.includes("over 2.5")) return total > 2.5;
+  if (pick.includes("under 3.5")) return total < 3.5;
+  if (pick.includes("btts")) return homeGoals > 0 && awayGoals > 0;
+  if (pick.includes("double chance 1x")) return homeGoals >= awayGoals;
+  if (pick.includes("double chance x2")) return awayGoals >= homeGoals;
+  if (pick.includes(homeName) && (pick.includes("win") || pick.includes("home"))) return homeGoals > awayGoals;
+  if (pick.includes(awayName) && (pick.includes("win") || pick.includes("away"))) return awayGoals > homeGoals;
+  if (pick.includes("home win")) return homeGoals > awayGoals;
+  if (pick.includes("away win")) return awayGoals > homeGoals;
+  return null;
+};
+
 const gameKey = (game: AdminGame) => `${game.match.toLowerCase()}|${game.pick.toLowerCase()}|${game.tier}`;
+const gameMatchKey = (game: AdminGame) => `${game.match.toLowerCase()}|${game.startsAt || ""}|${game.league.toLowerCase()}`;
+
+const dedupeGamesByMatch = (games: AdminGame[]) => {
+  const byMatch = new Map<string, AdminGame>();
+  games.forEach((game) => {
+    const key = gameMatchKey(game);
+    const existing = byMatch.get(key);
+    if (!existing || game.confidence > existing.confidence || (game.confidence === existing.confidence && game.odds > existing.odds)) {
+      byMatch.set(key, game);
+    }
+  });
+  return Array.from(byMatch.values());
+};
+
+const gameLeaguePriority = (game: AdminGame) => {
+  const league = game.league.toLowerCase();
+  const match = game.match.toLowerCase();
+  let score = game.confidence;
+  if (league.includes("champions league")) score += 120;
+  if (league.includes("europa league")) score += 110;
+  if (league.includes("premier league")) score += 105;
+  if (league.includes("la liga")) score += 92;
+  if (league.includes("serie a")) score += 90;
+  if (league.includes("bundesliga")) score += 88;
+  if (league.includes("ligue 1")) score += 76;
+  if (/\b(man|arsenal|chelsea|liverpool|tottenham|barcelona|real madrid|atletico|inter|milan|juventus|napoli|bayern|dortmund|leverkusen|psg|marseille)\b/i.test(match)) score += 24;
+  return score;
+};
+
+const pickFeaturedGame = (adminGames: AdminGame[], effectiveGames: AdminGame[]) => {
+  const manualGame = adminGames.find((game) => !defaultAdminGameKeys.has(gameKey(game)));
+  if (manualGame) return manualGame;
+  return dedupeGamesByMatch(effectiveGames)
+    .filter((game) => !["Won", "Lost", "Finished"].includes(evidenceStatusLabel(game)))
+    .sort((left, right) => gameLeaguePriority(right) - gameLeaguePriority(left))[0] || effectiveGames[0] || null;
+};
 
 const orderGamesForDisplay = (games: AdminGame[]) => [
   ...games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2),
@@ -1617,9 +1681,8 @@ function App() {
   }, [activeStatus, effectiveAdminContent.games]);
 
   const topPick = useMemo(() => {
-    const freePick = effectiveAdminContent.games.find((game) => game.tier === "freemium" && game.odds < 1.5);
-    return freePick || effectiveAdminContent.games[0] || null;
-  }, [effectiveAdminContent.games]);
+    return pickFeaturedGame(adminContent.games, effectiveAdminContent.games);
+  }, [adminContent.games, effectiveAdminContent.games]);
 
   const goHome = () => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/");
   const isUserVault = page.kind === "app" && isAuthed;
@@ -1812,9 +1875,11 @@ function HomePage({
   navigate: (page: Page, path?: string) => void;
   adminContent: AdminContent;
 }) {
-  const boardSource = filteredGames.length || activeStatus !== "All" ? filteredGames : adminContent.games;
+  const boardSource = dedupeGamesByMatch(filteredGames.length || activeStatus !== "All" ? filteredGames : adminContent.games)
+    .filter((game) => !["Won", "Lost", "Finished"].includes(evidenceStatusLabel(game)));
   const publicPredictions = boardSource.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2);
-  const vipPreview = boardSource.filter((game) => game.tier === "vip").slice(0, 6);
+  const publicMatchKeys = new Set(publicPredictions.map(gameMatchKey));
+  const vipPreview = boardSource.filter((game) => game.tier === "vip" && !publicMatchKeys.has(gameMatchKey(game))).slice(0, 6);
   const predictionBoard = [...publicPredictions, ...vipPreview];
   const topTeams = topPick ? splitMatchName(topPick.match) : null;
   const contactLink = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -1854,7 +1919,16 @@ function HomePage({
                 <span><Send size={14} /> Join 4,500+ Nigerian punters on Telegram</span>
               </div>
             </div>
-            <div className="signal-panel" aria-label="Top prediction">
+            <div
+              className={`signal-panel ${topPick ? "clickable" : ""}`}
+              aria-label="Top prediction"
+              role={topPick ? "button" : undefined}
+              tabIndex={topPick ? 0 : undefined}
+              onClick={() => topPick && navigate({ kind: "match", id: String(topPick.id) }, `/match/${topPick.id}`)}
+              onKeyDown={(event) => {
+                if (topPick && (event.key === "Enter" || event.key === " ")) navigate({ kind: "match", id: String(topPick.id) }, `/match/${topPick.id}`);
+              }}
+            >
               {topPick && topTeams ? (
                 <>
                   <div className="panel-topline">
@@ -2057,8 +2131,13 @@ function HomePage({
 }
 
 function EvidenceBoard({ games }: { games: AdminGame[] }) {
-  const platformGames = games
+  const platformGames = dedupeGamesByMatch(games)
     .filter((game) => game.startsAt || game.status)
+    .sort((left, right) => {
+      const leftTime = left.startsAt ? new Date(left.startsAt).getTime() : 0;
+      const rightTime = right.startsAt ? new Date(right.startsAt).getTime() : 0;
+      return rightTime - leftTime;
+    })
     .slice(0, 10);
   const completedGames = platformGames.filter((game) => ["Won", "Lost"].includes(evidenceStatusLabel(game)));
   const wins = completedGames.filter((game) => evidenceStatusLabel(game) === "Won").length;
@@ -2070,7 +2149,7 @@ function EvidenceBoard({ games }: { games: AdminGame[] }) {
         <div>
           <p className="eyebrow">Evidence board</p>
           <h2>Platform games and outcomes.</h2>
-          <p>Every BamSignal game appears here with its league, kickoff time, logos, pick, odds, and outcome once the result is settled.</p>
+          <p>Published games appear here with league, kickoff time, logos, pick, odds, and settled outcome.</p>
         </div>
         <div className="evidence-score">
           <strong>{completedGames.length ? `${hitRate}%` : "--"}</strong>
@@ -4537,12 +4616,16 @@ function HeadToHeadPanel({ detail, homeName, awayName }: { detail: MatchDetailAp
         {(detail.h2h || []).length ? detail.h2h?.map((match) => (
           <article className="h2h-card" key={match.id || `${match.home}-${match.away}-${match.date}`}>
             <small>{formatMatchDateTime(match.date)}</small>
-            <div>
-              <TeamLogo src={match.homeLogo} name={match.home || homeName} />
-              <strong>{match.home}</strong>
+            <div className="h2h-scoreline">
+              <span className="h2h-side">
+                <TeamLogo src={match.homeLogo} name={match.home || homeName} />
+                <strong>{match.home}</strong>
+              </span>
               <b>{match.score}</b>
-              <strong>{match.away}</strong>
-              <TeamLogo src={match.awayLogo} name={match.away || awayName} />
+              <span className="h2h-side">
+                <TeamLogo src={match.awayLogo} name={match.away || awayName} />
+                <strong>{match.away}</strong>
+              </span>
             </div>
             <span>{match.league}</span>
           </article>
@@ -4609,7 +4692,7 @@ function EventsPanel({ events }: { events: NonNullable<MatchDetailApi["events"]>
   return (
     <section className="match-section">
       <p className="eyebrow">Events</p>
-      <h2>Goals, cards, and match actions</h2>
+      <h2>Match timeline</h2>
       <div className="event-list">
         {events.length ? events.map((event, index) => (
           <div className="event-row" key={`${event.time}-${event.player}-${index}`}>
@@ -4617,7 +4700,7 @@ function EventsPanel({ events }: { events: NonNullable<MatchDetailApi["events"]>
             <span>{event.detail || event.type}</span>
             <b>{event.player || event.team}</b>
           </div>
-        )) : <p className="muted-copy">Event timeline appears when the match is live or finished.</p>}
+        )) : <p className="muted-copy">Key match events appear here from kickoff and remain attached to this fixture after fulltime.</p>}
       </div>
     </section>
   );

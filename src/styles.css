@@ -405,6 +405,18 @@ main {
   padding: 18px;
 }
 
+.signal-panel.clickable {
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.signal-panel.clickable:hover,
+.signal-panel.clickable:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  outline: none;
+  transform: translateY(-2px);
+}
+
 .empty-signal-state {
   align-items: center;
   background: color-mix(in srgb, var(--surface-2) 78%, transparent);
@@ -597,6 +609,23 @@ footer {
 
 .fixture-card {
   padding: 14px;
+}
+
+.fixture-card .fixture-main {
+  display: grid;
+  justify-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.fixture-card .fixture-identity,
+.fixture-card .team-lineup {
+  justify-content: center;
+}
+
+.fixture-card .prediction-row {
+  justify-content: center;
+  text-align: center;
 }
 
 .fixture-card.clickable {
@@ -1332,12 +1361,27 @@ footer {
   color: var(--muted);
 }
 
-.h2h-card > div {
+.h2h-card .h2h-scoreline {
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   margin: 0;
+  text-align: center;
+}
+
+.h2h-side {
+  align-items: center;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  min-width: 0;
+}
+
+.h2h-side strong {
+  font-size: 13px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .h2h-card b {
@@ -3891,11 +3935,6 @@ footer strong {
   .match-prediction-row b,
   .match-prediction-row span {
     font-size: 11px;
-  }
-
-  .h2h-card > div {
-    grid-template-columns: 1fr;
-    text-align: left;
   }
 
   .event-list {

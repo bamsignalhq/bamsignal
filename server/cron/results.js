@@ -2,7 +2,7 @@ import cron from "node-cron";
 import axios from "axios";
 import { config } from "../config.js";
 import { ensureDailyGamesTable, query } from "../db.js";
-import { postResultProof } from "../telegram.js";
+import { postDailyGameResultProof, postResultProof } from "../telegram.js";
 
 function fixtureApiHeaders() {
   return {
@@ -148,7 +148,7 @@ export async function checkPendingResults() {
     const settled = normalizeStatus(result, game);
     if (!settled) continue;
 
-    await query(
+    const updated = await query(
       `update daily_games
        set status = $1,
            result_payload = $2,
@@ -158,6 +158,8 @@ export async function checkPendingResults() {
       [settled.status, settled.payload, game.id]
     );
 
+    const settledGame = updated.rows[0];
+    await postDailyGameResultProof(settledGame);
     updates.push({ id: game.id, status: settled.status, table: "daily_games" });
   }
 

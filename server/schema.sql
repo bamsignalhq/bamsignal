@@ -51,6 +51,25 @@ create table if not exists daily_games (
 
 create index if not exists daily_games_game_date_idx on daily_games (game_date);
 create index if not exists daily_games_visibility_idx on daily_games (game_date, is_vip);
+alter table daily_games add column if not exists result_payload jsonb;
+
+create table if not exists app_users (
+  id uuid primary key default gen_random_uuid(),
+  email text unique,
+  phone text unique,
+  name text,
+  referral_code text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists app_users_email_unique_idx
+  on app_users (lower(email))
+  where email is not null and email <> '';
+
+create unique index if not exists app_users_phone_unique_idx
+  on app_users (phone)
+  where phone is not null and phone <> '';
 
 create table if not exists affiliate_clicks (
   id bigserial primary key,

@@ -885,6 +885,77 @@ export async function getDailyGames() {
   };
 }
 
+export async function getEvidenceGames(limit = 30) {
+  await ensureDailyGamesTable();
+  await ensureTipsTable();
+
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 30, 50));
+  const result = await query(
+    `select *
+     from (
+       select
+         id::text,
+         match_name,
+         league,
+         prediction,
+         odds,
+         confidence,
+         is_vip,
+         booking_codes,
+         source,
+         status,
+         starts_at,
+         fixture_payload,
+         result_payload,
+         updated_at,
+         created_at,
+         'daily_games' as evidence_source
+       from daily_games
+       where status in ('won', 'lost', 'void', 'finished', 'FT', 'AET', 'PEN')
+          or result_payload is not null
+       union all
+       select
+         id::text,
+         match_name,
+         league,
+         prediction,
+         odds,
+         confidence,
+         is_vip,
+         booking_codes,
+         source,
+         status,
+         starts_at,
+         fixture_payload,
+         result_payload,
+         updated_at,
+         created_at,
+         'tips' as evidence_source
+       from tips
+       where status in ('won', 'lost', 'void', 'finished', 'FT', 'AET', 'PEN')
+          or result_payload is not null
+     ) as settled
+     order by coalesce(starts_at, updated_at, created_at) desc
+     limit $1`,
+    [safeLimit]
+  );
+
+  const seen = new Set();
+  const games = [];
+  for (const row of result.rows) {
+    const key = `${normalizeText(row.match_name)}|${normalizeText(row.prediction)}|${row.starts_at || ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    games.push(row);
+  }
+
+  return {
+    ok: true,
+    limit: safeLimit,
+    games
+  };
+}
+
 export async function getMatchDetails(id) {
   await ensureDailyGamesTable();
 

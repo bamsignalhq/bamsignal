@@ -91,7 +91,7 @@ type Page =
 type AdminTab = "overview" | "games" | "login" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type AuthIntent = "login" | "signup" | "reset" | null;
-type PendingEmailOtpType = "signup" | "magiclink";
+type PendingEmailOtpType = "signup" | "email";
 type DashboardTab = "home" | "past" | "vip" | "profile";
 type BookmakerKey =
   | "sportybet"
@@ -169,7 +169,11 @@ type ApiTip = {
   booking_codes?: Record<string, string>;
   status?: string;
   starts_at?: string;
-  result_payload?: unknown;
+  result_payload?: {
+    score?: string;
+    result?: string;
+    evaluated_at?: string;
+  } | null;
   fixture_payload?: {
     raw?: {
       teams?: {
@@ -230,6 +234,10 @@ type DailyGamesApiResponse = {
   freemium: ApiTip[];
   vip: ApiTip[];
 };
+type EvidenceGamesApiResponse = {
+  ok: boolean;
+  games: ApiTip[];
+};
 type FootballNewsArticle = {
   title: string;
   summary?: string;
@@ -248,6 +256,11 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
   const homeGoals = fulltime?.home ?? goals?.home;
   const awayGoals = fulltime?.away ?? goals?.away;
   const hasScore = typeof homeGoals === "number" && typeof awayGoals === "number";
+  const resultScore = typeof tip.result_payload?.score === "string"
+    ? tip.result_payload.score
+    : typeof tip.result_payload?.result === "string"
+      ? tip.result_payload.result
+      : undefined;
   const bookingCodes = Object.entries(tip.booking_codes || {}).map(([bookmaker, code], codeIndex) => ({
     ...makeBookingCode(bookmakerKeyFromName(bookmaker), String(code), tip.is_vip),
     id: Number(`${Date.now()}${index}${codeIndex}`.slice(-9))
@@ -267,7 +280,7 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
     awayLogo: fixtureTeams?.away?.logo,
     homeTeam: fixtureTeams?.home?.name || fallbackHome?.trim(),
     awayTeam: fixtureTeams?.away?.name || fallbackAway?.trim(),
-    result: hasScore ? `${homeGoals}-${awayGoals}` : undefined,
+    result: resultScore || (hasScore ? `${homeGoals}-${awayGoals}` : undefined),
     showBookingCodes: !tip.is_vip && bookingCodes.length > 0,
     bookingCodes,
     pushApp: true,
@@ -300,15 +313,20 @@ const formatMatchDateTime = (startsAt?: string) => {
 };
 
 const gameBoardStatus = (game: AdminGame): Fixture["status"] => {
-  const normalized = (game.status || "").toLowerCase();
-  if (["1h", "2h", "ht", "et", "p", "bt", "live"].some((status) => normalized.includes(status))) return "Live";
+  const normalized = (game.status || "").trim().toLowerCase();
+  const liveStatuses = new Set(["1h", "2h", "ht", "et", "p", "bt", "int", "live", "in_play", "in-play"]);
+  if (liveStatuses.has(normalized)) return "Live";
   const startsAt = game.startsAt ? new Date(game.startsAt) : null;
   if (!startsAt || Number.isNaN(startsAt.getTime())) return "Today";
+  const dayFormatter = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+  const startDay = dayFormatter.format(startsAt);
   const now = new Date();
-  const startDay = new Date(startsAt.getFullYear(), startsAt.getMonth(), startsAt.getDate()).getTime();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const tomorrow = today + 24 * 60 * 60 * 1000;
-  if (startDay === tomorrow) return "Tomorrow";
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  if (startDay === dayFormatter.format(tomorrow)) return "Tomorrow";
   return "Today";
 };
 
@@ -524,12 +542,6 @@ type PlayedGame = {
   playedAt: string;
 };
 
-const daysAgo = (days: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return date.toISOString();
-};
-
 const isWithinRollingDays = (dateValue: string, days: number) => {
   const time = new Date(dateValue).getTime();
   if (Number.isNaN(time)) return false;
@@ -709,49 +721,6 @@ const getDailySureSignal = (dailyKey: string) => {
   return candidates[dayNumber % candidates.length];
 };
 
-const evidenceBoard: Evidence[] = [
-  {
-    match: "Arsenal vs Wolves",
-    pick: "Arsenal over 1.5 team goals",
-    odds: "1.62",
-    result: "2-0",
-    status: "Won",
-    tier: "Free"
-  },
-  {
-    match: "Inter Milan vs Torino",
-    pick: "Inter win or draw + over 1.5",
-    odds: "1.78",
-    result: "3-1",
-    status: "Won",
-    tier: "VIP"
-  },
-  {
-    match: "Real Sociedad vs Valencia",
-    pick: "Under 3.5 goals",
-    odds: "1.39",
-    result: "1-1",
-    status: "Won",
-    tier: "Free"
-  },
-  {
-    match: "Dortmund vs Freiburg",
-    pick: "Both teams to score",
-    odds: "1.71",
-    result: "1-0",
-    status: "Lost",
-    tier: "VIP"
-  },
-  {
-    match: "PSG vs Lille",
-    pick: "PSG over 0.5 first half",
-    odds: "1.55",
-    result: "2-1",
-    status: "Won",
-    tier: "VIP"
-  }
-];
-
 const defaultAdminGames: AdminGame[] = [
   {
     id: 1,
@@ -847,15 +816,6 @@ const defaultAdminGames: AdminGame[] = [
   }
 ];
 const defaultAdminGameKeys = new Set(defaultAdminGames.map(gameKey));
-
-const profileGameHistory: PlayedGame[] = [
-  { teams: "Paris SG vs Bayern Munich", league: "Champions League", play: "Over 1.5 goals", status: "Won", playedAt: daysAgo(1) },
-  { teams: "Southampton vs Ipswich Town", league: "Championship", play: "Home over 0.5", status: "Won", playedAt: daysAgo(3) },
-  { teams: "Roma vs Atalanta", league: "Serie A", play: "Both teams to score", status: "Lost", playedAt: daysAgo(5) },
-  { teams: "Dortmund vs Leipzig", league: "Bundesliga", play: "Over 2.5 goals", status: "Won", playedAt: daysAgo(9) },
-  { teams: "Espanyol vs Real Madrid", league: "La Liga", play: "Away double chance", status: "Won", playedAt: daysAgo(13) },
-  { teams: "Arsenal vs Brentford", league: "Premier League", play: "Home win", status: "Won", playedAt: daysAgo(19) }
-];
 
 const adminPlan = [
   "Publish Free Sure Game to app, Telegram channel, and WhatsApp channel",
@@ -1314,7 +1274,7 @@ const drawWrappedText = (
 
 async function createWinningProfileCard(
   profile: UserProfile,
-  wonGames: typeof profileGameHistory,
+  wonGames: PlayedGame[],
   stats: { wins: number; hitRate: number; inviteCode: string; referralLink: string; referralPoints: number }
 ) {
   const canvas = document.createElement("canvas");
@@ -1986,8 +1946,8 @@ function HomePage({
               )) : (
                 <div className="empty-signal-state wide">
                   <CalendarClock size={22} />
-                  <strong>No stale fixtures shown</strong>
-                  <span>Waiting for API-Football or admin’s first update of the day.</span>
+                  <strong>No matches in this filter yet</strong>
+                  <span>Switch to All, or wait for API-Football/admin to publish matching fixtures.</span>
                 </div>
               )}
             </div>
@@ -2100,14 +2060,40 @@ function HomePage({
 }
 
 function EvidenceBoard({ games }: { games: AdminGame[] }) {
-  const platformGames = dedupeGamesByMatch(games)
-    .filter((game) => game.startsAt || game.status)
+  const [evidenceGames, setEvidenceGames] = useState<AdminGame[]>([]);
+  const [evidenceLoaded, setEvidenceLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const refreshEvidence = () => {
+      fetch(`/api/evidence-games?limit=30&t=${Date.now()}`, { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : null)
+        .then((payload: EvidenceGamesApiResponse | null) => {
+          if (cancelled || !payload?.ok) return;
+          setEvidenceGames((payload.games || []).map(apiTipToAdminGame));
+          setEvidenceLoaded(true);
+        })
+        .catch(() => {
+          if (!cancelled) setEvidenceLoaded(true);
+        });
+    };
+
+    refreshEvidence();
+    const timer = window.setInterval(refreshEvidence, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const platformGames = (evidenceGames.length ? evidenceGames : dedupeGamesByMatch(games)
+    .filter((game) => ["Won", "Lost", "Void", "Finished"].includes(evidenceStatusLabel(game))))
     .sort((left, right) => {
       const leftTime = left.startsAt ? new Date(left.startsAt).getTime() : 0;
       const rightTime = right.startsAt ? new Date(right.startsAt).getTime() : 0;
       return rightTime - leftTime;
     })
-    .slice(0, 10);
+    .slice(0, 30);
   const completedGames = platformGames.filter((game) => ["Won", "Lost"].includes(evidenceStatusLabel(game)));
   const wins = completedGames.filter((game) => evidenceStatusLabel(game) === "Won").length;
   const hitRate = completedGames.length ? Math.round((wins / completedGames.length) * 100) : 0;
@@ -2117,8 +2103,8 @@ function EvidenceBoard({ games }: { games: AdminGame[] }) {
       <div className="evidence-head">
         <div>
           <p className="eyebrow">Evidence board</p>
-          <h2>Platform games and outcomes.</h2>
-          <p>Published games appear here with league, kickoff time, logos, pick, odds, and settled outcome.</p>
+          <h2>Last 30 settled BamSignal games.</h2>
+          <p>Finished games appear here with league, kickoff time, logos, pick, odds, score, and final outcome.</p>
         </div>
         <div className="evidence-score">
           <strong>{completedGames.length ? `${hitRate}%` : "--"}</strong>
@@ -2131,8 +2117,8 @@ function EvidenceBoard({ games }: { games: AdminGame[] }) {
         )) : (
           <article className="empty-signal-state wide">
             <CalendarClock size={22} />
-            <strong>No platform games yet</strong>
-            <span>Once the daily worker or admin publishes games, this board will start tracking them here.</span>
+            <strong>{evidenceLoaded ? "No settled games yet" : "Loading settled games"}</strong>
+            <span>Finished games will appear after the 6:00 AM WAT results worker settles published picks.</span>
           </article>
         )}
       </div>
@@ -2274,6 +2260,8 @@ function UserDashboard({
   const [isResendingCode, setIsResendingCode] = useState(false);
   const [authBusy, setAuthBusy] = useState<"signup" | "verify" | "login" | "loginOtp" | "reset" | null>(null);
   const [referralPoints, setReferralPoints] = useState(() => Number(window.localStorage.getItem("bamsignal-referral-points") || 0));
+  const [playedGames, setPlayedGames] = useState<PlayedGame[]>([]);
+  const [playedGamesLoaded, setPlayedGamesLoaded] = useState(false);
   const freemiumRoomGames = useMemo(
     () => adminContent.games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2),
     [adminContent.games]
@@ -2282,12 +2270,40 @@ function UserDashboard({
     () => adminContent.games.filter((game) => game.tier === "vip"),
     [adminContent.games]
   );
-  const playedGames = useMemo(
-    () => profileGameHistory
-      .filter((game) => isWithinRollingDays(game.playedAt, 14))
-      .sort((left, right) => new Date(right.playedAt).getTime() - new Date(left.playedAt).getTime()),
-    [dailyKey]
-  );
+  useEffect(() => {
+    let cancelled = false;
+    const refreshPlayedGames = () => {
+      fetch(`/api/evidence-games?limit=30&t=${Date.now()}`, { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : null)
+        .then((payload: EvidenceGamesApiResponse | null) => {
+          if (cancelled || !payload?.ok) return;
+          const nextGames = (payload.games || [])
+            .map(apiTipToAdminGame)
+            .filter((game) => game.startsAt && isWithinRollingDays(game.startsAt, 14))
+            .map((game) => ({
+              teams: game.match,
+              league: game.league,
+              play: game.pick,
+              status: evidenceStatusLabel(game) as PlayedGame["status"],
+              playedAt: game.startsAt || new Date().toISOString()
+            }))
+            .filter((game) => game.status === "Won" || game.status === "Lost")
+            .sort((left, right) => new Date(right.playedAt).getTime() - new Date(left.playedAt).getTime());
+          setPlayedGames(nextGames);
+          setPlayedGamesLoaded(true);
+        })
+        .catch(() => {
+          if (!cancelled) setPlayedGamesLoaded(true);
+        });
+    };
+
+    refreshPlayedGames();
+    const timer = window.setInterval(refreshPlayedGames, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [dailyKey]);
   const wins = playedGames.filter((game) => game.status === "Won").length;
   const losses = playedGames.filter((game) => game.status === "Lost").length;
   const hitRate = playedGames.length ? Math.round((wins / playedGames.length) * 100) : 0;
@@ -2567,7 +2583,7 @@ function UserDashboard({
         const { error } = await supabase.auth.verifyOtp({
           email: pendingLoginProfile.email,
           token: verificationInput.trim(),
-          type: "magiclink"
+          type: "email"
         });
         if (error) {
           setAuthMessage(friendlyAuthError(error));
@@ -2645,6 +2661,37 @@ function UserDashboard({
     setAuthMessage("");
   };
 
+  const checkSignupIdentity = async (profile: UserProfile) => {
+    const response = await fetch("/api/auth/identity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: profile.email,
+        phone: profile.phone
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok) {
+      throw new Error(payload?.error || "Could not verify email and phone number. Please try again.");
+    }
+    if (payload.exists) {
+      throw new Error(`${payload.field === "phone" ? "Phone number" : "Email"} is already in use. Login instead.`);
+    }
+  };
+
+  const registerSignupIdentity = async (profile: UserProfile) => {
+    await fetch("/api/auth/identity?action=register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        referralCode: profile.referralCode
+      })
+    }).catch(() => undefined);
+  };
+
   const signUp = async () => {
     if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password || !signupForm.pin) {
       setAuthMessage("Please fill in every signup field.");
@@ -2669,6 +2716,13 @@ function UserDashboard({
       referralCode: signupForm.referralCode.trim()
     };
     setAuthBusy("signup");
+    try {
+      await checkSignupIdentity(nextProfile);
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : "Email or phone number is already in use.");
+      setAuthBusy(null);
+      return;
+    }
     if (supabase) {
       try {
         const { data, error } = await supabase.auth.signUp({
@@ -2687,7 +2741,7 @@ function UserDashboard({
           if (isExistingSignupError(error)) {
             setUserProfile(nextProfile);
             setPendingSignup(nextProfile);
-            setPendingSignupOtpType("magiclink");
+            setPendingSignupOtpType("email");
             setVerificationCode("");
             setVerificationInput("");
             setAuthMode("verify");
@@ -2710,6 +2764,7 @@ function UserDashboard({
 
         setUserProfile(nextProfile);
         if (data.session?.user) {
+          await registerSignupIdentity(nextProfile);
           setVerifiedEmails((emails) => Array.from(new Set([...emails, nextProfile.email])));
           bindDevice(nextProfile, signupForm.pin);
           setAuthMessage("Account created. Welcome to your BamSignal room.");
@@ -2784,6 +2839,7 @@ function UserDashboard({
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData.session?.user) {
         setUserProfile(pendingSignup);
+        await registerSignupIdentity(pendingSignup);
         setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
         bindDevice(pendingSignup, signupForm.pin);
         setAuthBusy(null);
@@ -2792,7 +2848,7 @@ function UserDashboard({
       const { error } = await supabase.auth.verifyOtp({
         email: pendingSignup.email,
         token: verificationInput.trim(),
-        type: pendingSignupOtpType
+        type: "email"
       });
       if (error) {
         setAuthMessage(friendlyAuthError(error));
@@ -2805,6 +2861,7 @@ function UserDashboard({
       return;
     }
     setUserProfile(pendingSignup);
+    await registerSignupIdentity(pendingSignup);
     setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
     bindDevice(pendingSignup, signupForm.pin);
     setAuthBusy(null);
@@ -3006,7 +3063,7 @@ function UserDashboard({
                   </button>
                 </span>
               </label>
-              <label>Referral code <span className="optional-label">Optional</span><input value={signupForm.referralCode} onFocus={() => setSignupForm({ ...signupForm, referralCode: signupForm.referralCode || getReferralCodeFromUrl() })} onChange={(event) => setSignupForm({ ...signupForm, referralCode: event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 32) })} placeholder="Optional" /></label>
+              <label>Referral code<input value={signupForm.referralCode} onFocus={() => setSignupForm({ ...signupForm, referralCode: signupForm.referralCode || getReferralCodeFromUrl() })} onChange={(event) => setSignupForm({ ...signupForm, referralCode: event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 32) })} placeholder="Optional" /></label>
               <button className="primary-action neon-action" onClick={signUp} disabled={authBusy === "signup"}>
                 {authBusy === "signup" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Create secure account
               </button>
@@ -3209,19 +3266,25 @@ function UserDashboard({
           <div className="profile-history-head">
             <div>
               <p className="eyebrow">Past games</p>
-              <h3>Your played and tracked games</h3>
+              <h3>Your tracked games</h3>
             </div>
             <span>{playedGames.length} records</span>
           </div>
           <div className="played-list">
-            {playedGames.map((game, index) => (
+            {playedGames.length ? playedGames.map((game, index) => (
               <div className="played-game" key={`${game.teams}-${game.play}-${index}`}>
                 <strong>{game.teams}</strong>
                 <small>{game.league} / {game.play}</small>
                 <small>{new Date(game.playedAt).toLocaleDateString("en-NG", { month: "short", day: "numeric" })}</small>
                 <em className={game.status.toLowerCase()}>{game.status}</em>
               </div>
-            ))}
+            )) : (
+              <article className="empty-signal-state wide">
+                <CalendarClock size={22} />
+                <strong>{playedGamesLoaded ? "No settled games yet" : "Loading your game history"}</strong>
+                <span>Finished BamSignal picks from the last 14 days will appear here after the results worker settles them.</span>
+              </article>
+            )}
           </div>
         </section>
       )}
@@ -3241,10 +3304,10 @@ function UserDashboard({
             <div className="profile-identity">
               <span className="auth-secure-badge"><Users size={14} /> BamSignal community</span>
               <h2>{userProfile.name}</h2>
-              <p>{isPremium ? "VIP member sharing high-odd wins with the room." : "Freemium member building a visible signal record."}</p>
+              <p>{isPremium ? "VIP member tracking high-odd wins with the room." : "Freemium member tracking daily signals."}</p>
               <div className="member-badges">
                 <span>{isPremium ? "VIP Premium" : "Freemium"}</span>
-                <span>Signal record visible</span>
+                <span>Signal activity</span>
                 <span>Invite {makeInviteCode(userProfile)}</span>
               </div>
             </div>
@@ -3318,29 +3381,6 @@ function UserDashboard({
             <span><Send size={16} /><small>Email</small><strong>{userProfile.email}</strong></span>
             <span><Smartphone size={16} /><small>Phone</small><strong>{userProfile.phone}</strong></span>
             <span><Crown size={16} /><small>Plan</small><strong>{isPremium ? "VIP Premium" : "Freemium"}</strong></span>
-          </div>
-
-          <div className="profile-history-card">
-            <div className="profile-history-head">
-              <div>
-                <p className="eyebrow">Played games</p>
-                <h3>Public signal record</h3>
-              </div>
-              <span>{wins}W / {losses}L</span>
-            </div>
-            <div className="played-games-list">
-              {playedGames.map((game) => (
-                <article className="played-game" key={`${game.teams}-${game.play}`}>
-                  <div>
-                    <strong>{game.teams}</strong>
-                    <span>{game.league}</span>
-                  </div>
-                  <small>{game.play}</small>
-                  <small>{new Date(game.playedAt).toLocaleDateString("en-NG", { month: "short", day: "numeric" })}</small>
-                  <em className={game.status.toLowerCase()}>{game.status}</em>
-                </article>
-              ))}
-            </div>
           </div>
 
           <div className="profile-actions-grid">

@@ -1,6 +1,6 @@
 import express from "express";
 import { config } from "../config.js";
-import { getDailyGames, getMatchDetails, runDailySignalWorker } from "../services/signalWorker.js";
+import { getDailyGames, getEvidenceGames, getMatchDetails, runDailySignalWorker } from "../services/signalWorker.js";
 
 export const dailySignalsRouter = express.Router();
 
@@ -20,6 +20,15 @@ function requireWorkerSecret(req, res, next) {
 dailySignalsRouter.get("/daily-games", async (_req, res, next) => {
   try {
     const games = await getDailyGames();
+    res.json(games);
+  } catch (error) {
+    next(error);
+  }
+});
+
+dailySignalsRouter.get("/evidence-games", async (req, res, next) => {
+  try {
+    const games = await getEvidenceGames(Number(req.query.limit || 30));
     res.json(games);
   } catch (error) {
     next(error);

@@ -120,6 +120,66 @@ export async function ensureDailyGamesTable() {
   await query("alter table daily_games add column if not exists result_payload jsonb");
 }
 
+export async function ensureAppUsersTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists app_users (
+      id uuid primary key default gen_random_uuid(),
+      email text unique,
+      phone text unique,
+      name text,
+      referral_code text,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    )
+  `);
+
+  await query("create unique index if not exists app_users_email_unique_idx on app_users (lower(email)) where email is not null and email <> ''");
+  await query("create unique index if not exists app_users_phone_unique_idx on app_users (phone) where phone is not null and phone <> ''");
+}
+
+export async function findAppUserIdentity({ email, phone }) {
+  if (!pool) return null;
+  await ensureAppUsersTable();
+
+  const result = await query(
+    `select email, phone
+     from app_users
+     where ($1::text is not null and lower(email) = lower($1::text))
+        or ($2::text is not null and phone = $2::text)
+     limit 1`,
+    [email || null, phone || null]
+  );
+  return result.rows[0] || null;
+}
+
+export async function upsertAppUserIdentity({ email, phone, name, referralCode }) {
+  if (!pool) return null;
+  await ensureAppUsersTable();
+
+  const existing = await findAppUserIdentity({ email, phone });
+  const result = existing
+    ? await query(
+        `update app_users
+         set email = coalesce($1, email),
+             phone = coalesce($2, phone),
+             name = coalesce($3, name),
+             referral_code = coalesce($4, referral_code),
+             updated_at = now()
+         where lower(email) = lower($1::text) or phone = $2
+         returning *`,
+        [email || null, phone || null, name || null, referralCode || null]
+      )
+    : await query(
+        `insert into app_users (email, phone, name, referral_code)
+         values ($1, $2, $3, $4)
+         returning *`,
+        [email || null, phone || null, name || null, referralCode || null]
+      );
+  return result.rows[0];
+}
+
 export async function upsertDailyGames(gameDate, tips) {
   if (!pool) {
     return tips.map((tip, index) => ({ ...tip, id: `dry-daily-${gameDate}-${index}`, game_date: gameDate }));

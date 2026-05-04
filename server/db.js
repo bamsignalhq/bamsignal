@@ -234,7 +234,7 @@ export async function upsertDailyGames(gameDate, tips) {
         game_date, match_name, league, prediction, odds, confidence, is_vip,
         booking_codes, source, status, starts_at, fixture_payload
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', $10, $11)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       on conflict (game_date, match_name, prediction, is_vip)
       do update set
         league = excluded.league,
@@ -242,6 +242,10 @@ export async function upsertDailyGames(gameDate, tips) {
         confidence = excluded.confidence,
         booking_codes = excluded.booking_codes,
         source = excluded.source,
+        status = case
+          when daily_games.status in ('won', 'lost', 'void') then daily_games.status
+          else excluded.status
+        end,
         starts_at = excluded.starts_at,
         fixture_payload = excluded.fixture_payload,
         updated_at = now()
@@ -256,6 +260,7 @@ export async function upsertDailyGames(gameDate, tips) {
         tip.is_vip,
         tip.booking_codes || {},
         tip.source || null,
+        tip.status || "pending",
         tip.starts_at || null,
         tip.fixture_payload || null
       ]

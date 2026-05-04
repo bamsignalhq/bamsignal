@@ -39,7 +39,8 @@ export const config = {
     freeLimit: Number(process.env.SIGNAL_FREE_LIMIT || 2),
     vipLimit: Number(process.env.SIGNAL_VIP_LIMIT || 12),
     freeOddsMax: Number(process.env.SIGNAL_FREE_ODDS_MAX || 1.5),
-    defaultBookingCodes: parseJson(process.env.SIGNAL_DEFAULT_BOOKING_CODES, {})
+    defaultBookingCodes: parseJson(process.env.SIGNAL_DEFAULT_BOOKING_CODES, {}),
+    sportsDbApiKey: process.env.THESPORTSDB_API_KEY || "123"
   },
   footballNews: {
     rapidApiKey: process.env.RAPIDAPI_FOOTBALL_NEWS_KEY || process.env.RAPIDAPI_KEY,

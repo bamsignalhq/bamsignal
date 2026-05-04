@@ -136,7 +136,7 @@ export async function checkPendingResults() {
   await ensureDailyGamesTable();
   const pendingDailyGames = await query(
     `select * from daily_games
-     where status in ('pending', 'scheduled', 'NS', '1H', '2H', 'HT')
+     where status in ('pending', 'scheduled', 'NS', 'TBD', '1H', '2H', 'HT', 'ET', 'P', 'BT', 'INT', 'LIVE')
        and starts_at is not null
        and starts_at < now()
      order by starts_at asc

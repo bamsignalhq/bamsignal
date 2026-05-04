@@ -186,6 +186,14 @@ type ApiTip = {
       goals?: { home?: number | null; away?: number | null };
       score?: { fulltime?: { home?: number | null; away?: number | null } };
     };
+    teams?: {
+      home?: { name?: string; logo?: string };
+      away?: { name?: string; logo?: string };
+    };
+    league?: { name?: string; logo?: string; country?: string };
+    fixture?: { date?: string; status?: { short?: string; long?: string } };
+    goals?: { home?: number | null; away?: number | null };
+    score?: { fulltime?: { home?: number | null; away?: number | null } };
   };
 };
 type FixtureRaw = {
@@ -248,7 +256,7 @@ type FootballNewsArticle = {
   publishedAt?: string;
 };
 const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
-  const rawFixture = tip.fixture_payload?.raw;
+  const rawFixture = tip.fixture_payload?.raw || tip.fixture_payload;
   const fixtureTeams = rawFixture?.teams;
   const fixtureLeague = rawFixture?.league;
   const [fallbackHome, fallbackAway] = tip.match_name.split(/\s+vs\s+/i);
@@ -318,8 +326,9 @@ const gameBoardStatus = (game: AdminGame): Fixture["status"] => {
   const liveStatuses = new Set(["1h", "2h", "ht", "et", "p", "bt", "int", "live", "in_play", "in-play"]);
   if (liveStatuses.has(normalized)) return "Live";
   const startsAt = game.startsAt ? new Date(game.startsAt) : null;
-  if (!startsAt || Number.isNaN(startsAt.getTime())) return "Today";
+  if (!startsAt || Number.isNaN(startsAt.getTime())) return "Upcoming";
   const dayFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos",
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
@@ -327,8 +336,9 @@ const gameBoardStatus = (game: AdminGame): Fixture["status"] => {
   const startDay = dayFormatter.format(startsAt);
   const now = new Date();
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  if (startDay === dayFormatter.format(now)) return "Today";
   if (startDay === dayFormatter.format(tomorrow)) return "Tomorrow";
-  return "Today";
+  return "Upcoming";
 };
 
 const evidenceStatusLabel = (game: AdminGame) => {
@@ -524,7 +534,7 @@ type Fixture = {
   over25: number;
   corners: number;
   score: string;
-  status: "Live" | "Today" | "Tomorrow";
+  status: "Live" | "Today" | "Tomorrow" | "Upcoming";
 };
 
 type Evidence = {

@@ -90,12 +90,32 @@ const relativeFootballLeagueNames = [
 ];
 
 function todayInLagos() {
+  return dateInSignalTimezone(new Date());
+}
+
+function dateInSignalTimezone(dateValue) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: config.signalWorker.timezone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
-  }).format(new Date());
+  }).format(dateValue);
+}
+
+function addDaysInSignalTimezone(offset) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + offset);
+  return dateInSignalTimezone(date);
+}
+
+function signalDateFromStartsAt(startsAt) {
+  const date = startsAt ? new Date(startsAt) : new Date();
+  if (Number.isNaN(date.getTime())) return todayInLagos();
+  return dateInSignalTimezone(date);
+}
+
+function boardDates() {
+  return [addDaysInSignalTimezone(-1), addDaysInSignalTimezone(0), addDaysInSignalTimezone(1)];
 }
 
 function normalizeFixture(raw) {
@@ -121,6 +141,75 @@ function normalizeFixture(raw) {
     markets: Array.isArray(markets) ? markets : [],
     raw
   };
+}
+
+function sportsDbStatus(event) {
+  const status = String(event.strStatus || "").toLowerCase();
+  if (status.includes("finished")) return "FT";
+  if (status.includes("live") || status.includes("progress")) return "LIVE";
+  if (status.includes("postponed")) return "PST";
+  if (status.includes("cancel")) return "CANC";
+  const startsAt = event.strTimestamp ? new Date(`${event.strTimestamp.endsWith("Z") ? event.strTimestamp : `${event.strTimestamp}Z`}`) : null;
+  if (startsAt && !Number.isNaN(startsAt.getTime())) {
+    const diff = Date.now() - startsAt.getTime();
+    if (diff >= 0 && diff <= 2.5 * 60 * 60 * 1000 && event.intHomeScore === null && event.intAwayScore === null) return "LIVE";
+  }
+  return "NS";
+}
+
+function normalizeSportsDbEvent(event) {
+  const fixtureId = Number(event.idAPIfootball || event.idEvent || 0);
+  const homeScore = event.intHomeScore === null || event.intHomeScore === undefined ? null : Number(event.intHomeScore);
+  const awayScore = event.intAwayScore === null || event.intAwayScore === undefined ? null : Number(event.intAwayScore);
+  const startsAt = event.strTimestamp
+    ? `${String(event.strTimestamp).replace(/Z$/, "")}Z`
+    : `${event.dateEvent || todayInLagos()}T${event.strTime || "12:00:00"}Z`;
+
+  return normalizeFixture({
+    fixture: {
+      id: fixtureId,
+      date: startsAt,
+      status: {
+        short: sportsDbStatus(event),
+        long: event.strStatus || "Scheduled"
+      },
+      venue: {
+        name: event.strVenue || null,
+        city: event.strCity || null
+      }
+    },
+    league: {
+      id: Number(event.idLeague || 0),
+      name: event.strLeague || "Football",
+      country: event.strCountry || "",
+      logo: event.strLeagueBadge || null,
+      season: event.strSeason || null
+    },
+    teams: {
+      home: {
+        id: Number(event.idHomeTeam || 0),
+        name: event.strHomeTeam || "Home Team",
+        logo: event.strHomeTeamBadge || null
+      },
+      away: {
+        id: Number(event.idAwayTeam || 0),
+        name: event.strAwayTeam || "Away Team",
+        logo: event.strAwayTeamBadge || null
+      }
+    },
+    goals: {
+      home: Number.isFinite(homeScore) ? homeScore : null,
+      away: Number.isFinite(awayScore) ? awayScore : null
+    },
+    score: {
+      fulltime: {
+        home: Number.isFinite(homeScore) ? homeScore : null,
+        away: Number.isFinite(awayScore) ? awayScore : null
+      }
+    },
+    source_provider: "thesportsdb",
+    raw_sportsdb: event
+  });
 }
 
 function normalizeText(value) {
@@ -405,6 +494,10 @@ async function fetchFixtureApi(path, params = {}) {
       params,
       timeout: 15000
     });
+    const errors = response.data?.errors;
+    if (errors && Object.keys(errors).length) {
+      throw new Error(`API-Football error: ${Object.values(errors).join("; ")}`);
+    }
     const payload = response.data?.response || response.data?.data || response.data?.fixtures || response.data?.odds || [];
     return Array.isArray(payload) ? payload : [];
   } catch (error) {
@@ -661,8 +754,9 @@ function fixturePriority(fixture) {
 }
 
 async function fetchCandidateFixtures() {
+  const dates = boardDates();
   if (!config.signalWorker.fixtureApiUrl || !config.signalWorker.fixtureApiKey) {
-    return defaultFixtures;
+    return fetchSportsDbFixtures(dates);
   }
 
   const fixtureUrl = config.signalWorker.fixtureApiUrl.endsWith("/fixtures")
@@ -670,16 +764,6 @@ async function fetchCandidateFixtures() {
     : `${config.signalWorker.fixtureApiUrl.replace(/\/$/, "")}/fixtures`;
 
   try {
-    const dates = [0, 1].map((offset) => {
-      const date = new Date();
-      date.setUTCDate(date.getUTCDate() + offset);
-      return new Intl.DateTimeFormat("en-CA", {
-        timeZone: config.signalWorker.timezone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }).format(date);
-    });
     const fixtures = [];
 
     for (const date of dates) {
@@ -696,18 +780,46 @@ async function fetchCandidateFixtures() {
         timeout: 15000
       });
 
+      const errors = response.data?.errors;
+      if (errors && Object.keys(errors).length) {
+        throw new Error(`API-Football error: ${Object.values(errors).join("; ")}`);
+      }
+
       const payload = response.data?.fixtures || response.data?.data || response.data?.response || response.data;
       if (Array.isArray(payload)) fixtures.push(...payload.map(normalizeFixture));
     }
 
-    return fixtures.length ? fixtures : defaultFixtures;
+    return fixtures.length ? fixtures : fetchSportsDbFixtures(dates);
   } catch (error) {
-    console.warn("Fixture API unavailable; no stale fallback board will be published", {
+    console.warn("Fixture API unavailable; falling back to TheSportsDB", {
       code: error.code,
       message: error.message
     });
-    return defaultFixtures;
+    return fetchSportsDbFixtures(dates);
   }
+}
+
+async function fetchSportsDbFixtures(dates = boardDates()) {
+  if (!config.signalWorker.sportsDbApiKey) return defaultFixtures;
+  const fixtures = [];
+
+  for (const date of dates) {
+    try {
+      const response = await axios.get(`https://www.thesportsdb.com/api/v1/json/${config.signalWorker.sportsDbApiKey}/eventsday.php`, {
+        params: { d: date, s: "Soccer" },
+        timeout: 15000
+      });
+      const events = Array.isArray(response.data?.events) ? response.data.events : [];
+      fixtures.push(...events.map(normalizeSportsDbEvent));
+    } catch (error) {
+      console.warn("TheSportsDB fixture fallback unavailable", {
+        code: error.code,
+        message: error.message
+      });
+    }
+  }
+
+  return fixtures.length ? fixtures : defaultFixtures;
 }
 
 async function buildTipCandidates(fixtures) {
@@ -731,7 +843,11 @@ async function buildTipCandidates(fixtures) {
   const relativeFixtures = normalizedFixtures
     .filter((fixture) => !primaryKeys.has(`${fixture.fixture_id || ""}|${fixture.home}|${fixture.away}|${fixture.starts_at}`))
     .filter(isRelativeFootballFixture);
-  const selectedFixtures = [...primaryFixtures, ...relativeFixtures]
+  const preferredKeys = new Set([...primaryFixtures, ...relativeFixtures].map((fixture) => `${fixture.fixture_id || ""}|${fixture.home}|${fixture.away}|${fixture.starts_at}`));
+  const fallbackFixtures = normalizedFixtures
+    .filter((fixture) => !preferredKeys.has(`${fixture.fixture_id || ""}|${fixture.home}|${fixture.away}|${fixture.starts_at}`))
+    .filter(isCleanSeniorFixture);
+  const selectedFixtures = [...primaryFixtures, ...relativeFixtures, ...fallbackFixtures]
     .sort((left, right) => {
       const priorityDiff = fixturePriority(right) - fixturePriority(left);
       if (priorityDiff) return priorityDiff;
@@ -816,8 +932,19 @@ async function publishDailyTip(tip, { broadcast = true } = {}) {
 export async function runDailySignalWorker(options = {}) {
   const fixtures = await fetchCandidateFixtures();
   const candidates = await buildTipCandidates(fixtures);
-  await deleteDailyGamesBySource(todayInLagos(), "fixture-api");
-  const savedDailyGames = await upsertDailyGames(todayInLagos(), candidates);
+  const dates = boardDates();
+  await Promise.all(dates.map((date) => deleteDailyGamesBySource(date, "fixture-api")));
+
+  const candidatesByDate = candidates.reduce((groups, candidate) => {
+    const date = signalDateFromStartsAt(candidate.starts_at);
+    if (!groups.has(date)) groups.set(date, []);
+    groups.get(date).push(candidate);
+    return groups;
+  }, new Map());
+  const savedDailyGames = [];
+  for (const [gameDate, dateCandidates] of candidatesByDate.entries()) {
+    savedDailyGames.push(...await upsertDailyGames(gameDate, dateCandidates));
+  }
   const results = [];
 
   for (const candidate of candidates) {
@@ -827,6 +954,7 @@ export async function runDailySignalWorker(options = {}) {
   return {
     ok: true,
     date: todayInLagos(),
+    dates,
     timezone: config.signalWorker.timezone,
     stored: savedDailyGames.length,
     freemium: results.filter((item) => !item.tip.is_vip).length,
@@ -835,21 +963,144 @@ export async function runDailySignalWorker(options = {}) {
   };
 }
 
+const liveRefreshStatuses = new Set(["NS", "TBD", "1H", "HT", "2H", "ET", "P", "BT", "INT", "LIVE"]);
+const finishedStatuses = new Set(["FT", "AET", "PEN"]);
+let lastStatusRefreshAt = 0;
+
+function fixtureIdFromPayload(payload) {
+  const raw = payload?.raw || payload || {};
+  return Number(raw.fixture?.id || raw.id || raw.fixture_id || 0);
+}
+
+function fixtureResultPayload(fixture) {
+  const home = fixture?.goals?.home ?? fixture?.score?.fulltime?.home;
+  const away = fixture?.goals?.away ?? fixture?.score?.fulltime?.away;
+  return {
+    score: typeof home === "number" && typeof away === "number" ? `${home}-${away}` : null,
+    result: fixture,
+    refreshed_at: new Date().toISOString()
+  };
+}
+
+export async function refreshDailyGameStatuses({ force = false } = {}) {
+  await ensureDailyGamesTable();
+  if (!config.signalWorker.fixtureApiUrl || !config.signalWorker.fixtureApiKey) {
+    return { ok: false, skipped: true, reason: "Fixture API is not configured" };
+  }
+  const now = Date.now();
+  if (!force && now - lastStatusRefreshAt < 2 * 60 * 1000) {
+    return { ok: true, skipped: true, reason: "recently_refreshed" };
+  }
+  lastStatusRefreshAt = now;
+
+  const dates = boardDates();
+  const storedResult = await query(
+    `select id, game_date, status, starts_at, fixture_payload
+     from daily_games
+     where game_date = any($1::date[])
+       and status not in ('won', 'lost', 'void')
+     order by starts_at asc nulls last
+     limit 60`,
+    [dates]
+  );
+
+  if (!storedResult.rows.length) return { ok: true, dates, updated: 0 };
+
+  const snapshots = new Map();
+  for (const date of dates) {
+    const fixtures = await fetchFixtureApi("fixtures", { date, timezone: config.signalWorker.timezone });
+    for (const fixture of fixtures) {
+      const fixtureId = Number(fixture?.fixture?.id || fixture?.id || fixture?.fixture_id || 0);
+      if (fixtureId) snapshots.set(fixtureId, fixture);
+    }
+  }
+
+  let updated = 0;
+  for (const row of storedResult.rows) {
+    const fixtureId = fixtureIdFromPayload(row.fixture_payload);
+    const fixture = snapshots.get(fixtureId);
+    if (!fixture) continue;
+
+    const status = String(fixture?.fixture?.status?.short || fixture?.status || row.status || "NS").toUpperCase();
+    if (!liveRefreshStatuses.has(status) && !finishedStatuses.has(status)) continue;
+
+    if (finishedStatuses.has(status)) {
+      await query(
+        `update daily_games
+         set fixture_payload = $1,
+             result_payload = $2,
+             updated_at = now()
+         where id = $3`,
+        [fixture, fixtureResultPayload(fixture), row.id]
+      );
+    } else {
+      await query(
+        `update daily_games
+         set status = $1,
+             starts_at = coalesce($2, starts_at),
+             fixture_payload = $3,
+             result_payload = $4,
+             updated_at = now()
+         where id = $5`,
+        [status, fixture?.fixture?.date || null, fixture, fixtureResultPayload(fixture), row.id]
+      );
+    }
+    updated += 1;
+  }
+
+  return { ok: true, dates, updated };
+}
+
+async function seedDailyBoardIfEmpty() {
+  const dates = boardDates();
+  const existing = await query(
+    `select count(*)::int as count
+     from daily_games
+     where game_date = any($1::date[])`,
+    [dates]
+  );
+  if (Number(existing.rows[0]?.count || 0) > 0) return { seeded: false };
+
+  const fixtures = await fetchCandidateFixtures();
+  const candidates = await buildTipCandidates(fixtures);
+  const groups = candidates.reduce((map, candidate) => {
+    const date = signalDateFromStartsAt(candidate.starts_at);
+    if (!map.has(date)) map.set(date, []);
+    map.get(date).push(candidate);
+    return map;
+  }, new Map());
+  let stored = 0;
+  for (const [date, tips] of groups.entries()) {
+    stored += (await upsertDailyGames(date, tips)).length;
+  }
+  return { seeded: true, stored };
+}
+
 export async function getDailyGames() {
   await ensureDailyGamesTable();
+  await seedDailyBoardIfEmpty();
+  await refreshDailyGameStatuses().catch((error) => {
+    console.warn("Daily game status refresh failed", {
+      code: error.code,
+      message: error.message
+    });
+  });
+
+  const dates = boardDates();
 
   const dailyResult = await query(
     `select *
      from daily_games
-     where game_date = $1::date
+     where game_date = any($1::date[])
      order by is_vip asc, confidence desc nulls last, starts_at asc nulls last, created_at desc`,
-    [todayInLagos()]
+    [dates]
   );
 
   if (dailyResult.rows.length) {
     return {
       ok: true,
       date: todayInLagos(),
+      dates,
       source: "daily_games",
       freemium: dailyResult.rows.filter((tip) => !tip.is_vip),
       vip: dailyResult.rows.filter((tip) => tip.is_vip)
@@ -870,6 +1121,7 @@ export async function getDailyGames() {
     return {
       ok: true,
       date: todayInLagos(),
+      dates,
       source: "empty",
       freemium: [],
       vip: []
@@ -879,6 +1131,7 @@ export async function getDailyGames() {
   return {
     ok: true,
     date: todayInLagos(),
+    dates,
     source: "database",
     freemium: result.rows.filter((tip) => !tip.is_vip),
     vip: result.rows.filter((tip) => tip.is_vip)

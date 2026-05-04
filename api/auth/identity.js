@@ -1,4 +1,5 @@
 import { findAppUserIdentity, upsertAppUserIdentity } from "../../server/db.js";
+import { registerDevicePush } from "../../server/firebase.js";
 
 function normalizePhone(value = "") {
   const digits = String(value).replace(/\D/g, "");
@@ -66,6 +67,16 @@ export default async function handler(req, res) {
     if (req.query.action === "status") {
       const user = await findAppUserIdentity(identity);
       return res.status(200).json({ ok: true, user });
+    }
+
+    if (req.query.action === "push-token") {
+      const token = String(req.body?.token || "").trim();
+      if (!token) return res.status(400).json({ ok: false, error: "Push token is required" });
+      const user = await findAppUserIdentity(identity);
+      const premiumUntil = user?.premium_until ? new Date(user.premium_until).getTime() : 0;
+      const isPremium = Boolean(user?.is_premium && premiumUntil > Date.now());
+      const registration = await registerDevicePush({ token, isPremium });
+      return res.status(200).json({ ok: true, is_premium: isPremium, registration });
     }
 
     if (req.query.action === "register") {

@@ -14,7 +14,7 @@ export async function sendTipPush(tip) {
     return { ok: false, skipped: true, reason: "FIREBASE_SERVICE_ACCOUNT_JSON is not configured" };
   }
 
-  const topic = tip.is_vip ? "premium-users" : "all-users";
+  const topic = tip.is_vip ? "premium-users" : "signals";
   const response = await admin.messaging().send({
     topic,
     notification: {
@@ -28,4 +28,20 @@ export async function sendTipPush(tip) {
   });
 
   return { ok: true, topic, message_id: response };
+}
+
+export async function registerDevicePush({ token, isPremium = false }) {
+  if (!app) {
+    return { ok: false, skipped: true, reason: "FIREBASE_SERVICE_ACCOUNT_JSON is not configured" };
+  }
+  if (!token) return { ok: false, error: "Push token is required" };
+
+  await admin.messaging().subscribeToTopic([token], "signals");
+  if (isPremium) {
+    await admin.messaging().subscribeToTopic([token], "premium-users");
+  } else {
+    await admin.messaging().unsubscribeFromTopic([token], "premium-users").catch(() => undefined);
+  }
+
+  return { ok: true, topics: isPremium ? ["signals", "premium-users"] : ["signals"] };
 }

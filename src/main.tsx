@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
+import { PushNotifications } from "@capacitor/push-notifications";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   Activity,
@@ -2480,6 +2481,42 @@ function UserDashboard({
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, refreshTimer));
     };
   }, [deviceBinding, isAuthed, setIsAuthed]);
+
+  useEffect(() => {
+    if (!isAuthed || !Capacitor.isNativePlatform()) return undefined;
+    let removed = false;
+    const registerPushNotifications = async () => {
+      try {
+        const permission = await PushNotifications.requestPermissions();
+        if (permission.receive !== "granted") return;
+
+        await PushNotifications.removeAllListeners();
+        await PushNotifications.addListener("registration", async ({ value }) => {
+          if (removed) return;
+          await fetch("/api/auth/identity?action=push-token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: userProfile.email,
+              phone: userProfile.phone,
+              token: value
+            })
+          }).catch(() => undefined);
+        });
+        await PushNotifications.addListener("registrationError", () => undefined);
+        await PushNotifications.addListener("pushNotificationReceived", () => undefined);
+        await PushNotifications.register();
+      } catch {
+        undefined;
+      }
+    };
+
+    registerPushNotifications();
+    return () => {
+      removed = true;
+      PushNotifications.removeAllListeners().catch(() => undefined);
+    };
+  }, [isAuthed, isPremium, userProfile.email, userProfile.phone]);
 
   const normalizePhone = (value: string) => value.replace(/\D/g, "").replace(/^234/, "");
   const isPhoneIdentifier = (value: string) => {

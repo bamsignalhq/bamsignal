@@ -130,11 +130,21 @@ export async function ensureAppUsersTable() {
       phone text unique,
       name text,
       referral_code text,
+      is_premium boolean not null default false,
+      premium_until timestamptz,
+      telegram_vip_invite_link text,
+      paystack_reference text,
+      referral_points integer not null default 0,
       created_at timestamptz not null default now(),
       updated_at timestamptz not null default now()
     )
   `);
 
+  await query("alter table app_users add column if not exists is_premium boolean not null default false");
+  await query("alter table app_users add column if not exists premium_until timestamptz");
+  await query("alter table app_users add column if not exists telegram_vip_invite_link text");
+  await query("alter table app_users add column if not exists paystack_reference text");
+  await query("alter table app_users add column if not exists referral_points integer not null default 0");
   await query("create unique index if not exists app_users_email_unique_idx on app_users (lower(email)) where email is not null and email <> ''");
   await query("create unique index if not exists app_users_phone_unique_idx on app_users (phone) where phone is not null and phone <> ''");
 }
@@ -144,7 +154,7 @@ export async function findAppUserIdentity({ email, phone }) {
   await ensureAppUsersTable();
 
   const result = await query(
-    `select email, phone
+    `select *
      from app_users
      where ($1::text is not null and lower(email) = lower($1::text))
         or ($2::text is not null and phone = $2::text)
@@ -176,6 +186,36 @@ export async function upsertAppUserIdentity({ email, phone, name, referralCode }
          values ($1, $2, $3, $4)
          returning *`,
         [email || null, phone || null, name || null, referralCode || null]
+      );
+  return result.rows[0];
+}
+
+export async function activateAppUserPremium({ email, phone, name, premiumUntil, paystackReference, inviteLink }) {
+  if (!pool) return null;
+  await ensureAppUsersTable();
+
+  const existing = await findAppUserIdentity({ email, phone });
+  const result = existing
+    ? await query(
+        `update app_users
+         set email = coalesce($1, email),
+             phone = coalesce($2, phone),
+             name = coalesce($3, name),
+             is_premium = true,
+             premium_until = $4,
+             paystack_reference = coalesce($5, paystack_reference),
+             telegram_vip_invite_link = coalesce($6, telegram_vip_invite_link),
+             updated_at = now()
+         where ($1::text is not null and lower(email) = lower($1::text))
+            or ($2::text is not null and phone = $2::text)
+         returning *`,
+        [email || null, phone || null, name || null, premiumUntil, paystackReference || null, inviteLink || null]
+      )
+    : await query(
+        `insert into app_users (email, phone, name, is_premium, premium_until, paystack_reference, telegram_vip_invite_link)
+         values ($1, $2, $3, true, $4, $5, $6)
+         returning *`,
+        [email || null, phone || null, name || null, premiumUntil, paystackReference || null, inviteLink || null]
       );
   return result.rows[0];
 }

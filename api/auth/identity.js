@@ -17,6 +17,32 @@ function normalizePayload(body = {}) {
   };
 }
 
+function allowedAdminEmails() {
+  return (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+async function verifySupabaseAdmin(req) {
+  const adminEmails = allowedAdminEmails();
+  if (!adminEmails.length) return false;
+
+  const authHeader = req.headers.authorization || "";
+  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  if (!bearer || !process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY) return false;
+
+  const response = await fetch(`${process.env.VITE_SUPABASE_URL.replace(/\/$/, "")}/auth/v1/user`, {
+    headers: {
+      apikey: process.env.VITE_SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${bearer}`
+    }
+  });
+  if (!response.ok) return false;
+  const user = await response.json();
+  return adminEmails.includes(String(user.email || "").toLowerCase());
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -24,9 +50,22 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (req.query.action === "admin-session") {
+      const allowedSecrets = [process.env.SIGNAL_WORKER_SECRET, process.env.CRON_SECRET].filter(Boolean);
+      const provided = req.headers["x-bamsignal-secret"] || req.query.secret || req.body?.secret;
+      if (provided && allowedSecrets.includes(provided)) return res.status(200).json({ ok: true, method: "secret" });
+      if (await verifySupabaseAdmin(req)) return res.status(200).json({ ok: true, method: "supabase" });
+      return res.status(401).json({ ok: false, error: "Admin login required." });
+    }
+
     const identity = normalizePayload(req.body);
     if (!identity.email && !identity.phone) {
       return res.status(400).json({ ok: false, error: "Email or phone number is required" });
+    }
+
+    if (req.query.action === "status") {
+      const user = await findAppUserIdentity(identity);
+      return res.status(200).json({ ok: true, user });
     }
 
     if (req.query.action === "register") {

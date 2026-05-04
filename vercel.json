@@ -8,6 +8,10 @@
       "destination": "/api/affiliate?bookie=:bookie&tipId=:tipId"
     },
     {
+      "source": "/webhooks/paystack",
+      "destination": "/api/webhooks/paystack"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

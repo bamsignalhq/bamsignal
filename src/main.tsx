@@ -2255,10 +2255,15 @@ function UserDashboard({
     setupPin: false
   });
   const [subscriptionUntil, setSubscriptionUntil] = useState<Date | null>(null);
+  const [vipInviteLink, setVipInviteLink] = useState("");
+  const [paymentReference, setPaymentReference] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("reference") || params.get("trxref") || "";
+  });
   const [resetEmail, setResetEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [isResendingCode, setIsResendingCode] = useState(false);
-  const [authBusy, setAuthBusy] = useState<"signup" | "verify" | "login" | "loginOtp" | "reset" | null>(null);
+  const [authBusy, setAuthBusy] = useState<"signup" | "verify" | "login" | "loginOtp" | "reset" | "payment" | null>(null);
   const [referralPoints, setReferralPoints] = useState(() => Number(window.localStorage.getItem("bamsignal-referral-points") || 0));
   const [playedGames, setPlayedGames] = useState<PlayedGame[]>([]);
   const [playedGamesLoaded, setPlayedGamesLoaded] = useState(false);
@@ -2489,10 +2494,34 @@ function UserDashboard({
       ? { ...userProfile, phone: normalizePhone(identifier) }
       : { ...userProfile, email: identifier.trim().toLowerCase() };
   };
+  const refreshMembershipStatus = async (profile: UserProfile) => {
+    try {
+      const response = await fetch("/api/auth/identity?action=status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: profile.email, phone: profile.phone })
+      });
+      const payload = await response.json().catch(() => null);
+      const user = payload?.user;
+      const premiumUntil = user?.premium_until ? new Date(user.premium_until) : null;
+      if (premiumUntil && premiumUntil.getTime() > Date.now()) {
+        setIsPremium(true);
+        setSubscriptionUntil(premiumUntil);
+        setVipInviteLink(user.telegram_vip_invite_link || "");
+      } else {
+        setIsPremium(false);
+        setSubscriptionUntil(null);
+        setVipInviteLink("");
+      }
+    } catch {
+      undefined;
+    }
+  };
   const beginTrustedSession = (profile: UserProfile) => {
     const nextProfile = { ...profile, phone: normalizePhone(profile.phone) || profile.phone };
     setUserProfile(nextProfile);
     setIsAuthed(true);
+    refreshMembershipStatus(nextProfile);
     setAuthMessage("Secure login enabled. Next time, use your 6-digit PIN or your phone Face ID, PIN, or pattern.");
   };
   const bindDevice = (profile: UserProfile, pin: string) => {
@@ -2871,12 +2900,37 @@ function UserDashboard({
     bindDevice(profile, setupPin);
   };
 
-  const confirmVipPayment = (days = 30, label = "monthly") => {
-    const expiry = new Date();
-    expiry.setDate(expiry.getDate() + days);
-    setSubscriptionUntil(expiry);
-    setIsPremium(true);
-    setAuthMessage(`${label} payment verified. VIP is active until ${expiry.toLocaleDateString("en-NG")}.`);
+  const confirmVipPayment = async (days = 30, label = "monthly") => {
+    const reference = paymentReference.trim();
+    if (!reference) {
+      setAuthMessage("Enter the Paystack reference from your payment receipt, then verify.");
+      return;
+    }
+    setAuthBusy("payment");
+    try {
+      const response = await fetch("/api/paystack/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reference,
+          email: userProfile.email,
+          phone: userProfile.phone,
+          name: userProfile.name
+        })
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) {
+        setAuthMessage(payload?.error || "Payment could not be verified yet.");
+        return;
+      }
+      const expiry = new Date(payload.premium_until);
+      setSubscriptionUntil(expiry);
+      setIsPremium(true);
+      setVipInviteLink(payload.invite_link || "");
+      setAuthMessage(`${label} payment verified. VIP is active until ${expiry.toLocaleDateString("en-NG")}.`);
+    } finally {
+      setAuthBusy(null);
+    }
   };
 
   const sendReset = async () => {
@@ -3227,10 +3281,17 @@ function UserDashboard({
                       <strong>{plan.price}</strong>
                       <small>{plan.days} days of VIP games, booking codes, premium app room, and Telegram VIP access.</small>
                       <a className="primary-action neon-action" href={plan.link} target="_blank" rel="noreferrer"><CreditCard size={16} /> Pay {plan.price}</a>
-                      <button className="secondary-action" onClick={() => confirmVipPayment(plan.days, plan.label)}><ShieldCheck size={16} /> Verify {plan.id} payment</button>
+                      <button className="secondary-action" onClick={() => confirmVipPayment(plan.days, plan.label)} disabled={authBusy === "payment"}>
+                        {authBusy === "payment" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Verify {plan.id} payment
+                      </button>
                     </article>
                   ))}
                 </div>
+                <label className="payment-reference-field">
+                  Paystack reference
+                  <input value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="Paste Paystack reference / trxref" />
+                </label>
+                <small className="code-locked">VIP opens only after Paystack confirms a successful transaction.</small>
               </div>
             </>
           )}
@@ -3254,7 +3315,7 @@ function UserDashboard({
           </div>
           {vipRoomGames.map((game) => renderManagedGame(game, !isPremium))}
           {isPremium ? (
-            <a className="vip-join" href="https://t.me/+U5i6lKAUDtZkODIx" target="_blank" rel="noreferrer"><Send size={16} /> Join VIP Telegram room</a>
+            <a className="vip-join" href={vipInviteLink || "https://t.me/+U5i6lKAUDtZkODIx"} target="_blank" rel="noreferrer"><Send size={16} /> Join VIP Telegram room</a>
           ) : (
             <span className="vip-join muted-join"><LockKeyhole size={16} /> VIP Telegram link appears after payment</span>
           )}
@@ -3854,9 +3915,51 @@ function AdminPage({
   });
   const [adminStatus, setAdminStatus] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [adminAccess, setAdminAccess] = useState<"checking" | "granted" | "denied">("checking");
+  const [adminLoginForm, setAdminLoginForm] = useState({ email: "", password: "", secret: "" });
+  const [adminLoginBusy, setAdminLoginBusy] = useState(false);
   useEffect(() => {
     window.localStorage.setItem("bamsignal-admin-quick-publish", JSON.stringify(quickPublish));
   }, [quickPublish]);
+  const checkAdminAccess = async (secret = "") => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (secret) headers["x-bamsignal-secret"] = secret;
+    const session = supabase ? await supabase.auth.getSession() : null;
+    const token = session?.data.session?.access_token;
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const response = await fetch("/api/auth/identity?action=admin-session", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ secret })
+    });
+    const payload = await response.json().catch(() => null);
+    const granted = response.ok && payload?.ok;
+    setAdminAccess(granted ? "granted" : "denied");
+    return granted;
+  };
+  useEffect(() => {
+    checkAdminAccess().catch(() => setAdminAccess("denied"));
+  }, []);
+  const loginAdmin = async () => {
+    setAdminLoginBusy(true);
+    setAdminStatus("");
+    try {
+      if (adminLoginForm.email && adminLoginForm.password && supabase) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: adminLoginForm.email.trim().toLowerCase(),
+          password: adminLoginForm.password
+        });
+        if (error) {
+          setAdminStatus(friendlyAuthError(error));
+          return;
+        }
+      }
+      const granted = await checkAdminAccess(adminLoginForm.secret.trim());
+      setAdminStatus(granted ? "Admin access verified." : "Admin login failed. Use an ADMIN_EMAILS account or the publish secret.");
+    } finally {
+      setAdminLoginBusy(false);
+    }
+  };
   const updateAdLink = (index: number, value: string) => {
     const nextLinks = [...adminContent.adLinks];
     nextLinks[index] = value;
@@ -4009,9 +4112,35 @@ function AdminPage({
   };
   const logoutAdmin = () => {
     setQuickPublish({ ...quickPublish, publishSecret: "" });
+    supabase?.auth.signOut().catch(() => undefined);
+    setAdminAccess("denied");
     setAdminStatus("Admin session closed.");
     navigate({ kind: "home" }, "/");
   };
+
+  if (adminAccess !== "granted") {
+    return (
+      <main>
+        <section className="detail-hero admin-auth-card">
+          <button className="back-link" onClick={() => navigate({ kind: "home" }, "/")}>
+            <ArrowLeft size={16} /> Back to BamSignal
+          </button>
+          <p className="eyebrow">Admin command center</p>
+          <h2>Secure admin access</h2>
+          <p>Login with an approved BamSignal admin email or use the private publish secret.</p>
+          <div className="admin-form">
+            <label>Admin email<input value={adminLoginForm.email} onChange={(event) => setAdminLoginForm({ ...adminLoginForm, email: event.target.value })} type="email" placeholder="admin@bamsignal.com" /></label>
+            <label>Password<input value={adminLoginForm.password} onChange={(event) => setAdminLoginForm({ ...adminLoginForm, password: event.target.value })} type="password" placeholder="Admin password" /></label>
+            <label>Publish secret fallback<input value={adminLoginForm.secret} onChange={(event) => setAdminLoginForm({ ...adminLoginForm, secret: event.target.value })} type="password" placeholder="Optional private secret" /></label>
+          </div>
+          <button className="primary-action neon-action" onClick={loginAdmin} disabled={adminLoginBusy || adminAccess === "checking"}>
+            {adminLoginBusy || adminAccess === "checking" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Enter admin room
+          </button>
+          {adminStatus && <p className="auth-message">{adminStatus}</p>}
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main>

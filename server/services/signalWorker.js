@@ -48,6 +48,46 @@ const nigerianFavoriteCountries = new Set([
   "scotland",
   "turkey"
 ]);
+const relativeFootballCountries = new Set([
+  "belgium",
+  "austria",
+  "switzerland",
+  "denmark",
+  "norway",
+  "sweden",
+  "greece",
+  "brazil",
+  "argentina",
+  "usa",
+  "mexico",
+  "saudi-arabia",
+  "japan",
+  "south-korea",
+  "australia",
+  "nigeria"
+]);
+const relativeFootballLeagueNames = [
+  "pro league",
+  "bundesliga",
+  "super league",
+  "superliga",
+  "allsvenskan",
+  "eliteserien",
+  "jupiler",
+  "brasileiro",
+  "serie a",
+  "primera division",
+  "major league soccer",
+  "mls",
+  "liga mx",
+  "saudi pro league",
+  "j1 league",
+  "k league",
+  "a-league",
+  "caf",
+  "africa cup",
+  "npfl"
+];
 
 function todayInLagos() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -543,14 +583,45 @@ function getFixtureIdsFromRow(row) {
 function isNigerianFavoriteEuropeanFixture(fixture) {
   const leagueName = fixture.league.toLowerCase();
   const country = fixture.country.toLowerCase();
-  const isFavoriteLeague = nigerianFavoriteLeagueIds.has(fixture.league_id)
-    || nigerianFavoriteLeagueNames.some((name) => leagueName.includes(name));
+  const isCountryCorrectLeagueName = nigerianFavoriteLeagueNames.some((name) => {
+    if (!leagueName.includes(name)) return false;
+    if (name === "premier league") return country === "england";
+    if (name === "championship") return country === "england";
+    if (name === "fa cup" || name === "league cup" || name === "efl cup") return country === "england";
+    if (name === "la liga") return country === "spain";
+    if (name === "serie a") return country === "italy";
+    if (name === "bundesliga") return country === "germany";
+    if (name === "ligue 1") return country === "france";
+    if (name === "eredivisie") return country === "netherlands";
+    if (name === "primeira liga") return country === "portugal";
+    if (name === "super lig") return country === "turkey";
+    if (name === "scottish premiership") return country === "scotland";
+    return country === "europe";
+  });
+  const isFavoriteLeague = nigerianFavoriteLeagueIds.has(fixture.league_id) || isCountryCorrectLeagueName;
   const isFavoriteCountry = nigerianFavoriteCountries.has(country);
   const isYouthOrWomen = /\b(u17|u18|u19|u20|u21|women|w\b|reserve|reserves|ii\b|iii\b|regional|oberliga|landesliga)\b/i.test(
     `${fixture.league} ${fixture.home} ${fixture.away}`
   );
 
   return isFavoriteLeague && isFavoriteCountry && !isYouthOrWomen;
+}
+
+function isCleanSeniorFixture(fixture) {
+  return !/\b(u17|u18|u19|u20|u21|women|w\b|reserve|reserves|ii\b|iii\b|regional|oberliga|landesliga|youth|amateur|friendly women)\b/i.test(
+    `${fixture.league} ${fixture.home} ${fixture.away}`
+  );
+}
+
+function isRelativeFootballFixture(fixture) {
+  const leagueName = fixture.league.toLowerCase();
+  const country = fixture.country.toLowerCase();
+  const isKnownRelativeLeague = relativeFootballLeagueNames.some((name) => leagueName.includes(name));
+  const hasRecognizableClub = /\b(celtic|ajax|psv|feyenoord|benfica|porto|sporting|galatasaray|fenerbahce|besiktas|al hilal|al nassr|inter miami|flamengo|palmeiras|river plate|boca juniors|kaizer|orlando pirates|sundowns|al ahly|zamalek|enyimba)\b/i.test(
+    `${fixture.home} ${fixture.away}`
+  );
+
+  return isCleanSeniorFixture(fixture) && (isKnownRelativeLeague || hasRecognizableClub || country === "nigeria");
 }
 
 function fixturePriority(fixture) {
@@ -569,8 +640,13 @@ function fixturePriority(fixture) {
   if (leagueName.includes("eredivisie")) score += 62;
   if (leagueName.includes("primeira liga")) score += 60;
   if (leagueName.includes("super lig")) score += 56;
+  if (leagueName.includes("major league soccer") || leagueName.includes("mls")) score += 50;
+  if (leagueName.includes("brasileiro") || leagueName.includes("primera division")) score += 48;
+  if (leagueName.includes("saudi pro league")) score += 45;
+  if (leagueName.includes("caf") || leagueName.includes("africa cup") || country === "nigeria") score += 44;
   if (country === "europe") score += 20;
   if (["england", "spain", "italy", "germany", "france"].includes(country)) score += 12;
+  if (relativeFootballCountries.has(country)) score += 6;
   if (/\b(man|arsenal|chelsea|liverpool|tottenham|barcelona|real madrid|atletico|inter|milan|juventus|napoli|bayern|dortmund|leverkusen|psg|marseille)\b/i.test(`${fixture.home} ${fixture.away}`)) {
     score += 24;
   }
@@ -594,21 +670,37 @@ async function fetchCandidateFixtures() {
     : `${config.signalWorker.fixtureApiUrl.replace(/\/$/, "")}/fixtures`;
 
   try {
-    const response = await axios.get(fixtureUrl, {
-      headers: {
-        Authorization: `Bearer ${config.signalWorker.fixtureApiKey}`,
-        "x-apisports-key": config.signalWorker.fixtureApiKey,
-        "x-api-key": config.signalWorker.fixtureApiKey
-      },
-      params: {
-        date: todayInLagos(),
-        timezone: config.signalWorker.timezone
-      },
-      timeout: 15000
+    const dates = [0, 1].map((offset) => {
+      const date = new Date();
+      date.setUTCDate(date.getUTCDate() + offset);
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: config.signalWorker.timezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(date);
     });
+    const fixtures = [];
 
-    const payload = response.data?.fixtures || response.data?.data || response.data?.response || response.data;
-    return Array.isArray(payload) ? payload.map(normalizeFixture) : defaultFixtures;
+    for (const date of dates) {
+      const response = await axios.get(fixtureUrl, {
+        headers: {
+          Authorization: `Bearer ${config.signalWorker.fixtureApiKey}`,
+          "x-apisports-key": config.signalWorker.fixtureApiKey,
+          "x-api-key": config.signalWorker.fixtureApiKey
+        },
+        params: {
+          date,
+          timezone: config.signalWorker.timezone
+        },
+        timeout: 15000
+      });
+
+      const payload = response.data?.fixtures || response.data?.data || response.data?.response || response.data;
+      if (Array.isArray(payload)) fixtures.push(...payload.map(normalizeFixture));
+    }
+
+    return fixtures.length ? fixtures : defaultFixtures;
   } catch (error) {
     console.warn("Fixture API unavailable; no stale fallback board will be published", {
       code: error.code,
@@ -624,21 +716,28 @@ async function buildTipCandidates(fixtures) {
   const vipLimit = Math.min(config.signalWorker.vipLimit, Math.max(maxDailyPublishedTips - freeLimit, 0));
   const playableStatuses = new Set(["NS", "TBD", "1H", "HT", "2H", "ET", "P", "BT", "LIVE"]);
   const now = Date.now();
-  const selectedFixtures = fixtures
+  const normalizedFixtures = fixtures
     .map(normalizeFixture)
     .filter((fixture) => {
       const startsAtTime = new Date(fixture.starts_at).getTime();
       const isFutureOrLive = Number.isNaN(startsAtTime) || startsAtTime >= now - 60 * 60 * 1000;
       return playableStatuses.has(fixture.status.toUpperCase())
         && isFutureOrLive
-        && isNigerianFavoriteEuropeanFixture(fixture);
-    })
+        && isCleanSeniorFixture(fixture);
+    });
+  const targetCount = Math.max(freeLimit + vipLimit, 1);
+  const primaryFixtures = normalizedFixtures.filter(isNigerianFavoriteEuropeanFixture);
+  const primaryKeys = new Set(primaryFixtures.map((fixture) => `${fixture.fixture_id || ""}|${fixture.home}|${fixture.away}|${fixture.starts_at}`));
+  const relativeFixtures = normalizedFixtures
+    .filter((fixture) => !primaryKeys.has(`${fixture.fixture_id || ""}|${fixture.home}|${fixture.away}|${fixture.starts_at}`))
+    .filter(isRelativeFootballFixture);
+  const selectedFixtures = [...primaryFixtures, ...relativeFixtures]
     .sort((left, right) => {
       const priorityDiff = fixturePriority(right) - fixturePriority(left);
       if (priorityDiff) return priorityDiff;
       return new Date(left.starts_at).getTime() - new Date(right.starts_at).getTime();
     })
-    .slice(0, Math.max(freeLimit + vipLimit, 1));
+    .slice(0, targetCount);
 
   const selectedFixtureIds = selectedFixtures.map((fixture) => fixture.fixture_id).filter(Boolean);
   const oddsByFixtureId = await fetchOddsByFixtureIds(selectedFixtureIds);

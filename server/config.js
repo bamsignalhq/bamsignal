@@ -41,6 +41,16 @@ export const config = {
     freeOddsMax: Number(process.env.SIGNAL_FREE_ODDS_MAX || 1.5),
     defaultBookingCodes: parseJson(process.env.SIGNAL_DEFAULT_BOOKING_CODES, {})
   },
+  footballNews: {
+    rapidApiKey: process.env.RAPIDAPI_FOOTBALL_NEWS_KEY || process.env.RAPIDAPI_KEY,
+    rapidApiHost: process.env.RAPIDAPI_FOOTBALL_NEWS_HOST || "football-news-aggregator-live.p.rapidapi.com",
+    rapidApiPaths: (process.env.RAPIDAPI_FOOTBALL_NEWS_PATHS || "/news/espn,/news/goal,/news/onefootball")
+      .split(",")
+      .map((path) => path.trim())
+      .filter(Boolean),
+    fallbackBaseUrl: process.env.FOOTBALL_NEWS_FALLBACK_URL || "https://footballnewsapi.netlify.app/.netlify/functions/api",
+    maxItems: Number(process.env.FOOTBALL_NEWS_LIMIT || 6)
+  },
   affiliateUrls: {
     "1xbet": process.env.AFFILIATE_1XBET_URL,
     betking: process.env.AFFILIATE_BETKING_URL,

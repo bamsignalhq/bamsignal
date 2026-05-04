@@ -230,6 +230,14 @@ type DailyGamesApiResponse = {
   freemium: ApiTip[];
   vip: ApiTip[];
 };
+type FootballNewsArticle = {
+  title: string;
+  summary?: string;
+  url?: string;
+  imageUrl?: string;
+  source?: string;
+  publishedAt?: string;
+};
 const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
   const rawFixture = tip.fixture_payload?.raw;
   const fixtureTeams = rawFixture?.teams;
@@ -3354,24 +3362,58 @@ function UserDashboard({
 
 function FootballNewsPanel({ adminContent, compact = false }: { adminContent: AdminContent; compact?: boolean }) {
   const hasNews = Boolean(adminContent.newsTitle.trim() || adminContent.newsSummary.trim());
-  if (compact && !hasNews) return null;
+  const [feed, setFeed] = useState<FootballNewsArticle[]>([]);
+  const [feedReady, setFeedReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (hasNews) {
+      setFeedReady(false);
+      setFeed([]);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    fetch(`/api/football-news?t=${Date.now()}`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("News feed unavailable")))
+      .then((payload) => {
+        if (cancelled) return;
+        const articles = Array.isArray(payload.articles) ? payload.articles : [];
+        setFeed(articles);
+        setFeedReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFeed([]);
+          setFeedReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasNews]);
+
+  const leadArticle = feed[0];
+  if (compact && !hasNews && !leadArticle) return null;
   return (
     <section className={`football-news ${compact ? "compact" : ""}`}>
       <div>
         <p className="eyebrow">Football news</p>
-        <h2>{hasNews ? adminContent.newsTitle || "BamSignal football update" : "Latest football updates"}</h2>
+        <h2>{hasNews ? adminContent.newsTitle || "BamSignal football update" : leadArticle?.title || "Latest football updates"}</h2>
         <p>
           {hasNews
             ? adminContent.newsSummary || "A short football update is available from the BamSignal desk."
-            : "News will appear here after the football news feed is connected."}
+            : leadArticle?.summary || (feedReady ? "Fresh football headlines will appear here when the feed has a strong Nigerian-interest story." : "Loading football headlines...")}
         </p>
       </div>
-      {hasNews && adminContent.newsUrl ? (
-        <a className="secondary-action" href={adminContent.newsUrl} target="_blank" rel="noreferrer">
+      {(hasNews && adminContent.newsUrl) || leadArticle?.url ? (
+        <a className="secondary-action" href={hasNews ? adminContent.newsUrl : leadArticle?.url} target="_blank" rel="noreferrer">
           Read update <ArrowRight size={15} />
         </a>
       ) : null}
-      {hasNews && adminContent.newsSource ? <span className="news-source">Source: {adminContent.newsSource}</span> : null}
+      {(hasNews && adminContent.newsSource) || leadArticle?.source ? <span className="news-source">Source: {hasNews ? adminContent.newsSource : leadArticle?.source}</span> : null}
     </section>
   );
 }

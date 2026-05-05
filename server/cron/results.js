@@ -17,17 +17,169 @@ function getFixtureId(item) {
   return Number(raw.fixture?.id || raw.id || raw.fixture_id || 0);
 }
 
+function normalizeText(value = "") {
+  return String(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\bman city\b/g, "manchester city")
+    .replace(/\bman utd\b/g, "manchester united")
+    .replace(/\bman united\b/g, "manchester united")
+    .replace(/\bpsg\b/g, "paris saint germain")
+    .replace(/\bspurs\b/g, "tottenham");
+}
+
+function splitMatchName(matchName = "") {
+  const [home, away] = String(matchName).split(/\s+vs\s+/i);
+  return {
+    home: normalizeText(home),
+    away: normalizeText(away)
+  };
+}
+
+function dateInTimezone(dateValue, timezone = config.signalWorker.timezone) {
+  const date = dateValue ? new Date(dateValue) : new Date();
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+}
+
+function addDays(dateValue, days) {
+  const date = dateValue ? new Date(dateValue) : new Date();
+  if (Number.isNaN(date.getTime())) return null;
+  date.setUTCDate(date.getUTCDate() + days);
+  return date;
+}
+
+function sportsDbSportName(item) {
+  const raw = item?.fixture_payload?.raw || item?.fixture_payload || {};
+  const sport = normalizeText(raw.sport || raw.strSport || item.sport || "football");
+  if (sport.includes("basket")) return "Basketball";
+  if (sport.includes("tennis")) return "Tennis";
+  if (sport.includes("baseball") || sport.includes("mlb")) return "Baseball";
+  if (sport.includes("hockey")) return "Ice Hockey";
+  if (sport.includes("american")) return "American Football";
+  return "Soccer";
+}
+
+function sportsDbEventScore(event) {
+  const home = event?.intHomeScore === null || event?.intHomeScore === undefined ? null : Number(event.intHomeScore);
+  const away = event?.intAwayScore === null || event?.intAwayScore === undefined ? null : Number(event.intAwayScore);
+  if (!Number.isFinite(home) || !Number.isFinite(away)) return null;
+  return { home, away, label: `${home}-${away}` };
+}
+
+function sportsDbEventFinished(event) {
+  const status = String(event?.strStatus || "").toLowerCase();
+  return status.includes("finished") || Boolean(sportsDbEventScore(event));
+}
+
+function sportsDbMatchScore(event, item) {
+  const teams = splitMatchName(item.match_name);
+  const eventHome = normalizeText(event?.strHomeTeam);
+  const eventAway = normalizeText(event?.strAwayTeam);
+  let score = 0;
+  if (teams.home && (eventHome.includes(teams.home) || teams.home.includes(eventHome))) score += 45;
+  if (teams.away && (eventAway.includes(teams.away) || teams.away.includes(eventAway))) score += 45;
+  if (teams.home && (eventAway.includes(teams.home) || teams.home.includes(eventAway))) score += 15;
+  if (teams.away && (eventHome.includes(teams.away) || teams.away.includes(eventHome))) score += 15;
+  if (item.league && normalizeText(event?.strLeague).includes(normalizeText(item.league))) score += 10;
+  return score;
+}
+
+async function fetchSportsDbResult(item) {
+  if (!config.signalWorker.sportsDbApiKey) return null;
+  const baseDate = item.starts_at ? new Date(item.starts_at) : new Date();
+  const dates = [-1, 0, 1]
+    .map((offset) => dateInTimezone(addDays(baseDate, offset)))
+    .filter((date, index, list) => date && list.indexOf(date) === index);
+  const sport = sportsDbSportName(item);
+
+  let best = null;
+  for (const date of dates) {
+    try {
+      const response = await axios.get(`https://www.thesportsdb.com/api/v1/json/${config.signalWorker.sportsDbApiKey}/eventsday.php`, {
+        params: { d: date, s: sport },
+        timeout: 10000
+      });
+      const events = Array.isArray(response.data?.events) ? response.data.events : [];
+      for (const event of events) {
+        const score = sportsDbMatchScore(event, item);
+        if (score >= 75 && (!best || score > best.score)) best = { event, score };
+      }
+    } catch (error) {
+      console.warn("TheSportsDB result lookup failed", {
+        code: error.code,
+        message: error.message
+      });
+    }
+  }
+
+  if (!best || !sportsDbEventFinished(best.event)) return null;
+  const score = sportsDbEventScore(best.event);
+  if (!score) return null;
+
+  return {
+    finished: true,
+    fixture: {
+      id: best.event.idAPIfootball || best.event.idEvent,
+      date: best.event.strTimestamp || best.event.dateEvent,
+      status: { short: "FT", long: best.event.strStatus || "Match Finished" }
+    },
+    league: {
+      name: best.event.strLeague,
+      logo: best.event.strLeagueBadge
+    },
+    teams: {
+      home: { name: best.event.strHomeTeam, logo: best.event.strHomeTeamBadge },
+      away: { name: best.event.strAwayTeam, logo: best.event.strAwayTeamBadge }
+    },
+    goals: {
+      home: score.home,
+      away: score.away
+    },
+    score: {
+      fulltime: {
+        home: score.home,
+        away: score.away
+      }
+    },
+    source_provider: "thesportsdb",
+    raw_sportsdb: best.event
+  };
+}
+
 async function fetchResult(tip) {
   const fixtureId = getFixtureId(tip);
   if (fixtureId && config.signalWorker.fixtureApiUrl && config.signalWorker.fixtureApiKey) {
-    const response = await axios.get(`${config.signalWorker.fixtureApiUrl.replace(/\/$/, "")}/fixtures`, {
-      headers: fixtureApiHeaders(),
-      params: { id: fixtureId, timezone: config.signalWorker.timezone },
-      timeout: 10000
-    });
-    const fixture = response.data?.response?.[0];
-    if (fixture) return fixture;
+    try {
+      const response = await axios.get(`${config.signalWorker.fixtureApiUrl.replace(/\/$/, "")}/fixtures`, {
+        headers: fixtureApiHeaders(),
+        params: { id: fixtureId, timezone: config.signalWorker.timezone },
+        timeout: 10000
+      });
+      const errors = response.data?.errors;
+      if (errors && Object.keys(errors).length) {
+        throw new Error(`API-Football error: ${Object.values(errors).join("; ")}`);
+      }
+      const fixture = response.data?.response?.[0];
+      if (fixture) return fixture;
+    } catch (error) {
+      console.warn("API-Football result lookup failed; trying fallback", {
+        code: error.code,
+        message: error.message
+      });
+    }
   }
+
+  const sportsDbResult = await fetchSportsDbResult(tip);
+  if (sportsDbResult) return sportsDbResult;
 
   if (!config.liveScore.apiUrl || !config.liveScore.apiKey) return null;
 
@@ -107,9 +259,10 @@ export async function checkPendingResults() {
     `select * from tips
      where status = 'pending'
        and starts_at is not null
-       and starts_at < now()
+       and starts_at < now() - interval '90 minutes'
+       and starts_at > now() - interval '14 days'
      order by starts_at asc
-     limit 25`
+     limit 80`
   );
 
   const updates = [];
@@ -138,9 +291,10 @@ export async function checkPendingResults() {
     `select * from daily_games
      where status in ('pending', 'scheduled', 'NS', 'TBD', '1H', '2H', 'HT', 'ET', 'P', 'BT', 'INT', 'LIVE')
        and starts_at is not null
-       and starts_at < now()
+       and starts_at < now() - interval '90 minutes'
+       and starts_at > now() - interval '14 days'
      order by starts_at asc
-     limit 25`
+     limit 80`
   );
 
   for (const game of pendingDailyGames.rows) {

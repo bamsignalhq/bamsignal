@@ -880,8 +880,49 @@ footer {
 .admin-command-layout {
   align-items: start;
   display: grid;
-  gap: 16px;
-  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-compact-hero {
+  padding-bottom: 12px;
+  padding-top: 12px;
+}
+
+.admin-compact-hero .eyebrow {
+  margin: 12px 0 0;
+}
+
+.admin-menu-bar {
+  align-items: center;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.admin-menu-toggle {
+  align-items: center;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
+    var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 14px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 950;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  text-transform: uppercase;
+}
+
+.admin-menu-toggle svg:last-child {
+  transition: transform 0.18s ease;
+}
+
+.menu-open .admin-menu-toggle svg:last-child {
+  transform: rotate(180deg);
 }
 
 .admin-workspace {
@@ -896,12 +937,14 @@ footer {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  display: grid;
+  display: none;
   gap: 8px;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   padding: 8px;
-  position: sticky;
-  top: 92px;
+}
+
+.admin-work-nav.open {
+  display: grid;
 }
 
 .admin-work-nav button {
@@ -2987,6 +3030,35 @@ footer {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   overflow: auto;
   padding-right: 4px;
+}
+
+.admin-preview-state {
+  align-items: center;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 62%),
+    color-mix(in srgb, var(--surface-2) 84%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: var(--radius);
+  color: var(--muted);
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  min-height: 220px;
+  padding: 24px;
+  text-align: center;
+}
+
+.admin-preview-state strong {
+  color: var(--text);
+  font-size: 22px;
+}
+
+.admin-preview-state.error {
+  border-color: color-mix(in srgb, #f87171 36%, var(--border));
+}
+
+.admin-preview-state.error svg {
+  color: #fca5a5;
 }
 
 .ingest-preview-card {

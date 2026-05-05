@@ -243,6 +243,195 @@ function parseStructuredText(text, options) {
     .filter(Boolean);
 }
 
+function compareText(value = "") {
+  return clean(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function compactRepeatedName(value = "") {
+  const raw = clean(value);
+  if (!raw) return "";
+  const compact = raw.replace(/\s+/g, "");
+  if (compact.length > 3 && compact.length % 2 === 0) {
+    const middle = compact.length / 2;
+    const left = compact.slice(0, middle);
+    const right = compact.slice(middle);
+    if (left.toLowerCase() === right.toLowerCase()) return left;
+  }
+
+  const words = raw.split(/\s+/);
+  if (words.length > 1 && words.length % 2 === 0) {
+    const middle = words.length / 2;
+    const left = words.slice(0, middle).join(" ");
+    const right = words.slice(middle).join(" ");
+    if (left.toLowerCase() === right.toLowerCase()) return left;
+  }
+
+  return raw;
+}
+
+function isTimeLine(line = "") {
+  return /^([01]?\d|2[0-3]):[0-5]\d\s*(am|pm|wat|gmt)?$/i.test(clean(line));
+}
+
+function isStatusLine(line = "") {
+  return /^(not started|scheduled|pending|live|in[-\s]?play|half time|finished|full time|postponed|cancelled|canceled)$/i.test(clean(line));
+}
+
+function isNoiseLine(line = "") {
+  return /^(weather|odds|confidence|prediction:?|pick:?|market:?)$/i.test(clean(line));
+}
+
+function isLikelyLeagueLine(line = "") {
+  const normalized = clean(line).toLowerCase();
+  return /^(nba|wnba|mlb|nfl|nhl|atp|wta|uefa champions league|uefa europa league)$/i.test(normalized)
+    || /\b(league|cup|uefa|champions|europa|conference|premier|liga|serie a|bundesliga|ligue 1|basketball|baseball)\b/i.test(normalized);
+}
+
+function normalizePastedStatus(line = "") {
+  const normalized = clean(line).toLowerCase();
+  if (/live|in[-\s]?play|half time/.test(normalized)) return "live";
+  if (/finished|full time/.test(normalized)) return "finished";
+  if (/postponed/.test(normalized)) return "postponed";
+  if (/cancel/.test(normalized)) return "cancelled";
+  return "pending";
+}
+
+function fixtureStatusFromPastedStatus(status = "pending") {
+  if (status === "live") return { short: "LIVE", long: "Live" };
+  if (status === "finished") return { short: "FT", long: "Match Finished" };
+  if (status === "postponed") return { short: "PST", long: "Postponed" };
+  if (status === "cancelled") return { short: "CANC", long: "Cancelled" };
+  return { short: "NS", long: "Scheduled" };
+}
+
+function winnerPrediction(rawPrediction = "", home = "", away = "") {
+  const prediction = clean(rawPrediction);
+  if (!prediction) return "";
+  if (/\b(over|under|btts|both teams|double chance|draw|handicap|corners?|goals?|points?|runs?|sets?)\b/i.test(prediction)) {
+    return prediction;
+  }
+
+  const normalizedPrediction = compareText(prediction);
+  const normalizedHome = compareText(home);
+  const normalizedAway = compareText(away);
+  if (normalizedPrediction && normalizedHome && (normalizedPrediction === normalizedHome || normalizedPrediction.includes(normalizedHome) || normalizedHome.includes(normalizedPrediction))) {
+    return `${prediction} to win`;
+  }
+  if (normalizedPrediction && normalizedAway && (normalizedPrediction === normalizedAway || normalizedPrediction.includes(normalizedAway) || normalizedAway.includes(normalizedPrediction))) {
+    return `${prediction} to win`;
+  }
+  return prediction;
+}
+
+function blockConfidence(lines, predictionIndex, oddsIndex, fallback) {
+  const confidenceIndex = lines
+    .slice(predictionIndex + 1, oddsIndex)
+    .findIndex((line) => /^confidence$/i.test(clean(line)));
+  if (confidenceIndex === -1) return fallback;
+  const absoluteIndex = predictionIndex + 1 + confidenceIndex;
+  for (let index = absoluteIndex + 1; index < oddsIndex; index += 1) {
+    const number = toNumber(lines[index], null);
+    if (number && number <= 99) return number;
+  }
+  return fallback;
+}
+
+function parseCopiedPredictionBlocks(text, options = {}) {
+  const lines = String(text || "")
+    .split(/\n+/)
+    .map((line) => clean(line))
+    .filter(Boolean);
+  if (!lines.some((line) => /^prediction:?$/i.test(line)) || !lines.some((line) => /^odds$/i.test(line))) return [];
+
+  const tips = [];
+  const oddsIndexes = lines
+    .map((line, index) => ({ line, index, odds: toNumber(line, null) }))
+    .filter((item) => item.odds && item.odds >= 1.01 && item.odds <= 20 && lines.slice(Math.max(0, item.index - 2), item.index).some((line) => /^odds$/i.test(clean(line))));
+
+  for (const oddsEntry of oddsIndexes) {
+    const oddsIndex = oddsEntry.index;
+    let predictionIndex = -1;
+    for (let index = oddsIndex - 1; index >= Math.max(0, oddsIndex - 14); index -= 1) {
+      if (/^prediction:?$/i.test(lines[index])) {
+        predictionIndex = index;
+        break;
+      }
+    }
+    if (predictionIndex === -1) continue;
+
+    const teamCandidates = [];
+    for (let index = predictionIndex - 1; index >= 0 && teamCandidates.length < 2 && predictionIndex - index <= 10; index -= 1) {
+      const candidate = compactRepeatedName(lines[index]);
+      if (!candidate || isNoiseLine(candidate) || isTimeLine(candidate) || isStatusLine(candidate) || isLikelyLeagueLine(candidate)) continue;
+      teamCandidates.unshift(candidate);
+    }
+    if (teamCandidates.length < 2) continue;
+
+    const home = teamCandidates[0];
+    const away = teamCandidates[1];
+    const blockStart = Math.max(
+      0,
+      lines.slice(0, predictionIndex).map((line, index) => /^weather$/i.test(line) ? index + 1 : 0).reduce((max, value) => Math.max(max, value), 0)
+    );
+    const blockLines = lines.slice(blockStart, oddsIndex + 1);
+    const context = blockLines.join(" ");
+    const sport = inferSport(context, options.defaultSport || "auto");
+    const leagueLine = blockLines.find((line) => isLikelyLeagueLine(line));
+    const league = clean(leagueLine || inferLeague(context, sport, options.defaultLeague || "auto"));
+    const timeLine = blockLines.find((line) => isTimeLine(line));
+    const statusLine = blockLines.find((line) => isStatusLine(line));
+    const status = normalizePastedStatus(statusLine || "pending");
+    const startsAt = timeLine ? parseTime(timeLine) : null;
+    const rawPrediction = lines[predictionIndex + 1] || "";
+    const prediction = winnerPrediction(rawPrediction, home, away);
+    const isVip = tierFromOdds(oddsEntry.odds);
+    const confidence = blockConfidence(lines, predictionIndex, oddsIndex, isVip ? 76 : 82);
+    const rationale = lines
+      .slice(predictionIndex + 2, oddsIndex)
+      .filter((line) => !isNoiseLine(line) && !/^odds$/i.test(line))
+      .join(" ");
+
+    tips.push({
+      match_name: `${home} vs ${away}`,
+      league,
+      prediction,
+      odds: oddsEntry.odds.toFixed(2),
+      confidence: Math.max(1, Math.min(99, Math.round(confidence || 70))),
+      is_vip: isVip,
+      booking_codes: {},
+      source: "admin-ingest",
+      status,
+      starts_at: startsAt,
+      fixture_payload: {
+        provider: "admin-ingest",
+        sport,
+        ingest_index: tips.length,
+        fixture: {
+          id: `admin-${Date.now()}-${tips.length}`,
+          date: startsAt,
+          status: fixtureStatusFromPastedStatus(status)
+        },
+        league: { name: league, logo: null, country: "" },
+        teams: {
+          home: { name: home, logo: null },
+          away: { name: away, logo: null }
+        },
+        metadata: {
+          source_name: sourceLabel(options),
+          raw_block: blockLines,
+          rationale
+        }
+      }
+    });
+  }
+
+  return tips;
+}
+
 function parseFreeformLine(line, options = {}, index = 0) {
   const normalized = clean(line);
   if (!normalized || normalized.length < 8) return null;
@@ -336,6 +525,9 @@ export function parseSignalsFromText(text, options = {}) {
 
   const structured = parseStructuredText(source, options);
   if (structured.length) return structured;
+
+  const copiedBlocks = parseCopiedPredictionBlocks(source, options);
+  if (copiedBlocks.length) return copiedBlocks;
 
   return parseFreeformText(source, options);
 }

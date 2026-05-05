@@ -71,6 +71,181 @@ function splitMatchName(match = "") {
   };
 }
 
+const sportsDbTeamCache = new Map();
+const sportsDbLeagueCache = new Map();
+let sportsDbLeagueIndexPromise = null;
+
+function normalizeLookup(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\bman city\b/g, "manchester city")
+    .replace(/\bman utd\b/g, "manchester united")
+    .replace(/\bman united\b/g, "manchester united")
+    .replace(/\batletico\b(?!\s+madrid)/g, "atletico madrid")
+    .replace(/\bpsg\b/g, "paris saint germain");
+}
+
+function sportsDbSportName(sport = "", league = "") {
+  const source = `${sport} ${league}`.toLowerCase();
+  if (source.includes("basket") || source.includes("nba") || source.includes("nbl")) return "Basketball";
+  if (source.includes("baseball") || source.includes("mlb")) return "Baseball";
+  if (source.includes("american football") || source.includes("nfl")) return "American Football";
+  if (source.includes("hockey") || source.includes("nhl")) return "Ice Hockey";
+  if (source.includes("tennis") || source.includes("atp") || source.includes("wta")) return "Tennis";
+  return "Soccer";
+}
+
+async function sportsDbGet(path, params = {}) {
+  const key = config.signalWorker.sportsDbApiKey || "123";
+  const url = new URL(`https://www.thesportsdb.com/api/v1/json/${key}/${path}`);
+  Object.entries(params).forEach(([name, value]) => {
+    if (value !== undefined && value !== null && String(value).trim()) url.searchParams.set(name, String(value));
+  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) return null;
+    return response.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function bestSportsDbTeamMatch(teams = [], teamName = "", sportName = "Soccer") {
+  const target = normalizeLookup(teamName);
+  if (!target) return null;
+  const normalizedSport = normalizeLookup(sportName);
+  const candidates = teams
+    .filter(Boolean)
+    .filter((team) => !team.strSport || normalizeLookup(team.strSport) === normalizedSport)
+    .map((team) => ({ team, lookup: normalizeLookup(team.strTeam || team.strAlternate || "") }));
+  return candidates.find(({ lookup }) => lookup === target)?.team
+    || candidates.find(({ lookup }) => lookup.includes(target) || target.includes(lookup))?.team
+    || candidates[0]?.team
+    || null;
+}
+
+async function lookupSportsDbTeam(teamName = "", sportName = "Soccer") {
+  const normalized = normalizeLookup(teamName);
+  if (!normalized) return null;
+  const cacheKey = `${sportName}:${normalized}`;
+  if (sportsDbTeamCache.has(cacheKey)) return sportsDbTeamCache.get(cacheKey);
+
+  const payload = await sportsDbGet("searchteams.php", { t: teamName });
+  const team = bestSportsDbTeamMatch(Array.isArray(payload?.teams) ? payload.teams : [], teamName, sportName);
+  const result = team ? {
+    id: team.idTeam || null,
+    idLeague: team.idLeague || null,
+    name: team.strTeam || teamName,
+    logo: team.strTeamBadge || team.strBadge || team.strTeamLogo || null
+  } : null;
+  sportsDbTeamCache.set(cacheKey, result);
+  return result;
+}
+
+async function sportsDbLeagueIndex() {
+  if (!sportsDbLeagueIndexPromise) {
+    sportsDbLeagueIndexPromise = sportsDbGet("all_leagues.php")
+      .then((payload) => Array.isArray(payload?.leagues) ? payload.leagues : [])
+      .catch(() => []);
+  }
+  return sportsDbLeagueIndexPromise;
+}
+
+async function lookupSportsDbLeagueById(leagueId = "") {
+  const id = String(leagueId || "").trim();
+  if (!id) return null;
+  const cacheKey = `id:${id}`;
+  if (sportsDbLeagueCache.has(cacheKey)) return sportsDbLeagueCache.get(cacheKey);
+  const payload = await sportsDbGet("lookupleague.php", { id });
+  const league = Array.isArray(payload?.leagues) ? payload.leagues[0] : null;
+  const result = league ? {
+    id: league.idLeague || id,
+    name: league.strLeague || "",
+    logo: league.strBadge || league.strLogo || null,
+    country: league.strCountry || ""
+  } : null;
+  sportsDbLeagueCache.set(cacheKey, result);
+  return result;
+}
+
+async function lookupSportsDbLeague(leagueName = "", sportName = "Soccer", teamFallbacks = []) {
+  const normalized = normalizeLookup(leagueName);
+  if (!normalized) return null;
+  const cacheKey = `${sportName}:${normalized}`;
+  if (sportsDbLeagueCache.has(cacheKey)) return sportsDbLeagueCache.get(cacheKey);
+
+  const index = await sportsDbLeagueIndex();
+  const sportLookup = normalizeLookup(sportName);
+  const indexed = index
+    .filter((league) => !league.strSport || normalizeLookup(league.strSport) === sportLookup)
+    .find((league) => {
+      const candidate = normalizeLookup(league.strLeague || "");
+      return candidate === normalized || candidate.includes(normalized) || normalized.includes(candidate);
+    });
+  const byName = indexed?.idLeague ? await lookupSportsDbLeagueById(indexed.idLeague) : null;
+  const fallbackTeamLeagueId = teamFallbacks.find((team) => team?.idLeague)?.idLeague;
+  const byTeam = byName || await lookupSportsDbLeagueById(fallbackTeamLeagueId);
+  sportsDbLeagueCache.set(cacheKey, byTeam);
+  return byTeam;
+}
+
+async function enrichSignalAssets(signals = []) {
+  const enriched = [];
+  for (const tip of signals) {
+    const fixturePayload = tip.fixture_payload && typeof tip.fixture_payload === "object" ? tip.fixture_payload : {};
+    const existingTeams = fixturePayload.teams || {};
+    const existingLeague = fixturePayload.league || {};
+    const sportName = sportsDbSportName(fixturePayload.sport, tip.league || existingLeague.name);
+    const homeName = existingTeams.home?.name || splitMatchName(tip.match_name).home;
+    const awayName = existingTeams.away?.name || splitMatchName(tip.match_name).away;
+    const [homeAsset, awayAsset] = await Promise.all([
+      existingTeams.home?.logo ? null : lookupSportsDbTeam(homeName, sportName),
+      existingTeams.away?.logo ? null : lookupSportsDbTeam(awayName, sportName)
+    ]);
+    const leagueAsset = existingLeague.logo
+      ? null
+      : await lookupSportsDbLeague(tip.league || existingLeague.name, sportName, [homeAsset, awayAsset]);
+
+    enriched.push({
+      ...tip,
+      fixture_payload: {
+        ...fixturePayload,
+        teams: {
+          home: {
+            ...(existingTeams.home || {}),
+            name: existingTeams.home?.name || homeAsset?.name || homeName,
+            logo: existingTeams.home?.logo || homeAsset?.logo || null
+          },
+          away: {
+            ...(existingTeams.away || {}),
+            name: existingTeams.away?.name || awayAsset?.name || awayName,
+            logo: existingTeams.away?.logo || awayAsset?.logo || null
+          }
+        },
+        league: {
+          ...existingLeague,
+          name: existingLeague.name || leagueAsset?.name || tip.league,
+          logo: existingLeague.logo || leagueAsset?.logo || null,
+          country: existingLeague.country || leagueAsset?.country || ""
+        },
+        metadata: {
+          ...(fixturePayload.metadata || {}),
+          asset_enrichment: "thesportsdb-best-effort"
+        }
+      }
+    });
+  }
+  return enriched;
+}
+
 function normalizeDirectSignal(signal = {}, payload = {}, index = 0) {
   const matchName = String(signal.match_name || signal.match || signal.fixture || "").trim();
   const prediction = String(signal.prediction || signal.pick || signal.market || "").trim();
@@ -152,7 +327,7 @@ function validateTip(payload) {
 }
 
 async function publishIngestedSignals(payload) {
-  const parsed = (Array.isArray(payload.signals)
+  const parsedBase = (Array.isArray(payload.signals)
     ? payload.signals.map((signal, index) => normalizeDirectSignal(signal, payload, index)).filter(Boolean)
     : parseSignalsFromText(String(payload.text || payload.raw || payload.ingest_text || ""), {
         defaultSport: payload.defaultSport || "auto",
@@ -161,7 +336,7 @@ async function publishIngestedSignals(payload) {
         sourceName: payload.sourceName || payload.source_name || "Manual board"
       })).slice(0, 60);
 
-  if (!parsed.length) {
+  if (!parsedBase.length) {
     return {
       status: 400,
       body: {
@@ -170,6 +345,8 @@ async function publishIngestedSignals(payload) {
       }
     };
   }
+
+  const parsed = await enrichSignalAssets(parsedBase);
 
   if (payload.mode !== "publish") {
     return { status: 200, body: { ok: true, mode: "preview", count: parsed.length, signals: parsed } };
@@ -307,7 +484,7 @@ export default async function handler(req, res) {
   if (errors.length) return res.status(400).json({ ok: false, errors });
 
   try {
-    const tip = await enrichTipWithFixture({
+    const tipWithFixture = await enrichTipWithFixture({
       match_name: String(payload.match_name),
       league: payload.league ? String(payload.league) : "Football",
       prediction: String(payload.prediction),
@@ -318,6 +495,7 @@ export default async function handler(req, res) {
       source: "admin",
       starts_at: payload.starts_at || null
     });
+    const [tip] = await enrichSignalAssets([tipWithFixture]);
 
     const [savedTip] = await Promise.all([
       insertTip(tip),

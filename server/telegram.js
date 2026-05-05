@@ -1,8 +1,9 @@
 import { Telegraf } from "telegraf";
 import { config } from "./config.js";
-import { query } from "./db.js";
+import { ensureAppUsersTable, query } from "./db.js";
 
 export const bot = config.telegram.botToken ? new Telegraf(config.telegram.botToken) : null;
+let commandsRegistered = false;
 
 const money = new Intl.NumberFormat("en-NG", {
   style: "currency",
@@ -21,10 +22,49 @@ function bookieLabel(bookie) {
   return bookie.replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
 }
 
+function formatTipDateTime(tip) {
+  if (!tip.starts_at) return "";
+  const date = new Date(tip.starts_at);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-NG", {
+    timeZone: config.signalWorker.timezone,
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short"
+  }).format(date);
+}
+
+function affiliateUrlFor(bookie, tip) {
+  const normalized = String(bookie || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const aliases = {
+    "1xbet": "1xbet",
+    onexbet: "1xbet",
+    sportybet: "sportybet",
+    bet9ja: "bet9ja",
+    betking: "betking",
+    betway: "betway",
+    melbet: "melbet"
+  };
+  const key = aliases[normalized] || normalized;
+  if (!config.affiliateUrls[key]) return "";
+  return tip?.id ? `${config.publicAppUrl}/affiliate/${key}/${tip.id}` : config.affiliateUrls[key];
+}
+
+function primaryAffiliate(tip) {
+  const codeBookie = Object.keys(tip.booking_codes || {}).find((bookie) => affiliateUrlFor(bookie, tip));
+  if (codeBookie) return { label: bookieLabel(codeBookie), url: affiliateUrlFor(codeBookie, tip) };
+  const fallback = Object.entries(config.affiliateUrls).find(([, url]) => Boolean(url));
+  if (!fallback) return null;
+  return { label: bookieLabel(fallback[0]), url: tip?.id ? `${config.publicAppUrl}/affiliate/${fallback[0]}/${tip.id}` : fallback[1] };
+}
+
 function bookingButtons(tip) {
   const rows = Object.entries(tip.booking_codes || {}).flatMap(([bookie, code]) => {
-    const normalized = bookie.toLowerCase();
-    const url = config.affiliateUrls[normalized];
+    const url = affiliateUrlFor(bookie, tip);
     const buttons = [
       {
         text: `Copy ${bookieLabel(bookie)} Code`,
@@ -35,18 +75,25 @@ function bookingButtons(tip) {
     if (url) {
       buttons.push({
         text: `Open ${bookieLabel(bookie)}`,
-        url: `${config.publicAppUrl}/affiliate/${normalized}/${tip.id}`
+        url
       });
     }
 
     return [buttons];
   });
 
+  const affiliate = primaryAffiliate(tip);
+  if (affiliate && !rows.some((row) => row.some((button) => button.url === affiliate.url))) {
+    rows.push([{ text: `Open ${affiliate.label}`, url: affiliate.url }]);
+  }
+
   return rows.length ? { inline_keyboard: rows } : undefined;
 }
 
 export function formatTipMessage(tip) {
-  const tier = tip.is_vip ? "VIP SIGNAL" : "FREE SURE GAME";
+  const tier = tip.is_vip ? "VIP SIGNAL" : "FREE GAME";
+  const kickoff = formatTipDateTime(tip);
+  const affiliate = primaryAffiliate(tip);
   const bookingLines = Object.entries(tip.booking_codes || {})
     .map(([bookie, code]) => `• <b>${escapeHtml(bookieLabel(bookie))}</b>: <code>${escapeHtml(code)}</code>`)
     .join("\n");
@@ -54,15 +101,18 @@ export function formatTipMessage(tip) {
   return [
     `🚀 <b>BamSignal ${tier}</b>`,
     "",
+    tip.league ? `🏆 <b>${escapeHtml(tip.league)}</b>` : "",
+    kickoff ? `🗓 ${escapeHtml(kickoff)}` : "",
     `⚽ <b>${escapeHtml(tip.match_name)}</b>`,
     `✅ Pick: <b>${escapeHtml(tip.prediction)}</b>`,
     `💰 Odds: <b>${escapeHtml(tip.odds)}</b>`,
     tip.stake_hint ? `Stake: <b>${money.format(Number(tip.stake_hint))}</b>` : "",
     bookingLines ? `\n<b>Booking Codes</b>\n${bookingLines}` : "",
+    affiliate ? `🎁 Bonus link: <a href="${escapeHtml(affiliate.url)}">${escapeHtml(affiliate.label)}</a>` : "",
     "",
     tip.is_vip
       ? "Premium members only. Manage risk and stake responsibly."
-      : "Register with BamSignal affiliate links for bonus offers and more value alerts."
+      : "Free pick posted. Upgrade in the BamSignal app for premium games."
   ].filter(Boolean).join("\n");
 }
 
@@ -130,13 +180,53 @@ export async function createVipInviteLink(userId) {
   if (!bot || !config.telegram.vipGroupId) return null;
   const invite = await bot.telegram.createChatInviteLink(config.telegram.vipGroupId, {
     name: `BamSignal VIP ${userId}`,
-    member_limit: 1
+    creates_join_request: true
   });
   return invite.invite_link;
 }
 
+export async function handleVipJoinRequest(ctx) {
+  const request = ctx.chatJoinRequest;
+  if (!request || String(request.chat?.id) !== String(config.telegram.vipGroupId)) return { ok: false, skipped: true };
+
+  const inviteLink = request.invite_link?.invite_link || "";
+  const telegramUserId = String(request.from?.id || "");
+  if (!inviteLink || !telegramUserId) {
+    await ctx.telegram.declineChatJoinRequest(request.chat.id, request.from.id).catch(() => undefined);
+    return { ok: false, declined: true, reason: "missing invite link or user id" };
+  }
+
+  await ensureAppUsersTable();
+  const result = await query(
+    `select id, telegram_user_id
+     from app_users
+     where telegram_vip_invite_link = $1
+       and is_premium = true
+       and (premium_until is null or premium_until > now())
+     limit 1`,
+    [inviteLink]
+  );
+  const user = result.rows[0];
+  const alreadyClaimedByAnother = user?.telegram_user_id && String(user.telegram_user_id) !== telegramUserId;
+  if (!user || alreadyClaimedByAnother) {
+    await ctx.telegram.declineChatJoinRequest(request.chat.id, request.from.id).catch(() => undefined);
+    return { ok: false, declined: true, reason: alreadyClaimedByAnother ? "invite already claimed" : "no active premium user for invite" };
+  }
+
+  await ctx.telegram.approveChatJoinRequest(request.chat.id, request.from.id);
+  await query(
+    `update app_users
+     set telegram_user_id = coalesce(telegram_user_id, $2),
+         updated_at = now()
+     where id = $1`,
+    [user.id, telegramUserId]
+  );
+  return { ok: true, approved: true, user_id: user.id, telegram_user_id: telegramUserId };
+}
+
 export function registerBotCommands() {
-  if (!bot) return;
+  if (!bot || commandsRegistered) return;
+  commandsRegistered = true;
 
   bot.command("check_sub", async (ctx) => {
     const telegramUserId = String(ctx.from?.id || "");
@@ -153,5 +243,13 @@ export function registerBotCommands() {
     const expires = new Date(premiumUntil);
     const days = Math.max(0, Math.ceil((expires.getTime() - Date.now()) / 86400000));
     await ctx.reply(`✅ BamSignal VIP is active. You have ${days} day(s) left.`);
+  });
+
+  bot.on("chat_join_request", async (ctx) => {
+    await handleVipJoinRequest(ctx).catch((error) => {
+      console.error("VIP join request approval failed", {
+        message: error.message
+      });
+    });
   });
 }

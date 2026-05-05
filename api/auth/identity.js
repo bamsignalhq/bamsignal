@@ -9,6 +9,7 @@ import {
   upsertPlatformAdmin
 } from "../../server/db.js";
 import { registerDevicePush } from "../../server/firebase.js";
+import { bot, registerBotCommands } from "../../server/telegram.js";
 
 function normalizePhone(value = "") {
   const digits = String(value).replace(/\D/g, "");
@@ -68,6 +69,19 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (req.query.action === "telegram-webhook") {
+      const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET || process.env.SIGNAL_WORKER_SECRET || process.env.CRON_SECRET || "";
+      const providedSecret = req.query.secret || req.headers["x-telegram-bot-api-secret-token"];
+      if (expectedSecret && providedSecret !== expectedSecret) {
+        return res.status(401).json({ ok: false, error: "Invalid Telegram webhook secret." });
+      }
+      if (!bot) return res.status(503).json({ ok: false, error: "Telegram bot token is not configured." });
+      registerBotCommands();
+      await bot.handleUpdate(req.body, res);
+      if (!res.headersSent) return res.status(200).json({ ok: true });
+      return;
+    }
+
     if (req.query.action === "admin-session") {
       if (await requireAdmin(req, res)) return res.status(200).json({ ok: true, method: "admin" });
       return res.status(401).json({ ok: false, error: "Admin login required." });

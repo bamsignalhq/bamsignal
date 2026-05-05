@@ -62,6 +62,7 @@ create table if not exists app_users (
   is_premium boolean not null default false,
   premium_until timestamptz,
   telegram_vip_invite_link text,
+  telegram_user_id text,
   paystack_reference text,
   referral_points integer not null default 0,
   created_at timestamptz not null default now(),
@@ -71,6 +72,7 @@ create table if not exists app_users (
 alter table app_users add column if not exists is_premium boolean not null default false;
 alter table app_users add column if not exists premium_until timestamptz;
 alter table app_users add column if not exists telegram_vip_invite_link text;
+alter table app_users add column if not exists telegram_user_id text;
 alter table app_users add column if not exists paystack_reference text;
 alter table app_users add column if not exists referral_points integer not null default 0;
 

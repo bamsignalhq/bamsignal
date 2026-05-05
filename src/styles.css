@@ -627,7 +627,11 @@ footer {
 }
 
 .fixture-card .prediction-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: auto auto auto minmax(0, 1fr);
   justify-content: center;
+  justify-items: center;
   text-align: center;
 }
 
@@ -767,24 +771,34 @@ footer {
 
 .prediction-row {
   border-top: 1px solid var(--border);
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 9px;
+  padding-top: 9px;
 }
 
 .prediction-row span {
   color: var(--muted);
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.prediction-row strong {
+  font-size: 13px;
+  line-height: 1.15;
 }
 
 .probability-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 12px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .probability {
   background: var(--surface-2);
   border-radius: var(--radius);
-  font-size: 13px;
-  padding: 10px;
+  font-size: 10px;
+  padding: 6px;
+  text-align: center;
 }
 
 .probability strong,
@@ -792,11 +806,20 @@ footer {
   display: block;
 }
 
+.probability strong {
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.probability small {
+  font-size: 10px;
+}
+
 .bar {
   background: color-mix(in srgb, var(--border) 78%, transparent);
   border-radius: 999px;
-  height: 6px;
-  margin: 10px 0 6px;
+  height: 4px;
+  margin: 5px 0 3px;
   overflow: hidden;
 }
 

@@ -5896,6 +5896,8 @@ function PublicPredictionCard({
         <ConfidenceSignal confidence={game.confidence} />
       </div>
       <div className="prediction-row">
+        <strong>{gameOddsValue(game)}</strong>
+        <strong>{game.confidence}%</strong>
         <span>Primary pick</span>
         <strong className={locked ? "blurred-tip" : ""}>{game.pick}</strong>
       </div>

@@ -133,6 +133,7 @@ export async function ensureAppUsersTable() {
       is_premium boolean not null default false,
       premium_until timestamptz,
       telegram_vip_invite_link text,
+      telegram_user_id text,
       paystack_reference text,
       referral_points integer not null default 0,
       created_at timestamptz not null default now(),
@@ -143,6 +144,7 @@ export async function ensureAppUsersTable() {
   await query("alter table app_users add column if not exists is_premium boolean not null default false");
   await query("alter table app_users add column if not exists premium_until timestamptz");
   await query("alter table app_users add column if not exists telegram_vip_invite_link text");
+  await query("alter table app_users add column if not exists telegram_user_id text");
   await query("alter table app_users add column if not exists paystack_reference text");
   await query("alter table app_users add column if not exists referral_points integer not null default 0");
   await query("create unique index if not exists app_users_email_unique_idx on app_users (lower(email)) where email is not null and email <> ''");

@@ -56,7 +56,7 @@ async function isAuthorized(req) {
   if (provided && allowedSecrets.includes(provided)) return { ok: true };
   if (await verifySupabaseAdmin(req)) return { ok: true };
   if (!allowedSecrets.length && !process.env.ADMIN_EMAILS) {
-    return { ok: false, status: 503, error: "Set ADMIN_EMAILS or SIGNAL_WORKER_SECRET in Vercel before backend publishing." };
+    return { ok: false, status: 503, error: "Admin authentication is not configured in Vercel yet." };
   }
   if (!provided) return { ok: false, status: 401, error: "Log in as an admin account or enter the publish secret before publishing." };
   if (!allowedSecrets.includes(provided)) return { ok: false, status: 401, error: "Admin publish secret is incorrect." };

@@ -506,7 +506,6 @@ type QuickPublishForm = {
   pushWhatsApp: boolean;
   pushVipTelegram: boolean;
   showBookingCodes: boolean;
-  publishSecret: string;
 };
 type IngestForm = {
   text: string;
@@ -4095,8 +4094,7 @@ function AdminPage({
       pushTelegram: false,
       pushWhatsApp: false,
       pushVipTelegram: true,
-      showBookingCodes: true,
-      publishSecret: ""
+      showBookingCodes: true
     };
   });
   const [ingestForm, setIngestForm] = useState<IngestForm>({
@@ -4111,7 +4109,7 @@ function AdminPage({
   const [adminStatus, setAdminStatus] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [adminAccess, setAdminAccess] = useState<"checking" | "granted" | "denied">("checking");
-  const [adminLoginForm, setAdminLoginForm] = useState({ email: "", password: "", secret: "" });
+  const [adminLoginForm, setAdminLoginForm] = useState({ email: "", password: "" });
   const [adminLoginBusy, setAdminLoginBusy] = useState(false);
   const [adminSecurity, setAdminSecurity] = useState<{ envAdmins: string[]; dbAdmins: AdminAccount[] }>({ envAdmins: [], dbAdmins: [] });
   const [newAdminEmail, setNewAdminEmail] = useState("");
@@ -4139,7 +4137,7 @@ function AdminPage({
     const response = await fetch("/api/auth/identity?action=admin-security", {
       method: "POST",
       headers: await getAdminAuthHeaders(),
-      body: JSON.stringify({ secret: quickPublish.publishSecret })
+      body: "{}"
     });
     const payload = await response.json().catch(() => null);
     if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Could not load admin security.");
@@ -4166,7 +4164,7 @@ function AdminPage({
           return;
         }
       }
-      const granted = await checkAdminAccess(adminLoginForm.secret.trim());
+      const granted = await checkAdminAccess();
       setAdminStatus(granted ? "Admin access verified." : "Admin login failed. Use an ADMIN_EMAILS account or the publish secret.");
     } finally {
       setAdminLoginBusy(false);
@@ -4232,7 +4230,6 @@ function AdminPage({
   };
   const getAdminAuthHeaders = async () => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (quickPublish.publishSecret) headers["x-bamsignal-secret"] = quickPublish.publishSecret;
     const session = supabase ? await supabase.auth.getSession() : null;
     const token = session?.data.session?.access_token;
     if (token) headers.Authorization = `Bearer ${token}`;
@@ -4244,7 +4241,7 @@ function AdminPage({
       const response = await fetch("/api/auth/identity?action=settings-save", {
         method: "POST",
         headers: await getAdminAuthHeaders(),
-        body: JSON.stringify({ value: adminContent, secret: quickPublish.publishSecret })
+        body: JSON.stringify({ value: adminContent })
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Settings save failed");
@@ -4265,7 +4262,7 @@ function AdminPage({
       const response = await fetch("/api/auth/identity?action=admin-add", {
         method: "POST",
         headers: await getAdminAuthHeaders(),
-        body: JSON.stringify({ email: newAdminEmail.trim(), role: "admin", secret: quickPublish.publishSecret })
+        body: JSON.stringify({ email: newAdminEmail.trim(), role: "admin" })
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Could not add admin.");
@@ -4282,7 +4279,7 @@ function AdminPage({
       const response = await fetch("/api/auth/identity?action=admin-remove", {
         method: "POST",
         headers: await getAdminAuthHeaders(),
-        body: JSON.stringify({ email, secret: quickPublish.publishSecret })
+        body: JSON.stringify({ email })
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Could not remove admin.");
@@ -4487,7 +4484,6 @@ function AdminPage({
     });
   };
   const logoutAdmin = () => {
-    setQuickPublish({ ...quickPublish, publishSecret: "" });
     supabase?.auth.signOut().catch(() => undefined);
     setAdminAccess("denied");
     setAdminStatus("Admin session closed.");
@@ -4503,11 +4499,10 @@ function AdminPage({
           </button>
           <p className="eyebrow">Admin command center</p>
           <h2>Secure admin access</h2>
-          <p>Use an approved Supabase admin email and password. The private publish secret is an emergency fallback only.</p>
+          <p>Use an approved BamSignal admin email and password. Admin recovery secrets stay server-side only.</p>
           <div className="admin-form">
             <label>Admin email<input value={adminLoginForm.email} onChange={(event) => setAdminLoginForm({ ...adminLoginForm, email: event.target.value })} type="email" placeholder="admin@bamsignal.com" /></label>
             <label>Password<input value={adminLoginForm.password} onChange={(event) => setAdminLoginForm({ ...adminLoginForm, password: event.target.value })} type="password" placeholder="Admin password" /></label>
-            <label>Publish secret fallback<input value={adminLoginForm.secret} onChange={(event) => setAdminLoginForm({ ...adminLoginForm, secret: event.target.value })} type="password" placeholder="Optional private secret" /></label>
           </div>
           <button className="primary-action neon-action" onClick={loginAdmin} disabled={adminLoginBusy || adminAccess === "checking"}>
             {adminLoginBusy || adminAccess === "checking" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Enter admin room
@@ -4581,7 +4576,6 @@ function AdminPage({
           </label>
           <label>Odds<input value={quickPublish.odds} type="number" step="0.01" onChange={(event) => setQuickPublish({ ...quickPublish, odds: event.target.value })} placeholder="2.18" /></label>
           <label>Confidence %<input value={quickPublish.confidence} type="number" min="1" max="99" onChange={(event) => setQuickPublish({ ...quickPublish, confidence: event.target.value })} placeholder="82" /></label>
-          <label>Publish secret fallback<input value={quickPublish.publishSecret} onChange={(event) => setQuickPublish({ ...quickPublish, publishSecret: event.target.value })} type="password" placeholder="Optional if logged in as admin" /></label>
         </div>
         <div className="toggle-grid quick-publish-toggles">
           <label><input type="checkbox" checked={quickPublish.showBookingCodes} onChange={(event) => setQuickPublish({ ...quickPublish, showBookingCodes: event.target.checked })} /> Show booking codes in selected app room</label>
@@ -4841,7 +4835,7 @@ function AdminPage({
         </div>
         <div className="automation-list">
           <div><LockKeyhole size={16} /><span>Root admin emails from Vercel ADMIN_EMAILS: {adminSecurity.envAdmins.length ? adminSecurity.envAdmins.join(", ") : "not loaded yet"}</span></div>
-          <div><ShieldCheck size={16} /><span>Publish secret fallback is SIGNAL_WORKER_SECRET or CRON_SECRET in Vercel. Use it only if Supabase admin login is unavailable.</span></div>
+          <div><ShieldCheck size={16} /><span>Emergency backend recovery stays hidden in Vercel and is never shown inside the admin UI.</span></div>
           <div><Users size={16} /><span>For a new admin to work, create that same email as a Supabase Auth user, then add it here as approved.</span></div>
         </div>
         <div className="admin-game-grid">

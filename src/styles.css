@@ -2916,6 +2916,109 @@ footer {
   text-transform: uppercase;
 }
 
+.admin-preview-backdrop {
+  align-items: center;
+  background: rgba(2, 6, 23, 0.76);
+  backdrop-filter: blur(14px);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 18px;
+  position: fixed;
+  z-index: 80;
+}
+
+.admin-preview-modal {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 42%),
+    var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  border-radius: 20px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+  display: grid;
+  gap: 14px;
+  max-height: min(88vh, 920px);
+  max-width: 1120px;
+  overflow: hidden;
+  padding: 16px;
+  width: min(100%, 1120px);
+}
+
+.admin-preview-header,
+.admin-preview-footer {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.admin-preview-header h2 {
+  color: var(--text);
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1;
+  margin: 0;
+}
+
+.admin-preview-header p:not(.eyebrow) {
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+.admin-preview-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-preview-summary span {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  padding: 7px 10px;
+  text-transform: uppercase;
+}
+
+.admin-preview-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.ingest-preview-card {
+  background: color-mix(in srgb, var(--surface-2) 80%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.ingest-preview-card.vip {
+  border-color: color-mix(in srgb, #fbbf24 46%, var(--border));
+}
+
+.ingest-preview-card.freemium {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+}
+
+.ingest-preview-card small {
+  color: var(--muted);
+}
+
+.ingest-preview-edit-grid {
+  margin-top: 0;
+}
+
+.ingest-preview-ready .admin-action-row,
+.admin-preview-footer {
+  margin-top: 8px;
+}
+
 .admin-form label {
   color: var(--muted);
   display: grid;
@@ -4029,8 +4132,26 @@ footer strong {
   .admin-form.compact,
   .booking-code-list,
   .auth-dynamic-banner,
-  .auth-dynamic-banner.bottom {
+  .auth-dynamic-banner.bottom,
+  .admin-preview-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-preview-backdrop {
+    align-items: stretch;
+    padding: 8px;
+  }
+
+  .admin-preview-modal {
+    border-radius: 16px;
+    max-height: calc(100vh - 16px);
+    padding: 10px;
+  }
+
+  .admin-preview-header,
+  .admin-preview-footer {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .auth-tabs,

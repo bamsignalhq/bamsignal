@@ -4110,6 +4110,7 @@ function AdminPage({
     notify: false
   });
   const [ingestPreview, setIngestPreview] = useState<ApiTip[]>([]);
+  const [ingestPreviewOpen, setIngestPreviewOpen] = useState(false);
   const [ingestFileName, setIngestFileName] = useState("");
   const [isIngesting, setIsIngesting] = useState(false);
   const [adminStatus, setAdminStatus] = useState("");
@@ -4171,7 +4172,7 @@ function AdminPage({
         }
       }
       const granted = await checkAdminAccess();
-      setAdminStatus(granted ? "Admin access verified." : "Admin login failed. Use an ADMIN_EMAILS account or the publish secret.");
+      setAdminStatus(granted ? "Admin access verified." : "Admin login failed. Use an approved BamSignal admin email.");
     } finally {
       setAdminLoginBusy(false);
     }
@@ -4430,6 +4431,7 @@ function AdminPage({
       if (!response.ok || !result.ok) throw new Error(result.error || "Signal ingest failed");
       const signals = (result.signals || result.published || result.daily_games || []) as ApiTip[];
       setIngestPreview(signals);
+      if (mode === "preview") setIngestPreviewOpen(true);
       if (mode === "publish") {
         const games = signals.map(apiTipToAdminGame);
         setAdminContent({
@@ -4443,6 +4445,55 @@ function AdminPage({
       setAdminStatus(mode === "preview"
         ? `Parsed ${result.count} signal${result.count === 1 ? "" : "s"}. Review them, then publish when ready.`
         : `Published ${result.count} signal${result.count === 1 ? "" : "s"} into the BamSignal board.`);
+    } catch (error) {
+      setAdminStatus(`Ingest failed: ${friendlyAuthError(error)}`);
+    } finally {
+      setIsIngesting(false);
+    }
+  };
+  const updateIngestPreviewTip = (index: number, patch: Partial<ApiTip>) => {
+    setIngestPreview((current) => current.map((tip, tipIndex) => {
+      if (tipIndex !== index) return tip;
+      const next = { ...tip, ...patch };
+      if (patch.odds !== undefined) {
+        const odds = Number(patch.odds);
+        if (Number.isFinite(odds)) next.is_vip = odds >= 1.5;
+      }
+      return next;
+    }));
+  };
+  const publishEditedIngestPreview = async () => {
+    if (!ingestPreview.length) {
+      setAdminStatus("Preview signals first, then publish the edited board.");
+      return;
+    }
+    setIsIngesting(true);
+    setAdminStatus("Publishing edited preview...");
+    try {
+      const response = await fetch("/api/publish-tip", {
+        method: "POST",
+        headers: await getAdminAuthHeaders(),
+        body: JSON.stringify({
+          ...ingestForm,
+          action: "ingest",
+          mode: "publish",
+          signals: ingestPreview
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || "Edited board publish failed");
+      const signals = (result.published || result.daily_games || ingestPreview) as ApiTip[];
+      const games = signals.map(apiTipToAdminGame);
+      setAdminContent({
+        ...adminContent,
+        games: orderGamesForDisplay([
+          ...games,
+          ...adminContent.games.filter((game) => !games.some((item) => gameKey(item) === gameKey(game)))
+        ])
+      });
+      setIngestPreview(signals);
+      setIngestPreviewOpen(false);
+      setAdminStatus(`Published ${result.count || signals.length} edited signal${(result.count || signals.length) === 1 ? "" : "s"} into BamSignal.`);
     } catch (error) {
       setAdminStatus(`Ingest failed: ${friendlyAuthError(error)}`);
     } finally {
@@ -4733,23 +4784,16 @@ function AdminPage({
           <div><ShieldCheck size={16} /><span>Preview first. Publish only after the extracted matches look right.</span></div>
         </div>
         {ingestPreview.length ? (
-          <div className="admin-game-grid">
-            {ingestPreview.slice(0, 12).map((tip, index) => {
-              const game = apiTipToAdminGame(tip, index);
-              return (
-                <article className={`admin-game-card ${game.tier}`} key={`${game.match}-${game.pick}-${index}`}>
-                  <div className="admin-game-head">
-                    <strong>{game.tier === "vip" ? "VIP" : "Freemium"}</strong>
-                    <span>{game.odds.toFixed(2)} odds</span>
-                    <ConfidenceSignal confidence={game.confidence} compact />
-                  </div>
-                  <strong>{game.match}</strong>
-                  <span>{game.league}</span>
-                  <p>{game.pick}</p>
-                  <small>{game.startsAt ? formatMatchDateTime(game.startsAt) : "Time pending"}</small>
-                </article>
-              );
-            })}
+          <div className="publish-preview-card ingest-preview-ready">
+            <p className="eyebrow">Preview ready</p>
+            <strong>{ingestPreview.length} parsed signal{ingestPreview.length === 1 ? "" : "s"}</strong>
+            <span>Open the editable preview to check matches, odds, confidence, room, and time before publishing.</span>
+            <div className="admin-action-row">
+              <button className="secondary-action" onClick={() => setIngestPreviewOpen(true)}><Eye size={16} /> Open editable preview</button>
+              <button className="primary-action neon-action" onClick={publishEditedIngestPreview} disabled={isIngesting}>
+                {isIngesting ? <Loader2 className="spin" size={16} /> : <Send size={16} />} Publish edited board
+              </button>
+            </div>
           </div>
         ) : null}
       </section>}
@@ -4922,7 +4966,7 @@ function AdminPage({
             <article className="empty-signal-state wide">
               <ShieldCheck size={22} />
               <strong>No database admins loaded yet</strong>
-              <span>Use Refresh access list after logging in with a root admin email or publish secret.</span>
+              <span>Use Refresh access list after logging in with an approved root admin email.</span>
             </article>
           )}
         </div>
@@ -5083,6 +5127,69 @@ function AdminPage({
       </section>}
         </div>
       </div>
+      {ingestPreviewOpen && (
+        <div className="admin-preview-backdrop" role="presentation">
+          <section className="admin-preview-modal" role="dialog" aria-modal="true" aria-label="Review parsed BamSignal signals">
+            <div className="admin-preview-header">
+              <div>
+                <p className="eyebrow">Review before publish</p>
+                <h2>{ingestPreview.length} parsed signal{ingestPreview.length === 1 ? "" : "s"}</h2>
+                <p>Check every match. Edit anything that looks off, then publish the cleaned board.</p>
+              </div>
+              <button className="icon-button" onClick={() => setIngestPreviewOpen(false)} aria-label="Close parsed signal preview">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="admin-preview-summary">
+              <span>{ingestPreview.filter((tip) => !tip.is_vip).length} free</span>
+              <span>{ingestPreview.filter((tip) => tip.is_vip).length} VIP</span>
+              <span>{ingestForm.notify ? "Notify enabled" : "No broadcast yet"}</span>
+              <span>{ingestForm.replaceBoard ? "Replace board on publish" : "Merge with board"}</span>
+            </div>
+            <div className="admin-preview-grid">
+              {ingestPreview.map((tip, index) => {
+                const game = apiTipToAdminGame(tip, index);
+                return (
+                  <article className={`ingest-preview-card ${game.tier}`} key={`${tip.match_name}-${tip.prediction}-${index}`}>
+                    <div className="admin-game-head">
+                      <strong>{game.tier === "vip" ? "VIP" : "Free"}</strong>
+                      <span>{game.odds.toFixed(2)} odds</span>
+                      <ConfidenceSignal confidence={game.confidence} compact />
+                    </div>
+                    <div className="admin-form compact ingest-preview-edit-grid">
+                      <label>Match<input value={tip.match_name} onChange={(event) => updateIngestPreviewTip(index, { match_name: event.target.value })} /></label>
+                      <label>League<input value={tip.league || ""} onChange={(event) => updateIngestPreviewTip(index, { league: event.target.value })} /></label>
+                      <label>Prediction<input value={tip.prediction} onChange={(event) => updateIngestPreviewTip(index, { prediction: event.target.value })} /></label>
+                      <label>Odds<input type="number" step="0.01" value={String(tip.odds)} onChange={(event) => updateIngestPreviewTip(index, { odds: event.target.value })} /></label>
+                      <label>Confidence %<input type="number" min="1" max="99" value={String(tip.confidence || game.confidence)} onChange={(event) => updateIngestPreviewTip(index, { confidence: Number(event.target.value) || game.confidence })} /></label>
+                      <label>Kickoff time<input value={tip.starts_at || ""} onChange={(event) => updateIngestPreviewTip(index, { starts_at: event.target.value })} placeholder="2026-05-05 20:00 or ISO time" /></label>
+                      <label>Status
+                        <select value={tip.status || "pending"} onChange={(event) => updateIngestPreviewTip(index, { status: event.target.value })}>
+                          <option value="pending">Pending</option>
+                          <option value="live">Live</option>
+                          <option value="won">Won</option>
+                          <option value="lost">Lost</option>
+                          <option value="void">Void</option>
+                        </select>
+                      </label>
+                      <label>Room<input value={game.tier === "vip" ? "VIP, from odds 1.50+" : "Free, from odds below 1.50"} readOnly /></label>
+                    </div>
+                    <small>{game.startsAt ? formatMatchDateTime(game.startsAt) : "Time pending"}</small>
+                  </article>
+                );
+              })}
+            </div>
+            <div className="admin-preview-footer">
+              <button className="secondary-action" onClick={() => setIngestPreviewOpen(false)}>
+                <ClipboardCheck size={16} /> Keep editing later
+              </button>
+              <button className="primary-action neon-action" onClick={publishEditedIngestPreview} disabled={isIngesting}>
+                {isIngesting ? <Loader2 className="spin" size={16} /> : <Send size={16} />} Publish edited board
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

@@ -1,5 +1,5 @@
 import { config } from "../server/config.js";
-import { deleteDailyGamesBySource, ensureDailyGamesTable, ensureTipsTable, insertTip, query, upsertDailyGames } from "../server/db.js";
+import { deleteDailyGamesBySource, ensureDailyGamesTable, ensureTipsTable, insertTip, isPlatformAdminEmail, query, upsertDailyGames } from "../server/db.js";
 import { sendTipPush } from "../server/firebase.js";
 import { broadcastTip } from "../server/telegram.js";
 import { enrichTipWithFixture } from "../server/services/signalWorker.js";
@@ -31,7 +31,6 @@ async function verifySupabaseAdmin(req) {
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
-  if (!adminEmails.length) return false;
 
   const authHeader = req.headers.authorization || "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
@@ -47,7 +46,8 @@ async function verifySupabaseAdmin(req) {
   });
   if (!response.ok) return false;
   const user = await response.json();
-  return adminEmails.includes(String(user.email || "").toLowerCase());
+  const email = String(user.email || "").toLowerCase();
+  return adminEmails.includes(email) || await isPlatformAdminEmail(email);
 }
 
 async function isAuthorized(req) {
@@ -58,9 +58,85 @@ async function isAuthorized(req) {
   if (!allowedSecrets.length && !process.env.ADMIN_EMAILS) {
     return { ok: false, status: 503, error: "Admin authentication is not configured in Vercel yet." };
   }
-  if (!provided) return { ok: false, status: 401, error: "Log in as an admin account or enter the publish secret before publishing." };
-  if (!allowedSecrets.includes(provided)) return { ok: false, status: 401, error: "Admin publish secret is incorrect." };
+  if (!provided) return { ok: false, status: 401, error: "Log in as an approved BamSignal admin account before publishing." };
+  if (!allowedSecrets.includes(provided)) return { ok: false, status: 401, error: "Admin recovery credential is incorrect." };
   return { ok: true };
+}
+
+function splitMatchName(match = "") {
+  const [home, ...rest] = String(match).split(/\s+vs\s+/i);
+  return {
+    home: String(home || "").trim(),
+    away: String(rest.join(" vs ") || "").trim()
+  };
+}
+
+function normalizeDirectSignal(signal = {}, payload = {}, index = 0) {
+  const matchName = String(signal.match_name || signal.match || signal.fixture || "").trim();
+  const prediction = String(signal.prediction || signal.pick || signal.market || "").trim();
+  const oddsNumber = Number(String(signal.odds || signal.price || "").replace(/[^0-9.]/g, ""));
+  if (!matchName || !prediction || !Number.isFinite(oddsNumber) || oddsNumber <= 0) return null;
+
+  const confidenceNumber = Number(signal.confidence || signal.confidence_percent || signal.probability || "");
+  const confidence = Number.isFinite(confidenceNumber)
+    ? Math.max(1, Math.min(99, Math.round(confidenceNumber)))
+    : oddsNumber >= 1.5 ? 76 : 82;
+  const fixturePayload = signal.fixture_payload && typeof signal.fixture_payload === "object" ? signal.fixture_payload : {};
+  const existingTeams = fixturePayload.teams || fixturePayload.raw?.teams || {};
+  const existingLeague = fixturePayload.league || fixturePayload.raw?.league || {};
+  const existingFixture = fixturePayload.fixture || fixturePayload.raw?.fixture || {};
+  const teams = splitMatchName(matchName);
+  const league = String(signal.league || existingLeague.name || payload.defaultLeague || "Manual board").trim();
+  const startsAt = signal.starts_at || existingFixture.date || null;
+  const bookingCodes = signal.booking_codes && typeof signal.booking_codes === "object" && !Array.isArray(signal.booking_codes)
+    ? signal.booking_codes
+    : {};
+
+  return {
+    ...signal,
+    match_name: matchName,
+    league,
+    prediction,
+    odds: oddsNumber.toFixed(2),
+    confidence,
+    is_vip: oddsNumber >= 1.5,
+    booking_codes: bookingCodes,
+    source: "admin-ingest",
+    status: String(signal.status || "pending").trim().toLowerCase() || "pending",
+    starts_at: startsAt,
+    fixture_payload: {
+      ...fixturePayload,
+      provider: fixturePayload.provider || "admin-ingest",
+      fixture: {
+        ...existingFixture,
+        id: existingFixture.id || signal.match_id || signal.id || `admin-${Date.now()}-${index}`,
+        date: startsAt,
+        status: existingFixture.status || { short: "NS", long: "Scheduled" }
+      },
+      league: {
+        ...existingLeague,
+        name: league,
+        logo: existingLeague.logo || signal.league_logo || signal.league_logo_url || null
+      },
+      teams: {
+        home: {
+          ...(existingTeams.home || {}),
+          name: existingTeams.home?.name || signal.home_team || teams.home,
+          logo: existingTeams.home?.logo || signal.home_logo || signal.home_logo_url || null
+        },
+        away: {
+          ...(existingTeams.away || {}),
+          name: existingTeams.away?.name || signal.away_team || teams.away,
+          logo: existingTeams.away?.logo || signal.away_logo || signal.away_logo_url || null
+        }
+      },
+      metadata: {
+        ...(fixturePayload.metadata || {}),
+        source_name: payload.sourceName || payload.source_name || "Manual board",
+        edited_preview: true
+      }
+    }
+  };
 }
 
 function validateTip(payload) {
@@ -76,12 +152,14 @@ function validateTip(payload) {
 }
 
 async function publishIngestedSignals(payload) {
-  const parsed = parseSignalsFromText(String(payload.text || payload.raw || payload.ingest_text || ""), {
-    defaultSport: payload.defaultSport || "auto",
-    defaultLeague: payload.defaultLeague || "auto",
-    defaultTier: payload.defaultTier === "vip" ? "vip" : "freemium",
-    sourceName: payload.sourceName || payload.source_name || "Manual board"
-  }).slice(0, 60);
+  const parsed = (Array.isArray(payload.signals)
+    ? payload.signals.map((signal, index) => normalizeDirectSignal(signal, payload, index)).filter(Boolean)
+    : parseSignalsFromText(String(payload.text || payload.raw || payload.ingest_text || ""), {
+        defaultSport: payload.defaultSport || "auto",
+        defaultLeague: payload.defaultLeague || "auto",
+        defaultTier: payload.defaultTier === "vip" ? "vip" : "freemium",
+        sourceName: payload.sourceName || payload.source_name || "Manual board"
+      })).slice(0, 60);
 
   if (!parsed.length) {
     return {

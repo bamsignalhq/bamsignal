@@ -36,8 +36,6 @@ function allowedAdminEmails() {
 
 async function verifySupabaseAdmin(req) {
   const adminEmails = allowedAdminEmails();
-  if (!adminEmails.length) return false;
-
   const authHeader = req.headers.authorization || "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
   if (!bearer || !process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY) return false;

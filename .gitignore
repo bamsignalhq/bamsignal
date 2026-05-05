@@ -31,3 +31,4 @@ logo_light/
 assets/generated/
 android-emulator-*.png
 store-screenshots/
+.env*.local

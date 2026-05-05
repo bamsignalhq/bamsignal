@@ -2020,10 +2020,16 @@ function HomePage({
   const boardSource = dedupeGamesByMatch(filteredGames.length || activeStatus !== "All" ? filteredGames : adminContent.games)
     .filter((game) => !["Won", "Lost", "Finished"].includes(evidenceStatusLabel(game)))
     .filter((game) => !topPick || gameMatchKey(game) !== gameMatchKey(topPick));
-  const publicPredictions = boardSource.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2);
+  const publicHomeLimit = 10;
+  const visibleFreeLimit = 2;
+  const publicPredictions = boardSource
+    .filter((game) => game.tier === "freemium" && game.odds < 1.5)
+    .slice(0, visibleFreeLimit);
   const publicMatchKeys = new Set(publicPredictions.map(gameMatchKey));
-  const vipPreview = boardSource.filter((game) => game.tier === "vip" && !publicMatchKeys.has(gameMatchKey(game))).slice(0, 6);
-  const predictionBoard = [...publicPredictions, ...vipPreview];
+  const blurredPredictions = boardSource
+    .filter((game) => !publicMatchKeys.has(gameMatchKey(game)))
+    .slice(0, publicHomeLimit - publicPredictions.length);
+  const predictionBoard = [...publicPredictions, ...blurredPredictions];
   const topTeams = topPick ? splitMatchName(topPick.match) : null;
   const contactLink = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();

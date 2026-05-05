@@ -88,6 +88,14 @@ create table if not exists platform_settings (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists admin_users (
+  email text primary key,
+  role text not null default 'admin',
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists affiliate_clicks (
   id bigserial primary key,
   tip_id text not null,

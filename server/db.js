@@ -184,6 +184,73 @@ export async function setPlatformSetting(key, value) {
   return result.rows[0]?.value ?? value;
 }
 
+export async function ensureAdminUsersTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists admin_users (
+      email text primary key,
+      role text not null default 'admin',
+      active boolean not null default true,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    )
+  `);
+}
+
+export async function isPlatformAdminEmail(email) {
+  if (!pool || !email) return false;
+  await ensureAdminUsersTable();
+
+  const result = await query(
+    "select 1 from admin_users where lower(email) = lower($1) and active = true limit 1",
+    [email]
+  );
+  return result.rowCount > 0;
+}
+
+export async function listPlatformAdmins() {
+  if (!pool) return [];
+  await ensureAdminUsersTable();
+
+  const result = await query(
+    "select email, role, active, created_at, updated_at from admin_users order by created_at asc"
+  );
+  return result.rows;
+}
+
+export async function upsertPlatformAdmin(email, role = "admin") {
+  if (!pool) return null;
+  await ensureAdminUsersTable();
+
+  const normalized = String(email || "").trim().toLowerCase();
+  if (!normalized.includes("@")) throw new Error("Enter a valid admin email address.");
+
+  const result = await query(
+    `insert into admin_users (email, role, active, updated_at)
+     values ($1, $2, true, now())
+     on conflict (email)
+     do update set role = excluded.role, active = true, updated_at = now()
+     returning email, role, active, created_at, updated_at`,
+    [normalized, role || "admin"]
+  );
+  return result.rows[0];
+}
+
+export async function deactivatePlatformAdmin(email) {
+  if (!pool) return null;
+  await ensureAdminUsersTable();
+
+  const result = await query(
+    `update admin_users
+     set active = false, updated_at = now()
+     where lower(email) = lower($1)
+     returning email, role, active, created_at, updated_at`,
+    [String(email || "").trim().toLowerCase()]
+  );
+  return result.rows[0] || null;
+}
+
 export async function findAppUserIdentity({ email, phone }) {
   if (!pool) return null;
   await ensureAppUsersTable();

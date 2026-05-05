@@ -89,7 +89,7 @@ type Page =
   | { kind: "contact" }
   | { kind: "legal"; slug: string }
   | { kind: "admin" };
-type AdminTab = "overview" | "ingest" | "games" | "settings" | "login" | "content" | "payments" | "otp" | "support";
+type AdminTab = "overview" | "ingest" | "games" | "settings" | "security" | "login" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type AuthIntent = "login" | "signup" | "reset" | null;
 type PendingEmailOtpType = "signup" | "email";
@@ -484,6 +484,13 @@ type SupportMessage = {
   message: string;
   to: string;
   createdAt: string;
+};
+type AdminAccount = {
+  email: string;
+  role?: string;
+  active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
 type QuickPublishForm = {
   match: string;
@@ -3470,13 +3477,6 @@ function UserDashboard({
                     </article>
                   ))}
                 </div>
-                <label className="payment-reference-field">
-                  Reference fallback
-                  <input value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="Paste Paystack reference / trxref" />
-                </label>
-                <button className="secondary-action" onClick={() => confirmVipPayment(30, "VIP")} disabled={authBusy === "payment" || !paymentReference.trim()}>
-                  {authBusy === "payment" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Verify payment now
-                </button>
                 <small className="code-locked">BamSignal unlocks VIP automatically after Paystack returns a successful payment.</small>
               </div>
             </>
@@ -4113,6 +4113,9 @@ function AdminPage({
   const [adminAccess, setAdminAccess] = useState<"checking" | "granted" | "denied">("checking");
   const [adminLoginForm, setAdminLoginForm] = useState({ email: "", password: "", secret: "" });
   const [adminLoginBusy, setAdminLoginBusy] = useState(false);
+  const [adminSecurity, setAdminSecurity] = useState<{ envAdmins: string[]; dbAdmins: AdminAccount[] }>({ envAdmins: [], dbAdmins: [] });
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [adminPasswordForm, setAdminPasswordForm] = useState({ password: "", confirm: "" });
   useEffect(() => {
     window.localStorage.setItem("bamsignal-admin-quick-publish", JSON.stringify(quickPublish));
   }, [quickPublish]);
@@ -4131,6 +4134,20 @@ function AdminPage({
     const granted = response.ok && payload?.ok;
     setAdminAccess(granted ? "granted" : "denied");
     return granted;
+  };
+  const refreshAdminSecurity = async () => {
+    const response = await fetch("/api/auth/identity?action=admin-security", {
+      method: "POST",
+      headers: await getAdminAuthHeaders(),
+      body: JSON.stringify({ secret: quickPublish.publishSecret })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Could not load admin security.");
+    setAdminSecurity({
+      envAdmins: payload.envAdmins || [],
+      dbAdmins: payload.dbAdmins || []
+    });
+    return payload;
   };
   useEffect(() => {
     checkAdminAccess().catch(() => setAdminAccess("denied"));
@@ -4237,6 +4254,64 @@ function AdminPage({
     } catch (error) {
       setAdminStatus(`Settings save failed: ${friendlyAuthError(error)}`);
     }
+  };
+  const addAdminEmail = async () => {
+    if (!newAdminEmail.trim().includes("@")) {
+      setAdminStatus("Enter a valid admin email address.");
+      return;
+    }
+    setAdminStatus("Adding admin email...");
+    try {
+      const response = await fetch("/api/auth/identity?action=admin-add", {
+        method: "POST",
+        headers: await getAdminAuthHeaders(),
+        body: JSON.stringify({ email: newAdminEmail.trim(), role: "admin", secret: quickPublish.publishSecret })
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Could not add admin.");
+      setAdminSecurity({ ...adminSecurity, dbAdmins: payload.dbAdmins || [] });
+      setNewAdminEmail("");
+      setAdminStatus("Admin email added. That email must also exist as a Supabase Auth user with a password.");
+    } catch (error) {
+      setAdminStatus(`Admin add failed: ${friendlyAuthError(error)}`);
+    }
+  };
+  const removeAdminEmail = async (email: string) => {
+    setAdminStatus(`Disabling ${email}...`);
+    try {
+      const response = await fetch("/api/auth/identity?action=admin-remove", {
+        method: "POST",
+        headers: await getAdminAuthHeaders(),
+        body: JSON.stringify({ email, secret: quickPublish.publishSecret })
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Could not remove admin.");
+      setAdminSecurity({ ...adminSecurity, dbAdmins: payload.dbAdmins || [] });
+      setAdminStatus("Admin email disabled.");
+    } catch (error) {
+      setAdminStatus(`Admin remove failed: ${friendlyAuthError(error)}`);
+    }
+  };
+  const changeCurrentAdminPassword = async () => {
+    if (!supabase) {
+      setAdminStatus("Supabase Auth is not connected in this build.");
+      return;
+    }
+    if (adminPasswordForm.password.length < 8) {
+      setAdminStatus("Use at least 8 characters for the admin password.");
+      return;
+    }
+    if (adminPasswordForm.password !== adminPasswordForm.confirm) {
+      setAdminStatus("The two admin passwords do not match.");
+      return;
+    }
+    const { error } = await supabase.auth.updateUser({ password: adminPasswordForm.password });
+    if (error) {
+      setAdminStatus(friendlyAuthError(error));
+      return;
+    }
+    setAdminPasswordForm({ password: "", confirm: "" });
+    setAdminStatus("Admin password changed for the currently logged-in Supabase account.");
   };
   const publishAdminGame = async (game: AdminGame, schedule = quickPublish.schedule) => {
     const response = await fetch("/api/publish-tip", {
@@ -4428,7 +4503,7 @@ function AdminPage({
           </button>
           <p className="eyebrow">Admin command center</p>
           <h2>Secure admin access</h2>
-          <p>Login with an approved BamSignal admin email or use the private publish secret.</p>
+          <p>Use an approved Supabase admin email and password. The private publish secret is an emergency fallback only.</p>
           <div className="admin-form">
             <label>Admin email<input value={adminLoginForm.email} onChange={(event) => setAdminLoginForm({ ...adminLoginForm, email: event.target.value })} type="email" placeholder="admin@bamsignal.com" /></label>
             <label>Password<input value={adminLoginForm.password} onChange={(event) => setAdminLoginForm({ ...adminLoginForm, password: event.target.value })} type="password" placeholder="Admin password" /></label>
@@ -4467,13 +4542,14 @@ function AdminPage({
             { tab: "ingest", label: "Signal ingest", icon: <Activity size={15} /> },
             { tab: "games", label: "Games", icon: <Goal size={15} /> },
             { tab: "settings", label: "Settings", icon: <ShieldCheck size={15} /> },
+            { tab: "security", label: "Admin security", icon: <LockKeyhole size={15} /> },
             { tab: "login", label: "Login banners", icon: <Sparkles size={15} /> },
             { tab: "content", label: "News & ads", icon: <BarChart3 size={15} /> },
             { tab: "payments", label: "Payments", icon: <CreditCard size={15} /> },
             { tab: "otp", label: "OTP", icon: <ShieldCheck size={15} /> },
             { tab: "support", label: "Support inbox", icon: <MessageCircle size={15} /> }
           ].map(({ tab, label, icon }) => (
-            <button key={tab} className={activeAdminTab === tab ? "active" : ""} onClick={() => { setActiveAdminTab(tab as AdminTab); if (tab === "support") refreshSupportInbox(); }}>
+            <button key={tab} className={activeAdminTab === tab ? "active" : ""} onClick={() => { setActiveAdminTab(tab as AdminTab); if (tab === "support") refreshSupportInbox(); if (tab === "security") refreshAdminSecurity().catch((error) => setAdminStatus(friendlyAuthError(error))); }}>
               {icon}
               {label}
             </button>
@@ -4740,6 +4816,53 @@ function AdminPage({
         <div className="automation-list">
           <div><ClipboardCheck size={16} /><span>Manual paste remains the source of truth now. Provider rooms prepare BamSignal for SportsMonks or any future prediction API without redesigning admin.</span></div>
           <div><ShieldCheck size={16} /><span>Store API keys only as Vercel environment variables matching the env key name. Never paste live secret keys into the public UI.</span></div>
+        </div>
+      </section>}
+
+      {activeAdminTab === "security" && <section className="admin-panel">
+        <div className="admin-panel-head">
+          <div>
+            <p className="eyebrow">Admin security</p>
+            <h2>Control who can enter the command center.</h2>
+            <p className="admin-note">Best practice: login with a Supabase admin email and password. Keep the publish secret as an emergency fallback only, stored in Vercel env vars.</p>
+          </div>
+          <button className="secondary-action" onClick={() => refreshAdminSecurity().then(() => setAdminStatus("Admin security refreshed.")).catch((error) => setAdminStatus(friendlyAuthError(error)))}>
+            <ShieldCheck size={16} /> Refresh access list
+          </button>
+        </div>
+        <div className="admin-form quick-publish-form">
+          <label>Add approved admin email<input value={newAdminEmail} onChange={(event) => setNewAdminEmail(event.target.value)} type="email" placeholder="admin@bamsignal.com" /></label>
+          <label>New password for current admin<input value={adminPasswordForm.password} onChange={(event) => setAdminPasswordForm({ ...adminPasswordForm, password: event.target.value })} type="password" placeholder="At least 8 characters" /></label>
+          <label>Confirm new password<input value={adminPasswordForm.confirm} onChange={(event) => setAdminPasswordForm({ ...adminPasswordForm, confirm: event.target.value })} type="password" placeholder="Repeat password" /></label>
+        </div>
+        <div className="admin-action-row">
+          <button className="primary-action neon-action" onClick={addAdminEmail}><UserPlus size={16} /> Add admin email</button>
+          <button className="secondary-action" onClick={changeCurrentAdminPassword}><ShieldCheck size={16} /> Change my password</button>
+        </div>
+        <div className="automation-list">
+          <div><LockKeyhole size={16} /><span>Root admin emails from Vercel ADMIN_EMAILS: {adminSecurity.envAdmins.length ? adminSecurity.envAdmins.join(", ") : "not loaded yet"}</span></div>
+          <div><ShieldCheck size={16} /><span>Publish secret fallback is SIGNAL_WORKER_SECRET or CRON_SECRET in Vercel. Use it only if Supabase admin login is unavailable.</span></div>
+          <div><Users size={16} /><span>For a new admin to work, create that same email as a Supabase Auth user, then add it here as approved.</span></div>
+        </div>
+        <div className="admin-game-grid">
+          {adminSecurity.dbAdmins.length ? adminSecurity.dbAdmins.map((admin) => (
+            <article className={`admin-game-card ${admin.active ? "freemium" : "vip"}`} key={admin.email}>
+              <div className="admin-game-head">
+                <strong>{admin.email}</strong>
+                <span>{admin.active ? "Active" : "Disabled"}</span>
+              </div>
+              <p>{admin.role || "admin"}</p>
+              <button className="secondary-action danger-action" onClick={() => removeAdminEmail(admin.email)} disabled={!admin.active}>
+                <LockKeyhole size={16} /> Disable admin
+              </button>
+            </article>
+          )) : (
+            <article className="empty-signal-state wide">
+              <ShieldCheck size={22} />
+              <strong>No database admins loaded yet</strong>
+              <span>Use Refresh access list after logging in with a root admin email or publish secret.</span>
+            </article>
+          )}
         </div>
       </section>}
 

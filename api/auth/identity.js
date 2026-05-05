@@ -1,4 +1,13 @@
-import { findAppUserIdentity, getPlatformSetting, setPlatformSetting, upsertAppUserIdentity } from "../../server/db.js";
+import {
+  deactivatePlatformAdmin,
+  findAppUserIdentity,
+  getPlatformSetting,
+  isPlatformAdminEmail,
+  listPlatformAdmins,
+  setPlatformSetting,
+  upsertAppUserIdentity,
+  upsertPlatformAdmin
+} from "../../server/db.js";
 import { registerDevicePush } from "../../server/firebase.js";
 
 function normalizePhone(value = "") {
@@ -41,7 +50,17 @@ async function verifySupabaseAdmin(req) {
   });
   if (!response.ok) return false;
   const user = await response.json();
-  return adminEmails.includes(String(user.email || "").toLowerCase());
+  const email = String(user.email || "").toLowerCase();
+  return adminEmails.includes(email) || await isPlatformAdminEmail(email);
+}
+
+async function requireAdmin(req, res) {
+  const allowedSecrets = [process.env.SIGNAL_WORKER_SECRET, process.env.CRON_SECRET].filter(Boolean);
+  const provided = req.headers["x-bamsignal-secret"] || req.query.secret || req.body?.secret;
+  if (provided && allowedSecrets.includes(provided)) return true;
+  if (await verifySupabaseAdmin(req)) return true;
+  res.status(401).json({ ok: false, error: "Admin login required." });
+  return false;
 }
 
 export default async function handler(req, res) {
@@ -52,10 +71,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.query.action === "admin-session") {
-      const allowedSecrets = [process.env.SIGNAL_WORKER_SECRET, process.env.CRON_SECRET].filter(Boolean);
-      const provided = req.headers["x-bamsignal-secret"] || req.query.secret || req.body?.secret;
-      if (provided && allowedSecrets.includes(provided)) return res.status(200).json({ ok: true, method: "secret" });
-      if (await verifySupabaseAdmin(req)) return res.status(200).json({ ok: true, method: "supabase" });
+      if (await requireAdmin(req, res)) return res.status(200).json({ ok: true, method: "admin" });
       return res.status(401).json({ ok: false, error: "Admin login required." });
     }
 
@@ -65,12 +81,30 @@ export default async function handler(req, res) {
     }
 
     if (req.query.action === "settings-save") {
-      const allowedSecrets = [process.env.SIGNAL_WORKER_SECRET, process.env.CRON_SECRET].filter(Boolean);
-      const provided = req.headers["x-bamsignal-secret"] || req.query.secret || req.body?.secret;
-      const authorized = Boolean(provided && allowedSecrets.includes(provided)) || await verifySupabaseAdmin(req);
-      if (!authorized) return res.status(401).json({ ok: false, error: "Admin login required before saving settings." });
+      if (!await requireAdmin(req, res)) return;
       const value = await setPlatformSetting("admin_content", req.body?.value || {});
       return res.status(200).json({ ok: true, value });
+    }
+
+    if (req.query.action === "admin-security") {
+      if (!await requireAdmin(req, res)) return;
+      return res.status(200).json({
+        ok: true,
+        envAdmins: allowedAdminEmails(),
+        dbAdmins: await listPlatformAdmins()
+      });
+    }
+
+    if (req.query.action === "admin-add") {
+      if (!await requireAdmin(req, res)) return;
+      const admin = await upsertPlatformAdmin(req.body?.email, req.body?.role || "admin");
+      return res.status(200).json({ ok: true, admin, dbAdmins: await listPlatformAdmins() });
+    }
+
+    if (req.query.action === "admin-remove") {
+      if (!await requireAdmin(req, res)) return;
+      const admin = await deactivatePlatformAdmin(req.body?.email);
+      return res.status(200).json({ ok: true, admin, dbAdmins: await listPlatformAdmins() });
     }
 
     const identity = normalizePayload(req.body);

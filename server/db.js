@@ -149,6 +149,41 @@ export async function ensureAppUsersTable() {
   await query("create unique index if not exists app_users_phone_unique_idx on app_users (phone) where phone is not null and phone <> ''");
 }
 
+export async function ensurePlatformSettingsTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists platform_settings (
+      key text primary key,
+      value jsonb not null default '{}'::jsonb,
+      updated_at timestamptz not null default now()
+    )
+  `);
+}
+
+export async function getPlatformSetting(key, fallback = null) {
+  if (!pool) return fallback;
+  await ensurePlatformSettingsTable();
+
+  const result = await query("select value from platform_settings where key = $1 limit 1", [key]);
+  return result.rows[0]?.value ?? fallback;
+}
+
+export async function setPlatformSetting(key, value) {
+  if (!pool) return value;
+  await ensurePlatformSettingsTable();
+
+  const result = await query(
+    `insert into platform_settings (key, value, updated_at)
+     values ($1, $2, now())
+     on conflict (key)
+     do update set value = excluded.value, updated_at = now()
+     returning value`,
+    [key, value]
+  );
+  return result.rows[0]?.value ?? value;
+}
+
 export async function findAppUserIdentity({ email, phone }) {
   if (!pool) return null;
   await ensureAppUsersTable();

@@ -31,6 +31,7 @@ export const config = {
   cronSecret: process.env.CRON_SECRET,
   signalWorker: {
     enabled: process.env.SIGNAL_WORKER_ENABLED === "true",
+    autoFetchEnabled: process.env.SIGNAL_WORKER_AUTOFETCH === "true",
     secret: process.env.SIGNAL_WORKER_SECRET,
     timezone: process.env.SIGNAL_WORKER_TIMEZONE || "Africa/Lagos",
     cron: process.env.SIGNAL_WORKER_CRON || "0 9 * * *",

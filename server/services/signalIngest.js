@@ -16,6 +16,10 @@ function toNumber(value, fallback = null) {
   return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
+function tierFromOdds(odds) {
+  return Number(odds) >= 1.5;
+}
+
 function todayInTimezone(timezone = defaultTimezone) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: timezone,
@@ -126,7 +130,7 @@ function tipFromStructuredRow(row, options = {}, index = 0) {
   const odds = toNumber(rowValue(row, ["odds", "price"], ""), null);
   if (!home || !away || !prediction || !odds) return null;
 
-  const isVip = toBool(rowValue(row, ["is_vip", "vip", "tier", "room"], ""), options.defaultTier === "vip" || odds >= 1.5);
+  const isVip = tierFromOdds(odds);
   const confidence = toNumber(rowValue(row, ["confidence", "confidence_percent", "probability", "percent"], ""), isVip ? 76 : 82);
   const matchTime = parseTime(rowValue(row, ["match_time", "starts_at", "kickoff", "time", "date"], ""), rowValue(row, ["date"], ""));
   const bookmaker = clean(rowValue(row, ["bookmaker", "bookie"], ""));
@@ -219,7 +223,7 @@ function parseFreeformLine(line, options = {}, index = 0) {
     .replace(/\b(?:prediction|pick|market)[:\-]\s*/i, "")
     .replace(/[|\-—]+$/g, "")
     .trim() || "Over 1.5 goals";
-  const isVip = options.defaultTier === "vip" || odds >= 1.5;
+  const isVip = tierFromOdds(odds);
 
   return {
     match_name: `${home} vs ${away}`,

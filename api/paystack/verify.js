@@ -40,6 +40,55 @@ export default async function handler(req, res) {
   }
 
   const body = parseBody(req);
+  if (req.query.action === "initialize") {
+    const email = String(body.email || "").trim().toLowerCase();
+    const phone = normalizePhone(body.phone);
+    const name = String(body.name || "").trim();
+    const days = Number(body.days || body.planDays || 30);
+    const configuredAmount = Number(body.amount || 0);
+    const amount = configuredAmount > 0
+      ? Math.round(configuredAmount * 100)
+      : days <= 7
+        ? weeklyThresholdKobo
+        : monthlyThresholdKobo;
+
+    if (!email) return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
+    if (!Number.isFinite(days) || days <= 0 || days > 370) return res.status(400).json({ ok: false, error: "Invalid VIP plan duration." });
+
+    const callbackUrl = `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/app`;
+    const response = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        amount,
+        callback_url: callbackUrl,
+        channels: ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"],
+        metadata: {
+          app: "BamSignal",
+          name,
+          phone,
+          days,
+          plan_days: days,
+          plan: days <= 7 ? "weekly" : "monthly"
+        }
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.status) {
+      return res.status(502).json({ ok: false, error: payload?.message || "Paystack checkout could not start." });
+    }
+    return res.status(200).json({
+      ok: true,
+      reference: payload.data?.reference,
+      authorization_url: payload.data?.authorization_url,
+      access_code: payload.data?.access_code
+    });
+  }
+
   const reference = String(body.reference || body.trxref || "").trim();
   const email = String(body.email || "").trim().toLowerCase();
   const phone = normalizePhone(body.phone);

@@ -82,6 +82,12 @@ create unique index if not exists app_users_phone_unique_idx
   on app_users (phone)
   where phone is not null and phone <> '';
 
+create table if not exists platform_settings (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists affiliate_clicks (
   id bigserial primary key,
   tip_id text not null,

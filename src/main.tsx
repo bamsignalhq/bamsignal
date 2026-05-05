@@ -89,7 +89,7 @@ type Page =
   | { kind: "contact" }
   | { kind: "legal"; slug: string }
   | { kind: "admin" };
-type AdminTab = "overview" | "ingest" | "games" | "login" | "content" | "payments" | "otp" | "support";
+type AdminTab = "overview" | "ingest" | "games" | "settings" | "login" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type AuthIntent = "login" | "signup" | "reset" | null;
 type PendingEmailOtpType = "signup" | "email";
@@ -133,7 +133,9 @@ type UserProfile = {
   referralCode?: string;
 };
 type DeviceBinding = UserProfile & {
-  pin: string;
+  pin?: string;
+  pinHash?: string;
+  pinSalt?: string;
   deviceId: string;
 };
 type AdminGame = {
@@ -324,9 +326,22 @@ const formatMatchDateTime = (startsAt?: string) => {
 const gameBoardStatus = (game: AdminGame): Fixture["status"] => {
   const normalized = (game.status || "").trim().toLowerCase();
   const liveStatuses = new Set(["1h", "2h", "ht", "et", "p", "bt", "int", "live", "in_play", "in-play"]);
+  const finishedStatuses = new Set(["won", "lost", "void", "finished", "ft", "aet", "pen", "cancelled", "postponed"]);
+  if (finishedStatuses.has(normalized) || game.result) return "Finished";
   if (liveStatuses.has(normalized)) return "Live";
   const startsAt = game.startsAt ? new Date(game.startsAt) : null;
   if (!startsAt || Number.isNaN(startsAt.getTime())) return "Upcoming";
+  const now = new Date();
+  const elapsedMs = now.getTime() - startsAt.getTime();
+  const sportText = `${game.league} ${game.match}`.toLowerCase();
+  const expectedDurationMs = sportText.includes("basket") || sportText.includes("nba") || sportText.includes("nbl")
+    ? 3 * 60 * 60 * 1000
+    : sportText.includes("baseball") || sportText.includes("mlb")
+      ? 4 * 60 * 60 * 1000
+      : sportText.includes("tennis")
+        ? 4 * 60 * 60 * 1000
+        : 2.4 * 60 * 60 * 1000;
+  if (elapsedMs >= 0 && elapsedMs <= expectedDurationMs) return "Live";
   const dayFormatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Lagos",
     year: "numeric",
@@ -334,7 +349,6 @@ const gameBoardStatus = (game: AdminGame): Fixture["status"] => {
     day: "2-digit"
   });
   const startDay = dayFormatter.format(startsAt);
-  const now = new Date();
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   if (startDay === dayFormatter.format(now)) return "Today";
   if (startDay === dayFormatter.format(tomorrow)) return "Tomorrow";
@@ -447,6 +461,14 @@ type AdminContent = {
   vipMonthlyPrice: number;
   vipWeeklyLink: string;
   vipMonthlyLink: string;
+  predictionApis: {
+    id: number;
+    name: string;
+    baseUrl: string;
+    keyEnvName: string;
+    enabled: boolean;
+    notes: string;
+  }[];
   loginBanners: {
     firstTimer: LoginBanner;
     returning: LoginBanner;
@@ -541,7 +563,7 @@ type Fixture = {
   over25: number;
   corners: number;
   score: string;
-  status: "Live" | "Today" | "Tomorrow" | "Upcoming";
+  status: "Live" | "Today" | "Tomorrow" | "Upcoming" | "Finished";
 };
 
 type Evidence = {
@@ -868,6 +890,24 @@ const defaultAdminContent: AdminContent = {
   vipMonthlyPrice: 2950,
   vipWeeklyLink: "https://paystack.com/pay/bamsignal-vip-weekly",
   vipMonthlyLink: "https://paystack.com/pay/bamsignal-vip-monthly",
+  predictionApis: [
+    {
+      id: 1,
+      name: "SportsMonks",
+      baseUrl: "https://api.sportmonks.com/v3",
+      keyEnvName: "SPORTMONKS_API_KEY",
+      enabled: false,
+      notes: "Long-run enrichment provider for fixtures, teams, logos, and results."
+    },
+    {
+      id: 2,
+      name: "TheSportsDB",
+      baseUrl: "https://www.thesportsdb.com/api/v1/json",
+      keyEnvName: "THESPORTSDB_API_KEY",
+      enabled: true,
+      notes: "Fallback lookup for team names, logos, and multi-sport result settlement."
+    }
+  ],
   loginBanners: {
     firstTimer: {
       headline: "Start with 2 free low-risk signals",
@@ -1501,6 +1541,16 @@ const loadAdminContent = (): AdminContent => {
       adLinks: [...(parsed.adLinks ?? []), "", "", "", "", ""].slice(0, 5),
       affiliateLinks: { ...defaultAdminContent.affiliateLinks, ...(parsed.affiliateLinks ?? {}) },
       affiliateVisible: { ...defaultAdminContent.affiliateVisible, ...(parsed.affiliateVisible ?? {}) },
+      predictionApis: Array.isArray(parsed.predictionApis) && parsed.predictionApis.length
+        ? parsed.predictionApis.map((api, index) => ({
+            id: api.id ?? Date.now() + index,
+            name: api.name ?? "",
+            baseUrl: api.baseUrl ?? "",
+            keyEnvName: api.keyEnvName ?? "",
+            enabled: Boolean(api.enabled),
+            notes: api.notes ?? ""
+          }))
+        : defaultAdminContent.predictionApis,
       loginBanners: {
         firstTimer: { ...defaultAdminContent.loginBanners.firstTimer, ...(parsed.loginBanners?.firstTimer ?? {}) },
         returning: { ...defaultAdminContent.loginBanners.returning, ...(parsed.loginBanners?.returning ?? {}) },
@@ -1524,6 +1574,18 @@ const loadDeviceBinding = (): DeviceBinding | null => {
   } catch {
     return null;
   }
+};
+
+const randomSalt = () => {
+  const bytes = new Uint8Array(16);
+  window.crypto?.getRandomValues(bytes);
+  return Array.from(bytes).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+};
+
+const hashPin = async (pin: string, salt: string) => {
+  const input = new TextEncoder().encode(`${salt}:${pin}`);
+  const digest = await window.crypto.subtle.digest("SHA-256", input);
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 };
 
 const faq = [
@@ -1637,6 +1699,26 @@ function App() {
   useEffect(() => {
     window.localStorage.setItem("bamsignal-admin-content", JSON.stringify(adminContent));
   }, [adminContent]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/identity?action=settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+      cache: "no-store"
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => {
+        if (cancelled || !payload?.ok || !payload.value) return;
+        window.localStorage.setItem("bamsignal-admin-content", JSON.stringify(payload.value));
+        setAdminContent(loadAdminContent());
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -2338,8 +2420,8 @@ function UserDashboard({
   const referralVipCredit = Math.floor(referralPoints / 500);
   const isWebAppRoute = Capacitor.getPlatform() === "web";
   const vipPlans = useMemo(() => [
-    { id: "weekly", label: "Weekly VIP", price: formatNaira(adminContent.vipWeeklyPrice), days: 7, link: adminContent.vipWeeklyLink },
-    { id: "monthly", label: "Monthly VIP", price: formatNaira(adminContent.vipMonthlyPrice), days: 30, link: adminContent.vipMonthlyLink }
+    { id: "weekly", label: "Weekly VIP", price: formatNaira(adminContent.vipWeeklyPrice), amount: adminContent.vipWeeklyPrice, days: 7, link: adminContent.vipWeeklyLink },
+    { id: "monthly", label: "Monthly VIP", price: formatNaira(adminContent.vipMonthlyPrice), amount: adminContent.vipMonthlyPrice, days: 30, link: adminContent.vipMonthlyLink }
   ], [adminContent.vipMonthlyLink, adminContent.vipMonthlyPrice, adminContent.vipWeeklyLink, adminContent.vipWeeklyPrice]);
   const activeAuthBanner = useMemo(() => {
     const isWeekend = new Date().getDay() === 5 || new Date().getDay() === 6 || new Date().getDay() === 0;
@@ -2578,15 +2660,18 @@ function UserDashboard({
     refreshMembershipStatus(nextProfile);
     setAuthMessage("Secure login enabled. Next time, use your 6-digit PIN or your phone Face ID, PIN, or pattern.");
   };
-  const bindDevice = (profile: UserProfile, pin: string) => {
+  const bindDevice = async (profile: UserProfile, pin: string) => {
     if (!/^\d{6}$/.test(pin)) {
       setAuthMessage("Create a 6-digit BamSignal PIN.");
       return;
     }
+    const pinSalt = randomSalt();
+    const pinHash = await hashPin(pin, pinSalt);
     const binding: DeviceBinding = {
       ...profile,
       phone: normalizePhone(profile.phone) || profile.phone,
-      pin,
+      pinHash,
+      pinSalt,
       deviceId: `bamsignal-${Date.now()}`
     };
     window.localStorage.setItem("bamsignal-device-binding", JSON.stringify(binding));
@@ -2717,12 +2802,15 @@ function UserDashboard({
     beginTrustedSession(profile);
     setAuthMessage(`${provider} sign-in connected. Opening your BamSignal room.`);
   };
-  const unlockWithPin = () => {
+  const unlockWithPin = async () => {
     if (!deviceBinding) {
       setAuthMode("login");
       return;
     }
-    if (pinInput !== deviceBinding.pin) {
+    const valid = deviceBinding.pinHash && deviceBinding.pinSalt
+      ? await hashPin(pinInput, deviceBinding.pinSalt) === deviceBinding.pinHash
+      : pinInput === deviceBinding.pin;
+    if (!valid) {
       setAuthMessage("That PIN is not correct.");
       return;
     }
@@ -2849,7 +2937,7 @@ function UserDashboard({
         if (data.session?.user) {
           await registerSignupIdentity(nextProfile);
           setVerifiedEmails((emails) => Array.from(new Set([...emails, nextProfile.email])));
-          bindDevice(nextProfile, signupForm.pin);
+          await bindDevice(nextProfile, signupForm.pin);
           setAuthMessage("Account created. Welcome to your BamSignal room.");
           return;
         }
@@ -2924,7 +3012,7 @@ function UserDashboard({
         setUserProfile(pendingSignup);
         await registerSignupIdentity(pendingSignup);
         setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
-        bindDevice(pendingSignup, signupForm.pin);
+        await bindDevice(pendingSignup, signupForm.pin);
         setAuthBusy(null);
         return;
       }
@@ -2946,18 +3034,54 @@ function UserDashboard({
     setUserProfile(pendingSignup);
     await registerSignupIdentity(pendingSignup);
     setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
-    bindDevice(pendingSignup, signupForm.pin);
+    await bindDevice(pendingSignup, signupForm.pin);
     setAuthBusy(null);
   };
-  const finishPinSetup = () => {
+  const finishPinSetup = async () => {
     const profile = pendingLoginProfile ?? userProfile;
-    bindDevice(profile, setupPin);
+    await bindDevice(profile, setupPin);
+  };
+
+  const startVipCheckout = async (plan: typeof vipPlans[number]) => {
+    if (!userProfile.email) {
+      setAuthMessage("Add a verified email to your profile before starting Paystack checkout.");
+      return;
+    }
+    setAuthBusy("payment");
+    setAuthMessage("Opening secure Paystack checkout...");
+    try {
+      const response = await fetch("/api/paystack/verify?action=initialize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userProfile.email,
+          phone: userProfile.phone,
+          name: userProfile.name,
+          days: plan.days,
+          amount: plan.amount
+        })
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok || !payload.authorization_url) {
+        throw new Error(payload?.error || "Paystack checkout could not start.");
+      }
+      setPaymentReference(payload.reference || "");
+      if (Capacitor.isNativePlatform()) {
+        await Browser.open({ url: payload.authorization_url, presentationStyle: "fullscreen" });
+      } else {
+        window.location.href = payload.authorization_url;
+      }
+    } catch (error) {
+      setAuthMessage(friendlyAuthError(error));
+    } finally {
+      setAuthBusy(null);
+    }
   };
 
   const confirmVipPayment = async (days = 30, label = "monthly") => {
     const reference = paymentReference.trim();
     if (!reference) {
-      setAuthMessage("Enter the Paystack reference from your payment receipt, then verify.");
+      setAuthMessage("No Paystack reference found yet. Start checkout from the VIP room first.");
       return;
     }
     setAuthBusy("payment");
@@ -2982,10 +3106,16 @@ function UserDashboard({
       setIsPremium(true);
       setVipInviteLink(payload.invite_link || "");
       setAuthMessage(`${label} payment verified. VIP is active until ${expiry.toLocaleDateString("en-NG")}.`);
+      window.history.replaceState(null, "", "/app");
     } finally {
       setAuthBusy(null);
     }
   };
+
+  useEffect(() => {
+    if (!isAuthed || isPremium || !paymentReference || authBusy === "payment") return;
+    confirmVipPayment(30, "VIP").catch(() => undefined);
+  }, [isAuthed, isPremium, paymentReference]);
 
   const sendReset = async () => {
     if (supabase && resetEmail) {
@@ -3334,18 +3464,20 @@ function UserDashboard({
                       <h3>{plan.label}</h3>
                       <strong>{plan.price}</strong>
                       <small>{plan.days} days of VIP games, booking codes, premium app room, and Telegram VIP access.</small>
-                      <a className="primary-action neon-action" href={plan.link} target="_blank" rel="noreferrer"><CreditCard size={16} /> Pay {plan.price}</a>
-                      <button className="secondary-action" onClick={() => confirmVipPayment(plan.days, plan.label)} disabled={authBusy === "payment"}>
-                        {authBusy === "payment" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Verify {plan.id} payment
+                      <button className="primary-action neon-action" onClick={() => startVipCheckout(plan)} disabled={authBusy === "payment"}>
+                        {authBusy === "payment" ? <Loader2 className="spin" size={16} /> : <CreditCard size={16} />} Pay {plan.price}
                       </button>
                     </article>
                   ))}
                 </div>
                 <label className="payment-reference-field">
-                  Paystack reference
+                  Reference fallback
                   <input value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="Paste Paystack reference / trxref" />
                 </label>
-                <small className="code-locked">VIP opens only after Paystack confirms a successful transaction.</small>
+                <button className="secondary-action" onClick={() => confirmVipPayment(30, "VIP")} disabled={authBusy === "payment" || !paymentReference.trim()}>
+                  {authBusy === "payment" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Verify payment now
+                </button>
+                <small className="code-locked">BamSignal unlocks VIP automatically after Paystack returns a successful payment.</small>
               </div>
             </>
           )}
@@ -4050,6 +4182,27 @@ function AdminPage({
       : game);
     setAdminContent({ ...adminContent, games });
   };
+  const updatePredictionApi = (apiIndex: number, patch: Partial<AdminContent["predictionApis"][number]>) => {
+    setAdminContent({
+      ...adminContent,
+      predictionApis: adminContent.predictionApis.map((api, index) => index === apiIndex ? { ...api, ...patch } : api)
+    });
+  };
+  const addPredictionApi = () => {
+    setAdminContent({
+      ...adminContent,
+      predictionApis: [
+        ...adminContent.predictionApis,
+        { id: Date.now(), name: "", baseUrl: "", keyEnvName: "", enabled: false, notes: "" }
+      ]
+    });
+  };
+  const removePredictionApi = (apiIndex: number) => {
+    setAdminContent({
+      ...adminContent,
+      predictionApis: adminContent.predictionApis.filter((_, index) => index !== apiIndex)
+    });
+  };
   const saveQuickGameToApp = (publishStatus = "Saved to app game list.") => {
     const nextGame = quickPublishToAdminGame(quickPublish);
     const games = [
@@ -4067,6 +4220,23 @@ function AdminPage({
     const token = session?.data.session?.access_token;
     if (token) headers.Authorization = `Bearer ${token}`;
     return headers;
+  };
+  const saveAdminSettings = async (message = "Admin settings saved to BamSignal database.") => {
+    setAdminStatus("Saving settings to database...");
+    try {
+      const response = await fetch("/api/auth/identity?action=settings-save", {
+        method: "POST",
+        headers: await getAdminAuthHeaders(),
+        body: JSON.stringify({ value: adminContent, secret: quickPublish.publishSecret })
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Settings save failed");
+      window.localStorage.setItem("bamsignal-admin-content", JSON.stringify(payload.value));
+      setAdminContent(loadAdminContent());
+      setAdminStatus(message);
+    } catch (error) {
+      setAdminStatus(`Settings save failed: ${friendlyAuthError(error)}`);
+    }
   };
   const publishAdminGame = async (game: AdminGame, schedule = quickPublish.schedule) => {
     const response = await fetch("/api/publish-tip", {
@@ -4132,6 +4302,34 @@ function AdminPage({
       })
       .catch((error) => setAdminStatus(`Publish failed: ${friendlyAuthError(error)}`))
       .finally(() => setIsPublishing(false));
+  };
+  const saveGameOutcome = async (game: AdminGame) => {
+    setIsPublishing(true);
+    setAdminStatus(`Saving outcome for ${game.match}...`);
+    try {
+      const response = await fetch("/api/publish-tip", {
+        method: "POST",
+        headers: await getAdminAuthHeaders(),
+        body: JSON.stringify({
+          action: "settle",
+          id: typeof game.id === "string" && /^[0-9a-f-]{36}$/i.test(game.id) ? game.id : "",
+          match_name: game.match,
+          prediction: game.pick,
+          is_vip: game.tier === "vip",
+          status: game.status || "pending",
+          score: game.result || ""
+        })
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Outcome save failed");
+      setAdminStatus(payload.count
+        ? `Outcome saved for ${game.match}. Evidence board will update from the database.`
+        : `No database match found for ${game.match}. Publish it first, then save the result.`);
+    } catch (error) {
+      setAdminStatus(`Outcome save failed: ${friendlyAuthError(error)}`);
+    } finally {
+      setIsPublishing(false);
+    }
   };
   const ingestSignals = async (mode: "preview" | "publish") => {
     if (!ingestForm.text.trim()) {
@@ -4268,6 +4466,7 @@ function AdminPage({
             { tab: "overview", label: "Overview", icon: <ClipboardCheck size={15} /> },
             { tab: "ingest", label: "Signal ingest", icon: <Activity size={15} /> },
             { tab: "games", label: "Games", icon: <Goal size={15} /> },
+            { tab: "settings", label: "Settings", icon: <ShieldCheck size={15} /> },
             { tab: "login", label: "Login banners", icon: <Sparkles size={15} /> },
             { tab: "content", label: "News & ads", icon: <BarChart3 size={15} /> },
             { tab: "payments", label: "Payments", icon: <CreditCard size={15} /> },
@@ -4347,7 +4546,7 @@ function AdminPage({
           </div>
           <button className="secondary-action" onClick={() => setIngestForm({
             ...ingestForm,
-            text: "sport,league,home_team,away_team,prediction,odds,is_vip,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,FALSE,84,2026-05-05 20:00,SportyBet,SB123,,,"
+            text: "sport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,,,"
           })}>
             <ClipboardCheck size={16} /> Load CSV sample
           </button>
@@ -4366,18 +4565,18 @@ function AdminPage({
           <label>Default league<input value={ingestForm.defaultLeague} onChange={(event) => setIngestForm({ ...ingestForm, defaultLeague: event.target.value })} placeholder="Optional, e.g. Premier League / NBA" /></label>
           <label>Default room
             <select value={ingestForm.defaultTier} onChange={(event) => setIngestForm({ ...ingestForm, defaultTier: event.target.value as IngestForm["defaultTier"] })}>
-              <option value="freemium">Freemium unless odds are 1.50+</option>
+              <option value="freemium">Auto-tier by odds: below 1.50 free, 1.50+ VIP</option>
               <option value="vip">VIP by default</option>
             </select>
           </label>
           <label className="inline-admin-toggle"><input type="checkbox" checked={ingestForm.notify} onChange={(event) => setIngestForm({ ...ingestForm, notify: event.target.checked })} /> Notify app and Telegram after publishing</label>
         </div>
         <label className="admin-textarea-label">
-          Paste raw Deepbetting text, CSV, or JSON
+          Paste raw predictions from any reliable source, CSV, or JSON
           <textarea
             value={ingestForm.text}
             onChange={(event) => setIngestForm({ ...ingestForm, text: event.target.value })}
-            placeholder={"CSV format:\nsport,league,home_team,away_team,prediction,odds,is_vip,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,FALSE,84,2026-05-05 20:00,SportyBet,SB123,,,\n\nText format:\nChelsea vs Arsenal | Over 1.5 goals | 1.42\nMan City vs Tottenham - Home win + over 1.5 - 2.18"}
+            placeholder={"CSV format:\nsport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,,,\n\nText format:\nChelsea vs Arsenal | Over 1.5 goals | 1.42\nMan City vs Tottenham - Home win + over 1.5 - 2.18"}
             rows={12}
           />
         </label>
@@ -4390,7 +4589,8 @@ function AdminPage({
           </button>
         </div>
         <div className="automation-list">
-          <div><ClipboardCheck size={16} /><span>Best CSV columns: sport, league, home_team, away_team, prediction, odds, is_vip, confidence, match_time.</span></div>
+          <div><ClipboardCheck size={16} /><span>Best CSV columns: sport, league, home_team, away_team, prediction, odds, confidence, match_time.</span></div>
+          <div><Goal size={16} /><span>Odds below 1.50 go to freemium. Odds 1.50 and above go to VIP automatically.</span></div>
           <div><Goal size={16} /><span>Optional pro columns: bookmaker, booking_code, league_logo_url, home_logo_url, away_logo_url.</span></div>
           <div><ShieldCheck size={16} /><span>Preview first. Publish only after the extracted matches look right.</span></div>
         </div>
@@ -4448,6 +4648,16 @@ function AdminPage({
                 </label>
                 <label>Odds<input value={game.odds} type="number" step="0.01" onChange={(event) => updateAdminGame(index, { odds: Number(event.target.value) || 1 })} /></label>
                 <label>Confidence %<input value={game.confidence} type="number" min="1" max="99" onChange={(event) => updateAdminGame(index, { confidence: Number(event.target.value) || 1 })} /></label>
+                <label>Outcome
+                  <select value={game.status || "pending"} onChange={(event) => updateAdminGame(index, { status: event.target.value })}>
+                    <option value="pending">Pending</option>
+                    <option value="live">Live now</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                    <option value="void">Void</option>
+                  </select>
+                </label>
+                <label>Final score/result<input value={game.result || ""} onChange={(event) => updateAdminGame(index, { result: event.target.value })} placeholder="2-1 / cancelled / void" /></label>
               </div>
               <div className="booking-admin-head">
                 <strong>Booking codes</strong>
@@ -4484,13 +4694,52 @@ function AdminPage({
               <button className="primary-action neon-action" onClick={() => publishGame(game)} disabled={isPublishing}>
                 {isPublishing ? <Loader2 className="spin" size={16} /> : <Send size={16} />} Publish selected game now
               </button>
+              <button className="secondary-action" onClick={() => saveGameOutcome(game)} disabled={isPublishing}>
+                {isPublishing ? <Loader2 className="spin" size={16} /> : <Trophy size={16} />} Save outcome to evidence
+              </button>
             </article>
           ))}
         </div>
         <div className="admin-action-row">
-          <button className="secondary-action" onClick={() => setAdminStatus("Games saved. User app/game rooms now use the latest admin configuration.")}>
+          <button className="secondary-action" onClick={() => saveAdminSettings("Games setup saved to the BamSignal database.")}>
             <ClipboardCheck size={16} /> Save games setup
           </button>
+        </div>
+      </section>}
+
+      {activeAdminTab === "settings" && <section className="admin-panel">
+        <div className="admin-panel-head">
+          <div>
+            <p className="eyebrow">Platform settings</p>
+            <h2>Database-backed command controls.</h2>
+            <p className="admin-note">These controls are saved in Supabase, so web, app, admin, and future workers read the same launch settings instead of local-only browser storage.</p>
+          </div>
+          <button className="primary-action neon-action" onClick={() => saveAdminSettings()}><ClipboardCheck size={16} /> Save all settings</button>
+        </div>
+        <div className="admin-form quick-publish-form">
+          <label>Public booking button text<input value={adminContent.bookingButtonText} onChange={(event) => setAdminContent({ ...adminContent, bookingButtonText: event.target.value })} placeholder="Get Bet9ja Code / Get SportyBet Code" /></label>
+          <label>Weekly VIP price (₦)<input value={adminContent.vipWeeklyPrice} type="number" min="0" onChange={(event) => setAdminContent({ ...adminContent, vipWeeklyPrice: Number(event.target.value) || 0 })} /></label>
+          <label>Monthly VIP price (₦)<input value={adminContent.vipMonthlyPrice} type="number" min="0" onChange={(event) => setAdminContent({ ...adminContent, vipMonthlyPrice: Number(event.target.value) || 0 })} /></label>
+        </div>
+        <div className="booking-admin-head">
+          <strong>Prediction and enrichment APIs</strong>
+          <button className="secondary-action" onClick={addPredictionApi}><Activity size={15} /> Add provider room</button>
+        </div>
+        <div className="booking-entry-grid">
+          {adminContent.predictionApis.map((api, index) => (
+            <article className="booking-entry-card" key={api.id}>
+              <label>Provider name<input value={api.name} onChange={(event) => updatePredictionApi(index, { name: event.target.value })} placeholder="SportsMonks / TheSportsDB / Custom" /></label>
+              <label>Base URL<input value={api.baseUrl} onChange={(event) => updatePredictionApi(index, { baseUrl: event.target.value })} placeholder="https://api.provider.com" /></label>
+              <label>Vercel env key name<input value={api.keyEnvName} onChange={(event) => updatePredictionApi(index, { keyEnvName: event.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "_") })} placeholder="SPORTMONKS_API_KEY" /></label>
+              <label>Admin notes<input value={api.notes} onChange={(event) => updatePredictionApi(index, { notes: event.target.value })} placeholder="What this provider should do" /></label>
+              <label className="inline-admin-toggle"><input type="checkbox" checked={api.enabled} onChange={(event) => updatePredictionApi(index, { enabled: event.target.checked })} /> Enabled for workers when integrated</label>
+              <button className="text-action" onClick={() => removePredictionApi(index)}>Remove provider</button>
+            </article>
+          ))}
+        </div>
+        <div className="automation-list">
+          <div><ClipboardCheck size={16} /><span>Manual paste remains the source of truth now. Provider rooms prepare BamSignal for SportsMonks or any future prediction API without redesigning admin.</span></div>
+          <div><ShieldCheck size={16} /><span>Store API keys only as Vercel environment variables matching the env key name. Never paste live secret keys into the public UI.</span></div>
         </div>
       </section>}
 
@@ -4534,7 +4783,7 @@ function AdminPage({
           })}
         </div>
         <div className="admin-action-row">
-          <button className="primary-action neon-action" onClick={() => setAdminStatus("Login and reset banners saved.")}>
+          <button className="primary-action neon-action" onClick={() => saveAdminSettings("Login and reset banners saved to database.")}>
             <ClipboardCheck size={16} /> Save login banners
           </button>
         </div>
@@ -4564,7 +4813,7 @@ function AdminPage({
           ))}
         </div>
         <div className="admin-action-row">
-          <button className="primary-action neon-action" onClick={() => setAdminStatus("News and ad slots saved. Public pages now use the latest content.")}>
+          <button className="primary-action neon-action" onClick={() => saveAdminSettings("News, ads, and affiliate visibility saved to database.")}>
             <ClipboardCheck size={16} /> Save news and ads
           </button>
         </div>
@@ -4590,7 +4839,7 @@ function AdminPage({
           <div><Users size={16} /><span>Admin override room reserved for manual verification, refunds, and support fixes.</span></div>
         </div>
         <div className="admin-action-row">
-          <button className="primary-action neon-action" onClick={() => setAdminStatus("Payment settings saved. VIP prices and Paystack links are updated in the app.")}>
+          <button className="primary-action neon-action" onClick={() => saveAdminSettings("Payment settings saved. VIP prices are now database-backed.")}>
             <ClipboardCheck size={16} /> Save payment settings
           </button>
         </div>
@@ -4614,7 +4863,7 @@ function AdminPage({
           <label>API key storage<input value="SENDCHAMP_API_KEY env var only" readOnly /></label>
         </div>
         <div className="admin-action-row">
-          <button className="primary-action neon-action" onClick={() => setAdminStatus("OTP settings saved. Phone verification will use the selected channel when Sendchamp is active.")}>
+          <button className="primary-action neon-action" onClick={() => saveAdminSettings("OTP settings saved to database.")}>
             <ClipboardCheck size={16} /> Save OTP settings
           </button>
         </div>

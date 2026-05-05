@@ -930,6 +930,21 @@ async function publishDailyTip(tip, { broadcast = true } = {}) {
 }
 
 export async function runDailySignalWorker(options = {}) {
+  if (!config.signalWorker.autoFetchEnabled) {
+    return {
+      ok: true,
+      manual_only: true,
+      date: todayInLagos(),
+      dates: boardDates(),
+      timezone: config.signalWorker.timezone,
+      stored: 0,
+      freemium: 0,
+      vip: 0,
+      results: [],
+      message: "Manual signal ingestion is the active BamSignal source of truth. Use admin Signal ingest to publish today, tomorrow, live, and VIP boards."
+    };
+  }
+
   const fixtures = await fetchCandidateFixtures();
   const candidates = await buildTipCandidates(fixtures);
   const dates = boardDates();
@@ -1078,7 +1093,6 @@ async function seedDailyBoardIfEmpty() {
 
 export async function getDailyGames() {
   await ensureDailyGamesTable();
-  await seedDailyBoardIfEmpty();
   await refreshDailyGameStatuses().catch((error) => {
     console.warn("Daily game status refresh failed", {
       code: error.code,
@@ -1092,8 +1106,9 @@ export async function getDailyGames() {
     `select *
      from daily_games
      where game_date = any($1::date[])
+       and ($2::boolean = true or coalesce(source, '') <> 'fixture-api')
      order by is_vip asc, confidence desc nulls last, starts_at asc nulls last, created_at desc`,
-    [dates]
+    [dates, config.signalWorker.autoFetchEnabled]
   );
 
   if (dailyResult.rows.length) {
@@ -1113,8 +1128,9 @@ export async function getDailyGames() {
     `select *
      from tips
      where created_at >= (date_trunc('day', now() at time zone $1) at time zone $1)
+       and ($2::boolean = true or coalesce(source, '') <> 'fixture-api')
      order by is_vip asc, created_at desc`,
-    [config.signalWorker.timezone]
+    [config.signalWorker.timezone, config.signalWorker.autoFetchEnabled]
   );
 
   if (!result.rows.length) {

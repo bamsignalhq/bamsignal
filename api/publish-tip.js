@@ -1,5 +1,5 @@
 import { config } from "../server/config.js";
-import { insertTip, upsertDailyGames } from "../server/db.js";
+import { ensureDailyGamesTable, ensureTipsTable, insertTip, query, upsertDailyGames } from "../server/db.js";
 import { sendTipPush } from "../server/firebase.js";
 import { broadcastTip } from "../server/telegram.js";
 import { enrichTipWithFixture } from "../server/services/signalWorker.js";
@@ -138,6 +138,71 @@ async function publishIngestedSignals(payload) {
   };
 }
 
+async function settleManualSignal(payload) {
+  const id = String(payload.id || "").trim();
+  const matchName = String(payload.match_name || payload.match || "").trim();
+  const prediction = String(payload.prediction || payload.pick || "").trim();
+  const isVip = typeof payload.is_vip === "boolean" ? payload.is_vip : payload.tier === "vip";
+  const status = String(payload.status || "").trim().toLowerCase();
+  const allowedStatuses = new Set(["won", "lost", "void", "pending"]);
+  if (!allowedStatuses.has(status)) {
+    return { status: 400, body: { ok: false, error: "Outcome must be won, lost, void, or pending." } };
+  }
+
+  const resultPayload = {
+    score: String(payload.score || payload.result || "").trim(),
+    result: String(payload.result || payload.score || "").trim(),
+    manual: true,
+    settled_by: "admin",
+    evaluated_at: new Date().toISOString()
+  };
+
+  await ensureDailyGamesTable();
+  await ensureTipsTable();
+
+  const params = [status, resultPayload];
+  let where = "";
+  if (id) {
+    params.push(id);
+    where = "id = $3::uuid";
+  } else if (matchName && prediction) {
+    params.push(matchName, prediction, isVip);
+    where = "lower(match_name) = lower($3) and lower(prediction) = lower($4) and is_vip = $5";
+  } else {
+    return { status: 400, body: { ok: false, error: "Select a game or provide match plus prediction before saving an outcome." } };
+  }
+
+  const daily = await query(
+    `update daily_games
+     set status = $1,
+         result_payload = $2,
+         updated_at = now()
+     where ${where}
+     returning *`,
+    params
+  );
+  const tips = await query(
+    `update tips
+     set status = $1,
+         result_payload = $2,
+         settled_at = case when $1 in ('won', 'lost', 'void') then now() else settled_at end,
+         updated_at = now()
+     where ${where}
+     returning *`,
+    params
+  );
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      daily_games: daily.rows,
+      tips: tips.rows,
+      count: daily.rowCount + tips.rowCount
+    }
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -148,6 +213,11 @@ export default async function handler(req, res) {
   if (!auth.ok) return res.status(auth.status).json({ ok: false, error: auth.error });
 
   const payload = parseBody(req);
+  if (payload.action === "settle") {
+    const result = await settleManualSignal(payload);
+    return res.status(result.status).json(result.body);
+  }
+
   if (payload.action === "ingest" || payload.ingest_text || payload.raw) {
     const result = await publishIngestedSignals(payload);
     return res.status(result.status).json(result.body);

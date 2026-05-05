@@ -1,5 +1,6 @@
 import axios from "axios";
 import { config } from "../config.js";
+import { getPlatformSetting } from "../db.js";
 
 const naijaInterestKeywords = [
   "premier league",
@@ -96,12 +97,22 @@ async function fetchFallbackPath(path) {
 }
 
 export async function fetchFootballNews() {
+  const adminContent = await getPlatformSetting("admin_content", null).catch(() => null);
+  const manualArticle = adminContent?.newsTitle
+    ? normalizeArticle({
+        title: adminContent.newsTitle,
+        summary: adminContent.newsSummary,
+        source: adminContent.newsSource || "BamSignal news desk",
+        url: adminContent.newsUrl
+      }, "BamSignal news desk")
+    : null;
+
   if (!config.footballNews.rapidApiKey) {
     return {
-      ok: false,
-      source: "rapidapi-football-news",
+      ok: Boolean(manualArticle),
+      source: manualArticle ? "admin-curated-news" : "rapidapi-football-news",
       configured: false,
-      articles: [],
+      articles: manualArticle ? [manualArticle] : [],
       errors: [{ message: "Set RAPIDAPI_FOOTBALL_NEWS_KEY in Vercel to activate football news." }]
     };
   }
@@ -130,10 +141,10 @@ export async function fetchFootballNews() {
     .slice(0, config.footballNews.maxItems);
 
   return {
-    ok: articles.length > 0,
-    source: "rapidapi-football-news",
+    ok: articles.length > 0 || Boolean(manualArticle),
+    source: articles.length > 0 ? "rapidapi-football-news" : "admin-curated-news",
     configured: true,
-    articles,
+    articles: articles.length > 0 ? articles : manualArticle ? [manualArticle] : [],
     errors
   };
 }

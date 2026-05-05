@@ -188,7 +188,7 @@ nav a:hover {
   border: 0;
   color: var(--text);
   cursor: pointer;
-  display: flex;
+  display: none;
   gap: 10px;
 }
 
@@ -4019,6 +4019,7 @@ footer strong {
   }
 
   .topbar-brand {
+    display: flex;
     justify-content: center;
     min-width: 0;
   }

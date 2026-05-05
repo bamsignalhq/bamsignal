@@ -2,6 +2,11 @@ import axios from "axios";
 import { config } from "../config.js";
 import { getPlatformSetting } from "../db.js";
 
+const rssFallbackFeeds = [
+  { url: "https://feeds.bbci.co.uk/sport/football/rss.xml", source: "BBC Sport Football" },
+  { url: "https://www.espn.com/espn/rss/soccer/news", source: "ESPN Soccer" }
+];
+
 const naijaInterestKeywords = [
   "premier league",
   "champions league",
@@ -51,6 +56,23 @@ function cleanText(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
 }
 
+function decodeHtml(value) {
+  return cleanText(value)
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function stripHtml(value) {
+  return decodeHtml(
+    String(value || "")
+      .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+      .replace(/<[^>]+>/g, " ")
+  );
+}
+
 function scoreArticle(article) {
   const haystack = `${article.title} ${article.summary} ${article.source}`.toLowerCase();
   return naijaInterestKeywords.reduce((score, keyword) => score + (haystack.includes(keyword) ? 1 : 0), 0);
@@ -77,6 +99,36 @@ function normalizeArticle(item, source = "Football news") {
   };
 }
 
+function pickRssField(block, tag) {
+  const pattern = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, "i");
+  const match = block.match(pattern);
+  return match ? stripHtml(match[1]) : "";
+}
+
+function pickRssMedia(block) {
+  const mediaMatch = block.match(/<media:(?:thumbnail|content)[^>]*url="([^"]+)"/i);
+  if (mediaMatch?.[1]) return cleanText(mediaMatch[1]);
+  const enclosureMatch = block.match(/<enclosure[^>]*url="([^"]+)"/i);
+  return enclosureMatch?.[1] ? cleanText(enclosureMatch[1]) : "";
+}
+
+function parseRssFeed(xml, source) {
+  const items = Array.from(xml.matchAll(/<item\b[\s\S]*?<\/item>/gi));
+  return items
+    .map((match) => {
+      const block = match[0];
+      return normalizeArticle({
+        title: pickRssField(block, "title"),
+        summary: pickRssField(block, "description"),
+        link: pickRssField(block, "link"),
+        image_url: pickRssMedia(block),
+        publishedAt: pickRssField(block, "pubDate"),
+        source
+      }, source);
+    })
+    .filter(Boolean);
+}
+
 async function fetchRapidApiPath(path) {
   const url = `https://${config.footballNews.rapidApiHost}${path.startsWith("/") ? path : `/${path}`}`;
   const response = await axios.get(url, {
@@ -96,6 +148,14 @@ async function fetchFallbackPath(path) {
   return asArray(response.data).map((item) => normalizeArticle(item, path)).filter(Boolean);
 }
 
+async function fetchRssFallbackFeed(feed) {
+  const response = await axios.get(feed.url, {
+    timeout: 12000,
+    responseType: "text"
+  });
+  return parseRssFeed(String(response.data || ""), feed.source);
+}
+
 export async function fetchFootballNews() {
   const adminContent = await getPlatformSetting("admin_content", null).catch(() => null);
   const manualArticle = adminContent?.newsTitle
@@ -107,24 +167,33 @@ export async function fetchFootballNews() {
       }, "BamSignal news desk")
     : null;
 
-  if (!config.footballNews.rapidApiKey) {
-    return {
-      ok: Boolean(manualArticle),
-      source: manualArticle ? "admin-curated-news" : "rapidapi-football-news",
-      configured: false,
-      articles: manualArticle ? [manualArticle] : [],
-      errors: [{ message: "Set RAPIDAPI_FOOTBALL_NEWS_KEY in Vercel to activate football news." }]
-    };
-  }
-
   const errors = [];
   const allArticles = [];
+  let source = manualArticle ? "admin-curated-news" : "empty";
 
-  for (const path of config.footballNews.rapidApiPaths) {
-    try {
-      allArticles.push(...await fetchRapidApiPath(path));
-    } catch (error) {
-      errors.push({ path, message: error.message, code: error.code });
+  if (!config.footballNews.rapidApiKey) {
+    errors.push({ message: "Set RAPIDAPI_FOOTBALL_NEWS_KEY in Vercel to activate premium football news sources." });
+  } else {
+    for (const path of config.footballNews.rapidApiPaths) {
+      try {
+        const rapidArticles = await fetchRapidApiPath(path);
+        if (rapidArticles.length) source = "rapidapi-football-news";
+        allArticles.push(...rapidArticles);
+      } catch (error) {
+        errors.push({ path, message: error.message, code: error.code });
+      }
+    }
+  }
+
+  if (!allArticles.length) {
+    for (const feed of rssFallbackFeeds) {
+      try {
+        const rssArticles = await fetchRssFallbackFeed(feed);
+        if (rssArticles.length) source = "rss-football-news";
+        allArticles.push(...rssArticles);
+      } catch (error) {
+        errors.push({ path: feed.url, message: error.message, code: error.code });
+      }
     }
   }
 
@@ -142,8 +211,8 @@ export async function fetchFootballNews() {
 
   return {
     ok: articles.length > 0 || Boolean(manualArticle),
-    source: articles.length > 0 ? "rapidapi-football-news" : "admin-curated-news",
-    configured: true,
+    source: articles.length > 0 ? source : "admin-curated-news",
+    configured: Boolean(config.footballNews.rapidApiKey),
     articles: articles.length > 0 ? articles : manualArticle ? [manualArticle] : [],
     errors
   };

@@ -1,4 +1,4 @@
-import { getDailyGames } from "../server/services/signalWorker.js";
+import { filterDailyGamesPayload, getDailyGames } from "../server/services/signalWorker.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -8,7 +8,7 @@ export default async function handler(req, res) {
 
   try {
     const games = await getDailyGames();
-    return res.status(200).json(games);
+    return res.status(200).json(filterDailyGamesPayload(games, req.query?.filter));
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Could not load daily games" });
   }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "496440750551",
+    "project_id": "bam-signal-87ae8",
+    "storage_bucket": "bam-signal-87ae8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:496440750551:android:9a929be3f760e9b8a15b92",
+        "android_client_info": {
+          "package_name": "com.bamsignal.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyALLyQqe4WREMCqa9h4h5j3SeD2tV7bxJs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -118,6 +118,62 @@ function boardDates() {
   return [addDaysInSignalTimezone(-1), addDaysInSignalTimezone(0), addDaysInSignalTimezone(1)];
 }
 
+export function deriveDailyGameBoardStatus(game) {
+  const normalized = String(game?.status || "").trim().toLowerCase();
+  const liveStatuses = new Set(["1h", "2h", "ht", "et", "p", "bt", "int", "live", "in_play", "in-play"]);
+  const finishedStatuses = new Set(["won", "lost", "void", "finished", "ft", "aet", "pen", "cancelled", "postponed"]);
+  const scheduledStatuses = new Set(["pending", "scheduled", "not started", "not_started", "ns", "tbd"]);
+
+  if (finishedStatuses.has(normalized) || game?.result || game?.result_payload) return "finished";
+  if (liveStatuses.has(normalized)) return "live";
+
+  const startsAt = game?.starts_at ? new Date(game.starts_at) : null;
+  if (!startsAt || Number.isNaN(startsAt.getTime())) return "upcoming";
+
+  const now = new Date();
+  const elapsedMs = now.getTime() - startsAt.getTime();
+  const sportText = `${game?.league || ""} ${game?.match_name || ""}`.toLowerCase();
+  const expectedDurationMs = sportText.includes("basket") || sportText.includes("nba") || sportText.includes("nbl")
+    ? 3 * 60 * 60 * 1000
+    : sportText.includes("baseball") || sportText.includes("mlb")
+      ? 4 * 60 * 60 * 1000
+      : sportText.includes("tennis")
+        ? 4 * 60 * 60 * 1000
+        : 2.4 * 60 * 60 * 1000;
+
+  if (elapsedMs >= 0 && elapsedMs <= expectedDurationMs) return "live";
+
+  const today = dateInSignalTimezone(now);
+  const tomorrow = addDaysInSignalTimezone(1);
+  const startDay = dateInSignalTimezone(startsAt);
+
+  if (scheduledStatuses.has(normalized)) {
+    if (startDay === today) return "today";
+    if (startDay === tomorrow) return "tomorrow";
+    return startsAt.getTime() > now.getTime() ? "upcoming" : "today";
+  }
+
+  if (startDay === today) return "today";
+  if (startDay === tomorrow) return "tomorrow";
+  return "upcoming";
+}
+
+export function filterDailyGamesPayload(payload, filter) {
+  const normalizedFilter = String(filter || "all").trim().toLowerCase();
+  if (normalizedFilter === "all") return { ...payload, filter: "all" };
+  if (!["live", "today", "tomorrow", "finished", "upcoming"].includes(normalizedFilter)) {
+    return { ...payload, filter: "all" };
+  }
+
+  const keep = (game) => deriveDailyGameBoardStatus(game) === normalizedFilter;
+  return {
+    ...payload,
+    filter: normalizedFilter,
+    freemium: (payload.freemium || []).filter(keep),
+    vip: (payload.vip || []).filter(keep)
+  };
+}
+
 function normalizeFixture(raw) {
   const home = raw.home || raw.home_team || raw.homeTeam?.name || raw.teams?.home?.name;
   const away = raw.away || raw.away_team || raw.awayTeam?.name || raw.teams?.away?.name;

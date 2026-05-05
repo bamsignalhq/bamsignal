@@ -444,6 +444,35 @@ const gameLeaguePriority = (game: AdminGame) => {
   return score;
 };
 
+const boardStatusPriority = (game: AdminGame) => {
+  switch (gameBoardStatus(game)) {
+    case "Live":
+      return 0;
+    case "Today":
+      return 1;
+    case "Tomorrow":
+      return 2;
+    case "Upcoming":
+      return 3;
+    case "Finished":
+    default:
+      return 4;
+  }
+};
+
+const gameStartTime = (game: AdminGame) => {
+  const time = game.startsAt ? new Date(game.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
+  return Number.isFinite(time) ? time : Number.MAX_SAFE_INTEGER;
+};
+
+const compareDisplayGames = (left: AdminGame, right: AdminGame) => {
+  const statusDiff = boardStatusPriority(left) - boardStatusPriority(right);
+  if (statusDiff) return statusDiff;
+  const timeDiff = gameStartTime(left) - gameStartTime(right);
+  if (timeDiff) return timeDiff;
+  return gameLeaguePriority(right) - gameLeaguePriority(left);
+};
+
 const pickFeaturedGame = (adminGames: AdminGame[], effectiveGames: AdminGame[]) => {
   const board = dedupeGamesByMatch(effectiveGames)
     .filter((game) => !["Won", "Lost", "Finished"].includes(evidenceStatusLabel(game)))
@@ -459,11 +488,21 @@ const pickFeaturedGame = (adminGames: AdminGame[], effectiveGames: AdminGame[]) 
   return board.sort((left, right) => gameLeaguePriority(right) - gameLeaguePriority(left))[0] || effectiveGames[0] || null;
 };
 
-const orderGamesForDisplay = (games: AdminGame[]) => [
-  ...games.filter((game) => game.tier === "freemium" && game.odds < 1.5).slice(0, 2),
-  ...games.filter((game) => game.tier === "vip"),
-  ...games.filter((game) => game.tier === "freemium" && game.odds >= 1.5)
-];
+const orderGamesForDisplay = (games: AdminGame[]) => {
+  const uniqueGames = dedupeGamesByMatch(games);
+  return [
+    ...uniqueGames
+      .filter((game) => game.tier === "freemium" && game.odds < 1.5)
+      .sort(compareDisplayGames)
+      .slice(0, 2),
+    ...uniqueGames
+      .filter((game) => game.tier === "vip")
+      .sort(compareDisplayGames),
+    ...uniqueGames
+      .filter((game) => game.tier === "freemium" && game.odds >= 1.5)
+      .sort(compareDisplayGames)
+  ];
+};
 type AdminContent = {
   newsTitle: string;
   newsSummary: string;
@@ -1689,6 +1728,7 @@ function App() {
   const isNative = Capacitor.getPlatform() !== "web";
   const [theme, setTheme] = useState<Theme>(() => getSavedTheme());
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isCompactTopbar, setIsCompactTopbar] = useState(() => window.innerWidth <= 820);
   const [activeStatus, setActiveStatus] = useState<Fixture["status"] | "All">("All");
   const [isAuthed, setIsAuthed] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
@@ -1715,7 +1755,7 @@ function App() {
     const manualGames = hasSavedAdminContent
       ? adminContent.games.filter((game) => !defaultAdminGameKeys.has(gameKey(game)))
       : [];
-    const merged = [...manualGames, ...dailyApiGames].reduce<AdminGame[]>((list, game) => {
+    const merged = [...dailyApiGames, ...manualGames].reduce<AdminGame[]>((list, game) => {
       if (!list.some((item) => gameKey(item) === gameKey(game))) list.push(game);
       return list;
     }, []);
@@ -1738,6 +1778,12 @@ function App() {
   useEffect(() => {
     const timer = window.setInterval(() => setDailyKey(getDailyKey()), 60 * 1000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const syncCompactTopbar = () => setIsCompactTopbar(window.innerWidth <= 820);
+    window.addEventListener("resize", syncCompactTopbar);
+    return () => window.removeEventListener("resize", syncCompactTopbar);
   }, []);
 
   useEffect(() => {
@@ -1766,8 +1812,17 @@ function App() {
 
   useEffect(() => {
     if (isNative || !("serviceWorker" in navigator)) return undefined;
-    navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-    return undefined;
+    let reloaded = false;
+    const handleControllerChange = () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+    navigator.serviceWorker.register("/sw.js")
+      .then((registration) => registration.update().catch(() => undefined))
+      .catch(() => undefined);
+    return () => navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
   }, [isNative]);
 
   useEffect(() => {
@@ -1906,9 +1961,11 @@ function App() {
           ) : (
             <span className="topbar-spacer" aria-hidden="true" />
           )}
-          <button className="topbar-brand" onClick={goHome} aria-label="Go to BamSignal home">
-            <img className="topbar-logo" src={logoSrc} alt="BamSignal" />
-          </button>
+          {isCompactTopbar && (
+            <button className="topbar-brand" onClick={goHome} aria-label="Go to BamSignal home">
+              <img className="topbar-logo" src={logoSrc} alt="BamSignal" />
+            </button>
+          )}
           {showTopbarAuth && (
             <div className="topbar-auth-actions" aria-label="BamSignal member access">
               <button className="secondary-action" onClick={() => openMemberAuth("login")}>
@@ -2019,7 +2076,7 @@ function HomePage({
 }) {
   const boardSource = dedupeGamesByMatch(filteredGames.length || activeStatus !== "All" ? filteredGames : adminContent.games)
     .filter((game) => !["Won", "Lost", "Finished"].includes(evidenceStatusLabel(game)))
-    .filter((game) => !topPick || gameMatchKey(game) !== gameMatchKey(topPick));
+    .filter((game) => activeStatus !== "All" || !topPick || gameMatchKey(game) !== gameMatchKey(topPick));
   const publicHomeLimit = 10;
   const visibleFreeLimit = 2;
   const publicPredictions = boardSource
@@ -2082,7 +2139,7 @@ function HomePage({
                   <div className="mini-grid">
                     <span>Odds <strong>{gameOddsValue(topPick)}</strong></span>
                     <span>Room <strong>{topPick.tier === "vip" ? "VIP" : "Free"}</strong></span>
-                    <span>Source <strong>{dailyGamesSource === "daily_games" ? "Live" : "Admin"}</strong></span>
+                    <span>Status <strong>{gameBoardStatus(topPick)}</strong></span>
                   </div>
                 </>
               ) : (

@@ -1,4 +1,4 @@
-const CACHE_NAME = "bamsignal-shell-v1";
+const CACHE_NAME = "bamsignal-static-v2";
 const APP_SHELL = [
   "/",
   "/app",
@@ -30,14 +30,33 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
+  const url = new URL(request.url);
+
+  if (url.pathname.startsWith("/api/")) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() => caches.match("/") || caches.match("/app"))
+    );
+    return;
+  }
+
+  if (url.origin !== self.location.origin) return;
+
+  const cacheableDestinations = new Set(["script", "style", "image", "font"]);
+  const isShellAsset = APP_SHELL.includes(url.pathname);
+  if (!isShellAsset && !cacheableDestinations.has(request.destination)) return;
 
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
         return response;
-      })
-      .catch(() => caches.match(request).then((cached) => cached || caches.match("/")))
+      });
+    })
   );
 });

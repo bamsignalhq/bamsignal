@@ -89,7 +89,7 @@ type Page =
   | { kind: "contact" }
   | { kind: "legal"; slug: string }
   | { kind: "admin" };
-type AdminTab = "overview" | "games" | "login" | "content" | "payments" | "otp" | "support";
+type AdminTab = "overview" | "ingest" | "games" | "login" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type AuthIntent = "login" | "signup" | "reset" | null;
 type PendingEmailOtpType = "signup" | "email";
@@ -478,6 +478,13 @@ type QuickPublishForm = {
   pushVipTelegram: boolean;
   showBookingCodes: boolean;
   publishSecret: string;
+};
+type IngestForm = {
+  text: string;
+  defaultSport: string;
+  defaultLeague: string;
+  defaultTier: "freemium" | "vip";
+  notify: boolean;
 };
 
 const bookmakers: { key: BookmakerKey; label: string }[] = [
@@ -3960,6 +3967,15 @@ function AdminPage({
       publishSecret: ""
     };
   });
+  const [ingestForm, setIngestForm] = useState<IngestForm>({
+    text: "",
+    defaultSport: "Football",
+    defaultLeague: "",
+    defaultTier: "freemium",
+    notify: false
+  });
+  const [ingestPreview, setIngestPreview] = useState<ApiTip[]>([]);
+  const [isIngesting, setIsIngesting] = useState(false);
   const [adminStatus, setAdminStatus] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
   const [adminAccess, setAdminAccess] = useState<"checking" | "granted" | "denied">("checking");
@@ -4117,6 +4133,46 @@ function AdminPage({
       .catch((error) => setAdminStatus(`Publish failed: ${friendlyAuthError(error)}`))
       .finally(() => setIsPublishing(false));
   };
+  const ingestSignals = async (mode: "preview" | "publish") => {
+    if (!ingestForm.text.trim()) {
+      setAdminStatus("Paste Deepbetting text, CSV, or JSON before processing.");
+      return;
+    }
+    setIsIngesting(true);
+    setAdminStatus(mode === "preview" ? "Parsing pasted signals..." : "Publishing parsed signals...");
+    try {
+      const response = await fetch("/api/publish-tip", {
+        method: "POST",
+        headers: await getAdminAuthHeaders(),
+        body: JSON.stringify({
+          ...ingestForm,
+          action: "ingest",
+          mode
+        })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.ok) throw new Error(result.error || "Signal ingest failed");
+      const signals = (result.signals || result.published || result.daily_games || []) as ApiTip[];
+      setIngestPreview(signals);
+      if (mode === "publish") {
+        const games = signals.map(apiTipToAdminGame);
+        setAdminContent({
+          ...adminContent,
+          games: orderGamesForDisplay([
+            ...games,
+            ...adminContent.games.filter((game) => !games.some((item) => gameKey(item) === gameKey(game)))
+          ])
+        });
+      }
+      setAdminStatus(mode === "preview"
+        ? `Parsed ${result.count} signal${result.count === 1 ? "" : "s"}. Review them, then publish when ready.`
+        : `Published ${result.count} signal${result.count === 1 ? "" : "s"} into the BamSignal board.`);
+    } catch (error) {
+      setAdminStatus(`Ingest failed: ${friendlyAuthError(error)}`);
+    } finally {
+      setIsIngesting(false);
+    }
+  };
   const addAdminGame = () => {
     setAdminContent({
       ...adminContent,
@@ -4210,6 +4266,7 @@ function AdminPage({
         <nav className="admin-work-nav" aria-label="Admin work areas">
           {[
             { tab: "overview", label: "Overview", icon: <ClipboardCheck size={15} /> },
+            { tab: "ingest", label: "Signal ingest", icon: <Activity size={15} /> },
             { tab: "games", label: "Games", icon: <Goal size={15} /> },
             { tab: "login", label: "Login banners", icon: <Sparkles size={15} /> },
             { tab: "content", label: "News & ads", icon: <BarChart3 size={15} /> },
@@ -4279,6 +4336,84 @@ function AdminPage({
             </div>
           ))}
         </div>
+      </section>}
+
+      {activeAdminTab === "ingest" && <section className="admin-panel">
+        <div className="admin-panel-head">
+          <div>
+            <p className="eyebrow">Text-to-board worker</p>
+            <h2>Paste Deepbetting signals and populate BamSignal.</h2>
+            <p className="admin-note">Copy games from Deepbetting, paste everything here, preview the parser output, then publish. CSV works best, but clean text lines also work.</p>
+          </div>
+          <button className="secondary-action" onClick={() => setIngestForm({
+            ...ingestForm,
+            text: "sport,league,home_team,away_team,prediction,odds,is_vip,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,FALSE,84,2026-05-05 20:00,SportyBet,SB123,,,"
+          })}>
+            <ClipboardCheck size={16} /> Load CSV sample
+          </button>
+        </div>
+        <div className="admin-form quick-publish-form">
+          <label>Default sport
+            <select value={ingestForm.defaultSport} onChange={(event) => setIngestForm({ ...ingestForm, defaultSport: event.target.value })}>
+              <option value="Football">Football</option>
+              <option value="Basketball">Basketball</option>
+              <option value="Tennis">Tennis</option>
+              <option value="Baseball">Baseball</option>
+              <option value="Ice Hockey">Ice Hockey</option>
+              <option value="American Football">American Football</option>
+            </select>
+          </label>
+          <label>Default league<input value={ingestForm.defaultLeague} onChange={(event) => setIngestForm({ ...ingestForm, defaultLeague: event.target.value })} placeholder="Optional, e.g. Premier League / NBA" /></label>
+          <label>Default room
+            <select value={ingestForm.defaultTier} onChange={(event) => setIngestForm({ ...ingestForm, defaultTier: event.target.value as IngestForm["defaultTier"] })}>
+              <option value="freemium">Freemium unless odds are 1.50+</option>
+              <option value="vip">VIP by default</option>
+            </select>
+          </label>
+          <label className="inline-admin-toggle"><input type="checkbox" checked={ingestForm.notify} onChange={(event) => setIngestForm({ ...ingestForm, notify: event.target.checked })} /> Notify app and Telegram after publishing</label>
+        </div>
+        <label className="admin-textarea-label">
+          Paste raw Deepbetting text, CSV, or JSON
+          <textarea
+            value={ingestForm.text}
+            onChange={(event) => setIngestForm({ ...ingestForm, text: event.target.value })}
+            placeholder={"CSV format:\nsport,league,home_team,away_team,prediction,odds,is_vip,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,FALSE,84,2026-05-05 20:00,SportyBet,SB123,,,\n\nText format:\nChelsea vs Arsenal | Over 1.5 goals | 1.42\nMan City vs Tottenham - Home win + over 1.5 - 2.18"}
+            rows={12}
+          />
+        </label>
+        <div className="admin-action-row">
+          <button className="secondary-action" onClick={() => ingestSignals("preview")} disabled={isIngesting}>
+            {isIngesting ? <Loader2 className="spin" size={16} /> : <Eye size={16} />} Preview parsed signals
+          </button>
+          <button className="primary-action neon-action" onClick={() => ingestSignals("publish")} disabled={isIngesting}>
+            {isIngesting ? <Loader2 className="spin" size={16} /> : <Send size={16} />} Publish parsed board
+          </button>
+        </div>
+        <div className="automation-list">
+          <div><ClipboardCheck size={16} /><span>Best CSV columns: sport, league, home_team, away_team, prediction, odds, is_vip, confidence, match_time.</span></div>
+          <div><Goal size={16} /><span>Optional pro columns: bookmaker, booking_code, league_logo_url, home_logo_url, away_logo_url.</span></div>
+          <div><ShieldCheck size={16} /><span>Preview first. Publish only after the extracted matches look right.</span></div>
+        </div>
+        {ingestPreview.length ? (
+          <div className="admin-game-grid">
+            {ingestPreview.slice(0, 12).map((tip, index) => {
+              const game = apiTipToAdminGame(tip, index);
+              return (
+                <article className={`admin-game-card ${game.tier}`} key={`${game.match}-${game.pick}-${index}`}>
+                  <div className="admin-game-head">
+                    <strong>{game.tier === "vip" ? "VIP" : "Freemium"}</strong>
+                    <span>{game.odds.toFixed(2)} odds</span>
+                    <ConfidenceSignal confidence={game.confidence} compact />
+                  </div>
+                  <strong>{game.match}</strong>
+                  <span>{game.league}</span>
+                  <p>{game.pick}</p>
+                  <small>{game.startsAt ? formatMatchDateTime(game.startsAt) : "Time pending"}</small>
+                </article>
+              );
+            })}
+          </div>
+        ) : null}
       </section>}
 
       {activeAdminTab === "games" && <section className="admin-panel">

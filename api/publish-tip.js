@@ -3,6 +3,7 @@ import { insertTip, upsertDailyGames } from "../server/db.js";
 import { sendTipPush } from "../server/firebase.js";
 import { broadcastTip } from "../server/telegram.js";
 import { enrichTipWithFixture } from "../server/services/signalWorker.js";
+import { gameDateForTip, parseSignalsFromText } from "../server/services/signalIngest.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -74,6 +75,69 @@ function validateTip(payload) {
   return errors;
 }
 
+async function publishIngestedSignals(payload) {
+  const parsed = parseSignalsFromText(String(payload.text || payload.raw || payload.ingest_text || ""), {
+    defaultSport: payload.defaultSport || "Football",
+    defaultLeague: payload.defaultLeague || "",
+    defaultTier: payload.defaultTier === "vip" ? "vip" : "freemium"
+  }).slice(0, 60);
+
+  if (!parsed.length) {
+    return {
+      status: 400,
+      body: {
+        ok: false,
+        error: "No valid signals found. Use CSV headers or lines like: Chelsea vs Arsenal | Over 1.5 goals | 1.42"
+      }
+    };
+  }
+
+  if (payload.mode !== "publish") {
+    return { status: 200, body: { ok: true, mode: "preview", count: parsed.length, signals: parsed } };
+  }
+
+  const byDate = parsed.reduce((map, tip) => {
+    const date = gameDateForTip(tip, config.signalWorker.timezone);
+    if (!map.has(date)) map.set(date, []);
+    map.get(date).push(tip);
+    return map;
+  }, new Map());
+
+  const savedDailyGames = [];
+  for (const [date, tips] of byDate.entries()) {
+    savedDailyGames.push(...await upsertDailyGames(date, tips));
+  }
+
+  const published = [];
+  const delivery = [];
+  for (const tip of parsed) {
+    const savedTip = await insertTip(tip);
+    published.push(savedTip);
+    if (payload.notify) {
+      const [telegram, firebase] = await Promise.allSettled([
+        broadcastTip(savedTip),
+        sendTipPush(savedTip)
+      ]);
+      delivery.push({
+        telegram: telegram.status === "fulfilled" ? telegram.value : { ok: false, error: telegram.reason?.message },
+        firebase: firebase.status === "fulfilled" ? firebase.value : { ok: false, error: firebase.reason?.message }
+      });
+    }
+  }
+
+  return {
+    status: 201,
+    body: {
+      ok: true,
+      mode: "publish",
+      count: parsed.length,
+      daily_games: savedDailyGames,
+      published,
+      delivery
+    }
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -84,6 +148,11 @@ export default async function handler(req, res) {
   if (!auth.ok) return res.status(auth.status).json({ ok: false, error: auth.error });
 
   const payload = parseBody(req);
+  if (payload.action === "ingest" || payload.ingest_text || payload.raw) {
+    const result = await publishIngestedSignals(payload);
+    return res.status(result.status).json(result.body);
+  }
+
   const errors = validateTip(payload);
   if (errors.length) return res.status(400).json({ ok: false, errors });
 

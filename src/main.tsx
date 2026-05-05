@@ -39,6 +39,7 @@ import {
   Twitter,
   UserPlus,
   Users,
+  UploadCloud,
   X,
   Youtube
 } from "lucide-react";
@@ -4109,6 +4110,7 @@ function AdminPage({
     notify: false
   });
   const [ingestPreview, setIngestPreview] = useState<ApiTip[]>([]);
+  const [ingestFileName, setIngestFileName] = useState("");
   const [isIngesting, setIsIngesting] = useState(false);
   const [adminStatus, setAdminStatus] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
@@ -4447,6 +4449,29 @@ function AdminPage({
       setIsIngesting(false);
     }
   };
+  const loadIngestFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.currentTarget.value = "";
+    if (!file) return;
+    const allowed = /\.(txt|csv|json)$/i.test(file.name) || ["text/plain", "text/csv", "application/json"].includes(file.type);
+    if (!allowed) {
+      setAdminStatus("Upload a .txt, .csv, or .json file.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setAdminStatus("Keep signal uploads below 2MB so the parser stays fast on mobile.");
+      return;
+    }
+    try {
+      const text = await file.text();
+      setIngestFileName(file.name);
+      setIngestForm({ ...ingestForm, text });
+      setIngestPreview([]);
+      setAdminStatus(`Loaded ${file.name}. Preview it before publishing.`);
+    } catch {
+      setAdminStatus("Could not read that file. Try saving it as plain TXT, CSV, or JSON.");
+    }
+  };
   const addAdminGame = () => {
     setAdminContent({
       ...adminContent,
@@ -4625,7 +4650,7 @@ function AdminPage({
             })}>
               <ClipboardCheck size={16} /> CSV sample
             </button>
-            <button className="secondary-action" onClick={() => setIngestForm({ ...ingestForm, text: "" })}>
+            <button className="secondary-action" onClick={() => { setIngestForm({ ...ingestForm, text: "" }); setIngestFileName(""); setIngestPreview([]); }}>
               <X size={16} /> Clear paste
             </button>
           </div>
@@ -4665,6 +4690,19 @@ function AdminPage({
           <label className="inline-admin-toggle"><input type="checkbox" checked={ingestForm.replaceBoard} onChange={(event) => setIngestForm({ ...ingestForm, replaceBoard: event.target.checked })} /> Replace current manual board for matched dates</label>
           <label className="inline-admin-toggle"><input type="checkbox" checked={ingestForm.notify} onChange={(event) => setIngestForm({ ...ingestForm, notify: event.target.checked })} /> Notify app and Telegram after publishing</label>
         </div>
+        <div className="ingest-input-grid">
+          <label className="ingest-upload-card">
+            <input type="file" accept=".txt,.csv,.json,text/plain,text/csv,application/json" onChange={loadIngestFile} />
+            <UploadCloud size={22} />
+            <strong>{ingestFileName || "Upload TXT, CSV, or JSON"}</strong>
+            <span>Drop your copied board into a file, upload it here, then preview before publishing.</span>
+          </label>
+          <article className="ingest-upload-card passive">
+            <ClipboardCheck size={22} />
+            <strong>Or paste directly</strong>
+            <span>The box below accepts messy text, clean CSV, or JSON from any source you trust.</span>
+          </article>
+        </div>
         <label className="admin-textarea-label">
           Paste raw predictions, CSV, or JSON
           <textarea
@@ -4674,6 +4712,11 @@ function AdminPage({
             rows={12}
           />
         </label>
+        <div className="ingest-mini-stats">
+          <span>{ingestForm.text.trim() ? ingestForm.text.trim().split(/\n+/).length : 0} lines</span>
+          <span>{ingestForm.text.length} characters</span>
+          <span>{ingestFileName ? `File: ${ingestFileName}` : "Manual paste ready"}</span>
+        </div>
         <div className="admin-action-row">
           <button className="secondary-action" onClick={() => ingestSignals("preview")} disabled={isIngesting}>
             {isIngesting ? <Loader2 className="spin" size={16} /> : <Eye size={16} />} Preview parsed signals

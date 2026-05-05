@@ -4,6 +4,11 @@ function clean(value = "") {
   return String(value).replace(/\s+/g, " ").trim();
 }
 
+function autoValue(value = "") {
+  const normalized = clean(value).toLowerCase();
+  return !normalized || normalized === "auto" || normalized.includes("detect");
+}
+
 function toBool(value, fallback = false) {
   const normalized = String(value ?? "").trim().toLowerCase();
   if (["true", "yes", "y", "1", "vip", "premium"].includes(normalized)) return true;
@@ -18,6 +23,55 @@ function toNumber(value, fallback = null) {
 
 function tierFromOdds(odds) {
   return Number(odds) >= 1.5;
+}
+
+function sourceLabel(options = {}) {
+  return clean(options.sourceName || options.source || "admin-ingest");
+}
+
+function inferSport(text = "", fallback = "Football") {
+  const raw = clean(text).toLowerCase();
+  if (/\b(nba|wnba|basketball|nbl|euroleague|points|rebounds|assists)\b/.test(raw)) return "Basketball";
+  if (/\b(mlb|baseball|innings?|runs?|pitcher)\b/.test(raw)) return "Baseball";
+  if (/\b(nfl|american football|touchdown|yards?|quarterback)\b/.test(raw)) return "American Football";
+  if (/\b(nhl|ice hockey|hockey|puck)\b/.test(raw)) return "Ice Hockey";
+  if (/\b(tennis|atp|wta|sets?|games handicap)\b/.test(raw)) return "Tennis";
+  if (/\b(football|soccer|premier league|la liga|serie a|bundesliga|ligue 1|champions league|europa league|goals?|corners?|btts)\b/.test(raw)) return "Football";
+  return autoValue(fallback) ? "Football" : clean(fallback || "Football");
+}
+
+function inferLeague(text = "", sport = "Football", fallback = "") {
+  if (!autoValue(fallback)) return clean(fallback);
+  const raw = clean(text).toLowerCase();
+  const leagues = [
+    ["Champions League", /\b(champions league|ucl)\b/],
+    ["Europa League", /\b(europa league|uel)\b/],
+    ["Premier League", /\b(premier league|epl|english premier)\b/],
+    ["La Liga", /\b(la liga|laliga|spanish league)\b/],
+    ["Serie A", /\b(serie a|italian league)\b/],
+    ["Bundesliga", /\b(bundesliga|german league)\b/],
+    ["Ligue 1", /\b(ligue 1|french league)\b/],
+    ["NBA", /\b(nba)\b/],
+    ["WNBA", /\b(wnba)\b/],
+    ["MLB", /\b(mlb)\b/],
+    ["NFL", /\b(nfl)\b/],
+    ["NHL", /\b(nhl)\b/],
+    ["ATP", /\b(atp)\b/],
+    ["WTA", /\b(wta)\b/]
+  ];
+  const found = leagues.find(([, pattern]) => pattern.test(raw));
+  if (found) return found[0];
+
+  if (/\b(arsenal|chelsea|liverpool|manchester united|man united|man city|manchester city|tottenham|newcastle|aston villa|west ham|brighton|everton)\b/.test(raw)) return "Premier League";
+  if (/\b(real madrid|barcelona|atletico|sevilla|villarreal|valencia|real sociedad|athletic bilbao)\b/.test(raw)) return "La Liga";
+  if (/\b(inter|ac milan|milan|juventus|napoli|roma|lazio|atalanta|fiorentina)\b/.test(raw)) return "Serie A";
+  if (/\b(bayern|dortmund|leverkusen|rb leipzig|stuttgart|frankfurt|wolfsburg)\b/.test(raw)) return "Bundesliga";
+  if (/\b(psg|paris saint germain|marseille|lyon|monaco|lille|rennes)\b/.test(raw)) return "Ligue 1";
+  if (/\b(lakers|warriors|celtics|knicks|heat|bulls|mavericks|bucks|nuggets|suns|clippers)\b/.test(raw)) return "NBA";
+  if (/\b(yankees|dodgers|mets|red sox|cubs|braves|astros|giants|padres)\b/.test(raw)) return "MLB";
+  if (/\b(chiefs|cowboys|eagles|patriots|packers|steelers|ravens|49ers|bills)\b/.test(raw)) return "NFL";
+  if (/\b(maple leafs|rangers|bruins|oilers|canadiens|avalanche|panthers)\b/.test(raw)) return "NHL";
+  return sport;
 }
 
 function todayInTimezone(timezone = defaultTimezone) {
@@ -121,7 +175,8 @@ function logoFromRow(row, type) {
 }
 
 function tipFromStructuredRow(row, options = {}, index = 0) {
-  const sport = clean(rowValue(row, ["sport"], options.defaultSport || "Football")) || "Football";
+  const rawText = Object.values(row || {}).join(" ");
+  const sport = inferSport(rawText, rowValue(row, ["sport"], options.defaultSport || "auto"));
   const match = clean(rowValue(row, ["match", "fixture", "game"]));
   const split = splitMatch(match);
   const home = clean(rowValue(row, ["home_team", "home", "team_a"], split.home));
@@ -137,10 +192,11 @@ function tipFromStructuredRow(row, options = {}, index = 0) {
   const bookingCode = clean(rowValue(row, ["booking_code", "code"], ""));
   const bookingCodes = {};
   if (bookmaker && bookingCode) bookingCodes[bookmaker] = bookingCode;
+  const league = clean(rowValue(row, ["league", "competition"], inferLeague(rawText, sport, options.defaultLeague || "auto")));
 
   return {
     match_name: `${home} vs ${away}`,
-    league: clean(rowValue(row, ["league", "competition"], "Football")),
+    league,
     prediction,
     odds: odds.toFixed(2),
     confidence: Math.max(1, Math.min(99, Math.round(confidence || 70))),
@@ -159,7 +215,7 @@ function tipFromStructuredRow(row, options = {}, index = 0) {
         status: { short: "NS", long: "Scheduled" }
       },
       league: {
-        name: clean(rowValue(row, ["league", "competition"], "Football")),
+        name: league,
         logo: logoFromRow(row, "league") || null,
         country: clean(rowValue(row, ["country"], ""))
       },
@@ -168,6 +224,7 @@ function tipFromStructuredRow(row, options = {}, index = 0) {
         away: { name: away, logo: logoFromRow(row, "away") || null }
       },
       metadata: {
+        source_name: sourceLabel(options),
         raw: row
       }
     }
@@ -215,7 +272,8 @@ function parseFreeformLine(line, options = {}, index = 0) {
   if (timeMatch) tail = clean(tail.replace(timeMatch[0], ""));
 
   const leagueMatch = tail.match(/\b(?:league|competition)[:\-]\s*([^|]+)$/i);
-  const league = leagueMatch ? clean(leagueMatch[1]) : clean(options.defaultLeague || "Football");
+  const sport = inferSport(line, options.defaultSport || "auto");
+  const league = leagueMatch ? clean(leagueMatch[1]) : inferLeague(line, sport, options.defaultLeague || "auto");
   if (leagueMatch) tail = clean(tail.replace(leagueMatch[0], ""));
 
   away = away.replace(/\s+(?:prediction|pick|odds?)\b.*$/i, "").trim();
@@ -238,7 +296,7 @@ function parseFreeformLine(line, options = {}, index = 0) {
     starts_at: startsAt,
     fixture_payload: {
       provider: "admin-ingest",
-      sport: options.defaultSport || "Football",
+      sport,
       ingest_index: index,
       fixture: {
         id: `admin-${Date.now()}-${index}`,
@@ -250,7 +308,7 @@ function parseFreeformLine(line, options = {}, index = 0) {
         home: { name: home, logo: null },
         away: { name: away, logo: null }
       },
-      metadata: { raw_line: line }
+      metadata: { source_name: sourceLabel(options), raw_line: line }
     }
   };
 }

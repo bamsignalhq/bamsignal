@@ -512,6 +512,8 @@ type IngestForm = {
   defaultSport: string;
   defaultLeague: string;
   defaultTier: "freemium" | "vip";
+  sourceName: string;
+  replaceBoard: boolean;
   notify: boolean;
 };
 
@@ -4099,9 +4101,11 @@ function AdminPage({
   });
   const [ingestForm, setIngestForm] = useState<IngestForm>({
     text: "",
-    defaultSport: "Football",
-    defaultLeague: "",
+    defaultSport: "auto",
+    defaultLeague: "auto",
     defaultTier: "freemium",
+    sourceName: "",
+    replaceBoard: false,
     notify: false
   });
   const [ingestPreview, setIngestPreview] = useState<ApiTip[]>([]);
@@ -4405,7 +4409,7 @@ function AdminPage({
   };
   const ingestSignals = async (mode: "preview" | "publish") => {
     if (!ingestForm.text.trim()) {
-      setAdminStatus("Paste Deepbetting text, CSV, or JSON before processing.");
+      setAdminStatus("Paste prediction text, CSV, or JSON before processing.");
       return;
     }
     setIsIngesting(true);
@@ -4611,19 +4615,42 @@ function AdminPage({
         <div className="admin-panel-head">
           <div>
             <p className="eyebrow">Text-to-board worker</p>
-            <h2>Paste Deepbetting signals and populate BamSignal.</h2>
-            <p className="admin-note">Copy games from Deepbetting, paste everything here, preview the parser output, then publish. CSV works best, but clean text lines also work.</p>
+            <h2>Paste signals from any trusted source.</h2>
+            <p className="admin-note">Copy odds from any reliable board, paste once, preview the extraction, then publish. CSV gives the cleanest result; plain text works when the lines contain teams, pick, odds, and time.</p>
           </div>
-          <button className="secondary-action" onClick={() => setIngestForm({
-            ...ingestForm,
-            text: "sport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,,,"
-          })}>
-            <ClipboardCheck size={16} /> Load CSV sample
-          </button>
+          <div className="admin-head-actions">
+            <button className="secondary-action" onClick={() => setIngestForm({
+              ...ingestForm,
+              text: "sport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,,,"
+            })}>
+              <ClipboardCheck size={16} /> CSV sample
+            </button>
+            <button className="secondary-action" onClick={() => setIngestForm({ ...ingestForm, text: "" })}>
+              <X size={16} /> Clear paste
+            </button>
+          </div>
+        </div>
+        <div className="ingest-command-strip">
+          <article>
+            <Sparkles size={16} />
+            <strong>Auto-detect</strong>
+            <span>Sport and league are inferred from pasted text unless you override them.</span>
+          </article>
+          <article>
+            <Crown size={16} />
+            <strong>Auto-tier</strong>
+            <span>Below 1.50 enters free. 1.50 and above enters VIP.</span>
+          </article>
+          <article>
+            <Bell size={16} />
+            <strong>One publish</strong>
+            <span>Push to app and Telegram only when the notify toggle is on.</span>
+          </article>
         </div>
         <div className="admin-form quick-publish-form">
-          <label>Default sport
+          <label>Sport handling
             <select value={ingestForm.defaultSport} onChange={(event) => setIngestForm({ ...ingestForm, defaultSport: event.target.value })}>
+              <option value="auto">Auto-detect from paste</option>
               <option value="Football">Football</option>
               <option value="Basketball">Basketball</option>
               <option value="Tennis">Tennis</option>
@@ -4632,17 +4659,14 @@ function AdminPage({
               <option value="American Football">American Football</option>
             </select>
           </label>
-          <label>Default league<input value={ingestForm.defaultLeague} onChange={(event) => setIngestForm({ ...ingestForm, defaultLeague: event.target.value })} placeholder="Optional, e.g. Premier League / NBA" /></label>
-          <label>Default room
-            <select value={ingestForm.defaultTier} onChange={(event) => setIngestForm({ ...ingestForm, defaultTier: event.target.value as IngestForm["defaultTier"] })}>
-              <option value="freemium">Auto-tier by odds: below 1.50 free, 1.50+ VIP</option>
-              <option value="vip">VIP by default</option>
-            </select>
-          </label>
+          <label>League handling<input value={ingestForm.defaultLeague} onChange={(event) => setIngestForm({ ...ingestForm, defaultLeague: event.target.value })} placeholder="Auto-detect, or type Premier League / NBA / MLB" /></label>
+          <label>Source label<input value={ingestForm.sourceName} onChange={(event) => setIngestForm({ ...ingestForm, sourceName: event.target.value })} placeholder="Optional: Private board / analyst / source name" /></label>
+          <label>Tiering rule<input value="Below 1.50 free / 1.50+ VIP" readOnly /></label>
+          <label className="inline-admin-toggle"><input type="checkbox" checked={ingestForm.replaceBoard} onChange={(event) => setIngestForm({ ...ingestForm, replaceBoard: event.target.checked })} /> Replace current manual board for matched dates</label>
           <label className="inline-admin-toggle"><input type="checkbox" checked={ingestForm.notify} onChange={(event) => setIngestForm({ ...ingestForm, notify: event.target.checked })} /> Notify app and Telegram after publishing</label>
         </div>
         <label className="admin-textarea-label">
-          Paste raw predictions from any reliable source, CSV, or JSON
+          Paste raw predictions, CSV, or JSON
           <textarea
             value={ingestForm.text}
             onChange={(event) => setIngestForm({ ...ingestForm, text: event.target.value })}
@@ -4661,6 +4685,7 @@ function AdminPage({
         <div className="automation-list">
           <div><ClipboardCheck size={16} /><span>Best CSV columns: sport, league, home_team, away_team, prediction, odds, confidence, match_time.</span></div>
           <div><Goal size={16} /><span>Odds below 1.50 go to freemium. Odds 1.50 and above go to VIP automatically.</span></div>
+          <div><Activity size={16} /><span>When sport or league is missing, BamSignal reads keywords like NBA, MLB, Premier League, goals, points, runs, sets, and more.</span></div>
           <div><Goal size={16} /><span>Optional pro columns: bookmaker, booking_code, league_logo_url, home_logo_url, away_logo_url.</span></div>
           <div><ShieldCheck size={16} /><span>Preview first. Publish only after the extracted matches look right.</span></div>
         </div>

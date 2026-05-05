@@ -2811,6 +2811,46 @@ footer {
   justify-content: space-between;
 }
 
+.admin-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ingest-command-strip {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.ingest-command-strip article {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 13%, transparent), transparent 55%),
+    color-mix(in srgb, var(--surface-2) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 5px;
+  min-height: 104px;
+  padding: 12px;
+}
+
+.ingest-command-strip svg {
+  color: var(--accent);
+}
+
+.ingest-command-strip strong {
+  color: var(--text);
+}
+
+.ingest-command-strip span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .admin-form label {
   color: var(--muted);
   display: grid;
@@ -3907,6 +3947,7 @@ footer strong {
   .profile-fintech-grid,
   .plan-grid,
   .vip-special-grid,
+  .ingest-command-strip,
   .booking-grid,
   .toggle-grid,
   .code-destination-grid {

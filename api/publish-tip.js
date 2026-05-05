@@ -1,5 +1,5 @@
 import { config } from "../server/config.js";
-import { ensureDailyGamesTable, ensureTipsTable, insertTip, query, upsertDailyGames } from "../server/db.js";
+import { deleteDailyGamesBySource, ensureDailyGamesTable, ensureTipsTable, insertTip, query, upsertDailyGames } from "../server/db.js";
 import { sendTipPush } from "../server/firebase.js";
 import { broadcastTip } from "../server/telegram.js";
 import { enrichTipWithFixture } from "../server/services/signalWorker.js";
@@ -77,9 +77,10 @@ function validateTip(payload) {
 
 async function publishIngestedSignals(payload) {
   const parsed = parseSignalsFromText(String(payload.text || payload.raw || payload.ingest_text || ""), {
-    defaultSport: payload.defaultSport || "Football",
-    defaultLeague: payload.defaultLeague || "",
-    defaultTier: payload.defaultTier === "vip" ? "vip" : "freemium"
+    defaultSport: payload.defaultSport || "auto",
+    defaultLeague: payload.defaultLeague || "auto",
+    defaultTier: payload.defaultTier === "vip" ? "vip" : "freemium",
+    sourceName: payload.sourceName || payload.source_name || "Manual board"
   }).slice(0, 60);
 
   if (!parsed.length) {
@@ -105,6 +106,7 @@ async function publishIngestedSignals(payload) {
 
   const savedDailyGames = [];
   for (const [date, tips] of byDate.entries()) {
+    if (payload.replaceBoard) await deleteDailyGamesBySource(date, "admin-ingest");
     savedDailyGames.push(...await upsertDailyGames(date, tips));
   }
 

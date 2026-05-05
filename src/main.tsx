@@ -1893,7 +1893,7 @@ function App() {
         <div className="sidebar-card">
           <span>Sure Signal</span>
           <strong>{topPick ? `${topPick.confidence}%` : "Live"}</strong>
-          <p>{topPick ? `${topPick.match}: ${topPick.pick}` : "Today's board is refreshing from API-Football."}</p>
+          <p>{topPick ? `${topPick.match}: ${topPick.pick}` : "Today's BamSignal board is waiting for the first published pick."}</p>
         </div>
       </aside>}
 
@@ -2089,7 +2089,7 @@ function HomePage({
                 <div className="empty-signal-state">
                   <Activity size={22} />
                   <strong>Today's board is refreshing</strong>
-                  <span>API-Football or admin picks will appear here as soon as the daily worker stores them.</span>
+                  <span>Published BamSignal picks will appear here as soon as today's board is live.</span>
                 </div>
               )}
             </div>
@@ -2128,7 +2128,7 @@ function HomePage({
                 <div className="empty-signal-state wide">
                   <CalendarClock size={22} />
                   <strong>No matches in this filter yet</strong>
-                  <span>Switch to All, or wait for API-Football/admin to publish matching fixtures.</span>
+                  <span>Switch to All, or check back when the next board is live.</span>
                 </div>
               )}
             </div>
@@ -2958,7 +2958,7 @@ function UserDashboard({
       return;
     }
     if (!supabase && !demoOtpEnabled) {
-      setAuthMessage("Email signup is being activated. Please try again shortly.");
+      setAuthMessage("Secure signup is temporarily unavailable. Please try again shortly.");
       return;
     }
     const nextProfile = {
@@ -5733,13 +5733,13 @@ function RecentFormFallback({ detail, homeName, awayName }: { detail: MatchDetai
   const awayForm = lastFiveForm(detail.predictions?.teams?.away);
 
   if (!homeForm && !awayForm) {
-    return <p className="muted-copy">No recent official head-to-head record is available from API-Football for these clubs yet.</p>;
+    return <p className="muted-copy">No recent head-to-head record is available for these clubs yet.</p>;
   }
 
   return (
     <>
       <article className="h2h-card">
-        <small>Alternative API-Football signal</small>
+        <small>Recent form</small>
         <div className="form-fallback-row">
           <strong>{homeName}</strong>
           <b>{homeForm || "N/A"}</b>
@@ -5747,7 +5747,7 @@ function RecentFormFallback({ detail, homeName, awayName }: { detail: MatchDetai
         <span>Recent form from the club data feed.</span>
       </article>
       <article className="h2h-card">
-        <small>Alternative API-Football signal</small>
+        <small>Recent form</small>
         <div className="form-fallback-row">
           <strong>{awayName}</strong>
           <b>{awayForm || "N/A"}</b>
@@ -5814,7 +5814,7 @@ function StandingsPanel({ standings, league }: { standings: NonNullable<MatchDet
             <small>{typeof club.goalsDiff === "number" ? club.goalsDiff : "-"}</small>
             <b>{typeof club.points === "number" ? club.points : "-"}</b>
           </div>
-        )) : <p className="muted-copy">Official table data is not available for this competition yet. Club lists appear when API-Football returns league teams.</p>}
+        )) : <p className="muted-copy">League table data is not available for this competition yet.</p>}
       </div>
     </section>
   );

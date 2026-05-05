@@ -4,6 +4,8 @@ import { config } from "../config.js";
 import { ensureDailyGamesTable, query } from "../db.js";
 import { postDailyGameResultProof, postResultProof } from "../telegram.js";
 
+let sportsDbBackoffUntil = 0;
+
 function fixtureApiHeaders() {
   return {
     Authorization: `Bearer ${config.signalWorker.fixtureApiKey}`,
@@ -95,6 +97,7 @@ function sportsDbMatchScore(event, item) {
 
 async function fetchSportsDbResult(item) {
   if (!config.signalWorker.sportsDbApiKey) return null;
+  if (sportsDbBackoffUntil > Date.now()) return null;
   const baseDate = item.starts_at ? new Date(item.starts_at) : new Date();
   const dates = [-1, 0, 1]
     .map((offset) => dateInTimezone(addDays(baseDate, offset)))
@@ -114,10 +117,14 @@ async function fetchSportsDbResult(item) {
         if (score >= 75 && (!best || score > best.score)) best = { event, score };
       }
     } catch (error) {
+      if (error?.response?.status === 429) {
+        sportsDbBackoffUntil = Date.now() + 10 * 60 * 1000;
+      }
       console.warn("TheSportsDB result lookup failed", {
         code: error.code,
         message: error.message
       });
+      if (sportsDbBackoffUntil > Date.now()) break;
     }
   }
 
@@ -254,6 +261,16 @@ function normalizeStatus(result, item) {
   };
 }
 
+function resultLookupKey(item) {
+  const fixtureId = getFixtureId(item);
+  if (fixtureId) return `fixture:${fixtureId}`;
+  return [
+    normalizeText(item.match_name || ""),
+    normalizeText(item.league || ""),
+    dateInTimezone(item.starts_at) || ""
+  ].join("|");
+}
+
 export async function checkPendingResults() {
   const pending = await query(
     `select * from tips
@@ -266,8 +283,25 @@ export async function checkPendingResults() {
   );
 
   const updates = [];
+  const resultCache = new Map();
+
+  const lookupResult = async (item) => {
+    const key = resultLookupKey(item);
+    if (!resultCache.has(key)) {
+      resultCache.set(key, fetchResult(item).catch((error) => {
+        console.warn("Result lookup failed", {
+          match: item.match_name,
+          code: error.code,
+          message: error.message
+        });
+        return null;
+      }));
+    }
+    return resultCache.get(key);
+  };
+
   for (const tip of pending.rows) {
-    const result = await fetchResult(tip);
+    const result = await lookupResult(tip);
     const settled = normalizeStatus(result, tip);
     if (!settled) continue;
 
@@ -298,7 +332,7 @@ export async function checkPendingResults() {
   );
 
   for (const game of pendingDailyGames.rows) {
-    const result = await fetchResult(game);
+    const result = await lookupResult(game);
     const settled = normalizeStatus(result, game);
     if (!settled) continue;
 

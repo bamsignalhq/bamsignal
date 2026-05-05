@@ -1,5 +1,6 @@
 import axios from "axios";
 import { config } from "../config.js";
+import { checkPendingResults } from "../cron/results.js";
 import { deleteDailyGamesBySource, ensureDailyGamesTable, ensureTipsTable, insertTip, query, upsertDailyGames } from "../db.js";
 import { sendTipPush } from "../firebase.js";
 import { broadcastTip } from "../telegram.js";
@@ -131,18 +132,6 @@ export function deriveDailyGameBoardStatus(game) {
   if (!startsAt || Number.isNaN(startsAt.getTime())) return "upcoming";
 
   const now = new Date();
-  const elapsedMs = now.getTime() - startsAt.getTime();
-  const sportText = `${game?.league || ""} ${game?.match_name || ""}`.toLowerCase();
-  const expectedDurationMs = sportText.includes("basket") || sportText.includes("nba") || sportText.includes("nbl")
-    ? 3 * 60 * 60 * 1000
-    : sportText.includes("baseball") || sportText.includes("mlb")
-      ? 4 * 60 * 60 * 1000
-      : sportText.includes("tennis")
-        ? 4 * 60 * 60 * 1000
-        : 2.4 * 60 * 60 * 1000;
-
-  if (elapsedMs >= 0 && elapsedMs <= expectedDurationMs) return "live";
-
   const today = dateInSignalTimezone(now);
   const tomorrow = addDaysInSignalTimezone(1);
   const startDay = dateInSignalTimezone(startsAt);
@@ -1037,6 +1026,7 @@ export async function runDailySignalWorker(options = {}) {
 const liveRefreshStatuses = new Set(["NS", "TBD", "1H", "HT", "2H", "ET", "P", "BT", "INT", "LIVE"]);
 const finishedStatuses = new Set(["FT", "AET", "PEN"]);
 let lastStatusRefreshAt = 0;
+let lastSettlementRefreshAt = 0;
 
 function fixtureIdFromPayload(payload) {
   const raw = payload?.raw || payload || {};
@@ -1149,6 +1139,16 @@ async function seedDailyBoardIfEmpty() {
 
 export async function getDailyGames() {
   await ensureDailyGamesTable();
+  const now = Date.now();
+  if (now - lastSettlementRefreshAt > 5 * 60 * 1000) {
+    lastSettlementRefreshAt = now;
+    await checkPendingResults().catch((error) => {
+      console.warn("Pending result settlement refresh failed", {
+        code: error.code,
+        message: error.message
+      });
+    });
+  }
   await refreshDailyGameStatuses().catch((error) => {
     console.warn("Daily game status refresh failed", {
       code: error.code,
@@ -1213,6 +1213,16 @@ export async function getDailyGames() {
 export async function getEvidenceGames(limit = 30) {
   await ensureDailyGamesTable();
   await ensureTipsTable();
+  const now = Date.now();
+  if (now - lastSettlementRefreshAt > 5 * 60 * 1000) {
+    lastSettlementRefreshAt = now;
+    await checkPendingResults().catch((error) => {
+      console.warn("Evidence settlement refresh failed", {
+        code: error.code,
+        message: error.message
+      });
+    });
+  }
 
   const safeLimit = Math.max(1, Math.min(Number(limit) || 30, 50));
   const result = await query(

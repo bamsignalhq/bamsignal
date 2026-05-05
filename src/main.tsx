@@ -349,16 +349,6 @@ const gameBoardStatus = (game: AdminGame): Fixture["status"] => {
   const startsAt = game.startsAt ? new Date(game.startsAt) : null;
   if (!startsAt || Number.isNaN(startsAt.getTime())) return "Upcoming";
   const now = new Date();
-  const elapsedMs = now.getTime() - startsAt.getTime();
-  const sportText = `${game.league} ${game.match}`.toLowerCase();
-  const expectedDurationMs = sportText.includes("basket") || sportText.includes("nba") || sportText.includes("nbl")
-    ? 3 * 60 * 60 * 1000
-    : sportText.includes("baseball") || sportText.includes("mlb")
-      ? 4 * 60 * 60 * 1000
-      : sportText.includes("tennis")
-        ? 4 * 60 * 60 * 1000
-        : 2.4 * 60 * 60 * 1000;
-  if (elapsedMs >= 0 && elapsedMs <= expectedDurationMs) return "Live";
   const dayFormatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Lagos",
     year: "numeric",
@@ -3890,6 +3880,7 @@ function DisclaimerStrip() {
 function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?: string) => void; adminContent: AdminContent }) {
   const [form, setForm] = useState({ name: "", email: "", topic: "", message: "" });
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [submitFeedback, setSubmitFeedback] = useState("");
   const [captcha, setCaptcha] = useState(() => {
     const left = Math.floor(Math.random() * 10) + 1;
     const right = Math.floor(Math.random() * 10) + 1;
@@ -3906,9 +3897,11 @@ function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?:
   const submitContactMessage = async () => {
     if (!verified || !form.name || !form.email || !form.message) {
       setSubmitState("error");
+      setSubmitFeedback("Please fill in your name, email, message, and solve the math check.");
       return;
     }
     setSubmitState("sending");
+    setSubmitFeedback("");
     const payload: SupportMessage = {
       id: Date.now(),
       ...form,
@@ -3919,16 +3912,22 @@ function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?:
       const saved = window.localStorage.getItem("bamsignal-support-messages");
       const messages = saved ? (JSON.parse(saved) as SupportMessage[]) : [];
       window.localStorage.setItem("bamsignal-support-messages", JSON.stringify([payload, ...messages].slice(0, 50)));
-      await fetch("/api/contact", {
+      const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      }).catch(() => undefined);
+      });
+      if (!response.ok) {
+        const detail = await response.json().catch(() => ({}));
+        throw new Error(detail?.error || "Support email could not be sent right now.");
+      }
       setForm({ name: "", email: "", topic: "", message: "" });
       refreshCaptcha();
       setSubmitState("sent");
-    } catch {
+      setSubmitFeedback("Thanks for reaching out to BamSignal. We’ve received your message and sent a confirmation to your email. Our team will be with you shortly.");
+    } catch (error) {
       setSubmitState("error");
+      setSubmitFeedback(error instanceof Error ? error.message : "Support email could not be sent right now.");
     }
   };
 
@@ -3940,7 +3939,7 @@ function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?:
         </button>
         <p className="eyebrow">Contact BamSignal</p>
         <h2>Support, partnerships, VIP help, and app questions.</h2>
-        <p>Send a clean support request to support@bamsignal.com after solving the simple math check. It keeps spam away without making real users work hard.</p>
+        <p>Tell us what you need and we will get back to you as quickly as we can. The quick math check simply keeps spam away.</p>
       </section>
 
       <section className="contact-page-grid">
@@ -3962,8 +3961,8 @@ function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?:
             ) : (
               <button className="secondary-action" disabled><ShieldCheck size={16} /> Solve math to send</button>
             )}
-            {submitState === "sent" && <p className="auth-message">Message sent to support@bamsignal.com and saved in the admin support inbox.</p>}
-            {submitState === "error" && <p className="auth-message">Please fill in your name, email, message, and solve the math check.</p>}
+            {submitState === "sent" && <p className="auth-message success">{submitFeedback}</p>}
+            {submitState === "error" && <p className="auth-message error">{submitFeedback}</p>}
           </div>
         </div>
 
@@ -5964,10 +5963,10 @@ function PublicPredictionCard({
         </button>
       )}
       <div className={`probability-grid ${locked ? "blurred-grid" : ""}`}>
-        <Probability label="Confidence" value="Model" percent={game.confidence} />
-        <Probability label="Odds" value={gameOddsValue(game)} percent={gameOddsPercent(game)} />
-        <Probability label="Room" value={game.tier === "vip" ? "VIP" : "Free"} percent={game.tier === "vip" ? 88 : 72} />
-        <Probability label="Codes" value={game.bookingCodes.length ? "Ready" : "Hidden"} percent={game.bookingCodes.length ? 82 : 45} />
+        <Probability label="Confidence" value="Model" percent={game.confidence} compact />
+        <Probability label="Odds" value={gameOddsValue(game)} percent={gameOddsPercent(game)} compact />
+        <Probability label="Room" value={game.tier === "vip" ? "VIP" : "Free"} percent={game.tier === "vip" ? 88 : 72} compact />
+        <Probability label="Codes" value={game.bookingCodes.length ? "Ready" : "Hidden"} percent={game.bookingCodes.length ? 82 : 45} compact />
       </div>
     </article>
   );
@@ -5989,9 +5988,9 @@ function LeagueLogo({ src, name }: { src?: string; name: string }) {
   );
 }
 
-function Probability({ label, value, percent }: { label: string; value: string; percent: number }) {
+function Probability({ label, value, percent, compact = false }: { label: string; value: string; percent: number; compact?: boolean }) {
   return (
-    <div className="probability">
+    <div className={`probability ${compact ? "compact" : ""}`}>
       <span>{label}</span>
       <strong>{value}</strong>
       <div className="bar"><i style={{ width: `${percent}%` }} /></div>

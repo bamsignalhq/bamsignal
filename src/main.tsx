@@ -145,6 +145,7 @@ type AdminGame = {
   league: string;
   pick: string;
   odds: number;
+  oddsPending?: boolean;
   confidence: number;
   tier: "freemium" | "vip";
   status?: string;
@@ -178,7 +179,7 @@ type ApiTip = {
     result?: string;
     evaluated_at?: string;
   } | null;
-  fixture_payload?: {
+ fixture_payload?: {
     raw?: {
       teams?: {
         home?: { name?: string; logo?: string };
@@ -197,6 +198,12 @@ type ApiTip = {
     fixture?: { date?: string; status?: { short?: string; long?: string } };
     goals?: { home?: number | null; away?: number | null };
     score?: { fulltime?: { home?: number | null; away?: number | null } };
+    metadata?: {
+      odds_missing?: boolean;
+      article_predictions?: { label: string; pick: string }[];
+      parser?: string;
+      article_title?: string;
+    };
   };
 };
 type FixtureRaw = {
@@ -262,6 +269,7 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
   const rawFixture = tip.fixture_payload?.raw || tip.fixture_payload;
   const fixtureTeams = rawFixture?.teams;
   const fixtureLeague = rawFixture?.league;
+  const metadata = tip.fixture_payload?.metadata;
   const [fallbackHome, fallbackAway] = tip.match_name.split(/\s+vs\s+/i);
   const fulltime = rawFixture?.score?.fulltime;
   const goals = rawFixture?.goals;
@@ -277,12 +285,15 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
     ...makeBookingCode(bookmakerKeyFromName(bookmaker), String(code), tip.is_vip),
     id: Number(`${Date.now()}${index}${codeIndex}`.slice(-9))
   }));
+  const oddsNumber = Number(tip.odds);
+  const oddsPending = Boolean(metadata?.odds_missing);
   return {
     id: tip.id || Date.now() + index,
     match: tip.match_name,
     league: tip.league || "Football",
     pick: tip.prediction,
-    odds: Number(tip.odds),
+    odds: Number.isFinite(oddsNumber) && oddsNumber > 0 ? oddsNumber : 1,
+    oddsPending,
     confidence: Number(tip.confidence || (tip.is_vip ? 76 : 82)),
     tier: tip.is_vip ? "vip" : "freemium",
     status: tip.status || "pending",
@@ -301,6 +312,10 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
     pushVipTelegram: tip.is_vip
   };
 };
+
+const gameOddsLabel = (game: Pick<AdminGame, "odds" | "oddsPending">) => game.oddsPending ? "Odds pending" : `${game.odds.toFixed(2)} odds`;
+const gameOddsValue = (game: Pick<AdminGame, "odds" | "oddsPending">) => game.oddsPending ? "Pending" : game.odds.toFixed(2);
+const gameOddsPercent = (game: Pick<AdminGame, "odds" | "oddsPending">) => game.oddsPending ? 38 : Math.min(95, Math.round(game.odds * 32));
 
 const splitMatchName = (match: string) => {
   const [home, away] = match.split(/\s+vs\s+/i);
@@ -2059,7 +2074,7 @@ function HomePage({
                     <span>{topPick.pick}</span>
                   </div>
                   <div className="mini-grid">
-                    <span>Odds <strong>{topPick.odds.toFixed(2)}</strong></span>
+                    <span>Odds <strong>{gameOddsValue(topPick)}</strong></span>
                     <span>Room <strong>{topPick.tier === "vip" ? "VIP" : "Free"}</strong></span>
                     <span>Source <strong>{dailyGamesSource === "daily_games" ? "Live" : "Admin"}</strong></span>
                   </div>
@@ -2310,7 +2325,7 @@ function EvidenceGameRow({ game }: { game: AdminGame }) {
       </div>
       <div className="evidence-meta">
         <span>{game.tier === "vip" ? "VIP" : "Free"}</span>
-        <strong>{game.odds.toFixed(2)}</strong>
+        <strong>{gameOddsValue(game)}</strong>
         <small>{game.result || "Outcome pending"}</small>
       </div>
     </article>
@@ -3448,7 +3463,7 @@ function UserDashboard({
       <div className={`room-pick managed ${locked ? "locked" : ""}`} key={game.id}>
         <div className="room-pick-top">
           <ConfidenceSignal confidence={game.confidence} />
-          <em>{game.odds.toFixed(2)} odds</em>
+          <em>{gameOddsLabel(game)}</em>
         </div>
         <span>{game.match}</span>
         <small>{game.league}</small>
@@ -4570,7 +4585,16 @@ function AdminPage({
       const next = { ...tip, ...patch };
       if (patch.odds !== undefined) {
         const odds = Number(patch.odds);
-        if (Number.isFinite(odds)) next.is_vip = odds >= 1.5;
+        if (Number.isFinite(odds)) {
+          next.is_vip = odds >= 1.5;
+          next.fixture_payload = {
+            ...(next.fixture_payload || {}),
+            metadata: {
+              ...(next.fixture_payload?.metadata || {}),
+              odds_missing: false
+            }
+          };
+        }
       }
       return next;
     }));
@@ -4813,7 +4837,7 @@ function AdminPage({
           <div>
             <p className="eyebrow">Text-to-board worker</p>
             <h2>Paste signals from any trusted source.</h2>
-            <p className="admin-note">Copy odds from any reliable board, paste once, preview the extraction, then publish. CSV gives the cleanest result; plain text works when the lines contain teams, pick, odds, and time.</p>
+            <p className="admin-note">Copy predictions from any reliable board, paste once, preview the extraction, then publish. CSV is cleanest, but article-style previews and plain text are supported too.</p>
           </div>
           <div className="admin-head-actions">
             <button className="secondary-action" onClick={() => setIngestForm({
@@ -4880,7 +4904,7 @@ function AdminPage({
           <textarea
             value={ingestForm.text}
             onChange={(event) => setIngestForm({ ...ingestForm, text: event.target.value })}
-            placeholder={"Raw board format:\nUEFA Champions League\n12:00\nNot Started\nArsenalArsenal\nAtleticoAtletico\nPrediction:\nArsenal\nReason text here\nConfidence\nOdds\n1.60\nWeather\n\nCSV format:\nsport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,,,\n\nText format:\nChelsea vs Arsenal | Over 1.5 goals | 1.42"}
+            placeholder={"Article format:\nBayern Munich vs Paris Saint-Germain prediction, preview & betting tips - 06/05/2026\nBayern Munich\n06/05/26 - 20:00\nPSG\nBayern Munich - PSG\nUEFA Champions League - Allianz Arena\n2nd Round\nOur predictions\nHot tip\nOver 5.5 goals\nMatch result\nBayern Munich to win.\nAnytime goalscorer\nKhvicha Kvaratskhelia\n\nRaw board format:\nUEFA Champions League\n12:00\nNot Started\nArsenalArsenal\nAtleticoAtletico\nPrediction:\nArsenal\nReason text here\nConfidence\nOdds\n1.60\nWeather\n\nCSV format:\nsport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,,,"}
             rows={12}
           />
         </label>
@@ -4899,7 +4923,9 @@ function AdminPage({
         </div>
         <div className="automation-list">
           <div><ClipboardCheck size={16} /><span>Best CSV columns: sport, league, home_team, away_team, prediction, odds, confidence, match_time.</span></div>
+          <div><Activity size={16} /><span>Article-style previews with “Our predictions” are supported, including Hot tip, Match result, and goalscorer picks.</span></div>
           <div><Activity size={16} /><span>Raw copied boards with league, time, teams, Prediction, Confidence, Odds, and Weather separators are supported.</span></div>
+          <div><Goal size={16} /><span>If odds are missing, BamSignal shows “Odds pending” so you can publish now or add prices in preview.</span></div>
           <div><Goal size={16} /><span>Odds below 1.50 go to freemium. Odds 1.50 and above go to VIP automatically.</span></div>
           <div><Activity size={16} /><span>When sport or league is missing, BamSignal reads keywords like NBA, MLB, Premier League, goals, points, runs, sets, and more.</span></div>
           <div><Goal size={16} /><span>Optional pro columns: bookmaker, booking_code, league_logo_url, home_logo_url, away_logo_url.</span></div>
@@ -4937,7 +4963,7 @@ function AdminPage({
             <article className={`admin-game-card ${game.tier}`} key={game.id}>
               <div className="admin-game-head">
                 <strong>{game.tier === "vip" ? "VIP premium" : "Freemium"}</strong>
-                <span>{game.odds.toFixed(2)} odds</span>
+                <span>{gameOddsLabel(game)}</span>
                 <ConfidenceSignal confidence={game.confidence} compact />
               </div>
               <div className="admin-form compact">
@@ -5291,7 +5317,7 @@ function AdminPage({
                     <article className={`ingest-preview-card ${game.tier}`} key={`${tip.match_name}-${tip.prediction}-${index}`}>
                       <div className="admin-game-head">
                         <strong>{game.tier === "vip" ? "VIP" : "Free"}</strong>
-                        <span>{game.odds.toFixed(2)} odds</span>
+                        <span>{gameOddsLabel(game)}</span>
                         <ConfidenceSignal confidence={game.confidence} compact />
                       </div>
                       <div className="admin-form compact ingest-preview-edit-grid">
@@ -5310,7 +5336,7 @@ function AdminPage({
                             <option value="void">Void</option>
                           </select>
                         </label>
-                        <label>Room<input value={game.tier === "vip" ? "VIP, from odds 1.50+" : "Free, from odds below 1.50"} readOnly /></label>
+                        <label>Room<input value={game.oddsPending ? (game.tier === "vip" ? "VIP, selected by default room" : "Free, selected by default room") : (game.tier === "vip" ? "VIP, from odds 1.50+" : "Free, from odds below 1.50")} readOnly /></label>
                       </div>
                       <small>{game.startsAt ? formatMatchDateTime(game.startsAt) : "Time pending"}</small>
                     </article>
@@ -5469,6 +5495,7 @@ function MatchDetailPage({
   const predictionRows = makePredictionRows(detail, game);
   const statusText = raw.fixture?.status?.long || game?.status || "Scheduled";
   const isLockedDetail = game?.tier === "vip";
+  const articlePredictions = detail?.game.fixture_payload?.metadata?.article_predictions || [];
 
   if (loading) {
     return (
@@ -5554,12 +5581,15 @@ function MatchDetailPage({
             {isLockedDetail ? (
               null
             ) : (
-              <div className="prediction-matrix">
-                <PredictionGroup title="Result Predictions" rows={predictionRows.result} />
-                <PredictionGroup title="Over/Under Predictions" rows={predictionRows.totals} />
-                <PredictionGroup title="Score/Goals Predictions" rows={predictionRows.goals} />
-                <PredictionGroup title="Corner Predictions" rows={predictionRows.corners} />
-              </div>
+              <>
+                {articlePredictions.length ? <ArticlePredictionPanel predictions={articlePredictions} /> : null}
+                <div className="prediction-matrix">
+                  <PredictionGroup title="Result Predictions" rows={predictionRows.result} />
+                  <PredictionGroup title="Over/Under Predictions" rows={predictionRows.totals} />
+                  <PredictionGroup title="Score/Goals Predictions" rows={predictionRows.goals} />
+                  <PredictionGroup title="Corner Predictions" rows={predictionRows.corners} />
+                </div>
+              </>
             )}
 
             <StatsPanel stats={detail.statistics || []} homeName={homeName} awayName={awayName} />
@@ -5579,6 +5609,22 @@ function MatchDetailPage({
         </div>
       </section>
     </main>
+  );
+}
+
+function ArticlePredictionPanel({ predictions }: { predictions: { label: string; pick: string }[] }) {
+  return (
+    <section className="match-section compact article-pick-panel">
+      <h3>Published picks</h3>
+      <div className="article-pick-grid">
+        {predictions.map((prediction) => (
+          <article key={`${prediction.label}-${prediction.pick}`}>
+            <span>{prediction.label}</span>
+            <strong>{prediction.pick}</strong>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -5839,7 +5885,7 @@ function PublicPredictionCard({
             <h3>{homeName} <small>vs</small> {awayName}</h3>
             <TeamLogo src={game.awayLogo} name={awayName} />
           </div>
-          <p className="league">{game.odds.toFixed(2)} odds</p>
+          <p className="league">{gameOddsLabel(game)}</p>
         </div>
         <ConfidenceSignal confidence={game.confidence} />
       </div>
@@ -5854,7 +5900,7 @@ function PublicPredictionCard({
       )}
       <div className={`probability-grid ${locked ? "blurred-grid" : ""}`}>
         <Probability label="Confidence" value="Model" percent={game.confidence} />
-        <Probability label="Odds" value={game.odds.toFixed(2)} percent={Math.min(95, Math.round(game.odds * 32))} />
+        <Probability label="Odds" value={gameOddsValue(game)} percent={gameOddsPercent(game)} />
         <Probability label="Room" value={game.tier === "vip" ? "VIP" : "Free"} percent={game.tier === "vip" ? 88 : 72} />
         <Probability label="Codes" value={game.bookingCodes.length ? "Ready" : "Hidden"} percent={game.bookingCodes.length ? 82 : 45} />
       </div>

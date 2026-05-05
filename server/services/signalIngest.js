@@ -25,6 +25,14 @@ function tierFromOdds(odds) {
   return Number(odds) >= 1.5;
 }
 
+function tierFromOptions(options = {}, fallback = false) {
+  return String(options.defaultTier || "").toLowerCase() === "vip" || fallback;
+}
+
+function pendingOddsValue() {
+  return 1;
+}
+
 function sourceLabel(options = {}) {
   return clean(options.sourceName || options.source || "admin-ingest");
 }
@@ -165,6 +173,19 @@ function parseTime(value, dateHint = "") {
   return new Date(`${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+01:00`).toISOString();
 }
 
+function parseArticleDateTime(dateValue = "", timeValue = "") {
+  const dateMatch = clean(dateValue).match(/\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b/);
+  const timeMatch = clean(timeValue || dateValue).match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+  if (!dateMatch || !timeMatch) return null;
+  const year = Number(dateMatch[3].length === 2 ? `20${dateMatch[3]}` : dateMatch[3]);
+  const month = Number(dateMatch[2]);
+  const day = Number(dateMatch[1]);
+  const hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+  if (!year || !month || !day) return null;
+  return new Date(`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+01:00`).toISOString();
+}
+
 function logoFromRow(row, type) {
   return clean(rowValue(row, [
     `${type}_logo_url`,
@@ -183,9 +204,11 @@ function tipFromStructuredRow(row, options = {}, index = 0) {
   const away = clean(rowValue(row, ["away_team", "away", "team_b"], split.away));
   const prediction = clean(rowValue(row, ["prediction", "pick", "market", "signal"]));
   const odds = toNumber(rowValue(row, ["odds", "price"], ""), null);
-  if (!home || !away || !prediction || !odds) return null;
+  if (!home || !away || !prediction) return null;
 
-  const isVip = tierFromOdds(odds);
+  const oddsMissing = !odds;
+  const normalizedOdds = odds || pendingOddsValue();
+  const isVip = oddsMissing ? tierFromOptions(options, false) : tierFromOdds(normalizedOdds);
   const confidence = toNumber(rowValue(row, ["confidence", "confidence_percent", "probability", "percent"], ""), isVip ? 76 : 82);
   const matchTime = parseTime(rowValue(row, ["match_time", "starts_at", "kickoff", "time", "date"], ""), rowValue(row, ["date"], ""));
   const bookmaker = clean(rowValue(row, ["bookmaker", "bookie"], ""));
@@ -198,7 +221,7 @@ function tipFromStructuredRow(row, options = {}, index = 0) {
     match_name: `${home} vs ${away}`,
     league,
     prediction,
-    odds: odds.toFixed(2),
+    odds: normalizedOdds.toFixed(2),
     confidence: Math.max(1, Math.min(99, Math.round(confidence || 70))),
     is_vip: isVip,
     booking_codes: bookingCodes,
@@ -225,7 +248,8 @@ function tipFromStructuredRow(row, options = {}, index = 0) {
       },
       metadata: {
         source_name: sourceLabel(options),
-        raw: row
+        raw: row,
+        odds_missing: oddsMissing
       }
     }
   };
@@ -311,6 +335,7 @@ function fixtureStatusFromPastedStatus(status = "pending") {
 function winnerPrediction(rawPrediction = "", home = "", away = "") {
   const prediction = clean(rawPrediction);
   if (!prediction) return "";
+  if (/\bto win\b/i.test(prediction)) return prediction;
   if (/\b(over|under|btts|both teams|double chance|draw|handicap|corners?|goals?|points?|runs?|sets?)\b/i.test(prediction)) {
     return prediction;
   }
@@ -338,6 +363,98 @@ function blockConfidence(lines, predictionIndex, oddsIndex, fallback) {
     if (number && number <= 99) return number;
   }
   return fallback;
+}
+
+function stripPredictionEmoji(value = "") {
+  return clean(String(value).replace(/^[^\p{L}\p{N}]+/u, ""));
+}
+
+function isArticlePredictionLabel(line = "") {
+  return /\b(hot tip|match result|anytime goalscorer|goalscorer|correct score|double chance|both teams|over\/under|total goals|best bet|banker|value pick)\b/i.test(stripPredictionEmoji(line));
+}
+
+function parseArticlePredictionBlocks(text, options = {}) {
+  const lines = String(text || "")
+    .split(/\n+/)
+    .map((line) => clean(line))
+    .filter(Boolean);
+  const joined = lines.join(" ");
+  if (!/\bour predictions\b/i.test(joined) || !/\bvs\b/i.test(joined)) return [];
+
+  const titleMatch = joined.match(/([^.,\n]+?)\s+vs\s+([^.,\n]+?)\s+prediction/i);
+  const dashMatchLine = lines.find((line) => /\s+-\s+/.test(line) && !/\d{1,2}\/\d{1,2}\/\d{2,4}/.test(line));
+  const dashMatch = dashMatchLine?.match(/^(.+?)\s+-\s+(.+)$/);
+  let home = clean(titleMatch?.[1] || dashMatch?.[1] || "");
+  let away = clean(titleMatch?.[2] || dashMatch?.[2] || "");
+
+  const dateTimeLine = lines.find((line) => /\d{1,2}\/\d{1,2}\/\d{2,4}\s*-\s*\d{1,2}:\d{2}/.test(line));
+  if ((!home || !away) && dateTimeLine) {
+    const dateIndex = lines.indexOf(dateTimeLine);
+    home = clean(lines[dateIndex - 1] || home);
+    away = clean(lines[dateIndex + 1] || away);
+  }
+  if (!home || !away) return [];
+
+  const startsAt = dateTimeLine ? parseArticleDateTime(dateTimeLine, dateTimeLine) : null;
+  const titleDate = joined.match(/\b(\d{1,2}\/\d{1,2}\/\d{2,4})\b/)?.[1] || "";
+  const leagueVenueLine = lines.find((line) => line.includes(" - ") && !line.match(/^(.+?)\s+-\s+(.+)$/)?.[0]?.includes(`${home} - ${away}`) && isLikelyLeagueLine(line));
+  const [leagueFromLine, venueFromLine] = leagueVenueLine ? leagueVenueLine.split(/\s+-\s+/, 2).map(clean) : ["", ""];
+  const context = `${joined} ${home} ${away}`;
+  const sport = inferSport(context, options.defaultSport || "auto");
+  const league = clean(leagueFromLine || inferLeague(context, sport, options.defaultLeague || "auto"));
+  const round = clean(lines.find((line) => /\b(round|final|semi|quarter|group stage|regular season)\b/i.test(line)) || "");
+  const predictionsStart = lines.findIndex((line) => /^our predictions$/i.test(line));
+  if (predictionsStart === -1) return [];
+
+  const predictions = [];
+  for (let index = predictionsStart + 1; index < lines.length - 1; index += 1) {
+    const label = stripPredictionEmoji(lines[index]);
+    if (!isArticlePredictionLabel(label)) continue;
+    const pick = clean(lines[index + 1]);
+    if (!pick || isArticlePredictionLabel(pick)) continue;
+    predictions.push({ label, pick: winnerPrediction(pick.replace(/\.$/, ""), home, away) });
+    index += 1;
+  }
+  if (!predictions.length) return [];
+
+  const isVip = tierFromOptions(options, false);
+  const confidenceBase = isVip ? 76 : 82;
+  return predictions.map((prediction, index) => ({
+    match_name: `${home} vs ${away}`,
+    league,
+    prediction: prediction.label.toLowerCase().includes("hot tip") ? prediction.pick : `${prediction.label}: ${prediction.pick}`,
+    odds: pendingOddsValue().toFixed(2),
+    confidence: Math.max(1, Math.min(99, confidenceBase - index * 3)),
+    is_vip: isVip,
+    booking_codes: {},
+    source: "admin-ingest",
+    status: "pending",
+    starts_at: startsAt,
+    fixture_payload: {
+      provider: "admin-ingest",
+      sport,
+      ingest_index: index,
+      fixture: {
+        id: `admin-article-${Date.now()}-${index}`,
+        date: startsAt,
+        status: { short: "NS", long: "Scheduled" },
+        venue: { name: venueFromLine || null }
+      },
+      league: { name: league, logo: null, country: "", round },
+      teams: {
+        home: { name: home, logo: null },
+        away: { name: away, logo: null }
+      },
+      metadata: {
+        source_name: sourceLabel(options),
+        parser: "article-prediction-block",
+        article_title: lines[0] || "",
+        article_date: titleDate,
+        article_predictions: predictions,
+        odds_missing: true
+      }
+    }
+  }));
 }
 
 function parseCopiedPredictionBlocks(text, options = {}) {
@@ -525,6 +642,9 @@ export function parseSignalsFromText(text, options = {}) {
 
   const structured = parseStructuredText(source, options);
   if (structured.length) return structured;
+
+  const articlePredictions = parseArticlePredictionBlocks(source, options);
+  if (articlePredictions.length) return articlePredictions;
 
   const copiedBlocks = parseCopiedPredictionBlocks(source, options);
   if (copiedBlocks.length) return copiedBlocks;

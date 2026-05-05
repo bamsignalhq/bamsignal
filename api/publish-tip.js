@@ -128,7 +128,6 @@ function bestSportsDbTeamMatch(teams = [], teamName = "", sportName = "Soccer") 
     .map((team) => ({ team, lookup: normalizeLookup(team.strTeam || team.strAlternate || "") }));
   return candidates.find(({ lookup }) => lookup === target)?.team
     || candidates.find(({ lookup }) => lookup.includes(target) || target.includes(lookup))?.team
-    || candidates[0]?.team
     || null;
 }
 

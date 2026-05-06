@@ -6175,8 +6175,33 @@ function MatchDetailPage({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(apiUrl(`/api/match-details?id=${encodeURIComponent(matchId)}&t=${Date.now()}`), { cache: "no-store" })
-      .then((response) => response.ok ? response.json() : Promise.reject(new Error("Match detail could not be loaded")))
+    const loadDetail = async () => {
+      const cacheBust = `t=${Date.now()}`;
+      const attempts = [
+        apiUrl(`/api/match-details/${encodeURIComponent(matchId)}?${cacheBust}`),
+        apiUrl(`/api/match-details?id=${encodeURIComponent(matchId)}&${cacheBust}`)
+      ];
+      let lastError: Error | null = null;
+      for (const url of attempts) {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) {
+            lastError = new Error("Match detail could not be loaded");
+            continue;
+          }
+          const contentType = response.headers.get("content-type") || "";
+          if (!contentType.includes("application/json")) {
+            lastError = new Error("Match detail could not be loaded");
+            continue;
+          }
+          return await response.json();
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error("Match detail could not be loaded");
+        }
+      }
+      throw lastError || new Error("Match detail could not be loaded");
+    };
+    loadDetail()
       .then((payload: MatchDetailApi) => {
         if (!cancelled) {
           setDetail(payload);

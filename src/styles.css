@@ -2032,6 +2032,43 @@ footer {
   padding: 10px;
 }
 
+.auth-notice-backdrop {
+  align-items: center;
+  background: rgba(4, 9, 16, 0.7);
+  backdrop-filter: blur(12px);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 18px;
+  position: fixed;
+  z-index: 90;
+}
+
+.auth-notice-modal {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, transparent), transparent 38%),
+    var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 22px;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.34);
+  display: grid;
+  gap: 14px;
+  max-width: 420px;
+  padding: 18px;
+  width: min(100%, 420px);
+}
+
+.auth-notice-modal h3,
+.auth-notice-modal p {
+  margin: 0;
+}
+
+.auth-notice-modal p:not(.eyebrow) {
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
 .auth-message.success {
   background: color-mix(in srgb, #26c281 14%, transparent);
   border-color: color-mix(in srgb, #26c281 38%, var(--border));
@@ -2180,8 +2217,8 @@ footer {
   border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
   border-radius: var(--radius);
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px;
 }
 
 .paystack-checkout h3 {
@@ -2221,7 +2258,7 @@ footer {
 
 .room-grid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -2360,13 +2397,14 @@ footer {
 
 .room-pick.managed {
   border: 1px solid color-mix(in srgb, var(--border) 84%, var(--accent));
-  gap: 6px;
+  gap: 5px;
+  padding: 10px;
 }
 
 .room-pick-top {
   align-items: center;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: space-between;
 }
 
@@ -2431,8 +2469,8 @@ footer {
   border: 1px solid color-mix(in srgb, #fbbf24 34%, var(--border));
   border-radius: var(--radius);
   display: grid;
-  gap: 9px;
-  padding: 12px;
+  gap: 7px;
+  padding: 11px;
 }
 
 .vip-plan-card h3,
@@ -2442,7 +2480,7 @@ footer {
 
 .vip-plan-card > strong {
   color: #fbbf24;
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1;
 }
 
@@ -2478,8 +2516,8 @@ footer {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   display: grid;
-  gap: 16px;
-  padding: 18px;
+  gap: 12px;
+  padding: 14px;
 }
 
 .user-vault-route .shell {
@@ -2531,9 +2569,9 @@ footer {
   border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--border));
   border-radius: var(--radius);
   display: grid;
-  gap: 14px;
+  gap: 12px;
   grid-template-columns: auto minmax(0, 1fr);
-  padding: 14px;
+  padding: 12px;
 }
 
 .profile-photo-frame {
@@ -2547,16 +2585,16 @@ footer {
   align-items: center;
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--accent) 88%, #ffffff), var(--accent-2));
-  border: 3px solid color-mix(in srgb, var(--surface) 72%, #ffffff);
-  border-radius: 22px;
+  border: 2px solid color-mix(in srgb, var(--surface) 72%, #ffffff);
+  border-radius: 20px;
   box-shadow: 0 16px 36px color-mix(in srgb, var(--accent) 18%, transparent);
   color: #101923;
   display: flex;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 900;
-  height: 88px;
+  height: 76px;
   justify-content: center;
-  width: 88px;
+  width: 76px;
 }
 
 .profile-photo.has-avatar {
@@ -2594,7 +2632,7 @@ footer {
 .profile-identity {
   align-content: center;
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .profile-identity p {
@@ -2614,14 +2652,14 @@ footer {
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  padding: 6px 8px;
+  padding: 5px 8px;
 }
 
 .profile-score-grid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
@@ -2631,13 +2669,13 @@ footer {
   border-radius: var(--radius);
   display: grid;
   gap: 2px;
-  min-height: 68px;
-  padding: 10px;
+  min-height: 60px;
+  padding: 9px;
 }
 
 .profile-score-grid strong {
   color: var(--text);
-  font-size: 24px;
+  font-size: 21px;
   line-height: 1;
 }
 
@@ -2664,9 +2702,9 @@ footer {
   border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
   border-radius: var(--radius);
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: 14px;
+  padding: 12px;
 }
 
 .profile-share-card h3,
@@ -2689,9 +2727,9 @@ footer {
   border: 1px solid color-mix(in srgb, #fbbf24 40%, var(--border));
   border-radius: var(--radius);
   display: grid;
-  gap: 12px;
+  gap: 10px;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: 14px;
+  padding: 12px;
 }
 
 .referral-wallet-card h3,
@@ -2711,21 +2749,21 @@ footer {
   border-radius: var(--radius);
   display: grid;
   gap: 2px;
-  min-width: 108px;
-  padding: 10px;
+  min-width: 92px;
+  padding: 8px;
   text-align: center;
 }
 
 .referral-wallet-card strong {
   color: #fbbf24;
-  font-size: 30px;
+  font-size: 26px;
   line-height: 1;
 }
 
 .profile-fintech-grid {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .profile-wallet-card {
@@ -2734,9 +2772,9 @@ footer {
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
   border-radius: var(--radius);
   display: grid;
-  gap: 9px;
-  min-height: 132px;
-  padding: 12px;
+  gap: 7px;
+  min-height: 104px;
+  padding: 10px;
 }
 
 .profile-wallet-card > div {
@@ -2757,7 +2795,7 @@ footer {
 .profile-wallet-card strong {
   color: var(--text);
   display: block;
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.1;
   margin-top: 4px;
 }
@@ -2769,6 +2807,7 @@ footer {
 .profile-wallet-card small {
   color: var(--muted);
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .profile-hero {
@@ -2828,7 +2867,7 @@ footer {
 
 .profile-grid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -2841,8 +2880,8 @@ footer {
   display: grid;
   gap: 4px;
   grid-template-columns: auto minmax(0, 1fr);
-  min-height: 64px;
-  padding: 10px;
+  min-height: 58px;
+  padding: 9px;
 }
 
 .profile-grid svg {

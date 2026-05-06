@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
+import { FCM } from "@capacitor-community/fcm";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -50,8 +51,11 @@ const productionSupabaseAnonKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zd2l3eG1hdnVxcHV6bHNhc2NzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzg1MzksImV4cCI6MjA5MTc1NDUzOX0.5npMr6niRCG1n2EJL4B8ZSeeEel7ZZIVq6btbM3oghs";
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || productionSupabaseUrl;
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || productionSupabaseAnonKey;
+const publicAppUrl = ((import.meta.env.VITE_PUBLIC_APP_URL as string | undefined) || "https://bamsignal.com").replace(/\/$/, "");
 const demoOtpEnabled = import.meta.env.DEV;
 const nativeAuthRedirectUrl = "com.bamsignal.app://auth-callback";
+const isNativePlatform = Capacitor.getPlatform() !== "web";
+const apiUrl = (path: string) => isNativePlatform ? `${publicAppUrl}${path}` : path;
 const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
@@ -95,6 +99,10 @@ type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unloc
 type AuthIntent = "login" | "signup" | "reset" | null;
 type PendingEmailOtpType = "signup" | "email";
 type DashboardTab = "home" | "past" | "vip" | "profile";
+type AuthNotice = {
+  title: string;
+  body: string;
+};
 type BookmakerKey =
   | "sportybet"
   | "bet9ja"
@@ -339,7 +347,7 @@ const formatMatchDateTime = (startsAt?: string) => {
   }).format(date);
 };
 
-const gameBoardStatus = (game: AdminGame): Fixture["status"] => {
+const gameBoardStatus = (game: AdminGame): BoardStatus => {
   const normalized = (game.status || "").trim().toLowerCase();
   const liveStatuses = new Set(["1h", "2h", "ht", "et", "p", "bt", "int", "live", "in_play", "in-play"]);
   const finishedStatuses = new Set(["won", "lost", "void", "finished", "ft", "aet", "pen", "cancelled", "postponed"]);
@@ -406,6 +414,12 @@ const evaluateGamePick = (game: AdminGame): boolean | null => {
 
 const gameKey = (game: AdminGame) => `${game.match.toLowerCase()}|${game.pick.toLowerCase()}|${game.tier}`;
 const gameMatchKey = (game: AdminGame) => `${game.match.toLowerCase()}|${game.startsAt || ""}|${game.league.toLowerCase()}`;
+const isLegacySampleGame = (game: Partial<AdminGame>) => {
+  const match = String(game.match || "").trim().toLowerCase();
+  const pick = String(game.pick || "").trim().toLowerCase();
+  const tier = game.tier === "vip" ? "vip" : "freemium";
+  return legacySampleGameKeys.has(`${match}|${pick}|${tier}`) && !game.startsAt && !game.status && !game.result;
+};
 
 const dedupeGamesByMatch = (games: AdminGame[]) => {
   const byMatch = new Map<string, AdminGame>();
@@ -463,8 +477,9 @@ const compareDisplayGames = (left: AdminGame, right: AdminGame) => {
   return gameLeaguePriority(right) - gameLeaguePriority(left);
 };
 
-const pickFeaturedGame = (adminGames: AdminGame[], effectiveGames: AdminGame[]) => {
-  const board = dedupeGamesByMatch(effectiveGames)
+const pickFeaturedGame = (games: AdminGame[]) => {
+  const board = dedupeGamesByMatch(games)
+    .filter((game) => !isLegacySampleGame(game))
     .filter((game) => !["Won", "Lost", "Finished"].includes(evidenceStatusLabel(game)))
     .sort((left, right) => {
       const leftTime = left.startsAt ? new Date(left.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
@@ -473,9 +488,7 @@ const pickFeaturedGame = (adminGames: AdminGame[], effectiveGames: AdminGame[]) 
     });
   const firstFree = board.find((game) => game.tier === "freemium" && game.odds < 1.5);
   if (firstFree) return firstFree;
-  const manualGame = adminGames.find((game) => !defaultAdminGameKeys.has(gameKey(game)));
-  if (manualGame) return manualGame;
-  return board.sort((left, right) => gameLeaguePriority(right) - gameLeaguePriority(left))[0] || effectiveGames[0] || null;
+  return board.sort((left, right) => gameLeaguePriority(right) - gameLeaguePriority(left))[0] || null;
 };
 
 const orderGamesForDisplay = (games: AdminGame[]) => {
@@ -652,31 +665,7 @@ const getSavedTheme = (): Theme => {
   }
 };
 
-type Fixture = {
-  id: number;
-  league: string;
-  country: string;
-  time: string;
-  home: string;
-  away: string;
-  pick: string;
-  confidence: number;
-  result: string;
-  btts: number;
-  over25: number;
-  corners: number;
-  score: string;
-  status: "Live" | "Today" | "Tomorrow" | "Upcoming" | "Finished";
-};
-
-type Evidence = {
-  match: string;
-  pick: string;
-  odds: string;
-  result: string;
-  status: "Won" | "Lost";
-  tier: "Free" | "VIP";
-};
+type BoardStatus = "Live" | "Today" | "Tomorrow" | "Upcoming" | "Finished";
 type PlayedGame = {
   teams: string;
   league: string;
@@ -718,247 +707,19 @@ function ConfidenceSignal({ confidence, compact = false }: { confidence: number;
   );
 }
 
-const fixtures: Fixture[] = [
-  {
-    id: 1,
-    league: "Champions League",
-    country: "Europe",
-    time: "19:00",
-    home: "Paris SG",
-    away: "Bayern Munich",
-    pick: "Over 1.5 goals",
-    confidence: 86,
-    result: "Away or draw",
-    btts: 65,
-    over25: 61,
-    corners: 88,
-    score: "1-2",
-    status: "Today"
-  },
-  {
-    id: 2,
-    league: "Championship",
-    country: "England",
-    time: "18:45",
-    home: "Southampton",
-    away: "Ipswich Town",
-    pick: "Home over 0.5",
-    confidence: 73,
-    result: "Home win",
-    btts: 54,
-    over25: 49,
-    corners: 95,
-    score: "2-1",
-    status: "Today"
-  },
-  {
-    id: 3,
-    league: "La Liga",
-    country: "Spain",
-    time: "20:00",
-    home: "Espanyol",
-    away: "Real Madrid",
-    pick: "Away double chance",
-    confidence: 77,
-    result: "Away win",
-    btts: 51,
-    over25: 52,
-    corners: 91,
-    score: "1-2",
-    status: "Tomorrow"
-  },
-  {
-    id: 4,
-    league: "Serie A",
-    country: "Italy",
-    time: "16:30",
-    home: "Roma",
-    away: "Atalanta",
-    pick: "Both teams to score",
-    confidence: 68,
-    result: "Draw",
-    btts: 71,
-    over25: 58,
-    corners: 79,
-    score: "1-1",
-    status: "Live"
-  },
-  {
-    id: 5,
-    league: "Bundesliga",
-    country: "Germany",
-    time: "14:30",
-    home: "Dortmund",
-    away: "Leipzig",
-    pick: "Over 2.5 goals",
-    confidence: 74,
-    result: "Home or draw",
-    btts: 69,
-    over25: 76,
-    corners: 83,
-    score: "2-2",
-    status: "Tomorrow"
-  }
-];
-
-const dailySureSignals: Fixture[] = [
-  fixtures[0],
-  {
-    id: 101,
-    league: "Premier League",
-    country: "England",
-    time: "17:30",
-    home: "Man City",
-    away: "Tottenham",
-    pick: "Home win + over 1.5 goals",
-    confidence: 84,
-    result: "Home win",
-    btts: 57,
-    over25: 68,
-    corners: 82,
-    score: "2-1",
-    status: "Today"
-  },
-  {
-    id: 102,
-    league: "La Liga",
-    country: "Spain",
-    time: "20:00",
-    home: "Barcelona",
-    away: "Villarreal",
-    pick: "Barcelona team over 1.5",
-    confidence: 82,
-    result: "Home win",
-    btts: 61,
-    over25: 64,
-    corners: 76,
-    score: "3-1",
-    status: "Today"
-  },
-  {
-    id: 103,
-    league: "Bundesliga",
-    country: "Germany",
-    time: "14:30",
-    home: "Bayer Leverkusen",
-    away: "Mainz",
-    pick: "Home win and BTTS",
-    confidence: 80,
-    result: "Home win",
-    btts: 66,
-    over25: 63,
-    corners: 79,
-    score: "2-1",
-    status: "Today"
-  }
-];
-
 const getDailyKey = () => new Date().toLocaleDateString("en-CA");
 
-const getDailySureSignal = (dailyKey: string) => {
-  const dayNumber = dailyKey.split("-").reduce((total, part) => total + Number(part), 0);
-  const dailyPool = dailySureSignals
-    .filter((fixture) => fixture.status === "Today" && fixture.confidence >= 80)
-    .sort((left, right) => right.confidence - left.confidence);
-  const candidates = dailyPool.length ? dailyPool : fixtures;
-  return candidates[dayNumber % candidates.length];
-};
-
 const defaultAdminGames: AdminGame[] = [
-  {
-    id: 1,
-    match: "Paris SG vs Bayern Munich",
-    league: "Champions League",
-    pick: "Over 1.5 goals",
-    odds: 1.42,
-    confidence: 86,
-    tier: "freemium",
-    showBookingCodes: true,
-    bookingCodes: [
-      { ...makeBookingCode("sportybet", "SB-186"), id: 101 },
-      { ...makeBookingCode("bet9ja", "B9-142"), id: 102 },
-      { ...makeBookingCode("betking", "BK-186"), id: 103 }
-    ],
-    pushApp: true,
-    pushTelegram: true,
-    pushWhatsApp: true,
-    pushVipTelegram: false
-  },
-  {
-    id: 2,
-    match: "Southampton vs Ipswich Town",
-    league: "Championship",
-    pick: "Home over 0.5",
-    odds: 1.36,
-    confidence: 73,
-    tier: "freemium",
-    showBookingCodes: false,
-    bookingCodes: [
-      { ...makeBookingCode("sportybet", "SB-273"), id: 201 },
-      { ...makeBookingCode("bet9ja", "B9-136"), id: 202 }
-    ],
-    pushApp: true,
-    pushTelegram: true,
-    pushWhatsApp: true,
-    pushVipTelegram: false
-  },
-  {
-    id: 3,
-    match: "Man City vs Tottenham",
-    league: "Premier League",
-    pick: "Home win + over 1.5",
-    odds: 2.18,
-    confidence: 82,
-    tier: "vip",
-    showBookingCodes: true,
-    bookingCodes: [
-      { ...makeBookingCode("sportybet", "VIP-SB218", true), id: 301 },
-      { ...makeBookingCode("bet9ja", "VIP-B9218", true), id: 302 },
-      { ...makeBookingCode("onexbet", "VIP-1X218", true), id: 303 }
-    ],
-    pushApp: true,
-    pushTelegram: false,
-    pushWhatsApp: false,
-    pushVipTelegram: true
-  },
-  {
-    id: 4,
-    match: "Barcelona vs Villarreal",
-    league: "La Liga",
-    pick: "Barcelona team over 1.5",
-    odds: 1.94,
-    confidence: 79,
-    tier: "vip",
-    showBookingCodes: true,
-    bookingCodes: [
-      { ...makeBookingCode("betking", "VIP-BK194", true), id: 401 },
-      { ...makeBookingCode("betway", "VIP-BW194", true), id: 402 }
-    ],
-    pushApp: true,
-    pushTelegram: false,
-    pushWhatsApp: false,
-    pushVipTelegram: true
-  },
-  {
-    id: 5,
-    match: "Bayer Leverkusen vs Mainz",
-    league: "Bundesliga",
-    pick: "Home win and BTTS",
-    odds: 2.42,
-    confidence: 76,
-    tier: "vip",
-    showBookingCodes: true,
-    bookingCodes: [
-      { ...makeBookingCode("sportybet", "VIP-SB242", true), id: 501 },
-      { ...makeBookingCode("msport", "VIP-MS242", true), id: 502 }
-    ],
-    pushApp: true,
-    pushTelegram: false,
-    pushWhatsApp: false,
-    pushVipTelegram: true
-  }
+  
 ];
 const defaultAdminGameKeys = new Set(defaultAdminGames.map(gameKey));
+const legacySampleGameKeys = new Set([
+  "paris sg vs bayern munich|over 1.5 goals|freemium",
+  "southampton vs ipswich town|home over 0.5|freemium",
+  "man city vs tottenham|home win + over 1.5|vip",
+  "barcelona vs villarreal|barcelona team over 1.5|vip",
+  "bayer leverkusen vs mainz|home win and btts|vip"
+]);
 
 const adminPlan = [
   "Publish Free Sure Game to app, Telegram channel, and WhatsApp channel",
@@ -1255,7 +1016,7 @@ const leagueDetails = [
     intro: "Bundesliga predictions often involve tempo, transitions, attacking football, pressing, and goal-friendly patterns that can create strong over-goals and BTTS signals.",
     sections: [
       "What makes it unique: Germany's Bundesliga is known for attacking intent, pressing, vertical passing, and quick transitions. Many teams are brave with the ball, which can create open games, quick swings, and late goals. This makes goal markets very important for beginners to understand.",
-      "Major clubs and trophies: Bayern Munich are the dominant German powerhouse and Champions League winners. Borussia Dortmund are famous for elite talent development, league titles, and European prestige. Bayer Leverkusen, RB Leipzig, Werder Bremen, Stuttgart, Hamburg, Borussia Monchengladbach, Schalke, and Eintracht Frankfurt all carry important domestic or European history. Frankfurt and Leverkusen have major European moments, while Dortmund and Bayern are globally recognized.",
+      "Major clubs and trophies: Borussia Dortmund are famous for elite talent development, league titles, and European prestige. Bayer Leverkusen, RB Leipzig, Werder Bremen, Stuttgart, Hamburg, Borussia Monchengladbach, Schalke, and Eintracht Frankfurt all carry important domestic or European history. Frankfurt and Leverkusen have major European moments, while Dortmund remain one of Germany's most globally recognized clubs.",
       "How beginners should apply it: do not assume every Bundesliga game is automatically over 2.5, but do respect the league's attacking patterns. Check whether both teams press high, concede chances, and have available forwards. If a favorite is too short to back directly, team goals, over 1.5, BTTS, or corners may explain the game better.",
       "BamSignal angle: Bundesliga predictions are strongest when tempo data supports the eye test. High shot volume, aggressive full-backs, defensive injuries, and transition-heavy matchups often produce useful goal and corner signals."
     ]
@@ -1266,7 +1027,7 @@ const leagueDetails = [
     intro: "Champions League predictions must respect elite quality, two-leg strategy, travel, rotation, and the pressure of Europe's biggest club competition.",
     sections: [
       "What makes it unique: the Champions League brings together Europe's strongest clubs, but the market is not only about famous names. Group stage matches, knockout first legs, second legs, away goals context no longer applying, travel, and squad depth all change how teams approach risk.",
-      "Major clubs and trophies: Real Madrid are the competition's defining dynasty. AC Milan, Liverpool, Bayern Munich, Barcelona, Ajax, Inter Milan, Manchester United, Chelsea, Manchester City, Juventus, Benfica, Porto, Nottingham Forest, Aston Villa, Borussia Dortmund, Marseille, and others are part of European Cup and Champions League history. These clubs carry different levels of pressure, experience, and expectation when the anthem plays.",
+      "Major clubs and trophies: Real Madrid are the competition's defining dynasty. AC Milan, Liverpool, Barcelona, Ajax, Inter Milan, Manchester United, Chelsea, Manchester City, Juventus, Benfica, Porto, Nottingham Forest, Aston Villa, Borussia Dortmund, Marseille, and others are part of European Cup and Champions League history. These clubs carry different levels of pressure, experience, and expectation when the anthem plays.",
       "How beginners should apply it: check the tie situation before picking. In a first leg, a team may avoid risk. In a second leg, the team behind may attack early, which can affect goals, corners, cards, and BTTS. Domestic league schedule also matters because elite clubs manage minutes carefully.",
       "BamSignal angle: Champions League predictions should combine club strength with competition behavior. The best signals often come from identifying whether a match will be controlled, chaotic, rotated, or desperate. That context can point to safer picks like double chance, over 1.5, team goals, or corners."
     ]
@@ -1306,14 +1067,14 @@ const globalLeagueRegions = [
   {
     region: "Germany",
     competitions: "Bundesliga, 2. Bundesliga, DFB-Pokal, Supercup",
-    clubs: "Bayern Munich, Borussia Dortmund, Bayer Leverkusen, RB Leipzig, Eintracht Frankfurt, Stuttgart, Werder Bremen, Schalke, Hamburg, Borussia Monchengladbach",
+    clubs: "Borussia Dortmund, Bayer Leverkusen, RB Leipzig, Eintracht Frankfurt, Stuttgart, Werder Bremen, Schalke, Hamburg, Borussia Monchengladbach, Freiburg",
     notes: "German football is usually strong for goals, transitions, pressing, and corners. The main discipline is avoiding automatic over-picks when matchup tempo is slower than the league reputation."
   },
   {
     region: "France",
     competitions: "Ligue 1, Ligue 2, Coupe de France, Trophee des Champions",
-    clubs: "Paris Saint-Germain, Marseille, Lyon, Monaco, Lille, Lens, Rennes, Nice, Nantes, Saint-Etienne, Bordeaux",
-    notes: "French football can mix elite attacking talent with compact defensive teams. PSG fixtures need different treatment from mid-table tactical matches."
+    clubs: "Marseille, Lyon, Monaco, Lille, Lens, Rennes, Nice, Nantes, Saint-Etienne, Bordeaux, Strasbourg",
+    notes: "French football can mix elite attacking talent with compact defensive teams. Some fixtures are open and technical, while others are slower and more tactical than casual punters expect."
   },
   {
     region: "Portugal and Netherlands",
@@ -1659,11 +1420,37 @@ const loadAdminContent = (): AdminContent => {
         returning: { ...defaultAdminContent.loginBanners.returning, ...(parsed.loginBanners?.returning ?? {}) },
         weekendSpecial: { ...defaultAdminContent.loginBanners.weekendSpecial, ...(parsed.loginBanners?.weekendSpecial ?? {}) }
       },
-      games: parsed.games?.length ? parsed.games.map((game, index) => ({
-        ...defaultAdminGames[index % defaultAdminGames.length],
-        ...game,
-        bookingCodes: normalizeCodes(game.bookingCodes, defaultAdminGames[index % defaultAdminGames.length].bookingCodes)
-      })) : defaultAdminGames
+      games: parsed.games?.length
+        ? parsed.games
+          .filter((game) => !isLegacySampleGame(game))
+          .map((game, index) => {
+            const fallbackGame = defaultAdminGames[index % Math.max(defaultAdminGames.length, 1)];
+            return {
+              id: game.id ?? Date.now() + index,
+              match: game.match ?? fallbackGame?.match ?? "New fixture",
+              league: game.league ?? fallbackGame?.league ?? "Football",
+              pick: game.pick ?? fallbackGame?.pick ?? "Prediction",
+              odds: game.odds ?? fallbackGame?.odds ?? 1.5,
+              confidence: game.confidence ?? fallbackGame?.confidence ?? 75,
+              tier: game.tier ?? fallbackGame?.tier ?? "freemium",
+              showBookingCodes: game.showBookingCodes ?? fallbackGame?.showBookingCodes ?? false,
+              bookingCodes: normalizeCodes(game.bookingCodes, fallbackGame?.bookingCodes ?? []),
+              pushApp: game.pushApp ?? fallbackGame?.pushApp ?? true,
+              pushTelegram: game.pushTelegram ?? fallbackGame?.pushTelegram ?? true,
+              pushWhatsApp: game.pushWhatsApp ?? fallbackGame?.pushWhatsApp ?? true,
+              pushVipTelegram: game.pushVipTelegram ?? fallbackGame?.pushVipTelegram ?? false,
+              startsAt: game.startsAt,
+              status: game.status,
+              result: game.result,
+              leagueLogo: game.leagueLogo,
+              homeLogo: game.homeLogo,
+              awayLogo: game.awayLogo,
+              homeTeam: game.homeTeam,
+              awayTeam: game.awayTeam,
+              oddsPending: game.oddsPending
+            };
+          })
+        : defaultAdminGames
     };
   } catch {
     return defaultAdminContent;
@@ -1719,7 +1506,7 @@ function App() {
   const [theme, setTheme] = useState<Theme>(() => getSavedTheme());
   const [menuOpen, setMenuOpen] = useState(false);
   const [isCompactTopbar, setIsCompactTopbar] = useState(() => window.innerWidth <= 820);
-  const [activeStatus, setActiveStatus] = useState<Fixture["status"] | "All">("All");
+  const [activeStatus, setActiveStatus] = useState<BoardStatus | "All">("All");
   const [isAuthed, setIsAuthed] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
@@ -1821,7 +1608,7 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/auth/identity?action=settings", {
+    fetch(apiUrl("/api/auth/identity?action=settings"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: "{}",
@@ -1842,7 +1629,7 @@ function App() {
   useEffect(() => {
     let cancelled = false;
     const refreshDailyGames = () => {
-      fetch(`/api/daily-games?t=${Date.now()}`, { cache: "no-store" })
+      fetch(apiUrl(`/api/daily-games?t=${Date.now()}`), { cache: "no-store" })
         .then((response) => response.ok ? response.json() : null)
         .then((payload: DailyGamesApiResponse | null) => {
           if (cancelled || !payload?.ok) return;
@@ -1868,8 +1655,8 @@ function App() {
   }, [activeStatus, effectiveAdminContent.games]);
 
   const topPick = useMemo(() => {
-    return pickFeaturedGame(adminContent.games, effectiveAdminContent.games);
-  }, [adminContent.games, effectiveAdminContent.games]);
+    return pickFeaturedGame(effectiveAdminContent.games);
+  }, [effectiveAdminContent.games]);
 
   const goHome = () => navigate(isNative ? { kind: "app" } : { kind: "home" }, isNative ? "/app" : "/");
   const isUserVault = page.kind === "app" && isAuthed;
@@ -2056,11 +1843,11 @@ function HomePage({
   navigate,
   adminContent
 }: {
-  activeStatus: Fixture["status"] | "All";
+  activeStatus: BoardStatus | "All";
   filteredGames: AdminGame[];
   topPick: AdminGame | null;
   dailyGamesSource: string;
-  setActiveStatus: (status: Fixture["status"] | "All") => void;
+  setActiveStatus: (status: BoardStatus | "All") => void;
   navigate: (page: Page, path?: string) => void;
   adminContent: AdminContent;
 }) {
@@ -2161,7 +1948,7 @@ function HomePage({
                   <button
                     key={status}
                     className={activeStatus === status ? "active" : ""}
-                    onClick={() => setActiveStatus(status as Fixture["status"] | "All")}
+                    onClick={() => setActiveStatus(status as BoardStatus | "All")}
                   >
                     {status}
                   </button>
@@ -2294,7 +2081,7 @@ function EvidenceBoard({ games }: { games: AdminGame[] }) {
   useEffect(() => {
     let cancelled = false;
     const refreshEvidence = () => {
-      fetch(`/api/evidence-games?limit=30&t=${Date.now()}`, { cache: "no-store" })
+    fetch(apiUrl(`/api/evidence-games?limit=30&t=${Date.now()}`), { cache: "no-store" })
         .then((response) => response.ok ? response.json() : null)
         .then((payload: EvidenceGamesApiResponse | null) => {
           if (cancelled || !payload?.ok) return;
@@ -2490,6 +2277,7 @@ function UserDashboard({
   });
   const [resetEmail, setResetEmail] = useState("");
   const [authMessage, setAuthMessage] = useState("");
+  const [authNotice, setAuthNotice] = useState<AuthNotice | null>(null);
   const [isResendingCode, setIsResendingCode] = useState(false);
   const [authBusy, setAuthBusy] = useState<"signup" | "verify" | "login" | "loginOtp" | "reset" | "payment" | null>(null);
   const [referralPoints, setReferralPoints] = useState(() => Number(window.localStorage.getItem("bamsignal-referral-points") || 0));
@@ -2506,7 +2294,7 @@ function UserDashboard({
   useEffect(() => {
     let cancelled = false;
     const refreshPlayedGames = () => {
-      fetch(`/api/evidence-games?limit=30&t=${Date.now()}`, { cache: "no-store" })
+      fetch(apiUrl(`/api/evidence-games?limit=30&t=${Date.now()}`), { cache: "no-store" })
         .then((response) => response.ok ? response.json() : null)
         .then((payload: EvidenceGamesApiResponse | null) => {
           if (cancelled || !payload?.ok) return;
@@ -2572,6 +2360,10 @@ function UserDashboard({
     }
     if (url) window.open(url, "_blank", "noopener,noreferrer");
   };
+  const openAuthNotice = (title: string, body: string) => {
+    setAuthNotice({ title, body });
+  };
+  const closeAuthNotice = () => setAuthNotice(null);
   const toggleSecret = (key: keyof typeof visibleSecrets) => {
     setVisibleSecrets((current) => ({ ...current, [key]: !current[key] }));
   };
@@ -2709,41 +2501,90 @@ function UserDashboard({
     };
   }, [deviceBinding, isAuthed, setIsAuthed]);
 
+  const registerPushNotifications = useCallback(async (showFeedback = false) => {
+    if (!Capacitor.isNativePlatform()) {
+      if (showFeedback) {
+        openAuthNotice("Open the app for alerts", "Push notifications are managed inside the BamSignal iPhone or Android app.");
+      }
+      return false;
+    }
+
+    let tokenStored = false;
+    try {
+      const permission = await PushNotifications.requestPermissions();
+      if (permission.receive !== "granted") {
+        if (showFeedback) {
+          openAuthNotice("Notifications are off", "Allow notifications in your phone settings to receive BamSignal drops.");
+        }
+        return false;
+      }
+
+      if (Capacitor.getPlatform() === "android") {
+        await PushNotifications.createChannel({
+          id: "signals",
+          name: "BamSignal alerts",
+          description: "Free and VIP prediction alerts from BamSignal.",
+          importance: 5
+        }).catch(() => undefined);
+      }
+
+      await PushNotifications.removeAllListeners();
+      await PushNotifications.addListener("registration", async ({ value }) => {
+        let token = value;
+        try {
+          const nativeFcm = await FCM.getToken();
+          if (nativeFcm.token) token = nativeFcm.token;
+          await FCM.subscribeTo({ topic: "signals" }).catch(() => undefined);
+          if (isPremium) {
+            await FCM.subscribeTo({ topic: "premium-users" }).catch(() => undefined);
+          } else {
+            await FCM.unsubscribeFrom({ topic: "premium-users" }).catch(() => undefined);
+          }
+        } catch {
+          token = value;
+        }
+
+        await fetch(apiUrl("/api/auth/identity?action=push-token"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: userProfile.email,
+            phone: userProfile.phone,
+            token
+          })
+        }).catch(() => undefined);
+        tokenStored = true;
+      });
+      await PushNotifications.addListener("registrationError", () => undefined);
+      await PushNotifications.addListener("pushNotificationReceived", () => undefined);
+      await PushNotifications.register();
+
+      if (showFeedback) {
+        window.setTimeout(() => {
+          openAuthNotice(
+            tokenStored ? "Notifications are ready" : "Notifications are connecting",
+            tokenStored
+              ? "BamSignal alerts are active on this device."
+              : "BamSignal is registering this device for alerts. You are good to go."
+          );
+        }, 400);
+      }
+      return true;
+    } catch {
+      if (showFeedback) {
+        openAuthNotice("Notifications need attention", "BamSignal could not enable alerts right now. Try again in a moment.");
+      }
+      return false;
+    }
+  }, [isPremium, userProfile.email, userProfile.phone]);
+
   useEffect(() => {
     if (!isAuthed || !Capacitor.isNativePlatform()) return undefined;
-    let removed = false;
-    const registerPushNotifications = async () => {
-      try {
-        const permission = await PushNotifications.requestPermissions();
-        if (permission.receive !== "granted") return;
-
-        await PushNotifications.removeAllListeners();
-        await PushNotifications.addListener("registration", async ({ value }) => {
-          if (removed) return;
-          await fetch("/api/auth/identity?action=push-token", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: userProfile.email,
-              phone: userProfile.phone,
-              token: value
-            })
-          }).catch(() => undefined);
-        });
-        await PushNotifications.addListener("registrationError", () => undefined);
-        await PushNotifications.addListener("pushNotificationReceived", () => undefined);
-        await PushNotifications.register();
-      } catch {
-        undefined;
-      }
-    };
-
     registerPushNotifications();
     return () => {
-      removed = true;
       PushNotifications.removeAllListeners().catch(() => undefined);
     };
-  }, [isAuthed, isPremium, userProfile.email, userProfile.phone]);
+  }, [isAuthed, registerPushNotifications]);
 
   const normalizePhone = (value: string) => value.replace(/\D/g, "").replace(/^234/, "");
   const isPhoneIdentifier = (value: string) => {
@@ -2760,7 +2601,7 @@ function UserDashboard({
   };
   const refreshMembershipStatus = async (profile: UserProfile) => {
     try {
-      const response = await fetch("/api/auth/identity?action=status", {
+      const response = await fetch(apiUrl("/api/auth/identity?action=status"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: profile.email, phone: profile.phone })
@@ -2821,7 +2662,8 @@ function UserDashboard({
       setVerificationCode("");
       setVerificationInput("");
       setAuthMode(nextMode);
-      setAuthMessage("Verification code sent. Check your inbox.");
+      setAuthMessage("");
+      openAuthNotice("OTP sent", "A fresh verification code has been sent to your email. Tap OK and enter it to continue.");
       return;
     }
 
@@ -2835,6 +2677,7 @@ function UserDashboard({
     setVerificationInput("");
     setAuthMode(nextMode);
     setAuthMessage(`Verification code sent. Test code: ${code}`);
+    openAuthNotice("OTP sent", "A fresh verification code has been sent to your email. Tap OK and enter it to continue.");
   };
   const signIn = async () => {
     const identifier = loginForm.identifier.trim();
@@ -2854,7 +2697,7 @@ function UserDashboard({
           if (isUnverifiedEmailError(error)) {
             setPendingLoginProfile(profile);
             await sendEmailOtp(profile, "loginOtp");
-            setAuthMessage("Email verification is still pending. We sent a fresh code so you can finish login.");
+            setAuthMessage("");
             return;
           }
           setAuthMessage(friendlyAuthError(error));
@@ -2961,7 +2804,7 @@ function UserDashboard({
   };
 
   const checkSignupIdentity = async (profile: UserProfile) => {
-    const response = await fetch("/api/auth/identity", {
+    const response = await fetch(apiUrl("/api/auth/identity"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -2979,7 +2822,7 @@ function UserDashboard({
   };
 
   const registerSignupIdentity = async (profile: UserProfile) => {
-    await fetch("/api/auth/identity?action=register", {
+    await fetch(apiUrl("/api/auth/identity?action=register"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3051,10 +2894,12 @@ function UserDashboard({
                 emailRedirectTo: `${window.location.origin}/app?auth=login`
               }
             });
-            setAuthMessage(otpError
-              ? friendlyAuthError(otpError)
-              : "This account already exists but is not verified. We sent a fresh code; enter it to finish login."
-            );
+            if (otpError) {
+              setAuthMessage(friendlyAuthError(otpError));
+            } else {
+              setAuthMessage("");
+              openAuthNotice("OTP sent", "This account already exists but is not verified yet. We sent a fresh code to finish your login.");
+            }
             return;
           }
           setAuthMessage(friendlyAuthError(error));
@@ -3075,7 +2920,8 @@ function UserDashboard({
         setVerificationCode("");
         setVerificationInput("");
         setAuthMode("verify");
-        setAuthMessage("Verification sent. Enter the latest 6-digit code from your email.");
+        setAuthMessage("");
+        openAuthNotice("OTP sent", "Your verification code has been sent to your email. Tap OK and enter it to finish creating your account.");
         return;
       } finally {
         setAuthBusy(null);
@@ -3089,6 +2935,7 @@ function UserDashboard({
     setVerificationInput("");
     setAuthMode("verify");
     setAuthMessage(`Verification code sent. Test code: ${code}`);
+    openAuthNotice("OTP sent", "Your verification code has been sent to your email. Tap OK and enter it to finish creating your account.");
     setAuthBusy(null);
   };
 
@@ -3118,13 +2965,19 @@ function UserDashboard({
             }
           });
       setIsResendingCode(false);
-      setAuthMessage(error ? friendlyAuthError(error) : "Fresh 6-digit code sent. Use the newest email only.");
+      if (error) {
+        setAuthMessage(friendlyAuthError(error));
+      } else {
+        setAuthMessage("");
+        openAuthNotice("OTP resent", "A new verification code has been sent. Use the newest email only.");
+      }
       return;
     }
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setVerificationCode(code);
     setIsResendingCode(false);
     setAuthMessage(`Verification code sent again. Test code: ${code}`);
+    openAuthNotice("OTP resent", "A new verification code has been sent. Use the newest email only.");
   };
 
   const verifySignup = async () => {
@@ -3178,7 +3031,7 @@ function UserDashboard({
     setAuthBusy("payment");
     setAuthMessage("Opening secure Paystack checkout...");
     try {
-      const response = await fetch("/api/paystack/verify?action=initialize", {
+      const response = await fetch(apiUrl("/api/paystack/verify?action=initialize"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3214,7 +3067,7 @@ function UserDashboard({
     }
     setAuthBusy("payment");
     try {
-      const response = await fetch("/api/paystack/verify", {
+      const response = await fetch(apiUrl("/api/paystack/verify"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3252,7 +3105,12 @@ function UserDashboard({
         redirectTo: `${window.location.origin}/app?auth=reset`
       });
       setAuthBusy(null);
-      setAuthMessage(error ? friendlyAuthError(error) : "Password reset link sent.");
+      if (error) {
+        setAuthMessage(friendlyAuthError(error));
+      } else {
+        setAuthMessage("");
+        openAuthNotice("Reset link sent", "Check your email for the BamSignal password reset link.");
+      }
       return;
     }
     setAuthMessage(resetEmail ? "Password reset link sent." : "Enter your email to receive a reset link.");
@@ -3279,12 +3137,8 @@ function UserDashboard({
     const wonGames = playedGames.filter((game) => game.status === "Won");
     const nextPoints = referralPoints + 50;
     const shareText = [
-      `${userProfile.name}'s BamSignal winning record`,
-      `${wins} wins • ${hitRate}% hit rate`,
-      ...wonGames.slice(0, 5).map((game) => `${game.teams}: ${game.play}`),
-      `Invite code: ${inviteCode}`,
-      `Join with my link: ${referralLink}`,
-      "Referral reward: confirmed invites earn BamPoints toward VIP."
+      "Join the winning team on BamSignal.",
+      referralLink
     ].join("\n");
     const cardBlob = await createWinningProfileCard(userProfile, wonGames, {
       wins,
@@ -3316,7 +3170,11 @@ function UserDashboard({
     }
     setReferralPoints(nextPoints);
     window.localStorage.setItem("bamsignal-referral-points", String(nextPoints));
-    setAuthMessage("Winning profile shared. 50 BamPoints added; confirmed referrals can be converted toward VIP.");
+    setAuthMessage("Winning profile shared. 50 BamPoints added.");
+  };
+
+  const openNotificationSettings = async () => {
+    await registerPushNotifications(true);
   };
 
   const logout = async () => {
@@ -3332,11 +3190,25 @@ function UserDashboard({
     navigate({ kind: "app" }, "/app?auth=login");
   };
 
+  const noticeDialog = authNotice ? (
+    <div className="auth-notice-backdrop" role="presentation">
+      <div className="auth-notice-modal" role="dialog" aria-modal="true" aria-labelledby="auth-notice-title">
+        <div>
+          <p className="eyebrow">BamSignal</p>
+          <h3 id="auth-notice-title">{authNotice.title}</h3>
+          <p>{authNotice.body}</p>
+        </div>
+        <button className="primary-action neon-action" onClick={closeAuthNotice}>OK</button>
+      </div>
+    </div>
+  ) : null;
+
   if (!isAuthed) {
     const showDynamicBanner = authMode === "login" || authMode === "reset" || authMode === "unlock" || authMode === "verify";
     return (
-      <main className="auth-main">
-        <section className="auth-shell">
+      <>
+        <main className="auth-main">
+          <section className="auth-shell">
           {!isNative && (
             <button className="back-link" onClick={() => navigate({ kind: "home" })}>
               <ArrowLeft size={16} /> Back to website
@@ -3502,10 +3374,12 @@ function UserDashboard({
             </div>
           )}
 
-          {authMessage && <p className="auth-message">{authMessage}</p>}
-          {showDynamicBanner && !isNative && authMode !== "login" && <AuthDynamicBanner banner={activeAuthBanner} position="bottom" onAction={handleBannerAction} />}
-        </section>
-      </main>
+            {authMessage && <p className="auth-message">{authMessage}</p>}
+            {showDynamicBanner && !isNative && authMode !== "login" && <AuthDynamicBanner banner={activeAuthBanner} position="bottom" onAction={handleBannerAction} />}
+          </section>
+        </main>
+        {noticeDialog}
+      </>
     );
   }
 
@@ -3530,14 +3404,15 @@ function UserDashboard({
             ))}
           </div>
         ) : (
-          <small className="code-locked">{game.tier === "freemium" ? "Booking code hidden by admin" : "VIP booking codes unlock after payment"}</small>
+          <small className="code-locked">{game.tier === "freemium" ? "Booking code hidden by admin" : "Unlock after payment"}</small>
         )}
       </div>
     );
   };
 
   return (
-    <main className="dashboard-main">
+    <>
+      <main className="dashboard-main">
       <div className="vault-topbar">
         <div>
           <span className="auth-secure-badge"><ShieldCheck size={14} /> Private member vault</span>
@@ -3580,46 +3455,31 @@ function UserDashboard({
 
       {dashboardTab === "vip" && (
         <section className={`room-card premium-room ${isPremium ? "open" : "locked"}`}>
-          <span className="room-label">VIP premium games</span>
-          <h3>{isPremium ? "Premium games unlocked" : "Payment required"}</h3>
+          <span className="room-label">VIP room</span>
+          <h3>{isPremium ? "Premium games unlocked" : "Upgrade to VIP"}</h3>
           {!isPremium && (
-            <>
-              <div className="paystack-checkout">
-                <div className="plan-grid">
-                  {vipPlans.map((plan) => (
-                    <article className="vip-plan-card" key={plan.id}>
-                      <p className="eyebrow">Paystack checkout</p>
-                      <h3>{plan.label}</h3>
-                      <strong>{plan.price}</strong>
-                      <small>{plan.days} days of VIP games, booking codes, premium app room, and Telegram VIP access.</small>
-                      <button className="primary-action neon-action" onClick={() => startVipCheckout(plan)} disabled={authBusy === "payment"}>
-                        {authBusy === "payment" ? <Loader2 className="spin" size={16} /> : <CreditCard size={16} />} Pay {plan.price}
-                      </button>
-                    </article>
-                  ))}
-                </div>
-                <small className="code-locked">BamSignal unlocks VIP automatically after Paystack returns a successful payment.</small>
+            <div className="paystack-checkout">
+              <div className="plan-grid">
+                {vipPlans.map((plan) => (
+                  <article className="vip-plan-card" key={plan.id}>
+                    <h3>{plan.label}</h3>
+                    <strong>{plan.price}</strong>
+                    <small>{plan.days} days of premium games and booking codes.</small>
+                    <button className="primary-action neon-action" onClick={() => startVipCheckout(plan)} disabled={authBusy === "payment"}>
+                      {authBusy === "payment" ? <Loader2 className="spin" size={16} /> : <CreditCard size={16} />} Pay {plan.price}
+                    </button>
+                  </article>
+                ))}
               </div>
-            </>
+              <small className="code-locked">VIP opens automatically after successful Paystack payment.</small>
+            </div>
           )}
           {isPremium && (
             <div className="subscription-card">
               <ShieldCheck size={16} />
-              <span>VIP active until {subscriptionLabel}. When it ends, the app returns you to freemium automatically.</span>
+              <span>VIP active until {subscriptionLabel}.</span>
             </div>
           )}
-          <div className="vip-special-grid">
-            <article>
-              <Crown size={18} />
-              <strong>VIP app room</strong>
-              <span>High-odd signals, confidence notes, and booking codes stay inside your premium account.</span>
-            </article>
-            <article>
-              <Send size={18} />
-              <strong>Telegram VIP room</strong>
-              <span>Instant premium drops and quick in-play alerts appear for verified members only.</span>
-            </article>
-          </div>
           {vipRoomGames.map((game) => renderManagedGame(game, !isPremium))}
           {isPremium ? (
             <a className="vip-join" href={vipInviteLink || "https://t.me/+U5i6lKAUDtZkODIx"} target="_blank" rel="noreferrer"><Send size={16} /> Join VIP Telegram room</a>
@@ -3672,10 +3532,9 @@ function UserDashboard({
             <div className="profile-identity">
               <span className="auth-secure-badge"><Users size={14} /> BamSignal community</span>
               <h2>{userProfile.name}</h2>
-              <p>{isPremium ? "VIP member tracking high-odd wins with the room." : "Freemium member tracking daily signals."}</p>
+              <p>{isPremium ? "VIP member" : "Freemium member"}</p>
               <div className="member-badges">
                 <span>{isPremium ? "VIP Premium" : "Freemium"}</span>
-                <span>Signal activity</span>
                 <span>Invite {makeInviteCode(userProfile)}</span>
               </div>
             </div>
@@ -3684,17 +3543,17 @@ function UserDashboard({
           <div className="profile-share-card">
             <div>
               <p className="eyebrow">Winning profile</p>
-              <h3>Share wins only</h3>
-              <span>Your share card includes your avatar, last 5 wins, invite code, and referral link. Losses stay private inside your vault.</span>
+              <h3>Share your streak</h3>
+              <span>Your avatar, recent wins, and invite link.</span>
             </div>
             <button className="primary-action neon-action" onClick={shareWinningProfile}><Share2 size={16} /> Share profile</button>
           </div>
 
           <div className="referral-wallet-card">
             <div>
-              <p className="eyebrow">Referral wallet</p>
+              <p className="eyebrow">BamPoints</p>
               <h3>{referralPoints} BamPoints</h3>
-              <span>Earn 50 BamPoints when you share your profile. Confirmed invited members can be credited toward VIP access.</span>
+              <span>50 points per confirmed referral.</span>
             </div>
             <div>
               <strong>{referralVipCredit}</strong>
@@ -3720,27 +3579,19 @@ function UserDashboard({
             </article>
             <article className="profile-wallet-card">
               <div>
-                <span>Login protection</span>
-                <strong>{deviceBinding ? "Trusted device" : "Verification ready"}</strong>
-              </div>
-              <ShieldCheck size={18} />
-              <small>{deviceBinding ? "PIN and phone auth are ready here." : "Verify once to enable quick login."}</small>
-            </article>
-            <article className="profile-wallet-card">
-              <div>
-                <span>Room badge</span>
-                <strong>Signal Builder</strong>
-              </div>
-              <Users size={18} />
-              <small>{hitRate}% hit rate across your visible record.</small>
-            </article>
-            <article className="profile-wallet-card">
-              <div>
                 <span>Invite code</span>
                 <strong>{inviteCode}</strong>
               </div>
               <Share2 size={18} />
               <small>{referralLink}</small>
+            </article>
+            <article className="profile-wallet-card">
+              <div>
+                <span>Telegram support</span>
+                <strong>@ttmaketing</strong>
+              </div>
+              <Send size={18} />
+              <small>Reach admin quickly when you need help.</small>
             </article>
           </div>
 
@@ -3752,10 +3603,9 @@ function UserDashboard({
           </div>
 
           <div className="profile-actions-grid">
-            <button className="secondary-action"><Bell size={16} /> Notification settings</button>
+            <button className="secondary-action" onClick={openNotificationSettings}><Bell size={16} /> Notification settings</button>
             <button className="secondary-action" onClick={() => setDashboardTab("vip")}><CreditCard size={16} /> Manage VIP</button>
-            <a className="secondary-action" href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer"><Send size={16} /> Telegram support</a>
-            <button className="secondary-action"><ShieldCheck size={16} /> Security login</button>
+            <a className="secondary-action" href="https://t.me/ttmaketing" target="_blank" rel="noreferrer"><Send size={16} /> Telegram support</a>
             <a className="secondary-action danger-action" href="/legal/account-deletion"><ShieldCheck size={16} /> Request account deletion</a>
           </div>
 
@@ -3764,7 +3614,9 @@ function UserDashboard({
           </button>
         </section>
       )}
-    </main>
+      </main>
+      {noticeDialog}
+    </>
   );
 }
 
@@ -3783,7 +3635,7 @@ function FootballNewsPanel({ adminContent, compact = false }: { adminContent: Ad
       };
     }
 
-    fetch(`/api/football-news?t=${Date.now()}`, { cache: "no-store" })
+    fetch(apiUrl(`/api/football-news?t=${Date.now()}`), { cache: "no-store" })
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("News feed unavailable")))
       .then((payload) => {
         if (cancelled) return;
@@ -3912,7 +3764,7 @@ function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?:
       const saved = window.localStorage.getItem("bamsignal-support-messages");
       const messages = saved ? (JSON.parse(saved) as SupportMessage[]) : [];
       window.localStorage.setItem("bamsignal-support-messages", JSON.stringify([payload, ...messages].slice(0, 50)));
-      const response = await fetch("/api/contact", {
+      const response = await fetch(apiUrl("/api/contact"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -4283,7 +4135,7 @@ function AdminPage({
     const session = supabase ? await supabase.auth.getSession() : null;
     const token = session?.data.session?.access_token;
     if (token) headers.Authorization = `Bearer ${token}`;
-    const response = await fetch("/api/auth/identity?action=admin-session", {
+    const response = await fetch(apiUrl("/api/auth/identity?action=admin-session"), {
       method: "POST",
       headers,
       body: JSON.stringify({ secret })
@@ -4294,7 +4146,7 @@ function AdminPage({
     return granted;
   };
   const refreshAdminSecurity = async () => {
-    const response = await fetch("/api/auth/identity?action=admin-security", {
+    const response = await fetch(apiUrl("/api/auth/identity?action=admin-security"), {
       method: "POST",
       headers: await getAdminAuthHeaders(),
       body: "{}"
@@ -4404,7 +4256,7 @@ function AdminPage({
   const saveAdminSettings = async (message = "Admin settings saved to BamSignal database.") => {
     setAdminStatus("Saving settings to database...");
     try {
-      const response = await fetch("/api/auth/identity?action=settings-save", {
+      const response = await fetch(apiUrl("/api/auth/identity?action=settings-save"), {
         method: "POST",
         headers: await getAdminAuthHeaders(),
         body: JSON.stringify({ value: adminContent })
@@ -4425,7 +4277,7 @@ function AdminPage({
     }
     setAdminStatus("Adding admin email...");
     try {
-      const response = await fetch("/api/auth/identity?action=admin-add", {
+      const response = await fetch(apiUrl("/api/auth/identity?action=admin-add"), {
         method: "POST",
         headers: await getAdminAuthHeaders(),
         body: JSON.stringify({ email: newAdminEmail.trim(), role: "admin" })
@@ -4442,7 +4294,7 @@ function AdminPage({
   const removeAdminEmail = async (email: string) => {
     setAdminStatus(`Disabling ${email}...`);
     try {
-      const response = await fetch("/api/auth/identity?action=admin-remove", {
+      const response = await fetch(apiUrl("/api/auth/identity?action=admin-remove"), {
         method: "POST",
         headers: await getAdminAuthHeaders(),
         body: JSON.stringify({ email })
@@ -4477,7 +4329,7 @@ function AdminPage({
     setAdminStatus("Admin password changed for the currently logged-in Supabase account.");
   };
   const publishAdminGame = async (game: AdminGame, schedule = quickPublish.schedule) => {
-    const response = await fetch("/api/publish-tip", {
+    const response = await fetch(apiUrl("/api/publish-tip"), {
       method: "POST",
       headers: await getAdminAuthHeaders(),
       body: JSON.stringify({
@@ -4545,7 +4397,7 @@ function AdminPage({
     setIsPublishing(true);
     setAdminStatus(`Saving outcome for ${game.match}...`);
     try {
-      const response = await fetch("/api/publish-tip", {
+      const response = await fetch(apiUrl("/api/publish-tip"), {
         method: "POST",
         headers: await getAdminAuthHeaders(),
         body: JSON.stringify({
@@ -4590,7 +4442,7 @@ function AdminPage({
     setIsIngesting(true);
     setAdminStatus(mode === "preview" ? "Parsing pasted signals..." : "Publishing parsed signals...");
     try {
-      const response = await fetch("/api/publish-tip", {
+      const response = await fetch(apiUrl("/api/publish-tip"), {
         method: "POST",
         headers: await getAdminAuthHeaders(),
         body: JSON.stringify({
@@ -4675,7 +4527,7 @@ function AdminPage({
     setIngestPreviewMessage("Publishing the edited board...");
     setAdminStatus("Publishing edited preview...");
     try {
-      const response = await fetch("/api/publish-tip", {
+      const response = await fetch(apiUrl("/api/publish-tip"), {
         method: "POST",
         headers: await getAdminAuthHeaders(),
         body: JSON.stringify({
@@ -4966,7 +4818,7 @@ function AdminPage({
           <textarea
             value={ingestForm.text}
             onChange={(event) => setIngestForm({ ...ingestForm, text: event.target.value })}
-            placeholder={"Article format:\nBayern Munich vs Paris Saint-Germain prediction, preview & betting tips - 06/05/2026\nBayern Munich\n06/05/26 - 20:00\nPSG\nBayern Munich - PSG\nUEFA Champions League - Allianz Arena\n2nd Round\nOur predictions\nHot tip\nOver 5.5 goals\nMatch result\nBayern Munich to win.\nAnytime goalscorer\nKhvicha Kvaratskhelia\n\nRaw board format:\nUEFA Champions League\n12:00\nNot Started\nArsenalArsenal\nAtleticoAtletico\nPrediction:\nArsenal\nReason text here\nConfidence\nOdds\n1.60\nWeather\n\nCSV format:\nsport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,,,"}
+            placeholder={"Article format:\nHome Team vs Away Team prediction, preview & betting tips - 06/05/2026\nHome Team\n06/05/26 - 20:00\nAway Team\nHome Team - Away Team\nUEFA Champions League - Stadium Name\nKnockout round\nOur predictions\nHot tip\nOver 2.5 goals\nMatch result\nHome Team to win.\nAnytime goalscorer\nKey Player Name\n\nRaw board format:\nUEFA Champions League\n12:00\nNot Started\nArsenalArsenal\nAtleticoAtletico\nPrediction:\nArsenal\nReason text here\nConfidence\nOdds\n1.60\nWeather\n\nCSV format:\nsport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,,,"}
             rows={12}
           />
         </label>
@@ -5527,7 +5379,7 @@ function MatchDetailPage({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch(`/api/match-details?id=${encodeURIComponent(matchId)}&t=${Date.now()}`, { cache: "no-store" })
+    fetch(apiUrl(`/api/match-details?id=${encodeURIComponent(matchId)}&t=${Date.now()}`), { cache: "no-store" })
       .then((response) => response.ok ? response.json() : Promise.reject(new Error("Match detail could not be loaded")))
       .then((payload: MatchDetailApi) => {
         if (!cancelled) {
@@ -5873,44 +5725,6 @@ function StandingsPanel({ standings, league }: { standings: NonNullable<MatchDet
         )) : <p className="muted-copy">League table data is not available for this competition yet.</p>}
       </div>
     </section>
-  );
-}
-
-function FixtureCard({ fixture, locked, bookingButtonText }: { fixture: Fixture; locked?: boolean; bookingButtonText: string }) {
-  const bookingCode = `${fixture.status === "Live" ? "LIVE" : "SB"}-${fixture.id}${fixture.confidence}`;
-  const copyBookingCode = async () => {
-    if (Capacitor.getPlatform() !== "web") {
-      await navigator.clipboard?.writeText(bookingCode);
-      return;
-    }
-    document.getElementById("apps")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-  return (
-    <article className={`fixture-card ${locked ? "locked" : ""}`}>
-      <div className="fixture-main">
-        <div>
-          <span className={`status ${fixture.status.toLowerCase()}`}>{fixture.status === "Live" && <i aria-hidden="true" />}{fixture.status}</span>
-          <p className="league">{fixture.league} / {fixture.country} / {fixture.time}</p>
-          <h3>{fixture.home} <small>vs</small> {fixture.away}</h3>
-        </div>
-        <ConfidenceSignal confidence={fixture.confidence} />
-      </div>
-      <div className="prediction-row">
-        <span>Primary pick</span>
-        <strong className={locked ? "blurred-tip" : ""}>{fixture.pick}</strong>
-      </div>
-      {!locked && (
-        <button className="booking-code-button" onClick={copyBookingCode}>
-          <ClipboardCheck size={14} /> {bookingButtonText} <strong>{bookingCode}</strong>
-        </button>
-      )}
-      <div className={`probability-grid ${locked ? "blurred-grid" : ""}`}>
-        <Probability label="Result" value={fixture.result} percent={fixture.confidence} />
-        <Probability label="BTTS" value="Yes" percent={fixture.btts} />
-        <Probability label="Over 2.5" value="Yes" percent={fixture.over25} />
-        <Probability label="Corners 4+" value="Yes" percent={fixture.corners} />
-      </div>
-    </article>
   );
 }
 

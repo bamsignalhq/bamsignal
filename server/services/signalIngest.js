@@ -305,6 +305,38 @@ function isStatusLine(line = "") {
   return /^(not started|scheduled|pending|live|in[-\s]?play|half time|finished|full time|postponed|cancelled|canceled)$/i.test(clean(line));
 }
 
+function isDateOnlyLine(line = "") {
+  return /^\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?$/.test(clean(line));
+}
+
+function isStartsInLine(line = "") {
+  return /^starts in$/i.test(clean(line));
+}
+
+function isCountdownLine(line = "") {
+  return /^\d{1,2}h(?:\s*\d{1,2}m)?$/i.test(clean(line));
+}
+
+function parseCountdownToIso(value = "") {
+  const match = clean(value).match(/^(\d{1,2})h(?:\s*(\d{1,2})m)?$/i);
+  if (!match) return null;
+  const hours = Number(match[1] || 0);
+  const minutes = Number(match[2] || 0);
+  const target = new Date(Date.now() + ((hours * 60) + minutes) * 60000);
+  return target.toISOString();
+}
+
+function parseLooseDateOnly(value = "") {
+  const match = clean(value).match(/^(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?$/);
+  if (!match) return null;
+  const currentYear = new Date().getFullYear();
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = match[3] ? Number(match[3].length === 2 ? `20${match[3]}` : match[3]) : currentYear;
+  if (!day || !month || !year) return null;
+  return new Date(`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T12:00:00+01:00`).toISOString();
+}
+
 function isNoiseLine(line = "") {
   return /^(weather|odds|confidence|prediction:?|pick:?|market:?)$/i.test(clean(line));
 }
@@ -549,6 +581,98 @@ function parseCopiedPredictionBlocks(text, options = {}) {
   return tips;
 }
 
+function parseTimedTipBlocks(text, options = {}) {
+  const lines = String(text || "")
+    .split(/\n+/)
+    .map((line) => clean(line))
+    .filter(Boolean)
+    .filter((line) => !/^time match tip$/i.test(line));
+  if (!lines.some(isStartsInLine) || !lines.some(isDateOnlyLine)) return [];
+
+  const tips = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const dateLine = lines[index];
+    if (!isDateOnlyLine(dateLine)) continue;
+
+    let cursor = index + 1;
+    if (isStartsInLine(lines[cursor] || "")) cursor += 1;
+    const countdownLine = isCountdownLine(lines[cursor] || "") ? lines[cursor++] : "";
+    const home = compactRepeatedName(lines[cursor] || "");
+    const away = compactRepeatedName(lines[cursor + 1] || "");
+    if (!home || !away) continue;
+    cursor += 2;
+
+    const league = clean(lines[cursor] || "");
+    if (!league) continue;
+    cursor += 1;
+
+    const predictionParts = [];
+    let odds = null;
+    while (cursor < lines.length && !isDateOnlyLine(lines[cursor])) {
+      const current = clean(lines[cursor]);
+      if (!current || isStartsInLine(current) || isCountdownLine(current) || isNoiseLine(current) || isStatusLine(current)) {
+        cursor += 1;
+        continue;
+      }
+
+      const detectedOdds = /^\d+(?:\.\d{1,2})?$/.test(current) ? toNumber(current, null) : null;
+      if (detectedOdds && detectedOdds >= 1.01 && detectedOdds <= 20) {
+        odds = detectedOdds;
+        cursor += 1;
+        continue;
+      }
+
+      predictionParts.push(current);
+      cursor += 1;
+    }
+
+    const rawPrediction = predictionParts.join(" ").trim();
+    if (!rawPrediction) continue;
+
+    const normalizedOdds = odds || pendingOddsValue();
+    const sport = inferSport(`${league} ${home} ${away} ${rawPrediction}`, options.defaultSport || "auto");
+    const startsAt = parseCountdownToIso(countdownLine) || parseLooseDateOnly(dateLine);
+    const isVip = odds ? tierFromOdds(normalizedOdds) : tierFromOptions(options, false);
+
+    tips.push({
+      match_name: `${home} vs ${away}`,
+      league,
+      prediction: winnerPrediction(rawPrediction, home, away),
+      odds: normalizedOdds.toFixed(2),
+      confidence: isVip ? 76 : 82,
+      is_vip: isVip,
+      booking_codes: {},
+      source: "admin-ingest",
+      status: "pending",
+      starts_at: startsAt,
+      fixture_payload: {
+        provider: "admin-ingest",
+        sport,
+        ingest_index: tips.length,
+        fixture: {
+          id: `admin-timed-${Date.now()}-${tips.length}`,
+          date: startsAt,
+          status: { short: "NS", long: "Scheduled" }
+        },
+        league: { name: league, logo: null, country: "" },
+        teams: {
+          home: { name: home, logo: null },
+          away: { name: away, logo: null }
+        },
+        metadata: {
+          source_name: sourceLabel(options),
+          parser: "timed-tip-block",
+          raw_block: lines.slice(index, cursor),
+          countdown: countdownLine || null,
+          odds_missing: !odds
+        }
+      }
+    });
+  }
+
+  return tips;
+}
+
 function parseFreeformLine(line, options = {}, index = 0) {
   const normalized = clean(line);
   if (!normalized || normalized.length < 8) return null;
@@ -648,6 +772,9 @@ export function parseSignalsFromText(text, options = {}) {
 
   const copiedBlocks = parseCopiedPredictionBlocks(source, options);
   if (copiedBlocks.length) return copiedBlocks;
+
+  const timedBlocks = parseTimedTipBlocks(source, options);
+  if (timedBlocks.length) return timedBlocks;
 
   return parseFreeformText(source, options);
 }

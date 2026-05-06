@@ -18,6 +18,8 @@ function escapeHtml(value = "") {
     .replaceAll(">", "&gt;");
 }
 
+const adminTelegramHandle = "@ttmaketing";
+
 function bookieLabel(bookie) {
   return bookie.replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
 }
@@ -112,7 +114,8 @@ export function formatTipMessage(tip) {
     "",
     tip.is_vip
       ? "Premium members only. Manage risk and stake responsibly."
-      : "Free pick posted. Upgrade in the BamSignal app for premium games."
+      : "Free pick posted. Upgrade in the BamSignal app for premium games.",
+    `Need help? Message admin: ${escapeHtml(adminTelegramHandle)}`
   ].filter(Boolean).join("\n");
 }
 
@@ -146,7 +149,8 @@ export async function postResultProof(tip) {
     `Pick: <b>${escapeHtml(tip.prediction)}</b>`,
     result ? `Result: <b>${escapeHtml(result)}</b>` : "",
     tip.is_vip ? "VIP result logged. BamSignal shows every premium outcome." : "",
-    won ? "Our signal hit. Get more structured picks in the BamSignal app." : "We show every result. Transparency builds trust."
+    won ? "Our signal hit. Get more structured picks in the BamSignal app." : "We show every result. Transparency builds trust.",
+    `Need help? Message admin: ${escapeHtml(adminTelegramHandle)}`
   ].filter(Boolean).join("\n");
 
   const sent = await bot.telegram.sendMessage(chatId, message, {
@@ -166,7 +170,8 @@ export async function postDailyGameResultProof(game) {
     `⚽ ${escapeHtml(game.match_name)}`,
     `Pick: <b>${escapeHtml(game.prediction)}</b>`,
     result ? `Result: <b>${escapeHtml(result)}</b>` : "",
-    game.is_vip ? "VIP group outcome posted for full transparency." : "Free channel outcome posted for full transparency."
+    game.is_vip ? "VIP group outcome posted for full transparency." : "Free channel outcome posted for full transparency.",
+    `Need help? Message admin: ${escapeHtml(adminTelegramHandle)}`
   ].join("\n");
 
   const sent = await bot.telegram.sendMessage(chatId, message, {

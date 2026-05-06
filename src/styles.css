@@ -630,7 +630,7 @@ footer {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 12px;
+  gap: 6px 8px;
   justify-content: center;
   text-align: center;
 }
@@ -771,42 +771,66 @@ footer {
 
 .prediction-row {
   border-top: 1px solid var(--border);
-  margin-top: 9px;
-  padding-top: 9px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-top: 8px;
+  padding-top: 8px;
 }
 
 .prediction-row span {
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 999px;
   color: var(--muted);
-  font-size: 11px;
-  font-weight: 950;
+  font-size: 10px;
+  font-weight: 900;
+  min-height: 26px;
+  padding: 0 10px;
   text-transform: uppercase;
 }
 
 .prediction-row strong {
-  font-size: 13px;
-  line-height: 1.15;
+  align-items: center;
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
+  min-height: 26px;
+  padding: 0 10px;
+}
+
+.prediction-row strong:last-of-type {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+  flex: 1 1 220px;
+  justify-content: center;
+  min-width: 0;
 }
 
 .probability-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  margin-top: 8px;
+  gap: 4px;
+  margin-top: 6px;
 }
 
 .probability {
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   border-radius: var(--radius);
   font-size: 10px;
-  padding: 6px;
+  padding: 5px;
   text-align: center;
 }
 
 .probability.compact {
   align-items: center;
   display: grid;
-  gap: 2px 8px;
+  gap: 1px 6px;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  padding: 6px 8px;
+  padding: 5px 7px;
   text-align: left;
 }
 
@@ -833,21 +857,21 @@ footer {
 
 .probability.compact span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 800;
   grid-column: 1;
   text-transform: uppercase;
 }
 
 .probability.compact strong {
-  font-size: 11px;
+  font-size: 10px;
   grid-column: 2;
   min-width: 0;
 }
 
 .probability.compact small {
-  color: var(--accent);
-  font-size: 10px;
+  color: var(--text);
+  font-size: 9px;
   font-weight: 900;
   grid-column: 3;
   text-align: right;
@@ -865,6 +889,30 @@ footer {
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
   display: block;
   height: 100%;
+}
+
+.probability.high .bar i,
+.probability.high small {
+  color: #79f6b1;
+  background: linear-gradient(90deg, #34d399, #8bffb2);
+}
+
+.probability.mid .bar i,
+.probability.mid small {
+  color: #5eead4;
+  background: linear-gradient(90deg, #14b8a6, #6ee7b7);
+}
+
+.probability.soft .bar i,
+.probability.soft small {
+  color: #f8d25c;
+  background: linear-gradient(90deg, #f59e0b, #facc15);
+}
+
+.probability.low .bar i,
+.probability.low small {
+  color: #fda4af;
+  background: linear-gradient(90deg, #fb7185, #fda4af);
 }
 
 .probability.compact .bar {
@@ -1043,6 +1091,13 @@ footer {
   justify-content: space-between;
 }
 
+.evidence-actions {
+  align-items: stretch;
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
 .evidence-head h2,
 .dashboard-hero h2,
 .member-app-panel h2 {
@@ -1083,6 +1138,10 @@ footer {
   display: grid;
   gap: 10px;
   margin-top: 16px;
+}
+
+.archive-board .evidence-list {
+  margin-top: 0;
 }
 
 .evidence-row {
@@ -2914,6 +2973,57 @@ footer {
 .profile-actions-grid {
   display: grid;
   gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compact-profile-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.compact-profile-panel .profile-community-card,
+.compact-profile-panel .profile-grid,
+.compact-profile-panel .profile-score-grid {
+  margin: 0;
+}
+
+.compact-profile-panel .profile-community-card {
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+.compact-profile-panel .profile-photo {
+  border-radius: 18px;
+  font-size: 22px;
+  height: 68px;
+  width: 68px;
+}
+
+.compact-profile-panel .profile-identity {
+  gap: 4px;
+}
+
+.compact-profile-panel .profile-identity p {
+  font-size: 13px;
+}
+
+.compact-profile-panel .member-badges span {
+  font-size: 9px;
+  min-height: 24px;
+  padding: 0 8px;
+}
+
+.compact-profile-panel .profile-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compact-profile-panel .profile-grid span {
+  min-height: 54px;
+  padding: 8px 9px;
+}
+
+.compact-profile-panel .profile-actions-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 

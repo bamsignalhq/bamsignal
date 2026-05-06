@@ -459,6 +459,41 @@ async function settleManualSignal(payload) {
   };
 }
 
+async function deleteEvidenceSignal(payload) {
+  const id = String(payload.id || "").trim();
+  const source = String(payload.evidence_source || "").trim().toLowerCase();
+  if (!id) {
+    return { status: 400, body: { ok: false, error: "Select an evidence record before deleting it." } };
+  }
+
+  await ensureDailyGamesTable();
+  await ensureTipsTable();
+
+  const deleted = { daily_games: 0, tips: 0 };
+  if (!source || source === "daily_games") {
+    const result = await query("delete from daily_games where id = $1::uuid returning id", [id]);
+    deleted.daily_games = result.rowCount || 0;
+  }
+  if (!source || source === "tips") {
+    const result = await query("delete from tips where id = $1::uuid returning id", [id]);
+    deleted.tips = result.rowCount || 0;
+  }
+
+  const count = deleted.daily_games + deleted.tips;
+  if (!count) {
+    return { status: 404, body: { ok: false, error: "That evidence record was not found." } };
+  }
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      count,
+      deleted
+    }
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -471,6 +506,11 @@ export default async function handler(req, res) {
   const payload = parseBody(req);
   if (payload.action === "settle") {
     const result = await settleManualSignal(payload);
+    return res.status(result.status).json(result.body);
+  }
+
+  if (payload.action === "delete-evidence") {
+    const result = await deleteEvidenceSignal(payload);
     return res.status(result.status).json(result.body);
   }
 

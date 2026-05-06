@@ -86,6 +86,7 @@ type Theme = "dark" | "light";
 type Page =
   | { kind: "home" }
   | { kind: "app" }
+  | { kind: "evidence" }
   | { kind: "tips" }
   | { kind: "markets" }
   | { kind: "leagues" }
@@ -95,7 +96,7 @@ type Page =
   | { kind: "contact" }
   | { kind: "legal"; slug: string }
   | { kind: "admin" };
-type AdminTab = "overview" | "ingest" | "games" | "settings" | "security" | "login" | "content" | "payments" | "otp" | "support";
+type AdminTab = "overview" | "ingest" | "games" | "evidence" | "settings" | "security" | "login" | "content" | "payments" | "otp" | "support";
 type AuthMode = "login" | "signup" | "verify" | "loginOtp" | "pinSetup" | "unlock" | "reset";
 type AuthIntent = "login" | "signup" | "reset" | null;
 type PendingEmailOtpType = "signup" | "email";
@@ -156,6 +157,7 @@ type DeviceBinding = UserProfile & {
 };
 type AdminGame = {
   id: string | number;
+  evidenceSource?: "daily_games" | "tips";
   match: string;
   league: string;
   pick: string;
@@ -180,6 +182,7 @@ type AdminGame = {
 };
 type ApiTip = {
   id?: string | number;
+  evidence_source?: "daily_games" | "tips";
   match_name: string;
   league?: string;
   prediction: string;
@@ -340,6 +343,7 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
   const oddsPending = Boolean(metadata?.odds_missing);
   return {
     id: tip.id || Date.now() + index,
+    evidenceSource: tip.evidence_source,
     match: tip.match_name,
     league: tip.league || "Football",
     pick: tip.prediction,
@@ -1240,6 +1244,7 @@ function getInitialPage(): Page {
   const [, section, slug] = window.location.pathname.split("/");
   if (section === "lex" && slug === "auth") return { kind: "admin" };
   if (section === "app") return { kind: "app" };
+  if (section === "evidence") return { kind: "evidence" };
   if (section === "contact") return { kind: "contact" };
   if (section === "legal" && slug) return { kind: "legal", slug };
   if (section === "match" && slug) return { kind: "match", id: slug };
@@ -2017,6 +2022,8 @@ function App() {
             toggleTheme={toggleTheme}
             dailyKey={dailyKey}
           />
+        ) : page.kind === "evidence" ? (
+          <EvidenceArchivePage navigate={navigate} />
         ) : page.kind === "admin" ? (
           <AdminPage isNative={isNative} navigate={navigate} adminContent={adminContent} setAdminContent={setAdminContent} />
         ) : page.kind === "contact" ? (
@@ -2211,7 +2218,7 @@ function HomePage({
               <div className="tip-row"><strong>Game of the day</strong><span>{topPick?.match || "Waiting for today's verified pick"}</span></div>
               <div className="tip-row"><strong>Safer market</strong><span>Double chance and over 1.5</span></div>
             </div>
-            <EvidenceBoard games={adminContent.games} />
+            <EvidenceBoard games={adminContent.games} navigate={navigate} />
             <div className="info-panel markets-panel" id="markets">
               <p className="eyebrow">Markets</p>
               <h2>Every fixture, multiple angles.</h2>
@@ -2306,7 +2313,7 @@ function HomePage({
   );
 }
 
-function EvidenceBoard({ games }: { games: AdminGame[] }) {
+function EvidenceBoard({ games, navigate }: { games: AdminGame[]; navigate: (page: Page, path?: string) => void }) {
   const [evidenceGames, setEvidenceGames] = useState<AdminGame[]>([]);
   const [evidenceLoaded, setEvidenceLoaded] = useState(false);
 
@@ -2351,11 +2358,15 @@ function EvidenceBoard({ games }: { games: AdminGame[] }) {
         <div>
           <p className="eyebrow">Evidence board</p>
           <h2>Last 30 settled BamSignal games.</h2>
-          <p>Finished games appear here with league, kickoff time, logos, pick, odds, score, and final outcome.</p>
         </div>
-        <div className="evidence-score">
-          <strong>{completedGames.length ? `${hitRate}%` : "--"}</strong>
-          <span>{completedGames.length ? "settled hit rate" : "awaiting results"}</span>
+        <div className="evidence-actions">
+          <div className="evidence-score">
+            <strong>{completedGames.length ? `${hitRate}%` : "--"}</strong>
+            <span>{completedGames.length ? "settled hit rate" : "awaiting results"}</span>
+          </div>
+          <button className="secondary-action" onClick={() => navigate({ kind: "evidence" }, "/evidence")}>
+            <ArrowRight size={16} /> View more
+          </button>
         </div>
       </div>
       <div className="evidence-list">
@@ -2370,6 +2381,53 @@ function EvidenceBoard({ games }: { games: AdminGame[] }) {
         )}
       </div>
     </section>
+  );
+}
+
+function EvidenceArchivePage({ navigate }: { navigate: (page: Page, path?: string) => void }) {
+  const [evidenceGames, setEvidenceGames] = useState<AdminGame[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(apiUrl(`/api/evidence-games?limit=250&t=${Date.now()}`), { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload: EvidenceGamesApiResponse | null) => {
+        if (cancelled || !payload?.ok) return;
+        setEvidenceGames((payload.games || []).map(apiTipToAdminGame));
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <main className="detail-shell evidence-archive-shell">
+      <section className="info-panel detail-hero">
+        <button className="back-link" onClick={() => navigate({ kind: "home" }, "/#tips")}>
+          <ArrowLeft size={16} /> Back to BamSignal
+        </button>
+        <p className="eyebrow">Evidence board</p>
+        <h1>Every settled BamSignal outcome.</h1>
+      </section>
+      <section className="evidence-board archive-board">
+        <div className="evidence-list">
+          {evidenceGames.length ? evidenceGames.map((game) => (
+            <EvidenceGameRow game={game} key={gameKey(game)} />
+          )) : (
+            <article className="empty-signal-state wide">
+              <CalendarClock size={22} />
+              <strong>{loaded ? "No settled games yet" : "Loading evidence board"}</strong>
+              <span>{loaded ? "Settled games will appear here as soon as outcomes are recorded." : "Please wait while BamSignal loads the full evidence archive."}</span>
+            </article>
+          )}
+        </div>
+      </section>
+    </main>
   );
 }
 
@@ -2467,12 +2525,16 @@ function UserDashboard({
   toggleTheme: () => void;
   dailyKey: string;
 }) {
-  const initialDeviceBinding = useMemo(() => loadDeviceBinding(), []);
+  const deviceSecurityEnabled = isNative;
+  const initialDeviceBinding = useMemo(
+    () => (deviceSecurityEnabled ? loadDeviceBinding() : null),
+    [deviceSecurityEnabled]
+  );
   const initialAuthMode = useMemo<AuthMode>(() => {
     if (authIntent === "signup") return "signup";
     if (authIntent === "reset") return "reset";
-    return initialDeviceBinding ? "unlock" : "login";
-  }, [authIntent, initialDeviceBinding]);
+    return deviceSecurityEnabled && initialDeviceBinding ? "unlock" : "login";
+  }, [authIntent, deviceSecurityEnabled, initialDeviceBinding]);
   const [deviceBinding, setDeviceBinding] = useState<DeviceBinding | null>(initialDeviceBinding);
   const [authMode, setAuthMode] = useState<AuthMode>(initialAuthMode);
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("home");
@@ -2566,8 +2628,6 @@ function UserDashboard({
     : "Not active";
   const inviteCode = makeInviteCode(userProfile);
   const referralLink = `https://bamsignal.com/app?auth=signup&ref=${inviteCode}`;
-  const referralVipCredit = Math.floor(referralPoints / 500);
-  const isWebAppRoute = Capacitor.getPlatform() === "web";
   const vipPlans = useMemo(() => [
     { id: "weekly", label: "Weekly VIP", price: formatNaira(adminContent.vipWeeklyPrice), amount: adminContent.vipWeeklyPrice, days: 7, link: adminContent.vipWeeklyLink },
     { id: "monthly", label: "Monthly VIP", price: formatNaira(adminContent.vipMonthlyPrice), amount: adminContent.vipMonthlyPrice, days: 30, link: adminContent.vipMonthlyLink }
@@ -2575,15 +2635,15 @@ function UserDashboard({
   const activeAuthBanner = useMemo(() => {
     const isWeekend = new Date().getDay() === 5 || new Date().getDay() === 6 || new Date().getDay() === 0;
     if (isWeekend && adminContent.loginBanners.weekendSpecial.active) return adminContent.loginBanners.weekendSpecial;
-    return deviceBinding ? adminContent.loginBanners.returning : adminContent.loginBanners.firstTimer;
-  }, [adminContent.loginBanners, deviceBinding]);
+    return deviceSecurityEnabled && deviceBinding ? adminContent.loginBanners.returning : adminContent.loginBanners.firstTimer;
+  }, [adminContent.loginBanners, deviceBinding, deviceSecurityEnabled]);
   const handleBannerAction = (url: string) => {
     if (url === "signup") {
       setAuthMode("signup");
       return;
     }
     if (url === "login") {
-      setAuthMode(deviceBinding ? "unlock" : "login");
+      setAuthMode(deviceSecurityEnabled && deviceBinding ? "unlock" : "login");
       return;
     }
     if (url === "vip") {
@@ -2643,7 +2703,7 @@ function UserDashboard({
       setAuthMode("reset");
       return;
     }
-    setAuthMode(deviceBinding ? "unlock" : "login");
+    setAuthMode(deviceSecurityEnabled && deviceBinding ? "unlock" : "login");
   }, [authIntent, deviceBinding, isAuthed]);
 
   useEffect(() => {
@@ -2679,10 +2739,14 @@ function UserDashboard({
         return;
       }
       setUserProfile(profile);
-      setPendingLoginProfile(profile);
-      setSetupPin("");
-      setAuthMode("pinSetup");
-      setAuthMessage("Account verified. Create your 6-digit PIN to bind this phone.");
+      if (deviceSecurityEnabled) {
+        setPendingLoginProfile(profile);
+        setSetupPin("");
+        setAuthMode("pinSetup");
+        setAuthMessage("Account verified. Create your 6-digit PIN to bind this phone.");
+        return;
+      }
+      beginTrustedSession(profile);
     };
 
     supabase.auth.getSession().then(({ data }) => {
@@ -2699,7 +2763,7 @@ function UserDashboard({
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, [deviceBinding, isAuthed, userProfile.email, userProfile.phone, userProfile.avatar]);
+  }, [deviceBinding, deviceSecurityEnabled, isAuthed, userProfile.email, userProfile.phone, userProfile.avatar]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -2718,8 +2782,10 @@ function UserDashboard({
     const lockVault = () => {
       supabase?.auth.signOut().catch(() => undefined);
       setIsAuthed(false);
-      setAuthMode(deviceBinding ? "unlock" : "login");
-      setAuthMessage("For your protection, BamSignal locked after 20 minutes of inactivity.");
+      setAuthMode(deviceSecurityEnabled && deviceBinding ? "unlock" : "login");
+      setAuthMessage(deviceSecurityEnabled
+        ? "For your protection, BamSignal locked after 20 minutes of inactivity."
+        : "For your protection, BamSignal signed you out after 20 minutes of inactivity.");
     };
     const refreshTimer = () => {
       window.clearTimeout(inactivityTimer);
@@ -2732,7 +2798,7 @@ function UserDashboard({
       window.clearTimeout(inactivityTimer);
       activityEvents.forEach((eventName) => window.removeEventListener(eventName, refreshTimer));
     };
-  }, [deviceBinding, isAuthed, setIsAuthed]);
+  }, [deviceBinding, deviceSecurityEnabled, isAuthed, setIsAuthed]);
 
   const registerPushNotifications = useCallback(async (showFeedback = false) => {
     if (!Capacitor.isNativePlatform()) {
@@ -2860,9 +2926,15 @@ function UserDashboard({
     setUserProfile(nextProfile);
     setIsAuthed(true);
     refreshMembershipStatus(nextProfile);
-    setAuthMessage("Secure login enabled. Next time, use your 6-digit PIN or your phone Face ID, PIN, or pattern.");
+    setAuthMessage(deviceSecurityEnabled
+      ? "Secure login enabled. Next time, use your 6-digit PIN or your phone Face ID, PIN, or pattern."
+      : "Login confirmed. Your BamSignal room is ready.");
   };
   const bindDevice = async (profile: UserProfile, pin: string) => {
+    if (!deviceSecurityEnabled) {
+      beginTrustedSession(profile);
+      return;
+    }
     if (!/^\d{6}$/.test(pin)) {
       setAuthMessage("Create a 6-digit BamSignal PIN.");
       return;
@@ -2970,9 +3042,13 @@ function UserDashboard({
         beginTrustedSession(deviceBinding);
         return;
       }
-      setSetupPin("");
-      setAuthMode("pinSetup");
-      setAuthMessage("Code confirmed. Create your 6-digit PIN to bind this phone.");
+      if (deviceSecurityEnabled) {
+        setSetupPin("");
+        setAuthMode("pinSetup");
+        setAuthMessage("Code confirmed. Create your 6-digit PIN to bind this phone.");
+        return;
+      }
+      beginTrustedSession(pendingLoginProfile);
     } finally {
       setAuthBusy(null);
     }
@@ -2997,10 +3073,14 @@ function UserDashboard({
 
     const profile = deviceBinding ?? userProfile;
     if (!deviceBinding) {
-      setPendingLoginProfile(profile);
-      setSetupPin("");
-      setAuthMode("pinSetup");
-      setAuthMessage(`${provider} connected. Create your 6-digit PIN to bind this phone.`);
+      if (deviceSecurityEnabled) {
+        setPendingLoginProfile(profile);
+        setSetupPin("");
+        setAuthMode("pinSetup");
+        setAuthMessage(`${provider} connected. Create your 6-digit PIN to bind this phone.`);
+      } else {
+        beginTrustedSession(profile);
+      }
       return;
     }
     beginTrustedSession(profile);
@@ -3068,7 +3148,7 @@ function UserDashboard({
   };
 
   const signUp = async () => {
-    if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password || !signupForm.pin) {
+    if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password || (deviceSecurityEnabled && !signupForm.pin)) {
       setAuthMessage("Please fill in every signup field.");
       return;
     }
@@ -3076,7 +3156,7 @@ function UserDashboard({
       setAuthMessage("The two passwords do not match.");
       return;
     }
-    if (!/^\d{6}$/.test(signupForm.pin)) {
+    if (deviceSecurityEnabled && !/^\d{6}$/.test(signupForm.pin)) {
       setAuthMessage("Your BamSignal PIN must be exactly 6 digits.");
       return;
     }
@@ -3143,7 +3223,11 @@ function UserDashboard({
         if (data.session?.user) {
           await registerSignupIdentity(nextProfile);
           setVerifiedEmails((emails) => Array.from(new Set([...emails, nextProfile.email])));
-          await bindDevice(nextProfile, signupForm.pin);
+          if (deviceSecurityEnabled) {
+            await bindDevice(nextProfile, signupForm.pin);
+          } else {
+            beginTrustedSession(nextProfile);
+          }
           setAuthMessage("Account created. Welcome to your BamSignal room.");
           return;
         }
@@ -3226,7 +3310,11 @@ function UserDashboard({
         setUserProfile(pendingSignup);
         await registerSignupIdentity(pendingSignup);
         setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
-        await bindDevice(pendingSignup, signupForm.pin);
+        if (deviceSecurityEnabled) {
+          await bindDevice(pendingSignup, signupForm.pin);
+        } else {
+          beginTrustedSession(pendingSignup);
+        }
         setAuthBusy(null);
         return;
       }
@@ -3248,7 +3336,11 @@ function UserDashboard({
     setUserProfile(pendingSignup);
     await registerSignupIdentity(pendingSignup);
     setVerifiedEmails((emails) => Array.from(new Set([...emails, pendingSignup.email])));
-    await bindDevice(pendingSignup, signupForm.pin);
+    if (deviceSecurityEnabled) {
+      await bindDevice(pendingSignup, signupForm.pin);
+    } else {
+      beginTrustedSession(pendingSignup);
+    }
     setAuthBusy(null);
   };
   const finishPinSetup = async () => {
@@ -3418,7 +3510,7 @@ function UserDashboard({
     setVerificationInput("");
     setPendingLoginProfile(null);
     setPendingSignup(null);
-    setAuthMode(deviceBinding ? "unlock" : "login");
+    setAuthMode(deviceSecurityEnabled && deviceBinding ? "unlock" : "login");
     setAuthMessage("Logged out securely.");
     navigate({ kind: "app" }, "/app?auth=login");
   };
@@ -3454,7 +3546,7 @@ function UserDashboard({
 
           {showDynamicBanner && <AuthDynamicBanner banner={activeAuthBanner} position="top" onAction={handleBannerAction} />}
 
-          {authMode === "unlock" && deviceBinding && (
+          {deviceSecurityEnabled && authMode === "unlock" && deviceBinding && (
             <div className="auth-form">
               <div className="bound-account-card">
                 <span>Bound to this phone</span>
@@ -3470,7 +3562,7 @@ function UserDashboard({
                 </span>
               </label>
               <button className="primary-action neon-action" onClick={unlockWithPin}><ShieldCheck size={16} /> Unlock with PIN</button>
-              {!isWebAppRoute && <button className="secondary-action" onClick={unlockWithNativeAuth}><ShieldCheck size={16} /> Use Face ID / Phone PIN / Pattern</button>}
+              <button className="secondary-action" onClick={unlockWithNativeAuth}><ShieldCheck size={16} /> Use Face ID / Phone PIN / Pattern</button>
               <div className="auth-switch-row">
                 <button className="text-action create-link" onClick={useAnotherAccount}>Use another account</button>
                 <button className="text-action" onClick={() => setAuthMode("reset")}>Forgot password?</button>
@@ -3497,7 +3589,7 @@ function UserDashboard({
               <button className="primary-action neon-action" onClick={signIn} disabled={authBusy === "login"}>
                 {authBusy === "login" ? <Loader2 className="spin" size={16} /> : <UserPlus size={16} />} Login securely
               </button>
-              {deviceBinding && <button className="secondary-action" onClick={() => setAuthMode("unlock")}><ShieldCheck size={16} /> Use bound-device login</button>}
+              {deviceSecurityEnabled && deviceBinding && <button className="secondary-action" onClick={() => setAuthMode("unlock")}><ShieldCheck size={16} /> Use bound-device login</button>}
               <div className="auth-switch-row">
                 <button className="text-action create-link" onClick={() => setAuthMode("signup")}>Create account</button>
                 <button className="text-action" onClick={() => setAuthMode("reset")}>Forgot password?</button>
@@ -3526,14 +3618,16 @@ function UserDashboard({
                   </button>
                 </span>
               </label>
-              <label>6-digit app PIN
-                <span className="secret-input-wrap">
-                  <input value={signupForm.pin} onChange={(event) => setSignupForm({ ...signupForm, pin: event.target.value.replace(/\D/g, "").slice(0, 6) })} inputMode="numeric" type={secretInputType("signupPin")} placeholder="Create 6-digit PIN" />
-                  <button type="button" className="secret-toggle" onClick={() => toggleSecret("signupPin")} aria-label={visibleSecrets.signupPin ? "Hide PIN" : "Show PIN"}>
-                    {visibleSecrets.signupPin ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </span>
-              </label>
+              {deviceSecurityEnabled && (
+                <label>6-digit app PIN
+                  <span className="secret-input-wrap">
+                    <input value={signupForm.pin} onChange={(event) => setSignupForm({ ...signupForm, pin: event.target.value.replace(/\D/g, "").slice(0, 6) })} inputMode="numeric" type={secretInputType("signupPin")} placeholder="Create 6-digit PIN" />
+                    <button type="button" className="secret-toggle" onClick={() => toggleSecret("signupPin")} aria-label={visibleSecrets.signupPin ? "Hide PIN" : "Show PIN"}>
+                      {visibleSecrets.signupPin ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </span>
+                </label>
+              )}
               <label>Referral code<input value={signupForm.referralCode} onFocus={() => setSignupForm({ ...signupForm, referralCode: signupForm.referralCode || getReferralCodeFromUrl() })} onChange={(event) => setSignupForm({ ...signupForm, referralCode: event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 32) })} placeholder="Optional" /></label>
               <button className="primary-action neon-action" onClick={signUp} disabled={authBusy === "signup"}>
                 {authBusy === "signup" ? <Loader2 className="spin" size={16} /> : <ShieldCheck size={16} />} Create secure account
@@ -3574,7 +3668,7 @@ function UserDashboard({
             </div>
           )}
 
-          {authMode === "pinSetup" && (
+          {deviceSecurityEnabled && authMode === "pinSetup" && (
             <div className="auth-form">
               <div className="bound-account-card">
                 <span>Account verified</span>
@@ -3761,7 +3855,7 @@ function UserDashboard({
       )}
 
       {dashboardTab === "profile" && (
-        <section className="profile-panel">
+        <section className="profile-panel compact-profile-panel">
           <div className="profile-community-card">
             <div className="profile-photo-frame">
               <div className={`profile-photo ${userProfile.avatar ? "has-avatar" : ""}`}>
@@ -3773,34 +3867,13 @@ function UserDashboard({
               </label>
             </div>
             <div className="profile-identity">
-              <span className="auth-secure-badge"><Users size={14} /> BamSignal community</span>
               <h2>{userProfile.name}</h2>
               <p>{isPremium ? "VIP member" : "Freemium member"}</p>
               <div className="member-badges">
                 <span>{isPremium ? "VIP Premium" : "Freemium"}</span>
-                <span>Invite {makeInviteCode(userProfile)}</span>
+                <span>{inviteCode}</span>
+                <span>{wins} wins</span>
               </div>
-            </div>
-          </div>
-
-          <div className="profile-share-card">
-            <div>
-              <p className="eyebrow">Winning profile</p>
-              <h3>Share your streak</h3>
-              <span>Your avatar, recent wins, and invite link.</span>
-            </div>
-            <button className="primary-action neon-action" onClick={shareWinningProfile}><Share2 size={16} /> Share profile</button>
-          </div>
-
-          <div className="referral-wallet-card">
-            <div>
-              <p className="eyebrow">BamPoints</p>
-              <h3>{referralPoints} BamPoints</h3>
-              <span>50 points per confirmed referral.</span>
-            </div>
-            <div>
-              <strong>{referralVipCredit}</strong>
-              <small>VIP credit units</small>
             </div>
           </div>
 
@@ -3811,41 +3884,19 @@ function UserDashboard({
             <div><strong>{hitRate}%</strong><span>Hit rate</span></div>
           </div>
 
-          <div className="profile-fintech-grid">
-            <article className="profile-wallet-card">
-              <div>
-                <span>Member status</span>
-                <strong>{isPremium ? "VIP active" : "Freemium active"}</strong>
-              </div>
-              <Crown size={18} />
-              <small>{isPremium ? `Access until ${subscriptionLabel}` : `VIP from ${vipPlans[0]?.price ?? "₦950"} weekly.`}</small>
-            </article>
-            <article className="profile-wallet-card">
-              <div>
-                <span>Invite code</span>
-                <strong>{inviteCode}</strong>
-              </div>
-              <Share2 size={18} />
-              <small>{referralLink}</small>
-            </article>
-            <article className="profile-wallet-card">
-              <div>
-                <span>Telegram support</span>
-                <strong>@ttmaketing</strong>
-              </div>
-              <Send size={18} />
-              <small>Reach admin quickly when you need help.</small>
-            </article>
-          </div>
-
           <div className="profile-grid">
             <span><Users size={16} /><small>Name</small><strong>{userProfile.name}</strong></span>
             <span><Send size={16} /><small>Email</small><strong>{userProfile.email}</strong></span>
             <span><Smartphone size={16} /><small>Phone</small><strong>{userProfile.phone}</strong></span>
             <span><Crown size={16} /><small>Plan</small><strong>{isPremium ? "VIP Premium" : "Freemium"}</strong></span>
+            <span><Share2 size={16} /><small>Invite code</small><strong>{inviteCode}</strong></span>
+            <span><Goal size={16} /><small>BamPoints</small><strong>{referralPoints}</strong></span>
+            {isPremium && <span><CalendarDays size={16} /><small>Active until</small><strong>{subscriptionLabel}</strong></span>}
+            <span><Send size={16} /><small>Support</small><strong>@ttmaketing</strong></span>
           </div>
 
           <div className="profile-actions-grid">
+            <button className="primary-action neon-action" onClick={shareWinningProfile}><Share2 size={16} /> Share profile</button>
             <button className="secondary-action" onClick={openNotificationSettings}><Bell size={16} /> Notification settings</button>
             <button className="secondary-action" onClick={() => setDashboardTab("vip")}><CreditCard size={16} /> Manage VIP</button>
             <a className="secondary-action" href="https://t.me/ttmaketing" target="_blank" rel="noreferrer"><Send size={16} /> Telegram support</a>
@@ -4344,6 +4395,8 @@ function AdminPage({
   const [isIngesting, setIsIngesting] = useState(false);
   const [adminStatus, setAdminStatus] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
+  const [evidenceGames, setEvidenceGames] = useState<AdminGame[]>([]);
+  const [evidenceBusy, setEvidenceBusy] = useState(false);
   const [adminAccess, setAdminAccess] = useState<"checking" | "granted" | "denied">("checking");
   const [adminLoginForm, setAdminLoginForm] = useState({ email: "", password: "" });
   const [adminLoginBusy, setAdminLoginBusy] = useState(false);
@@ -4370,6 +4423,7 @@ function AdminPage({
     { tab: "overview", label: "Overview", icon: <ClipboardCheck size={15} /> },
     { tab: "ingest", label: "Signal ingest", icon: <Activity size={15} /> },
     { tab: "games", label: "Games", icon: <Goal size={15} /> },
+    { tab: "evidence", label: "Evidence board", icon: <BarChart3 size={15} /> },
     { tab: "settings", label: "Settings", icon: <ShieldCheck size={15} /> },
     { tab: "security", label: "Admin security", icon: <LockKeyhole size={15} /> },
     { tab: "login", label: "Login banners", icon: <Sparkles size={15} /> },
@@ -4423,6 +4477,17 @@ function AdminPage({
     });
     return payload;
   };
+  const refreshEvidenceBoard = async () => {
+    setEvidenceBusy(true);
+    try {
+      const response = await fetch(apiUrl(`/api/evidence-games?limit=250&t=${Date.now()}`), { cache: "no-store" });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Could not load evidence board.");
+      setEvidenceGames((payload.games || []).map(apiTipToAdminGame));
+    } finally {
+      setEvidenceBusy(false);
+    }
+  };
   useEffect(() => {
     checkAdminAccess().catch(() => setAdminAccess("denied"));
   }, []);
@@ -4451,6 +4516,7 @@ function AdminPage({
     setAdminMenuOpen(false);
     if (tab === "support") refreshSupportInbox();
     if (tab === "security") refreshAdminSecurity().catch((error) => setAdminStatus(friendlyAuthError(error)));
+    if (tab === "evidence") refreshEvidenceBoard().catch((error) => setAdminStatus(friendlyAuthError(error)));
   };
   const updateAdLink = (index: number, value: string) => {
     const nextLinks = [...adminContent.adLinks];
@@ -4822,6 +4888,29 @@ function AdminPage({
       setAdminStatus(`Outcome save failed: ${friendlyAuthError(error)}`);
     } finally {
       setIsPublishing(false);
+    }
+  };
+  const deleteEvidenceGame = async (game: AdminGame) => {
+    setEvidenceBusy(true);
+    setAdminStatus(`Removing ${game.match} from the evidence board...`);
+    try {
+      const response = await fetch(apiUrl("/api/publish-tip"), {
+        method: "POST",
+        headers: await getAdminAuthHeaders(),
+        body: JSON.stringify({
+          action: "delete-evidence",
+          id: game.id,
+          evidence_source: game.evidenceSource
+        })
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.ok) throw new Error(payload?.error || "Evidence delete failed");
+      setEvidenceGames((current) => current.filter((item) => !(item.id === game.id && item.evidenceSource === game.evidenceSource)));
+      setAdminStatus(`${game.match} removed from the public evidence board.`);
+    } catch (error) {
+      setAdminStatus(`Evidence delete failed: ${friendlyAuthError(error)}`);
+    } finally {
+      setEvidenceBusy(false);
     }
   };
   const ingestSignals = async (mode: "preview" | "publish") => {
@@ -5443,6 +5532,45 @@ function AdminPage({
           <button className="secondary-action" onClick={() => saveAdminSettings("Games setup saved to the BamSignal database.")}>
             <ClipboardCheck size={16} /> Save games setup
           </button>
+        </div>
+      </section>}
+
+      {activeAdminTab === "evidence" && <section className="admin-panel">
+        <div className="admin-panel-head">
+          <div>
+            <p className="eyebrow">Evidence board control</p>
+            <h2>Review settled games and remove any record you do not want public.</h2>
+          </div>
+          <button className="secondary-action" onClick={() => refreshEvidenceBoard().catch((error) => setAdminStatus(friendlyAuthError(error)))} disabled={evidenceBusy}>
+            {evidenceBusy ? <Loader2 className="spin" size={16} /> : <Activity size={16} />} Refresh evidence
+          </button>
+        </div>
+        <div className="admin-game-grid evidence-admin-grid">
+          {evidenceGames.length ? evidenceGames.map((game) => (
+            <article className="admin-game-card evidence-admin-card" key={`${game.evidenceSource || "unknown"}-${game.id}`}>
+              <div className="admin-game-head">
+                <strong>{evidenceStatusLabel(game)}</strong>
+                <span>{game.evidenceSource === "tips" ? "Historic tip" : "Daily board"}</span>
+              </div>
+              <div className="admin-form compact">
+                <label>Match<input value={game.match} readOnly /></label>
+                <label>League<input value={game.league} readOnly /></label>
+                <label>Prediction<input value={game.pick} readOnly /></label>
+                <label>Result<input value={game.result || "Pending"} readOnly /></label>
+              </div>
+              <div className="admin-action-row wrap">
+                <button className="secondary-action danger-action" onClick={() => deleteEvidenceGame(game)} disabled={evidenceBusy}>
+                  <X size={16} /> Delete from evidence board
+                </button>
+              </div>
+            </article>
+          )) : (
+            <article className="empty-signal-state wide">
+              <CalendarClock size={22} />
+              <strong>{evidenceBusy ? "Loading evidence board" : "No evidence games yet"}</strong>
+              <span>Settled or expired games will appear here as soon as BamSignal records them.</span>
+            </article>
+          )}
         </div>
       </section>}
 
@@ -6273,7 +6401,7 @@ function PublicPredictionCard({
         <ConfidenceSignal confidence={game.confidence} />
       </div>
       <div className="prediction-row">
-        <strong>{gameOddsValue(game)}</strong>
+        <strong>{gameOddsValue(game)} odds</strong>
         <strong>{game.confidence}%</strong>
         <span>Primary pick</span>
         <strong className={locked ? "blurred-tip" : ""}>{game.pick}</strong>
@@ -6321,7 +6449,10 @@ function LeagueLogo({ src, name }: { src?: string; name: string }) {
 
 function Probability({ label, value, percent, compact = false }: { label: string; value: string; percent: number; compact?: boolean }) {
   return (
-    <div className={`probability ${compact ? "compact" : ""}`}>
+    <div
+      className={`probability ${compact ? "compact" : ""} ${percent >= 80 ? "high" : percent >= 60 ? "mid" : percent >= 45 ? "soft" : "low"}`}
+      style={{ "--meter": `${Math.max(0, Math.min(percent, 100))}%` } as React.CSSProperties}
+    >
       <span>{label}</span>
       <strong>{value}</strong>
       <div className="bar"><i style={{ width: `${percent}%` }} /></div>

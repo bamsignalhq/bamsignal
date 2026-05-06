@@ -213,8 +213,20 @@ function tipFromStructuredRow(row, options = {}, index = 0) {
   const matchTime = parseTime(rowValue(row, ["match_time", "starts_at", "kickoff", "time", "date"], ""), rowValue(row, ["date"], ""));
   const bookmaker = clean(rowValue(row, ["bookmaker", "bookie"], ""));
   const bookingCode = clean(rowValue(row, ["booking_code", "code"], ""));
+  const bookingUrl = clean(rowValue(row, ["booking_link", "booking_url", "bookie_link", "bookie_url", "affiliate_link"], ""));
+  const buttonText = clean(rowValue(row, ["button_text", "booking_button_text"], ""));
   const bookingCodes = {};
-  if (bookmaker && bookingCode) bookingCodes[bookmaker] = bookingCode;
+  if (bookmaker && (bookingCode || bookingUrl)) {
+    bookingCodes[bookmaker] = (bookingUrl || buttonText)
+      ? {
+          code: bookingCode || undefined,
+          url: bookingUrl || undefined,
+          label: bookmaker,
+          button_text: buttonText || undefined,
+          action_mode: bookingCode && bookingUrl ? "both" : bookingUrl ? "link" : "code"
+        }
+      : bookingCode;
+  }
   const league = clean(rowValue(row, ["league", "competition"], inferLeague(rawText, sport, options.defaultLeague || "auto")));
 
   return {

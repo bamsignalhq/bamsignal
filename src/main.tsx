@@ -19,6 +19,7 @@ import {
   ClipboardCheck,
   CreditCard,
   Crown,
+  ExternalLink,
   Eye,
   EyeOff,
   Goal,
@@ -116,11 +117,17 @@ type BookmakerKey =
   | "bangbet"
   | "betano"
   | "accessbet"
-  | "melbet";
+  | "melbet"
+  | "custom";
+type BookingActionMode = "code" | "link" | "both";
 type BookingCodeEntry = {
   id: number;
   bookmaker: BookmakerKey;
+  customName?: string;
   code: string;
+  link?: string;
+  buttonText?: string;
+  actionMode?: BookingActionMode;
   regularApp: boolean;
   premiumApp: boolean;
   regularTelegram: boolean;
@@ -179,7 +186,13 @@ type ApiTip = {
   odds: string | number;
   confidence?: number;
   is_vip: boolean;
-  booking_codes?: Record<string, string>;
+  booking_codes?: Record<string, string | {
+    code?: string;
+    url?: string;
+    label?: string;
+    button_text?: string;
+    action_mode?: BookingActionMode;
+  }>;
   status?: string;
   starts_at?: string;
   result_payload?: {
@@ -289,10 +302,40 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
     : typeof tip.result_payload?.result === "string"
       ? tip.result_payload.result
       : undefined;
-  const bookingCodes = Object.entries(tip.booking_codes || {}).map(([bookmaker, code], codeIndex) => ({
-    ...makeBookingCode(bookmakerKeyFromName(bookmaker), String(code), tip.is_vip),
-    id: Number(`${Date.now()}${index}${codeIndex}`.slice(-9))
-  }));
+  const bookingCodes = Object.entries(tip.booking_codes || {}).map(([bookmaker, value], codeIndex) => {
+    const premium = tip.is_vip;
+    const bookmakerKey = bookmakerKeyFromName(bookmaker);
+    if (typeof value === "string") {
+      return {
+        ...makeBookingCode(
+          bookmakerKey,
+          isLikelyUrl(value) ? "" : String(value),
+          premium,
+          {
+            customName: bookmakerKey === "custom" ? bookmaker : "",
+            link: isLikelyUrl(value) ? String(value) : "",
+            actionMode: isLikelyUrl(value) ? "link" : "code"
+          }
+        ),
+        id: Number(`${Date.now()}${index}${codeIndex}`.slice(-9))
+      };
+    }
+    const typed = value || {};
+    return {
+      ...makeBookingCode(
+        bookmakerKey,
+        String(typed.code || ""),
+        premium,
+        {
+          customName: String(typed.label || (bookmakerKey === "custom" ? bookmaker : "")),
+          link: String(typed.url || ""),
+          buttonText: String(typed.button_text || ""),
+          actionMode: typed.action_mode || undefined
+        }
+      ),
+      id: Number(`${Date.now()}${index}${codeIndex}`.slice(-9))
+    };
+  });
   const oddsNumber = Number(tip.odds);
   const oddsPending = Boolean(metadata?.odds_missing);
   return {
@@ -367,7 +410,9 @@ const gameBoardStatus = (game: AdminGame): BoardStatus => {
   });
   const startDay = dayFormatter.format(startsAt);
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const kickoffPassed = startsAt.getTime() <= now.getTime();
   if (scheduledStatuses.has(normalized)) {
+    if (kickoffPassed) return "Finished";
     if (startDay === dayFormatter.format(now)) return "Today";
     if (startDay === dayFormatter.format(tomorrow)) return "Tomorrow";
     return startsAt.getTime() > now.getTime() ? "Upcoming" : "Today";
@@ -387,7 +432,12 @@ const evidenceStatusLabel = (game: AdminGame) => {
     if (typeof evaluated === "boolean") return evaluated ? "Won" : "Lost";
     return "Finished";
   }
-  return game.startsAt ? "Scheduled" : "Pending";
+  if (game.startsAt) {
+    const startsAt = new Date(game.startsAt);
+    if (!Number.isNaN(startsAt.getTime()) && startsAt.getTime() <= Date.now()) return "Awaiting result";
+    return "Scheduled";
+  }
+  return "Pending";
 };
 
 const evaluateGamePick = (game: AdminGame): boolean | null => {
@@ -482,7 +532,7 @@ const compareDisplayGames = (left: AdminGame, right: AdminGame) => {
 const pickFeaturedGame = (games: AdminGame[]) => {
   const board = dedupeGamesByMatch(games)
     .filter((game) => !isLegacySampleGame(game))
-    .filter((game) => !["Won", "Lost", "Finished"].includes(evidenceStatusLabel(game)))
+    .filter((game) => gameBoardStatus(game) !== "Finished")
     .sort((left, right) => {
       const leftTime = left.startsAt ? new Date(left.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
       const rightTime = right.startsAt ? new Date(right.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
@@ -646,23 +696,78 @@ const bookmakers: { key: BookmakerKey; label: string }[] = [
   { key: "bangbet", label: "Bangbet" },
   { key: "betano", label: "Betano" },
   { key: "accessbet", label: "AccessBET" },
-  { key: "melbet", label: "Melbet" }
+  { key: "melbet", label: "Melbet" },
+  { key: "custom", label: "Custom bookie" }
 ];
 
-const bookmakerLabel = (key: BookmakerKey) => bookmakers.find((bookmaker) => bookmaker.key === key)?.label ?? key;
+const bookmakerLabel = (key: BookmakerKey, customName = "") => {
+  if (key === "custom" && customName.trim()) return customName.trim();
+  return bookmakers.find((bookmaker) => bookmaker.key === key)?.label ?? (customName.trim() || key);
+};
 const bookmakerKeyFromName = (value: string): BookmakerKey => {
   const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return bookmakers.find((bookmaker) => bookmaker.key.replace(/[^a-z0-9]/g, "") === normalized || bookmaker.label.toLowerCase().replace(/[^a-z0-9]/g, "") === normalized)?.key ?? "sportybet";
+  return bookmakers.find((bookmaker) => bookmaker.key.replace(/[^a-z0-9]/g, "") === normalized || bookmaker.label.toLowerCase().replace(/[^a-z0-9]/g, "") === normalized)?.key ?? "custom";
 };
-const makeBookingCode = (bookmaker: BookmakerKey, code: string, premium = false): BookingCodeEntry => ({
+const isLikelyUrl = (value = "") => /^https?:\/\//i.test(String(value).trim());
+const sanitizeBookieUrl = (value = "") => String(value || "").trim();
+const makeBookingCode = (
+  bookmaker: BookmakerKey,
+  code: string,
+  premium = false,
+  options: Partial<Pick<BookingCodeEntry, "customName" | "link" | "buttonText" | "actionMode">> = {}
+): BookingCodeEntry => ({
   id: Date.now() + Math.floor(Math.random() * 10000),
   bookmaker,
+  customName: options.customName || "",
   code,
+  link: sanitizeBookieUrl(options.link || ""),
+  buttonText: options.buttonText || "",
+  actionMode: options.actionMode || ((code.trim() && sanitizeBookieUrl(options.link || "")) ? "both" : sanitizeBookieUrl(options.link || "") ? "link" : "code"),
   regularApp: !premium,
   premiumApp: premium,
   regularTelegram: !premium,
   premiumTelegram: premium
 });
+const bookingEntryLabel = (entry: BookingCodeEntry) => bookmakerLabel(entry.bookmaker, entry.customName);
+const bookingEntryHasCode = (entry: BookingCodeEntry) => Boolean(entry.code.trim());
+const bookingEntryHasLink = (entry: BookingCodeEntry) => Boolean(sanitizeBookieUrl(entry.link));
+const bookingEntryPrimaryActionLabel = (entry: BookingCodeEntry, fallback = "Open booking") => {
+  if (entry.buttonText?.trim()) return entry.buttonText.trim();
+  const label = bookingEntryLabel(entry);
+  if (entry.actionMode === "link" || (!bookingEntryHasCode(entry) && bookingEntryHasLink(entry))) return `Open ${label}`;
+  if (entry.actionMode === "both" && bookingEntryHasLink(entry)) return `Open ${label}`;
+  if (bookingEntryHasCode(entry)) return `Copy ${label} code`;
+  return fallback;
+};
+const bookingEntryToPayload = (entry: BookingCodeEntry) => {
+  const label = bookingEntryLabel(entry);
+  const code = entry.code.trim();
+  const url = sanitizeBookieUrl(entry.link);
+  if (!code && !url) return null;
+  if (code && !url && !entry.buttonText?.trim() && entry.bookmaker !== "custom") return { key: label, value: code };
+  return {
+    key: label,
+    value: {
+      code: code || undefined,
+      url: url || undefined,
+      label,
+      button_text: entry.buttonText?.trim() || undefined,
+      action_mode: entry.actionMode || undefined
+    }
+  };
+};
+const bookingEntriesToPayload = (entries: BookingCodeEntry[]) => entries.reduce<Record<string, string | {
+  code?: string;
+  url?: string;
+  label?: string;
+  button_text?: string;
+  action_mode?: BookingActionMode;
+}>>((codes, entry) => {
+  const payload = bookingEntryToPayload(entry);
+  if (!payload) return codes;
+  codes[payload.key] = payload.value;
+  return codes;
+}, {});
 
 const getSavedTheme = (): Theme => {
   try {
@@ -1339,7 +1444,7 @@ async function createWinningProfileCard(
 }
 
 const parseAdminBookingCodes = (value: string) => value
-  .split("/")
+  .split(/\s+\/\s+|\n+/)
   .map((chunk) => chunk.trim())
   .filter(Boolean)
   .reduce<Record<string, string>>((codes, chunk) => {
@@ -1352,17 +1457,60 @@ const parseAdminBookingCodes = (value: string) => value
 
 const adminBookingEntriesFromText = (value: string, isVip: boolean): BookingCodeEntry[] => {
   const parsed = parseAdminBookingCodes(value);
-  const entries = Object.entries(parsed).map(([bookmaker, code], index) => ({
-    ...makeBookingCode(bookmakerKeyFromName(bookmaker), code, isVip),
-    id: Date.now() + index
-  }));
+  const entries = Object.entries(parsed).map(([bookmaker, rawValue], index) => {
+    const bookmakerKey = bookmakerKeyFromName(bookmaker);
+    const link = isLikelyUrl(rawValue) ? rawValue : rawValue.split(/\s+/).find((part) => isLikelyUrl(part)) || "";
+    const code = link ? rawValue.replace(link, "").trim() : rawValue;
+    return {
+      ...makeBookingCode(bookmakerKey, code, isVip, {
+        customName: bookmakerKey === "custom" ? bookmaker : "",
+        link,
+        actionMode: link && code ? "both" : link ? "link" : "code"
+      }),
+      id: Date.now() + index
+    };
+  });
   return entries.length ? entries : [makeBookingCode("sportybet", "", isVip)];
 };
 
 const summarizeBookingCodes = (game: AdminGame) => game.bookingCodes
-  .filter((entry) => entry.code.trim())
-  .map((entry) => `${bookmakerLabel(entry.bookmaker)}: ${entry.code.trim()}`)
+  .filter((entry) => entry.code.trim() || sanitizeBookieUrl(entry.link))
+  .map((entry) => {
+    const label = bookingEntryLabel(entry);
+    const parts = [];
+    if (entry.code.trim()) parts.push(entry.code.trim());
+    if (sanitizeBookieUrl(entry.link)) parts.push(sanitizeBookieUrl(entry.link));
+    return `${label}: ${parts.join(" / ")}`;
+  })
   .join(" / ");
+
+const actionableBookingEntries = (entries: BookingCodeEntry[]) => entries.filter((entry) => {
+  if (entry.actionMode === "link") return bookingEntryHasLink(entry);
+  if (entry.actionMode === "both") return bookingEntryHasLink(entry) || bookingEntryHasCode(entry);
+  return bookingEntryHasCode(entry) || bookingEntryHasLink(entry);
+});
+
+const performBookingAction = async (entry: BookingCodeEntry) => {
+  const url = sanitizeBookieUrl(entry.link);
+  const code = entry.code.trim();
+  if ((entry.actionMode === "link" || entry.actionMode === "both") && url) {
+    if (isNativePlatform) {
+      await Browser.open({ url });
+    } else {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+    return;
+  }
+  if (code) {
+    await navigator.clipboard?.writeText(code);
+  } else if (url) {
+    if (isNativePlatform) {
+      await Browser.open({ url });
+    } else {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  }
+};
 
 const formatManualChannelPost = (
   games: AdminGame[],
@@ -1430,6 +1578,10 @@ const loadAdminContent = (): AdminContent => {
             id: item.id ?? Date.now() + index,
             bookmaker: (item.bookmaker ?? "sportybet") as BookmakerKey,
             code: item.code ?? "",
+            customName: item.customName ?? "",
+            link: item.link ?? "",
+            buttonText: item.buttonText ?? "",
+            actionMode: (item.actionMode ?? (item.code && item.link ? "both" : item.link ? "link" : "code")) as BookingActionMode,
             regularApp: item.regularApp ?? true,
             premiumApp: item.premiumApp ?? false,
             regularTelegram: item.regularTelegram ?? false,
@@ -1438,17 +1590,45 @@ const loadAdminContent = (): AdminContent => {
         });
       }
       if (codes && typeof codes === "object") {
-        return Object.entries(codes as Record<string, string>)
-          .filter(([, code]) => Boolean(code))
-          .map(([bookmaker, code], index) => ({
-            id: Date.now() + index,
-            bookmaker: bookmaker as BookmakerKey,
-            code,
-            regularApp: true,
-            premiumApp: false,
-            regularTelegram: false,
-            premiumTelegram: false
-          }));
+        return Object.entries(codes as Record<string, string | {
+          code?: string;
+          url?: string;
+          label?: string;
+          button_text?: string;
+          action_mode?: BookingActionMode;
+        }>)
+          .filter(([, value]) => Boolean(value))
+          .map(([bookmaker, value], index) => {
+            const bookmakerKey = bookmakerKeyFromName(bookmaker);
+            if (typeof value === "string") {
+              return {
+                id: Date.now() + index,
+                bookmaker: bookmakerKey,
+                customName: bookmakerKey === "custom" ? bookmaker : "",
+                code: isLikelyUrl(value) ? "" : value,
+                link: isLikelyUrl(value) ? value : "",
+                buttonText: "",
+                actionMode: (isLikelyUrl(value) ? "link" : "code") as BookingActionMode,
+                regularApp: true,
+                premiumApp: false,
+                regularTelegram: false,
+                premiumTelegram: false
+              };
+            }
+            return {
+              id: Date.now() + index,
+              bookmaker: bookmakerKey,
+              customName: value.label ?? (bookmakerKey === "custom" ? bookmaker : ""),
+              code: value.code ?? "",
+              link: value.url ?? "",
+              buttonText: value.button_text ?? "",
+              actionMode: (value.action_mode ?? (value.code && value.url ? "both" : value.url ? "link" : "code")) as BookingActionMode,
+              regularApp: true,
+              premiumApp: false,
+              regularTelegram: false,
+              premiumTelegram: false
+            };
+          });
       }
       return fallback;
     };
@@ -1904,7 +2084,7 @@ function HomePage({
   adminContent: AdminContent;
 }) {
   const boardSource = dedupeGamesByMatch(filteredGames.length || activeStatus !== "All" ? filteredGames : adminContent.games)
-    .filter((game) => !["Won", "Lost", "Finished"].includes(evidenceStatusLabel(game)))
+    .filter((game) => gameBoardStatus(game) !== "Finished")
     .filter((game) => activeStatus !== "All" || !topPick || gameMatchKey(game) !== gameMatchKey(topPick));
   const publicHomeLimit = 10;
   const visibleFreeLimit = 2;
@@ -2198,6 +2378,7 @@ function EvidenceGameRow({ game }: { game: AdminGame }) {
   const homeName = game.homeTeam || teams.home;
   const awayName = game.awayTeam || teams.away;
   const status = evidenceStatusLabel(game);
+  const statusClass = status.toLowerCase().replace(/\s+/g, "-");
   return (
     <article className="evidence-row platform-evidence-row">
       <div className="evidence-match-media">
@@ -2206,7 +2387,7 @@ function EvidenceGameRow({ game }: { game: AdminGame }) {
         <TeamLogo src={game.awayLogo} name={awayName} />
       </div>
       <div className="evidence-main">
-        <span className={`result-dot ${status.toLowerCase()}`}>{status}</span>
+        <span className={`result-dot ${statusClass}`}>{status}</span>
         <h3>{homeName} <small>vs</small> {awayName}</h3>
         <p>{game.pick}</p>
         <div className="fixture-identity">
@@ -3437,7 +3618,7 @@ function UserDashboard({
 
   const renderManagedGame = (game: AdminGame, locked = false) => {
     const visibleCodes = !locked && (game.tier === "vip" || game.showBookingCodes);
-    const appCodes = game.bookingCodes.filter((entry) => entry.code.trim() && (game.tier === "vip" ? entry.premiumApp : entry.regularApp));
+    const appCodes = actionableBookingEntries(game.bookingCodes.filter((entry) => game.tier === "vip" ? entry.premiumApp : entry.regularApp));
     return (
       <div className={`room-pick managed ${locked ? "locked" : ""}`} key={game.id}>
         <div className="room-pick-top">
@@ -3450,8 +3631,12 @@ function UserDashboard({
         {visibleCodes && appCodes.length ? (
           <div className="booking-code-list">
             {appCodes.map((entry) => (
-              <button key={`${game.id}-${entry.id}`} onClick={() => navigator.clipboard?.writeText(entry.code)}>
-                <ClipboardCheck size={13} /> {bookmakerLabel(entry.bookmaker)} <strong>{entry.code}</strong>
+              <button key={`${game.id}-${entry.id}`} onClick={() => performBookingAction(entry)}>
+                {bookingEntryHasLink(entry) && (entry.actionMode === "link" || entry.actionMode === "both")
+                  ? <ExternalLink size={13} />
+                  : <ClipboardCheck size={13} />}
+                {bookingEntryPrimaryActionLabel(entry)}
+                {bookingEntryHasCode(entry) && entry.actionMode !== "link" ? <strong>{entry.code}</strong> : null}
               </button>
             ))}
           </div>
@@ -4168,7 +4353,11 @@ function AdminPage({
   const [selectedGameIds, setSelectedGameIds] = useState<Array<string | number>>([]);
   const [batchBookingForm, setBatchBookingForm] = useState({
     bookmaker: "sportybet" as BookmakerKey,
+    customName: "",
     code: "",
+    link: "",
+    buttonText: "",
+    actionMode: "both" as BookingActionMode,
     multipleTitle: "",
     multipleOdds: "",
     showToFreemium: false,
@@ -4306,8 +4495,8 @@ function AdminPage({
       setAdminStatus("Select one or more games before applying a booking code.");
       return;
     }
-    if (!batchBookingForm.code.trim()) {
-      setAdminStatus("Enter the bookmaker code you want to apply to the selected games.");
+    if (!batchBookingForm.code.trim() && !batchBookingForm.link.trim()) {
+      setAdminStatus("Enter a booking code, a direct bookie link, or both before applying it to selected games.");
       return;
     }
     const nextGames = adminContent.games.map((game) => {
@@ -4315,7 +4504,12 @@ function AdminPage({
       const existingIndex = game.bookingCodes.findIndex((entry) => entry.bookmaker === batchBookingForm.bookmaker);
       const premium = game.tier === "vip";
       const nextEntry = {
-        ...makeBookingCode(batchBookingForm.bookmaker, batchBookingForm.code.trim(), premium),
+        ...makeBookingCode(batchBookingForm.bookmaker, batchBookingForm.code.trim(), premium, {
+          customName: batchBookingForm.customName.trim(),
+          link: batchBookingForm.link.trim(),
+          buttonText: batchBookingForm.buttonText.trim(),
+          actionMode: batchBookingForm.actionMode
+        }),
         id: existingIndex >= 0 ? game.bookingCodes[existingIndex].id : Date.now() + Math.floor(Math.random() * 10000)
       };
       const bookingCodes = existingIndex >= 0
@@ -4332,7 +4526,7 @@ function AdminPage({
       };
     });
     setAdminContent({ ...adminContent, games: nextGames });
-    setAdminStatus(`${bookmakerLabel(batchBookingForm.bookmaker)} code applied to ${selectedGames.length} selected game${selectedGames.length === 1 ? "" : "s"}. Save games setup when you are happy with it.`);
+    setAdminStatus(`${bookmakerLabel(batchBookingForm.bookmaker, batchBookingForm.customName)} booking action applied to ${selectedGames.length} selected game${selectedGames.length === 1 ? "" : "s"}. Save games setup when you are happy with it.`);
   };
   const createMultipleFromSelection = () => {
     if (selectedGames.length < 2) {
@@ -4357,8 +4551,13 @@ function AdminPage({
       status: "pending",
       startsAt,
       showBookingCodes: !isVip && batchBookingForm.showToFreemium,
-      bookingCodes: batchBookingForm.code.trim()
-        ? [makeBookingCode(batchBookingForm.bookmaker, batchBookingForm.code.trim(), isVip)]
+      bookingCodes: (batchBookingForm.code.trim() || batchBookingForm.link.trim())
+        ? [makeBookingCode(batchBookingForm.bookmaker, batchBookingForm.code.trim(), isVip, {
+          customName: batchBookingForm.customName.trim(),
+          link: batchBookingForm.link.trim(),
+          buttonText: batchBookingForm.buttonText.trim(),
+          actionMode: batchBookingForm.actionMode
+        })]
         : [makeBookingCode("sportybet", "", isVip)],
       pushApp: batchBookingForm.pushApp,
       pushTelegram: batchBookingForm.pushTelegram,
@@ -4382,6 +4581,24 @@ function AdminPage({
     }
     await navigator.clipboard?.writeText(formatManualChannelPost(relevantGames, audience, adminContent));
     setAdminStatus(`${audience === "vip" ? "VIP" : "Freemium"} WhatsApp post copied. Open the room link and paste it.`);
+  };
+  const openWhatsAppDraft = (audience: "freemium" | "vip") => {
+    const sourceGames = selectedGames.length
+      ? selectedGames
+      : adminContent.games.filter((game) => audience === "vip" ? game.tier === "vip" : game.tier === "freemium").slice(0, audience === "vip" ? 10 : 2);
+    const relevantGames = sourceGames.filter((game) => audience === "vip" ? game.tier === "vip" : game.tier === "freemium");
+    if (!relevantGames.length) {
+      setAdminStatus(`No ${audience === "vip" ? "VIP" : "freemium"} games are available for a WhatsApp draft right now.`);
+      return;
+    }
+    const text = formatManualChannelPost(relevantGames, audience, adminContent);
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    if (isNativePlatform) {
+      Browser.open({ url }).catch(() => window.open(url, "_blank", "noopener,noreferrer"));
+    } else {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+    setAdminStatus(`WhatsApp ${audience === "vip" ? "VIP" : "freemium"} draft opened in a new tab.`);
   };
   const publishSelectedGames = async () => {
     if (!selectedGames.length) {
@@ -4528,10 +4745,7 @@ function AdminPage({
         odds: game.odds,
         confidence: game.confidence,
         is_vip: game.tier === "vip",
-        booking_codes: game.bookingCodes.reduce<Record<string, string>>((codes, entry) => {
-          if (entry.code.trim()) codes[bookmakerLabel(entry.bookmaker)] = entry.code.trim();
-          return codes;
-        }, {}),
+        booking_codes: bookingEntriesToPayload(game.bookingCodes),
         starts_at: schedule,
         channels: {
           app: game.pushApp,
@@ -4894,7 +5108,7 @@ function AdminPage({
           <label>Game of the day<input value={quickPublish.match} onChange={(event) => setQuickPublish({ ...quickPublish, match: event.target.value })} placeholder="Man City vs Tottenham" /></label>
           <label>League<input value={quickPublish.league} onChange={(event) => setQuickPublish({ ...quickPublish, league: event.target.value })} placeholder="Premier League" /></label>
           <label>Prediction<input value={quickPublish.prediction} onChange={(event) => setQuickPublish({ ...quickPublish, prediction: event.target.value })} placeholder="Home win + over 1.5" /></label>
-          <label>Booking codes<input value={quickPublish.bookingCodes} onChange={(event) => setQuickPublish({ ...quickPublish, bookingCodes: event.target.value })} placeholder="1xBet: BAM218 / BetKing: BK944" /></label>
+          <label>Booking codes<input value={quickPublish.bookingCodes} onChange={(event) => setQuickPublish({ ...quickPublish, bookingCodes: event.target.value })} placeholder="1xBet: BAM218 / BetKing: https://... / CustomBookie: MYCODE" /></label>
           <label>Schedule<input value={quickPublish.schedule} onChange={(event) => setQuickPublish({ ...quickPublish, schedule: event.target.value })} placeholder="Saturday 10:00 AM WAT" /></label>
           <label>Room
             <select value={quickPublish.tier} onChange={(event) => setQuickPublish({ ...quickPublish, tier: event.target.value as "freemium" | "vip" })}>
@@ -5007,7 +5221,7 @@ function AdminPage({
           <textarea
             value={ingestForm.text}
             onChange={(event) => setIngestForm({ ...ingestForm, text: event.target.value })}
-            placeholder={"Article format:\nHome Team vs Away Team prediction, preview & betting tips - 06/05/2026\nHome Team\n06/05/26 - 20:00\nAway Team\nHome Team - Away Team\nUEFA Champions League - Stadium Name\nKnockout round\nOur predictions\nHot tip\nOver 2.5 goals\nMatch result\nHome Team to win.\nAnytime goalscorer\nKey Player Name\n\nRaw board format:\nUEFA Champions League\n12:00\nNot Started\nArsenalArsenal\nAtleticoAtletico\nPrediction:\nArsenal\nReason text here\nConfidence\nOdds\n1.60\nWeather\n\nCSV format:\nsport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,,,"}
+            placeholder={"Article format:\nHome Team vs Away Team prediction, preview & betting tips - 06/05/2026\nHome Team\n06/05/26 - 20:00\nAway Team\nHome Team - Away Team\nUEFA Champions League - Stadium Name\nKnockout round\nOur predictions\nHot tip\nOver 2.5 goals\nMatch result\nHome Team to win.\nAnytime goalscorer\nKey Player Name\n\nRaw board format:\nUEFA Champions League\n12:00\nNot Started\nArsenalArsenal\nAtleticoAtletico\nPrediction:\nArsenal\nReason text here\nConfidence\nOdds\n1.60\nWeather\n\nCSV format:\nsport,league,home_team,away_team,prediction,odds,confidence,match_time,bookmaker,booking_code,booking_url,button_text,league_logo_url,home_logo_url,away_logo_url\nFootball,Premier League,Chelsea,Arsenal,Over 1.5 goals,1.42,84,2026-05-05 20:00,SportyBet,SB123,https://bookie.link,Open SportyBet,,,"}
             rows={12}
           />
         </label>
@@ -5076,7 +5290,7 @@ function AdminPage({
             <strong>{selectedGames.length}</strong>
             <span>{selectedGames.length === 1 ? "game selected" : "games selected"}</span>
           </div>
-          <p className="admin-note">Telegram can publish directly right now. WhatsApp stays manual until you connect a provider, so the buttons below copy a clean post and open the right room fast.</p>
+          <p className="admin-note">Telegram publishes directly now. WhatsApp opens a ready-made draft instantly, and the same bookie link or code can flow into app, Telegram, and your WhatsApp post.</p>
           <div className="admin-form quick-publish-form">
             <label>Bookmaker
               <select value={batchBookingForm.bookmaker} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, bookmaker: event.target.value as BookmakerKey })}>
@@ -5085,7 +5299,17 @@ function AdminPage({
                 ))}
               </select>
             </label>
+            <label>Custom bookie name<input value={batchBookingForm.customName} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, customName: event.target.value })} placeholder="Use only when bookmaker is Custom" /></label>
             <label>Booking code<input value={batchBookingForm.code} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, code: event.target.value })} placeholder="Paste one code for the selected games" /></label>
+            <label>Direct booking link<input value={batchBookingForm.link} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, link: event.target.value })} placeholder="https://..." /></label>
+            <label>Button text<input value={batchBookingForm.buttonText} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, buttonText: event.target.value })} placeholder="Optional custom label" /></label>
+            <label>Action mode
+              <select value={batchBookingForm.actionMode} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, actionMode: event.target.value as BookingActionMode })}>
+                <option value="both">Link and code</option>
+                <option value="link">Open direct link only</option>
+                <option value="code">Copy code only</option>
+              </select>
+            </label>
             <label>Multiple title<input value={batchBookingForm.multipleTitle} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, multipleTitle: event.target.value })} placeholder="Weekend multiple / 3-game acca" /></label>
             <label>Combined odds<input value={batchBookingForm.multipleOdds} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, multipleOdds: event.target.value })} placeholder="Auto-calc if left empty" /></label>
           </div>
@@ -5111,6 +5335,12 @@ function AdminPage({
             </button>
             <button className="secondary-action" onClick={() => copySelectedChannelPost("vip")}>
               <Send size={16} /> Copy WhatsApp VIP post
+            </button>
+            <button className="secondary-action" onClick={() => openWhatsAppDraft("freemium")}>
+              <MessageCircle size={16} /> Open WhatsApp free draft
+            </button>
+            <button className="secondary-action" onClick={() => openWhatsAppDraft("vip")}>
+              <MessageCircle size={16} /> Open WhatsApp VIP draft
             </button>
           </div>
           <div className="admin-action-row wrap">
@@ -5172,7 +5402,17 @@ function AdminPage({
                         ))}
                       </select>
                     </label>
+                    <label>Display name<input value={entry.customName || ""} onChange={(event) => updateBookingEntry(index, codeIndex, { customName: event.target.value })} placeholder={entry.bookmaker === "custom" ? "Type the bookie name" : bookmakerLabel(entry.bookmaker)} /></label>
                     <label>Booking code<input value={entry.code} onChange={(event) => updateBookingEntry(index, codeIndex, { code: event.target.value })} placeholder="Paste booking code" /></label>
+                    <label>Direct link<input value={entry.link || ""} onChange={(event) => updateBookingEntry(index, codeIndex, { link: event.target.value })} placeholder="https://..." /></label>
+                    <label>Button text<input value={entry.buttonText || ""} onChange={(event) => updateBookingEntry(index, codeIndex, { buttonText: event.target.value })} placeholder="Optional custom button label" /></label>
+                    <label>Action mode
+                      <select value={entry.actionMode || "code"} onChange={(event) => updateBookingEntry(index, codeIndex, { actionMode: event.target.value as BookingActionMode })}>
+                        <option value="both">Link and code</option>
+                        <option value="link">Open direct link</option>
+                        <option value="code">Copy code</option>
+                      </select>
+                    </label>
                     <div className="code-destination-grid">
                       <label><input type="checkbox" checked={entry.regularApp} onChange={(event) => updateBookingEntry(index, codeIndex, { regularApp: event.target.checked })} /> User app</label>
                       <label><input type="checkbox" checked={entry.premiumApp} onChange={(event) => updateBookingEntry(index, codeIndex, { premiumApp: event.target.checked })} /> VIP app</label>
@@ -6008,6 +6248,9 @@ function PublicPredictionCard({
   const awayName = game.awayTeam || teams.away;
   const boardStatus = gameBoardStatus(game);
   const openMatch = () => navigate({ kind: "match", id: String(game.id) }, `/match/${game.id}`);
+  const publicEntry = actionableBookingEntries(
+    game.bookingCodes.filter((entry) => game.tier === "vip" ? entry.premiumApp : entry.regularApp)
+  )[0];
   return (
     <article className={`fixture-card clickable ${locked ? "locked" : ""}`} role="button" tabIndex={0} onClick={openMatch} onKeyDown={(event) => {
       if (event.key === "Enter" || event.key === " ") openMatch();
@@ -6036,8 +6279,18 @@ function PublicPredictionCard({
         <strong className={locked ? "blurred-tip" : ""}>{game.pick}</strong>
       </div>
       {!locked && (
-        <button className="booking-code-button" onClick={(event) => event.stopPropagation()}>
-          <ClipboardCheck size={14} /> {bookingButtonText}
+        <button className="booking-code-button" onClick={(event) => {
+          event.stopPropagation();
+          if (publicEntry) {
+            performBookingAction(publicEntry);
+            return;
+          }
+          navigate({ kind: "app" }, "/app?auth=login");
+        }}>
+          {publicEntry && bookingEntryHasLink(publicEntry) && (publicEntry.actionMode === "link" || publicEntry.actionMode === "both")
+            ? <ExternalLink size={14} />
+            : <ClipboardCheck size={14} />}
+          {publicEntry ? bookingEntryPrimaryActionLabel(publicEntry, bookingButtonText) : bookingButtonText}
         </button>
       )}
       <div className={`probability-grid ${locked ? "blurred-grid" : ""}`}>

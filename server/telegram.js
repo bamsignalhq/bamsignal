@@ -24,6 +24,30 @@ function bookieLabel(bookie) {
   return bookie.replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
 }
 
+function normalizeBookingEntry(bookie, rawValue) {
+  if (typeof rawValue === "string") {
+    const trimmed = String(rawValue || "").trim();
+    return {
+      label: bookieLabel(bookie),
+      code: /^https?:\/\//i.test(trimmed) ? "" : trimmed,
+      url: /^https?:\/\//i.test(trimmed) ? trimmed : "",
+      buttonText: "",
+      actionMode: /^https?:\/\//i.test(trimmed) ? "link" : "code"
+    };
+  }
+  return {
+    label: String(rawValue?.label || bookieLabel(bookie)).trim(),
+    code: String(rawValue?.code || "").trim(),
+    url: String(rawValue?.url || "").trim(),
+    buttonText: String(rawValue?.button_text || "").trim(),
+    actionMode: String(rawValue?.action_mode || ((rawValue?.code && rawValue?.url) ? "both" : rawValue?.url ? "link" : "code")).trim().toLowerCase()
+  };
+}
+
+function tipBookingEntries(tip) {
+  return Object.entries(tip.booking_codes || {}).map(([bookie, rawValue]) => normalizeBookingEntry(bookie, rawValue));
+}
+
 function formatTipDateTime(tip) {
   if (!tip.starts_at) return "";
   const date = new Date(tip.starts_at);
@@ -57,6 +81,8 @@ function affiliateUrlFor(bookie, tip) {
 }
 
 function primaryAffiliate(tip) {
+  const direct = tipBookingEntries(tip).find((entry) => entry.url);
+  if (direct) return { label: direct.label, url: direct.url };
   const codeBookie = Object.keys(tip.booking_codes || {}).find((bookie) => affiliateUrlFor(bookie, tip));
   if (codeBookie) return { label: bookieLabel(codeBookie), url: affiliateUrlFor(codeBookie, tip) };
   const fallback = Object.entries(config.affiliateUrls).find(([, url]) => Boolean(url));
@@ -65,23 +91,26 @@ function primaryAffiliate(tip) {
 }
 
 function bookingButtons(tip) {
-  const rows = Object.entries(tip.booking_codes || {}).flatMap(([bookie, code]) => {
-    const url = affiliateUrlFor(bookie, tip);
-    const buttons = [
-      {
-        text: `Copy ${bookieLabel(bookie)} Code`,
-        copy_text: { text: String(code) }
-      }
-    ];
+  const rows = Object.entries(tip.booking_codes || {}).flatMap(([bookie, rawValue]) => {
+    const entry = normalizeBookingEntry(bookie, rawValue);
+    const url = entry.url || affiliateUrlFor(bookie, tip);
+    const buttons = [];
 
-    if (url) {
+    if ((entry.actionMode === "code" || entry.actionMode === "both" || (!entry.url && entry.code)) && entry.code) {
       buttons.push({
-        text: `Open ${bookieLabel(bookie)}`,
+        text: `Copy ${entry.label} Code`,
+        copy_text: { text: String(entry.code) }
+      });
+    }
+
+    if ((entry.actionMode === "link" || entry.actionMode === "both" || (!entry.code && url)) && url) {
+      buttons.push({
+        text: entry.buttonText || `Open ${entry.label}`,
         url
       });
     }
 
-    return [buttons];
+    return buttons.length ? [buttons] : [];
   });
 
   const affiliate = primaryAffiliate(tip);
@@ -97,7 +126,14 @@ export function formatTipMessage(tip) {
   const kickoff = formatTipDateTime(tip);
   const affiliate = primaryAffiliate(tip);
   const bookingLines = Object.entries(tip.booking_codes || {})
-    .map(([bookie, code]) => `• <b>${escapeHtml(bookieLabel(bookie))}</b>: <code>${escapeHtml(code)}</code>`)
+    .map(([bookie, rawValue]) => {
+      const entry = normalizeBookingEntry(bookie, rawValue);
+      const parts = [];
+      if (entry.code) parts.push(`<code>${escapeHtml(entry.code)}</code>`);
+      if (entry.url && entry.actionMode !== "code") parts.push(`<a href="${escapeHtml(entry.url)}">Open link</a>`);
+      return parts.length ? `• <b>${escapeHtml(entry.label)}</b>: ${parts.join(" / ")}` : "";
+    })
+    .filter(Boolean)
     .join("\n");
 
   return [

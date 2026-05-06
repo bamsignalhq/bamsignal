@@ -347,6 +347,8 @@ const formatMatchDateTime = (startsAt?: string) => {
   }).format(date);
 };
 
+const formatKickoffLabel = (startsAt?: string) => formatMatchDateTime(startsAt);
+
 const gameBoardStatus = (game: AdminGame): BoardStatus => {
   const normalized = (game.status || "").trim().toLowerCase();
   const liveStatuses = new Set(["1h", "2h", "ht", "et", "p", "bt", "int", "live", "in_play", "in-play"]);
@@ -512,6 +514,12 @@ type AdminContent = {
   newsSource: string;
   newsUrl: string;
   adLinks: string[];
+  communityLinks: {
+    telegramChannel: string;
+    telegramVip: string;
+    whatsappChannel: string;
+    whatsappVip: string;
+  };
   affiliateLinks: {
     sportybet: string;
     melbet: string;
@@ -734,6 +742,12 @@ const defaultAdminContent: AdminContent = {
   newsSource: "",
   newsUrl: "",
   adLinks: ["", "", "", "", ""],
+  communityLinks: {
+    telegramChannel: "https://t.me/officialbamsignal",
+    telegramVip: "https://t.me/+U5i6lKAUDtZkODIx",
+    whatsappChannel: "https://whatsapp.com/channel/0029Vb7wB96DZ4LdE2Nhlp3A",
+    whatsappVip: "https://chat.whatsapp.com/FwIo5YuWPqD3UneUjbFRU3"
+  },
   affiliateLinks: {
     sportybet: "",
     melbet: "https://melbet.org/en?tag=d_5550069m_45415c_",
@@ -1345,6 +1359,45 @@ const adminBookingEntriesFromText = (value: string, isVip: boolean): BookingCode
   return entries.length ? entries : [makeBookingCode("sportybet", "", isVip)];
 };
 
+const summarizeBookingCodes = (game: AdminGame) => game.bookingCodes
+  .filter((entry) => entry.code.trim())
+  .map((entry) => `${bookmakerLabel(entry.bookmaker)}: ${entry.code.trim()}`)
+  .join(" / ");
+
+const formatManualChannelPost = (
+  games: AdminGame[],
+  audience: "freemium" | "vip",
+  adminContent: AdminContent
+) => {
+  const lines = games
+    .filter((game) => audience === "vip" ? game.tier === "vip" : game.tier === "freemium")
+    .map((game, index) => {
+      const startsAt = formatKickoffLabel(game.startsAt);
+      const codes = summarizeBookingCodes(game);
+      return [
+        `${index + 1}. ${game.league}`,
+        `${game.match}`,
+        `Pick: ${game.pick}`,
+        `Odds: ${gameOddsLabel(game)} | Confidence: ${game.confidence}%`,
+        startsAt ? `Kickoff: ${startsAt}` : "",
+        codes ? `Code: ${codes}` : ""
+      ].filter(Boolean).join("\n");
+    });
+
+  const heading = audience === "vip" ? "BamSignal VIP DROP" : "BamSignal FREE GAME";
+  const roomLink = audience === "vip"
+    ? adminContent.communityLinks.whatsappVip
+    : adminContent.communityLinks.whatsappChannel;
+
+  return [
+    heading,
+    "",
+    ...lines,
+    roomLink ? `Join room: ${roomLink}` : "",
+    "Need help? Telegram admin: @ttmaketing"
+  ].filter(Boolean).join("\n\n");
+};
+
 const quickPublishToAdminGame = (form: QuickPublishForm): AdminGame => {
   const isVip = form.tier === "vip";
   return {
@@ -1403,6 +1456,7 @@ const loadAdminContent = (): AdminContent => {
       ...defaultAdminContent,
       ...parsed,
       adLinks: [...(parsed.adLinks ?? []), "", "", "", "", ""].slice(0, 5),
+      communityLinks: { ...defaultAdminContent.communityLinks, ...(parsed.communityLinks ?? {}) },
       affiliateLinks: { ...defaultAdminContent.affiliateLinks, ...(parsed.affiliateLinks ?? {}) },
       affiliateVisible: { ...defaultAdminContent.affiliateVisible, ...(parsed.affiliateVisible ?? {}) },
       predictionApis: Array.isArray(parsed.predictionApis) && parsed.predictionApis.length
@@ -1523,21 +1577,19 @@ function App() {
   const [adminContent, setAdminContent] = useState<AdminContent>(() => loadAdminContent());
   const [dailyApiGames, setDailyApiGames] = useState<AdminGame[]>([]);
   const [dailyGamesSource, setDailyGamesSource] = useState("loading");
-  const hasSavedAdminContent = useMemo(() => Boolean(window.localStorage.getItem("bamsignal-admin-content")), []);
   const logoSrc = theme === "dark" ? "/brand/compact-logo-dark.jpg" : "/brand/compact-logo-light.jpg";
   const appIconSrc = theme === "dark" ? "/brand/app-icon-dark.jpg" : "/brand/app-icon-light.jpg";
   const effectiveAdminContent = useMemo(() => {
-    if (!hasSavedAdminContent) return { ...adminContent, games: orderGamesForDisplay(dailyApiGames) };
-    if (!dailyApiGames.length) return adminContent;
-    const manualGames = hasSavedAdminContent
-      ? adminContent.games.filter((game) => !defaultAdminGameKeys.has(gameKey(game)))
-      : [];
-    const merged = [...dailyApiGames, ...manualGames].reduce<AdminGame[]>((list, game) => {
+    const manualGames = adminContent.games.filter((game) => !defaultAdminGameKeys.has(gameKey(game)));
+    if (!dailyApiGames.length) {
+      return manualGames.length ? { ...adminContent, games: orderGamesForDisplay(manualGames) } : adminContent;
+    }
+    const merged = [...manualGames, ...dailyApiGames].reduce<AdminGame[]>((list, game) => {
       if (!list.some((item) => gameKey(item) === gameKey(game))) list.push(game);
       return list;
     }, []);
     return { ...adminContent, games: orderGamesForDisplay(merged) };
-  }, [adminContent, dailyApiGames, hasSavedAdminContent]);
+  }, [adminContent, dailyApiGames]);
 
   const navigate = (nextPage: Page, path = "/") => {
     window.history.pushState(null, "", path);
@@ -1803,7 +1855,7 @@ function App() {
           <DetailPage page={page} navigate={navigate} />
         )}
 
-        {!isUserVault && <SiteFooter navigate={navigate} logoSrc={logoSrc} />}
+        {!isUserVault && <SiteFooter navigate={navigate} logoSrc={logoSrc} adminContent={effectiveAdminContent} />}
       </div>
 
       {menuOpen && (
@@ -1935,7 +1987,7 @@ function HomePage({
             <Stat icon={<BarChart3 size={20} />} label="Tracked markets" value="8+" />
             <Stat icon={<Trophy size={20} />} label="Covered competitions" value="25+" />
           </section>
-          <SocialProofStrip />
+          <SocialProofStrip adminContent={adminContent} />
 
           <section className="content-grid" id="predictions">
             <div className="section-head">
@@ -2059,11 +2111,11 @@ function HomePage({
                 <MessageCircle size={16} /> Open contact page
               </a>
               <div className="contact-link-row" aria-label="BamSignal official channels">
-                <a href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer">
+                <a href={adminContent.communityLinks.telegramChannel} target="_blank" rel="noreferrer">
                   <Send size={18} />
                   Telegram
                 </a>
-                <a href="https://whatsapp.com/channel/0029Vb7wB96DZ4LdE2Nhlp3A" target="_blank" rel="noreferrer">
+                <a href={adminContent.communityLinks.whatsappChannel} target="_blank" rel="noreferrer">
                   <MessageCircle size={18} />
                   WhatsApp
                 </a>
@@ -2172,14 +2224,14 @@ function EvidenceGameRow({ game }: { game: AdminGame }) {
   );
 }
 
-function SocialProofStrip() {
+function SocialProofStrip({ adminContent }: { adminContent: AdminContent }) {
   return (
     <section className="tribe-strip" aria-label="BamSignal community proof">
       <div>
         <p className="eyebrow">Social proof</p>
         <h2>Join 4,500+ Nigerian punters tracking signals daily.</h2>
       </div>
-      <a className="primary-action" href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer">
+      <a className="primary-action" href={adminContent.communityLinks.telegramChannel} target="_blank" rel="noreferrer">
         <Send size={16} /> Join the Telegram tribe
       </a>
     </section>
@@ -3482,9 +3534,15 @@ function UserDashboard({
           )}
           {vipRoomGames.map((game) => renderManagedGame(game, !isPremium))}
           {isPremium ? (
-            <a className="vip-join" href={vipInviteLink || "https://t.me/+U5i6lKAUDtZkODIx"} target="_blank" rel="noreferrer"><Send size={16} /> Join VIP Telegram room</a>
+            <div className="vip-join-row">
+              <a className="vip-join" href={vipInviteLink || adminContent.communityLinks.telegramVip} target="_blank" rel="noreferrer"><Send size={16} /> Join VIP Telegram room</a>
+              <a className="vip-join secondary-join" href={adminContent.communityLinks.whatsappVip} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Join VIP WhatsApp</a>
+            </div>
           ) : (
-            <span className="vip-join muted-join"><LockKeyhole size={16} /> VIP Telegram link appears after payment</span>
+            <div className="vip-join-row">
+              <span className="vip-join muted-join"><LockKeyhole size={16} /> VIP Telegram link appears after payment</span>
+              <span className="vip-join muted-join"><LockKeyhole size={16} /> VIP WhatsApp link appears after payment</span>
+            </div>
           )}
         </section>
       )}
@@ -3606,6 +3664,7 @@ function UserDashboard({
             <button className="secondary-action" onClick={openNotificationSettings}><Bell size={16} /> Notification settings</button>
             <button className="secondary-action" onClick={() => setDashboardTab("vip")}><CreditCard size={16} /> Manage VIP</button>
             <a className="secondary-action" href="https://t.me/ttmaketing" target="_blank" rel="noreferrer"><Send size={16} /> Telegram support</a>
+            <a className="secondary-action" href={adminContent.communityLinks.whatsappChannel} target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp updates</a>
             <a className="secondary-action danger-action" href="/legal/account-deletion"><ShieldCheck size={16} /> Request account deletion</a>
           </div>
 
@@ -3825,8 +3884,8 @@ function ContactPage({ navigate, adminContent }: { navigate: (page: Page, path?:
             <p className="eyebrow">Official channels</p>
             <h2>Reach the right room.</h2>
             <div className="social-grid">
-              <a href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer"><Send size={18} /><span>Telegram</span><small>official channel</small></a>
-              <a href="https://whatsapp.com/channel/0029Vb7wB96DZ4LdE2Nhlp3A" target="_blank" rel="noreferrer"><MessageCircle size={18} /><span>WhatsApp</span><small>official channel</small></a>
+              <a href={adminContent.communityLinks.telegramChannel} target="_blank" rel="noreferrer"><Send size={18} /><span>Telegram</span><small>official channel</small></a>
+              <a href={adminContent.communityLinks.whatsappChannel} target="_blank" rel="noreferrer"><MessageCircle size={18} /><span>WhatsApp</span><small>official channel</small></a>
               <a href="https://www.instagram.com/officialbamsignal/" target="_blank" rel="noreferrer"><Instagram size={18} /><span>Instagram</span><small>@officialbamsignal</small></a>
               <a href="https://x.com/bamsignalhq" target="_blank" rel="noreferrer"><Twitter size={18} /><span>X</span><small>@bamsignalhq</small></a>
             </div>
@@ -4003,7 +4062,7 @@ function LeaguesPage({ navigate }: { navigate: (page: Page, path?: string) => vo
   );
 }
 
-function SiteFooter({ navigate, logoSrc }: { navigate: (page: Page, path?: string) => void; logoSrc: string }) {
+function SiteFooter({ navigate, logoSrc, adminContent }: { navigate: (page: Page, path?: string) => void; logoSrc: string; adminContent: AdminContent }) {
   const legalNav = (event: React.MouseEvent<HTMLAnchorElement>, slug: string) => {
     event.preventDefault();
     navigate({ kind: "legal", slug }, `/legal/${slug}`);
@@ -4021,8 +4080,8 @@ function SiteFooter({ navigate, logoSrc }: { navigate: (page: Page, path?: strin
         <span>Support</span>
         <nav aria-label="BamSignal support links">
           <a href="/contact" onClick={(event) => { event.preventDefault(); navigate({ kind: "contact" }, "/contact"); }}>Contact</a>
-          <a href="https://t.me/officialbamsignal" target="_blank" rel="noreferrer">Telegram</a>
-          <a href="https://whatsapp.com/channel/0029Vb7wB96DZ4LdE2Nhlp3A" target="_blank" rel="noreferrer">WhatsApp</a>
+          <a href={adminContent.communityLinks.telegramChannel} target="_blank" rel="noreferrer">Telegram</a>
+          <a href={adminContent.communityLinks.whatsappChannel} target="_blank" rel="noreferrer">WhatsApp</a>
         </nav>
       </div>
       <div className="footer-column">
@@ -4046,7 +4105,7 @@ function AdminPage({
   isNative: boolean;
   navigate: (page: Page, path?: string) => void;
   adminContent: AdminContent;
-  setAdminContent: (content: AdminContent) => void;
+  setAdminContent: React.Dispatch<React.SetStateAction<AdminContent>>;
 }) {
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>("overview");
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
@@ -4106,6 +4165,18 @@ function AdminPage({
   const [adminSecurity, setAdminSecurity] = useState<{ envAdmins: string[]; dbAdmins: AdminAccount[] }>({ envAdmins: [], dbAdmins: [] });
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [adminPasswordForm, setAdminPasswordForm] = useState({ password: "", confirm: "" });
+  const [selectedGameIds, setSelectedGameIds] = useState<Array<string | number>>([]);
+  const [batchBookingForm, setBatchBookingForm] = useState({
+    bookmaker: "sportybet" as BookmakerKey,
+    code: "",
+    multipleTitle: "",
+    multipleOdds: "",
+    showToFreemium: false,
+    pushApp: true,
+    pushTelegram: false,
+    pushWhatsApp: true,
+    pushVipTelegram: true
+  });
   const adminTabs = [
     { tab: "overview", label: "Overview", icon: <ClipboardCheck size={15} /> },
     { tab: "ingest", label: "Signal ingest", icon: <Activity size={15} /> },
@@ -4119,6 +4190,10 @@ function AdminPage({
     { tab: "support", label: "Support inbox", icon: <MessageCircle size={15} /> }
   ] as const;
   const activeAdminMeta = adminTabs.find((item) => item.tab === activeAdminTab) || adminTabs[0];
+  const selectedGames = useMemo(
+    () => adminContent.games.filter((game) => selectedGameIds.includes(game.id)),
+    [adminContent.games, selectedGameIds]
+  );
   useEffect(() => {
     window.localStorage.setItem("bamsignal-admin-quick-publish", JSON.stringify(quickPublish));
   }, [quickPublish]);
@@ -4214,6 +4289,120 @@ function AdminPage({
       ? { ...game, bookingCodes: game.bookingCodes.filter((_, entryIndex) => entryIndex !== codeIndex) }
       : game);
     setAdminContent({ ...adminContent, games });
+  };
+  const toggleGameSelection = (gameId: string | number) => {
+    setSelectedGameIds((current) => current.includes(gameId)
+      ? current.filter((id) => id !== gameId)
+      : [...current, gameId]);
+  };
+  const selectAllGames = () => {
+    setSelectedGameIds(adminContent.games.map((game) => game.id));
+  };
+  const clearSelectedGames = () => {
+    setSelectedGameIds([]);
+  };
+  const applyBatchBookingCode = () => {
+    if (!selectedGames.length) {
+      setAdminStatus("Select one or more games before applying a booking code.");
+      return;
+    }
+    if (!batchBookingForm.code.trim()) {
+      setAdminStatus("Enter the bookmaker code you want to apply to the selected games.");
+      return;
+    }
+    const nextGames = adminContent.games.map((game) => {
+      if (!selectedGameIds.includes(game.id)) return game;
+      const existingIndex = game.bookingCodes.findIndex((entry) => entry.bookmaker === batchBookingForm.bookmaker);
+      const premium = game.tier === "vip";
+      const nextEntry = {
+        ...makeBookingCode(batchBookingForm.bookmaker, batchBookingForm.code.trim(), premium),
+        id: existingIndex >= 0 ? game.bookingCodes[existingIndex].id : Date.now() + Math.floor(Math.random() * 10000)
+      };
+      const bookingCodes = existingIndex >= 0
+        ? game.bookingCodes.map((entry, index) => index === existingIndex ? nextEntry : entry)
+        : [...game.bookingCodes, nextEntry];
+      return {
+        ...game,
+        bookingCodes,
+        showBookingCodes: premium ? game.showBookingCodes : batchBookingForm.showToFreemium,
+        pushApp: batchBookingForm.pushApp,
+        pushTelegram: batchBookingForm.pushTelegram,
+        pushWhatsApp: batchBookingForm.pushWhatsApp,
+        pushVipTelegram: premium ? batchBookingForm.pushVipTelegram : game.pushVipTelegram
+      };
+    });
+    setAdminContent({ ...adminContent, games: nextGames });
+    setAdminStatus(`${bookmakerLabel(batchBookingForm.bookmaker)} code applied to ${selectedGames.length} selected game${selectedGames.length === 1 ? "" : "s"}. Save games setup when you are happy with it.`);
+  };
+  const createMultipleFromSelection = () => {
+    if (selectedGames.length < 2) {
+      setAdminStatus("Select at least two games before creating a multiple ticket.");
+      return;
+    }
+    const combinedOdds = Number(batchBookingForm.multipleOdds) || Number(selectedGames.reduce((total, game) => total * Math.max(Number(game.odds) || 1, 1), 1).toFixed(2));
+    const confidence = Math.round(selectedGames.reduce((total, game) => total + (game.confidence || 0), 0) / selectedGames.length);
+    const isVip = combinedOdds >= 1.5 || selectedGames.some((game) => game.tier === "vip");
+    const startsAt = selectedGames
+      .map((game) => game.startsAt)
+      .filter(Boolean)
+      .sort()[0];
+    const multipleGame: AdminGame = {
+      id: Date.now(),
+      match: batchBookingForm.multipleTitle.trim() || `${selectedGames.length}-game multiple`,
+      league: "Multiple bet",
+      pick: selectedGames.map((game) => `${game.match} — ${game.pick}`).join(" / "),
+      odds: combinedOdds,
+      confidence,
+      tier: isVip ? "vip" : "freemium",
+      status: "pending",
+      startsAt,
+      showBookingCodes: !isVip && batchBookingForm.showToFreemium,
+      bookingCodes: batchBookingForm.code.trim()
+        ? [makeBookingCode(batchBookingForm.bookmaker, batchBookingForm.code.trim(), isVip)]
+        : [makeBookingCode("sportybet", "", isVip)],
+      pushApp: batchBookingForm.pushApp,
+      pushTelegram: batchBookingForm.pushTelegram,
+      pushWhatsApp: batchBookingForm.pushWhatsApp,
+      pushVipTelegram: batchBookingForm.pushVipTelegram
+    };
+    setAdminContent({
+      ...adminContent,
+      games: orderGamesForDisplay([multipleGame, ...adminContent.games])
+    });
+    setAdminStatus(`${multipleGame.match} created from ${selectedGames.length} games. Add or adjust the booking code, then publish when ready.`);
+  };
+  const copySelectedChannelPost = async (audience: "freemium" | "vip") => {
+    const sourceGames = selectedGames.length
+      ? selectedGames
+      : adminContent.games.filter((game) => audience === "vip" ? game.tier === "vip" : game.tier === "freemium").slice(0, audience === "vip" ? 10 : 2);
+    const relevantGames = sourceGames.filter((game) => audience === "vip" ? game.tier === "vip" : game.tier === "freemium");
+    if (!relevantGames.length) {
+      setAdminStatus(`No ${audience === "vip" ? "VIP" : "freemium"} games are selected right now.`);
+      return;
+    }
+    await navigator.clipboard?.writeText(formatManualChannelPost(relevantGames, audience, adminContent));
+    setAdminStatus(`${audience === "vip" ? "VIP" : "Freemium"} WhatsApp post copied. Open the room link and paste it.`);
+  };
+  const publishSelectedGames = async () => {
+    if (!selectedGames.length) {
+      setAdminStatus("Select one or more games before publishing in batch.");
+      return;
+    }
+    setIsPublishing(true);
+    setAdminStatus(`Publishing ${selectedGames.length} selected game${selectedGames.length === 1 ? "" : "s"}...`);
+    try {
+      let publishedCount = 0;
+      for (const game of selectedGames) {
+        const result = await publishAdminGame(game);
+        if (result.tip) applyPublishedTipToAdminList(result.tip);
+        publishedCount += 1;
+      }
+      setAdminStatus(`Published ${publishedCount} selected game${publishedCount === 1 ? "" : "s"} to the live board.`);
+    } catch (error) {
+      setAdminStatus(`Batch publish stopped: ${friendlyAuthError(error)}`);
+    } finally {
+      setIsPublishing(false);
+    }
   };
   const updatePredictionApi = (apiIndex: number, patch: Partial<AdminContent["predictionApis"][number]>) => {
     setAdminContent({
@@ -4358,13 +4547,13 @@ function AdminPage({
   };
   const applyPublishedTipToAdminList = (tip: ApiTip) => {
     const enrichedGame = apiTipToAdminGame(tip, Date.now());
-    setAdminContent({
-      ...adminContent,
+    setAdminContent((current) => ({
+      ...current,
       games: [
         enrichedGame,
-        ...adminContent.games.filter((game) => !(game.match === enrichedGame.match && game.tier === enrichedGame.tier))
+        ...current.games.filter((game) => !(game.match === enrichedGame.match && game.tier === enrichedGame.tier))
       ]
-    });
+    }));
     return enrichedGame;
   };
   const publishQuickGame = async () => {
@@ -4872,13 +5061,79 @@ function AdminPage({
         <div className="admin-form single-row">
           <label>Public booking button text<input value={adminContent.bookingButtonText} onChange={(event) => setAdminContent({ ...adminContent, bookingButtonText: event.target.value })} placeholder="Get Bet9ja Code / Get SportyBet Code" /></label>
         </div>
+        <div className="admin-batch-card">
+          <div className="admin-batch-head">
+            <div>
+              <p className="eyebrow">Batch code control</p>
+              <h3>Select games, assign one bookmaker code, or build a multiple in one move.</h3>
+            </div>
+            <div className="admin-batch-actions">
+              <button className="secondary-action" onClick={selectAllGames}>Select all</button>
+              <button className="secondary-action" onClick={clearSelectedGames}>Clear</button>
+            </div>
+          </div>
+          <div className="admin-batch-summary">
+            <strong>{selectedGames.length}</strong>
+            <span>{selectedGames.length === 1 ? "game selected" : "games selected"}</span>
+          </div>
+          <p className="admin-note">Telegram can publish directly right now. WhatsApp stays manual until you connect a provider, so the buttons below copy a clean post and open the right room fast.</p>
+          <div className="admin-form quick-publish-form">
+            <label>Bookmaker
+              <select value={batchBookingForm.bookmaker} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, bookmaker: event.target.value as BookmakerKey })}>
+                {bookmakers.map((bookmaker) => (
+                  <option value={bookmaker.key} key={bookmaker.key}>{bookmaker.label}</option>
+                ))}
+              </select>
+            </label>
+            <label>Booking code<input value={batchBookingForm.code} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, code: event.target.value })} placeholder="Paste one code for the selected games" /></label>
+            <label>Multiple title<input value={batchBookingForm.multipleTitle} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, multipleTitle: event.target.value })} placeholder="Weekend multiple / 3-game acca" /></label>
+            <label>Combined odds<input value={batchBookingForm.multipleOdds} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, multipleOdds: event.target.value })} placeholder="Auto-calc if left empty" /></label>
+          </div>
+          <div className="toggle-grid compact-toggle-grid">
+            <label><input type="checkbox" checked={batchBookingForm.showToFreemium} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, showToFreemium: event.target.checked })} /> Show to freemium</label>
+            <label><input type="checkbox" checked={batchBookingForm.pushApp} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, pushApp: event.target.checked })} /> App room</label>
+            <label><input type="checkbox" checked={batchBookingForm.pushTelegram} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, pushTelegram: event.target.checked })} /> Telegram free</label>
+            <label><input type="checkbox" checked={batchBookingForm.pushWhatsApp} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, pushWhatsApp: event.target.checked })} /> WhatsApp free</label>
+            <label><input type="checkbox" checked={batchBookingForm.pushVipTelegram} onChange={(event) => setBatchBookingForm({ ...batchBookingForm, pushVipTelegram: event.target.checked })} /> Telegram VIP</label>
+          </div>
+          <div className="admin-action-row wrap">
+            <button className="primary-action neon-action" onClick={applyBatchBookingCode}>
+              <ClipboardCheck size={16} /> Apply code to selected games
+            </button>
+            <button className="primary-action" onClick={publishSelectedGames} disabled={isPublishing}>
+              {isPublishing ? <Loader2 className="spin" size={16} /> : <Send size={16} />} Publish selected games
+            </button>
+            <button className="secondary-action" onClick={createMultipleFromSelection}>
+              <Goal size={16} /> Create multiple from selected
+            </button>
+            <button className="secondary-action" onClick={() => copySelectedChannelPost("freemium")}>
+              <MessageCircle size={16} /> Copy WhatsApp freemium post
+            </button>
+            <button className="secondary-action" onClick={() => copySelectedChannelPost("vip")}>
+              <Send size={16} /> Copy WhatsApp VIP post
+            </button>
+          </div>
+          <div className="admin-action-row wrap">
+            <a className="secondary-action" href={adminContent.communityLinks.whatsappChannel} target="_blank" rel="noreferrer">
+              <MessageCircle size={16} /> Open freemium WhatsApp
+            </a>
+            <a className="secondary-action" href={adminContent.communityLinks.whatsappVip} target="_blank" rel="noreferrer">
+              <MessageCircle size={16} /> Open VIP WhatsApp
+            </a>
+          </div>
+        </div>
         <div className="admin-game-grid">
           {adminContent.games.map((game, index) => (
             <article className={`admin-game-card ${game.tier}`} key={game.id}>
               <div className="admin-game-head">
-                <strong>{game.tier === "vip" ? "VIP premium" : "Freemium"}</strong>
-                <span>{gameOddsLabel(game)}</span>
-                <ConfidenceSignal confidence={game.confidence} compact />
+                <label className="game-select-chip">
+                  <input type="checkbox" checked={selectedGameIds.includes(game.id)} onChange={() => toggleGameSelection(game.id)} />
+                  <strong>{game.tier === "vip" ? "VIP premium" : "Freemium"}</strong>
+                </label>
+                <div className="admin-game-meta">
+                  <span>{gameOddsLabel(game)}</span>
+                  <ConfidenceSignal confidence={game.confidence} compact />
+                </div>
               </div>
               <div className="admin-form compact">
                 <label>Match<input value={game.match} onChange={(event) => updateAdminGame(index, { match: event.target.value })} /></label>
@@ -4964,6 +5219,15 @@ function AdminPage({
           <label>Public booking button text<input value={adminContent.bookingButtonText} onChange={(event) => setAdminContent({ ...adminContent, bookingButtonText: event.target.value })} placeholder="Get Bet9ja Code / Get SportyBet Code" /></label>
           <label>Weekly VIP price (₦)<input value={adminContent.vipWeeklyPrice} type="number" min="0" onChange={(event) => setAdminContent({ ...adminContent, vipWeeklyPrice: Number(event.target.value) || 0 })} /></label>
           <label>Monthly VIP price (₦)<input value={adminContent.vipMonthlyPrice} type="number" min="0" onChange={(event) => setAdminContent({ ...adminContent, vipMonthlyPrice: Number(event.target.value) || 0 })} /></label>
+        </div>
+        <div className="booking-admin-head">
+          <strong>Community room links</strong>
+        </div>
+        <div className="admin-form quick-publish-form">
+          <label>Telegram channel link<input value={adminContent.communityLinks.telegramChannel} onChange={(event) => setAdminContent({ ...adminContent, communityLinks: { ...adminContent.communityLinks, telegramChannel: event.target.value } })} placeholder="https://t.me/officialbamsignal" /></label>
+          <label>Telegram VIP link<input value={adminContent.communityLinks.telegramVip} onChange={(event) => setAdminContent({ ...adminContent, communityLinks: { ...adminContent.communityLinks, telegramVip: event.target.value } })} placeholder="https://t.me/+..." /></label>
+          <label>WhatsApp channel link<input value={adminContent.communityLinks.whatsappChannel} onChange={(event) => setAdminContent({ ...adminContent, communityLinks: { ...adminContent.communityLinks, whatsappChannel: event.target.value } })} placeholder="https://whatsapp.com/channel/..." /></label>
+          <label>WhatsApp VIP link<input value={adminContent.communityLinks.whatsappVip} onChange={(event) => setAdminContent({ ...adminContent, communityLinks: { ...adminContent.communityLinks, whatsappVip: event.target.value } })} placeholder="https://chat.whatsapp.com/..." /></label>
         </div>
         <div className="booking-admin-head">
           <strong>Prediction and enrichment APIs</strong>

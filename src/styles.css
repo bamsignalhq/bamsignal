@@ -2507,6 +2507,17 @@ footer {
   padding: 0 12px;
 }
 
+.vip-join-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.secondary-join {
+  border-color: var(--border);
+  color: var(--text);
+}
+
 .muted-join {
   color: var(--muted);
 }
@@ -3396,6 +3407,67 @@ footer {
   font-weight: 900;
 }
 
+.admin-game-meta {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.game-select-chip {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.game-select-chip input {
+  accent-color: var(--accent);
+}
+
+.admin-batch-card {
+  background: color-mix(in srgb, var(--surface-2) 76%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px;
+}
+
+.admin-batch-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.admin-batch-head h3 {
+  color: var(--text);
+  font-size: 18px;
+  margin: 2px 0 0;
+}
+
+.admin-batch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-batch-summary {
+  align-items: baseline;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.admin-batch-summary strong {
+  color: var(--accent);
+  font-size: 24px;
+}
+
+.admin-batch-summary span {
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .booking-grid,
 .toggle-grid,
 .booking-entry-grid,
@@ -3469,6 +3541,10 @@ footer {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
+.compact-toggle-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .toggle-grid label {
   align-items: center;
   background: var(--surface);
@@ -3484,6 +3560,10 @@ footer {
 .toggle-grid input {
   accent-color: var(--accent);
   flex: 0 0 auto;
+}
+
+.admin-action-row.wrap {
+  flex-wrap: wrap;
 }
 
 .support-inbox-list {
@@ -4353,12 +4433,15 @@ footer strong {
   .ingest-input-grid,
   .booking-grid,
   .toggle-grid,
+  .compact-toggle-grid,
   .code-destination-grid {
     grid-template-columns: 1fr;
   }
 
   .admin-panel-head,
-  .admin-game-head {
+  .admin-game-head,
+  .admin-batch-head,
+  .admin-game-meta {
     align-items: stretch;
     flex-direction: column;
   }
@@ -4401,6 +4484,10 @@ footer strong {
 
   .fixture-card .probability-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vip-join-row {
+    flex-direction: column;
   }
 
   .match-detail-shell {

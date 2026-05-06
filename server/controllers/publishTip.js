@@ -1,6 +1,7 @@
 import { insertTip } from "../db.js";
 import { sendTipPush } from "../firebase.js";
 import { broadcastTip } from "../telegram.js";
+import { applyPredictionReason, normalizeStartsAtInput } from "../services/publishHelpers.js";
 import { enrichTipWithFixture } from "../services/signalWorker.js";
 
 function validateTip(payload) {
@@ -26,13 +27,14 @@ export async function publishTip(req, res, next) {
       match_name: String(req.body.match_name),
       league: req.body.league ? String(req.body.league) : "Football",
       prediction: String(req.body.prediction),
+      prediction_reason: String(req.body.prediction_reason || req.body.reason || "").trim(),
       odds: String(req.body.odds),
       confidence: req.body.confidence ? Number(req.body.confidence) : null,
       is_vip: Boolean(req.body.is_vip),
       booking_codes: req.body.booking_codes,
-      starts_at: req.body.starts_at || null,
+      starts_at: normalizeStartsAtInput(req.body.starts_at) || null,
     });
-    const tip = await insertTip(enrichedTip);
+    const tip = await insertTip(applyPredictionReason(enrichedTip, String(req.body.prediction_reason || req.body.reason || "").trim()));
 
     const [telegram, firebase] = await Promise.allSettled([
       broadcastTip(tip),

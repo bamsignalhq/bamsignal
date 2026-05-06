@@ -2,6 +2,7 @@ import { config } from "../server/config.js";
 import { deleteDailyGamesBySource, ensureDailyGamesTable, ensureTipsTable, insertTip, isPlatformAdminEmail, query, upsertDailyGames } from "../server/db.js";
 import { sendTipPush } from "../server/firebase.js";
 import { broadcastTip } from "../server/telegram.js";
+import { applyPredictionReason, normalizeStartsAtInput } from "../server/services/publishHelpers.js";
 import { enrichTipWithFixture } from "../server/services/signalWorker.js";
 import { gameDateForTip, parseSignalsFromText } from "../server/services/signalIngest.js";
 
@@ -261,16 +262,17 @@ function normalizeDirectSignal(signal = {}, payload = {}, index = 0) {
   const existingFixture = fixturePayload.fixture || fixturePayload.raw?.fixture || {};
   const teams = splitMatchName(matchName);
   const league = String(signal.league || existingLeague.name || payload.defaultLeague || "Manual board").trim();
-  const startsAt = signal.starts_at || existingFixture.date || null;
+  const startsAt = normalizeStartsAtInput(signal.starts_at || existingFixture.date || null) || existingFixture.date || null;
   const bookingCodes = signal.booking_codes && typeof signal.booking_codes === "object" && !Array.isArray(signal.booking_codes)
     ? signal.booking_codes
     : {};
 
-  return {
+  return applyPredictionReason({
     ...signal,
     match_name: matchName,
     league,
     prediction,
+    prediction_reason: String(signal.prediction_reason || signal.reason || "").trim(),
     odds: oddsNumber.toFixed(2),
     confidence,
     is_vip: oddsNumber >= 1.5,
@@ -304,13 +306,13 @@ function normalizeDirectSignal(signal = {}, payload = {}, index = 0) {
           logo: existingTeams.away?.logo || signal.away_logo || signal.away_logo_url || null
         }
       },
-      metadata: {
-        ...(fixturePayload.metadata || {}),
-        source_name: payload.sourceName || payload.source_name || "Manual board",
-        edited_preview: true
+        metadata: {
+          ...(fixturePayload.metadata || {}),
+          source_name: payload.sourceName || payload.source_name || "Manual board",
+          edited_preview: true
+        }
       }
-    }
-  };
+  }, String(signal.prediction_reason || signal.reason || "").trim());
 }
 
 function validateTip(payload) {
@@ -345,7 +347,7 @@ async function publishIngestedSignals(payload) {
     };
   }
 
-  const parsed = await enrichSignalAssets(parsedBase);
+  const parsed = await enrichSignalAssets(parsedBase.map((tip) => applyPredictionReason(tip)));
 
   if (payload.mode !== "publish") {
     return { status: 200, body: { ok: true, mode: "preview", count: parsed.length, signals: parsed } };
@@ -527,18 +529,21 @@ export default async function handler(req, res) {
       match_name: String(payload.match_name),
       league: payload.league ? String(payload.league) : "Football",
       prediction: String(payload.prediction),
+      prediction_reason: String(payload.prediction_reason || payload.reason || "").trim(),
       odds: String(payload.odds),
       confidence: payload.confidence ? Number(payload.confidence) : null,
       is_vip: Boolean(payload.is_vip),
       booking_codes: payload.booking_codes,
       source: "admin",
-      starts_at: payload.starts_at || null
+      starts_at: normalizeStartsAtInput(payload.starts_at) || null
     });
-    const [tip] = await enrichSignalAssets([tipWithFixture]);
+    const [tip] = await enrichSignalAssets([
+      applyPredictionReason(tipWithFixture, String(payload.prediction_reason || payload.reason || "").trim())
+    ]);
 
     const [savedTip] = await Promise.all([
       insertTip(tip),
-      upsertDailyGames(todayInLagos(), [tip])
+      upsertDailyGames(gameDateForTip(tip, config.signalWorker.timezone), [tip])
     ]);
 
     const delivery = {};

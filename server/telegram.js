@@ -48,6 +48,16 @@ function tipBookingEntries(tip) {
   return Object.entries(tip.booking_codes || {}).map(([bookie, rawValue]) => normalizeBookingEntry(bookie, rawValue));
 }
 
+function tipReason(tip) {
+  return String(
+    tip?.prediction_reason
+    || tip?.fixture_payload?.metadata?.public_reason
+    || tip?.fixture_payload?.metadata?.prediction_reason
+    || tip?.fixture_payload?.metadata?.rationale
+    || ""
+  ).trim();
+}
+
 function formatTipDateTime(tip) {
   if (!tip.starts_at) return "";
   const date = new Date(tip.starts_at);
@@ -143,6 +153,7 @@ export function formatTipMessage(tip) {
     kickoff ? `🗓 ${escapeHtml(kickoff)}` : "",
     `⚽ <b>${escapeHtml(tip.match_name)}</b>`,
     `✅ Pick: <b>${escapeHtml(tip.prediction)}</b>`,
+    tipReason(tip) ? `🧠 Why: ${escapeHtml(tipReason(tip))}` : "",
     `💰 Odds: <b>${escapeHtml(tip.odds)}</b>`,
     tip.stake_hint ? `Stake: <b>${money.format(Number(tip.stake_hint))}</b>` : "",
     bookingLines ? `\n<b>Booking Codes</b>\n${bookingLines}` : "",

@@ -1253,7 +1253,6 @@ export async function getEvidenceGames(limit = 30) {
        from daily_games
        where status in ('won', 'lost', 'void', 'finished', 'FT', 'AET', 'PEN')
           or result_payload is not null
-          or (starts_at is not null and starts_at <= now() and lower(coalesce(status, 'pending')) in ('pending', 'scheduled', 'not started', 'not_started', 'ns', 'tbd'))
        union all
        select
          id::text,
@@ -1275,7 +1274,6 @@ export async function getEvidenceGames(limit = 30) {
        from tips
        where status in ('won', 'lost', 'void', 'finished', 'FT', 'AET', 'PEN')
           or result_payload is not null
-          or (starts_at is not null and starts_at <= now() and lower(coalesce(status, 'pending')) in ('pending', 'scheduled', 'not started', 'not_started', 'ns', 'tbd'))
      ) as settled
      order by coalesce(starts_at, updated_at, created_at) desc
      limit $1`,

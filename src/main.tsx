@@ -161,6 +161,7 @@ type AdminGame = {
   match: string;
   league: string;
   pick: string;
+  reason?: string;
   odds: number;
   oddsPending?: boolean;
   confidence: number;
@@ -186,6 +187,7 @@ type ApiTip = {
   match_name: string;
   league?: string;
   prediction: string;
+  prediction_reason?: string;
   odds: string | number;
   confidence?: number;
   is_vip: boolean;
@@ -227,6 +229,9 @@ type ApiTip = {
       article_predictions?: { label: string; pick: string }[];
       parser?: string;
       article_title?: string;
+      rationale?: string;
+      public_reason?: string;
+      prediction_reason?: string;
     };
   };
 };
@@ -341,12 +346,20 @@ const apiTipToAdminGame = (tip: ApiTip, index: number): AdminGame => {
   });
   const oddsNumber = Number(tip.odds);
   const oddsPending = Boolean(metadata?.odds_missing);
+  const reason = String(
+    tip.prediction_reason
+    || metadata?.public_reason
+    || metadata?.prediction_reason
+    || metadata?.rationale
+    || ""
+  ).trim();
   return {
     id: tip.id || Date.now() + index,
     evidenceSource: tip.evidence_source,
     match: tip.match_name,
     league: tip.league || "Football",
     pick: tip.prediction,
+    reason: reason || generatedPredictionReason(tip.match_name, tip.prediction),
     odds: Number.isFinite(oddsNumber) && oddsNumber > 0 ? oddsNumber : 1,
     oddsPending,
     confidence: Number(tip.confidence || (tip.is_vip ? 76 : 82)),
@@ -378,6 +391,137 @@ const splitMatchName = (match: string) => {
     home: home?.trim() || match,
     away: away?.trim() || "Opponent"
   };
+};
+
+const lagosDateParts = (date = new Date()) => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short"
+  }).formatToParts(date);
+  const read = (type: string) => parts.find((part) => part.type === type)?.value || "";
+  return {
+    year: read("year"),
+    month: read("month"),
+    day: read("day"),
+    weekday: read("weekday").toLowerCase()
+  };
+};
+
+const nextLagosDateForWeekday = (weekdayLabel: string) => {
+  const weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+  const now = new Date();
+  const today = lagosDateParts(now);
+  const currentIndex = weekdays.indexOf(today.weekday.slice(0, 3));
+  const targetIndex = weekdays.indexOf(weekdayLabel.slice(0, 3).toLowerCase());
+  if (currentIndex === -1 || targetIndex === -1) return `${today.year}-${today.month}-${today.day}`;
+  const diff = (targetIndex - currentIndex + 7) % 7;
+  const target = new Date(now.getTime() + diff * 24 * 60 * 60 * 1000);
+  const parts = lagosDateParts(target);
+  return `${parts.year}-${parts.month}-${parts.day}`;
+};
+
+const normalizeStartsAtInput = (value?: string) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+
+  const isoDateTime = raw.match(/\b(\d{4}-\d{2}-\d{2})[ T]([01]?\d|2[0-3])[:.]([0-5]\d)\b/);
+  if (isoDateTime) {
+    return new Date(`${isoDateTime[1]}T${isoDateTime[2].padStart(2, "0")}:${isoDateTime[3]}:00+01:00`).toISOString();
+  }
+
+  const direct = new Date(raw);
+  if (!Number.isNaN(direct.getTime())) return direct.toISOString();
+
+  const weekdayMatch = raw.match(/\b(monday|mon|tuesday|tue|wednesday|wed|thursday|thu|friday|fri|saturday|sat|sunday|sun)\b/i);
+  const explicitDate = raw.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/);
+  const timeMatch = raw
+    .replace(/\b(?:wat|gmt[+-]?\d*|utc[+-]?\d*)\b/gi, " ")
+    .match(/\b([01]?\d|2[0-3]):([0-5]\d)\s*(am|pm)?\b/i);
+  if (!timeMatch) return "";
+
+  let hour = Number(timeMatch[1]);
+  const minute = Number(timeMatch[2]);
+  const suffix = String(timeMatch[3] || "").toLowerCase();
+  if (suffix && hour <= 12) {
+    if (suffix === "pm" && hour < 12) hour += 12;
+    if (suffix === "am" && hour === 12) hour = 0;
+  }
+
+  let datePart = "";
+  if (explicitDate) {
+    const [, day, month, year] = explicitDate;
+    const normalizedYear = year ? (year.length === 2 ? `20${year}` : year) : lagosDateParts().year;
+    datePart = `${normalizedYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  } else if (weekdayMatch) {
+    datePart = nextLagosDateForWeekday(weekdayMatch[1]);
+  } else {
+    const today = lagosDateParts();
+    datePart = `${today.year}-${today.month}-${today.day}`;
+  }
+
+  return new Date(`${datePart}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+01:00`).toISOString();
+};
+
+const possessiveName = (value = "") => {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return "The side's";
+  return /s$/i.test(trimmed) ? `${trimmed}'` : `${trimmed}'s`;
+};
+
+const generatedPredictionReason = (match: string, pick: string) => {
+  const teams = splitMatchName(match);
+  const home = teams.home || "The home side";
+  const away = teams.away || "the away side";
+  const normalizedPick = String(pick || "").trim().toLowerCase();
+
+  if (normalizedPick.includes("home win") && normalizedPick.includes("over 1.5")) {
+    return `${possessiveName(home)} home control and the expected tempo support a win with goals.`;
+  }
+  if (normalizedPick.includes("away win") && normalizedPick.includes("over 1.5")) {
+    return `${possessiveName(away)} stronger attacking profile and match tempo support the away win with goals.`;
+  }
+  if (normalizedPick.includes("double chance 1x")) {
+    return `${possessiveName(home)} home edge makes the safer double-chance angle attractive.`;
+  }
+  if (normalizedPick.includes("double chance x2")) {
+    return `${possessiveName(away)} resilience and matchup stability support the safer away-side double chance.`;
+  }
+  if (normalizedPick.includes("over 1.5")) {
+    return "Recent scoring patterns and open-match potential point toward at least two goals.";
+  }
+  if (normalizedPick.includes("over 2.5")) {
+    return "Both sides carry enough attacking intent to support a higher-scoring game.";
+  }
+  if (normalizedPick.includes("under 3.5")) {
+    return "Game control and recent scoring trends keep the total in a safer range.";
+  }
+  if (normalizedPick.includes("btts") || normalizedPick.includes("both teams to score")) {
+    return "Both teams create enough threat to find the net in this matchup.";
+  }
+  if (normalizedPick.includes("corners")) {
+    return "Wide play, pressure, and crossing volume all support the corner angle.";
+  }
+  if (normalizedPick.includes("draw")) {
+    return "The matchup looks balanced enough for a tighter result than the market suggests.";
+  }
+  if (normalizedPick.includes(home.toLowerCase()) && normalizedPick.includes("win")) {
+    return `${possessiveName(home)} home dominance and attacking depth make them the better side here.`;
+  }
+  if (normalizedPick.includes(away.toLowerCase()) && normalizedPick.includes("win")) {
+    return `${possessiveName(away)} recent form and sharper attacking quality make them the stronger side here.`;
+  }
+  if (normalizedPick.includes("to win")) {
+    const target = normalizedPick.includes(home.toLowerCase()) ? home : normalizedPick.includes(away.toLowerCase()) ? away : home;
+    return `${possessiveName(target)} stronger form and attacking depth make this the better win angle.`;
+  }
+  return "Form, venue, and market shape all point toward this angle.";
+};
+
+const getGameReason = (game: Pick<AdminGame, "match" | "pick"> & { reason?: string }) => {
+  return String(game.reason || "").trim() || generatedPredictionReason(game.match, game.pick);
 };
 
 const formatMatchDateTime = (startsAt?: string) => {
@@ -629,6 +773,7 @@ type QuickPublishForm = {
   match: string;
   league: string;
   prediction: string;
+  reason: string;
   odds: string;
   confidence: string;
   tier: "freemium" | "vip";
@@ -1531,6 +1676,7 @@ const formatManualChannelPost = (
         `${index + 1}. ${game.league}`,
         `${game.match}`,
         `Pick: ${game.pick}`,
+        `Why: ${getGameReason(game)}`,
         `Odds: ${gameOddsLabel(game)} | Confidence: ${game.confidence}%`,
         startsAt ? `Kickoff: ${startsAt}` : "",
         codes ? `Code: ${codes}` : ""
@@ -1553,14 +1699,17 @@ const formatManualChannelPost = (
 
 const quickPublishToAdminGame = (form: QuickPublishForm): AdminGame => {
   const isVip = form.tier === "vip";
+  const normalizedStartsAt = normalizeStartsAtInput(form.schedule);
   return {
     id: Date.now(),
     match: form.match.trim() || "New fixture",
     league: form.league.trim() || "Football",
     pick: form.prediction.trim() || "Prediction",
+    reason: form.reason.trim() || generatedPredictionReason(form.match.trim() || "Fixture", form.prediction.trim() || "Prediction"),
     odds: Number(form.odds) || (isVip ? 2.05 : 1.45),
     confidence: Number(form.confidence) || (isVip ? 78 : 84),
     tier: form.tier,
+    startsAt: normalizedStartsAt || undefined,
     showBookingCodes: form.showBookingCodes,
     bookingCodes: adminBookingEntriesFromText(form.bookingCodes, isVip),
     pushApp: form.pushApp,
@@ -2376,7 +2525,7 @@ function EvidenceBoard({ games, navigate }: { games: AdminGame[]; navigate: (pag
           <article className="empty-signal-state wide">
             <CalendarClock size={22} />
             <strong>{evidenceLoaded ? "No settled games yet" : "Loading settled games"}</strong>
-            <span>Finished games will appear after the 6:00 AM WAT results worker settles published picks.</span>
+            <span>Settled BamSignal results will appear here automatically.</span>
           </article>
         )}
       </div>
@@ -2422,7 +2571,7 @@ function EvidenceArchivePage({ navigate }: { navigate: (page: Page, path?: strin
             <article className="empty-signal-state wide">
               <CalendarClock size={22} />
               <strong>{loaded ? "No settled games yet" : "Loading evidence board"}</strong>
-              <span>{loaded ? "Settled games will appear here as soon as outcomes are recorded." : "Please wait while BamSignal loads the full evidence archive."}</span>
+              <span>{loaded ? "Settled results will show here as soon as they are recorded." : "Please wait while BamSignal loads the full evidence archive."}</span>
             </article>
           )}
         </div>
@@ -2447,7 +2596,6 @@ function EvidenceGameRow({ game }: { game: AdminGame }) {
       <div className="evidence-main">
         <span className={`result-dot ${statusClass}`}>{status}</span>
         <h3>{homeName} <small>vs</small> {awayName}</h3>
-        <p>{game.pick}</p>
         <div className="fixture-identity">
           <LeagueLogo src={game.leagueLogo} name={game.league} />
           <span>{game.league}</span>
@@ -2455,9 +2603,7 @@ function EvidenceGameRow({ game }: { game: AdminGame }) {
         </div>
       </div>
       <div className="evidence-meta">
-        <span>{game.tier === "vip" ? "VIP" : "Free"}</span>
-        <strong>{gameOddsValue(game)}</strong>
-        <small>{game.result || "Outcome pending"}</small>
+        <strong>{game.result || status}</strong>
       </div>
     </article>
   );
@@ -4354,27 +4500,29 @@ function AdminPage({
     }
   });
   const [quickPublish, setQuickPublish] = useState<QuickPublishForm>(() => {
-    try {
-      const saved = window.localStorage.getItem("bamsignal-admin-quick-publish");
-      if (saved) return JSON.parse(saved) as QuickPublishForm;
-    } catch {
-      undefined;
-    }
-    return {
+    const defaults: QuickPublishForm = {
       match: "Man City vs Tottenham",
       league: "Premier League",
       prediction: "Home win + over 1.5",
+      reason: "Man City's home control and attacking depth support a win with goals.",
       odds: "2.18",
       confidence: "82",
       tier: "vip",
       bookingCodes: "1xBet: BAM218 / BetKing: BK944",
-      schedule: "Saturday 10:00 AM WAT",
+      schedule: "2026-05-10 10:00",
       pushApp: true,
       pushTelegram: false,
       pushWhatsApp: false,
       pushVipTelegram: true,
       showBookingCodes: true
     };
+    try {
+      const saved = window.localStorage.getItem("bamsignal-admin-quick-publish");
+      if (saved) return { ...defaults, ...(JSON.parse(saved) as Partial<QuickPublishForm>) };
+    } catch {
+      undefined;
+    }
+    return defaults;
   });
   const [ingestForm, setIngestForm] = useState<IngestForm>({
     text: "",
@@ -4801,6 +4949,7 @@ function AdminPage({
     setAdminStatus("Admin password changed for the currently logged-in Supabase account.");
   };
   const publishAdminGame = async (game: AdminGame, schedule = quickPublish.schedule) => {
+    const normalizedStartsAt = normalizeStartsAtInput(schedule || game.startsAt || "");
     const response = await fetch(apiUrl("/api/publish-tip"), {
       method: "POST",
       headers: await getAdminAuthHeaders(),
@@ -4808,11 +4957,12 @@ function AdminPage({
         match_name: game.match,
         league: game.league,
         prediction: game.pick,
+        prediction_reason: getGameReason(game),
         odds: game.odds,
         confidence: game.confidence,
         is_vip: game.tier === "vip",
         booking_codes: bookingEntriesToPayload(game.bookingCodes),
-        starts_at: schedule,
+        starts_at: normalizedStartsAt || null,
         channels: {
           app: game.pushApp,
           telegram: game.pushTelegram,
@@ -5197,8 +5347,9 @@ function AdminPage({
           <label>Game of the day<input value={quickPublish.match} onChange={(event) => setQuickPublish({ ...quickPublish, match: event.target.value })} placeholder="Man City vs Tottenham" /></label>
           <label>League<input value={quickPublish.league} onChange={(event) => setQuickPublish({ ...quickPublish, league: event.target.value })} placeholder="Premier League" /></label>
           <label>Prediction<input value={quickPublish.prediction} onChange={(event) => setQuickPublish({ ...quickPublish, prediction: event.target.value })} placeholder="Home win + over 1.5" /></label>
+          <label className="wide-field">Why this pick<input value={quickPublish.reason} onChange={(event) => setQuickPublish({ ...quickPublish, reason: event.target.value })} placeholder="Leave blank and BamSignal will auto-write a short reason." /></label>
           <label>Booking codes<input value={quickPublish.bookingCodes} onChange={(event) => setQuickPublish({ ...quickPublish, bookingCodes: event.target.value })} placeholder="1xBet: BAM218 / BetKing: https://... / CustomBookie: MYCODE" /></label>
-          <label>Schedule<input value={quickPublish.schedule} onChange={(event) => setQuickPublish({ ...quickPublish, schedule: event.target.value })} placeholder="Saturday 10:00 AM WAT" /></label>
+          <label>Schedule<input value={quickPublish.schedule} onChange={(event) => setQuickPublish({ ...quickPublish, schedule: event.target.value })} placeholder="2026-05-10 10:00 or Sat 8:00 PM WAT" /></label>
           <label>Room
             <select value={quickPublish.tier} onChange={(event) => setQuickPublish({ ...quickPublish, tier: event.target.value as "freemium" | "vip" })}>
               <option value="freemium">Freemium low-odd room</option>
@@ -5226,6 +5377,7 @@ function AdminPage({
           <strong>{quickPublish.match || "Game of the day"}</strong>
           <ConfidenceSignal confidence={Number(quickPublish.confidence) || 0} />
           <span>{quickPublish.prediction || "Prediction"} / {quickPublish.odds || "0.00"} odds / {quickPublish.confidence || "0"}%</span>
+          <p>{quickPublish.reason.trim() || generatedPredictionReason(quickPublish.match || "Fixture", quickPublish.prediction || "Prediction")}</p>
           <small>{quickPublish.tier === "vip" ? "VIP room" : "Freemium room"} / {quickPublish.bookingCodes || "No booking codes yet"}</small>
         </div>
         <div className="automation-list">
@@ -5458,6 +5610,7 @@ function AdminPage({
                 <label>Match<input value={game.match} onChange={(event) => updateAdminGame(index, { match: event.target.value })} /></label>
                 <label>League<input value={game.league} onChange={(event) => updateAdminGame(index, { league: event.target.value })} /></label>
                 <label>Prediction<input value={game.pick} onChange={(event) => updateAdminGame(index, { pick: event.target.value })} /></label>
+                <label className="wide-field">Why this pick<input value={game.reason || ""} onChange={(event) => updateAdminGame(index, { reason: event.target.value })} placeholder="Auto-generated if left empty" /></label>
                 <label>Tier
                   <select value={game.tier} onChange={(event) => updateAdminGame(index, { tier: event.target.value as AdminGame["tier"] })}>
                     <option value="freemium">Freemium low-odd</option>
@@ -5466,6 +5619,7 @@ function AdminPage({
                 </label>
                 <label>Odds<input value={game.odds} type="number" step="0.01" onChange={(event) => updateAdminGame(index, { odds: Number(event.target.value) || 1 })} /></label>
                 <label>Confidence %<input value={game.confidence} type="number" min="1" max="99" onChange={(event) => updateAdminGame(index, { confidence: Number(event.target.value) || 1 })} /></label>
+                <label>Kickoff<input value={game.startsAt || ""} onChange={(event) => updateAdminGame(index, { startsAt: normalizeStartsAtInput(event.target.value) || event.target.value })} placeholder="2026-05-10 10:00 or Sat 8:00 PM WAT" /></label>
                 <label>Outcome
                   <select value={game.status || "pending"} onChange={(event) => updateAdminGame(index, { status: event.target.value })}>
                     <option value="pending">Pending</option>
@@ -5870,6 +6024,16 @@ function AdminPage({
                         <label>Match<input value={tip.match_name} onChange={(event) => updateIngestPreviewTip(index, { match_name: event.target.value })} /></label>
                         <label>League<input value={tip.league || ""} onChange={(event) => updateIngestPreviewTip(index, { league: event.target.value })} /></label>
                         <label>Prediction<input value={tip.prediction} onChange={(event) => updateIngestPreviewTip(index, { prediction: event.target.value })} /></label>
+                        <label className="wide-field">Why this pick<input value={String(tip.prediction_reason || tip.fixture_payload?.metadata?.public_reason || tip.fixture_payload?.metadata?.rationale || "")} onChange={(event) => updateIngestPreviewTip(index, {
+                          prediction_reason: event.target.value,
+                          fixture_payload: {
+                            ...(tip.fixture_payload || {}),
+                            metadata: {
+                              ...(tip.fixture_payload?.metadata || {}),
+                              public_reason: event.target.value
+                            }
+                          }
+                        })} placeholder="Auto-generated if blank" /></label>
                         <label>Odds<input type="number" step="0.01" value={String(tip.odds)} onChange={(event) => updateIngestPreviewTip(index, { odds: event.target.value })} /></label>
                         <label>Confidence %<input type="number" min="1" max="99" value={String(tip.confidence || game.confidence)} onChange={(event) => updateIngestPreviewTip(index, { confidence: Number(event.target.value) || game.confidence })} /></label>
                         <label>Kickoff time<input value={tip.starts_at || ""} onChange={(event) => updateIngestPreviewTip(index, { starts_at: event.target.value })} placeholder="2026-05-05 20:00 or ISO time" /></label>
@@ -6042,6 +6206,15 @@ function MatchDetailPage({
   const statusText = raw.fixture?.status?.long || game?.status || "Scheduled";
   const isLockedDetail = game?.tier === "vip";
   const articlePredictions = detail?.game.fixture_payload?.metadata?.article_predictions || [];
+  const awayPercent = percentNumber(
+    detail?.predictions?.predictions?.percent?.away,
+    Math.max(18, 100 - predictionRows.result[0].left - predictionRows.result[0].right)
+  );
+  const showThreeWay = !isLockedDetail && Boolean(
+    predictionRows.result[0].left
+    || predictionRows.result[0].right
+    || awayPercent
+  );
 
   if (loading) {
     return (
@@ -6098,20 +6271,25 @@ function MatchDetailPage({
             </div>
           </div>
           <div className="match-meta-row">
-            <span><b>Stadium</b>{raw.fixture?.venue?.name || "Pending"}</span>
-            <span><b>Round</b>{raw.league?.round || "Pending"}</span>
-            <span><b>Referee</b>{raw.fixture?.referee || "TBC"}</span>
+            <span><b>Stadium</b><small>{raw.fixture?.venue?.name || "Pending"}</small></span>
+            <span><b>Round</b><small>{raw.league?.round || "Pending"}</small></span>
+            <span><b>Referee</b><small>{raw.fixture?.referee || "TBC"}</small></span>
           </div>
           {isLockedDetail ? (
             <div className="locked-probability-strip">
               <LockKeyhole size={16} />
-              <span>Premium members see probabilities and market edge in the app.</span>
+              <span>Premium signal hidden.</span>
             </div>
-          ) : (
+          ) : showThreeWay ? (
             <div className="three-way-grid">
               <Probability label="Home" value={homeName} percent={predictionRows.result[0].left} />
               <Probability label="Draw" value="X" percent={predictionRows.result[0].right} />
-              <Probability label="Away" value={awayName} percent={percentNumber(detail.predictions?.predictions?.percent?.away, Math.max(18, 100 - predictionRows.result[0].left - predictionRows.result[0].right))} />
+              <Probability label="Away" value={awayName} percent={awayPercent} />
+            </div>
+          ) : (
+            <div className="locked-probability-strip neutral-note">
+              <Activity size={16} />
+              <span>Model percentages will appear when enough pre-match data is available.</span>
             </div>
           )}
         </div>
@@ -6120,8 +6298,8 @@ function MatchDetailPage({
           <div className="match-main-column">
             <section className="match-section">
               <p className="eyebrow">{homeName} vs {awayName} intelligence</p>
-              <h2>{isLockedDetail ? "Match context" : detail.predictions?.predictions?.advice || game.pick}</h2>
-              <p>{isLockedDetail ? "Review score, form, events, table position, and recent meetings before opening the premium room." : "Review the public match context, then open the app for booking codes and member picks."}</p>
+              <h2>{isLockedDetail ? "Public match context" : game.pick}</h2>
+              <p>{isLockedDetail ? "Score, stats, standings, and recent meetings stay public here." : getGameReason(game)}</p>
             </section>
 
             {isLockedDetail ? (
@@ -6175,19 +6353,26 @@ function ArticlePredictionPanel({ predictions }: { predictions: { label: string;
 }
 
 function PredictionGroup({ title, rows }: { title: string; rows: { label: string; market: string; value: string; left: number; right: number }[] }) {
+  const visibleRows = rows.filter((row) => row.left > 0 || row.right > 0);
   return (
     <section className="match-section compact">
       <h3>{title}</h3>
       <div className="match-prediction-list">
-        {rows.map((row) => (
-          <div className="match-prediction-row" key={`${title}-${row.market}`}>
-            <strong>{row.left}%</strong>
-            <span>{row.label}</span>
-            <b>{row.market}</b>
-            <span>{row.value}</span>
-            <strong>{row.right}%</strong>
+        {visibleRows.length ? visibleRows.map((row) => (
+          <div
+            className={`match-prediction-row ${row.left >= 80 ? "high" : row.left >= 60 ? "mid" : row.left >= 45 ? "soft" : "low"}`}
+            key={`${title}-${row.market}`}
+          >
+            <div className="match-prediction-copy">
+              <strong>{row.market}</strong>
+              <span>{row.label}{row.value ? ` • ${row.value}` : ""}</span>
+            </div>
+            <div className="match-prediction-track" aria-hidden="true">
+              <i style={{ width: `${Math.max(0, Math.min(row.left, 100))}%` }} />
+            </div>
+            <b>{row.left}%</b>
           </div>
-        ))}
+        )) : <p className="muted-copy">Model percentages are not ready for this market yet.</p>}
       </div>
     </section>
   );
@@ -6302,7 +6487,7 @@ function StatsPanel({ stats, homeName, awayName }: { stats: NonNullable<MatchDet
   return (
     <section className="match-section">
       <p className="eyebrow">Stats</p>
-      <h2>Match stats</h2>
+      <h2>Live and final match numbers</h2>
       <div className="stats-table">
         <div className="stats-row head"><strong>{homeName}</strong><span>Metric</span><strong>{awayName}</strong></div>
         {stats.length ? stats.map((item) => (
@@ -6311,7 +6496,7 @@ function StatsPanel({ stats, homeName, awayName }: { stats: NonNullable<MatchDet
             <span>{item.label}</span>
             <strong>{item.away}</strong>
           </div>
-        )) : <p className="muted-copy">Stats unlock during live and finished fixtures.</p>}
+        )) : <p className="muted-copy">Stats appear when the match goes live or finishes.</p>}
       </div>
     </section>
   );
@@ -6321,7 +6506,7 @@ function EventsPanel({ events }: { events: NonNullable<MatchDetailApi["events"]>
   return (
     <section className="match-section">
       <p className="eyebrow">Events</p>
-      <h2>Match timeline</h2>
+      <h2>Key match events</h2>
       <div className="event-list">
         {events.length ? events.map((event, index) => (
           <div className="event-row" key={`${event.time}-${event.player}-${index}`}>
@@ -6329,7 +6514,7 @@ function EventsPanel({ events }: { events: NonNullable<MatchDetailApi["events"]>
             <span>{event.detail || event.type}</span>
             <b>{event.player || event.team}</b>
           </div>
-        )) : <p className="muted-copy">Key match events appear here from kickoff and remain attached to this fixture after fulltime.</p>}
+        )) : <p className="muted-copy">Events will show here once the match starts.</p>}
       </div>
     </section>
   );
@@ -6400,12 +6585,13 @@ function PublicPredictionCard({
         </div>
         <ConfidenceSignal confidence={game.confidence} />
       </div>
-      <div className="prediction-row">
+      <div className="prediction-row summary-row">
         <strong>{gameOddsValue(game)} odds</strong>
         <strong>{game.confidence}%</strong>
         <span>Primary pick</span>
         <strong className={locked ? "blurred-tip" : ""}>{game.pick}</strong>
       </div>
+      <p className={`prediction-reason ${locked ? "blurred-copy" : ""}`}>{getGameReason(game)}</p>
       {!locked && (
         <button className="booking-code-button" onClick={(event) => {
           event.stopPropagation();
@@ -6421,12 +6607,6 @@ function PublicPredictionCard({
           {publicEntry ? bookingEntryPrimaryActionLabel(publicEntry, bookingButtonText) : bookingButtonText}
         </button>
       )}
-      <div className={`probability-grid ${locked ? "blurred-grid" : ""}`}>
-        <Probability label="Confidence" value="Model" percent={game.confidence} compact />
-        <Probability label="Odds" value={gameOddsValue(game)} percent={gameOddsPercent(game)} compact />
-        <Probability label="Room" value={game.tier === "vip" ? "VIP" : "Free"} percent={game.tier === "vip" ? 88 : 72} compact />
-        <Probability label="Codes" value={game.bookingCodes.length ? "Ready" : "Hidden"} percent={game.bookingCodes.length ? 82 : 45} compact />
-      </div>
     </article>
   );
 }

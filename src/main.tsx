@@ -393,6 +393,22 @@ const splitMatchName = (match: string) => {
   };
 };
 
+const teamShortCode = (name: string) => {
+  const clean = String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s]/g, " ")
+    .trim();
+  if (!clean) return "FC";
+  const words = clean
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((word) => !["fc", "sc", "cf", "club", "de", "the", "bk", "fk", "if"].includes(word.toLowerCase()));
+  if (!words.length) return clean.slice(0, 3).toUpperCase();
+  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+  return words.slice(0, 3).map((word) => word[0]).join("").toUpperCase();
+};
+
 const lagosDateParts = (date = new Date()) => {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Lagos",
@@ -2253,6 +2269,8 @@ function HomePage({
     .slice(0, publicHomeLimit - publicPredictions.length);
   const predictionBoard = [...publicPredictions, ...blurredPredictions];
   const topTeams = topPick ? splitMatchName(topPick.match) : null;
+  const topHomeCode = topTeams ? teamShortCode(topPick?.homeTeam || topTeams.home) : "";
+  const topAwayCode = topTeams ? teamShortCode(topPick?.awayTeam || topTeams.away) : "";
   const contactLink = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     navigate({ kind: "contact" }, "/contact");
@@ -2288,24 +2306,31 @@ function HomePage({
             >
               {topPick && topTeams ? (
                 <>
-                  <div className="panel-topline">
+                  <div className="panel-topline compact-topline">
                     <span>{topPick.league}</span>
                     <strong>Game of the day</strong>
                   </div>
-                  <div className="teams">
-                    <span>{topTeams.home}</span>
-                    <small>vs</small>
-                    <span>{topTeams.away}</span>
+                  <div className="hero-versus">
+                    <div className="hero-side">
+                      <TeamLogo src={topPick.homeLogo} name={topPick.homeTeam || topTeams.home} />
+                      <strong>{topHomeCode}</strong>
+                      <small>{topPick.homeTeam || topTeams.home}</small>
+                    </div>
+                    <div className="hero-center-chip">
+                      <b>VS</b>
+                      <span>{gameBoardStatus(topPick)}</span>
+                    </div>
+                    <div className="hero-side">
+                      <TeamLogo src={topPick.awayLogo} name={topPick.awayTeam || topTeams.away} />
+                      <strong>{topAwayCode}</strong>
+                      <small>{topPick.awayTeam || topTeams.away}</small>
+                    </div>
                   </div>
-                  <div className="compact-pick">
+                  <div className="compact-pick hero-pick-pill">
                     <strong>{topPick.confidence}%</strong>
                     <span>{topPick.pick}</span>
                   </div>
-                  <div className="mini-grid">
-                    <span>Odds <strong>{gameOddsValue(topPick)}</strong></span>
-                    <span>Room <strong>{topPick.tier === "vip" ? "VIP" : "Free"}</strong></span>
-                    <span>Status <strong>{gameBoardStatus(topPick)}</strong></span>
-                  </div>
+                  <p className="hero-pick-reason">{getGameReason(topPick)}</p>
                 </>
               ) : (
                 <div className="empty-signal-state">
@@ -6229,6 +6254,8 @@ function MatchDetailPage({
   const score = typeof homeGoals === "number" && typeof awayGoals === "number" ? `${homeGoals} : ${awayGoals}` : "vs";
   const predictionRows = makePredictionRows(detail, game);
   const statusText = raw.fixture?.status?.long || game?.status || "Scheduled";
+  const homeCode = teamShortCode(homeName);
+  const awayCode = teamShortCode(awayName);
   const isLockedDetail = game?.tier === "vip";
   const articlePredictions = detail?.game.fixture_payload?.metadata?.article_predictions || [];
   const awayPercent = percentNumber(
@@ -6274,25 +6301,25 @@ function MatchDetailPage({
           <ArrowLeft size={16} /> Back to predictions
         </button>
         <div className="match-hero-card">
-          <div className="match-kicker">
+          <div className="match-kicker capsule">
             <LeagueLogo src={raw.league?.logo || game.leagueLogo} name={raw.league?.name || game.league} />
             <span>{raw.league?.name || game.league}</span>
-            <small>{formatMatchDateTime(game.startsAt)}</small>
           </div>
+          <div className="match-kickoff-line">{formatMatchDateTime(game.startsAt)}</div>
           <div className="match-scoreboard">
             <div className="match-team">
               <TeamLogo src={raw.teams?.home?.logo || game.homeLogo} name={homeName} />
-              <strong>{homeName}</strong>
-              <span>Home</span>
+              <strong>{homeCode}</strong>
+              <small>{homeName}</small>
             </div>
             <div className="match-score">
-              <strong>{score}</strong>
+              <strong>{score === "vs" ? "VS" : score}</strong>
               <span>{statusText}</span>
             </div>
             <div className="match-team">
               <TeamLogo src={raw.teams?.away?.logo || game.awayLogo} name={awayName} />
-              <strong>{awayName}</strong>
-              <span>Away</span>
+              <strong>{awayCode}</strong>
+              <small>{awayName}</small>
             </div>
           </div>
           <div className="match-meta-row">
@@ -6306,10 +6333,19 @@ function MatchDetailPage({
               <span>Premium signal hidden.</span>
             </div>
           ) : showThreeWay ? (
-            <div className="three-way-grid">
-              <Probability label="Home" value={homeName} percent={predictionRows.result[0].left} />
-              <Probability label="Draw" value="X" percent={predictionRows.result[0].right} />
-              <Probability label="Away" value={awayName} percent={awayPercent} />
+            <div className="three-way-pills">
+              <div className="three-way-pill home-pill">
+                <strong>{predictionRows.result[0].left}%</strong>
+                <span>{homeCode}</span>
+              </div>
+              <div className="three-way-date">
+                <strong>{new Date(game.startsAt || Date.now()).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit" })}</strong>
+                <span>Draw {predictionRows.result[0].right}%</span>
+              </div>
+              <div className="three-way-pill away-pill">
+                <strong>{awayPercent}%</strong>
+                <span>{awayCode}</span>
+              </div>
             </div>
           ) : (
             <div className="locked-probability-strip neutral-note">
@@ -6324,7 +6360,7 @@ function MatchDetailPage({
             <section className="match-section">
               <p className="eyebrow">{homeName} vs {awayName} intelligence</p>
               <h2>{isLockedDetail ? "Public match context" : game.pick}</h2>
-              <p>{isLockedDetail ? "Score, stats, standings, and recent meetings stay public here." : getGameReason(game)}</p>
+              <p>{isLockedDetail ? "Stats, table, and recent meetings stay public here." : getGameReason(game)}</p>
             </section>
 
             {isLockedDetail ? (
@@ -6381,21 +6417,31 @@ function PredictionGroup({ title, rows }: { title: string; rows: { label: string
   const visibleRows = rows.filter((row) => row.left > 0 || row.right > 0);
   return (
     <section className="match-section compact">
-      <h3>{title}</h3>
+      <div className="section-pill-title">
+        <h3>{title}</h3>
+      </div>
       <div className="match-prediction-list">
         {visibleRows.length ? visibleRows.map((row) => (
           <div
             className={`match-prediction-row ${row.left >= 80 ? "high" : row.left >= 60 ? "mid" : row.left >= 45 ? "soft" : "low"}`}
             key={`${title}-${row.market}`}
           >
+            <div className="match-prediction-edge left-edge">
+              <strong>{row.left}%</strong>
+              <span>{row.label.split("•")[0]?.trim() || "Yes"}</span>
+            </div>
             <div className="match-prediction-copy">
               <strong>{row.market}</strong>
               <span>{row.label}{row.value ? ` • ${row.value}` : ""}</span>
+              <div className="match-prediction-track dual-track" aria-hidden="true">
+                <i className="left-fill" style={{ width: `${Math.max(0, Math.min(row.left, 100))}%` }} />
+                <i className="right-fill" style={{ width: `${Math.max(0, Math.min(row.right, 100))}%` }} />
+              </div>
             </div>
-            <div className="match-prediction-track" aria-hidden="true">
-              <i style={{ width: `${Math.max(0, Math.min(row.left, 100))}%` }} />
+            <div className="match-prediction-edge right-edge">
+              <strong>{row.right}%</strong>
+              <span>{row.label.split("•")[1]?.trim() || "No"}</span>
             </div>
-            <b>{row.left}%</b>
           </div>
         )) : <p className="muted-copy">Model percentages are not ready for this market yet.</p>}
       </div>
@@ -6585,6 +6631,8 @@ function PublicPredictionCard({
   const homeName = game.homeTeam || teams.home;
   const awayName = game.awayTeam || teams.away;
   const boardStatus = gameBoardStatus(game);
+  const homeCode = teamShortCode(homeName);
+  const awayCode = teamShortCode(awayName);
   const openMatch = () => navigate({ kind: "match", id: String(game.id) }, `/match/${game.id}`);
   const publicEntry = actionableBookingEntries(
     game.bookingCodes.filter((entry) => game.tier === "vip" ? entry.premiumApp : entry.regularApp)
@@ -6593,32 +6641,37 @@ function PublicPredictionCard({
     <article className={`fixture-card clickable ${locked ? "locked" : ""}`} role="button" tabIndex={0} onClick={openMatch} onKeyDown={(event) => {
       if (event.key === "Enter" || event.key === " ") openMatch();
     }}>
-      <div className="fixture-main">
-        <div>
-          <span className={`status ${boardStatus.toLowerCase()}`}>{boardStatus === "Live" && <i aria-hidden="true" />}{boardStatus}</span>
-          <div className="fixture-identity">
-            <LeagueLogo src={game.leagueLogo} name={game.league} />
-            <span>{game.league}</span>
-            <small>{formatMatchDateTime(game.startsAt)}</small>
-          </div>
-          <div className="team-lineup">
-            <TeamLogo src={game.homeLogo} name={homeName} />
-            <h3>{homeName} <small>vs</small> {awayName}</h3>
-            <TeamLogo src={game.awayLogo} name={awayName} />
-          </div>
-          <p className="league">{gameOddsLabel(game)}</p>
+      <div className="fixture-topline">
+        <div className="fixture-identity">
+          <LeagueLogo src={game.leagueLogo} name={game.league} />
+          <span>{game.league}</span>
+          <small>{formatMatchDateTime(game.startsAt)}</small>
         </div>
-        <ConfidenceSignal confidence={game.confidence} />
+        <span className={`status ${boardStatus.toLowerCase()}`}>{boardStatus === "Live" && <i aria-hidden="true" />}{boardStatus}</span>
       </div>
-      <div className="prediction-row summary-row">
-        <strong>{gameOddsValue(game)} odds</strong>
-        <strong>{game.confidence}%</strong>
-        <span>Primary pick</span>
+      <div className="fixture-versus">
+        <div className="fixture-side">
+          <TeamLogo src={game.homeLogo} name={homeName} />
+          <strong>{homeCode}</strong>
+          <small>{homeName}</small>
+        </div>
+        <div className="fixture-versus-center">
+          <b>VS</b>
+          <span>{gameOddsValue(game)} odds</span>
+        </div>
+        <div className="fixture-side">
+          <TeamLogo src={game.awayLogo} name={awayName} />
+          <strong>{awayCode}</strong>
+          <small>{awayName}</small>
+        </div>
+      </div>
+      <div className="fixture-pick-strip">
+        <span className="fixture-confidence-pill">{game.confidence}%</span>
         <strong className={locked ? "blurred-tip" : ""}>{game.pick}</strong>
       </div>
       <p className={`prediction-reason ${locked ? "blurred-copy" : ""}`}>{getGameReason(game)}</p>
       {!locked && (
-        <button className="booking-code-button" onClick={(event) => {
+        <button className="booking-code-button compact-booking-button" onClick={(event) => {
           event.stopPropagation();
           if (publicEntry) {
             performBookingAction(publicEntry);

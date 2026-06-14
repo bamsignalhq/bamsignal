@@ -24,12 +24,10 @@ if (!fs.existsSync(indexHtml)) {
 
 process.on("uncaughtException", (error) => {
   console.error("[bamsignal] Uncaught exception:", error);
-  process.exit(1);
 });
 
 process.on("unhandledRejection", (reason) => {
   console.error("[bamsignal] Unhandled rejection:", reason);
-  process.exit(1);
 });
 
 const app = express();
@@ -53,9 +51,11 @@ function healthPayload() {
   return {
     ok: true,
     service: "bamsignal",
-    database: dbEnabled ? "connected" : "dry-run",
-    telegram: Boolean(config.telegram.botToken),
-    firebase: Boolean(config.firebase.serviceAccount)
+    database: dbEnabled ? "configured" : "dry-run",
+    paystack: Boolean(config.paystackSecretKey),
+    resend: Boolean(process.env.RESEND_API_KEY?.trim()),
+    firebase: Boolean(config.firebase.serviceAccount),
+    telegram: Boolean(config.telegram.botToken)
   };
 }
 
@@ -84,11 +84,13 @@ app.use((req, res, next) => {
 
 app.use((error, _req, res, _next) => {
   console.error(error);
-  res.status(500).json({ ok: false, error: error.message || "Internal server error" });
+  if (!res.headersSent) {
+    res.status(500).json({ ok: false, error: error.message || "Internal server error" });
+  }
 });
 
 const server = app.listen(port, host, () => {
-  console.log(`BamSignal running on http://${host}:${port}`);
+  console.log(`[bamsignal] Running on http://${host}:${port}`);
 });
 
 server.on("error", (error) => {
@@ -96,9 +98,13 @@ server.on("error", (error) => {
   process.exit(1);
 });
 
-registerBotCommands();
-if (bot && process.env.TELEGRAM_ENABLE_POLLING === "true") {
-  bot.launch().catch((error) => {
-    console.error("[bamsignal] Telegram polling failed:", error);
-  });
+try {
+  registerBotCommands();
+  if (bot && process.env.TELEGRAM_ENABLE_POLLING === "true") {
+    bot.launch().catch((error) => {
+      console.error("[bamsignal] Telegram polling failed:", error);
+    });
+  }
+} catch (error) {
+  console.error("[bamsignal] Telegram setup skipped:", error);
 }

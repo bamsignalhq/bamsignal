@@ -4,9 +4,12 @@ dotenv.config();
 
 const parseJson = (value, fallback = null) => {
   if (!value) return fallback;
+  const trimmed = String(value).trim();
+  if (!trimmed || trimmed.startsWith("<")) return fallback;
   try {
-    return JSON.parse(value);
+    return JSON.parse(trimmed);
   } catch {
+    console.warn("[bamsignal] Ignoring invalid JSON environment value.");
     return fallback;
   }
 };
@@ -14,9 +17,9 @@ const parseJson = (value, fallback = null) => {
 export const config = {
   port: Number(process.env.PORT || 3000),
   host: process.env.HOST || "0.0.0.0",
-  databaseUrl: process.env.DATABASE_URL,
+  databaseUrl: process.env.DATABASE_URL?.trim() || "",
   publicAppUrl: process.env.PUBLIC_APP_URL || "https://bamsignal.com",
-  paystackSecretKey: process.env.PAYSTACK_SECRET_KEY,
+  paystackSecretKey: process.env.PAYSTACK_SECRET_KEY?.trim() || "",
   paystackCallbackUrl:
     process.env.PAYSTACK_CALLBACK_URL ||
     `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/payment/success`,
@@ -26,7 +29,7 @@ export const config = {
   timezone: process.env.APP_TIMEZONE || "Africa/Lagos",
   cronSecret: process.env.CRON_SECRET,
   telegram: {
-    botToken: process.env.TELEGRAM_BOT_TOKEN,
+    botToken: process.env.TELEGRAM_BOT_TOKEN?.trim() || "",
     freeChannelId: process.env.TELEGRAM_FREE_CHANNEL_ID,
     vipGroupId: process.env.TELEGRAM_VIP_GROUP_ID
   },
@@ -34,3 +37,15 @@ export const config = {
     serviceAccount: parseJson(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
   }
 };
+
+if (!config.databaseUrl) {
+  console.warn("[bamsignal] DATABASE_URL is not set. Database-backed features will run in dry-run mode.");
+}
+
+if (!config.paystackSecretKey) {
+  console.warn("[bamsignal] PAYSTACK_SECRET_KEY is not set. Payment endpoints will return service-unavailable errors.");
+}
+
+if (!process.env.RESEND_API_KEY?.trim()) {
+  console.warn("[bamsignal] RESEND_API_KEY is not set. Contact form email delivery is disabled.");
+}

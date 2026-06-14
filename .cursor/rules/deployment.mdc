@@ -1,0 +1,20 @@
+---
+description: Production deployment — Coolify only (not Vercel)
+alwaysApply: true
+---
+
+# Deployment
+
+- **Platform:** [Coolify](https://control.bamsignal.com) — self-hosted on the BamSignal server.
+- **Production URL:** https://bamsignal.com
+- **Do not use Vercel** for this repo (`.vercel/` is legacy/unused).
+
+## How to deploy
+
+1. Commit and push to `main` on `github.com/bamsignalhq/bamsignal`.
+2. Coolify rebuilds from the repo `Dockerfile` (`npm run build` → `node server/production.js`).
+3. Confirm deploy status in Coolify at control.bamsignal.com (manual redeploy if webhook did not fire).
+
+## Build args / env
+
+See `.env.example` — Coolify injects `VITE_*` at build time and server secrets at runtime (`DATABASE_URL`, `PAYSTACK_SECRET_KEY`, Supabase, etc.).

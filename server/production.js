@@ -44,10 +44,9 @@ app.use(paystackRouter);
 
 app.use(express.static(distDir, { index: false, maxAge: "1d" }));
 
-app.get("*", (req, res, next) => {
-  if (req.path.startsWith("/api/") || req.path.startsWith("/webhooks/")) {
-    return next();
-  }
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  if (req.path.startsWith("/api/") || req.path.startsWith("/webhooks/")) return next();
   res.sendFile(path.join(distDir, "index.html"), (error) => {
     if (error) next(error);
   });

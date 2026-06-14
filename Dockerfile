@@ -3,7 +3,9 @@ FROM node:20-slim AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# Coolify may inject NODE_ENV=production at build time; devDependencies are required for tsc/vite.
+ENV NODE_ENV=development
+RUN npm ci --include=dev
 
 COPY . .
 

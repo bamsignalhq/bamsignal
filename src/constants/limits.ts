@@ -40,5 +40,7 @@ export const STORAGE_KEYS = {
   quickieUnlockedMatches: "bamsignal-quickie-unlocked-matches",
   authUsernameIndex: "bamsignal-auth-usernames",
   discoverLocationMeta: "bamsignal-discover-location-meta",
-  shadowBanned: "bamsignal-shadow-banned"
+  shadowBanned: "bamsignal-shadow-banned",
+  photoModerationStrikes: "bamsignal-photo-mod-strikes",
+  voiceModerationStrikes: "bamsignal-voice-mod-strikes"
 } as const;

@@ -44,6 +44,7 @@ import {
   submitVerificationRequest
 } from "../utils/verificationQueue";
 import { notifyVerificationApproved } from "../utils/notifyHelpers";
+import { moderatePhotoUpload } from "../utils/mediaModeration";
 
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary", "Prefer not to say"];
 const LOOKING: LookingFor[] = ["Men", "Women", "Everyone"];
@@ -77,6 +78,7 @@ export function ProfilePage({
     normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}))
   );
   const [saved, setSaved] = useState(false);
+  const [modMessage, setModMessage] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [section, setSection] = useState<"profile" | "preferences" | "safety" | "account">("profile");
   const verifyPending = isUserVerificationPending(user.phone);
@@ -97,9 +99,20 @@ export function ProfilePage({
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const uploadPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const showModMessage = (msg: string) => {
+    setModMessage(msg);
+    window.setTimeout(() => setModMessage(""), 4000);
+  };
+
+  const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
+    const verdict = await moderatePhotoUpload(file);
+    if (!verdict.allowed) {
+      showModMessage(verdict.message);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const url = String(reader.result || "");
@@ -151,6 +164,11 @@ export function ProfilePage({
 
   return (
     <div className="page profile-page profile-page--fb">
+      {modMessage && (
+        <p className="profile-mod-toast" role="status">
+          {modMessage}
+        </p>
+      )}
       <ProfileCoverHeader
         user={user}
         profile={profile}
@@ -288,6 +306,7 @@ export function ProfilePage({
           url={profile.voiceIntroUrl}
           onRecorded={(url) => setProfile({ ...profile, voiceIntroUrl: url })}
           onClear={() => setProfile({ ...profile, voiceIntroUrl: undefined })}
+          onRejected={showModMessage}
         />
         <label>
           Bio

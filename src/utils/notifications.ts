@@ -9,7 +9,8 @@ export type AppNotification = {
     | "profile_viewed"
     | "verification_approved"
     | "premium_activated"
-    | "off_platform_request";
+    | "off_platform_request"
+    | "boost_activated";
   title: string;
   body: string;
   at: string;

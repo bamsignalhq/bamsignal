@@ -27,6 +27,7 @@ import { defaultSafetySettings } from "../constants/safety";
 import { applyFemaleFirstDefaults } from "../utils/safety";
 import { markJoinedAt, persistCitySelection } from "../utils/launchSeed";
 import { writeJson } from "../utils/storage";
+import { moderatePhotoUpload } from "../utils/mediaModeration";
 
 const STEPS = [
   "City",
@@ -49,6 +50,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   const cms = getCms();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(0);
+  const [modMessage, setModMessage] = useState("");
   const [profile, setProfile] = useState<DatingProfile>(() => ({
     photos: [],
     age: 25,
@@ -102,9 +104,16 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
 
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
-  const uploadPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
+    const verdict = await moderatePhotoUpload(file);
+    if (!verdict.allowed) {
+      setModMessage(verdict.message);
+      window.setTimeout(() => setModMessage(""), 4000);
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const url = String(reader.result || "");
@@ -125,6 +134,11 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
 
   return (
     <div className="page onboarding-page welcome-flow">
+      {modMessage && (
+        <p className="profile-mod-toast onboarding-mod-toast" role="status">
+          {modMessage}
+        </p>
+      )}
       <header className="onboarding-header">
         {step > 0 && (
           <button type="button" className="onboarding-back" onClick={back} aria-label="Back">

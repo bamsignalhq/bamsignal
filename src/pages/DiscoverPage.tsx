@@ -48,6 +48,7 @@ import {
   type DiscoverQuickFilter
 } from "../utils/discoverFilters";
 import { isViewerShadowBanned } from "../utils/shadowBan";
+import { consumePrioritySignal, getViewerBoostSummary } from "../utils/activeBoosts";
 
 const SIGNAL_ANIM_MS = 700;
 
@@ -97,6 +98,11 @@ export function DiscoverPage({
   );
 
   const trending = useMemo(() => trendingSections(baseDeck), [baseDeck]);
+
+  const memberUser = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+  const boostSummary = useMemo(() => getViewerBoostSummary(memberUser), [memberUser.email, memberUser.phone]);
+  const boostBanner =
+    boostSummary.profileBoost || boostSummary.signalBoost || boostSummary.priorityPending;
 
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [toast, setToast] = useState("");
@@ -170,12 +176,17 @@ export function DiscoverPage({
     setFocusedId(null);
   };
 
-  const finishSignal = (profile: DiscoverProfile) => {
+  const finishSignal = (profile: DiscoverProfile, opts?: { priority?: boolean }) => {
     const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const suppressed = isViewerShadowBanned(user.phone, user.email);
+    const priority = opts?.priority ?? false;
 
     if (suppressed) {
-      setToast(`${BRAND.signalSent} to ${profile.name} ⚡`);
+      setToast(
+        priority
+          ? `${BRAND.prioritySignal} sent to ${profile.name}! ⚡`
+          : `${BRAND.signalSent} to ${profile.name} ⚡`
+      );
       setTimeout(() => setToast(""), 3000);
       advance(profile.id);
       return;
@@ -204,7 +215,11 @@ export function DiscoverPage({
         setTimeout(() => setToast(""), 3000);
       }
     } else {
-      setToast(`${BRAND.signalSent} to ${profile.name} ⚡`);
+      setToast(
+        priority
+          ? `${BRAND.prioritySignal} sent to ${profile.name}! ⚡`
+          : `${BRAND.signalSent} to ${profile.name} ⚡`
+      );
       setTimeout(() => setToast(""), 3000);
     }
     advance(profile.id);
@@ -226,11 +241,12 @@ export function DiscoverPage({
     setSignalSent(true);
     useSwipe();
     incrementSignalsSent();
-    trackEvent("signal_sent", { profileId: current.id });
     const profile = current;
+    const priority = consumePrioritySignal();
+    trackEvent("signal_sent", { profileId: current.id, priority: priority ? "true" : "false" });
     setTimeout(() => {
       setSignalSent(false);
-      finishSignal(profile);
+      finishSignal(profile, { priority });
     }, SIGNAL_ANIM_MS);
   };
 
@@ -239,12 +255,12 @@ export function DiscoverPage({
     setSignalSent(true);
     useSwipe();
     incrementSignalsSent();
+    trackEvent("signal_sent", { profileId: current.id, priority: "true" });
     const profile = current;
+    const usedBoost = consumePrioritySignal();
     setTimeout(() => {
       setSignalSent(false);
-      setToast(`${BRAND.prioritySignal} sent to ${profile.name}! ⚡`);
-      setTimeout(() => setToast(""), 3000);
-      advance(profile.id);
+      finishSignal(profile, { priority: usedBoost || isPremium });
     }, SIGNAL_ANIM_MS);
   };
 
@@ -367,6 +383,14 @@ export function DiscoverPage({
       />
 
       <DiscoverLimitsBar isPremium={isPremium} />
+
+      {boostBanner && (
+        <p className="discover-boost-banner" role="status">
+          {boostSummary.profileBoost && "Profile Boost active — you're featured at the top of local results. "}
+          {boostSummary.signalBoost && "Signal Boost active — extra visibility in your city. "}
+          {boostSummary.priorityPending && "Priority Signal ready — your next signal lands first."}
+        </p>
+      )}
 
       <div className="discover-mode-tabs" role="tablist" aria-label="Discover modes">
         {(["signals", "radar", "trending"] as const).map((tab) => (

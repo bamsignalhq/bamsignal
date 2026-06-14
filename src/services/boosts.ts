@@ -55,3 +55,5 @@ export async function saveBoostProductsAdmin(
   const products = saveLocalBoostProducts(inputs);
   return { ok: true, products };
 }
+
+export { activateBoost, consumePrioritySignal, getActiveBoosts, getViewerBoostSummary } from "../utils/activeBoosts";

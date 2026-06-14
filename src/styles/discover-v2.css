@@ -223,6 +223,35 @@
   transition: width 0.35s ease;
 }
 
+.discover-boost-banner {
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--brand-pink-rgb, 236, 72, 153), 0.12),
+    rgba(var(--brand-purple-rgb, 168, 85, 247), 0.08)
+  );
+  border: 1px solid rgba(var(--brand-pink-rgb, 236, 72, 153), 0.22);
+}
+
+.profile-mod-toast {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  color: var(--text);
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+.onboarding-mod-toast {
+  margin: 0 1rem 0.5rem;
+}
+
 /* Premium nudge */
 .discover-premium-nudge {
   margin-top: 1rem;

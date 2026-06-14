@@ -1,5 +1,6 @@
 import type { DiscoverProfile } from "../types";
 import { isOnlineNow } from "./activity";
+import { boostedProfileIds } from "./activeBoosts";
 
 export type DiscoverQuickFilter =
   | "all"
@@ -33,18 +34,27 @@ export function applyQuickFilter(
 }
 
 export function trendingSections(profiles: DiscoverProfile[]) {
-  const byActive = [...profiles].sort(
+  const boosted = boostedProfileIds();
+  const sortBoostedFirst = (list: DiscoverProfile[]) =>
+    [...list].sort((a, b) => {
+      const aBoost = boosted.has(a.id) ? 1 : 0;
+      const bBoost = boosted.has(b.id) ? 1 : 0;
+      return bBoost - aBoost;
+    });
+
+  const byActive = sortBoostedFirst(profiles).sort(
     (a, b) =>
+      (boosted.has(b.id) ? 1 : 0) - (boosted.has(a.id) ? 1 : 0) ||
       new Date(b.lastActiveAt ?? 0).getTime() - new Date(a.lastActiveAt ?? 0).getTime()
   );
   return {
     active: byActive.slice(0, 8),
-    verified: profiles.filter((p) => p.verified).slice(0, 8),
-    newMembers: profiles
-      .filter((p) => {
+    verified: sortBoostedFirst(profiles.filter((p) => p.verified)).slice(0, 8),
+    newMembers: sortBoostedFirst(
+      profiles.filter((p) => {
         if (!p.createdAt) return false;
         return Date.now() - new Date(p.createdAt).getTime() < 7 * 86400000;
       })
-      .slice(0, 8)
+    ).slice(0, 8)
   };
 }

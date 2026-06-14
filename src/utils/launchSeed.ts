@@ -5,6 +5,7 @@ import { cityProximityTier } from "../constants/seedCities";
 import { getDiscoverCityConfig } from "../constants/discoverCityConfig";
 import { scoreProfile } from "./matching";
 import { readJson, writeJson } from "./storage";
+import { getDiscoverScoreBonusForProfile } from "./activeBoosts";
 
 export const NEW_SIGNAL_BOOST_DAYS = 7;
 
@@ -76,6 +77,8 @@ function seedScore(
   if (candidate.verified) score += 10;
   if (candidate.premium) score += 12;
   if (isRecentlyActive(candidate)) score += 14;
+
+  score += getDiscoverScoreBonusForProfile(candidate.id);
 
   score -= impressionPenalty(candidate.id);
 

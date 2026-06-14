@@ -41,3 +41,11 @@ export function notifyPremiumActivated(): void {
     body: getCms().notificationTemplates.premiumActivated
   });
 }
+
+export function notifyBoostActivated(productName: string): void {
+  pushNotification({
+    type: "boost_activated",
+    title: "Boost active",
+    body: `${productName} is live — your profile is bumped in Discover.`
+  });
+}

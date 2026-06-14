@@ -1,0 +1,133 @@
+import type { BoostProductId } from "../constants/boosts";
+import { STORAGE_KEYS } from "../constants/limits";
+import type { DatingProfile, UserProfile } from "../types";
+import { readJson, writeJson } from "./storage";
+
+export type ActiveBoostEntry = {
+  productId: BoostProductId;
+  activatedAt: string;
+  expiresAt: string | null;
+  consumed?: boolean;
+  memberDiscoverId: string;
+  city: string;
+};
+
+const DURATION_MS: Record<Exclude<BoostProductId, "priority-signal-once">, number> = {
+  "signal-boost": 24 * 60 * 60 * 1000,
+  "profile-boost": 48 * 60 * 60 * 1000
+};
+
+const DISCOVER_BONUS: Record<BoostProductId, number> = {
+  "signal-boost": 55,
+  "profile-boost": 85,
+  "priority-signal-once": 0
+};
+
+export function getMemberDiscoverId(user: Pick<UserProfile, "email" | "phone" | "username">): string {
+  const key = (user.email || user.phone || user.username || "member").toLowerCase();
+  return `member-${key.replace(/[^a-z0-9]/g, "")}`;
+}
+
+function loadBoosts(): ActiveBoostEntry[] {
+  return readJson<ActiveBoostEntry[]>(STORAGE_KEYS.activeBoosts, []);
+}
+
+function saveBoosts(entries: ActiveBoostEntry[]): ActiveBoostEntry[] {
+  const pruned = pruneExpired(entries);
+  writeJson(STORAGE_KEYS.activeBoosts, pruned);
+  return pruned;
+}
+
+function pruneExpired(entries: ActiveBoostEntry[]): ActiveBoostEntry[] {
+  const now = Date.now();
+  return entries.filter((entry) => {
+    if (entry.productId === "priority-signal-once") {
+      return !entry.consumed;
+    }
+    if (!entry.expiresAt) return false;
+    return new Date(entry.expiresAt).getTime() > now;
+  });
+}
+
+export function getActiveBoosts(): ActiveBoostEntry[] {
+  return saveBoosts(loadBoosts());
+}
+
+export function hasActiveBoost(productId: BoostProductId, memberDiscoverId?: string): boolean {
+  const id = memberDiscoverId ?? getMemberDiscoverId(readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }));
+  return getActiveBoosts().some((b) => b.productId === productId && b.memberDiscoverId === id);
+}
+
+export function activateBoost(
+  productId: BoostProductId,
+  user: Pick<UserProfile, "email" | "phone" | "username">,
+  datingProfile?: Pick<DatingProfile, "city">
+): ActiveBoostEntry {
+  const memberDiscoverId = getMemberDiscoverId(user);
+  const city =
+    datingProfile?.city ||
+    readJson<DatingProfile | null>(STORAGE_KEYS.datingProfile, null)?.city ||
+    "Lagos";
+  const activatedAt = new Date().toISOString();
+  const expiresAt =
+    productId === "priority-signal-once"
+      ? null
+      : new Date(Date.now() + DURATION_MS[productId]).toISOString();
+
+  const entry: ActiveBoostEntry = {
+    productId,
+    activatedAt,
+    expiresAt,
+    consumed: productId === "priority-signal-once" ? false : undefined,
+    memberDiscoverId,
+    city
+  };
+
+  const withoutSame = loadBoosts().filter(
+    (b) => !(b.memberDiscoverId === memberDiscoverId && b.productId === productId && !b.consumed)
+  );
+  saveBoosts([...withoutSame, entry]);
+  return entry;
+}
+
+export function consumePrioritySignal(memberDiscoverId?: string): boolean {
+  const id =
+    memberDiscoverId ??
+    getMemberDiscoverId(readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }));
+  const boosts = loadBoosts();
+  const idx = boosts.findIndex(
+    (b) => b.productId === "priority-signal-once" && b.memberDiscoverId === id && !b.consumed
+  );
+  if (idx < 0) return false;
+  boosts[idx] = { ...boosts[idx], consumed: true };
+  saveBoosts(boosts);
+  return true;
+}
+
+export function getDiscoverScoreBonusForProfile(profileId: string): number {
+  const now = Date.now();
+  let bonus = 0;
+  for (const entry of getActiveBoosts()) {
+    if (entry.memberDiscoverId !== profileId) continue;
+    if (entry.productId === "priority-signal-once") continue;
+    if (entry.expiresAt && new Date(entry.expiresAt).getTime() <= now) continue;
+    bonus += DISCOVER_BONUS[entry.productId];
+  }
+  return bonus;
+}
+
+export function getViewerBoostSummary(
+  user: Pick<UserProfile, "email" | "phone" | "username">
+): { signalBoost: boolean; profileBoost: boolean; priorityPending: boolean } {
+  const id = getMemberDiscoverId(user);
+  const active = getActiveBoosts().filter((b) => b.memberDiscoverId === id);
+  return {
+    signalBoost: active.some((b) => b.productId === "signal-boost"),
+    profileBoost: active.some((b) => b.productId === "profile-boost"),
+    priorityPending: active.some((b) => b.productId === "priority-signal-once" && !b.consumed)
+  };
+}
+
+export function boostedProfileIds(): Set<string> {
+  return new Set(getActiveBoosts().map((b) => b.memberDiscoverId));
+}

@@ -20,7 +20,8 @@ export type AnalyticsEvent =
   | "city_selected"
   | "state_selected"
   | "quickie_paywall_shown"
-  | "quickie_unlock";
+  | "quickie_unlock"
+  | "boost_activated";
 
 type EventRow = { event: AnalyticsEvent; at: string; meta?: Record<string, string> };
 

@@ -8,6 +8,9 @@ import { readJson, writeJson } from "./storage";
 
 type StrikeRecord = { count: number };
 
+const FACE_MESSAGE = "Choose a photo that clearly shows only you.";
+const GENERIC_REJECT = "That photo couldn't be saved. Try a different one.";
+
 function isSkinLike(r: number, g: number, b: number): boolean {
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
@@ -42,44 +45,96 @@ async function loadImageBitmap(file: File): Promise<ImageBitmap> {
   }
 }
 
-/** Heuristic scan — blocks likely explicit portrait uploads without sending images off-device. */
-export async function scanPhotoForExplicitContent(file: File): Promise<boolean> {
-  if (!file.type.startsWith("image/")) return false;
+type PhotoScan = {
+  explicit: boolean;
+  validPortrait: boolean;
+  reason: string;
+};
+
+async function scanProfilePhoto(file: File): Promise<PhotoScan> {
+  if (!file.type.startsWith("image/")) {
+    return { explicit: false, validPortrait: false, reason: "Upload a JPG or PNG photo." };
+  }
 
   const bitmap = await loadImageBitmap(file);
-  const size = 72;
+  const width = bitmap.width;
+  const height = bitmap.height;
+  bitmap.close?.();
+
+  if (width < 320 || height < 320) {
+    return { explicit: false, validPortrait: false, reason: "Use a higher resolution photo." };
+  }
+
+  const ratio = width / height;
+  if (ratio > 2.2 || ratio < 0.45) {
+    return { explicit: false, validPortrait: false, reason: FACE_MESSAGE };
+  }
+
+  const size = 96;
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return false;
+  if (!ctx) return { explicit: false, validPortrait: true, reason: "" };
 
-  ctx.drawImage(bitmap, 0, 0, size, size);
-  bitmap.close?.();
+  const reload = await loadImageBitmap(file);
+  ctx.drawImage(reload, 0, 0, size, size);
+  reload.close?.();
 
   const { data } = ctx.getImageData(0, 0, size, size);
   let skin = 0;
   let sampled = 0;
   let lowVariance = 0;
+  let centerSkin = 0;
+  let edgeSkin = 0;
+  let centerSampled = 0;
+  let edgeSampled = 0;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      if (x < size * 0.12 || x > size * 0.88 || y < size * 0.08 || y > size * 0.92) continue;
+      if (x < size * 0.08 || x > size * 0.92 || y < size * 0.06 || y > size * 0.94) continue;
       const i = (y * size + x) * 4;
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
       sampled++;
-      if (isSkinLike(r, g, b)) skin++;
+      const skinHit = isSkinLike(r, g, b);
+      if (skinHit) skin++;
       const spread = Math.max(r, g, b) - Math.min(r, g, b);
       if (spread < 28) lowVariance++;
+
+      const inCenter = x > size * 0.28 && x < size * 0.72 && y > size * 0.18 && y < size * 0.78;
+      if (inCenter) {
+        centerSampled++;
+        if (skinHit) centerSkin++;
+      } else {
+        edgeSampled++;
+        if (skinHit) edgeSkin++;
+      }
     }
   }
 
-  if (!sampled) return false;
+  if (!sampled) return { explicit: false, validPortrait: false, reason: FACE_MESSAGE };
+
   const skinRatio = skin / sampled;
   const flatRatio = lowVariance / sampled;
-  return skinRatio > 0.68 && flatRatio > 0.42;
+  const explicit = skinRatio > 0.68 && flatRatio > 0.42;
+  const centerRatio = centerSampled ? centerSkin / centerSampled : 0;
+  const edgeRatio = edgeSampled ? edgeSkin / edgeSampled : 0;
+
+  if (explicit) {
+    return { explicit: true, validPortrait: false, reason: GENERIC_REJECT };
+  }
+
+  if (centerRatio < 0.08) {
+    return { explicit: false, validPortrait: false, reason: FACE_MESSAGE };
+  }
+
+  if (edgeRatio > 0.22 && edgeRatio > centerRatio * 1.35) {
+    return { explicit: false, validPortrait: false, reason: FACE_MESSAGE };
+  }
+
+  return { explicit: false, validPortrait: true, reason: "" };
 }
 
 function recordStrike(storageKey: string): { count: number; isFinal: boolean } {
@@ -99,20 +154,19 @@ export function resetVoiceModerationStrikes(): void {
 
 export async function moderatePhotoUpload(file: File): Promise<{ allowed: boolean; message: string }> {
   try {
-    const flagged = await scanPhotoForExplicitContent(file);
-    if (!flagged) {
+    const scan = await scanProfilePhoto(file);
+    if (scan.validPortrait) {
       resetPhotoModerationStrikes();
       return { allowed: true, message: "" };
     }
+    const { isFinal } = recordStrike(STORAGE_KEYS.photoModerationStrikes);
+    return {
+      allowed: false,
+      message: isFinal ? FACE_MESSAGE : scan.reason || GENERIC_REJECT
+    };
   } catch {
     return { allowed: true, message: "" };
   }
-
-  const { isFinal } = recordStrike(STORAGE_KEYS.photoModerationStrikes);
-  if (isFinal) {
-    return { allowed: false, message: "Such photo not allowed." };
-  }
-  return { allowed: false, message: "That photo couldn't be saved. Try a different one." };
 }
 
 export function checkVoiceIntroTranscript(text: string): { allowed: boolean; reason: string } {
@@ -150,4 +204,10 @@ export function moderateVoiceIntroTranscript(transcript: string): { allowed: boo
     allowed: false,
     message: check.reason || "Couldn't save that intro. Please try again."
   };
+}
+
+/** @deprecated */
+export async function scanPhotoForExplicitContent(file: File): Promise<boolean> {
+  const scan = await scanProfilePhoto(file);
+  return scan.explicit;
 }

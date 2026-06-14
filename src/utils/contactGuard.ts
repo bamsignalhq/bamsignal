@@ -62,8 +62,6 @@ export function containsOtherOffPlatform(text: string): boolean {
 export function checkOutgoingChatMessage(
   message: string,
   opts: {
-    isQuickie: boolean;
-    quickieUnlocked: boolean;
     offPlatformApproved: boolean;
   }
 ): ContactCheckResult {
@@ -71,9 +69,6 @@ export function checkOutgoingChatMessage(
   if (!text) return { blocked: false, kind: "none" };
 
   if (containsDigits(text)) {
-    if (opts.isQuickie && opts.quickieUnlocked && PHONE_PATTERNS.slice(0, 3).some((p) => p.test(text))) {
-      return { blocked: false, kind: "none" };
-    }
     return { blocked: true, kind: "digits" };
   }
 
@@ -93,8 +88,6 @@ export function checkOutgoingChatMessage(
 /** @deprecated Use checkOutgoingChatMessage */
 export function detectBlockedContactExchange(message: string): boolean {
   return checkOutgoingChatMessage(message, {
-    isQuickie: false,
-    quickieUnlocked: false,
     offPlatformApproved: false
   }).blocked;
 }

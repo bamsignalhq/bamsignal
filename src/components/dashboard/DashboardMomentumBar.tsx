@@ -31,11 +31,11 @@ function buildItems(input: {
 }): MomentumItem[] {
   const items: MomentumItem[] = [];
 
-  if (input.totalViews > 0) {
+  if (input.totalViews > 0 || input.viewsToday > 0) {
     items.push({
       id: "views",
-      emoji: "🔥",
-      text: `${input.animatedViews} ${input.animatedViews === 1 ? "person" : "people"} viewed your profile today`,
+      emoji: "👀",
+      text: `${input.animatedViews} profile view${input.animatedViews === 1 ? "" : "s"} today`,
       onClick: input.onOpenProfileViews
     });
   } else {

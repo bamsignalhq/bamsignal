@@ -70,14 +70,14 @@ export const LANDING_PREVIEW_PROFILES: LandingPreviewProfile[] = [
 ];
 
 export const LIVE_ACTIVITY_MESSAGES = [
-  "🔥 428 active signals nearby",
-  "✨ Real people discovering connections across Nigeria"
+  "Verified profiles across Nigeria",
+  "Send a Signal when someone feels right"
 ] as const;
 
 export const ACTIVITY_METRICS = [
-  { value: "18,000+", label: "Signals Sent" },
-  { value: "4,000+", label: "Verified Profiles" },
-  { value: "10 Cities", label: "Connected" }
+  { value: "5 free daily", label: "Signals" },
+  { value: "ID verified", label: "Profiles" },
+  { value: "Nationwide", label: "Coverage" }
 ] as const;
 
 export const RECENT_ACTIVITY = [

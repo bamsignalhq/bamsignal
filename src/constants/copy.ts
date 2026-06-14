@@ -10,10 +10,10 @@ export const BRAND = {
   paywallTitle: "Go Premium",
   paywallBody: "",
   contactBlockMessage:
-    "Couldn't send — keep numbers inside BamSignal for now. Try again without digits.",
+    "For your safety, contact details are blocked. Keep chats inside BamSignal.",
   contactTelegramBlocked:
-    "Couldn't send — we'll ask if they're comfortable chatting off-app first.",
-  contactRetryHint: "Message not sent. Edit and try again.",
+    "For your safety, contact details are blocked. Keep chats inside BamSignal.",
+  contactRetryHint: "",
   chatSafetyNotice:
     "To protect everyone, contact exchange is blocked until trust is built.",
   signalSent: "Signal Sent",

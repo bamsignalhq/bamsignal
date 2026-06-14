@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { Crown, Eye, X } from "lucide-react";
+import { ShowcaseImage } from "../ShowcaseImage";
 import type { ProfileViewer } from "../../utils/profileViews";
 
 type ProfileViewsSheetProps = {
@@ -9,6 +10,7 @@ type ProfileViewsSheetProps = {
   viewers: ProfileViewer[];
   isPremium: boolean;
   onUpgrade: () => void;
+  onOpenFullPage?: () => void;
 };
 
 export function ProfileViewsSheet({
@@ -18,7 +20,8 @@ export function ProfileViewsSheet({
   viewsToday,
   viewers,
   isPremium,
-  onUpgrade
+  onUpgrade,
+  onOpenFullPage
 }: ProfileViewsSheetProps) {
   if (!open) return null;
 
@@ -32,8 +35,7 @@ export function ProfileViewsSheet({
           <div>
             <h2>Profile Views</h2>
             <p>
-              {displayCount} {displayCount === 1 ? "person" : "people"} viewed your profile
-              {viewsToday > 0 ? " today" : ""}
+              👀 {displayCount} profile view{displayCount === 1 ? "" : "s"} today
             </p>
           </div>
           <button type="button" className="icon-btn profile-views-sheet__close" onClick={onClose} aria-label="Close">
@@ -42,19 +44,31 @@ export function ProfileViewsSheet({
         </header>
 
         {isPremium && viewers.length > 0 ? (
-          <ul className="profile-views-sheet__list">
-            {viewers.slice(0, 12).map((viewer, index) => (
-              <li key={`${viewer.at}-${index}`}>
-                <img src={viewer.photo} alt="" />
-                <div>
-                  <strong>{viewer.name}</strong>
-                  <span>{viewer.city}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="profile-views-sheet__list">
+              {viewers.slice(0, 8).map((viewer) => (
+                <li key={`${viewer.profileId}-${viewer.at}`}>
+                  <ShowcaseImage src={viewer.photo} alt="" loading="lazy" />
+                  <div>
+                    <strong>
+                      {viewer.name}, {viewer.age}
+                    </strong>
+                    <span>
+                      {viewer.city} · {viewer.compatibility}% match
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {onOpenFullPage && (
+              <button type="button" className="link-btn profile-views-sheet__more" onClick={onOpenFullPage}>
+                See all visitors
+              </button>
+            )}
+          </>
         ) : (
           <div className="profile-views-sheet__locked">
+            <Eye size={32} aria-hidden />
             <p className="profile-views-sheet__count-only">
               <strong>{displayCount}</strong> profile view{displayCount === 1 ? "" : "s"}
             </p>
@@ -67,6 +81,7 @@ export function ProfileViewsSheet({
                 onUpgrade();
               }}
             >
+              <Crown size={18} />
               See who viewed you
             </button>
           </div>

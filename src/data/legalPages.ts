@@ -32,9 +32,9 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
     heroImage: SHOWCASE.hero,
     heroAlt: "Young Nigerian professionals connecting in Lagos",
     highlights: [
-      { label: "Verified profiles", value: "4,000+" },
-      { label: "Cities live", value: "10+" },
-      { label: "Signals sent", value: "18,000+" }
+      { label: "Verification", value: "ID checks available" },
+      { label: "Coverage", value: "All states" },
+      { label: "Free tier", value: "5 signals daily" }
     ],
     gallery: [
       { src: SHOWCASE.lagosRooftop, alt: "Friends at a Lagos rooftop hangout" },

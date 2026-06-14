@@ -1,9 +1,9 @@
-import { isQuickieMode } from "../constants/quickie";
 import { STORAGE_KEYS } from "../constants/limits";
 import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
 import { cityProximityTier } from "../constants/seedCities";
+import { metroForCity } from "../constants/profileOptions";
 import { getDiscoverCityConfig } from "../constants/discoverCityConfig";
-import { scoreProfile } from "./matching";
+import { scoreProfile as rankScoreProfile } from "./matching";
 import { readJson, writeJson } from "./storage";
 import { getDiscoverScoreBonusForProfile } from "./activeBoosts";
 
@@ -68,60 +68,16 @@ function seedScore(
   viewer: DatingProfile,
   prefs: MatchPreferences
 ): number {
-  let score = scoreProfile(candidate, viewer, prefs);
+  let score = rankScoreProfile(candidate, viewer, prefs);
 
   const tier = cityProximityTier(viewer.city, candidate.city);
   score += [40, 28, 14, 0][tier] ?? 0;
 
-  if (isNewSignalProfile(candidate)) score += 28;
-  if (candidate.verified) score += 10;
-  if (candidate.premium) score += 12;
-  if (isRecentlyActive(candidate)) score += 14;
-
+  if (isNewSignalProfile(candidate)) score += 12;
   score += getDiscoverScoreBonusForProfile(candidate.id);
-
   score -= impressionPenalty(candidate.id);
 
   return score;
-}
-
-function bucket(profile: DiscoverProfile): "new" | "verified" | "premium" | "active" | "other" {
-  if (isNewSignalProfile(profile)) return "new";
-  if (profile.premium) return "premium";
-  if (profile.verified) return "verified";
-  if (isRecentlyActive(profile)) return "active";
-  return "other";
-}
-
-function diversifyDeck(ranked: DiscoverProfile[]): DiscoverProfile[] {
-  const buckets: Record<string, DiscoverProfile[]> = {
-    new: [],
-    verified: [],
-    premium: [],
-    active: [],
-    other: []
-  };
-
-  for (const p of ranked) {
-    buckets[bucket(p)].push(p);
-  }
-
-  const order = ["new", "verified", "active", "premium", "other"] as const;
-  const out: DiscoverProfile[] = [];
-  let added = true;
-
-  while (added && out.length < ranked.length) {
-    added = false;
-    for (const key of order) {
-      const next = buckets[key].shift();
-      if (next) {
-        out.push(next);
-        added = true;
-      }
-    }
-  }
-
-  return out.length ? out : ranked;
 }
 
 /** Same city → nearby → regional → expansion, with quality + rotation */
@@ -130,14 +86,12 @@ export function buildDiscoveryDeck(
   viewer: DatingProfile,
   prefs: MatchPreferences
 ): DiscoverProfile[] {
-  const viewerQuickie = isQuickieMode(viewer.intents);
-  const eligible = candidates.filter(
-    (p) => meetsDiscoveryQuality(p) && isQuickieMode(p.intents) === viewerQuickie
-  );
+  const viewerMetro = metroForCity(viewer.city);
+  const eligible = candidates.filter((p) => meetsDiscoveryQuality(p));
   const scored = eligible
     .map((p) => ({
       p,
-      tier: cityProximityTier(viewer.city, p.city),
+      tier: cityProximityTier(viewerMetro, metroForCity(p.city)),
       score: seedScore(p, viewer, prefs)
     }))
     .sort(
@@ -156,7 +110,7 @@ export function buildDiscoveryDeck(
   }
 
   const orderedTiers = [0, 1, 2, 3].filter((t) => byTier.has(t));
-  return orderedTiers.flatMap((t) => diversifyDeck(byTier.get(t) ?? []));
+  return orderedTiers.flatMap((t) => (byTier.get(t) ?? []).sort((a, b) => seedScore(b, viewer, prefs) - seedScore(a, viewer, prefs)));
 }
 
 export function countSameCityProfiles(
@@ -184,8 +138,8 @@ export function getJoinedAt(): string | null {
   return readJson<string | null>(STORAGE_KEYS.memberJoinedAt, null);
 }
 
-export function persistCitySelection(profile: DatingProfile, city: string): DatingProfile {
-  const next = { ...profile, city };
-  writeJson(STORAGE_KEYS.datingProfile, { ...next, onboardingComplete: false });
+export function persistCitySelection(profile: DatingProfile, state: string, city: string): DatingProfile {
+  const next = { ...profile, state, city };
+  writeJson(STORAGE_KEYS.datingProfile, { ...next, onboardingComplete: profile.onboardingComplete ?? false });
   return next;
 }

@@ -9,9 +9,10 @@ const SLIDE_MS = 5500;
 
 type VisualHeroProps = {
   onGetStarted: () => void;
+  onExplore?: () => void;
 };
 
-export function VisualHero({ onGetStarted }: VisualHeroProps) {
+export function VisualHero({ onGetStarted, onExplore }: VisualHeroProps) {
   const cms = getCms();
   const [slideIndex, setSlideIndex] = useState(0);
 
@@ -27,6 +28,10 @@ export function VisualHero({ onGetStarted }: VisualHeroProps) {
   }, []);
 
   const scrollToHow = () => {
+    if (onExplore) {
+      onExplore();
+      return;
+    }
     document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -58,7 +63,7 @@ export function VisualHero({ onGetStarted }: VisualHeroProps) {
               <ArrowRight size={18} aria-hidden />
             </button>
             <button type="button" className="visual-btn visual-btn--ghost" onClick={scrollToHow}>
-              {HOME_HERO.secondaryCta}
+              {cms.heroSecondaryCta || "Explore Signals"}
               <ChevronDown size={18} aria-hidden />
             </button>
           </div>

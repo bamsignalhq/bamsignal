@@ -3,46 +3,77 @@ import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types"
 import { isPreferNot } from "./profile";
 import { isOnlineNow } from "./activity";
 
-const MAX_RAW = 110;
+/** Weighted compatibility factors (must sum to 100) */
+const WEIGHTS = {
+  interests: 30,
+  intent: 25,
+  lifestyle: 15,
+  location: 15,
+  religion: 5,
+  verification: 10
+} as const;
 
-function intentOverlap(a: string[], b: string[]): number {
+function interestScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
+  const a = viewer.interests ?? [];
+  const b = candidate.interests ?? [];
   if (!a.length || !b.length) return 0;
   const shared = a.filter((i) => b.includes(i)).length;
-  return (shared / Math.max(a.length, b.length)) * 25;
+  const ratio = shared / Math.max(a.length, b.length, 1);
+  return Math.min(1, ratio + (shared >= 2 ? 0.15 : 0));
 }
 
-function interestOverlap(a: string[], b: string[]): number {
+function intentScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
+  const a = viewer.intents ?? [];
+  const b = candidate.intents ?? [];
   if (!a.length || !b.length) return 0;
   const shared = a.filter((i) => b.includes(i)).length;
-  return Math.min(25, shared * 5);
+  if (!shared) return 0;
+  if (shared >= 2 || (a.includes("Relationship") && b.includes("Relationship"))) return 1;
+  return 0.65 + (shared / Math.max(a.length, b.length)) * 0.35;
 }
 
-/** 0–100 compatibility — subtle, inclusive metric */
+function lifestyleScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
+  if (isPreferNot(viewer.lifestyle) || !viewer.lifestyle || !candidate.lifestyle) return 0;
+  return candidate.lifestyle === viewer.lifestyle ? 1 : 0;
+}
+
+function locationScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
+  if (viewer.city && candidate.city === viewer.city) return 1;
+  if (candidate.distanceKm != null) {
+    if (candidate.distanceKm <= 10) return 0.85;
+    if (candidate.distanceKm <= 25) return 0.55;
+    if (candidate.distanceKm <= 50) return 0.35;
+  }
+  const useState = viewer.matchingPrivacy?.useStateForMatching !== false;
+  if (useState && viewer.stateOfOrigin && candidate.stateOfOrigin === viewer.stateOfOrigin) return 0.4;
+  return 0.15;
+}
+
+function religionScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
+  const useReligion = viewer.matchingPrivacy?.useReligionForMatching !== false;
+  if (!useReligion || isPreferNot(viewer.religion) || !viewer.religion || !candidate.religion) return 0;
+  return candidate.religion === viewer.religion ? 1 : 0;
+}
+
+function verificationScore(candidate: DiscoverProfile): number {
+  return candidate.verified ? 1 : 0;
+}
+
+/** 65–99% compatibility — realistic, never 100% */
 export function computeCompatibilityPercent(
   viewer: DatingProfile,
   candidate: DiscoverProfile
 ): number {
-  let raw = 40;
+  const weighted =
+    interestScore(viewer, candidate) * WEIGHTS.interests +
+    intentScore(viewer, candidate) * WEIGHTS.intent +
+    lifestyleScore(viewer, candidate) * WEIGHTS.lifestyle +
+    locationScore(viewer, candidate) * WEIGHTS.location +
+    religionScore(viewer, candidate) * WEIGHTS.religion +
+    verificationScore(candidate) * WEIGHTS.verification;
 
-  raw += interestOverlap(viewer.interests ?? [], candidate.interests ?? []);
-  raw += intentOverlap(viewer.intents ?? [], candidate.intents ?? []);
-
-  if (viewer.city && candidate.city === viewer.city) raw += 16;
-  if (candidate.distanceKm != null && candidate.distanceKm <= 10) raw += 6;
-  if (!isPreferNot(viewer.lifestyle) && candidate.lifestyle === viewer.lifestyle) raw += 10;
-
-  const useReligion = viewer.matchingPrivacy?.useReligionForMatching !== false;
-  const useEthnicity = viewer.matchingPrivacy?.useEthnicityForMatching !== false;
-  const useState = viewer.matchingPrivacy?.useStateForMatching !== false;
-
-  if (useReligion && !isPreferNot(viewer.religion) && candidate.religion === viewer.religion) raw += 8;
-  if (useEthnicity && !isPreferNot(viewer.ethnicity) && candidate.ethnicity === viewer.ethnicity) raw += 6;
-  if (useState && viewer.stateOfOrigin && candidate.stateOfOrigin === viewer.stateOfOrigin) raw += 5;
-
-  if (candidate.verified) raw += 4;
-
-  const pct = Math.round((raw / MAX_RAW) * 100);
-  return Math.min(99, Math.max(62, pct));
+  const pct = Math.round(65 + (weighted / 100) * 34);
+  return Math.min(99, Math.max(65, pct));
 }
 
 export function compatibilitySubtitle(
@@ -50,20 +81,14 @@ export function compatibilitySubtitle(
   candidate: DiscoverProfile,
   percent: number
 ): string {
-  if (percent >= 90) return "Shared values · Similar lifestyle";
-  if (
-    !isPreferNot(viewer.religion) &&
-    candidate.religion === viewer.religion &&
-    !isPreferNot(viewer.ethnicity) &&
-    candidate.ethnicity === viewer.ethnicity
-  ) {
-    return "Strong cultural fit";
-  }
+  if (percent >= 90) return "Strong match · Shared values";
+  if (interestScore(viewer, candidate) >= 0.5) return "Shared interests · Good fit";
   if (!isPreferNot(viewer.lifestyle) && candidate.lifestyle === viewer.lifestyle) {
     return "Similar lifestyle";
   }
-  if (viewer.city === candidate.city) return "Nearby · Your kind of vibe";
-  return "High compatibility";
+  if (viewer.city === candidate.city) return "Same city · Your kind of vibe";
+  if (intentScore(viewer, candidate) >= 0.65) return "Compatible intentions";
+  return "Selected for you";
 }
 
 type MatchReason = { score: number; label: string };
@@ -74,57 +99,57 @@ function sharedInterests(viewer: DatingProfile, candidate: DiscoverProfile): str
   return viewerInterests.filter((interest) => candidateInterests.includes(interest));
 }
 
-/** 2–4 trust-building reasons for "Why this profile?" */
+function similarAgeRange(viewer: DatingProfile, candidate: DiscoverProfile): boolean {
+  return Math.abs(viewer.age - candidate.age) <= 5;
+}
+
+/** Dynamic reasons for "Why this profile?" — never hardcoded per profile */
 export function getProfileMatchReasons(viewer: DatingProfile, candidate: DiscoverProfile): string[] {
   const reasons: MatchReason[] = [];
   const sharedIntents = (viewer.intents ?? []).filter((intent) => candidate.intents.includes(intent));
+  const interests = sharedInterests(viewer, candidate);
+
+  if (interests.length >= 2) {
+    reasons.push({ score: 96, label: "Shared interests" });
+  } else if (interests.length === 1) {
+    reasons.push({ score: 90, label: `Shared interest · ${interests[0]}` });
+  }
 
   if (sharedIntents.includes("Relationship")) {
-    reasons.push({ score: 96, label: "Both looking for a relationship" });
+    reasons.push({ score: 94, label: "Compatible intentions" });
   } else if (sharedIntents.length) {
-    const label = sharedIntents.length > 1 ? "Similar intent" : `Both open to ${intentLabel(sharedIntents[0]).toLowerCase()}`;
-    reasons.push({ score: 92, label });
+    const label =
+      sharedIntents.length > 1
+        ? "Compatible intentions"
+        : `Both open to ${intentLabel(sharedIntents[0]).toLowerCase()}`;
+    reasons.push({ score: 88, label });
   }
 
   if (viewer.city && candidate.city === viewer.city) {
-    reasons.push({ score: 90, label: "Same city" });
-  } else if (candidate.distanceKm != null && candidate.distanceKm <= 10) {
-    reasons.push({ score: 84, label: "Nearby" });
-  }
-
-  const interests = sharedInterests(viewer, candidate);
-  if (interests.length >= 2) {
-    reasons.push({ score: 88, label: "Similar interests" });
-  } else if (interests.length === 1) {
-    reasons.push({ score: 82, label: `Shared interest · ${interests[0]}` });
+    reasons.push({ score: 86, label: "Same city" });
+  } else if (candidate.distanceKm != null && candidate.distanceKm <= 15) {
+    reasons.push({ score: 82, label: "Nearby" });
   }
 
   if (!isPreferNot(viewer.lifestyle) && candidate.lifestyle === viewer.lifestyle) {
-    reasons.push({ score: 80, label: "Similar lifestyle" });
+    reasons.push({ score: 84, label: "Similar lifestyle" });
+  }
+
+  if (similarAgeRange(viewer, candidate)) {
+    reasons.push({ score: 78, label: "Similar age range" });
   }
 
   const useReligion = viewer.matchingPrivacy?.useReligionForMatching !== false;
-  const useEthnicity = viewer.matchingPrivacy?.useEthnicityForMatching !== false;
-  const useState = viewer.matchingPrivacy?.useStateForMatching !== false;
-
-  const valueMatches = [
-    useReligion && !isPreferNot(viewer.religion) && candidate.religion === viewer.religion,
-    useEthnicity && !isPreferNot(viewer.ethnicity) && candidate.ethnicity === viewer.ethnicity,
-    useState && viewer.stateOfOrigin && candidate.stateOfOrigin === viewer.stateOfOrigin
-  ].filter(Boolean).length;
-
-  if (valueMatches >= 2) {
-    reasons.push({ score: 78, label: "Shared values" });
-  } else if (valueMatches === 1) {
-    if (useReligion && !isPreferNot(viewer.religion) && candidate.religion === viewer.religion) {
-      reasons.push({ score: 74, label: "Shared values" });
-    } else if (useState && viewer.stateOfOrigin && candidate.stateOfOrigin === viewer.stateOfOrigin) {
-      reasons.push({ score: 72, label: "Shared background" });
-    }
+  if (useReligion && !isPreferNot(viewer.religion) && candidate.religion === viewer.religion) {
+    reasons.push({ score: 74, label: "Shared values" });
   }
 
   if (candidate.verified) {
-    reasons.push({ score: 68, label: "Verified profile" });
+    reasons.push({ score: 72, label: "Verified profile" });
+  }
+
+  if (isOnlineNow(candidate.lastActiveAt)) {
+    reasons.push({ score: 70, label: "Active recently" });
   }
 
   const seen = new Set<string>();
@@ -150,7 +175,10 @@ export function hasActivePreferences(prefs: MatchPreferences): boolean {
     prefs.ageMin != null ||
     prefs.ageMax != null ||
     prefs.distanceMax != null ||
-    Boolean(prefs.onlineNow)
+    Boolean(prefs.onlineNow) ||
+    prefs.minCompatibility != null ||
+    Boolean(prefs.requireVoiceIntro) ||
+    Boolean(prefs.requireVerified)
   );
 }
 
@@ -168,5 +196,7 @@ export function matchesPreferences(candidate: DiscoverProfile, prefs: MatchPrefe
   if (prefs.ageMax != null && candidate.age > prefs.ageMax) return false;
   if (prefs.distanceMax != null && candidate.distanceKm != null && candidate.distanceKm > prefs.distanceMax)
     return false;
+  if (prefs.requireVerified && !candidate.verified) return false;
+  if (prefs.requireVoiceIntro && !candidate.voiceIntroUrl) return false;
   return true;
 }

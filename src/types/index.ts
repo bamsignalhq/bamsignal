@@ -7,8 +7,7 @@ export type IntentTag =
   | "Friendship"
   | "Networking"
   | "Social Events"
-  | "Chat"
-  | "Quickie";
+  | "Chat";
 
 export type Gender = "Man" | "Woman" | "Non-binary" | "Prefer not to say";
 
@@ -117,6 +116,12 @@ export type MatchPreferences = {
   preferenceMode: PreferenceMode;
   /** Premium — prioritize recently active profiles */
   onlineNow?: boolean;
+  /** Premium — minimum compatibility % (65–99) */
+  minCompatibility?: number;
+  /** Premium — only profiles with voice intro */
+  requireVoiceIntro?: boolean;
+  /** Premium — verified profiles only */
+  requireVerified?: boolean;
 };
 
 export type DiscoverProfile = {

@@ -49,3 +49,11 @@ export function notifyBoostActivated(productName: string): void {
     body: `${productName} is live — your profile is bumped in Discover.`
   });
 }
+
+export function notifyReferralRewardEarned(days: number): void {
+  pushNotification({
+    type: "referral_reward",
+    title: "Referral reward earned",
+    body: `${days} days of Signal Pass added to your account.`
+  });
+}

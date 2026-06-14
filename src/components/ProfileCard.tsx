@@ -80,7 +80,7 @@ export function ProfileCard({
           onClick={onViewProfile}
           aria-label={`View ${profile.name}'s profile`}
         >
-          <ShowcaseImage src={profile.photo} alt={profile.name} />
+          <ShowcaseImage src={profile.photo} alt={profile.name} loading="lazy" />
           <div className="profile-card-gradient" />
           <div className="profile-card-v2__overlay">
             <div className="profile-card-v2__identity">
@@ -113,7 +113,7 @@ export function ProfileCard({
 
       <div className="profile-card-body profile-card-v2__body">
         <WhyThisProfile reasons={matchReasons} compact />
-        <VoiceIntro url={profile.voiceIntroUrl} />
+        <VoiceIntro url={profile.voiceIntroUrl} showBadge={Boolean(profile.voiceIntroUrl)} />
         <p className="profile-card-bio">{profile.bio}</p>
         <SignalMoments moments={moments} />
         {signalBlockedReason && (

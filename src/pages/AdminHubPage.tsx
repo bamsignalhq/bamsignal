@@ -37,6 +37,16 @@ import { ADMIN_AUTH_PATH, navigateToPath } from "../constants/routes";
 import { DEMO_USER } from "../constants/demoAccounts";
 import { getModerationQueue, moderationStats } from "../utils/moderationQueue";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
+import {
+  fetchAdminCityMembers,
+  setAdminCityHomeHidden,
+  setAdminCityPlacement,
+  type CityHomeMember
+} from "../services/cityHome";
+import { CITIES_VISUAL } from "../data/visualLanding";
+import { AdminBusinessDashboard } from "../components/admin/AdminBusinessDashboard";
+import { AdminSeedingTools } from "../components/admin/AdminSeedingTools";
+import { getLaunchConfig, saveLaunchConfig } from "../utils/launchConfig";
 
 type AdminHubPageProps = {
   onBack: () => void;
@@ -45,8 +55,12 @@ type AdminHubPageProps = {
 type AdminTab =
   | "command"
   | "overview"
+  | "business"
+  | "users"
+  | "reports"
   | "cities"
   | "discover"
+  | "cityhome"
   | "pricing"
   | "verifications"
   | "content"
@@ -62,6 +76,30 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
   const [leads, setLeads] = useState(getLaunchLeads());
   const [moderation, setModeration] = useState(getModerationQueue());
   const modStats = moderationStats();
+  const [cityHomeCity, setCityHomeCity] = useState(CITIES_VISUAL[0]?.name || "Lagos");
+  const [cityHomeMembers, setCityHomeMembers] = useState<CityHomeMember[]>([]);
+  const [cityHomeLoading, setCityHomeLoading] = useState(false);
+  const [cityHomeMessage, setCityHomeMessage] = useState("");
+  const [seedMessage, setSeedMessage] = useState("");
+  const launchConfig = getLaunchConfig();
+
+  const loadCityHomeMembers = async (city = cityHomeCity) => {
+    setCityHomeLoading(true);
+    setCityHomeMessage("");
+    const data = await fetchAdminCityMembers(city);
+    setCityHomeLoading(false);
+    if (!data) {
+      setCityHomeMessage("Could not load city members. Check database connection and admin session.");
+      setCityHomeMembers([]);
+      return;
+    }
+    setCityHomeMembers(data.members);
+  };
+
+  useEffect(() => {
+    if (tab !== "cityhome" || !authorized) return;
+    void loadCityHomeMembers(cityHomeCity);
+  }, [tab, authorized, cityHomeCity]);
 
   useEffect(() => {
     if (isAdminSessionActive()) {
@@ -144,8 +182,12 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
           [
             ["command", "Command"],
             ["overview", "Metrics"],
+            ["business", "Business"],
+            ["users", "Users"],
+            ["reports", `Reports (${modStats.totalReports})`],
             ["cities", "Cities"],
             ["discover", "Discover"],
+            ["cityhome", "City home"],
             ["leads", `Leads (${leads.length})`],
             ["verifications", `Verify (${pendingCount()})`],
             ["pricing", "Pricing"],
@@ -195,18 +237,20 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
               anyone. Use after 3+ reports.
             </p>
             <div className="admin-command-actions">
-              <button
-                type="button"
-                className="btn-secondary btn-sm"
-                onClick={() => {
-                  shadowBanId(memberShadowKey(DEMO_USER.profile.phone, DEMO_USER.profile.email));
-                  setModeration(getModerationQueue());
-                }}
-              >
-                Shadow ban demo member (test)
-              </button>
+              {import.meta.env.DEV && (
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => {
+                    shadowBanId(memberShadowKey(DEMO_USER.profile.phone, DEMO_USER.profile.email));
+                    setModeration(getModerationQueue());
+                  }}
+                >
+                  Shadow ban demo member (test)
+                </button>
+              )}
               <button type="button" className="btn-secondary btn-sm" onClick={() => setTab("pricing")}>
-                Quickie pricing →
+                Pricing →
               </button>
             </div>
             {moderation.length === 0 && <p className="admin-empty">No reports filed yet.</p>}
@@ -288,6 +332,91 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
             ))}
           </section>
         </>
+      )}
+
+      {tab === "business" && <AdminBusinessDashboard />}
+
+      {tab === "users" && (
+        <>
+          <section className="admin-stats-grid admin-stats-grid--highlight">
+            <div className="card admin-stat admin-stat--highlight">
+              <strong>{countEvent("signup_completed")}</strong>
+              <span>Total signups</span>
+            </div>
+            <div className="card admin-stat admin-stat--highlight">
+              <strong>{dailyActiveUsersToday()}</strong>
+              <span>Daily active users</span>
+            </div>
+            <div className="card admin-stat admin-stat--highlight">
+              <strong>{blocked}</strong>
+              <span>Blocked users</span>
+            </div>
+            <div className="card admin-stat admin-stat--highlight">
+              <strong>{modStats.shadowBanned}</strong>
+              <span>Shadow banned</span>
+            </div>
+          </section>
+
+          <h3 className="admin-section-title">Users & engagement by city</h3>
+          <section className="admin-city-table card">
+            {cityLeaderboard(usersByCity()).map((row) => (
+              <div key={row.city} className="admin-city-row">
+                <span>{row.city}</span>
+                <span>{row.value} users</span>
+              </div>
+            ))}
+            {!cityLeaderboard(usersByCity()).length && (
+              <p className="admin-empty">No city signup data yet.</p>
+            )}
+          </section>
+
+          <h3 className="admin-section-title">Profile completion by city</h3>
+          <section className="admin-city-table card">
+            {cityLeaderboard(profileCompletionByCity()).map((row) => (
+              <div key={row.city} className="admin-city-row">
+                <span>{row.city}</span>
+                <strong>{row.value}%</strong>
+              </div>
+            ))}
+          </section>
+
+          <AdminSeedingTools onMessage={setSeedMessage} />
+          {seedMessage && <p className="admin-toast" role="status">{seedMessage}</p>}
+        </>
+      )}
+
+      {tab === "reports" && (
+        <section className="card admin-command-panel">
+          <h3>Reports queue</h3>
+          <p className="match-prefs-note">
+            {modStats.totalReports} total report{modStats.totalReports === 1 ? "" : "s"} ·{" "}
+            {modStats.flaggedProfiles} flagged · {modStats.pendingReview} awaiting review
+          </p>
+          {moderation.length === 0 && <p className="admin-empty">No reports filed yet.</p>}
+          {moderation.map((entry) => (
+            <article
+              key={entry.profileId}
+              className={`card admin-moderation-row ${entry.reportCount >= 3 ? "admin-moderation-row--hot" : ""}`}
+            >
+              <div className="admin-moderation-row__main">
+                <strong>{entry.name}</strong>
+                <span>
+                  {entry.city} · {entry.reportCount} report{entry.reportCount === 1 ? "" : "s"}
+                  {entry.shadowBanned ? " · shadow banned" : ""}
+                </span>
+                {entry.lastReportAt && (
+                  <time>{new Date(entry.lastReportAt).toLocaleString()}</time>
+                )}
+                {entry.lastReason && <small>Latest: {entry.lastReason.replace(/_/g, " ")}</small>}
+              </div>
+              <div className="admin-moderation-row__actions">
+                <button type="button" className="btn-secondary btn-sm" onClick={() => setTab("command")}>
+                  Review in Command
+                </button>
+              </div>
+            </article>
+          ))}
+        </section>
       )}
 
       {tab === "cities" && (
@@ -408,6 +537,26 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
       )}
 
       {tab === "discover" && (
+        <>
+        <section className="card admin-launch-config">
+          <h3>Launch experiments</h3>
+          <label className="admin-discover-city__toggle">
+            <input
+              type="checkbox"
+              checked={launchConfig.premiumTrialEnabled}
+              onChange={(e) => saveLaunchConfig({ premiumTrialEnabled: e.target.checked })}
+            />
+            24-hour Signal Pass trial for new signups
+          </label>
+          <label className="admin-discover-city__toggle">
+            <input
+              type="checkbox"
+              checked={launchConfig.socialProofEnabled}
+              onChange={(e) => saveLaunchConfig({ socialProofEnabled: e.target.checked })}
+            />
+            Show success stories section (only when real content exists)
+          </label>
+        </section>
         <section className="card admin-cms admin-discover-city">
           <h3>Discover city header</h3>
           <p className="match-prefs-note">
@@ -541,6 +690,101 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
               Reset defaults
             </button>
           </div>
+        </section>
+        </>
+      )}
+
+      {tab === "cityhome" && (
+        <section className="card admin-cms admin-city-home">
+          <h3>City home placements</h3>
+          <p className="match-prefs-note">
+            Members appear automatically after onboarding. Feature, mark hot, or hide profiles on each city
+            home page. Paid City Boosts land here instantly — no manual work needed.
+          </p>
+
+          <label>
+            City
+            <select value={cityHomeCity} onChange={(e) => setCityHomeCity(e.target.value)}>
+              {CITIES_VISUAL.map((city) => (
+                <option key={city.id} value={city.name}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {cityHomeMessage && <p className="admin-empty">{cityHomeMessage}</p>}
+          {cityHomeLoading && <p>Loading members…</p>}
+
+          {!cityHomeLoading && cityHomeMembers.length === 0 && !cityHomeMessage && (
+            <p className="admin-empty">No completed profiles in {cityHomeCity} yet.</p>
+          )}
+
+          {cityHomeMembers.map((member) => (
+            <article key={member.id} className="card admin-moderation-row admin-city-home-row">
+              <div className="admin-moderation-row__main">
+                {member.photo ? (
+                  <img src={member.photo} alt="" className="admin-city-home-row__photo" />
+                ) : null}
+                <div>
+                  <strong>{member.name}</strong>
+                  <span>
+                    {member.city}
+                    {member.cityHomeHidden ? " · hidden" : " · visible"}
+                  </span>
+                </div>
+              </div>
+              <div className="admin-moderation-row__actions">
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={async () => {
+                    const ok = await setAdminCityPlacement({
+                      city: cityHomeCity,
+                      profileId: member.id,
+                      placementType: "featured"
+                    });
+                    setCityHomeMessage(ok ? `${member.name} featured in ${cityHomeCity}.` : "Could not update placement.");
+                    if (ok) void loadCityHomeMembers();
+                  }}
+                >
+                  Feature
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={async () => {
+                    const ok = await setAdminCityPlacement({
+                      city: cityHomeCity,
+                      profileId: member.id,
+                      placementType: "hot"
+                    });
+                    setCityHomeMessage(ok ? `${member.name} marked hot in ${cityHomeCity}.` : "Could not update placement.");
+                    if (ok) void loadCityHomeMembers();
+                  }}
+                >
+                  Hot
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={async () => {
+                    const ok = await setAdminCityHomeHidden(member.id, !member.cityHomeHidden);
+                    setCityHomeMessage(
+                      ok
+                        ? member.cityHomeHidden
+                          ? `${member.name} visible again.`
+                          : `${member.name} hidden from city home.`
+                        : "Could not update visibility."
+                    );
+                    if (ok) void loadCityHomeMembers();
+                  }}
+                >
+                  {member.cityHomeHidden ? "Show" : "Hide"}
+                </button>
+              </div>
+            </article>
+          ))}
         </section>
       )}
 

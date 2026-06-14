@@ -1,23 +1,54 @@
 type PaymentRecoveryBannerProps = {
+  title?: string;
+  body?: string;
   onRetry: () => void;
   onDismiss: () => void;
 };
 
-export function PaymentRecoveryBanner({ onRetry, onDismiss }: PaymentRecoveryBannerProps) {
+export function PaymentRecoveryBanner({
+  title = "Payment incomplete",
+  body = "Your purchase was not completed. You can try again at any time.",
+  onRetry,
+  onDismiss
+}: PaymentRecoveryBannerProps) {
   return (
     <div className="payment-recovery-banner" role="status">
       <div>
-        <strong>Payment didn't complete</strong>
-        <p>Continue where you left off — your Signal Pass is one tap away.</p>
+        <strong>{title}</strong>
+        <p>{body}</p>
       </div>
       <div className="payment-recovery-banner__actions">
         <button type="button" className="btn-primary btn-sm" onClick={onRetry}>
-          Retry payment
+          Try again
         </button>
         <button type="button" className="link-btn" onClick={onDismiss}>
-          Dismiss
+          Close
         </button>
       </div>
+    </div>
+  );
+}
+
+type PaymentSuccessToastProps = {
+  title?: string;
+  body?: string;
+  onContinue: () => void;
+};
+
+export function PaymentSuccessToast({
+  title = "Payment successful",
+  body = "Your Signal Pass is now active.",
+  onContinue
+}: PaymentSuccessToastProps) {
+  return (
+    <div className="payment-success-banner" role="status">
+      <div>
+        <strong>{title}</strong>
+        <p>{body}</p>
+      </div>
+      <button type="button" className="btn-primary btn-sm" onClick={onContinue}>
+        Continue
+      </button>
     </div>
   );
 }

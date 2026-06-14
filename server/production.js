@@ -3,13 +3,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
-import { dbEnabled } from "./db.js";
+import { getDatabaseStatus, initDatabase, pingDatabase } from "./db.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
 import { registerBotCommands, bot } from "./telegram.js";
 import { mountHandler } from "./mountHandler.js";
 import identityHandler from "../api/auth/identity.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
+import memberDataHandler from "../api/member/data.js";
+import cityHomeHandler from "../api/city/home.js";
+import adminCityHomeHandler from "../api/admin/city-home.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "..", "dist");
@@ -47,11 +50,17 @@ app.use((req, res, next) => {
   express.json()(req, res, next);
 });
 
-function healthPayload() {
+async function healthPayload() {
+  let database = getDatabaseStatus();
+  if (database === "connected") {
+    const alive = await pingDatabase();
+    database = alive ? "connected" : "disconnected";
+  }
+
   return {
     ok: true,
     service: "bamsignal",
-    database: dbEnabled ? "configured" : "dry-run",
+    database,
     paystack: Boolean(config.paystackSecretKey),
     resend: Boolean(process.env.RESEND_API_KEY?.trim()),
     firebase: Boolean(config.firebase.serviceAccount),
@@ -59,8 +68,8 @@ function healthPayload() {
   };
 }
 
-app.get("/health", (_req, res) => {
-  res.status(200).json(healthPayload());
+app.get("/health", async (_req, res) => {
+  res.status(200).json(await healthPayload());
 });
 
 app.head("/health", (_req, res) => {
@@ -69,7 +78,10 @@ app.head("/health", (_req, res) => {
 
 app.post("/api/contact", handleContactNodeRequest);
 mountHandler(app, "post", "/api/auth/identity", identityHandler);
+mountHandler(app, "post", "/api/member/data", memberDataHandler);
 mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);
+mountHandler(app, "post", "/api/admin/city-home", adminCityHomeHandler);
+mountHandler(app, "get", "/api/city/home", cityHomeHandler);
 app.use(paystackRouter);
 
 app.use(express.static(distDir, { index: false, maxAge: "1d" }));
@@ -91,6 +103,10 @@ app.use((error, _req, res, _next) => {
 
 const server = app.listen(port, host, () => {
   console.log(`[bamsignal] Running on http://${host}:${port}`);
+});
+
+void initDatabase().catch((error) => {
+  console.error("[bamsignal] Database init error:", error.message || error);
 });
 
 server.on("error", (error) => {

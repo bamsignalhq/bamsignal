@@ -35,16 +35,16 @@ export type CmsContent = {
 export const DEFAULT_CMS: CmsContent = {
   heroHeadline: LANDING.heroHeadline,
   heroSubheadline: LANDING.heroSubheadline,
-  heroCta: "Get Started",
+  heroCta: "Join BamSignal",
   heroSecondaryCta: "Explore Signals",
   safetyText: "Meet in public first. Keep conversations inside BamSignal until you're comfortable.",
   welcomeTitle: "Welcome to BamSignal",
-  welcomeBody: "The right connection starts with a signal.",
+  welcomeBody: "Meet people who match your vibe.",
   welcomePhotoHint: "Profiles with photos get 5× more signals. Add at least one clear photo of you.",
   welcomeReadyTitle: "Ready to Discover",
   welcomeReadyBody: "Your profile is live. Send your first signal when someone feels right.",
   earlyAccessLabel: "Early Access",
-  foundingMemberLabel: "🏆 Founding Member",
+  foundingMemberLabel: "Early member",
   notificationTemplates: {
     signalReceived: "Someone sent you a signal ⚡",
     signalAccepted: "Your signal was accepted — say hi in Inbox",
@@ -52,12 +52,12 @@ export const DEFAULT_CMS: CmsContent = {
     verificationApproved: "You're verified! Your badge is now live.",
     premiumActivated: "Signal Pass active — unlimited signals unlocked"
   },
-  supportWhatsapp: "+234 800 000 0000",
-  supportResponseTime: "Few hours",
-  supportHours: "Weekdays",
-  growthVerifiedProfiles: "4,000+",
-  growthCitiesLive: "10+",
-  growthSignalsSent: "18,000+",
+  supportWhatsapp: "",
+  supportResponseTime: "Within 24 hours",
+  supportHours: "Mon–Sat, 9am–6pm WAT",
+  growthVerifiedProfiles: "ID verified",
+  growthCitiesLive: "Nationwide",
+  growthSignalsSent: "5 free daily",
   quickiePrice: 1499,
   quickiePriceLabel: "₦1,499"
 };

@@ -31,7 +31,7 @@ export function WaitlistForm() {
     return (
       <section className="card waitlist-form waitlist-form--done">
         <h3>You're on the list</h3>
-        <p>We'll reach out when BamSignal opens in {city}. Founding spots are limited.</p>
+        <p>We'll email you when BamSignal is ready in {city}.</p>
       </section>
     );
   }
@@ -42,7 +42,7 @@ export function WaitlistForm() {
         <Mail size={22} />
         <div>
           <h3>Not ready to join yet?</h3>
-          <p>Get launch updates — founding member spots are limited.</p>
+          <p>Get launch updates for your city — no spam.</p>
         </div>
       </div>
       <label>

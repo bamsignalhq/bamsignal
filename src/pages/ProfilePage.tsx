@@ -1,6 +1,6 @@
 import { Camera, Crown, LogOut, Moon, ShieldCheck, Sun, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { INTENT_OPTIONS } from "../constants/intents";
+import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS } from "../constants/intents";
 import { PREMIUM_FEATURES } from "../constants/plans";
 import { StateCitySelect } from "../components/StateCitySelect";
 import {
@@ -30,7 +30,6 @@ import type {
   UserProfile
 } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
-import { calculateProfileStrength } from "../utils/profileStrength";
 import { getVerificationTier } from "../utils/verification";
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
 import { readJson, writeJson } from "../utils/storage";
@@ -80,7 +79,7 @@ export function ProfilePage({
   const [saved, setSaved] = useState(false);
   const [modMessage, setModMessage] = useState("");
   const [verifying, setVerifying] = useState(false);
-  const [section, setSection] = useState<"profile" | "preferences" | "safety" | "account">("profile");
+  const [section, setSection] = useState<"overview" | "edit" | "settings">("overview");
   const verifyPending = isUserVerificationPending(user.phone);
 
   useEffect(() => {
@@ -129,12 +128,13 @@ export function ProfilePage({
   };
 
   const toggleIntent = (intent: IntentTag) => {
-    setProfile((p) => ({
-      ...p,
-      intents: p.intents.includes(intent)
-        ? p.intents.filter((i) => i !== intent)
-        : [...p.intents, intent]
-    }));
+    setProfile((p) => {
+      if (p.intents.includes(intent)) {
+        return { ...p, intents: p.intents.filter((i) => i !== intent) };
+      }
+      if (p.intents.length >= MAX_INTENT_SELECTIONS) return p;
+      return { ...p, intents: [...p.intents, intent] };
+    });
   };
 
   const togglePref = <T extends string>(key: keyof MatchPreferences, value: T) => {
@@ -157,10 +157,8 @@ export function ProfilePage({
     onLogout();
   };
 
-  const strength = calculateProfileStrength(profile);
   const phoneVerified = Boolean(user.phoneVerified ?? user.phone);
   const verification = getVerificationTier(profile, isPremium, phoneVerified);
-  const isFoundingMember = Boolean(localStorage.getItem(STORAGE_KEYS.foundingMember));
 
   return (
     <div className="page profile-page profile-page--fb">
@@ -172,21 +170,20 @@ export function ProfilePage({
       <ProfileCoverHeader
         user={user}
         profile={profile}
-        strength={strength}
         verification={verification}
         isPremium={isPremium}
-        isFoundingMember={isFoundingMember}
         onEditPhoto={() => fileRef.current?.click()}
+        onEditProfile={() => setSection("edit")}
+        onOpenSettings={() => setSection("settings")}
       />
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={uploadPhoto} />
 
       <nav className="profile-section-nav" aria-label="Profile sections">
         {(
           [
-            ["profile", "Profile"],
-            ["preferences", "Preferences"],
-            ["safety", "Safety"],
-            ["account", "Account"]
+            ["overview", "Overview"],
+            ["edit", "Edit profile"],
+            ["settings", "Settings"]
           ] as const
         ).map(([id, label]) => (
           <button
@@ -200,21 +197,28 @@ export function ProfilePage({
         ))}
       </nav>
 
-      {profile.photos.length > 1 && section === "profile" && (
-        <section className="card profile-photo-grid">
-          <h3>Photos</h3>
-          <div className="profile-photos">
-            {profile.photos.map((photo, i) => (
-              <img key={i} src={photo} alt="" className="profile-photo-thumb" />
-            ))}
-          </div>
-          <button type="button" className="upload-photo-btn" onClick={() => fileRef.current?.click()}>
-            <Upload size={16} /> Add photo
-          </button>
-        </section>
+      {section === "overview" && (
+        <>
+          <section className="card profile-overview-card">
+            <h3>About</h3>
+            <p className="profile-overview-bio">{profile.bio || "Add a short bio so people know your vibe."}</p>
+          </section>
+          {profile.interests?.length > 0 && (
+            <section className="card profile-overview-card">
+              <h3>Interests</h3>
+              <div className="intent-tags">
+                {profile.interests.map((interest) => (
+                  <span key={interest} className="intent-tag selected">
+                    {interest}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
       )}
 
-      {section === "profile" && (
+      {section === "edit" && (
       <>
       <section className="card profile-form-card">
         <label>
@@ -245,10 +249,9 @@ export function ProfilePage({
           </select>
         </label>
         <StateCitySelect
-          state={profile.state ?? "Lagos"}
+          state={profile.state ?? ""}
           city={profile.city}
-          onStateChange={(state) => setProfile({ ...profile, state })}
-          onCityChange={(city) => setProfile({ ...profile, city })}
+          onLocationChange={(state, city) => setProfile({ ...profile, state, city })}
         />
         <label>
           Religion <span className="label-optional">(optional)</span>
@@ -318,24 +321,24 @@ export function ProfilePage({
           />
         </label>
         <fieldset className="intent-fieldset">
-          <legend>Intent</legend>
+          <legend>Intent · up to {MAX_INTENT_SELECTIONS}</legend>
           <div className="intent-tags selectable">
-            {INTENT_OPTIONS.map((opt) => (
+            {INTENT_OPTIONS.map((opt) => {
+              const selected = profile.intents.includes(opt.id);
+              const disabled = !selected && profile.intents.length >= MAX_INTENT_SELECTIONS;
+              return (
               <button
                 key={opt.id}
                 type="button"
-                className={`intent-tag ${profile.intents.includes(opt.id) ? "selected" : ""}`}
+                className={`intent-tag ${selected ? "selected" : ""}`}
+                disabled={disabled}
                 onClick={() => toggleIntent(opt.id)}
               >
                 {opt.emoji} {opt.label}
               </button>
-            ))}
+              );
+            })}
           </div>
-          {profile.intents.includes("Quickie") && (
-            <p className="onboarding-quickie-note">
-              Quickie is a private pool — you only see others who picked it. Pay ₦1,499 to continue after your first message.
-            </p>
-          )}
         </fieldset>
         <InterestPicker
           selected={profile.interests ?? []}
@@ -345,81 +348,16 @@ export function ProfilePage({
           {saved ? "Saved ✓" : "Save profile"}
         </button>
       </section>
-
-      <section className="card profile-privacy-card">
-        <h3>Profile visibility</h3>
-        <p className="match-prefs-note">{ONBOARDING_CULTURAL_COPY}</p>
-        {(
-          [
-            ["showReligion", "Show my religion on profile"],
-            ["showEthnicity", "Show my ethnic background on profile"],
-            ["showState", "Show my state of origin on profile"]
-          ] as const
-        ).map(([key, label]) => (
-          <label key={key} className="settings-row settings-row--toggle">
-            <span>{label}</span>
-            <input
-              type="checkbox"
-              checked={profile.visibility?.[key] ?? false}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  visibility: { ...profile.visibility!, [key]: e.target.checked }
-                })
-              }
-            />
-          </label>
-        ))}
-        <p className="match-prefs-note">Even when hidden, BamSignal can use these privately for compatibility if enabled below.</p>
-        {(
-          [
-            ["useReligionForMatching", "Use religion for matching"],
-            ["useEthnicityForMatching", "Use background for matching"],
-            ["useStateForMatching", "Use state for matching"]
-          ] as const
-        ).map(([key, label]) => (
-          <label key={key} className="settings-row settings-row--toggle">
-            <span>{label}</span>
-            <input
-              type="checkbox"
-              checked={profile.matchingPrivacy?.[key] ?? true}
-              onChange={(e) =>
-                setProfile({
-                  ...profile,
-                  matchingPrivacy: { ...profile.matchingPrivacy!, [key]: e.target.checked }
-                })
-              }
-            />
-          </label>
-        ))}
-      </section>
       </>
       )}
 
-      {section === "safety" && (
+      {section === "settings" && (
       <>
-      <SafetySettingsCard
-        profile={profile}
-        onChange={(safetySettings: SafetySettings) => setProfile({ ...profile, safetySettings })}
-      />
+      <section className="card settings-card">
+        <h3>Settings</h3>
+        <p className="match-prefs-note">Preferences, privacy, safety, and account.</p>
+      </section>
 
-      {isFemaleGender(profile.gender) && (
-        <section className="card safety-centre-card">
-          <h3>{FEMALE_SAFETY_COPY.dashboardTitle}</h3>
-          <p>{FEMALE_SAFETY_COPY.dashboardBody}</p>
-          <ul>
-            <li>Report anyone instantly — pick a reason, we review fast.</li>
-            <li>Block removes them from discovery and your inbox.</li>
-            <li>Restrict who can signal and message you below.</li>
-            <li>Contact details stay blocked in chat until you're ready.</li>
-          </ul>
-        </section>
-      )}
-
-      </>
-      )}
-
-      {section === "preferences" && (
       <section className="card match-prefs-card">
         <h3>Match preferences</h3>
         <p className="match-prefs-note">{PREFERENCE_CULTURAL_COPY}</p>
@@ -575,12 +513,47 @@ export function ProfilePage({
           Save preferences
         </button>
       </section>
+
+      <section className="card profile-privacy-card">
+        <h3>Privacy</h3>
+        <p className="match-prefs-note">{ONBOARDING_CULTURAL_COPY}</p>
+        {(
+          [
+            ["showReligion", "Show my religion on profile"],
+            ["showEthnicity", "Show my ethnic background on profile"],
+            ["showState", "Show my state of origin on profile"]
+          ] as const
+        ).map(([key, label]) => (
+          <label key={key} className="settings-row settings-row--toggle">
+            <span>{label}</span>
+            <input
+              type="checkbox"
+              checked={profile.visibility?.[key] ?? false}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  visibility: { ...profile.visibility!, [key]: e.target.checked }
+                })
+              }
+            />
+          </label>
+        ))}
+      </section>
+
+      <SafetySettingsCard
+        profile={profile}
+        onChange={(safetySettings: SafetySettings) => setProfile({ ...profile, safetySettings })}
+      />
+
+      {isFemaleGender(profile.gender) && (
+        <section className="card safety-centre-card">
+          <h3>{FEMALE_SAFETY_COPY.dashboardTitle}</h3>
+          <p>{FEMALE_SAFETY_COPY.dashboardBody}</p>
+        </section>
       )}
 
-      {section === "account" && (
-      <>
       <section className="card settings-card">
-        <h3>Appearance</h3>
+        <h3>Account</h3>
         <button type="button" className="settings-row" onClick={onToggleTheme}>
           {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>

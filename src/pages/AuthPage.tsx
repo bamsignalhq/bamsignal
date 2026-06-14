@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Mail, ShieldCheck } from "lucide-react";
 import { AppLogo } from "../components/AppLogo";
 import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
@@ -35,6 +35,19 @@ const emptySignup = {
   confirmPin: ""
 };
 
+const OTP_LENGTH = 6;
+const RESEND_COOLDOWN_SEC = 60;
+
+function maskEmail(email: string): string {
+  const trimmed = email.trim().toLowerCase();
+  const [local, domain] = trimmed.split("@");
+  if (!local || !domain) return trimmed || "your email";
+  const head = local.slice(0, 1);
+  const tail = local.length > 2 ? local.slice(-1) : "";
+  const hidden = Math.max(local.length - head.length - tail.length, 1);
+  return `${head}${"•".repeat(Math.min(hidden, 5))}${tail ? tail : ""}@${domain}`;
+}
+
 export function AuthPage({
   mode,
   onModeChange,
@@ -49,9 +62,24 @@ export function AuthPage({
   const [verifyCode, setVerifyCode] = useState("");
   const [resetEmail, setResetEmail] = useState("");
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(null);
+  const [resendIn, setResendIn] = useState(0);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const phoneDigits = (value: string) => normalizeNigerianPhone(value);
   const pinDigits = (value: string) => value.replace(/\D/g, "").slice(0, 6);
+
+  useEffect(() => {
+    if (mode !== "verify") return;
+    setVerifyCode("");
+    setResendIn(RESEND_COOLDOWN_SEC);
+    window.setTimeout(() => otpRefs.current[0]?.focus(), 120);
+  }, [mode, pendingSignup?.email]);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = window.setTimeout(() => setResendIn((value) => value - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendIn]);
 
   const signIn = async () => {
     const username = normalizeUsername(loginForm.username);
@@ -156,7 +184,7 @@ export function AuthPage({
   };
 
   const verifySignup = async (code = verifyCode) => {
-    if (!pendingSignup || code.length !== 6) return;
+    if (!pendingSignup || code.length !== OTP_LENGTH) return;
     setBusy("verify");
     onMessage("");
     try {
@@ -173,6 +201,79 @@ export function AuthPage({
         }
       }
       onAuthenticated(pendingSignup, { isNewSignup: true });
+    } catch (error) {
+      onMessage(friendlyAuthError(error));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const updateVerifyCode = (next: string) => {
+    const cleaned = next.replace(/\D/g, "").slice(0, OTP_LENGTH);
+    setVerifyCode(cleaned);
+    return cleaned;
+  };
+
+  const handleOtpInput = (index: number, raw: string) => {
+    const digit = raw.replace(/\D/g, "").slice(-1);
+    const chars = verifyCode.padEnd(OTP_LENGTH, " ").split("").slice(0, OTP_LENGTH);
+    chars[index] = digit || " ";
+    const next = updateVerifyCode(chars.join("").replace(/\s/g, ""));
+
+    if (digit && index < OTP_LENGTH - 1) {
+      otpRefs.current[index + 1]?.focus();
+    }
+    if (next.length === OTP_LENGTH) {
+      void verifySignup(next);
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, key: string) => {
+    if (key !== "Backspace") return;
+    if (verifyCode[index]) {
+      const chars = verifyCode.padEnd(OTP_LENGTH, " ").split("").slice(0, OTP_LENGTH);
+      chars[index] = " ";
+      updateVerifyCode(chars.join("").replace(/\s/g, ""));
+      return;
+    }
+    if (index > 0) {
+      otpRefs.current[index - 1]?.focus();
+      const chars = verifyCode.padEnd(OTP_LENGTH, " ").split("").slice(0, OTP_LENGTH);
+      chars[index - 1] = " ";
+      updateVerifyCode(chars.join("").replace(/\s/g, ""));
+    }
+  };
+
+  const handleOtpPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    if (!pasted) return;
+    event.preventDefault();
+    const next = updateVerifyCode(pasted);
+    const focusIndex = Math.min(next.length, OTP_LENGTH - 1);
+    otpRefs.current[focusIndex]?.focus();
+    if (next.length === OTP_LENGTH) {
+      void verifySignup(next);
+    }
+  };
+
+  const resendVerification = async () => {
+    if (!pendingSignup?.email || resendIn > 0) return;
+    setBusy("resend");
+    onMessage("");
+    try {
+      if (supabase) {
+        const { error } = await supabase.auth.resend({
+          type: "signup",
+          email: pendingSignup.email
+        });
+        if (error) throw error;
+        onMessage("Fresh code sent — check your inbox.");
+        setResendIn(RESEND_COOLDOWN_SEC);
+        setVerifyCode("");
+        otpRefs.current[0]?.focus();
+        return;
+      }
+      onMessage("Check your inbox for the code.");
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {
@@ -337,32 +438,88 @@ export function AuthPage({
           )}
 
           {mode === "verify" && (
-            <>
-              <h1 className="auth-title">Verify email</h1>
-              <p className="auth-sub auth-sub--tight">
-                Code sent to {pendingSignup?.email || "your email"}.
-              </p>
-              <label className="auth-field">
-                <span>Code</span>
-                <input
-                  className="auth-code-input"
-                  value={verifyCode}
-                  onChange={(e) => setVerifyCode(pinDigits(e.target.value))}
-                  inputMode="numeric"
-                  maxLength={6}
-                  autoComplete="one-time-code"
-                  placeholder="000000"
-                />
-              </label>
+            <div className="auth-verify">
+              <div className="auth-verify__hero">
+                <div className="auth-verify__icon-ring" aria-hidden>
+                  <div className="auth-verify__icon">
+                    <Mail size={26} strokeWidth={2.2} />
+                  </div>
+                </div>
+                <p className="auth-verify__step">Step 2 of 2 · Verify email</p>
+                <h1 className="auth-title auth-verify__title">Check your inbox</h1>
+                <p className="auth-verify__lede">
+                  Enter the 6-digit code we sent to{" "}
+                  <strong>{maskEmail(pendingSignup?.email || "")}</strong>
+                </p>
+              </div>
+
+              <div
+                className="auth-verify__otp"
+                role="group"
+                aria-label="Verification code"
+                onPaste={handleOtpPaste}
+              >
+                {Array.from({ length: OTP_LENGTH }, (_, index) => (
+                  <input
+                    key={index}
+                    ref={(element) => {
+                      otpRefs.current[index] = element;
+                    }}
+                    className={`auth-verify__digit ${verifyCode[index] ? "auth-verify__digit--filled" : ""}`}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete={index === 0 ? "one-time-code" : "off"}
+                    maxLength={1}
+                    value={verifyCode[index] ?? ""}
+                    aria-label={`Digit ${index + 1}`}
+                    disabled={busy === "verify"}
+                    onChange={(event) => handleOtpInput(index, event.target.value)}
+                    onKeyDown={(event) => handleOtpKeyDown(index, event.key)}
+                  />
+                ))}
+              </div>
+
               <button
                 type="button"
-                className="btn-primary btn-full btn-auth"
+                className="btn-primary btn-full btn-auth auth-verify__submit"
                 onClick={() => verifySignup()}
-                disabled={busy === "verify" || verifyCode.length !== 6}
+                disabled={busy === "verify" || verifyCode.length !== OTP_LENGTH}
               >
-                {busy === "verify" ? <Loader2 className="spin" size={20} /> : "Verify"}
+                {busy === "verify" ? <Loader2 className="spin" size={20} /> : "Verify & continue"}
               </button>
-            </>
+
+              <div className="auth-verify__meta">
+                <p className="auth-verify__hint">
+                  <ShieldCheck size={15} aria-hidden />
+                  Codes expire in a few minutes. Check spam if you don&apos;t see it.
+                </p>
+                <p className="auth-verify__resend">
+                  Didn&apos;t get it?{" "}
+                  {resendIn > 0 ? (
+                    <span className="auth-verify__timer">Resend in {resendIn}s</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="link-btn link-btn--accent"
+                      onClick={() => void resendVerification()}
+                      disabled={busy === "resend"}
+                    >
+                      {busy === "resend" ? "Sending…" : "Resend code"}
+                    </button>
+                  )}
+                </p>
+                <button
+                  type="button"
+                  className="link-btn auth-verify__back"
+                  onClick={() => {
+                    setVerifyCode("");
+                    onModeChange("signup");
+                  }}
+                >
+                  Wrong email? Go back
+                </button>
+              </div>
+            </div>
           )}
 
           {mode === "reset" && (
@@ -386,7 +543,11 @@ export function AuthPage({
             </>
           )}
 
-          {message && <p className="auth-message">{message}</p>}
+          {message && (
+            <p className={`auth-message ${message.toLowerCase().includes("sent") ? "auth-message--success" : ""}`}>
+              {message}
+            </p>
+          )}
         </div>
       </div>
     </main>

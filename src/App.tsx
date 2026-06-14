@@ -14,7 +14,7 @@ import { LikesPage } from "./pages/LikesPage";
 import { ChatsPage } from "./pages/ChatsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AdminHubPage } from "./pages/AdminHubPage";
-import { PaymentRecoveryBanner } from "./components/PaymentRecoveryBanner";
+import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
 import { NotificationCenter } from "./components/NotificationCenter";
 import type { PremiumPlan } from "./constants/plans";
 import type { BoostProduct } from "./constants/boosts";
@@ -24,14 +24,22 @@ import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./ty
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
 import { isOnboardingComplete } from "./utils/profile";
 import { recordStreakActivity } from "./utils/streaks";
-import { isPremiumActive, startPlanPayment, verifyPayment } from "./services/payments";
+import { isPremiumActive, startBoostPayment, startPlanPayment, verifyBoostPayment, verifyPayment } from "./services/payments";
+import { maybeGrantPremiumTrial, checkPremiumTrialExpiry } from "./utils/premiumTrial";
+import { markFirstDayStep } from "./utils/firstDayJourney";
+import { markJoinedAt } from "./utils/launchSeed";
+import { hydrateMemberData, registerMember } from "./services/memberData";
 import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
+import { getProfileViewsToday } from "./utils/profileViews";
 import { unreadCount } from "./utils/notifications";
 import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { activateBoost } from "./utils/activeBoosts";
 import { LegalPage } from "./pages/LegalPage";
+import { PremiumPage } from "./pages/PremiumPage";
+import { VisitorsPage } from "./pages/VisitorsPage";
+import { SafetyCenterPage } from "./pages/SafetyCenterPage";
 import { SiteFooter } from "./components/SiteFooter";
 import { LoveAuthRoutePage } from "./pages/LoveAuthRoutePage";
 import { AdminAuthPage } from "./pages/AdminAuthPage";
@@ -79,7 +87,9 @@ export function App() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [memberOverlay, setMemberOverlay] = useState<"visitors" | "premium" | "safety" | null>(null);
   const [notifVersion, setNotifVersion] = useState(0);
+  const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
   const [user, setUser] = useState<UserProfile>(() =>
     readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" })
   );
@@ -142,7 +152,9 @@ export function App() {
   }, [user]);
 
   useEffect(() => {
-    rememberUsernameEmail(DEMO_USER.username, DEMO_USER.profile.email);
+    if (import.meta.env.DEV) {
+      rememberUsernameEmail(DEMO_USER.username, DEMO_USER.profile.email);
+    }
 
     supabase?.auth.getSession().then(({ data }) => {
       if (data.session?.user) {
@@ -161,7 +173,7 @@ export function App() {
   }, [isAuthed, showOnboarding]);
 
   useEffect(() => {
-    if (!isAuthed || isPremium) return;
+    if (!isAuthed) return;
 
     const params = new URLSearchParams(window.location.search);
     const urlRef = params.get("trxref") || params.get("reference");
@@ -169,17 +181,54 @@ export function App() {
       localStorage.setItem(STORAGE_KEYS.paymentReference, urlRef);
       localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
       if (window.location.pathname === "/payment/success") {
-        navigateToPath("/app");
+        navigateToPath("/");
       }
     }
 
     const ref = localStorage.getItem(STORAGE_KEYS.paymentReference);
     if (!ref) return;
+
+    const paymentKind = localStorage.getItem(STORAGE_KEYS.paymentKind) || "premium";
+
+    if (paymentKind === "boost") {
+      const datingProfile = readJson(STORAGE_KEYS.datingProfile, { city: "Lagos" });
+      const boostId = localStorage.getItem(STORAGE_KEYS.paymentBoostId) || "city-boost";
+      verifyBoostPayment(user, boostId, datingProfile.city).then((result) => {
+        if (result.ok) {
+          activateBoost(boostId as BoostProduct["id"], user, datingProfile);
+          localStorage.removeItem(STORAGE_KEYS.paymentPending);
+          localStorage.removeItem(STORAGE_KEYS.paymentReference);
+          localStorage.removeItem(STORAGE_KEYS.paymentKind);
+          localStorage.removeItem(STORAGE_KEYS.paymentBoostId);
+          setPaymentSuccess({
+            title: "Payment successful",
+            body:
+              boostId === "city-boost"
+                ? "Your City Boost is now active."
+                : `${boostId.replace(/-/g, " ")} is now active.`
+          });
+          notifyBoostActivated(boostId);
+          setNotifVersion((v) => v + 1);
+          trackEvent("boost_activated", { product: boostId, paid: "true" });
+        } else {
+          localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
+        }
+      });
+      return;
+    }
+
+    if (isPremium) return;
+
     verifyPayment(user).then((result) => {
       if (result.ok) {
         setIsPremium(true);
         localStorage.removeItem(STORAGE_KEYS.paymentPending);
         localStorage.removeItem(STORAGE_KEYS.paymentReference);
+        localStorage.removeItem(STORAGE_KEYS.paymentKind);
+        setPaymentSuccess({
+          title: "Payment successful",
+          body: "Your Signal Pass is now active."
+        });
         trackEvent("payment_successful");
         notifyPremiumActivated();
         setNotifVersion((v) => v + 1);
@@ -219,7 +268,16 @@ export function App() {
       setIsAuthed(true);
       setAuthMessage("");
       recordStreakActivity();
-      if (meta?.isNewSignup) trackEvent("signup_completed");
+      checkPremiumTrialExpiry();
+      void registerMember(withPhone).then(() => hydrateMemberData(withPhone));
+      if (meta?.isNewSignup) {
+        trackEvent("signup_completed");
+        markJoinedAt();
+        markFirstDayStep("welcome");
+        if (maybeGrantPremiumTrial(true)) setIsPremium(true);
+        const ref = new URLSearchParams(window.location.search).get("ref");
+        if (ref) trackEvent("referral_signup", { code: ref.toUpperCase() });
+      }
       if (getAuthPath()) {
         navigateToPath("/");
         setAuthPath(null);
@@ -263,7 +321,10 @@ export function App() {
     setTab("home");
   }, []);
 
-  const navigateTab = useCallback((next: NavTab) => setTab(next), []);
+  const navigateTab = useCallback((next: NavTab) => {
+    setMemberOverlay(null);
+    setTab(next);
+  }, []);
 
   const handleUpgrade = useCallback(
     async (plan: PremiumPlan) => {
@@ -291,26 +352,28 @@ export function App() {
   }, []);
 
   const handlePurchaseBoost = useCallback(
-    (product: BoostProduct) => {
+    async (product: BoostProduct) => {
       if (!isAuthed) {
         openAuth("signup", tab === "home" ? "discover" : tab);
         return;
       }
-      const datingProfile = readJson(STORAGE_KEYS.datingProfile, { city: "Lagos" });
-      activateBoost(product.id, user, datingProfile);
-      setPricingOpen(false);
-      let msg = `${product.name} is active.`;
-      if (product.id === "profile-boost") {
-        msg = "Profile Boost live — you're featured at the top of local Discover for 48 hours.";
-      } else if (product.id === "signal-boost") {
-        msg = "Signal Boost live — extra visibility in your city for 24 hours.";
-      } else {
-        msg = "Priority Signal ready — your next signal lands first in their Likes inbox.";
+      if (!user.email) {
+        setAuthMessage("Add a verified email before purchasing a boost.");
+        return;
       }
-      setAuthMessage(msg);
-      notifyBoostActivated(product.name);
-      setNotifVersion((v) => v + 1);
-      trackEvent("boost_activated", { product: product.id });
+      const datingProfile = readJson(STORAGE_KEYS.datingProfile, { city: "Lagos" });
+
+      setPaymentLoading(true);
+      localStorage.setItem(STORAGE_KEYS.paymentKind, "boost");
+      localStorage.setItem(STORAGE_KEYS.paymentBoostId, product.id);
+      const result = await startBoostPayment(product.id, product.price, user, datingProfile.city);
+      setPaymentLoading(false);
+      if (!result.ok) {
+        setAuthMessage(result.error || "Checkout could not start.");
+        return;
+      }
+      setPricingOpen(false);
+      setAuthMessage(`Complete payment to activate ${product.name}.`);
     },
     [isAuthed, openAuth, tab, user]
   );
@@ -352,10 +415,9 @@ export function App() {
     }
   };
 
-  const isFoundingMember = Boolean(localStorage.getItem(STORAGE_KEYS.foundingMember));
   const showPaymentRecovery =
     isAuthed &&
-    !isPremium &&
+    !paymentSuccess &&
     (localStorage.getItem(STORAGE_KEYS.paymentPending) === "1" ||
       Boolean(localStorage.getItem(STORAGE_KEYS.paymentReference)));
   void notifVersion;
@@ -450,7 +512,7 @@ export function App() {
             showNotifications={isAuthed}
             notificationCount={notificationUnread}
             onNotificationsClick={() => setNotificationsOpen(true)}
-            showFoundingMember={isAuthed && isFoundingMember}
+            showFoundingMember={false}
             memberFirstName={
               isAuthed ? user.name.split(" ")[0] || user.username || undefined : undefined
             }
@@ -469,7 +531,7 @@ export function App() {
               <BlogIndexPage onSignup={() => openAuth("signup", "discover")} />
             )}
           </main>
-          <SiteFooter showEarlyAccess={isAuthed && isFoundingMember} onLogoClick={goHome} />
+          <SiteFooter onLogoClick={goHome} />
         </div>
       </div>
     );
@@ -489,7 +551,7 @@ export function App() {
             showNotifications={isAuthed}
             notificationCount={notificationUnread}
             onNotificationsClick={() => setNotificationsOpen(true)}
-            showFoundingMember={isAuthed && isFoundingMember}
+            showFoundingMember={false}
             memberFirstName={
               isAuthed ? user.name.split(" ")[0] || user.username || undefined : undefined
             }
@@ -497,7 +559,7 @@ export function App() {
           <main className="app-main app-main--legal">
             <LegalPage path={legalPath} />
           </main>
-          <SiteFooter showEarlyAccess={isAuthed && isFoundingMember} onLogoClick={goHome} />
+          <SiteFooter onLogoClick={goHome} />
         </div>
 
         <NotificationCenter
@@ -533,7 +595,7 @@ export function App() {
           showNotifications={isAuthed && !showOnboarding}
           notificationCount={notificationUnread}
           onNotificationsClick={() => setNotificationsOpen(true)}
-          showEarlyAccess={isAuthed && isFoundingMember}
+          showEarlyAccess={false}
           showMemberNav={isAuthed && !showOnboarding}
           memberTab={tab}
           onMemberNavigate={navigateTab}
@@ -547,7 +609,18 @@ export function App() {
         {showPaymentRecovery && !showOnboarding && (
           <PaymentRecoveryBanner
             onRetry={() => setPricingOpen(true)}
-            onDismiss={() => localStorage.removeItem(STORAGE_KEYS.paymentPending)}
+            onDismiss={() => {
+              localStorage.removeItem(STORAGE_KEYS.paymentPending);
+              localStorage.removeItem(STORAGE_KEYS.paymentReference);
+            }}
+          />
+        )}
+
+        {paymentSuccess && !showOnboarding && (
+          <PaymentSuccessToast
+            title={paymentSuccess.title}
+            body={paymentSuccess.body}
+            onContinue={() => setPaymentSuccess(null)}
           />
         )}
 
@@ -555,14 +628,55 @@ export function App() {
           {isAuthed && showOnboarding && (
             <OnboardingPage user={user} onUserChange={setUser} onComplete={finishOnboarding} />
           )}
-          {isAuthed && !showOnboarding && tab === "home" && (
+          {isAuthed && !showOnboarding && memberOverlay === "premium" && (
+            <PremiumPage
+              isPremium={isPremium}
+              plans={plans}
+              onBack={() => setMemberOverlay(null)}
+              onSelectPlan={(plan) => void handleUpgrade(plan)}
+              loading={paymentLoading}
+            />
+          )}
+          {isAuthed && !showOnboarding && memberOverlay === "visitors" && (
+            <VisitorsPage
+              viewers={readJson(STORAGE_KEYS.profileViews, { count: 0, viewers: [] }).viewers}
+              viewsToday={getProfileViewsToday()}
+              isPremium={isPremium}
+              onBack={() => setMemberOverlay(null)}
+              onUpgrade={() => {
+                setMemberOverlay("premium");
+              }}
+              onSendSignal={() => {
+                setMemberOverlay(null);
+                setTab("discover");
+              }}
+              onCompleteProfile={() => {
+                setMemberOverlay(null);
+                setTab("me");
+              }}
+            />
+          )}
+          {isAuthed && !showOnboarding && memberOverlay === "safety" && (
+            <SafetyCenterPage
+              onBack={() => setMemberOverlay(null)}
+              onOpenProfile={() => {
+                setMemberOverlay(null);
+                setTab("me");
+              }}
+            />
+          )}
+          {isAuthed && !showOnboarding && !memberOverlay && tab === "home" && (
             <HomePage
+              user={user}
               userName={user.name}
               isPremium={isPremium}
               onDiscover={() => setTab("discover")}
               onOpenPricing={openPricing}
+              onOpenPremium={() => setMemberOverlay("premium")}
               onOpenProfile={() => setTab("me")}
               onOpenLikes={() => setTab("likes")}
+              onOpenVisitors={() => setMemberOverlay("visitors")}
+              onOpenSafety={() => setMemberOverlay("safety")}
             />
           )}
           {tab === "home" && isGuest && (
@@ -570,7 +684,7 @@ export function App() {
               onSignup={() => openAuth("signup")}
               onOpenPricing={openPricing}
               onGuestAction={() => openAuth("signup", "discover")}
-              showEarlyAccess={isFoundingMember}
+              showEarlyAccess={false}
               onLogoClick={goHome}
             />
           )}

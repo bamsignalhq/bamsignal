@@ -9,6 +9,7 @@ import { DiscoverLimitsBar } from "../components/discover/DiscoverLimitsBar";
 import { DiscoverPremiumNudge } from "../components/discover/DiscoverPremiumNudge";
 import { DiscoverQuickFilters } from "../components/discover/DiscoverQuickFilters";
 import { DiscoverTrending } from "../components/discover/DiscoverTrending";
+import { ProfileCardSkeleton } from "../components/Skeleton";
 import { EmptyState } from "../components/EmptyState";
 import { PaywallModal } from "../components/PaywallModal";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
@@ -23,6 +24,9 @@ import {
   getProfileMatchReasons
 } from "../utils/compatibility";
 import { buildDiscoveryDeck, countSameCityProfiles, recordDiscoveryImpression } from "../utils/launchSeed";
+import { buildDensityAwareDeck } from "../utils/cityDensity";
+import { markFirstDayStep } from "../utils/firstDayJourney";
+import { trackUpgradeImpression } from "../utils/premiumConversion";
 import {
   defaultDatingProfile,
   defaultMatchPreferences,
@@ -43,12 +47,14 @@ import {
   remainingFreeStateChanges
 } from "../utils/discoverLocation";
 import {
+  applyDiscoverPreferences,
   applyQuickFilter,
   trendingSections,
   type DiscoverQuickFilter
 } from "../utils/discoverFilters";
 import { isViewerShadowBanned } from "../utils/shadowBan";
 import { consumePrioritySignal, getViewerBoostSummary } from "../utils/activeBoosts";
+import { persistMatchRemote, persistSignalRemote } from "../services/memberData";
 
 const SIGNAL_ANIM_MS = 700;
 
@@ -86,10 +92,15 @@ export function DiscoverPage({
   const [viewer, setViewer] = useState(() =>
     normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
   );
+  const [deckReady, setDeckReady] = useState(false);
 
-  const baseDeck = useMemo(() => {
+  const { baseDeck, densityMessage } = useMemo(() => {
     const available = filterDiscoverDeck(MOCK_PROFILES, viewer, blocked, passedIds);
-    return buildDiscoveryDeck(available, viewer, prefs);
+    const { deck, density } = buildDensityAwareDeck(available, viewer, prefs, blocked, passedIds);
+    return {
+      baseDeck: applyDiscoverPreferences(deck, prefs, viewer),
+      densityMessage: density.message
+    };
   }, [passedIds, blocked, viewer, prefs]);
 
   const deck = useMemo(
@@ -121,6 +132,16 @@ export function DiscoverPage({
     Date.now() - Number(localStorage.getItem(STORAGE_KEYS.firstSignalPromptAt)) < 5 * 60 * 1000;
 
   useEffect(() => {
+    markFirstDayStep("discover_opened");
+  }, []);
+
+  useEffect(() => {
+    setDeckReady(false);
+    const t = window.setTimeout(() => setDeckReady(true), 180);
+    return () => window.clearTimeout(t);
+  }, [baseDeck.length, quickFilter, prefs]);
+
+  useEffect(() => {
     if (current?.id) recordDiscoveryImpression(current.id);
   }, [current?.id]);
 
@@ -142,6 +163,7 @@ export function DiscoverPage({
       const gate = evaluateDiscoverStateChange(prevState, state, isPremium);
       if (!gate.allowed) {
         trackEvent("paywall_seen", { source: "discover_state_change" });
+        trackUpgradeImpression("discover_state_change");
         setPaywallOpen(true);
         return;
       }
@@ -158,6 +180,7 @@ export function DiscoverPage({
     if (isPremium) return true;
     if (readDailyCount(STORAGE_KEYS.dailySwipes) >= FREE_DAILY_SWIPES) {
       trackEvent("paywall_seen", { source: "discover_swipes" });
+      trackUpgradeImpression("signal_limit");
       setPaywallOpen(true);
       return false;
     }
@@ -180,6 +203,7 @@ export function DiscoverPage({
     const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const suppressed = isViewerShadowBanned(user.phone, user.email);
     const priority = opts?.priority ?? false;
+    persistSignalRemote(user, profile.id, priority ? "priority" : "signal");
 
     if (suppressed) {
       setToast(
@@ -205,10 +229,12 @@ export function DiscoverPage({
       const matches = readJson<Match[]>(STORAGE_KEYS.matches, []);
       if (!matches.some((m) => m.profileId === profile.id)) {
         writeJson(STORAGE_KEYS.matches, [...matches, match]);
+        persistMatchRemote(user, match);
         const received = readJson<number>(STORAGE_KEYS.signalsReceived, 0) + 1;
         writeJson(STORAGE_KEYS.signalsReceived, received);
         trackEvent("signal_accepted", { profileId: profile.id });
         trackEvent("signal_received", { profileId: profile.id });
+        markFirstDayStep("first_connection");
         notifySignalAccepted(profile.name);
         onMatch(match);
         setToast(`${BRAND.signalAccepted}! ${profile.name} signaled back ⚡`);
@@ -241,6 +267,7 @@ export function DiscoverPage({
     setSignalSent(true);
     useSwipe();
     incrementSignalsSent();
+    markFirstDayStep("first_signal");
     const profile = current;
     const priority = consumePrioritySignal();
     trackEvent("signal_sent", { profileId: current.id, priority: priority ? "true" : "false" });
@@ -255,6 +282,7 @@ export function DiscoverPage({
     setSignalSent(true);
     useSwipe();
     incrementSignalsSent();
+    markFirstDayStep("first_signal");
     trackEvent("signal_sent", { profileId: current.id, priority: "true" });
     const profile = current;
     const usedBoost = consumePrioritySignal();
@@ -382,6 +410,12 @@ export function DiscoverPage({
         onAdvancedFilters={() => setFiltersOpen(true)}
       />
 
+      {densityMessage && (
+        <p className="discover-density-note" role="status">
+          {densityMessage}
+        </p>
+      )}
+
       <DiscoverLimitsBar isPremium={isPremium} />
 
       {boostBanner && (
@@ -439,7 +473,9 @@ export function DiscoverPage({
         />
       )}
 
-      {mode === "signals" && current && (
+      {mode === "signals" && !deckReady && <ProfileCardSkeleton />}
+
+      {mode === "signals" && deckReady && current && (
         <ProfileCard
           key={cardKey}
           profile={current}
@@ -453,7 +489,10 @@ export function DiscoverPage({
           onSendSignal={handleSendSignal}
           onPrioritySignal={handlePrioritySignal}
           onSafety={() => setSafetyOpen(true)}
-          onViewProfile={() => setProfileOpen(true)}
+          onViewProfile={() => {
+            markFirstDayStep("compat_viewed");
+            setProfileOpen(true);
+          }}
           signalBlockedReason={!signalGate.allowed ? signalGate.reason : undefined}
           signalSent={signalSent}
           entering
@@ -484,6 +523,7 @@ export function DiscoverPage({
         freeStateChangesRemaining={freeStateChangesLeft}
         isPremium={isPremium}
         onRequirePremium={() => {
+          trackUpgradeImpression("premium_filter");
           trackEvent("paywall_seen", { source: "online_now_filter" });
           setPaywallOpen(true);
         }}

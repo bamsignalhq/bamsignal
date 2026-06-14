@@ -1,5 +1,6 @@
 import { activateAppUserPremium } from "../../server/db.js";
 import { getPlatformSetting } from "../../server/db.js";
+import { activateCityBoostPlacement } from "../../server/cityHome.js";
 import { createVipInviteLink } from "../../server/telegram.js";
 import { normalizePlan, normalizePlans, planDaysFromAmount } from "../../server/pricing.js";
 
@@ -92,7 +93,8 @@ export default async function handler(req, res) {
           phone,
           days,
           plan_days: days,
-          plan: planMeta
+          plan: planMeta,
+          product_type: "premium"
         }
       })
     });
@@ -105,6 +107,62 @@ export default async function handler(req, res) {
       reference: payload.data?.reference,
       authorization_url: payload.data?.authorization_url,
       access_code: payload.data?.access_code
+    });
+  }
+
+  if (req.query.action === "initialize-boost") {
+    const email = String(body.email || "").trim().toLowerCase();
+    const phone = normalizePhone(body.phone);
+    const name = String(body.name || "").trim();
+    const boostId = String(body.boostId || body.product || "city-boost").trim();
+    const city = String(body.city || "Lagos").trim();
+    const priceNaira = Math.max(0, Math.round(Number(body.amount || body.price || 600)));
+    const amount = priceNaira * 100;
+    const durationHours = Math.max(1, Math.round(Number(body.durationHours || 48)));
+
+    if (!email) {
+      return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
+    }
+    if (!amount) {
+      return res.status(400).json({ ok: false, error: "Invalid boost price." });
+    }
+
+    const callbackUrl =
+      process.env.PAYSTACK_CALLBACK_URL ||
+      `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/payment/success`;
+    const response = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        amount,
+        callback_url: callbackUrl,
+        channels: ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"],
+        metadata: {
+          app: "BamSignal",
+          name,
+          phone,
+          city,
+          boost_id: boostId,
+          duration_hours: durationHours,
+          product_type: "boost"
+        }
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.status) {
+      return res.status(502).json({ ok: false, error: payload?.message || "Paystack checkout could not start." });
+    }
+    return res.status(200).json({
+      ok: true,
+      reference: payload.data?.reference,
+      authorization_url: payload.data?.authorization_url,
+      access_code: payload.data?.access_code,
+      productType: "boost",
+      boostId
     });
   }
 
@@ -135,6 +193,52 @@ export default async function handler(req, res) {
     const transactionEmail = String(transaction?.customer?.email || transaction?.metadata?.email || "").toLowerCase();
     if (email && transactionEmail && transactionEmail !== email) {
       return res.status(403).json({ ok: false, error: "Payment email does not match this BamSignal account." });
+    }
+
+    const productType = String(transaction?.metadata?.product_type || body.productType || "premium").trim();
+
+    if (productType === "boost") {
+      const boostId = String(transaction?.metadata?.boost_id || body.boostId || "city-boost").trim();
+      const city = String(transaction?.metadata?.city || body.city || "").trim();
+      const durationHours = Math.max(
+        1,
+        Math.round(Number(transaction?.metadata?.duration_hours || body.durationHours || 48))
+      );
+
+      const allowedBoosts = new Set(["city-boost", "signal-boost", "profile-boost", "priority-signal-once"]);
+      if (!allowedBoosts.has(boostId)) {
+        return res.status(422).json({ ok: false, error: "Unknown boost product." });
+      }
+
+      if (boostId === "city-boost") {
+        const placement = await activateCityBoostPlacement({
+          email: email || transactionEmail,
+          phone,
+          city,
+          durationHours,
+          paystackReference: reference
+        });
+        if (!placement) {
+          return res.status(422).json({
+            ok: false,
+            error: "Complete onboarding in your city before buying a City Boost."
+          });
+        }
+        return res.status(200).json({
+          ok: true,
+          productType: "boost",
+          boostId,
+          city: placement.city,
+          expiresAt: placement.expires_at
+        });
+      }
+
+      return res.status(200).json({
+        ok: true,
+        productType: "boost",
+        boostId,
+        expiresAt: new Date(Date.now() + durationHours * 3600000).toISOString()
+      });
     }
 
     const days = await premiumDaysFromTransaction(transaction);

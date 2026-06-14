@@ -17,6 +17,8 @@ export const STORAGE_KEYS = {
   reports: "bamsignal-reports",
   premiumUntil: "bamsignal-premium-until",
   paymentReference: "bamsignal-payment-ref",
+  paymentKind: "bamsignal-payment-kind",
+  paymentBoostId: "bamsignal-payment-boost-id",
   premiumPlans: "bamsignal-premium-plans",
   boostProducts: "bamsignal-boost-products",
   streak: "bamsignal-streak",
@@ -42,5 +44,10 @@ export const STORAGE_KEYS = {
   discoverLocationMeta: "bamsignal-discover-location-meta",
   shadowBanned: "bamsignal-shadow-banned",
   photoModerationStrikes: "bamsignal-photo-mod-strikes",
-  voiceModerationStrikes: "bamsignal-voice-mod-strikes"
+  voiceModerationStrikes: "bamsignal-voice-mod-strikes",
+  referrals: "bamsignal-referrals",
+  launchConfig: "bamsignal-launch-config",
+  premiumTrial: "bamsignal-premium-trial",
+  firstDayJourney: "bamsignal-first-day-journey",
+  discoverShownToday: "bamsignal-discover-shown-today"
 } as const;

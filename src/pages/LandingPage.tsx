@@ -3,6 +3,8 @@ import { HomeHowItWorks } from "../components/home/HomeHowItWorks";
 import { HomePremiumTeaser } from "../components/home/HomePremiumTeaser";
 import { HomePulseBar } from "../components/home/HomePulseBar";
 import { HomeTrustStrip } from "../components/home/HomeTrustStrip";
+import { HomeValueProps } from "../components/home/HomeValueProps";
+import { SocialProofSection } from "../components/home/SocialProofSection";
 import { VisualHero } from "../components/visual/VisualHero";
 import { SignalsAroundNigeria } from "../components/visual/SignalsAroundNigeria";
 import { SignalMoments } from "../components/visual/SignalMoments";
@@ -25,12 +27,14 @@ export function LandingPage({
 }: LandingPageProps) {
   return (
     <div className="visual-page home-landing">
-      <VisualHero onGetStarted={onSignup} />
+      <VisualHero onGetStarted={onSignup} onExplore={onGuestAction} />
+      <HomeValueProps onSignup={onSignup} onExplore={onGuestAction} />
       <HomePulseBar />
       <HomeHowItWorks onGetStarted={onSignup} />
       <SignalsAroundNigeria onGuestAction={onGuestAction} />
       <SignalMoments />
       <HomeTrustStrip />
+      <SocialProofSection />
       <HomePremiumTeaser onUnlock={onOpenPricing} />
       <VisualFinalCta onSignup={onSignup} />
       <SiteFooter showEarlyAccess={showEarlyAccess} onLogoClick={onLogoClick} />

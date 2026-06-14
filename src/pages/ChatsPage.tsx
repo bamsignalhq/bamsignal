@@ -10,10 +10,8 @@ import { EmptyState } from "../components/EmptyState";
 import { OffPlatformConsentCard } from "../components/OffPlatformConsentCard";
 import { OffPlatformEducationModal } from "../components/OffPlatformEducationModal";
 import { PaywallModal } from "../components/PaywallModal";
-import { QuickiePaywallModal } from "../components/QuickiePaywallModal";
 import { ReportBlockModal } from "../components/ReportBlockModal";
 import { SafetyNotice } from "../components/SafetyNotice";
-import { isQuickieMode } from "../constants/quickie";
 import type { ChatMessage, ChatThread, Match, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { FEMALE_SAFETY_COPY } from "../constants/safety";
@@ -24,9 +22,9 @@ import { blockUser, canUseInbox, filterBlockedByProfileId } from "../utils/safet
 import { isOnlineNow } from "../utils/activity";
 import { trackEvent } from "../utils/analytics";
 import { pushNotification } from "../utils/notifications";
-import { isQuickieUnlocked, unlockQuickieChat } from "../utils/quickie";
 import { isViewerShadowBanned } from "../utils/shadowBan";
 import { incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
+import { persistMessageRemote } from "../services/memberData";
 
 type ChatsPageProps = {
   isPremium: boolean;
@@ -92,7 +90,7 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
         <EmptyState
           icon={MessageCircle}
           title="No conversations yet"
-          message="When you accept a signal, your chat opens here. Send a signal to get started."
+          message="Your conversations will appear here."
           actionLabel="Go to Discover"
           onAction={onDiscover}
         />
@@ -210,7 +208,6 @@ function ChatDetail({
     offPlatformDeclined: initialThread.offPlatformDeclined
   });
   const [messages, setMessages] = useState<ChatMessage[]>(initialThread.messages);
-  const [quickiePaywallOpen, setQuickiePaywallOpen] = useState(false);
   const [educationOpen, setEducationOpen] = useState(false);
   const [blockWarning, setBlockWarning] = useState("");
   const [toast, setToast] = useState("");
@@ -220,12 +217,7 @@ function ChatDetail({
   const lastActiveAt = match.lastActiveAt ?? getDiscoverProfile(match.profileId)?.lastActiveAt;
   const discoverProfile = getDiscoverProfile(match.profileId);
   const matchReasons = discoverProfile ? getProfileMatchReasons(getDatingProfile(), discoverProfile) : [];
-  const isQuickieChat =
-    isQuickieMode(viewer.intents) && Boolean(discoverProfile && isQuickieMode(discoverProfile.intents));
-  const quickieUnlocked = isQuickieUnlocked(match.id);
-  const quickieLocked = isQuickieChat && !isPremium && !quickieUnlocked;
   const sentByMe = messages.filter((m) => m.from === "me").length;
-  const chatInputBlocked = quickieLocked && sentByMe >= 1;
   const showOffAppLink =
     messages.length >= OFF_APP_MESSAGE_THRESHOLD &&
     !threadMeta.offPlatformApproved &&
@@ -239,6 +231,10 @@ function ChatDetail({
       ...allThreads,
       [match.id]: { ...nextMeta, messages: nextMessages }
     });
+    const lastMessage = nextMessages[nextMessages.length - 1];
+    if (lastMessage?.from === "me") {
+      persistMessageRemote(user, match.id, lastMessage, nextMeta);
+    }
   };
 
   const updateMeta = (patch: Partial<Omit<ChatThread, "messages">>) => {
@@ -252,7 +248,6 @@ function ChatDetail({
 
   const maybeReply = (nextMessages: ChatMessage[]) => {
     if (viewerShadowBanned) return;
-    if (quickieLocked && !quickieUnlocked && !isPremium) return;
     setTimeout(() => {
       const reply: ChatMessage = {
         id: `msg-${Date.now()}-r`,
@@ -266,24 +261,18 @@ function ChatDetail({
 
   const handleSend = (text: string) => {
     setBlockWarning("");
-    if (quickieLocked && sentByMe >= 1) {
-      setQuickiePaywallOpen(true);
-      return;
-    }
 
     const contactCheck = checkOutgoingChatMessage(text, {
-      isQuickie: isQuickieChat,
-      quickieUnlocked: quickieUnlocked || isPremium,
       offPlatformApproved: Boolean(threadMeta.offPlatformApproved)
     });
 
     if (contactCheck.blocked) {
       if (contactCheck.kind === "digits") {
-        setBlockWarning(`${BRAND.contactBlockMessage} ${BRAND.contactRetryHint}`);
+        setBlockWarning(BRAND.contactBlockMessage);
         return;
       }
       if (contactCheck.needsConsent) {
-        setBlockWarning(`${BRAND.contactTelegramBlocked} ${BRAND.contactRetryHint}`);
+        setBlockWarning(BRAND.contactTelegramBlocked);
         updateMeta({ pendingOffPlatformRequest: true, offPlatformDeclined: false });
         pushNotification({
           type: "off_platform_request",
@@ -294,11 +283,11 @@ function ChatDetail({
         setTimeout(() => setToast(""), 4000);
         return;
       }
-      setBlockWarning(`${BRAND.contactBlockMessage} ${BRAND.contactRetryHint}`);
+      setBlockWarning(BRAND.contactBlockMessage);
       return;
     }
 
-    if (!isQuickieChat && !isPremium) {
+    if (!isPremium) {
       if (readDailyCount(STORAGE_KEYS.dailyMessages) >= FREE_DAILY_MESSAGES) {
         setPaywallOpen(true);
         return;
@@ -316,12 +305,6 @@ function ChatDetail({
     const nextMessages = [...messages, msg];
     persistThread(nextMessages);
     if (isFirstMessage) trackEvent("message_started", { matchId: match.id });
-
-    if (quickieLocked && sentByMe === 0) {
-      trackEvent("quickie_paywall_shown", { matchId: match.id });
-      setTimeout(() => setQuickiePaywallOpen(true), 350);
-      return;
-    }
 
     maybeReply(nextMessages);
   };
@@ -356,12 +339,6 @@ function ChatDetail({
     updateMeta({ pendingOffPlatformRequest: false, offPlatformDeclined: true });
     setToast("Kept inside BamSignal. They'll need to keep chatting here.");
     setTimeout(() => setToast(""), 3500);
-  };
-
-  const handleQuickieUnlock = () => {
-    unlockQuickieChat(match.id);
-    setQuickiePaywallOpen(false);
-    trackEvent("quickie_unlock", { matchId: match.id });
   };
 
   const handleBlock = () => {
@@ -418,12 +395,10 @@ function ChatDetail({
         ))}
       </div>
 
-      <SafetyNotice variant="inline" message="Meet in public first. Share meet details with a trusted contact (coming soon)." />
+      <SafetyNotice variant="inline" message="Meet in public first. Tell a trusted contact where you're going and when you'll check in." />
 
       {dmPaused ? (
         <p className="chat-dm-paused">{inboxGate.reason ?? FEMALE_SAFETY_COPY.dmPaused}</p>
-      ) : chatInputBlocked ? (
-        <p className="chat-dm-paused">Chat paused — pay once to continue this Quickie conversation.</p>
       ) : (
         <ChatInput
           onSend={handleSend}
@@ -437,14 +412,6 @@ function ChatDetail({
         open={educationOpen}
         onClose={() => setEducationOpen(false)}
         onContinue={finishOffPlatformAccept}
-      />
-
-      <QuickiePaywallModal
-        open={quickiePaywallOpen}
-        onClose={() => setQuickiePaywallOpen(false)}
-        onUnlock={handleQuickieUnlock}
-        loading={paymentLoading}
-        matchName={match.name}
       />
 
       <PaywallModal

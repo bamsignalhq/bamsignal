@@ -15,6 +15,8 @@ import { matchesPreferences } from "./compatibility";
 import { defaultMatchPreferences } from "./profile";
 import { meetsDiscoveryQuality } from "./launchSeed";
 import { readJson, writeJson } from "./storage";
+import { persistReportRemote } from "../services/memberData";
+import { trackSafetyBlock, trackSafetyReport } from "./safetyAnalytics";
 
 export function resolveSafetySettings(profile: {
   gender?: Gender;
@@ -61,19 +63,33 @@ export function isAutoFlagged(profileId: string): boolean {
 
 export function recordReport(profileId: string, reason: ReportReason, details?: string): void {
   const reports = readJson<ReportRecord[]>(STORAGE_KEYS.reports, []);
-  reports.push({
+  const report: ReportRecord = {
     profileId,
     reason,
     details: details?.trim() || undefined,
     at: new Date().toISOString()
-  });
+  };
+  reports.push(report);
   writeJson(STORAGE_KEYS.reports, reports);
+  trackSafetyReport(profileId, reason);
+  const user = readJson<{ email?: string; phone?: string; name?: string }>(STORAGE_KEYS.userProfile, {
+    email: "",
+    phone: "",
+    name: ""
+  });
+  if (user.email || user.phone) {
+    persistReportRemote(
+      { email: user.email || "", phone: user.phone || "", name: user.name || "" },
+      report
+    );
+  }
 }
 
 export function blockUser(profileId: string): void {
   const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
   if (!blocked.includes(profileId)) {
     writeJson(STORAGE_KEYS.blocked, [...blocked, profileId]);
+    trackSafetyBlock(profileId);
   }
   const matches = readJson<{ profileId: string }[]>(STORAGE_KEYS.matches, []);
   writeJson(

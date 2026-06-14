@@ -1,12 +1,12 @@
 import { HOW_IT_WORKS, TRUST_ITEMS } from "./landingProfiles";
 
 export const HOME_HERO = {
-  badge: "Built for Nigeria · Early access",
+  badge: "Built for Nigeria",
   headline: "Meet someone real in your city.",
   subheadline:
-    "Verified profiles, safer chats, and connections that start with a signal — from Lagos rooftops to Sunday hangouts.",
-  primaryCta: "Start free",
-  secondaryCta: "See how it works"
+    "Verified profiles. Safer chats. Connections that start with a Signal — not endless swiping.",
+  primaryCta: "Join BamSignal",
+  secondaryCta: "Explore Signals"
 } as const;
 
 export const HOME_SECTIONS = {
@@ -55,10 +55,12 @@ export const HOME_HOW_STEPS = HOW_IT_WORKS.slice(0, 3);
 export const HOME_TRUST = TRUST_ITEMS;
 
 export const HOME_CITY_MARQUEE = [
-  "New signal in Lekki",
-  "Verified profile in Abuja",
-  "Match in Port Harcourt",
-  "Active now in Enugu",
-  "Sunday hangout crew in Ibadan",
-  "Rooftop linkup in Lagos"
+  "Verified profiles across Nigeria",
+  "Send a Signal when someone feels right",
+  "Chat safely inside BamSignal first",
+  "Meet in public — tell someone your plans",
+  "Friendship, dating, and real connections",
+  "Built for Lagos, Abuja, PH, and beyond",
+  "5 free signals every day",
+  "Upgrade for unlimited signals and filters"
 ] as const;

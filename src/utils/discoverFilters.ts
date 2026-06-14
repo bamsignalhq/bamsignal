@@ -1,6 +1,9 @@
-import type { DiscoverProfile } from "../types";
+import type { DatingProfile, DiscoverProfile } from "../types";
 import { isOnlineNow } from "./activity";
 import { boostedProfileIds } from "./activeBoosts";
+import { computeCompatibilityPercent } from "./compatibility";
+
+import type { MatchPreferences } from "../types";
 
 export type DiscoverQuickFilter =
   | "all"
@@ -10,6 +13,26 @@ export type DiscoverQuickFilter =
   | "networking"
   | "verified"
   | "nearby";
+
+export function applyDiscoverPreferences(
+  profiles: DiscoverProfile[],
+  prefs: MatchPreferences,
+  viewer?: DatingProfile
+): DiscoverProfile[] {
+  let result = profiles;
+
+  if (prefs.requireVerified) {
+    result = result.filter((p) => p.verified);
+  }
+  if (prefs.requireVoiceIntro) {
+    result = result.filter((p) => Boolean(p.voiceIntroUrl));
+  }
+  if (prefs.minCompatibility != null && viewer) {
+    result = result.filter((p) => computeCompatibilityPercent(viewer, p) >= prefs.minCompatibility!);
+  }
+
+  return result;
+}
 
 export function applyQuickFilter(
   profiles: DiscoverProfile[],

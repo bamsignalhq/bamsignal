@@ -65,7 +65,10 @@ export function DiscoverFilters({
       ageMax: undefined,
       distanceMax: undefined,
       preferenceMode: "flexible",
-      onlineNow: false
+      onlineNow: false,
+      minCompatibility: undefined,
+      requireVoiceIntro: false,
+      requireVerified: false
     });
   };
 
@@ -75,6 +78,18 @@ export function DiscoverFilters({
       return;
     }
     onChange({ ...prefs, onlineNow: !prefs.onlineNow });
+  };
+
+  const requirePremium = (action: () => void) => {
+    if (!isPremium) {
+      onRequirePremium?.();
+      return;
+    }
+    action();
+  };
+
+  const togglePremium = <K extends keyof MatchPreferences>(key: K, value: MatchPreferences[K]) => {
+    requirePremium(() => onChange({ ...prefs, [key]: value }));
   };
 
   const activeCount =
@@ -87,7 +102,10 @@ export function DiscoverFilters({
     (prefs.ageMin != null || prefs.ageMax != null ? 1 : 0) +
     (prefs.distanceMax != null ? 1 : 0) +
     (prefs.preferenceMode === "strict" ? 1 : 0) +
-    (prefs.onlineNow ? 1 : 0);
+    (prefs.onlineNow ? 1 : 0) +
+    (prefs.minCompatibility != null ? 1 : 0) +
+    (prefs.requireVoiceIntro ? 1 : 0) +
+    (prefs.requireVerified ? 1 : 0);
 
   return (
     <>
@@ -119,12 +137,7 @@ export function DiscoverFilters({
             <StateCitySelect
               state={discoverState}
               city={discoverCity}
-              onStateChange={(state) => {
-                const cities = citiesForState(state);
-                const nextCity = cities.includes(discoverCity) ? discoverCity : (cities[0] ?? discoverCity);
-                onDiscoverLocationChange(state, nextCity);
-              }}
-              onCityChange={(city) => onDiscoverLocationChange(discoverState, city)}
+              onLocationChange={onDiscoverLocationChange}
               stateLabel="State"
               cityLabel="City"
             />
@@ -255,15 +268,15 @@ export function DiscoverFilters({
             </div>
           </fieldset>
 
-          <fieldset className="intent-fieldset">
-            <legend>Religion (optional)</legend>
+          <fieldset className={`intent-fieldset ${!isPremium ? "discover-filter--locked" : ""}`}>
+            <legend>Religion { !isPremium && "· Premium"}</legend>
             <div className="intent-tags selectable">
               {FILTER_RELIGIONS.map((r) => (
                 <button
                   key={r}
                   type="button"
                   className={`intent-tag ${prefs.religions.includes(r) ? "selected" : ""}`}
-                  onClick={() => toggle("religions", r)}
+                  onClick={() => requirePremium(() => toggle("religions", r))}
                 >
                   {r}
                 </button>
@@ -287,20 +300,53 @@ export function DiscoverFilters({
             </div>
           </fieldset>
 
-          <fieldset className="intent-fieldset">
-            <legend>Lifestyle circle (optional)</legend>
+          <fieldset className={`intent-fieldset ${!isPremium ? "discover-filter--locked" : ""}`}>
+            <legend>Lifestyle { !isPremium && "· Premium"}</legend>
             <div className="intent-tags selectable">
               {FILTER_LIFESTYLES.map((l) => (
                 <button
                   key={l}
                   type="button"
                   className={`intent-tag ${prefs.lifestyles.includes(l) ? "selected" : ""}`}
-                  onClick={() => toggle("lifestyles", l)}
+                  onClick={() => requirePremium(() => toggle("lifestyles", l))}
                 >
                   {l}
                 </button>
               ))}
             </div>
+          </fieldset>
+
+          <fieldset className={`intent-fieldset discover-premium-filters ${!isPremium ? "discover-filter--locked" : ""}`}>
+            <legend>Premium filters</legend>
+            <button
+              type="button"
+              className={`discover-online-toggle ${prefs.requireVerified ? "active" : ""}`}
+              onClick={() => togglePremium("requireVerified", !prefs.requireVerified)}
+            >
+              <span className="discover-online-toggle__label">Verified only</span>
+            </button>
+            <button
+              type="button"
+              className={`discover-online-toggle ${prefs.requireVoiceIntro ? "active" : ""}`}
+              onClick={() => togglePremium("requireVoiceIntro", !prefs.requireVoiceIntro)}
+            >
+              <span className="discover-online-toggle__label">🎤 Voice intro</span>
+            </button>
+            <label className="discover-compat-filter">
+              Min compatibility %
+              <input
+                type="range"
+                min={65}
+                max={99}
+                step={1}
+                value={prefs.minCompatibility ?? 65}
+                disabled={!isPremium}
+                onChange={(e) =>
+                  togglePremium("minCompatibility", Number(e.target.value))
+                }
+              />
+              <span>{prefs.minCompatibility ?? 65}%+</span>
+            </label>
           </fieldset>
 
           <div className="discover-filters-actions">

@@ -4,6 +4,7 @@ import { BRAND } from "../constants/copy";
 import type { PremiumPlan } from "../constants/plans";
 import { PlanCard } from "./PlanCard";
 import { trackEvent } from "../utils/analytics";
+import { trackUpgradeClick, trackUpgradeImpression } from "../utils/premiumConversion";
 
 type PaywallModalProps = {
   open: boolean;
@@ -15,7 +16,10 @@ type PaywallModalProps = {
 
 export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: PaywallModalProps) {
   useEffect(() => {
-    if (open) trackEvent("paywall_seen", { source: "paywall_modal" });
+    if (open) {
+      trackEvent("paywall_seen", { source: "paywall_modal" });
+      trackUpgradeImpression("paywall_modal");
+    }
   }, [open]);
 
   if (!open) return null;
@@ -42,7 +46,10 @@ export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: Pa
             <PlanCard
               key={plan.id}
               plan={plan}
-              onSelect={() => onSelectPlan(plan)}
+              onSelect={() => {
+                trackUpgradeClick("paywall_modal");
+                onSelectPlan(plan);
+              }}
               disabled={loading}
             />
           ))}

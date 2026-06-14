@@ -10,6 +10,7 @@
     "generate:brand": "node scripts/generate-brand-assets.mjs",
     "generate:showcase": "node scripts/convert-showcase-images.mjs",
     "convert:showcase": "node scripts/convert-showcase-images.mjs",
+    "verify:database": "node scripts/verify-database.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "start": "node server/production.js",
     "server": "node server/index.js",

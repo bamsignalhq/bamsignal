@@ -21,7 +21,17 @@ export type AnalyticsEvent =
   | "state_selected"
   | "quickie_paywall_shown"
   | "quickie_unlock"
-  | "boost_activated";
+  | "boost_activated"
+  | "upgrade_impression"
+  | "upgrade_click"
+  | "premium_trial_started"
+  | "premium_trial_expired"
+  | "first_day_step"
+  | "safety_report"
+  | "safety_block"
+  | "contact_share_attempt"
+  | "referral_signup"
+  | "verification_approved";
 
 type EventRow = { event: AnalyticsEvent; at: string; meta?: Record<string, string> };
 

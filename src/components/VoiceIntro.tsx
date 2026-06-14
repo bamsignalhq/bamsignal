@@ -1,15 +1,41 @@
-import { Pause, Play } from "lucide-react";
-import { useRef, useState } from "react";
+import { Pause, Play, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { moderateVoiceIntroTranscript } from "../utils/mediaModeration";
+
+const MAX_SECONDS = 15;
 
 type VoiceIntroProps = {
   url?: string;
   label?: string;
+  showBadge?: boolean;
 };
 
-export function VoiceIntro({ url, label = "Voice Intro" }: VoiceIntroProps) {
+function formatDuration(seconds: number): string {
+  const s = Math.max(0, Math.min(MAX_SECONDS, Math.floor(seconds)));
+  return `0:${s.toString().padStart(2, "0")}`;
+}
+
+export function VoiceIntro({ url, label = "Voice Intro", showBadge = false }: VoiceIntroProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onMeta = () => setDuration(Math.min(audio.duration || 0, MAX_SECONDS));
+    const onTime = () => {
+      const d = audio.duration || MAX_SECONDS;
+      setProgress((audio.currentTime / d) * 100);
+    };
+    audio.addEventListener("loadedmetadata", onMeta);
+    audio.addEventListener("timeupdate", onTime);
+    return () => {
+      audio.removeEventListener("loadedmetadata", onMeta);
+      audio.removeEventListener("timeupdate", onTime);
+    };
+  }, [url]);
 
   if (!url) return null;
 
@@ -27,15 +53,36 @@ export function VoiceIntro({ url, label = "Voice Intro" }: VoiceIntroProps) {
 
   return (
     <div className="voice-intro">
+      {showBadge && (
+        <span className="voice-intro__badge" aria-label="Voice intro available">
+          🎤 Voice Intro Available
+        </span>
+      )}
       <button type="button" className="voice-intro__btn" onClick={toggle} aria-label={label}>
         {playing ? <Pause size={16} /> : <Play size={16} fill="currentColor" />}
+        <span className="voice-intro__wave" aria-hidden>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span
+              key={i}
+              className={`voice-intro__bar ${playing ? "voice-intro__bar--active" : ""}`}
+              style={{ height: `${30 + ((i * 7) % 50)}%`, animationDelay: `${i * 0.05}s` }}
+            />
+          ))}
+        </span>
         <span>{label}</span>
+        <span className="voice-intro__time">{formatDuration(duration || MAX_SECONDS)}</span>
       </button>
+      <div className="voice-intro__progress" aria-hidden>
+        <div style={{ width: `${progress}%` }} />
+      </div>
       <audio
         ref={audioRef}
         src={url}
-        preload="none"
-        onEnded={() => setPlaying(false)}
+        preload="metadata"
+        onEnded={() => {
+          setPlaying(false);
+          setProgress(0);
+        }}
         onPause={() => setPlaying(false)}
       />
     </div>
@@ -79,15 +126,18 @@ type VoiceIntroRecorderProps = {
 
 export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: VoiceIntroRecorderProps) {
   const [recording, setRecording] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const tickRef = useRef<number | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const transcriptRef = useRef("");
 
   const start = async () => {
     try {
       transcriptRef.current = "";
+      setElapsed(0);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const SpeechRecognitionCtor = getSpeechRecognition();
       if (SpeechRecognitionCtor) {
@@ -116,6 +166,7 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
         recognitionRef.current?.stop();
         recognitionRef.current = null;
         stream.getTracks().forEach((t) => t.stop());
+        if (tickRef.current) window.clearInterval(tickRef.current);
 
         const transcript = transcriptRef.current.trim();
         if (transcript) {
@@ -134,7 +185,10 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
       mediaRef.current = recorder;
       recorder.start();
       setRecording(true);
-      timerRef.current = window.setTimeout(() => stop(), 15000);
+      tickRef.current = window.setInterval(() => {
+        setElapsed((s) => Math.min(MAX_SECONDS, s + 1));
+      }, 1000);
+      timerRef.current = window.setTimeout(() => stop(), MAX_SECONDS * 1000);
     } catch {
       onRejected?.("Microphone access is required to record a voice intro.");
     }
@@ -142,6 +196,7 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
 
   const stop = () => {
     if (timerRef.current) window.clearTimeout(timerRef.current);
+    if (tickRef.current) window.clearInterval(tickRef.current);
     mediaRef.current?.stop();
     setRecording(false);
   };
@@ -149,19 +204,30 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
   return (
     <div className="voice-intro-recorder">
       <p className="voice-intro-recorder__hint">
-        Record a 15-second intro — no phone numbers, WhatsApp, Telegram, or Facebook handles.
+        Record up to {MAX_SECONDS} seconds — no phone numbers or social handles.
       </p>
       {url ? (
         <div className="voice-intro-recorder__row">
           <VoiceIntro url={url} />
+          <button type="button" className="link-btn" onClick={onClear} aria-label="Delete voice intro">
+            <Trash2 size={16} />
+            Delete
+          </button>
           <button type="button" className="link-btn" onClick={onClear}>
             Re-record
           </button>
         </div>
       ) : (
-        <button type="button" className="btn-secondary" onClick={recording ? stop : start}>
-          {recording ? "Stop recording" : "Record voice intro"}
-        </button>
+        <div className="voice-intro-recorder__controls">
+          <button type="button" className="btn-secondary" onClick={recording ? stop : start}>
+            {recording ? `Stop · ${formatDuration(elapsed)}` : "Record voice intro"}
+          </button>
+          {recording && (
+            <span className="voice-intro-recorder__live" aria-live="polite">
+              Recording… max {MAX_SECONDS}s
+            </span>
+          )}
+        </div>
       )}
     </div>
   );

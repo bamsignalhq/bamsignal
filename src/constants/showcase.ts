@@ -80,7 +80,26 @@ export const CITY_PROFILE_PHOTOS: Record<string, string> = {
   Aba: MOMENT_SETS.suyaChill[0],
   Asaba: MOMENT_SETS.roadTrip[0],
   Abeokuta: MOMENT_SETS.sundayHangout[0],
-  Ibadan: MOMENT_SETS.movieDate[0]
+  Ibadan: MOMENT_SETS.movieDate[0],
+  Kaduna: MOMENT_SETS.sundayHangout[0],
+  Kano: MOMENT_SETS.movieDate[0],
+  Jos: MOMENT_SETS.roadTrip[0],
+  Calabar: MOMENT_SETS.beachDay[0],
+  Warri: MOMENT_SETS.suyaChill[0],
+  Onitsha: MOMENT_SETS.sundayHangout[0],
+  Awka: MOMENT_SETS.roadTrip[0],
+  Ilorin: MOMENT_SETS.movieDate[0],
+  Akure: MOMENT_SETS.sundayHangout[0],
+  Osogbo: MOMENT_SETS.suyaChill[0],
+  Makurdi: MOMENT_SETS.roadTrip[0],
+  Yenagoa: MOMENT_SETS.beachDay[0],
+  Lokoja: MOMENT_SETS.sundayHangout[0],
+  Minna: MOMENT_SETS.movieDate[0],
+  Umuahia: MOMENT_SETS.suyaChill[0],
+  Sagamu: MOMENT_SETS.roadTrip[0],
+  Nnewi: MOMENT_SETS.sundayHangout[0],
+  Zaria: MOMENT_SETS.movieDate[0],
+  Eket: MOMENT_SETS.beachDay[0]
 };
 
 export function photoForCity(city: string): string {

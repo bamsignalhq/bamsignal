@@ -2,8 +2,7 @@ import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { BoostProductInput } from "../constants/boosts";
 import { DEFAULT_BOOST_INPUTS } from "../constants/boosts";
-import { getCms, saveCms } from "../constants/cms";
-import { durationLabel, formatPriceLabel } from "../constants/plans";
+import { durationLabel } from "../constants/plans";
 import type { PremiumPlanInput } from "../constants/plans";
 import { usePlans } from "../context/PlansContext";
 import { saveBoostProductsAdmin, fetchBoostProducts } from "../services/boosts";
@@ -19,7 +18,6 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
   const { plans, refreshPlans } = usePlans();
   const [draft, setDraft] = useState<PremiumPlanInput[]>([]);
   const [boostDraft, setBoostDraft] = useState<BoostProductInput[]>(DEFAULT_BOOST_INPUTS);
-  const [quickiePrice, setQuickiePrice] = useState(() => getCms().quickiePrice);
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [message, setMessage] = useState("");
   const [savingKey, setSavingKey] = useState<string | null>(null);
@@ -48,7 +46,6 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
         }))
       );
     });
-    setQuickiePrice(getCms().quickiePrice);
   }, []);
 
   useEffect(() => {
@@ -92,15 +89,6 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
     } else {
       setMessage(result.error || "Could not save boosts.");
     }
-  };
-
-  const saveQuickie = () => {
-    setSavingKey("quickie");
-    const price = Math.max(0, Math.round(Number(quickiePrice) || 0));
-    saveCms({ quickiePrice: price, quickiePriceLabel: formatPriceLabel(price) });
-    setQuickiePrice(price);
-    setSavingKey(null);
-    setMessage(`Quickie chat charge set to ${formatPriceLabel(price)}.`);
   };
 
   if (authorized === null) {
@@ -194,39 +182,6 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
           </section>
         ))}
       </div>
-
-      <header className="page-header">
-        <h3>Quickie chat charge</h3>
-        <p>One-time fee after the first message in a Quickie match.</p>
-      </header>
-
-      <section className="card admin-plan-row admin-plan-row--quickie">
-        <div className="admin-plan-row__head">
-          <span className="admin-plan-id">quickie</span>
-          <button
-            type="button"
-            className="btn-secondary btn-sm admin-row-save"
-            disabled={savingKey === "quickie"}
-            onClick={saveQuickie}
-          >
-            {savingKey === "quickie" ? <Loader2 className="spin" size={16} /> : <Save size={16} />}
-            Save Quickie price
-          </button>
-        </div>
-        <label>
-          Price (₦)
-          <input
-            type="number"
-            min={100}
-            step={1}
-            value={quickiePrice}
-            onChange={(e) => setQuickiePrice(Number(e.target.value))}
-          />
-        </label>
-        <p className="admin-plan-preview">
-          Preview: Quickie unlock — {formatPriceLabel(quickiePrice || 0)}
-        </p>
-      </section>
 
       <header className="page-header">
         <h3>Signal boosts</h3>

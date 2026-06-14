@@ -4,20 +4,15 @@ export const INTENT_OPTIONS: {
   id: IntentTag;
   label: string;
   emoji: string;
-  hint?: string;
 }[] = [
   { id: "Relationship", label: "Relationship", emoji: "❤️" },
   { id: "Friendship", label: "Friendship", emoji: "🤝" },
   { id: "Networking", label: "Networking", emoji: "🌍" },
   { id: "Social Events", label: "Social Events", emoji: "🎉" },
-  { id: "Chat", label: "Chat", emoji: "💬" },
-  {
-    id: "Quickie",
-    label: "Quickie",
-    emoji: "⚡",
-    hint: "Private pool — only shown to others who picked Quickie. Chat unlocks after payment."
-  }
+  { id: "Chat", label: "Chat", emoji: "💬" }
 ];
+
+export const MAX_INTENT_SELECTIONS = 2;
 
 export function intentLabel(id: IntentTag): string {
   return INTENT_OPTIONS.find((o) => o.id === id)?.label ?? id;
@@ -39,7 +34,7 @@ export function normalizeIntent(raw: string): IntentTag | null {
     Relationship: "Relationship",
     "Social Events": "Social Events",
     Chat: "Chat",
-    Quickie: "Quickie"
+    Quickie: "Chat"
   };
   return map[raw] ?? null;
 }
@@ -47,5 +42,6 @@ export function normalizeIntent(raw: string): IntentTag | null {
 export function normalizeIntents(raw: string[] | undefined): IntentTag[] {
   if (!raw?.length) return ["Relationship"];
   const out = raw.map(normalizeIntent).filter(Boolean) as IntentTag[];
-  return out.length ? [...new Set(out)] : ["Relationship"];
+  const unique = [...new Set(out)].slice(0, MAX_INTENT_SELECTIONS);
+  return unique.length ? unique : ["Relationship"];
 }

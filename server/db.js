@@ -10,11 +10,207 @@ export const pool = config.databaseUrl
     })
   : null;
 
+/** @type {"dry-run" | "connected" | "disconnected"} */
+let dbConnectionStatus = config.databaseUrl ? "disconnected" : "dry-run";
+let dbConnectionError = null;
+
+if (pool) {
+  pool.on("error", (error) => {
+    console.error("[bamsignal] Database pool error:", error.message);
+    dbConnectionStatus = "disconnected";
+    dbConnectionError = error.message;
+  });
+}
+
 export const dbEnabled = Boolean(pool);
 
+export function getDatabaseStatus() {
+  if (!config.databaseUrl) return "dry-run";
+  return dbConnectionStatus;
+}
+
+export function getDatabaseError() {
+  return dbConnectionError;
+}
+
+export function isDatabaseReady() {
+  return Boolean(pool) && dbConnectionStatus === "connected";
+}
+
 export async function query(text, params = []) {
-  if (!pool) return { rows: [], rowCount: 0 };
+  if (!pool || !isDatabaseReady()) return { rows: [], rowCount: 0 };
   return pool.query(text, params);
+}
+
+export function normalizeUserKey({ email, phone } = {}) {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  if (normalizedEmail.includes("@")) return `email:${normalizedEmail}`;
+
+  const digits = String(phone || "")
+    .replace(/\D/g, "")
+    .replace(/^234/, "");
+  if (digits) return `phone:${digits}`;
+  return null;
+}
+
+export async function ensureSubscriptionEventsTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists subscription_events (
+      id uuid primary key default gen_random_uuid(),
+      provider text not null default 'paystack',
+      event_type text not null,
+      user_email text,
+      user_id text,
+      payload jsonb not null default '{}'::jsonb,
+      created_at timestamptz not null default now()
+    )
+  `);
+}
+
+export async function ensureAppSignalsTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists app_signals (
+      id uuid primary key default gen_random_uuid(),
+      user_key text not null,
+      sender_email text,
+      sender_phone text,
+      target_profile_id text not null,
+      signal_type text not null default 'signal',
+      payload jsonb not null default '{}'::jsonb,
+      created_at timestamptz not null default now()
+    )
+  `);
+  await query("create index if not exists app_signals_user_key_idx on app_signals (user_key, created_at desc)");
+}
+
+export async function ensureAppMatchesTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists app_matches (
+      id text not null,
+      user_key text not null,
+      owner_email text,
+      owner_phone text,
+      profile_id text not null,
+      payload jsonb not null default '{}'::jsonb,
+      matched_at timestamptz not null default now(),
+      primary key (id, user_key)
+    )
+  `);
+}
+
+export async function ensureAppMessagesTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists app_messages (
+      id text not null,
+      thread_id text not null,
+      user_key text not null,
+      owner_email text,
+      owner_phone text,
+      from_side text not null,
+      body text not null,
+      payload jsonb not null default '{}'::jsonb,
+      created_at timestamptz not null default now(),
+      primary key (id, user_key)
+    )
+  `);
+  await query(
+    "create index if not exists app_messages_thread_idx on app_messages (user_key, thread_id, created_at)"
+  );
+}
+
+export async function ensureAppChatThreadsTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists app_chat_threads (
+      match_id text not null,
+      user_key text not null,
+      owner_email text,
+      owner_phone text,
+      meta jsonb not null default '{}'::jsonb,
+      updated_at timestamptz not null default now(),
+      primary key (match_id, user_key)
+    )
+  `);
+}
+
+export async function ensureAppReportsTable() {
+  if (!pool) return;
+
+  await query(`
+    create table if not exists app_reports (
+      id uuid primary key default gen_random_uuid(),
+      user_key text not null,
+      reporter_email text,
+      reporter_phone text,
+      profile_id text not null,
+      reason text not null,
+      details text,
+      payload jsonb not null default '{}'::jsonb,
+      created_at timestamptz not null default now()
+    )
+  `);
+  await query("create index if not exists app_reports_profile_idx on app_reports (profile_id, created_at desc)");
+}
+
+export async function ensureAllTables() {
+  await ensureAppUsersTable();
+  await ensurePlatformSettingsTable();
+  await ensureAdminUsersTable();
+  await ensureSubscriptionEventsTable();
+  await ensureAppSignalsTable();
+  await ensureAppMatchesTable();
+  await ensureAppMessagesTable();
+  await ensureAppChatThreadsTable();
+  await ensureAppReportsTable();
+  const { ensureCityHomeTables } = await import("./cityHome.js");
+  await ensureCityHomeTables();
+}
+
+export async function initDatabase() {
+  if (!pool) {
+    dbConnectionStatus = "dry-run";
+    dbConnectionError = null;
+    return { ok: false, reason: "DATABASE_URL is not set" };
+  }
+
+  try {
+    await pool.query("select 1 as ok");
+    dbConnectionStatus = "connected";
+    dbConnectionError = null;
+    await ensureAllTables();
+    console.log("[bamsignal] Database connected successfully");
+    return { ok: true };
+  } catch (error) {
+    dbConnectionStatus = "disconnected";
+    dbConnectionError = error.message || "Database connection failed";
+    console.error("[bamsignal] Database connection failed:", dbConnectionError);
+    console.warn("[bamsignal] Server will continue without database persistence.");
+    return { ok: false, reason: dbConnectionError };
+  }
+}
+
+export async function pingDatabase() {
+  if (!pool) return false;
+  if (dbConnectionStatus !== "connected") return false;
+  try {
+    await pool.query("select 1 as ok");
+    return true;
+  } catch (error) {
+    dbConnectionStatus = "disconnected";
+    dbConnectionError = error.message || "Database ping failed";
+    return false;
+  }
 }
 
 export async function withDbRetry(task, attempts = 3) {
@@ -166,7 +362,7 @@ export async function deactivatePlatformAdmin(email) {
 }
 
 export async function findAppUserIdentity({ email, phone }) {
-  if (!pool) return null;
+  if (!isDatabaseReady()) return null;
   await ensureAppUsersTable();
 
   const result = await query(
@@ -181,7 +377,7 @@ export async function findAppUserIdentity({ email, phone }) {
 }
 
 export async function upsertAppUserIdentity({ email, phone, name, referralCode }) {
-  if (!pool) return null;
+  if (!isDatabaseReady()) return null;
   await ensureAppUsersTable();
 
   const existing = await findAppUserIdentity({ email, phone });
@@ -207,8 +403,17 @@ export async function upsertAppUserIdentity({ email, phone, name, referralCode }
 }
 
 export async function activateAppUserPremium({ email, phone, name, premiumUntil, paystackReference, inviteLink }) {
-  if (!pool) return null;
+  if (!isDatabaseReady()) return null;
   await ensureAppUsersTable();
+
+  if (paystackReference) {
+    const duplicate = await query("select * from app_users where paystack_reference = $1 limit 1", [
+      paystackReference
+    ]);
+    if (duplicate.rows[0]) {
+      return duplicate.rows[0];
+    }
+  }
 
   const existing = await findAppUserIdentity({ email, phone });
   const result = existing
@@ -234,4 +439,180 @@ export async function activateAppUserPremium({ email, phone, name, premiumUntil,
         [email || null, phone || null, name || null, premiumUntil, paystackReference || null, inviteLink || null]
       );
   return result.rows[0];
+}
+
+function memberIdentity({ email, phone }) {
+  const userKey = normalizeUserKey({ email, phone });
+  const normalizedPhone = String(phone || "")
+    .replace(/\D/g, "")
+    .replace(/^234/, "");
+  return {
+    userKey,
+    email: String(email || "")
+      .trim()
+      .toLowerCase(),
+    phone: normalizedPhone || null
+  };
+}
+
+export async function persistSignal({ email, phone, targetProfileId, signalType = "signal", payload = {} }) {
+  if (!isDatabaseReady()) return null;
+  const identity = memberIdentity({ email, phone });
+  if (!identity.userKey || !targetProfileId) return null;
+  await ensureAppSignalsTable();
+
+  const result = await query(
+    `insert into app_signals (user_key, sender_email, sender_phone, target_profile_id, signal_type, payload)
+     values ($1, $2, $3, $4, $5, $6)
+     returning *`,
+    [
+      identity.userKey,
+      identity.email || null,
+      identity.phone,
+      targetProfileId,
+      signalType,
+      payload
+    ]
+  );
+  return result.rows[0] || null;
+}
+
+export async function persistMatch({ email, phone, match }) {
+  if (!isDatabaseReady() || !match?.id) return null;
+  const identity = memberIdentity({ email, phone });
+  if (!identity.userKey) return null;
+  await ensureAppMatchesTable();
+
+  const result = await query(
+    `insert into app_matches (id, user_key, owner_email, owner_phone, profile_id, payload, matched_at)
+     values ($1, $2, $3, $4, $5, $6, $7)
+     on conflict (id, user_key)
+     do update set payload = excluded.payload, matched_at = excluded.matched_at
+     returning *`,
+    [
+      match.id,
+      identity.userKey,
+      identity.email || null,
+      identity.phone,
+      match.profileId,
+      match,
+      match.matchedAt || new Date().toISOString()
+    ]
+  );
+  return result.rows[0] || null;
+}
+
+export async function persistMessage({ email, phone, threadId, message, threadMeta = {} }) {
+  if (!isDatabaseReady() || !threadId || !message?.id) return null;
+  const identity = memberIdentity({ email, phone });
+  if (!identity.userKey) return null;
+  await ensureAppMessagesTable();
+  await ensureAppChatThreadsTable();
+
+  const messageResult = await query(
+    `insert into app_messages (id, thread_id, user_key, owner_email, owner_phone, from_side, body, payload, created_at)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     on conflict (id, user_key) do nothing
+     returning *`,
+    [
+      message.id,
+      threadId,
+      identity.userKey,
+      identity.email || null,
+      identity.phone,
+      message.from,
+      message.text,
+      message,
+      message.at || new Date().toISOString()
+    ]
+  );
+
+  await query(
+    `insert into app_chat_threads (match_id, user_key, owner_email, owner_phone, meta, updated_at)
+     values ($1, $2, $3, $4, $5, now())
+     on conflict (match_id, user_key)
+     do update set meta = excluded.meta, updated_at = now()`,
+    [threadId, identity.userKey, identity.email || null, identity.phone, threadMeta]
+  );
+
+  return messageResult.rows[0] || null;
+}
+
+export async function persistReport({ email, phone, report }) {
+  if (!isDatabaseReady() || !report?.profileId || !report?.reason) return null;
+  const identity = memberIdentity({ email, phone });
+  if (!identity.userKey) return null;
+  await ensureAppReportsTable();
+
+  const result = await query(
+    `insert into app_reports (user_key, reporter_email, reporter_phone, profile_id, reason, details, payload, created_at)
+     values ($1, $2, $3, $4, $5, $6, $7, $8)
+     returning *`,
+    [
+      identity.userKey,
+      identity.email || null,
+      identity.phone,
+      report.profileId,
+      report.reason,
+      report.details || null,
+      report,
+      report.at || new Date().toISOString()
+    ]
+  );
+  return result.rows[0] || null;
+}
+
+export async function fetchMemberBundle({ email, phone }) {
+  if (!isDatabaseReady()) return null;
+  const identity = memberIdentity({ email, phone });
+  if (!identity.userKey) return null;
+
+  const [matches, messages, reports, signals, user] = await Promise.all([
+    query(
+      `select payload, matched_at
+       from app_matches
+       where user_key = $1
+       order by matched_at desc`,
+      [identity.userKey]
+    ),
+    query(
+      `select thread_id, payload, created_at
+       from app_messages
+       where user_key = $1
+       order by created_at asc`,
+      [identity.userKey]
+    ),
+    query(
+      `select payload, created_at
+       from app_reports
+       where user_key = $1
+       order by created_at desc`,
+      [identity.userKey]
+    ),
+    query(
+      `select count(*)::int as count
+       from app_signals
+       where user_key = $1`,
+      [identity.userKey]
+    ),
+    findAppUserIdentity({ email: identity.email, phone: identity.phone })
+  ]);
+
+  const threads = {};
+  for (const row of messages.rows) {
+    const threadId = row.thread_id;
+    const payload = row.payload || {};
+    if (!threads[threadId]) {
+      threads[threadId] = { matchId: threadId, messages: [] };
+    }
+    threads[threadId].messages.push(payload);
+  }
+
+  return {
+    user,
+    matches: matches.rows.map((row) => row.payload),
+    chats: threads,
+    reports: reports.rows.map((row) => row.payload),
+    signalsSent: signals.rows[0]?.count ?? 0
+  };
 }

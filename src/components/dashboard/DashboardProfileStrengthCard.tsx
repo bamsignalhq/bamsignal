@@ -1,5 +1,8 @@
 import { ProfileStrengthMeter } from "../ProfileStrengthMeter";
-import { getProfileStrengthSuggestions } from "../../utils/profileStrength";
+import {
+  getProfileCompletenessChecklist,
+  profileCompletenessCount
+} from "../../utils/profileStrength";
 import type { DatingProfile } from "../../types";
 
 type DashboardProfileStrengthCardProps = {
@@ -13,18 +16,26 @@ export function DashboardProfileStrengthCard({
   strength,
   onCompleteProfile
 }: DashboardProfileStrengthCardProps) {
-  const suggestions = getProfileStrengthSuggestions(profile);
+  const checklist = getProfileCompletenessChecklist(profile);
+  const { done, total } = profileCompletenessCount(profile);
 
   return (
     <section className="dash-strength card dash-animate">
-      <ProfileStrengthMeter strength={strength} />
-      {suggestions.length > 0 && strength < 100 && (
-        <ul className="dash-strength__suggestions">
-          {suggestions.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      )}
+      <header className="dash-strength__head">
+        <h2>Complete your profile</h2>
+        <span className="dash-strength__count">
+          {done}/{total} Complete
+        </span>
+      </header>
+      <ProfileStrengthMeter strength={strength} compact />
+      <ul className="dash-strength__checklist">
+        {checklist.map((item) => (
+          <li key={item.id} className={item.done ? "done" : ""}>
+            <span aria-hidden>{item.done ? "✓" : "○"}</span>
+            {item.label}
+          </li>
+        ))}
+      </ul>
       {strength < 100 && (
         <button type="button" className="btn-primary btn-full dash-strength__cta" onClick={onCompleteProfile}>
           Complete Profile

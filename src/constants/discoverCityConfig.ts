@@ -1,20 +1,24 @@
 import { LAUNCH_PRIMARY_CITIES } from "./seedCities";
+import { CITIES_VISUAL } from "../data/visualLanding";
 import { STORAGE_KEYS } from "./limits";
 import { readJson, writeJson } from "../utils/storage";
 
 /** All cities supported in Discover city header copy */
 export const DISCOVER_SUPPORTED_CITIES = [
-  ...LAUNCH_PRIMARY_CITIES,
-  "Enugu",
-  "Owerri",
-  "Benin",
-  "Ibadan",
-  "Uyo",
-  "Aba",
-  "Asaba",
-  "Kaduna",
-  "Kano",
-  "Jos"
+  ...new Set([
+    ...LAUNCH_PRIMARY_CITIES,
+    ...CITIES_VISUAL.map((city) => city.name),
+    "Enugu",
+    "Owerri",
+    "Benin",
+    "Ibadan",
+    "Uyo",
+    "Aba",
+    "Asaba",
+    "Kaduna",
+    "Kano",
+    "Jos"
+  ])
 ] as const;
 
 export type DiscoverSupportedCity = (typeof DISCOVER_SUPPORTED_CITIES)[number];

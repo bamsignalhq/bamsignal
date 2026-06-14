@@ -34,6 +34,7 @@ export async function startPlanPayment(
 
     if (payload.reference) {
       localStorage.setItem(STORAGE_KEYS.paymentReference, payload.reference);
+      localStorage.setItem(STORAGE_KEYS.paymentKind, "premium");
     }
 
     if (Capacitor.isNativePlatform()) {
@@ -103,8 +104,98 @@ export async function verifyPayment(user: UserProfile): Promise<{
   }
 }
 
+import { isPremiumTrialActive } from "../utils/premiumTrial";
+
 export function isPremiumActive(): boolean {
+  if (isPremiumTrialActive()) return true;
   const until = localStorage.getItem(STORAGE_KEYS.premiumUntil);
   if (!until) return false;
   return new Date(until).getTime() > Date.now();
+}
+
+export async function startBoostPayment(
+  boostId: string,
+  price: number,
+  user: UserProfile,
+  city: string,
+  durationHours = 48
+): Promise<{ ok: boolean; error?: string; reference?: string }> {
+  if (!user.email) {
+    return { ok: false, error: "Add a verified email before purchasing a boost." };
+  }
+
+  try {
+    const response = await fetch(apiUrl("/api/paystack/verify?action=initialize-boost"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        boostId,
+        city,
+        amount: price,
+        durationHours
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok || !payload.authorization_url) {
+      return { ok: false, error: payload?.error || "Paystack checkout could not start." };
+    }
+
+    if (payload.reference) {
+      localStorage.setItem(STORAGE_KEYS.paymentReference, payload.reference);
+      localStorage.setItem(STORAGE_KEYS.paymentKind, "boost");
+    }
+
+    if (Capacitor.isNativePlatform()) {
+      await Browser.open({ url: payload.authorization_url, presentationStyle: "fullscreen" });
+    } else {
+      window.location.href = payload.authorization_url;
+    }
+
+    return { ok: true, reference: payload.reference };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Payment could not start."
+    };
+  }
+}
+
+export async function verifyBoostPayment(
+  user: UserProfile,
+  boostId = "city-boost",
+  city = "Lagos"
+): Promise<{ ok: boolean; error?: string; expiresAt?: string }> {
+  const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
+  if (!reference) {
+    return { ok: false, error: "No payment reference found." };
+  }
+
+  try {
+    const response = await fetch(apiUrl("/api/paystack/verify"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference,
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        productType: "boost",
+        boostId,
+        city
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok) {
+      return { ok: false, error: payload?.error || "Payment not verified yet." };
+    }
+    return { ok: true, expiresAt: payload.expiresAt };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Verification failed."
+    };
+  }
 }

@@ -82,6 +82,9 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
     states: raw.states ?? base.states,
     preferenceMode: raw.preferenceMode ?? base.preferenceMode,
     onlineNow: raw.onlineNow ?? false,
+    minCompatibility: raw.minCompatibility,
+    requireVoiceIntro: raw.requireVoiceIntro ?? false,
+    requireVerified: raw.requireVerified ?? false,
     intents: raw.intents?.length ? normalizeIntents(raw.intents as string[]) : base.intents
   };
 }

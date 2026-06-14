@@ -341,6 +341,7 @@
 .visual-city-photo {
   margin: 0;
   overflow: hidden;
+  position: relative;
   animation: photoIn 0.45s ease both;
 }
 
@@ -354,6 +355,22 @@
   min-height: 160px;
   object-fit: cover;
   display: block;
+}
+
+.visual-city-photo__badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(6px);
 }
 
 @keyframes photoIn {

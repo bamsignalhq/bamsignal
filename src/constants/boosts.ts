@@ -1,4 +1,8 @@
-export type BoostProductId = "signal-boost" | "priority-signal-once" | "profile-boost";
+export type BoostProductId =
+  | "signal-boost"
+  | "priority-signal-once"
+  | "profile-boost"
+  | "city-boost";
 
 export type BoostProductInput = {
   id: BoostProductId;
@@ -44,6 +48,13 @@ export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
     price: 750,
     description: "48-hour featured placement at the top of local results.",
     cta: "Go featured"
+  },
+  {
+    id: "city-boost",
+    name: "City Boost",
+    price: 600,
+    description: "48-hour spotlight on your city home page — no admin wait.",
+    cta: "Boost my city"
   }
 ];
 

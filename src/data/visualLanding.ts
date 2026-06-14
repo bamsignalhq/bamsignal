@@ -169,6 +169,206 @@ export const CITIES_VISUAL: CityVisual[] = [
       "Movie night",
       "Date night"
     ])
+  },
+  {
+    id: "aba",
+    name: "Aba",
+    tagline: "Markets, music & real connections",
+    profiles: cityProfiles("Aba", MOMENT_SETS.suyaChill, [
+      "Suya & chill",
+      "After-work spot",
+      "Good company"
+    ])
+  },
+  {
+    id: "kaduna",
+    name: "Kaduna",
+    tagline: "Northern hustle, warm hearts",
+    profiles: cityProfiles("Kaduna", SUNDAY_HANGOUT_TRIO, [
+      "Sunday hangout",
+      "Community time",
+      "Social circle"
+    ])
+  },
+  {
+    id: "kano",
+    name: "Kano",
+    tagline: "Heritage city, new signals",
+    profiles: cityProfiles("Kano", MOMENT_SETS.movieDate, [
+      "Cinema date",
+      "Movie night",
+      "Date night"
+    ])
+  },
+  {
+    id: "jos",
+    name: "Jos",
+    tagline: "Cool air, warm people",
+    profiles: cityProfiles("Jos", MOMENT_SETS.roadTrip, [
+      "Road trip",
+      "Weekend escape",
+      "Adventure"
+    ])
+  },
+  {
+    id: "calabar",
+    name: "Calabar",
+    tagline: "Coastal charm & good vibes",
+    profiles: cityProfiles("Calabar", MOMENT_SETS.beachDay, [
+      "Beach outing",
+      "Coastal day",
+      "Weekend escape"
+    ])
+  },
+  {
+    id: "warri",
+    name: "Warri",
+    tagline: "Energy, culture & connection",
+    profiles: cityProfiles("Warri", MOMENT_SETS.suyaChill, [
+      "Suya & chill",
+      "After-work spot",
+      "Good company"
+    ])
+  },
+  {
+    id: "onitsha",
+    name: "Onitsha",
+    tagline: "Commerce meets chemistry",
+    profiles: cityProfiles("Onitsha", SUNDAY_HANGOUT_TRIO, [
+      "Sunday hangout",
+      "Social circle",
+      "Chill afternoon"
+    ])
+  },
+  {
+    id: "awka",
+    name: "Awka",
+    tagline: "Capital city connections",
+    profiles: cityProfiles("Awka", MOMENT_SETS.roadTrip, [
+      "Road trip",
+      "Weekend drive",
+      "Adventure"
+    ])
+  },
+  {
+    id: "ilorin",
+    name: "Ilorin",
+    tagline: "Tradition meets today",
+    profiles: cityProfiles("Ilorin", MOMENT_SETS.movieDate, [
+      "Cinema date",
+      "Movie night",
+      "Date night"
+    ])
+  },
+  {
+    id: "akure",
+    name: "Akure",
+    tagline: "Sunshine & social scenes",
+    profiles: cityProfiles("Akure", SUNDAY_HANGOUT_TRIO, [
+      "Sunday hangout",
+      "Community time",
+      "Social hangout"
+    ])
+  },
+  {
+    id: "osogbo",
+    name: "Osogbo",
+    tagline: "Art, culture & community",
+    profiles: cityProfiles("Osogbo", MOMENT_SETS.suyaChill, [
+      "Suya & chill",
+      "After-work spot",
+      "Good company"
+    ])
+  },
+  {
+    id: "makurdi",
+    name: "Makurdi",
+    tagline: "River city rendezvous",
+    profiles: cityProfiles("Makurdi", MOMENT_SETS.roadTrip, [
+      "Road trip",
+      "Weekend escape",
+      "Adventure"
+    ])
+  },
+  {
+    id: "yenagoa",
+    name: "Yenagoa",
+    tagline: "Bay beauty & belonging",
+    profiles: cityProfiles("Yenagoa", MOMENT_SETS.beachDay, [
+      "Beach day",
+      "Coastal vibes",
+      "Weekend outing"
+    ])
+  },
+  {
+    id: "lokoja",
+    name: "Lokoja",
+    tagline: "Where rivers meet romance",
+    profiles: cityProfiles("Lokoja", SUNDAY_HANGOUT_TRIO, [
+      "Sunday hangout",
+      "Social circle",
+      "Chill afternoon"
+    ])
+  },
+  {
+    id: "minna",
+    name: "Minna",
+    tagline: "Heartland vibes",
+    profiles: cityProfiles("Minna", MOMENT_SETS.movieDate, [
+      "Cinema date",
+      "Movie night",
+      "Date night"
+    ])
+  },
+  {
+    id: "umuahia",
+    name: "Umuahia",
+    tagline: "Abia roots, real people",
+    profiles: cityProfiles("Umuahia", MOMENT_SETS.suyaChill, [
+      "Suya & chill",
+      "Good food",
+      "Good company"
+    ])
+  },
+  {
+    id: "sagamu",
+    name: "Sagamu",
+    tagline: "Gateway connections",
+    profiles: cityProfiles("Sagamu", MOMENT_SETS.roadTrip, [
+      "Road trip",
+      "Weekend drive",
+      "Adventure"
+    ])
+  },
+  {
+    id: "nnewi",
+    name: "Nnewi",
+    tagline: "Driven & down-to-earth",
+    profiles: cityProfiles("Nnewi", SUNDAY_HANGOUT_TRIO, [
+      "Sunday hangout",
+      "Community time",
+      "Social hangout"
+    ])
+  },
+  {
+    id: "zaria",
+    name: "Zaria",
+    tagline: "Student city sparks",
+    profiles: cityProfiles("Zaria", MOMENT_SETS.movieDate, [
+      "Cinema date",
+      "Movie night",
+      "Date night"
+    ])
+  },
+  {
+    id: "eket",
+    name: "Eket",
+    tagline: "Coastal calm & connection",
+    profiles: cityProfiles("Eket", MOMENT_SETS.beachDay, [
+      "Beach outing",
+      "Coastal day",
+      "Weekend escape"
+    ])
   }
 ];
 

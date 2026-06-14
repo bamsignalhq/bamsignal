@@ -55,7 +55,7 @@ export default async function handler(req, res) {
   }
 
   if (!process.env.PAYSTACK_SECRET_KEY) {
-    return res.status(503).json({ ok: false, error: "PAYSTACK_SECRET_KEY is not configured in Vercel." });
+    return res.status(503).json({ ok: false, error: "PAYSTACK_SECRET_KEY is not configured." });
   }
 
   const body = parseBody(req);
@@ -72,7 +72,9 @@ export default async function handler(req, res) {
     if (!Number.isFinite(days) || days <= 0 || days > 370) return res.status(400).json({ ok: false, error: "Invalid VIP plan duration." });
 
     const planMeta = String(body.plan || plans.find((item) => item.days === days)?.id || "monthly");
-    const callbackUrl = `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/app`;
+    const callbackUrl =
+      process.env.PAYSTACK_CALLBACK_URL ||
+      `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/payment/success`;
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {

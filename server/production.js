@@ -35,7 +35,11 @@ process.on("unhandledRejection", (reason) => {
 const app = express();
 
 app.use((req, res, next) => {
-  if (req.path === "/webhooks/paystack" || req.path === "/api/webhooks/paystack") {
+  if (
+    req.path === "/webhooks/paystack" ||
+    req.path === "/api/webhooks/paystack" ||
+    req.path === "/api/paystack/webhook"
+  ) {
     express.raw({ type: "application/json" })(req, res, () => {
       req.rawBody = req.body;
       next();

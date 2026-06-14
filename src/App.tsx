@@ -17,6 +17,7 @@ import { AdminHubPage } from "./pages/AdminHubPage";
 import { PaymentRecoveryBanner } from "./components/PaymentRecoveryBanner";
 import { NotificationCenter } from "./components/NotificationCenter";
 import type { PremiumPlan } from "./constants/plans";
+import type { BoostProduct } from "./constants/boosts";
 import { STORAGE_KEYS } from "./constants/limits";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./types";
@@ -28,7 +29,8 @@ import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
 import { unreadCount } from "./utils/notifications";
-import { notifyPremiumActivated } from "./utils/notifyHelpers";
+import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
+import { activateBoost } from "./utils/activeBoosts";
 import { LegalPage } from "./pages/LegalPage";
 import { SiteFooter } from "./components/SiteFooter";
 import { LoveAuthRoutePage } from "./pages/LoveAuthRoutePage";
@@ -160,6 +162,17 @@ export function App() {
 
   useEffect(() => {
     if (!isAuthed || isPremium) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const urlRef = params.get("trxref") || params.get("reference");
+    if (urlRef) {
+      localStorage.setItem(STORAGE_KEYS.paymentReference, urlRef);
+      localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
+      if (window.location.pathname === "/payment/success") {
+        navigateToPath("/app");
+      }
+    }
+
     const ref = localStorage.getItem(STORAGE_KEYS.paymentReference);
     if (!ref) return;
     verifyPayment(user).then((result) => {
@@ -276,6 +289,31 @@ export function App() {
   const openPricing = useCallback(() => {
     setPricingOpen(true);
   }, []);
+
+  const handlePurchaseBoost = useCallback(
+    (product: BoostProduct) => {
+      if (!isAuthed) {
+        openAuth("signup", tab === "home" ? "discover" : tab);
+        return;
+      }
+      const datingProfile = readJson(STORAGE_KEYS.datingProfile, { city: "Lagos" });
+      activateBoost(product.id, user, datingProfile);
+      setPricingOpen(false);
+      let msg = `${product.name} is active.`;
+      if (product.id === "profile-boost") {
+        msg = "Profile Boost live — you're featured at the top of local Discover for 48 hours.";
+      } else if (product.id === "signal-boost") {
+        msg = "Signal Boost live — extra visibility in your city for 24 hours.";
+      } else {
+        msg = "Priority Signal ready — your next signal lands first in their Likes inbox.";
+      }
+      setAuthMessage(msg);
+      notifyBoostActivated(product.name);
+      setNotifVersion((v) => v + 1);
+      trackEvent("boost_activated", { product: product.id });
+    },
+    [isAuthed, openAuth, tab, user]
+  );
 
   const upgradeById = useCallback(
     (planId: string) => {
@@ -475,10 +513,7 @@ export function App() {
           onClose={() => setPricingOpen(false)}
           plans={plans}
           onSelectPlan={(plan) => void handleUpgrade(plan)}
-          onPurchaseBoost={() => {
-            setAuthMessage("Boost purchase coming soon via Paystack.");
-            setPricingOpen(false);
-          }}
+          onPurchaseBoost={handlePurchaseBoost}
           loading={paymentLoading}
         />
       </div>
@@ -617,10 +652,7 @@ export function App() {
         onClose={() => setPricingOpen(false)}
         plans={plans}
         onSelectPlan={(plan) => void handleUpgrade(plan)}
-        onPurchaseBoost={() => {
-          setAuthMessage("Boost purchase coming soon via Paystack.");
-          setPricingOpen(false);
-        }}
+        onPurchaseBoost={handlePurchaseBoost}
         loading={paymentLoading}
       />
     </div>

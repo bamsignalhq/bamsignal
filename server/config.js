@@ -17,6 +17,12 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL,
   publicAppUrl: process.env.PUBLIC_APP_URL || "https://bamsignal.com",
   paystackSecretKey: process.env.PAYSTACK_SECRET_KEY,
+  paystackCallbackUrl:
+    process.env.PAYSTACK_CALLBACK_URL ||
+    `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/payment/success`,
+  paystackWebhookUrl:
+    process.env.PAYSTACK_WEBHOOK_URL ||
+    `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/api/paystack/webhook`,
   timezone: process.env.APP_TIMEZONE || "Africa/Lagos",
   cronSecret: process.env.CRON_SECRET,
   telegram: {

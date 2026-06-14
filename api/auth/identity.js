@@ -8,6 +8,7 @@ import {
   upsertAppUserIdentity,
   upsertPlatformAdmin
 } from "../../server/db.js";
+import { normalizePlans } from "../../server/pricing.js";
 import { registerDevicePush } from "../../server/firebase.js";
 import { bot, registerBotCommands } from "../../server/telegram.js";
 
@@ -54,7 +55,7 @@ async function verifySupabaseAdmin(req) {
 }
 
 async function requireAdmin(req, res) {
-  const allowedSecrets = [process.env.SIGNAL_WORKER_SECRET, process.env.CRON_SECRET].filter(Boolean);
+  const allowedSecrets = [process.env.CRON_SECRET].filter(Boolean);
   const provided = req.headers["x-bamsignal-secret"] || req.query.secret || req.body?.secret;
   if (provided && allowedSecrets.includes(provided)) return true;
   if (await verifySupabaseAdmin(req)) return true;
@@ -70,7 +71,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.query.action === "telegram-webhook") {
-      const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET || process.env.SIGNAL_WORKER_SECRET || process.env.CRON_SECRET || "";
+      const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET || process.env.CRON_SECRET || "";
       const providedSecret = req.query.secret || req.headers["x-telegram-bot-api-secret-token"];
       if (expectedSecret && providedSecret !== expectedSecret) {
         return res.status(401).json({ ok: false, error: "Invalid Telegram webhook secret." });
@@ -90,6 +91,19 @@ export default async function handler(req, res) {
     if (req.query.action === "settings") {
       const value = await getPlatformSetting("admin_content", null);
       return res.status(200).json({ ok: true, value });
+    }
+
+    if (req.query.action === "pricing") {
+      const stored = await getPlatformSetting("premium_plans", null);
+      const plans = normalizePlans(stored);
+      return res.status(200).json({ ok: true, plans });
+    }
+
+    if (req.query.action === "pricing-save") {
+      if (!await requireAdmin(req, res)) return;
+      const plans = normalizePlans(req.body?.plans || []);
+      const value = await setPlatformSetting("premium_plans", plans);
+      return res.status(200).json({ ok: true, plans: value });
     }
 
     if (req.query.action === "settings-save") {

@@ -2,16 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
-      content="BamSignal delivers AI-assisted football predictions, match probabilities, betting tips, and league insights."
+      content="BamSignal — the right connection starts with a signal."
     />
-    <meta name="theme-color" content="#101923" />
+    <meta name="theme-color" content="#1a0a2e" />
+    <meta property="og:title" content="BamSignal" />
+    <meta property="og:description" content="The right connection starts with a signal." />
+    <meta property="og:image" content="/icons/icon-512.webp" />
+    <meta property="og:type" content="website" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" type="image/png" href="/favicon-dark.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>BamSignal | AI Football Predictions</title>
+    <link rel="icon" type="image/webp" href="/favicon.webp" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="BamSignal" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.webp" />
+    <link rel="canonical" href="https://bamsignal.com/" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    <link rel="preload" as="image" href="/showcase/hero-lagos-young-professionals-01.webp" type="image/webp" />
+    <title>BamSignal | Your signal starts here</title>
+    <script>
+      try {
+        var t = localStorage.getItem("bamsignal-theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

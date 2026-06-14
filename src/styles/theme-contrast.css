@@ -1,0 +1,71 @@
+/* Dark/light theme contrast — member app surfaces */
+
+.platform-root--member .page,
+.platform-root--member .member-page,
+.platform-root--member .chat-detail-page {
+  color: var(--text);
+}
+
+.platform-root--member button:not(.btn-primary):not(.btn-secondary):not(.btn-ghost):not(.intent-tag):not(.icon-btn):not([class*="__accept"]):not([class*="__decline"]):not([class*="__report"]):not([class*="__lock"]):not([class*="__signal"]):not([class*="__pass"]) {
+  -webkit-text-fill-color: currentColor;
+}
+
+.profile-section-nav button.active {
+  color: var(--text);
+}
+
+.why-this-profile,
+.why-this-profile__list li {
+  color: var(--text);
+}
+
+.paywall-modal,
+.pricing-modal {
+  color: var(--text);
+}
+
+.plan-card {
+  color: var(--text);
+}
+
+.chat-list-item {
+  -webkit-text-fill-color: currentColor;
+}
+
+.discover-city-header__city,
+.discover-city-header__tagline,
+.discover-city-header__activity,
+.discover-city-header__rotator {
+  color: var(--text);
+}
+
+.discover-city-header__tagline,
+.discover-city-header__rotator {
+  color: var(--text-muted);
+}
+
+.discover-limits__head,
+.discover-limits__head strong {
+  color: var(--text-muted);
+}
+
+.discover-limits__head strong {
+  color: var(--text);
+}
+
+.profile-card-v2__pass,
+.profile-card-v2__priority {
+  color: var(--text);
+}
+
+.profile-card-v2__pass {
+  color: var(--text-muted);
+}
+
+.member-upgrade-banner h3 {
+  color: var(--text);
+}
+
+.empty-state h2 {
+  -webkit-text-fill-color: currentColor;
+}

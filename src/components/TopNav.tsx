@@ -1,0 +1,95 @@
+import { Moon, Sun } from "lucide-react";
+import { AppLogo } from "./AppLogo";
+import { FoundingMemberBadge } from "./FoundingMemberBadge";
+import { MemberNav } from "./MemberNav";
+import { NotificationBell } from "./NotificationCenter";
+import type { NavTab, Theme } from "../types";
+
+type TopNavProps = {
+  theme: Theme;
+  onToggleTheme: () => void;
+  isPremium?: boolean;
+  isGuest?: boolean;
+  onGetStarted?: () => void;
+  onLogoClick?: () => void;
+  showNotifications?: boolean;
+  notificationCount?: number;
+  onNotificationsClick?: () => void;
+  showEarlyAccess?: boolean;
+  showFoundingMember?: boolean;
+  memberTab?: NavTab;
+  onMemberNavigate?: (tab: NavTab) => void;
+  likeCount?: number;
+  messageCount?: number;
+  showMemberNav?: boolean;
+  memberFirstName?: string;
+};
+
+export function TopNav({
+  theme,
+  onToggleTheme,
+  isPremium,
+  isGuest,
+  onGetStarted,
+  onLogoClick,
+  showNotifications,
+  notificationCount = 0,
+  onNotificationsClick,
+  showEarlyAccess,
+  showFoundingMember,
+  memberTab,
+  onMemberNavigate,
+  likeCount = 0,
+  messageCount = 0,
+  showMemberNav = false,
+  memberFirstName
+}: TopNavProps) {
+  return (
+    <header className="top-nav">
+      <button type="button" className="top-nav-brand" onClick={onLogoClick} aria-label="BamSignal home">
+        <AppLogo size="sm" showText={false} />
+        {showFoundingMember && <FoundingMemberBadge className="top-nav-early" />}
+        {!showFoundingMember && showEarlyAccess && <FoundingMemberBadge className="top-nav-early" />}
+      </button>
+
+      {showMemberNav && memberTab && onMemberNavigate && (
+        <MemberNav
+          active={memberTab}
+          onNavigate={onMemberNavigate}
+          likeCount={likeCount}
+          messageCount={messageCount}
+          className="top-nav-member-nav"
+        />
+      )}
+      <div className="top-nav-actions">
+        {isGuest ? (
+          <>
+            {onGetStarted && (
+              <button type="button" className="top-nav-get-started" onClick={onGetStarted}>
+                Get Started
+              </button>
+            )}
+            <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme">
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </>
+        ) : (
+          <>
+            {memberFirstName && (
+              <span className="top-nav-greeting" aria-label={`Signed in as ${memberFirstName}`}>
+                Hi, {memberFirstName}
+              </span>
+            )}
+            {isPremium && <span className="premium-pill">Premium</span>}
+            {showNotifications && onNotificationsClick && (
+              <NotificationBell count={notificationCount} onClick={onNotificationsClick} />
+            )}
+            <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme">
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </>
+        )}
+      </div>
+    </header>
+  );
+}

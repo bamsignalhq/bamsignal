@@ -1,0 +1,195 @@
+import { defaultSafetySettings, isFemaleGender } from "../constants/safety";
+import { STORAGE_KEYS } from "../constants/limits";
+import type {
+  DatingProfile,
+  DiscoverProfile,
+  DmControl,
+  Gender,
+  LookingFor,
+  MatchPreferences,
+  ReportReason,
+  ReportRecord,
+  SafetySettings
+} from "../types";
+import { matchesPreferences } from "./compatibility";
+import { defaultMatchPreferences } from "./profile";
+import { meetsDiscoveryQuality } from "./launchSeed";
+import { readJson, writeJson } from "./storage";
+
+export function resolveSafetySettings(profile: {
+  gender?: Gender;
+  safetySettings?: SafetySettings;
+}): SafetySettings {
+  return { ...defaultSafetySettings(profile.gender), ...profile.safetySettings };
+}
+
+export function senderAsDiscoverProfile(sender: DatingProfile, id = "viewer"): DiscoverProfile {
+  return {
+    id,
+    name: "You",
+    age: sender.age,
+    gender: sender.gender,
+    lookingFor: sender.lookingFor,
+    city: sender.city,
+    bio: sender.bio,
+    photo: sender.photos[0] ?? "",
+    intents: sender.intents,
+    interests: sender.interests,
+    religion: sender.religion,
+    ethnicity: sender.ethnicity,
+    stateOfOrigin: sender.stateOfOrigin,
+    lifestyle: sender.lifestyle,
+    verified: sender.verified
+  };
+}
+
+export function genderMatchesLookingFor(lookingFor: LookingFor | undefined, gender?: Gender): boolean {
+  if (!lookingFor || lookingFor === "Everyone" || !gender || gender === "Prefer not to say") return true;
+  if (lookingFor === "Men") return gender === "Man";
+  if (lookingFor === "Women") return gender === "Woman";
+  return true;
+}
+
+export function getReportCount(profileId: string): number {
+  const reports = readJson<ReportRecord[]>(STORAGE_KEYS.reports, []);
+  return reports.filter((r) => r.profileId === profileId).length;
+}
+
+export function isAutoFlagged(profileId: string): boolean {
+  return getReportCount(profileId) >= 3;
+}
+
+export function recordReport(profileId: string, reason: ReportReason, details?: string): void {
+  const reports = readJson<ReportRecord[]>(STORAGE_KEYS.reports, []);
+  reports.push({
+    profileId,
+    reason,
+    details: details?.trim() || undefined,
+    at: new Date().toISOString()
+  });
+  writeJson(STORAGE_KEYS.reports, reports);
+}
+
+export function blockUser(profileId: string): void {
+  const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
+  if (!blocked.includes(profileId)) {
+    writeJson(STORAGE_KEYS.blocked, [...blocked, profileId]);
+  }
+  const matches = readJson<{ profileId: string }[]>(STORAGE_KEYS.matches, []);
+  writeJson(
+    STORAGE_KEYS.matches,
+    matches.filter((m) => m.profileId !== profileId)
+  );
+  const likedBy = readJson<{ profileId: string }[]>(STORAGE_KEYS.likedBy, []);
+  writeJson(
+    STORAGE_KEYS.likedBy,
+    likedBy.filter((l) => l.profileId !== profileId)
+  );
+}
+
+export type SignalGateResult = { allowed: true } | { allowed: false; reason: string };
+
+/** Can the logged-in user send a signal to this discover profile? */
+export function canUserSignalTarget(
+  sender: DatingProfile,
+  recipient: DiscoverProfile,
+  recipientPrefs: MatchPreferences = defaultMatchPreferences()
+): SignalGateResult {
+  const safety = resolveSafetySettings({
+    gender: recipient.gender,
+    safetySettings: recipient.safetySettings
+  });
+
+  if (safety.whoCanSignalMe === "verified_only" && !sender.verified) {
+    return {
+      allowed: false,
+      reason: "Only verified members can signal this person."
+    };
+  }
+
+  if (safety.whoCanSignalMe === "matches_preferences" || safety.onlyMatchingPreferencesCanSignal) {
+    const senderCard = senderAsDiscoverProfile(sender);
+    if (!matchesPreferences(senderCard, recipientPrefs)) {
+      return {
+        allowed: false,
+        reason: "This person only accepts signals from profiles matching their preferences."
+      };
+    }
+  }
+
+  if (recipient.lookingFor && !genderMatchesLookingFor(recipient.lookingFor, sender.gender)) {
+    return { allowed: false, reason: "This person isn't looking for signals from your profile type." };
+  }
+
+  if (!genderMatchesLookingFor(sender.lookingFor, recipient.gender)) {
+    return { allowed: false, reason: "This profile doesn't match who you're looking for." };
+  }
+
+  return { allowed: true };
+}
+
+/** Can the logged-in user receive / send messages in an existing match? */
+export function canUseInbox(viewer: DatingProfile): SignalGateResult {
+  const safety = resolveSafetySettings(viewer);
+  if (safety.dmControl === "nobody") {
+    return { allowed: false, reason: "You've paused incoming messages in Safety settings." };
+  }
+  return { allowed: true };
+}
+
+export function canReceiveMessageFrom(
+  recipient: DatingProfile,
+  senderVerified: boolean,
+  isMatch: boolean
+): SignalGateResult {
+  const safety = resolveSafetySettings(recipient);
+  if (!isMatch) {
+    return { allowed: false, reason: "Messages unlock after a signal is accepted." };
+  }
+  if (safety.dmControl === "nobody") {
+    return { allowed: false, reason: "This member has paused incoming messages." };
+  }
+  if (safety.dmControl === "verified_only" && !senderVerified) {
+    return { allowed: false, reason: "This member only accepts messages from verified profiles." };
+  }
+  return { allowed: true };
+}
+
+export function shouldHideFromDiscovery(profile: DatingProfile): boolean {
+  return Boolean(resolveSafetySettings(profile).hideFromDiscovery);
+}
+
+export function filterDiscoverDeck(
+  profiles: DiscoverProfile[],
+  viewer: DatingProfile,
+  blocked: string[],
+  passed: string[]
+): DiscoverProfile[] {
+  return profiles.filter((p) => {
+    if (!meetsDiscoveryQuality(p)) return false;
+    if (blocked.includes(p.id) || passed.includes(p.id)) return false;
+    if (!genderMatchesLookingFor(viewer.lookingFor, p.gender)) return false;
+    return true;
+  });
+}
+
+export function filterBlockedById<T extends { id: string }>(items: T[]): T[] {
+  const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
+  return items.filter((p) => !blocked.includes(p.id));
+}
+
+export function filterBlockedByProfileId<T extends { profileId: string }>(items: T[]): T[] {
+  const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
+  return items.filter((p) => !blocked.includes(p.profileId));
+}
+
+export function applyFemaleFirstDefaults(profile: DatingProfile): DatingProfile {
+  if (!isFemaleGender(profile.gender)) return profile;
+  return {
+    ...profile,
+    safetySettings: {
+      ...defaultSafetySettings("Woman"),
+      ...profile.safetySettings
+    }
+  };
+}

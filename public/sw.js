@@ -1,12 +1,12 @@
-const CACHE_NAME = "bamsignal-static-v2";
+const CACHE_NAME = "bamsignal-static-v4";
 const APP_SHELL = [
   "/",
-  "/app",
   "/manifest.webmanifest",
-  "/brand/compact-logo-dark.jpg",
-  "/brand/compact-logo-light.jpg",
-  "/brand/icon-dark.png",
-  "/brand/icon-light.png",
+  "/favicon.webp",
+  "/apple-touch-icon.webp",
+  "/brand/logo.webp",
+  "/icons/icon-192.webp",
+  "/icons/icon-512.webp",
   "/app-store-badge.svg",
   "/google-play-badge.svg"
 ];
@@ -36,7 +36,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match("/") || caches.match("/app"))
+      fetch(request).catch(() => caches.match("/"))
     );
     return;
   }

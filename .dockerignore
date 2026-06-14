@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.github
+.vercel
+.env
+.env.*
+!.env.example
+android
+ios
+store-screenshots
+.DS_Store
+*.md
+!README.md

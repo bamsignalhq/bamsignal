@@ -1,0 +1,207 @@
+/* Fintech-inspired auth — PalmPay / Kuda quality */
+
+.auth-page {
+  min-height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+}
+
+.auth-page--embedded {
+  min-height: auto;
+}
+
+.auth-shell {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  padding: 8px 0 24px;
+  overflow: hidden;
+}
+
+.auth-shell__glow {
+  position: absolute;
+  inset: -40% -20% auto;
+  height: 280px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(233, 30, 140, 0.28), transparent 65%);
+  pointer-events: none;
+  animation: authGlow 6s ease-in-out infinite alternate;
+}
+
+@keyframes authGlow {
+  from {
+    opacity: 0.7;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(8px);
+  }
+}
+
+.auth-card--fintech {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  text-align: left;
+  padding: 28px 24px 32px;
+  border-radius: 28px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  animation: authSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes authSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-brand {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.auth-title {
+  margin: 0 0 8px;
+  font-size: clamp(1.5rem, 5vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.auth-sub {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.auth-sub--tight {
+  margin-bottom: 14px;
+  font-size: 0.84rem;
+}
+
+.auth-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-field span {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.auth-field input,
+.auth-code-input {
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-field input:focus,
+.auth-code-input:focus {
+  outline: none;
+  border-color: rgba(233, 30, 140, 0.45);
+  box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.12);
+}
+
+.auth-code-input {
+  text-align: center;
+  letter-spacing: 0.35em;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.btn-auth {
+  min-height: 54px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: -0.01em;
+}
+
+.auth-links--stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.link-btn--accent {
+  color: var(--brand-pink);
+  font-weight: 700;
+}
+
+.auth-switch {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.auth-message {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--brand-gradient-soft);
+  color: var(--brand-purple);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  animation: authSlideUp 0.3s ease both;
+}
+
+.auth-modal .auth-page--embedded {
+  padding: 0;
+}
+
+.auth-modal .auth-shell {
+  padding: 0;
+}
+
+.auth-modal .auth-card--fintech {
+  border: none;
+  box-shadow: none;
+  padding: 8px 4px 16px;
+  background: transparent;
+}
+
+.auth-modal .auth-shell__glow {
+  display: none;
+}
+
+.embedded-auth .auth-card {
+  box-shadow: none;
+  border: none;
+  padding: 0;
+}

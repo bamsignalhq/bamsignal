@@ -1,0 +1,259 @@
+.safety-settings-card {
+  border-color: rgba(233, 30, 140, 0.25);
+}
+
+.safety-settings-card--female {
+  background: linear-gradient(145deg, rgba(76, 29, 149, 0.12), rgba(233, 30, 140, 0.08));
+}
+
+.safety-settings-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.safety-settings-head h3 {
+  margin: 0 0 4px;
+}
+
+.safety-settings-head p {
+  margin: 0;
+  font-size: 0.88rem;
+  opacity: 0.85;
+}
+
+.safety-female-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: rgba(233, 30, 140, 0.12);
+  border: 1px solid rgba(233, 30, 140, 0.25);
+  font-size: 0.85rem;
+}
+
+.safety-female-banner strong {
+  color: var(--accent, #e91e8c);
+}
+
+.safety-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.safety-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: var(--surface-2, rgba(255, 255, 255, 0.04));
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.safety-option strong {
+  font-size: 0.9rem;
+}
+
+.safety-option span {
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.safety-option.selected {
+  border-color: var(--accent, #e91e8c);
+  background: rgba(233, 30, 140, 0.1);
+}
+
+.safety-toggle-row {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.safety-toggle-row small {
+  display: block;
+  font-size: 0.78rem;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.safety-toggle-row input {
+  align-self: flex-end;
+}
+
+.safety-modal__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: rgba(233, 30, 140, 0.15);
+  color: var(--accent, #e91e8c);
+}
+
+.safety-modal__icon--success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.safety-modal__lead {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+.safety-reason-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.safety-reason {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: var(--surface-2, rgba(255, 255, 255, 0.04));
+  text-align: left;
+  cursor: pointer;
+}
+
+.safety-reason.selected {
+  border-color: var(--accent, #e91e8c);
+  background: rgba(233, 30, 140, 0.1);
+}
+
+.safety-reason strong {
+  font-size: 0.88rem;
+}
+
+.safety-reason span {
+  font-size: 0.76rem;
+  opacity: 0.72;
+}
+
+.safety-details-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.safety-details-label textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 72px;
+}
+
+.safety-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.safety-modal__actions .btn-secondary,
+.safety-modal__actions .btn-primary {
+  flex: 1;
+}
+
+.profile-card-safety-btn {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.profile-card-signal-gate {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: var(--text, #fff);
+}
+
+.like-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.like-card-actions button {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
+  background: transparent;
+  cursor: pointer;
+}
+
+.like-card-actions .accept {
+  background: var(--accent, #e91e8c);
+  border-color: transparent;
+  color: #fff;
+}
+
+.chat-dm-paused {
+  margin: 12px 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  text-align: center;
+  color: var(--text);
+}
+
+.action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.safety-centre-card {
+  border-color: rgba(233, 30, 140, 0.3);
+}
+
+.safety-centre-card ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.safety-centre-card li {
+  margin-bottom: 4px;
+}

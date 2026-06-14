@@ -1,47 +1,38 @@
 # BamSignal
 
-BamSignal is a React/Vite football prediction dashboard with light and dark modes, a responsive website layout, and Capacitor setup for native Android/iOS shells.
+BamSignal is a React + Vite dating app for Nigeria — discover profiles, send signals, chat, and manage premium plans. The web app ships with optional Capacitor shells for Android/iOS.
 
-## Run the Website
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Build
+Open [http://localhost:5173](http://localhost:5173).
+
+## Build for production
 
 ```bash
 npm run build
+npm run preview
 ```
 
-## Android
+## API server (contact, Paystack, identity)
 
-The Android platform project has been generated in `android/`.
+```bash
+npm run server
+```
+
+## Environment
+
+Copy `.env.example` to `.env.local` and fill in Supabase, Paystack, and email keys before production deploy.
+
+## Mobile (optional)
+
+Capacitor projects live in `android/` and `ios/`. Sync after a web build:
 
 ```bash
 npm run cap:sync
-npm run android
+npm run android   # or npm run ios
 ```
-
-If Gradle needs to download wrapper dependencies for the first time, Android Studio may be the smoother way to open and finish the first sync.
-
-The debug APK can be built with Android Studio's bundled Java 21 runtime:
-
-```bash
-cd android
-JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew assembleDebug
-```
-
-## iOS
-
-Capacitor is configured for iOS and the native folder has been generated in `ios/`. Running or archiving the iOS app requires full Xcode, not only Command Line Tools:
-
-```bash
-xcode-select -s /Applications/Xcode.app/Contents/Developer
-npm run ios
-```
-
-## Product Notes
-
-The app uses original BamSignal copy and branding while matching the reference product category: football predictions, confidence percentages, major European leagues, betting markets, FAQs, contact links, responsible gambling language, and app-store focused calls to action.

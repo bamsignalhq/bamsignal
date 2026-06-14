@@ -4,26 +4,12 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/affiliate/:bookie/:tipId",
-      "destination": "/api/affiliate?bookie=:bookie&tipId=:tipId"
-    },
-    {
       "source": "/webhooks/paystack",
       "destination": "/api/webhooks/paystack"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
-    }
-  ],
-  "crons": [
-    {
-      "path": "/api/worker/daily-signals/run",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/worker/results/run",
-      "schedule": "0 5 * * *"
     }
   ]
 }

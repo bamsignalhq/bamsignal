@@ -1,0 +1,655 @@
+/* BamSignal V5 — signal animation system */
+
+/* ── SignalPulse ── */
+.signal-pulse {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.signal-pulse__core {
+  width: 28%;
+  height: 28%;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.signal-pulse__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  opacity: 0.6;
+  animation: signalPulseRing 2.4s ease-out infinite;
+}
+
+.signal-pulse__ring--2 {
+  animation-delay: 1.2s;
+}
+
+@keyframes signalPulseRing {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+}
+
+/* ── SignalWave ── */
+.signal-wave {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.signal-wave__ring {
+  position: absolute;
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  border: 2px solid rgba(233, 30, 140, 0.55);
+  animation: signalWaveExpand 1.1s ease-out forwards;
+}
+
+@keyframes signalWaveExpand {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+/* ── SignalRipple ── */
+.signal-ripple {
+  position: absolute;
+  inset: -20%;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.signal-ripple__ring {
+  position: absolute;
+  width: 55%;
+  height: 55%;
+  border-radius: 50%;
+  border: 2px solid rgba(233, 30, 140, 0.45);
+  animation: signalRippleOut 2.4s ease-out infinite;
+}
+
+.signal-ripple__ring--2 {
+  animation-delay: 1.2s;
+}
+
+@keyframes signalRippleOut {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* ── SignalNode ── */
+.signal-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform 0.25s ease;
+}
+
+.signal-node:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.signal-node--selected {
+  z-index: 10;
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.signal-node__pulse {
+  position: absolute;
+  inset: -8px;
+  color: var(--brand-pink);
+}
+
+.signal-node__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 72px;
+}
+
+.signal-node__avatar,
+.signal-node__dot {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(233, 30, 140, 0.55);
+  box-shadow: 0 0 20px rgba(233, 30, 140, 0.35);
+}
+
+.signal-node__dot {
+  display: block;
+  background: var(--brand-gradient);
+}
+
+.signal-node__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
+
+.signal-node__sub {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+/* ── BAM Effect ── */
+.bam-effect {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+}
+
+.bam-effect-glow {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(233, 30, 140, 0.55) 0%, transparent 68%);
+  animation: bamGlow 0.75s ease-out forwards;
+}
+
+@keyframes bamGlow {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+.bam-effect-burst {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(233, 30, 140, 0.45) 0%, transparent 70%);
+  animation: bamBurst 0.85s ease-out forwards;
+}
+
+@keyframes bamBurst {
+  0% {
+    transform: scale(0.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(3.8);
+    opacity: 0;
+  }
+}
+
+.bam-effect-wave {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(233, 30, 140, 0.6);
+  animation: bamWaveRing 1s ease-out forwards;
+}
+
+.bam-effect-wave--2 {
+  animation-delay: 0.1s;
+}
+
+.bam-effect-wave--3 {
+  animation-delay: 0.2s;
+}
+
+@keyframes bamWaveRing {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(5);
+    opacity: 0;
+  }
+}
+
+.bam-effect-text {
+  font-size: clamp(2.6rem, 13vw, 4.2rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  background: linear-gradient(135deg, #fff 0%, #e91e8c 45%, #9c27b0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: bamTextPop 0.72s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: 2;
+}
+
+@keyframes bamTextPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.28);
+  }
+  48% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.32);
+  }
+}
+
+.bam-effect--accepted .bam-effect-glow {
+  background: radial-gradient(circle, rgba(76, 175, 80, 0.45) 0%, transparent 68%);
+}
+
+.bam-effect--premium .bam-effect-text {
+  background: linear-gradient(135deg, #fff 0%, #ffd54f 40%, #e91e8c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.bam-effect--verified .bam-effect-glow {
+  background: radial-gradient(circle, rgba(103, 58, 183, 0.5) 0%, transparent 68%);
+}
+
+/* ── Signal Network Hero ── */
+.signal-network {
+  position: relative;
+  min-height: calc(100dvh - 56px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px 48px;
+  overflow: hidden;
+  background: radial-gradient(ellipse 130% 90% at 50% 0%, #2a1048 0%, #0c0616 48%, #06030c 100%);
+}
+
+.signal-network__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.85;
+}
+
+.signal-network__radar-fill {
+  opacity: 0.6;
+}
+
+.signal-network__radar {
+  fill: none;
+  stroke: rgba(233, 30, 140, 0.12);
+  stroke-width: 0.4;
+  transform-origin: 50px 50px;
+  animation: radarSpin 12s linear infinite;
+}
+
+@keyframes radarSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.signal-network__link {
+  stroke: url(#sn-line);
+  stroke-width: 0.35;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: networkLinkPulse 5s ease-in-out infinite;
+}
+
+@keyframes networkLinkPulse {
+  0%,
+  100% {
+    opacity: 0;
+    stroke-dasharray: 0 40;
+  }
+  20%,
+  55% {
+    opacity: 0.7;
+    stroke-dasharray: 40 0;
+  }
+}
+
+.signal-network__node-glow {
+  fill: rgba(233, 30, 140, 0.35);
+  filter: blur(0.3px);
+  animation: nodeGlow 2.8s ease-in-out infinite;
+}
+
+.signal-network__node-core {
+  fill: #e91e8c;
+}
+
+@keyframes nodeGlow {
+  0%,
+  100% {
+    r: 2;
+    opacity: 0.5;
+  }
+  50% {
+    r: 3.2;
+    opacity: 1;
+  }
+}
+
+.signal-network__content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 520px;
+}
+
+.signal-network__emitter {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 12px;
+}
+
+.signal-network__logo .app-logo-img {
+  width: clamp(76px, 18vw, 100px) !important;
+  height: clamp(76px, 18vw, 100px) !important;
+  filter: drop-shadow(0 0 36px rgba(233, 30, 140, 0.5));
+  position: relative;
+  z-index: 2;
+  animation: logoBreath 3.5s ease-in-out infinite;
+}
+
+@keyframes logoBreath {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.signal-network__waves {
+  z-index: 1;
+}
+
+.signal-network__activity {
+  margin: 0 0 18px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: rgba(233, 30, 140, 0.92);
+  min-height: 1.3em;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.38s ease, transform 0.38s ease;
+}
+
+.signal-network__activity--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.signal-network__headline {
+  margin: 0 0 10px;
+  font-size: clamp(1.65rem, 5vw, 2.65rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: #fff;
+}
+
+.signal-network__sub {
+  margin: 0 0 26px;
+  font-size: clamp(0.9rem, 2.2vw, 1.02rem);
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.5;
+}
+
+.signal-network__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* ── Nearby Signals field ── */
+.nearby-signals {
+  padding: 48px 20px 56px;
+  background: linear-gradient(180deg, #06030c 0%, #0a0614 100%);
+  text-align: center;
+}
+
+.nearby-signals__field {
+  position: relative;
+  max-width: 400px;
+  height: 380px;
+  margin: 0 auto;
+  border-radius: 28px;
+  background: radial-gradient(circle at 50% 50%, rgba(103, 58, 183, 0.12), rgba(6, 3, 12, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.nearby-signals__field::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 40%, rgba(233, 30, 140, 0.06), transparent 50%);
+  pointer-events: none;
+}
+
+.nearby-signals__panel {
+  position: absolute;
+  inset: 12px;
+  z-index: 15;
+  background: rgba(12, 6, 22, 0.92);
+  border-radius: 20px;
+  border: 1px solid rgba(233, 30, 140, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: panelIn 0.35s ease;
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.nearby-signals__panel-logo {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 4;
+  opacity: 0.9;
+}
+
+.nearby-signals__panel-logo--pulse {
+  animation: logoPulse 0.55s ease-out;
+}
+
+.nearby-signals__panel-photo {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.nearby-signals__panel-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nearby-signals__panel-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88) 0%, transparent 55%);
+}
+
+.nearby-signals__panel-meta {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  text-align: left;
+  color: #fff;
+}
+
+.nearby-signals__panel-meta h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.25rem;
+}
+
+.nearby-signals__panel-meta span {
+  display: block;
+  font-size: 0.88rem;
+  opacity: 0.9;
+}
+
+.nearby-signals__actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+}
+
+.nearby-signals__success {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  font-weight: 700;
+  color: var(--brand-pink);
+  background: rgba(233, 30, 140, 0.1);
+}
+
+.nearby-signals__waves {
+  z-index: 18;
+}
+
+/* ── Preloader ── */
+.preloader {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.preloader--exit {
+  opacity: 0;
+  transform: scale(1.02);
+}
+
+.preloader__gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, #1a0a2e 0%, #7b1fa2 45%, #e91e8c 100%);
+  z-index: 0;
+}
+
+.preloader__core {
+  position: relative;
+  z-index: 1;
+  width: 140px;
+  height: 140px;
+  display: grid;
+  place-items: center;
+}
+
+.preloader__logo {
+  position: relative;
+  z-index: 2;
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 40px rgba(0, 0, 0, 0.35));
+  animation: logoBreath 2.8s ease-in-out infinite;
+}
+
+.preloader__title {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  margin: 20px 0 0;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.preloader__tagline {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 240px;
+}
+
+@media (min-width: 900px) {
+  .signal-network {
+    min-height: calc(100dvh - 64px);
+  }
+
+  .nearby-signals__field {
+    height: 420px;
+    max-width: 460px;
+  }
+}
+
+@media (max-width: 599px) {
+  .signal-network__sub {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}

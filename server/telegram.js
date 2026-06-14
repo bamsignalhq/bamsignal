@@ -63,7 +63,7 @@ function formatTipDateTime(tip) {
   const date = new Date(tip.starts_at);
   if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat("en-NG", {
-    timeZone: config.signalWorker.timezone,
+    timeZone: config.timezone,
     weekday: "short",
     day: "2-digit",
     month: "short",
@@ -86,8 +86,7 @@ function affiliateUrlFor(bookie, tip) {
     melbet: "melbet"
   };
   const key = aliases[normalized] || normalized;
-  if (!config.affiliateUrls[key]) return "";
-  return tip?.id ? `${config.publicAppUrl}/affiliate/${key}/${tip.id}` : config.affiliateUrls[key];
+  return "";
 }
 
 function primaryAffiliate(tip) {
@@ -95,9 +94,7 @@ function primaryAffiliate(tip) {
   if (direct) return { label: direct.label, url: direct.url };
   const codeBookie = Object.keys(tip.booking_codes || {}).find((bookie) => affiliateUrlFor(bookie, tip));
   if (codeBookie) return { label: bookieLabel(codeBookie), url: affiliateUrlFor(codeBookie, tip) };
-  const fallback = Object.entries(config.affiliateUrls).find(([, url]) => Boolean(url));
-  if (!fallback) return null;
-  return { label: bookieLabel(fallback[0]), url: tip?.id ? `${config.publicAppUrl}/affiliate/${fallback[0]}/${tip.id}` : fallback[1] };
+  return null;
 }
 
 function bookingButtons(tip) {

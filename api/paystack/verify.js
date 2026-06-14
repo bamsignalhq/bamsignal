@@ -1,8 +1,7 @@
 import { activateAppUserPremium } from "../../server/db.js";
+import { getPlatformSetting } from "../../server/db.js";
 import { createVipInviteLink } from "../../server/telegram.js";
-
-const weeklyThresholdKobo = 95000;
-const monthlyThresholdKobo = 295000;
+import { normalizePlan, normalizePlans, planDaysFromAmount } from "../../server/pricing.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -20,13 +19,33 @@ function normalizePhone(value = "") {
   return String(value).replace(/\D/g, "").replace(/^234/, "");
 }
 
-function premiumDaysFromTransaction(data) {
+async function loadPricingPlans() {
+  const stored = await getPlatformSetting("premium_plans", null);
+  return normalizePlans(stored);
+}
+
+async function premiumDaysFromTransaction(data) {
   const metadataDays = Number(data?.metadata?.days || data?.metadata?.plan_days || data?.metadata?.planDays);
   if (Number.isFinite(metadataDays) && metadataDays > 0 && metadataDays <= 370) return metadataDays;
+
+  const plans = await loadPricingPlans();
   const amount = Number(data?.amount || 0);
-  if (amount >= monthlyThresholdKobo) return 30;
-  if (amount >= weeklyThresholdKobo) return 7;
-  return 0;
+  return planDaysFromAmount(amount, plans);
+}
+
+function resolvePlanAmount(body, plans) {
+  const configuredAmount = Number(body.amount || 0);
+  if (configuredAmount > 0) return Math.round(configuredAmount * 100);
+
+  const planId = String(body.plan || "").trim();
+  const byId = plans.find((item) => item.id === planId);
+  if (byId) return byId.amountKobo;
+
+  const days = Number(body.days || body.planDays || 30);
+  const byDays = plans.find((item) => item.days === days);
+  if (byDays) return byDays.amountKobo;
+
+  return normalizePlan(plans[plans.length - 1] || {}).amountKobo;
 }
 
 export default async function handler(req, res) {
@@ -40,21 +59,19 @@ export default async function handler(req, res) {
   }
 
   const body = parseBody(req);
+  const plans = await loadPricingPlans();
+
   if (req.query.action === "initialize") {
     const email = String(body.email || "").trim().toLowerCase();
     const phone = normalizePhone(body.phone);
     const name = String(body.name || "").trim();
     const days = Number(body.days || body.planDays || 30);
-    const configuredAmount = Number(body.amount || 0);
-    const amount = configuredAmount > 0
-      ? Math.round(configuredAmount * 100)
-      : days <= 7
-        ? weeklyThresholdKobo
-        : monthlyThresholdKobo;
+    const amount = resolvePlanAmount(body, plans);
 
     if (!email) return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
     if (!Number.isFinite(days) || days <= 0 || days > 370) return res.status(400).json({ ok: false, error: "Invalid VIP plan duration." });
 
+    const planMeta = String(body.plan || plans.find((item) => item.days === days)?.id || "monthly");
     const callbackUrl = `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/app`;
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
@@ -73,7 +90,7 @@ export default async function handler(req, res) {
           phone,
           days,
           plan_days: days,
-          plan: days <= 7 ? "weekly" : "monthly"
+          plan: planMeta
         }
       })
     });
@@ -118,7 +135,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ ok: false, error: "Payment email does not match this BamSignal account." });
     }
 
-    const days = premiumDaysFromTransaction(transaction);
+    const days = await premiumDaysFromTransaction(transaction);
     if (!days) {
       return res.status(422).json({ ok: false, error: "Payment amount does not match an active VIP plan." });
     }

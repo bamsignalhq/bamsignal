@@ -1,5 +1,5 @@
 import { verifySignupOtp, SignupOtpError } from "../../server/services/signupOtp.js";
-import { PLAY_REVIEWER, provisionPlayReviewerAccount, repairPlayReviewerAuth } from "../../server/provisionPlayReviewer.js";
+import { PLAY_REVIEWER, provisionPlayReviewerAccount } from "../../server/provisionPlayReviewer.js";
 import { isSignupEmailConfigured } from "../../server/supabaseEnv.js";
 import { getDatabaseStatus } from "../../server/db.js";
 
@@ -44,13 +44,14 @@ export default async function handler(req, res) {
     await verifySignupOtp(PLAY_REVIEWER.email, code);
 
     if (isSignupEmailConfigured()) {
-      const authUser = await repairPlayReviewerAuth(pin);
+      const result = await provisionPlayReviewerAccount(pin);
       return res.status(200).json({
         ok: true,
         username: PLAY_REVIEWER.username,
         email: PLAY_REVIEWER.email,
-        authCreated: Boolean(authUser.created),
-        authUserId: authUser?.id || null,
+        authCreated: Boolean(result.authUser.created),
+        authUserId: result.authUser?.id || null,
+        memberProfileId: result.memberProfileId,
         mode: "admin"
       });
     }

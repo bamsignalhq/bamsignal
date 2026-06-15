@@ -214,6 +214,14 @@ async function ensureAuthUserViaAdmin({ email, password, name, username, phone, 
   const { serviceKey, url } = headers;
 
   if (reset) {
+    if (isDatabaseReady()) {
+      try {
+        await resetReviewerAuthUser(email);
+      } catch (error) {
+        console.warn("[bamsignal] play reviewer SQL auth reset:", error?.message || error);
+      }
+    }
+
     const list = await fetch(
       `${url}/auth/v1/admin/users?${new URLSearchParams({ page: "1", per_page: "1", email })}`,
       { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }

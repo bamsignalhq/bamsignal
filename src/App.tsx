@@ -99,6 +99,11 @@ export function App() {
   const isGuest = !isAuthed;
 
   useEffect(() => {
+    if (!isNative) return;
+    document.documentElement.classList.add("capacitor-native");
+  }, [isNative]);
+
+  useEffect(() => {
     const syncRoute = () => {
       redirectLegacyAdmin();
       setLegalPath(getLegalPath());
@@ -817,7 +822,7 @@ export function App() {
           )}
         </main>
 
-        {isGuest && !showOnboarding && tab !== "home" && (
+        {!isNative && isGuest && !showOnboarding && tab !== "home" && (
           <SiteFooter className="site-footer--compact" onLogoClick={goHome} />
         )}
 

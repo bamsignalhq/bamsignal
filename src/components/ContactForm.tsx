@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Loader2, Send } from "lucide-react";
+import { apiUrl } from "../services/supabase";
 import { createAdditionPuzzle, parseCaptchaAnswer } from "../utils/mathCaptcha";
 
 const TOPICS = [
@@ -61,7 +62,7 @@ export function ContactForm() {
     setError("");
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch(apiUrl("/api/contact"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

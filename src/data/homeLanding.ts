@@ -2,9 +2,9 @@ import { TRUST_ITEMS } from "./landingProfiles";
 
 export const HOME_HERO = {
   badge: "",
-  headline: "Meet someone who matches your vibe.",
+  headline: "Meet someone real in your city.",
   subheadline: "",
-  primaryCta: "Send a Signal",
+  primaryCta: "Join BamSignal",
   secondaryCta: ""
 } as const;
 

@@ -52,7 +52,7 @@
 }
 
 .platform-root--member .discover-quick-filters {
-  top: 57px;
+  top: calc(57px + env(safe-area-inset-top, 0px));
 }
 
 @media (min-width: 900px) {

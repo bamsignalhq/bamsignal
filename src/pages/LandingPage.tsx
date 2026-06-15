@@ -1,4 +1,5 @@
 import { SiteFooter } from "../components/SiteFooter";
+import { isNativePlatform } from "../services/supabase";
 import { HomeHeroTrustStrip } from "../components/home/HomeHeroTrustStrip";
 import { HomeTrustStrip } from "../components/home/HomeTrustStrip";
 import { VisualHero } from "../components/visual/VisualHero";
@@ -27,7 +28,9 @@ export function LandingPage({
       <SignalMoments />
       <HomeTrustStrip />
       <VisualFinalCta onSignup={onSignup} />
-      <SiteFooter showEarlyAccess={showEarlyAccess} onLogoClick={onLogoClick} />
+      {!isNativePlatform ? (
+        <SiteFooter showEarlyAccess={showEarlyAccess} onLogoClick={onLogoClick} />
+      ) : null}
     </div>
   );
 }

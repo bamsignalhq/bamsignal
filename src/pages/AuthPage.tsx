@@ -5,6 +5,7 @@ import { AuthField } from "../components/AuthField";
 import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
 import { friendlyAuthError, supabase } from "../services/supabase";
+import { sendSignupEmailCode, verifySignupEmailCode } from "../services/authEmail";
 import { trackEvent } from "../utils/analytics";
 import {
   emailForUsername,
@@ -161,6 +162,20 @@ export function AuthPage({
 
     try {
       if (supabase) {
+        try {
+          await sendSignupEmailCode(email, name);
+          rememberUsernameEmail(username, email);
+          setPendingSignup(profile);
+          onModeChange("verify");
+          return;
+        } catch (serverError) {
+          const serverMessage =
+            serverError instanceof Error ? serverError.message : String(serverError || "");
+          if (!/network|fetch failed/i.test(serverMessage)) {
+            throw serverError;
+          }
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password: signupForm.pin,
@@ -190,15 +205,44 @@ export function AuthPage({
     onMessage("");
     try {
       if (supabase) {
-        const { data, error } = await supabase.auth.verifyOtp({
-          email: pendingSignup.email,
-          token: code,
-          type: "email"
-        });
-        if (error) throw error;
-        if (data.session?.user) {
-          onAuthenticated(profileFromSessionUser(data.session.user), { isNewSignup: true });
-          return;
+        try {
+          await verifySignupEmailCode({
+            email: pendingSignup.email,
+            code,
+            password: signupForm.pin,
+            name: pendingSignup.name,
+            username: pendingSignup.username || "",
+            phone: pendingSignup.phone || ""
+          });
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: pendingSignup.email,
+            password: signupForm.pin
+          });
+          if (error) throw error;
+          if (data.user) {
+            onAuthenticated(profileFromSessionUser(data.user), { isNewSignup: true });
+            return;
+          }
+        } catch (serverError) {
+          const serverMessage =
+            serverError instanceof Error ? serverError.message : String(serverError || "");
+          if (
+            /doesn't match|expired|Wait|valid|already exists|configured|Too many/i.test(serverMessage)
+          ) {
+            throw serverError;
+          }
+
+          const { data, error } = await supabase.auth.verifyOtp({
+            email: pendingSignup.email,
+            token: code,
+            type: "email"
+          });
+          if (error) throw error;
+          if (data.session?.user) {
+            onAuthenticated(profileFromSessionUser(data.session.user), { isNewSignup: true });
+            return;
+          }
+          throw serverError;
         }
       }
       onAuthenticated(pendingSignup, { isNewSignup: true });
@@ -263,6 +307,21 @@ export function AuthPage({
     onMessage("");
     try {
       if (supabase) {
+        try {
+          await sendSignupEmailCode(pendingSignup.email, pendingSignup.name);
+          onMessage("Fresh code sent — check your inbox.");
+          setResendIn(RESEND_COOLDOWN_SEC);
+          setVerifyCode("");
+          otpRefs.current[0]?.focus();
+          return;
+        } catch (serverError) {
+          const serverMessage =
+            serverError instanceof Error ? serverError.message : String(serverError || "");
+          if (!/network|fetch failed/i.test(serverMessage)) {
+            throw serverError;
+          }
+        }
+
         const { error } = await supabase.auth.resend({
           type: "signup",
           email: pendingSignup.email
@@ -312,7 +371,8 @@ export function AuthPage({
 
           {mode === "login" && (
             <>
-              <h1 className="auth-title">Login</h1>
+              <h1 className="auth-title">Welcome back</h1>
+              <p className="auth-sub">Sign in with your username and PIN.</p>
               {import.meta.env.DEV && (
                 <p className="auth-dev-hint">
                   Demo: <strong>{DEMO_USER.username}</strong> / <strong>{DEMO_USER.pin}</strong>
@@ -350,7 +410,8 @@ export function AuthPage({
 
           {mode === "signup" && (
             <>
-              <h1 className="auth-title">Sign up</h1>
+              <h1 className="auth-title">Create your account</h1>
+              <p className="auth-sub">Join BamSignal — we&apos;ll verify your email in the next step.</p>
               <div className="auth-fields">
                 <AuthField
                   label="Name"

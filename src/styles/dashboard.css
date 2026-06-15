@@ -501,6 +501,7 @@
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
+  object-position: center 22%;
   display: block;
 }
 

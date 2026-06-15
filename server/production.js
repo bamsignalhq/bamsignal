@@ -9,6 +9,7 @@ import { handleContactNodeRequest } from "./services/contactMail.js";
 import { registerBotCommands, bot } from "./telegram.js";
 import { mountHandler } from "./mountHandler.js";
 import identityHandler from "../api/auth/identity.js";
+import emailCodeHandler from "../api/auth/email-code.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
 import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivity.js";
 import memberDataHandler from "../api/member/data.js";
@@ -67,6 +68,9 @@ async function healthPayload() {
     database,
     paystack: Boolean(config.paystackSecretKey),
     resend: Boolean(process.env.RESEND_API_KEY?.trim()),
+    signupEmail: Boolean(
+      process.env.RESEND_API_KEY?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+    ),
     firebase: Boolean(config.firebase.serviceAccount),
     telegram: Boolean(config.telegram.botToken)
   };
@@ -81,6 +85,7 @@ app.head("/health", (_req, res) => {
 });
 
 app.post("/api/contact", handleContactNodeRequest);
+mountHandler(app, "post", "/api/auth/email-code", emailCodeHandler);
 mountHandler(app, "post", "/api/auth/identity", identityHandler);
 mountHandler(app, "post", "/api/member/data", memberDataHandler);
 mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);

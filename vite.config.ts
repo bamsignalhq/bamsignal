@@ -10,7 +10,11 @@ function contactApiDevPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = req.url?.split("?")[0];
-        if (url !== "/api/contact" || req.method !== "POST") {
+        if (url !== "/api/contact" && url !== "/api/auth/email-code") {
+          next();
+          return;
+        }
+        if (req.method !== "POST") {
           next();
           return;
         }
@@ -20,24 +24,55 @@ function contactApiDevPlugin(): Plugin {
         req.on("end", async () => {
           try {
             const body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
-            const { handleContactPost, sendContactJson } = await import("./server/services/contactMail.js");
-            const result = await handleContactPost(body);
-            sendContactJson(res, 200, result);
+            if (url === "/api/contact") {
+              const { handleContactPost, sendContactJson } = await import("./server/services/contactMail.js");
+              const result = await handleContactPost(body);
+              sendContactJson(res, 200, result);
+              return;
+            }
+
+            const { handleSignupEmailCodeRequest, SignupOtpError } = await import(
+              "./server/services/signupOtp.js"
+            );
+            const result = await handleSignupEmailCodeRequest(body);
+            res.statusCode = 200;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify(result));
           } catch (error) {
-            const { ContactError, sendContactJson } = await import("./server/services/contactMail.js");
-            if (error instanceof ContactError) {
-              sendContactJson(res, error.status, {
+            if (url === "/api/contact") {
+              const { ContactError, sendContactJson } = await import("./server/services/contactMail.js");
+              if (error instanceof ContactError) {
+                sendContactJson(res, error.status, {
+                  ok: false,
+                  error: error.message,
+                  detail: error.detail
+                });
+                return;
+              }
+
+              sendContactJson(res, 500, {
                 ok: false,
-                error: error.message,
-                detail: error.detail
+                error: error instanceof Error ? error.message : "Support email failed"
               });
               return;
             }
 
-            sendContactJson(res, 500, {
-              ok: false,
-              error: error instanceof Error ? error.message : "Support email failed"
-            });
+            const { SignupOtpError } = await import("./server/services/signupOtp.js");
+            if (error instanceof SignupOtpError) {
+              res.statusCode = error.status;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ ok: false, error: error.message }));
+              return;
+            }
+
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.end(
+              JSON.stringify({
+                ok: false,
+                error: "We couldn't send the code right now. Wait a minute and try again, or check your spam folder."
+              })
+            );
           }
         });
         req.on("error", () => {

@@ -5,39 +5,44 @@
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding: 0;
-  background: transparent;
+  padding: 12px 0 28px;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(233, 30, 140, 0.22), transparent 55%),
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(99, 102, 241, 0.12), transparent 50%),
+    var(--bg);
 }
 
 .auth-page--embedded {
   min-height: auto;
+  padding: 0;
+  background: transparent;
 }
 
 .auth-shell {
   position: relative;
   width: 100%;
-  max-width: 440px;
-  padding: 8px 0 24px;
+  max-width: 420px;
+  padding: 4px 16px 24px;
   overflow: hidden;
 }
 
 .auth-shell__glow {
   position: absolute;
-  inset: -40% -20% auto;
-  height: 280px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(233, 30, 140, 0.28), transparent 65%);
+  inset: -30% -15% auto;
+  height: 240px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(233, 30, 140, 0.35), transparent 68%);
   pointer-events: none;
   animation: authGlow 6s ease-in-out infinite alternate;
 }
 
 @keyframes authGlow {
   from {
-    opacity: 0.7;
+    opacity: 0.65;
     transform: translateY(0);
   }
   to {
     opacity: 1;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
 }
 
@@ -46,12 +51,40 @@
   z-index: 1;
   width: 100%;
   text-align: left;
-  padding: 28px 24px 32px;
-  border-radius: 28px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  box-shadow: var(--shadow-soft);
+  padding: 0 0 28px;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
   animation: authSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  overflow: hidden;
+}
+
+.auth-card--fintech::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: var(--brand-gradient);
+}
+
+.auth-card--fintech > .auth-brand,
+.auth-card--fintech > .auth-title,
+.auth-card--fintech > .auth-sub,
+.auth-card--fintech > .auth-fields,
+.auth-card--fintech > .auth-links,
+.auth-card--fintech > .auth-switch,
+.auth-card--fintech > .btn-auth,
+.auth-card--fintech > .auth-dev-hint,
+.auth-card--fintech > .auth-verify {
+  padding-left: 22px;
+  padding-right: 22px;
+}
+
+.auth-card--fintech > .auth-brand {
+  padding-top: 22px;
 }
 
 @keyframes authSlideUp {
@@ -68,22 +101,22 @@
 .auth-brand {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .auth-title {
-  margin: 0 0 8px;
-  font-size: clamp(1.5rem, 5vw, 1.75rem);
+  margin: 0 0 6px;
+  font-size: clamp(1.55rem, 5vw, 1.85rem);
   font-weight: 800;
   letter-spacing: -0.03em;
-  line-height: 1.15;
+  line-height: 1.12;
 }
 
 .auth-sub {
   margin: 0 0 20px;
   color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.45;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .auth-sub--tight {
@@ -114,21 +147,19 @@
 .auth-field input,
 .auth-code-input {
   width: 100%;
-  padding: 16px 18px;
+  padding: 15px 16px;
   border-radius: 14px;
-  border: 1.5px solid var(--border);
-  background: var(--input-bg);
-  color: var(--text);
+  border: 1.5px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: color-mix(in srgb, var(--input-bg) 92%, var(--bg));
   font-size: 1rem;
-  font-weight: 500;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .auth-field input:focus,
 .auth-code-input:focus {
   outline: none;
-  border-color: rgba(233, 30, 140, 0.45);
-  box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.12);
+  border-color: color-mix(in srgb, var(--brand-pink) 55%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-pink) 18%, transparent);
 }
 
 .auth-code-input {

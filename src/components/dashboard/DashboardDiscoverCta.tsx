@@ -1,5 +1,5 @@
 import { Compass } from "lucide-react";
-import { MOMENT_SETS } from "../../constants/showcase";
+import { SHOWCASE } from "../../constants/showcase";
 
 type DashboardDiscoverCtaProps = {
   onDiscover: () => void;
@@ -9,7 +9,7 @@ export function DashboardDiscoverCta({ onDiscover }: DashboardDiscoverCtaProps) 
   return (
     <section className="dash-discover dash-animate">
       <button type="button" className="dash-discover__hit" onClick={onDiscover}>
-        <img src={MOMENT_SETS.lagosRooftop[2]} alt="" className="dash-discover__img" />
+        <img src={SHOWCASE.hero} alt="" className="dash-discover__img" />
         <div className="dash-discover__shade" />
         <div className="dash-discover__content">
           <h2>Discover People Nearby</h2>

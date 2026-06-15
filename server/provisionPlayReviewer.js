@@ -53,8 +53,18 @@ async function resetReviewerAuthUser(email) {
   const userId = existing.rows[0]?.id;
   if (!userId) return;
 
-  await query("delete from auth.identities where user_id = $1::uuid", [userId]);
-  await query("delete from auth.users where id = $1::uuid", [userId]);
+  const cleanup = [
+    "delete from auth.refresh_tokens where user_id = $1::uuid",
+    "delete from auth.sessions where user_id = $1::uuid",
+    "delete from auth.mfa_factors where user_id = $1::uuid",
+    "delete from auth.one_time_tokens where user_id = $1::uuid",
+    "delete from auth.identities where user_id = $1::uuid",
+    "delete from auth.users where id = $1::uuid"
+  ];
+
+  for (const statement of cleanup) {
+    await query(statement, [userId]).catch(() => null);
+  }
 }
 
 async function ensureAuthUserViaSql({ email, password, name, username, phone, reset = false }) {
@@ -130,6 +140,9 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone, re
        last_sign_in_at,
        raw_app_meta_data,
        raw_user_meta_data,
+       is_super_admin,
+       is_sso_user,
+       is_anonymous,
        created_at,
        updated_at,
        confirmation_token,
@@ -149,6 +162,9 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone, re
        now(),
        '{"provider":"email","providers":["email"]}'::jsonb,
        $3::jsonb,
+       false,
+       false,
+       false,
        now(),
        now(),
        '',
@@ -191,7 +207,8 @@ export async function provisionPlayReviewerAccount(pin) {
     password: String(pin),
     name,
     username,
-    phone
+    phone,
+    reset: true
   });
 
   await upsertAppUserIdentity({

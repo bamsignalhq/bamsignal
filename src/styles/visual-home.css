@@ -690,19 +690,19 @@
 }
 
 .platform-root:not(.platform-root--member) .visual-hero--minimal .visual-hero__layout--minimal {
-  justify-content: center;
+  justify-content: flex-end;
   min-height: 100dvh;
-  padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
-  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .visual-hero__shade--minimal {
   background: linear-gradient(
     to top,
-    rgba(6, 3, 12, 0.92) 0%,
-    rgba(6, 3, 12, 0.35) 28%,
-    rgba(6, 3, 12, 0.08) 55%,
-    rgba(6, 3, 12, 0.2) 100%
+    rgba(6, 3, 12, 0.94) 0%,
+    rgba(6, 3, 12, 0.55) 18%,
+    rgba(6, 3, 12, 0.12) 38%,
+    transparent 62%
   );
 }
 
@@ -718,8 +718,9 @@
 }
 
 .visual-hero__copy--minimal {
-  padding: 0 20px 16px;
+  padding: 0 20px 8px;
   max-width: 420px;
+  margin-top: auto;
 }
 
 .visual-hero__copy--minimal h1 {

@@ -3,12 +3,21 @@
  * Accepts legacy JWT service_role keys (eyJ…) and new secret keys (sb_secret_…).
  */
 
+function normalizeEnvValue(value = "") {
+  return String(value).trim().replace(/^\uFEFF/, "").replace(/^['"]|['"]$/g, "");
+}
+
 export function resolveSupabaseUrl() {
-  return (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").trim().replace(/\/$/, "");
+  const raw = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
+  return normalizeEnvValue(raw).replace(/\/$/, "");
 }
 
 export function resolveSupabaseServiceKey() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
+  const raw =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SECRET_KEY ||
+    "";
+  return normalizeEnvValue(raw);
 }
 
 /** True for legacy JWT service_role keys and new sb_secret_ API keys. */
@@ -21,24 +30,40 @@ export function isSupabaseServiceKeyFormat(key = "") {
 }
 
 export function isSignupEmailConfigured() {
+  const hasResend = Boolean(normalizeEnvValue(process.env.RESEND_API_KEY || ""));
+  const serviceKey = resolveSupabaseServiceKey();
   return Boolean(
-    process.env.RESEND_API_KEY?.trim() &&
-      resolveSupabaseServiceKey() &&
-      isSupabaseServiceKeyFormat(resolveSupabaseServiceKey()) &&
+    hasResend &&
+      serviceKey &&
+      isSupabaseServiceKeyFormat(serviceKey) &&
       resolveSupabaseUrl()
   );
 }
 
 export function getSignupEmailEnvTrace() {
   const serviceKey = resolveSupabaseServiceKey();
+  const hasResend = Boolean(normalizeEnvValue(process.env.RESEND_API_KEY || ""));
   return {
-    hasSupabaseUrl: Boolean(process.env.SUPABASE_URL?.trim()),
-    hasViteSupabaseUrl: Boolean(process.env.VITE_SUPABASE_URL?.trim()),
+    hasResend,
+    hasSupabaseUrl: Boolean(normalizeEnvValue(process.env.SUPABASE_URL || "")),
+    hasViteSupabaseUrl: Boolean(normalizeEnvValue(process.env.VITE_SUPABASE_URL || "")),
     hasServiceRoleKey: Boolean(serviceKey),
+    hasSecretKeyAlias: Boolean(normalizeEnvValue(process.env.SUPABASE_SECRET_KEY || "")),
     serviceKeyPrefixIsSbSecret: serviceKey.startsWith("sb_secret_"),
     serviceKeyLength: serviceKey.length,
     resolvedUrl: Boolean(resolveSupabaseUrl()),
     validServiceKeyFormat: isSupabaseServiceKeyFormat(serviceKey)
+  };
+}
+
+/** Safe booleans for /health — shows which gate fails when signupEmail is false. */
+export function getSignupEmailHealthTrace() {
+  const trace = getSignupEmailEnvTrace();
+  return {
+    hasResend: trace.hasResend,
+    hasServiceRoleKey: trace.hasServiceRoleKey,
+    validServiceKeyFormat: trace.validServiceKeyFormat,
+    resolvedUrl: trace.resolvedUrl
   };
 }
 
@@ -47,6 +72,7 @@ export function logSignupEmailEnvTrace() {
   console.info(
     "[bamsignal] signupEmail env trace:",
     JSON.stringify({
+      hasResend: trace.hasResend,
       hasSupabaseUrl: trace.hasSupabaseUrl,
       hasViteSupabaseUrl: trace.hasViteSupabaseUrl,
       hasServiceRoleKey: trace.hasServiceRoleKey,

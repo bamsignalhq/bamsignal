@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
-import { isSignupEmailConfigured } from "./supabaseEnv.js";
+import { isSignupEmailConfigured, getSignupEmailHealthTrace } from "./supabaseEnv.js";
 import { corsMiddleware } from "./cors.js";
 import { fixFunctionSecurity } from "./fixFunctionSecurity.js";
 import { fixSecurityDefinerViews } from "./fixSecurityDefinerViews.js";
@@ -87,6 +87,7 @@ async function healthPayload() {
     paystack: Boolean(config.paystackSecretKey),
     resend: Boolean(process.env.RESEND_API_KEY?.trim()),
     signupEmail: isSignupEmailConfigured(),
+    signupEmailTrace: getSignupEmailHealthTrace(),
     firebase: Boolean(config.firebase.serviceAccount),
     telegram: Boolean(config.telegram.botToken)
   };

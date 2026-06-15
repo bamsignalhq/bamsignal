@@ -6,6 +6,7 @@ import { ProfileDetailSheet } from "../ProfileDetailSheet";
 import { ShowcaseImage } from "../ShowcaseImage";
 import { fetchCitySpotlightProfiles, type CityHomeProfile } from "../../services/cityHome";
 import { cityHomeToDiscoverProfile, trackCitySpotlightEvent } from "../../utils/citySpotlight";
+import { cityVisualId, readSpotlightCity, resolveGuestCity, saveSpotlightCity } from "../../utils/guestCity";
 import type { DiscoverProfile } from "../../types";
 
 type CitySpotlightSectionProps = {
@@ -13,7 +14,7 @@ type CitySpotlightSectionProps = {
 };
 
 export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProps) {
-  const [cityId, setCityId] = useState(CITIES_VISUAL[0].id);
+  const [cityId, setCityId] = useState(() => cityVisualId(readSpotlightCity() || resolveGuestCity()));
   const [profiles, setProfiles] = useState<CityHomeProfile[]>([]);
   const [selected, setSelected] = useState<DiscoverProfile | null>(null);
 
@@ -84,7 +85,10 @@ export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProp
             role="tab"
             aria-selected={c.id === cityId}
             className={`city-spotlight__city ${c.id === cityId ? "city-spotlight__city--active" : ""}`}
-            onClick={() => setCityId(c.id)}
+            onClick={() => {
+              setCityId(c.id);
+              saveSpotlightCity(c.name);
+            }}
           >
             {c.name}
           </button>

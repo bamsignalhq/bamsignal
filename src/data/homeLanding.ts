@@ -13,7 +13,7 @@ export const HOME_HERO_TRUST = ["Verified Profiles", "Safer Conversations"] as c
 export const HOME_SECTIONS = {
   cities: {
     eyebrow: "City Spotlight",
-    title: "Featured members across Nigeria",
+    title: "Featured Members Everywhere",
     lede: "Pick a city — real people, real Naija energy."
   },
   moments: {

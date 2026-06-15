@@ -678,7 +678,22 @@
 }
 
 .visual-final--simple .visual-final__content {
-  gap: 18px;
+  gap: 28px;
+}
+
+.visual-final__content--spaced {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.visual-final__content--spaced h2 {
+  margin: 0;
+}
+
+.visual-final__content--spaced .visual-btn {
+  margin-top: 4px;
 }
 
 .visual-final--simple .visual-final__content h2 {

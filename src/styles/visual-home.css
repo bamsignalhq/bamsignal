@@ -430,6 +430,24 @@
   cursor: default;
 }
 
+.visual-moment-card__hit {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  position: relative;
+}
+
+.visual-moment-card__hit:focus-visible {
+  outline: 2px solid var(--brand-pink);
+  outline-offset: 2px;
+}
+
 .visual-moment-card:hover,
 .visual-moment-card:focus-within {
   transform: scale(1.03);
@@ -441,7 +459,9 @@
 }
 
 .visual-moment-card img,
-.visual-moment-card .showcase-fallback {
+.visual-moment-card .showcase-fallback,
+.visual-moment-card__hit img,
+.visual-moment-card__hit .showcase-fallback {
   width: 100%;
   height: 100%;
   object-fit: cover;

@@ -54,19 +54,30 @@
 }
 
 .site-footer-tagline {
-  margin: 0 0 2px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 24ch;
+}
+
+.site-footer-tagline__lead {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.site-footer-tagline__sub {
   font-size: 13px;
-  font-weight: 500;
+  line-height: 1.45;
   color: var(--text-muted);
+  font-weight: 450;
 }
 
 .site-footer-subtagline {
-  margin: 0;
-  max-width: 22ch;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-muted);
-  opacity: 0.9;
+  display: none;
 }
 
 .site-footer-section {

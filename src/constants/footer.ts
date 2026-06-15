@@ -1,4 +1,4 @@
-export const FOOTER_TAGLINE = "Send a Signal.";
+export const FOOTER_TAGLINE = "Send a Signal";
 export const FOOTER_SUBTAGLINE = "Meet people who match your vibe.";
 
 export const FOOTER_COPYRIGHT = `© ${new Date().getFullYear()} BamSignal`;

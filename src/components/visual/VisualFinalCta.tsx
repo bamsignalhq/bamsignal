@@ -14,7 +14,7 @@ export function VisualFinalCta({ onSignup }: VisualFinalCtaProps) {
     <section className="visual-final visual-final--premium visual-final--simple">
       <ShowcaseImage className="visual-final__bg" src={FINAL_CTA_IMAGE} alt="" />
       <div className="visual-final__shade" />
-      <div className="visual-final__content">
+      <div className="visual-final__content visual-final__content--spaced">
         <h2>{final.headline}</h2>
         <button type="button" className="visual-btn visual-btn--light" onClick={onSignup}>
           {final.cta}

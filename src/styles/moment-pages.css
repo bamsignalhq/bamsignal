@@ -1,0 +1,239 @@
+/* Moment lifestyle pages */
+
+.moment-page {
+  padding-bottom: 40px;
+}
+
+.moment-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.moment-page__hero {
+  position: relative;
+  min-height: 280px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.moment-page__hero-img {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  object-fit: cover;
+}
+
+.moment-page__hero-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(6, 3, 12, 0.92) 0%, rgba(6, 3, 12, 0.2) 55%, transparent);
+}
+
+.moment-page__hero-copy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 22px 20px;
+  color: #fff;
+}
+
+.moment-page__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.moment-page__hero-copy h1 {
+  margin: 0 0 6px;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.moment-page__tagline {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.92;
+}
+
+.moment-page__intro {
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.moment-page__intro h2 {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.moment-page__intro p {
+  margin: 0 0 10px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.moment-page__situation {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.moment-page__city {
+  margin-bottom: 18px;
+}
+
+.moment-page__city-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.moment-page__city-head p {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.moment-page__city-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.moment-page__city-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.moment-page__city-tab {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.moment-page__city-tab--active {
+  border-color: color-mix(in srgb, var(--brand-pink) 45%, var(--border));
+  background: color-mix(in srgb, var(--brand-pink) 12%, var(--card));
+  color: var(--text);
+}
+
+.moment-page__grid {
+  display: grid;
+  gap: 16px;
+}
+
+.moment-page__card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.moment-page__photo {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.moment-page__photo img,
+.moment-page__photo .showcase-fallback {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  display: block;
+}
+
+.moment-page__meta {
+  padding: 16px;
+}
+
+.moment-page__meta h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.moment-page__location {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.moment-page__verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brand-pink);
+}
+
+.moment-page__bio {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.moment-page__loading,
+.moment-page__empty {
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.moment-page__cta {
+  margin-top: 24px;
+  padding: 22px 20px;
+  text-align: center;
+}
+
+.moment-page__cta h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+.moment-page__cta p {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+@media (min-width: 640px) {
+  .moment-page__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .moment-page__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

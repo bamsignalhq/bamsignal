@@ -1,3 +1,4 @@
+import { navigateToPath } from "../../constants/routes";
 import { SIGNAL_MOMENTS } from "../../data/visualLanding";
 import { HOME_SECTIONS } from "../../data/homeLanding";
 import { ShowcaseImage } from "../ShowcaseImage";
@@ -16,12 +17,19 @@ export function SignalMoments() {
       <div className="visual-moments__track">
         {SIGNAL_MOMENTS.map((moment) => (
           <article key={moment.id} className="visual-moment-card">
-            <ShowcaseImage src={moment.image} alt={moment.title} loading="lazy" />
-            <div className="visual-moment-card__shade" />
-            <div className="visual-moment-card__label">
-              <h3>{moment.title}</h3>
-              <p>{moment.tagline}</p>
-            </div>
+            <button
+              type="button"
+              className="visual-moment-card__hit"
+              onClick={() => navigateToPath(`/moments/${moment.id}`)}
+              aria-label={`Explore ${moment.title}`}
+            >
+              <ShowcaseImage src={moment.image} alt="" loading="lazy" />
+              <div className="visual-moment-card__shade" />
+              <div className="visual-moment-card__label">
+                <h3>{moment.title}</h3>
+                <p>{moment.tagline}</p>
+              </div>
+            </button>
           </article>
         ))}
       </div>

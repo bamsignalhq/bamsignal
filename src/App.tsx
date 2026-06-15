@@ -45,7 +45,9 @@ import { LoveAuthRoutePage } from "./pages/LoveAuthRoutePage";
 import { AdminAuthPage } from "./pages/AdminAuthPage";
 import { BlogIndexPage } from "./pages/BlogIndexPage";
 import { BlogPostPage } from "./pages/BlogPostPage";
+import { MomentPage } from "./pages/MomentPage";
 import { getBlogPost } from "./data/blogPosts";
+import { getMomentPage, type MomentPageId } from "./data/momentPages";
 import {
   ADMIN_AUTH_PATH,
   ADMIN_HUB_PATH,
@@ -53,6 +55,7 @@ import {
   AUTH_SIGNUP_PATH,
   getAuthPath,
   getBlogSlug,
+  getMomentSlug,
   isAdminAuthRoute,
   isAdminHubRoute,
   isBlogIndex,
@@ -78,6 +81,7 @@ export function App() {
   const [legalPath, setLegalPath] = useState<LegalPath | null>(() => getLegalPath());
   const [authPath, setAuthPath] = useState<AuthPath | null>(() => getAuthPath());
   const [blogSlug, setBlogSlug] = useState<string | null>(() => getBlogSlug());
+  const [momentSlug, setMomentSlug] = useState<string | null>(() => getMomentSlug());
   const [showBlogIndex, setShowBlogIndex] = useState(() => isBlogIndex());
   const [showAdminAuth, setShowAdminAuth] = useState(() => isAdminAuthRoute());
   const [showAdminHub, setShowAdminHub] = useState(() => isAdminHubRoute() && !isAdminAuthRoute());
@@ -109,6 +113,7 @@ export function App() {
       setLegalPath(getLegalPath());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());
+      setMomentSlug(getMomentSlug());
       setShowBlogIndex(isBlogIndex());
       setShowAdminAuth(isAdminAuthRoute());
       setShowAdminHub(isAdminHubRoute() && !isAdminAuthRoute());
@@ -499,7 +504,8 @@ export function App() {
     setTab("home");
     setShowBlogIndex(false);
     setBlogSlug(null);
-    if (getLegalPath() || isBlogIndex() || getBlogSlug()) {
+    setMomentSlug(null);
+    if (getLegalPath() || isBlogIndex() || getBlogSlug() || getMomentSlug()) {
       navigateToPath("/");
       setLegalPath(null);
     }
@@ -583,6 +589,33 @@ export function App() {
           message={authMessage}
           onMessage={setAuthMessage}
         />
+      </div>
+    );
+  }
+
+  if (momentSlug && getMomentPage(momentSlug)) {
+    return (
+      <div className={`app ${theme} platform-root`}>
+        <div className="platform-shell platform-shell--legal">
+          <TopNav
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            isPremium={isPremium}
+            isGuest={isGuest}
+            onGetStarted={() => openAuth("signup")}
+            onLogoClick={goHome}
+            showNotifications={isAuthed}
+            notificationCount={notificationUnread}
+            onNotificationsClick={() => setNotificationsOpen(true)}
+            showFoundingMember={false}
+            memberFirstName={
+              isAuthed ? user.name.split(" ")[0] || user.username || undefined : undefined
+            }
+          />
+          <main className="app-main app-main--legal">
+            <MomentPage momentId={momentSlug as MomentPageId} onSignup={() => openAuth("signup", "discover")} />
+          </main>
+        </div>
       </div>
     );
   }

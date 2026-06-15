@@ -3,6 +3,14 @@ export const AUTH_SIGNUP_PATH = "/love/sign";
 export const ADMIN_AUTH_PATH = "/hard/auth";
 export const ADMIN_HUB_PATH = "/hard";
 export const BLOG_INDEX_PATH = "/blog";
+export const MOMENTS_PATH_PREFIX = "/moments";
+
+export function getMomentSlug(pathname = window.location.pathname): string | null {
+  const path = normalizePath(pathname);
+  if (!path.startsWith(`${MOMENTS_PATH_PREFIX}/`)) return null;
+  const slug = path.slice(MOMENTS_PATH_PREFIX.length + 1);
+  return slug && !slug.includes("/") ? slug : null;
+}
 
 export const AUTH_PATHS = [AUTH_LOGIN_PATH, AUTH_SIGNUP_PATH] as const;
 export type AuthPath = (typeof AUTH_PATHS)[number];

@@ -30,8 +30,10 @@ export function SiteFooter({ className = "", showEarlyAccess = false, onLogoClic
               <AppLogo size="sm" showText={false} />
             </button>
             <p className="site-footer-brand-name">BamSignal</p>
-            <p className="site-footer-tagline">{FOOTER_TAGLINE}</p>
-            <p className="site-footer-subtagline">{FOOTER_SUBTAGLINE}</p>
+            <p className="site-footer-tagline">
+              <span className="site-footer-tagline__lead">{FOOTER_TAGLINE}</span>
+              <span className="site-footer-tagline__sub">{FOOTER_SUBTAGLINE}</span>
+            </p>
           </section>
 
           <section className="site-footer-section" aria-label="Quick links">

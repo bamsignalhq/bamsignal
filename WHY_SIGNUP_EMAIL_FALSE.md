@@ -129,7 +129,7 @@ Container boot logs also print: `[bamsignal] signupEmail env trace:` (no secret 
 curl -sS https://bamsignal.com/health | jq '{signupEmail, signupEmailTrace, resend}'
 ```
 
-**Expected (post-fix, env correctly injected):**
+**Verified (deploy `a160f00`, June 15, 2026):**
 
 ```json
 {

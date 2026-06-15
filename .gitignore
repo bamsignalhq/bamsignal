@@ -13,6 +13,8 @@ android/app/build/
 android/local.properties
 android/key.properties
 android/app/*.jks
+*.jks
+*.keystore
 android/.idea/deploymentTargetSelector.xml
 android/.idea/deviceManager.xml
 

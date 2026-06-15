@@ -8,6 +8,8 @@
     "build": "node scripts/generate-sitemap.mjs && tsc && vite build",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
     "generate:brand": "node scripts/generate-brand-assets.mjs",
+    "generate:android-icons": "node scripts/generate-android-icons.mjs",
+    "android:release": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease bundleRelease",
     "generate:showcase": "node scripts/convert-showcase-images.mjs",
     "convert:showcase": "node scripts/convert-showcase-images.mjs",
     "verify:database": "node scripts/verify-database.mjs",

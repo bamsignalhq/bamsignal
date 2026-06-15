@@ -1,0 +1,4 @@
+storePassword=REPLACE_ME
+keyPassword=REPLACE_ME
+keyAlias=bamsignal_upload
+storeFile=bamsignal-upload-key.jks

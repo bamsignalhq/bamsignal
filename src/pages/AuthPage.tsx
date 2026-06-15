@@ -161,37 +161,15 @@ export function AuthPage({
     const profile: UserProfile = { name, username, email, phone };
 
     try {
-      if (supabase) {
-        try {
-          await sendSignupEmailCode(email, name);
-          rememberUsernameEmail(username, email);
-          setPendingSignup(profile);
-          onModeChange("verify");
-          return;
-        } catch (serverError) {
-          const serverMessage =
-            serverError instanceof Error ? serverError.message : String(serverError || "");
-          if (!/network|fetch failed/i.test(serverMessage)) {
-            throw serverError;
-          }
-        }
-
-        const { error } = await supabase.auth.signUp({
-          email,
-          password: signupForm.pin,
-          options: {
-            data: { phone, name, username }
-          }
-        });
-        if (error) throw error;
-        rememberUsernameEmail(username, email);
-        setPendingSignup(profile);
-        onModeChange("verify");
-        return;
+      if (!supabase) {
+        throw new Error("Authentication is not configured. Please update the app and try again.");
       }
 
+      await sendSignupEmailCode(email, name);
       rememberUsernameEmail(username, email);
-      onAuthenticated(profile, { isNewSignup: true });
+      setPendingSignup(profile);
+      onModeChange("verify");
+      return;
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {
@@ -204,48 +182,30 @@ export function AuthPage({
     setBusy("verify");
     onMessage("");
     try {
-      if (supabase) {
-        try {
-          await verifySignupEmailCode({
-            email: pendingSignup.email,
-            code,
-            password: signupForm.pin,
-            name: pendingSignup.name,
-            username: pendingSignup.username || "",
-            phone: pendingSignup.phone || ""
-          });
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: pendingSignup.email,
-            password: signupForm.pin
-          });
-          if (error) throw error;
-          if (data.user) {
-            onAuthenticated(profileFromSessionUser(data.user), { isNewSignup: true });
-            return;
-          }
-        } catch (serverError) {
-          const serverMessage =
-            serverError instanceof Error ? serverError.message : String(serverError || "");
-          if (
-            /doesn't match|expired|Wait|valid|already exists|configured|Too many/i.test(serverMessage)
-          ) {
-            throw serverError;
-          }
-
-          const { data, error } = await supabase.auth.verifyOtp({
-            email: pendingSignup.email,
-            token: code,
-            type: "email"
-          });
-          if (error) throw error;
-          if (data.session?.user) {
-            onAuthenticated(profileFromSessionUser(data.session.user), { isNewSignup: true });
-            return;
-          }
-          throw serverError;
-        }
+      if (!supabase) {
+        throw new Error("Authentication is not configured. Please update the app and try again.");
       }
-      onAuthenticated(pendingSignup, { isNewSignup: true });
+
+      await verifySignupEmailCode({
+        email: pendingSignup.email,
+        code,
+        password: signupForm.pin,
+        name: pendingSignup.name,
+        username: pendingSignup.username || "",
+        phone: pendingSignup.phone || ""
+      });
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: pendingSignup.email,
+        password: signupForm.pin
+      });
+      if (error) throw error;
+      if (data.user) {
+        onAuthenticated(profileFromSessionUser(data.user), { isNewSignup: true });
+        return;
+      }
+
+      throw new Error("We couldn't finish creating your account. Try again shortly.");
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {
@@ -306,34 +266,15 @@ export function AuthPage({
     setBusy("resend");
     onMessage("");
     try {
-      if (supabase) {
-        try {
-          await sendSignupEmailCode(pendingSignup.email, pendingSignup.name);
-          onMessage("Fresh code sent — check your inbox.");
-          setResendIn(RESEND_COOLDOWN_SEC);
-          setVerifyCode("");
-          otpRefs.current[0]?.focus();
-          return;
-        } catch (serverError) {
-          const serverMessage =
-            serverError instanceof Error ? serverError.message : String(serverError || "");
-          if (!/network|fetch failed/i.test(serverMessage)) {
-            throw serverError;
-          }
-        }
-
-        const { error } = await supabase.auth.resend({
-          type: "signup",
-          email: pendingSignup.email
-        });
-        if (error) throw error;
-        onMessage("Fresh code sent — check your inbox.");
-        setResendIn(RESEND_COOLDOWN_SEC);
-        setVerifyCode("");
-        otpRefs.current[0]?.focus();
-        return;
+      if (!supabase) {
+        throw new Error("Authentication is not configured. Please update the app and try again.");
       }
-      onMessage("Check your inbox for the code.");
+
+      await sendSignupEmailCode(pendingSignup.email, pendingSignup.name);
+      onMessage("Fresh code sent — check your inbox.");
+      setResendIn(RESEND_COOLDOWN_SEC);
+      setVerifyCode("");
+      otpRefs.current[0]?.focus();
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {
@@ -411,7 +352,6 @@ export function AuthPage({
           {mode === "signup" && (
             <>
               <h1 className="auth-title">Create your account</h1>
-              <p className="auth-sub">Join BamSignal — we&apos;ll verify your email in the next step.</p>
               <div className="auth-fields">
                 <AuthField
                   label="Name"

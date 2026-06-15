@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 import { BoostShop } from "./BoostShop";
 import type { BoostProduct } from "../constants/boosts";
 import type { PremiumPlan } from "../constants/plans";
+import { STORAGE_KEYS } from "../constants/limits";
 import { fetchBoostProducts } from "../services/boosts";
+import { normalizeDatingProfile } from "../utils/profile";
+import { readJson } from "../utils/storage";
 
 type PricingModalProps = {
   open: boolean;
@@ -23,10 +26,13 @@ export function PricingModal({
   loading
 }: PricingModalProps) {
   const [boosts, setBoosts] = useState<BoostProduct[]>([]);
+  const [memberCity, setMemberCity] = useState("");
 
   useEffect(() => {
     if (!open) return;
     void fetchBoostProducts().then(setBoosts);
+    const profile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
+    setMemberCity(profile.city?.trim() || "");
   }, [open]);
 
   if (!open) return null;
@@ -65,7 +71,12 @@ export function PricingModal({
         </div>
 
         {boosts.length > 0 && onPurchaseBoost && (
-          <BoostShop products={boosts} onPurchase={onPurchaseBoost} loading={loading} />
+          <BoostShop
+            products={boosts}
+            onPurchase={onPurchaseBoost}
+            loading={loading}
+            memberCity={memberCity}
+          />
         )}
       </div>
     </div>

@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   const city = String(req.query.city || "").trim();
-  const limit = Math.min(3, Math.max(1, Number(req.query.limit) || 3));
+  const limit = Math.min(12, Math.max(1, Number(req.query.limit) || 8));
 
   if (!city) {
     return res.status(400).json({ ok: false, error: "City is required." });

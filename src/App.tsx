@@ -22,13 +22,14 @@ import { STORAGE_KEYS } from "./constants/limits";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./types";
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
-import { isOnboardingComplete } from "./utils/profile";
+import { isOnboardingComplete, normalizeDatingProfile } from "./utils/profile";
 import { recordStreakActivity } from "./utils/streaks";
 import { isPremiumActive, refreshPremiumStatus, startBoostPayment, startPlanPayment, verifyBoostPayment, verifyPayment } from "./services/payments";
 import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive } from "./utils/premiumTrial";
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
 import { hydrateMemberData, registerMember } from "./services/memberData";
+import { syncMemberProfileRemote } from "./services/cityHome";
 import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
@@ -214,7 +215,7 @@ export function App() {
             title: "Payment successful",
             body:
               boostId === "city-spotlight"
-                ? "City Spotlight is live for 24 hours."
+                ? `Hot spotlight is live for 24 hours in ${datingProfile.city || "your city"}.`
                 : boostId === "city-boost"
                   ? "Your City Boost is now active."
                   : `${boostId.replace(/-/g, " ")} is now active.`
@@ -448,7 +449,15 @@ export function App() {
         setAuthMessage("Add a verified email before purchasing a boost.");
         return;
       }
-      const datingProfile = readJson(STORAGE_KEYS.datingProfile, { city: "Lagos" });
+      const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
+      const memberCity = datingProfile.city?.trim() || "";
+
+      if ((product.id === "city-spotlight" || product.id === "city-boost") && !memberCity) {
+        setAuthMessage("Set your city in Edit Profile before buying a city boost.");
+        return;
+      }
+
+      syncMemberProfileRemote(user, datingProfile);
 
       setPaymentLoading(true);
       localStorage.setItem(STORAGE_KEYS.paymentKind, "boost");

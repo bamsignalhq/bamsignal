@@ -36,7 +36,7 @@ export type CityHomeMember = {
   updatedAt?: string;
 };
 
-export async function fetchCitySpotlightProfiles(city: string, limit = 3): Promise<CityHomeProfile[]> {
+export async function fetchCitySpotlightProfiles(city: string, limit = 8): Promise<CityHomeProfile[]> {
   try {
     const params = new URLSearchParams({ city, limit: String(limit) });
     const response = await fetch(apiUrl(`/api/city/spotlight?${params.toString()}`), {

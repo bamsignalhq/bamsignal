@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, Flame } from "lucide-react";
 import { CITIES_VISUAL } from "../../data/visualLanding";
 import { HOME_SECTIONS } from "../../data/homeLanding";
 import { ProfileDetailSheet } from "../ProfileDetailSheet";
@@ -13,6 +13,10 @@ type CitySpotlightSectionProps = {
   onGuestAction: () => void;
 };
 
+function isHotPlacement(profile: CityHomeProfile): boolean {
+  return Boolean(profile.placementType && ["hot", "spotlight", "boost"].includes(profile.placementType));
+}
+
 export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProps) {
   const [cityId, setCityId] = useState(() => cityVisualId(readSpotlightCity() || resolveGuestCity()));
   const [profiles, setProfiles] = useState<CityHomeProfile[]>([]);
@@ -23,7 +27,7 @@ export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProp
 
   useEffect(() => {
     let cancelled = false;
-    void fetchCitySpotlightProfiles(city.name, 3).then((rows) => {
+    void fetchCitySpotlightProfiles(city.name, 8).then((rows) => {
       if (!cancelled) setProfiles(rows);
     });
     return () => {
@@ -40,7 +44,7 @@ export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProp
     });
   }, [city.name, profiles.length]);
 
-  const spotlightCards = useMemo(() => profiles.slice(0, 3), [profiles]);
+  const spotlightCards = useMemo(() => profiles.slice(0, 8), [profiles]);
 
   const openProfile = (profile: CityHomeProfile) => {
     const discover = cityHomeToDiscoverProfile(profile);
@@ -95,38 +99,44 @@ export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProp
         ))}
       </div>
 
-      <div className="city-spotlight__members">
-        {spotlightCards.length > 0 ? (
-          spotlightCards.map((profile) => (
-            <article key={profile.profileId} className="city-spotlight__card card">
-              <button
-                type="button"
-                className="city-spotlight__photo"
-                onClick={() => openProfile(profile)}
-                aria-label={`View ${profile.name}'s profile`}
-              >
-                <ShowcaseImage src={profile.photo} alt={profile.name} loading="lazy" />
-              </button>
-              <div className="city-spotlight__meta">
-                <h3>
-                  {profile.name}
-                  {profile.age ? `, ${profile.age}` : ""}
-                </h3>
-                {profile.verified ? (
-                  <span className="city-spotlight__verified">
-                    <BadgeCheck size={14} aria-hidden />
-                    Verified
-                  </span>
-                ) : null}
-                <button type="button" className="btn-secondary city-spotlight__view" onClick={() => openProfile(profile)}>
-                  View Profile
+      <div className="city-spotlight__track-wrap">
+        <div className="city-spotlight__members" aria-label={`Hot members in ${city.name}`}>
+          {spotlightCards.length > 0 ? (
+            spotlightCards.map((profile) => (
+              <article key={profile.profileId} className="city-spotlight__card">
+                <button
+                  type="button"
+                  className="city-spotlight__photo"
+                  onClick={() => openProfile(profile)}
+                  aria-label={`View ${profile.name}'s profile`}
+                >
+                  <ShowcaseImage src={profile.photo} alt="" loading="lazy" />
+                  {isHotPlacement(profile) ? (
+                    <span className="city-spotlight__badge-hot">
+                      <Flame size={12} aria-hidden />
+                      Hot
+                    </span>
+                  ) : null}
                 </button>
-              </div>
-            </article>
-          ))
-        ) : (
-          <p className="city-spotlight__empty">Featured members in {city.name} will appear here soon.</p>
-        )}
+                <div className="city-spotlight__meta">
+                  <h3>
+                    {profile.name}
+                    {profile.age ? `, ${profile.age}` : ""}
+                  </h3>
+                  <p className="city-spotlight__city-line">{profile.city}</p>
+                  {profile.verified ? (
+                    <span className="city-spotlight__verified">
+                      <BadgeCheck size={14} aria-hidden />
+                      Verified
+                    </span>
+                  ) : null}
+                </div>
+              </article>
+            ))
+          ) : (
+            <p className="city-spotlight__empty">Featured members in {city.name} will appear here soon.</p>
+          )}
+        </div>
       </div>
 
       {selected ? (
@@ -134,7 +144,7 @@ export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProp
           profile={selected}
           open
           onClose={() => setSelected(null)}
-          matchReasons={[`Featured in ${city.name}`]}
+          matchReasons={[`Hot in ${city.name}`]}
           onSendSignal={sendSignal}
         />
       ) : null}

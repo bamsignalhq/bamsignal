@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
+import { corsMiddleware } from "./cors.js";
 import { getDatabaseStatus, initDatabase, pingDatabase } from "./db.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
@@ -40,6 +41,8 @@ process.on("unhandledRejection", (reason) => {
 
 const app = express();
 
+app.use(corsMiddleware);
+
 app.use((req, res, next) => {
   if (
     req.path === "/webhooks/paystack" ||
@@ -69,7 +72,9 @@ async function healthPayload() {
     paystack: Boolean(config.paystackSecretKey),
     resend: Boolean(process.env.RESEND_API_KEY?.trim()),
     signupEmail: Boolean(
-      process.env.RESEND_API_KEY?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+      process.env.RESEND_API_KEY?.trim() &&
+        process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() &&
+        (process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim())
     ),
     firebase: Boolean(config.firebase.serviceAccount),
     telegram: Boolean(config.telegram.botToken)

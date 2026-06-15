@@ -46,6 +46,8 @@ if (!config.paystackSecretKey) {
   console.warn("[bamsignal] PAYSTACK_SECRET_KEY is not set. Payment endpoints will return service-unavailable errors.");
 }
 
-if (!process.env.RESEND_API_KEY?.trim()) {
-  console.warn("[bamsignal] RESEND_API_KEY is not set. Contact form email delivery is disabled.");
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+  console.warn(
+    "[bamsignal] SUPABASE_SERVICE_ROLE_KEY is not set. Signup OTP verify will fail until this is configured in Coolify."
+  );
 }

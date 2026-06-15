@@ -3,7 +3,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const devServerUrl = process.env.CAP_SERVER_URL?.trim();
 
 const config: CapacitorConfig = {
-  appId: "com.bamsignal.app",
+  appId: "com.bamsignal.com",
   appName: "BamSignal",
   webDir: "dist",
   android: {

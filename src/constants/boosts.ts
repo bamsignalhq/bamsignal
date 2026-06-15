@@ -52,10 +52,10 @@ export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
   },
   {
     id: "city-spotlight",
-    name: "City Spotlight",
+    name: "Hot",
     price: 500,
-    description: "24-hour featured placement in your city's spotlight — real profile discovery.",
-    cta: "Get City Spotlight"
+    description: "24 hours in Featured Members for your city — the horizontal spotlight row visitors browse.",
+    cta: "Get Hot"
   },
   {
     id: "city-boost",

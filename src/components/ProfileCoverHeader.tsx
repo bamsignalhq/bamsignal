@@ -1,6 +1,4 @@
 import { MapPin, UserRound } from "lucide-react";
-import { VerificationBadge } from "./VerificationBadge";
-import { VerifiedBadge } from "./VerifiedBadge";
 import { ShowcaseImage } from "./ShowcaseImage";
 import { MOMENT_SETS } from "../constants/showcase";
 import type { DatingProfile, UserProfile } from "../types";
@@ -10,6 +8,7 @@ type ProfileCoverHeaderProps = {
   user: UserProfile;
   profile: DatingProfile;
   verification: VerificationInfo;
+  coverOnly?: boolean;
 };
 
 const DEFAULT_COVER = MOMENT_SETS.lagosRooftop[0];
@@ -20,7 +19,7 @@ function formatLocation(profile: DatingProfile): string {
   return state ? `${profile.city}, ${state}` : profile.city;
 }
 
-export function ProfileCoverHeader({ user, profile, verification }: ProfileCoverHeaderProps) {
+export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHeaderProps) {
   const avatar = profile.photos[0] ?? null;
   const cover = avatar ?? DEFAULT_COVER;
 
@@ -55,20 +54,16 @@ export function ProfileCoverHeader({ user, profile, verification }: ProfileCover
           )}
         </div>
 
-        <div className="profile-hero__meta">
-          <h1 className="profile-hero__name">{user.name || "Your profile"}</h1>
-          {profile.age ? <p className="profile-hero__age">{profile.age}</p> : null}
-          <p className="profile-hero__location">
-            <MapPin size={14} aria-hidden />
-            {formatLocation(profile)}
-          </p>
-          {(verification.tier > 0 || profile.verified) && (
-            <div className="profile-hero__badges">
-              {verification.tier > 0 && <VerificationBadge info={verification} />}
-              {profile.verified && !verification.tier && <VerifiedBadge />}
-            </div>
-          )}
-        </div>
+        {!coverOnly && (
+          <div className="profile-hero__meta">
+            <h1 className="profile-hero__name">{user.name || "Your profile"}</h1>
+            {profile.age ? <p className="profile-hero__age">{profile.age}</p> : null}
+            <p className="profile-hero__location">
+              <MapPin size={14} aria-hidden />
+              {formatLocation(profile)}
+            </p>
+          </div>
+        )}
       </div>
     </header>
   );

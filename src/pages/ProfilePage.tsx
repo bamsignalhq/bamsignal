@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, ShieldCheck, Sun, Upload } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, Settings, ShieldCheck, Sun, Upload } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay } from "../constants/intents";
 import { StateCitySelect } from "../components/StateCitySelect";
@@ -13,6 +13,7 @@ import {
   SOCIAL_LIFESTYLES
 } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
+import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
 import { InterestPicker } from "../components/InterestPicker";
 import { VoiceIntroRecorder } from "../components/VoiceIntro";
 import { VoiceIntro } from "../components/VoiceIntro";
@@ -43,8 +44,9 @@ import {
 import { notifyVerificationApproved } from "../utils/notifyHelpers";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
 import { getOwnProfileHighlights } from "../utils/profileHighlights";
-import { getOwnCompatibilitySummary } from "../utils/profileCompatSummary";
+import { getOwnProfileChips } from "../utils/profileCompatSummary";
 import { ShowcaseImage } from "../components/ShowcaseImage";
+import { syncMemberProfileRemote } from "../services/cityHome";
 
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary", "Prefer not to say"];
 const LOOKING: LookingFor[] = ["Men", "Women", "Everyone"];
@@ -63,6 +65,30 @@ type ProfilePageProps = {
   onUpgrade: () => void;
   onOpenAdmin?: () => void;
 };
+
+function bioHint(bio: string): string {
+  return bio.trim().length >= 16 ? "Added" : "Not added";
+}
+
+function interestsHint(interests?: string[]): string {
+  const count = interests?.length ?? 0;
+  if (!count) return "None yet";
+  return `${count} selected`;
+}
+
+function intentHint(intents: IntentTag[]): string {
+  if (!intents.length) return "Not added";
+  if (intents.length === 1) return intentDisplay(intents[0]);
+  return `${intents.length} selected`;
+}
+
+function voiceHint(url?: string): string {
+  return url ? "Added" : "Not added";
+}
+
+function photosHint(count: number): string {
+  return `${count} of 6 added`;
+}
 
 function SettingsRow({ label, onClick }: { label: string; onClick: () => void }) {
   return (
@@ -138,8 +164,10 @@ export function ProfilePage({
   }, [user.phone, profile.verified]);
 
   const save = () => {
-    writeJson(STORAGE_KEYS.datingProfile, { ...profile, premium: isPremium });
+    const normalized = normalizeDatingProfile({ ...profile, premium: isPremium });
+    writeJson(STORAGE_KEYS.datingProfile, normalized);
     writeJson(STORAGE_KEYS.matchPreferences, prefs);
+    syncMemberProfileRemote(user, normalized);
     onUserChange({ ...user, name: user.name });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -215,11 +243,11 @@ export function ProfilePage({
   const phoneVerified = Boolean(user.phoneVerified ?? user.phone);
   const verification = getVerificationTier(profile, isPremium, phoneVerified);
   const profileHighlights = getOwnProfileHighlights(profile);
-  const compatibilitySummary = getOwnCompatibilitySummary(profile, prefs);
+  const profileChips = getOwnProfileChips(profile, prefs);
 
   const settingsBack = () => {
     if (settingsPanel === "hub") {
-      setView("overview");
+      setView("edit");
     } else {
       setSettingsPanel("hub");
     }
@@ -235,24 +263,18 @@ export function ProfilePage({
 
       {view === "overview" && (
         <>
-          <ProfileCoverHeader user={user} profile={profile} verification={verification} />
-
-          <div className="profile-overview-actions">
-            <button type="button" className="btn-primary btn-full" onClick={() => setView("edit")}>
-              Edit Profile
-            </button>
-            <button type="button" className="link-btn profile-settings-link" onClick={() => openSettings()}>
-              Settings
-            </button>
-          </div>
+          <ProfileCoverHeader user={user} profile={profile} verification={verification} coverOnly />
+          <ProfileIdentityStrip user={user} profile={profile} verification={verification} />
 
           <div className="profile-overview-sections">
-            <section className="profile-overview-card">
-              <h3>Bio</h3>
-              <p className="profile-overview-bio">{profile.bio || "Add a short bio in Edit Profile."}</p>
+            <section className="profile-overview-block">
+              <h3>About</h3>
+              <p className="profile-overview-bio">
+                {profile.bio || "Tell people a little about yourself."}
+              </p>
             </section>
 
-            <section className="profile-overview-card">
+            <section className="profile-overview-block">
               <h3>Interests</h3>
               {profile.interests?.length > 0 ? (
                 <div className="intent-tags">
@@ -263,12 +285,12 @@ export function ProfilePage({
                   ))}
                 </div>
               ) : (
-                <p className="profile-overview-empty">Add interests in Edit Profile.</p>
+                <p className="profile-overview-empty">Choose a few interests.</p>
               )}
             </section>
 
-            <section className="profile-overview-card">
-              <h3>Looking for</h3>
+            <section className="profile-overview-block">
+              <h3>Interested in</h3>
               {profile.intents.length > 0 ? (
                 <div className="intent-tags">
                   {profile.intents.slice(0, MAX_INTENT_SELECTIONS).map((intent) => (
@@ -278,116 +300,166 @@ export function ProfilePage({
                   ))}
                 </div>
               ) : (
-                <p className="profile-overview-empty">Add what you&apos;re looking for in Edit Profile.</p>
+                <p className="profile-overview-empty">Share what you&apos;re open to.</p>
               )}
             </section>
 
-            {profile.voiceIntroUrl && (
-              <section className="profile-overview-card">
-                <h3>Voice intro</h3>
+            <section className="profile-overview-block">
+              <h3>Voice greeting</h3>
+              {profile.voiceIntroUrl ? (
                 <VoiceIntro url={profile.voiceIntroUrl} />
-              </section>
-            )}
+              ) : (
+                <p className="profile-overview-empty">Add a short voice greeting.</p>
+              )}
+            </section>
 
-            {(profileHighlights.length > 0 || compatibilitySummary) && (
-              <section className="profile-overview-card profile-overview-card--insight">
-                {profileHighlights.length > 0 && <WhyThisProfile reasons={profileHighlights} />}
-                {compatibilitySummary ? (
-                  <p className="profile-overview-compat">{compatibilitySummary}</p>
+            {profileHighlights.length > 0 && (
+              <section className="profile-overview-block profile-overview-block--insight">
+                <WhyThisProfile reasons={profileHighlights} title="Profile highlights" />
+                {profileChips.length > 0 ? (
+                  <div className="profile-highlights-chips">
+                    {profileChips.map((chip) => (
+                      <span key={chip} className="profile-highlights-chip">
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
                 ) : null}
               </section>
             )}
+          </div>
+
+          <div className="profile-edit-cta">
+            <button type="button" className="btn-primary btn-full" onClick={() => setView("edit")}>
+              Edit Profile
+            </button>
+          </div>
+
+          <div className="profile-overview-footer">
+            <button type="button" className="profile-logout-link" onClick={handleLogout}>
+              <LogOut size={16} aria-hidden />
+              Log out
+            </button>
           </div>
         </>
       )}
 
       {view === "edit" && (
         <>
-          <button type="button" className="profile-back-link" onClick={() => setView("overview")}>
-            <ChevronLeft size={18} /> Profile
-          </button>
+          <div className="profile-edit-top">
+            <button type="button" className="profile-back-link" onClick={() => setView("overview")}>
+              <ChevronLeft size={18} /> Profile
+            </button>
+            <button
+              type="button"
+              className="profile-settings-gear"
+              onClick={() => openSettings()}
+              aria-label="Settings"
+            >
+              <Settings size={18} aria-hidden />
+              <span>Settings</span>
+            </button>
+          </div>
           <h2 className="profile-screen-title">Edit Profile</h2>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={uploadPhoto} />
 
           <EditAccordion
             id="basic"
-            title="Basic info"
+            title="About"
             open={editOpen === "basic"}
             onToggle={toggleEditSection}
           >
-            <label>
-              Name
-              <input value={user.name} onChange={(e) => onUserChange({ ...user, name: e.target.value })} />
-            </label>
-            <label>
-              Age
-              <input
-                type="number"
-                min={18}
-                max={99}
-                value={profile.age}
-                onChange={(e) => setProfile({ ...profile, age: Number(e.target.value) })}
-              />
-            </label>
-            <label>
-              Gender
-              <select
-                value={profile.gender}
-                onChange={(e) => setProfile({ ...profile, gender: e.target.value as Gender })}
-              >
-                {GENDERS.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <StateCitySelect
-              state={profile.state ?? ""}
-              city={profile.city}
-              onLocationChange={(state, city) => setProfile({ ...profile, state, city })}
-            />
-            <label>
-              Looking for
-              <select
-                value={profile.lookingFor}
-                onChange={(e) => setProfile({ ...profile, lookingFor: e.target.value as LookingFor })}
-              >
-                {LOOKING.map((l) => (
-                  <option key={l} value={l}>
-                    {l}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="profile-form-rows">
+              <label className="profile-form-row">
+                <span className="profile-form-row__label">Name</span>
+                <input
+                  className="profile-form-row__input"
+                  value={user.name}
+                  onChange={(e) => onUserChange({ ...user, name: e.target.value })}
+                />
+              </label>
+              <label className="profile-form-row">
+                <span className="profile-form-row__label">Age</span>
+                <input
+                  className="profile-form-row__input"
+                  type="number"
+                  min={18}
+                  max={99}
+                  value={profile.age}
+                  onChange={(e) => setProfile({ ...profile, age: Number(e.target.value) })}
+                />
+              </label>
+              <label className="profile-form-row">
+                <span className="profile-form-row__label">Gender</span>
+                <select
+                  className="profile-form-row__input"
+                  value={profile.gender}
+                  onChange={(e) => setProfile({ ...profile, gender: e.target.value as Gender })}
+                >
+                  {GENDERS.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="profile-form-row profile-form-row--location">
+                <span className="profile-form-row__label">Location</span>
+                <StateCitySelect
+                  state={profile.state ?? ""}
+                  city={profile.city}
+                  onLocationChange={(state, city) => setProfile({ ...profile, state, city })}
+                />
+              </div>
+              <label className="profile-form-row">
+                <span className="profile-form-row__label">Open to</span>
+                <select
+                  className="profile-form-row__input"
+                  value={profile.lookingFor}
+                  onChange={(e) => setProfile({ ...profile, lookingFor: e.target.value as LookingFor })}
+                >
+                  {LOOKING.map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </EditAccordion>
 
           <EditAccordion
             id="photos"
             title="Photos"
-            hint={`${profile.photos.length}/6`}
+            hint={photosHint(profile.photos.length)}
             open={editOpen === "photos"}
             onToggle={toggleEditSection}
           >
-            <div className="profile-photo-grid">
-              {profile.photos.map((photo, index) => (
-                <div key={`${photo.slice(0, 24)}-${index}`} className="profile-photo-grid__item">
-                  <ShowcaseImage src={photo} alt="" className="profile-photo-grid__img--face" />
-                  <button
-                    type="button"
-                    className="profile-photo-grid__remove"
-                    onClick={() =>
-                      setProfile((p) => ({ ...p, photos: p.photos.filter((_, i) => i !== index) }))
-                    }
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
+            {profile.photos.length > 0 ? (
+              <div className="profile-photo-grid">
+                {profile.photos.map((photo, index) => (
+                  <div key={`${photo.slice(0, 24)}-${index}`} className="profile-photo-grid__item">
+                    <ShowcaseImage src={photo} alt="" className="profile-photo-grid__img--face" />
+                    <button
+                      type="button"
+                      className="profile-photo-grid__remove"
+                      onClick={() =>
+                        setProfile((p) => ({ ...p, photos: p.photos.filter((_, i) => i !== index) }))
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             {profile.photos.length < 6 && (
-              <button type="button" className="btn-secondary btn-sm" onClick={() => fileRef.current?.click()}>
-                <Upload size={16} /> Add Photo
+              <button
+                type="button"
+                className={`btn-secondary btn-sm profile-photo-add ${profile.photos.length ? "" : "profile-photo-add--solo"}`}
+                onClick={() => fileRef.current?.click()}
+              >
+                <Upload size={16} /> Add photo
               </button>
             )}
           </EditAccordion>
@@ -395,15 +467,17 @@ export function ProfilePage({
           <EditAccordion
             id="bio"
             title="Bio"
+            hint={bioHint(profile.bio)}
             open={editOpen === "bio"}
             onToggle={toggleEditSection}
           >
-            <label>
-              Bio
+            <label className="profile-form-row profile-form-row--stack">
+              <span className="profile-form-row__label">Bio</span>
               <textarea
+                className="profile-form-row__textarea"
                 value={profile.bio}
                 onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                placeholder="A few lines about you"
+                placeholder="Tell people a little about yourself"
                 rows={4}
               />
             </label>
@@ -412,6 +486,7 @@ export function ProfilePage({
           <EditAccordion
             id="interests"
             title="Interests"
+            hint={interestsHint(profile.interests)}
             open={editOpen === "interests"}
             onToggle={toggleEditSection}
           >
@@ -423,11 +498,12 @@ export function ProfilePage({
 
           <EditAccordion
             id="intent"
-            title="Looking for"
+            title="Interested in"
+            hint={intentHint(profile.intents)}
             open={editOpen === "intent"}
             onToggle={toggleEditSection}
           >
-            <fieldset className="intent-fieldset">
+            <fieldset className="intent-fieldset intent-fieldset--flat">
               <legend>Up to {MAX_INTENT_SELECTIONS}</legend>
               <div className="intent-tags selectable">
                 {INTENT_OPTIONS.map((opt) => {
@@ -451,7 +527,8 @@ export function ProfilePage({
 
           <EditAccordion
             id="voice"
-            title="Voice intro"
+            title="Voice greeting"
+            hint={voiceHint(profile.voiceIntroUrl)}
             open={editOpen === "voice"}
             onToggle={toggleEditSection}
           >
@@ -474,7 +551,7 @@ export function ProfilePage({
       {view === "settings" && (
         <>
           <button type="button" className="profile-back-link" onClick={settingsBack}>
-            <ChevronLeft size={18} /> {settingsPanel === "hub" ? "Profile" : "Settings"}
+            <ChevronLeft size={18} /> {settingsPanel === "hub" ? "Edit Profile" : "Settings"}
           </button>
           <h2 className="profile-screen-title">
             {settingsPanel === "hub"
@@ -493,14 +570,22 @@ export function ProfilePage({
           </h2>
 
           {settingsPanel === "hub" && (
-            <section className="card settings-hub-card">
-              <SettingsRow label="Preferences" onClick={() => setSettingsPanel("preferences")} />
-              <SettingsRow label="Privacy" onClick={() => setSettingsPanel("privacy")} />
-              <SettingsRow label="Safety" onClick={() => setSettingsPanel("safety")} />
-              <SettingsRow label="Notifications" onClick={() => setSettingsPanel("notifications")} />
-              {!isPremium && <SettingsRow label="Payments" onClick={() => setSettingsPanel("payments")} />}
-              <SettingsRow label="Account" onClick={() => setSettingsPanel("account")} />
-            </section>
+            <>
+              <section className="card settings-hub-card">
+                <SettingsRow label="Preferences" onClick={() => setSettingsPanel("preferences")} />
+                <SettingsRow label="Privacy" onClick={() => setSettingsPanel("privacy")} />
+                <SettingsRow label="Safety" onClick={() => setSettingsPanel("safety")} />
+                <SettingsRow label="Notifications" onClick={() => setSettingsPanel("notifications")} />
+                {!isPremium && <SettingsRow label="Payments" onClick={() => setSettingsPanel("payments")} />}
+                <SettingsRow label="Account" onClick={() => setSettingsPanel("account")} />
+              </section>
+              <div className="settings-hub-footer">
+                <button type="button" className="profile-logout-link" onClick={handleLogout}>
+                  <LogOut size={16} aria-hidden />
+                  Log out
+                </button>
+              </div>
+            </>
           )}
 
           {settingsPanel === "preferences" && (
@@ -741,10 +826,6 @@ export function ProfilePage({
                   <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
                 </button>
               </section>
-
-              <button type="button" className="btn-logout" onClick={handleLogout}>
-                <LogOut size={18} /> Logout
-              </button>
 
               {onOpenAdmin && (
                 <button type="button" className="link-btn admin-link" onClick={onOpenAdmin}>

@@ -1,4 +1,4 @@
-package com.bamsignal.app;
+package com.bamsignal.com;
 
 import com.getcapacitor.BridgeActivity;
 

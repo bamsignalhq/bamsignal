@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">BamSignal</string>
     <string name="title_activity_main">BamSignal</string>
-    <string name="package_name">com.bamsignal.app</string>
-    <string name="custom_url_scheme">com.bamsignal.app</string>
+    <string name="package_name">com.bamsignal.com</string>
+    <string name="custom_url_scheme">com.bamsignal.com</string>
 </resources>

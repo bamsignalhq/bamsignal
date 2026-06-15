@@ -1,8 +1,8 @@
 # Google Play Console Upload Checklist
 
 **App:** BamSignal  
-**Package:** `com.bamsignal.app`  
-**Version:** `1.0.0` (versionCode `1`)  
+**Package:** `com.bamsignal.com`  
+**Version:** `1.0.1` (versionCode `4`)  
 **AAB:** `android/app/build/outputs/bundle/release/app-release.aab`
 
 ---

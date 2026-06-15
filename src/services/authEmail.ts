@@ -3,25 +3,98 @@ import { apiUrl } from "./supabase";
 type SendCodeResponse = { ok: boolean; email?: string; error?: string };
 type VerifyCodeResponse = { ok: boolean; email?: string; error?: string };
 
-async function parseJson<T>(response: Response): Promise<T> {
-  const contentType = response.headers.get("content-type") || "";
-  if (!contentType.includes("application/json")) {
-    throw new Error("network");
+export class AuthEmailError extends Error {
+  readonly kind: "network" | "server" | "validation" | "rate_limit" | "exists";
+
+  constructor(message: string, kind: AuthEmailError["kind"] = "server") {
+    super(message);
+    this.name = "AuthEmailError";
+    this.kind = kind;
   }
-  return response.json() as Promise<T>;
+}
+
+async function readApiResponse<T extends { ok?: boolean; error?: string }>(
+  response: Response,
+  fallbackError: string
+): Promise<T> {
+  const contentType = response.headers.get("content-type") || "";
+  let payload: T | null = null;
+
+  if (contentType.includes("application/json")) {
+    payload = (await response.json().catch(() => null)) as T | null;
+  } else {
+    const text = await response.text().catch(() => "");
+    if (/<!doctype html|<html/i.test(text)) {
+      throw new AuthEmailError(
+        "We're having trouble creating your account right now. Please try again shortly.",
+        "server"
+      );
+    }
+    if (text.trim()) {
+      throw new AuthEmailError(text.slice(0, 240), "server");
+    }
+  }
+
+  if (!response.ok || payload?.ok === false) {
+    const message = payload?.error || fallbackError;
+    if (response.status === 429) {
+      throw new AuthEmailError(message, "rate_limit");
+    }
+    if (response.status === 409 || /already exists/i.test(message)) {
+      throw new AuthEmailError(message, "exists");
+    }
+    if (response.status === 400) {
+      throw new AuthEmailError(message, "validation");
+    }
+    if (response.status === 503 || /not configured|unavailable/i.test(message)) {
+      throw new AuthEmailError(
+        message.includes("configured") || message.includes("unavailable")
+          ? message
+          : "Email verification is temporarily unavailable. Please try again shortly.",
+        "server"
+      );
+    }
+    throw new AuthEmailError(message, "server");
+  }
+
+  if (!payload) {
+    throw new AuthEmailError(fallbackError, "server");
+  }
+
+  return payload;
+}
+
+async function postEmailCode(body: Record<string, unknown>) {
+  let response: Response;
+  try {
+    response = await fetch(apiUrl("/api/auth/email-code"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error || "");
+    if (/failed to fetch|network|load failed/i.test(message)) {
+      throw new AuthEmailError(
+        "Unable to connect. Check your internet connection and try again.",
+        "network"
+      );
+    }
+    throw new AuthEmailError(
+      "We're having trouble creating your account right now. Please try again shortly.",
+      "server"
+    );
+  }
+
+  return response;
 }
 
 export async function sendSignupEmailCode(email: string, name: string): Promise<SendCodeResponse> {
-  const response = await fetch(apiUrl("/api/auth/email-code"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "send", email, name })
-  });
-  const data = await parseJson<SendCodeResponse>(response);
-  if (!response.ok || !data.ok) {
-    throw new Error(data.error || "send_failed");
-  }
-  return data;
+  const response = await postEmailCode({ action: "send", email, name });
+  return readApiResponse<SendCodeResponse>(
+    response,
+    "We couldn't send the code right now. Wait a minute and try again, or check your spam folder."
+  );
 }
 
 export async function verifySignupEmailCode(input: {
@@ -32,14 +105,9 @@ export async function verifySignupEmailCode(input: {
   username: string;
   phone: string;
 }): Promise<VerifyCodeResponse> {
-  const response = await fetch(apiUrl("/api/auth/email-code"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "verify", ...input })
-  });
-  const data = await parseJson<VerifyCodeResponse>(response);
-  if (!response.ok || !data.ok) {
-    throw new Error(data.error || "verify_failed");
-  }
-  return data;
+  const response = await postEmailCode({ action: "verify", ...input });
+  return readApiResponse<VerifyCodeResponse>(
+    response,
+    "We couldn't finish creating your account. Try again shortly."
+  );
 }

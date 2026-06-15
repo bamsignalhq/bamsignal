@@ -52,7 +52,14 @@ export function saveLocalBoostProducts(inputs: BoostProductInput[]): BoostProduc
 }
 
 export async function fetchBoostProducts(): Promise<BoostProduct[]> {
-  return loadLocalBoostProducts() || DEFAULT_BOOST_PRODUCTS;
+  const cached = loadLocalBoostProducts();
+  return mergeBoostCatalog(cached || DEFAULT_BOOST_PRODUCTS);
+}
+
+/** Always include every default boost (e.g. Hot / city-spotlight) even if admin cache is stale */
+function mergeBoostCatalog(products: BoostProduct[]): BoostProduct[] {
+  const byId = new Map(products.map((product) => [product.id, product]));
+  return DEFAULT_BOOST_INPUTS.map((input) => byId.get(input.id) ?? hydrateBoost(input));
 }
 
 export async function saveBoostProductsAdmin(

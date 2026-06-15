@@ -207,7 +207,7 @@ export async function verifySignupOtp(email, code) {
 
 function supabaseServiceHeaders() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  const url = process.env.VITE_SUPABASE_URL?.replace(/\/$/, "");
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
   if (!serviceKey || !url) return null;
   return { url, serviceKey };
 }

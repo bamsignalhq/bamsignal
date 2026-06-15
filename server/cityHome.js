@@ -267,11 +267,11 @@ export async function listCityHomeProfiles(city, limit = 6) {
   return result.rows.map(profilePayload);
 }
 
-/** Up to 3 featured members per city for the public spotlight section */
-export async function listCitySpotlightProfiles(city, limit = 3) {
+/** Paid + ranked featured members per city for the public spotlight carousel */
+export async function listCitySpotlightProfiles(city, limit = 8) {
   if (!isDatabaseReady() || !city) return [];
   await ensureCityHomeTables();
-  const cap = Math.min(3, Math.max(1, limit));
+  const cap = Math.min(12, Math.max(1, limit));
 
   const result = await query(
     `with candidates as (
@@ -408,7 +408,8 @@ export async function activateCitySpotlightPlacement({
   const row = member.rows[0];
   if (!row) return null;
 
-  const targetCity = city || row.city;
+  const targetCity = String(row.city || city || "").trim();
+  if (!targetCity) return null;
   const expiresAt = new Date(Date.now() + durationHours * 3600000).toISOString();
 
   if (paystackReference) {
@@ -552,7 +553,8 @@ export async function activateCityBoostPlacement({
   const row = member.rows[0];
   if (!row) return null;
 
-  const targetCity = city || row.city;
+  const targetCity = String(row.city || city || "").trim();
+  if (!targetCity) return null;
   const expiresAt = new Date(Date.now() + durationHours * 3600000).toISOString();
 
   if (paystackReference) {

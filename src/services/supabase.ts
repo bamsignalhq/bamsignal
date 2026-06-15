@@ -30,20 +30,45 @@ export const supabase: SupabaseClient | null =
     : null;
 
 export function friendlyAuthError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error || "");
-  if (/failed to fetch|fetch failed|network/i.test(message)) {
-    return "BamSignal could not reach the server. Check your internet connection.";
+  if (error && typeof error === "object" && "message" in error) {
+    const maybe = error as { message?: string; kind?: string };
+    if (maybe.kind && maybe.message) return maybe.message;
   }
-  if (/expired|invalid|token/i.test(message)) {
+
+  const message = error instanceof Error ? error.message : String(error || "");
+  const lower = message.toLowerCase();
+
+  if (/failed to fetch|fetch failed|network error|load failed|unable to connect/i.test(message)) {
+    return "Unable to connect. Check your internet connection and try again.";
+  }
+
+  if (/expired|invalid.*code|token/i.test(message)) {
     return "That code is not valid anymore. Request a fresh one and try again.";
   }
-  if (/email.*confirm|confirm.*email|otp|rate limit/i.test(message)) {
-    return message.includes("Wait") || message.includes("doesn't match") || message.includes("expired")
-      ? message
-      : "We couldn't send the code right now. Wait a minute and try again, or check your spam folder.";
+
+  if (/already exists|already registered|user already registered/i.test(message)) {
+    return "An account already exists for this email. Try logging in instead.";
   }
-  if (/user already registered|already exists/i.test(message)) {
-    return "An account with this email already exists. Try logging in instead.";
+
+  if (/not configured|temporarily unavailable|email delivery is not configured/i.test(message)) {
+    return "Email verification is temporarily unavailable. Please try again shortly.";
   }
+
+  if (/wait \d+s|doesn't match|spam folder|couldn't send the code/i.test(message)) {
+    return message;
+  }
+
+  if (/error sending confirmation email|signup is disabled/i.test(message)) {
+    return "Email verification is temporarily unavailable. Please try again shortly.";
+  }
+
+  if (/trouble creating your account|couldn't finish creating/i.test(message)) {
+    return message;
+  }
+
+  if (/invalid login|invalid credentials|invalid email or password/i.test(lower)) {
+    return "Username or PIN doesn't match. Try again or reset your PIN.";
+  }
+
   return message || "Authentication could not be completed. Please try again.";
 }

@@ -92,30 +92,40 @@ SUPABASE_URL=https://<project-ref>.supabase.co   # recommended at runtime
 
 ## 6. Verification (production)
 
-### Before deploy (pre-fix snapshot)
+**Deploy:** `5f8ea17` pushed to `main` — June 15, 2026
 
-```bash
-curl -sS https://bamsignal.com/health | jq .signupEmail
-# true (key was already present in Coolify; report documented false from earlier snapshot)
-```
-
-### After deploy
+### `/health`
 
 ```bash
 curl -sS https://bamsignal.com/health | jq .
-# Expect: "signupEmail": true
 ```
 
-### Email-code send test
+**Result (post-deploy):**
+
+```json
+{
+  "ok": true,
+  "service": "bamsignal",
+  "database": "connected",
+  "paystack": true,
+  "resend": true,
+  "signupEmail": true,
+  "firebase": false,
+  "telegram": false
+}
+```
+
+### `POST /api/auth/email-code` (send)
 
 ```bash
 curl -sS -X POST https://bamsignal.com/api/auth/email-code \
   -H "Content-Type: application/json" \
-  -d '{"action":"send","email":"you@example.com","name":"Test"}'
-# Expect: {"ok":true,"email":"you@example.com"}
+  -d '{"action":"send","email":"env-trace-verify@example.com","name":"Env Trace"}'
 ```
 
-### Email-code verify test
+**Result:** `{"ok":true,"email":"env-trace-verify@example.com"}` — HTTP 200
+
+### Email-code verify
 
 Requires a real OTP from email. With `signupEmail: true`, verify + account creation should return 200 (or 409 if email already exists), not 503.
 

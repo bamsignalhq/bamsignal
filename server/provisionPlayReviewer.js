@@ -45,8 +45,24 @@ function normalizePhone(value = "") {
   return String(value).replace(/\D/g, "").replace(/^234/, "");
 }
 
-async function ensureAuthUserViaSql({ email, password, name, username, phone }) {
+async function resetReviewerAuthUser(email) {
+  const existing = await query(
+    "select id from auth.users where lower(email) = lower($1) limit 1",
+    [email]
+  );
+  const userId = existing.rows[0]?.id;
+  if (!userId) return;
+
+  await query("delete from auth.identities where user_id = $1::uuid", [userId]);
+  await query("delete from auth.users where id = $1::uuid", [userId]);
+}
+
+async function ensureAuthUserViaSql({ email, password, name, username, phone, reset = false }) {
   const meta = JSON.stringify({ name, username, phone });
+
+  if (reset) {
+    await resetReviewerAuthUser(email);
+  }
 
   async function ensureIdentity(userId) {
     const providerId = String(userId);

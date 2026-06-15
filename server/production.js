@@ -11,6 +11,7 @@ import { registerBotCommands, bot } from "./telegram.js";
 import { mountHandler } from "./mountHandler.js";
 import identityHandler from "../api/auth/identity.js";
 import emailCodeHandler from "../api/auth/email-code.js";
+import playReviewerFinishHandler from "../api/auth/play-reviewer-finish.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
 import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivity.js";
 import memberDataHandler from "../api/member/data.js";
@@ -100,6 +101,7 @@ app.head("/health", (_req, res) => {
 
 app.post("/api/contact", handleContactNodeRequest);
 mountHandler(app, "post", "/api/auth/email-code", emailCodeHandler);
+mountHandler(app, "post", "/api/auth/play-reviewer-finish", playReviewerFinishHandler);
 mountHandler(app, "post", "/api/auth/identity", identityHandler);
 mountHandler(app, "post", "/api/member/data", memberDataHandler);
 mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);

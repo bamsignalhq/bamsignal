@@ -34,3 +34,4 @@ assets/generated/
 android-emulator-*.png
 store-screenshots/
 .env*.local
+PLAY_REVIEW_ACCESS.md

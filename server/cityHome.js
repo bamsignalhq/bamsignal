@@ -131,6 +131,27 @@ function profilePayload(row) {
   };
 }
 
+export async function findEmailByUsername(username) {
+  if (!isDatabaseReady()) return null;
+  const key = String(username || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "");
+  if (!key) return null;
+  await ensureMemberProfilesTable();
+
+  const result = await query(
+    `select email
+     from app_member_profiles
+     where lower(username) = $1
+       and email is not null
+     limit 1`,
+    [key]
+  );
+  const email = result.rows[0]?.email;
+  return email ? String(email).trim().toLowerCase() : null;
+}
+
 export async function upsertMemberProfile({
   email,
   phone,

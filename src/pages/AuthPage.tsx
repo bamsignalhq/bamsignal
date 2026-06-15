@@ -5,7 +5,7 @@ import { AuthField } from "../components/AuthField";
 import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
 import { friendlyAuthError, supabase } from "../services/supabase";
-import { sendSignupEmailCode, verifySignupEmailCode } from "../services/authEmail";
+import { resolveLoginEmail, sendSignupEmailCode, verifySignupEmailCode } from "../services/authEmail";
 import { trackEvent } from "../utils/analytics";
 import {
   emailForUsername,
@@ -104,13 +104,15 @@ export function AuthPage({
         return;
       }
 
-      const email = emailForUsername(username);
+      const email =
+        emailForUsername(username) ?? (await resolveLoginEmail(username));
       if (supabase && email) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password: loginForm.pin
         });
         if (error) throw error;
+        rememberUsernameEmail(username, email);
         onAuthenticated(profileFromSessionUser(data.user!), { isNewSignup: false });
         return;
       }

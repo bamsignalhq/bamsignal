@@ -5,7 +5,7 @@ import {
   persistReport,
   upsertAppUserIdentity
 } from "../../server/db.js";
-import { upsertMemberProfile } from "../../server/cityHome.js";
+import { findEmailByUsername, upsertMemberProfile } from "../../server/cityHome.js";
 import {
   acceptIncomingSignal,
   completeOnboardingReferral,
@@ -65,13 +65,30 @@ export default async function handler(req, res) {
   }
 
   const body = parseBody(req);
-  const identity = normalizeIdentity(body);
-
-  if (!identity.email && !identity.phone) {
-    return res.status(400).json({ ok: false, error: "Email or phone is required." });
-  }
 
   try {
+    if (req.query.action === "resolve-username") {
+      if (!requireDatabase(res)) return;
+      const username = String(body.username || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "");
+      if (!username) {
+        return res.status(400).json({ ok: false, error: "Username is required." });
+      }
+      const email = await findEmailByUsername(username);
+      if (!email) {
+        return res.status(404).json({ ok: false, error: "Account not found." });
+      }
+      return res.status(200).json({ ok: true, email });
+    }
+
+    const identity = normalizeIdentity(body);
+
+    if (!identity.email && !identity.phone) {
+      return res.status(400).json({ ok: false, error: "Email or phone is required." });
+    }
+
     if (req.query.action === "pull") {
       if (!requireDatabase(res)) return;
       const bundle = await fetchMemberBundle(identity);

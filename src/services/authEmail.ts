@@ -117,3 +117,22 @@ export async function verifySignupEmailCode(input: {
     "We couldn't finish creating your account. Try again shortly."
   );
 }
+
+/** Resolve username → email for login on fresh installs (Play review, new devices). */
+export async function resolveLoginEmail(username: string): Promise<string | null> {
+  const normalized = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+  if (!normalized) return null;
+
+  try {
+    const response = await fetch(apiUrl("/api/member/data?action=resolve-username"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: normalized })
+    });
+    const payload = (await response.json().catch(() => null)) as { ok?: boolean; email?: string } | null;
+    if (!response.ok || !payload?.ok || !payload.email) return null;
+    return payload.email.trim().toLowerCase();
+  } catch {
+    return null;
+  }
+}

@@ -1,3 +1,5 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { MapPin, UserRound } from "lucide-react";
 import { ShowcaseImage } from "./ShowcaseImage";
 import { MOMENT_SETS } from "../constants/showcase";
@@ -20,8 +22,15 @@ function formatLocation(profile: DatingProfile): string {
 }
 
 export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHeaderProps) {
-  const avatar = profile.photos[0] ?? null;
+  const photos = profile.photos.filter(Boolean);
+  const [index, setIndex] = useState(0);
+  const avatar = photos[index] ?? photos[0] ?? null;
   const cover = avatar ?? DEFAULT_COVER;
+
+  const shift = (dir: -1 | 1) => {
+    if (photos.length <= 1) return;
+    setIndex((i) => (i + dir + photos.length) % photos.length);
+  };
 
   return (
     <header className="profile-hero">
@@ -36,6 +45,16 @@ export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHea
           alt=""
           className="profile-hero__cover-img profile-hero__cover-img--face"
         />
+        {photos.length > 1 && (
+          <>
+            <button type="button" className="profile-hero__nav profile-hero__nav--prev" onClick={() => shift(-1)} aria-label="Previous photo">
+              <ChevronLeft size={22} />
+            </button>
+            <button type="button" className="profile-hero__nav profile-hero__nav--next" onClick={() => shift(1)} aria-label="Next photo">
+              <ChevronRight size={22} />
+            </button>
+          </>
+        )}
         <div className="profile-hero__cover-shade" />
       </div>
 
@@ -65,6 +84,22 @@ export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHea
           </div>
         )}
       </div>
+
+      {photos.length > 1 && (
+        <div className="profile-hero__thumbs">
+          {photos.map((src, i) => (
+            <button
+              key={`${src.slice(0, 16)}-${i}`}
+              type="button"
+              className={i === index ? "active" : ""}
+              onClick={() => setIndex(i)}
+              aria-label={`Photo ${i + 1}`}
+            >
+              <img src={src} alt="" />
+            </button>
+          ))}
+        </div>
+      )}
     </header>
   );
 }

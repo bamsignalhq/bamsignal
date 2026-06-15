@@ -29,9 +29,25 @@ export async function ensureSocialSchema() {
       unique (referred_user_key)
     )
   `);
-  await query(
-    "create index if not exists app_referral_events_referrer_idx on app_referral_events (referrer_user_key, created_at desc)"
-  );
+  await query(`
+    create table if not exists app_profile_likes (
+      id uuid primary key default gen_random_uuid(),
+      actor_profile_id uuid not null,
+      target_profile_id uuid not null,
+      photo_index integer not null default 0,
+      created_at timestamptz not null default now(),
+      unique (actor_profile_id, target_profile_id)
+    )
+  `);
+  await query(`
+    create table if not exists app_profile_follows (
+      id uuid primary key default gen_random_uuid(),
+      actor_profile_id uuid not null,
+      target_profile_id uuid not null,
+      created_at timestamptz not null default now(),
+      unique (actor_profile_id, target_profile_id)
+    )
+  `);
 }
 
 function generateReferralCode(name = "") {
@@ -77,6 +93,7 @@ export function rowToDiscoverProfile(row) {
     state: row.state,
     bio: profile.bio || "",
     photo: photos[0] || "",
+    photos,
     intents: profile.intents || [],
     interests: profile.interests || [],
     religion: profile.religion,
@@ -478,19 +495,123 @@ export async function fetchMemberSocialBundle({ email, phone }) {
   if (!isDatabaseReady()) return null;
   await ensureSocialSchema();
 
-  const [incomingSignals, referral, premium, ownProfile] = await Promise.all([
-    fetchIncomingSignals({ email, phone }),
-    fetchReferralStats({ email, phone }),
-    fetchPremiumStatus({ email, phone }),
-    findMemberProfileByUserKey(email, phone)
-  ]);
+  const [incomingSignals, referral, premium, ownProfile, incomingLikes, incomingFollows] =
+    await Promise.all([
+      fetchIncomingSignals({ email, phone }),
+      fetchReferralStats({ email, phone }),
+      fetchPremiumStatus({ email, phone }),
+      findMemberProfileByUserKey(email, phone),
+      fetchIncomingProfileLikes({ email, phone }),
+      fetchIncomingProfileFollows({ email, phone })
+    ]);
+
+  const profileJson = ownProfile?.profile || {};
+  const photos = Array.isArray(profileJson.photos) ? profileJson.photos : [];
 
   return {
     incomingSignals,
     referral,
     premium,
-    memberProfileId: ownProfile?.id || null
+    memberProfileId: ownProfile?.id || null,
+    datingProfile: ownProfile
+      ? {
+          photos,
+          age: profileJson.age || 25,
+          dateOfBirth: profileJson.dateOfBirth,
+          gender: profileJson.gender,
+          state: ownProfile.state,
+          city: ownProfile.city,
+          bio: profileJson.bio || "",
+          lookingFor: profileJson.lookingFor,
+          intents: profileJson.intents || [],
+          interests: profileJson.interests || [],
+          religion: profileJson.religion,
+          lifestyle: profileJson.lifestyle,
+          verified: Boolean(profileJson.verified),
+          premium: Boolean(profileJson.premium),
+          onboardingComplete: Boolean(ownProfile.onboarding_complete),
+          createdAt: profileJson.createdAt || ownProfile.created_at
+        }
+      : null,
+    incomingLikes,
+    incomingFollows
   };
+}
+
+export async function likeMemberProfile({ email, phone, targetProfileId, photoIndex = 0 }) {
+  if (!isDatabaseReady() || !targetProfileId) return null;
+  await ensureSocialSchema();
+  const actor = await findMemberProfileByUserKey(email, phone);
+  if (!actor?.id || actor.id === targetProfileId) return null;
+  const result = await query(
+    `insert into app_profile_likes (actor_profile_id, target_profile_id, photo_index)
+     values ($1, $2, $3)
+     on conflict (actor_profile_id, target_profile_id) do update set photo_index = excluded.photo_index
+     returning *`,
+    [actor.id, targetProfileId, photoIndex]
+  );
+  return result.rows[0] || null;
+}
+
+export async function followMemberProfile({ email, phone, targetProfileId }) {
+  if (!isDatabaseReady() || !targetProfileId) return null;
+  await ensureSocialSchema();
+  const actor = await findMemberProfileByUserKey(email, phone);
+  if (!actor?.id || actor.id === targetProfileId) return null;
+  const result = await query(
+    `insert into app_profile_follows (actor_profile_id, target_profile_id)
+     values ($1, $2)
+     on conflict (actor_profile_id, target_profile_id) do nothing
+     returning *`,
+    [actor.id, targetProfileId]
+  );
+  return result.rows[0] || { duplicate: true };
+}
+
+async function fetchIncomingProfileLikes({ email, phone }) {
+  const own = await findMemberProfileByUserKey(email, phone);
+  if (!own?.id) return [];
+  const result = await query(
+    `select l.*, p.name, p.city, p.profile
+     from app_profile_likes l
+     join app_member_profiles p on p.id = l.actor_profile_id
+     where l.target_profile_id = $1
+     order by l.created_at desc
+     limit 100`,
+    [own.id]
+  );
+  return result.rows.map((row) => {
+    const photos = Array.isArray(row.profile?.photos) ? row.profile.photos : [];
+    return {
+      profileId: row.actor_profile_id,
+      name: row.name || "Member",
+      photo: photos[0] || "",
+      at: row.created_at
+    };
+  });
+}
+
+async function fetchIncomingProfileFollows({ email, phone }) {
+  const own = await findMemberProfileByUserKey(email, phone);
+  if (!own?.id) return [];
+  const result = await query(
+    `select f.*, p.name, p.city, p.profile
+     from app_profile_follows f
+     join app_member_profiles p on p.id = f.actor_profile_id
+     where f.target_profile_id = $1
+     order by f.created_at desc
+     limit 100`,
+    [own.id]
+  );
+  return result.rows.map((row) => {
+    const photos = Array.isArray(row.profile?.photos) ? row.profile.photos : [];
+    return {
+      profileId: row.actor_profile_id,
+      name: row.name || "Member",
+      photo: photos[0] || "",
+      at: row.created_at
+    };
+  });
 }
 
 export async function fetchProfileVisitors({ email, phone }) {

@@ -126,7 +126,7 @@ async function scanProfilePhoto(file: File): Promise<PhotoScan> {
     return { explicit: true, validPortrait: false, reason: GENERIC_REJECT };
   }
 
-  if (centerRatio < 0.08) {
+  if (centerRatio < 0.05) {
     return { explicit: false, validPortrait: false, reason: FACE_MESSAGE };
   }
 

@@ -237,23 +237,7 @@ export function DiscoverFilters({
           </label>
 
           <fieldset className="intent-fieldset">
-            <legend>City</legend>
-            <div className="intent-tags selectable match-prefs-scroll">
-              {ALL_NIGERIAN_CITIES.map((city) => (
-                <button
-                  key={city}
-                  type="button"
-                  className={`intent-tag ${prefs.cities.includes(city) ? "selected" : ""}`}
-                  onClick={() => toggle("cities", city)}
-                >
-                  {city}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="intent-fieldset">
-            <legend>State / region (optional)</legend>
+            <legend>Preferred state</legend>
             <div className="intent-tags selectable match-prefs-scroll">
               {NIGERIAN_STATES.map((state) => (
                 <button
@@ -262,14 +246,32 @@ export function DiscoverFilters({
                   className={`intent-tag ${prefs.states.includes(state) ? "selected" : ""}`}
                   onClick={() => toggle("states", state)}
                 >
-                  {state}
+                  {state === "FCT" ? "Abuja" : state}
                 </button>
               ))}
             </div>
           </fieldset>
 
+          {prefs.states.length > 0 && (
+            <fieldset className="intent-fieldset">
+              <legend>Preferred city</legend>
+              <div className="intent-tags selectable match-prefs-scroll">
+                {prefs.states.flatMap((s) => citiesForState(s)).map((city) => (
+                  <button
+                    key={city}
+                    type="button"
+                    className={`intent-tag ${prefs.cities.includes(city) ? "selected" : ""}`}
+                    onClick={() => toggle("cities", city)}
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
           <fieldset className={`intent-fieldset ${!isPremium ? "discover-filter--locked" : ""}`}>
-            <legend>Religion { !isPremium && "· Premium"}</legend>
+            <legend>Faith { !isPremium && "· Premium"}</legend>
             <div className="intent-tags selectable">
               {FILTER_RELIGIONS.map((r) => (
                 <button

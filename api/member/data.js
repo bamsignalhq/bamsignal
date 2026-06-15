@@ -17,6 +17,8 @@ import {
   fetchReferralStats,
   getMemberProfileById,
   listDiscoverProfiles,
+  likeMemberProfile,
+  followMemberProfile,
   registerWithReferral,
   sendSignalToProfile
 } from "../../server/memberSocial.js";
@@ -180,6 +182,27 @@ export default async function handler(req, res) {
         signalId: String(body.signalId || "").trim()
       });
       return res.status(ok ? 200 : 404).json({ ok });
+    }
+
+    if (req.query.action === "like-profile") {
+      if (!requireDatabase(res)) return;
+      const row = await likeMemberProfile({
+        email: identity.email,
+        phone: identity.phone,
+        targetProfileId: String(body.targetProfileId || "").trim(),
+        photoIndex: Number(body.photoIndex) || 0
+      });
+      return res.status(row ? 200 : 400).json({ ok: Boolean(row), like: row });
+    }
+
+    if (req.query.action === "follow-profile") {
+      if (!requireDatabase(res)) return;
+      const row = await followMemberProfile({
+        email: identity.email,
+        phone: identity.phone,
+        targetProfileId: String(body.targetProfileId || "").trim()
+      });
+      return res.status(row ? 200 : 400).json({ ok: Boolean(row), follow: row });
     }
 
     if (req.query.action === "complete-onboarding") {

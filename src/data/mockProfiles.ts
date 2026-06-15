@@ -147,7 +147,7 @@ const RAW_PROFILES: DiscoverProfile[] = [
     name: "Amaka",
     age: 24,
     gender: "Woman",
-    lookingFor: "Everyone",
+    lookingFor: "Women",
     city: "Benin",
     distanceKm: 8,
     bio: "Always down for road trips and new experiences. Wedding-guest fashion enthusiast.",

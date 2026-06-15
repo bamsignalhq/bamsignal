@@ -10,6 +10,7 @@ import { EmptyState } from "../components/EmptyState";
 import { OffPlatformConsentCard } from "../components/OffPlatformConsentCard";
 import { OffPlatformEducationModal } from "../components/OffPlatformEducationModal";
 import { PaywallModal } from "../components/PaywallModal";
+import { QuickiePaywallModal } from "../components/QuickiePaywallModal";
 import { ReportBlockModal } from "../components/ReportBlockModal";
 import { SafetyNotice } from "../components/SafetyNotice";
 import type { ChatMessage, ChatThread, Match, UserProfile } from "../types";
@@ -25,6 +26,8 @@ import { pushNotification } from "../utils/notifications";
 import { isViewerShadowBanned } from "../utils/shadowBan";
 import { incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
 import { persistMessageRemote } from "../services/memberData";
+import { startQuickiePassPayment } from "../services/payments";
+import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch } from "../utils/quickie";
 
 type ChatsPageProps = {
   isPremium: boolean;
@@ -211,11 +214,14 @@ function ChatDetail({
   const [educationOpen, setEducationOpen] = useState(false);
   const [blockWarning, setBlockWarning] = useState("");
   const [toast, setToast] = useState("");
+  const [quickiePaywallOpen, setQuickiePaywallOpen] = useState(false);
+  const [quickieLoading, setQuickieLoading] = useState(false);
   const viewer = getDatingProfile();
   const inboxGate = canUseInbox(viewer);
   const dmPaused = !inboxGate.allowed;
   const lastActiveAt = match.lastActiveAt ?? getCachedMemberProfile(match.profileId)?.lastActiveAt;
   const discoverProfile = getCachedMemberProfile(match.profileId);
+  const matchHasQuickie = profileHasQuickieIntent(discoverProfile?.intents);
   const matchReasons = discoverProfile ? getProfileMatchReasons(getDatingProfile(), discoverProfile) : [];
   const sentByMe = messages.filter((m) => m.from === "me").length;
   const showOffAppLink =
@@ -275,6 +281,12 @@ function ChatDetail({
         return;
       }
       setBlockWarning(BRAND.contactBlockMessage);
+      return;
+    }
+
+    if (!canMessageQuickieProfile(match.profileId, matchHasQuickie)) {
+      setQuickiePaywallOpen(true);
+      trackEvent("quickie_paywall_shown", { context: "message" });
       return;
     }
 
@@ -412,6 +424,25 @@ function ChatDetail({
           setPaywallOpen(false);
         }}
         loading={paymentLoading}
+      />
+
+      <QuickiePaywallModal
+        open={quickiePaywallOpen}
+        onClose={() => setQuickiePaywallOpen(false)}
+        loading={quickieLoading}
+        context="message"
+        onPay={async () => {
+          setQuickieLoading(true);
+          const result = await startQuickiePassPayment(user);
+          setQuickieLoading(false);
+          if (result.ok) {
+            unlockQuickieMatch(match.profileId);
+            setQuickiePaywallOpen(false);
+          } else if (result.error) {
+            setToast(result.error);
+            setTimeout(() => setToast(""), 4000);
+          }
+        }}
       />
 
       <ReportBlockModal

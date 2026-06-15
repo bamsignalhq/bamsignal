@@ -1,7 +1,8 @@
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, Settings, ShieldCheck, Sun, Upload } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay } from "../constants/intents";
-import { StateCitySelect } from "../components/StateCitySelect";
+import { DateOfBirthPicker } from "../components/DateOfBirthPicker";
+import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import {
   ALL_NIGERIAN_CITIES,
   ETHNIC_BACKGROUNDS,
@@ -9,6 +10,7 @@ import {
   FILTER_LIFESTYLES,
   FILTER_RELIGIONS,
   NIGERIAN_STATES,
+  citiesForState,
   RELIGIONS,
   SOCIAL_LIFESTYLES
 } from "../constants/profileOptions";
@@ -45,11 +47,14 @@ import { notifyVerificationApproved } from "../utils/notifyHelpers";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
 import { getOwnProfileHighlights } from "../utils/profileHighlights";
 import { getOwnProfileChips } from "../utils/profileCompatSummary";
-import { ShowcaseImage } from "../components/ShowcaseImage";
+import { StateCitySelect } from "../components/StateCitySelect";
+import { MAX_PROFILE_PHOTOS } from "../constants/photos";
+import { isAdultDob } from "../utils/ageFromDob";
 import { syncMemberProfileRemote } from "../services/cityHome";
+import { mySocialStats } from "../utils/profileSocial";
 
-const GENDERS: Gender[] = ["Man", "Woman", "Non-binary", "Prefer not to say"];
-const LOOKING: LookingFor[] = ["Men", "Women", "Everyone"];
+const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
+const LOOKING: LookingFor[] = ["Men", "Women"];
 
 type ProfileView = "overview" | "edit" | "settings";
 type SettingsPanel = "hub" | "preferences" | "privacy" | "safety" | "account" | "payments" | "notifications";
@@ -86,7 +91,7 @@ function voiceHint(url?: string): string {
 }
 
 function photosHint(count: number): string {
-  return `${count} of 6 added`;
+  return `${count} of ${MAX_PROFILE_PHOTOS} added`;
 }
 
 function SettingsRow({ label, onClick }: { label: string; onClick: () => void }) {
@@ -150,8 +155,11 @@ export function ProfilePage({
   const [verifying, setVerifying] = useState(false);
   const [view, setView] = useState<ProfileView>("overview");
   const [settingsPanel, setSettingsPanel] = useState<SettingsPanel>("hub");
+  const [prefsStatePick, setPrefsStatePick] = useState(prefs.states[0] ?? "");
   const [editOpen, setEditOpen] = useState<EditSection | null>(null);
-  const verifyPending = isUserVerificationPending(user.phone);
+  const [verifySubmitted, setVerifySubmitted] = useState(() => isUserVerificationPending(user.phone));
+  const verifyPending = verifySubmitted || isUserVerificationPending(user.phone);
+  const social = mySocialStats();
 
   useEffect(() => {
     if (profile.verified || !user.phone) return;
@@ -188,15 +196,21 @@ export function ProfilePage({
     const reader = new FileReader();
     reader.onload = () => {
       const url = String(reader.result || "");
-      setProfile((p) => ({ ...p, photos: [...p.photos, url].slice(0, 6) }));
+      setProfile((p) => {
+        const next = { ...p, photos: [...p.photos, url].slice(0, MAX_PROFILE_PHOTOS) };
+        writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
+        syncMemberProfileRemote(user, next);
+        return next;
+      });
     };
     reader.readAsDataURL(file);
   };
 
   const startSelfieVerification = () => {
-    if (verifyPending) return;
+    if (verifyPending || profile.verified) return;
     setVerifying(true);
     submitVerificationRequest(user.name || "Member", user.phone || "unknown");
+    setVerifySubmitted(true);
     window.setTimeout(() => setVerifying(false), 600);
   };
 
@@ -325,6 +339,39 @@ export function ProfilePage({
                 ) : null}
               </section>
             )}
+
+            {(social.likesReceived > 0 || social.followsReceived > 0) && (
+              <section className="profile-overview-block profile-overview-block--private">
+                <h3>Your admirers</h3>
+                <p className="profile-overview-private-note">Only you can see who liked your photos or followed you.</p>
+                {social.likesReceived > 0 && (
+                  <div className="profile-social-list">
+                    <h4>Photo likes ({social.likesReceived})</h4>
+                    <ul>
+                      {social.incomingLikes.slice(0, 8).map((entry) => (
+                        <li key={entry.profileId}>
+                          <img src={entry.photo} alt="" />
+                          <span>{entry.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {social.followsReceived > 0 && (
+                  <div className="profile-social-list">
+                    <h4>Followers ({social.followsReceived})</h4>
+                    <ul>
+                      {social.incomingFollows.slice(0, 8).map((entry) => (
+                        <li key={entry.profileId}>
+                          <img src={entry.photo} alt="" />
+                          <span>{entry.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
           </div>
 
           <div className="profile-edit-cta">
@@ -376,31 +423,33 @@ export function ProfilePage({
                   onChange={(e) => onUserChange({ ...user, name: e.target.value })}
                 />
               </label>
-              <label className="profile-form-row">
-                <span className="profile-form-row__label">Age</span>
-                <input
-                  className="profile-form-row__input"
-                  type="number"
-                  min={18}
-                  max={99}
-                  value={profile.age}
-                  onChange={(e) => setProfile({ ...profile, age: Number(e.target.value) })}
+              <div className="profile-form-row profile-form-row--dob">
+                <DateOfBirthPicker
+                  value={profile.dateOfBirth ?? ""}
+                  onChange={(iso, age) =>
+                    setProfile((p) => ({
+                      ...p,
+                      dateOfBirth: iso,
+                      age: age ?? p.age
+                    }))
+                  }
                 />
-              </label>
-              <label className="profile-form-row">
-                <span className="profile-form-row__label">Gender</span>
-                <select
-                  className="profile-form-row__input"
-                  value={profile.gender}
-                  onChange={(e) => setProfile({ ...profile, gender: e.target.value as Gender })}
-                >
+              </div>
+              <fieldset className="intent-fieldset profile-form-row">
+                <legend>Gender</legend>
+                <div className="intent-tags selectable">
                   {GENDERS.map((g) => (
-                    <option key={g} value={g}>
+                    <button
+                      key={g}
+                      type="button"
+                      className={`intent-tag ${profile.gender === g ? "selected" : ""}`}
+                      onClick={() => setProfile({ ...profile, gender: g })}
+                    >
                       {g}
-                    </option>
+                    </button>
                   ))}
-                </select>
-              </label>
+                </div>
+              </fieldset>
               <div className="profile-form-row profile-form-row--location">
                 <span className="profile-form-row__label">Location</span>
                 <StateCitySelect
@@ -409,20 +458,21 @@ export function ProfilePage({
                   onLocationChange={(state, city) => setProfile({ ...profile, state, city })}
                 />
               </div>
-              <label className="profile-form-row">
-                <span className="profile-form-row__label">Open to</span>
-                <select
-                  className="profile-form-row__input"
-                  value={profile.lookingFor}
-                  onChange={(e) => setProfile({ ...profile, lookingFor: e.target.value as LookingFor })}
-                >
+              <fieldset className="intent-fieldset profile-form-row">
+                <legend>Interested in</legend>
+                <div className="intent-tags selectable">
                   {LOOKING.map((l) => (
-                    <option key={l} value={l}>
+                    <button
+                      key={l}
+                      type="button"
+                      className={`intent-tag ${profile.lookingFor === l ? "selected" : ""}`}
+                      onClick={() => setProfile({ ...profile, lookingFor: l })}
+                    >
                       {l}
-                    </option>
+                    </button>
                   ))}
-                </select>
-              </label>
+                </div>
+              </fieldset>
             </div>
           </EditAccordion>
 
@@ -433,33 +483,18 @@ export function ProfilePage({
             open={editOpen === "photos"}
             onToggle={toggleEditSection}
           >
-            {profile.photos.length > 0 ? (
-              <div className="profile-photo-grid">
-                {profile.photos.map((photo, index) => (
-                  <div key={`${photo.slice(0, 24)}-${index}`} className="profile-photo-grid__item">
-                    <ShowcaseImage src={photo} alt="" className="profile-photo-grid__img--face" />
-                    <button
-                      type="button"
-                      className="profile-photo-grid__remove"
-                      onClick={() =>
-                        setProfile((p) => ({ ...p, photos: p.photos.filter((_, i) => i !== index) }))
-                      }
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            {profile.photos.length < 6 && (
-              <button
-                type="button"
-                className={`btn-secondary btn-sm profile-photo-add ${profile.photos.length ? "" : "profile-photo-add--solo"}`}
-                onClick={() => fileRef.current?.click()}
-              >
-                <Upload size={16} /> Add photo
-              </button>
-            )}
+            <PhotoUploadGrid
+              photos={profile.photos}
+              onChange={(photos) => {
+                setProfile((p) => {
+                  const next = { ...p, photos };
+                  writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
+                  syncMemberProfileRemote(user, next);
+                  return next;
+                });
+              }}
+              onModerationMessage={showModMessage}
+            />
           </EditAccordion>
 
           <EditAccordion
@@ -621,7 +656,7 @@ export function ProfilePage({
               </fieldset>
 
               <fieldset className="intent-fieldset">
-                <legend>Preferred religion</legend>
+                <legend>Faith</legend>
                 <div className="intent-tags selectable">
                   {FILTER_RELIGIONS.map((religion) => (
                     <button
@@ -669,22 +704,6 @@ export function ProfilePage({
               </fieldset>
 
               <fieldset className="intent-fieldset">
-                <legend>Preferred city</legend>
-                <div className="intent-tags selectable">
-                  {ALL_NIGERIAN_CITIES.map((city) => (
-                    <button
-                      key={city}
-                      type="button"
-                      className={`intent-tag ${prefs.cities.includes(city) ? "selected" : ""}`}
-                      onClick={() => togglePrefCity(city)}
-                    >
-                      {city}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset className="intent-fieldset">
                 <legend>Preferred state</legend>
                 <div className="intent-tags selectable match-prefs-scroll">
                   {NIGERIAN_STATES.map((state) => (
@@ -692,13 +711,34 @@ export function ProfilePage({
                       key={state}
                       type="button"
                       className={`intent-tag ${prefs.states.includes(state) ? "selected" : ""}`}
-                      onClick={() => togglePref("states", state)}
+                      onClick={() => {
+                        togglePref("states", state);
+                        setPrefsStatePick(state);
+                      }}
                     >
-                      {state}
+                      {state === "FCT" ? "Abuja" : state}
                     </button>
                   ))}
                 </div>
               </fieldset>
+
+              {prefsStatePick && (
+                <fieldset className="intent-fieldset">
+                  <legend>Preferred city in {prefsStatePick === "FCT" ? "Abuja" : prefsStatePick}</legend>
+                  <div className="intent-tags selectable match-prefs-scroll">
+                    {citiesForState(prefsStatePick).map((city) => (
+                      <button
+                        key={city}
+                        type="button"
+                        className={`intent-tag ${prefs.cities.includes(city) ? "selected" : ""}`}
+                        onClick={() => togglePrefCity(city)}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
 
               <div className="match-prefs-age">
                 <label>
@@ -811,10 +851,10 @@ export function ProfilePage({
                   {profile.verified
                     ? "Verified"
                     : verifyPending
-                      ? "Pending"
+                      ? "Verification pending"
                       : verifying
                         ? "Submitting…"
-                        : "Verify"}
+                        : "Verify account"}
                 </button>
               </section>
 

@@ -108,6 +108,80 @@ import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./pre
 
 export { isPremiumActive, refreshPremiumStatus };
 
+export async function startQuickiePassPayment(
+  user: UserProfile
+): Promise<{ ok: boolean; error?: string; reference?: string }> {
+  if (!user.email) {
+    return { ok: false, error: "Add a verified email before purchasing a Quickie pass." };
+  }
+
+  try {
+    const response = await fetch(apiUrl("/api/paystack/verify?action=initialize-quickie"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        amount: 999
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok || !payload.authorization_url) {
+      return { ok: false, error: payload?.error || "Paystack checkout could not start." };
+    }
+
+    if (payload.reference) {
+      localStorage.setItem(STORAGE_KEYS.paymentReference, payload.reference);
+      localStorage.setItem(STORAGE_KEYS.paymentKind, "quickie");
+    }
+
+    if (Capacitor.isNativePlatform()) {
+      await Browser.open({ url: payload.authorization_url, presentationStyle: "fullscreen" });
+    } else {
+      window.location.href = payload.authorization_url;
+    }
+
+    return { ok: true, reference: payload.reference };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Payment could not start."
+    };
+  }
+}
+
+export async function verifyQuickiePayment(user: UserProfile): Promise<{ ok: boolean; error?: string }> {
+  const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
+  if (!reference) {
+    return { ok: false, error: "No payment reference found." };
+  }
+
+  try {
+    const response = await fetch(apiUrl("/api/paystack/verify"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference,
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        productType: "quickie"
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok) {
+      return { ok: false, error: payload?.error || "Payment not verified yet." };
+    }
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Verification failed."
+    };
+  }
+}
+
 export async function startBoostPayment(
   boostId: string,
   price: number,

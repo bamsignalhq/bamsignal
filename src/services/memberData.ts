@@ -4,6 +4,8 @@ import { readJson, writeJson } from "../utils/storage";
 import { cacheDiscoverProfiles } from "./discoverProfiles";
 import { setPremiumSnapshot } from "./premiumStatus";
 import { apiUrl } from "./supabase";
+import { normalizeDatingProfile } from "../utils/profile";
+import { mergeIncomingSocial } from "../utils/profileSocial";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
 
@@ -82,6 +84,31 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
     });
   }
 
+  if (bundle.memberProfileId) {
+    localStorage.setItem(STORAGE_KEYS.memberProfileId, String(bundle.memberProfileId));
+  }
+
+  if (bundle.datingProfile && typeof bundle.datingProfile === "object") {
+    const local = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
+    const remote = bundle.datingProfile as Record<string, unknown>;
+    const remotePhotos = Array.isArray(remote.photos) ? (remote.photos as string[]) : [];
+    const localPhotos = local.photos || [];
+    const mergedPhotos = remotePhotos.length >= localPhotos.length ? remotePhotos : localPhotos;
+    const merged = normalizeDatingProfile({
+      ...local,
+      ...remote,
+      photos: mergedPhotos.length ? mergedPhotos : localPhotos
+    });
+    writeJson(STORAGE_KEYS.datingProfile, merged);
+  }
+
+  if (Array.isArray(bundle.incomingLikes) || Array.isArray(bundle.incomingFollows)) {
+    mergeIncomingSocial({
+      incomingLikes: bundle.incomingLikes as Parameters<typeof mergeIncomingSocial>[0]["incomingLikes"],
+      incomingFollows: bundle.incomingFollows as Parameters<typeof mergeIncomingSocial>[0]["incomingFollows"]
+    });
+  }
+
   const matchProfiles = (bundle.matches as Match[] | undefined)?.map((match) => ({
     id: match.profileId,
     name: match.name,
@@ -96,6 +123,23 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
   if (matchProfiles?.length) cacheDiscoverProfiles(matchProfiles);
 
   return true;
+}
+
+export async function likeProfileRemote(
+  user: MemberIdentity,
+  targetProfileId: string,
+  photoIndex = 0
+): Promise<boolean> {
+  const payload = await postMemberAction("like-profile", user, { targetProfileId, photoIndex });
+  return Boolean(payload?.ok);
+}
+
+export async function followProfileRemote(
+  user: MemberIdentity,
+  targetProfileId: string
+): Promise<boolean> {
+  const payload = await postMemberAction("follow-profile", user, { targetProfileId });
+  return Boolean(payload?.ok);
 }
 
 export async function sendSignalRemote(

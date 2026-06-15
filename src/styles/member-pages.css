@@ -602,6 +602,189 @@
   margin-bottom: 20px;
 }
 
+.premium-page--fintech {
+  max-width: 440px;
+  margin-inline: auto;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
+
+.premium-page__head--fintech {
+  margin-bottom: 16px;
+}
+
+.premium-page__title {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.premium-page__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+}
+
+.premium-page__active--fintech {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--brand-pink) 35%, var(--border));
+  background: color-mix(in srgb, var(--brand-pink) 8%, var(--surface));
+}
+
+.premium-page__active-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand-pink);
+}
+
+.premium-page__active-copy {
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+}
+
+.premium-plan-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.premium-plan-strip__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.premium-plan-strip__card--selected {
+  border-color: var(--brand-pink);
+  background: color-mix(in srgb, var(--brand-pink) 7%, var(--surface));
+}
+
+.premium-plan-strip__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.premium-plan-strip__name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.premium-plan-strip__duration {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.premium-plan-strip__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.premium-plan-strip__price {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.premium-plan-strip__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brand-pink);
+}
+
+.premium-includes {
+  margin-bottom: 20px;
+}
+
+.premium-includes__title {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.premium-includes__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.premium-includes__list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+}
+
+.premium-includes__list svg {
+  flex-shrink: 0;
+  color: var(--brand-pink);
+}
+
+.premium-page__upgrade {
+  margin-top: 4px;
+  min-height: 48px;
+  font-weight: 600;
+}
+
+.paywall-modal--fintech,
+.pricing-modal--fintech {
+  padding-top: 28px;
+}
+
+.paywall-modal__title,
+.pricing-modal--fintech .paywall-modal__title {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: left;
+}
+
+.paywall-modal__subtitle {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.premium-plan-strip--modal {
+  margin-bottom: 16px;
+}
+
+.premium-includes--modal {
+  margin-bottom: 16px;
+}
+
+.premium-includes--modal .premium-includes__title {
+  margin-bottom: 8px;
+}
+
 .premium-page__eyebrow {
   display: block;
   font-size: 0.72rem;
@@ -609,36 +792,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--brand-pink);
-}
-
-.premium-benefit {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-
-.premium-benefit__icon {
-  font-size: 1.4rem;
-}
-
-.premium-plan-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
-}
-
-.premium-plan-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.premium-plan-card__price {
-  font-size: 1.2rem;
-  font-weight: 800;
 }
 
 .visitors-page__list {
@@ -1027,6 +1180,112 @@
   justify-content: center;
   gap: 8px;
   margin-top: 12px;
+}
+
+.profile-hero__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.profile-hero__nav--prev {
+  left: 10px;
+}
+
+.profile-hero__nav--next {
+  right: 10px;
+}
+
+.profile-hero__thumbs {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+  overflow-x: auto;
+}
+
+.profile-hero__thumbs button {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  padding: 0;
+  opacity: 0.65;
+}
+
+.profile-hero__thumbs button.active {
+  border-color: var(--accent, #e85d4c);
+  opacity: 1;
+}
+
+.profile-hero__thumbs img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-overview-block--private {
+  background: color-mix(in srgb, var(--accent, #e85d4c) 6%, var(--surface));
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.profile-overview-private-note {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.profile-social-list h4 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.profile-social-list ul {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-social-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-social-list li img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-detail-sheet__social-row {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 12px;
+}
+
+.profile-detail-sheet__social-row .btn-secondary.active {
+  border-color: var(--accent, #e85d4c);
+  color: var(--accent, #e85d4c);
 }
 
 .profile-overview-sections {

@@ -504,6 +504,7 @@ export function DiscoverPage({
           onBlock={handleBlock}
           isPremium={isPremium}
           signalSent={signalSent}
+          viewer={memberUser}
         />
       )}
 

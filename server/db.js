@@ -624,6 +624,9 @@ export async function fetchMemberBundle({ email, phone }) {
     incomingSignals: social?.incomingSignals ?? [],
     referral: social?.referral ?? null,
     premium: social?.premium ?? null,
-    memberProfileId: social?.memberProfileId ?? null
+    memberProfileId: social?.memberProfileId ?? null,
+    datingProfile: social?.datingProfile ?? null,
+    incomingLikes: social?.incomingLikes ?? [],
+    incomingFollows: social?.incomingFollows ?? []
   };
 }

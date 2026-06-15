@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { INTEREST_OPTIONS } from "../constants/profileOptions";
 
-const MAX_INTERESTS = 5;
+const MAX_INTERESTS = 10;
 
 type InterestPickerProps = {
   selected: string[];

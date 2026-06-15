@@ -58,8 +58,8 @@ export const DEFAULT_CMS: CmsContent = {
   growthVerifiedProfiles: "ID verified",
   growthCitiesLive: "Nationwide",
   growthSignalsSent: "5 free daily",
-  quickiePrice: 1499,
-  quickiePriceLabel: "₦1,499"
+  quickiePrice: 999,
+  quickiePriceLabel: "₦999"
 };
 
 const REMOVED_HERO_SUBHEADLINE =

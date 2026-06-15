@@ -14,13 +14,18 @@ export function getPendingVerifications(): PendingVerification[] {
   return readJson<PendingVerification[]>(STORAGE_KEYS.verificationQueue, []);
 }
 
+function normalizePhone(phone: string): string {
+  return String(phone || "").replace(/\D/g, "");
+}
+
 export function submitVerificationRequest(userName: string, phone: string): void {
+  const normalized = normalizePhone(phone);
   const list = getPendingVerifications();
-  if (list.some((v) => v.phone === phone && v.status === "pending")) return;
+  if (list.some((v) => normalizePhone(v.phone) === normalized && v.status === "pending")) return;
   list.unshift({
     id: `v-${Date.now()}`,
     userName,
-    phone,
+    phone: normalized || phone,
     submittedAt: new Date().toISOString(),
     status: "pending"
   });
@@ -76,9 +81,15 @@ export function verificationStats() {
 }
 
 export function isUserVerificationPending(phone: string): boolean {
-  return getPendingVerifications().some((v) => v.phone === phone && v.status === "pending");
+  const normalized = normalizePhone(phone);
+  return getPendingVerifications().some(
+    (v) => normalizePhone(v.phone) === normalized && v.status === "pending"
+  );
 }
 
 export function isUserVerificationApproved(phone: string): boolean {
-  return getPendingVerifications().some((v) => v.phone === phone && v.status === "approved");
+  const normalized = normalizePhone(phone);
+  return getPendingVerifications().some(
+    (v) => normalizePhone(v.phone) === normalized && v.status === "approved"
+  );
 }

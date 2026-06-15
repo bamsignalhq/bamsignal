@@ -7,11 +7,12 @@ export type IntentTag =
   | "Friendship"
   | "Networking"
   | "Social Events"
-  | "Chat";
+  | "Chat"
+  | "Quickie";
 
-export type Gender = "Man" | "Woman" | "Non-binary" | "Prefer not to say";
+export type Gender = "Man" | "Woman" | "Non-binary";
 
-export type LookingFor = "Men" | "Women" | "Everyone";
+export type LookingFor = "Men" | "Women";
 
 export type Religion =
   | "Christian"
@@ -81,6 +82,8 @@ export type UserProfile = {
 export type DatingProfile = {
   photos: string[];
   age: number;
+  /** ISO date YYYY-MM-DD — source of truth for age when set */
+  dateOfBirth?: string;
   gender: Gender;
   state?: string;
   city: string;
@@ -133,6 +136,7 @@ export type DiscoverProfile = {
   city: string;
   bio: string;
   photo: string;
+  photos?: string[];
   intents: IntentTag[];
   interests?: string[];
   religion?: Religion;

@@ -1,6 +1,6 @@
 /** Nigerian states and major cities/LGAs per state — 36 states + FCT */
 export const NIGERIA_STATE_CITIES: Record<string, readonly string[]> = {
-  Abia: ["Aba", "Umuahia", "Arochukwu", "Ohafia", "Obingwa", "Isiala Ngwa", "Osisioma"],
+  Abia: ["Aba", "Umuahia", "Arochukwu", "Ohafia", "Obingwa", "Isiala Ngwa", "Osisioma", "Umudike", "Bende", "Akwete"],
   Adamawa: ["Yola", "Mubi", "Numan", "Jimeta", "Gombi", "Michika", "Hong"],
   "Akwa Ibom": ["Uyo", "Eket", "Ikot Ekpene", "Oron", "Abak", "Ikot Abasi", "Ekparakwa"],
   Anambra: ["Awka", "Onitsha", "Nnewi", "Ekwulobia", "Aguata", "Ihiala", "Ogbaru"],
@@ -51,7 +51,14 @@ export const NIGERIA_STATE_CITIES: Record<string, readonly string[]> = {
     "Ajah",
     "Apapa",
     "Maryland",
-    "Festac"
+    "Festac",
+    "Ikoyi",
+    "Banana Island",
+    "Magodo",
+    "Gbagada",
+    "Oshodi",
+    "Mushin",
+    "Alimosho"
   ],
   Nasarawa: ["Lafia", "Keffi", "Akwanga", "Nasarawa", "Doma", "Karu", "Masaka"],
   Niger: ["Minna", "Bida", "Suleja", "Kontagora", "New Bussa", "Mokwa", "Sabon Wuse"],
@@ -67,9 +74,15 @@ export const NIGERIA_STATE_CITIES: Record<string, readonly string[]> = {
   Zamfara: ["Gusau", "Kaura Namoda", "Anka", "Talata Mafara", "Shinkafi", "Maru", "Tsafe"]
 };
 
-export const NIGERIAN_STATES = Object.keys(NIGERIA_STATE_CITIES).sort((a, b) =>
+const SORTED_STATES = Object.keys(NIGERIA_STATE_CITIES).sort((a, b) =>
   a.localeCompare(b, "en", { sensitivity: "base" })
-) as readonly string[];
+);
+
+/** Abia first (home state), then remaining states A–Z */
+export const NIGERIAN_STATES = [
+  "Abia",
+  ...SORTED_STATES.filter((s) => s !== "Abia")
+] as readonly string[];
 
 export function citiesForState(state: string): string[] {
   if (!state) return [];

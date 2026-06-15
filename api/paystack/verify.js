@@ -186,6 +186,49 @@ export default async function handler(req, res) {
       }
     }
 
+    if (req.query.action === "initialize-quickie") {
+      const email = String(body.email || "").trim().toLowerCase();
+      const phone = normalizePhone(body.phone);
+      const name = String(body.name || "").trim();
+      const priceNaira = Math.max(0, Math.round(Number(body.amount || 999)));
+      const amount = priceNaira * 100;
+
+      if (!email) {
+        return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
+      }
+
+      const reference = buildReference("quickie");
+
+      try {
+        const data = await initializePaystackTransaction({
+          email,
+          amount,
+          reference,
+          callback_url: callbackUrl,
+          channels: ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"],
+          metadata: {
+            app: "BamSignal",
+            name,
+            phone,
+            product_type: "quickie",
+            quickie_hours: 24
+          }
+        });
+
+        return res.status(200).json({
+          ok: true,
+          reference: data?.reference || reference,
+          authorization_url: data?.authorization_url,
+          access_code: data?.access_code,
+          productType: "quickie"
+        });
+      } catch (error) {
+        logPaystackFailure("initialize-quickie", error, { email, amount });
+        const mapped = paystackErrorResponse(error, "Unable to start payment. Please try again shortly.");
+        return res.status(mapped.status).json(mapped.body);
+      }
+    }
+
     const reference = String(body.reference || body.trxref || "").trim();
     const email = String(body.email || "").trim().toLowerCase();
     const phone = normalizePhone(body.phone);
@@ -214,6 +257,15 @@ export default async function handler(req, res) {
     }
 
     const productType = String(transaction?.metadata?.product_type || body.productType || "premium").trim();
+
+    if (productType === "quickie") {
+      const passUntil = new Date(Date.now() + 24 * 3600000).toISOString();
+      return res.status(200).json({
+        ok: true,
+        productType: "quickie",
+        quickiePassUntil: passUntil
+      });
+    }
 
     if (productType === "boost") {
       const boostId = String(transaction?.metadata?.boost_id || body.boostId || "city-boost").trim();

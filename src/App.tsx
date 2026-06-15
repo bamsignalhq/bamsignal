@@ -24,7 +24,7 @@ import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./ty
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
 import { isOnboardingComplete, normalizeDatingProfile } from "./utils/profile";
 import { recordStreakActivity } from "./utils/streaks";
-import { isPremiumActive, refreshPremiumStatus, startBoostPayment, startPlanPayment, verifyBoostPayment, verifyPayment } from "./services/payments";
+import { isPremiumActive, refreshPremiumStatus, startBoostPayment, startPlanPayment, verifyBoostPayment, verifyPayment, verifyQuickiePayment } from "./services/payments";
 import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive } from "./utils/premiumTrial";
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
@@ -37,6 +37,7 @@ import { getProfileViewsToday } from "./utils/profileViews";
 import { unreadCount } from "./utils/notifications";
 import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { activateBoost } from "./utils/activeBoosts";
+import { activateQuickiePass } from "./utils/quickie";
 import { LegalPage } from "./pages/LegalPage";
 import { PremiumPage } from "./pages/PremiumPage";
 import { VisitorsPage } from "./pages/VisitorsPage";
@@ -230,6 +231,25 @@ export function App() {
       return;
     }
 
+    if (paymentKind === "quickie") {
+      verifyQuickiePayment(user).then((result) => {
+        if (result.ok) {
+          activateQuickiePass();
+          localStorage.removeItem(STORAGE_KEYS.paymentPending);
+          localStorage.removeItem(STORAGE_KEYS.paymentReference);
+          localStorage.removeItem(STORAGE_KEYS.paymentKind);
+          setPaymentSuccess({
+            title: "Quickie pass active",
+            body: "Your 24-hour Quickie daily pass is live — you can message Quickie profiles now."
+          });
+          trackEvent("quickie_unlock");
+        } else {
+          localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
+        }
+      });
+      return;
+    }
+
     if (isPremium) return;
 
     verifyPayment(user).then(async (result) => {
@@ -393,7 +413,7 @@ export function App() {
   const finishOnboarding = useCallback(() => {
     setShowOnboarding(false);
     localStorage.removeItem(STORAGE_KEYS.onboardingStep);
-    setTab("discover");
+    setTab("home");
   }, []);
 
   const handleLogout = useCallback(async () => {

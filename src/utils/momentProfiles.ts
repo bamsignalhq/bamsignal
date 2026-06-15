@@ -25,7 +25,7 @@ function buildLocalPreviews(moment: MomentPageContent, city: string): DiscoverPr
     name,
     age: PREVIEW_AGES[index],
     gender: index === 1 ? "Man" : "Woman",
-    lookingFor: "Everyone",
+    lookingFor: "Women" as const,
     city: normalizedCity,
     bio: moment.situation.split(".")[0] + ".",
     photo: moment.imageSet[index % moment.imageSet.length],

@@ -2,7 +2,22 @@
 
 **Date:** June 15, 2026  
 **Severity:** P0 launch blocker  
-**Status:** Root cause identified — code fixes applied; **Coolify env action required**
+**Status:** Root cause identified — fixes deployed (`de965da`). **Coolify env action still required for OTP verify.**
+
+---
+
+## Update (June 15, 2026 — deploy `de965da`)
+
+Production verification after deploy:
+
+| Check | Result |
+|-------|--------|
+| JS bundle | `index-D7MIUZ1t.js` (new; old “could not reach the server” removed) |
+| CORS preflight | `204` with `Access-Control-Allow-Origin: https://localhost` |
+| `POST /api/auth/email-code` | **200** |
+| `/health` signupEmail | **false** — `SUPABASE_SERVICE_ROLE_KEY` still missing in Coolify |
+
+**Additional root cause:** `www.bamsignal.com` returns **503** (no server). API calls now always target `https://bamsignal.com` in production.
 
 ---
 

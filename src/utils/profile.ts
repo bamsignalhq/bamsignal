@@ -1,3 +1,4 @@
+import { ageFromDateOfBirth, defaultAdultDob } from "./ageFromDob";
 import { STORAGE_KEYS } from "../constants/limits";
 import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
@@ -8,11 +9,12 @@ import { readJson } from "./storage";
 export const defaultDatingProfile = (): DatingProfile => ({
   photos: [],
   age: 25,
-  gender: "Prefer not to say",
-  state: "Lagos",
-  city: "Lagos",
+  dateOfBirth: defaultAdultDob(),
+  gender: "Man",
+  state: "Abia",
+  city: "",
   bio: "",
-  lookingFor: "Everyone",
+  lookingFor: "Women",
   intents: ["Relationship"],
   interests: [],
   verified: false,
@@ -60,11 +62,26 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
   const base = defaultDatingProfile();
   const city = raw.city ?? base.city;
   const state = raw.state ?? stateForCity(city) ?? base.state;
+  const dateOfBirth = raw.dateOfBirth ?? base.dateOfBirth;
+  const computedAge = dateOfBirth ? ageFromDateOfBirth(dateOfBirth) : null;
+  const age = computedAge ?? raw.age ?? base.age;
+  const gender =
+    raw.gender && (raw.gender as string) !== "Prefer not to say"
+      ? (raw.gender as DatingProfile["gender"])
+      : base.gender;
+  const lookingFor =
+    raw.lookingFor && (raw.lookingFor as string) !== "Everyone"
+      ? (raw.lookingFor as DatingProfile["lookingFor"])
+      : base.lookingFor;
   return {
     ...base,
     ...raw,
     state,
     city,
+    dateOfBirth,
+    age,
+    gender: gender as DatingProfile["gender"],
+    lookingFor: lookingFor as DatingProfile["lookingFor"],
     intents: normalizeIntents(raw.intents as string[] | undefined),
     interests: raw.interests ?? base.interests,
     visibility: { ...base.visibility!, ...raw.visibility },

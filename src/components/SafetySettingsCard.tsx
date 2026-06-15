@@ -62,18 +62,6 @@ export function SafetySettingsCard({ profile, onChange, variant = "profile" }: S
         </div>
       </fieldset>
 
-      <label className="settings-row settings-row--toggle safety-toggle-row">
-        <span>
-          <strong>Preference matching only</strong>
-          <small>Only people who match your filters can signal you</small>
-        </span>
-        <input
-          type="checkbox"
-          checked={safety.onlyMatchingPreferencesCanSignal}
-          onChange={(e) => update({ onlyMatchingPreferencesCanSignal: e.target.checked })}
-        />
-      </label>
-
       <fieldset className="intent-fieldset">
         <legend>Who can message me</legend>
         <div className="safety-option-list">

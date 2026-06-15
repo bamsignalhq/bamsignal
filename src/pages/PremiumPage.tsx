@@ -1,6 +1,7 @@
-import { ArrowLeft, Crown, Sparkles, Zap } from "lucide-react";
-import type { PremiumPlan } from "../constants/plans";
-import { PREMIUM_FEATURES } from "../constants/plans";
+import { ArrowLeft, Check } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { PlanId, PremiumPlan } from "../constants/plans";
+import { SIGNAL_PASS_INCLUDES, durationLabel, planBadge, planShortLabel } from "../constants/plans";
 
 type PremiumPageProps = {
   isPremium: boolean;
@@ -10,98 +11,85 @@ type PremiumPageProps = {
   loading?: boolean;
 };
 
-const BENEFITS = [
-  { icon: "⚡", title: "Unlimited Signals", body: "Send as many signals as you want — no daily cap." },
-  { icon: "👀", title: "Profile Visitors", body: "See exactly who viewed your profile and when." },
-  { icon: "🎯", title: "Advanced Filters", body: "Religion, lifestyle, voice intro, compatibility % & more." },
-  { icon: "📈", title: "Priority Placement", body: "Rank higher in Discover when profiles are matched." },
-  { icon: "✓", title: "Read Receipts", body: "Know when your messages have been seen." },
-  { icon: "🚀", title: "Priority Signals", body: "Your signal lands first in their inbox." },
-  { icon: "✨", title: "Better Discover Ranking", body: "Intelligent sorting puts you in front of the right people." }
-] as const;
+function defaultPlanId(plans: PremiumPlan[]): PlanId {
+  return plans.find((p) => p.id === "monthly")?.id ?? plans[0]?.id ?? "monthly";
+}
 
 export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }: PremiumPageProps) {
-  const featured = plans.find((p) => p.id === "monthly") ?? plans[0];
+  const [selectedId, setSelectedId] = useState<PlanId>(() => defaultPlanId(plans));
+  const selected = useMemo(
+    () => plans.find((p) => p.id === selectedId) ?? plans[0],
+    [plans, selectedId]
+  );
 
   return (
-    <div className="page premium-page">
-      <header className="premium-page__head">
+    <div className="page premium-page premium-page--fintech">
+      <header className="premium-page__head premium-page__head--fintech">
         <button type="button" className="icon-btn" onClick={onBack} aria-label="Back">
           <ArrowLeft size={22} />
         </button>
         <div>
-          <span className="premium-page__eyebrow">Signal Pass</span>
-          <h1>Premium that feels intentional</h1>
-          <p>Unlock visibility, intelligence, and control — built for real connections.</p>
+          <h1 className="premium-page__title">Signal Pass</h1>
+          {!isPremium && <p className="premium-page__subtitle">Choose a plan</p>}
         </div>
       </header>
 
       {isPremium ? (
-        <section className="premium-page__active card">
-          <Crown size={28} aria-hidden />
-          <h2>You&apos;re on Signal Pass</h2>
-          <p>All premium benefits are active on your account.</p>
+        <section className="premium-page__active premium-page__active--fintech">
+          <p className="premium-page__active-label">Active</p>
+          <p className="premium-page__active-copy">Signal Pass is on your account.</p>
         </section>
       ) : (
-        <section className="premium-page__hero card">
-          <Sparkles className="premium-page__hero-icon" size={32} aria-hidden />
-          <h2>Upgrade your signal</h2>
-          <p>Like the best fintech apps — simple cards, clear value, no clutter.</p>
-          {featured && (
-            <button
-              type="button"
-              className="btn-primary btn-full premium-page__cta"
-              disabled={loading}
-              onClick={() => onSelectPlan(featured)}
-            >
-              <Zap size={18} fill="currentColor" />
-              Get {featured.name} · {featured.priceLabel}
-            </button>
-          )}
-        </section>
+        <>
+          <section className="premium-plan-strip" aria-label="Signal Pass plans">
+            {plans.map((plan) => {
+              const active = plan.id === selectedId;
+              const badge = planBadge(plan);
+              return (
+                <button
+                  key={plan.id}
+                  type="button"
+                  className={`premium-plan-strip__card${active ? " premium-plan-strip__card--selected" : ""}`}
+                  onClick={() => setSelectedId(plan.id)}
+                  aria-pressed={active}
+                >
+                  <div className="premium-plan-strip__main">
+                    <span className="premium-plan-strip__name">{planShortLabel(plan)}</span>
+                    <span className="premium-plan-strip__duration">{durationLabel(plan.days)}</span>
+                  </div>
+                  <div className="premium-plan-strip__aside">
+                    {badge ? <span className="premium-plan-strip__badge">{badge}</span> : null}
+                    <span className="premium-plan-strip__price">{plan.priceLabel}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </section>
+
+          <section className="premium-includes" aria-labelledby="premium-includes-title">
+            <h2 id="premium-includes-title" className="premium-includes__title">
+              Included with Signal Pass
+            </h2>
+            <ul className="premium-includes__list">
+              {SIGNAL_PASS_INCLUDES.map((item) => (
+                <li key={item}>
+                  <Check size={16} aria-hidden />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <button
+            type="button"
+            className="btn-primary btn-full premium-page__upgrade"
+            disabled={loading || !selected}
+            onClick={() => selected && onSelectPlan(selected)}
+          >
+            {loading ? "Opening checkout…" : "Upgrade Now"}
+          </button>
+        </>
       )}
-
-      <section className="premium-page__benefits" aria-label="Signal Pass benefits">
-        {BENEFITS.map((benefit) => (
-          <article key={benefit.title} className="premium-benefit card">
-            <span className="premium-benefit__icon" aria-hidden>
-              {benefit.icon}
-            </span>
-            <div>
-              <h3>{benefit.title}</h3>
-              <p>{benefit.body}</p>
-            </div>
-          </article>
-        ))}
-      </section>
-
-      {!isPremium && (
-        <section className="premium-page__plans">
-          <h2>Choose your pass</h2>
-          <div className="premium-plan-cards">
-            {plans.map((plan) => (
-              <button
-                key={plan.id}
-                type="button"
-                className={`premium-plan-card card ${plan.highlight ? "premium-plan-card--featured" : ""}`}
-                disabled={loading}
-                onClick={() => onSelectPlan(plan)}
-              >
-                {plan.highlight && <span className="premium-plan-card__badge">Popular</span>}
-                <strong>{plan.name}</strong>
-                <span className="premium-plan-card__price">{plan.priceLabel}</span>
-                <span className="premium-plan-card__days">{plan.days} days</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <ul className="premium-page__fineprint">
-        {PREMIUM_FEATURES.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ul>
     </div>
   );
 }

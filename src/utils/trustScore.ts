@@ -17,10 +17,10 @@ export function computeTrustScore(
   const asDating: DatingProfile = {
     photos: "photos" in profile && profile.photos?.length ? profile.photos : profile.photo ? [profile.photo] : [],
     age: profile.age ?? 25,
-    gender: profile.gender ?? "Prefer not to say",
+    gender: (profile.gender as string) === "Prefer not to say" ? "Man" : (profile.gender ?? "Man"),
     city: profile.city ?? "",
     bio: profile.bio ?? "",
-    lookingFor: profile.lookingFor ?? "Everyone",
+    lookingFor: (profile.lookingFor as string) === "Everyone" ? "Women" : profile.lookingFor ?? "Women",
     intents: profile.intents ?? [],
     interests: profile.interests ?? [],
     verified: profile.verified,

@@ -25,8 +25,27 @@ export function formatPriceLabel(price: number): string {
 export function durationLabel(days: number): string {
   if (days === 7) return "7 days";
   if (days === 30) return "30 days";
-  if (days === 90) return "3 months";
+  if (days === 90) return "90 days";
   return `${days} days`;
+}
+
+export const PLAN_SHORT_NAMES: Record<PlanId, string> = {
+  weekly: "Weekly",
+  monthly: "Monthly",
+  quarterly: "3 Months"
+};
+
+export const PLAN_DEFAULT_BADGES: Partial<Record<PlanId, string>> = {
+  monthly: "Recommended",
+  quarterly: "Best Value"
+};
+
+export function planShortLabel(plan: PremiumPlan): string {
+  return PLAN_SHORT_NAMES[plan.id] ?? plan.name.replace(/\s*Signal Pass$/i, "");
+}
+
+export function planBadge(plan: PremiumPlan): string | undefined {
+  return plan.highlight || PLAN_DEFAULT_BADGES[plan.id];
 }
 
 export function hydratePlan(raw: PremiumPlanInput): PremiumPlan {
@@ -67,22 +86,27 @@ export const DEFAULT_PREMIUM_PLAN_INPUTS: PremiumPlanInput[] = [
     id: "monthly",
     name: "Monthly Signal Pass",
     price: 3999,
-    days: 30
+    days: 30,
+    highlight: "Recommended"
   },
   {
     id: "quarterly",
     name: "3 Months Signal Pass",
     price: 10999,
-    days: 90
+    days: 90,
+    highlight: "Best Value"
   }
 ];
 
 export const DEFAULT_PREMIUM_PLANS: PremiumPlan[] = DEFAULT_PREMIUM_PLAN_INPUTS.map(hydratePlan);
 
-export const PREMIUM_FEATURES = [
-  "Unlimited signals & messages",
-  "See who liked you",
-  "Advanced filters",
-  "Priority visibility",
-  "Verified badge support"
+/** Shown on Signal Pass upgrade — keep to four clear bullets */
+export const SIGNAL_PASS_INCLUDES = [
+  "Unlimited Signals",
+  "See Profile Visitors",
+  "Advanced Filters",
+  "Priority Visibility"
 ] as const;
+
+/** @deprecated use SIGNAL_PASS_INCLUDES */
+export const PREMIUM_FEATURES = SIGNAL_PASS_INCLUDES;

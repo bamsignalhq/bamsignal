@@ -422,8 +422,6 @@ export function AuthPage({
                 <p className="auth-verify__step">Verify your email</p>
                 <h1 className="auth-title auth-verify__title">Check your email</h1>
                 <p className="auth-verify__lede">
-                  Check your email for your verification code.
-                  <br />
                   Sent to <strong>{maskEmail(pendingSignup?.email || "")}</strong>
                 </p>
               </div>

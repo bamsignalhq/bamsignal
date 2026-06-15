@@ -46,7 +46,7 @@ export function senderAsDiscoverProfile(sender: DatingProfile, id = "viewer"): D
 }
 
 export function genderMatchesLookingFor(lookingFor: LookingFor | undefined, gender?: Gender): boolean {
-  if (!lookingFor || lookingFor === "Everyone" || !gender || gender === "Prefer not to say") return true;
+  if (!lookingFor || (lookingFor as string) === "Everyone" || !gender || (gender as string) === "Prefer not to say") return true;
   if (lookingFor === "Men") return gender === "Man";
   if (lookingFor === "Women") return gender === "Woman";
   return true;

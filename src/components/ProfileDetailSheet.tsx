@@ -1,4 +1,4 @@
-import { MoreHorizontal, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, MoreHorizontal, UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BRAND } from "../constants/copy";
 import { intentDisplay } from "../constants/intents";
@@ -8,6 +8,9 @@ import { ShowcaseImage } from "./ShowcaseImage";
 import { VerificationBadge } from "./VerificationBadge";
 import { VoiceIntro } from "./VoiceIntro";
 import { WhyThisProfile } from "./WhyThisProfile";
+import { likeProfile, followProfile, hasLikedProfile, hasFollowedProfile } from "../utils/profileSocial";
+import { likeProfileRemote, followProfileRemote } from "../services/memberData";
+import type { UserProfile } from "../types";
 
 type ProfileDetailSheetProps = {
   profile: DiscoverProfile;
@@ -24,6 +27,7 @@ type ProfileDetailSheetProps = {
   onBlock?: () => void;
   isPremium?: boolean;
   signalSent?: boolean;
+  viewer?: Pick<UserProfile, "email" | "phone" | "name">;
 };
 
 export function ProfileDetailSheet({
@@ -39,14 +43,51 @@ export function ProfileDetailSheet({
   onReport,
   onBlock,
   isPremium = false,
-  signalSent = false
+  signalSent = false,
+  viewer
 }: ProfileDetailSheetProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [liked, setLiked] = useState(() => hasLikedProfile(profile.id));
+  const [followed, setFollowed] = useState(() => hasFollowedProfile(profile.id));
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const gallery = [profile.photo];
+  const gallery = (profile.photos?.length ? profile.photos : [profile.photo]).filter(Boolean);
   const heroPhoto = gallery[photoIndex] ?? profile.photo;
+
+  const goPhoto = (dir: -1 | 1) => {
+    if (gallery.length <= 1) return;
+    setPhotoIndex((i) => (i + dir + gallery.length) % gallery.length);
+  };
+
+  const handleLike = async () => {
+    if (liked) return;
+    const entry = {
+      profileId: profile.id,
+      name: profile.name,
+      photo: gallery[photoIndex] || profile.photo,
+      at: new Date().toISOString()
+    };
+    if (likeProfile(entry)) setLiked(true);
+    if (viewer) void likeProfileRemote(viewer, profile.id, photoIndex);
+  };
+
+  const handleFollow = async () => {
+    if (followed) return;
+    const entry = {
+      profileId: profile.id,
+      name: profile.name,
+      photo: profile.photo,
+      at: new Date().toISOString()
+    };
+    if (followProfile(entry)) setFollowed(true);
+    if (viewer) void followProfileRemote(viewer, profile.id);
+  };
+
+  const handleSignal = () => {
+    onSendSignal?.();
+    onClose();
+  };
 
   useEffect(() => {
     if (!open) {
@@ -74,6 +115,12 @@ export function ProfileDetailSheet({
       <article className="profile-detail-sheet__panel profile-detail-sheet__panel--actions">
         <header className="profile-detail-sheet__hero">
           <ShowcaseImage src={heroPhoto} alt={profile.name} className="profile-detail-sheet__img--face" />
+          {gallery.length > 1 && (
+            <>
+              <button type="button" className="profile-detail-sheet__nav profile-detail-sheet__nav--prev" onClick={() => goPhoto(-1)} aria-label="Previous photo" />
+              <button type="button" className="profile-detail-sheet__nav profile-detail-sheet__nav--next" onClick={() => goPhoto(1)} aria-label="Next photo" />
+            </>
+          )}
           <div className="profile-detail-sheet__shade" />
           <button type="button" className="profile-detail-sheet__close icon-btn" onClick={onClose} aria-label="Close">
             <X size={22} />
@@ -106,6 +153,15 @@ export function ProfileDetailSheet({
         </header>
 
         <div className="profile-detail-sheet__body profile-detail-sheet__body--clean">
+          <div className="profile-detail-sheet__social-row">
+            <button type="button" className={`btn-secondary btn-sm ${liked ? "active" : ""}`} onClick={handleLike}>
+              <Heart size={16} /> {liked ? "Liked" : "Like photo"}
+            </button>
+            <button type="button" className={`btn-secondary btn-sm ${followed ? "active" : ""}`} onClick={handleFollow}>
+              <UserPlus size={16} /> {followed ? "Following" : "Follow"}
+            </button>
+          </div>
+
           <section className="profile-detail-sheet__card">
             <h3>Bio</h3>
             <p className="profile-detail-sheet__bio">{profile.bio || "—"}</p>
@@ -169,10 +225,7 @@ export function ProfileDetailSheet({
             <button
               type="button"
               className="profile-detail-sheet__signal"
-              onClick={() => {
-                onSendSignal?.();
-                onClose();
-              }}
+              onClick={handleSignal}
               disabled={signalSent}
             >
               {BRAND.sendSignal}

@@ -9,7 +9,8 @@ export const INTENT_OPTIONS: {
   { id: "Friendship", label: "Friendship", emoji: "🤝" },
   { id: "Networking", label: "Networking", emoji: "🌍" },
   { id: "Social Events", label: "Social Events", emoji: "🎉" },
-  { id: "Chat", label: "Chat", emoji: "💬" }
+  { id: "Chat", label: "Chat", emoji: "💬" },
+  { id: "Quickie", label: "Quickie", emoji: "🔥" }
 ];
 
 export const MAX_INTENT_SELECTIONS = 2;
@@ -34,7 +35,7 @@ export function normalizeIntent(raw: string): IntentTag | null {
     Relationship: "Relationship",
     "Social Events": "Social Events",
     Chat: "Chat",
-    Quickie: "Chat"
+    Quickie: "Quickie"
   };
   return map[raw] ?? null;
 }

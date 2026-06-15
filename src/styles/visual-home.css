@@ -659,3 +659,48 @@
   inset: 0;
   min-height: 100%;
 }
+
+/* Minimal hero — imagery first */
+.visual-hero--minimal {
+  min-height: min(88dvh, 720px);
+}
+
+.visual-hero__shade--minimal {
+  background: linear-gradient(
+    to top,
+    rgba(6, 3, 12, 0.92) 0%,
+    rgba(6, 3, 12, 0.35) 28%,
+    rgba(6, 3, 12, 0.08) 55%,
+    rgba(6, 3, 12, 0.2) 100%
+  );
+}
+
+.visual-hero__layout--minimal {
+  position: relative;
+  z-index: 3;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: min(88dvh, 720px);
+  padding-bottom: 28px;
+}
+
+.visual-hero__copy--minimal {
+  padding: 0 20px 12px;
+  max-width: 420px;
+}
+
+.visual-hero__copy--minimal h1 {
+  margin: 0 0 14px;
+  font-size: clamp(1.5rem, 4.8vw, 2.2rem);
+  line-height: 1.08;
+}
+
+.visual-hero__copy--minimal .visual-hero__actions {
+  margin: 0;
+}
+
+.visual-hero--minimal .visual-hero__dots {
+  bottom: 12px;
+}

@@ -6,9 +6,22 @@ type ShowcaseImageProps = {
   alt: string;
   className?: string;
   loading?: "eager" | "lazy";
+  fetchPriority?: "high" | "low" | "auto";
+  width?: number;
+  height?: number;
+  objectPosition?: string;
 };
 
-export function ShowcaseImage({ src, alt, className, loading = "lazy" }: ShowcaseImageProps) {
+export function ShowcaseImage({
+  src,
+  alt,
+  className,
+  loading = "lazy",
+  fetchPriority,
+  width,
+  height,
+  objectPosition
+}: ShowcaseImageProps) {
   const [failed, setFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
@@ -38,6 +51,10 @@ export function ShowcaseImage({ src, alt, className, loading = "lazy" }: Showcas
       className={className}
       loading={loading}
       decoding="async"
+      fetchPriority={fetchPriority}
+      width={width}
+      height={height}
+      style={objectPosition ? { objectPosition } : undefined}
       onError={() => setFailed(true)}
     />
   );

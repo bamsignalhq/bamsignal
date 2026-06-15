@@ -5,18 +5,21 @@ export const HERO_STACK = {
   main: {
     id: "hero-main",
     src: HERO_IMAGES.main,
-    alt: "Young Nigerian professionals in Lagos"
+    alt: "Young Nigerian professionals in Lagos",
+    objectPosition: "center 22%"
   },
   accents: [
     {
-      id: "a1",
-      src: MOMENT_SETS.lagosRooftop[0],
-      alt: "Lagos rooftop hangout"
+      id: "hero-2",
+      src: HERO_IMAGES.panels[0],
+      alt: "Young Nigerian professionals connecting in Lagos",
+      objectPosition: "center 28%"
     },
     {
-      id: "a2",
-      src: MOMENT_SETS.suyaChill[0],
-      alt: "Suya and chill with friends"
+      id: "hero-3",
+      src: HERO_IMAGES.panels[1],
+      alt: "Lagos social scene with young professionals",
+      objectPosition: "center 22%"
     }
   ] as const
 } as const;

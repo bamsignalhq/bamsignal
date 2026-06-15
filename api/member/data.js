@@ -10,6 +10,7 @@ import {
   acceptIncomingSignal,
   completeOnboardingReferral,
   declineIncomingSignal,
+  ensureUserReferralCode,
   fetchIncomingSignals,
   fetchPremiumStatus,
   fetchProfileVisitors,
@@ -82,7 +83,9 @@ export default async function handler(req, res) {
       const user = body.referralCode
         ? await registerWithReferral({ ...identity, referralCode: body.referralCode })
         : await upsertAppUserIdentity(identity);
-      return res.status(200).json({ ok: true, user });
+      if (user) await ensureUserReferralCode(identity);
+      const freshUser = user ? await findAppUserIdentity(identity) : null;
+      return res.status(200).json({ ok: true, user: freshUser || user });
     }
 
     if (req.query.action === "status") {

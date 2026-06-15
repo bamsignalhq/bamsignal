@@ -43,6 +43,26 @@ function generateReferralCode(name = "") {
   return `${base || "BAM"}${suffix}`;
 }
 
+export async function ensureUserReferralCode({ email, phone }) {
+  if (!isDatabaseReady()) return null;
+  await ensureSocialSchema();
+
+  const user = await findAppUserIdentity({ email, phone });
+  if (!user) return null;
+  if (user.referral_code) return user.referral_code;
+
+  const code = generateReferralCode(user.name);
+  const result = await query(
+    `update app_users
+     set referral_code = $3, updated_at = now()
+     where ($1::text is not null and lower(email) = lower($1::text))
+        or ($2::text is not null and phone = $2::text)
+     returning referral_code`,
+    [email || null, phone || null, code]
+  );
+  return result.rows[0]?.referral_code || code;
+}
+
 export function rowToDiscoverProfile(row) {
   if (!row) return null;
   const profile = row.profile || {};
@@ -322,19 +342,20 @@ export async function registerWithReferral({ email, phone, name, referralCode })
     return result.rows[0] || null;
   }
 
-  return upsertAppUserIdentity({
+  const user = await upsertAppUserIdentity({
     email,
     phone,
     name,
     referralCode: ownCode
-  }).then(async (user) => {
-    if (!user || !referredByUserKey) return user;
-    await query(
-      `update app_users set referred_by_user_key = $2, updated_at = now() where id = $1`,
-      [user.id, referredByUserKey]
-    );
-    return findAppUserIdentity({ email, phone });
   });
+  if (!user) return null;
+  if (!referredByUserKey) return user;
+
+  await query(
+    `update app_users set referred_by_user_key = $2, updated_at = now() where id = $1`,
+    [user.id, referredByUserKey]
+  );
+  return findAppUserIdentity({ email, phone });
 }
 
 const REFERRAL_GOAL = 3;
@@ -423,6 +444,7 @@ export async function fetchReferralStats({ email, phone }) {
   const user = await findAppUserIdentity({ email, phone });
   if (!user) return null;
 
+  const code = await ensureUserReferralCode({ email, phone });
   const userKey = normalizeUserKey({ email, phone });
   const countResult = await query(
     "select count(*)::int as count from app_referral_events where referrer_user_key = $1",
@@ -432,7 +454,7 @@ export async function fetchReferralStats({ email, phone }) {
   const rewardsClaimed = Math.floor(successfulReferrals / REFERRAL_GOAL);
 
   return {
-    code: user.referral_code || generateReferralCode(user.name),
+    code: code || user.referral_code,
     successfulReferrals,
     rewardsClaimed,
     goal: REFERRAL_GOAL,

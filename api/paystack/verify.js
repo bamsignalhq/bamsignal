@@ -49,21 +49,37 @@ function resolvePlanAmount(body, plans) {
   return normalizePlan(plans[plans.length - 1] || {}).amountKobo;
 }
 
+async function paystackFetch(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 25000);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new Error("Paystack request timed out.");
+    }
+    throw new Error(error?.message || "Paystack network request failed.");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
-  }
+  try {
+    if (req.method !== "POST") {
+      res.setHeader("Allow", "POST");
+      return res.status(405).json({ ok: false, error: "Method not allowed" });
+    }
 
-  if (!process.env.PAYSTACK_SECRET_KEY) {
-    return res.status(503).json({ ok: false, error: "PAYSTACK_SECRET_KEY is not configured." });
-  }
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      return res.status(503).json({ ok: false, error: "PAYSTACK_SECRET_KEY is not configured." });
+    }
 
-  const body = parseBody(req);
-  const plans = await loadPricingPlans();
+    const body = parseBody(req);
+    const plans = await loadPricingPlans();
 
-  if (req.query.action === "initialize") {
-    const email = String(body.email || "").trim().toLowerCase();
+    if (req.query.action === "initialize") {
+      const email = String(body.email || "").trim().toLowerCase();
     const phone = normalizePhone(body.phone);
     const name = String(body.name || "").trim();
     const days = Number(body.days || body.planDays || 30);
@@ -76,7 +92,7 @@ export default async function handler(req, res) {
     const callbackUrl =
       process.env.PAYSTACK_CALLBACK_URL ||
       `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/payment/success`;
-    const response = await fetch("https://api.paystack.co/transaction/initialize", {
+    const response = await paystackFetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
@@ -130,7 +146,7 @@ export default async function handler(req, res) {
     const callbackUrl =
       process.env.PAYSTACK_CALLBACK_URL ||
       `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/payment/success`;
-    const response = await fetch("https://api.paystack.co/transaction/initialize", {
+    const response = await paystackFetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
@@ -173,98 +189,97 @@ export default async function handler(req, res) {
   if (!reference) return res.status(400).json({ ok: false, error: "Payment reference is required." });
   if (!email && !phone) return res.status(400).json({ ok: false, error: "User email or phone number is required." });
 
-  try {
-    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        "Content-Type": "application/json"
-      }
-    });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || !payload?.status) {
-      return res.status(502).json({ ok: false, error: payload?.message || "Paystack verification failed." });
+  const response = await paystackFetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+    headers: {
+      Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+      "Content-Type": "application/json"
+    }
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.status) {
+    return res.status(502).json({ ok: false, error: payload?.message || "Paystack verification failed." });
+  }
+
+  const transaction = payload.data;
+  if (transaction?.status !== "success") {
+    return res.status(402).json({ ok: false, error: "Payment is not successful yet." });
+  }
+
+  const transactionEmail = String(transaction?.customer?.email || transaction?.metadata?.email || "").toLowerCase();
+  if (email && transactionEmail && transactionEmail !== email) {
+    return res.status(403).json({ ok: false, error: "Payment email does not match this BamSignal account." });
+  }
+
+  const productType = String(transaction?.metadata?.product_type || body.productType || "premium").trim();
+
+  if (productType === "boost") {
+    const boostId = String(transaction?.metadata?.boost_id || body.boostId || "city-boost").trim();
+    const city = String(transaction?.metadata?.city || body.city || "").trim();
+    const durationHours = Math.max(
+      1,
+      Math.round(Number(transaction?.metadata?.duration_hours || body.durationHours || 48))
+    );
+
+    const allowedBoosts = new Set(["city-boost", "signal-boost", "profile-boost", "priority-signal-once"]);
+    if (!allowedBoosts.has(boostId)) {
+      return res.status(422).json({ ok: false, error: "Unknown boost product." });
     }
 
-    const transaction = payload.data;
-    if (transaction?.status !== "success") {
-      return res.status(402).json({ ok: false, error: "Payment is not successful yet." });
-    }
-
-    const transactionEmail = String(transaction?.customer?.email || transaction?.metadata?.email || "").toLowerCase();
-    if (email && transactionEmail && transactionEmail !== email) {
-      return res.status(403).json({ ok: false, error: "Payment email does not match this BamSignal account." });
-    }
-
-    const productType = String(transaction?.metadata?.product_type || body.productType || "premium").trim();
-
-    if (productType === "boost") {
-      const boostId = String(transaction?.metadata?.boost_id || body.boostId || "city-boost").trim();
-      const city = String(transaction?.metadata?.city || body.city || "").trim();
-      const durationHours = Math.max(
-        1,
-        Math.round(Number(transaction?.metadata?.duration_hours || body.durationHours || 48))
-      );
-
-      const allowedBoosts = new Set(["city-boost", "signal-boost", "profile-boost", "priority-signal-once"]);
-      if (!allowedBoosts.has(boostId)) {
-        return res.status(422).json({ ok: false, error: "Unknown boost product." });
-      }
-
-      if (boostId === "city-boost") {
-        const placement = await activateCityBoostPlacement({
-          email: email || transactionEmail,
-          phone,
-          city,
-          durationHours,
-          paystackReference: reference
-        });
-        if (!placement) {
-          return res.status(422).json({
-            ok: false,
-            error: "Complete onboarding in your city before buying a City Boost."
-          });
-        }
-        return res.status(200).json({
-          ok: true,
-          productType: "boost",
-          boostId,
-          city: placement.city,
-          expiresAt: placement.expires_at
+    if (boostId === "city-boost") {
+      const placement = await activateCityBoostPlacement({
+        email: email || transactionEmail,
+        phone,
+        city,
+        durationHours,
+        paystackReference: reference
+      });
+      if (!placement) {
+        return res.status(422).json({
+          ok: false,
+          error: "Complete onboarding in your city before buying a City Boost."
         });
       }
-
       return res.status(200).json({
         ok: true,
         productType: "boost",
         boostId,
-        expiresAt: new Date(Date.now() + durationHours * 3600000).toISOString()
+        city: placement.city,
+        expiresAt: placement.expires_at
       });
     }
 
-    const days = await premiumDaysFromTransaction(transaction);
-    if (!days) {
-      return res.status(422).json({ ok: false, error: "Payment amount does not match an active VIP plan." });
-    }
-
-    const premiumUntil = new Date(Date.now() + days * 86400000).toISOString();
-    const inviteLink = await createVipInviteLink(email || phone).catch(() => null);
-    const user = await activateAppUserPremium({
-      email: email || transactionEmail,
-      phone,
-      name,
-      premiumUntil,
-      paystackReference: reference,
-      inviteLink
-    });
-
     return res.status(200).json({
       ok: true,
-      premium_until: premiumUntil,
-      days,
-      invite_link: inviteLink,
-      user
+      productType: "boost",
+      boostId,
+      expiresAt: new Date(Date.now() + durationHours * 3600000).toISOString()
     });
+  }
+
+  const days = await premiumDaysFromTransaction(transaction);
+  if (!days) {
+    return res.status(422).json({ ok: false, error: "Payment amount does not match an active VIP plan." });
+  }
+
+  const premiumUntil = new Date(Date.now() + days * 86400000).toISOString();
+  const inviteLink = await createVipInviteLink(email || phone).catch(() => null);
+  const user = await activateAppUserPremium({
+    email: email || transactionEmail,
+    phone,
+    name,
+    premiumUntil,
+    paystackReference: reference,
+    inviteLink
+  });
+
+  return res.status(200).json({
+    ok: true,
+    premium_until: premiumUntil,
+    days,
+    invite_link: inviteLink,
+    user
+  });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "Payment verification failed." });
+    return res.status(500).json({ ok: false, error: error.message || "Payment request failed." });
   }
 }

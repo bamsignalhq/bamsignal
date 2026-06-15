@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { createConfirmedSupabaseUser } from "./services/signupOtp.js";
 import { isDatabaseReady, query, upsertAppUserIdentity } from "./db.js";
 import { upsertMemberProfile } from "./cityHome.js";
 
@@ -51,7 +52,7 @@ async function resetReviewerAuthUser(email) {
     [email]
   );
   const userId = existing.rows[0]?.id;
-  if (!userId) return;
+  if (!userId) return false;
 
   const cleanup = [
     "delete from auth.refresh_tokens where user_id = $1::uuid",
@@ -63,8 +64,24 @@ async function resetReviewerAuthUser(email) {
   ];
 
   for (const statement of cleanup) {
-    await query(statement, [userId]).catch(() => null);
+    try {
+      await query(statement, [userId]);
+    } catch (error) {
+      const message = String(error?.message || error);
+      if (!/does not exist|undefined table/i.test(message)) {
+        console.warn("[bamsignal] play reviewer auth cleanup:", message);
+      }
+    }
   }
+
+  const stillThere = await query(
+    "select id from auth.users where id = $1::uuid limit 1",
+    [userId]
+  );
+  if (stillThere.rows[0]?.id) {
+    throw new Error("Could not reset existing reviewer auth user.");
+  }
+  return true;
 }
 
 async function ensureAuthUserViaSql({ email, password, name, username, phone, reset = false }) {
@@ -88,7 +105,6 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone, re
          user_id,
          identity_data,
          provider,
-         provider_id,
          last_sign_in_at,
          created_at,
          updated_at
@@ -98,7 +114,6 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone, re
          $1::uuid,
          jsonb_build_object('sub', $2::text, 'email', $3::text),
          'email',
-         $2::text,
          now(),
          now(),
          now()
@@ -192,6 +207,74 @@ async function ensureNotPlatformAdmin(email) {
   ).catch(() => null);
 }
 
+async function ensureAuthUserViaAdmin({ email, password, name, username, phone, reset }) {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
+  if (!serviceKey || !url) return null;
+
+  if (reset) {
+    const list = await fetch(
+      `${url}/auth/v1/admin/users?${new URLSearchParams({ page: "1", per_page: "1", email })}`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    if (list.ok) {
+      const payload = await list.json();
+      const existingId = payload?.users?.[0]?.id;
+      if (existingId) {
+        await fetch(`${url}/auth/v1/admin/users/${existingId}`, {
+          method: "DELETE",
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+        });
+      }
+    }
+  }
+
+  try {
+    const user = await createConfirmedSupabaseUser({ email, password, name, username, phone });
+    return { id: user?.id, created: true };
+  } catch (error) {
+    const message = String(error?.message || error);
+    if (!/already exists|already registered/i.test(message)) throw error;
+
+    const list = await fetch(
+      `${url}/auth/v1/admin/users?${new URLSearchParams({ page: "1", per_page: "1", email })}`,
+      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+    );
+    const payload = list.ok ? await list.json() : null;
+    const userId = payload?.users?.[0]?.id;
+    if (!userId) throw error;
+
+    await fetch(`${url}/auth/v1/admin/users/${userId}`, {
+      method: "PUT",
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        password: String(password),
+        user_metadata: { name, username, phone },
+        email_confirm: true
+      })
+    });
+
+    return { id: userId, created: false };
+  }
+}
+
+async function ensureAuthUser({ email, password, name, username, phone, reset }) {
+  const viaAdmin = await ensureAuthUserViaAdmin({
+    email,
+    password,
+    name,
+    username,
+    phone,
+    reset
+  });
+  if (viaAdmin?.id) return viaAdmin;
+  return ensureAuthUserViaSql({ email, password, name, username, phone, reset });
+}
+
 /** Idempotent Play reviewer member + auth provisioning (uses Postgres auth schema). */
 export async function provisionPlayReviewerAccount(pin) {
   if (!isDatabaseReady()) {
@@ -202,7 +285,7 @@ export async function provisionPlayReviewerAccount(pin) {
   }
 
   const { email, username, name, phone, city, state } = PLAY_REVIEWER;
-  const authUser = await ensureAuthUserViaSql({
+  const authUser = await ensureAuthUser({
     email,
     password: String(pin),
     name,

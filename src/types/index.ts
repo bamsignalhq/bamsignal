@@ -186,6 +186,7 @@ export type ChatThread = {
 };
 
 export type LikeEntry = {
+  id?: string;
   profileId: string;
   name: string;
   photo: string;

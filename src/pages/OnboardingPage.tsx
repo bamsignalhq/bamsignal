@@ -24,6 +24,7 @@ import { applyFemaleFirstDefaults } from "../utils/safety";
 import { markJoinedAt, persistCitySelection } from "../utils/launchSeed";
 import { markFirstDayStep } from "../utils/firstDayJourney";
 import { syncMemberProfileRemote } from "../services/cityHome";
+import { completeOnboardingRemote } from "../services/memberData";
 import { writeJson, readJson } from "../utils/storage";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
 
@@ -79,6 +80,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     });
     localStorage.setItem(STORAGE_KEYS.firstSignalPromptAt, String(Date.now()));
     syncMemberProfileRemote(user, final);
+    void completeOnboardingRemote(user);
     trackEvent("profile_completed", { city: final.city, state: final.state ?? "" });
     markFirstDayStep("profile_complete");
     onComplete();

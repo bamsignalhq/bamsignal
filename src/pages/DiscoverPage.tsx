@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Compass } from "lucide-react";
 import { BRAND } from "../constants/copy";
 import { FREE_DAILY_SWIPES, STORAGE_KEYS } from "../constants/limits";
-import { MOCK_PROFILES } from "../data/mockProfiles";
+import { fetchDiscoverProfiles } from "../services/discoverProfiles";
+import { sendSignalRemote } from "../services/memberData";
 import { DiscoverFilters } from "../components/DiscoverFilters";
 import { DiscoverCityHeader } from "../components/discover/DiscoverCityHeader";
 import { DiscoverLimitsBar } from "../components/discover/DiscoverLimitsBar";
@@ -38,7 +39,6 @@ import { getTrustLevel } from "../utils/trust";
 import { getVerificationTier } from "../utils/verification";
 import { getSignalsSentCount, incrementSignalsSent } from "../utils/streaks";
 import { trackEvent } from "../utils/analytics";
-import { notifySignalAccepted } from "../utils/notifyHelpers";
 import { getRemainingDaily, incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
 import {
   evaluateDiscoverStateChange,
@@ -54,7 +54,6 @@ import {
 } from "../utils/discoverFilters";
 import { isViewerShadowBanned } from "../utils/shadowBan";
 import { consumePrioritySignal, getViewerBoostSummary } from "../utils/activeBoosts";
-import { persistMatchRemote, persistSignalRemote } from "../services/memberData";
 
 const SIGNAL_ANIM_MS = 700;
 
@@ -93,15 +92,30 @@ export function DiscoverPage({
     normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
   );
   const [deckReady, setDeckReady] = useState(false);
+  const [allProfiles, setAllProfiles] = useState<DiscoverProfile[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+    const city = viewer.city || "Lagos";
+    void fetchDiscoverProfiles(user, city, [...blocked, ...passedIds]).then((profiles) => {
+      if (cancelled) return;
+      setAllProfiles(profiles);
+      setDeckReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [viewer.city, blocked.length, passedIds.length]);
 
   const { baseDeck, densityMessage } = useMemo(() => {
-    const available = filterDiscoverDeck(MOCK_PROFILES, viewer, blocked, passedIds);
+    const available = filterDiscoverDeck(allProfiles, viewer, blocked, passedIds);
     const { deck, density } = buildDensityAwareDeck(available, viewer, prefs, blocked, passedIds);
     return {
       baseDeck: applyDiscoverPreferences(deck, prefs, viewer),
       densityMessage: density.message
     };
-  }, [passedIds, blocked, viewer, prefs]);
+  }, [passedIds, blocked, viewer, prefs, allProfiles]);
 
   const deck = useMemo(
     () => applyQuickFilter(baseDeck, quickFilter),
@@ -199,11 +213,18 @@ export function DiscoverPage({
     setFocusedId(null);
   };
 
-  const finishSignal = (profile: DiscoverProfile, opts?: { priority?: boolean }) => {
+  const finishSignal = async (profile: DiscoverProfile, opts?: { priority?: boolean }) => {
     const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const suppressed = isViewerShadowBanned(user.phone, user.email);
     const priority = opts?.priority ?? false;
-    persistSignalRemote(user, profile.id, priority ? "priority" : "signal");
+    const sent = await sendSignalRemote(user, profile.id, priority ? "priority" : "signal");
+
+    if (!sent) {
+      setToast("Could not send signal. Check your connection and try again.");
+      setTimeout(() => setToast(""), 3500);
+      advance(profile.id);
+      return;
+    }
 
     if (suppressed) {
       setToast(
@@ -211,43 +232,14 @@ export function DiscoverPage({
           ? `${BRAND.prioritySignal} sent to ${profile.name}! ⚡`
           : `${BRAND.signalSent} to ${profile.name} ⚡`
       );
-      setTimeout(() => setToast(""), 3000);
-      advance(profile.id);
-      return;
-    }
-
-    if (Math.random() > 0.55) {
-      const match: Match = {
-        id: `m-${profile.id}`,
-        profileId: profile.id,
-        name: profile.name,
-        photo: profile.photo,
-        city: profile.city,
-        matchedAt: new Date().toISOString(),
-        lastActiveAt: profile.lastActiveAt
-      };
-      const matches = readJson<Match[]>(STORAGE_KEYS.matches, []);
-      if (!matches.some((m) => m.profileId === profile.id)) {
-        writeJson(STORAGE_KEYS.matches, [...matches, match]);
-        persistMatchRemote(user, match);
-        const received = readJson<number>(STORAGE_KEYS.signalsReceived, 0) + 1;
-        writeJson(STORAGE_KEYS.signalsReceived, received);
-        trackEvent("signal_accepted", { profileId: profile.id });
-        trackEvent("signal_received", { profileId: profile.id });
-        markFirstDayStep("first_connection");
-        notifySignalAccepted(profile.name);
-        onMatch(match);
-        setToast(`${BRAND.signalAccepted}! ${profile.name} signaled back ⚡`);
-        setTimeout(() => setToast(""), 3000);
-      }
     } else {
       setToast(
         priority
           ? `${BRAND.prioritySignal} sent to ${profile.name}! ⚡`
           : `${BRAND.signalSent} to ${profile.name} ⚡`
       );
-      setTimeout(() => setToast(""), 3000);
     }
+    setTimeout(() => setToast(""), 3000);
     advance(profile.id);
   };
 
@@ -307,7 +299,7 @@ export function DiscoverPage({
   };
 
   const renderEmpty = () => {
-    const sameCityCount = countSameCityProfiles(MOCK_PROFILES, viewer.city, blocked, passedIds);
+    const sameCityCount = countSameCityProfiles(allProfiles, viewer.city, blocked, passedIds);
     const lowCityDensity = sameCityCount < 2;
     const filteredEmpty = baseDeck.length > 0 && deck.length === 0;
 
@@ -348,7 +340,7 @@ export function DiscoverPage({
       <div className="page discover-page discover-v2">
         <DiscoverCityHeader
           city={viewer.city}
-          profiles={MOCK_PROFILES}
+          profiles={allProfiles}
           blocked={blocked}
           passedIds={passedIds}
         />
@@ -398,7 +390,7 @@ export function DiscoverPage({
     <div className="page discover-page discover-v2">
       <DiscoverCityHeader
         city={viewer.city}
-        profiles={MOCK_PROFILES}
+        profiles={allProfiles}
         blocked={blocked}
         passedIds={passedIds}
       />

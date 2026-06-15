@@ -1,6 +1,6 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import type { DatingProfile, LikeEntry } from "../types";
-import { getDiscoverProfile } from "../data/mockProfiles";
+import { getCachedMemberProfile } from "../services/discoverProfiles";
 import { computeCompatibilityPercent } from "./compatibility";
 import { readJson, writeJson, getDailyKey } from "./storage";
 
@@ -30,6 +30,13 @@ export function getProfileViewsToday(): number {
   ).length;
 }
 
+export function setProfileViewsFromServer(viewers: ProfileViewer[]): void {
+  writeJson(STORAGE_KEYS.profileViews, {
+    count: viewers.length,
+    viewers: viewers.slice(0, 50)
+  });
+}
+
 export function recordProfileView(viewer: Omit<ProfileViewer, "at">): void {
   const state = getProfileViews();
   const exists = state.viewers.some((v) => v.profileId === viewer.profileId);
@@ -50,21 +57,24 @@ export function recordProfileView(viewer: Omit<ProfileViewer, "at">): void {
   });
 }
 
-/** Sync real viewers from incoming signals — no fake simulation */
+/** Build visitor list from incoming signals in the database-backed inbox */
 export function syncProfileViewsFromSignals(
   viewer: DatingProfile,
   signals: LikeEntry[] = readJson<LikeEntry[]>(STORAGE_KEYS.likedBy, [])
-): void {
+): ProfileViewer[] {
+  const viewers: ProfileViewer[] = [];
   for (const signal of signals) {
-    const profile = getDiscoverProfile(signal.profileId);
-    if (!profile) continue;
-    recordProfileView({
-      profileId: profile.id,
-      name: profile.name,
-      photo: profile.photo,
-      age: profile.age,
-      city: profile.city,
-      compatibility: computeCompatibilityPercent(viewer, profile)
+    const profile = getCachedMemberProfile(signal.profileId);
+    viewers.push({
+      profileId: signal.profileId,
+      name: signal.name,
+      photo: signal.photo,
+      age: profile?.age || 25,
+      city: signal.city || profile?.city || viewer.city || "",
+      compatibility: profile ? computeCompatibilityPercent(viewer, profile) : 0,
+      at: signal.at
     });
   }
+  setProfileViewsFromServer(viewers);
+  return viewers;
 }

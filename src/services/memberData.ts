@@ -1,6 +1,8 @@
 import { STORAGE_KEYS } from "../constants/limits";
-import type { ChatMessage, ChatThread, Match, ReportRecord, UserProfile } from "../types";
+import type { ChatMessage, ChatThread, LikeEntry, Match, ReportRecord, UserProfile } from "../types";
 import { readJson, writeJson } from "../utils/storage";
+import { cacheDiscoverProfiles } from "./discoverProfiles";
+import { setPremiumSnapshot } from "./premiumStatus";
 import { apiUrl } from "./supabase";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
@@ -20,100 +22,153 @@ async function postMemberAction(action: string, identity: MemberIdentity, body: 
   }
 }
 
-function mergeMatches(local: Match[], remote: Match[]): Match[] {
-  const byId = new Map<string, Match>();
-  for (const match of remote) byId.set(match.id, match);
-  for (const match of local) byId.set(match.id, match);
-  return Array.from(byId.values()).sort(
-    (a, b) => new Date(b.matchedAt).getTime() - new Date(a.matchedAt).getTime()
-  );
+export async function registerMember(
+  user: MemberIdentity,
+  referralCode?: string | null
+): Promise<void> {
+  await postMemberAction("register", user, referralCode ? { referralCode } : {});
 }
 
-function mergeReports(local: ReportRecord[], remote: ReportRecord[]): ReportRecord[] {
-  const key = (report: ReportRecord) => `${report.profileId}:${report.reason}:${report.at}`;
-  const seen = new Set<string>();
-  const merged: ReportRecord[] = [];
-  for (const report of [...remote, ...local]) {
-    const id = key(report);
-    if (seen.has(id)) continue;
-    seen.add(id);
-    merged.push(report);
-  }
-  return merged;
-}
-
-function mergeChats(
-  local: Record<string, ChatThread>,
-  remote: Record<string, ChatThread>
-): Record<string, ChatThread> {
-  const next = { ...local };
-  for (const [matchId, thread] of Object.entries(remote)) {
-    const existing = next[matchId];
-    if (!existing) {
-      next[matchId] = thread;
-      continue;
-    }
-    const byId = new Map<string, ChatMessage>();
-    for (const message of [...existing.messages, ...thread.messages]) {
-      byId.set(message.id, message);
-    }
-    next[matchId] = {
-      ...existing,
-      ...thread,
-      messages: Array.from(byId.values()).sort(
-        (a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()
-      )
-    };
-  }
-  return next;
-}
-
-export async function registerMember(user: MemberIdentity): Promise<void> {
-  await postMemberAction("register", user);
-}
-
-export async function hydrateMemberData(user: MemberIdentity): Promise<void> {
+export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> {
   const payload = await postMemberAction("pull", user);
   const bundle = payload?.bundle;
-  if (!bundle) return;
+  if (!bundle) return false;
 
-  const localMatches = readJson<Match[]>(STORAGE_KEYS.matches, []);
-  const localReports = readJson<ReportRecord[]>(STORAGE_KEYS.reports, []);
-  const localChats = readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {});
-  const localSignalsSent = readJson<number>(STORAGE_KEYS.signalsSent, 0);
-
-  if (Array.isArray(bundle.matches) && bundle.matches.length) {
-    writeJson(STORAGE_KEYS.matches, mergeMatches(localMatches, bundle.matches));
+  if (Array.isArray(bundle.matches)) {
+    writeJson(STORAGE_KEYS.matches, bundle.matches as Match[]);
+  } else {
+    writeJson(STORAGE_KEYS.matches, []);
   }
 
-  if (Array.isArray(bundle.reports) && bundle.reports.length) {
-    writeJson(STORAGE_KEYS.reports, mergeReports(localReports, bundle.reports));
+  if (Array.isArray(bundle.reports)) {
+    writeJson(STORAGE_KEYS.reports, bundle.reports as ReportRecord[]);
   }
 
   if (bundle.chats && typeof bundle.chats === "object") {
-    writeJson(STORAGE_KEYS.chats, mergeChats(localChats, bundle.chats));
+    writeJson(STORAGE_KEYS.chats, bundle.chats as Record<string, ChatThread>);
+  } else {
+    writeJson(STORAGE_KEYS.chats, {});
   }
 
-  if (typeof bundle.signalsSent === "number" && bundle.signalsSent > localSignalsSent) {
+  if (typeof bundle.signalsSent === "number") {
     writeJson(STORAGE_KEYS.signalsSent, bundle.signalsSent);
   }
 
-  const premiumUntil = bundle.user?.premium_until;
-  if (premiumUntil && new Date(premiumUntil).getTime() > Date.now()) {
-    localStorage.setItem(STORAGE_KEYS.premiumUntil, premiumUntil);
+  if (Array.isArray(bundle.incomingSignals)) {
+    writeJson(STORAGE_KEYS.likedBy, bundle.incomingSignals as LikeEntry[]);
+    writeJson(STORAGE_KEYS.signalsReceived, bundle.incomingSignals.length);
+  } else {
+    writeJson(STORAGE_KEYS.likedBy, []);
+    writeJson(STORAGE_KEYS.signalsReceived, 0);
   }
+
+  if (bundle.referral) {
+    const prior = readJson<{ invitesSent?: number }>(STORAGE_KEYS.referrals, {});
+    writeJson(STORAGE_KEYS.referrals, {
+      code: bundle.referral.code,
+      invitesSent: prior.invitesSent ?? 0,
+      successfulReferrals: bundle.referral.successfulReferrals ?? 0,
+      rewardsClaimed: bundle.referral.rewardsClaimed ?? 0
+    });
+  }
+
+  if (bundle.premium) {
+    setPremiumSnapshot(bundle.premium);
+  } else if (bundle.user) {
+    const until = bundle.user.premium_until as string | null;
+    setPremiumSnapshot({
+      isPremium: until ? new Date(until).getTime() > Date.now() : Boolean(bundle.user.is_premium),
+      premiumUntil: until || null
+    });
+  }
+
+  const matchProfiles = (bundle.matches as Match[] | undefined)?.map((match) => ({
+    id: match.profileId,
+    name: match.name,
+    age: 25,
+    city: match.city,
+    bio: "",
+    photo: match.photo,
+    intents: [],
+    verified: false,
+    lastActiveAt: match.lastActiveAt
+  }));
+  if (matchProfiles?.length) cacheDiscoverProfiles(matchProfiles);
+
+  return true;
 }
 
-export function persistSignalRemote(
+export async function sendSignalRemote(
   user: MemberIdentity,
   targetProfileId: string,
   signalType: "signal" | "priority" = "signal"
-): void {
-  void postMemberAction("signal", user, { targetProfileId, signalType });
+): Promise<boolean> {
+  const payload = await postMemberAction("signal", user, { targetProfileId, signalType });
+  return Boolean(payload?.signal);
 }
 
-export function persistMatchRemote(user: MemberIdentity, match: Match): void {
-  void postMemberAction("match", user, { match });
+export async function acceptSignalRemote(
+  user: MemberIdentity,
+  signalId: string
+): Promise<Match | null> {
+  const payload = await postMemberAction("accept-signal", user, { signalId });
+  if (!payload?.match) return null;
+
+  const match = payload.match as Match;
+  const matches = readJson<Match[]>(STORAGE_KEYS.matches, []);
+  if (!matches.some((m) => m.id === match.id)) {
+    writeJson(STORAGE_KEYS.matches, [...matches, match]);
+  }
+
+  const incoming = readJson<LikeEntry[]>(STORAGE_KEYS.likedBy, []).filter(
+    (s) => s.id !== signalId && s.profileId !== match.profileId
+  );
+  writeJson(STORAGE_KEYS.likedBy, incoming);
+  writeJson(STORAGE_KEYS.signalsReceived, incoming.length);
+
+  return match;
+}
+
+export async function declineSignalRemote(user: MemberIdentity, signalId: string): Promise<boolean> {
+  const payload = await postMemberAction("decline-signal", user, { signalId });
+  if (!payload?.ok) return false;
+
+  const incoming = readJson<LikeEntry[]>(STORAGE_KEYS.likedBy, []).filter((s) => s.id !== signalId);
+  writeJson(STORAGE_KEYS.likedBy, incoming);
+  writeJson(STORAGE_KEYS.signalsReceived, incoming.length);
+  return true;
+}
+
+export async function completeOnboardingRemote(user: MemberIdentity): Promise<void> {
+  const payload = await postMemberAction("complete-onboarding", user);
+  if (payload?.referral) {
+    writeJson(STORAGE_KEYS.referrals, {
+      code: payload.referral.code,
+      invitesSent: readJson<{ invitesSent?: number }>(STORAGE_KEYS.referrals, {}).invitesSent ?? 0,
+      successfulReferrals: payload.referral.successfulReferrals ?? 0,
+      rewardsClaimed: payload.referral.rewardsClaimed ?? 0
+    });
+  }
+  if (payload?.result?.rewardGranted) {
+    await postMemberAction("status", user).then((status) => {
+      if (status?.premium) setPremiumSnapshot(status.premium);
+    });
+  }
+}
+
+export async function fetchIncomingSignalsRemote(user: MemberIdentity): Promise<LikeEntry[]> {
+  const payload = await postMemberAction("incoming", user);
+  const incoming = (payload?.incomingSignals as LikeEntry[]) || [];
+  writeJson(STORAGE_KEYS.likedBy, incoming);
+  writeJson(STORAGE_KEYS.signalsReceived, incoming.length);
+  return incoming;
+}
+
+export async function fetchVisitorsRemote(
+  user: MemberIdentity
+): Promise<import("../utils/profileViews").ProfileViewer[]> {
+  const payload = await postMemberAction("visitors", user);
+  return payload?.viewers || [];
 }
 
 export function persistMessageRemote(
@@ -127,4 +182,18 @@ export function persistMessageRemote(
 
 export function persistReportRemote(user: MemberIdentity, report: ReportRecord): void {
   void postMemberAction("report", user, { report });
+}
+
+/** @deprecated use sendSignalRemote */
+export function persistSignalRemote(
+  user: MemberIdentity,
+  targetProfileId: string,
+  signalType: "signal" | "priority" = "signal"
+): void {
+  void sendSignalRemote(user, targetProfileId, signalType);
+}
+
+/** @deprecated matches created via accept-signal */
+export function persistMatchRemote(user: MemberIdentity, match: Match): void {
+  void postMemberAction("match", user, { match });
 }

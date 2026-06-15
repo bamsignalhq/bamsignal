@@ -1,4 +1,3 @@
-import { MOCK_PROFILES } from "../data/mockProfiles";
 import { STORAGE_KEYS } from "../constants/limits";
 import type { ReportRecord } from "../types";
 import { getReportCount } from "./safety";
@@ -27,13 +26,12 @@ export function getModerationQueue(): ModerationEntry[] {
 
   const entries: ModerationEntry[] = [];
   for (const [profileId, list] of byProfile) {
-    const profile = MOCK_PROFILES.find((p) => p.id === profileId);
     const sorted = [...list].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
     const latest = sorted[0];
     entries.push({
       profileId,
-      name: profile?.name ?? profileId,
-      city: profile?.city ?? "—",
+      name: `Member ${profileId.slice(0, 8)}`,
+      city: "—",
       reportCount: list.length,
       shadowBanned: isShadowBanned(profileId),
       lastReportAt: latest?.at,

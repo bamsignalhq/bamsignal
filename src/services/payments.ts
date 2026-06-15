@@ -93,7 +93,7 @@ export async function verifyPayment(user: UserProfile): Promise<{
       return { ok: false, error: payload?.error || "Payment not verified yet." };
     }
     if (payload.premium_until) {
-      localStorage.setItem(STORAGE_KEYS.premiumUntil, payload.premium_until);
+      setPremiumSnapshot({ isPremium: true, premiumUntil: payload.premium_until });
     }
     return { ok: true, premiumUntil: payload.premium_until };
   } catch (error) {
@@ -104,14 +104,9 @@ export async function verifyPayment(user: UserProfile): Promise<{
   }
 }
 
-import { isPremiumTrialActive } from "../utils/premiumTrial";
+import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
 
-export function isPremiumActive(): boolean {
-  if (isPremiumTrialActive()) return true;
-  const until = localStorage.getItem(STORAGE_KEYS.premiumUntil);
-  if (!until) return false;
-  return new Date(until).getTime() > Date.now();
-}
+export { isPremiumActive, refreshPremiumStatus };
 
 export async function startBoostPayment(
   boostId: string,

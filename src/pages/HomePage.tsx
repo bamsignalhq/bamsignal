@@ -13,8 +13,8 @@ import { ProfileViewsSheet } from "../components/dashboard/ProfileViewsSheet";
 import { ReferralCard } from "../components/dashboard/ReferralCard";
 import { greetingForHour } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
-import { MOCK_PROFILES } from "../data/mockProfiles";
 import type { DiscoverProfile, LikeEntry, UserProfile } from "../types";
+import { fetchDiscoverProfiles } from "../services/discoverProfiles";
 import { buildDashboardFeed } from "../utils/dashboardFeed";
 import { buildDiscoveryDeck } from "../utils/launchSeed";
 import { getMatchPreferences, getDatingProfile, normalizeDatingProfile } from "../utils/profile";
@@ -58,6 +58,7 @@ export function HomePage({
 }: HomePageProps) {
   const [profileViewsOpen, setProfileViewsOpen] = useState(false);
   const [viewsSnapshot, setViewsSnapshot] = useState(() => getProfileViews());
+  const [allProfiles, setAllProfiles] = useState<DiscoverProfile[]>([]);
 
   const profile = getDatingProfile();
   const viewer = normalizeDatingProfile(profile);
@@ -73,9 +74,13 @@ export function HomePage({
   const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
   const passed = readJson<string[]>(STORAGE_KEYS.passed, []);
 
+  useEffect(() => {
+    void fetchDiscoverProfiles(user, city, [...blocked, ...passed]).then(setAllProfiles);
+  }, [user.email, user.phone, city, blocked.length, passed.length]);
+
   const nearbyDeck = useMemo(
-    () => buildDiscoveryDeck(filterBlockedById(MOCK_PROFILES), viewer, prefs),
-    [viewer, prefs]
+    () => buildDiscoveryDeck(filterBlockedById(allProfiles), viewer, prefs),
+    [allProfiles, viewer, prefs]
   );
 
   const nearby: DiscoverProfile[] = nearbyDeck.slice(0, 5);
@@ -87,7 +92,7 @@ export function HomePage({
     () =>
       buildDashboardFeed({
         city,
-        profiles: MOCK_PROFILES,
+        profiles: allProfiles,
         blocked,
         passed,
         signalsReceived,
@@ -96,7 +101,7 @@ export function HomePage({
         verified: profile.verified,
         compatibleNearby: nearbyCount
       }),
-    [city, blocked, passed, signalsReceived, viewsToday, strength, profile.verified, nearbyCount]
+    [city, allProfiles, blocked, passed, signalsReceived, viewsToday, strength, profile.verified, nearbyCount]
   );
 
   const momentumExtras = useMemo(() => {

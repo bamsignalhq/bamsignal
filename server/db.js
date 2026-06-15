@@ -255,6 +255,8 @@ export async function ensureAppUsersTable() {
   await query("alter table app_users add column if not exists telegram_user_id text");
   await query("alter table app_users add column if not exists paystack_reference text");
   await query("alter table app_users add column if not exists referral_points integer not null default 0");
+  await query("alter table app_users add column if not exists user_key text");
+  await query("create unique index if not exists app_users_user_key_idx on app_users (user_key) where user_key is not null");
   await query("create unique index if not exists app_users_email_unique_idx on app_users (lower(email)) where email is not null and email <> ''");
   await query("create unique index if not exists app_users_phone_unique_idx on app_users (phone) where phone is not null and phone <> ''");
 }
@@ -380,6 +382,7 @@ export async function upsertAppUserIdentity({ email, phone, name, referralCode }
   if (!isDatabaseReady()) return null;
   await ensureAppUsersTable();
 
+  const userKey = normalizeUserKey({ email, phone });
   const existing = await findAppUserIdentity({ email, phone });
   const result = existing
     ? await query(
@@ -388,16 +391,17 @@ export async function upsertAppUserIdentity({ email, phone, name, referralCode }
              phone = coalesce($2, phone),
              name = coalesce($3, name),
              referral_code = coalesce($4, referral_code),
+             user_key = coalesce(user_key, $5),
              updated_at = now()
          where lower(email) = lower($1::text) or phone = $2
          returning *`,
-        [email || null, phone || null, name || null, referralCode || null]
+        [email || null, phone || null, name || null, referralCode || null, userKey]
       )
     : await query(
-        `insert into app_users (email, phone, name, referral_code)
-         values ($1, $2, $3, $4)
+        `insert into app_users (email, phone, name, referral_code, user_key)
+         values ($1, $2, $3, $4, $5)
          returning *`,
-        [email || null, phone || null, name || null, referralCode || null]
+        [email || null, phone || null, name || null, referralCode || null, userKey]
       );
   return result.rows[0];
 }
@@ -567,7 +571,9 @@ export async function fetchMemberBundle({ email, phone }) {
   const identity = memberIdentity({ email, phone });
   if (!identity.userKey) return null;
 
-  const [matches, messages, reports, signals, user] = await Promise.all([
+  const { fetchMemberSocialBundle } = await import("./memberSocial.js");
+
+  const [matches, messages, reports, signals, user, social] = await Promise.all([
     query(
       `select payload, matched_at
        from app_matches
@@ -595,7 +601,8 @@ export async function fetchMemberBundle({ email, phone }) {
        where user_key = $1`,
       [identity.userKey]
     ),
-    findAppUserIdentity({ email: identity.email, phone: identity.phone })
+    findAppUserIdentity({ email: identity.email, phone: identity.phone }),
+    fetchMemberSocialBundle({ email, phone })
   ]);
 
   const threads = {};
@@ -613,6 +620,10 @@ export async function fetchMemberBundle({ email, phone }) {
     matches: matches.rows.map((row) => row.payload),
     chats: threads,
     reports: reports.rows.map((row) => row.payload),
-    signalsSent: signals.rows[0]?.count ?? 0
+    signalsSent: signals.rows[0]?.count ?? 0,
+    incomingSignals: social?.incomingSignals ?? [],
+    referral: social?.referral ?? null,
+    premium: social?.premium ?? null,
+    memberProfileId: social?.memberProfileId ?? null
   };
 }

@@ -24,8 +24,8 @@ import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./ty
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
 import { isOnboardingComplete } from "./utils/profile";
 import { recordStreakActivity } from "./utils/streaks";
-import { isPremiumActive, startBoostPayment, startPlanPayment, verifyBoostPayment, verifyPayment } from "./services/payments";
-import { maybeGrantPremiumTrial, checkPremiumTrialExpiry } from "./utils/premiumTrial";
+import { isPremiumActive, refreshPremiumStatus, startBoostPayment, startPlanPayment, verifyBoostPayment, verifyPayment } from "./services/payments";
+import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive } from "./utils/premiumTrial";
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
 import { hydrateMemberData, registerMember } from "./services/memberData";
@@ -156,14 +156,18 @@ export function App() {
       rememberUsernameEmail(DEMO_USER.username, DEMO_USER.profile.email);
     }
 
-    supabase?.auth.getSession().then(({ data }) => {
+    supabase?.auth.getSession().then(async ({ data }) => {
       if (data.session?.user) {
-        setUser(profileFromSessionUser(data.session.user));
+        const profile = profileFromSessionUser(data.session.user);
+        setUser(profile);
         setIsAuthed(true);
         if (!isOnboardingComplete()) {
           setShowOnboarding(true);
         }
         recordStreakActivity();
+        await hydrateMemberData(profile);
+        const premium = await refreshPremiumStatus(profile);
+        setIsPremium(premium.isPremium || isPremiumTrialActive());
       }
     });
   }, []);
@@ -219,9 +223,10 @@ export function App() {
 
     if (isPremium) return;
 
-    verifyPayment(user).then((result) => {
+    verifyPayment(user).then(async (result) => {
       if (result.ok) {
-        setIsPremium(true);
+        const premium = await refreshPremiumStatus(user);
+        setIsPremium(premium.isPremium || isPremiumTrialActive());
         localStorage.removeItem(STORAGE_KEYS.paymentPending);
         localStorage.removeItem(STORAGE_KEYS.paymentReference);
         localStorage.removeItem(STORAGE_KEYS.paymentKind);
@@ -269,7 +274,11 @@ export function App() {
       setAuthMessage("");
       recordStreakActivity();
       checkPremiumTrialExpiry();
-      void registerMember(withPhone).then(() => hydrateMemberData(withPhone));
+      void registerMember(withPhone, new URLSearchParams(window.location.search).get("ref")).then(async () => {
+        await hydrateMemberData(withPhone);
+        const premium = await refreshPremiumStatus(withPhone);
+        setIsPremium(premium.isPremium || isPremiumTrialActive());
+      });
       if (meta?.isNewSignup) {
         trackEvent("signup_completed");
         markJoinedAt();

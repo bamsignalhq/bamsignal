@@ -3,6 +3,8 @@ import type { UserProfile } from "../types";
 import { readJson, writeJson } from "./storage";
 import { notifyReferralRewardEarned } from "./notifyHelpers";
 
+import { AUTH_SIGNUP_PATH } from "../constants/routes";
+
 const REFERRAL_GOAL = 3;
 const REWARD_DAYS = 7;
 
@@ -35,7 +37,7 @@ export function getReferralState(user: UserProfile): ReferralState {
 
 export function referralShareUrl(code: string): string {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://bamsignal.com";
-  return `${origin}/signup?ref=${encodeURIComponent(code)}`;
+  return `${origin}${AUTH_SIGNUP_PATH}?ref=${encodeURIComponent(code)}`;
 }
 
 export function recordInviteSent(): ReferralState {
@@ -50,42 +52,17 @@ export function recordInviteSent(): ReferralState {
   return next;
 }
 
-/** Call when a referred user completes signup */
+/** Referral credits are applied server-side when referred users finish onboarding. */
 export function recordSuccessfulReferral(): ReferralState {
-  const state = readJson<ReferralState>(STORAGE_KEYS.referrals, {
+  return readJson<ReferralState>(STORAGE_KEYS.referrals, {
     code: "BAM0000",
     invitesSent: 0,
     successfulReferrals: 0,
     rewardsClaimed: 0
   });
-  const successfulReferrals = state.successfulReferrals + 1;
-  const next = { ...state, successfulReferrals };
-  writeJson(STORAGE_KEYS.referrals, next);
-
-  const pendingRewards = Math.floor(successfulReferrals / REFERRAL_GOAL) - state.rewardsClaimed;
-  if (pendingRewards > 0) {
-    grantReferralReward(pendingRewards);
-  }
-
-  return next;
 }
 
 function grantReferralReward(count: number): void {
-  const state = readJson<ReferralState>(STORAGE_KEYS.referrals, {
-    code: "BAM0000",
-    invitesSent: 0,
-    successfulReferrals: 0,
-    rewardsClaimed: 0
-  });
-  const until = readJson<string | null>(STORAGE_KEYS.premiumUntil, null);
-  const base = until && new Date(until).getTime() > Date.now() ? new Date(until).getTime() : Date.now();
-  const extended = new Date(base + REWARD_DAYS * count * 24 * 60 * 60 * 1000).toISOString();
-  writeJson(STORAGE_KEYS.premiumUntil, extended);
-  writeJson(STORAGE_KEYS.referrals, {
-    ...state,
-    rewardsClaimed: state.rewardsClaimed + count,
-    lastRewardAt: new Date().toISOString()
-  });
   notifyReferralRewardEarned(REWARD_DAYS * count);
 }
 

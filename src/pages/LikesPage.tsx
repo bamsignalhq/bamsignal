@@ -1,12 +1,17 @@
 import { Crown, Sparkles, Zap } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BRAND } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
 import { EmptyState } from "../components/EmptyState";
 import { ReportBlockModal } from "../components/ReportBlockModal";
 import { ActivityStatus } from "../components/ActivityStatus";
-import { MOCK_LIKES, getDiscoverProfile } from "../data/mockProfiles";
-import type { LikeEntry, Match } from "../types";
+import { getCachedMemberProfile } from "../services/discoverProfiles";
+import {
+  acceptSignalRemote,
+  declineSignalRemote,
+  fetchIncomingSignalsRemote
+} from "../services/memberData";
+import type { LikeEntry } from "../types";
 import { blockUser, filterBlockedByProfileId } from "../utils/safety";
 import { trackEvent } from "../utils/analytics";
 import { notifySignalAccepted } from "../utils/notifyHelpers";
@@ -31,12 +36,19 @@ function timeAgo(iso: string): string {
 }
 
 export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover }: LikesPageProps) {
+  const user = readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
   const [signals, setSignals] = useState<LikeEntry[]>(() =>
-    filterBlockedByProfileId(readJson(STORAGE_KEYS.likedBy, MOCK_LIKES))
+    filterBlockedByProfileId(readJson(STORAGE_KEYS.likedBy, []))
   );
   const [filter, setFilter] = useState<Filter>("all");
   const [safetyTarget, setSafetyTarget] = useState<LikeEntry | null>(null);
   const [toast, setToast] = useState("");
+
+  useEffect(() => {
+    void fetchIncomingSignalsRemote(user).then((incoming) => {
+      setSignals(filterBlockedByProfileId(incoming));
+    });
+  }, [user.email, user.phone]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -50,23 +62,17 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
 
   const priorityCount = signals.filter((s) => s.superLike).length;
 
-  const acceptSignal = (entry: LikeEntry) => {
-    const matches = readJson<Match[]>(STORAGE_KEYS.matches, []);
-    if (!matches.some((m) => m.profileId === entry.profileId)) {
-      writeJson(STORAGE_KEYS.matches, [
-        ...matches,
-        {
-          id: `m-${entry.profileId}`,
-          profileId: entry.profileId,
-          name: entry.name,
-          photo: entry.photo,
-          city: entry.city,
-          matchedAt: new Date().toISOString(),
-          lastActiveAt: getDiscoverProfile(entry.profileId)?.lastActiveAt
-        }
-      ]);
+  const acceptSignal = async (entry: LikeEntry) => {
+    if (!entry.id) {
+      showToast("Could not accept this signal.");
+      return;
     }
-    const next = signals.filter((s) => s.profileId !== entry.profileId);
+    const match = await acceptSignalRemote(user, entry.id);
+    if (!match) {
+      showToast("Could not accept signal. Try again.");
+      return;
+    }
+    const next = signals.filter((s) => s.id !== entry.id && s.profileId !== entry.profileId);
     setSignals(next);
     writeJson(STORAGE_KEYS.likedBy, next);
     trackEvent("signal_accepted", { profileId: entry.profileId });
@@ -74,8 +80,9 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
     showToast(`${BRAND.signalAccepted}! Message ${entry.name} in Messages.`);
   };
 
-  const declineSignal = (entry: LikeEntry) => {
-    const next = signals.filter((s) => s.profileId !== entry.profileId);
+  const declineSignal = async (entry: LikeEntry) => {
+    if (entry.id) await declineSignalRemote(user, entry.id);
+    const next = signals.filter((s) => s.id !== entry.id && s.profileId !== entry.profileId);
     setSignals(next);
     writeJson(STORAGE_KEYS.likedBy, next);
     showToast(`Signal from ${entry.name} declined.`);
@@ -83,7 +90,7 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
 
   const handleBlock = (entry: LikeEntry) => {
     blockUser(entry.profileId);
-    declineSignal(entry);
+    void declineSignal(entry);
     showToast(`${entry.name} blocked.`);
   };
 
@@ -147,9 +154,9 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
 
       <div className={`likes-feed ${!isPremium ? "likes-feed--locked" : ""}`}>
         {filtered.map((entry) => {
-          const profile = getDiscoverProfile(entry.profileId);
+          const profile = getCachedMemberProfile(entry.profileId);
           return (
-            <article key={entry.profileId} className="likes-row card">
+            <article key={entry.id || entry.profileId} className="likes-row card">
               <div className="likes-row__avatar">
                 <img
                   src={entry.photo}
@@ -184,10 +191,10 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
 
               {isPremium ? (
                 <div className="likes-row__actions">
-                  <button type="button" className="likes-row__accept" onClick={() => acceptSignal(entry)}>
+                  <button type="button" className="likes-row__accept" onClick={() => void acceptSignal(entry)}>
                     Accept
                   </button>
-                  <button type="button" className="likes-row__decline" onClick={() => declineSignal(entry)}>
+                  <button type="button" className="likes-row__decline" onClick={() => void declineSignal(entry)}>
                     Decline
                   </button>
                   <button type="button" className="likes-row__report" onClick={() => setSafetyTarget(entry)}>

@@ -1,8 +1,8 @@
 import { ArrowLeft, MessageCircle, MoreVertical, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BRAND } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
-import { getDiscoverProfile } from "../data/mockProfiles";
+import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
 import { ActivityStatus } from "../components/ActivityStatus";
 import { WhyThisProfile } from "../components/WhyThisProfile";
 import { ChatInput } from "../components/ChatInput";
@@ -66,7 +66,7 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
         const thread = threads[match.id];
         const messages = thread?.messages ?? [];
         const lastAt = messages[messages.length - 1]?.at ?? match.matchedAt;
-        const lastActiveAt = match.lastActiveAt ?? getDiscoverProfile(match.profileId)?.lastActiveAt;
+        const lastActiveAt = match.lastActiveAt ?? getCachedMemberProfile(match.profileId)?.lastActiveAt;
         return { match, messages, lastAt, lastActiveAt };
       })
       .sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
@@ -214,8 +214,8 @@ function ChatDetail({
   const viewer = getDatingProfile();
   const inboxGate = canUseInbox(viewer);
   const dmPaused = !inboxGate.allowed;
-  const lastActiveAt = match.lastActiveAt ?? getDiscoverProfile(match.profileId)?.lastActiveAt;
-  const discoverProfile = getDiscoverProfile(match.profileId);
+  const lastActiveAt = match.lastActiveAt ?? getCachedMemberProfile(match.profileId)?.lastActiveAt;
+  const discoverProfile = getCachedMemberProfile(match.profileId);
   const matchReasons = discoverProfile ? getProfileMatchReasons(getDatingProfile(), discoverProfile) : [];
   const sentByMe = messages.filter((m) => m.from === "me").length;
   const showOffAppLink =
@@ -223,12 +223,16 @@ function ChatDetail({
     !threadMeta.offPlatformApproved &&
     !threadMeta.pendingOffPlatformRequest;
 
+  useEffect(() => {
+    void fetchMemberProfileById(user, match.profileId);
+  }, [match.profileId, user.email, user.phone]);
+
   const persistThread = (nextMessages: ChatMessage[], meta = threadMeta) => {
     const nextMeta = { ...meta, matchId: match.id };
     setMessages(nextMessages);
     setThreadMeta(nextMeta);
     writeJson(STORAGE_KEYS.chats, {
-      ...allThreads,
+      ...readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {}),
       [match.id]: { ...nextMeta, messages: nextMessages }
     });
     const lastMessage = nextMessages[nextMessages.length - 1];
@@ -241,22 +245,9 @@ function ChatDetail({
     const meta = { ...threadMeta, ...patch, matchId: match.id };
     setThreadMeta(meta);
     writeJson(STORAGE_KEYS.chats, {
-      ...allThreads,
+      ...readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {}),
       [match.id]: { ...meta, messages }
     });
-  };
-
-  const maybeReply = (nextMessages: ChatMessage[]) => {
-    if (viewerShadowBanned) return;
-    setTimeout(() => {
-      const reply: ChatMessage = {
-        id: `msg-${Date.now()}-r`,
-        from: "them",
-        text: "Hey! Good to connect on BamSignal 😊",
-        at: new Date().toISOString()
-      };
-      persistThread([...nextMessages, reply]);
-    }, 1200);
   };
 
   const handleSend = (text: string) => {
@@ -305,8 +296,6 @@ function ChatDetail({
     const nextMessages = [...messages, msg];
     persistThread(nextMessages);
     if (isFirstMessage) trackEvent("message_started", { matchId: match.id });
-
-    maybeReply(nextMessages);
   };
 
   const requestOffApp = () => {

@@ -1,0 +1,485 @@
+import {
+  findAppUserIdentity,
+  isDatabaseReady,
+  normalizeUserKey,
+  persistMatch,
+  query,
+  upsertAppUserIdentity
+} from "./db.js";
+import { findMemberProfileByUserKey } from "./cityHome.js";
+
+export async function ensureSocialSchema() {
+  if (!isDatabaseReady()) return;
+
+  await query("alter table app_signals add column if not exists status text not null default 'pending'");
+  await query(
+    "create index if not exists app_signals_target_status_idx on app_signals (target_profile_id, status, created_at desc)"
+  );
+  await query("alter table app_users add column if not exists referred_by_user_key text");
+  await query("alter table app_users add column if not exists onboarding_completed_at timestamptz");
+
+  await query(`
+    create table if not exists app_referral_events (
+      id uuid primary key default gen_random_uuid(),
+      referrer_user_key text not null,
+      referred_user_key text not null,
+      referral_code text not null,
+      reward_days integer not null default 0,
+      created_at timestamptz not null default now(),
+      unique (referred_user_key)
+    )
+  `);
+  await query(
+    "create index if not exists app_referral_events_referrer_idx on app_referral_events (referrer_user_key, created_at desc)"
+  );
+}
+
+function generateReferralCode(name = "") {
+  const base = String(name || "BAM")
+    .replace(/[^a-zA-Z]/g, "")
+    .slice(0, 4)
+    .toUpperCase();
+  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `${base || "BAM"}${suffix}`;
+}
+
+export function rowToDiscoverProfile(row) {
+  if (!row) return null;
+  const profile = row.profile || {};
+  const photos = Array.isArray(profile.photos) ? profile.photos : [];
+  return {
+    id: row.id,
+    name: row.name || profile.name || "Member",
+    age: profile.age || 25,
+    gender: profile.gender,
+    lookingFor: profile.lookingFor,
+    city: row.city,
+    state: row.state,
+    bio: profile.bio || "",
+    photo: photos[0] || "",
+    intents: profile.intents || [],
+    interests: profile.interests || [],
+    religion: profile.religion,
+    ethnicity: profile.ethnicity,
+    stateOfOrigin: profile.stateOfOrigin,
+    lifestyle: profile.lifestyle,
+    voiceIntroUrl: profile.voiceIntroUrl,
+    verified: Boolean(profile.verified),
+    premium: Boolean(profile.premium),
+    createdAt: profile.createdAt || row.created_at,
+    lastActiveAt: row.updated_at || row.created_at
+  };
+}
+
+export async function listDiscoverProfiles({
+  email,
+  phone,
+  city,
+  excludeProfileIds = [],
+  limit = 48
+}) {
+  if (!isDatabaseReady() || !city) return [];
+  await ensureSocialSchema();
+
+  const own = await findMemberProfileByUserKey(email, phone);
+  if (!own?.id) return [];
+
+  const exclude = Array.from(new Set([own.id, ...excludeProfileIds.filter(Boolean)]));
+
+  const result = await query(
+    `select *
+     from app_member_profiles
+     where lower(city) = lower($1)
+       and onboarding_complete = true
+       and discoverable = true
+       and city_home_hidden = false
+       and user_key <> $2
+       and not (id = any($3::uuid[]))
+     order by updated_at desc
+     limit $4`,
+    [city.trim(), own.user_key, exclude, limit]
+  );
+
+  return result.rows.map(rowToDiscoverProfile).filter(Boolean);
+}
+
+export async function getMemberProfileById(profileId) {
+  if (!isDatabaseReady() || !profileId) return null;
+  const result = await query("select * from app_member_profiles where id = $1 limit 1", [profileId]);
+  return rowToDiscoverProfile(result.rows[0]);
+}
+
+export async function sendSignalToProfile({
+  email,
+  phone,
+  targetProfileId,
+  signalType = "signal",
+  payload = {}
+}) {
+  if (!isDatabaseReady() || !targetProfileId) return null;
+  await ensureSocialSchema();
+
+  const sender = await findMemberProfileByUserKey(email, phone);
+  if (!sender?.id || sender.id === targetProfileId) return null;
+
+  const duplicate = await query(
+    `select id from app_signals
+     where user_key = $1 and target_profile_id = $2 and status = 'pending'
+     limit 1`,
+    [sender.user_key, targetProfileId]
+  );
+  if (duplicate.rows[0]) return duplicate.rows[0];
+
+  const result = await query(
+    `insert into app_signals (user_key, sender_email, sender_phone, target_profile_id, signal_type, payload, status)
+     values ($1, $2, $3, $4, $5, $6, 'pending')
+     returning *`,
+    [
+      sender.user_key,
+      String(email || "").trim().toLowerCase() || null,
+      String(phone || "").replace(/\D/g, "").replace(/^234/, "") || null,
+      targetProfileId,
+      signalType,
+      payload
+    ]
+  );
+  return result.rows[0] || null;
+}
+
+function signalToLikeEntry(row, senderProfile) {
+  const profile = senderProfile || {};
+  const photos = Array.isArray(profile.profile?.photos) ? profile.profile.photos : [];
+  return {
+    id: row.id,
+    profileId: profile.id || row.user_key,
+    name: profile.name || row.sender_email || "Member",
+    photo: photos[0] || "",
+    city: profile.city || "",
+    at: row.created_at,
+    superLike: row.signal_type === "priority" || row.signal_type === "priority-signal-once"
+  };
+}
+
+export async function fetchIncomingSignals({ email, phone }) {
+  if (!isDatabaseReady()) return [];
+  await ensureSocialSchema();
+
+  const own = await findMemberProfileByUserKey(email, phone);
+  if (!own?.id) return [];
+
+  const result = await query(
+    `select s.*, p.name, p.city, p.profile, p.id as sender_profile_id
+     from app_signals s
+     join app_member_profiles p on p.user_key = s.user_key
+     where s.target_profile_id = $1
+       and s.status = 'pending'
+     order by s.created_at desc`,
+    [own.id]
+  );
+
+  return result.rows.map((row) =>
+    signalToLikeEntry(row, {
+      id: row.sender_profile_id,
+      name: row.name,
+      city: row.city,
+      profile: row.profile
+    })
+  );
+}
+
+function buildMatchId(a, b) {
+  return `m-${[a, b].sort().join("-")}`;
+}
+
+function buildMatchPayload({ matchId, profileId, name, photo, city, lastActiveAt }) {
+  return {
+    id: matchId,
+    profileId,
+    name,
+    photo,
+    city,
+    matchedAt: new Date().toISOString(),
+    lastActiveAt
+  };
+}
+
+export async function acceptIncomingSignal({ email, phone, signalId }) {
+  if (!isDatabaseReady() || !signalId) return null;
+  await ensureSocialSchema();
+
+  const own = await findMemberProfileByUserKey(email, phone);
+  if (!own?.id) return null;
+
+  const signalResult = await query(
+    `select s.*, sender.id as sender_profile_id, sender.name as sender_name, sender.city as sender_city,
+            sender.profile as sender_profile, sender.email as sender_email, sender.phone as sender_phone,
+            sender.updated_at as sender_updated_at
+     from app_signals s
+     join app_member_profiles sender on sender.user_key = s.user_key
+     where s.id = $1 and s.target_profile_id = $2 and s.status = 'pending'
+     limit 1`,
+    [signalId, own.id]
+  );
+  const signal = signalResult.rows[0];
+  if (!signal) return null;
+
+  await query("update app_signals set status = 'accepted' where id = $1", [signalId]);
+
+  const senderPhotos = Array.isArray(signal.sender_profile?.photos) ? signal.sender_profile.photos : [];
+  const ownPhotos = Array.isArray(own.profile?.photos) ? own.profile.photos : [];
+  const matchId = buildMatchId(own.id, signal.sender_profile_id);
+
+  const matchForAcceptor = buildMatchPayload({
+    matchId,
+    profileId: signal.sender_profile_id,
+    name: signal.sender_name || "Member",
+    photo: senderPhotos[0] || "",
+    city: signal.sender_city || "",
+    lastActiveAt: signal.sender_updated_at
+  });
+
+  const matchForSender = buildMatchPayload({
+    matchId,
+    profileId: own.id,
+    name: own.name || "Member",
+    photo: ownPhotos[0] || "",
+    city: own.city || "",
+    lastActiveAt: own.updated_at
+  });
+
+  await persistMatch({ email, phone, match: matchForAcceptor });
+  await persistMatch({
+    email: signal.sender_email,
+    phone: signal.sender_phone,
+    match: matchForSender
+  });
+
+  return { match: matchForAcceptor, signalId };
+}
+
+export async function declineIncomingSignal({ email, phone, signalId }) {
+  if (!isDatabaseReady() || !signalId) return false;
+  await ensureSocialSchema();
+
+  const own = await findMemberProfileByUserKey(email, phone);
+  if (!own?.id) return false;
+
+  const result = await query(
+    `update app_signals set status = 'declined'
+     where id = $1 and target_profile_id = $2 and status = 'pending'
+     returning id`,
+    [signalId, own.id]
+  );
+  return result.rowCount > 0;
+}
+
+export async function registerWithReferral({ email, phone, name, referralCode }) {
+  if (!isDatabaseReady()) return null;
+  await ensureSocialSchema();
+
+  let referredByUserKey = null;
+  let referrerCode = "";
+  const code = String(referralCode || "")
+    .trim()
+    .toUpperCase();
+  if (code) {
+    const referrer = await query(
+      "select email, phone, referral_code from app_users where upper(referral_code) = $1 limit 1",
+      [code]
+    );
+    const refRow = referrer.rows[0];
+    if (refRow) {
+      referredByUserKey = normalizeUserKey({ email: refRow.email, phone: refRow.phone });
+      referrerCode = refRow.referral_code || code;
+    }
+  }
+
+  const existing = await findAppUserIdentity({ email, phone });
+  const ownCode = existing?.referral_code || generateReferralCode(name);
+
+  if (existing) {
+    const result = await query(
+      `update app_users
+       set email = coalesce($1, email),
+           phone = coalesce($2, phone),
+           name = coalesce($3, name),
+           referral_code = coalesce(referral_code, $4),
+           referred_by_user_key = coalesce(referred_by_user_key, $5),
+           user_key = coalesce(user_key, $6),
+           updated_at = now()
+       where ($1::text is not null and lower(email) = lower($1::text))
+          or ($2::text is not null and phone = $2::text)
+       returning *`,
+      [
+        email || null,
+        phone || null,
+        name || null,
+        ownCode,
+        referredByUserKey,
+        normalizeUserKey({ email, phone })
+      ]
+    );
+    return result.rows[0] || null;
+  }
+
+  return upsertAppUserIdentity({
+    email,
+    phone,
+    name,
+    referralCode: ownCode
+  }).then(async (user) => {
+    if (!user || !referredByUserKey) return user;
+    await query(
+      `update app_users set referred_by_user_key = $2, updated_at = now() where id = $1`,
+      [user.id, referredByUserKey]
+    );
+    return findAppUserIdentity({ email, phone });
+  });
+}
+
+const REFERRAL_GOAL = 3;
+const REWARD_DAYS = 7;
+
+async function extendUserPremium({ email, phone }, days) {
+  const user = await findAppUserIdentity({ email, phone });
+  if (!user) return null;
+
+  const base =
+    user.premium_until && new Date(user.premium_until).getTime() > Date.now()
+      ? new Date(user.premium_until).getTime()
+      : Date.now();
+  const premiumUntil = new Date(base + days * 86400000).toISOString();
+
+  const result = await query(
+    `update app_users
+     set is_premium = true, premium_until = $3, updated_at = now()
+     where ($1::text is not null and lower(email) = lower($1::text))
+        or ($2::text is not null and phone = $2::text)
+     returning *`,
+    [email || null, phone || null, premiumUntil]
+  );
+  return result.rows[0] || null;
+}
+
+export async function completeOnboardingReferral({ email, phone }) {
+  if (!isDatabaseReady()) return null;
+  await ensureSocialSchema();
+
+  const referredUserKey = normalizeUserKey({ email, phone });
+  if (!referredUserKey) return { credited: false };
+
+  const user = await findAppUserIdentity({ email, phone });
+  if (!user?.referred_by_user_key) return { credited: false };
+
+  const existing = await query(
+    "select id from app_referral_events where referred_user_key = $1 limit 1",
+    [referredUserKey]
+  );
+  if (existing.rows[0]) return { credited: false, duplicate: true };
+
+  const referrer = await query(
+    "select email, phone, referral_code from app_users where user_key = $1 limit 1",
+    [user.referred_by_user_key]
+  );
+  const referrerRow = referrer.rows[0];
+  if (!referrerRow) return { credited: false };
+
+  await query(
+    `update app_users set onboarding_completed_at = now(), updated_at = now()
+     where ($1::text is not null and lower(email) = lower($1::text))
+        or ($2::text is not null and phone = $2::text)`,
+    [email || null, phone || null]
+  );
+
+  await query(
+    `insert into app_referral_events (referrer_user_key, referred_user_key, referral_code)
+     values ($1, $2, $3)`,
+    [user.referred_by_user_key, referredUserKey, referrerRow.referral_code || ""]
+  );
+
+  const countResult = await query(
+    "select count(*)::int as count from app_referral_events where referrer_user_key = $1",
+    [user.referred_by_user_key]
+  );
+  const count = countResult.rows[0]?.count ?? 0;
+  let rewardGranted = false;
+
+  if (count > 0 && count % REFERRAL_GOAL === 0) {
+    await extendUserPremium(referrerRow, REWARD_DAYS);
+    await query(
+      "update app_referral_events set reward_days = $2 where referred_user_key = $1",
+      [referredUserKey, REWARD_DAYS]
+    );
+    rewardGranted = true;
+  }
+
+  return { credited: true, rewardGranted, referrerUserKey: user.referred_by_user_key };
+}
+
+export async function fetchReferralStats({ email, phone }) {
+  if (!isDatabaseReady()) return null;
+  await ensureSocialSchema();
+
+  const user = await findAppUserIdentity({ email, phone });
+  if (!user) return null;
+
+  const userKey = normalizeUserKey({ email, phone });
+  const countResult = await query(
+    "select count(*)::int as count from app_referral_events where referrer_user_key = $1",
+    [userKey]
+  );
+  const successfulReferrals = countResult.rows[0]?.count ?? 0;
+  const rewardsClaimed = Math.floor(successfulReferrals / REFERRAL_GOAL);
+
+  return {
+    code: user.referral_code || generateReferralCode(user.name),
+    successfulReferrals,
+    rewardsClaimed,
+    goal: REFERRAL_GOAL,
+    rewardDays: REWARD_DAYS
+  };
+}
+
+export function resolvePremiumStatus(user) {
+  if (!user) return { isPremium: false, premiumUntil: null };
+  const until = user.premium_until;
+  const isPremium = until ? new Date(until).getTime() > Date.now() : Boolean(user.is_premium);
+  return { isPremium, premiumUntil: until || null };
+}
+
+export async function fetchPremiumStatus({ email, phone }) {
+  const user = await findAppUserIdentity({ email, phone });
+  return resolvePremiumStatus(user);
+}
+
+export async function fetchMemberSocialBundle({ email, phone }) {
+  if (!isDatabaseReady()) return null;
+  await ensureSocialSchema();
+
+  const [incomingSignals, referral, premium, ownProfile] = await Promise.all([
+    fetchIncomingSignals({ email, phone }),
+    fetchReferralStats({ email, phone }),
+    fetchPremiumStatus({ email, phone }),
+    findMemberProfileByUserKey(email, phone)
+  ]);
+
+  return {
+    incomingSignals,
+    referral,
+    premium,
+    memberProfileId: ownProfile?.id || null
+  };
+}
+
+export async function fetchProfileVisitors({ email, phone }) {
+  const incoming = await fetchIncomingSignals({ email, phone });
+  return incoming.map((signal) => ({
+    profileId: signal.profileId,
+    name: signal.name,
+    photo: signal.photo,
+    age: 25,
+    city: signal.city,
+    compatibility: 0,
+    at: signal.at
+  }));
+}

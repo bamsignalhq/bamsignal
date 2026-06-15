@@ -46,23 +46,16 @@ function normalizePhone(value = "") {
 }
 
 async function ensureAuthUserViaSql({ email, password, name, username, phone }) {
-  const existing = await query(
-    "select id from auth.users where lower(email) = lower($1) limit 1",
-    [email]
-  );
+  const meta = JSON.stringify({ name, username, phone });
 
-  if (existing.rows[0]?.id) {
-    const userId = existing.rows[0].id;
-    await query(
-      `update auth.users
-       set encrypted_password = crypt($2, gen_salt('bf')),
-           email_confirmed_at = coalesce(email_confirmed_at, now()),
-           raw_user_meta_data = $3::jsonb,
-           updated_at = now()
-       where id = $1`,
-      [userId, password, JSON.stringify({ name, username, phone })]
-    );
+  async function ensureIdentity(userId) {
     const providerId = String(userId);
+    const existingIdentity = await query(
+      `select id from auth.identities where user_id = $1::uuid and provider = 'email' limit 1`,
+      [userId]
+    );
+    if (existingIdentity.rows[0]?.id) return;
+
     await query(
       `insert into auth.identities (
          id,
@@ -74,21 +67,37 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone }) 
          created_at,
          updated_at
        )
-       select
+       values (
          gen_random_uuid(),
          $1::uuid,
-         jsonb_build_object('sub', $2, 'email', $3),
+         jsonb_build_object('sub', $2::text, 'email', $3::text),
          'email',
-         $2,
+         $2::text,
          now(),
          now(),
          now()
-       where not exists (
-         select 1 from auth.identities
-         where user_id = $1::uuid and provider = 'email'
        )`,
       [userId, providerId, email]
     );
+  }
+
+  const existing = await query(
+    "select id from auth.users where lower(email) = lower($1) limit 1",
+    [email]
+  );
+
+  if (existing.rows[0]?.id) {
+    const userId = existing.rows[0].id;
+    await query(
+      `update auth.users
+       set encrypted_password = crypt($2::text, gen_salt('bf')),
+           email_confirmed_at = coalesce(email_confirmed_at, now()),
+           raw_user_meta_data = $3::jsonb,
+           updated_at = now()
+       where id = $1::uuid`,
+      [userId, password, meta]
+    );
+    await ensureIdentity(userId);
     return { id: userId, created: false };
   }
 
@@ -101,59 +110,44 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone }) 
        email,
        encrypted_password,
        email_confirmed_at,
+       recovery_sent_at,
+       last_sign_in_at,
        raw_app_meta_data,
        raw_user_meta_data,
        created_at,
-       updated_at
+       updated_at,
+       confirmation_token,
+       email_change,
+       email_change_token_new,
+       recovery_token
      )
      values (
        '00000000-0000-0000-0000-000000000000',
        gen_random_uuid(),
        'authenticated',
        'authenticated',
-       $1,
-       crypt($2, gen_salt('bf')),
+       $1::text,
+       crypt($2::text, gen_salt('bf')),
+       now(),
+       now(),
        now(),
        '{"provider":"email","providers":["email"]}'::jsonb,
        $3::jsonb,
        now(),
-       now()
+       now(),
+       '',
+       '',
+       '',
+       ''
      )
      returning id`,
-    [email, password, JSON.stringify({ name, username, phone })]
+    [email, password, meta]
   );
 
   const userId = inserted.rows[0]?.id;
   if (!userId) throw new Error("Failed to insert auth.users row.");
 
-  const providerId = String(userId);
-  await query(
-    `insert into auth.identities (
-       id,
-       user_id,
-       identity_data,
-       provider,
-       provider_id,
-       last_sign_in_at,
-       created_at,
-       updated_at
-     )
-     select
-       gen_random_uuid(),
-       $1::uuid,
-       jsonb_build_object('sub', $2, 'email', $3),
-       'email',
-       $2,
-       now(),
-       now(),
-       now()
-     where not exists (
-       select 1 from auth.identities
-       where user_id = $1::uuid and provider = 'email'
-     )`,
-    [userId, providerId, email]
-  );
-
+  await ensureIdentity(userId);
   return { id: userId, created: true };
 }
 

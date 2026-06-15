@@ -280,7 +280,34 @@ export async function createConfirmedSupabaseUser({ email, password, name, usern
     if (!userId) {
       throw new SignupOtpError(409, "An account with this email already exists. Try logging in instead.");
     }
-    return updateExistingUser(userId);
+
+    await fetch(`${config.url}/auth/v1/admin/users/${userId}`, {
+      method: "DELETE",
+      headers
+    });
+
+    const retry = await fetch(`${config.url}/auth/v1/admin/users`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        email: normalized,
+        password: String(password),
+        email_confirm: true,
+        user_metadata: userMetadata
+      })
+    });
+
+    if (retry.ok) {
+      return retry.json();
+    }
+
+    const retryDetail = await retry.text();
+    if (/already registered|already exists|duplicate/i.test(retryDetail)) {
+      return updateExistingUser(userId);
+    }
+
+    console.error("[bamsignal] Supabase admin recreate user failed:", retryDetail);
+    throw new SignupOtpError(502, "We couldn't finish creating your account. Try again shortly.");
   }
 
   console.error("[bamsignal] Supabase admin create user failed:", detail);

@@ -245,7 +245,7 @@ async function ensureAuthUserViaAdmin({ email, password, name, username, phone, 
     const userId = payload?.users?.[0]?.id;
     if (!userId) throw error;
 
-    await fetch(`${url}/auth/v1/admin/users/${userId}`, {
+    const update = await fetch(`${url}/auth/v1/admin/users/${userId}`, {
       method: "PUT",
       headers: {
         apikey: serviceKey,
@@ -259,21 +259,48 @@ async function ensureAuthUserViaAdmin({ email, password, name, username, phone, 
       })
     });
 
+    if (!update.ok) {
+      const detail = await update.text();
+      throw new Error(detail || "Supabase admin user update failed.");
+    }
+
     return { id: userId, created: false };
   }
 }
 
 async function ensureAuthUser({ email, password, name, username, phone, reset }) {
-  const viaAdmin = await ensureAuthUserViaAdmin({
+  if (supabaseServiceHeaders()) {
+    const viaAdmin = await ensureAuthUserViaAdmin({
+      email,
+      password,
+      name,
+      username,
+      phone,
+      reset
+    });
+    if (!viaAdmin?.id) {
+      throw new Error("Supabase admin auth provisioning failed.");
+    }
+    return viaAdmin;
+  }
+
+  return ensureAuthUserViaSql({ email, password, name, username, phone, reset });
+}
+
+export async function repairPlayReviewerAuth(pin) {
+  if (!/^\d{6}$/.test(String(pin))) {
+    throw new Error("PIN must be exactly 6 digits.");
+  }
+
+  const { email, username, name, phone } = PLAY_REVIEWER;
+  return ensureAuthUser({
     email,
-    password,
+    password: String(pin),
     name,
     username,
     phone,
-    reset
+    reset: true
   });
-  if (viaAdmin?.id) return viaAdmin;
-  return ensureAuthUserViaSql({ email, password, name, username, phone, reset });
 }
 
 /** Idempotent Play reviewer member + auth provisioning (uses Postgres auth schema). */

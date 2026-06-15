@@ -52,6 +52,7 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone }) 
   );
 
   if (existing.rows[0]?.id) {
+    const userId = existing.rows[0].id;
     await query(
       `update auth.users
        set encrypted_password = crypt($2, gen_salt('bf')),
@@ -59,9 +60,36 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone }) 
            raw_user_meta_data = $3::jsonb,
            updated_at = now()
        where id = $1`,
-      [existing.rows[0].id, password, JSON.stringify({ name, username, phone })]
+      [userId, password, JSON.stringify({ name, username, phone })]
     );
-    return { id: existing.rows[0].id, created: false };
+    const providerId = String(userId);
+    await query(
+      `insert into auth.identities (
+         id,
+         user_id,
+         identity_data,
+         provider,
+         provider_id,
+         last_sign_in_at,
+         created_at,
+         updated_at
+       )
+       select
+         gen_random_uuid(),
+         $1::uuid,
+         jsonb_build_object('sub', $2, 'email', $3),
+         'email',
+         $2,
+         now(),
+         now(),
+         now()
+       where not exists (
+         select 1 from auth.identities
+         where user_id = $1::uuid and provider = 'email'
+       )`,
+      [userId, providerId, email]
+    );
+    return { id: userId, created: false };
   }
 
   const inserted = await query(
@@ -98,6 +126,7 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone }) 
   const userId = inserted.rows[0]?.id;
   if (!userId) throw new Error("Failed to insert auth.users row.");
 
+  const providerId = String(userId);
   await query(
     `insert into auth.identities (
        id,
@@ -109,18 +138,20 @@ async function ensureAuthUserViaSql({ email, password, name, username, phone }) 
        created_at,
        updated_at
      )
-     values (
+     select
        gen_random_uuid(),
-       $1,
-       jsonb_build_object('sub', $1::text, 'email', $2),
+       $1::uuid,
+       jsonb_build_object('sub', $2, 'email', $3),
        'email',
-       $1::text,
+       $2,
        now(),
        now(),
        now()
-     )
-     on conflict do nothing`,
-    [userId, email]
+     where not exists (
+       select 1 from auth.identities
+       where user_id = $1::uuid and provider = 'email'
+     )`,
+    [userId, providerId, email]
   );
 
   return { id: userId, created: true };

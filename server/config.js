@@ -24,6 +24,8 @@ export const config = {
   paystackCallbackUrl:
     process.env.PAYSTACK_CALLBACK_URL ||
     `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/payment/success`,
+  paystackAndroidCallbackUrl:
+    process.env.PAYSTACK_ANDROID_CALLBACK_URL || "com.bamsignal.com://payment-success",
   paystackWebhookUrl:
     process.env.PAYSTACK_WEBHOOK_URL ||
     `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/api/paystack/webhook`,
@@ -36,6 +38,12 @@ export const config = {
   },
   firebase: {
     serviceAccount: parseJson(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+  },
+  sendchamp: {
+    apiKey: process.env.SENDCHAMP_API_KEY?.trim() || "",
+    sender: process.env.SENDCHAMP_SENDER?.trim() || "",
+    whatsappSender: process.env.SENDCHAMP_WHATSAPP_SENDER?.trim() || "",
+    baseUrl: process.env.SENDCHAMP_BASE_URL?.trim() || "https://api.sendchamp.com/api/v1"
   }
 };
 

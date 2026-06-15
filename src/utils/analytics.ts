@@ -31,7 +31,8 @@ export type AnalyticsEvent =
   | "safety_block"
   | "contact_share_attempt"
   | "referral_signup"
-  | "verification_approved";
+  | "verification_approved"
+  | "photo_rejected_contact_text";
 
 type EventRow = { event: AnalyticsEvent; at: string; meta?: Record<string, string> };
 

@@ -5,7 +5,8 @@ import {
   Scale,
   Shield,
   ShieldCheck,
-  Users
+  Users,
+  UserX
 } from "lucide-react";
 import type { LegalPath } from "../constants/footer";
 import { getContactHighlights } from "../constants/growthStats";
@@ -27,7 +28,8 @@ const PAGE_ICONS: Record<LegalPath, typeof Heart> = {
   "/safety": Shield,
   "/privacy": ShieldCheck,
   "/terms": Scale,
-  "/contact": Mail
+  "/contact": Mail,
+  "/delete-account": UserX
 };
 
 function HighlightCell({

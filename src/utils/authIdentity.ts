@@ -53,6 +53,13 @@ export function normalizeNigerianPhone(value: string): string {
   return digits;
 }
 
+export function toE164NigerianPhone(value: string): string {
+  const local = normalizeNigerianPhone(value);
+  if (!local) return "";
+  if (/^0[789]\d{9}$/.test(local)) return `+234${local.slice(1)}`;
+  return value.trim().startsWith("+") ? value.trim() : `+${local}`;
+}
+
 export function isValidNigerianPhone(value: string): boolean {
   const phone = normalizeNigerianPhone(value);
   return /^0[789]\d{9}$/.test(phone);
@@ -83,6 +90,6 @@ export function profileFromSessionUser(user: {
     username: meta.username ? String(meta.username) : undefined,
     email: user.email?.includes("@phone.bamsignal.local") ? "" : user.email || "",
     phone: String(meta.phone || ""),
-    phoneVerified: Boolean(meta.phone)
+    phoneVerified: Boolean(meta.phoneVerified)
   };
 }

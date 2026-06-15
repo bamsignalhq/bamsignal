@@ -14,7 +14,11 @@ export const PLAY_REVIEWER = {
 };
 
 export const PLAY_REVIEWER_PROFILE = {
-  photos: ["/showcase/hero-lagos-young-professionals-01.webp"],
+  photos: [
+    "/showcase/hero-lagos-young-professionals-01.webp",
+    "/showcase/hero-lagos-young-professionals-02.webp"
+  ],
+  coverPhoto: "/showcase/hero-lagos-young-professionals-01.webp",
   age: 29,
   gender: "Woman",
   state: "Lagos",
@@ -23,7 +27,8 @@ export const PLAY_REVIEWER_PROFILE = {
   lookingFor: "Everyone",
   intents: ["Relationship"],
   interests: ["Music", "Food", "Travel", "Movies"],
-  verified: false,
+  phoneVerified: true,
+  verified: true,
   premium: false,
   onboardingComplete: true,
   createdAt: new Date().toISOString(),
@@ -86,7 +91,7 @@ async function resetReviewerAuthUser(email) {
 }
 
 async function ensureAuthUserViaSql({ email, password, name, username, phone, reset = false }) {
-  const meta = JSON.stringify({ name, username, phone });
+  const meta = JSON.stringify({ name, username, phone, phoneVerified: true });
 
   if (reset) {
     await resetReviewerAuthUser(email);
@@ -262,7 +267,7 @@ async function ensureAuthUserViaAdmin({ email, password, name, username, phone, 
       },
       body: JSON.stringify({
         password: String(password),
-        user_metadata: { name, username, phone },
+        user_metadata: { name, username, phone, phoneVerified: true },
         email_confirm: true
       })
     });

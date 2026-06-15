@@ -23,7 +23,7 @@ import {
   computeCompatibilityPercent,
   getProfileMatchReasons
 } from "../utils/compatibility";
-import { buildDiscoveryDeck, countSameCityProfiles, recordDiscoveryImpression } from "../utils/launchSeed";
+import { buildDiscoveryDeck, recordDiscoveryImpression } from "../utils/launchSeed";
 import { buildDensityAwareDeck } from "../utils/cityDensity";
 import { markFirstDayStep } from "../utils/firstDayJourney";
 import { trackUpgradeImpression } from "../utils/premiumConversion";
@@ -34,7 +34,6 @@ import {
   normalizeMatchPreferences
 } from "../utils/profile";
 import { blockUser, canUserSignalTarget, filterDiscoverDeck } from "../utils/safety";
-import { getTrustLevel } from "../utils/trust";
 import { getVerificationTier } from "../utils/verification";
 import { getSignalsSentCount, incrementSignalsSent } from "../utils/streaks";
 import { trackEvent } from "../utils/analytics";
@@ -298,28 +297,14 @@ export function DiscoverPage({
   };
 
   const renderEmpty = () => {
-    const sameCityCount = countSameCityProfiles(allProfiles, viewer.city, blocked, passedIds);
-    const lowCityDensity = sameCityCount < 2;
     const filteredEmpty = baseDeck.length > 0 && deck.length === 0;
 
     return (
       <EmptyState
         icon={Compass}
-        title={
-          filteredEmpty
-            ? "No signals match this filter."
-            : lowCityDensity
-              ? `We're growing quickly in ${viewer.city || "your city"}.`
-              : "No new signals nearby."
-        }
-        message={
-          filteredEmpty
-            ? "Try a different filter or expand your discovery settings."
-            : lowCityDensity
-              ? "Expand your distance or check back later as more people join."
-              : "Expand your distance or check back later."
-        }
-        actionLabel={filteredEmpty ? "Clear filter" : "Expand Discovery"}
+        title={filteredEmpty ? "No matches for this filter" : "No signals nearby"}
+        message={filteredEmpty ? "Try another filter." : "Expand your distance to see more people."}
+        actionLabel={filteredEmpty ? "Clear filter" : "Expand discovery"}
         onAction={() =>
           filteredEmpty
             ? setQuickFilter("all")
@@ -328,8 +313,6 @@ export function DiscoverPage({
                 distanceMax: Math.max(prefs.distanceMax ?? milesToKm(15), milesToKm(50))
               })
         }
-        secondaryLabel="Reset filters"
-        onSecondary={() => savePrefs(defaultMatchPreferences())}
       />
     );
   };
@@ -375,14 +358,6 @@ export function DiscoverPage({
   const verification = current
     ? getVerificationTier({ ...defaultDatingProfile(), verified: current.verified }, false, true)
     : getVerificationTier(defaultDatingProfile(), false, true);
-  const trust = current
-    ? getTrustLevel(
-        { ...defaultDatingProfile(), verified: current.verified, createdAt: new Date().toISOString() },
-        false,
-        true,
-        0
-      )
-    : getTrustLevel(defaultDatingProfile(), false, true, 0);
 
   return (
     <div className="page discover-page discover-v2">
@@ -469,10 +444,7 @@ export function DiscoverPage({
         <ProfileCard
           key={cardKey}
           profile={current}
-          compatibilityPercent={compatibility}
-          matchReasons={matchReasons}
           verification={verification.tier ? verification : undefined}
-          trust={trust.level !== "none" ? trust : undefined}
           isPremium={isPremium}
           onIgnore={handleIgnore}
           onSendSignal={handleSendSignal}

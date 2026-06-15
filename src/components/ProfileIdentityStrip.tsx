@@ -1,5 +1,4 @@
 import { MapPin } from "lucide-react";
-import { intentDisplay } from "../constants/intents";
 import { VerificationBadge } from "./VerificationBadge";
 import { VerifiedBadge } from "./VerifiedBadge";
 import type { DatingProfile, UserProfile } from "../types";
@@ -18,9 +17,6 @@ function formatCity(profile: DatingProfile): string {
 }
 
 export function ProfileIdentityStrip({ user, profile, verification }: ProfileIdentityStripProps) {
-  const intentChips = profile.intents.slice(0, 2).map((intent) => intentDisplay(intent));
-  const interestChips = (profile.interests ?? []).slice(0, 3);
-
   return (
     <div className="profile-identity-strip">
       <h1 className="profile-identity-strip__name">{user.name || "Your profile"}</h1>
@@ -34,20 +30,12 @@ export function ProfileIdentityStrip({ user, profile, verification }: ProfileIde
           </span>
         ) : null}
       </p>
-      <div className="profile-identity-strip__chips">
-        {verification.tier > 0 ? <VerificationBadge info={verification} /> : null}
-        {profile.verified && !verification.tier ? <VerifiedBadge /> : null}
-        {intentChips.map((label) => (
-          <span key={label} className="profile-identity-chip profile-identity-chip--intent">
-            {label}
-          </span>
-        ))}
-        {interestChips.map((interest) => (
-          <span key={interest} className="profile-identity-chip">
-            {interest}
-          </span>
-        ))}
-      </div>
+      {(verification.tier > 0 || profile.verified) && (
+        <div className="profile-identity-strip__badges">
+          {verification.tier > 0 ? <VerificationBadge info={verification} /> : null}
+          {profile.verified && !verification.tier ? <VerifiedBadge /> : null}
+        </div>
+      )}
     </div>
   );
 }

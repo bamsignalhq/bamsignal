@@ -2,19 +2,15 @@ import { MoreHorizontal, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BRAND } from "../constants/copy";
 import type { DiscoverProfile } from "../types";
-import type { TrustInfo } from "../utils/trust";
 import type { VerificationInfo } from "../utils/verification";
 import { ShowcaseImage } from "./ShowcaseImage";
 import { VerificationBadge } from "./VerificationBadge";
-import { TrustBadge } from "./TrustBadge";
-import { TrustMicroStrip } from "./TrustMicroStrip";
 
 type ProfileCardProps = {
   profile: DiscoverProfile;
   compatibilityPercent?: number;
   matchReasons?: string[];
   verification?: VerificationInfo;
-  trust?: TrustInfo;
   onIgnore?: () => void;
   onSendSignal?: () => void;
   onPrioritySignal?: () => void;
@@ -31,10 +27,7 @@ type ProfileCardProps = {
 
 export function ProfileCard({
   profile,
-  compatibilityPercent,
-  matchReasons = [],
   verification,
-  trust,
   onIgnore,
   onSendSignal,
   onPrioritySignal,
@@ -50,7 +43,6 @@ export function ProfileCard({
 }: ProfileCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const reasonChips = matchReasons.slice(0, 2);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -65,7 +57,7 @@ export function ProfileCard({
 
   return (
     <article
-      className={`profile-card profile-card-v2 profile-card-v2--minimal ${blurred ? "blurred" : ""} ${signalSent ? "profile-card-v2--sent" : ""} ${entering ? "profile-card-v2--enter" : ""}`}
+      className={`profile-card profile-card-v2 profile-card-v2--minimal profile-card-v2--hero ${blurred ? "blurred" : ""} ${signalSent ? "profile-card-v2--sent" : ""} ${entering ? "profile-card-v2--enter" : ""}`}
     >
       <div className="profile-card-v2__photo">
         <button
@@ -84,27 +76,11 @@ export function ProfileCard({
               </h3>
             </div>
             <p className="profile-card-v2__city">{profile.city}</p>
-            <div className="profile-card-badges">
-              {verification && <VerificationBadge info={verification} />}
-              {trust && <TrustBadge info={trust} />}
-            </div>
-            <TrustMicroStrip
-              verified={Boolean(verification?.tier || profile.verified)}
-              voiceIntroUrl={profile.voiceIntroUrl}
-              lastActiveAt={profile.lastActiveAt}
-            />
-            {compatibilityPercent != null && (
-              <span className="profile-card-compat">{compatibilityPercent}% match</span>
-            )}
-            {reasonChips.length > 0 && (
-              <div className="profile-card-reason-chips">
-                {reasonChips.map((reason) => (
-                  <span key={reason} className="profile-card-reason-chip">
-                    {reason}
-                  </span>
-                ))}
+            {verification?.tier ? (
+              <div className="profile-card-badges profile-card-badges--minimal">
+                <VerificationBadge info={verification} />
               </div>
-            )}
+            ) : null}
           </div>
         </button>
       </div>
@@ -119,16 +95,21 @@ export function ProfileCard({
         <div className="profile-card-v2__actions profile-card-v2__actions--minimal">
           <button
             type="button"
-            className="profile-card-v2__signal"
+            className="btn-secondary profile-card-v2__pass"
+            onClick={onIgnore}
+            aria-label={BRAND.ignore}
+          >
+            {BRAND.ignore}
+          </button>
+          <button
+            type="button"
+            className="btn-primary profile-card-v2__signal"
             onClick={onSendSignal}
             aria-label={BRAND.sendSignal}
             disabled={Boolean(signalBlockedReason) || signalSent}
           >
             <Zap size={18} fill="currentColor" />
             {BRAND.sendSignal}
-          </button>
-          <button type="button" className="profile-card-v2__pass" onClick={onIgnore} aria-label={BRAND.ignore}>
-            {BRAND.ignore}
           </button>
           <div className="profile-card-overflow" ref={menuRef}>
             <button

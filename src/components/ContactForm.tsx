@@ -6,6 +6,7 @@ import { createAdditionPuzzle, parseCaptchaAnswer } from "../utils/mathCaptcha";
 const TOPICS = [
   "General question",
   "Account help",
+  "Delete my account",
   "Safety report",
   "Billing & subscriptions",
   "Partnership",

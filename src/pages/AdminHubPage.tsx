@@ -11,10 +11,13 @@ import { LAUNCH_PRIMARY_CITIES } from "../constants/seedCities";
 import { STORAGE_KEYS } from "../constants/limits";
 import { AdminPricingPage } from "./AdminPricingPage";
 import {
-  approveVerification,
+  fetchVerificationSubmissions,
+  reviewVerificationSubmission,
+  type ServerVerificationSubmission
+} from "../services/adminVerification";
+import {
   getPendingVerifications,
   pendingCount,
-  rejectVerification,
   verificationStats
 } from "../utils/verificationQueue";
 import { countEvent, countEventToday, dailyActiveUsersToday } from "../utils/analytics";
@@ -80,13 +83,16 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
   const [cmsDraft, setCmsDraft] = useState<CmsContent>(() => getCms());
   const [discoverDraft, setDiscoverDraft] = useState<DiscoverCityConfig>(() => getDiscoverCityConfig());
   const [rejectReason, setRejectReason] = useState("");
-  const [verifications, setVerifications] = useState(getPendingVerifications());
+  const [serverVerifications, setServerVerifications] = useState<ServerVerificationSubmission[]>([]);
+  const [localVerifications] = useState(getPendingVerifications());
   const [leads, setLeads] = useState(getLaunchLeads());
   const [moderation, setModeration] = useState(getModerationQueue());
   const [reportFilter, setReportFilter] = useState<ReportFilter>("all");
   const [verificationFilter, setVerificationFilter] = useState<"pending" | "approved" | "rejected">("pending");
   const modStats = moderationStats();
   const verifyStats = verificationStats();
+  const pendingVerificationCount =
+    serverVerifications.filter((v) => v.status === "pending").length || pendingCount();
   const trustMetrics = getTrustAnalyticsSummary();
   const [cityHomeCity, setCityHomeCity] = useState(CITIES_VISUAL[0]?.name || "Lagos");
   const [cityHomeMembers, setCityHomeMembers] = useState<CityHomeMember[]>([]);
@@ -119,6 +125,11 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
     if (tab !== "cityhome" || !authorized) return;
     void loadCityHomeMembers(cityHomeCity);
   }, [tab, authorized, cityHomeCity]);
+
+  useEffect(() => {
+    if (tab !== "verifications" || !authorized) return;
+    void fetchVerificationSubmissions().then(setServerVerifications);
+  }, [tab, authorized, verificationFilter]);
 
   useEffect(() => {
     if (isAdminSessionActive()) {
@@ -183,7 +194,7 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
     { label: "Profile views", value: countEvent("profile_viewed") },
     { label: "Reports", value: reports },
     { label: "Blocked users", value: blocked },
-    { label: "Pending verifications", value: pendingCount() }
+    { label: "Pending verifications", value: pendingVerificationCount }
   ];
 
   return (
@@ -208,7 +219,7 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
             ["discover", "Discover"],
             ["cityhome", "City home"],
             ["leads", `Leads (${leads.length})`],
-            ["verifications", `Verify (${pendingCount()})`],
+            ["verifications", `Verify (${pendingVerificationCount})`],
             ["pricing", "Pricing"],
             ["content", "Content"],
             ["email", "Email"]
@@ -535,15 +546,15 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
         <section className="admin-verifications">
           <div className="admin-stats-grid admin-stats-grid--highlight">
             <div className="card admin-stat admin-stat--highlight">
-              <strong>{verifyStats.pending}</strong>
+              <strong>{serverVerifications.filter((v) => v.status === "pending").length || verifyStats.pending}</strong>
               <span>Pending</span>
             </div>
             <div className="card admin-stat admin-stat--highlight">
-              <strong>{verifyStats.approved}</strong>
+              <strong>{serverVerifications.filter((v) => v.status === "approved").length || verifyStats.approved}</strong>
               <span>Approved</span>
             </div>
             <div className="card admin-stat admin-stat--highlight">
-              <strong>{verifyStats.rejected}</strong>
+              <strong>{serverVerifications.filter((v) => v.status === "rejected").length || verifyStats.rejected}</strong>
               <span>Rejected</span>
             </div>
             <div className="card admin-stat admin-stat--highlight">
@@ -563,18 +574,24 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
               </button>
             ))}
           </div>
-          {verifications.filter((v) => v.status === verificationFilter).length === 0 && (
+          {serverVerifications.filter((v) => v.status === verificationFilter).length === 0 &&
+            localVerifications.filter((v) => v.status === verificationFilter).length === 0 && (
             <p className="admin-empty">No {verificationFilter} verifications.</p>
           )}
-          {verifications
+          {serverVerifications
             .filter((v) => v.status === verificationFilter)
             .map((v) => (
               <article key={v.id} className="card admin-verification-row">
-                <div>
-                  <strong>{v.userName}</strong>
-                  <span>{v.phone}</span>
-                  <time>{new Date(v.submittedAt).toLocaleString()}</time>
-                  {v.rejectReason && <small>{v.rejectReason}</small>}
+                <div className="admin-verification-row__meta">
+                  <strong>{v.user_name || "Member"}</strong>
+                  <span>{v.phone || v.email}</span>
+                  <span>{v.phone_verified ? "Phone verified" : "Phone not verified"}</span>
+                  <time>{new Date(v.submitted_at).toLocaleString()}</time>
+                  {v.reject_reason && <small>{v.reject_reason}</small>}
+                </div>
+                <div className="admin-verification-row__photos">
+                  {v.profile_photo && <img src={v.profile_photo} alt="Profile" />}
+                  {v.verification_selfie && <img src={v.verification_selfie} alt="Selfie" />}
                 </div>
                 {v.status === "pending" && (
                   <div className="admin-verification-actions">
@@ -587,9 +604,9 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
                     <button
                       type="button"
                       className="btn-primary btn-sm"
-                      onClick={() => {
-                        approveVerification(v.id);
-                        setVerifications(getPendingVerifications());
+                      onClick={async () => {
+                        await reviewVerificationSubmission({ id: v.id, action: "approve" });
+                        setServerVerifications(await fetchVerificationSubmissions());
                       }}
                     >
                       Approve
@@ -597,10 +614,14 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
                     <button
                       type="button"
                       className="btn-secondary btn-sm"
-                      onClick={() => {
-                        rejectVerification(v.id, rejectReason || "Did not meet guidelines");
-                        setVerifications(getPendingVerifications());
+                      onClick={async () => {
+                        await reviewVerificationSubmission({
+                          id: v.id,
+                          action: "reject",
+                          rejectReason: rejectReason || "Did not meet guidelines"
+                        });
                         setRejectReason("");
+                        setServerVerifications(await fetchVerificationSubmissions());
                       }}
                     >
                       Reject

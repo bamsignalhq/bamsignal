@@ -750,6 +750,15 @@
 }
 
 /* Minimal discover card */
+.profile-card-v2--hero .profile-card-v2__photo,
+.profile-card-v2--minimal.profile-card-v2--hero .profile-card-v2__photo {
+  min-height: min(72vh, 580px);
+  max-height: 76vh;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
 .profile-card-v2--minimal .profile-card-v2__photo {
   aspect-ratio: 4 / 5;
   border-radius: var(--radius-xl);
@@ -778,9 +787,29 @@
 
 .profile-card-v2__actions--minimal {
   display: grid;
-  grid-template-columns: 1fr 1.4fr auto;
+  grid-template-columns: 1fr 1.5fr auto;
   gap: 8px;
   padding: 12px 0 0;
+  align-items: stretch;
+}
+
+.profile-card-v2__actions--minimal .btn-primary,
+.profile-card-v2__actions--minimal .btn-secondary {
+  min-height: 44px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.profile-card-badges--minimal {
+  margin-top: 6px;
+}
+
+.profile-card-v2__overlay {
+  padding: 1rem 1rem 0.85rem;
+}
+
+.profile-card-v2__identity h3 {
+  font-size: 1.65rem;
 }
 
 .profile-card-overflow {

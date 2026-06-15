@@ -255,5 +255,33 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
           "Prefer WhatsApp or email? Message us on WhatsApp for a quick reply, or write to support@bamsignal.com — we aim to respond within a few hours on weekdays."
       }
     ]
+  },
+  "/delete-account": {
+    eyebrow: "Account",
+    title: "Delete your BamSignal account",
+    lede: "You can request permanent deletion of your account and associated profile data.",
+    heroImage: SHOWCASE.sundayHangout,
+    heroAlt: "Account settings",
+    highlights: [
+      { label: "Processing time", value: "Up to 7 days" },
+      { label: "Support email", value: "support@bamsignal.com" }
+    ],
+    sections: [
+      {
+        heading: "How to request deletion",
+        body:
+          "Send a message from the email linked to your BamSignal account. Include your username and the phone number on your profile. We will confirm before deleting.",
+        bullets: [
+          "Use the form below with topic \"Delete my account\"",
+          "Or email support@bamsignal.com with subject \"Delete my account\"",
+          "Deletion removes your profile, photos, and match data where applicable"
+        ]
+      },
+      {
+        heading: "What we keep",
+        body:
+          "We may retain minimal records where required for fraud prevention, legal compliance, or unresolved safety reports."
+      }
+    ]
   }
 };

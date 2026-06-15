@@ -1,15 +1,30 @@
+import {
+  GENERIC_PHOTO_REJECT,
+  GENERIC_PHOTO_REJECT_ALT
+} from "../constants/photos";
 import { STORAGE_KEYS } from "../constants/limits";
 import {
   containsDigits,
   containsOtherOffPlatform,
   containsTelegramOrHandle
 } from "./contactGuard";
+import { scanImageForContactDetails } from "./imageContactScan";
 import { readJson, writeJson } from "./storage";
+import { trackEvent } from "./analytics";
 
 type StrikeRecord = { count: number };
 
+export type PhotoUploadKind = "profile" | "cover" | "selfie" | "signup";
+
 const FACE_MESSAGE = "Choose a photo that clearly shows only you.";
-const GENERIC_REJECT = "That photo couldn't be saved. Try a different one.";
+const SIGNUP_REJECT = "We couldn't use that image. Try another clear photo.";
+
+const IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i;
+
+export function isLikelyImageFile(file: File): boolean {
+  if (file.type.startsWith("image/")) return true;
+  return IMAGE_EXTENSIONS.test(file.name || "");
+}
 
 function isSkinLike(r: number, g: number, b: number): boolean {
   const max = Math.max(r, g, b);
@@ -51,9 +66,9 @@ type PhotoScan = {
   reason: string;
 };
 
-async function scanProfilePhoto(file: File): Promise<PhotoScan> {
-  if (!file.type.startsWith("image/")) {
-    return { explicit: false, validPortrait: false, reason: "Upload a JPG or PNG photo." };
+async function scanProfilePhoto(file: File, kind: PhotoUploadKind): Promise<PhotoScan> {
+  if (!isLikelyImageFile(file)) {
+    return { explicit: false, validPortrait: false, reason: GENERIC_PHOTO_REJECT_ALT };
   }
 
   const bitmap = await loadImageBitmap(file);
@@ -62,10 +77,17 @@ async function scanProfilePhoto(file: File): Promise<PhotoScan> {
   bitmap.close?.();
 
   if (width < 320 || height < 320) {
-    return { explicit: false, validPortrait: false, reason: "Use a higher resolution photo." };
+    return { explicit: false, validPortrait: false, reason: GENERIC_PHOTO_REJECT_ALT };
   }
 
   const ratio = width / height;
+  if (kind === "cover") {
+    if (ratio < 1.1 || ratio > 3.8) {
+      return { explicit: false, validPortrait: false, reason: GENERIC_PHOTO_REJECT_ALT };
+    }
+    return { explicit: false, validPortrait: true, reason: "" };
+  }
+
   if (ratio > 2.2 || ratio < 0.45) {
     return { explicit: false, validPortrait: false, reason: FACE_MESSAGE };
   }
@@ -123,7 +145,7 @@ async function scanProfilePhoto(file: File): Promise<PhotoScan> {
   const edgeRatio = edgeSampled ? edgeSkin / edgeSampled : 0;
 
   if (explicit) {
-    return { explicit: true, validPortrait: false, reason: GENERIC_REJECT };
+    return { explicit: true, validPortrait: false, reason: GENERIC_PHOTO_REJECT };
   }
 
   if (centerRatio < 0.05) {
@@ -144,6 +166,12 @@ function recordStrike(storageKey: string): { count: number; isFinal: boolean } {
   return { count, isFinal: count >= 3 };
 }
 
+function genericRejectMessage(kind: PhotoUploadKind, contactBlocked: boolean): string {
+  if (contactBlocked) return GENERIC_PHOTO_REJECT_ALT;
+  if (kind === "cover") return GENERIC_PHOTO_REJECT;
+  return GENERIC_PHOTO_REJECT_ALT;
+}
+
 export function resetPhotoModerationStrikes(): void {
   writeJson(STORAGE_KEYS.photoModerationStrikes, { count: 0 });
 }
@@ -152,17 +180,83 @@ export function resetVoiceModerationStrikes(): void {
   writeJson(STORAGE_KEYS.voiceModerationStrikes, { count: 0 });
 }
 
-export async function moderatePhotoUpload(file: File): Promise<{ allowed: boolean; message: string }> {
+/** Light checks for signup — no face heuristics; tolerates HEIC and empty MIME types. */
+export async function moderateSignupPhotoUpload(
+  file: File
+): Promise<{ allowed: boolean; message: string }> {
   try {
-    const scan = await scanProfilePhoto(file);
+    if (!isLikelyImageFile(file)) {
+      return { allowed: false, message: SIGNUP_REJECT };
+    }
+
+    const contactScan = await scanImageForContactDetails(file, {
+      strictTextHeavy: false,
+      skipTextHeavy: true
+    });
+    if (contactScan.blocked) {
+      return { allowed: false, message: SIGNUP_REJECT };
+    }
+
+    try {
+      const bitmap = await loadImageBitmap(file);
+      const width = bitmap.width;
+      const height = bitmap.height;
+      bitmap.close?.();
+      if (width < 200 || height < 200) {
+        return { allowed: false, message: SIGNUP_REJECT };
+      }
+    } catch {
+      if (file.size < 8_000) {
+        return { allowed: false, message: SIGNUP_REJECT };
+      }
+    }
+
+    resetPhotoModerationStrikes();
+    return { allowed: true, message: "" };
+  } catch {
+    return { allowed: true, message: "" };
+  }
+}
+
+export async function moderatePhotoUpload(
+  file: File,
+  kind: PhotoUploadKind = "profile"
+): Promise<{ allowed: boolean; message: string }> {
+  if (kind === "signup") {
+    return moderateSignupPhotoUpload(file);
+  }
+  try {
+    const contactScan = await scanImageForContactDetails(file, {
+      strictTextHeavy: kind === "cover"
+    });
+    if (contactScan.blocked) {
+      return {
+        allowed: false,
+        message: genericRejectMessage(kind, true)
+      };
+    }
+
+    const scan = await scanProfilePhoto(file, kind);
     if (scan.validPortrait) {
       resetPhotoModerationStrikes();
       return { allowed: true, message: "" };
     }
+
+    if (scan.explicit) {
+      trackEvent("photo_rejected_contact_text", { source: "explicit_heuristic" });
+    }
+
     const { isFinal } = recordStrike(STORAGE_KEYS.photoModerationStrikes);
+    if (contactScan.reason === "none" && (kind === "profile" || kind === "selfie")) {
+      return {
+        allowed: false,
+        message: isFinal ? FACE_MESSAGE : scan.reason || GENERIC_PHOTO_REJECT_ALT
+      };
+    }
+
     return {
       allowed: false,
-      message: isFinal ? FACE_MESSAGE : scan.reason || GENERIC_REJECT
+      message: genericRejectMessage(kind, false)
     };
   } catch {
     return { allowed: true, message: "" };
@@ -208,6 +302,6 @@ export function moderateVoiceIntroTranscript(transcript: string): { allowed: boo
 
 /** @deprecated */
 export async function scanPhotoForExplicitContent(file: File): Promise<boolean> {
-  const scan = await scanProfilePhoto(file);
+  const scan = await scanProfilePhoto(file, "profile");
   return scan.explicit;
 }

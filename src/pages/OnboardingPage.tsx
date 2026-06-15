@@ -287,7 +287,12 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           <p className="onboarding-sub">Clear photos of you — profiles with more photos get more signals.</p>
           <PhotoUploadGrid
             photos={profile.photos}
-            onChange={(photos) => setProfile({ ...profile, photos })}
+            signupMode
+            onChange={(photos) => {
+              const next = normalizeDatingProfile({ ...profile, photos });
+              setProfile(next);
+              writeJson(STORAGE_KEYS.datingProfile, { ...next, onboardingComplete: false });
+            }}
             onModerationMessage={(msg) => {
               setModMessage(msg);
               window.setTimeout(() => setModMessage(""), 4000);

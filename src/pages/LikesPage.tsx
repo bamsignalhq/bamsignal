@@ -106,11 +106,8 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
         <EmptyState
           icon={Zap}
           title="No signals yet"
-          message="When someone signals you, they appear here. Complete your profile to get noticed faster."
-          actionLabel="Complete profile"
-          onAction={onCompleteProfile ?? onUpgrade}
-          secondaryLabel="Start discovering"
-          onSecondary={onDiscover ?? onUpgrade}
+          actionLabel="Discover people nearby"
+          onAction={onDiscover ?? onUpgrade}
         />
       </div>
     );

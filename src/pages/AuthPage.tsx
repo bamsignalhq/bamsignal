@@ -148,7 +148,7 @@ export function AuthPage({
       return;
     }
     if (!isStrongPin(signupForm.pin)) {
-      onMessage("PIN must be at least 4 digits.");
+      onMessage("Choose a 6-digit PIN without repeats or sequences like 123456.");
       return;
     }
     if (signupForm.pin !== signupForm.confirmPin) {

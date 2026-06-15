@@ -25,6 +25,10 @@ import citySpotlightHandler from "../api/city/spotlight.js";
 import citySpotlightEventHandler from "../api/city/spotlight-event.js";
 import adminCityHomeHandler from "../api/admin/city-home.js";
 import adminCitySpotlightHandler from "../api/admin/city-spotlight.js";
+import whatsappVerifyStartHandler from "../api/verify/whatsapp/start.js";
+import whatsappVerifyConfirmHandler from "../api/verify/whatsapp/confirm.js";
+import verificationSubmissionsHandler from "../api/verify/submissions.js";
+import { getSendchampHealthTrace, isSendchampConfigured } from "./services/sendchamp.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "..", "dist");
@@ -89,7 +93,9 @@ async function healthPayload() {
     signupEmail: isSignupEmailConfigured(),
     signupEmailTrace: getSignupEmailHealthTrace(),
     firebase: Boolean(config.firebase.serviceAccount),
-    telegram: Boolean(config.telegram.botToken)
+    telegram: Boolean(config.telegram.botToken),
+    sendchamp: isSendchampConfigured(),
+    sendchampTrace: getSendchampHealthTrace()
   };
 }
 
@@ -105,6 +111,10 @@ app.post("/api/contact", handleContactNodeRequest);
 mountHandler(app, "post", "/api/auth/email-code", emailCodeHandler);
 mountHandler(app, "post", "/api/auth/play-reviewer-finish", playReviewerFinishHandler);
 mountHandler(app, "post", "/api/auth/identity", identityHandler);
+mountHandler(app, "post", "/api/verify/whatsapp/start", whatsappVerifyStartHandler);
+mountHandler(app, "post", "/api/verify/whatsapp/confirm", whatsappVerifyConfirmHandler);
+mountHandler(app, "post", "/api/verify/submissions", verificationSubmissionsHandler);
+mountHandler(app, "get", "/api/verify/submissions", verificationSubmissionsHandler);
 mountHandler(app, "post", "/api/member/data", memberDataHandler);
 mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);
 mountHandler(app, "get", "/api/diagnostics/paystack-connectivity", paystackConnectivityHandler);

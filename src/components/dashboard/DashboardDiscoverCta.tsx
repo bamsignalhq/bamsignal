@@ -7,13 +7,12 @@ type DashboardDiscoverCtaProps = {
 
 export function DashboardDiscoverCta({ onDiscover }: DashboardDiscoverCtaProps) {
   return (
-    <section className="dash-discover dash-animate">
+    <section className="dash-discover">
       <button type="button" className="dash-discover__hit" onClick={onDiscover}>
         <img src={SHOWCASE.hero} alt="" className="dash-discover__img" />
         <div className="dash-discover__shade" />
         <div className="dash-discover__content">
-          <h2>Discover People Nearby</h2>
-          <p className="dash-discover__lede">Meet people who match your vibe.</p>
+          <h2>Discover</h2>
           <span className="btn-primary dash-discover__btn">
             <Compass size={18} aria-hidden />
             Open Discover

@@ -31,6 +31,7 @@ export const STORAGE_KEYS = {
   cms: "bamsignal-cms",
   analytics: "bamsignal-analytics",
   paymentPending: "bamsignal-payment-pending",
+  paymentFlowState: "bamsignal-payment-flow-state",
   earlyAccessMember: "bamsignal-early-access",
   foundingMember: "bamsignal-founding-member",
   memberJoinedAt: "bamsignal-member-joined-at",

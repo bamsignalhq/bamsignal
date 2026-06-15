@@ -59,6 +59,31 @@ export function containsOtherOffPlatform(text: string): boolean {
   return OTHER_OFF_PLATFORM.some((pattern) => pattern.test(text));
 }
 
+const IMAGE_CONTACT_PATTERNS = [
+  ...PHONE_PATTERNS,
+  ...TELEGRAM_PATTERNS,
+  ...OTHER_OFF_PLATFORM,
+  /\bwatsapp\b/i,
+  /\bwassap\b/i,
+  /\bwhats\s*app\b/i,
+  /\bchat me\b/i,
+  /\bfollow me\b/i,
+  /\big:\s*@/i,
+  /\.com\b/i,
+  /\.ng\b/i,
+  /\b080\d{8}\b/i,
+  /\b081\d{8}\b/i,
+  /\b070\d{8}\b/i,
+  /\b090\d{8}\b/i,
+  /\b091\d{8}\b/i
+];
+
+export function containsContactInText(text: string): boolean {
+  const normalized = String(text || "").trim();
+  if (!normalized) return false;
+  return IMAGE_CONTACT_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
 export function checkOutgoingChatMessage(
   message: string,
   opts: {

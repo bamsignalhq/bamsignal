@@ -1,13 +1,16 @@
 import { ageFromDateOfBirth, defaultAdultDob } from "./ageFromDob";
 import { STORAGE_KEYS } from "../constants/limits";
+import { MIN_PROFILE_PHOTOS } from "../constants/photos";
 import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
 import { stateForCity } from "../constants/profileOptions";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { readJson } from "./storage";
+import { sameImageDataUrl } from "./imageContactScan";
 
 export const defaultDatingProfile = (): DatingProfile => ({
   photos: [],
+  coverPhoto: undefined,
   age: 25,
   dateOfBirth: defaultAdultDob(),
   gender: "Man",
@@ -51,7 +54,11 @@ export function getMatchPreferences(): MatchPreferences {
 
 export function isOnboardingComplete(): boolean {
   const profile = getDatingProfile();
-  return Boolean(profile.onboardingComplete && profile.bio.trim() && profile.photos.length > 0);
+  return Boolean(
+    profile.onboardingComplete &&
+      profile.bio.trim() &&
+      profile.photos.length >= MIN_PROFILE_PHOTOS
+  );
 }
 
 export function isPreferNot(value?: string): boolean {
@@ -84,11 +91,24 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     lookingFor: lookingFor as DatingProfile["lookingFor"],
     intents: normalizeIntents(raw.intents as string[] | undefined),
     interests: raw.interests ?? base.interests,
+    coverPhoto:
+      raw.coverPhoto && raw.photos?.some((p) => sameImageDataUrl(p, raw.coverPhoto))
+        ? undefined
+        : raw.coverPhoto,
+    photos: sanitizeProfilePhotos(raw.photos ?? base.photos, raw.coverPhoto),
+    verificationSelfie: raw.verificationSelfie,
+    verificationStatus: raw.verificationStatus ?? "none",
     visibility: { ...base.visibility!, ...raw.visibility },
     matchingPrivacy: { ...base.matchingPrivacy!, ...raw.matchingPrivacy },
     safetySettings: { ...defaultSafetySettings(raw.gender ?? base.gender), ...raw.safetySettings },
     createdAt: raw.createdAt ?? base.createdAt ?? new Date().toISOString()
   };
+}
+
+function sanitizeProfilePhotos(photos: string[], coverPhoto?: string): string[] {
+  const list = photos.filter(Boolean);
+  if (!coverPhoto) return list;
+  return list.filter((photo) => !sameImageDataUrl(photo, coverPhoto));
 }
 
 export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): MatchPreferences {

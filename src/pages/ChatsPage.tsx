@@ -4,7 +4,6 @@ import { BRAND } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
 import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
 import { ActivityStatus } from "../components/ActivityStatus";
-import { WhyThisProfile } from "../components/WhyThisProfile";
 import { ChatInput } from "../components/ChatInput";
 import { EmptyState } from "../components/EmptyState";
 import { OffPlatformConsentCard } from "../components/OffPlatformConsentCard";
@@ -12,12 +11,10 @@ import { OffPlatformEducationModal } from "../components/OffPlatformEducationMod
 import { PaywallModal } from "../components/PaywallModal";
 import { QuickiePaywallModal } from "../components/QuickiePaywallModal";
 import { ReportBlockModal } from "../components/ReportBlockModal";
-import { SafetyNotice } from "../components/SafetyNotice";
 import type { ChatMessage, ChatThread, Match, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { FEMALE_SAFETY_COPY } from "../constants/safety";
 import { getDatingProfile } from "../utils/profile";
-import { getProfileMatchReasons } from "../utils/compatibility";
 import { checkOutgoingChatMessage } from "../utils/contactGuard";
 import { blockUser, canUseInbox, filterBlockedByProfileId } from "../utils/safety";
 import { isOnlineNow } from "../utils/activity";
@@ -26,8 +23,8 @@ import { pushNotification } from "../utils/notifications";
 import { isViewerShadowBanned } from "../utils/shadowBan";
 import { incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
 import { persistMessageRemote } from "../services/memberData";
-import { startQuickiePassPayment } from "../services/payments";
-import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch } from "../utils/quickie";
+import { startQuickiePassPayment, completePendingPayment } from "../services/payments";
+import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch, activateQuickiePass } from "../utils/quickie";
 
 type ChatsPageProps = {
   isPremium: boolean;
@@ -93,8 +90,8 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
         <EmptyState
           icon={MessageCircle}
           title="No conversations yet"
-          message="Your conversations will appear here."
-          actionLabel="Go to Discover"
+          message="Start your first conversation."
+          actionLabel="Discover people nearby"
           onAction={onDiscover}
         />
       </div>
@@ -124,7 +121,6 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
         <div>
           <p className="member-page-head__eyebrow">Messages</p>
           <h1>{matches.length} conversation{matches.length === 1 ? "" : "s"}</h1>
-          <p className="member-page-head__sub">Signal accepted — chat safely inside BamSignal.</p>
         </div>
       </header>
 
@@ -222,7 +218,6 @@ function ChatDetail({
   const lastActiveAt = match.lastActiveAt ?? getCachedMemberProfile(match.profileId)?.lastActiveAt;
   const discoverProfile = getCachedMemberProfile(match.profileId);
   const matchHasQuickie = profileHasQuickieIntent(discoverProfile?.intents);
-  const matchReasons = discoverProfile ? getProfileMatchReasons(getDatingProfile(), discoverProfile) : [];
   const sentByMe = messages.filter((m) => m.from === "me").length;
   const showOffAppLink =
     messages.length >= OFF_APP_MESSAGE_THRESHOLD &&
@@ -371,8 +366,6 @@ function ChatDetail({
 
       {toast && <div className="toast toast--member">{toast}</div>}
 
-      <SafetyNotice variant="chat" message={BRAND.chatSafetyNotice} />
-
       {threadMeta.pendingOffPlatformRequest && (
         <OffPlatformConsentCard
           matchName={match.name}
@@ -381,22 +374,14 @@ function ChatDetail({
         />
       )}
 
-      {matchReasons.length > 0 && (
-        <WhyThisProfile reasons={matchReasons} compact className="chat-detail-why" />
-      )}
-
       <div className="chat-messages chat-messages--fintech">
-        {messages.length === 0 && (
-          <p className="chat-empty">Say hi to {match.name}! Keep it friendly and stay on BamSignal.</p>
-        )}
+        {messages.length === 0 && <p className="chat-empty">Say hi to {match.name}.</p>}
         {messages.map((m) => (
           <div key={m.id} className={`chat-bubble ${m.from}`}>
             {m.text}
           </div>
         ))}
       </div>
-
-      <SafetyNotice variant="inline" message="Meet in public first. Tell a trusted contact where you're going and when you'll check in." />
 
       {dmPaused ? (
         <p className="chat-dm-paused">{inboxGate.reason ?? FEMALE_SAFETY_COPY.dmPaused}</p>
@@ -434,14 +419,26 @@ function ChatDetail({
         onPay={async () => {
           setQuickieLoading(true);
           const result = await startQuickiePassPayment(user);
-          setQuickieLoading(false);
-          if (result.ok) {
-            unlockQuickieMatch(match.profileId);
-            setQuickiePaywallOpen(false);
-          } else if (result.error) {
-            setToast(result.error);
-            setTimeout(() => setToast(""), 4000);
+          if (!result.ok) {
+            setQuickieLoading(false);
+            if (!result.cancelled && result.error) {
+              setToast(result.error);
+              setTimeout(() => setToast(""), 4000);
+            }
+            return;
           }
+          if (!result.redirected) {
+            const verified = await completePendingPayment(user);
+            if (verified.ok) {
+              activateQuickiePass();
+              unlockQuickieMatch(match.profileId);
+              setQuickiePaywallOpen(false);
+            } else if (!verified.cancelled && verified.error) {
+              setToast(verified.error);
+              setTimeout(() => setToast(""), 4000);
+            }
+          }
+          setQuickieLoading(false);
         }}
       />
 

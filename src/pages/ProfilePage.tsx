@@ -1,8 +1,10 @@
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, Settings, ShieldCheck, Sun, Upload } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, Settings, Sun } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay } from "../constants/intents";
 import { DateOfBirthPicker } from "../components/DateOfBirthPicker";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
+import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
+import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
 import {
   ALL_NIGERIAN_CITIES,
   ETHNIC_BACKGROUNDS,
@@ -19,7 +21,6 @@ import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
 import { InterestPicker } from "../components/InterestPicker";
 import { VoiceIntroRecorder } from "../components/VoiceIntro";
 import { VoiceIntro } from "../components/VoiceIntro";
-import { WhyThisProfile } from "../components/WhyThisProfile";
 import type {
   DatingProfile,
   EthnicBackground,
@@ -40,24 +41,19 @@ import { readJson, writeJson } from "../utils/storage";
 import { SafetySettingsCard } from "../components/SafetySettingsCard";
 import {
   isUserVerificationApproved,
-  isUserVerificationPending,
-  submitVerificationRequest
+  isUserVerificationPending
 } from "../utils/verificationQueue";
 import { notifyVerificationApproved } from "../utils/notifyHelpers";
-import { moderatePhotoUpload } from "../utils/mediaModeration";
-import { getOwnProfileHighlights } from "../utils/profileHighlights";
-import { getOwnProfileChips } from "../utils/profileCompatSummary";
 import { StateCitySelect } from "../components/StateCitySelect";
 import { MAX_PROFILE_PHOTOS } from "../constants/photos";
 import { isAdultDob } from "../utils/ageFromDob";
 import { syncMemberProfileRemote } from "../services/cityHome";
-import { mySocialStats } from "../utils/profileSocial";
 
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
 const LOOKING: LookingFor[] = ["Men", "Women"];
 
 type ProfileView = "overview" | "edit" | "settings";
-type SettingsPanel = "hub" | "preferences" | "privacy" | "safety" | "account" | "payments" | "notifications";
+type SettingsPanel = "hub" | "preferences" | "privacy" | "account" | "notifications" | "verification";
 type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "voice";
 
 type ProfilePageProps = {
@@ -143,7 +139,6 @@ export function ProfilePage({
   onLogout,
   onUpgrade
 }: ProfilePageProps) {
-  const fileRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<DatingProfile>(() =>
     normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
   );
@@ -152,14 +147,17 @@ export function ProfilePage({
   );
   const [saved, setSaved] = useState(false);
   const [modMessage, setModMessage] = useState("");
-  const [verifying, setVerifying] = useState(false);
   const [view, setView] = useState<ProfileView>("overview");
   const [settingsPanel, setSettingsPanel] = useState<SettingsPanel>("hub");
   const [prefsStatePick, setPrefsStatePick] = useState(prefs.states[0] ?? "");
   const [editOpen, setEditOpen] = useState<EditSection | null>(null);
-  const [verifySubmitted, setVerifySubmitted] = useState(() => isUserVerificationPending(user.phone));
-  const verifyPending = verifySubmitted || isUserVerificationPending(user.phone);
-  const social = mySocialStats();
+  const [verifySubmitted, setVerifySubmitted] = useState(
+    () => profile.verificationStatus === "pending" || isUserVerificationPending(user.phone)
+  );
+  const verifyPending =
+    verifySubmitted ||
+    profile.verificationStatus === "pending" ||
+    isUserVerificationPending(user.phone);
 
   useEffect(() => {
     if (profile.verified || !user.phone) return;
@@ -184,34 +182,28 @@ export function ProfilePage({
     window.setTimeout(() => setModMessage(""), 4000);
   };
 
-  const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    const verdict = await moderatePhotoUpload(file);
-    if (!verdict.allowed) {
-      showModMessage(verdict.message);
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const url = String(reader.result || "");
-      setProfile((p) => {
-        const next = { ...p, photos: [...p.photos, url].slice(0, MAX_PROFILE_PHOTOS) };
-        writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
-        syncMemberProfileRemote(user, next);
-        return next;
-      });
-    };
-    reader.readAsDataURL(file);
+  const startSelfieVerification = () => {
+    openSettings("verification");
   };
 
-  const startSelfieVerification = () => {
-    if (verifyPending || profile.verified) return;
-    setVerifying(true);
-    submitVerificationRequest(user.name || "Member", user.phone || "unknown");
+  const handlePhoneVerified = (phone: string) => {
+    const nextUser = { ...user, phone, phoneVerified: true };
+    onUserChange(nextUser);
+    writeJson(STORAGE_KEYS.userProfile, nextUser);
+  };
+
+  const handleSelfieSubmitted = (verificationSelfie: string) => {
+    setProfile((p) => {
+      const next = {
+        ...p,
+        verificationSelfie,
+        verificationStatus: "pending" as const
+      };
+      writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
+      syncMemberProfileRemote(user, next);
+      return next;
+    });
     setVerifySubmitted(true);
-    window.setTimeout(() => setVerifying(false), 600);
   };
 
   const toggleIntent = (intent: IntentTag) => {
@@ -252,10 +244,8 @@ export function ProfilePage({
     setEditOpen((current) => (current === id ? null : id));
   };
 
-  const phoneVerified = Boolean(user.phoneVerified ?? user.phone);
+  const phoneVerified = Boolean(user.phoneVerified);
   const verification = getVerificationTier(profile, isPremium, phoneVerified);
-  const profileHighlights = getOwnProfileHighlights(profile);
-  const profileChips = getOwnProfileChips(profile, prefs);
 
   const settingsBack = () => {
     if (settingsPanel === "hub") {
@@ -302,7 +292,7 @@ export function ProfilePage({
             </section>
 
             <section className="profile-overview-block">
-              <h3>Interested in</h3>
+              <h3>Looking for</h3>
               {profile.intents.length > 0 ? (
                 <div className="intent-tags">
                   {profile.intents.slice(0, MAX_INTENT_SELECTIONS).map((intent) => (
@@ -312,66 +302,18 @@ export function ProfilePage({
                   ))}
                 </div>
               ) : (
-                <p className="profile-overview-empty">Share what you&apos;re open to.</p>
+                <p className="profile-overview-empty">Add what you&apos;re open to.</p>
               )}
             </section>
 
             <section className="profile-overview-block">
-              <h3>Voice greeting</h3>
+              <h3>Voice intro</h3>
               {profile.voiceIntroUrl ? (
                 <VoiceIntro url={profile.voiceIntroUrl} />
               ) : (
-                <p className="profile-overview-empty">Add a short voice greeting.</p>
+                <p className="profile-overview-empty">Record a short intro.</p>
               )}
             </section>
-
-            {profileHighlights.length > 0 && (
-              <section className="profile-overview-block profile-overview-block--insight">
-                <WhyThisProfile reasons={profileHighlights} title="Profile highlights" />
-                {profileChips.length > 0 ? (
-                  <div className="profile-highlights-chips">
-                    {profileChips.map((chip) => (
-                      <span key={chip} className="profile-highlights-chip">
-                        {chip}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </section>
-            )}
-
-            {(social.likesReceived > 0 || social.followsReceived > 0) && (
-              <section className="profile-overview-block profile-overview-block--private">
-                <h3>Your admirers</h3>
-                <p className="profile-overview-private-note">Only you can see who liked your photos or followed you.</p>
-                {social.likesReceived > 0 && (
-                  <div className="profile-social-list">
-                    <h4>Photo likes ({social.likesReceived})</h4>
-                    <ul>
-                      {social.incomingLikes.slice(0, 8).map((entry) => (
-                        <li key={entry.profileId}>
-                          <img src={entry.photo} alt="" />
-                          <span>{entry.name}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {social.followsReceived > 0 && (
-                  <div className="profile-social-list">
-                    <h4>Followers ({social.followsReceived})</h4>
-                    <ul>
-                      {social.incomingFollows.slice(0, 8).map((entry) => (
-                        <li key={entry.profileId}>
-                          <img src={entry.photo} alt="" />
-                          <span>{entry.name}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </section>
-            )}
           </div>
 
           <div className="profile-edit-cta">
@@ -406,7 +348,6 @@ export function ProfilePage({
             </button>
           </div>
           <h2 className="profile-screen-title">Edit Profile</h2>
-          <input ref={fileRef} type="file" accept="image/*" hidden onChange={uploadPhoto} />
 
           <EditAccordion
             id="basic"
@@ -483,12 +424,28 @@ export function ProfilePage({
             open={editOpen === "photos"}
             onToggle={toggleEditSection}
           >
+            <h4 className="profile-form-row__label">Cover photo</h4>
+            <CoverPhotoUpload
+              coverPhoto={profile.coverPhoto}
+              profilePhotos={profile.photos}
+              onChange={(coverPhoto) => {
+                setProfile((p) => {
+                  const next = normalizeDatingProfile({ ...p, coverPhoto });
+                  writeJson(STORAGE_KEYS.datingProfile, next);
+                  syncMemberProfileRemote(user, next);
+                  return next;
+                });
+              }}
+              onModerationMessage={showModMessage}
+            />
+            <h4 className="profile-form-row__label">Profile photos</h4>
             <PhotoUploadGrid
               photos={profile.photos}
+              coverPhoto={profile.coverPhoto}
               onChange={(photos) => {
                 setProfile((p) => {
-                  const next = { ...p, photos };
-                  writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
+                  const next = normalizeDatingProfile({ ...p, photos });
+                  writeJson(STORAGE_KEYS.datingProfile, next);
                   syncMemberProfileRemote(user, next);
                   return next;
                 });
@@ -593,13 +550,11 @@ export function ProfilePage({
                 ? "Preferences"
                 : settingsPanel === "privacy"
                   ? "Privacy"
-                  : settingsPanel === "safety"
-                    ? "Safety"
-                    : settingsPanel === "notifications"
-                      ? "Notifications"
-                      : settingsPanel === "payments"
-                        ? "Payments"
-                        : "Account"}
+                  : settingsPanel === "notifications"
+                    ? "Notifications"
+                    : settingsPanel === "verification"
+                      ? "Verification"
+                      : "Account"}
           </h2>
 
           {settingsPanel === "hub" && (
@@ -607,9 +562,8 @@ export function ProfilePage({
               <section className="card settings-hub-card">
                 <SettingsRow label="Preferences" onClick={() => setSettingsPanel("preferences")} />
                 <SettingsRow label="Privacy" onClick={() => setSettingsPanel("privacy")} />
-                <SettingsRow label="Safety" onClick={() => setSettingsPanel("safety")} />
                 <SettingsRow label="Notifications" onClick={() => setSettingsPanel("notifications")} />
-                {!isPremium && <SettingsRow label="Payments" onClick={() => setSettingsPanel("payments")} />}
+                <SettingsRow label="Verification" onClick={() => setSettingsPanel("verification")} />
                 <SettingsRow label="Account" onClick={() => setSettingsPanel("account")} />
               </section>
               <div className="settings-hub-footer">
@@ -781,6 +735,46 @@ export function ProfilePage({
             </section>
           )}
 
+          {settingsPanel === "privacy" && (
+            <>
+              <section className="card profile-privacy-card">
+                {(
+                  [
+                    ["showReligion", "Show faith on profile"],
+                    ["showEthnicity", "Show ethnic background on profile"],
+                    ["showState", "Show state on profile"]
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key} className="settings-row settings-row--toggle">
+                    <span>{label}</span>
+                    <input
+                      type="checkbox"
+                      checked={profile.visibility?.[key] ?? false}
+                      onChange={(e) => {
+                        const next = {
+                          ...profile,
+                          visibility: { ...profile.visibility!, [key]: e.target.checked }
+                        };
+                        setProfile(next);
+                        writeJson(STORAGE_KEYS.datingProfile, { ...next, premium: isPremium });
+                      }}
+                    />
+                  </label>
+                ))}
+              </section>
+              <details className="settings-advanced">
+                <summary>Safety controls</summary>
+                <SafetySettingsCard
+                  profile={profile}
+                  onChange={(safetySettings: SafetySettings) => {
+                    setProfile({ ...profile, safetySettings });
+                    writeJson(STORAGE_KEYS.datingProfile, { ...profile, safetySettings, premium: isPremium });
+                  }}
+                />
+              </details>
+            </>
+          )}
+
           {settingsPanel === "notifications" && (
             <section className="card settings-card settings-card--quiet">
               <p className="profile-overview-empty">
@@ -789,76 +783,30 @@ export function ProfilePage({
             </section>
           )}
 
-          {settingsPanel === "privacy" && (
-            <section className="card profile-privacy-card">
-              {(
-                [
-                  ["showReligion", "Show religion on profile"],
-                  ["showEthnicity", "Show ethnic background on profile"],
-                  ["showState", "Show state on profile"]
-                ] as const
-              ).map(([key, label]) => (
-                <label key={key} className="settings-row settings-row--toggle">
-                  <span>{label}</span>
-                  <input
-                    type="checkbox"
-                    checked={profile.visibility?.[key] ?? false}
-                    onChange={(e) => {
-                      const next = {
-                        ...profile,
-                        visibility: { ...profile.visibility!, [key]: e.target.checked }
-                      };
-                      setProfile(next);
-                      writeJson(STORAGE_KEYS.datingProfile, { ...next, premium: isPremium });
-                    }}
-                  />
-                </label>
-              ))}
-            </section>
-          )}
-
-          {settingsPanel === "safety" && (
-            <SafetySettingsCard
-              profile={profile}
-              onChange={(safetySettings: SafetySettings) => {
-                setProfile({ ...profile, safetySettings });
-                writeJson(STORAGE_KEYS.datingProfile, { ...profile, safetySettings, premium: isPremium });
-              }}
+          {settingsPanel === "verification" && (
+            <PhoneVerificationPanel
+              user={user}
+              phoneVerified={phoneVerified}
+              profilePhoto={profile.photos[0]}
+              verificationStatus={
+                profile.verified
+                  ? "approved"
+                  : profile.verificationStatus || (verifyPending ? "pending" : "none")
+              }
+              onPhoneVerified={handlePhoneVerified}
+              onSelfieSubmitted={handleSelfieSubmitted}
+              onMessage={showModMessage}
             />
-          )}
-
-          {settingsPanel === "payments" && !isPremium && (
-            <section className="card settings-card">
-              <button type="button" className="btn-primary btn-full" onClick={onUpgrade}>
-                Signal Pass
-              </button>
-            </section>
           )}
 
           {settingsPanel === "account" && (
             <>
-              <section className="card verification-card verification-card--compact">
-                <ShieldCheck size={22} />
-                <div>
-                  <h3>Verification</h3>
-                </div>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={startSelfieVerification}
-                  disabled={profile.verified || verifying || verifyPending}
-                >
-                  {profile.verified
-                    ? "Verified"
-                    : verifyPending
-                      ? "Verification pending"
-                      : verifying
-                        ? "Submitting…"
-                        : "Verify account"}
-                </button>
-              </section>
-
               <section className="card settings-card">
+                {!isPremium && (
+                  <button type="button" className="settings-row" onClick={onUpgrade}>
+                    <span>Signal Pass</span>
+                  </button>
+                )}
                 <button type="button" className="settings-row" onClick={onToggleTheme}>
                   {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
                   <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>

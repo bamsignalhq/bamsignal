@@ -256,6 +256,8 @@ export async function ensureAppUsersTable() {
   await query("alter table app_users add column if not exists paystack_reference text");
   await query("alter table app_users add column if not exists referral_points integer not null default 0");
   await query("alter table app_users add column if not exists user_key text");
+  await query("alter table app_users add column if not exists phone_verified boolean not null default false");
+  await query("alter table app_users add column if not exists phone_verified_at timestamptz");
   await query("create unique index if not exists app_users_user_key_idx on app_users (user_key) where user_key is not null");
   await query("create unique index if not exists app_users_email_unique_idx on app_users (lower(email)) where email is not null and email <> ''");
   await query("create unique index if not exists app_users_phone_unique_idx on app_users (phone) where phone is not null and phone <> ''");

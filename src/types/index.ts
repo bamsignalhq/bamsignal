@@ -79,8 +79,12 @@ export type UserProfile = {
   phoneVerified?: boolean;
 };
 
+export type VerificationReviewStatus = "none" | "pending" | "approved" | "rejected";
+
 export type DatingProfile = {
   photos: string[];
+  /** Wide hero backdrop — separate from profile gallery photos */
+  coverPhoto?: string;
   age: number;
   /** ISO date YYYY-MM-DD — source of truth for age when set */
   dateOfBirth?: string;
@@ -101,6 +105,9 @@ export type DatingProfile = {
   safetySettings?: SafetySettings;
   verified: boolean;
   premium: boolean;
+  /** Selfie submitted for manual identity review */
+  verificationSelfie?: string;
+  verificationStatus?: VerificationReviewStatus;
   onboardingComplete?: boolean;
   createdAt?: string;
   reportCount?: number;

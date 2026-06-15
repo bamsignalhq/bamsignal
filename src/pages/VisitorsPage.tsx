@@ -34,7 +34,7 @@ export function VisitorsPage({
           <Eye size={24} aria-hidden />
           <h1>Profile Visitors</h1>
           <p>
-            👀 {displayCount} profile view{displayCount === 1 ? "" : "s"} today
+            {displayCount} profile view{displayCount === 1 ? "" : "s"} today
           </p>
         </div>
       </header>
@@ -51,9 +51,8 @@ export function VisitorsPage({
       ) : viewers.length === 0 ? (
         <EmptyState
           icon={Eye}
-          title="No profile visitors yet"
-          message="Complete your profile and start sending Signals."
-          actionLabel="Complete profile"
+          title="No visitors yet"
+          actionLabel="Discover people nearby"
           onAction={onCompleteProfile}
         />
       ) : (

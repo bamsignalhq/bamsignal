@@ -12,14 +12,11 @@ export function DashboardActivitySnapshot({
   const rows = [
     { label: "Profile views", value: profileViews },
     { label: "Signals received", value: signalsReceived },
-    { label: "New connections", value: connectionsStarted }
-  ].filter((row) => row.value > 0);
-
-  if (!rows.length) return null;
+    { label: "Connections", value: connectionsStarted }
+  ];
 
   return (
-    <section className="dash-activity card dash-animate" aria-label="Your activity">
-      <h2 className="dash-activity__title">Your Activity</h2>
+    <section className="dash-activity dash-activity--compact" aria-label="Activity summary">
       <dl className="dash-activity__list">
         {rows.map((row) => (
           <div key={row.label} className="dash-activity__row">

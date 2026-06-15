@@ -4,51 +4,111 @@ import type { PremiumPlan } from "../constants/plans";
 import { DEFAULT_PREMIUM_PLANS } from "../constants/plans";
 import { STORAGE_KEYS } from "../constants/limits";
 import type { UserProfile } from "../types";
+import { readJson } from "../utils/storage";
+import { setPaymentFlowState } from "../utils/paymentState";
+import { openPaystackCheckout } from "./paymentCheckout";
 import { apiUrl } from "./supabase";
+import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
 
-export async function startPlanPayment(
-  plan: PremiumPlan,
-  user: UserProfile
-): Promise<{ ok: boolean; error?: string; reference?: string }> {
+export { isPremiumActive, refreshPremiumStatus };
+export { clearPaymentSession } from "../utils/paymentState";
+
+const INIT_ERROR = "We couldn't start payment right now. Please try again shortly.";
+
+function paymentPlatform(): "native" | "web" {
+  return Capacitor.isNativePlatform() ? "native" : "web";
+}
+
+type InitPayload = {
+  ok: boolean;
+  error?: string;
+  reference?: string;
+  authorization_url?: string;
+  access_code?: string;
+};
+
+type StartPaymentResult = {
+  ok: boolean;
+  error?: string;
+  reference?: string;
+  cancelled?: boolean;
+  redirected?: boolean;
+};
+
+async function postInitialize(url: string, body: Record<string, unknown>): Promise<InitPayload> {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.ok || !payload.authorization_url) {
+    return { ok: false, error: payload?.error || INIT_ERROR };
+  }
+  return payload as InitPayload;
+}
+
+async function launchCheckout(
+  init: InitPayload,
+  kind: string,
+  extraKeys?: Record<string, string>
+): Promise<StartPaymentResult> {
+  if (init.reference) {
+    localStorage.setItem(STORAGE_KEYS.paymentReference, init.reference);
+  }
+  localStorage.setItem(STORAGE_KEYS.paymentKind, kind);
+  if (extraKeys) {
+    for (const [key, value] of Object.entries(extraKeys)) {
+      localStorage.setItem(key, value);
+    }
+  }
+
+  const outcome = await openPaystackCheckout({
+    authorizationUrl: init.authorization_url!,
+    accessCode: init.access_code
+  });
+
+  if (outcome.status === "redirect") {
+    return { ok: true, reference: init.reference, redirected: true };
+  }
+
+  if (outcome.status === "cancelled") {
+    setPaymentFlowState("cancelled");
+    return { ok: false, cancelled: true };
+  }
+
+  localStorage.setItem(STORAGE_KEYS.paymentReference, outcome.reference);
+  setPaymentFlowState("verifying");
+  return { ok: true, reference: outcome.reference };
+}
+
+export async function startPlanPayment(plan: PremiumPlan, user: UserProfile): Promise<StartPaymentResult> {
   if (!user.email) {
     return { ok: false, error: "Add a verified email before upgrading." };
   }
 
+  setPaymentFlowState("initializing");
+
   try {
-    const response = await fetch(apiUrl("/api/paystack/verify?action=initialize"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: user.email,
-        phone: user.phone,
-        name: user.name,
-        days: plan.days,
-        amount: plan.price,
-        plan: plan.id
-      })
+    const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize"), {
+      email: user.email,
+      phone: user.phone,
+      name: user.name,
+      days: plan.days,
+      amount: plan.price,
+      plan: plan.id,
+      platform: paymentPlatform()
     });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || !payload?.ok || !payload.authorization_url) {
-      return { ok: false, error: payload?.error || "Paystack checkout could not start." };
+
+    if (!init.ok) {
+      setPaymentFlowState("failed");
+      return { ok: false, error: init.error || INIT_ERROR };
     }
 
-    if (payload.reference) {
-      localStorage.setItem(STORAGE_KEYS.paymentReference, payload.reference);
-      localStorage.setItem(STORAGE_KEYS.paymentKind, "premium");
-    }
-
-    if (Capacitor.isNativePlatform()) {
-      await Browser.open({ url: payload.authorization_url, presentationStyle: "fullscreen" });
-    } else {
-      window.location.href = payload.authorization_url;
-    }
-
-    return { ok: true, reference: payload.reference };
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Payment could not start."
-    };
+    return await launchCheckout(init, "premium");
+  } catch {
+    setPaymentFlowState("failed");
+    return { ok: false, error: INIT_ERROR };
   }
 }
 
@@ -71,6 +131,7 @@ export async function verifyPayment(user: UserProfile): Promise<{
   ok: boolean;
   premiumUntil?: string;
   error?: string;
+  pending?: boolean;
 }> {
   const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
   if (!reference) {
@@ -89,6 +150,9 @@ export async function verifyPayment(user: UserProfile): Promise<{
       })
     });
     const payload = await response.json().catch(() => null);
+    if (response.status === 402) {
+      return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
+    }
     if (!response.ok || !payload?.ok) {
       return { ok: false, error: payload?.error || "Payment not verified yet." };
     }
@@ -96,62 +160,44 @@ export async function verifyPayment(user: UserProfile): Promise<{
       setPremiumSnapshot({ isPremium: true, premiumUntil: payload.premium_until });
     }
     return { ok: true, premiumUntil: payload.premium_until };
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Verification failed."
-    };
+  } catch {
+    return { ok: false, error: "Verification failed." };
   }
 }
 
-import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
-
-export { isPremiumActive, refreshPremiumStatus };
-
-export async function startQuickiePassPayment(
-  user: UserProfile
-): Promise<{ ok: boolean; error?: string; reference?: string }> {
+export async function startQuickiePassPayment(user: UserProfile): Promise<StartPaymentResult> {
   if (!user.email) {
     return { ok: false, error: "Add a verified email before purchasing a Quickie pass." };
   }
 
+  setPaymentFlowState("initializing");
+
   try {
-    const response = await fetch(apiUrl("/api/paystack/verify?action=initialize-quickie"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: user.email,
-        phone: user.phone,
-        name: user.name,
-        amount: 999
-      })
+    const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize-quickie"), {
+      email: user.email,
+      phone: user.phone,
+      name: user.name,
+      amount: 999,
+      platform: paymentPlatform()
     });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || !payload?.ok || !payload.authorization_url) {
-      return { ok: false, error: payload?.error || "Paystack checkout could not start." };
+
+    if (!init.ok) {
+      setPaymentFlowState("failed");
+      return { ok: false, error: init.error || INIT_ERROR };
     }
 
-    if (payload.reference) {
-      localStorage.setItem(STORAGE_KEYS.paymentReference, payload.reference);
-      localStorage.setItem(STORAGE_KEYS.paymentKind, "quickie");
-    }
-
-    if (Capacitor.isNativePlatform()) {
-      await Browser.open({ url: payload.authorization_url, presentationStyle: "fullscreen" });
-    } else {
-      window.location.href = payload.authorization_url;
-    }
-
-    return { ok: true, reference: payload.reference };
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Payment could not start."
-    };
+    return await launchCheckout(init, "quickie");
+  } catch {
+    setPaymentFlowState("failed");
+    return { ok: false, error: INIT_ERROR };
   }
 }
 
-export async function verifyQuickiePayment(user: UserProfile): Promise<{ ok: boolean; error?: string }> {
+export async function verifyQuickiePayment(user: UserProfile): Promise<{
+  ok: boolean;
+  error?: string;
+  pending?: boolean;
+}> {
   const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
   if (!reference) {
     return { ok: false, error: "No payment reference found." };
@@ -170,15 +216,15 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{ ok: boo
       })
     });
     const payload = await response.json().catch(() => null);
+    if (response.status === 402) {
+      return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
+    }
     if (!response.ok || !payload?.ok) {
       return { ok: false, error: payload?.error || "Payment not verified yet." };
     }
     return { ok: true };
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Verification failed."
-    };
+  } catch {
+    return { ok: false, error: "Verification failed." };
   }
 }
 
@@ -188,47 +234,36 @@ export async function startBoostPayment(
   user: UserProfile,
   city: string,
   durationHours = 48
-): Promise<{ ok: boolean; error?: string; reference?: string }> {
+): Promise<StartPaymentResult> {
   if (!user.email) {
     return { ok: false, error: "Add a verified email before purchasing a boost." };
   }
 
+  setPaymentFlowState("initializing");
+
   try {
-    const response = await fetch(apiUrl("/api/paystack/verify?action=initialize-boost"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: user.email,
-        phone: user.phone,
-        name: user.name,
-        boostId,
-        city,
-        amount: price,
-        durationHours
-      })
+    const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize-boost"), {
+      email: user.email,
+      phone: user.phone,
+      name: user.name,
+      boostId,
+      city,
+      amount: price,
+      durationHours,
+      platform: paymentPlatform()
     });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || !payload?.ok || !payload.authorization_url) {
-      return { ok: false, error: payload?.error || "Paystack checkout could not start." };
+
+    if (!init.ok) {
+      setPaymentFlowState("failed");
+      return { ok: false, error: init.error || INIT_ERROR };
     }
 
-    if (payload.reference) {
-      localStorage.setItem(STORAGE_KEYS.paymentReference, payload.reference);
-      localStorage.setItem(STORAGE_KEYS.paymentKind, "boost");
-    }
-
-    if (Capacitor.isNativePlatform()) {
-      await Browser.open({ url: payload.authorization_url, presentationStyle: "fullscreen" });
-    } else {
-      window.location.href = payload.authorization_url;
-    }
-
-    return { ok: true, reference: payload.reference };
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Payment could not start."
-    };
+    return await launchCheckout(init, "boost", {
+      [STORAGE_KEYS.paymentBoostId]: boostId
+    });
+  } catch {
+    setPaymentFlowState("failed");
+    return { ok: false, error: INIT_ERROR };
   }
 }
 
@@ -236,7 +271,7 @@ export async function verifyBoostPayment(
   user: UserProfile,
   boostId = "city-boost",
   city = "Lagos"
-): Promise<{ ok: boolean; error?: string; expiresAt?: string }> {
+): Promise<{ ok: boolean; error?: string; expiresAt?: string; pending?: boolean }> {
   const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
   if (!reference) {
     return { ok: false, error: "No payment reference found." };
@@ -257,14 +292,63 @@ export async function verifyBoostPayment(
       })
     });
     const payload = await response.json().catch(() => null);
+    if (response.status === 402) {
+      return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
+    }
     if (!response.ok || !payload?.ok) {
       return { ok: false, error: payload?.error || "Payment not verified yet." };
     }
     return { ok: true, expiresAt: payload.expiresAt };
-  } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Verification failed."
-    };
+  } catch {
+    return { ok: false, error: "Verification failed." };
   }
+}
+
+export async function completePendingPayment(user: UserProfile): Promise<{
+  ok: boolean;
+  kind: "premium" | "boost" | "quickie";
+  error?: string;
+  pending?: boolean;
+  cancelled?: boolean;
+}> {
+  const reference =
+    new URLSearchParams(window.location.search).get("trxref") ||
+    new URLSearchParams(window.location.search).get("reference") ||
+    localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
+
+  if (!reference) {
+    return { ok: false, kind: "premium", error: "No payment reference." };
+  }
+
+  localStorage.setItem(STORAGE_KEYS.paymentReference, reference);
+  setPaymentFlowState("verifying");
+
+  const kind = (localStorage.getItem(STORAGE_KEYS.paymentKind) || "premium") as
+    | "premium"
+    | "boost"
+    | "quickie";
+
+  if (kind === "boost") {
+    const datingProfile = readJson<{ city?: string }>(STORAGE_KEYS.datingProfile, {});
+    const boostId = localStorage.getItem(STORAGE_KEYS.paymentBoostId) || "city-boost";
+    const result = await verifyBoostPayment(user, boostId, datingProfile.city || "Lagos");
+    if (result.ok) return { ok: true, kind: "boost" };
+    if (result.pending) return { ok: false, kind: "boost", pending: true, cancelled: true };
+    setPaymentFlowState("failed");
+    return { ok: false, kind: "boost", error: result.error };
+  }
+
+  if (kind === "quickie") {
+    const result = await verifyQuickiePayment(user);
+    if (result.ok) return { ok: true, kind: "quickie" };
+    if (result.pending) return { ok: false, kind: "quickie", pending: true, cancelled: true };
+    setPaymentFlowState("failed");
+    return { ok: false, kind: "quickie", error: result.error };
+  }
+
+  const result = await verifyPayment(user);
+  if (result.ok) return { ok: true, kind: "premium" };
+  if (result.pending) return { ok: false, kind: "premium", pending: true, cancelled: true };
+  setPaymentFlowState("failed");
+  return { ok: false, kind: "premium", error: result.error };
 }

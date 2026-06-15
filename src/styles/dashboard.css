@@ -387,6 +387,14 @@
 }
 
 /* Activity summary */
+.dash-activity--compact {
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+}
+
 .dash-activity {
   padding: 18px 20px;
 }
@@ -838,17 +846,22 @@
 }
 
 .dash-premium--compact {
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
   padding: 14px 16px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
 }
 
 .dash-premium--compact__copy {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 

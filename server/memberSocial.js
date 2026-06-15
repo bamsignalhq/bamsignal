@@ -516,6 +516,7 @@ export async function fetchMemberSocialBundle({ email, phone }) {
     datingProfile: ownProfile
       ? {
           photos,
+          coverPhoto: profileJson.coverPhoto,
           age: profileJson.age || 25,
           dateOfBirth: profileJson.dateOfBirth,
           gender: profileJson.gender,
@@ -529,6 +530,8 @@ export async function fetchMemberSocialBundle({ email, phone }) {
           lifestyle: profileJson.lifestyle,
           verified: Boolean(profileJson.verified),
           premium: Boolean(profileJson.premium),
+          verificationSelfie: profileJson.verificationSelfie,
+          verificationStatus: profileJson.verificationStatus || "none",
           onboardingComplete: Boolean(ownProfile.onboarding_complete),
           createdAt: profileJson.createdAt || ownProfile.created_at
         }

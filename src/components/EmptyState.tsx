@@ -1,40 +1,22 @@
 import type { LucideIcon } from "lucide-react";
-import { AppLogo } from "./AppLogo";
 
 type EmptyStateProps = {
   icon?: LucideIcon;
   title: string;
-  message: string;
+  message?: string;
   actionLabel?: string;
   onAction?: () => void;
-  secondaryLabel?: string;
-  onSecondary?: () => void;
 };
 
-export function EmptyState({
-  icon: Icon,
-  title,
-  message,
-  actionLabel,
-  onAction,
-  secondaryLabel,
-  onSecondary
-}: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, message, actionLabel, onAction }: EmptyStateProps) {
   return (
-    <div className="empty-state empty-state--rich">
-      <div className="empty-state__art" aria-hidden>
-        {Icon ? <Icon size={40} strokeWidth={1.2} /> : <AppLogo size="md" showText={false} />}
-      </div>
+    <div className="empty-state empty-state--calm">
+      {Icon ? <Icon size={28} strokeWidth={1.5} aria-hidden className="empty-state__icon" /> : null}
       <h2>{title}</h2>
-      <p>{message}</p>
+      {message ? <p>{message}</p> : null}
       {actionLabel && onAction && (
         <button type="button" className="btn-primary" onClick={onAction}>
           {actionLabel}
-        </button>
-      )}
-      {secondaryLabel && onSecondary && (
-        <button type="button" className="link-btn" onClick={onSecondary}>
-          {secondaryLabel}
         </button>
       )}
     </div>

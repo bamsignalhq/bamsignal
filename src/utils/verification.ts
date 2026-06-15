@@ -1,5 +1,4 @@
 import type { DatingProfile } from "../types";
-import { calculateProfileStrength } from "./profileStrength";
 
 export type VerificationTier = 0 | 1 | 2 | 3;
 
@@ -15,18 +14,16 @@ export function getVerificationTier(
   isPremium: boolean,
   phoneVerified: boolean
 ): VerificationInfo {
-  const strength = calculateProfileStrength(profile);
-  const selfieOk = profile.verified;
-  const tier1 = phoneVerified && selfieOk;
+  const selfieApproved = profile.verified;
 
-  if (isPremium && tier1 && strength >= 80) {
+  if (isPremium && phoneVerified && selfieApproved) {
     return { tier: 3, label: "Premium Verified", emoji: "🟣", color: "purple" };
   }
-  if (tier1 && strength >= 80) {
-    return { tier: 2, label: "Verified Plus", emoji: "🔵", color: "blue" };
+  if (phoneVerified && selfieApproved) {
+    return { tier: 2, label: "Verified", emoji: "🟢", color: "green" };
   }
-  if (tier1) {
-    return { tier: 1, label: "Verified", emoji: "🟢", color: "green" };
+  if (phoneVerified) {
+    return { tier: 1, label: "Phone Verified", emoji: "📱", color: "blue" };
   }
   return { tier: 0, label: "", emoji: "", color: "green" };
 }

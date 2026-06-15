@@ -10,13 +10,21 @@ export const FOOTER_QUICK_LINKS = [
   { href: "/safety", label: "Safety" },
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },
-  { href: "/contact", label: "Contact" }
+  { href: "/contact", label: "Contact" },
+  { href: "/delete-account", label: "Delete account" }
 ] as const;
 
 /** @deprecated Use FOOTER_QUICK_LINKS */
 export const FOOTER_LINKS = FOOTER_QUICK_LINKS;
 
-export const LEGAL_PATHS = ["/about", "/safety", "/privacy", "/terms", "/contact"] as const;
+export const LEGAL_PATHS = [
+  "/about",
+  "/safety",
+  "/privacy",
+  "/terms",
+  "/contact",
+  "/delete-account"
+] as const;
 
 export type LegalPath = (typeof LEGAL_PATHS)[number];
 

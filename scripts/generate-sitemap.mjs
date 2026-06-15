@@ -17,7 +17,7 @@ const pillarSlugs = [
   "what-is-bamsignal-nigeria-dating"
 ];
 
-const staticPaths = ["", "/about", "/safety", "/privacy", "/terms", "/contact", "/blog"];
+const staticPaths = ["", "/about", "/safety", "/privacy", "/terms", "/contact", "/delete-account", "/blog"];
 
 const citySlugs = cities.map((c) => `/blog/find-love-in-${c}-nigeria`);
 const blogSlugs = [...citySlugs, ...pillarSlugs.map((s) => `/blog/${s}`)];

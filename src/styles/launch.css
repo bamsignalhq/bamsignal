@@ -9,6 +9,76 @@
   justify-content: center;
 }
 
+.empty-state--calm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.empty-state--calm h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.empty-state--calm p {
+  margin: 0;
+  max-width: 28ch;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.empty-state--calm .empty-state__icon {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.payment-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 24px;
+}
+
+.payment-loading-overlay__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 28px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+  min-width: min(280px, 100%);
+}
+
+.payment-loading-overlay__spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--brand-pink) 25%, transparent);
+  border-top-color: var(--brand-pink);
+  animation: payment-spin 0.8s linear infinite;
+}
+
+@keyframes payment-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.payment-loading-overlay__card p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
 .empty-state__art {
   width: 88px;
   height: 88px;
@@ -294,6 +364,24 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.admin-verification-row__meta {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+}
+
+.admin-verification-row__photos {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-verification-row__photos img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 10px;
 }
 
 .admin-verification-actions {

@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { MapPin, UserRound } from "lucide-react";
+import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { ShowcaseImage } from "./ShowcaseImage";
-import { MOMENT_SETS } from "../constants/showcase";
 import type { DatingProfile, UserProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
 
@@ -12,8 +12,6 @@ type ProfileCoverHeaderProps = {
   verification: VerificationInfo;
   coverOnly?: boolean;
 };
-
-const DEFAULT_COVER = MOMENT_SETS.lagosRooftop[0];
 
 function formatLocation(profile: DatingProfile): string {
   if (!profile.city) return "Add your city";
@@ -25,7 +23,7 @@ export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHea
   const photos = profile.photos.filter(Boolean);
   const [index, setIndex] = useState(0);
   const avatar = photos[index] ?? photos[0] ?? null;
-  const cover = avatar ?? DEFAULT_COVER;
+  const cover = profile.coverPhoto || DEFAULT_PROFILE_COVER;
 
   const shift = (dir: -1 | 1) => {
     if (photos.length <= 1) return;
@@ -34,16 +32,16 @@ export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHea
 
   return (
     <header className="profile-hero">
-      <div className="profile-hero__cover" aria-hidden={!avatar}>
+      <div className="profile-hero__cover" aria-hidden={!avatar && !profile.coverPhoto}>
         <ShowcaseImage
           src={cover}
           alt=""
-          className="profile-hero__cover-blur profile-hero__cover-img--face"
+          className={`profile-hero__cover-blur profile-hero__cover-img${profile.coverPhoto ? "" : " profile-hero__cover-img--default"}`}
         />
         <ShowcaseImage
           src={cover}
           alt=""
-          className="profile-hero__cover-img profile-hero__cover-img--face"
+          className={`profile-hero__cover-img${profile.coverPhoto ? "" : " profile-hero__cover-img--default"}`}
         />
         {photos.length > 1 && (
           <>

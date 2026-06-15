@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Preloader } from "./components/Preloader";
 import { BRAND_ASSETS } from "./constants/brand";
@@ -15,6 +16,7 @@ import { ChatsPage } from "./pages/ChatsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AdminHubPage } from "./pages/AdminHubPage";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
+import { PaymentLoadingOverlay } from "./components/PaymentLoadingOverlay";
 import { NotificationCenter } from "./components/NotificationCenter";
 import type { PremiumPlan } from "./constants/plans";
 import type { BoostProduct } from "./constants/boosts";
@@ -24,7 +26,14 @@ import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./ty
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
 import { isOnboardingComplete, normalizeDatingProfile } from "./utils/profile";
 import { recordStreakActivity } from "./utils/streaks";
-import { isPremiumActive, refreshPremiumStatus, startBoostPayment, startPlanPayment, verifyBoostPayment, verifyPayment, verifyQuickiePayment } from "./services/payments";
+import {
+  isPremiumActive,
+  refreshPremiumStatus,
+  startBoostPayment,
+  startPlanPayment,
+  completePendingPayment,
+  clearPaymentSession
+} from "./services/payments";
 import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive } from "./utils/premiumTrial";
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
@@ -38,6 +47,12 @@ import { unreadCount } from "./utils/notifications";
 import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { activateBoost } from "./utils/activeBoosts";
 import { activateQuickiePass } from "./utils/quickie";
+import {
+  getPaymentFlowState,
+  parsePaymentReturnUrl,
+  setPaymentFlowState,
+  shouldShowPaymentRecovery
+} from "./utils/paymentState";
 import { LegalPage } from "./pages/LegalPage";
 import { PremiumPage } from "./pages/PremiumPage";
 import { VisitorsPage } from "./pages/VisitorsPage";
@@ -98,6 +113,7 @@ export function App() {
   const [memberOverlay, setMemberOverlay] = useState<"visitors" | "premium" | "safety" | null>(null);
   const [notifVersion, setNotifVersion] = useState(0);
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
+  const [paymentFlowTick, setPaymentFlowTick] = useState(0);
   const [user, setUser] = useState<UserProfile>(() =>
     readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" })
   );
@@ -166,7 +182,13 @@ export function App() {
   }, [user]);
 
   const applyRestoredSession = useCallback(async (profile: UserProfile) => {
-    setUser(profile);
+    const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+    const merged: UserProfile = {
+      ...profile,
+      phone: stored.phone || profile.phone,
+      phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
+    };
+    setUser(merged);
     setIsAuthed(true);
     if (!isOnboardingComplete()) {
       setShowOnboarding(true);
@@ -184,93 +206,96 @@ export function App() {
     if (isAuthed && !showOnboarding) recordDailyActive();
   }, [isAuthed, showOnboarding]);
 
-  useEffect(() => {
-    if (!isAuthed) return;
-
-    const params = new URLSearchParams(window.location.search);
-    const urlRef = params.get("trxref") || params.get("reference");
-    if (urlRef) {
-      localStorage.setItem(STORAGE_KEYS.paymentReference, urlRef);
-      localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
-      if (window.location.pathname === "/payment/success") {
-        navigateToPath("/");
-      }
-    }
-
-    const ref = localStorage.getItem(STORAGE_KEYS.paymentReference);
-    if (!ref) return;
-
-    const paymentKind = localStorage.getItem(STORAGE_KEYS.paymentKind) || "premium";
-
-    if (paymentKind === "boost") {
-      const datingProfile = readJson(STORAGE_KEYS.datingProfile, { city: "Lagos" });
+  const applyPaymentSuccess = useCallback(
+    (kind: "premium" | "boost" | "quickie") => {
       const boostId = localStorage.getItem(STORAGE_KEYS.paymentBoostId) || "city-boost";
-      verifyBoostPayment(user, boostId, datingProfile.city).then((result) => {
-        if (result.ok) {
-          activateBoost(boostId as BoostProduct["id"], user, datingProfile);
-          localStorage.removeItem(STORAGE_KEYS.paymentPending);
-          localStorage.removeItem(STORAGE_KEYS.paymentReference);
-          localStorage.removeItem(STORAGE_KEYS.paymentKind);
-          localStorage.removeItem(STORAGE_KEYS.paymentBoostId);
-          setPaymentSuccess({
-            title: "Payment successful",
-            body:
-              boostId === "city-spotlight"
-                ? `Hot spotlight is live for 24 hours in ${datingProfile.city || "your city"}.`
-                : boostId === "city-boost"
-                  ? "Your City Boost is now active."
-                  : `${boostId.replace(/-/g, " ")} is now active.`
-          });
-          notifyBoostActivated(boostId);
-          setNotifVersion((v) => v + 1);
-          trackEvent("boost_activated", { product: boostId, paid: "true" });
-        } else {
-          localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
-        }
-      });
-      return;
-    }
+      clearPaymentSession();
+      setPaymentFlowState("success");
+      setPaymentFlowTick((v) => v + 1);
 
-    if (paymentKind === "quickie") {
-      verifyQuickiePayment(user).then((result) => {
-        if (result.ok) {
-          activateQuickiePass();
-          localStorage.removeItem(STORAGE_KEYS.paymentPending);
-          localStorage.removeItem(STORAGE_KEYS.paymentReference);
-          localStorage.removeItem(STORAGE_KEYS.paymentKind);
-          setPaymentSuccess({
-            title: "Quickie pass active",
-            body: "Your 24-hour Quickie daily pass is live — you can message Quickie profiles now."
-          });
-          trackEvent("quickie_unlock");
-        } else {
-          localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
-        }
-      });
-      return;
-    }
-
-    if (isPremium) return;
-
-    verifyPayment(user).then(async (result) => {
-      if (result.ok) {
-        const premium = await refreshPremiumStatus(user);
-        setIsPremium(premium.isPremium || isPremiumTrialActive());
-        localStorage.removeItem(STORAGE_KEYS.paymentPending);
-        localStorage.removeItem(STORAGE_KEYS.paymentReference);
-        localStorage.removeItem(STORAGE_KEYS.paymentKind);
+      if (kind === "boost") {
+        const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
+        activateBoost(boostId as BoostProduct["id"], user, datingProfile);
         setPaymentSuccess({
           title: "Payment successful",
-          body: "Your Signal Pass is now active."
+          body:
+            boostId === "city-spotlight"
+              ? `Hot spotlight is live for 24 hours in ${datingProfile.city || "your city"}.`
+              : boostId === "city-boost"
+                ? "Your City Boost is now active."
+                : `${boostId.replace(/-/g, " ")} is now active.`
+        });
+        notifyBoostActivated(boostId);
+        trackEvent("boost_activated", { product: boostId, paid: "true" });
+      } else if (kind === "quickie") {
+        activateQuickiePass();
+        setPaymentSuccess({
+          title: "Payment successful",
+          body: "Your Quickie daily pass is active."
+        });
+        trackEvent("quickie_unlock");
+      } else {
+        void refreshPremiumStatus(user).then((premium) => {
+          setIsPremium(premium.isPremium || isPremiumTrialActive());
+        });
+        setPaymentSuccess({
+          title: "Payment successful",
+          body: "Your Signal Pass is active."
         });
         trackEvent("payment_successful");
         notifyPremiumActivated();
-        setNotifVersion((v) => v + 1);
-      } else {
-        localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
       }
+      setNotifVersion((v) => v + 1);
+    },
+    [user]
+  );
+
+  const processPaymentReturn = useCallback(async () => {
+    const params = new URLSearchParams(window.location.search);
+    const urlRef = params.get("trxref") || params.get("reference");
+    const state = getPaymentFlowState();
+
+    if (!urlRef && state !== "verifying") return;
+
+    if (urlRef && window.location.pathname === "/payment/success") {
+      navigateToPath("/");
+    }
+
+    const result = await completePendingPayment(user);
+    setPaymentFlowTick((v) => v + 1);
+
+    if (result.ok) {
+      applyPaymentSuccess(result.kind);
+      return;
+    }
+
+    if (result.cancelled || result.pending) {
+      setPaymentFlowState("cancelled");
+      return;
+    }
+
+    setPaymentFlowState("failed");
+    if (result.error) setAuthMessage(result.error);
+  }, [applyPaymentSuccess, user]);
+
+  useEffect(() => {
+    if (!isNative) return;
+    const listener = CapApp.addListener("appUrlOpen", (event) => {
+      const parsed = parsePaymentReturnUrl(event.url);
+      if (!parsed) return;
+      localStorage.setItem(STORAGE_KEYS.paymentReference, parsed.reference);
+      setPaymentFlowState("verifying");
+      setPaymentFlowTick((v) => v + 1);
     });
-  }, [isAuthed, isPremium, user]);
+    return () => {
+      void listener.then((handle) => handle.remove());
+    };
+  }, [isNative]);
+
+  useEffect(() => {
+    if (!isAuthed) return;
+    void processPaymentReturn();
+  }, [isAuthed, processPaymentReturn, paymentFlowTick]);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
@@ -294,9 +319,11 @@ export function App() {
 
   const handleAuthenticated = useCallback(
     (profile: UserProfile, meta?: AuthMeta) => {
+      const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
       const withPhone = {
         ...profile,
-        phoneVerified: Boolean(profile.phone || profile.phoneVerified)
+        phone: stored.phone || profile.phone,
+        phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
       };
       setUser(withPhone);
       setIsAuthed(true);
@@ -441,18 +468,24 @@ export function App() {
         return;
       }
       setPaymentLoading(true);
+      setAuthMessage("");
       trackEvent("payment_started", { plan: plan.id });
-      localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
       const result = await startPlanPayment(plan, user);
       setPaymentLoading(false);
+      setPaymentFlowTick((v) => v + 1);
+
       if (!result.ok) {
-        setAuthMessage(result.error || "Payment failed.");
-        localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
-      } else {
-        setPricingOpen(false);
+        if (result.cancelled) return;
+        setAuthMessage(result.error || "We couldn't start payment right now. Please try again shortly.");
+        return;
+      }
+
+      setPricingOpen(false);
+      if (!result.redirected) {
+        await processPaymentReturn();
       }
     },
-    [isAuthed, openAuth, tab, user]
+    [isAuthed, openAuth, processPaymentReturn, tab, user]
   );
 
   const openPricing = useCallback(() => {
@@ -479,11 +512,11 @@ export function App() {
 
       syncMemberProfileRemote(user, datingProfile);
 
-      setPaymentLoading(true);
-      localStorage.setItem(STORAGE_KEYS.paymentKind, "boost");
-      localStorage.setItem(STORAGE_KEYS.paymentBoostId, product.id);
       const durationHours =
         product.id === "city-spotlight" ? 24 : product.id === "city-boost" ? 48 : product.id === "signal-boost" ? 24 : 48;
+
+      setPaymentLoading(true);
+      setAuthMessage("");
       const result = await startBoostPayment(
         product.id,
         product.price,
@@ -492,14 +525,18 @@ export function App() {
         durationHours
       );
       setPaymentLoading(false);
+      setPaymentFlowTick((v) => v + 1);
       if (!result.ok) {
-        setAuthMessage(result.error || "Checkout could not start.");
+        if (result.cancelled) return;
+        setAuthMessage(result.error || "We couldn't start payment right now. Please try again shortly.");
         return;
       }
       setPricingOpen(false);
-      setAuthMessage(`Complete payment to activate ${product.name}.`);
+      if (!result.redirected) {
+        await processPaymentReturn();
+      }
     },
-    [isAuthed, openAuth, tab, user]
+    [isAuthed, openAuth, processPaymentReturn, tab, user]
   );
 
   const upgradeById = useCallback(
@@ -529,11 +566,8 @@ export function App() {
   };
 
   const showPaymentRecovery =
-    isAuthed &&
-    !paymentSuccess &&
-    (localStorage.getItem(STORAGE_KEYS.paymentPending) === "1" ||
-      Boolean(localStorage.getItem(STORAGE_KEYS.paymentReference)));
-  void notifVersion;
+    isAuthed && !paymentSuccess && shouldShowPaymentRecovery();
+  void paymentFlowTick;
   const notificationUnread = unreadCount();
   const incomingSignals = filterBlockedByProfileId(
     readJson<{ profileId: string }[]>(STORAGE_KEYS.likedBy, [])
@@ -746,12 +780,18 @@ export function App() {
           }
         />
 
+        {paymentLoading && !showOnboarding && <PaymentLoadingOverlay />}
+
         {showPaymentRecovery && !showOnboarding && (
           <PaymentRecoveryBanner
-            onRetry={() => setPricingOpen(true)}
+            onRetry={() => {
+              clearPaymentSession();
+              setPaymentFlowTick((v) => v + 1);
+              setPricingOpen(true);
+            }}
             onDismiss={() => {
-              localStorage.removeItem(STORAGE_KEYS.paymentPending);
-              localStorage.removeItem(STORAGE_KEYS.paymentReference);
+              clearPaymentSession();
+              setPaymentFlowTick((v) => v + 1);
             }}
           />
         )}
@@ -811,7 +851,6 @@ export function App() {
               isPremium={isPremium}
               onDiscover={() => setTab("discover")}
               onOpenPremium={() => setMemberOverlay("premium")}
-              onOpenProfile={() => setTab("me")}
             />
           )}
           {tab === "home" && isGuest && (

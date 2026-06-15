@@ -20,6 +20,59 @@ import { query } from "../server/db.js";
 dotenv.config();
 dotenv.config({ path: ".env.local", override: true });
 
+function writeReviewerAccountDoc(pin) {
+  const docPath = path.join(process.cwd(), "PLAY_REVIEWER_ACCOUNT.md");
+  const content = `# BamSignal — Google Play reviewer account
+
+Generated: ${new Date().toISOString()}
+
+## Login (App access section in Play Console)
+
+| Field | Value |
+|-------|-------|
+| **Username** | \`${PLAY_REVIEWER.username}\` |
+| **PIN** | \`${pin}\` |
+| **Email (confirmed)** | \`${PLAY_REVIEWER.email}\` |
+
+Members sign in with **username + 6-digit PIN** on the BamSignal login screen.
+
+## Profile completeness
+
+| Item | Status |
+|------|--------|
+| Photos (2+) | ✓ showcase photos |
+| Cover photo | ✓ |
+| Bio | ✓ |
+| Interests | Music, Food, Travel, Movies |
+| Email verified | ✓ (confirmed in auth) |
+| Phone verified | ✓ (${PLAY_REVIEWER.phone}) |
+| Onboarding | Complete |
+| City | Lagos (discoverable) |
+
+## Play Console paste block
+
+\`\`\`
+BamSignal uses username + PIN login (no Google Sign-In).
+
+Username: playreview
+PIN: ${pin}
+
+After login, the account has completed onboarding with photos, bio, and interests. Discover, Likes, Messages, Profile, Safety, and Premium payment screens are accessible. Standard member account — no admin access.
+\`\`\`
+
+## Re-provision
+
+\`\`\`bash
+node scripts/provision-play-reviewer.mjs
+\`\`\`
+
+Requires \`DATABASE_URL\` (and optionally \`SUPABASE_SERVICE_ROLE_KEY\`). PIN is also written to \`PLAY_REVIEW_ACCESS.md\` (gitignored).
+`;
+
+  fs.writeFileSync(docPath, content, "utf8");
+  console.log(`Wrote ${docPath}`);
+}
+
 function writeAccessDoc(pin) {
   const docPath = path.join(process.cwd(), "PLAY_REVIEW_ACCESS.md");
   const content = `# Google Play reviewer access (local only — do not commit)
@@ -96,6 +149,7 @@ async function main() {
   }
 
   const result = await provisionPlayReviewerAccount(pin);
+  writeReviewerAccountDoc(pin);
   writeAccessDoc(pin);
 
   console.log("Play reviewer account ready.");

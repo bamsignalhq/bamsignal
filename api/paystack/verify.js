@@ -4,6 +4,7 @@ import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../.
 import { createVipInviteLink } from "../../server/telegram.js";
 import { normalizePlan, normalizePlans, planDaysFromAmount } from "../../server/pricing.js";
 import { config } from "../../server/config.js";
+import { PAYSTACK_CHANNELS } from "../../server/paystackChannels.js";
 import {
   initializePaystackTransaction,
   paystackConfigured,
@@ -84,7 +85,13 @@ export default async function handler(req, res) {
 
     const body = parseBody(req);
     const plans = await loadPricingPlans();
-    const callbackUrl = config.paystackCallbackUrl;
+    const useNativeCallback =
+      body.platform === "native" ||
+      body.platform === "android" ||
+      String(body.callbackPlatform || "").toLowerCase() === "native";
+    const callbackUrl = useNativeCallback
+      ? config.paystackAndroidCallbackUrl || config.paystackCallbackUrl
+      : config.paystackCallbackUrl;
 
     if (req.query.action === "initialize") {
       const email = String(body.email || "").trim().toLowerCase();
@@ -109,7 +116,7 @@ export default async function handler(req, res) {
           amount,
           reference,
           callback_url: callbackUrl,
-          channels: ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"],
+          channels: PAYSTACK_CHANNELS,
           metadata: {
             app: "BamSignal",
             name,
@@ -159,7 +166,7 @@ export default async function handler(req, res) {
           amount,
           reference,
           callback_url: callbackUrl,
-          channels: ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"],
+          channels: PAYSTACK_CHANNELS,
           metadata: {
             app: "BamSignal",
             name,
@@ -205,7 +212,7 @@ export default async function handler(req, res) {
           amount,
           reference,
           callback_url: callbackUrl,
-          channels: ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"],
+          channels: PAYSTACK_CHANNELS,
           metadata: {
             app: "BamSignal",
             name,

@@ -3,7 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
+import { isSignupEmailConfigured } from "./supabaseEnv.js";
 import { corsMiddleware } from "./cors.js";
+import { fixSecurityDefinerViews } from "./fixSecurityDefinerViews.js";
 import { getDatabaseStatus, initDatabase, pingDatabase } from "./db.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
@@ -81,11 +83,7 @@ async function healthPayload() {
     database,
     paystack: Boolean(config.paystackSecretKey),
     resend: Boolean(process.env.RESEND_API_KEY?.trim()),
-    signupEmail: Boolean(
-      process.env.RESEND_API_KEY?.trim() &&
-        process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() &&
-        (process.env.SUPABASE_URL?.trim() || process.env.VITE_SUPABASE_URL?.trim())
-    ),
+    signupEmail: isSignupEmailConfigured(),
     firebase: Boolean(config.firebase.serviceAccount),
     telegram: Boolean(config.telegram.botToken)
   };
@@ -143,9 +141,19 @@ const server = app.listen(port, host, async () => {
   }
 });
 
-void initDatabase().catch((error) => {
-  console.error("[bamsignal] Database init error:", error.message || error);
-});
+void initDatabase()
+  .then(async () => {
+    const viewFix = await fixSecurityDefinerViews().catch((error) => {
+      console.warn("[bamsignal] security definer view fix skipped:", error.message || error);
+      return null;
+    });
+    if (viewFix?.fixed?.length) {
+      console.log(`[bamsignal] security_invoker enabled on views: ${viewFix.fixed.join(", ")}`);
+    }
+  })
+  .catch((error) => {
+    console.error("[bamsignal] Database init error:", error.message || error);
+  });
 
 server.on("error", (error) => {
   console.error("[bamsignal] Server failed to start:", error);

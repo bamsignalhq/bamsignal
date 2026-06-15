@@ -79,7 +79,6 @@ async function launchCheckout(
 
   const outcome = await openPaystackCheckout({
     authorizationUrl: init.authorization_url!,
-    accessCode: init.access_code,
     reference: init.reference,
     kind
   });

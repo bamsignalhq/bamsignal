@@ -1,11 +1,7 @@
 import { App } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
-import {
-  getPaystackPublicKey,
-  isValidPaystackPublicKey,
-  paystackInlineReady
-} from "../config/paystack";
+import { PAYMENT_START_ERROR } from "../config/paystack";
 import { STORAGE_KEYS } from "../constants/limits";
 import { logPaymentEvent, setPaymentFlowState, parsePaymentReturnUrl } from "../utils/paymentState";
 
@@ -15,112 +11,17 @@ export type CheckoutOutcome =
   | { status: "redirect" }
   | { status: "error"; message: string };
 
-type PaystackInlineHandler = {
-  openIframe: () => void;
-};
-
-type PaystackPop = {
-  setup: (options: {
-    key: string;
-    access_code: string;
-    onClose?: () => void;
-    callback?: (response: { reference: string; status?: string }) => void;
-  }) => PaystackInlineHandler;
-};
-
-declare global {
-  interface Window {
-    PaystackPop?: PaystackPop;
-  }
-}
-
 const MIN_CHECKOUT_MS = 2000;
-const INLINE_CANCEL_DEBOUNCE_MS = 900;
 
-let paystackScriptPromise: Promise<PaystackPop> | null = null;
-
-function loadPaystackInline(): Promise<PaystackPop> {
-  if (paystackScriptPromise) return paystackScriptPromise;
-  paystackScriptPromise = new Promise((resolve, reject) => {
-    if (window.PaystackPop) {
-      resolve(window.PaystackPop);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://js.paystack.co/v1/inline.js";
-    script.async = true;
-    script.onload = () => {
-      if (window.PaystackPop) resolve(window.PaystackPop);
-      else reject(new Error("Paystack inline script failed to load."));
-    };
-    script.onerror = () => reject(new Error("Paystack inline script failed to load."));
-    document.body.appendChild(script);
-  });
-  return paystackScriptPromise;
+/** Hosted Paystack checkout URL from initialize — no public key required on the client. */
+export function isValidPaystackAuthorizationUrl(url: string): boolean {
+  return /^https:\/\/checkout\.paystack\.com\/[a-zA-Z0-9_-]+/.test(url.trim());
 }
 
 function persistCheckoutReference(reference: string, kind?: string): void {
   localStorage.setItem(STORAGE_KEYS.paymentReference, reference);
   if (kind) localStorage.setItem(STORAGE_KEYS.paymentKind, kind);
   logPaymentEvent("reference created", { reference, kind });
-}
-
-function openInlineCheckout(accessCode: string, reference: string, kind?: string): Promise<CheckoutOutcome> {
-  const publicKey = getPaystackPublicKey();
-  if (!isValidPaystackPublicKey(publicKey)) {
-    logPaymentEvent("checkout blocked — invalid or missing public key", {
-      hasKey: Boolean(publicKey)
-    });
-    return Promise.resolve({
-      status: "error",
-      message: "Payment could not start. Please try again."
-    });
-  }
-
-  return loadPaystackInline().then(
-    (PaystackPop) =>
-      new Promise((resolve) => {
-        let completed = false;
-        let cancelTimer: ReturnType<typeof setTimeout> | null = null;
-        const checkoutOpenedAt = Date.now();
-
-        const handler = PaystackPop.setup({
-          key: publicKey,
-          access_code: accessCode,
-          onClose: () => {
-            if (completed) return;
-            if (Date.now() - checkoutOpenedAt < MIN_CHECKOUT_MS) {
-              logPaymentEvent("checkout close ignored (too early)", { reference });
-              return;
-            }
-            cancelTimer = setTimeout(() => {
-              if (!completed) {
-                logPaymentEvent("checkout closed/cancelled", { reference, mode: "inline" });
-                resolve({ status: "cancelled" });
-              }
-            }, INLINE_CANCEL_DEBOUNCE_MS);
-          },
-          callback: (response) => {
-            if (cancelTimer) clearTimeout(cancelTimer);
-            completed = true;
-            logPaymentEvent("checkout callback", {
-              reference: response?.reference || reference,
-              status: response?.status
-            });
-            if (response?.reference) {
-              resolve({ status: "paid", reference: response.reference });
-            } else {
-              resolve({ status: "cancelled" });
-            }
-          }
-        });
-
-        persistCheckoutReference(reference, kind);
-        setPaymentFlowState("checkout_open");
-        logPaymentEvent("checkout opening", { reference, mode: "inline", keyPrefix: publicKey.slice(0, 8) });
-        handler.openIframe();
-      })
-  );
 }
 
 async function openCapacitorCheckout(
@@ -189,26 +90,20 @@ function openHostedRedirect(authorizationUrl: string, reference: string, kind?: 
   return { status: "redirect" };
 }
 
+/**
+ * Open Paystack via server-provided authorization_url (hosted checkout).
+ * Never uses PaystackPop inline — avoids "valid Key" errors when the public key is missing or wrong.
+ */
 export async function openPaystackCheckout(options: {
   authorizationUrl: string;
-  accessCode?: string | null;
   reference: string;
   kind?: string;
 }): Promise<CheckoutOutcome> {
-  const { authorizationUrl, accessCode, reference, kind } = options;
+  const { authorizationUrl, reference, kind } = options;
 
-  if (accessCode && paystackInlineReady()) {
-    try {
-      const inline = await openInlineCheckout(accessCode, reference, kind);
-      if (inline.status !== "error") return inline;
-      logPaymentEvent("inline failed, falling back to hosted checkout", { reference });
-    } catch (error) {
-      logPaymentEvent("inline unavailable, using hosted checkout", { reference, error: String(error) });
-    }
-  } else if (accessCode && !paystackInlineReady()) {
-    logPaymentEvent("inline skipped — missing VITE_PAYSTACK_PUBLIC_KEY, using hosted checkout", {
-      reference
-    });
+  if (!isValidPaystackAuthorizationUrl(authorizationUrl)) {
+    logPaymentEvent("checkout blocked — invalid authorization_url", { reference });
+    return { status: "error", message: PAYMENT_START_ERROR };
   }
 
   if (Capacitor.isNativePlatform()) {

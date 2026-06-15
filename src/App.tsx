@@ -48,11 +48,9 @@ import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelp
 import { activateBoost } from "./utils/activeBoosts";
 import { activateQuickiePass } from "./utils/quickie";
 import {
-  beginPaymentSession,
   getPaymentFlowState,
   isActivePaymentFlow,
   logPaymentEvent,
-  markPaymentSessionStarted,
   parsePaymentReturnUrl,
   sanitizeStalePaymentState,
   setPaymentFlowState,
@@ -552,8 +550,6 @@ export function App() {
         openAuth("signup", tab === "home" ? "discover" : tab);
         return;
       }
-      beginPaymentSession();
-      markPaymentSessionStarted();
       setPaymentFlowTick((v) => v + 1);
       setPaymentLoading(true);
       setAuthMessage("");
@@ -601,8 +597,6 @@ export function App() {
 
       const durationHours = product.id === "profile-boost" ? 48 : 24;
 
-      beginPaymentSession();
-      markPaymentSessionStarted();
       setPaymentFlowTick((v) => v + 1);
       setPaymentLoading(true);
       setAuthMessage("");

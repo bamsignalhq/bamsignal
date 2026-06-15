@@ -23,7 +23,7 @@ export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHea
   const photos = profile.photos.filter(Boolean);
   const [index, setIndex] = useState(0);
   const avatar = photos[index] ?? photos[0] ?? null;
-  const cover = profile.coverPhoto || DEFAULT_PROFILE_COVER;
+  const cover = profile.coverPhotoExplicit && profile.coverPhoto ? profile.coverPhoto : DEFAULT_PROFILE_COVER;
 
   const shift = (dir: -1 | 1) => {
     if (photos.length <= 1) return;
@@ -32,16 +32,16 @@ export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHea
 
   return (
     <header className="profile-hero">
-      <div className="profile-hero__cover" aria-hidden={!avatar && !profile.coverPhoto}>
+      <div className="profile-hero__cover" aria-hidden={!avatar && !(profile.coverPhotoExplicit && profile.coverPhoto)}>
         <ShowcaseImage
           src={cover}
           alt=""
-          className={`profile-hero__cover-blur profile-hero__cover-img${profile.coverPhoto ? "" : " profile-hero__cover-img--default"}`}
+          className={`profile-hero__cover-blur profile-hero__cover-img${profile.coverPhotoExplicit && profile.coverPhoto ? "" : " profile-hero__cover-img--default"}`}
         />
         <ShowcaseImage
           src={cover}
           alt=""
-          className={`profile-hero__cover-img${profile.coverPhoto ? "" : " profile-hero__cover-img--default"}`}
+          className={`profile-hero__cover-img${profile.coverPhotoExplicit && profile.coverPhoto ? "" : " profile-hero__cover-img--default"}`}
         />
         {photos.length > 1 && (
           <>

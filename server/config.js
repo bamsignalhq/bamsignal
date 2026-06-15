@@ -53,6 +53,8 @@ if (!config.databaseUrl) {
 
 if (!config.paystackSecretKey) {
   console.warn("[bamsignal] PAYSTACK_SECRET_KEY is not set. Payment endpoints will return service-unavailable errors.");
+} else if (!/^sk_(test|live)_/.test(config.paystackSecretKey)) {
+  console.warn("[bamsignal] PAYSTACK_SECRET_KEY format looks invalid (expected sk_test_ or sk_live_ prefix).");
 }
 
 logSignupEmailEnvTrace();

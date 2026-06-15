@@ -16,6 +16,7 @@ type PricingModalProps = {
   onSelectPlan: (plan: PremiumPlan) => void;
   onPurchaseBoost?: (product: BoostProduct) => void;
   loading?: boolean;
+  memberCity?: string;
 };
 
 function defaultPlanId(plans: PremiumPlan[]): PlanId {
@@ -28,7 +29,8 @@ export function PricingModal({
   plans,
   onSelectPlan,
   onPurchaseBoost,
-  loading
+  loading,
+  memberCity: memberCityProp
 }: PricingModalProps) {
   const [boosts, setBoosts] = useState<BoostProduct[]>([]);
   const [memberCity, setMemberCity] = useState("");
@@ -42,9 +44,10 @@ export function PricingModal({
     if (!open) return;
     void fetchBoostProducts().then(setBoosts);
     const profile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
-    setMemberCity(profile.city?.trim() || "");
+    const user = readJson<{ city?: string }>(STORAGE_KEYS.userProfile, {});
+    setMemberCity(memberCityProp?.trim() || profile.city?.trim() || user.city?.trim() || "");
     setSelectedId(defaultPlanId(plans));
-  }, [open, plans]);
+  }, [open, plans, memberCityProp]);
 
   if (!open) return null;
 

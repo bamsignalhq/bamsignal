@@ -17,6 +17,7 @@ import {
   fetchReferralStats,
   getMemberProfileById,
   listDiscoverProfiles,
+  searchMemberProfiles,
   likeMemberProfile,
   followMemberProfile,
   registerWithReferral,
@@ -124,6 +125,35 @@ export default async function handler(req, res) {
         city,
         excludeProfileIds: Array.isArray(body.excludeProfileIds) ? body.excludeProfileIds : [],
         limit: Number(body.limit) || 48
+      });
+      return res.status(200).json({ ok: true, profiles });
+    }
+
+    if (req.query.action === "search") {
+      if (!requireDatabase(res)) return;
+      const city = String(body.city || "").trim();
+      const state = String(body.state || "").trim();
+      if (!city && !state) {
+        return res.status(400).json({ ok: false, error: "City or state is required." });
+      }
+      const profiles = await searchMemberProfiles({
+        email: identity.email,
+        phone: identity.phone,
+        state,
+        city,
+        ageMin: Number(body.ageMin) || 18,
+        ageMax: Number(body.ageMax) || 99,
+        excludeProfileIds: Array.isArray(body.excludeProfileIds) ? body.excludeProfileIds : [],
+        limit: Number(body.limit) || 72,
+        tribes: Array.isArray(body.tribes) ? body.tribes : [],
+        religions: Array.isArray(body.religions) ? body.religions : [],
+        occupations: Array.isArray(body.occupations) ? body.occupations : [],
+        statesOfOrigin: Array.isArray(body.statesOfOrigin) ? body.statesOfOrigin : [],
+        relationshipIntentions: Array.isArray(body.relationshipIntentions)
+          ? body.relationshipIntentions
+          : [],
+        genotypes: Array.isArray(body.genotypes) ? body.genotypes : [],
+        kidsPreferences: Array.isArray(body.kidsPreferences) ? body.kidsPreferences : []
       });
       return res.status(200).json({ ok: true, profiles });
     }

@@ -5,6 +5,11 @@ export type BoostProductId =
   | "city-boost"
   | "city-spotlight";
 
+/** Products shown in member boost shop (compact fintech catalog). */
+export const SHOP_BOOST_IDS = ["signal-boost", "priority-signal-once", "profile-boost"] as const;
+
+export type ShopBoostProductId = (typeof SHOP_BOOST_IDS)[number];
+
 export type BoostProductInput = {
   id: BoostProductId;
   name: string;
@@ -33,37 +38,41 @@ export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
     id: "signal-boost",
     name: "Signal Boost",
     price: 350,
-    description: "24-hour visibility spike across Discover in your city.",
+    description: "24-hour visibility boost in your city.",
     cta: "Boost visibility"
   },
   {
     id: "priority-signal-once",
     name: "Priority Signal",
     price: 250,
-    description: "Your next signal lands first in their Likes inbox.",
+    description: "Your next Signal appears first.",
     cta: "Send priority"
   },
   {
     id: "profile-boost",
     name: "Profile Boost",
     price: 750,
-    description: "48-hour featured placement at the top of local results.",
+    description: "48-hour featured placement in your city.",
     cta: "Go featured"
-  },
-  {
-    id: "city-spotlight",
-    name: "Hot",
-    price: 500,
-    description: "24 hours in Featured Members for your city — the horizontal spotlight row visitors browse.",
-    cta: "Get Hot"
-  },
-  {
-    id: "city-boost",
-    name: "City Boost",
-    price: 600,
-    description: "48-hour visibility boost across Discover in your city.",
-    cta: "Boost my city"
   }
 ];
 
 export const DEFAULT_BOOST_PRODUCTS: BoostProduct[] = DEFAULT_BOOST_INPUTS.map(hydrateBoost);
+
+export function shopBoostDescription(product: BoostProduct, cityLabel: string): string {
+  const place = cityLabel.trim() || "your city";
+  switch (product.id) {
+    case "signal-boost":
+      return `24-hour visibility boost in ${place}.`;
+    case "priority-signal-once":
+      return "Your next Signal appears first.";
+    case "profile-boost":
+      return `48-hour featured placement in ${place}.`;
+    default:
+      return product.description;
+  }
+}
+
+export function boostNeedsMemberCity(id: BoostProductId): boolean {
+  return id === "signal-boost" || id === "profile-boost";
+}

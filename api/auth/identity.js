@@ -9,6 +9,7 @@ import {
   upsertPlatformAdmin
 } from "../../server/db.js";
 import { normalizeEmailBranding } from "../../server/services/emailBranding.js";
+import { normalizeHomeFeedAds } from "../../server/services/homeFeedAds.js";
 import { normalizePlans } from "../../server/pricing.js";
 import { registerDevicePush } from "../../server/firebase.js";
 import { bot, registerBotCommands } from "../../server/telegram.js";
@@ -121,6 +122,17 @@ export default async function handler(req, res) {
     if (req.query.action === "email-branding-save") {
       if (!await requireAdmin(req, res)) return;
       const value = await setPlatformSetting("email_branding", normalizeEmailBranding(req.body?.value || {}));
+      return res.status(200).json({ ok: true, value });
+    }
+
+    if (req.query.action === "home-feed-ads") {
+      const stored = await getPlatformSetting("home_feed_ads", null);
+      return res.status(200).json({ ok: true, value: normalizeHomeFeedAds(stored) });
+    }
+
+    if (req.query.action === "home-feed-ads-save") {
+      if (!await requireAdmin(req, res)) return;
+      const value = await setPlatformSetting("home_feed_ads", normalizeHomeFeedAds(req.body?.value || {}));
       return res.status(200).json({ ok: true, value });
     }
 

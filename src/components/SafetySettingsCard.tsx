@@ -1,11 +1,12 @@
 import { ShieldCheck } from "lucide-react";
 import {
+  ACTIVITY_VISIBILITY_OPTIONS,
   DM_CONTROL_OPTIONS,
   FEMALE_SAFETY_COPY,
   WHO_CAN_SIGNAL_OPTIONS,
   isFemaleGender
 } from "../constants/safety";
-import type { DatingProfile, DmControl, SafetySettings, WhoCanSignalMe } from "../types";
+import type { ActivityVisibility, DatingProfile, DmControl, SafetySettings, WhoCanSignalMe } from "../types";
 import { resolveSafetySettings } from "../utils/safety";
 
 type SafetySettingsCardProps = {
@@ -71,6 +72,23 @@ export function SafetySettingsCard({ profile, onChange, variant = "profile" }: S
               type="button"
               className={`safety-option ${safety.dmControl === opt.id ? "selected" : ""}`}
               onClick={() => update({ dmControl: opt.id as DmControl })}
+            >
+              <strong>{opt.label}</strong>
+              <span>{opt.hint}</span>
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="intent-fieldset">
+        <legend>Show activity status</legend>
+        <div className="safety-option-list">
+          {ACTIVITY_VISIBILITY_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              className={`safety-option ${(safety.activityVisibility ?? "matches_only") === opt.id ? "selected" : ""}`}
+              onClick={() => update({ activityVisibility: opt.id as ActivityVisibility })}
             >
               <strong>{opt.label}</strong>
               <span>{opt.hint}</span>

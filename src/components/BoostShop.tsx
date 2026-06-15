@@ -1,6 +1,5 @@
 import type { BoostProduct } from "../constants/boosts";
-
-const CITY_BOOST_IDS = new Set<BoostProduct["id"]>(["city-spotlight", "city-boost"]);
+import { boostNeedsMemberCity, shopBoostDescription } from "../constants/boosts";
 
 type BoostShopProps = {
   products: BoostProduct[];
@@ -9,32 +8,36 @@ type BoostShopProps = {
   memberCity?: string;
 };
 
-export function BoostShop({ products, onPurchase, loading, memberCity }: BoostShopProps) {
+export function BoostShop({ products, onPurchase, loading, memberCity = "" }: BoostShopProps) {
+  const cityLabel = memberCity.trim() || "your city";
+
   return (
-    <section className="boost-shop">
+    <section className="boost-shop boost-shop--compact">
       <div className="boost-shop__head">
         <h3>One-time boosts</h3>
-        <p className="boost-shop__sub">Stack visibility without a subscription.</p>
+        <p className="boost-shop__sub">Get extra visibility without a subscription.</p>
       </div>
       <div className="boost-shop__grid">
         {products.map((product) => {
-          const needsCity = CITY_BOOST_IDS.has(product.id);
+          const needsCity = boostNeedsMemberCity(product.id);
           const cityReady = Boolean(memberCity?.trim());
+          const disabled = loading || (needsCity && !cityReady);
           return (
-            <article key={product.id} className="card boost-card">
-              <h4>{product.name}</h4>
-              <p className="boost-card__price">{product.priceLabel}</p>
-              <p className="boost-card__desc">{product.description}</p>
-              {needsCity && cityReady ? (
-                <p className="boost-card__city">Shows in {memberCity}</p>
-              ) : null}
+            <article key={product.id} className="boost-card boost-card--compact">
+              <div className="boost-card__row">
+                <div className="boost-card__copy">
+                  <h4>{product.name}</h4>
+                  <p className="boost-card__desc">{shopBoostDescription(product, cityLabel)}</p>
+                </div>
+                <p className="boost-card__price">{product.priceLabel}</p>
+              </div>
               {needsCity && !cityReady ? (
-                <p className="boost-card__city boost-card__city--warn">Set your city in Edit Profile first</p>
+                <p className="boost-card__hint">Set your city in Edit Profile first.</p>
               ) : null}
               <button
                 type="button"
-                className="btn-secondary btn-full"
-                disabled={loading || (needsCity && !cityReady)}
+                className="btn-secondary btn-sm btn-full boost-card__cta"
+                disabled={disabled}
                 onClick={() => onPurchase(product)}
               >
                 {product.cta}

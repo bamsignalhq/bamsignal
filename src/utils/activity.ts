@@ -26,15 +26,16 @@ export function isOnlineNow(lastActiveAt: string | undefined, now = Date.now()):
   return now - new Date(lastActiveAt).getTime() <= ONLINE_NOW_MS;
 }
 
-/** Card overlay badge — Active Now or Active Today only */
+/** Card overlay badge — Active now, Active today, or Active this week */
 export function cardActivityBadge(
   lastActiveAt: string | undefined,
   now = Date.now()
 ): { online: boolean; label: string } | null {
   if (!lastActiveAt) return null;
   const diff = Math.max(0, now - new Date(lastActiveAt).getTime());
-  if (diff <= ONLINE_NOW_MS) return { online: true, label: "Active Now" };
-  if (diff < DAY_MS) return { online: false, label: "Active Today" };
+  if (diff <= ONLINE_NOW_MS) return { online: true, label: "Active now" };
+  if (diff < DAY_MS) return { online: false, label: "Active today" };
+  if (diff < 7 * DAY_MS) return { online: false, label: "Active this week" };
   return null;
 }
 

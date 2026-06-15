@@ -222,4 +222,20 @@ Initialize endpoint: `POST /api/paystack/verify?action=initialize` → returns `
 | Inline checkout with `access_code` | **Fixed** (all platforms, fallback preserved) |
 | Signal Pass activates after success | **Unchanged** (verify → DB → toast) |
 
+---
+
+## Round 2 hardening (2026-06-15)
+
+Additional fixes after field reports of banner + checkout opening together:
+
+1. **`browserFinished` ignored for 2s** after in-app browser opens (`paymentCheckout.ts`) — prevents spurious cancel before Paystack loads.
+2. **Inline `onClose` debounced 900ms** and ignored if checkout open &lt; 2s.
+3. **Boot sanitize clears all `failed`/`cancelled`** unless URL has Paystack return params.
+4. **`beginPaymentSession()` at first line of Upgrade/Boost** in `App.tsx` before loading overlay.
+5. **`processPaymentReturn` blocked** during `initializing` and `checkout_open`.
+6. **Legacy keys cleared**: `paymentPending`, `paymentCancelled`, `pendingPayment`, `lastPaymentStatus`, etc.
+7. **Cancel banner only if `checkoutWasOpened`** — never from init failures.
+8. **App resume listener** on Android re-runs verify when returning from custom tab (no false cancel on blur).
+9. **Structured logs**: client `[payment] …` + server `[paystack] …` for init, checkout, verify.
+
 Deploy this commit and retest Upgrade on the same device that reproduced the bug.

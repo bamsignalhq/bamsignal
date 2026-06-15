@@ -1,4 +1,4 @@
-import type { DmControl, Gender, ReportReason, SafetySettings, WhoCanSignalMe } from "../types";
+import type { DmControl, Gender, ReportReason, SafetySettings, WhoCanSignalMe, ActivityVisibility } from "../types";
 
 export const REPORT_REASONS: { id: ReportReason; label: string; hint: string }[] = [
   { id: "fake_profile", label: "Fake profile", hint: "Photos or identity seem misleading" },
@@ -47,19 +47,27 @@ export function isFemaleGender(gender?: Gender): boolean {
   return gender === "Woman";
 }
 
+export const ACTIVITY_VISIBILITY_OPTIONS: { id: ActivityVisibility; label: string; hint: string }[] = [
+  { id: "everyone", label: "Everyone", hint: "Anyone can see Active now / Active today on your card" },
+  { id: "matches_only", label: "Matches only", hint: "Only people you've matched with see your activity" },
+  { id: "nobody", label: "Nobody", hint: "Hide activity status completely" }
+];
+
 export function defaultSafetySettings(gender?: Gender): SafetySettings {
   if (isFemaleGender(gender)) {
     return {
       whoCanSignalMe: "verified_only",
       onlyMatchingPreferencesCanSignal: true,
       dmControl: "matches_only",
-      hideFromDiscovery: false
+      hideFromDiscovery: false,
+      activityVisibility: "matches_only"
     };
   }
   return {
     whoCanSignalMe: "everyone",
     onlyMatchingPreferencesCanSignal: false,
     dmControl: "everyone",
-    hideFromDiscovery: false
+    hideFromDiscovery: false,
+    activityVisibility: "matches_only"
   };
 }

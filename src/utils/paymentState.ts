@@ -12,9 +12,29 @@ export type PaymentFlowState =
 
 const PAYMENT_STATE_EVENT = "bamsignal-payment-state";
 
+/** Legacy keys from older builds — always cleared on new payment. */
+const LEGACY_PAYMENT_KEYS = [
+  "bamsignal-payment-cancelled",
+  "bamsignal-payment-pending-payment",
+  "bamsignal-last-payment-status",
+  "paymentPending",
+  "paymentReference",
+  "paymentCancelled",
+  "pendingPayment",
+  "lastPaymentStatus"
+] as const;
+
+export function logPaymentEvent(event: string, detail?: Record<string, unknown>): void {
+  if (detail && Object.keys(detail).length > 0) {
+    console.info(`[payment] ${event}`, detail);
+  } else {
+    console.info(`[payment] ${event}`);
+  }
+}
+
 function notifyPaymentStateChange(state: PaymentFlowState): void {
   if (typeof window === "undefined") return;
-  console.info("[payment] state →", state);
+  logPaymentEvent("state transition", { state });
   window.dispatchEvent(new CustomEvent(PAYMENT_STATE_EVENT, { detail: state }));
 }
 
@@ -40,8 +60,21 @@ export function getPaymentFlowState(): PaymentFlowState {
   return "idle";
 }
 
+export function isActivePaymentFlow(): boolean {
+  const state = getPaymentFlowState();
+  return state === "initializing" || state === "checkout_open" || state === "verifying";
+}
+
 export function checkoutWasOpened(): boolean {
   return localStorage.getItem(STORAGE_KEYS.paymentCheckoutOpened) === "1";
+}
+
+export function clearLegacyPaymentFlags(): void {
+  for (const key of LEGACY_PAYMENT_KEYS) {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  }
+  localStorage.removeItem(STORAGE_KEYS.paymentPending);
 }
 
 export function setPaymentFlowState(state: PaymentFlowState): void {
@@ -55,7 +88,9 @@ export function setPaymentFlowState(state: PaymentFlowState): void {
     localStorage.removeItem(STORAGE_KEYS.paymentPending);
     localStorage.removeItem(STORAGE_KEYS.paymentCheckoutOpened);
   } else if (state === "cancelled") {
-    localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
+    if (checkoutWasOpened()) {
+      localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
+    }
   } else if (state === "failed") {
     if (checkoutWasOpened()) {
       localStorage.setItem(STORAGE_KEYS.paymentPending, "1");
@@ -71,21 +106,33 @@ export function setPaymentFlowState(state: PaymentFlowState): void {
 
 /** Start a fresh payment attempt — clears stale banners and old references. */
 export function beginPaymentSession(): void {
+  clearLegacyPaymentFlags();
   localStorage.removeItem(STORAGE_KEYS.paymentReference);
   localStorage.removeItem(STORAGE_KEYS.paymentKind);
   localStorage.removeItem(STORAGE_KEYS.paymentBoostId);
-  localStorage.removeItem(STORAGE_KEYS.paymentPending);
   localStorage.removeItem(STORAGE_KEYS.paymentCheckoutOpened);
+  localStorage.removeItem(STORAGE_KEYS.paymentStartedAt);
   writeJson(STORAGE_KEYS.paymentFlowState, "initializing");
+  logPaymentEvent("session started");
   notifyPaymentStateChange("initializing");
+}
+
+function hasPaymentReturnInUrl(): boolean {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  return Boolean(params.get("trxref") || params.get("reference"));
 }
 
 /** Drop orphaned failed/cancelled sessions from prior app loads. */
 export function sanitizeStalePaymentState(): void {
+  clearLegacyPaymentFlags();
+
+  if (hasPaymentReturnInUrl()) return;
+
   const state = getPaymentFlowState();
   const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
 
-  if ((state === "failed" || state === "cancelled") && !reference) {
+  if (state === "failed" || state === "cancelled") {
     clearPaymentSession();
     return;
   }
@@ -99,10 +146,8 @@ export function sanitizeStalePaymentState(): void {
     return;
   }
 
-  if (state === "initializing" || state === "checkout_open" || state === "verifying") {
-    if (!reference) {
-      clearPaymentSession();
-    }
+  if ((state === "initializing" || state === "checkout_open" || state === "verifying") && !reference) {
+    clearPaymentSession();
   }
 }
 
@@ -111,6 +156,7 @@ export function markPaymentSessionStarted(): void {
 }
 
 export function clearPaymentSession(): void {
+  clearLegacyPaymentFlags();
   localStorage.removeItem(STORAGE_KEYS.paymentReference);
   localStorage.removeItem(STORAGE_KEYS.paymentKind);
   localStorage.removeItem(STORAGE_KEYS.paymentBoostId);
@@ -122,11 +168,10 @@ export function clearPaymentSession(): void {
 }
 
 export function shouldShowPaymentRecovery(): boolean {
+  if (isActivePaymentFlow()) return false;
+
   const state = getPaymentFlowState();
-  if (state === "initializing" || state === "checkout_open" || state === "verifying") {
-    return false;
-  }
-  if (state === "cancelled") return true;
+  if (state === "cancelled") return checkoutWasOpened();
   if (state === "failed") return checkoutWasOpened();
   return false;
 }

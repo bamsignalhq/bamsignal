@@ -8,6 +8,8 @@ import { ShowcaseImage } from "./ShowcaseImage";
 import { VerificationBadge } from "./VerificationBadge";
 import { VoiceIntro } from "./VoiceIntro";
 import { WhyThisProfile } from "./WhyThisProfile";
+import { ProfileDetailsList } from "./profile/ProfileDetailsList";
+import { hasFilledProfileDetails } from "../utils/profileDetails";
 import { likeProfile, followProfile, hasLikedProfile, hasFollowedProfile } from "../utils/profileSocial";
 import { likeProfileRemote, followProfileRemote } from "../services/memberData";
 import type { UserProfile } from "../types";
@@ -166,6 +168,13 @@ export function ProfileDetailSheet({
             <h3>Bio</h3>
             <p className="profile-detail-sheet__bio">{profile.bio || "—"}</p>
           </section>
+
+          {hasFilledProfileDetails(profile) ? (
+            <section className="profile-detail-sheet__card">
+              <h3>Details</h3>
+              <ProfileDetailsList profile={profile} />
+            </section>
+          ) : null}
 
           <section className="profile-detail-sheet__card">
             <h3>Interests</h3>

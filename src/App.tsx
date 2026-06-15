@@ -48,7 +48,11 @@ import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelp
 import { activateBoost } from "./utils/activeBoosts";
 import { activateQuickiePass } from "./utils/quickie";
 import {
+  beginPaymentSession,
   getPaymentFlowState,
+  isActivePaymentFlow,
+  logPaymentEvent,
+  markPaymentSessionStarted,
   parsePaymentReturnUrl,
   sanitizeStalePaymentState,
   setPaymentFlowState,
@@ -86,7 +90,10 @@ import { getLegalPath, type LegalPath } from "./constants/footer";
 import { isAdminSessionActive } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
+import { boostNeedsMemberCity } from "./constants/boosts";
+import { PAYMENT_START_ERROR } from "./config/paystack";
 import { DEMO_USER } from "./constants/demoAccounts";
+import { getMemberCity } from "./utils/memberCity";
 import { usePlans } from "./context/PlansContext";
 
 export function App() {
@@ -263,21 +270,25 @@ export function App() {
     const urlRef = params.get("trxref") || params.get("reference");
     const state = getPaymentFlowState();
 
+    if (!urlRef && (state === "initializing" || state === "checkout_open")) return;
     if (!urlRef && state !== "verifying") return;
 
     if (urlRef && window.location.pathname === "/payment/success") {
       navigateToPath("/");
     }
 
+    logPaymentEvent("verification started", { reference: urlRef || localStorage.getItem(STORAGE_KEYS.paymentReference) });
     const result = await completePendingPayment(user);
     setPaymentFlowTick((v) => v + 1);
 
     if (result.ok) {
+      logPaymentEvent("verification result", { ok: true, kind: result.kind });
       applyPaymentSuccess(result.kind);
       return;
     }
 
     if (result.pending) {
+      logPaymentEvent("verification result", { ok: false, pending: true, kind: result.kind });
       return;
     }
 
@@ -286,7 +297,10 @@ export function App() {
       return;
     }
 
-    setPaymentFlowState("failed");
+    if (getPaymentFlowState() !== "failed") {
+      setPaymentFlowState("failed");
+    }
+    logPaymentEvent("verification result", { ok: false, kind: result.kind, error: result.error });
     if (result.error) setAuthMessage(result.error);
   }, [applyPaymentSuccess, user]);
 
@@ -295,6 +309,7 @@ export function App() {
     const listener = CapApp.addListener("appUrlOpen", (event) => {
       const parsed = parsePaymentReturnUrl(event.url);
       if (!parsed) return;
+      logPaymentEvent("checkout callback", { reference: parsed.reference, mode: "deep-link" });
       localStorage.setItem(STORAGE_KEYS.paymentReference, parsed.reference);
       setPaymentFlowState("verifying");
       setPaymentFlowTick((v) => v + 1);
@@ -305,9 +320,67 @@ export function App() {
   }, [isNative]);
 
   useEffect(() => {
+    if (!isNative) return;
+    const listener = CapApp.addListener("appStateChange", ({ isActive }) => {
+      if (!isActive) return;
+      const state = getPaymentFlowState();
+      if (state === "checkout_open" || state === "verifying") {
+        logPaymentEvent("app resumed during payment", { state });
+        setPaymentFlowTick((v) => v + 1);
+      }
+    });
+    return () => {
+      void listener.then((handle) => handle.remove());
+    };
+  }, [isNative]);
+
+  useEffect(() => {
     if (!isAuthed) return;
     void processPaymentReturn();
   }, [isAuthed, processPaymentReturn, paymentFlowTick]);
+
+  /** Re-check Supabase session when returning from Paystack / back button — never logout on payment failure. */
+  useEffect(() => {
+    if (!supabase) return;
+
+    const refreshSessionSilently = async () => {
+      if (!supabase) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const profile = profileFromSessionUser(session.user);
+        setUser((prev) => ({
+          ...profile,
+          phone: prev.phone || profile.phone,
+          phoneVerified: Boolean(prev.phoneVerified ?? profile.phoneVerified)
+        }));
+        setIsAuthed(true);
+        setAuthLoading(false);
+        return;
+      }
+      if (isAuthed && readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }).email) {
+        setIsAuthed(true);
+      }
+    };
+
+    const onReturnToApp = () => {
+      if (document.visibilityState && document.visibilityState !== "visible") return;
+      sanitizeStalePaymentState();
+      void refreshSessionSilently();
+      const state = getPaymentFlowState();
+      if (state === "checkout_open" || state === "verifying") {
+        setPaymentFlowTick((v) => v + 1);
+      }
+    };
+
+    document.addEventListener("visibilitychange", onReturnToApp);
+    window.addEventListener("pageshow", onReturnToApp);
+    window.addEventListener("focus", onReturnToApp);
+    return () => {
+      document.removeEventListener("visibilitychange", onReturnToApp);
+      window.removeEventListener("pageshow", onReturnToApp);
+      window.removeEventListener("focus", onReturnToApp);
+    };
+  }, [isAuthed]);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
@@ -479,6 +552,9 @@ export function App() {
         openAuth("signup", tab === "home" ? "discover" : tab);
         return;
       }
+      beginPaymentSession();
+      markPaymentSessionStarted();
+      setPaymentFlowTick((v) => v + 1);
       setPaymentLoading(true);
       setAuthMessage("");
       trackEvent("payment_started", { plan: plan.id });
@@ -488,7 +564,7 @@ export function App() {
 
       if (!result.ok) {
         if (result.cancelled) return;
-        setAuthMessage(result.error || "We couldn't start payment right now. Please try again shortly.");
+        setAuthMessage(result.error || PAYMENT_START_ERROR);
         return;
       }
 
@@ -514,33 +590,34 @@ export function App() {
         setAuthMessage("Add a verified email before purchasing a boost.");
         return;
       }
-      const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
-      const memberCity = datingProfile.city?.trim() || "";
-
-      if ((product.id === "city-spotlight" || product.id === "city-boost") && !memberCity) {
-        setAuthMessage("Set your city in Edit Profile before buying a city boost.");
+      const memberCity = getMemberCity();
+      if (boostNeedsMemberCity(product.id) && !memberCity) {
+        setAuthMessage("Set your city in Edit Profile before buying this boost.");
         return;
       }
 
+      const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
       syncMemberProfileRemote(user, datingProfile);
 
-      const durationHours =
-        product.id === "city-spotlight" ? 24 : product.id === "city-boost" ? 48 : product.id === "signal-boost" ? 24 : 48;
+      const durationHours = product.id === "profile-boost" ? 48 : 24;
 
+      beginPaymentSession();
+      markPaymentSessionStarted();
+      setPaymentFlowTick((v) => v + 1);
       setPaymentLoading(true);
       setAuthMessage("");
       const result = await startBoostPayment(
         product.id,
         product.price,
         user,
-        datingProfile.city,
+        memberCity || datingProfile.city || "",
         durationHours
       );
       setPaymentLoading(false);
       setPaymentFlowTick((v) => v + 1);
       if (!result.ok) {
         if (result.cancelled) return;
-        setAuthMessage(result.error || "We couldn't start payment right now. Please try again shortly.");
+        setAuthMessage(result.error || PAYMENT_START_ERROR);
         return;
       }
       setPricingOpen(false);
@@ -581,6 +658,7 @@ export function App() {
     isAuthed &&
     !paymentSuccess &&
     !paymentLoading &&
+    !isActivePaymentFlow() &&
     shouldShowPaymentRecovery();
   void paymentFlowTick;
   const notificationUnread = unreadCount();
@@ -766,6 +844,7 @@ export function App() {
           onSelectPlan={(plan) => void handleUpgrade(plan)}
           onPurchaseBoost={handlePurchaseBoost}
           loading={paymentLoading}
+          memberCity={getMemberCity()}
         />
       </div>
     );
@@ -862,6 +941,7 @@ export function App() {
           )}
           {isAuthed && !showOnboarding && !memberOverlay && tab === "home" && (
             <HomePage
+              user={user}
               userName={user.name}
               isPremium={isPremium}
               onDiscover={() => setTab("discover")}
@@ -955,6 +1035,7 @@ export function App() {
         onSelectPlan={(plan) => void handleUpgrade(plan)}
         onPurchaseBoost={handlePurchaseBoost}
         loading={paymentLoading}
+        memberCity={getMemberCity()}
       />
     </div>
   );

@@ -103,6 +103,16 @@ body {
 
 .app-main--member {
   padding: 0 16px 96px;
+  overflow-x: hidden;
+}
+
+.page {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.card {
+  overflow-wrap: break-word;
 }
 
 /* Splash */

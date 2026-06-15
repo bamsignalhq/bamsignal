@@ -76,7 +76,13 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       safetySettings: profile.safetySettings ?? defaultSafetySettings(profile.gender)
     });
     const joinedAt = markJoinedAt();
-    const final: DatingProfile = { ...withSafety, onboardingComplete: true, createdAt: joinedAt };
+    const final: DatingProfile = {
+      ...withSafety,
+      onboardingComplete: true,
+      createdAt: joinedAt,
+      coverPhoto: undefined,
+      coverPhotoExplicit: false
+    };
     writeJson(STORAGE_KEYS.datingProfile, final);
     localStorage.removeItem(STORAGE_KEYS.onboardingStep);
     writeJson(STORAGE_KEYS.matchPreferences, {
@@ -284,12 +290,17 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       {step === 2 && (
         <section className="onboarding-step">
           <h2>Your photos</h2>
-          <p className="onboarding-sub">Clear photos of you — profiles with more photos get more signals.</p>
+          <p className="onboarding-sub">Profile gallery photos only — you can add a cover photo later from Edit Profile.</p>
           <PhotoUploadGrid
             photos={profile.photos}
             signupMode
             onChange={(photos) => {
-              const next = normalizeDatingProfile({ ...profile, photos });
+              const next = normalizeDatingProfile({
+                ...profile,
+                photos,
+                coverPhoto: undefined,
+                coverPhotoExplicit: false
+              });
               setProfile(next);
               writeJson(STORAGE_KEYS.datingProfile, { ...next, onboardingComplete: false });
             }}

@@ -9,15 +9,20 @@ import {
   ALL_NIGERIAN_CITIES,
   ETHNIC_BACKGROUNDS,
   FILTER_ETHNICITIES,
+  FILTER_KIDS_PREFERENCES,
   FILTER_LIFESTYLES,
   FILTER_RELIGIONS,
+  GENOTYPES,
+  KIDS_PREFERENCES,
   NIGERIAN_STATES,
+  OCCUPATIONS,
   citiesForState,
   RELIGIONS,
   SOCIAL_LIFESTYLES
 } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
 import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
+import { ProfileDetailsList } from "../components/profile/ProfileDetailsList";
 import { InterestPicker } from "../components/InterestPicker";
 import { VoiceIntroRecorder } from "../components/VoiceIntro";
 import { VoiceIntro } from "../components/VoiceIntro";
@@ -25,9 +30,12 @@ import type {
   DatingProfile,
   EthnicBackground,
   Gender,
+  Genotype,
   IntentTag,
+  KidsPreference,
   LookingFor,
   MatchPreferences,
+  Occupation,
   Religion,
   SafetySettings,
   SocialLifestyle,
@@ -48,13 +56,14 @@ import { StateCitySelect } from "../components/StateCitySelect";
 import { MAX_PROFILE_PHOTOS } from "../constants/photos";
 import { isAdultDob } from "../utils/ageFromDob";
 import { syncMemberProfileRemote } from "../services/cityHome";
+import { hasFilledProfileDetails } from "../utils/profileDetails";
 
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
 const LOOKING: LookingFor[] = ["Men", "Women"];
 
 type ProfileView = "overview" | "edit" | "settings";
 type SettingsPanel = "hub" | "preferences" | "privacy" | "account" | "notifications" | "verification";
-type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "voice";
+type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "details" | "voice";
 
 type ProfilePageProps = {
   user: UserProfile;
@@ -84,6 +93,18 @@ function intentHint(intents: IntentTag[]): string {
 
 function voiceHint(url?: string): string {
   return url ? "Added" : "Not added";
+}
+
+function detailsHint(profile: DatingProfile): string {
+  const count = [
+    profile.ethnicity,
+    profile.religion,
+    profile.occupation,
+    profile.stateOfOrigin,
+    profile.genotype,
+    profile.kidsPreference
+  ].filter((v) => v && v !== "Prefer not to say").length;
+  return count ? `${count} added` : "Optional";
 }
 
 function photosHint(count: number): string {
@@ -256,7 +277,7 @@ export function ProfilePage({
   };
 
   return (
-    <div className={`page profile-page profile-page--hero ${view === "edit" ? "profile-page--editing" : ""}`}>
+    <div className={`page profile-page profile-page--hero member-content-pad ${view === "edit" ? "profile-page--editing" : ""}`}>
       {modMessage && (
         <p className="profile-mod-toast" role="status">
           {modMessage}
@@ -305,6 +326,13 @@ export function ProfilePage({
                 <p className="profile-overview-empty">Add what you&apos;re open to.</p>
               )}
             </section>
+
+            {hasFilledProfileDetails(profile) ? (
+              <section className="profile-overview-block">
+                <h3>Details</h3>
+                <ProfileDetailsList profile={profile} />
+              </section>
+            ) : null}
 
             <section className="profile-overview-block">
               <h3>Voice intro</h3>
@@ -430,7 +458,11 @@ export function ProfilePage({
               profilePhotos={profile.photos}
               onChange={(coverPhoto) => {
                 setProfile((p) => {
-                  const next = normalizeDatingProfile({ ...p, coverPhoto });
+                  const next = normalizeDatingProfile({
+                    ...p,
+                    coverPhoto,
+                    coverPhotoExplicit: Boolean(coverPhoto)
+                  });
                   writeJson(STORAGE_KEYS.datingProfile, next);
                   syncMemberProfileRemote(user, next);
                   return next;
@@ -516,6 +548,144 @@ export function ProfilePage({
           </EditAccordion>
 
           <EditAccordion
+            id="details"
+            title="Details"
+            hint={detailsHint(profile)}
+            open={editOpen === "details"}
+            onToggle={toggleEditSection}
+          >
+            <p className="profile-form-row__hint">Optional — helps people find you in Advanced Search.</p>
+
+            <fieldset className="intent-fieldset profile-form-row">
+              <legend>Tribe</legend>
+              <div className="intent-tags selectable match-prefs-scroll">
+                {ETHNIC_BACKGROUNDS.map((tribe) => (
+                  <button
+                    key={tribe}
+                    type="button"
+                    className={`intent-tag ${profile.ethnicity === tribe ? "selected" : ""}`}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        ethnicity: profile.ethnicity === tribe ? undefined : (tribe as EthnicBackground)
+                      })
+                    }
+                  >
+                    {tribe}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="intent-fieldset profile-form-row">
+              <legend>Religion</legend>
+              <div className="intent-tags selectable">
+                {RELIGIONS.map((religion) => (
+                  <button
+                    key={religion}
+                    type="button"
+                    className={`intent-tag ${profile.religion === religion ? "selected" : ""}`}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        religion: profile.religion === religion ? undefined : (religion as Religion)
+                      })
+                    }
+                  >
+                    {religion}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="intent-fieldset profile-form-row">
+              <legend>Occupation</legend>
+              <div className="intent-tags selectable match-prefs-scroll">
+                {OCCUPATIONS.map((occupation) => (
+                  <button
+                    key={occupation}
+                    type="button"
+                    className={`intent-tag ${profile.occupation === occupation ? "selected" : ""}`}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        occupation:
+                          profile.occupation === occupation ? undefined : (occupation as Occupation)
+                      })
+                    }
+                  >
+                    {occupation}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="intent-fieldset profile-form-row">
+              <legend>State of origin</legend>
+              <div className="intent-tags selectable match-prefs-scroll">
+                {NIGERIAN_STATES.map((origin) => (
+                  <button
+                    key={origin}
+                    type="button"
+                    className={`intent-tag ${profile.stateOfOrigin === origin ? "selected" : ""}`}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        stateOfOrigin: profile.stateOfOrigin === origin ? undefined : origin
+                      })
+                    }
+                  >
+                    {origin === "FCT" ? "Abuja" : origin}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="intent-fieldset profile-form-row">
+              <legend>Genotype</legend>
+              <div className="intent-tags selectable">
+                {GENOTYPES.map((genotype) => (
+                  <button
+                    key={genotype}
+                    type="button"
+                    className={`intent-tag ${profile.genotype === genotype ? "selected" : ""}`}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        genotype: profile.genotype === genotype ? undefined : (genotype as Genotype)
+                      })
+                    }
+                  >
+                    {genotype}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <fieldset className="intent-fieldset profile-form-row">
+              <legend>Has kids / Wants kids</legend>
+              <div className="intent-tags selectable">
+                {KIDS_PREFERENCES.map((pref) => (
+                  <button
+                    key={pref}
+                    type="button"
+                    className={`intent-tag ${profile.kidsPreference === pref ? "selected" : ""}`}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        kidsPreference:
+                          profile.kidsPreference === pref ? undefined : (pref as KidsPreference)
+                      })
+                    }
+                  >
+                    {pref}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          </EditAccordion>
+
+          <EditAccordion
             id="voice"
             title="Voice greeting"
             hint={voiceHint(profile.voiceIntroUrl)}
@@ -547,7 +717,7 @@ export function ProfilePage({
             {settingsPanel === "hub"
               ? "Settings"
               : settingsPanel === "preferences"
-                ? "Preferences"
+                ? "Compatibility Preferences"
                 : settingsPanel === "privacy"
                   ? "Privacy"
                   : settingsPanel === "notifications"
@@ -560,7 +730,7 @@ export function ProfilePage({
           {settingsPanel === "hub" && (
             <>
               <section className="card settings-hub-card">
-                <SettingsRow label="Preferences" onClick={() => setSettingsPanel("preferences")} />
+                <SettingsRow label="Compatibility Preferences" onClick={() => setSettingsPanel("preferences")} />
                 <SettingsRow label="Privacy" onClick={() => setSettingsPanel("privacy")} />
                 <SettingsRow label="Notifications" onClick={() => setSettingsPanel("notifications")} />
                 <SettingsRow label="Verification" onClick={() => setSettingsPanel("verification")} />
@@ -693,6 +863,34 @@ export function ProfilePage({
                   </div>
                 </fieldset>
               )}
+
+              <fieldset className="intent-fieldset">
+                <legend>Kids preference</legend>
+                <div className="intent-tags selectable">
+                  {FILTER_KIDS_PREFERENCES.map((pref) => (
+                    <button
+                      key={pref}
+                      type="button"
+                      className={`intent-tag ${(prefs.kidsPreferences ?? []).includes(pref) ? "selected" : ""}`}
+                      onClick={() => togglePref("kidsPreferences", pref)}
+                    >
+                      {pref}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label className="settings-row settings-row--toggle">
+                <span>
+                  <strong>Verified only</strong>
+                  <small>Prioritize verified profiles on Home</small>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={Boolean(prefs.requireVerified)}
+                  onChange={(e) => setPrefs({ ...prefs, requireVerified: e.target.checked })}
+                />
+              </label>
 
               <div className="match-prefs-age">
                 <label>

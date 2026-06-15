@@ -41,7 +41,8 @@ export const defaultMatchPreferences = (): MatchPreferences => ({
   cities: [],
   states: [],
   intents: [],
-  preferenceMode: "flexible"
+  preferenceMode: "flexible",
+  kidsPreferences: []
 });
 
 export function getDatingProfile(): DatingProfile {
@@ -80,6 +81,14 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     raw.lookingFor && (raw.lookingFor as string) !== "Everyone"
       ? (raw.lookingFor as DatingProfile["lookingFor"])
       : base.lookingFor;
+  const onboardingComplete = Boolean(raw.onboardingComplete);
+  const coverFromRaw =
+    !onboardingComplete || !raw.coverPhotoExplicit
+      ? undefined
+      : raw.coverPhoto &&
+          raw.photos?.some((p) => sameImageDataUrl(p, raw.coverPhoto))
+        ? undefined
+        : raw.coverPhoto;
   return {
     ...base,
     ...raw,
@@ -91,11 +100,9 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     lookingFor: lookingFor as DatingProfile["lookingFor"],
     intents: normalizeIntents(raw.intents as string[] | undefined),
     interests: raw.interests ?? base.interests,
-    coverPhoto:
-      raw.coverPhoto && raw.photos?.some((p) => sameImageDataUrl(p, raw.coverPhoto))
-        ? undefined
-        : raw.coverPhoto,
-    photos: sanitizeProfilePhotos(raw.photos ?? base.photos, raw.coverPhoto),
+    coverPhoto: coverFromRaw,
+    coverPhotoExplicit: onboardingComplete ? raw.coverPhotoExplicit : false,
+    photos: sanitizeProfilePhotos(raw.photos ?? base.photos, coverFromRaw),
     verificationSelfie: raw.verificationSelfie,
     verificationStatus: raw.verificationStatus ?? "none",
     visibility: { ...base.visibility!, ...raw.visibility },
@@ -122,6 +129,7 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
     minCompatibility: raw.minCompatibility,
     requireVoiceIntro: raw.requireVoiceIntro ?? false,
     requireVerified: raw.requireVerified ?? false,
+    kidsPreferences: raw.kidsPreferences ?? base.kidsPreferences,
     intents: raw.intents?.length ? normalizeIntents(raw.intents as string[]) : base.intents
   };
 }

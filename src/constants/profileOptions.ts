@@ -178,7 +178,66 @@ export const INTEREST_OPTIONS = [
   "Content creation"
 ] as const;
 
+export const OCCUPATIONS = [
+  "Software Engineer",
+  "Doctor",
+  "Nurse",
+  "Pharmacist",
+  "Lawyer",
+  "Accountant",
+  "Banker",
+  "Teacher",
+  "Entrepreneur",
+  "Business Owner",
+  "Civil Servant",
+  "Marketing",
+  "Sales",
+  "Designer",
+  "Content Creator",
+  "Student",
+  "Graduate / NYSC",
+  "Trader",
+  "Fashion Designer",
+  "Real Estate Agent",
+  "Pilot",
+  "Architect",
+  "Engineer",
+  "Consultant",
+  "HR Professional",
+  "Chef",
+  "Hospitality",
+  "Military / Security",
+  "Clergy",
+  "Artist",
+  "Athlete",
+  "Driver / Logistics",
+  "Artisan",
+  "Farmer",
+  "Other",
+  "Prefer not to say"
+] as const;
+
+export type Occupation = (typeof OCCUPATIONS)[number];
+
+export const GENOTYPES = ["AA", "AS", "SS", "AC", "SC", "CC", "Prefer not to say"] as const;
+
+export type Genotype = (typeof GENOTYPES)[number];
+
+export const KIDS_PREFERENCES = [
+  "Has kids",
+  "No kids",
+  "Wants kids",
+  "Doesn't want kids",
+  "Open to kids",
+  "Prefer not to say"
+] as const;
+
+export type KidsPreference = (typeof KIDS_PREFERENCES)[number];
+
 /** Optional filter picklists — same values, excluding "Prefer not to say" for filters */
 export const FILTER_RELIGIONS = RELIGIONS.filter((r) => r !== "Prefer not to say");
 export const FILTER_ETHNICITIES = ETHNIC_BACKGROUNDS.filter((e) => e !== "Prefer not to say");
 export const FILTER_LIFESTYLES = SOCIAL_LIFESTYLES.filter((l) => l !== "Prefer not to say");
+export const FILTER_OCCUPATIONS = OCCUPATIONS.filter((o) => o !== "Prefer not to say");
+export const FILTER_GENOTYPES = GENOTYPES.filter((g) => g !== "Prefer not to say");
+export const FILTER_KIDS_PREFERENCES = KIDS_PREFERENCES.filter((k) => k !== "Prefer not to say");

@@ -21,14 +21,28 @@ export type Religion =
   | "Other"
   | "Prefer not to say";
 
-export type { EthnicBackground, SocialLifestyle } from "../constants/profileOptions";
-import type { EthnicBackground, SocialLifestyle } from "../constants/profileOptions";
+export type {
+  EthnicBackground,
+  Genotype,
+  KidsPreference,
+  Occupation,
+  SocialLifestyle
+} from "../constants/profileOptions";
+import type {
+  EthnicBackground,
+  Genotype,
+  KidsPreference,
+  Occupation,
+  SocialLifestyle
+} from "../constants/profileOptions";
 
 export type PreferenceMode = "flexible" | "strict";
 
 export type WhoCanSignalMe = "everyone" | "verified_only" | "matches_preferences";
 
 export type DmControl = "everyone" | "matches_only" | "verified_only" | "nobody";
+
+export type ActivityVisibility = "everyone" | "matches_only" | "nobody";
 
 export type SafetySettings = {
   /** Who may send you a signal */
@@ -39,6 +53,8 @@ export type SafetySettings = {
   dmControl: DmControl;
   /** Hide profile from discovery (pause) */
   hideFromDiscovery?: boolean;
+  /** Who can see your activity status on cards */
+  activityVisibility?: ActivityVisibility;
 };
 
 export type ReportReason =
@@ -85,6 +101,8 @@ export type DatingProfile = {
   photos: string[];
   /** Wide hero backdrop — separate from profile gallery photos */
   coverPhoto?: string;
+  /** Set only when member explicitly adds cover in Profile (not signup). */
+  coverPhotoExplicit?: boolean;
   age: number;
   /** ISO date YYYY-MM-DD — source of truth for age when set */
   dateOfBirth?: string;
@@ -96,8 +114,12 @@ export type DatingProfile = {
   intents: IntentTag[];
   interests: string[];
   religion?: Religion;
+  /** Tribe / ethnic background */
   ethnicity?: EthnicBackground;
   stateOfOrigin?: string;
+  occupation?: Occupation;
+  genotype?: Genotype;
+  kidsPreference?: KidsPreference;
   lifestyle?: SocialLifestyle;
   voiceIntroUrl?: string;
   visibility?: ProfileVisibility;
@@ -132,6 +154,48 @@ export type MatchPreferences = {
   requireVoiceIntro?: boolean;
   /** Premium — verified profiles only */
   requireVerified?: boolean;
+  kidsPreferences?: KidsPreference[];
+};
+
+export type SavedSearch = {
+  id: string;
+  label: string;
+  resultCount?: number;
+  ageMin: number;
+  ageMax: number;
+  state: string;
+  city: string;
+  advanced: HomeAdvancedFilters;
+  savedAt: string;
+};
+
+export type HomeAdvancedFilters = {
+  tribes: EthnicBackground[];
+  religions: Religion[];
+  occupations: Occupation[];
+  statesOfOrigin: string[];
+  relationshipIntentions: IntentTag[];
+  genotypes: Genotype[];
+  hasKids: KidsPreference[];
+  wantsKids: KidsPreference[];
+  verifiedOnly: boolean;
+};
+
+/** Home / Search filters — advanced keys apply only when the user selects them */
+export type MemberSearchFilters = {
+  state?: string;
+  city?: string;
+  ageMin?: number;
+  ageMax?: number;
+  excludeProfileIds?: string[];
+  tribes?: EthnicBackground[];
+  religions?: Religion[];
+  occupations?: Occupation[];
+  statesOfOrigin?: string[];
+  relationshipIntentions?: IntentTag[];
+  genotypes?: Genotype[];
+  kidsPreferences?: KidsPreference[];
+  limit?: number;
 };
 
 export type DiscoverProfile = {
@@ -147,8 +211,12 @@ export type DiscoverProfile = {
   intents: IntentTag[];
   interests?: string[];
   religion?: Religion;
+  /** Tribe / ethnic background */
   ethnicity?: EthnicBackground;
   stateOfOrigin?: string;
+  occupation?: Occupation;
+  genotype?: Genotype;
+  kidsPreference?: KidsPreference;
   lifestyle?: SocialLifestyle;
   voiceIntroUrl?: string;
   distanceKm?: number;

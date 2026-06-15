@@ -49,6 +49,7 @@ import {
 } from "../services/cityHome";
 import { CITIES_VISUAL } from "../data/visualLanding";
 import { AdminBusinessDashboard } from "../components/admin/AdminBusinessDashboard";
+import { AdminHomeFeedAdsPanel } from "../components/admin/AdminHomeFeedAdsPanel";
 import { AdminSeedingTools } from "../components/admin/AdminSeedingTools";
 import { getLaunchConfig, saveLaunchConfig } from "../utils/launchConfig";
 import {
@@ -75,6 +76,7 @@ type AdminTab =
   | "verifications"
   | "content"
   | "email"
+  | "ads"
   | "leads";
 
 export function AdminHubPage({ onBack }: AdminHubPageProps) {
@@ -101,6 +103,7 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
   const [seedMessage, setSeedMessage] = useState("");
   const [emailBrandingDraft, setEmailBrandingDraft] = useState<EmailBrandingSettings>(DEFAULT_EMAIL_BRANDING);
   const [emailBrandingMessage, setEmailBrandingMessage] = useState("");
+  const [adsMessage, setAdsMessage] = useState("");
   const launchConfig = getLaunchConfig();
 
   const loadCityHomeMembers = async (city = cityHomeCity) => {
@@ -222,7 +225,8 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
             ["verifications", `Verify (${pendingVerificationCount})`],
             ["pricing", "Pricing"],
             ["content", "Content"],
-            ["email", "Email"]
+            ["email", "Email"],
+            ["ads", "Home ads"]
           ] as const
         ).map(([id, label]) => (
           <button
@@ -1029,6 +1033,17 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
             </button>
           </div>
         </section>
+      )}
+
+      {tab === "ads" && (
+        <>
+          <AdminHomeFeedAdsPanel onMessage={setAdsMessage} />
+          {adsMessage ? (
+            <p className="admin-toast" role="status">
+              {adsMessage}
+            </p>
+          ) : null}
+        </>
       )}
     </div>
   );

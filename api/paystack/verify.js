@@ -128,6 +128,14 @@ export default async function handler(req, res) {
           }
         });
 
+        console.info("[paystack] payment initialized", {
+          reference: data?.reference || reference,
+          email,
+          plan: planMeta,
+          amount,
+          hasAccessCode: Boolean(data?.access_code)
+        });
+
         return res.status(200).json({
           ok: true,
           reference: data?.reference || reference,
@@ -247,6 +255,7 @@ export default async function handler(req, res) {
 
     let transaction;
     try {
+      console.info("[paystack] verification started", { reference, email: email || phone });
       transaction = await verifyPaystackTransaction(reference);
     } catch (error) {
       logPaystackFailure("verify", error, { reference });
@@ -255,8 +264,11 @@ export default async function handler(req, res) {
     }
 
     if (transaction?.status !== "success") {
+      console.info("[paystack] verification result", { reference, ok: false, status: transaction?.status });
       return res.status(402).json({ ok: false, error: "Payment is not successful yet." });
     }
+
+    console.info("[paystack] verification result", { reference, ok: true, status: transaction.status });
 
     const transactionEmail = String(transaction?.customer?.email || transaction?.metadata?.email || "").toLowerCase();
     if (email && transactionEmail && transactionEmail !== email) {

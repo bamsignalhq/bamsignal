@@ -99,10 +99,14 @@ export function rowToDiscoverProfile(row) {
     religion: profile.religion,
     ethnicity: profile.ethnicity,
     stateOfOrigin: profile.stateOfOrigin,
+    occupation: profile.occupation,
+    genotype: profile.genotype,
+    kidsPreference: profile.kidsPreference,
     lifestyle: profile.lifestyle,
     voiceIntroUrl: profile.voiceIntroUrl,
     verified: Boolean(profile.verified),
     premium: Boolean(profile.premium),
+    safetySettings: profile.safetySettings,
     createdAt: profile.createdAt || row.created_at,
     lastActiveAt: row.updated_at || row.created_at
   };
@@ -135,6 +139,100 @@ export async function listDiscoverProfiles({
      order by updated_at desc
      limit $4`,
     [city.trim(), own.user_key, exclude, limit]
+  );
+
+  return result.rows.map(rowToDiscoverProfile).filter(Boolean);
+}
+
+export async function searchMemberProfiles({
+  email,
+  phone,
+  state = "",
+  city = "",
+  ageMin = 18,
+  ageMax = 99,
+  excludeProfileIds = [],
+  limit = 24,
+  tribes = [],
+  religions = [],
+  occupations = [],
+  statesOfOrigin = [],
+  relationshipIntentions = [],
+  genotypes = [],
+  kidsPreferences = []
+}) {
+  if (!isDatabaseReady()) return [];
+  await ensureSocialSchema();
+
+  const own = await findMemberProfileByUserKey(email, phone);
+  if (!own?.id) return [];
+
+  const exclude = Array.from(new Set([own.id, ...excludeProfileIds.filter(Boolean)]));
+  const minAge = Math.max(18, Math.min(99, Math.round(Number(ageMin) || 18)));
+  const maxAge = Math.max(minAge, Math.min(99, Math.round(Number(ageMax) || 99)));
+  const stateQ = String(state || "").trim();
+  const cityQ = String(city || "").trim();
+
+  if (!cityQ && !stateQ) return [];
+
+  const params = [own.user_key, exclude, minAge, maxAge];
+  const where = [
+    "onboarding_complete = true",
+    "discoverable = true",
+    "city_home_hidden = false",
+    "user_key <> $1",
+    "not (id = any($2::uuid[]))",
+    "coalesce((profile->>'age')::int, 25) >= $3",
+    "coalesce((profile->>'age')::int, 25) <= $4"
+  ];
+
+  if (cityQ) {
+    params.push(cityQ);
+    where.push(`lower(city) = lower($${params.length})`);
+  } else {
+    params.push(stateQ);
+    where.push(`lower(state) = lower($${params.length})`);
+  }
+
+  if (cityQ) {
+    params.push(cityQ);
+    where.push(`lower(city) = lower($${params.length})`);
+  } else {
+    params.push(stateQ);
+    where.push(`lower(state) = lower($${params.length})`);
+  }
+
+  const addJsonInFilter = (jsonKey, values) => {
+    const list = Array.isArray(values) ? values.filter(Boolean) : [];
+    if (!list.length) return;
+    params.push(list);
+    where.push(`profile->>'${jsonKey}' = any($${params.length}::text[])`);
+  };
+
+  addJsonInFilter("ethnicity", tribes);
+  addJsonInFilter("religion", religions);
+  addJsonInFilter("occupation", occupations);
+  addJsonInFilter("stateOfOrigin", statesOfOrigin);
+  addJsonInFilter("genotype", genotypes);
+  addJsonInFilter("kidsPreference", kidsPreferences);
+
+  const intentList = Array.isArray(relationshipIntentions)
+    ? relationshipIntentions.filter(Boolean)
+    : [];
+  if (intentList.length) {
+    params.push(intentList);
+    where.push(`profile->'intents' ?| $${params.length}::text[]`);
+  }
+
+  params.push(Math.min(80, Math.max(1, Number(limit) || 24)));
+
+  const result = await query(
+    `select *
+     from app_member_profiles
+     where ${where.join(" and ")}
+     order by updated_at desc
+     limit $${params.length}`,
+    params
   );
 
   return result.rows.map(rowToDiscoverProfile).filter(Boolean);
@@ -527,6 +625,11 @@ export async function fetchMemberSocialBundle({ email, phone }) {
           intents: profileJson.intents || [],
           interests: profileJson.interests || [],
           religion: profileJson.religion,
+          ethnicity: profileJson.ethnicity,
+          stateOfOrigin: profileJson.stateOfOrigin,
+          occupation: profileJson.occupation,
+          genotype: profileJson.genotype,
+          kidsPreference: profileJson.kidsPreference,
           lifestyle: profileJson.lifestyle,
           verified: Boolean(profileJson.verified),
           premium: Boolean(profileJson.premium),

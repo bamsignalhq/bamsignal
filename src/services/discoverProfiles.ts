@@ -1,4 +1,4 @@
-import type { DiscoverProfile, UserProfile } from "../types";
+import type { DiscoverProfile, MemberSearchFilters, UserProfile } from "../types";
 import { apiUrl } from "./supabase";
 
 const profileCache = new Map<string, DiscoverProfile>();
@@ -29,6 +29,59 @@ export async function fetchDiscoverProfiles(
         phone: user.phone,
         city,
         excludeProfileIds
+      })
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok || !Array.isArray(payload.profiles)) return [];
+    const profiles = payload.profiles as DiscoverProfile[];
+    cacheDiscoverProfiles(profiles);
+    return profiles;
+  } catch {
+    return [];
+  }
+}
+
+export async function searchMemberProfiles(
+  user: Pick<UserProfile, "email" | "phone">,
+  options: MemberSearchFilters
+): Promise<DiscoverProfile[]> {
+  const {
+    state = "",
+    city = "",
+    ageMin = 18,
+    ageMax = 99,
+    excludeProfileIds = [],
+    tribes = [],
+    religions = [],
+    occupations = [],
+    statesOfOrigin = [],
+    relationshipIntentions = [],
+    genotypes = [],
+    kidsPreferences = [],
+    limit = 72
+  } = options;
+  if (!city.trim() && !state.trim()) return [];
+
+  try {
+    const response = await fetch(apiUrl("/api/member/data?action=search"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: user.email,
+        phone: user.phone,
+        state,
+        city,
+        ageMin,
+        ageMax,
+        excludeProfileIds,
+        tribes,
+        religions,
+        occupations,
+        statesOfOrigin,
+        relationshipIntentions,
+        genotypes,
+        kidsPreferences,
+        limit
       })
     });
     const payload = await response.json().catch(() => null);

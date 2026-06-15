@@ -1,6 +1,7 @@
 import {
   DEFAULT_BOOST_INPUTS,
   DEFAULT_BOOST_PRODUCTS,
+  SHOP_BOOST_IDS,
   hydrateBoost,
   type BoostProduct,
   type BoostProductInput
@@ -56,10 +57,13 @@ export async function fetchBoostProducts(): Promise<BoostProduct[]> {
   return mergeBoostCatalog(cached || DEFAULT_BOOST_PRODUCTS);
 }
 
-/** Always include every default boost (e.g. Hot / city-spotlight) even if admin cache is stale */
+/** Member shop: three compact boosts only. */
 function mergeBoostCatalog(products: BoostProduct[]): BoostProduct[] {
   const byId = new Map(products.map((product) => [product.id, product]));
-  return DEFAULT_BOOST_INPUTS.map((input) => byId.get(input.id) ?? hydrateBoost(input));
+  return SHOP_BOOST_IDS.map((id) => {
+    const fallback = DEFAULT_BOOST_INPUTS.find((input) => input.id === id);
+    return byId.get(id) ?? (fallback ? hydrateBoost(fallback) : hydrateBoost(DEFAULT_BOOST_INPUTS[0]));
+  });
 }
 
 export async function saveBoostProductsAdmin(

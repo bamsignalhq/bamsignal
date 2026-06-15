@@ -9,7 +9,7 @@ export function PaymentRecoveryBanner({ onRetry, onDismiss }: PaymentRecoveryBan
   const cancelled = getPaymentFlowState() === "cancelled";
   const title = cancelled ? "Payment not completed" : "Payment incomplete";
   const body = cancelled
-    ? "You closed checkout before paying. You can try again whenever you're ready."
+    ? "Payment was not completed. You can try again at any time."
     : "We couldn't confirm your payment. Please try again.";
 
   return (

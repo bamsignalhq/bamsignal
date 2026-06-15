@@ -7,9 +7,11 @@ import { readJson } from "../utils/storage";
 import {
   beginPaymentSession,
   checkoutWasOpened,
+  logPaymentEvent,
   markPaymentSessionStarted,
   setPaymentFlowState
 } from "../utils/paymentState";
+import { PAYMENT_START_ERROR } from "../config/paystack";
 import { openPaystackCheckout } from "./paymentCheckout";
 import { apiUrl } from "./supabase";
 import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
@@ -17,7 +19,7 @@ import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./pre
 export { isPremiumActive, refreshPremiumStatus };
 export { clearPaymentSession } from "../utils/paymentState";
 
-const INIT_ERROR = "We couldn't start payment right now. Please try again shortly.";
+const INIT_ERROR = PAYMENT_START_ERROR;
 
 function paymentPlatform(): "native" | "web" {
   return Capacitor.isNativePlatform() ? "native" : "web";
@@ -48,8 +50,13 @@ async function postInitialize(url: string, body: Record<string, unknown>): Promi
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok || !payload?.ok || !payload.authorization_url) {
+    logPaymentEvent("initialize failed", { url, error: payload?.error });
     return { ok: false, error: payload?.error || INIT_ERROR };
   }
+  logPaymentEvent("payment initialized", {
+    reference: payload.reference,
+    hasAccessCode: Boolean(payload.access_code)
+  });
   return payload as InitPayload;
 }
 
@@ -77,17 +84,27 @@ async function launchCheckout(
     kind
   });
 
+  if (outcome.status === "error") {
+    setPaymentFlowState("idle");
+    return { ok: false, error: outcome.message };
+  }
+
   if (outcome.status === "redirect") {
     return { ok: true, reference: init.reference, redirected: true };
   }
 
   if (outcome.status === "cancelled") {
-    setPaymentFlowState("cancelled");
+    if (checkoutWasOpened()) {
+      setPaymentFlowState("cancelled");
+    } else {
+      setPaymentFlowState("idle");
+    }
     return { ok: false, cancelled: true };
   }
 
   localStorage.setItem(STORAGE_KEYS.paymentReference, outcome.reference);
   setPaymentFlowState("verifying");
+  logPaymentEvent("verification started", { reference: outcome.reference });
   return { ok: true, reference: outcome.reference, needsVerify: true };
 }
 
@@ -334,6 +351,7 @@ export async function completePendingPayment(user: UserProfile): Promise<{
 
   localStorage.setItem(STORAGE_KEYS.paymentReference, reference);
   setPaymentFlowState("verifying");
+  logPaymentEvent("verification started", { reference });
 
   const kind = (localStorage.getItem(STORAGE_KEYS.paymentKind) || "premium") as
     | "premium"
@@ -344,8 +362,12 @@ export async function completePendingPayment(user: UserProfile): Promise<{
     const datingProfile = readJson<{ city?: string }>(STORAGE_KEYS.datingProfile, {});
     const boostId = localStorage.getItem(STORAGE_KEYS.paymentBoostId) || "city-boost";
     const result = await verifyBoostPayment(user, boostId, datingProfile.city || "Lagos");
-    if (result.ok) return { ok: true, kind: "boost" };
+    if (result.ok) {
+      logPaymentEvent("verification result", { reference, ok: true, kind: "boost" });
+      return { ok: true, kind: "boost" };
+    }
     if (result.pending) return { ok: false, kind: "boost", pending: true };
+    logPaymentEvent("verification result", { reference, ok: false, kind: "boost", error: result.error });
     if (checkoutWasOpened()) {
       setPaymentFlowState("failed");
     } else {
@@ -356,8 +378,12 @@ export async function completePendingPayment(user: UserProfile): Promise<{
 
   if (kind === "quickie") {
     const result = await verifyQuickiePayment(user);
-    if (result.ok) return { ok: true, kind: "quickie" };
+    if (result.ok) {
+      logPaymentEvent("verification result", { reference, ok: true, kind: "quickie" });
+      return { ok: true, kind: "quickie" };
+    }
     if (result.pending) return { ok: false, kind: "quickie", pending: true };
+    logPaymentEvent("verification result", { reference, ok: false, kind: "quickie", error: result.error });
     if (checkoutWasOpened()) {
       setPaymentFlowState("failed");
     } else {
@@ -367,8 +393,12 @@ export async function completePendingPayment(user: UserProfile): Promise<{
   }
 
   const result = await verifyPayment(user);
-  if (result.ok) return { ok: true, kind: "premium" };
+  if (result.ok) {
+    logPaymentEvent("verification result", { reference, ok: true, kind: "premium" });
+    return { ok: true, kind: "premium" };
+  }
   if (result.pending) return { ok: false, kind: "premium", pending: true };
+  logPaymentEvent("verification result", { reference, ok: false, kind: "premium", error: result.error });
   if (checkoutWasOpened()) {
     setPaymentFlowState("failed");
   } else {

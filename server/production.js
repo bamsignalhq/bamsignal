@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
 import { isSignupEmailConfigured } from "./supabaseEnv.js";
 import { corsMiddleware } from "./cors.js";
+import { fixFunctionSecurity } from "./fixFunctionSecurity.js";
 import { fixSecurityDefinerViews } from "./fixSecurityDefinerViews.js";
 import { getDatabaseStatus, initDatabase, pingDatabase } from "./db.js";
 import { paystackRouter } from "./routes/paystack.js";
@@ -17,6 +18,7 @@ import playReviewerFinishHandler from "../api/auth/play-reviewer-finish.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
 import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivity.js";
 import viewSecurityHandler from "../api/diagnostics/view-security.js";
+import functionSecurityHandler from "../api/diagnostics/function-security.js";
 import memberDataHandler from "../api/member/data.js";
 import cityHomeHandler from "../api/city/home.js";
 import citySpotlightHandler from "../api/city/spotlight.js";
@@ -107,6 +109,8 @@ mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);
 mountHandler(app, "get", "/api/diagnostics/paystack-connectivity", paystackConnectivityHandler);
 mountHandler(app, "get", "/api/diagnostics/view-security", viewSecurityHandler);
 mountHandler(app, "post", "/api/diagnostics/view-security", viewSecurityHandler);
+mountHandler(app, "get", "/api/diagnostics/function-security", functionSecurityHandler);
+mountHandler(app, "post", "/api/diagnostics/function-security", functionSecurityHandler);
 mountHandler(app, "post", "/api/admin/city-home", adminCityHomeHandler);
 mountHandler(app, "get", "/api/admin/city-spotlight", adminCitySpotlightHandler);
 mountHandler(app, "get", "/api/city/home", cityHomeHandler);
@@ -152,6 +156,16 @@ void initDatabase()
     });
     if (viewFix?.fixed?.length) {
       console.log(`[bamsignal] security_invoker enabled on views: ${viewFix.fixed.join(", ")}`);
+    }
+
+    const functionFix = await fixFunctionSecurity().catch((error) => {
+      console.warn("[bamsignal] function security fix skipped:", error.message || error);
+      return null;
+    });
+    if (functionFix?.searchPathFixed?.length || functionFix?.rpcRevoked?.length) {
+      console.log(
+        `[bamsignal] function security hardened: search_path=${functionFix.searchPathFixed.join(", ") || "none"}; rpc_revoked=${functionFix.rpcRevoked.join(", ") || "none"}`
+      );
     }
   })
   .catch((error) => {

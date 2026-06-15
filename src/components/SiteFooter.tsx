@@ -1,11 +1,14 @@
 import { AppLogo } from "./AppLogo";
+import { SocialIconLinks } from "./SocialIconLinks";
 import {
   FOOTER_COPYRIGHT,
   FOOTER_EARLY_ACCESS_LABEL,
-  FOOTER_LINKS,
-  FOOTER_TRUST_LINE,
+  FOOTER_QUICK_LINKS,
+  FOOTER_SUBTAGLINE,
+  FOOTER_TAGLINE,
   navigateToPath
 } from "../constants/footer";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "../constants/support";
 
 type SiteFooterProps = {
   className?: string;
@@ -17,39 +20,57 @@ export function SiteFooter({ className = "", showEarlyAccess = false, onLogoClic
   return (
     <footer className={`site-footer ${className}`.trim()} role="contentinfo" aria-label="Site footer">
       <div className="site-footer-inner">
-        <p className="site-footer-trust">{FOOTER_TRUST_LINE}</p>
+        <div className="site-footer-grid">
+          <section className="site-footer-brand" aria-label="Brand">
+            <button
+              type="button"
+              className="site-footer-logo"
+              onClick={onLogoClick}
+              aria-label="BamSignal home"
+            >
+              <AppLogo size="sm" showText={false} />
+            </button>
+            <p className="site-footer-brand-name">BamSignal</p>
+            <p className="site-footer-tagline">{FOOTER_TAGLINE}</p>
+            <p className="site-footer-subtagline">{FOOTER_SUBTAGLINE}</p>
+          </section>
 
-        <div className="site-footer-bar">
-          <button
-            type="button"
-            className="site-footer-logo"
-            onClick={onLogoClick}
-            aria-label="BamSignal home"
-          >
-            <AppLogo size="sm" showText={false} />
-          </button>
+          <section className="site-footer-section" aria-label="Quick links">
+            <h3 className="site-footer-heading">Quick Links</h3>
+            <nav aria-label="Footer">
+              <ul className="site-footer-links">
+                {FOOTER_QUICK_LINKS.map((link) => (
+                  <li key={link.label}>
+                    <a
+                      className="site-footer-link"
+                      href={link.href}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        navigateToPath(link.href);
+                      }}
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </section>
 
-          <nav className="site-footer-nav" aria-label="Footer">
-            <ul className="site-footer-links">
-              {FOOTER_LINKS.map((link) => (
-                <li key={link.label}>
-                  <a
-                    className="site-footer-link"
-                    href={link.href}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      navigateToPath(link.href);
-                    }}
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <section className="site-footer-section" aria-label="Social">
+            <h3 className="site-footer-heading">Social</h3>
+            <SocialIconLinks className="site-footer-social" size={22} />
+          </section>
 
-          <p className="site-footer-copy">{FOOTER_COPYRIGHT}</p>
+          <section className="site-footer-section" aria-label="Support">
+            <h3 className="site-footer-heading">Support</h3>
+            <a className="site-footer-support" href={SUPPORT_MAILTO}>
+              {SUPPORT_EMAIL}
+            </a>
+          </section>
         </div>
+
+        <p className="site-footer-copy">{FOOTER_COPYRIGHT}</p>
 
         {showEarlyAccess && <p className="site-footer-edition">{FOOTER_EARLY_ACCESS_LABEL}</p>}
       </div>

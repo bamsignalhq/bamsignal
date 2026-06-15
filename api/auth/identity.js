@@ -8,6 +8,7 @@ import {
   upsertAppUserIdentity,
   upsertPlatformAdmin
 } from "../../server/db.js";
+import { normalizeEmailBranding } from "../../server/services/emailBranding.js";
 import { normalizePlans } from "../../server/pricing.js";
 import { registerDevicePush } from "../../server/firebase.js";
 import { bot, registerBotCommands } from "../../server/telegram.js";
@@ -109,6 +110,17 @@ export default async function handler(req, res) {
     if (req.query.action === "settings-save") {
       if (!await requireAdmin(req, res)) return;
       const value = await setPlatformSetting("admin_content", req.body?.value || {});
+      return res.status(200).json({ ok: true, value });
+    }
+
+    if (req.query.action === "email-branding") {
+      const value = await getPlatformSetting("email_branding", null);
+      return res.status(200).json({ ok: true, value: normalizeEmailBranding(value) });
+    }
+
+    if (req.query.action === "email-branding-save") {
+      if (!await requireAdmin(req, res)) return;
+      const value = await setPlatformSetting("email_branding", normalizeEmailBranding(req.body?.value || {}));
       return res.status(200).json({ ok: true, value });
     }
 

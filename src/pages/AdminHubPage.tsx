@@ -47,6 +47,11 @@ import { CITIES_VISUAL } from "../data/visualLanding";
 import { AdminBusinessDashboard } from "../components/admin/AdminBusinessDashboard";
 import { AdminSeedingTools } from "../components/admin/AdminSeedingTools";
 import { getLaunchConfig, saveLaunchConfig } from "../utils/launchConfig";
+import {
+  DEFAULT_EMAIL_BRANDING,
+  type EmailBrandingSettings
+} from "../constants/emailBranding";
+import { fetchEmailBranding, saveEmailBrandingAdmin } from "../services/emailBranding";
 
 type AdminHubPageProps = {
   onBack: () => void;
@@ -64,6 +69,7 @@ type AdminTab =
   | "pricing"
   | "verifications"
   | "content"
+  | "email"
   | "leads";
 
 export function AdminHubPage({ onBack }: AdminHubPageProps) {
@@ -81,6 +87,8 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
   const [cityHomeLoading, setCityHomeLoading] = useState(false);
   const [cityHomeMessage, setCityHomeMessage] = useState("");
   const [seedMessage, setSeedMessage] = useState("");
+  const [emailBrandingDraft, setEmailBrandingDraft] = useState<EmailBrandingSettings>(DEFAULT_EMAIL_BRANDING);
+  const [emailBrandingMessage, setEmailBrandingMessage] = useState("");
   const launchConfig = getLaunchConfig();
 
   const loadCityHomeMembers = async (city = cityHomeCity) => {
@@ -95,6 +103,11 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
     }
     setCityHomeMembers(data.members);
   };
+
+  useEffect(() => {
+    if (tab !== "email" || !authorized) return;
+    void fetchEmailBranding().then(setEmailBrandingDraft);
+  }, [tab, authorized]);
 
   useEffect(() => {
     if (tab !== "cityhome" || !authorized) return;
@@ -191,7 +204,8 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
             ["leads", `Leads (${leads.length})`],
             ["verifications", `Verify (${pendingCount()})`],
             ["pricing", "Pricing"],
-            ["content", "Content"]
+            ["content", "Content"],
+            ["email", "Email"]
           ] as const
         ).map(([id, label]) => (
           <button
@@ -823,6 +837,94 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
               Save content
             </button>
             <button type="button" className="btn-secondary" onClick={() => setCmsDraft({ ...DEFAULT_CMS })}>
+              Reset defaults
+            </button>
+          </div>
+        </section>
+      )}
+
+      {tab === "email" && (
+        <section className="card admin-cms">
+          <h3>Email branding</h3>
+          <p className="match-prefs-note">
+            Control the header shown on BamSignal transactional emails. When a banner is enabled, it replaces the logo.
+            Invalid or missing banner images fall back to the logo automatically.
+          </p>
+          <label className="admin-checkbox">
+            <input
+              type="checkbox"
+              checked={emailBrandingDraft.bannerEnabled}
+              onChange={(e) =>
+                setEmailBrandingDraft({ ...emailBrandingDraft, bannerEnabled: e.target.checked })
+              }
+            />
+            Enable email banner
+          </label>
+          <label>
+            Banner image URL
+            <input
+              type="url"
+              placeholder="https://bamsignal.com/campaigns/launch-banner.webp"
+              value={emailBrandingDraft.bannerImageUrl}
+              onChange={(e) =>
+                setEmailBrandingDraft({ ...emailBrandingDraft, bannerImageUrl: e.target.value })
+              }
+            />
+          </label>
+          <label>
+            Banner link URL
+            <input
+              type="url"
+              placeholder="https://bamsignal.com/premium"
+              value={emailBrandingDraft.bannerLinkUrl}
+              onChange={(e) =>
+                setEmailBrandingDraft({ ...emailBrandingDraft, bannerLinkUrl: e.target.value })
+              }
+            />
+          </label>
+          <label>
+            Banner alt text
+            <input
+              type="text"
+              placeholder="Signal Pass launch — limited time"
+              value={emailBrandingDraft.bannerAltText}
+              onChange={(e) =>
+                setEmailBrandingDraft({ ...emailBrandingDraft, bannerAltText: e.target.value })
+              }
+            />
+          </label>
+          {emailBrandingMessage && <p className="match-prefs-note">{emailBrandingMessage}</p>}
+          <div className="admin-cms-actions">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                void (async () => {
+                  setEmailBrandingMessage("");
+                  const { data } = await supabase?.auth.getSession() || { data: null };
+                  const result = await saveEmailBrandingAdmin(
+                    emailBrandingDraft,
+                    data?.session?.access_token
+                  );
+                  if (!result.ok) {
+                    setEmailBrandingMessage(result.error || "Could not save email branding.");
+                    return;
+                  }
+                  if (result.value) setEmailBrandingDraft(result.value);
+                  setEmailBrandingMessage("Email branding saved.");
+                })();
+              }}
+            >
+              Save email branding
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                setEmailBrandingDraft(DEFAULT_EMAIL_BRANDING);
+                setEmailBrandingMessage("Reset to defaults (not saved yet).");
+              }}
+            >
               Reset defaults
             </button>
           </div>

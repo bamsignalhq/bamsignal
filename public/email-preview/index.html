@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BamSignal email previews</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #0b1220; color: #dbe5f4; }
+    header { padding: 28px 24px; border-bottom: 1px solid #23314d; }
+    h1 { margin: 0 0 8px; font-size: 1.5rem; }
+    p { margin: 0; color: #9db0cf; line-height: 1.6; max-width: 60ch; }
+    main { display: grid; gap: 20px; padding: 24px; max-width: 1200px; margin: 0 auto; }
+    .card { background: #131d31; border: 1px solid #23314d; border-radius: 16px; overflow: hidden; }
+    .card-head { padding: 16px 18px; border-bottom: 1px solid #23314d; }
+    .card-head h2 { margin: 0 0 4px; font-size: 1rem; }
+    .card-head span { font-size: 0.85rem; color: #9db0cf; }
+    iframe { width: 100%; height: 720px; border: 0; background: #0b1220; }
+    a.open { display: inline-block; margin-top: 10px; color: #e879f9; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>BamSignal email previews</h1>
+    <p>Review before deploy. Run <code>npm run dev</code> and open <code>/email-preview/</code>. Mocks marked Supabase are not in-repo yet.</p>
+  </header>
+  <main>
+    
+      <section class="card">
+        <div class="card-head">
+          <h2>Support request (to team)</h2>
+          <span>Subject: BamSignal support: Account help</span>
+          <a class="open" href="./support-request.html" target="_blank" rel="noopener">Open full page →</a>
+        </div>
+        <iframe src="./support-request.html" title="Support request (to team)"></iframe>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <h2>Support acknowledgement (to user)</h2>
+          <span>Subject: We received your BamSignal message</span>
+          <a class="open" href="./support-acknowledgement.html" target="_blank" rel="noopener">Open full page →</a>
+        </div>
+        <iframe src="./support-acknowledgement.html" title="Support acknowledgement (to user)"></iframe>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <h2>Welcome (mock — Supabase today)</h2>
+          <span>Subject: Welcome to BamSignal</span>
+          <a class="open" href="./welcome.html" target="_blank" rel="noopener">Open full page →</a>
+        </div>
+        <iframe src="./welcome.html" title="Welcome (mock — Supabase today)"></iframe>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <h2>Verification OTP (mock — Supabase today)</h2>
+          <span>Subject: Your BamSignal verification code</span>
+          <a class="open" href="./verification.html" target="_blank" rel="noopener">Open full page →</a>
+        </div>
+        <iframe src="./verification.html" title="Verification OTP (mock — Supabase today)"></iframe>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <h2>Password reset (mock — Supabase today)</h2>
+          <span>Subject: Reset your BamSignal password</span>
+          <a class="open" href="./password-reset.html" target="_blank" rel="noopener">Open full page →</a>
+        </div>
+        <iframe src="./password-reset.html" title="Password reset (mock — Supabase today)"></iframe>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <h2>Premium activated (future transactional)</h2>
+          <span>Subject: Signal Pass is active</span>
+          <a class="open" href="./premium.html" target="_blank" rel="noopener">Open full page →</a>
+        </div>
+        <iframe src="./premium.html" title="Premium activated (future transactional)"></iframe>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <h2>Referral invite (future transactional)</h2>
+          <span>Subject: Ada invited you to BamSignal</span>
+          <a class="open" href="./referral.html" target="_blank" rel="noopener">Open full page →</a>
+        </div>
+        <iframe src="./referral.html" title="Referral invite (future transactional)"></iframe>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <h2>Promotional banner header (admin)</h2>
+          <span>Subject: Campaign email with banner</span>
+          <a class="open" href="./banner-variant.html" target="_blank" rel="noopener">Open full page →</a>
+        </div>
+        <iframe src="./banner-variant.html" title="Promotional banner header (admin)"></iframe>
+      </section>
+  </main>
+</body>
+</html>

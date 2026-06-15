@@ -215,22 +215,58 @@ export async function createConfirmedSupabaseUser({ email, password, name, usern
     );
   }
 
+  const normalized = normalizeEmail(email);
+  const headers = {
+    apikey: config.serviceKey,
+    Authorization: `Bearer ${config.serviceKey}`,
+    "Content-Type": "application/json"
+  };
+  const userMetadata = {
+    name: String(name || "").trim(),
+    username: String(username || "").trim(),
+    phone: String(phone || "").trim()
+  };
+
+  async function findExistingUserId() {
+    const list = await fetch(
+      `${config.url}/auth/v1/admin/users?${new URLSearchParams({
+        page: "1",
+        per_page: "1",
+        email: normalized
+      })}`,
+      { headers }
+    );
+    if (!list.ok) return null;
+    const payload = await list.json();
+    return payload?.users?.[0]?.id || null;
+  }
+
+  async function updateExistingUser(userId) {
+    const update = await fetch(`${config.url}/auth/v1/admin/users/${userId}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        password: String(password),
+        email_confirm: true,
+        user_metadata: userMetadata
+      })
+    });
+    if (!update.ok) {
+      const detail = await update.text();
+      console.error("[bamsignal] Supabase admin update user failed:", detail);
+      throw new SignupOtpError(502, "We couldn't finish creating your account. Try again shortly.");
+    }
+    return { id: userId };
+  }
+
   const response = await fetch(`${config.url}/auth/v1/admin/users`, {
     method: "POST",
-    headers: {
-      apikey: config.serviceKey,
-      Authorization: `Bearer ${config.serviceKey}`,
-      "Content-Type": "application/json"
-    },
+    headers,
     body: JSON.stringify({
-      email: normalizeEmail(email),
+      email: normalized,
       password: String(password),
       email_confirm: true,
-      user_metadata: {
-        name: String(name || "").trim(),
-        username: String(username || "").trim(),
-        phone: String(phone || "").trim()
-      }
+      user_metadata: userMetadata
     })
   });
 
@@ -240,7 +276,11 @@ export async function createConfirmedSupabaseUser({ email, password, name, usern
 
   const detail = await response.text();
   if (/already registered|already exists|duplicate/i.test(detail)) {
-    throw new SignupOtpError(409, "An account with this email already exists. Try logging in instead.");
+    const userId = await findExistingUserId();
+    if (!userId) {
+      throw new SignupOtpError(409, "An account with this email already exists. Try logging in instead.");
+    }
+    return updateExistingUser(userId);
   }
 
   console.error("[bamsignal] Supabase admin create user failed:", detail);

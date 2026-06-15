@@ -1,9 +1,5 @@
-import { verifySignupOtp, SignupOtpError } from "../../server/services/signupOtp.js";
-import {
-  PLAY_REVIEWER,
-  provisionPlayReviewerAccount,
-  repairPlayReviewerAuth
-} from "../../server/provisionPlayReviewer.js";
+import { verifySignupOtp, SignupOtpError, createConfirmedSupabaseUser } from "../../server/services/signupOtp.js";
+import { PLAY_REVIEWER, provisionPlayReviewerAccount } from "../../server/provisionPlayReviewer.js";
 import { isSignupEmailConfigured } from "../../server/supabaseEnv.js";
 import { getDatabaseStatus } from "../../server/db.js";
 

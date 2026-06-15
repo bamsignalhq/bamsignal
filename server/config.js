@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { logSignupEmailEnvTrace } from "./supabaseEnv.js";
 
 dotenv.config();
 
@@ -46,8 +47,4 @@ if (!config.paystackSecretKey) {
   console.warn("[bamsignal] PAYSTACK_SECRET_KEY is not set. Payment endpoints will return service-unavailable errors.");
 }
 
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
-  console.warn(
-    "[bamsignal] SUPABASE_SERVICE_ROLE_KEY is not set. Signup OTP verify will fail until this is configured in Coolify."
-  );
-}
+logSignupEmailEnvTrace();

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import dotenv from "dotenv";
 import { query } from "../db.js";
+import { supabaseServiceHeaders } from "../supabaseEnv.js";
 import { escapeHtml, loadEmailBranding, wrapEmailLayoutAsync } from "./emailBranding.js";
 
 dotenv.config();
@@ -203,13 +204,6 @@ export async function verifySignupOtp(email, code) {
 
   await clearStored(normalized);
   return { ok: true, email: normalized };
-}
-
-function supabaseServiceHeaders() {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
-  if (!serviceKey || !url) return null;
-  return { url, serviceKey };
 }
 
 export async function createConfirmedSupabaseUser({ email, password, name, username, phone }) {

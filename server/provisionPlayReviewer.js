@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { createConfirmedSupabaseUser } from "./services/signupOtp.js";
+import { supabaseServiceHeaders } from "./supabaseEnv.js";
 import { isDatabaseReady, query, upsertAppUserIdentity } from "./db.js";
 import { upsertMemberProfile } from "./cityHome.js";
 
@@ -208,9 +209,9 @@ async function ensureNotPlatformAdmin(email) {
 }
 
 async function ensureAuthUserViaAdmin({ email, password, name, username, phone, reset }) {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  const url = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
-  if (!serviceKey || !url) return null;
+  const headers = supabaseServiceHeaders();
+  if (!headers) return null;
+  const { serviceKey, url } = headers;
 
   if (reset) {
     const list = await fetch(

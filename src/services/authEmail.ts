@@ -24,6 +24,12 @@ async function readApiResponse<T extends { ok?: boolean; error?: string }>(
     payload = (await response.json().catch(() => null)) as T | null;
   } else {
     const text = await response.text().catch(() => "");
+    if (response.status === 503 || response.status === 502) {
+      throw new AuthEmailError(
+        "We're having trouble creating your account right now. Please try again shortly.",
+        "server"
+      );
+    }
     if (/<!doctype html|<html/i.test(text)) {
       throw new AuthEmailError(
         "We're having trouble creating your account right now. Please try again shortly.",

@@ -490,18 +490,6 @@ export function App() {
     [handleUpgrade, plans]
   );
 
-  const openAdmin = () => {
-    if (isAdminSessionActive()) {
-      navigateToPath(ADMIN_HUB_PATH);
-      setShowAdminHub(true);
-      setShowAdminAuth(false);
-      return;
-    }
-    navigateToPath(ADMIN_AUTH_PATH);
-    setShowAdminAuth(true);
-    setShowAdminHub(false);
-  };
-
   const closeAdmin = () => {
     navigateToPath("/");
     setShowAdminHub(false);
@@ -859,7 +847,6 @@ export function App() {
               onUserChange={setUser}
               onLogout={handleLogout}
               onUpgrade={openPricing}
-              onOpenAdmin={openAdmin}
             />
           )}
         </main>

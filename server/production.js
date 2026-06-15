@@ -41,6 +41,15 @@ process.on("unhandledRejection", (reason) => {
 
 const app = express();
 
+app.use((req, res, next) => {
+  const host = String(req.headers.host || "");
+  if (host.startsWith("www.")) {
+    const apex = host.replace(/^www\./i, "");
+    return res.redirect(301, `https://${apex}${req.originalUrl}`);
+  }
+  next();
+});
+
 app.use(corsMiddleware);
 
 app.use((req, res, next) => {
@@ -107,6 +116,9 @@ app.use(express.static(distDir, { index: false, maxAge: "1d" }));
 app.use((req, res, next) => {
   if (req.method !== "GET" && req.method !== "HEAD") return next();
   if (req.path.startsWith("/api/") || req.path.startsWith("/webhooks/")) return next();
+  if (req.path === "/" || req.path.endsWith(".html")) {
+    res.setHeader("Cache-Control", "no-cache");
+  }
   res.sendFile(indexHtml, (error) => {
     if (error) next(error);
   });
@@ -119,8 +131,14 @@ app.use((error, _req, res, _next) => {
   }
 });
 
-const server = app.listen(port, host, () => {
+const server = app.listen(port, host, async () => {
   console.log(`[bamsignal] Running on http://${host}:${port}`);
+  const health = await healthPayload();
+  if (!health.signupEmail) {
+    console.warn(
+      "[bamsignal] signupEmail=false — set RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_URL in Coolify."
+    );
+  }
 });
 
 void initDatabase().catch((error) => {

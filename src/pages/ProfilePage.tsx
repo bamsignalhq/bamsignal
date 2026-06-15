@@ -63,7 +63,6 @@ type ProfilePageProps = {
   onUserChange: (user: UserProfile) => void;
   onLogout: () => void;
   onUpgrade: () => void;
-  onOpenAdmin?: () => void;
 };
 
 function bioHint(bio: string): string {
@@ -137,8 +136,7 @@ export function ProfilePage({
   onToggleTheme,
   onUserChange,
   onLogout,
-  onUpgrade,
-  onOpenAdmin
+  onUpgrade
 }: ProfilePageProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<DatingProfile>(() =>
@@ -826,12 +824,6 @@ export function ProfilePage({
                   <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
                 </button>
               </section>
-
-              {onOpenAdmin && (
-                <button type="button" className="link-btn admin-link" onClick={onOpenAdmin}>
-                  Ops console
-                </button>
-              )}
             </>
           )}
         </>

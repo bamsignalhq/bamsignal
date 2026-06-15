@@ -14,6 +14,7 @@ const STATIC_ORIGINS = new Set([
 function isAllowedOrigin(origin) {
   if (!origin) return false;
   if (STATIC_ORIGINS.has(origin)) return true;
+  if (/^https:\/\/([a-z0-9-]+\.)?bamsignal\.com$/i.test(origin)) return true;
   if (/^http:\/\/localhost:\d+$/.test(origin)) return true;
   if (/^http:\/\/127\.0\.0\.1:\d+$/.test(origin)) return true;
   try {

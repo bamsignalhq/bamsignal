@@ -7,7 +7,14 @@ export const publicAppUrl = (
 
 export const isNativePlatform = Capacitor.getPlatform() !== "web";
 
-export const apiUrl = (path: string) => (isNativePlatform ? `${publicAppUrl}${path}` : path);
+/** Canonical API URL — production/native always hit bamsignal.com; dev uses Vite proxy. */
+export function apiUrl(path: string): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (import.meta.env.DEV && Capacitor.getPlatform() === "web") {
+    return normalized;
+  }
+  return `${publicAppUrl}${normalized}`;
+}
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() || "";
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim() || "";

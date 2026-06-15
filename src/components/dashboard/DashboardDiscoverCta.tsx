@@ -12,11 +12,11 @@ export function DashboardDiscoverCta({ onDiscover }: DashboardDiscoverCtaProps) 
         <img src={MOMENT_SETS.lagosRooftop[2]} alt="" className="dash-discover__img" />
         <div className="dash-discover__shade" />
         <div className="dash-discover__content">
-          <p className="dash-discover__eyebrow">Discover</p>
-          <h2>New signals are waiting.</h2>
+          <h2>Discover People Nearby</h2>
+          <p className="dash-discover__lede">Meet people who match your vibe.</p>
           <span className="btn-primary dash-discover__btn">
-            <Compass size={18} />
-            Start Discovering
+            <Compass size={18} aria-hidden />
+            Open Discover
           </span>
         </div>
       </button>

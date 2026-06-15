@@ -2,7 +2,8 @@ export type BoostProductId =
   | "signal-boost"
   | "priority-signal-once"
   | "profile-boost"
-  | "city-boost";
+  | "city-boost"
+  | "city-spotlight";
 
 export type BoostProductInput = {
   id: BoostProductId;
@@ -50,10 +51,17 @@ export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
     cta: "Go featured"
   },
   {
+    id: "city-spotlight",
+    name: "City Spotlight",
+    price: 500,
+    description: "24-hour featured placement in your city's spotlight — real profile discovery.",
+    cta: "Get City Spotlight"
+  },
+  {
     id: "city-boost",
     name: "City Boost",
     price: 600,
-    description: "48-hour spotlight on your city home page — no admin wait.",
+    description: "48-hour visibility boost across Discover in your city.",
     cta: "Boost my city"
   }
 ];

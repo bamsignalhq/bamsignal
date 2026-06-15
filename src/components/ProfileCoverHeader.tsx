@@ -1,4 +1,4 @@
-import { Camera, MapPin, Pencil, Settings } from "lucide-react";
+import { MapPin, UserRound } from "lucide-react";
 import { VerificationBadge } from "./VerificationBadge";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { ShowcaseImage } from "./ShowcaseImage";
@@ -10,63 +10,63 @@ type ProfileCoverHeaderProps = {
   user: UserProfile;
   profile: DatingProfile;
   verification: VerificationInfo;
-  isPremium: boolean;
-  onEditPhoto?: () => void;
-  onEditProfile?: () => void;
-  onOpenSettings?: () => void;
 };
 
 const DEFAULT_COVER = MOMENT_SETS.lagosRooftop[0];
 
-export function ProfileCoverHeader({
-  user,
-  profile,
-  verification,
-  isPremium,
-  onEditPhoto,
-  onEditProfile,
-  onOpenSettings
-}: ProfileCoverHeaderProps) {
-  const cover = profile.photos[0] || DEFAULT_COVER;
+function formatLocation(profile: DatingProfile): string {
+  if (!profile.city) return "Add your city";
+  const state = profile.state === "FCT" ? "Abuja" : profile.state;
+  return state ? `${profile.city}, ${state}` : profile.city;
+}
+
+export function ProfileCoverHeader({ user, profile, verification }: ProfileCoverHeaderProps) {
+  const avatar = profile.photos[0] ?? null;
+  const cover = avatar ?? DEFAULT_COVER;
 
   return (
-    <header className="profile-fb profile-fb--premium">
-      <div className="profile-fb__cover">
-        <ShowcaseImage src={cover} alt="" className="profile-fb__cover-img profile-fb__cover-img--face" />
-        <div className="profile-fb__cover-shade" />
-        {onEditPhoto && (
-          <button type="button" className="profile-fb__cover-edit" onClick={onEditPhoto}>
-            <Camera size={16} /> Edit photo
-          </button>
-        )}
+    <header className="profile-hero">
+      <div className="profile-hero__cover" aria-hidden={!avatar}>
+        <ShowcaseImage
+          src={cover}
+          alt=""
+          className="profile-hero__cover-blur profile-hero__cover-img--face"
+        />
+        <ShowcaseImage
+          src={cover}
+          alt=""
+          className="profile-hero__cover-img profile-hero__cover-img--face"
+        />
+        <div className="profile-hero__cover-shade" />
       </div>
 
-      <div className="profile-fb__identity profile-fb__identity--compact">
-        <div className="profile-fb__meta">
-          <h1>
-            {user.name || "Your profile"}
-            {profile.age ? `, ${profile.age}` : ""}
-          </h1>
-          <p className="profile-fb__location">
-            <MapPin size={14} />
-            {profile.city ? `${profile.city}${profile.state ? `, ${profile.state === "FCT" ? "Abuja" : profile.state}` : ""}` : "Add your city"}
-          </p>
-          <div className="profile-fb__badges">
-            {verification.tier > 0 && <VerificationBadge info={verification} />}
-            {profile.verified && !verification.tier && <VerifiedBadge />}
-            {isPremium && <span className="premium-pill">Premium</span>}
-          </div>
-        </div>
-        <div className="profile-fb__actions">
-          {onEditProfile && (
-            <button type="button" className="btn-secondary btn-sm" onClick={onEditProfile}>
-              <Pencil size={14} /> Edit profile
-            </button>
+      <div className="profile-hero__body">
+        <div className="profile-hero__avatar-ring">
+          {avatar ? (
+            <ShowcaseImage
+              src={avatar}
+              alt={user.name || "Profile photo"}
+              className="profile-hero__avatar profile-hero__avatar-img--face"
+            />
+          ) : (
+            <div className="profile-hero__avatar profile-hero__avatar--empty">
+              <UserRound size={40} aria-hidden />
+            </div>
           )}
-          {onOpenSettings && (
-            <button type="button" className="btn-secondary btn-sm profile-fb__settings-btn" onClick={onOpenSettings}>
-              <Settings size={14} /> Settings
-            </button>
+        </div>
+
+        <div className="profile-hero__meta">
+          <h1 className="profile-hero__name">{user.name || "Your profile"}</h1>
+          {profile.age ? <p className="profile-hero__age">{profile.age}</p> : null}
+          <p className="profile-hero__location">
+            <MapPin size={14} aria-hidden />
+            {formatLocation(profile)}
+          </p>
+          {(verification.tier > 0 || profile.verified) && (
+            <div className="profile-hero__badges">
+              {verification.tier > 0 && <VerificationBadge info={verification} />}
+              {profile.verified && !verification.tier && <VerifiedBadge />}
+            </div>
           )}
         </div>
       </div>

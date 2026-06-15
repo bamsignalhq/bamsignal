@@ -1,5 +1,3 @@
-import { HOME_SECTIONS } from "../../data/homeLanding";
-
 type HomeValuePropsProps = {
   onSignup: () => void;
   onExplore: () => void;
@@ -25,7 +23,7 @@ export function HomeValueProps({ onSignup, onExplore }: HomeValuePropsProps) {
         </article>
         <article>
           <h2>Why trust it?</h2>
-          <p>{HOME_SECTIONS.trust.lede} Verification, privacy controls, and in-app safety tools.</p>
+          <p>Verification, privacy controls, and in-app safety tools.</p>
         </article>
       </div>
       <div className="home-value__cta">

@@ -1,3 +1,5 @@
+import { AdminReferralPanel } from "./AdminReferralPanel";
+import { AdminCitySpotlightPanel } from "./AdminCitySpotlightPanel";
 import { getBusinessMetrics, getRetentionMetrics } from "../../utils/retentionAnalytics";
 import { getSafetyMetrics, getTrustMetrics } from "../../utils/safetyAnalytics";
 import { countEventToday } from "../../utils/analytics";
@@ -86,6 +88,10 @@ export function AdminBusinessDashboard() {
         Top intent types use signal_sent events until intent metadata is persisted server-side.
         Relationship signals today: {intentCounts.Relationship}
       </p>
+
+      <AdminCitySpotlightPanel />
+
+      <AdminReferralPanel />
     </div>
   );
 }

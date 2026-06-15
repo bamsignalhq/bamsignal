@@ -14,7 +14,8 @@ import {
   approveVerification,
   getPendingVerifications,
   pendingCount,
-  rejectVerification
+  rejectVerification,
+  verificationStats
 } from "../utils/verificationQueue";
 import { countEvent, countEventToday, dailyActiveUsersToday } from "../utils/analytics";
 import {
@@ -35,7 +36,7 @@ import { supabase } from "../services/supabase";
 import { isAdminSessionActive } from "../utils/adminSession";
 import { ADMIN_AUTH_PATH, navigateToPath } from "../constants/routes";
 import { DEMO_USER } from "../constants/demoAccounts";
-import { getModerationQueue, moderationStats } from "../utils/moderationQueue";
+import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
 import {
   fetchAdminCityMembers,
@@ -51,6 +52,7 @@ import {
   DEFAULT_EMAIL_BRANDING,
   type EmailBrandingSettings
 } from "../constants/emailBranding";
+import { getTrustAnalyticsSummary } from "../utils/trustAnalytics";
 import { fetchEmailBranding, saveEmailBrandingAdmin } from "../services/emailBranding";
 
 type AdminHubPageProps = {
@@ -81,7 +83,11 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
   const [verifications, setVerifications] = useState(getPendingVerifications());
   const [leads, setLeads] = useState(getLaunchLeads());
   const [moderation, setModeration] = useState(getModerationQueue());
+  const [reportFilter, setReportFilter] = useState<ReportFilter>("all");
+  const [verificationFilter, setVerificationFilter] = useState<"pending" | "approved" | "rejected">("pending");
   const modStats = moderationStats();
+  const verifyStats = verificationStats();
+  const trustMetrics = getTrustAnalyticsSummary();
   const [cityHomeCity, setCityHomeCity] = useState(CITIES_VISUAL[0]?.name || "Lagos");
   const [cityHomeMembers, setCityHomeMembers] = useState<CityHomeMember[]>([]);
   const [cityHomeLoading, setCityHomeLoading] = useState(false);
@@ -244,6 +250,15 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
             </div>
           </section>
 
+          <section className="admin-stats-grid admin-stats-grid--highlight">
+            {trustMetrics.map((item) => (
+              <div key={item.label} className="card admin-stat admin-stat--highlight">
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </section>
+
           <section className="card admin-command-panel">
             <h3>Moderation queue</h3>
             <p className="match-prefs-note">
@@ -401,13 +416,27 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
 
       {tab === "reports" && (
         <section className="card admin-command-panel">
-          <h3>Reports queue</h3>
+          <h3>Reports</h3>
           <p className="match-prefs-note">
-            {modStats.totalReports} total report{modStats.totalReports === 1 ? "" : "s"} ·{" "}
-            {modStats.flaggedProfiles} flagged · {modStats.pendingReview} awaiting review
+            {modStats.totalReports} submitted · {modStats.pendingReview} pending · {modStats.resolved} reviewed ·{" "}
+            {modStats.actionTaken} action taken
           </p>
-          {moderation.length === 0 && <p className="admin-empty">No reports filed yet.</p>}
-          {moderation.map((entry) => (
+          <div className="admin-filter-row">
+            {(["all", "pending", "reviewed", "action_taken"] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                className={reportFilter === filter ? "active" : ""}
+                onClick={() => setReportFilter(filter)}
+              >
+                {filter.replace(/_/g, " ")}
+              </button>
+            ))}
+          </div>
+          {filterModerationQueue(moderation, reportFilter).length === 0 && (
+            <p className="admin-empty">No reports in this filter.</p>
+          )}
+          {filterModerationQueue(moderation, reportFilter).map((entry) => (
             <article
               key={entry.profileId}
               className={`card admin-moderation-row ${entry.reportCount >= 3 ? "admin-moderation-row--hot" : ""}`}
@@ -415,13 +444,13 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
               <div className="admin-moderation-row__main">
                 <strong>{entry.name}</strong>
                 <span>
-                  {entry.city} · {entry.reportCount} report{entry.reportCount === 1 ? "" : "s"}
+                  {entry.city} · {entry.reportCount} report{entry.reportCount === 1 ? "" : "s"} · {entry.status.replace(/_/g, " ")}
                   {entry.shadowBanned ? " · shadow banned" : ""}
                 </span>
                 {entry.lastReportAt && (
                   <time>{new Date(entry.lastReportAt).toLocaleString()}</time>
                 )}
-                {entry.lastReason && <small>Latest: {entry.lastReason.replace(/_/g, " ")}</small>}
+                {entry.lastReason && <small>Reason: {entry.lastReason.replace(/_/g, " ")}</small>}
               </div>
               <div className="admin-moderation-row__actions">
                 <button type="button" className="btn-secondary btn-sm" onClick={() => setTab("command")}>
@@ -504,47 +533,80 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
 
       {tab === "verifications" && (
         <section className="admin-verifications">
-          {verifications.filter((v) => v.status === "pending").length === 0 && (
-            <p className="admin-empty">No pending verifications.</p>
+          <div className="admin-stats-grid admin-stats-grid--highlight">
+            <div className="card admin-stat admin-stat--highlight">
+              <strong>{verifyStats.pending}</strong>
+              <span>Pending</span>
+            </div>
+            <div className="card admin-stat admin-stat--highlight">
+              <strong>{verifyStats.approved}</strong>
+              <span>Approved</span>
+            </div>
+            <div className="card admin-stat admin-stat--highlight">
+              <strong>{verifyStats.rejected}</strong>
+              <span>Rejected</span>
+            </div>
+            <div className="card admin-stat admin-stat--highlight">
+              <strong>{verifyStats.avgReviewHours != null ? `${verifyStats.avgReviewHours}h` : "—"}</strong>
+              <span>Avg review time</span>
+            </div>
+          </div>
+          <div className="admin-filter-row">
+            {(["pending", "approved", "rejected"] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                className={verificationFilter === filter ? "active" : ""}
+                onClick={() => setVerificationFilter(filter)}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+          {verifications.filter((v) => v.status === verificationFilter).length === 0 && (
+            <p className="admin-empty">No {verificationFilter} verifications.</p>
           )}
           {verifications
-            .filter((v) => v.status === "pending")
+            .filter((v) => v.status === verificationFilter)
             .map((v) => (
               <article key={v.id} className="card admin-verification-row">
                 <div>
                   <strong>{v.userName}</strong>
                   <span>{v.phone}</span>
                   <time>{new Date(v.submittedAt).toLocaleString()}</time>
+                  {v.rejectReason && <small>{v.rejectReason}</small>}
                 </div>
-                <div className="admin-verification-actions">
-                  <input
-                    type="text"
-                    placeholder="Reject reason (optional)"
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    className="btn-primary btn-sm"
-                    onClick={() => {
-                      approveVerification(v.id);
-                      setVerifications(getPendingVerifications());
-                    }}
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-secondary btn-sm"
-                    onClick={() => {
-                      rejectVerification(v.id, rejectReason || "Did not meet guidelines");
-                      setVerifications(getPendingVerifications());
-                      setRejectReason("");
-                    }}
-                  >
-                    Reject
-                  </button>
-                </div>
+                {v.status === "pending" && (
+                  <div className="admin-verification-actions">
+                    <input
+                      type="text"
+                      placeholder="Reject reason (optional)"
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="btn-primary btn-sm"
+                      onClick={() => {
+                        approveVerification(v.id);
+                        setVerifications(getPendingVerifications());
+                      }}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary btn-sm"
+                      onClick={() => {
+                        rejectVerification(v.id, rejectReason || "Did not meet guidelines");
+                        setVerifications(getPendingVerifications());
+                        setRejectReason("");
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
               </article>
             ))}
         </section>
@@ -749,6 +811,23 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
                 </div>
               </div>
               <div className="admin-moderation-row__actions">
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={async () => {
+                    const ok = await setAdminCityPlacement({
+                      city: cityHomeCity,
+                      profileId: member.id,
+                      placementType: "spotlight"
+                    });
+                    setCityHomeMessage(
+                      ok ? `${member.name} in City Spotlight for ${cityHomeCity}.` : "Could not update placement."
+                    );
+                    if (ok) void loadCityHomeMembers();
+                  }}
+                >
+                  Spotlight
+                </button>
                 <button
                   type="button"
                   className="btn-secondary btn-sm"

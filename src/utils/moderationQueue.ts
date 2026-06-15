@@ -12,7 +12,10 @@ export type ModerationEntry = {
   shadowBanned: boolean;
   lastReportAt?: string;
   lastReason?: string;
+  status: "pending" | "reviewed" | "action_taken";
 };
+
+export type ReportFilter = "all" | "pending" | "reviewed" | "action_taken";
 
 export function getModerationQueue(): ModerationEntry[] {
   const reports = readJson<ReportRecord[]>(STORAGE_KEYS.reports, []);
@@ -35,7 +38,12 @@ export function getModerationQueue(): ModerationEntry[] {
       reportCount: list.length,
       shadowBanned: isShadowBanned(profileId),
       lastReportAt: latest?.at,
-      lastReason: latest?.reason
+      lastReason: latest?.reason,
+      status: isShadowBanned(profileId)
+        ? "action_taken"
+        : list.length >= 3
+          ? "pending"
+          : "reviewed"
     });
   }
 
@@ -48,8 +56,15 @@ export function moderationStats() {
     totalReports: readJson<ReportRecord[]>(STORAGE_KEYS.reports, []).length,
     flaggedProfiles: queue.filter((e) => e.reportCount >= 3).length,
     shadowBanned: readShadowBannedIds().length,
-    pendingReview: queue.filter((e) => e.reportCount >= 3 && !e.shadowBanned).length
+    pendingReview: queue.filter((e) => e.status === "pending").length,
+    resolved: queue.filter((e) => e.status === "reviewed").length,
+    actionTaken: queue.filter((e) => e.status === "action_taken").length
   };
+}
+
+export function filterModerationQueue(queue: ModerationEntry[], filter: ReportFilter): ModerationEntry[] {
+  if (filter === "all") return queue;
+  return queue.filter((entry) => entry.status === filter);
 }
 
 export { getReportCount };

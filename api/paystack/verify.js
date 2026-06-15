@@ -1,6 +1,6 @@
 import { activateAppUserPremium } from "../../server/db.js";
 import { getPlatformSetting } from "../../server/db.js";
-import { activateCityBoostPlacement } from "../../server/cityHome.js";
+import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../../server/cityHome.js";
 import { createVipInviteLink } from "../../server/telegram.js";
 import { normalizePlan, normalizePlans, planDaysFromAmount } from "../../server/pricing.js";
 import { config } from "../../server/config.js";
@@ -223,9 +223,38 @@ export default async function handler(req, res) {
         Math.round(Number(transaction?.metadata?.duration_hours || body.durationHours || 48))
       );
 
-      const allowedBoosts = new Set(["city-boost", "signal-boost", "profile-boost", "priority-signal-once"]);
+      const allowedBoosts = new Set([
+        "city-spotlight",
+        "city-boost",
+        "signal-boost",
+        "profile-boost",
+        "priority-signal-once"
+      ]);
       if (!allowedBoosts.has(boostId)) {
         return res.status(422).json({ ok: false, error: "Unknown boost product." });
+      }
+
+      if (boostId === "city-spotlight") {
+        const placement = await activateCitySpotlightPlacement({
+          email: email || transactionEmail,
+          phone,
+          city,
+          durationHours: durationHours || 24,
+          paystackReference: reference
+        });
+        if (!placement) {
+          return res.status(422).json({
+            ok: false,
+            error: "Complete onboarding in your city before buying City Spotlight."
+          });
+        }
+        return res.status(200).json({
+          ok: true,
+          productType: "boost",
+          boostId,
+          city: placement.city,
+          expiresAt: placement.expires_at
+        });
       }
 
       if (boostId === "city-boost") {

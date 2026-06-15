@@ -748,3 +748,109 @@
     order: -1;
   }
 }
+
+/* Minimal discover card */
+.profile-card-v2--minimal .profile-card-v2__photo {
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.profile-card-v2__img--face {
+  object-position: center 20%;
+}
+
+.profile-card-reason-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.profile-card-reason-chip {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 0.72rem;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+}
+
+.profile-card-v2__actions--minimal {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr auto;
+  gap: 8px;
+  padding: 12px 0 0;
+}
+
+.profile-card-overflow {
+  position: relative;
+}
+
+.profile-card-overflow__trigger {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.profile-card-overflow__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 168px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+.profile-card-overflow__menu--up {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.profile-card-overflow__menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  font-size: 0.88rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.profile-card-overflow__menu button:hover {
+  background: var(--input-bg);
+}
+
+.trust-micro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.trust-micro__item {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 0.68rem;
+  font-weight: 600;
+  backdrop-filter: blur(6px);
+}
+
+.trust-micro--on-dark .trust-micro__item {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}

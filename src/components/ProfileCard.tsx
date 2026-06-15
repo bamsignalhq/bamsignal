@@ -1,30 +1,25 @@
-import { Shield, Zap } from "lucide-react";
+import { MoreHorizontal, Zap } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { BRAND } from "../constants/copy";
-import { momentsForProfile } from "../constants/signalMoments";
 import type { DiscoverProfile } from "../types";
 import type { TrustInfo } from "../utils/trust";
 import type { VerificationInfo } from "../utils/verification";
-import { cardActivityBadge } from "../utils/activity";
-import { isNewSignalProfile } from "../utils/launchSeed";
 import { ShowcaseImage } from "./ShowcaseImage";
-import { SignalMoments } from "./discover/SignalMoments";
-import { SignalSentEffect } from "./discover/SignalSentEffect";
-import { TrustBadge } from "./TrustBadge";
 import { VerificationBadge } from "./VerificationBadge";
-import { VoiceIntro } from "./VoiceIntro";
-import { WhyThisProfile } from "./WhyThisProfile";
+import { TrustBadge } from "./TrustBadge";
+import { TrustMicroStrip } from "./TrustMicroStrip";
 
 type ProfileCardProps = {
   profile: DiscoverProfile;
   compatibilityPercent?: number;
-  compatibilitySubtitle?: string;
   matchReasons?: string[];
   verification?: VerificationInfo;
   trust?: TrustInfo;
   onIgnore?: () => void;
   onSendSignal?: () => void;
   onPrioritySignal?: () => void;
-  onSafety?: () => void;
+  onReport?: () => void;
+  onBlock?: () => void;
   onViewProfile?: () => void;
   signalBlockedReason?: string;
   showActions?: boolean;
@@ -37,14 +32,14 @@ type ProfileCardProps = {
 export function ProfileCard({
   profile,
   compatibilityPercent,
-  compatibilitySubtitle,
   matchReasons = [],
   verification,
   trust,
   onIgnore,
   onSendSignal,
   onPrioritySignal,
-  onSafety,
+  onReport,
+  onBlock,
   onViewProfile,
   signalBlockedReason,
   showActions = true,
@@ -53,107 +48,142 @@ export function ProfileCard({
   signalSent = false,
   entering = true
 }: ProfileCardProps) {
-  const activity = cardActivityBadge(profile.lastActiveAt);
-  const moments = momentsForProfile(profile.interests, profile.id);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const reasonChips = matchReasons.slice(0, 2);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [menuOpen]);
 
   return (
     <article
-      className={`profile-card profile-card-v2 ${blurred ? "blurred" : ""} ${signalSent ? "profile-card-v2--sent" : ""} ${entering ? "profile-card-v2--enter" : ""}`}
+      className={`profile-card profile-card-v2 profile-card-v2--minimal ${blurred ? "blurred" : ""} ${signalSent ? "profile-card-v2--sent" : ""} ${entering ? "profile-card-v2--enter" : ""}`}
     >
       <div className="profile-card-v2__photo">
-        {onSafety && (
-          <button type="button" className="profile-card-safety-btn" onClick={onSafety} aria-label="Safety options">
-            <Shield size={18} />
-          </button>
-        )}
-        {activity && (
-          <span
-            className={`profile-card-v2__activity ${activity.online ? "profile-card-v2__activity--online" : ""}`}
-          >
-            {activity.online && "🟢 "}
-            {activity.label}
-          </span>
-        )}
         <button
           type="button"
           className="profile-card-photo-hit"
           onClick={onViewProfile}
           aria-label={`View ${profile.name}'s profile`}
         >
-          <ShowcaseImage src={profile.photo} alt={profile.name} loading="lazy" />
+          <ShowcaseImage src={profile.photo} alt={profile.name} loading="lazy" className="profile-card-v2__img--face" />
           <div className="profile-card-gradient" />
           <div className="profile-card-v2__overlay">
             <div className="profile-card-v2__identity">
-              <h3>{profile.name}</h3>
-              <span className="profile-card-v2__age">{profile.age}</span>
+              <h3>
+                {profile.name}
+                <span className="profile-card-v2__age">, {profile.age}</span>
+              </h3>
             </div>
             <p className="profile-card-v2__city">{profile.city}</p>
-            {profile.distanceKm != null && (
-              <p className="profile-card-v2__distance">{profile.distanceKm}km away</p>
-            )}
             <div className="profile-card-badges">
-              {isNewSignalProfile(profile) && (
-                <span className="profile-badge profile-badge--new-signal">New Signal</span>
-              )}
               {verification && <VerificationBadge info={verification} />}
               {trust && <TrustBadge info={trust} />}
             </div>
+            <TrustMicroStrip
+              verified={Boolean(verification?.tier || profile.verified)}
+              voiceIntroUrl={profile.voiceIntroUrl}
+              lastActiveAt={profile.lastActiveAt}
+            />
             {compatibilityPercent != null && (
-              <div className="profile-card-compat-wrap">
-                <span className="profile-card-compat">{compatibilityPercent}% Compatibility</span>
-                {compatibilitySubtitle && (
-                  <span className="profile-card-compat-sub">{compatibilitySubtitle}</span>
-                )}
+              <span className="profile-card-compat">{compatibilityPercent}% match</span>
+            )}
+            {reasonChips.length > 0 && (
+              <div className="profile-card-reason-chips">
+                {reasonChips.map((reason) => (
+                  <span key={reason} className="profile-card-reason-chip">
+                    {reason}
+                  </span>
+                ))}
               </div>
             )}
           </div>
         </button>
-        <SignalSentEffect active={signalSent} />
       </div>
 
-      <div className="profile-card-body profile-card-v2__body">
-        <WhyThisProfile reasons={matchReasons} compact />
-        <VoiceIntro url={profile.voiceIntroUrl} showBadge={Boolean(profile.voiceIntroUrl)} />
-        <p className="profile-card-bio">{profile.bio}</p>
-        <SignalMoments moments={moments} />
-        {signalBlockedReason && (
-          <p className="profile-card-signal-gate" role="status">
-            {signalBlockedReason}
-          </p>
-        )}
-        {showActions && !blurred && (
-          <div className="profile-card-v2__actions">
-            <button type="button" className="profile-card-v2__pass" onClick={onIgnore} aria-label={BRAND.ignore}>
-              Pass
-            </button>
+      {signalBlockedReason && (
+        <p className="profile-card-signal-gate" role="status">
+          {signalBlockedReason}
+        </p>
+      )}
+
+      {showActions && !blurred && (
+        <div className="profile-card-v2__actions profile-card-v2__actions--minimal">
+          <button
+            type="button"
+            className="profile-card-v2__signal"
+            onClick={onSendSignal}
+            aria-label={BRAND.sendSignal}
+            disabled={Boolean(signalBlockedReason) || signalSent}
+          >
+            <Zap size={18} fill="currentColor" />
+            {BRAND.sendSignal}
+          </button>
+          <button type="button" className="profile-card-v2__pass" onClick={onIgnore} aria-label={BRAND.ignore}>
+            {BRAND.ignore}
+          </button>
+          <div className="profile-card-overflow" ref={menuRef}>
             <button
               type="button"
-              className="profile-card-v2__signal"
-              onClick={onSendSignal}
-              aria-label={BRAND.sendSignal}
-              disabled={Boolean(signalBlockedReason) || signalSent}
+              className="profile-card-overflow__trigger"
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-label="More options"
+              aria-expanded={menuOpen}
             >
-              <Zap size={18} fill="currentColor" />
-              {BRAND.sendSignal}
+              <MoreHorizontal size={20} />
             </button>
-            {isPremium && onPrioritySignal ? (
-              <button
-                type="button"
-                className="profile-card-v2__priority"
-                onClick={onPrioritySignal}
-                aria-label={BRAND.prioritySignal}
-                disabled={signalSent}
-              >
-                {BRAND.prioritySignal}
-              </button>
-            ) : (
-              <button type="button" className="profile-card-v2__priority profile-card-v2__priority--locked" disabled>
-                {BRAND.prioritySignal}
-              </button>
+            {menuOpen && (
+              <div className="profile-card-overflow__menu" role="menu">
+                {onReport && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onReport();
+                    }}
+                  >
+                    Report
+                  </button>
+                )}
+                {onBlock && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onBlock();
+                    }}
+                  >
+                    Block
+                  </button>
+                )}
+                {isPremium && onPrioritySignal && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onPrioritySignal();
+                    }}
+                    disabled={signalSent}
+                  >
+                    {BRAND.prioritySignal}
+                  </button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </article>
   );
 }

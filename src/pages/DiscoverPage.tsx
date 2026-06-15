@@ -21,7 +21,6 @@ import type { DiscoverMode, DiscoverProfile, Match, MatchPreferences, UserProfil
 import type { PremiumPlan } from "../constants/plans";
 import {
   computeCompatibilityPercent,
-  compatibilitySubtitle,
   getProfileMatchReasons
 } from "../utils/compatibility";
 import { buildDiscoveryDeck, countSameCityProfiles, recordDiscoveryImpression } from "../utils/launchSeed";
@@ -372,7 +371,6 @@ export function DiscoverPage({
   }
 
   const compatibility = current ? computeCompatibilityPercent(viewer, current) : 0;
-  const compatSub = current ? compatibilitySubtitle(viewer, current, compatibility) : "";
   const matchReasons = current ? getProfileMatchReasons(viewer, current) : [];
   const verification = current
     ? getVerificationTier({ ...defaultDatingProfile(), verified: current.verified }, false, true)
@@ -472,7 +470,6 @@ export function DiscoverPage({
           key={cardKey}
           profile={current}
           compatibilityPercent={compatibility}
-          compatibilitySubtitle={compatSub}
           matchReasons={matchReasons}
           verification={verification.tier ? verification : undefined}
           trust={trust.level !== "none" ? trust : undefined}
@@ -480,7 +477,8 @@ export function DiscoverPage({
           onIgnore={handleIgnore}
           onSendSignal={handleSendSignal}
           onPrioritySignal={handlePrioritySignal}
-          onSafety={() => setSafetyOpen(true)}
+          onReport={() => setSafetyOpen(true)}
+          onBlock={handleBlock}
           onViewProfile={() => {
             markFirstDayStep("compat_viewed");
             setProfileOpen(true);
@@ -498,9 +496,14 @@ export function DiscoverPage({
           onClose={() => setProfileOpen(false)}
           matchReasons={matchReasons}
           compatibilityPercent={compatibility}
-          compatibilitySubtitle={compatSub}
           verification={verification.tier ? verification : undefined}
-          trust={trust.level !== "none" ? trust : undefined}
+          onSendSignal={handleSendSignal}
+          onPass={handleIgnore}
+          onPrioritySignal={handlePrioritySignal}
+          onReport={() => setSafetyOpen(true)}
+          onBlock={handleBlock}
+          isPremium={isPremium}
+          signalSent={signalSent}
         />
       )}
 

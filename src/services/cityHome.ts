@@ -1,4 +1,4 @@
-import type { DatingProfile, UserProfile } from "../types";
+import type { DatingProfile, DiscoverProfile, UserProfile } from "../types";
 import { apiUrl } from "./supabase";
 import { supabase } from "./supabase";
 
@@ -12,9 +12,16 @@ export type CityHomeProfile = {
   bio?: string;
   age?: number;
   verified?: boolean;
-  placementType: "featured" | "hot" | "boost" | "admin" | "auto";
+  placementType: "spotlight" | "featured" | "hot" | "boost" | "admin" | "auto";
   sortOrder?: number;
   expiresAt?: string | null;
+  lastActiveAt?: string;
+  gender?: DiscoverProfile["gender"];
+  lookingFor?: DiscoverProfile["lookingFor"];
+  intents?: DiscoverProfile["intents"];
+  interests?: string[];
+  voiceIntroUrl?: string;
+  premium?: boolean;
 };
 
 export type CityHomeMember = {
@@ -28,6 +35,21 @@ export type CityHomeMember = {
   onboardingComplete: boolean;
   updatedAt?: string;
 };
+
+export async function fetchCitySpotlightProfiles(city: string, limit = 3): Promise<CityHomeProfile[]> {
+  try {
+    const params = new URLSearchParams({ city, limit: String(limit) });
+    const response = await fetch(apiUrl(`/api/city/spotlight?${params.toString()}`), {
+      method: "GET",
+      cache: "no-store"
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok || !Array.isArray(payload.profiles)) return [];
+    return payload.profiles as CityHomeProfile[];
+  } catch {
+    return [];
+  }
+}
 
 export async function fetchCityHomeProfiles(city: string, limit = 6): Promise<CityHomeProfile[]> {
   try {

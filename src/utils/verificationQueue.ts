@@ -49,6 +49,32 @@ export function pendingCount(): number {
   return getPendingVerifications().filter((v) => v.status === "pending").length;
 }
 
+export function verificationStats() {
+  const all = getPendingVerifications();
+  const pending = all.filter((v) => v.status === "pending");
+  const approved = all.filter((v) => v.status === "approved");
+  const rejected = all.filter((v) => v.status === "rejected");
+
+  const reviewDurations = approved
+    .map((v) => new Date(v.submittedAt).getTime())
+    .filter(Boolean);
+  const avgReviewHours =
+    reviewDurations.length > 0
+      ? Math.round(
+          reviewDurations.reduce((sum, start) => sum + (Date.now() - start), 0) /
+            reviewDurations.length /
+            3600000
+        )
+      : null;
+
+  return {
+    pending: pending.length,
+    approved: approved.length,
+    rejected: rejected.length,
+    avgReviewHours
+  };
+}
+
 export function isUserVerificationPending(phone: string): boolean {
   return getPendingVerifications().some((v) => v.phone === phone && v.status === "pending");
 }

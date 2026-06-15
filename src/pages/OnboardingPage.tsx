@@ -1,5 +1,5 @@
 import { Camera, ChevronLeft, ChevronRight, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
 import {
   RELIGIONS,
@@ -25,6 +25,7 @@ import { markJoinedAt, persistCitySelection } from "../utils/launchSeed";
 import { markFirstDayStep } from "../utils/firstDayJourney";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { completeOnboardingRemote } from "../services/memberData";
+import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { writeJson, readJson } from "../utils/storage";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
 
@@ -41,27 +42,29 @@ type OnboardingPageProps = {
 
 export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPageProps) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => {
+    const saved = readJson<number>(STORAGE_KEYS.onboardingStep, 0);
+    return Number.isFinite(saved) ? Math.min(Math.max(0, saved), STEPS.length - 1) : 0;
+  });
   const [modMessage, setModMessage] = useState("");
-  const [profile, setProfile] = useState<DatingProfile>(() => ({
-    photos: [],
-    age: 25,
-    gender: "Prefer not to say",
-    city: "",
-    state: "",
-    bio: "",
-    lookingFor: "Everyone",
-    intents: ["Relationship"],
-    interests: [],
-    verified: false,
-    premium: false,
-    onboardingComplete: false,
-    safetySettings: defaultSafetySettings()
-  }));
+  const [profile, setProfile] = useState<DatingProfile>(() => {
+    const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
+    if (stored.onboardingComplete) return { ...defaultDatingProfile(), onboardingComplete: false };
+    return normalizeDatingProfile(stored);
+  });
   const [ageMin, setAgeMin] = useState<number | "">(22);
   const [ageMax, setAgeMax] = useState<number | "">(35);
 
   const progress = ((step + 1) / STEPS.length) * 100;
+
+  useEffect(() => {
+    writeJson(STORAGE_KEYS.onboardingStep, step);
+  }, [step]);
+
+  useEffect(() => {
+    if (profile.onboardingComplete) return;
+    writeJson(STORAGE_KEYS.datingProfile, { ...profile, onboardingComplete: false });
+  }, [profile]);
 
   const saveAndFinish = () => {
     const located = resolveProfileLocation(profile.city, profile.state);
@@ -73,6 +76,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     const joinedAt = markJoinedAt();
     const final: DatingProfile = { ...withSafety, onboardingComplete: true, createdAt: joinedAt };
     writeJson(STORAGE_KEYS.datingProfile, final);
+    localStorage.removeItem(STORAGE_KEYS.onboardingStep);
     writeJson(STORAGE_KEYS.matchPreferences, {
       ...readJson(STORAGE_KEYS.matchPreferences, {}),
       ageMin: ageMin === "" ? undefined : Number(ageMin),

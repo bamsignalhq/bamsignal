@@ -4,6 +4,7 @@ import { SHOWCASE } from "../constants/showcase";
 export type LegalHighlight = {
   label: string;
   value: string;
+  body?: string;
 };
 
 export type LegalSection = {
@@ -73,9 +74,21 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
     heroImage: SHOWCASE.sundayHangout,
     heroAlt: "Safe Sunday hangout with friends",
     highlights: [
-      { label: "Reports reviewed", value: "Every one" },
-      { label: "Contact blocking", value: "In-chat" },
-      { label: "Your controls", value: "Always on" }
+      {
+        label: "Reports reviewed",
+        value: "Reports reviewed",
+        body: "We actively review reports to help keep BamSignal safe."
+      },
+      {
+        label: "Contact blocking",
+        value: "Contact blocking",
+        body: "Phone numbers, links and external contacts are filtered in chat."
+      },
+      {
+        label: "Your controls",
+        value: "Your controls",
+        body: "Block, report and manage your experience at any time."
+      }
     ],
     gallery: [
       { src: SHOWCASE.beachDay, alt: "Beach day with friends" },

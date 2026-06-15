@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Mail, ShieldCheck } from "lucide-react";
 import { AppLogo } from "../components/AppLogo";
+import { AuthField } from "../components/AuthField";
 import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
 import { friendlyAuthError, supabase } from "../services/supabase";
@@ -144,7 +145,7 @@ export function AuthPage({
       return;
     }
     if (!isStrongPin(signupForm.pin)) {
-      onMessage("Choose a stronger PIN.");
+      onMessage("PIN must be at least 4 digits.");
       return;
     }
     if (signupForm.pin !== signupForm.confirmPin) {
@@ -318,28 +319,20 @@ export function AuthPage({
                 </p>
               )}
               <div className="auth-fields">
-                <label className="auth-field">
-                  <span>Username</span>
-                  <input
-                    autoComplete="username"
-                    value={loginForm.username}
-                    onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                    placeholder="yourname"
-                  />
-                </label>
-                <label className="auth-field">
-                  <span>PIN</span>
-                  <input
-                    className="auth-code-input"
-                    type="password"
-                    inputMode="numeric"
-                    autoComplete="current-password"
-                    maxLength={6}
-                    value={loginForm.pin}
-                    onChange={(e) => setLoginForm({ ...loginForm, pin: pinDigits(e.target.value) })}
-                    placeholder="••••••"
-                  />
-                </label>
+                <AuthField
+                  label="Username"
+                  value={loginForm.username}
+                  onChange={(username) => setLoginForm({ ...loginForm, username })}
+                  autoComplete="username"
+                />
+                <AuthField
+                  label="PIN"
+                  value={loginForm.pin}
+                  onChange={(pin) => setLoginForm({ ...loginForm, pin: pinDigits(pin) })}
+                  pin
+                  maxLength={6}
+                  autoComplete="current-password"
+                />
               </div>
               <button type="button" className="btn-primary btn-full btn-auth" onClick={signIn} disabled={busy === "login"}>
                 {busy === "login" ? <Loader2 className="spin" size={20} /> : "Login"}
@@ -359,74 +352,52 @@ export function AuthPage({
             <>
               <h1 className="auth-title">Sign up</h1>
               <div className="auth-fields">
-                <label className="auth-field">
-                  <span>Full name</span>
-                  <input
-                    autoComplete="name"
-                    value={signupForm.name}
-                    onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
-                    placeholder="Ada Okonkwo"
-                  />
-                </label>
-                <label className="auth-field">
-                  <span>Username</span>
-                  <input
-                    autoComplete="username"
-                    value={signupForm.username}
-                    onChange={(e) => setSignupForm({ ...signupForm, username: e.target.value })}
-                    placeholder="ada"
-                  />
-                </label>
-                <label className="auth-field">
-                  <span>Phone</span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="tel"
-                    maxLength={11}
-                    value={signupForm.phone}
-                    onChange={(e) =>
-                      setSignupForm({ ...signupForm, phone: phoneDigits(e.target.value).slice(0, 11) })
-                    }
-                    placeholder="08012345678"
-                  />
-                </label>
-                <label className="auth-field">
-                  <span>Email</span>
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    value={signupForm.email}
-                    onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
-                    placeholder="you@example.com"
-                  />
-                </label>
-                <label className="auth-field">
-                  <span>Choose PIN</span>
-                  <input
-                    className="auth-code-input"
-                    type="password"
-                    inputMode="numeric"
-                    autoComplete="new-password"
-                    maxLength={6}
-                    value={signupForm.pin}
-                    onChange={(e) => setSignupForm({ ...signupForm, pin: pinDigits(e.target.value) })}
-                    placeholder="••••••"
-                  />
-                </label>
-                <label className="auth-field">
-                  <span>Confirm PIN</span>
-                  <input
-                    className="auth-code-input"
-                    type="password"
-                    inputMode="numeric"
-                    autoComplete="new-password"
-                    maxLength={6}
-                    value={signupForm.confirmPin}
-                    onChange={(e) => setSignupForm({ ...signupForm, confirmPin: pinDigits(e.target.value) })}
-                    placeholder="••••••"
-                  />
-                </label>
+                <AuthField
+                  label="Name"
+                  value={signupForm.name}
+                  onChange={(name) => setSignupForm({ ...signupForm, name })}
+                  autoComplete="name"
+                />
+                <AuthField
+                  label="Username"
+                  value={signupForm.username}
+                  onChange={(username) => setSignupForm({ ...signupForm, username })}
+                  autoComplete="username"
+                />
+                <AuthField
+                  label="Phone"
+                  value={signupForm.phone}
+                  onChange={(phone) =>
+                    setSignupForm({ ...signupForm, phone: phoneDigits(phone).slice(0, 11) })
+                  }
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  maxLength={11}
+                />
+                <AuthField
+                  label="Email"
+                  value={signupForm.email}
+                  onChange={(email) => setSignupForm({ ...signupForm, email })}
+                  type="email"
+                  autoComplete="email"
+                />
+                <AuthField
+                  label="PIN"
+                  value={signupForm.pin}
+                  onChange={(pin) => setSignupForm({ ...signupForm, pin: pinDigits(pin) })}
+                  pin
+                  maxLength={6}
+                  autoComplete="new-password"
+                />
+                <AuthField
+                  label="Confirm PIN"
+                  value={signupForm.confirmPin}
+                  onChange={(confirmPin) => setSignupForm({ ...signupForm, confirmPin: pinDigits(confirmPin) })}
+                  pin
+                  maxLength={6}
+                  autoComplete="new-password"
+                />
               </div>
               <button type="button" className="btn-primary btn-full btn-auth" onClick={signUp} disabled={busy === "signup"}>
                 {busy === "signup" ? <Loader2 className="spin" size={20} /> : "Continue"}
@@ -445,11 +416,12 @@ export function AuthPage({
                     <Mail size={26} strokeWidth={2.2} />
                   </div>
                 </div>
-                <p className="auth-verify__step">Step 2 of 2 · Verify email</p>
-                <h1 className="auth-title auth-verify__title">Check your inbox</h1>
+                <p className="auth-verify__step">Verify your email</p>
+                <h1 className="auth-title auth-verify__title">Check your email</h1>
                 <p className="auth-verify__lede">
-                  Enter the 6-digit code we sent to{" "}
-                  <strong>{maskEmail(pendingSignup?.email || "")}</strong>
+                  Check your email for your verification code.
+                  <br />
+                  Sent to <strong>{maskEmail(pendingSignup?.email || "")}</strong>
                 </p>
               </div>
 
@@ -491,12 +463,11 @@ export function AuthPage({
               <div className="auth-verify__meta">
                 <p className="auth-verify__hint">
                   <ShieldCheck size={15} aria-hidden />
-                  Codes expire in a few minutes. Check spam if you don&apos;t see it.
+                  If you don&apos;t see it within a minute, check your spam folder.
                 </p>
                 <p className="auth-verify__resend">
-                  Didn&apos;t get it?{" "}
                   {resendIn > 0 ? (
-                    <span className="auth-verify__timer">Resend in {resendIn}s</span>
+                    <span className="auth-verify__timer">Resend available in {resendIn}s</span>
                   ) : (
                     <button
                       type="button"
@@ -516,7 +487,7 @@ export function AuthPage({
                     onModeChange("signup");
                   }}
                 >
-                  Wrong email? Go back
+                  Change email
                 </button>
               </div>
             </div>
@@ -525,15 +496,12 @@ export function AuthPage({
           {mode === "reset" && (
             <>
               <h1 className="auth-title">Reset PIN</h1>
-              <label className="auth-field">
-                <span>Email</span>
-                <input
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  placeholder="you@example.com"
-                />
-              </label>
+              <AuthField
+                label="Email"
+                value={resetEmail}
+                onChange={setResetEmail}
+                type="email"
+              />
               <button type="button" className="btn-primary btn-full btn-auth" onClick={sendReset} disabled={busy === "reset"}>
                 {busy === "reset" ? <Loader2 className="spin" size={20} /> : "Send link"}
               </button>

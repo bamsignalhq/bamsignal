@@ -63,6 +63,7 @@ import {
 import { getLegalPath, type LegalPath } from "./constants/footer";
 import { isAdminSessionActive } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdentity";
+import { clearMemberSessionCaches } from "./utils/authSession";
 import { DEMO_USER } from "./constants/demoAccounts";
 import { usePlans } from "./context/PlansContext";
 
@@ -70,6 +71,7 @@ export function App() {
   const isNative = Capacitor.getPlatform() !== "web";
   const { plans } = usePlans();
   const [booting, setBooting] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
   const [bootExit, setBootExit] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => getSavedTheme());
   const [tab, setTab] = useState<NavTab>("home");
@@ -151,25 +153,19 @@ export function App() {
     writeJson(STORAGE_KEYS.userProfile, user);
   }, [user]);
 
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      rememberUsernameEmail(DEMO_USER.username, DEMO_USER.profile.email);
+  const applyRestoredSession = useCallback(async (profile: UserProfile) => {
+    setUser(profile);
+    setIsAuthed(true);
+    if (!isOnboardingComplete()) {
+      setShowOnboarding(true);
+    } else {
+      setShowOnboarding(false);
     }
-
-    supabase?.auth.getSession().then(async ({ data }) => {
-      if (data.session?.user) {
-        const profile = profileFromSessionUser(data.session.user);
-        setUser(profile);
-        setIsAuthed(true);
-        if (!isOnboardingComplete()) {
-          setShowOnboarding(true);
-        }
-        recordStreakActivity();
-        await hydrateMemberData(profile);
-        const premium = await refreshPremiumStatus(profile);
-        setIsPremium(premium.isPremium || isPremiumTrialActive());
-      }
-    });
+    recordStreakActivity();
+    checkPremiumTrialExpiry();
+    await hydrateMemberData(profile);
+    const premium = await refreshPremiumStatus(profile);
+    setIsPremium(premium.isPremium || isPremiumTrialActive());
   }, []);
 
   useEffect(() => {
@@ -207,9 +203,11 @@ export function App() {
           setPaymentSuccess({
             title: "Payment successful",
             body:
-              boostId === "city-boost"
-                ? "Your City Boost is now active."
-                : `${boostId.replace(/-/g, " ")} is now active.`
+              boostId === "city-spotlight"
+                ? "City Spotlight is live for 24 hours."
+                : boostId === "city-boost"
+                  ? "Your City Boost is now active."
+                  : `${boostId.replace(/-/g, " ")} is now active.`
           });
           notifyBoostActivated(boostId);
           setNotifVersion((v) => v + 1);
@@ -307,27 +305,97 @@ export function App() {
   );
 
   useEffect(() => {
-    if (!supabase) return;
+    if (import.meta.env.DEV) {
+      rememberUsernameEmail(DEMO_USER.username, DEMO_USER.profile.email);
+    }
+
+    if (!supabase) {
+      setAuthLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    let bootstrapDone = false;
+    let sessionRestored = false;
+
+    const finishBootstrap = () => {
+      if (!cancelled && !bootstrapDone) {
+        bootstrapDone = true;
+        setAuthLoading(false);
+      }
+    };
+
+    const restoreFromSession = async (session: { user: { email?: string | null; user_metadata?: Record<string, unknown> } } | null) => {
+      if (!session?.user || sessionRestored) return;
+      sessionRestored = true;
+      await applyRestoredSession(profileFromSessionUser(session.user));
+    };
+
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event !== "SIGNED_IN" || !session?.user || !getAuthPath()) return;
-      handleAuthenticated(profileFromSessionUser(session.user), { isNewSignup: false });
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (cancelled) return;
+
+      if (event === "INITIAL_SESSION") {
+        await restoreFromSession(session);
+        finishBootstrap();
+        return;
+      }
+
+      if (event === "SIGNED_IN" && session?.user) {
+        if (getAuthPath()) {
+          handleAuthenticated(profileFromSessionUser(session.user), { isNewSignup: false });
+          return;
+        }
+        await restoreFromSession(session);
+        return;
+      }
+
+      if ((event === "TOKEN_REFRESHED" || event === "USER_UPDATED") && session?.user) {
+        const profile = profileFromSessionUser(session.user);
+        setUser(profile);
+        setIsAuthed(true);
+        const premium = await refreshPremiumStatus(profile);
+        setIsPremium(premium.isPremium || isPremiumTrialActive());
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        clearMemberSessionCaches();
+        setIsAuthed(false);
+        setShowOnboarding(false);
+        setIsPremium(false);
+        setUser({ name: "", email: "", phone: "" });
+        setTab("home");
+      }
     });
-    return () => subscription.unsubscribe();
-  }, [handleAuthenticated]);
+
+    const fallback = window.setTimeout(finishBootstrap, 8000);
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+      window.clearTimeout(fallback);
+    };
+  }, [applyRestoredSession, handleAuthenticated]);
 
   const finishOnboarding = useCallback(() => {
     setShowOnboarding(false);
+    localStorage.removeItem(STORAGE_KEYS.onboardingStep);
     setTab("discover");
   }, []);
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback(async () => {
+    await supabase?.auth.signOut().catch(() => undefined);
+    clearMemberSessionCaches();
     setIsAuthed(false);
     setShowOnboarding(false);
     setIsPremium(false);
     setUser({ name: "", email: "", phone: "" });
     setTab("home");
+    navigateToPath("/");
+    setAuthPath(null);
+    setLegalPath(null);
   }, []);
 
   const navigateTab = useCallback((next: NavTab) => {
@@ -375,7 +443,15 @@ export function App() {
       setPaymentLoading(true);
       localStorage.setItem(STORAGE_KEYS.paymentKind, "boost");
       localStorage.setItem(STORAGE_KEYS.paymentBoostId, product.id);
-      const result = await startBoostPayment(product.id, product.price, user, datingProfile.city);
+      const durationHours =
+        product.id === "city-spotlight" ? 24 : product.id === "city-boost" ? 48 : product.id === "signal-boost" ? 24 : 48;
+      const result = await startBoostPayment(
+        product.id,
+        product.price,
+        user,
+        datingProfile.city,
+        durationHours
+      );
       setPaymentLoading(false);
       if (!result.ok) {
         setAuthMessage(result.error || "Checkout could not start.");
@@ -436,7 +512,7 @@ export function App() {
   ).length;
   const messageCount = filterBlockedByProfileId(readJson<Match[]>(STORAGE_KEYS.matches, [])).length;
 
-  if (booting) {
+  if (booting || authLoading) {
     return (
       <div className={`app ${theme}`}>
         <Preloader exiting={bootExit} />
@@ -676,22 +752,16 @@ export function App() {
           )}
           {isAuthed && !showOnboarding && !memberOverlay && tab === "home" && (
             <HomePage
-              user={user}
               userName={user.name}
               isPremium={isPremium}
               onDiscover={() => setTab("discover")}
-              onOpenPricing={openPricing}
               onOpenPremium={() => setMemberOverlay("premium")}
               onOpenProfile={() => setTab("me")}
-              onOpenLikes={() => setTab("likes")}
-              onOpenVisitors={() => setMemberOverlay("visitors")}
-              onOpenSafety={() => setMemberOverlay("safety")}
             />
           )}
           {tab === "home" && isGuest && (
             <LandingPage
               onSignup={() => openAuth("signup")}
-              onOpenPricing={openPricing}
               onGuestAction={() => openAuth("signup", "discover")}
               showEarlyAccess={false}
               onLogoClick={goHome}

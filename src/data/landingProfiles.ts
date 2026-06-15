@@ -89,10 +89,10 @@ export const RECENT_ACTIVITY = [
 ] as const;
 
 export const TRUST_ITEMS = [
-  { title: "Verified profiles", body: "Real people, not random accounts." },
-  { title: "Safer conversations", body: "Chat inside BamSignal until trust builds." },
-  { title: "Contact exchange protection", body: "Phone numbers and socials stay blocked early." },
-  { title: "Built for genuine connections", body: "Dating, friendship, and good vibes — not noise." }
+  { title: "Reports reviewed", body: "Reports are reviewed by our moderation team." },
+  { title: "Contact blocking", body: "Phone numbers, links and external contacts are filtered in chat." },
+  { title: "Your controls", body: "Block, report and manage your experience at any time." },
+  { title: "Active moderation", body: "Verification and safety tools help keep BamSignal trustworthy." }
 ] as const;
 
 export const HOW_IT_WORKS = [
@@ -122,8 +122,6 @@ export const HOW_IT_WORKS = [
   }
 ] as const;
 
-export const ONBOARDING_CULTURAL_COPY =
-  "Help BamSignal understand the kind of people you connect with best. These details are optional and can be hidden from your profile.";
+export const ONBOARDING_CULTURAL_COPY = "Control what appears on your profile.";
 
-export const PREFERENCE_CULTURAL_COPY =
-  "Choose what matters to you. We'll use it to improve your matches, not limit your experience.";
+export const PREFERENCE_CULTURAL_COPY = "Used privately to improve compatibility.";

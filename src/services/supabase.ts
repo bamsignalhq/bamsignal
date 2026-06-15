@@ -23,7 +23,8 @@ export const supabase: SupabaseClient | null =
           autoRefreshToken: true,
           detectSessionInUrl: true,
           flowType: "pkce",
-          persistSession: true
+          persistSession: true,
+          storage: typeof window !== "undefined" ? window.localStorage : undefined
         }
       })
     : null;
@@ -35,6 +36,12 @@ export function friendlyAuthError(error: unknown): string {
   }
   if (/expired|invalid|token/i.test(message)) {
     return "That code is not valid anymore. Request a fresh one and try again.";
+  }
+  if (/email.*confirm|confirm.*email|otp|rate limit/i.test(message)) {
+    return "We couldn't send the code right now. Wait a minute and try again, or check your spam folder.";
+  }
+  if (/user already registered|already exists/i.test(message)) {
+    return "An account with this email already exists. Try logging in instead.";
   }
   return message || "Authentication could not be completed. Please try again.";
 }

@@ -15,14 +15,16 @@ export type ActiveBoostEntry = {
 const DURATION_MS: Record<Exclude<BoostProductId, "priority-signal-once">, number> = {
   "signal-boost": 24 * 60 * 60 * 1000,
   "profile-boost": 48 * 60 * 60 * 1000,
-  "city-boost": 48 * 60 * 60 * 1000
+  "city-boost": 48 * 60 * 60 * 1000,
+  "city-spotlight": 24 * 60 * 60 * 1000
 };
 
 const DISCOVER_BONUS: Record<BoostProductId, number> = {
   "signal-boost": 55,
   "profile-boost": 85,
   "priority-signal-once": 0,
-  "city-boost": 70
+  "city-boost": 70,
+  "city-spotlight": 95
 };
 
 export function getMemberDiscoverId(user: Pick<UserProfile, "email" | "phone" | "username">): string {

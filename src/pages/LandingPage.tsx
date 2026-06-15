@@ -1,18 +1,13 @@
 import { SiteFooter } from "../components/SiteFooter";
-import { HomeHowItWorks } from "../components/home/HomeHowItWorks";
-import { HomePremiumTeaser } from "../components/home/HomePremiumTeaser";
-import { HomePulseBar } from "../components/home/HomePulseBar";
+import { HomeHeroTrustStrip } from "../components/home/HomeHeroTrustStrip";
 import { HomeTrustStrip } from "../components/home/HomeTrustStrip";
-import { HomeValueProps } from "../components/home/HomeValueProps";
-import { SocialProofSection } from "../components/home/SocialProofSection";
 import { VisualHero } from "../components/visual/VisualHero";
-import { SignalsAroundNigeria } from "../components/visual/SignalsAroundNigeria";
+import { CitySpotlightSection } from "../components/visual/CitySpotlightSection";
 import { SignalMoments } from "../components/visual/SignalMoments";
 import { VisualFinalCta } from "../components/visual/VisualFinalCta";
 
 type LandingPageProps = {
   onSignup: () => void;
-  onOpenPricing: () => void;
   onGuestAction: () => void;
   showEarlyAccess?: boolean;
   onLogoClick?: () => void;
@@ -20,7 +15,6 @@ type LandingPageProps = {
 
 export function LandingPage({
   onSignup,
-  onOpenPricing,
   onGuestAction,
   showEarlyAccess,
   onLogoClick
@@ -28,14 +22,10 @@ export function LandingPage({
   return (
     <div className="visual-page home-landing">
       <VisualHero onGetStarted={onSignup} onExplore={onGuestAction} />
-      <HomeValueProps onSignup={onSignup} onExplore={onGuestAction} />
-      <HomePulseBar />
-      <HomeHowItWorks onGetStarted={onSignup} />
-      <SignalsAroundNigeria onGuestAction={onGuestAction} />
+      <HomeHeroTrustStrip />
+      <CitySpotlightSection onGuestAction={onGuestAction} />
       <SignalMoments />
       <HomeTrustStrip />
-      <SocialProofSection />
-      <HomePremiumTeaser onUnlock={onOpenPricing} />
       <VisualFinalCta onSignup={onSignup} />
       <SiteFooter showEarlyAccess={showEarlyAccess} onLogoClick={onLogoClick} />
     </div>

@@ -79,23 +79,19 @@ export function ContactForm() {
         data = await response.json();
       } else {
         const text = (await response.text()).trim();
-        throw new Error(
-          text && text.length < 160
-            ? text
-            : "Could not reach the contact service. Try again or email support@bamsignal.com."
-        );
+        throw new Error(text && text.length < 160 ? "send_failed" : "send_failed");
       }
 
       if (!response.ok || !data.ok) {
-        throw new Error(data.error || "Could not send your message. Try again or email support@bamsignal.com.");
+        throw new Error("send_failed");
       }
 
       setStatus("success");
       setForm(EMPTY);
       refreshCaptcha();
-    } catch (err) {
+    } catch {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setError("We're unable to send your message right now. Please try again shortly.");
       refreshCaptcha();
     }
   };
@@ -103,8 +99,8 @@ export function ContactForm() {
   if (status === "success") {
     return (
       <div className="contact-form contact-form--success">
-        <h3>Message sent</h3>
-        <p>Thanks for reaching out. We&apos;ll get back to you within a few hours.</p>
+        <h3>Message sent successfully</h3>
+        <p>We&apos;ll get back to you as soon as possible.</p>
         <button type="button" className="contact-form__btn contact-form__btn--secondary" onClick={() => setStatus("idle")}>
           Send another message
         </button>

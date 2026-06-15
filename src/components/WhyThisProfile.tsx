@@ -2,19 +2,25 @@ type WhyThisProfileProps = {
   reasons: string[];
   compact?: boolean;
   className?: string;
+  title?: string;
 };
 
-export function WhyThisProfile({ reasons, compact = false, className = "" }: WhyThisProfileProps) {
+export function WhyThisProfile({
+  reasons,
+  compact = false,
+  className = "",
+  title = "Why this profile"
+}: WhyThisProfileProps) {
   if (!reasons.length) return null;
 
-  const visible = compact ? reasons.slice(0, 3) : reasons.slice(0, 4);
+  const visible = compact ? reasons.slice(0, 2) : reasons.slice(0, 4);
 
   return (
     <section
       className={`why-this-profile ${compact ? "why-this-profile--compact" : ""} ${className}`.trim()}
-      aria-label="Why this profile"
+      aria-label={title}
     >
-      <h4 className="why-this-profile__title">Why this profile?</h4>
+      <h4 className="why-this-profile__title">{title}</h4>
       <ul className="why-this-profile__list">
         {visible.map((reason) => (
           <li key={reason}>

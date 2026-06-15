@@ -27,11 +27,11 @@ export function SafetySettingsCard({ profile, onChange, variant = "profile" }: S
       <header className="safety-settings-head">
         <ShieldCheck size={22} />
         <div>
-          <h3>{variant === "onboarding" ? FEMALE_SAFETY_COPY.onboardingTitle : "Safety settings"}</h3>
+          <h3>{variant === "onboarding" ? FEMALE_SAFETY_COPY.onboardingTitle : "Safety"}</h3>
           <p>
             {variant === "onboarding"
               ? FEMALE_SAFETY_COPY.onboardingBody
-              : "Control who can signal and message you. Changes apply immediately."}
+              : "Control who can signal and message you."}
           </p>
         </div>
       </header>
@@ -64,8 +64,8 @@ export function SafetySettingsCard({ profile, onChange, variant = "profile" }: S
 
       <label className="settings-row settings-row--toggle safety-toggle-row">
         <span>
-          <strong>Only people matching my preferences can signal me</strong>
-          <small>Religion, background, city, lifestyle, and age filters you've set</small>
+          <strong>Preference matching only</strong>
+          <small>Only people who match your filters can signal you</small>
         </span>
         <input
           type="checkbox"
@@ -75,7 +75,7 @@ export function SafetySettingsCard({ profile, onChange, variant = "profile" }: S
       </label>
 
       <fieldset className="intent-fieldset">
-        <legend>DM controls — who can message me?</legend>
+        <legend>Who can message me</legend>
         <div className="safety-option-list">
           {DM_CONTROL_OPTIONS.map((opt) => (
             <button

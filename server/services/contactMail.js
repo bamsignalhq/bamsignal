@@ -43,7 +43,7 @@ export async function handleContactPost(body) {
   if (!process.env.RESEND_API_KEY) {
     throw new ContactError(
       503,
-      "Support email is not configured yet. Email support@bamsignal.com directly."
+      "We're unable to send your message right now. Please try again shortly."
     );
   }
 
@@ -110,7 +110,7 @@ export async function handleContactPost(body) {
 
   if (!supportResponse.ok) {
     const detail = await supportResponse.text();
-    throw new ContactError(502, "Support email could not be sent", detail);
+    throw new ContactError(502, "We're unable to send your message right now. Please try again shortly.", detail);
   }
 
   const acknowledgementResponse = await sendEmail({
@@ -162,7 +162,7 @@ export async function handleContactNodeRequest(req, res) {
 
     return sendContactJson(res, 500, {
       ok: false,
-      error: error instanceof Error ? error.message : "Support email failed"
+      error: "We're unable to send your message right now. Please try again shortly."
     });
   }
 }

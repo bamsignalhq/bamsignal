@@ -8,7 +8,6 @@ import {
   FOOTER_TAGLINE,
   navigateToPath
 } from "../constants/footer";
-import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "../constants/support";
 
 type SiteFooterProps = {
   className?: string;
@@ -60,13 +59,6 @@ export function SiteFooter({ className = "", showEarlyAccess = false, onLogoClic
           <section className="site-footer-section" aria-label="Social">
             <h3 className="site-footer-heading">Social</h3>
             <SocialIconLinks className="site-footer-social" size={22} />
-          </section>
-
-          <section className="site-footer-section" aria-label="Support">
-            <h3 className="site-footer-heading">Support</h3>
-            <a className="site-footer-support" href={SUPPORT_MAILTO}>
-              {SUPPORT_EMAIL}
-            </a>
           </section>
         </div>
 

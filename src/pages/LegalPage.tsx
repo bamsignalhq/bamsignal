@@ -85,6 +85,15 @@ export function LegalPage({ path }: LegalPageProps) {
 
       {isAbout ? (
         <GrowthStatsStrip variant="info" eyebrow="" />
+      ) : path === "/safety" ? (
+        <div className="safety-pillars">
+          {page.highlights.map((item) => (
+            <article key={item.label} className="safety-pillar">
+              <h2>{item.value}</h2>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
       ) : (
         <div className={`info-highlights${useRowLayout ? " info-highlights--row" : ""}`}>
           {highlights?.map((item) => (

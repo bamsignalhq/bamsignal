@@ -520,3 +520,48 @@
   gap: 8px;
   margin-top: 12px;
 }
+
+/* Floating label fields */
+.auth-field--float {
+  position: relative;
+  gap: 0;
+}
+
+.auth-field--float input {
+  padding: 22px 18px 10px;
+}
+
+.auth-field--float > span {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: transform 0.15s ease, font-size 0.15s ease, color 0.15s ease;
+}
+
+.auth-field--float input:focus + span,
+.auth-field--float input:not(:placeholder-shown) + span {
+  transform: translateY(-1.15rem);
+  font-size: 0.72rem;
+  color: var(--brand-pink);
+}
+
+.auth-field--pin input {
+  padding-right: 48px;
+}
+
+.auth-field__toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}

@@ -13,7 +13,10 @@ import paystackVerifyHandler from "../api/paystack/verify.js";
 import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivity.js";
 import memberDataHandler from "../api/member/data.js";
 import cityHomeHandler from "../api/city/home.js";
+import citySpotlightHandler from "../api/city/spotlight.js";
+import citySpotlightEventHandler from "../api/city/spotlight-event.js";
 import adminCityHomeHandler from "../api/admin/city-home.js";
+import adminCitySpotlightHandler from "../api/admin/city-spotlight.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "..", "dist");
@@ -83,7 +86,10 @@ mountHandler(app, "post", "/api/member/data", memberDataHandler);
 mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);
 mountHandler(app, "get", "/api/diagnostics/paystack-connectivity", paystackConnectivityHandler);
 mountHandler(app, "post", "/api/admin/city-home", adminCityHomeHandler);
+mountHandler(app, "get", "/api/admin/city-spotlight", adminCitySpotlightHandler);
 mountHandler(app, "get", "/api/city/home", cityHomeHandler);
+mountHandler(app, "get", "/api/city/spotlight", citySpotlightHandler);
+mountHandler(app, "post", "/api/city/spotlight-event", citySpotlightEventHandler);
 app.use(paystackRouter);
 
 app.use(express.static(distDir, { index: false, maxAge: "1d" }));

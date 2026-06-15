@@ -8,7 +8,13 @@ import {
 import { STORAGE_KEYS } from "../constants/limits";
 import { readJson, writeJson } from "../utils/storage";
 
-const VALID_BOOST_IDS = new Set(["signal-boost", "priority-signal-once", "profile-boost"]);
+const VALID_BOOST_IDS = new Set([
+  "signal-boost",
+  "priority-signal-once",
+  "profile-boost",
+  "city-boost",
+  "city-spotlight"
+]);
 
 function normalizeBoostInputs(raw: unknown): BoostProductInput[] {
   if (!Array.isArray(raw)) return DEFAULT_BOOST_INPUTS;

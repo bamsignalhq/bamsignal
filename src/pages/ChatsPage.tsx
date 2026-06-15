@@ -427,13 +427,13 @@ function ChatDetail({
             }
             return;
           }
-          if (!result.redirected) {
+          if (result.needsVerify) {
             const verified = await completePendingPayment(user);
             if (verified.ok) {
               activateQuickiePass();
               unlockQuickieMatch(match.profileId);
               setQuickiePaywallOpen(false);
-            } else if (!verified.cancelled && verified.error) {
+            } else if (!verified.pending && verified.error) {
               setToast(verified.error);
               setTimeout(() => setToast(""), 4000);
             }

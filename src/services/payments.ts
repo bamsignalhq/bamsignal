@@ -1,11 +1,15 @@
-import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 import type { PremiumPlan } from "../constants/plans";
 import { DEFAULT_PREMIUM_PLANS } from "../constants/plans";
 import { STORAGE_KEYS } from "../constants/limits";
 import type { UserProfile } from "../types";
 import { readJson } from "../utils/storage";
-import { setPaymentFlowState } from "../utils/paymentState";
+import {
+  beginPaymentSession,
+  checkoutWasOpened,
+  markPaymentSessionStarted,
+  setPaymentFlowState
+} from "../utils/paymentState";
 import { openPaystackCheckout } from "./paymentCheckout";
 import { apiUrl } from "./supabase";
 import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
@@ -33,6 +37,7 @@ type StartPaymentResult = {
   reference?: string;
   cancelled?: boolean;
   redirected?: boolean;
+  needsVerify?: boolean;
 };
 
 async function postInitialize(url: string, body: Record<string, unknown>): Promise<InitPayload> {
@@ -53,9 +58,11 @@ async function launchCheckout(
   kind: string,
   extraKeys?: Record<string, string>
 ): Promise<StartPaymentResult> {
-  if (init.reference) {
-    localStorage.setItem(STORAGE_KEYS.paymentReference, init.reference);
+  if (!init.reference) {
+    setPaymentFlowState("idle");
+    return { ok: false, error: INIT_ERROR };
   }
+
   localStorage.setItem(STORAGE_KEYS.paymentKind, kind);
   if (extraKeys) {
     for (const [key, value] of Object.entries(extraKeys)) {
@@ -65,7 +72,9 @@ async function launchCheckout(
 
   const outcome = await openPaystackCheckout({
     authorizationUrl: init.authorization_url!,
-    accessCode: init.access_code
+    accessCode: init.access_code,
+    reference: init.reference,
+    kind
   });
 
   if (outcome.status === "redirect") {
@@ -79,7 +88,7 @@ async function launchCheckout(
 
   localStorage.setItem(STORAGE_KEYS.paymentReference, outcome.reference);
   setPaymentFlowState("verifying");
-  return { ok: true, reference: outcome.reference };
+  return { ok: true, reference: outcome.reference, needsVerify: true };
 }
 
 export async function startPlanPayment(plan: PremiumPlan, user: UserProfile): Promise<StartPaymentResult> {
@@ -87,7 +96,8 @@ export async function startPlanPayment(plan: PremiumPlan, user: UserProfile): Pr
     return { ok: false, error: "Add a verified email before upgrading." };
   }
 
-  setPaymentFlowState("initializing");
+  beginPaymentSession();
+  markPaymentSessionStarted();
 
   try {
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize"), {
@@ -101,13 +111,13 @@ export async function startPlanPayment(plan: PremiumPlan, user: UserProfile): Pr
     });
 
     if (!init.ok) {
-      setPaymentFlowState("failed");
+      setPaymentFlowState("idle");
       return { ok: false, error: init.error || INIT_ERROR };
     }
 
     return await launchCheckout(init, "premium");
   } catch {
-    setPaymentFlowState("failed");
+    setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };
   }
 }
@@ -170,7 +180,8 @@ export async function startQuickiePassPayment(user: UserProfile): Promise<StartP
     return { ok: false, error: "Add a verified email before purchasing a Quickie pass." };
   }
 
-  setPaymentFlowState("initializing");
+  beginPaymentSession();
+  markPaymentSessionStarted();
 
   try {
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize-quickie"), {
@@ -182,13 +193,13 @@ export async function startQuickiePassPayment(user: UserProfile): Promise<StartP
     });
 
     if (!init.ok) {
-      setPaymentFlowState("failed");
+      setPaymentFlowState("idle");
       return { ok: false, error: init.error || INIT_ERROR };
     }
 
     return await launchCheckout(init, "quickie");
   } catch {
-    setPaymentFlowState("failed");
+    setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };
   }
 }
@@ -239,7 +250,8 @@ export async function startBoostPayment(
     return { ok: false, error: "Add a verified email before purchasing a boost." };
   }
 
-  setPaymentFlowState("initializing");
+  beginPaymentSession();
+  markPaymentSessionStarted();
 
   try {
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize-boost"), {
@@ -254,7 +266,7 @@ export async function startBoostPayment(
     });
 
     if (!init.ok) {
-      setPaymentFlowState("failed");
+      setPaymentFlowState("idle");
       return { ok: false, error: init.error || INIT_ERROR };
     }
 
@@ -262,7 +274,7 @@ export async function startBoostPayment(
       [STORAGE_KEYS.paymentBoostId]: boostId
     });
   } catch {
-    setPaymentFlowState("failed");
+    setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };
   }
 }
@@ -333,22 +345,34 @@ export async function completePendingPayment(user: UserProfile): Promise<{
     const boostId = localStorage.getItem(STORAGE_KEYS.paymentBoostId) || "city-boost";
     const result = await verifyBoostPayment(user, boostId, datingProfile.city || "Lagos");
     if (result.ok) return { ok: true, kind: "boost" };
-    if (result.pending) return { ok: false, kind: "boost", pending: true, cancelled: true };
-    setPaymentFlowState("failed");
+    if (result.pending) return { ok: false, kind: "boost", pending: true };
+    if (checkoutWasOpened()) {
+      setPaymentFlowState("failed");
+    } else {
+      setPaymentFlowState("idle");
+    }
     return { ok: false, kind: "boost", error: result.error };
   }
 
   if (kind === "quickie") {
     const result = await verifyQuickiePayment(user);
     if (result.ok) return { ok: true, kind: "quickie" };
-    if (result.pending) return { ok: false, kind: "quickie", pending: true, cancelled: true };
-    setPaymentFlowState("failed");
+    if (result.pending) return { ok: false, kind: "quickie", pending: true };
+    if (checkoutWasOpened()) {
+      setPaymentFlowState("failed");
+    } else {
+      setPaymentFlowState("idle");
+    }
     return { ok: false, kind: "quickie", error: result.error };
   }
 
   const result = await verifyPayment(user);
   if (result.ok) return { ok: true, kind: "premium" };
-  if (result.pending) return { ok: false, kind: "premium", pending: true, cancelled: true };
-  setPaymentFlowState("failed");
+  if (result.pending) return { ok: false, kind: "premium", pending: true };
+  if (checkoutWasOpened()) {
+    setPaymentFlowState("failed");
+  } else {
+    setPaymentFlowState("idle");
+  }
   return { ok: false, kind: "premium", error: result.error };
 }

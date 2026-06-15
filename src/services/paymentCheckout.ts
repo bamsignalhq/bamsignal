@@ -1,6 +1,7 @@
 import { App } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
+import { STORAGE_KEYS } from "../constants/limits";
 import { setPaymentFlowState, parsePaymentReturnUrl } from "../utils/paymentState";
 
 export type CheckoutOutcome =
@@ -48,7 +49,12 @@ function loadPaystackInline(): Promise<PaystackPop> {
   return paystackScriptPromise;
 }
 
-function openInlineCheckout(accessCode: string): Promise<CheckoutOutcome> {
+function persistCheckoutReference(reference: string, kind?: string): void {
+  localStorage.setItem(STORAGE_KEYS.paymentReference, reference);
+  if (kind) localStorage.setItem(STORAGE_KEYS.paymentKind, kind);
+}
+
+function openInlineCheckout(accessCode: string, reference: string, kind?: string): Promise<CheckoutOutcome> {
   return loadPaystackInline().then(
     (PaystackPop) =>
       new Promise((resolve) => {
@@ -67,13 +73,14 @@ function openInlineCheckout(accessCode: string): Promise<CheckoutOutcome> {
             }
           }
         });
+        persistCheckoutReference(reference, kind);
         setPaymentFlowState("checkout_open");
         handler.openIframe();
       })
   );
 }
 
-async function openCapacitorCheckout(authorizationUrl: string): Promise<CheckoutOutcome> {
+async function openCapacitorCheckout(authorizationUrl: string, reference: string, kind?: string): Promise<CheckoutOutcome> {
   return new Promise((resolve) => {
     let settled = false;
     const finish = (outcome: CheckoutOutcome) => {
@@ -95,6 +102,7 @@ async function openCapacitorCheckout(authorizationUrl: string): Promise<Checkout
       finish({ status: "cancelled" });
     });
 
+    persistCheckoutReference(reference, kind);
     setPaymentFlowState("checkout_open");
     void Browser.open({
       url: authorizationUrl,
@@ -107,21 +115,24 @@ async function openCapacitorCheckout(authorizationUrl: string): Promise<Checkout
 export async function openPaystackCheckout(options: {
   authorizationUrl: string;
   accessCode?: string | null;
+  reference: string;
+  kind?: string;
 }): Promise<CheckoutOutcome> {
-  const { authorizationUrl, accessCode } = options;
-
-  if (Capacitor.isNativePlatform()) {
-    return openCapacitorCheckout(authorizationUrl);
-  }
+  const { authorizationUrl, accessCode, reference, kind } = options;
 
   if (accessCode) {
     try {
-      return await openInlineCheckout(accessCode);
-    } catch {
-      // Fall through to hosted redirect if inline fails to load.
+      return await openInlineCheckout(accessCode, reference, kind);
+    } catch (error) {
+      console.warn("[payment] inline checkout unavailable, falling back to hosted checkout", error);
     }
   }
 
+  if (Capacitor.isNativePlatform()) {
+    return openCapacitorCheckout(authorizationUrl, reference, kind);
+  }
+
+  persistCheckoutReference(reference, kind);
   setPaymentFlowState("checkout_open");
   window.location.assign(authorizationUrl);
   return { status: "redirect" };

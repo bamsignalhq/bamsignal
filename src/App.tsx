@@ -50,8 +50,10 @@ import { activateQuickiePass } from "./utils/quickie";
 import {
   getPaymentFlowState,
   parsePaymentReturnUrl,
+  sanitizeStalePaymentState,
   setPaymentFlowState,
-  shouldShowPaymentRecovery
+  shouldShowPaymentRecovery,
+  subscribePaymentState
 } from "./utils/paymentState";
 import { LegalPage } from "./pages/LegalPage";
 import { PremiumPage } from "./pages/PremiumPage";
@@ -178,6 +180,12 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
+    sanitizeStalePaymentState();
+    setPaymentFlowTick((v) => v + 1);
+    return subscribePaymentState(() => setPaymentFlowTick((v) => v + 1));
+  }, []);
+
+  useEffect(() => {
     writeJson(STORAGE_KEYS.userProfile, user);
   }, [user]);
 
@@ -269,7 +277,11 @@ export function App() {
       return;
     }
 
-    if (result.cancelled || result.pending) {
+    if (result.pending) {
+      return;
+    }
+
+    if (result.cancelled) {
       setPaymentFlowState("cancelled");
       return;
     }
@@ -481,7 +493,7 @@ export function App() {
       }
 
       setPricingOpen(false);
-      if (!result.redirected) {
+      if (result.needsVerify) {
         await processPaymentReturn();
       }
     },
@@ -532,7 +544,7 @@ export function App() {
         return;
       }
       setPricingOpen(false);
-      if (!result.redirected) {
+      if (result.needsVerify) {
         await processPaymentReturn();
       }
     },
@@ -566,7 +578,10 @@ export function App() {
   };
 
   const showPaymentRecovery =
-    isAuthed && !paymentSuccess && shouldShowPaymentRecovery();
+    isAuthed &&
+    !paymentSuccess &&
+    !paymentLoading &&
+    shouldShowPaymentRecovery();
   void paymentFlowTick;
   const notificationUnread = unreadCount();
   const incomingSignals = filterBlockedByProfileId(

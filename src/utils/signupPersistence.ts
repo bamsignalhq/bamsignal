@@ -21,11 +21,15 @@ function readSession<T>(key: string): T | null {
   }
 }
 
-function writeSession(key: string, value: unknown): void {
+function writeSession(key: string, value: unknown): boolean {
   try {
     sessionStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    /* ignore quota / private mode */
+    return true;
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error("[bamsignal] signup session write failed", error);
+    }
+    return false;
   }
 }
 
@@ -44,8 +48,8 @@ export function savePendingSignup(input: {
   pin: string;
   verifyCode?: string;
   codeSentAt?: number;
-}): void {
-  writeSession(STORAGE_KEYS.pendingSignup, {
+}): boolean {
+  return writeSession(STORAGE_KEYS.pendingSignup, {
     profile: input.profile,
     pin: input.pin,
     verifyCode: input.verifyCode || "",
@@ -53,16 +57,16 @@ export function savePendingSignup(input: {
   });
 }
 
-export function touchPendingVerifyCode(code: string): void {
+export function touchPendingVerifyCode(code: string): boolean {
   const current = loadPendingSignup();
-  if (!current) return;
-  writeSession(STORAGE_KEYS.pendingSignup, { ...current, verifyCode: code });
+  if (!current) return false;
+  return writeSession(STORAGE_KEYS.pendingSignup, { ...current, verifyCode: code });
 }
 
-export function touchPendingCodeSent(): void {
+export function touchPendingCodeSent(): boolean {
   const current = loadPendingSignup();
-  if (!current) return;
-  writeSession(STORAGE_KEYS.pendingSignup, {
+  if (!current) return false;
+  return writeSession(STORAGE_KEYS.pendingSignup, {
     ...current,
     codeSentAt: Date.now(),
     verifyCode: ""

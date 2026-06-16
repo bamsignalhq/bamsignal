@@ -624,6 +624,14 @@
   letter-spacing: -0.03em;
 }
 
+.preloader__status {
+  position: relative;
+  z-index: 1;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+}
+
 .preloader__tagline {
   position: relative;
   z-index: 1;

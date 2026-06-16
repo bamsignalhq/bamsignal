@@ -4,9 +4,10 @@ import { SignalRipple } from "./signals/SignalRipple";
 
 type PreloaderProps = {
   exiting?: boolean;
+  subtitle?: string;
 };
 
-export function Preloader({ exiting = false }: PreloaderProps) {
+export function Preloader({ exiting = false, subtitle }: PreloaderProps) {
   return (
     <main className={`preloader ${exiting ? "preloader--exit" : ""}`} aria-label="Loading BamSignal">
       <div className="preloader__gradient" />
@@ -15,6 +16,7 @@ export function Preloader({ exiting = false }: PreloaderProps) {
         <img src={BRAND_ASSETS.logo} alt="" className="preloader__logo" width={112} height={112} />
       </div>
       <h1 className="preloader__title">{BRAND.name}</h1>
+      {subtitle ? <p className="preloader__status">{subtitle}</p> : null}
       <p className="preloader__tagline">
         {BRAND.tagline.split("\n").map((line, i) => (
           <span key={line}>

@@ -1,4 +1,5 @@
 import { apiUrl } from "./supabase";
+import { USER_MESSAGES } from "../constants/userMessages";
 import { normalizeNigerianPhone } from "../utils/authIdentity";
 
 export async function startWhatsappVerification(phone: string): Promise<{ ok: boolean; message?: string; error?: string }> {
@@ -10,11 +11,14 @@ export async function startWhatsappVerification(phone: string): Promise<{ ok: bo
     });
     const payload = await response.json().catch(() => null);
     if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "We couldn't send the code right now." };
+      return { ok: false, error: payload?.error || USER_MESSAGES.otpSendFailed };
     }
     return { ok: true, message: payload.message || "Verification code sent." };
-  } catch {
-    return { ok: false, error: "We couldn't send the code right now." };
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error("[bamsignal] whatsapp otp send failed", error);
+    }
+    return { ok: false, error: USER_MESSAGES.otpSendFailed };
   }
 }
 
@@ -32,12 +36,15 @@ export async function confirmWhatsappVerification(
     if (!response.ok || !payload?.ok) {
       return {
         ok: false,
-        error: payload?.error || "That code is not correct. Please check and try again."
+        error: payload?.error || USER_MESSAGES.otpVerifyFailed
       };
     }
     return { ok: true, phoneVerified: true };
-  } catch {
-    return { ok: false, error: "We couldn't verify that code right now." };
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error("[bamsignal] whatsapp otp verify failed", error);
+    }
+    return { ok: false, error: USER_MESSAGES.otpVerifyFailed };
   }
 }
 

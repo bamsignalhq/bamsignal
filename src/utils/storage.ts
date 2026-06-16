@@ -28,7 +28,10 @@ export function writeJson(key: string, value: unknown): boolean {
   try {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
-  } catch {
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error("[bamsignal] localStorage write failed", key, error);
+    }
     return false;
   }
 }

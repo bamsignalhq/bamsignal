@@ -90,6 +90,7 @@ import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdent
 import { clearMemberSessionCaches } from "./utils/authSession";
 import { boostNeedsMemberCity } from "./constants/boosts";
 import { PAYMENT_START_ERROR } from "./config/paystack";
+import { USER_MESSAGES } from "./constants/userMessages";
 import { DEMO_USER } from "./constants/demoAccounts";
 import { getMemberCity } from "./utils/memberCity";
 import { usePlans } from "./context/PlansContext";
@@ -292,6 +293,7 @@ export function App() {
 
     if (result.cancelled) {
       setPaymentFlowState("cancelled");
+      setAuthMessage(USER_MESSAGES.paymentNotCompleted);
       return;
     }
 
@@ -472,6 +474,11 @@ export function App() {
       await applyRestoredSession(profileFromSessionUser(session.user));
     };
 
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return;
+      void restoreFromSession(session).finally(finishBootstrap);
+    });
+
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -519,6 +526,12 @@ export function App() {
       window.clearTimeout(fallback);
     };
   }, [applyRestoredSession, handleAuthenticated]);
+
+  useEffect(() => {
+    if (authLoading || !isAuthed || !authPath) return;
+    navigateToPath("/");
+    setAuthPath(null);
+  }, [authLoading, isAuthed, authPath]);
 
   const finishOnboarding = useCallback(() => {
     setShowOnboarding(false);
@@ -664,7 +677,10 @@ export function App() {
   if (booting || authLoading) {
     return (
       <div className={`app ${theme}`}>
-        <Preloader exiting={bootExit} />
+        <Preloader
+          exiting={bootExit}
+          subtitle={!booting && authLoading ? "Restoring your session…" : undefined}
+        />
       </div>
     );
   }

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
 import type { UserProfile } from "../types";
+import { USER_MESSAGES } from "../constants/userMessages";
 import { isValidNigerianPhone, normalizeNigerianPhone } from "../utils/authIdentity";
 import {
   confirmWhatsappVerification,
@@ -42,38 +43,50 @@ export function PhoneVerificationPanel({
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [busy, setBusy] = useState<"idle" | "sending" | "verifying">("idle");
+  const codeInputRef = useRef<HTMLInputElement | null>(null);
 
   const phoneReady = phone.length === 11 && isValidNigerianPhone(phone);
   const codeReady = code.length === 6;
 
+  useEffect(() => {
+    if (!codeSent || phoneVerified) return;
+    window.setTimeout(() => codeInputRef.current?.focus({ preventScroll: true }), 120);
+  }, [codeSent, phoneVerified]);
+
   const sendOtp = async () => {
     if (!isValidNigerianPhone(phone)) return;
     setBusy("sending");
-    const result = await startWhatsappVerification(phone);
-    setBusy("idle");
-    if (!result.ok) {
-      onMessage?.(result.error || "We couldn't send the code right now.");
-      return;
+    try {
+      const result = await startWhatsappVerification(phone);
+      if (!result.ok) {
+        onMessage?.(result.error || USER_MESSAGES.otpSendFailed);
+        return;
+      }
+      setModalView("closed");
+      setCodeSent(true);
+      setCode("");
+      onMessage?.("Code sent to WhatsApp.");
+    } finally {
+      setBusy("idle");
     }
-    setModalView("closed");
-    setCodeSent(true);
-    setCode("");
-    onMessage?.("Code sent to WhatsApp.");
   };
 
   const verifyCode = async () => {
-    if (!codeReady) return;
+    if (!codeReady || busy === "verifying") return;
     setBusy("verifying");
-    const result = await confirmWhatsappVerification(phone, code);
-    setBusy("idle");
-    if (!result.ok) {
-      onMessage?.(result.error || "That code is not correct. Please check and try again.");
-      return;
+    try {
+      const result = await confirmWhatsappVerification(phone, code);
+      if (!result.ok) {
+        onMessage?.(result.error || USER_MESSAGES.otpVerifyFailed);
+        return;
+      }
+      setCodeSent(false);
+      setCode("");
+      onPhoneVerified(normalizeNigerianPhone(phone));
+      onMessage?.("Phone verified.");
+    } finally {
+      setBusy("idle");
     }
-    setCodeSent(false);
-    setCode("");
-    onPhoneVerified(normalizeNigerianPhone(phone));
-    onMessage?.("Phone verified.");
   };
 
   const saveChangedNumber = () => {
@@ -109,20 +122,23 @@ export function PhoneVerificationPanel({
     reader.onload = async () => {
       const verificationSelfie = String(reader.result || "");
       setBusy("verifying");
-      const result = await submitVerificationSelfie({
-        email: user.email,
-        phone: normalizeNigerianPhone(phone || user.phone),
-        name: user.name,
-        profilePhoto,
-        verificationSelfie
-      });
-      setBusy("idle");
-      if (!result.ok) {
-        onMessage?.(result.error || "Couldn't submit verification right now.");
-        return;
+      try {
+        const result = await submitVerificationSelfie({
+          email: user.email,
+          phone: normalizeNigerianPhone(phone || user.phone),
+          name: user.name,
+          profilePhoto,
+          verificationSelfie
+        });
+        if (!result.ok) {
+          onMessage?.(result.error || "Couldn't submit verification right now.");
+          return;
+        }
+        onSelfieSubmitted(verificationSelfie);
+        onMessage?.("Verification submitted. We'll review it shortly.");
+      } finally {
+        setBusy("idle");
       }
-      onSelfieSubmitted(verificationSelfie);
-      onMessage?.("Verification submitted. We'll review it shortly.");
     };
     reader.readAsDataURL(file);
   };
@@ -187,24 +203,32 @@ export function PhoneVerificationPanel({
             <label className="verification-code-row__field">
               <span className="profile-form-row__label">Verification code</span>
               <input
+                ref={codeInputRef}
                 type="text"
                 inputMode="numeric"
+                autoComplete="one-time-code"
+                enterKeyHint="done"
                 maxLength={6}
                 value={code}
+                disabled={busy === "verifying"}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onPaste={(event) => {
+                  const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                  if (!pasted) return;
+                  event.preventDefault();
+                  setCode(pasted);
+                }}
                 placeholder="6-digit code"
               />
             </label>
-            {codeReady && (
-              <button
-                type="button"
-                className="btn-primary verification-code-row__verify"
-                onClick={verifyCode}
-                disabled={busy === "verifying"}
-              >
-                {busy === "verifying" ? "Verifying…" : "Verify Code"}
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn-primary verification-code-row__verify"
+              onClick={verifyCode}
+              disabled={busy === "verifying" || !codeReady}
+            >
+              {busy === "verifying" ? "Verifying…" : "Verify Code"}
+            </button>
           </div>
         )}
 

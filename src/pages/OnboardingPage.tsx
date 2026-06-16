@@ -17,6 +17,7 @@ import type {
   SocialLifestyle,
   UserProfile
 } from "../types";
+import { USER_MESSAGES } from "../constants/userMessages";
 import { trackEvent } from "../utils/analytics";
 import { isAdultDob } from "../utils/ageFromDob";
 import { defaultSafetySettings } from "../constants/safety";
@@ -60,12 +61,16 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   const progress = ((step + 1) / STEPS.length) * 100;
 
   useEffect(() => {
-    writeJson(STORAGE_KEYS.onboardingStep, step);
+    if (!writeJson(STORAGE_KEYS.onboardingStep, step)) {
+      setModMessage(USER_MESSAGES.progressSaveFailed);
+    }
   }, [step]);
 
   useEffect(() => {
     if (profile.onboardingComplete) return;
-    writeJson(STORAGE_KEYS.datingProfile, { ...profile, onboardingComplete: false });
+    if (!writeJson(STORAGE_KEYS.datingProfile, { ...profile, onboardingComplete: false })) {
+      setModMessage(USER_MESSAGES.progressSaveFailed);
+    }
   }, [profile]);
 
   const saveAndFinish = () => {

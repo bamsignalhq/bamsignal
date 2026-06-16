@@ -1,4 +1,5 @@
 import { apiUrl } from "./supabase";
+import { USER_MESSAGES } from "../constants/userMessages";
 import { normalizeUsername } from "../utils/authIdentity";
 
 type SendCodeResponse = { ok: boolean; email?: string; error?: string };
@@ -134,7 +135,7 @@ export async function sendSignupEmailCode(
   });
   return readApiResponse<SendCodeResponse>(
     response,
-    "We couldn't send the code right now. Wait a minute and try again, or check your spam folder."
+    USER_MESSAGES.otpSendFailed
   );
 }
 
@@ -149,7 +150,7 @@ export async function verifySignupEmailCode(input: {
   const response = await postEmailCode({ action: "verify", ...input });
   return readApiResponse<VerifyCodeResponse>(
     response,
-    "We couldn't finish creating your account. Try again shortly."
+    USER_MESSAGES.otpVerifyFailed
   );
 }
 

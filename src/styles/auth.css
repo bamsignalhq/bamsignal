@@ -328,34 +328,30 @@
   word-break: break-all;
 }
 
-.auth-verify__otp {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+.auth-verify__otp-field {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-top: 4px;
-  position: relative;
 }
 
-.auth-verify__autofill {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-  left: -9999px;
+.auth-verify__otp-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
-.auth-verify__digit {
+.auth-verify__code-input {
   width: 100%;
-  aspect-ratio: 0.82;
-  min-height: 52px;
-  padding: 0;
+  min-height: 56px;
+  padding: 16px 18px;
   border-radius: 16px;
   border: 1.5px solid var(--border);
   background: var(--input-bg);
   color: var(--text);
-  font-size: clamp(1.15rem, 4.5vw, 1.35rem);
+  font-size: 1.35rem;
   font-weight: 800;
+  letter-spacing: 0.35em;
   text-align: center;
   touch-action: manipulation;
   cursor: text;
@@ -366,7 +362,7 @@
     background 0.2s ease;
 }
 
-.auth-verify__digit:focus {
+.auth-verify__code-input:focus {
   outline: none;
   border-color: rgba(233, 30, 140, 0.55);
   box-shadow:
@@ -375,12 +371,7 @@
   transform: translateY(-1px);
 }
 
-.auth-verify__digit--filled {
-  border-color: color-mix(in srgb, var(--brand-pink) 35%, var(--border));
-  background: color-mix(in srgb, var(--brand-pink) 8%, var(--input-bg));
-}
-
-.auth-verify__digit:disabled {
+.auth-verify__code-input:disabled {
   opacity: 0.72;
 }
 
@@ -435,12 +426,9 @@
 }
 
 @media (max-width: 380px) {
-  .auth-verify__otp {
-    gap: 6px;
-  }
-
-  .auth-verify__digit {
-    min-height: 48px;
+  .auth-verify__code-input {
+    min-height: 52px;
+    font-size: 1.2rem;
     border-radius: 14px;
   }
 }
@@ -674,6 +662,15 @@
 .verification-code-row__field {
   flex: 1;
   min-width: 0;
+}
+
+.verification-code-row__field input {
+  width: 100%;
+  min-height: 48px;
+  touch-action: manipulation;
+  letter-spacing: 0.2em;
+  text-align: center;
+  font-weight: 700;
 }
 
 .verification-phone-row__verify,

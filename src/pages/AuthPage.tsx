@@ -6,6 +6,7 @@ import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
 import { friendlyAuthError, supabase } from "../services/supabase";
 import { resolveLoginEmail, checkSignupAvailability, sendSignupEmailCode, verifySignupEmailCode, AuthEmailError } from "../services/authEmail";
+import { USER_MESSAGES } from "../constants/userMessages";
 import { trackEvent } from "../utils/analytics";
 import {
   emailForUsername,
@@ -105,23 +106,21 @@ export function AuthPage({
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
   const [resendIn, setResendIn] = useState(restored.current.resendIn);
   const [verifyBusy, setVerifyBusy] = useState(false);
-  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const otpInputRef = useRef<HTMLInputElement | null>(null);
   const verifyInFlight = useRef(false);
-  const autofillRef = useRef<HTMLInputElement | null>(null);
 
   const phoneDigits = (value: string) => normalizeNigerianPhone(value);
   const pinDigits = (value: string) => value.replace(/\D/g, "").slice(0, 6);
 
-  const focusOtpDigit = (index = verifyCode.length) => {
-    const safeIndex = Math.min(Math.max(index, 0), OTP_LENGTH - 1);
+  const focusOtpInput = () => {
     window.setTimeout(() => {
-      otpRefs.current[safeIndex]?.focus();
-    }, 80);
+      otpInputRef.current?.focus({ preventScroll: true });
+    }, 120);
   };
 
   useEffect(() => {
     if (mode !== "verify" || !pendingSignup?.email) return;
-    focusOtpDigit(verifyCode.length);
+    focusOtpInput();
   }, [mode, pendingSignup?.email]);
 
   useEffect(() => {
@@ -129,7 +128,7 @@ export function AuthPage({
 
     const refocusOtp = () => {
       if (document.visibilityState && document.visibilityState !== "visible") return;
-      focusOtpDigit(verifyCode.length);
+      focusOtpInput();
     };
 
     document.addEventListener("visibilitychange", refocusOtp);
@@ -140,7 +139,7 @@ export function AuthPage({
       window.removeEventListener("pageshow", refocusOtp);
       window.removeEventListener("focus", refocusOtp);
     };
-  }, [mode, verifyCode.length]);
+  }, [mode]);
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -244,7 +243,9 @@ export function AuthPage({
       setVerifyCode("");
       setResendIn(RESEND_COOLDOWN_SEC);
       setPendingSignup(profile);
-      savePendingSignup({ profile, pin: signupForm.pin, verifyCode: "" });
+      if (!savePendingSignup({ profile, pin: signupForm.pin, verifyCode: "" })) {
+        onMessage(USER_MESSAGES.progressSaveFailed);
+      }
       onModeChange("verify");
       return;
     } catch (error) {
@@ -317,47 +318,18 @@ export function AuthPage({
     return cleaned;
   };
 
-  const handleOtpInput = (index: number, raw: string) => {
-    const digit = raw.replace(/\D/g, "").slice(-1);
-    const chars = verifyCode.padEnd(OTP_LENGTH, " ").split("").slice(0, OTP_LENGTH);
-    chars[index] = digit || " ";
-    const next = updateVerifyCode(chars.join("").replace(/\s/g, ""));
-
-    if (digit && index < OTP_LENGTH - 1) {
-      otpRefs.current[index + 1]?.focus();
-    }
+  const handleOtpChange = (raw: string) => {
+    const next = updateVerifyCode(raw);
     if (next.length === OTP_LENGTH) {
       void verifySignup(next);
     }
   };
 
-  const handleOtpClick = (index: number) => {
-    otpRefs.current[index]?.focus();
-  };
-
-  const handleOtpKeyDown = (index: number, key: string) => {
-    if (key !== "Backspace") return;
-    if (verifyCode[index]) {
-      const chars = verifyCode.padEnd(OTP_LENGTH, " ").split("").slice(0, OTP_LENGTH);
-      chars[index] = " ";
-      updateVerifyCode(chars.join("").replace(/\s/g, ""));
-      return;
-    }
-    if (index > 0) {
-      otpRefs.current[index - 1]?.focus();
-      const chars = verifyCode.padEnd(OTP_LENGTH, " ").split("").slice(0, OTP_LENGTH);
-      chars[index - 1] = " ";
-      updateVerifyCode(chars.join("").replace(/\s/g, ""));
-    }
-  };
-
-  const handleOtpPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+  const handleOtpPaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
     const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
     if (!pasted) return;
     event.preventDefault();
     const next = updateVerifyCode(pasted);
-    const focusIndex = Math.min(next.length, OTP_LENGTH - 1);
-    otpRefs.current[focusIndex]?.focus();
     if (next.length === OTP_LENGTH) {
       void verifySignup(next);
     }
@@ -380,7 +352,7 @@ export function AuthPage({
       setResendIn(RESEND_COOLDOWN_SEC);
       setVerifyCode("");
       touchPendingCodeSent();
-      focusOtpDigit(0);
+      focusOtpInput();
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {
@@ -541,50 +513,23 @@ export function AuthPage({
                 </p>
               </div>
 
-              <div
-                className="auth-verify__otp"
-                role="group"
-                aria-label="Verification code"
-                onPaste={handleOtpPaste}
-              >
+              <label className="auth-verify__otp-field">
+                <span className="auth-verify__otp-label">Verification code</span>
                 <input
-                  ref={autofillRef}
-                  className="auth-verify__autofill"
+                  ref={otpInputRef}
+                  className="auth-verify__code-input"
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  tabIndex={-1}
-                  aria-hidden
+                  enterKeyHint="done"
+                  maxLength={OTP_LENGTH}
                   value={verifyCode}
-                  onChange={(event) => {
-                    const next = updateVerifyCode(event.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH));
-                    if (next.length === OTP_LENGTH) {
-                      void verifySignup(next);
-                    } else {
-                      focusOtpDigit(next.length);
-                    }
-                  }}
+                  aria-label="Email verification code"
+                  disabled={busy === "verify" || verifyBusy}
+                  onChange={(event) => handleOtpChange(event.target.value)}
+                  onPaste={handleOtpPaste}
                 />
-                {Array.from({ length: OTP_LENGTH }, (_, index) => (
-                  <input
-                    key={index}
-                    ref={(element) => {
-                      otpRefs.current[index] = element;
-                    }}
-                    className={`auth-verify__digit ${verifyCode[index] ? "auth-verify__digit--filled" : ""}`}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    maxLength={1}
-                    value={verifyCode[index] ?? ""}
-                    aria-label={`Digit ${index + 1}`}
-                    disabled={busy === "verify" || verifyBusy}
-                    onClick={() => handleOtpClick(index)}
-                    onChange={(event) => handleOtpInput(index, event.target.value)}
-                    onKeyDown={(event) => handleOtpKeyDown(index, event.key)}
-                  />
-                ))}
-              </div>
+              </label>
 
               <button
                 type="button"

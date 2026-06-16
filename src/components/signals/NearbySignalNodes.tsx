@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Zap } from "lucide-react";
+import { BRAND } from "../../constants/copy";
 import { BamEffect } from "./BamEffect";
 import { SignalNode } from "./SignalNode";
 import { SignalWave } from "./SignalWave";
@@ -71,7 +72,7 @@ export function NearbySignalNodes({ onGuestAction }: NearbySignalNodesProps) {
             </div>
             {phase === "sent" ? (
               <div className="nearby-signals__success">
-                <Zap size={18} fill="currentColor" /> Signal Sent
+                <Zap size={18} fill="currentColor" /> {BRAND.signalSent}
               </div>
             ) : (
               <div className="nearby-signals__actions">

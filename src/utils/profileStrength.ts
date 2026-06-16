@@ -47,16 +47,25 @@ export function calculateProfileStrength(profile: DatingProfile): number {
 }
 
 export function profileStrengthHint(strength: number): string {
-  if (strength >= 100) return "Your profile is fully optimized for discovery.";
-  if (strength >= 80) return "Almost there — complete the last items for better ranking.";
-  if (strength >= 50) return "Complete your profile to get more signals.";
-  return "Add photos and details so more people discover you.";
+  if (strength >= 100) return "You're shining — people can see the real you.";
+  if (strength >= 80) return "Almost there. A few more details and you'll stand out.";
+  if (strength >= 50) return "You're on your way. Complete your profile to attract the right connections.";
+  return "Add photos and a little about you — it helps the right people find you.";
 }
 
 export function getProfileStrengthSuggestions(profile: DatingProfile): string[] {
+  const friendly: Record<ProfileCompletenessItem["id"], string> = {
+    photo: "Add a clear photo",
+    bio: "Share a little about you",
+    interests: "Add a few interests",
+    intent: "Share what you're open to",
+    verification: "Verify your profile",
+    voice: "Add a voice greeting"
+  };
+
   return getProfileCompletenessChecklist(profile)
     .filter((item) => !item.done)
-    .map((item) => item.label)
+    .map((item) => friendly[item.id])
     .slice(0, 3);
 }
 

@@ -5,20 +5,10 @@ const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
-/** Human-readable activity — no exact clock timestamps */
+/** Human-readable activity — soft labels only (no exact timestamps) */
 export function formatLastActive(lastActiveAt: string | undefined, now = Date.now()): string {
-  if (!lastActiveAt) return "Active recently";
-
-  const diff = Math.max(0, now - new Date(lastActiveAt).getTime());
-  if (diff < 5 * MINUTE_MS) return "Active now";
-  if (diff < HOUR_MS) {
-    const mins = Math.max(1, Math.round(diff / MINUTE_MS));
-    return mins === 1 ? "Active 1 min ago" : `Active ${mins} mins ago`;
-  }
-  if (diff < DAY_MS) return "Active today";
-  if (diff < 2 * DAY_MS) return "Active yesterday";
-  if (diff < 7 * DAY_MS) return "Active this week";
-  return "Active recently";
+  const badge = cardActivityBadge(lastActiveAt, now);
+  return badge?.label ?? "Active recently";
 }
 
 export function isOnlineNow(lastActiveAt: string | undefined, now = Date.now()): boolean {

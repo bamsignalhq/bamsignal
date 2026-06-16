@@ -1,4 +1,5 @@
 import { intentDisplay } from "../constants/intents";
+import { relationshipIntentionsToSearchIntents } from "../constants/profileOptions";
 import type {
   DiscoverProfile,
   EthnicBackground,
@@ -9,7 +10,8 @@ import type {
   MatchPreferences,
   Occupation,
   Religion,
-  SavedSearch
+  SavedSearch,
+  VerificationPreference
 } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
 import { readJson, writeJson } from "./storage";
@@ -25,7 +27,8 @@ export const emptyHomeAdvancedFilters = (): HomeAdvancedFilters => ({
   genotypes: [],
   hasKids: [],
   wantsKids: [],
-  verifiedOnly: false
+  bodyTypes: [],
+  verificationPreferences: []
 });
 
 export function homeAdvancedFilterCount(filters: HomeAdvancedFilters): number {
@@ -38,20 +41,31 @@ export function homeAdvancedFilterCount(filters: HomeAdvancedFilters): number {
     filters.genotypes.length +
     filters.hasKids.length +
     filters.wantsKids.length +
+    filters.bodyTypes.length +
+    filters.verificationPreferences.filter((v) => v !== "Anyone" && v !== "No preference").length +
     (filters.verifiedOnly ? 1 : 0)
   );
 }
 
 export function homeAdvancedToSearchFilters(filters: HomeAdvancedFilters) {
-  const kidsPreferences = [...new Set([...filters.hasKids, ...filters.wantsKids])];
+  const kidsPreferences = [...new Set([...filters.hasKids, ...filters.wantsKids])] as KidsPreference[];
+  const relationshipIntentions = relationshipIntentionsToSearchIntents(
+    filters.relationshipIntentions
+  ) as IntentTag[];
+  const verificationPreferences = filters.verificationPreferences.filter(
+    (v) => v !== "Anyone" && v !== "No preference"
+  );
+
   return {
     tribes: filters.tribes,
     religions: filters.religions,
     occupations: filters.occupations,
     statesOfOrigin: filters.statesOfOrigin,
-    relationshipIntentions: filters.relationshipIntentions,
+    relationshipIntentions,
     genotypes: filters.genotypes,
-    kidsPreferences
+    kidsPreferences,
+    bodyTypes: filters.bodyTypes,
+    verificationPreferences
   };
 }
 
@@ -60,13 +74,24 @@ export function advancedFromMatchPreferences(prefs: MatchPreferences): HomeAdvan
   return {
     tribes: prefs.ethnicities ?? [],
     religions: prefs.religions ?? [],
-    occupations: [],
-    statesOfOrigin: prefs.states ?? [],
-    relationshipIntentions: prefs.intents ?? [],
-    genotypes: [],
-    hasKids: kids.filter((k) => k === "Has kids" || k === "No kids"),
-    wantsKids: kids.filter((k) => k !== "Has kids" && k !== "No kids"),
-    verifiedOnly: Boolean(prefs.requireVerified)
+    occupations: prefs.occupations ?? [],
+    statesOfOrigin: prefs.statesOfOrigin?.length ? prefs.statesOfOrigin : (prefs.states ?? []),
+    relationshipIntentions: prefs.relationshipIntentions ?? [],
+    genotypes: prefs.genotypes ?? [],
+    hasKids: prefs.hasKids?.length
+      ? prefs.hasKids
+      : kids.filter((k) => k === "Has kids" || k === "No kids"),
+    wantsKids: prefs.wantsKids?.length
+      ? prefs.wantsKids
+      : (kids.filter(
+          (k) => k === "Wants kids" || k === "Doesn't want kids" || k === "Open to kids"
+        ) as import("../types").WantsKidsOption[]),
+    bodyTypes: prefs.bodyTypes ?? [],
+    verificationPreferences: prefs.verificationPreferences?.length
+      ? prefs.verificationPreferences
+      : prefs.requireVerified
+        ? ["Selfie verified"]
+        : []
   };
 }
 
@@ -111,7 +136,7 @@ export function buildHomeFilterChips(options: {
   for (const intent of advanced.relationshipIntentions) {
     chips.push({
       id: `intent-${intent}`,
-      label: intentDisplay(intent),
+      label: intent,
       kind: "intent",
       value: intent
     });
@@ -119,11 +144,18 @@ export function buildHomeFilterChips(options: {
   for (const genotype of advanced.genotypes) {
     chips.push({ id: `genotype-${genotype}`, label: genotype, kind: "genotype", value: genotype });
   }
+  for (const bodyType of advanced.bodyTypes) {
+    chips.push({ id: `bodyType-${bodyType}`, label: bodyType, kind: "bodyType", value: bodyType });
+  }
   for (const pref of advanced.hasKids) {
     chips.push({ id: `hasKids-${pref}`, label: pref, kind: "hasKids", value: pref });
   }
   for (const pref of advanced.wantsKids) {
     chips.push({ id: `wantsKids-${pref}`, label: pref, kind: "wantsKids", value: pref });
+  }
+  for (const pref of advanced.verificationPreferences) {
+    if (pref === "Anyone" || pref === "No preference") continue;
+    chips.push({ id: `verification-${pref}`, label: pref, kind: "verification", value: pref });
   }
   if (advanced.verifiedOnly) {
     chips.push({ id: "verified", label: "Verified only", kind: "verified", value: "true" });
@@ -178,7 +210,10 @@ export function homeHasCustomFilters(options: {
   return homeAdvancedFilterCount(advanced) > 0;
 }
 
+import { isAnywhereDistance } from "../constants/homeFilters";
+
 export function filterProfilesByDistance(profiles: DiscoverProfile[], maxKm: number): DiscoverProfile[] {
+  if (isAnywhereDistance(maxKm)) return profiles;
   return profiles.filter((profile) => profile.distanceKm == null || profile.distanceKm <= maxKm);
 }
 
@@ -231,11 +266,19 @@ export function removeHomeFilterChip(
     case "genotype":
       next.genotypes = next.genotypes.filter((v) => v !== chip.value);
       break;
+    case "bodyType":
+      next.bodyTypes = next.bodyTypes.filter((v) => v !== chip.value);
+      break;
     case "hasKids":
       next.hasKids = next.hasKids.filter((v) => v !== chip.value);
       break;
     case "wantsKids":
       next.wantsKids = next.wantsKids.filter((v) => v !== chip.value);
+      break;
+    case "verification":
+      next.verificationPreferences = next.verificationPreferences.filter(
+        (v) => v !== chip.value
+      ) as VerificationPreference[];
       break;
     case "verified":
       next.verifiedOnly = false;
@@ -253,7 +296,7 @@ function buildSavedSearchLabel(city: string, advanced: HomeAdvancedFilters): str
   if (advanced.religions[0]) parts.push(advanced.religions[0]);
   if (advanced.tribes[0]) parts.push(advanced.tribes[0]);
   if (advanced.relationshipIntentions[0]) {
-    parts.push(intentDisplay(advanced.relationshipIntentions[0]));
+    parts.push(advanced.relationshipIntentions[0]);
   }
   return parts.slice(0, 3).join(" ") || "Saved search";
 }

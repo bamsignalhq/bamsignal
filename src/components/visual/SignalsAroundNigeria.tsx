@@ -109,7 +109,7 @@ export function SignalsAroundNigeria({ onGuestAction }: SignalsAroundNigeriaProp
                   {profile.placementType === "featured"
                     ? "Featured"
                     : profile.placementType === "hot"
-                      ? "Hot"
+                      ? "Spotlight"
                       : profile.placementType === "boost"
                         ? "Boost"
                         : "Spotlight"}

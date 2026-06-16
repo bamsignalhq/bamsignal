@@ -1,5 +1,6 @@
-import { Flag, ShieldBan, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
+import { Flag, ShieldBan, ShieldCheck, UserX, X } from "lucide-react";
+import { BUTTON_COPY, EXPERIENCE_COPY } from "../constants/copy";
 import { FEMALE_SAFETY_COPY, REPORT_REASONS } from "../constants/safety";
 import type { ReportReason } from "../types";
 import { recordReport } from "../utils/safety";
@@ -11,6 +12,7 @@ type ReportBlockModalProps = {
   onClose: () => void;
   onReport?: (reason: ReportReason, details?: string) => void;
   onBlock: () => void;
+  onUnmatch?: () => void;
 };
 
 export function ReportBlockModal({
@@ -19,7 +21,8 @@ export function ReportBlockModal({
   profileId,
   onClose,
   onReport,
-  onBlock
+  onBlock,
+  onUnmatch
 }: ReportBlockModalProps) {
   const [view, setView] = useState<"menu" | "report" | "done">("menu");
   const [reason, setReason] = useState<ReportReason | null>(null);
@@ -40,6 +43,7 @@ export function ReportBlockModal({
 
   const submitReport = () => {
     if (!reason || !profileId) return;
+    if (reason === "other" && !details.trim()) return;
     recordReport(profileId, reason, details);
     onReport?.(reason, details);
     setView("done");
@@ -57,10 +61,8 @@ export function ReportBlockModal({
             <div className="safety-modal__icon">
               <ShieldCheck size={28} />
             </div>
-            <h3>Safety options</h3>
-            <p className="safety-modal__lead">
-              You're always in control. Report or block <strong>{userName}</strong> instantly — no questions asked.
-            </p>
+            <h3>{EXPERIENCE_COPY.safetyMenuTitle}</h3>
+            <p className="safety-modal__lead">{EXPERIENCE_COPY.safetyMenuLead}</p>
             <div className="safety-actions">
               <button
                 type="button"
@@ -68,7 +70,7 @@ export function ReportBlockModal({
                 onClick={() => setView("report")}
                 disabled={!profileId}
               >
-                <Flag size={18} /> Report {userName}
+                <Flag size={18} /> {EXPERIENCE_COPY.reportUser}
               </button>
               <button
                 type="button"
@@ -78,20 +80,28 @@ export function ReportBlockModal({
                   close();
                 }}
               >
-                <ShieldBan size={18} /> Block {userName}
+                <ShieldBan size={18} /> {EXPERIENCE_COPY.blockUser}
               </button>
+              {onUnmatch ? (
+                <button
+                  type="button"
+                  className="safety-action-btn unmatch"
+                  onClick={() => {
+                    onUnmatch();
+                    close();
+                  }}
+                >
+                  <UserX size={18} /> {EXPERIENCE_COPY.unmatch}
+                </button>
+              ) : null}
             </div>
-            <p className="safety-hint">
-              Three or more reports unlock shadow ban in Command center — they can stay in app but won't reach
-              anyone.
-            </p>
           </>
         )}
 
         {view === "report" && (
           <>
             <h3>Report {userName}</h3>
-            <p className="safety-modal__lead">What happened? Pick the closest reason — you can add details below.</p>
+            <p className="safety-modal__lead">What happened? Choose the closest reason.</p>
             <div className="safety-reason-list">
               {REPORT_REASONS.map((item) => (
                 <button
@@ -110,7 +120,7 @@ export function ReportBlockModal({
               <textarea
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
-                placeholder="Briefly describe what happened…"
+                placeholder="Share what happened, in your own words…"
                 rows={3}
                 maxLength={500}
               />
@@ -119,8 +129,13 @@ export function ReportBlockModal({
               <button type="button" className="btn-secondary" onClick={() => setView("menu")}>
                 Back
               </button>
-              <button type="button" className="btn-primary" disabled={!reason} onClick={submitReport}>
-                Submit report
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={!reason || (reason === "other" && !details.trim())}
+                onClick={submitReport}
+              >
+                {BUTTON_COPY.done}
               </button>
             </div>
           </>
@@ -142,7 +157,7 @@ export function ReportBlockModal({
                   close();
                 }}
               >
-                Block {userName}
+                {EXPERIENCE_COPY.blockUser}
               </button>
               <button type="button" className="btn-primary" onClick={close}>
                 Done

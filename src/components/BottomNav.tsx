@@ -19,7 +19,7 @@ type NavItem = {
 const memberTabs: NavItem[] = [
   { id: "home", label: "Home", icon: Home },
   { id: "discover", label: "Discover", icon: Compass },
-  { id: "chats", label: "Messages", icon: MessageCircle },
+  { id: "chats", label: "Chats", icon: MessageCircle },
   { id: "likes", label: "Signals", icon: Heart },
   { id: "me", label: "Profile", icon: User }
 ];

@@ -9,7 +9,8 @@ export function VerificationBadge({ info }: VerificationBadgeProps) {
 
   return (
     <span className={`verification-badge verification-badge--${info.color}`} title={info.label}>
-      <span aria-hidden>{info.emoji}</span> {info.label}
+      {info.emoji ? <span aria-hidden>{info.emoji}</span> : null}
+      {info.label}
     </span>
   );
 }

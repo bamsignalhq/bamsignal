@@ -40,17 +40,18 @@ export const DEFAULT_CMS: CmsContent = {
   safetyText: "Meet in public first. Keep conversations inside BamSignal until you're comfortable.",
   welcomeTitle: "Welcome to BamSignal",
   welcomeBody: "Meet people who match your vibe.",
-  welcomePhotoHint: "Profiles with photos get 5× more signals. Add at least one clear photo of you.",
-  welcomeReadyTitle: "Ready to Discover",
-  welcomeReadyBody: "Your profile is live. Send your first signal when someone feels right.",
+  welcomePhotoHint: "Clear photos help people know the real you.",
+  welcomeReadyTitle: "Welcome to BamSignal ❤️",
+  welcomeReadyBody:
+    "Your profile is ready. Discover genuine people around you and take things one signal at a time.",
   earlyAccessLabel: "Early Access",
   foundingMemberLabel: "Early member",
   notificationTemplates: {
-    signalReceived: "Someone sent you a signal ⚡",
-    signalAccepted: "Your signal was accepted — say hi in Inbox",
-    profileViewed: "Someone viewed your profile",
+    signalReceived: "Someone is interested in getting to know you.",
+    signalAccepted: "You can now start chatting.",
+    profileViewed: "Someone noticed your profile.",
     verificationApproved: "You're verified! Your badge is now live.",
-    premiumActivated: "Signal Pass active — unlimited signals unlocked"
+    premiumActivated: "Enjoy unlimited connections."
   },
   supportWhatsapp: "",
   supportResponseTime: "Within 24 hours",

@@ -1,6 +1,6 @@
-import { ArrowLeft, MessageCircle, MoreVertical, Search } from "lucide-react";
+import { ArrowLeft, MessageCircle, MoreVertical, Pin, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { BRAND } from "../constants/copy";
+import { BRAND, EXPERIENCE_COPY } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
 import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
 import { ActivityStatus } from "../components/ActivityStatus";
@@ -14,10 +14,11 @@ import { ReportBlockModal } from "../components/ReportBlockModal";
 import type { ChatMessage, ChatThread, Match, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { FEMALE_SAFETY_COPY } from "../constants/safety";
+import { readReceiptsAllowed } from "../utils/activityPrivacy";
+import { matchAnniversaryBanner } from "../utils/connectionAnniversary";
 import { getDatingProfile } from "../utils/profile";
 import { checkOutgoingChatMessage } from "../utils/contactGuard";
-import { blockUser, canUseInbox, filterBlockedByProfileId } from "../utils/safety";
-import { isOnlineNow } from "../utils/activity";
+import { blockUser, canUseInbox, filterBlockedByProfileId, unmatchUser } from "../utils/safety";
 import { trackEvent } from "../utils/analytics";
 import { pushNotification } from "../utils/notifications";
 import { isViewerShadowBanned } from "../utils/shadowBan";
@@ -46,19 +47,49 @@ function formatThreadTime(iso?: string): string {
 }
 
 function lastPreview(messages: ChatMessage[]): string {
-  if (!messages.length) return "Say hi — your signal was accepted ✨";
+  if (!messages.length) return EXPERIENCE_COPY.chatNewPreview;
   const last = messages[messages.length - 1];
   const prefix = last.from === "me" ? "You: " : "";
   return `${prefix}${last.text}`;
 }
 
+function unreadCount(messages: ChatMessage[], readAt?: string): number {
+  const since = readAt ? new Date(readAt).getTime() : 0;
+  return messages.filter((m) => m.from === "them" && new Date(m.at).getTime() > since).length;
+}
+
+function markThreadRead(matchId: string): void {
+  const all = readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {});
+  const thread = all[matchId] ?? { matchId, messages: [] };
+  writeJson(STORAGE_KEYS.chats, {
+    ...all,
+    [matchId]: { ...thread, readAt: new Date().toISOString() }
+  });
+}
+
+function toggleThreadPinned(matchId: string): boolean {
+  const all = readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {});
+  const thread = all[matchId] ?? { matchId, messages: [] };
+  const pinned = !thread.pinned;
+  writeJson(STORAGE_KEYS.chats, { ...all, [matchId]: { ...thread, pinned } });
+  return pinned;
+}
+
 export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDiscover }: ChatsPageProps) {
-  const threads = readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {});
-  const matches = filterBlockedByProfileId(readJson<Match[]>(STORAGE_KEYS.matches, []));
   const [activeMatch, setActiveMatch] = useState<Match | null>(null);
   const [query, setQuery] = useState("");
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
+  const [listTick, setListTick] = useState(0);
+
+  const threads = useMemo(
+    () => readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {}),
+    [listTick, activeMatch]
+  );
+  const matches = useMemo(
+    () => filterBlockedByProfileId(readJson<Match[]>(STORAGE_KEYS.matches, [])),
+    [listTick, activeMatch]
+  );
 
   const rows = useMemo(() => {
     return matches
@@ -67,9 +98,15 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
         const messages = thread?.messages ?? [];
         const lastAt = messages[messages.length - 1]?.at ?? match.matchedAt;
         const lastActiveAt = match.lastActiveAt ?? getCachedMemberProfile(match.profileId)?.lastActiveAt;
-        return { match, messages, lastAt, lastActiveAt };
+        const unread = unreadCount(messages, thread?.readAt);
+        return { match, thread, messages, lastAt, lastActiveAt, unread };
       })
-      .sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
+      .sort((a, b) => {
+        const pinA = a.thread?.pinned ? 1 : 0;
+        const pinB = b.thread?.pinned ? 1 : 0;
+        if (pinA !== pinB) return pinB - pinA;
+        return new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime();
+      });
   }, [matches, threads]);
 
   const filtered = useMemo(() => {
@@ -81,17 +118,14 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
   if (!matches.length && !activeMatch) {
     return (
       <div className="page member-page messages-page">
-        <header className="member-page-head">
-          <div>
-            <p className="member-page-head__eyebrow">Messages</p>
-            <h1>Your inbox</h1>
-          </div>
+        <header className="member-page-head member-page-head--minimal">
+          <h1>{EXPERIENCE_COPY.chatsTitle}</h1>
         </header>
         <EmptyState
           icon={MessageCircle}
-          title="No conversations yet"
-          message="Start your first conversation."
-          actionLabel="Discover people nearby"
+          title={EXPERIENCE_COPY.chatEmptyTitle}
+          message={EXPERIENCE_COPY.chatEmptyBody}
+          actionLabel="Discover people"
           onAction={onDiscover}
         />
       </div>
@@ -103,7 +137,10 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
       <ChatDetail
         match={activeMatch}
         isPremium={isPremium}
-        onBack={() => setActiveMatch(null)}
+        onBack={() => {
+          setActiveMatch(null);
+          setListTick((v) => v + 1);
+        }}
         plans={plans}
         onUpgrade={onUpgrade}
         paywallOpen={paywallOpen}
@@ -115,13 +152,15 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
     );
   }
 
+  const openConversation = (match: Match) => {
+    markThreadRead(match.id);
+    setActiveMatch(match);
+  };
+
   return (
     <div className="page member-page messages-page">
-      <header className="member-page-head">
-        <div>
-          <p className="member-page-head__eyebrow">Messages</p>
-          <h1>{matches.length} conversation{matches.length === 1 ? "" : "s"}</h1>
-        </div>
+      <header className="member-page-head member-page-head--minimal">
+        <h1>{EXPERIENCE_COPY.chatsTitle}</h1>
       </header>
 
       <label className="member-search">
@@ -130,38 +169,38 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search messages"
+          placeholder={EXPERIENCE_COPY.searchConversations}
         />
       </label>
 
       <ul className="messages-list">
-        {filtered.map(({ match, messages, lastAt, lastActiveAt }) => {
-          const online = isOnlineNow(lastActiveAt);
-          const unread = messages.filter((m) => m.from === "them").length > 0 && messages[messages.length - 1]?.from === "them";
+        {filtered.map(({ match, thread, messages, lastAt, unread }) => {
+          const pinned = Boolean(thread?.pinned);
           return (
             <li key={match.id}>
-              <button type="button" className="messages-row" onClick={() => setActiveMatch(match)}>
+              <button
+                type="button"
+                className={`messages-row${unread > 0 ? " messages-row--unread" : ""}${pinned ? " messages-row--pinned" : ""}`}
+                onClick={() => openConversation(match)}
+              >
                 <span className="messages-row__avatar">
                   <img src={match.photo} alt="" />
-                  {online && <span className="messages-row__online" aria-label="Online now" />}
                 </span>
                 <span className="messages-row__body">
                   <span className="messages-row__top">
-                    <strong>{match.name}</strong>
+                    <strong>
+                      {pinned ? <Pin size={12} className="messages-row__pin" aria-hidden /> : null}
+                      {match.name}
+                    </strong>
                     <time>{formatThreadTime(lastAt)}</time>
                   </span>
                   <span className="messages-row__preview">{lastPreview(messages)}</span>
-                  <span className="messages-row__meta">
-                    {match.city}
-                    {lastActiveAt && (
-                      <>
-                        {" · "}
-                        <ActivityStatus lastActiveAt={lastActiveAt} variant="subtle" />
-                      </>
-                    )}
-                  </span>
                 </span>
-                {unread && <span className="messages-row__unread" aria-label="Unread" />}
+                {unread > 0 ? (
+                  <span className="messages-row__badge" aria-label={`${unread} unread`}>
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                ) : null}
               </button>
             </li>
           );
@@ -204,12 +243,15 @@ function ChatDetail({
     matchId: match.id,
     offPlatformApproved: initialThread.offPlatformApproved,
     pendingOffPlatformRequest: initialThread.pendingOffPlatformRequest,
-    offPlatformDeclined: initialThread.offPlatformDeclined
+    offPlatformDeclined: initialThread.offPlatformDeclined,
+    pinned: initialThread.pinned,
+    readAt: initialThread.readAt
   });
   const [messages, setMessages] = useState<ChatMessage[]>(initialThread.messages);
   const [educationOpen, setEducationOpen] = useState(false);
   const [blockWarning, setBlockWarning] = useState("");
   const [toast, setToast] = useState("");
+  const [screenshotNotice, setScreenshotNotice] = useState(false);
   const [quickiePaywallOpen, setQuickiePaywallOpen] = useState(false);
   const [quickieLoading, setQuickieLoading] = useState(false);
   const viewer = getDatingProfile();
@@ -218,6 +260,10 @@ function ChatDetail({
   const lastActiveAt = match.lastActiveAt ?? getCachedMemberProfile(match.profileId)?.lastActiveAt;
   const discoverProfile = getCachedMemberProfile(match.profileId);
   const matchHasQuickie = profileHasQuickieIntent(discoverProfile?.intents);
+  const receiptsOn = readReceiptsAllowed(viewer, discoverProfile ?? {});
+  const anniversary = matchAnniversaryBanner(match);
+  const lastMine = [...messages].reverse().find((m) => m.from === "me");
+  const showSeen = receiptsOn && lastMine && threadMeta.peerSeenAt;
   const sentByMe = messages.filter((m) => m.from === "me").length;
   const showOffAppLink =
     messages.length >= OFF_APP_MESSAGE_THRESHOLD &&
@@ -226,7 +272,13 @@ function ChatDetail({
 
   useEffect(() => {
     void fetchMemberProfileById(user, match.profileId);
-  }, [match.profileId, user.email, user.phone]);
+    markThreadRead(match.id);
+    const seen = localStorage.getItem(STORAGE_KEYS.screenshotPrivacyNoticeSeen) === "true";
+    if (!seen) {
+      setScreenshotNotice(true);
+      localStorage.setItem(STORAGE_KEYS.screenshotPrivacyNoticeSeen, "true");
+    }
+  }, [match.profileId, user.email, user.phone, match.id]);
 
   const persistThread = (nextMessages: ChatMessage[], meta = threadMeta) => {
     const nextMeta = { ...meta, matchId: match.id };
@@ -342,6 +394,16 @@ function ChatDetail({
     onBack();
   };
 
+  const handleUnmatch = () => {
+    unmatchUser(match.id, match.profileId);
+    onBack();
+  };
+
+  const handleTogglePin = () => {
+    const pinned = toggleThreadPinned(match.id);
+    updateMeta({ pinned });
+  };
+
   return (
     <div className="page chat-detail-page">
       <header className="chat-detail-header chat-detail-header--fintech">
@@ -351,7 +413,12 @@ function ChatDetail({
         <img src={match.photo} alt="" className="chat-avatar" />
         <div className="chat-detail-header__meta">
           <strong>{match.name}</strong>
-          <ActivityStatus lastActiveAt={lastActiveAt} variant="subtle" />
+          <ActivityStatus
+            lastActiveAt={lastActiveAt}
+            profile={discoverProfile ?? undefined}
+            isConnection
+            variant="subtle"
+          />
           <span>{match.city}</span>
           {showOffAppLink && (
             <button type="button" className="chat-off-app-link" onClick={requestOffApp}>
@@ -359,6 +426,9 @@ function ChatDetail({
             </button>
           )}
         </div>
+        <button type="button" className="icon-btn" onClick={handleTogglePin} aria-label={threadMeta.pinned ? "Unpin conversation" : "Pin conversation"}>
+          <Pin size={20} className={threadMeta.pinned ? "chat-detail-header__pin--active" : ""} />
+        </button>
         <button type="button" className="icon-btn" onClick={() => setSafetyOpen(true)} aria-label="Safety options">
           <MoreVertical size={22} />
         </button>
@@ -374,13 +444,25 @@ function ChatDetail({
         />
       )}
 
+      {screenshotNotice ? (
+        <p className="chat-privacy-notice">{FEMALE_SAFETY_COPY.screenshotNotice}</p>
+      ) : null}
+
+      {anniversary ? <p className="chat-anniversary-banner">{anniversary}</p> : null}
+
       <div className="chat-messages chat-messages--fintech">
-        {messages.length === 0 && <p className="chat-empty">Say hi to {match.name}.</p>}
+        {messages.length === 0 ? (
+          <div className="chat-match-banner">
+            <p className="chat-match-banner__title">{EXPERIENCE_COPY.chatMatchBanner}</p>
+            <p className="chat-match-banner__hint">{EXPERIENCE_COPY.chatMatchHint}</p>
+          </div>
+        ) : null}
         {messages.map((m) => (
           <div key={m.id} className={`chat-bubble ${m.from}`}>
             {m.text}
           </div>
         ))}
+        {showSeen ? <p className="chat-read-receipt">Seen</p> : null}
       </div>
 
       {dmPaused ? (
@@ -448,6 +530,7 @@ function ChatDetail({
         profileId={match.profileId}
         onClose={() => setSafetyOpen(false)}
         onBlock={handleBlock}
+        onUnmatch={handleUnmatch}
       />
     </div>
   );

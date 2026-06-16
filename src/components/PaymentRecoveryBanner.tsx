@@ -1,3 +1,4 @@
+import { MONETIZATION_COPY } from "../constants/copy";
 import { getPaymentFlowState } from "../utils/paymentState";
 
 type PaymentRecoveryBannerProps = {
@@ -7,10 +8,10 @@ type PaymentRecoveryBannerProps = {
 
 export function PaymentRecoveryBanner({ onRetry, onDismiss }: PaymentRecoveryBannerProps) {
   const cancelled = getPaymentFlowState() === "cancelled";
-  const title = cancelled ? "Payment not completed" : "Payment incomplete";
+  const title = cancelled ? MONETIZATION_COPY.paymentCancelledTitle : "Payment incomplete";
   const body = cancelled
-    ? "Payment was not completed. You can try again at any time."
-    : "We couldn't confirm your payment. Please try again.";
+    ? MONETIZATION_COPY.paymentCancelledBody
+    : "We couldn't confirm your payment. You can try again when you're ready.";
 
   return (
     <div className="payment-recovery-banner" role="status">
@@ -37,8 +38,8 @@ type PaymentSuccessToastProps = {
 };
 
 export function PaymentSuccessToast({
-  title = "Payment successful",
-  body = "Your Signal Pass is active.",
+  title = MONETIZATION_COPY.paymentSuccessTitle,
+  body = MONETIZATION_COPY.paymentSuccessBody,
   onContinue
 }: PaymentSuccessToastProps) {
   return (

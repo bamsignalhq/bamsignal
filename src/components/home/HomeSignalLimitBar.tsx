@@ -1,4 +1,5 @@
 import { FREE_DAILY_SWIPES } from "../../constants/limits";
+import { MONETIZATION_COPY } from "../../constants/copy";
 import { getFreeSignalsRemaining } from "../../utils/signalLimits";
 
 type HomeSignalLimitBarProps = {
@@ -20,14 +21,22 @@ export function HomeSignalLimitBar({ isPremium, onUpgrade, refreshKey = 0 }: Hom
     );
   }
 
+  if (atLimit) {
+    return (
+      <button
+        type="button"
+        className="home-signal-pill home-signal-pill--full"
+        onClick={onUpgrade}
+        aria-label={MONETIZATION_COPY.signalsExhaustedTitle}
+      >
+        {MONETIZATION_COPY.signalsExhaustedTitle}
+      </button>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      className={`home-signal-pill ${atLimit ? "home-signal-pill--full" : ""}`}
-      onClick={atLimit ? onUpgrade : undefined}
-      aria-label={`${remaining} of ${FREE_DAILY_SWIPES} signals left today`}
-    >
-      {remaining}/{FREE_DAILY_SWIPES} Signals
-    </button>
+    <span className="home-signal-pill" aria-label={`${remaining} signals available today`}>
+      {remaining} Signal{remaining === 1 ? "" : "s"} available today
+    </span>
   );
 }

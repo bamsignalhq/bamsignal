@@ -36,23 +36,23 @@ export function hydrateBoost(raw: BoostProductInput): BoostProduct {
 export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
   {
     id: "signal-boost",
-    name: "Signal Boost",
+    name: "Boost Visibility",
     price: 350,
-    description: "24-hour visibility boost in your city.",
+    description: "Stand out in Discover for 24 hours.",
     cta: "Boost visibility"
   },
   {
     id: "priority-signal-once",
-    name: "Priority Signal",
+    name: "Priority Introduction",
     price: 250,
-    description: "Your next Signal appears first.",
+    description: "Make sure your next signal gets noticed first.",
     cta: "Send priority"
   },
   {
     id: "profile-boost",
-    name: "Profile Boost",
+    name: "Featured Profile",
     price: 750,
-    description: "48-hour featured placement in your city.",
+    description: "Appear at the top of local recommendations for 48 hours.",
     cta: "Go featured"
   }
 ];
@@ -60,16 +60,69 @@ export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
 export const DEFAULT_BOOST_PRODUCTS: BoostProduct[] = DEFAULT_BOOST_INPUTS.map(hydrateBoost);
 
 export function shopBoostDescription(product: BoostProduct, cityLabel: string): string {
-  const place = cityLabel.trim() || "your city";
+  const place = cityLabel.trim() || "your area";
   switch (product.id) {
     case "signal-boost":
-      return `24-hour visibility boost in ${place}.`;
+      return "Stand out in Discover for 24 hours.";
     case "priority-signal-once":
-      return "Your next Signal appears first.";
+      return "Make sure your next signal gets noticed first.";
     case "profile-boost":
-      return `48-hour featured placement in ${place}.`;
+      return `Appear at the top of local recommendations in ${place} for 48 hours.`;
     default:
       return product.description;
+  }
+}
+
+export function boostDisplayName(id: BoostProductId): string {
+  switch (id) {
+    case "signal-boost":
+      return "Boost Visibility";
+    case "priority-signal-once":
+      return "Priority Introduction";
+    case "profile-boost":
+      return "Featured Profile";
+    case "city-boost":
+      return "City Spotlight";
+    case "city-spotlight":
+      return "Spotlight";
+    default:
+      return String(id).replace(/-/g, " ");
+  }
+}
+
+export function boostSuccessCopy(
+  id: BoostProductId,
+  city?: string
+): { title: string; body: string } {
+  const place = city?.trim() || "your city";
+  switch (id) {
+    case "signal-boost":
+      return {
+        title: "Boost Visibility is live",
+        body: "Stand out in Discover for the next 24 hours."
+      };
+    case "priority-signal-once":
+      return {
+        title: "Priority Introduction ready",
+        body: "Your next signal will get noticed first."
+      };
+    case "profile-boost":
+      return {
+        title: "Featured Profile is live",
+        body: `You're at the top of local recommendations in ${place} for 48 hours.`
+      };
+    case "city-spotlight":
+      return {
+        title: "Spotlight is live",
+        body: `You're featured among highlighted members in ${place} for 24 hours.`
+      };
+    case "city-boost":
+      return {
+        title: "City Spotlight is live",
+        body: `Your visibility is increased across ${place} for 48 hours.`
+      };
+    default:
+      return { title: "Boost active", body: "Your boost is now live." };
   }
 }
 

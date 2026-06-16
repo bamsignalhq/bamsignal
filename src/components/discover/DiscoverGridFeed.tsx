@@ -3,7 +3,7 @@ import { ProfileDetailSheet } from "../ProfileDetailSheet";
 import { ReportBlockModal } from "../ReportBlockModal";
 import { HomeSponsoredBanner } from "../home/HomeSponsoredBanner";
 import { DiscoverFeedCard } from "./DiscoverFeedCard";
-import { BRAND } from "../../constants/copy";
+import { BRAND, ERROR_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { HOME_FEED_PROFILE_COUNT } from "../../constants/homeFeedAds";
 import type { HomeFeedAdsSettings } from "../../constants/homeFeedAds";
 import { sendSignalRemote } from "../../services/memberData";
@@ -116,14 +116,14 @@ export function DiscoverGridFeed({
     setSignalingId(null);
 
     if (!sent) {
-      showToast("Could not send Signal. Try again.");
+      showToast(ERROR_COPY.signalFailed);
       return;
     }
 
     recordSignalUsage(isPremium, gate.usesDailySlot);
     incrementSignalsSent();
     trackEvent("signal_sent", { profileId: profile.id, source: "discover_grid" });
-    showToast(`${BRAND.signalSent} to ${profile.name}`);
+    showToast(`${BRAND.signalSent} ${BRAND.signalSentSub}`);
   };
 
   const detailVerification = detailProfile
@@ -138,8 +138,8 @@ export function DiscoverGridFeed({
     <section className="discover-grid-feed" aria-label="Signals near you">
       <header className="discover-grid-feed__head">
         <div>
-          <h2>Signals Near You</h2>
-          <p>People around you looking for something real.</p>
+          <h2>{SUCCESS_COPY.peopleNearYou}</h2>
+          <p>Genuine people around you, one signal at a time.</p>
         </div>
         {onViewAll ? (
           <button type="button" className="discover-grid-feed__view-all" onClick={onViewAll}>
@@ -162,8 +162,8 @@ export function DiscoverGridFeed({
         </div>
       ) : gridItems.length === 0 ? (
         <div className="discover-grid-feed__empty card">
-          <p>No signals nearby right now.</p>
-          <p className="discover-grid-feed__empty-hint">Try widening your age range or location.</p>
+          <p>{SUCCESS_COPY.homeFeedEmpty}</p>
+          <p className="discover-grid-feed__empty-hint">{SUCCESS_COPY.discoverEmptyHint}</p>
         </div>
       ) : (
         <>

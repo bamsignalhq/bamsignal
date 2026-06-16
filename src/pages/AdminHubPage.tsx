@@ -38,6 +38,8 @@ import { hardPathForTab, parseHardTabFromPath } from "../constants/hardRoutes";
 import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
 import { DEMO_USER } from "../constants/demoAccounts";
 import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
+import { AdminShadowBannedSection } from "../components/admin/AdminShadowBannedSection";
+import { shadowBanAdmin } from "../services/adminModeration";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
 import {
   fetchAdminCityMembers,
@@ -380,25 +382,31 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                 </div>
                 <div className="admin-moderation-row__actions">
                   {entry.shadowBanned ? (
-                    <button
-                      type="button"
-                      className="btn-secondary btn-sm"
-                      onClick={() => {
-                        liftShadowBan(entry.profileId);
-                        setModeration(getModerationQueue());
-                      }}
-                    >
-                      Lift shadow ban
-                    </button>
+                    <span className="match-prefs-note">Listed in shadow banned users</span>
                   ) : (
                     <button
                       type="button"
                       className="btn-primary btn-sm"
                       disabled={entry.reportCount < 3}
                       title={entry.reportCount < 3 ? "Requires 3+ reports" : "Shadow ban profile"}
-                      onClick={() => {
+                      onClick={async () => {
+                        if (!(await ensureConsent("Confirm shadow ban for this member."))) {
+                          pushToast("Console PIN required.");
+                          return;
+                        }
+                        const result = await shadowBanAdmin(
+                          entry.profileId,
+                          entry.lastReason
+                            ? `Shadow ban after reports: ${entry.lastReason.replace(/_/g, " ")}`
+                            : `Shadow ban after ${entry.reportCount} reports.`
+                        );
+                        if (!result.ok) {
+                          pushToast(result.error);
+                          return;
+                        }
                         shadowBanId(entry.profileId);
                         setModeration(getModerationQueue());
+                        pushToast("Member shadow banned.");
                       }}
                     >
                       Shadow ban
@@ -408,6 +416,14 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
               </article>
             ))}
           </section>
+
+          <AdminShadowBannedSection
+            onToast={pushToast}
+            onRestored={(profileId) => {
+              liftShadowBan(profileId);
+              setModeration(getModerationQueue());
+            }}
+          />
 
           <section className="admin-stats-grid">
             {successMetrics.slice(0, 4).map((s) => (

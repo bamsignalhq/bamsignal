@@ -566,14 +566,14 @@ body {
   transform: scale(0.92) translateY(10px) rotate(-2deg);
   opacity: 0.5;
   pointer-events: none;
-  animation: stackTilt 5s ease-in-out infinite;
+  animation: stackTilt 8s ease-in-out infinite;
 }
 
 .swipe-card--active {
   position: relative;
   z-index: 2;
   min-height: 500px;
-  animation: cardTilt 6s ease-in-out infinite;
+  animation: cardTilt 10s ease-in-out infinite;
   transition: transform 0.32s ease, opacity 0.32s ease;
 }
 
@@ -595,20 +595,20 @@ body {
 @keyframes cardTilt {
   0%,
   100% {
-    transform: rotate(-1.2deg) translateY(0);
+    transform: rotate(-0.4deg) translateY(0);
   }
   50% {
-    transform: rotate(1.2deg) translateY(-8px);
+    transform: rotate(0.4deg) translateY(-2px);
   }
 }
 
 @keyframes stackTilt {
   0%,
   100% {
-    transform: scale(0.92) translateY(10px) rotate(-3deg);
+    transform: scale(0.96) translateY(6px) rotate(-1deg);
   }
   50% {
-    transform: scale(0.92) translateY(14px) rotate(-1deg);
+    transform: scale(0.96) translateY(8px) rotate(-0.5deg);
   }
 }
 

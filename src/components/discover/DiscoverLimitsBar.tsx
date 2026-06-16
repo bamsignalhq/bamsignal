@@ -1,4 +1,5 @@
 import { FREE_DAILY_SWIPES, STORAGE_KEYS } from "../../constants/limits";
+import { MONETIZATION_COPY } from "../../constants/copy";
 import { getRemainingDaily } from "../../utils/storage";
 import { signalsRemainingLabel } from "../../utils/signalLimits";
 
@@ -17,8 +18,8 @@ export function DiscoverLimitsBar({ isPremium }: DiscoverLimitsBarProps) {
   return (
     <div className="discover-limits" aria-label="Daily signals remaining">
       <div className="discover-limits__head">
-        <span>Free Signals today</span>
-        <strong>{label || "None left"}</strong>
+        <span>Signals today</span>
+        <strong>{label || MONETIZATION_COPY.signalsExhaustedTitle}</strong>
       </div>
       <div className="discover-limits__track">
         <div className="discover-limits__fill" style={{ width: `${pct}%` }} />

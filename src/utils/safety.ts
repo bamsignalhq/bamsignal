@@ -1,6 +1,7 @@
 import { defaultSafetySettings, isFemaleGender } from "../constants/safety";
 import { STORAGE_KEYS } from "../constants/limits";
 import type {
+  ChatThread,
   DatingProfile,
   DiscoverProfile,
   DmControl,
@@ -101,6 +102,18 @@ export function blockUser(profileId: string): void {
     STORAGE_KEYS.likedBy,
     likedBy.filter((l) => l.profileId !== profileId)
   );
+}
+
+export function unmatchUser(matchId: string, profileId: string): void {
+  const matches = readJson<{ id: string; profileId: string }[]>(STORAGE_KEYS.matches, []);
+  writeJson(
+    STORAGE_KEYS.matches,
+    matches.filter((m) => m.id !== matchId && m.profileId !== profileId)
+  );
+  const chats = readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {});
+  const { [matchId]: _removed, ...rest } = chats;
+  void _removed;
+  writeJson(STORAGE_KEYS.chats, rest);
 }
 
 export type SignalGateResult = { allowed: true } | { allowed: false; reason: string };

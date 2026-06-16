@@ -1,5 +1,6 @@
 import { Eye, Flame, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { STORAGE_KEYS } from "../constants/limits";
+import { BRAND } from "../constants/copy";
 import { getNotifications } from "../utils/notifications";
 import { getProfileViews } from "../utils/profileViews";
 import { getStreak, getStreakLabel } from "../utils/streaks";
@@ -60,8 +61,8 @@ export function ReturnTriggers({
     items.push({
       id: "accepted",
       icon: Sparkles,
-      title: "Signal accepted",
-      detail: accepted.body,
+      title: BRAND.signalAccepted,
+      detail: BRAND.signalAcceptedSub,
       action: onOpenNotifications,
       accent: true
     });

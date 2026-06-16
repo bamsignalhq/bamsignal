@@ -22,7 +22,7 @@ async function main() {
     console.log("Password set from ADMIN_BOOTSTRAP_PASSWORD.");
   }
   console.log("\nLogin at https://bamsignal.com/hard/auth");
-  console.log("Set ADMIN_ACTION_PIN in Coolify for action confirmation.");
+  console.log("Set COMMAND_CENTER_PIN in Coolify for action confirmation.");
 }
 
 void main();

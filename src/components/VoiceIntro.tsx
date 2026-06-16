@@ -2,7 +2,9 @@ import { Pause, Play, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { moderateVoiceIntroTranscript } from "../utils/mediaModeration";
 
-const MAX_SECONDS = 15;
+const MIN_VOICE_SECONDS = 3;
+const MAX_VOICE_SECONDS = 60;
+const RECOMMENDED_MIN = 30;
 
 type VoiceIntroProps = {
   url?: string;
@@ -11,8 +13,10 @@ type VoiceIntroProps = {
 };
 
 function formatDuration(seconds: number): string {
-  const s = Math.max(0, Math.min(MAX_SECONDS, Math.floor(seconds)));
-  return `0:${s.toString().padStart(2, "0")}`;
+  const s = Math.max(0, Math.min(MAX_VOICE_SECONDS, Math.floor(seconds)));
+  const mins = Math.floor(s / 60);
+  const rem = s % 60;
+  return mins > 0 ? `${mins}:${rem.toString().padStart(2, "0")}` : `0:${rem.toString().padStart(2, "0")}`;
 }
 
 export function VoiceIntro({ url, label = "Voice Intro", showBadge = false }: VoiceIntroProps) {
@@ -24,9 +28,9 @@ export function VoiceIntro({ url, label = "Voice Intro", showBadge = false }: Vo
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    const onMeta = () => setDuration(Math.min(audio.duration || 0, MAX_SECONDS));
+    const onMeta = () => setDuration(Math.min(audio.duration || 0, MAX_VOICE_SECONDS));
     const onTime = () => {
-      const d = audio.duration || MAX_SECONDS;
+      const d = audio.duration || MAX_VOICE_SECONDS;
       setProgress((audio.currentTime / d) * 100);
     };
     audio.addEventListener("loadedmetadata", onMeta);
@@ -53,11 +57,7 @@ export function VoiceIntro({ url, label = "Voice Intro", showBadge = false }: Vo
 
   return (
     <div className="voice-intro">
-      {showBadge && (
-        <span className="voice-intro__badge" aria-label="Voice intro available">
-          🎤 Voice Intro Available
-        </span>
-      )}
+      {showBadge && <span className="voice-intro__badge">Voice intro</span>}
       <button type="button" className="voice-intro__btn" onClick={toggle} aria-label={label}>
         {playing ? <Pause size={16} /> : <Play size={16} fill="currentColor" />}
         <span className="voice-intro__wave" aria-hidden>
@@ -70,7 +70,7 @@ export function VoiceIntro({ url, label = "Voice Intro", showBadge = false }: Vo
           ))}
         </span>
         <span>{label}</span>
-        <span className="voice-intro__time">{formatDuration(duration || MAX_SECONDS)}</span>
+        <span className="voice-intro__time">{formatDuration(duration || MAX_VOICE_SECONDS)}</span>
       </button>
       <div className="voice-intro__progress" aria-hidden>
         <div style={{ width: `${progress}%` }} />
@@ -131,12 +131,14 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
+  const elapsedRef = useRef(0);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const transcriptRef = useRef("");
 
   const start = async () => {
     try {
       transcriptRef.current = "";
+      elapsedRef.current = 0;
       setElapsed(0);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const SpeechRecognitionCtor = getSpeechRecognition();
@@ -168,6 +170,16 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
         stream.getTracks().forEach((t) => t.stop());
         if (tickRef.current) window.clearInterval(tickRef.current);
 
+        const secondsRecorded = elapsedRef.current;
+        if (secondsRecorded < MIN_VOICE_SECONDS) {
+          onRejected?.("Voice intro is too short.");
+          return;
+        }
+        if (secondsRecorded > MAX_VOICE_SECONDS) {
+          onRejected?.("Voice intro can be up to 60 seconds.");
+          return;
+        }
+
         const transcript = transcriptRef.current.trim();
         if (transcript) {
           const verdict = moderateVoiceIntroTranscript(transcript);
@@ -186,9 +198,11 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
       recorder.start();
       setRecording(true);
       tickRef.current = window.setInterval(() => {
-        setElapsed((s) => Math.min(MAX_SECONDS, s + 1));
+        elapsedRef.current = Math.min(MAX_VOICE_SECONDS, elapsedRef.current + 1);
+        setElapsed(elapsedRef.current);
+        if (elapsedRef.current >= MAX_VOICE_SECONDS) stop();
       }, 1000);
-      timerRef.current = window.setTimeout(() => stop(), MAX_SECONDS * 1000);
+      timerRef.current = window.setTimeout(() => stop(), MAX_VOICE_SECONDS * 1000);
     } catch {
       onRejected?.("Microphone access is required to record a voice intro.");
     }
@@ -204,7 +218,7 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
   return (
     <div className="voice-intro-recorder">
       <p className="voice-intro-recorder__hint">
-        Record up to {MAX_SECONDS} seconds — no phone numbers or social handles.
+        Record {MIN_VOICE_SECONDS}–{MAX_VOICE_SECONDS} seconds — {RECOMMENDED_MIN}–{MAX_VOICE_SECONDS} is ideal.
       </p>
       {url ? (
         <div className="voice-intro-recorder__row">
@@ -224,7 +238,7 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
           </button>
           {recording && (
             <span className="voice-intro-recorder__live" aria-live="polite">
-              Recording… max {MAX_SECONDS}s
+              Recording… max {MAX_VOICE_SECONDS}s
             </span>
           )}
         </div>

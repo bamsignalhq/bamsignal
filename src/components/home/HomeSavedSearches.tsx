@@ -1,4 +1,5 @@
 import { ChevronRight, Eye, Lock } from "lucide-react";
+import { SUCCESS_COPY, MONETIZATION_COPY } from "../../constants/copy";
 import type { SavedSearch } from "../../types";
 
 type HomeSavedSearchesProps = {
@@ -18,7 +19,7 @@ export function HomeSavedSearches({ searches, onApply, onDelete }: HomeSavedSear
           <li key={search.id}>
             <button type="button" className="home-saved-searches__item" onClick={() => onApply(search)}>
               <strong>{search.label}</strong>
-              <span>{search.resultCount != null ? `${search.resultCount} matches` : "Apply"}</span>
+              <span>{search.resultCount != null ? `${search.resultCount} people` : "Apply"}</span>
             </button>
             <button
               type="button"
@@ -43,11 +44,12 @@ type HomeProfileVisitorsCardProps = {
 
 export function HomeProfileVisitorsCard({ isPremium, visitorCount, onUpgrade }: HomeProfileVisitorsCardProps) {
   const copy = isPremium ? (
-    <>
-      <strong>{visitorCount}</strong> profile visitors this week
-    </>
+    <>{SUCCESS_COPY.profileVisitorsCount(visitorCount)}</>
   ) : (
-    <>Profile visitors — unlock with Signal Pass</>
+    <>
+      <strong>{SUCCESS_COPY.profileVisitorsLocked}</strong>
+      <span className="home-insight__subtitle">{SUCCESS_COPY.profileVisitorsSubtitle}</span>
+    </>
   );
 
   if (isPremium) {
@@ -66,7 +68,7 @@ export function HomeProfileVisitorsCard({ isPremium, visitorCount, onUpgrade }: 
       type="button"
       className="home-insight home-insight--visitors home-insight--locked"
       onClick={onUpgrade}
-      aria-label="Unlock profile visitors"
+      aria-label={MONETIZATION_COPY.seeEveryone}
     >
       <span className="home-insight__icon">
         <Lock size={16} aria-hidden />

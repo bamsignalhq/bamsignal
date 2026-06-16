@@ -3,7 +3,7 @@ import { ProfileDetailSheet } from "../ProfileDetailSheet";
 import { ReportBlockModal } from "../ReportBlockModal";
 import { HomeFeedCard } from "./HomeFeedCard";
 import { HomeSponsoredBanner } from "./HomeSponsoredBanner";
-import { BRAND } from "../../constants/copy";
+import { BRAND, ERROR_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { HOME_FEED_PROFILE_COUNT } from "../../constants/homeFeedAds";
 import { STORAGE_KEYS } from "../../constants/limits";
 import type { HomeFeedAdsSettings } from "../../constants/homeFeedAds";
@@ -235,7 +235,7 @@ export function HomeSignalsFeed({
 
   const handleSignal = async (profile: DiscoverProfile) => {
     if (isSampleHomeProfile(profile)) {
-      showToast("Preview profile — real matches appear as more people join near you.");
+      showToast("Preview profile — more people join near you every day.");
       return;
     }
 
@@ -251,7 +251,7 @@ export function HomeSignalsFeed({
     setSignalingId(null);
 
     if (!sent) {
-      showToast("Could not send Signal. Try again.");
+      showToast(ERROR_COPY.signalFailed);
       return;
     }
 
@@ -259,7 +259,7 @@ export function HomeSignalsFeed({
     incrementSignalsSent();
     onSignalSent?.();
     trackEvent("signal_sent", { profileId: profile.id, source: "home_feed" });
-    showToast(`${BRAND.signalSent} to ${profile.name}`);
+    showToast(BRAND.signalSent);
   };
 
   const detailVerification = detailProfile
@@ -274,13 +274,8 @@ export function HomeSignalsFeed({
 
   return (
     <section className="home-signals-feed" aria-label="Signals near you">
-      <header className="home-signals-feed__head">
-        <h2>Near you</h2>
-        {!loading && profiles.length > 0 ? (
-          <p className="home-signals-feed__reach">
-            {profiles.length} signal{profiles.length === 1 ? "" : "s"} within {effectiveDistanceKm} km
-          </p>
-        ) : null}
+      <header className="home-signals-feed__head home-signals-feed__head--minimal">
+        <h2>{SUCCESS_COPY.peopleNearYou}</h2>
       </header>
 
       {toast ? (
@@ -297,11 +292,11 @@ export function HomeSignalsFeed({
         </div>
       ) : gridItems.length === 0 ? (
         <div className="home-signals-feed__empty card">
-          <p>No exact matches nearby.</p>
-          <p className="home-signals-feed__empty-hint">Try expanding your age range or location.</p>
+          <p>{SUCCESS_COPY.homeFeedEmpty}</p>
+          <p className="home-signals-feed__empty-hint">{SUCCESS_COPY.homeFeedEmptyHint}</p>
           {filtersApplied ? (
             <button type="button" className="btn-secondary btn-sm" onClick={() => onResetFilters?.()}>
-              Reset Filters
+              Reset filters
             </button>
           ) : null}
         </div>
@@ -349,7 +344,7 @@ export function HomeSignalsFeed({
                 else onViewMore();
               }}
             >
-              View More Signals Near You →
+              View more
             </button>
           ) : null}
         </>

@@ -119,12 +119,22 @@ export function PhotoUploadGrid({
   const slots = Array.from({ length: MAX_PROFILE_PHOTOS }, (_, i) => photos[i] ?? null);
   const canAdd = photos.length < MAX_PROFILE_PHOTOS;
   const visibleSlots = Math.max(photos.length + (canAdd ? 1 : 0), MIN_PROFILE_PHOTOS);
+  const photoCount = photos.filter(Boolean).length;
+  const belowMin = photoCount < MIN_PROFILE_PHOTOS;
+  const aboveMax = photoCount > MAX_PROFILE_PHOTOS;
 
   return (
     <div className="photo-upload-grid">
-      <p className="photo-upload-grid__hint">
-        Add {MIN_PROFILE_PHOTOS}–{MAX_PROFILE_PHOTOS} clear photos of you · {photos.length}/{MAX_PROFILE_PHOTOS}
-      </p>
+      {belowMin ? (
+        <p className="photo-upload-grid__hint photo-upload-grid__hint--warn" role="status">
+          Please add at least {MIN_PROFILE_PHOTOS} photos.
+        </p>
+      ) : null}
+      {aboveMax ? (
+        <p className="photo-upload-grid__hint photo-upload-grid__hint--warn" role="status">
+          Maximum {MAX_PROFILE_PHOTOS} photos allowed.
+        </p>
+      ) : null}
       <div className="photo-upload-grid__tiles">
         {slots.slice(0, visibleSlots).map((src, i) => (
           <div key={i} className={`photo-upload-grid__tile ${i === 0 ? "photo-upload-grid__tile--main" : ""}`}>

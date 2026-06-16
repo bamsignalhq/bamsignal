@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BadgeCheck, Flame } from "lucide-react";
+import { BadgeCheck } from "lucide-react";
 import { CITIES_VISUAL } from "../../data/visualLanding";
 import { HOME_SECTIONS } from "../../data/homeLanding";
 import { ProfileDetailSheet } from "../ProfileDetailSheet";
@@ -100,7 +100,7 @@ export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProp
       </div>
 
       <div className="city-spotlight__track-wrap">
-        <div className="city-spotlight__members" aria-label={`Hot members in ${city.name}`}>
+        <div className="city-spotlight__members" aria-label={`Spotlight members in ${city.name}`}>
           {spotlightCards.length > 0 ? (
             spotlightCards.map((profile) => (
               <article key={profile.profileId} className="city-spotlight__card">
@@ -113,8 +113,7 @@ export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProp
                   <ShowcaseImage src={profile.photo} alt="" loading="lazy" />
                   {isHotPlacement(profile) ? (
                     <span className="city-spotlight__badge-hot">
-                      <Flame size={12} aria-hidden />
-                      Hot
+                      Spotlight
                     </span>
                   ) : null}
                 </button>
@@ -144,7 +143,7 @@ export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProp
           profile={selected}
           open
           onClose={() => setSelected(null)}
-          matchReasons={[`Hot in ${city.name}`]}
+          matchReasons={[`Spotlight in ${city.name}`]}
           onSendSignal={sendSignal}
         />
       ) : null}

@@ -22,18 +22,28 @@ export type Religion =
   | "Prefer not to say";
 
 export type {
+  BodyType,
   EthnicBackground,
   Genotype,
+  HasKidsOption,
   KidsPreference,
   Occupation,
-  SocialLifestyle
+  RelationshipIntention,
+  SocialLifestyle,
+  VerificationPreference,
+  WantsKidsOption
 } from "../constants/profileOptions";
 import type {
+  BodyType,
   EthnicBackground,
   Genotype,
+  HasKidsOption,
   KidsPreference,
   Occupation,
-  SocialLifestyle
+  RelationshipIntention,
+  SocialLifestyle,
+  VerificationPreference,
+  WantsKidsOption
 } from "../constants/profileOptions";
 
 export type PreferenceMode = "flexible" | "strict";
@@ -42,7 +52,10 @@ export type WhoCanSignalMe = "everyone" | "verified_only" | "matches_preferences
 
 export type DmControl = "everyone" | "matches_only" | "verified_only" | "nobody";
 
-export type ActivityVisibility = "everyone" | "matches_only" | "nobody";
+export type ActivityVisibility = "everyone" | "connections_only" | "nobody";
+
+/** @deprecated Use connections_only — kept for legacy stored profiles */
+export type LegacyActivityVisibility = "everyone" | "matches_only" | "nobody";
 
 export type SafetySettings = {
   /** Who may send you a signal */
@@ -53,17 +66,24 @@ export type SafetySettings = {
   dmControl: DmControl;
   /** Hide profile from discovery (pause) */
   hideFromDiscovery?: boolean;
-  /** Who can see your activity status on cards */
-  activityVisibility?: ActivityVisibility;
+  /** Who can see your last active label */
+  lastSeenVisibility?: ActivityVisibility;
+  /** Who can see online status */
+  onlineStatusVisibility?: ActivityVisibility;
+  /** @deprecated Use lastSeenVisibility / onlineStatusVisibility */
+  activityVisibility?: LegacyActivityVisibility | ActivityVisibility;
+  /** When false, neither side sees read receipts in chat */
+  readReceiptsEnabled?: boolean;
 };
 
 export type ReportReason =
   | "fake_profile"
   | "harassment"
-  | "scam"
+  | "spam"
+  | "inappropriate_photos"
   | "underage"
-  | "unsafe_behavior"
-  | "explicit_content"
+  | "off_platform_solicitation"
+  | "scammer"
   | "other";
 
 export type ReportRecord = {
@@ -117,10 +137,17 @@ export type DatingProfile = {
   /** Tribe / ethnic background */
   ethnicity?: EthnicBackground;
   stateOfOrigin?: string;
+  statesOfOrigin?: string[];
   occupation?: Occupation;
+  occupations?: Occupation[];
   genotype?: Genotype;
+  genotypes?: Genotype[];
   kidsPreference?: KidsPreference;
+  hasKidsOptions?: HasKidsOption[];
+  wantsKidsOptions?: WantsKidsOption[];
   lifestyle?: SocialLifestyle;
+  lifestyles?: SocialLifestyle[];
+  bodyTypes?: BodyType[];
   voiceIntroUrl?: string;
   visibility?: ProfileVisibility;
   matchingPrivacy?: MatchingPrivacy;
@@ -133,6 +160,11 @@ export type DatingProfile = {
   onboardingComplete?: boolean;
   createdAt?: string;
   reportCount?: number;
+  /** Optional profile prompt answers (max 3) */
+  profilePrompts?: { prompt: string; answer: string }[];
+  /** Local-only until synced */
+  screenshotPrivacyNoticeSeen?: boolean;
+  profilePausedAt?: string;
 };
 
 export type MatchPreferences = {
@@ -141,7 +173,15 @@ export type MatchPreferences = {
   lifestyles: SocialLifestyle[];
   cities: string[];
   states: string[];
+  statesOfOrigin: string[];
   intents: IntentTag[];
+  occupations: Occupation[];
+  genotypes: Genotype[];
+  bodyTypes: BodyType[];
+  relationshipIntentions: RelationshipIntention[];
+  hasKids: HasKidsOption[];
+  wantsKids: WantsKidsOption[];
+  verificationPreferences: VerificationPreference[];
   ageMin?: number;
   ageMax?: number;
   distanceMax?: number;
@@ -152,7 +192,7 @@ export type MatchPreferences = {
   minCompatibility?: number;
   /** Premium — only profiles with voice intro */
   requireVoiceIntro?: boolean;
-  /** Premium — verified profiles only */
+  /** @deprecated Use verificationPreferences */
   requireVerified?: boolean;
   kidsPreferences?: KidsPreference[];
 };
@@ -174,11 +214,14 @@ export type HomeAdvancedFilters = {
   religions: Religion[];
   occupations: Occupation[];
   statesOfOrigin: string[];
-  relationshipIntentions: IntentTag[];
+  relationshipIntentions: RelationshipIntention[];
   genotypes: Genotype[];
-  hasKids: KidsPreference[];
-  wantsKids: KidsPreference[];
-  verifiedOnly: boolean;
+  hasKids: HasKidsOption[];
+  wantsKids: WantsKidsOption[];
+  bodyTypes: BodyType[];
+  verificationPreferences: VerificationPreference[];
+  /** @deprecated Use verificationPreferences */
+  verifiedOnly?: boolean;
 };
 
 /** Home / Search filters — advanced keys apply only when the user selects them */
@@ -195,6 +238,7 @@ export type MemberSearchFilters = {
   relationshipIntentions?: IntentTag[];
   genotypes?: Genotype[];
   kidsPreferences?: KidsPreference[];
+  bodyTypes?: BodyType[];
   limit?: number;
 };
 
@@ -214,10 +258,17 @@ export type DiscoverProfile = {
   /** Tribe / ethnic background */
   ethnicity?: EthnicBackground;
   stateOfOrigin?: string;
+  statesOfOrigin?: string[];
   occupation?: Occupation;
+  occupations?: Occupation[];
   genotype?: Genotype;
+  genotypes?: Genotype[];
   kidsPreference?: KidsPreference;
+  hasKidsOptions?: HasKidsOption[];
+  wantsKidsOptions?: WantsKidsOption[];
   lifestyle?: SocialLifestyle;
+  lifestyles?: SocialLifestyle[];
+  bodyTypes?: BodyType[];
   voiceIntroUrl?: string;
   distanceKm?: number;
   verified: boolean;
@@ -262,6 +313,10 @@ export type ChatThread = {
   offPlatformApproved?: boolean;
   pendingOffPlatformRequest?: boolean;
   offPlatformDeclined?: boolean;
+  pinned?: boolean;
+  readAt?: string;
+  /** When the other person last read (if both allow read receipts) */
+  peerSeenAt?: string;
 };
 
 export type LikeEntry = {

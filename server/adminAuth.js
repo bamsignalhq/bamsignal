@@ -1,10 +1,8 @@
+import { commandCenterEmails } from "./consoleEnv.js";
 import { isPlatformAdminEmail } from "./db.js";
 
 export function allowedAdminEmails() {
-  return (process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
+  return commandCenterEmails();
 }
 
 export async function verifySupabaseAdmin(req) {

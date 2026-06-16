@@ -6,10 +6,13 @@ import {
   query,
   upsertAppUserIdentity
 } from "./db.js";
-import { findMemberProfileByUserKey } from "./cityHome.js";
+import { discoverVisibilitySql, ensureMemberTrustSchema } from "./memberTrust.js";
 
 export async function ensureSocialSchema() {
   if (!isDatabaseReady()) return;
+
+  const { ensureModerationSchema } = await import("./services/moderation.js");
+  await ensureModerationSchema();
 
   await query("alter table app_signals add column if not exists status text not null default 'pending'");
   await query(
@@ -101,8 +104,11 @@ export function rowToDiscoverProfile(row) {
     stateOfOrigin: profile.stateOfOrigin,
     occupation: profile.occupation,
     genotype: profile.genotype,
+    genotypes: profile.genotypes,
     kidsPreference: profile.kidsPreference,
     lifestyle: profile.lifestyle,
+    lifestyles: profile.lifestyles,
+    bodyTypes: profile.bodyTypes,
     voiceIntroUrl: profile.voiceIntroUrl,
     verified: Boolean(profile.verified),
     premium: Boolean(profile.premium),
@@ -121,6 +127,7 @@ export async function listDiscoverProfiles({
 }) {
   if (!isDatabaseReady() || !city) return [];
   await ensureSocialSchema();
+  await ensureMemberTrustSchema();
 
   const own = await findMemberProfileByUserKey(email, phone);
   if (!own?.id) return [];
@@ -134,6 +141,7 @@ export async function listDiscoverProfiles({
        and onboarding_complete = true
        and discoverable = true
        and city_home_hidden = false
+       and ${discoverVisibilitySql()}
        and user_key <> $2
        and not (id = any($3::uuid[]))
      order by updated_at desc
@@ -159,7 +167,8 @@ export async function searchMemberProfiles({
   statesOfOrigin = [],
   relationshipIntentions = [],
   genotypes = [],
-  kidsPreferences = []
+  kidsPreferences = [],
+  bodyTypes = []
 }) {
   if (!isDatabaseReady()) return [];
   await ensureSocialSchema();
@@ -180,6 +189,7 @@ export async function searchMemberProfiles({
     "onboarding_complete = true",
     "discoverable = true",
     "city_home_hidden = false",
+    discoverVisibilitySql(),
     "user_key <> $1",
     "not (id = any($2::uuid[]))",
     "coalesce((profile->>'age')::int, 25) >= $3",
@@ -209,12 +219,25 @@ export async function searchMemberProfiles({
     where.push(`profile->>'${jsonKey}' = any($${params.length}::text[])`);
   };
 
+  const addJsonArrayOverlap = (jsonKey, values) => {
+    const list = Array.isArray(values) ? values.filter(Boolean) : [];
+    if (!list.length) return;
+    params.push(list);
+    where.push(`profile->'${jsonKey}' ?| $${params.length}::text[]`);
+  };
+
   addJsonInFilter("ethnicity", tribes);
   addJsonInFilter("religion", religions);
-  addJsonInFilter("occupation", occupations);
+  if (occupations.length) {
+    params.push(occupations);
+    where.push(
+      `(profile->>'occupation' = any($${params.length}::text[]) OR profile->'occupations' ?| $${params.length}::text[])`
+    );
+  }
   addJsonInFilter("stateOfOrigin", statesOfOrigin);
   addJsonInFilter("genotype", genotypes);
   addJsonInFilter("kidsPreference", kidsPreferences);
+  addJsonArrayOverlap("bodyTypes", bodyTypes);
 
   const intentList = Array.isArray(relationshipIntentions)
     ? relationshipIntentions.filter(Boolean)
@@ -256,6 +279,9 @@ export async function sendSignalToProfile({
 
   const sender = await findMemberProfileByUserKey(email, phone);
   if (!sender?.id || sender.id === targetProfileId) return null;
+  if (sender.shadow_banned) {
+    return { id: `suppressed-${Date.now()}`, suppressed: true };
+  }
 
   const duplicate = await query(
     `select id from app_signals
@@ -308,6 +334,7 @@ export async function fetchIncomingSignals({ email, phone }) {
      join app_member_profiles p on p.user_key = s.user_key
      where s.target_profile_id = $1
        and s.status = 'pending'
+       and coalesce(p.shadow_banned, false) = false
      order by s.created_at desc`,
     [own.id]
   );
@@ -611,6 +638,7 @@ export async function fetchMemberSocialBundle({ email, phone }) {
     referral,
     premium,
     memberProfileId: ownProfile?.id || null,
+    shadowBanned: Boolean(ownProfile?.shadow_banned),
     datingProfile: ownProfile
       ? {
           photos,

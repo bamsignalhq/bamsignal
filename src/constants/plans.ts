@@ -100,12 +100,13 @@ export const DEFAULT_PREMIUM_PLAN_INPUTS: PremiumPlanInput[] = [
 
 export const DEFAULT_PREMIUM_PLANS: PremiumPlan[] = DEFAULT_PREMIUM_PLAN_INPUTS.map(hydratePlan);
 
-/** Shown on Signal Pass upgrade — keep to four clear bullets */
+/** Shown on Signal Pass upgrade */
 export const SIGNAL_PASS_INCLUDES = [
   "Unlimited Signals",
-  "See Profile Visitors",
-  "Advanced Filters",
-  "Priority Visibility"
+  "See who's interested in you",
+  "Advanced preferences",
+  "Priority visibility",
+  "Premium verification badge"
 ] as const;
 
 /** @deprecated use SIGNAL_PASS_INCLUDES */

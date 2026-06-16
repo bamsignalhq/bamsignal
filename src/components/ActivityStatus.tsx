@@ -1,7 +1,11 @@
-import { formatLastActive, isOnlineNow } from "../utils/activity";
+import { cardActivityBadge } from "../utils/activity";
+import { canShowLastSeen, canShowOnlineStatus } from "../utils/activityPrivacy";
+import type { DiscoverProfile } from "../types";
 
 type ActivityStatusProps = {
   lastActiveAt?: string;
+  profile?: Pick<DiscoverProfile, "safetySettings">;
+  isConnection?: boolean;
   showOnlineBadge?: boolean;
   className?: string;
   variant?: "default" | "overlay" | "subtle";
@@ -9,21 +13,31 @@ type ActivityStatusProps = {
 
 export function ActivityStatus({
   lastActiveAt,
-  showOnlineBadge = false,
+  profile,
+  isConnection = false,
+  showOnlineBadge = true,
   className = "",
   variant = "default"
 }: ActivityStatusProps) {
-  const label = formatLastActive(lastActiveAt);
-  const online = showOnlineBadge && isOnlineNow(lastActiveAt);
+  const showLastSeen = profile ? canShowLastSeen(profile, { isConnection }) : true;
+  const showOnline = profile ? canShowOnlineStatus(profile, { isConnection }) : true;
+
+  if (!showLastSeen && !showOnline) return null;
+
+  const badge = showLastSeen ? cardActivityBadge(lastActiveAt) : null;
+  const online = showOnline && showOnlineBadge && badge?.online;
+
+  if (!badge && !online) return null;
 
   return (
     <div className={`activity-status activity-status--${variant} ${className}`.trim()}>
-      {online && (
+      {online ? (
         <span className="activity-status__online" aria-label="Online now">
-          🟢 Online Now
+          Active now
         </span>
-      )}
-      <span className="activity-status__label">{label}</span>
+      ) : badge ? (
+        <span className="activity-status__label">{badge.label}</span>
+      ) : null}
     </div>
   );
 }

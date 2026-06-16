@@ -1,5 +1,6 @@
 import { ArrowLeft, Check } from "lucide-react";
 import { useMemo, useState } from "react";
+import { BRAND, MONETIZATION_COPY } from "../constants/copy";
 import type { PlanId, PremiumPlan } from "../constants/plans";
 import { SIGNAL_PASS_INCLUDES, durationLabel, planBadge, planShortLabel } from "../constants/plans";
 
@@ -30,7 +31,7 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
         </button>
         <div>
           <h1 className="premium-page__title">Signal Pass</h1>
-          {!isPremium && <p className="premium-page__subtitle">Choose a plan</p>}
+          {!isPremium && <p className="premium-page__subtitle">{BRAND.paywallBody}</p>}
         </div>
       </header>
 
@@ -86,7 +87,7 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
             disabled={loading || !selected}
             onClick={() => selected && onSelectPlan(selected)}
           >
-            {loading ? "Opening checkout…" : "Upgrade Now"}
+            {loading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.getSignalPass}
           </button>
         </>
       )}

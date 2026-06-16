@@ -4,6 +4,7 @@ import { BoostShop } from "./BoostShop";
 import type { BoostProduct } from "../constants/boosts";
 import type { PlanId, PremiumPlan } from "../constants/plans";
 import { SIGNAL_PASS_INCLUDES, durationLabel, planBadge, planShortLabel } from "../constants/plans";
+import { BRAND, MONETIZATION_COPY } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
 import { fetchBoostProducts } from "../services/boosts";
 import { normalizeDatingProfile } from "../utils/profile";
@@ -65,9 +66,9 @@ export function PricingModal({
         </button>
 
         <h2 id="pricing-modal-title" className="paywall-modal__title">
-          Signal Pass
+          {BRAND.paywallTitle}
         </h2>
-        <p className="paywall-modal__subtitle">Choose a plan</p>
+        <p className="paywall-modal__subtitle">{BRAND.paywallBody}</p>
 
         <div className="premium-plan-strip premium-plan-strip--modal" aria-label="Signal Pass plans">
           {plans.map((plan) => {
@@ -112,7 +113,7 @@ export function PricingModal({
           disabled={loading || !selected}
           onClick={() => selected && onSelectPlan(selected)}
         >
-          {loading ? "Opening checkout…" : "Upgrade Now"}
+          {loading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.getSignalPass}
         </button>
 
         {boosts.length > 0 && onPurchaseBoost && (

@@ -181,7 +181,7 @@ export async function upsertMemberProfile({
   if (!userKey || !city) return null;
 
   const normalizedUsername = username
-    ? String(username).trim().toLowerCase().replace(/[^a-z]/g, "")
+    ? String(username).trim().toLowerCase().replace(/[^a-z0-9_]/g, "")
     : null;
   let normalizedPhone = String(phone || "").replace(/\D/g, "");
   if (normalizedPhone.startsWith("234") && normalizedPhone.length === 13) {

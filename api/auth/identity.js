@@ -13,6 +13,7 @@ import { normalizeHomeFeedAds } from "../../server/services/homeFeedAds.js";
 import { normalizePlans } from "../../server/pricing.js";
 import { registerDevicePush } from "../../server/firebase.js";
 import { bot, registerBotCommands } from "../../server/telegram.js";
+import { allowedAdminEmails } from "../../server/adminAuth.js";
 import { requireAdminConsent } from "../../server/adminConsent.js";
 
 function normalizePhone(value = "") {
@@ -30,13 +31,6 @@ function normalizePayload(body = {}) {
     name: String(body.name || "").trim(),
     referralCode: String(body.referralCode || "").trim().toUpperCase()
   };
-}
-
-function allowedAdminEmails() {
-  return (process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
 }
 
 async function verifySupabaseAdmin(req) {

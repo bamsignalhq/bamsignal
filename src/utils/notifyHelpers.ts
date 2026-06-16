@@ -1,27 +1,44 @@
 import { getCms } from "../constants/cms";
+import { EXPERIENCE_COPY, MONETIZATION_COPY } from "../constants/copy";
+import { boostDisplayName } from "../constants/boosts";
 import { pushNotification } from "./notifications";
 
-export function notifySignalReceived(name?: string): void {
-  const cms = getCms();
+export function notifySignalReceived(_name?: string): void {
   pushNotification({
     type: "signal_received",
-    title: "New signal",
-    body: name ? `${name} sent you a signal ⚡` : cms.notificationTemplates.signalReceived
+    title: EXPERIENCE_COPY.notificationSignalReceivedTitle,
+    body: getCms().notificationTemplates.signalReceived
   });
 }
 
-export function notifySignalAccepted(name: string): void {
+export function notifySignalAccepted(_name: string): void {
   pushNotification({
     type: "signal_accepted",
-    title: "Signal accepted",
-    body: `${name} accepted your signal — open Inbox to chat`
+    title: EXPERIENCE_COPY.notificationSignalAcceptedTitle,
+    body: EXPERIENCE_COPY.notificationSignalAcceptedBody
+  });
+}
+
+export function notifyNewConversation(): void {
+  pushNotification({
+    type: "signal_accepted",
+    title: EXPERIENCE_COPY.notificationSignalAcceptedTitle,
+    body: EXPERIENCE_COPY.notificationSignalAcceptedBody
+  });
+}
+
+export function notifyNewMessage(_name?: string): void {
+  pushNotification({
+    type: "signal_accepted",
+    title: EXPERIENCE_COPY.notificationNewMessageTitle,
+    body: EXPERIENCE_COPY.notificationNewMessageBody
   });
 }
 
 export function notifyProfileViewed(): void {
   pushNotification({
     type: "profile_viewed",
-    title: "Profile view",
+    title: EXPERIENCE_COPY.notificationProfileViewedTitle,
     body: getCms().notificationTemplates.profileViewed
   });
 }
@@ -37,16 +54,17 @@ export function notifyVerificationApproved(): void {
 export function notifyPremiumActivated(): void {
   pushNotification({
     type: "premium_activated",
-    title: "Signal Pass active",
+    title: MONETIZATION_COPY.paymentSuccessTitle,
     body: getCms().notificationTemplates.premiumActivated
   });
 }
 
-export function notifyBoostActivated(productName: string): void {
+export function notifyBoostActivated(productId: string): void {
+  const name = boostDisplayName(productId as Parameters<typeof boostDisplayName>[0]);
   pushNotification({
     type: "boost_activated",
-    title: "Boost active",
-    body: `${productName} is live — your profile is bumped in Discover.`
+    title: `${name} is live`,
+    body: "Your profile has extra visibility in Discover."
   });
 }
 

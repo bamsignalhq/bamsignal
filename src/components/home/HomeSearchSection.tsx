@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, Search, Zap } from "lucide-react";
-import { BRAND } from "../../constants/copy";
+import { BRAND, ERROR_COPY, MONETIZATION_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { INTENT_OPTIONS } from "../../constants/intents";
 import { STORAGE_KEYS } from "../../constants/limits";
 import {
@@ -34,6 +34,7 @@ import {
   isAtFreeSignalLimit,
   recordSignalUsage,
   signalLimitReachedMessage,
+  signalLimitReachedHint,
   signalsRemainingLabel
 } from "../../utils/signalLimits";
 import { readJson } from "../../utils/storage";
@@ -154,7 +155,7 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
     setSignalingId(null);
 
     if (!sent) {
-      setToast("Could not send Signal. Try again.");
+      setToast(ERROR_COPY.signalFailed);
       window.setTimeout(() => setToast(""), 3500);
       return;
     }
@@ -162,21 +163,21 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
     recordSignalUsage(isPremium, gate.usesDailySlot);
     incrementSignalsSent();
     trackEvent("signal_sent", { profileId: profile.id, source: "home_search" });
-    setToast(`${BRAND.signalSent} to ${profile.name}`);
+    setToast(`${BRAND.signalSent} ${BRAND.signalSentSub}`);
     window.setTimeout(() => setToast(""), 3000);
   };
 
   const emptyMessage = useMemo(() => {
     if (!searched) return null;
     if (loading) return null;
-    return "No profiles match your search. Try a nearby city, wider age range, or fewer filters.";
+    return { title: SUCCESS_COPY.searchEmpty, hint: SUCCESS_COPY.searchEmptyHint };
   }, [searched, loading]);
 
   return (
     <section className="home-search" aria-label="Search members">
       <div className="home-search__head">
-        <h2>Search</h2>
-        <p>Find people by what matters to you.</p>
+        <h2>{SUCCESS_COPY.searchTitle}</h2>
+        <p>Take your time — find people who feel right for you.</p>
         {remainingLabel ? <p className="home-search__limit">{remainingLabel}</p> : null}
       </div>
 
@@ -368,15 +369,21 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
       {!isPremium && isAtFreeSignalLimit(isPremium) ? (
         <div className="home-search__limit-banner card">
           <p>{signalLimitReachedMessage()}</p>
+          <p className="home-search__limit-hint">{signalLimitReachedHint()}</p>
           <div className="home-search__limit-actions">
             <button type="button" className="btn-primary btn-sm" onClick={onUpgrade}>
-              Get Signal Pass
+              {MONETIZATION_COPY.getSignalPass}
             </button>
           </div>
         </div>
       ) : null}
 
-      {emptyMessage ? <p className="home-search__empty">{emptyMessage}</p> : null}
+      {emptyMessage ? (
+        <div className="home-search__empty">
+          <p>{emptyMessage.title}</p>
+          <p className="home-search__empty-hint">{emptyMessage.hint}</p>
+        </div>
+      ) : null}
 
       {results.length > 0 ? (
         <ul className="home-search__results">

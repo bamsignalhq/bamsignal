@@ -83,6 +83,11 @@
   color: #ce93d8;
 }
 
+.verification-badge--neutral {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.78);
+}
+
 .trust-badge--trusted-member {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.85);

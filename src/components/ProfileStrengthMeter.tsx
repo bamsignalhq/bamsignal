@@ -1,26 +1,22 @@
-import { calculateProfileStrength, profileStrengthHint } from "../utils/profileStrength";
+import { SUCCESS_COPY } from "../constants/copy";
+import { getProfileStrengthSuggestions } from "../utils/profileStrength";
+import type { DatingProfile } from "../types";
 
 type ProfileStrengthMeterProps = {
-  strength: number;
+  profile: DatingProfile;
   compact?: boolean;
 };
 
-export function ProfileStrengthMeter({ strength, compact }: ProfileStrengthMeterProps) {
-  const hint = profileStrengthHint(strength);
+export function ProfileStrengthMeter({ profile, compact }: ProfileStrengthMeterProps) {
+  const suggestions = getProfileStrengthSuggestions(profile);
+  if (!suggestions.length) return null;
 
   return (
-    <div className={`profile-strength ${compact ? "profile-strength--compact" : ""}`}>
-      <div className="profile-strength__head">
-        <span className="profile-strength__label">Profile Strength</span>
-        <strong className="profile-strength__value">{strength}%</strong>
-      </div>
-      <div className="profile-strength__track" role="progressbar" aria-valuenow={strength} aria-valuemin={0} aria-valuemax={100}>
-        <div
-          className="profile-strength__fill"
-          style={{ width: `${strength}%` }}
-        />
-      </div>
-      {!compact && <p className="profile-strength__hint">{hint}</p>}
+    <div className={`profile-strength profile-strength--shine ${compact ? "profile-strength--compact" : ""}`}>
+      <p className="profile-strength__label">{SUCCESS_COPY.profileShine}</p>
+      {!compact && (
+        <p className="profile-strength__hint">{suggestions.join(" · ")}</p>
+      )}
     </div>
   );
 }

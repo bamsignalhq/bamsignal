@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Compass } from "lucide-react";
-import { BRAND } from "../constants/copy";
+import { BRAND, ERROR_COPY, SUCCESS_COPY } from "../constants/copy";
 import { FREE_DAILY_SWIPES, STORAGE_KEYS } from "../constants/limits";
 import { fetchDiscoverProfiles } from "../services/discoverProfiles";
 import { sendSignalRemote } from "../services/memberData";
@@ -29,6 +29,7 @@ import {
   normalizeMatchPreferences
 } from "../utils/profile";
 import { blockUser, canUserSignalTarget, filterDiscoverDeck } from "../utils/safety";
+import { pushPassedProfile, canUndoPass, undoLastPass } from "../utils/undoPass";
 import { getVerificationTier } from "../utils/verification";
 import { incrementSignalsSent } from "../utils/streaks";
 import { trackEvent } from "../utils/analytics";
@@ -36,6 +37,8 @@ import { getMemberCity } from "../utils/memberCity";
 import { getRemainingDaily, incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
 import { applyDiscoverPreferences, applyQuickFilter, type DiscoverQuickFilter } from "../utils/discoverFilters";
 import { isViewerShadowBanned } from "../utils/shadowBan";
+import { checkSignalBurst } from "../utils/suspicionDetection";
+import { reportModerationFlagRemote } from "../services/memberTrust";
 import { consumePrioritySignal } from "../utils/activeBoosts";
 import { useAndroidBack } from "../hooks/useAndroidBack";
 
@@ -155,10 +158,25 @@ export function DiscoverPage({
   };
 
   const advance = (profileId: string) => {
-    const nextPassed = [...passedIds, profileId];
-    setPassedIds(nextPassed);
-    writeJson(STORAGE_KEYS.passed, nextPassed);
+    pushPassedProfile(profileId);
+    setPassedIds(readJson<string[]>(STORAGE_KEYS.passed, []));
     setCardKey((k) => k + 1);
+  };
+
+  const handleUndoPass = () => {
+    if (!canUndoPass(isPremium)) {
+      setToast("Signal Pass gives you unlimited undo.");
+      setTimeout(() => setToast(""), 3500);
+      trackUpgradeImpression("signal_limit");
+      setPaywallOpen(true);
+      return;
+    }
+    const restoredId = undoLastPass(isPremium);
+    if (!restoredId) return;
+    setPassedIds(readJson<string[]>(STORAGE_KEYS.passed, []));
+    setCardKey((k) => k + 1);
+    setToast("Undo");
+    setTimeout(() => setToast(""), 2500);
   };
 
   const finishSignal = async (profile: DiscoverProfile, opts?: { priority?: boolean }) => {
@@ -167,16 +185,19 @@ export function DiscoverPage({
     const sent = await sendSignalRemote(user, profile.id, priority ? "priority" : "signal");
 
     if (!sent) {
-      setToast("Could not send signal. Check your connection and try again.");
+      setToast(ERROR_COPY.signalFailed);
       setTimeout(() => setToast(""), 3500);
       advance(profile.id);
       return;
     }
 
+    const burst = checkSignalBurst();
+    if (burst && "count" in burst) {
+      void reportModerationFlagRemote(user, burst.reason, { count: burst.count }, profile.id);
+    }
+
     setToast(
-      priority
-        ? `${BRAND.prioritySignal} sent to ${profile.name}!`
-        : `${BRAND.signalSent} to ${profile.name}`
+      priority ? `${BRAND.prioritySignal} sent` : BRAND.signalSent
     );
     setTimeout(() => setToast(""), 3000);
     advance(profile.id);
@@ -237,8 +258,8 @@ export function DiscoverPage({
     return (
       <EmptyState
         icon={Compass}
-        title={filteredEmpty ? "No matches for this filter" : "No profiles to discover"}
-        message={filteredEmpty ? "Try another filter." : "Check back soon for more people."}
+        title={filteredEmpty ? SUCCESS_COPY.discoverFilterEmpty : SUCCESS_COPY.discoverEmpty}
+        message={filteredEmpty ? SUCCESS_COPY.discoverFilterEmptyHint : SUCCESS_COPY.discoverEmptyHint}
         actionLabel={filteredEmpty ? "Clear filter" : undefined}
         onAction={filteredEmpty ? () => setQuickFilter("all") : undefined}
       />
@@ -255,6 +276,11 @@ export function DiscoverPage({
     <div className="page discover-page discover-v2 discover-v2--clean">
       <DiscoverHeader />
       <DiscoverQuickFilters active={quickFilter} onChange={setQuickFilter} />
+      {passedIds.length > 0 ? (
+        <button type="button" className="discover-undo-btn" onClick={handleUndoPass}>
+          Undo
+        </button>
+      ) : null}
 
       {toast && <div className="toast">{toast}</div>}
 

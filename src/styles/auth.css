@@ -671,6 +671,147 @@
   margin: 0 0 0.75rem;
 }
 
+.photo-upload-grid__hint--warn {
+  color: color-mix(in srgb, var(--brand-pink) 70%, #ef4444);
+}
+
+.tap-select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tap-select-field__label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tap-select-field__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  background: var(--input-bg, var(--card));
+  color: var(--text);
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.tap-select-field__trigger:disabled {
+  opacity: 0.5;
+}
+
+.tap-select-field__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tap-select-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--brand-pink) 35%, var(--border));
+  background: color-mix(in srgb, var(--brand-pink) 10%, var(--card));
+  color: var(--text);
+  font-size: 0.84rem;
+}
+
+.match-pref-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.age-range-tap-select__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tap-select-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.tap-select-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.tap-select-sheet__panel {
+  position: relative;
+  width: min(100%, 520px);
+  max-height: min(78vh, 640px);
+  border-radius: 20px 20px 0 0;
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tap-select-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tap-select-sheet__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tap-select-sheet__done {
+  border: none;
+  background: transparent;
+  color: var(--brand-pink);
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.tap-select-sheet__options {
+  padding: 14px 16px 24px;
+  overflow-y: auto;
+}
+
+.onboarding-age-gender-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.onboarding-age-gender-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.onboarding-age-gender-row select {
+  width: 100%;
+}
+
+@media (max-width: 340px) {
+  .onboarding-age-gender-row {
+    gap: 10px;
+  }
+}
+
 .photo-upload-grid__input {
   position: absolute;
   width: 1px;

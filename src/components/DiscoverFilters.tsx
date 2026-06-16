@@ -1,5 +1,6 @@
 import { SlidersHorizontal, X } from "lucide-react";
 import { useState } from "react";
+import { MONETIZATION_COPY } from "../constants/copy";
 import { StateCitySelect } from "./StateCitySelect";
 import { INTENT_OPTIONS } from "../constants/intents";
 import {
@@ -12,6 +13,7 @@ import {
 } from "../constants/profileOptions";
 import { MAX_DISCOVER_RADIUS_MILES, kmToMiles, milesToKm } from "../utils/discoverLocation";
 import type { MatchPreferences, PreferenceMode } from "../types";
+import { defaultMatchPreferences } from "../utils/profile";
 
 type DiscoverFiltersProps = {
   prefs: MatchPreferences;
@@ -54,22 +56,7 @@ export function DiscoverFilters({
   };
 
   const clearAll = () => {
-    onChange({
-      religions: [],
-      ethnicities: [],
-      lifestyles: [],
-      cities: [],
-      states: [],
-      intents: [],
-      ageMin: undefined,
-      ageMax: undefined,
-      distanceMax: undefined,
-      preferenceMode: "flexible",
-      onlineNow: false,
-      minCompatibility: undefined,
-      requireVoiceIntro: false,
-      requireVerified: false
-    });
+    onChange(defaultMatchPreferences());
   };
 
   const toggleOnlineNow = () => {
@@ -153,7 +140,7 @@ export function DiscoverFilters({
             >
               <span className="discover-online-toggle__label">🟢 Online Now</span>
               <span className="discover-online-toggle__hint">
-                {isPremium ? "Prioritize recently active profiles" : "Premium feature"}
+                {isPremium ? "Prioritize recently active profiles" : MONETIZATION_COPY.lockedFeature}
               </span>
             </button>
           </fieldset>
@@ -271,7 +258,7 @@ export function DiscoverFilters({
           )}
 
           <fieldset className={`intent-fieldset ${!isPremium ? "discover-filter--locked" : ""}`}>
-            <legend>Faith { !isPremium && "· Premium"}</legend>
+            <legend>Faith {!isPremium && `· ${MONETIZATION_COPY.lockedFeature}`}</legend>
             <div className="intent-tags selectable">
               {FILTER_RELIGIONS.map((r) => (
                 <button
@@ -303,7 +290,7 @@ export function DiscoverFilters({
           </fieldset>
 
           <fieldset className={`intent-fieldset ${!isPremium ? "discover-filter--locked" : ""}`}>
-            <legend>Lifestyle { !isPremium && "· Premium"}</legend>
+            <legend>Lifestyle {!isPremium && `· ${MONETIZATION_COPY.lockedFeature}`}</legend>
             <div className="intent-tags selectable">
               {FILTER_LIFESTYLES.map((l) => (
                 <button
@@ -319,7 +306,7 @@ export function DiscoverFilters({
           </fieldset>
 
           <fieldset className={`intent-fieldset discover-premium-filters ${!isPremium ? "discover-filter--locked" : ""}`}>
-            <legend>Premium filters</legend>
+            <legend>Advanced preferences {!isPremium && `· ${MONETIZATION_COPY.lockedFeature}`}</legend>
             <button
               type="button"
               className={`discover-online-toggle ${prefs.requireVerified ? "active" : ""}`}

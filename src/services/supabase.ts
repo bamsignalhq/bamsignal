@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { Capacitor } from "@capacitor/core";
+import { ERROR_COPY } from "../constants/copy";
 import { USER_MESSAGES } from "../constants/userMessages";
 
 export const publicAppUrl = (
@@ -80,5 +81,5 @@ export function friendlyAuthError(error: unknown): string {
     return "Username or PIN doesn't match. Try again or reset your PIN.";
   }
 
-  return message || "Authentication could not be completed. Please try again.";
+  return ERROR_COPY.tryAgainSoon;
 }

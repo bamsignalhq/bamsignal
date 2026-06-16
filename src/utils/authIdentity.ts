@@ -1,43 +1,59 @@
 import { STORAGE_KEYS } from "../constants/limits";
+import { ERROR_COPY } from "../constants/copy";
 import { readJson, writeJson } from "./storage";
 
-export const USERNAME_SIGNUP_MIN_LENGTH = 7;
+export const USERNAME_MIN_LENGTH = 4;
+export const USERNAME_MAX_LENGTH = 20;
 export const USERNAME_LOGIN_MIN_LENGTH = 3;
-export const USERNAME_MAX_LENGTH = 24;
+export const USERNAME_CHANGE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
-/** Strip digits/symbols and lowercase — handles phone keyboards capitalizing the first letter. */
+/** Normalize username: lowercase letters, numbers, underscore only */
 export function formatUsernameInput(value: string): string {
-  const letters = value.replace(/[^a-zA-Z]/g, "");
-  return letters.toLowerCase();
+  return value.toLowerCase().replace(/[^a-z0-9_]/g, "");
 }
 
 export function normalizeUsername(value: string): string {
   return formatUsernameInput(value);
 }
 
-/** Signup — more than 6 letters, letters only. */
 export function isValidSignupUsername(value: string): boolean {
   const u = normalizeUsername(value);
   return (
-    u.length >= USERNAME_SIGNUP_MIN_LENGTH &&
+    u.length >= USERNAME_MIN_LENGTH &&
     u.length <= USERNAME_MAX_LENGTH &&
-    /^[a-z]+$/.test(u)
+    /^[a-z0-9_]+$/.test(u)
   );
 }
 
-/** Login — allows shorter legacy usernames (e.g. demo). */
+/** Login — allows shorter legacy usernames */
 export function isValidLoginUsername(value: string): boolean {
   const u = normalizeUsername(value);
   return (
     u.length >= USERNAME_LOGIN_MIN_LENGTH &&
     u.length <= USERNAME_MAX_LENGTH &&
-    /^[a-z]+$/.test(u)
+    /^[a-z0-9_]+$/.test(u)
   );
 }
 
 /** @deprecated Use isValidSignupUsername or isValidLoginUsername */
 export function isValidUsername(value: string): boolean {
   return isValidSignupUsername(value);
+}
+
+export function usernameChangeBlockedMessage(lastChangedAt?: string | null): string | null {
+  if (!lastChangedAt) return null;
+  const elapsed = Date.now() - new Date(lastChangedAt).getTime();
+  if (elapsed < USERNAME_CHANGE_COOLDOWN_MS) {
+    return "You can change your username again after 30 days.";
+  }
+  return null;
+}
+
+export function canChangeUsername(lastChangedAt?: string | null, current?: string, next?: string): boolean {
+  const normalizedCurrent = normalizeUsername(current || "");
+  const normalizedNext = normalizeUsername(next || "");
+  if (!normalizedNext || normalizedNext === normalizedCurrent) return true;
+  return !usernameChangeBlockedMessage(lastChangedAt);
 }
 
 /** Login — any saved 6-digit PIN */
@@ -99,15 +115,19 @@ export function rememberUsernameEmail(username: string, email: string): void {
   const key = normalizeUsername(username);
   if (!key || !email.trim()) return;
   const index = readJson<Record<string, string>>(STORAGE_KEYS.authUsernameIndex, {});
-  index[key] = email.trim().toLowerCase();
-  writeJson(STORAGE_KEYS.authUsernameIndex, index);
+  writeJson(STORAGE_KEYS.authUsernameIndex, { ...index, [key]: email.trim().toLowerCase() });
 }
 
-export function emailForUsername(username: string): string | null {
+export function lookupUsernameEmail(username: string): string | null {
   const key = normalizeUsername(username);
   if (!key) return null;
   const index = readJson<Record<string, string>>(STORAGE_KEYS.authUsernameIndex, {});
-  return index[key] ?? null;
+  return index[key] || null;
+}
+
+/** @deprecated Use lookupUsernameEmail */
+export function emailForUsername(username: string): string | null {
+  return lookupUsernameEmail(username);
 }
 
 export function profileFromSessionUser(user: {
@@ -123,3 +143,7 @@ export function profileFromSessionUser(user: {
     phoneVerified: Boolean(meta.phoneVerified)
   };
 }
+
+export const USERNAME_TAKEN_MESSAGE = "This username is already taken.";
+export const USERNAME_CHANGE_COOLDOWN_MESSAGE = "You can change your username again after 30 days.";
+export const GENERIC_TRY_AGAIN = ERROR_COPY.tryAgain;

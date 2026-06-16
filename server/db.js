@@ -175,6 +175,8 @@ export async function ensureAllTables() {
   await ensureAppReportsTable();
   const { ensureCityHomeTables } = await import("./cityHome.js");
   await ensureCityHomeTables();
+  const { ensureModerationSchema } = await import("./services/moderation.js");
+  await ensureModerationSchema();
 }
 
 export async function initDatabase() {
@@ -549,6 +551,8 @@ export async function persistReport({ email, phone, report }) {
   const identity = memberIdentity({ email, phone });
   if (!identity.userKey) return null;
   await ensureAppReportsTable();
+  const { ensureModerationSchema, maybeAutoShadowBanProfile } = await import("./services/moderation.js");
+  await ensureModerationSchema();
 
   const result = await query(
     `insert into app_reports (user_key, reporter_email, reporter_phone, profile_id, reason, details, payload, created_at)
@@ -565,7 +569,13 @@ export async function persistReport({ email, phone, report }) {
       report.at || new Date().toISOString()
     ]
   );
-  return result.rows[0] || null;
+  const row = result.rows[0] || null;
+  if (row?.profile_id) {
+    void maybeAutoShadowBanProfile(row.profile_id).catch((error) => {
+      console.error("[bamsignal] auto shadow ban failed:", error);
+    });
+  }
+  return row;
 }
 
 export async function fetchMemberBundle({ email, phone }) {
@@ -629,6 +639,7 @@ export async function fetchMemberBundle({ email, phone }) {
     memberProfileId: social?.memberProfileId ?? null,
     datingProfile: social?.datingProfile ?? null,
     incomingLikes: social?.incomingLikes ?? [],
-    incomingFollows: social?.incomingFollows ?? []
+    incomingFollows: social?.incomingFollows ?? [],
+    shadowBanned: Boolean(social?.shadowBanned)
   };
 }

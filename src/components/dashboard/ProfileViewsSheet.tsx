@@ -1,4 +1,5 @@
 import { Crown, Eye, X } from "lucide-react";
+import { MONETIZATION_COPY } from "../../constants/copy";
 import { ShowcaseImage } from "../ShowcaseImage";
 import type { ProfileViewer } from "../../utils/profileViews";
 
@@ -54,7 +55,7 @@ export function ProfileViewsSheet({
                       {viewer.name}, {viewer.age}
                     </strong>
                     <span>
-                      {viewer.city} · {viewer.compatibility}% match
+                      {viewer.city} · {viewer.compatibility}% compatibility
                     </span>
                   </div>
                 </li>
@@ -72,7 +73,7 @@ export function ProfileViewsSheet({
             <p className="profile-views-sheet__count-only">
               <strong>{displayCount}</strong> profile view{displayCount === 1 ? "" : "s"}
             </p>
-            <p>Upgrade to see who&apos;s curious about you.</p>
+            <p>{MONETIZATION_COPY.lockedFeature}</p>
             <button
               type="button"
               className="btn-primary btn-full"
@@ -82,7 +83,7 @@ export function ProfileViewsSheet({
               }}
             >
               <Crown size={18} />
-              See who viewed you
+              {MONETIZATION_COPY.seeEveryone}
             </button>
           </div>
         )}

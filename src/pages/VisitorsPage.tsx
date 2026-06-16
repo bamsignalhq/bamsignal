@@ -1,4 +1,5 @@
 import { ArrowLeft, Crown, Eye, Zap } from "lucide-react";
+import { MONETIZATION_COPY, SUCCESS_COPY, BUTTON_COPY } from "../constants/copy";
 import { EmptyState } from "../components/EmptyState";
 import { ShowcaseImage } from "../components/ShowcaseImage";
 import type { ProfileViewer } from "../utils/profileViews";
@@ -43,16 +44,17 @@ export function VisitorsPage({
         <section className="visitors-page__locked card">
           <Crown size={28} aria-hidden />
           <h2>{displayCount} people viewed your profile</h2>
-          <p>Upgrade to Signal Pass to see who&apos;s curious about you.</p>
+          <p>{MONETIZATION_COPY.lockedFeature}</p>
           <button type="button" className="btn-primary btn-full" onClick={onUpgrade}>
-            Unlock Profile Visitors
+            {MONETIZATION_COPY.seeEveryone}
           </button>
         </section>
       ) : viewers.length === 0 ? (
         <EmptyState
           icon={Eye}
-          title="No visitors yet"
-          actionLabel="Discover people nearby"
+          title={SUCCESS_COPY.emptyPremiumState}
+          message="When someone views your profile, you'll see them here."
+          actionLabel={BUTTON_COPY.explore}
           onAction={onCompleteProfile}
         />
       ) : (
@@ -65,7 +67,7 @@ export function VisitorsPage({
                   {visitor.name}, {visitor.age}
                 </strong>
                 <span>{visitor.city}</span>
-                <span className="visitors-page__compat">{visitor.compatibility}% Compatibility</span>
+                <span className="visitors-page__compat">{visitor.compatibility}% compatibility</span>
               </div>
               <button
                 type="button"

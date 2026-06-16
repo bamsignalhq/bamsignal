@@ -5,21 +5,9 @@ import { DateOfBirthPicker } from "../components/DateOfBirthPicker";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
 import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
-import {
-  ALL_NIGERIAN_CITIES,
-  ETHNIC_BACKGROUNDS,
-  FILTER_ETHNICITIES,
-  FILTER_KIDS_PREFERENCES,
-  FILTER_LIFESTYLES,
-  FILTER_RELIGIONS,
-  GENOTYPES,
-  KIDS_PREFERENCES,
-  NIGERIAN_STATES,
-  OCCUPATIONS,
-  citiesForState,
-  RELIGIONS,
-  SOCIAL_LIFESTYLES
-} from "../constants/profileOptions";
+import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
+import { TapSelectField } from "../components/TapSelectField";
+import { citiesForState } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
 import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
 import { ProfileDetailsList } from "../components/profile/ProfileDetailsList";
@@ -28,21 +16,17 @@ import { VoiceIntroRecorder } from "../components/VoiceIntro";
 import { VoiceIntro } from "../components/VoiceIntro";
 import type {
   DatingProfile,
-  EthnicBackground,
   Gender,
-  Genotype,
   IntentTag,
-  KidsPreference,
   LookingFor,
   MatchPreferences,
-  Occupation,
-  Religion,
   SafetySettings,
-  SocialLifestyle,
   Theme,
   UserProfile
 } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
+import { BUTTON_COPY } from "../constants/copy";
+import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { getVerificationTier } from "../utils/verification";
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
@@ -57,14 +41,14 @@ import { StateCitySelect } from "../components/StateCitySelect";
 import { MAX_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { isAdultDob } from "../utils/ageFromDob";
 import { syncMemberProfileRemote } from "../services/cityHome";
+import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
+import { ProfilePromptsEditor, ProfilePromptsDisplay } from "../components/profile/ProfilePromptsEditor";
 import { hasFilledProfileDetails } from "../utils/profileDetails";
 
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
-const LOOKING: LookingFor[] = ["Men", "Women"];
-
 type ProfileView = "overview" | "edit" | "settings";
-type SettingsPanel = "hub" | "preferences" | "privacy" | "account" | "notifications" | "verification";
-type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "details" | "voice";
+type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help";
+type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "details" | "prompts" | "voice";
 
 type ProfilePageProps = {
   user: UserProfile;
@@ -172,7 +156,6 @@ export function ProfilePage({
   const [modMessage, setModMessage] = useState("");
   const [view, setView] = useState<ProfileView>("overview");
   const [settingsPanel, setSettingsPanel] = useState<SettingsPanel>("hub");
-  const [prefsStatePick, setPrefsStatePick] = useState(prefs.states[0] ?? "");
   const [editOpen, setEditOpen] = useState<EditSection | null>(null);
   const [verifySubmitted, setVerifySubmitted] = useState(
     () => profile.verificationStatus === "pending" || isUserVerificationPending(user.phone)
@@ -249,21 +232,6 @@ export function ProfilePage({
     });
   };
 
-  const togglePref = <T extends string>(key: keyof MatchPreferences, value: T) => {
-    setPrefs((p) => {
-      const list = (p[key] as T[]) ?? [];
-      const next = list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
-      return { ...p, [key]: next };
-    });
-  };
-
-  const togglePrefCity = (city: string) => {
-    setPrefs((p) => ({
-      ...p,
-      cities: p.cities.includes(city) ? p.cities.filter((c) => c !== city) : [...p.cities, city]
-    }));
-  };
-
   const handleLogout = async () => {
     onLogout();
   };
@@ -301,17 +269,17 @@ export function ProfilePage({
           <ProfileCoverHeader user={user} profile={profile} verification={verification} coverOnly />
           <ProfileIdentityStrip user={user} profile={profile} verification={verification} />
 
-          <div className="profile-overview-sections">
-            <section className="profile-overview-block">
-              <h3>About</h3>
-              <p className="profile-overview-bio">
-                {profile.bio || "Tell people a little about yourself."}
-              </p>
-            </section>
+          <div className="profile-overview-sections profile-overview-sections--clean">
+            {profile.bio?.trim() ? (
+              <section className="profile-overview-block">
+                <h3>About</h3>
+                <p className="profile-overview-bio">{profile.bio}</p>
+              </section>
+            ) : null}
 
-            <section className="profile-overview-block">
-              <h3>Interests</h3>
-              {profile.interests?.length > 0 ? (
+            {profile.interests?.length > 0 ? (
+              <section className="profile-overview-block">
+                <h3>Interests</h3>
                 <div className="intent-tags">
                   {profile.interests.map((interest) => (
                     <span key={interest} className="intent-tag selected">
@@ -319,14 +287,12 @@ export function ProfilePage({
                     </span>
                   ))}
                 </div>
-              ) : (
-                <p className="profile-overview-empty">Choose a few interests.</p>
-              )}
-            </section>
+              </section>
+            ) : null}
 
-            <section className="profile-overview-block">
-              <h3>Looking for</h3>
-              {profile.intents.length > 0 ? (
+            {profile.intents.length > 0 ? (
+              <section className="profile-overview-block">
+                <h3>Looking for</h3>
                 <div className="intent-tags">
                   {profile.intents.slice(0, MAX_INTENT_SELECTIONS).map((intent) => (
                     <span key={intent} className="intent-tag selected">
@@ -334,10 +300,8 @@ export function ProfilePage({
                     </span>
                   ))}
                 </div>
-              ) : (
-                <p className="profile-overview-empty">Add what you&apos;re open to.</p>
-              )}
-            </section>
+              </section>
+            ) : null}
 
             {hasFilledProfileDetails(profile) ? (
               <section className="profile-overview-block">
@@ -345,27 +309,27 @@ export function ProfilePage({
                 <ProfileDetailsList profile={profile} />
               </section>
             ) : null}
-
+          {profile.profilePrompts?.filter((p) => p.answer.trim()).length ? (
             <section className="profile-overview-block">
-              <h3>Voice intro</h3>
-              {profile.voiceIntroUrl ? (
-                <VoiceIntro url={profile.voiceIntroUrl} />
-              ) : (
-                <p className="profile-overview-empty">Record a short intro.</p>
-              )}
+              <h3>Prompts</h3>
+              <ProfilePromptsDisplay prompts={profile.profilePrompts} />
             </section>
+          ) : null}
+
+            {profile.voiceIntroUrl ? (
+              <section className="profile-overview-block">
+                <h3>Voice intro</h3>
+                <VoiceIntro url={profile.voiceIntroUrl} label="Listen" />
+              </section>
+            ) : null}
           </div>
 
-          <div className="profile-edit-cta">
+          <div className="profile-edit-cta profile-edit-cta--split">
             <button type="button" className="btn-primary btn-full" onClick={() => setView("edit")}>
-              Edit Profile
+              Edit profile
             </button>
-          </div>
-
-          <div className="profile-overview-footer">
-            <button type="button" className="profile-logout-link" onClick={handleLogout}>
-              <LogOut size={16} aria-hidden />
-              Log out
+            <button type="button" className="btn-secondary btn-full" onClick={() => openSettings()}>
+              Settings
             </button>
           </div>
         </>
@@ -439,21 +403,12 @@ export function ProfilePage({
                   onLocationChange={(state, city) => setProfile({ ...profile, state, city })}
                 />
               </div>
-              <fieldset className="intent-fieldset profile-form-row">
-                <legend>Interested in</legend>
-                <div className="intent-tags selectable">
-                  {LOOKING.map((l) => (
-                    <button
-                      key={l}
-                      type="button"
-                      className={`intent-tag ${profile.lookingFor === l ? "selected" : ""}`}
-                      onClick={() => setProfile({ ...profile, lookingFor: l })}
-                    >
-                      {l}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
+              <TapSelectField
+                label="Interested in"
+                options={["Men", "Women"]}
+                value={profile.lookingFor}
+                onChange={(next) => next && setProfile({ ...profile, lookingFor: next as LookingFor })}
+              />
             </div>
           </EditAccordion>
 
@@ -572,135 +527,75 @@ export function ProfilePage({
             open={editOpen === "details"}
             onToggle={toggleEditSection}
           >
-            <p className="profile-form-row__hint">Optional — helps people find you in Advanced Search.</p>
+            <p className="profile-form-row__hint">Optional — helps the right people find you.</p>
+            <MatchPreferenceFields
+              tribe={profile.ethnicity}
+              onTribeChange={(ethnicity) => setProfile({ ...profile, ethnicity })}
+              faith={profile.religion}
+              onFaithChange={(religion) => setProfile({ ...profile, religion })}
+              lifestyles={
+                profile.lifestyles ?? (profile.lifestyle ? [profile.lifestyle] : [])
+              }
+              onLifestylesChange={(lifestyles) =>
+                setProfile({
+                  ...profile,
+                  lifestyles,
+                  lifestyle: lifestyles[0]
+                })
+              }
+              occupations={
+                profile.occupations ?? (profile.occupation ? [profile.occupation] : [])
+              }
+              onOccupationsChange={(occupations) =>
+                setProfile({
+                  ...profile,
+                  occupations,
+                  occupation: occupations[0]
+                })
+              }
+              statesOfOrigin={
+                profile.statesOfOrigin ??
+                (profile.stateOfOrigin ? [profile.stateOfOrigin] : [])
+              }
+              onStatesOfOriginChange={(statesOfOrigin) =>
+                setProfile({
+                  ...profile,
+                  statesOfOrigin,
+                  stateOfOrigin: statesOfOrigin[0]
+                })
+              }
+              genotypes={profile.genotypes ?? (profile.genotype ? [profile.genotype] : [])}
+              onGenotypesChange={(genotypes) =>
+                setProfile({
+                  ...profile,
+                  genotypes,
+                  genotype: genotypes[0]
+                })
+              }
+              hasKids={profile.hasKidsOptions ?? []}
+              onHasKidsChange={(hasKidsOptions) => setProfile({ ...profile, hasKidsOptions })}
+              wantsKids={profile.wantsKidsOptions ?? []}
+              onWantsKidsChange={(wantsKidsOptions) => setProfile({ ...profile, wantsKidsOptions })}
+              bodyTypes={profile.bodyTypes ?? []}
+              onBodyTypesChange={(bodyTypes) => setProfile({ ...profile, bodyTypes })}
+            />
+          </EditAccordion>
 
-            <fieldset className="intent-fieldset profile-form-row">
-              <legend>Tribe</legend>
-              <div className="intent-tags selectable match-prefs-scroll">
-                {ETHNIC_BACKGROUNDS.map((tribe) => (
-                  <button
-                    key={tribe}
-                    type="button"
-                    className={`intent-tag ${profile.ethnicity === tribe ? "selected" : ""}`}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        ethnicity: profile.ethnicity === tribe ? undefined : (tribe as EthnicBackground)
-                      })
-                    }
-                  >
-                    {tribe}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset profile-form-row">
-              <legend>Religion</legend>
-              <div className="intent-tags selectable">
-                {RELIGIONS.map((religion) => (
-                  <button
-                    key={religion}
-                    type="button"
-                    className={`intent-tag ${profile.religion === religion ? "selected" : ""}`}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        religion: profile.religion === religion ? undefined : (religion as Religion)
-                      })
-                    }
-                  >
-                    {religion}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset profile-form-row">
-              <legend>Occupation</legend>
-              <div className="intent-tags selectable match-prefs-scroll">
-                {OCCUPATIONS.map((occupation) => (
-                  <button
-                    key={occupation}
-                    type="button"
-                    className={`intent-tag ${profile.occupation === occupation ? "selected" : ""}`}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        occupation:
-                          profile.occupation === occupation ? undefined : (occupation as Occupation)
-                      })
-                    }
-                  >
-                    {occupation}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset profile-form-row">
-              <legend>State of origin</legend>
-              <div className="intent-tags selectable match-prefs-scroll">
-                {NIGERIAN_STATES.map((origin) => (
-                  <button
-                    key={origin}
-                    type="button"
-                    className={`intent-tag ${profile.stateOfOrigin === origin ? "selected" : ""}`}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        stateOfOrigin: profile.stateOfOrigin === origin ? undefined : origin
-                      })
-                    }
-                  >
-                    {origin === "FCT" ? "Abuja" : origin}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset profile-form-row">
-              <legend>Genotype</legend>
-              <div className="intent-tags selectable">
-                {GENOTYPES.map((genotype) => (
-                  <button
-                    key={genotype}
-                    type="button"
-                    className={`intent-tag ${profile.genotype === genotype ? "selected" : ""}`}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        genotype: profile.genotype === genotype ? undefined : (genotype as Genotype)
-                      })
-                    }
-                  >
-                    {genotype}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset profile-form-row">
-              <legend>Has kids / Wants kids</legend>
-              <div className="intent-tags selectable">
-                {KIDS_PREFERENCES.map((pref) => (
-                  <button
-                    key={pref}
-                    type="button"
-                    className={`intent-tag ${profile.kidsPreference === pref ? "selected" : ""}`}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        kidsPreference:
-                          profile.kidsPreference === pref ? undefined : (pref as KidsPreference)
-                      })
-                    }
-                  >
-                    {pref}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+          <EditAccordion
+            id="prompts"
+            title="Profile prompts"
+            hint={
+              profile.profilePrompts?.filter((p) => p.answer.trim()).length
+                ? `${profile.profilePrompts.filter((p) => p.answer.trim()).length} answered`
+                : "Optional"
+            }
+            open={editOpen === "prompts"}
+            onToggle={toggleEditSection}
+          >
+            <ProfilePromptsEditor
+              prompts={profile.profilePrompts}
+              onChange={(profilePrompts) => setProfile({ ...profile, profilePrompts })}
+            />
           </EditAccordion>
 
           <EditAccordion
@@ -734,32 +629,34 @@ export function ProfilePage({
           <h2 className="profile-screen-title">
             {settingsPanel === "hub"
               ? "Settings"
-              : settingsPanel === "preferences"
-                ? "Compatibility Preferences"
+              : settingsPanel === "account"
+                ? "Account"
                 : settingsPanel === "privacy"
-                  ? "Privacy"
+                  ? "Privacy & Safety"
                   : settingsPanel === "notifications"
                     ? "Notifications"
-                    : settingsPanel === "verification"
-                      ? "Verification"
-                      : "Account"}
+                    : settingsPanel === "preferences"
+                      ? "Preferences"
+                      : settingsPanel === "verification"
+                        ? "Verification"
+                        : settingsPanel === "subscription"
+                          ? "Subscription"
+                          : settingsPanel === "help"
+                            ? "Help"
+                            : "Settings"}
           </h2>
 
           {settingsPanel === "hub" && (
             <>
               <section className="card settings-hub-card">
-                <SettingsRow label="Compatibility Preferences" onClick={() => setSettingsPanel("preferences")} />
-                <SettingsRow label="Privacy" onClick={() => setSettingsPanel("privacy")} />
-                <SettingsRow label="Notifications" onClick={() => setSettingsPanel("notifications")} />
-                <SettingsRow label="Verification" onClick={() => setSettingsPanel("verification")} />
                 <SettingsRow label="Account" onClick={() => setSettingsPanel("account")} />
+                <SettingsRow label="Privacy & Safety" onClick={() => setSettingsPanel("privacy")} />
+                <SettingsRow label="Notifications" onClick={() => setSettingsPanel("notifications")} />
+                <SettingsRow label="Preferences" onClick={() => setSettingsPanel("preferences")} />
+                <SettingsRow label="Verification" onClick={() => setSettingsPanel("verification")} />
+                <SettingsRow label="Subscription" onClick={() => setSettingsPanel("subscription")} />
+                <SettingsRow label="Help" onClick={() => setSettingsPanel("help")} />
               </section>
-              <div className="settings-hub-footer">
-                <button type="button" className="profile-logout-link" onClick={handleLogout}>
-                  <LogOut size={16} aria-hidden />
-                  Log out
-                </button>
-              </div>
             </>
           )}
 
@@ -781,172 +678,52 @@ export function ProfilePage({
                 </div>
               </fieldset>
 
-              <fieldset className="intent-fieldset">
-                <legend>Preferred intent</legend>
-                <div className="intent-tags selectable">
-                  {INTENT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      className={`intent-tag ${prefs.intents.includes(opt.id) ? "selected" : ""}`}
-                      onClick={() => togglePref("intents", opt.id)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset className="intent-fieldset">
-                <legend>Faith</legend>
-                <div className="intent-tags selectable">
-                  {FILTER_RELIGIONS.map((religion) => (
-                    <button
-                      key={religion}
-                      type="button"
-                      className={`intent-tag ${prefs.religions.includes(religion) ? "selected" : ""}`}
-                      onClick={() => togglePref("religions", religion)}
-                    >
-                      {religion}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset className="intent-fieldset">
-                <legend>Preferred background</legend>
-                <div className="intent-tags selectable match-prefs-scroll">
-                  {FILTER_ETHNICITIES.map((ethnicity) => (
-                    <button
-                      key={ethnicity}
-                      type="button"
-                      className={`intent-tag ${prefs.ethnicities.includes(ethnicity) ? "selected" : ""}`}
-                      onClick={() => togglePref("ethnicities", ethnicity)}
-                    >
-                      {ethnicity}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset className="intent-fieldset">
-                <legend>Preferred lifestyle</legend>
-                <div className="intent-tags selectable">
-                  {FILTER_LIFESTYLES.map((lifestyle) => (
-                    <button
-                      key={lifestyle}
-                      type="button"
-                      className={`intent-tag ${prefs.lifestyles.includes(lifestyle) ? "selected" : ""}`}
-                      onClick={() => togglePref("lifestyles", lifestyle)}
-                    >
-                      {lifestyle}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset className="intent-fieldset">
-                <legend>Preferred state</legend>
-                <div className="intent-tags selectable match-prefs-scroll">
-                  {NIGERIAN_STATES.map((state) => (
-                    <button
-                      key={state}
-                      type="button"
-                      className={`intent-tag ${prefs.states.includes(state) ? "selected" : ""}`}
-                      onClick={() => {
-                        togglePref("states", state);
-                        setPrefsStatePick(state);
-                      }}
-                    >
-                      {state === "FCT" ? "Abuja" : state}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              {prefsStatePick && (
-                <fieldset className="intent-fieldset">
-                  <legend>Preferred city in {prefsStatePick === "FCT" ? "Abuja" : prefsStatePick}</legend>
-                  <div className="intent-tags selectable match-prefs-scroll">
-                    {citiesForState(prefsStatePick).map((city) => (
-                      <button
-                        key={city}
-                        type="button"
-                        className={`intent-tag ${prefs.cities.includes(city) ? "selected" : ""}`}
-                        onClick={() => togglePrefCity(city)}
-                      >
-                        {city}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-              )}
-
-              <fieldset className="intent-fieldset">
-                <legend>Kids preference</legend>
-                <div className="intent-tags selectable">
-                  {FILTER_KIDS_PREFERENCES.map((pref) => (
-                    <button
-                      key={pref}
-                      type="button"
-                      className={`intent-tag ${(prefs.kidsPreferences ?? []).includes(pref) ? "selected" : ""}`}
-                      onClick={() => togglePref("kidsPreferences", pref)}
-                    >
-                      {pref}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <label className="settings-row settings-row--toggle">
-                <span>
-                  <strong>Verified only</strong>
-                  <small>Prioritize verified profiles on Home</small>
-                </span>
-                <input
-                  type="checkbox"
-                  checked={Boolean(prefs.requireVerified)}
-                  onChange={(e) => setPrefs({ ...prefs, requireVerified: e.target.checked })}
-                />
-              </label>
-
-              <div className="match-prefs-age">
-                <label>
-                  Age from
-                  <input
-                    type="number"
-                    min={18}
-                    max={99}
-                    placeholder="18"
-                    value={prefs.ageMin ?? ""}
-                    onChange={(e) =>
-                      setPrefs({
-                        ...prefs,
-                        ageMin: e.target.value ? Number(e.target.value) : undefined
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  Age to
-                  <input
-                    type="number"
-                    min={18}
-                    max={99}
-                    placeholder="45"
-                    value={prefs.ageMax ?? ""}
-                    onChange={(e) =>
-                      setPrefs({
-                        ...prefs,
-                        ageMax: e.target.value ? Number(e.target.value) : undefined
-                      })
-                    }
-                  />
-                </label>
-              </div>
+              <MatchPreferenceFields
+                religions={prefs.religions}
+                onReligionsChange={(religions) => setPrefs({ ...prefs, religions })}
+                ethnicities={prefs.ethnicities}
+                onEthnicitiesChange={(ethnicities) => setPrefs({ ...prefs, ethnicities })}
+                prefLifestyles={prefs.lifestyles}
+                onPrefLifestylesChange={(lifestyles) => setPrefs({ ...prefs, lifestyles })}
+                states={prefs.states}
+                onStatesChange={(states) => {
+                  setPrefs((current) => ({
+                    ...current,
+                    states,
+                    cities: current.cities.filter((city) =>
+                      states.some((state) => citiesForState(state).includes(city))
+                    )
+                  }));
+                }}
+                cities={prefs.cities}
+                onCitiesChange={(cities) => setPrefs({ ...prefs, cities })}
+                ageMin={prefs.ageMin ?? 22}
+                ageMax={prefs.ageMax ?? 35}
+                onAgeRangeChange={(ageMin, ageMax) => setPrefs({ ...prefs, ageMin, ageMax })}
+                occupations={prefs.occupations}
+                onOccupationsChange={(occupations) => setPrefs({ ...prefs, occupations })}
+                statesOfOrigin={prefs.statesOfOrigin}
+                onStatesOfOriginChange={(statesOfOrigin) => setPrefs({ ...prefs, statesOfOrigin })}
+                relationshipIntentions={prefs.relationshipIntentions}
+                onRelationshipIntentionsChange={(relationshipIntentions) =>
+                  setPrefs({ ...prefs, relationshipIntentions })
+                }
+                genotypes={prefs.genotypes}
+                onGenotypesChange={(genotypes) => setPrefs({ ...prefs, genotypes })}
+                hasKids={prefs.hasKids}
+                onHasKidsChange={(hasKids) => setPrefs({ ...prefs, hasKids })}
+                wantsKids={prefs.wantsKids}
+                onWantsKidsChange={(wantsKids) => setPrefs({ ...prefs, wantsKids })}
+                bodyTypes={prefs.bodyTypes}
+                onBodyTypesChange={(bodyTypes) => setPrefs({ ...prefs, bodyTypes })}
+                verificationPreferences={prefs.verificationPreferences}
+                onVerificationPreferencesChange={(verificationPreferences) =>
+                  setPrefs({ ...prefs, verificationPreferences, requireVerified: false })
+                }
+              />
 
               <button type="button" className="btn-primary btn-full" onClick={save}>
-                Save preferences
+                {BUTTON_COPY.save}
               </button>
             </section>
           )}
@@ -978,8 +755,8 @@ export function ProfilePage({
                   </label>
                 ))}
               </section>
-              <details className="settings-advanced">
-                <summary>Safety controls</summary>
+              <details className="settings-advanced" open>
+                <summary>Privacy & Safety controls</summary>
                 <SafetySettingsCard
                   profile={profile}
                   onChange={(safetySettings: SafetySettings) => {
@@ -994,8 +771,31 @@ export function ProfilePage({
           {settingsPanel === "notifications" && (
             <section className="card settings-card settings-card--quiet">
               <p className="profile-overview-empty">
-                Signal, match, and activity alerts appear in your notification center.
+                Signal and conversation alerts appear in your notification center.
               </p>
+            </section>
+          )}
+
+          {settingsPanel === "subscription" && (
+            <section className="card settings-card">
+              {isPremium ? (
+                <p className="profile-overview-empty">Signal Pass is active on your account.</p>
+              ) : (
+                <button type="button" className="settings-row" onClick={onUpgrade}>
+                  <span>Get Signal Pass</span>
+                </button>
+              )}
+            </section>
+          )}
+
+          {settingsPanel === "help" && (
+            <section className="card settings-card settings-card--quiet">
+              <p className="profile-overview-empty">
+                {getCms().supportWhatsapp
+                  ? `Reach us on WhatsApp. ${getCms().supportResponseTime}.`
+                  : `We're here to help. ${getCms().supportResponseTime}.`}
+              </p>
+              <p className="profile-overview-empty">{getCms().supportHours}</p>
             </section>
           )}
 
@@ -1017,15 +817,27 @@ export function ProfilePage({
 
           {settingsPanel === "account" && (
             <>
+              <ProfileAccountPanel
+                user={user}
+                profile={profile}
+                isPremium={isPremium}
+                onProfileChange={setProfile}
+                onUsernameChange={(username) => {
+                  const nextUser = { ...user, username };
+                  writeJson(STORAGE_KEYS.userProfile, nextUser);
+                  onUserChange(nextUser);
+                }}
+                onLogout={handleLogout}
+                onMessage={showModMessage}
+              />
               <section className="card settings-card">
-                {!isPremium && (
-                  <button type="button" className="settings-row" onClick={onUpgrade}>
-                    <span>Signal Pass</span>
-                  </button>
-                )}
                 <button type="button" className="settings-row" onClick={onToggleTheme}>
                   {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
                   <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+                </button>
+                <button type="button" className="settings-row settings-row--logout" onClick={handleLogout}>
+                  <LogOut size={20} />
+                  <span>Log out</span>
                 </button>
               </section>
             </>

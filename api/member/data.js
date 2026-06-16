@@ -283,6 +283,11 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: "City is required for profile sync." });
       }
 
+      const profile = body.profile || {};
+      const hideFromDiscovery = Boolean(profile.safetySettings?.hideFromDiscovery);
+      const discoverable =
+        body.discoverable !== false && !hideFromDiscovery && body.accountStatus !== "deleted_pending";
+
       const row = await upsertMemberProfile({
         email: identity.email,
         phone: identity.phone,
@@ -290,12 +295,133 @@ export default async function handler(req, res) {
         username: String(body.username || "").trim() || null,
         city,
         state: String(body.state || body.profile?.state || "").trim() || null,
-        profile: body.profile || {},
-        discoverable: body.discoverable !== false,
+        profile,
+        discoverable,
         onboardingComplete: Boolean(body.onboardingComplete ?? body.profile?.onboardingComplete),
         cityHomeHidden: Boolean(body.cityHomeHidden)
       });
       return res.status(row ? 200 : 503).json({ ok: Boolean(row), profile: row });
+    }
+
+    if (req.query.action === "account-state") {
+      if (!requireDatabase(res)) return;
+      const { fetchMemberAccountState } = await import("../../server/memberTrust.js");
+      const state = await fetchMemberAccountState(identity);
+      return res.status(200).json({ ok: true, account: state });
+    }
+
+    if (req.query.action === "check-username") {
+      if (!requireDatabase(res)) return;
+      const { checkUsernameAvailable } = await import("../../server/memberTrust.js");
+      const result = await checkUsernameAvailable(
+        String(body.username || ""),
+        body.excludeProfileId || null
+      );
+      return res.status(result.available ? 200 : 409).json(result);
+    }
+
+    if (req.query.action === "change-username") {
+      if (!requireDatabase(res)) return;
+      const { changeMemberUsername } = await import("../../server/memberTrust.js");
+      const result = await changeMemberUsername({
+        email: identity.email,
+        phone: identity.phone,
+        username: String(body.username || "")
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "pause-profile") {
+      if (!requireDatabase(res)) return;
+      const { pauseMemberProfile } = await import("../../server/memberTrust.js");
+      const result = await pauseMemberProfile({
+        email: identity.email,
+        phone: identity.phone,
+        reason: body.reason
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "unpause-profile") {
+      if (!requireDatabase(res)) return;
+      const { unpauseMemberProfile } = await import("../../server/memberTrust.js");
+      const result = await unpauseMemberProfile({ email: identity.email, phone: identity.phone });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "soft-delete-account") {
+      if (!requireDatabase(res)) return;
+      const { softDeleteMemberAccount } = await import("../../server/memberTrust.js");
+      const result = await softDeleteMemberAccount({ email: identity.email, phone: identity.phone });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "restore-account") {
+      if (!requireDatabase(res)) return;
+      const { restoreMemberAccount } = await import("../../server/memberTrust.js");
+      const result = await restoreMemberAccount({ email: identity.email, phone: identity.phone });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "connection-note") {
+      if (!requireDatabase(res)) return;
+      const { fetchConnectionNote, upsertConnectionNote } = await import("../../server/memberTrust.js");
+      const targetProfileId = String(body.targetProfileId || "").trim();
+      if (req.method === "GET" || body.readOnly) {
+        const note = await fetchConnectionNote({
+          email: identity.email,
+          phone: identity.phone,
+          targetProfileId
+        });
+        return res.status(200).json({ ok: true, note });
+      }
+      const result = await upsertConnectionNote({
+        email: identity.email,
+        phone: identity.phone,
+        targetProfileId,
+        note: body.note
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "send-introduction") {
+      if (!requireDatabase(res)) return;
+      const { sendMemberIntroduction } = await import("../../server/memberTrust.js");
+      const result = await sendMemberIntroduction({
+        email: identity.email,
+        phone: identity.phone,
+        targetProfileId: String(body.targetProfileId || ""),
+        recipientProfileId: String(body.recipientProfileId || ""),
+        note: body.note
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "success-story") {
+      if (!requireDatabase(res)) return;
+      const { submitSuccessStory } = await import("../../server/memberTrust.js");
+      const result = await submitSuccessStory({
+        email: identity.email,
+        phone: identity.phone,
+        story: body.story,
+        anonymous: body.anonymous
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "moderation-flag") {
+      if (!requireDatabase(res)) return;
+      const { createModerationFlag } = await import("../../server/memberTrust.js");
+      const { normalizeUserKey } = await import("../../server/db.js");
+      const userKey = normalizeUserKey(identity);
+      const flag = await createModerationFlag({
+        userKey,
+        profileId: body.profileId || null,
+        reason: String(body.reason || ""),
+        severity: body.severity || "medium",
+        metadata: body.metadata || {}
+      });
+      return res.status(flag ? 200 : 400).json({ ok: Boolean(flag), flag });
     }
 
     return res.status(400).json({ ok: false, error: "Unknown action." });

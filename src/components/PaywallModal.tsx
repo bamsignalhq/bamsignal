@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Check, X } from "lucide-react";
 import type { PlanId, PremiumPlan } from "../constants/plans";
 import { SIGNAL_PASS_INCLUDES, durationLabel, planBadge, planShortLabel } from "../constants/plans";
+import { BRAND, MONETIZATION_COPY } from "../constants/copy";
 import { trackEvent } from "../utils/analytics";
 import { trackUpgradeClick, trackUpgradeImpression } from "../utils/premiumConversion";
 
@@ -48,9 +49,9 @@ export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: Pa
         </button>
 
         <h2 id="paywall-title" className="paywall-modal__title">
-          Signal Pass
+          {BRAND.paywallTitle}
         </h2>
-        <p className="paywall-modal__subtitle">Choose a plan</p>
+        <p className="paywall-modal__subtitle">{BRAND.paywallBody}</p>
 
         <div className="premium-plan-strip premium-plan-strip--modal" aria-label="Signal Pass plans">
           {plans.map((plan) => {
@@ -99,7 +100,7 @@ export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: Pa
             onSelectPlan(selected);
           }}
         >
-          {loading ? "Opening checkout…" : "Upgrade Now"}
+          {loading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.getSignalPass}
         </button>
       </div>
     </div>

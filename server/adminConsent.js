@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { commandCenterPin } from "./consoleEnv.js";
 import { getPlatformSetting, setPlatformSetting } from "./db.js";
 import { requireAdmin, verifySupabaseAdmin } from "./adminAuth.js";
 
@@ -16,7 +17,7 @@ function hashPin(pin) {
 async function configuredPinHash() {
   const fromDb = await getPlatformSetting(PIN_SETTING_KEY, null);
   if (typeof fromDb === "string" && fromDb.length >= 32) return fromDb;
-  const fromEnv = String(process.env.ADMIN_ACTION_PIN || "").trim();
+  const fromEnv = commandCenterPin();
   if (!fromEnv) return null;
   return hashPin(fromEnv);
 }
@@ -69,7 +70,7 @@ export function verifyAdminConsentToken(token, email) {
   return true;
 }
 
-export async function getAdminEmailFromRequest(req) {
+export export async function getAdminEmailFromRequest(req) {
   const authHeader = req.headers.authorization || "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
   if (!bearer || !process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY) return null;
@@ -93,7 +94,7 @@ export async function requireAdminConsent(req, res) {
     if (process.env.NODE_ENV !== "production") return true;
     res.status(503).json({
       ok: false,
-      error: "Set ADMIN_ACTION_PIN in server environment before making admin changes.",
+      error: "Set COMMAND_CENTER_PIN in server environment before making console changes.",
       code: "pin_not_configured"
     });
     return false;

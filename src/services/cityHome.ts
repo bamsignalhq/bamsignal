@@ -2,6 +2,7 @@ import type { DatingProfile, DiscoverProfile, UserProfile } from "../types";
 import { apiUrl } from "./supabase";
 import { readResponseJson } from "../utils/httpJson";
 import { appendAdminConsentHeader } from "../utils/adminConsent";
+import { shouldHideFromDiscovery } from "../utils/safety";
 import { supabase } from "./supabase";
 
 export type CityHomeProfile = {
@@ -140,6 +141,7 @@ export async function syncMemberProfileRemote(
   profile: DatingProfile
 ): Promise<boolean> {
   try {
+    const paused = Boolean(profile.profilePausedAt);
     const response = await fetch(apiUrl("/api/member/data?action=profile"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -152,7 +154,7 @@ export async function syncMemberProfileRemote(
         state: profile.state,
         profile,
         onboardingComplete: profile.onboardingComplete,
-        discoverable: true
+        discoverable: !shouldHideFromDiscovery(profile) && !paused
       })
     });
     const payload = await readResponseJson<{ ok?: boolean }>(response);

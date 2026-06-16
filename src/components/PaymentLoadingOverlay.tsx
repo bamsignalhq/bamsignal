@@ -1,9 +1,11 @@
+import { MONETIZATION_COPY } from "../constants/copy";
+
 type PaymentLoadingOverlayProps = {
   message?: string;
 };
 
 export function PaymentLoadingOverlay({
-  message = "Starting secure payment…"
+  message = MONETIZATION_COPY.checkoutLoading
 }: PaymentLoadingOverlayProps) {
   return (
     <div className="payment-loading-overlay" role="status" aria-live="polite">

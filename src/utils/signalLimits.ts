@@ -24,11 +24,15 @@ export function signalsRemainingLabel(isPremium: boolean): string | null {
   if (isPremium) return null;
   const left = getFreeSignalsRemaining(false);
   if (left <= 0) return null;
-  return `${left} Signal${left === 1 ? "" : "s"} left today`;
+  return `${left} Signal${left === 1 ? "" : "s"} available today`;
 }
 
 export function signalLimitReachedMessage(): string {
-  return "You've used your 5 free Signals today. Upgrade to keep sending Signals.";
+  return "You've used today's free signals.";
+}
+
+export function signalLimitReachedHint(): string {
+  return "Signal Pass lets you keep connecting.";
 }
 
 export type SignalGateResult =

@@ -2,16 +2,17 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppLogo } from "../components/AppLogo";
 import { DEMO_ADMIN, matchDemoAdmin } from "../constants/demoAccounts";
-import { HARD_AUTH_PATH, HARD_HUB_PATH, navigateToPath } from "../constants/routes";
-import { friendlyAuthError, supabase } from "../services/supabase";
+import { HARD_HUB_PATH, navigateToPath } from "../constants/routes";
+import { createConsoleAccess, fetchConsoleSetupStatus } from "../services/consoleSetup";
 import { verifyAdminSession } from "../services/plans";
+import { friendlyAuthError, supabase } from "../services/supabase";
 import {
   getHardLastRoute,
   persistHardSession,
   snapshotMemberSessionBeforeHardLogin
 } from "../utils/adminSession";
 
-type AuthMode = "login" | "forgot" | "recovery" | "change-password";
+type AuthMode = "login" | "forgot" | "recovery" | "change-password" | "setup";
 
 type AdminAuthPageProps = {
   onAuthed: () => void;
@@ -30,8 +31,10 @@ export function AdminAuthPage({
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [setupSecret, setSetupSecret] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [checkingSetup, setCheckingSetup] = useState(!allowPasswordChange);
 
   useEffect(() => {
     if (!supabase || allowPasswordChange) return;
@@ -44,9 +47,25 @@ export function AdminAuthPage({
     return () => data.subscription.unsubscribe();
   }, [allowPasswordChange]);
 
+  useEffect(() => {
+    if (allowPasswordChange) return;
+    let cancelled = false;
+    void (async () => {
+      const needsSetup = await fetchConsoleSetupStatus();
+      if (cancelled) return;
+      if (needsSetup) {
+        setMode("setup");
+      }
+      setCheckingSetup(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [allowPasswordChange]);
+
   const finishAuthed = async (sessionEmail: string, accessToken?: string) => {
     await persistHardSession(sessionEmail, accessToken);
-    navigateToPath(getHardLastRoute() || HARD_HUB_PATH);
+    navigateToPath(HARD_HUB_PATH);
     onAuthed();
   };
 
@@ -85,6 +104,71 @@ export function AdminAuthPage({
       }
 
       setMessage("Invalid credentials.");
+    } catch (error) {
+      setMessage(friendlyAuthError(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const runSetup = async () => {
+    setBusy(true);
+    setMessage("");
+    try {
+      const targetEmail = email.trim().toLowerCase();
+      if (!targetEmail) {
+        setMessage("Enter your email.");
+        return;
+      }
+      if (password.length < 8) {
+        setMessage("Use at least 8 characters.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setMessage("Passwords do not match.");
+        return;
+      }
+      if (!setupSecret.trim()) {
+        setMessage("Enter the setup secret.");
+        return;
+      }
+
+      const result = await createConsoleAccess({
+        email: targetEmail,
+        password,
+        confirmPassword,
+        setupSecret: setupSecret.trim()
+      });
+      if (!result.ok) {
+        setMessage(result.error || "Setup failed.");
+        return;
+      }
+
+      if (!supabase) {
+        setMessage("Authentication is not configured.");
+        return;
+      }
+
+      await snapshotMemberSessionBeforeHardLogin();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: targetEmail,
+        password
+      });
+      if (error) throw error;
+      const token = data.session?.access_token;
+      if (!token) {
+        setMessage("Account created. Sign in with your new password.");
+        setMode("login");
+        return;
+      }
+      const ok = await verifyAdminSession(token);
+      if (!ok) {
+        await supabase.auth.signOut();
+        setMessage("Account created but console access was not granted. Contact support.");
+        setMode("login");
+        return;
+      }
+      await finishAuthed(targetEmail, token);
     } catch (error) {
       setMessage(friendlyAuthError(error));
     } finally {
@@ -154,13 +238,27 @@ export function AdminAuthPage({
     }
   };
 
-  const loginTitle = allowPasswordChange || mode === "recovery" ? "BamSignal" : "BamSignal";
+  const loginTitle = "BamSignal";
   const loginSubtitle =
-    mode === "forgot"
-      ? "Password reset"
-      : mode === "recovery" || mode === "change-password"
-        ? "Set new password"
-        : "Command Center";
+    mode === "setup"
+      ? "Create Command Center Access"
+      : mode === "forgot"
+        ? "Password reset"
+        : mode === "recovery" || mode === "change-password"
+          ? "Set new password"
+          : "Command Center";
+
+  if (checkingSetup && !allowPasswordChange) {
+    return (
+      <main className="auth-page hard-auth-page">
+        <div className="auth-shell">
+          <div className="auth-card auth-card--fintech hard-auth-card">
+            <Loader2 className="spin" size={28} aria-label="Loading" />
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="auth-page hard-auth-page">
@@ -174,7 +272,7 @@ export function AdminAuthPage({
           <p className="auth-sub">{loginSubtitle}</p>
 
           <div className="auth-fields">
-            {(mode === "login" || mode === "forgot") && (
+            {(mode === "login" || mode === "forgot" || mode === "setup") && (
               <label className="auth-field">
                 <span>Email</span>
                 <input
@@ -186,16 +284,39 @@ export function AdminAuthPage({
               </label>
             )}
 
-            {mode === "login" && (
+            {(mode === "login" || mode === "setup") && (
               <label className="auth-field">
                 <span>Password</span>
                 <input
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete={mode === "setup" ? "new-password" : "current-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </label>
+            )}
+
+            {mode === "setup" && (
+              <>
+                <label className="auth-field">
+                  <span>Confirm password</span>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </label>
+                <label className="auth-field">
+                  <span>Setup secret</span>
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    value={setupSecret}
+                    onChange={(e) => setSetupSecret(e.target.value)}
+                  />
+                </label>
+              </>
             )}
 
             {(mode === "recovery" || mode === "change-password") && (
@@ -230,6 +351,18 @@ export function AdminAuthPage({
                 </>
               ) : (
                 "Access Console"
+              )}
+            </button>
+          )}
+
+          {mode === "setup" && (
+            <button type="button" className="btn-primary btn-full btn-auth" onClick={runSetup} disabled={busy}>
+              {busy ? (
+                <>
+                  <Loader2 className="spin" size={20} /> Creating access…
+                </>
+              ) : (
+                "Create access"
               )}
             </button>
           )}

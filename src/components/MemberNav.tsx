@@ -12,7 +12,7 @@ const TABS: { id: NavTab; label: string; badgeKey?: "likes" | "messages" }[] = [
   { id: "home", label: "Home" },
   { id: "discover", label: "Discover" },
   { id: "likes", label: "Likes", badgeKey: "likes" },
-  { id: "chats", label: "Messages", badgeKey: "messages" },
+  { id: "chats", label: "Chats", badgeKey: "messages" },
   { id: "me", label: "Me" }
 ];
 

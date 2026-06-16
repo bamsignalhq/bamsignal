@@ -1,11 +1,12 @@
 import { BadgeCheck, Crown, Mic, ShieldCheck, Sparkles } from "lucide-react";
+import { MONETIZATION_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { FREE_DAILY_MESSAGES, FREE_DAILY_SWIPES, STORAGE_KEYS } from "../../constants/limits";
 import type { DatingProfile } from "../../types";
+import { getProfileStrengthSuggestions } from "../../utils/profileStrength";
 import { readDailyCount } from "../../utils/storage";
 
 type DashboardNextStepsProps = {
   profile: DatingProfile;
-  strength: number;
   isPremium: boolean;
   onCompleteProfile: () => void;
   onOpenPricing: () => void;
@@ -22,7 +23,6 @@ type Step = {
 
 export function DashboardNextSteps({
   profile,
-  strength,
   isPremium,
   onCompleteProfile,
   onOpenPricing
@@ -32,13 +32,15 @@ export function DashboardNextSteps({
   const swipesLeft = Math.max(0, FREE_DAILY_SWIPES - swipesUsed);
   const messagesLeft = Math.max(0, FREE_DAILY_MESSAGES - messagesUsed);
 
+  const suggestions = getProfileStrengthSuggestions(profile);
+
   const steps: Step[] = [];
 
-  if (strength < 100) {
+  if (suggestions.length > 0) {
     steps.push({
       id: "strength",
-      label: `Profile ${strength}%`,
-      detail: "Complete profile",
+      label: SUCCESS_COPY.profileShine,
+      detail: suggestions[0],
       icon: Sparkles,
       onClick: onCompleteProfile
     });
@@ -72,8 +74,8 @@ export function DashboardNextSteps({
   if (!isPremium) {
     steps.push({
       id: "upgrade",
-      label: "Upgrade",
-      detail: `${swipesLeft} swipes · ${messagesLeft} msgs left`,
+      label: MONETIZATION_COPY.getSignalPass,
+      detail: `${swipesLeft} signal${swipesLeft === 1 ? "" : "s"} · ${messagesLeft} msg${messagesLeft === 1 ? "" : "s"} left`,
       icon: Crown,
       onClick: onOpenPricing,
       accent: "upgrade"

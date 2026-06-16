@@ -40,7 +40,15 @@ export const defaultMatchPreferences = (): MatchPreferences => ({
   lifestyles: [],
   cities: [],
   states: [],
+  statesOfOrigin: [],
   intents: [],
+  occupations: [],
+  genotypes: [],
+  bodyTypes: [],
+  relationshipIntentions: [],
+  hasKids: [],
+  wantsKids: [],
+  verificationPreferences: [],
   preferenceMode: "flexible",
   kidsPreferences: []
 });
@@ -70,9 +78,14 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
   const base = defaultDatingProfile();
   const city = raw.city ?? base.city;
   const state = raw.state ?? stateForCity(city) ?? base.state;
-  const dateOfBirth = raw.dateOfBirth ?? base.dateOfBirth;
+  const dateOfBirth =
+    raw.dateOfBirth !== undefined
+      ? raw.dateOfBirth
+      : raw.age !== undefined
+        ? undefined
+        : base.dateOfBirth;
   const computedAge = dateOfBirth ? ageFromDateOfBirth(dateOfBirth) : null;
-  const age = computedAge ?? raw.age ?? base.age;
+  const age = raw.age ?? computedAge ?? base.age;
   const gender =
     raw.gender && (raw.gender as string) !== "Prefer not to say"
       ? (raw.gender as DatingProfile["gender"])
@@ -108,6 +121,7 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     visibility: { ...base.visibility!, ...raw.visibility },
     matchingPrivacy: { ...base.matchingPrivacy!, ...raw.matchingPrivacy },
     safetySettings: { ...defaultSafetySettings(raw.gender ?? base.gender), ...raw.safetySettings },
+    profilePrompts: raw.profilePrompts ?? [],
     createdAt: raw.createdAt ?? base.createdAt ?? new Date().toISOString()
   };
 }
@@ -120,10 +134,32 @@ function sanitizeProfilePhotos(photos: string[], coverPhoto?: string): string[] 
 
 export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): MatchPreferences {
   const base = defaultMatchPreferences();
+  const legacyKids = raw.kidsPreferences ?? base.kidsPreferences ?? [];
+  const hasKids =
+    raw.hasKids ??
+    legacyKids.filter((k): k is import("../types").HasKidsOption => k === "Has kids" || k === "No kids");
+  const wantsKids =
+    raw.wantsKids ??
+    legacyKids.filter(
+      (k): k is import("../types").WantsKidsOption =>
+        k === "Wants kids" || k === "Doesn't want kids" || k === "Open to kids"
+    );
+  const verificationPreferences =
+    raw.verificationPreferences ??
+    (raw.requireVerified ? (["Selfie verified"] as import("../types").VerificationPreference[]) : []);
+
   return {
     ...base,
     ...raw,
     states: raw.states ?? base.states,
+    statesOfOrigin: raw.statesOfOrigin ?? base.statesOfOrigin,
+    occupations: raw.occupations ?? base.occupations,
+    genotypes: raw.genotypes ?? base.genotypes,
+    bodyTypes: raw.bodyTypes ?? base.bodyTypes,
+    relationshipIntentions: raw.relationshipIntentions ?? base.relationshipIntentions,
+    hasKids,
+    wantsKids,
+    verificationPreferences,
     preferenceMode: raw.preferenceMode ?? base.preferenceMode,
     onlineNow: raw.onlineNow ?? false,
     minCompatibility: raw.minCompatibility,

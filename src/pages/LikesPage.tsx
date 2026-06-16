@@ -1,6 +1,6 @@
 import { Crown, Sparkles, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { BRAND } from "../constants/copy";
+import { BRAND, BUTTON_COPY, MONETIZATION_COPY, SUCCESS_COPY } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
 import { EmptyState } from "../components/EmptyState";
 import { ReportBlockModal } from "../components/ReportBlockModal";
@@ -77,7 +77,7 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
     writeJson(STORAGE_KEYS.likedBy, next);
     trackEvent("signal_accepted", { profileId: entry.profileId });
     notifySignalAccepted(entry.name);
-    showToast(`${BRAND.signalAccepted}! Message ${entry.name} in Messages.`);
+    showToast(`${BRAND.matchCreated} ${BRAND.matchCreatedSub}`);
   };
 
   const declineSignal = async (entry: LikeEntry) => {
@@ -105,8 +105,9 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
         </header>
         <EmptyState
           icon={Zap}
-          title="No signals yet"
-          actionLabel="Discover people nearby"
+          title={SUCCESS_COPY.emptyPremiumState}
+          message="When someone signals you, they'll appear here."
+          actionLabel={BUTTON_COPY.explore}
           onAction={onDiscover ?? onUpgrade}
         />
       </div>
@@ -120,12 +121,14 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
           <p className="member-page-head__eyebrow">Likes</p>
           <h1>{signals.length} signal{signals.length === 1 ? "" : "s"} waiting</h1>
           <p className="member-page-head__sub">
-            {isPremium ? "Accept to start chatting in Messages." : "Upgrade to reveal who signaled you."}
+            {isPremium
+              ? "Accept a signal to start a conversation."
+              : "Signal Pass shows you who's interested."}
           </p>
         </div>
         {!isPremium && (
           <button type="button" className="member-page-head__cta" onClick={onUpgrade}>
-            <Crown size={16} /> Unlock
+            <Crown size={16} /> {MONETIZATION_COPY.seeEveryone}
           </button>
         )}
       </header>
@@ -161,7 +164,7 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
                   className={isPremium ? "" : "blurred-photo"}
                 />
                 {entry.superLike && isPremium && (
-                  <span className="likes-row__priority" aria-label="Priority signal">
+                  <span className="likes-row__priority" aria-label="Priority introduction">
                     ⚡
                   </span>
                 )}
@@ -173,7 +176,7 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
                   <span className="likes-row__time">{timeAgo(entry.at)}</span>
                 </div>
                 <p className="likes-row__meta">
-                  {isPremium ? entry.city : "Upgrade to reveal"}
+                  {isPremium ? entry.city : MONETIZATION_COPY.lockedFeature}
                   {isPremium && profile?.lastActiveAt && (
                     <>
                       {" · "}
@@ -199,7 +202,7 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
                   </button>
                 </div>
               ) : (
-                <button type="button" className="likes-row__lock" onClick={onUpgrade} aria-label="Unlock">
+                <button type="button" className="likes-row__lock" onClick={onUpgrade} aria-label={MONETIZATION_COPY.seeEveryone}>
                   <Crown size={18} />
                 </button>
               )}
@@ -212,11 +215,11 @@ export function LikesPage({ isPremium, onUpgrade, onCompleteProfile, onDiscover 
         <section className="member-upgrade-banner card">
           <Crown size={22} />
           <div>
-            <h3>See who signaled you</h3>
-            <p>Reveal names, photos, and accept signals instantly.</p>
+            <h3>People interested in you</h3>
+            <p>{SUCCESS_COPY.emptyPremiumState}</p>
           </div>
           <button type="button" className="btn-primary btn-full" onClick={onUpgrade}>
-            Unlock signal passes
+            {MONETIZATION_COPY.seeEveryone}
           </button>
         </section>
       )}

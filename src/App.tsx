@@ -98,6 +98,8 @@ import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdent
 import { clearMemberSessionCaches } from "./utils/authSession";
 import { boostNeedsMemberCity } from "./constants/boosts";
 import { PAYMENT_START_ERROR } from "./config/paystack";
+import { boostSuccessCopy } from "./constants/boosts";
+import { MONETIZATION_COPY } from "./constants/copy";
 import { USER_MESSAGES } from "./constants/userMessages";
 import { DEMO_USER } from "./constants/demoAccounts";
 import { getMemberCity } from "./utils/memberCity";
@@ -265,15 +267,8 @@ export function App() {
       if (kind === "boost") {
         const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
         activateBoost(boostId as BoostProduct["id"], user, datingProfile);
-        setPaymentSuccess({
-          title: "Payment successful",
-          body:
-            boostId === "city-spotlight"
-              ? `Hot spotlight is live for 24 hours in ${datingProfile.city || "your city"}.`
-              : boostId === "city-boost"
-                ? "Your City Boost is now active."
-                : `${boostId.replace(/-/g, " ")} is now active.`
-        });
+        const boostCopy = boostSuccessCopy(boostId as BoostProduct["id"], datingProfile.city);
+        setPaymentSuccess(boostCopy);
         notifyBoostActivated(boostId);
         trackEvent("boost_activated", { product: boostId, paid: "true" });
       } else if (kind === "quickie") {
@@ -288,8 +283,8 @@ export function App() {
           setIsPremium(premium.isPremium || isPremiumTrialActive());
         });
         setPaymentSuccess({
-          title: "Payment successful",
-          body: "Your Signal Pass is active."
+          title: MONETIZATION_COPY.paymentSuccessTitle,
+          body: MONETIZATION_COPY.paymentSuccessBody
         });
         trackEvent("payment_successful");
         notifyPremiumActivated();

@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import type { ChatMessage, ChatThread, LikeEntry, Match, ReportRecord, UserProfile } from "../types";
 import { readJson, writeJson } from "../utils/storage";
+import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
 import { cacheDiscoverProfiles } from "./discoverProfiles";
 import { setPremiumSnapshot } from "./premiumStatus";
 import { apiUrl } from "./supabase";
@@ -20,6 +21,7 @@ type MemberBundle = {
   premium?: { isPremium: boolean; premiumUntil: string | null };
   user?: { premium_until?: string | null; is_premium?: boolean };
   memberProfileId?: string;
+  shadowBanned?: boolean;
   datingProfile?: Record<string, unknown>;
   incomingLikes?: Parameters<typeof mergeIncomingSocial>[0]["incomingLikes"];
   incomingFollows?: Parameters<typeof mergeIncomingSocial>[0]["incomingFollows"];
@@ -119,6 +121,15 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
 
   if (bundle.memberProfileId) {
     localStorage.setItem(STORAGE_KEYS.memberProfileId, String(bundle.memberProfileId));
+    const profileId = String(bundle.memberProfileId);
+    const memberKey = memberShadowKey(user.phone, user.email);
+    if (bundle.shadowBanned) {
+      shadowBanId(profileId);
+      shadowBanId(memberKey);
+    } else {
+      liftShadowBan(profileId);
+      liftShadowBan(memberKey);
+    }
   }
 
   if (bundle.datingProfile && typeof bundle.datingProfile === "object") {

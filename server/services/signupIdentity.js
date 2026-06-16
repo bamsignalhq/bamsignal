@@ -22,7 +22,7 @@ export function normalizeSignupEmail(email = "") {
 }
 
 export function normalizeSignupUsername(username = "") {
-  return String(username).trim().toLowerCase().replace(/[^a-z]/g, "");
+  return String(username).trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
 }
 
 /** Nigerian local format: 0XXXXXXXXXX */
@@ -208,7 +208,7 @@ export async function checkSignupIdentityField(field, value) {
 
   if (field === "username") {
     const normalized = normalizeSignupUsername(value);
-    if (normalized.length < 7) return { ok: true, field };
+    if (normalized.length < 4) return { ok: true, field };
     await throwIfTaken("username", await usernameExists(normalized));
     return { ok: true, field, username: normalized };
   }
@@ -233,7 +233,7 @@ export async function assertSignupIdentityAvailable({ email, phone, username }) 
     await throwIfTaken("email", await emailExists(normalizedEmail));
   }
 
-  if (normalizedUsername && normalizedUsername.length >= 7) {
+  if (normalizedUsername && normalizedUsername.length >= 4) {
     await throwIfTaken("username", await usernameExists(normalizedUsername));
   }
 

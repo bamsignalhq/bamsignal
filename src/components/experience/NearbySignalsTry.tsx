@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Zap } from "lucide-react";
+import { BRAND } from "../../constants/copy";
 import { AppLogo } from "../AppLogo";
 import { VerifiedBadge } from "../VerifiedBadge";
 import { BamEffect } from "./BamEffect";
@@ -60,7 +61,7 @@ export function NearbySignalsTry({ onGuestAction }: NearbySignalsTryProps) {
           {phase === "sent" && (
             <div className="world-discover-success">
               <Zap size={18} fill="currentColor" />
-              Signal Sent
+              {BRAND.signalSent}
             </div>
           )}
         </article>

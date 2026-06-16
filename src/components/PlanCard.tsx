@@ -1,3 +1,4 @@
+import { MONETIZATION_COPY } from "../constants/copy";
 import type { PremiumPlan } from "../constants/plans";
 
 type PlanCardProps = {
@@ -17,7 +18,7 @@ export function PlanCard({ plan, onSelect, disabled, compact }: PlanCardProps) {
     >
       <strong>{plan.name}</strong>
       <span className="plan-price">{plan.priceLabel}</span>
-      {!compact && <span className="plan-cta">Upgrade</span>}
+      {!compact && <span className="plan-cta">{MONETIZATION_COPY.getSignalPass}</span>}
     </button>
   );
 }

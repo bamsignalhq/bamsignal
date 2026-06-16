@@ -1,3 +1,5 @@
+import { MONETIZATION_COPY, SUCCESS_COPY } from "../../constants/copy";
+
 type DiscoverPremiumNudgeProps = {
   onUpgrade: () => void;
 };
@@ -5,8 +7,9 @@ type DiscoverPremiumNudgeProps = {
 export function DiscoverPremiumNudge({ onUpgrade }: DiscoverPremiumNudgeProps) {
   return (
     <aside className="discover-premium-nudge card">
-      <button type="button" className="btn-secondary btn-full" onClick={onUpgrade}>
-        Upgrade
+      <p className="discover-premium-nudge__copy">{SUCCESS_COPY.emptyPremiumState}</p>
+      <button type="button" className="btn-primary btn-full" onClick={onUpgrade}>
+        {MONETIZATION_COPY.getSignalPass}
       </button>
     </aside>
   );

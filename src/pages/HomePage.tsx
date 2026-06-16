@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { greetingForHour } from "../constants/copy";
+import { greetingForHour, SUCCESS_COPY } from "../constants/copy";
 import { firstNameFromDisplayName } from "../constants/homeFilters";
 import { clampHomeDistanceForCity } from "../utils/cityMetroRadius";
 import { stateForCity } from "../constants/profileOptions";
@@ -10,23 +10,17 @@ import {
   emptyHomeAdvancedFilters
 } from "../components/home/HomeAdvancedFiltersSheet";
 import { HomeFeedFilters } from "../components/home/HomeFeedFilters";
-import { HomeFilterChips } from "../components/home/HomeFilterChips";
-import { HomeProfileVisitorsCard, HomeSavedSearches } from "../components/home/HomeSavedSearches";
+import { HomeSignalLimitBar } from "../components/home/HomeSignalLimitBar";
 import { HomeQuickFilterSheet } from "../components/home/HomeQuickFilterSheet";
 import { HomeSignalsFeed } from "../components/home/HomeSignalsFeed";
 import { fetchHomeFeedAds } from "../services/homeFeedAds";
-import { fetchVisitorsRemote } from "../services/memberData";
-import type { SavedSearch, UserProfile } from "../types";
+import type { UserProfile } from "../types";
 import { resolveHomeFilterDefaults } from "../utils/homeFilterDefaults";
 import {
   advancedFromMatchPreferences,
-  buildHomeAdvancedChips,
-  deleteSavedSearch,
-  getSavedSearches,
   homeHasCustomFilters
 } from "../utils/homeFilters";
 import { getDatingProfile, normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
-import { getProfileViews, setProfileViewsFromServer } from "../utils/profileViews";
 import { readJson } from "../utils/storage";
 import { useAndroidBack } from "../hooks/useAndroidBack";
 
@@ -57,26 +51,19 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const [advanced, setAdvanced] = useState(() => advancedFromMatchPreferences(prefs));
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
-  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(() => getSavedSearches());
-  const [visitorCount, setVisitorCount] = useState(() => getProfileViews().count);
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(() =>
     localStorage.getItem(STORAGE_KEYS.pendingSignalProfileId)
   );
   const [signalsInRange, setSignalsInRange] = useState<number | null>(null);
   const [signalsLoading, setSignalsLoading] = useState(true);
+  const [signalRefresh, setSignalRefresh] = useState(0);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void fetchHomeFeedAds().then(setAdSettings);
-      void fetchVisitorsRemote(user).then((viewers) => {
-        if (viewers.length) setProfileViewsFromServer(viewers);
-        setVisitorCount(getProfileViews().count);
-      });
     }, 250);
     return () => window.clearTimeout(timer);
   }, [user]);
-
-  const advancedChips = useMemo(() => buildHomeAdvancedChips(advanced, { city, state }), [advanced, city, state]);
 
   const hasCustomFilters = useMemo(
     () =>
@@ -126,17 +113,10 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     setQuickFiltersOpen(false);
   };
 
-  const applySavedSearch = (search: SavedSearch) => {
-    setAgeMin(search.ageMin);
-    setAgeMax(search.ageMax);
-    setState(search.state);
-    setCity(search.city);
-    setAdvanced(search.advanced);
-  };
-
   const handleSignalSent = () => {
     localStorage.removeItem(STORAGE_KEYS.pendingSignalProfileId);
     setPendingProfileId(null);
+    setSignalRefresh((v) => v + 1);
   };
 
   useAndroidBack(() => {
@@ -153,13 +133,19 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
 
   return (
     <div className="page home-page home-page--compact member-content-pad">
-      <header className="home-top home-top--compact">
+      <header className="home-top home-top--compact home-top--row">
         <h1 className="home-top__greeting">
           {greetingForHour()}, {firstName} 👋
         </h1>
+        <HomeSignalLimitBar
+          isPremium={isPremium}
+          onUpgrade={onOpenPremium}
+          refreshKey={signalRefresh}
+        />
       </header>
 
-      <section className="home-discovery home-discovery--compact" aria-label="Find people">
+      <section className="home-discovery home-discovery--compact" aria-label="Filters">
+        <h2 className="home-discovery__title">{SUCCESS_COPY.searchTitle}</h2>
         <HomeFeedFilters
           nameQuery={nameQuery}
           onNameQueryChange={setNameQuery}
@@ -173,24 +159,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
           onOpenAdvanced={() => setAdvancedOpen(true)}
           onReset={resetFilters}
         />
-
-        <HomeFilterChips chips={advancedChips} />
       </section>
-
-      <HomeSavedSearches
-        searches={savedSearches}
-        onApply={applySavedSearch}
-        onDelete={(id) => {
-          deleteSavedSearch(id);
-          setSavedSearches(getSavedSearches());
-        }}
-      />
-
-      <HomeProfileVisitorsCard
-        isPremium={isPremium}
-        visitorCount={visitorCount}
-        onUpgrade={onOpenPremium}
-      />
 
       <HomeSignalsFeed
         user={user}

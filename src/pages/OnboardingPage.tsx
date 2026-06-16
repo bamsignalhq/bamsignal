@@ -1,25 +1,22 @@
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useEffect, useState } from "react";
-import { DateOfBirthPicker } from "../components/DateOfBirthPicker";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
-import { FILTER_RELIGIONS, SOCIAL_LIFESTYLES, NIGERIAN_STATES, citiesForState } from "../constants/profileOptions";
+import { citiesForState } from "../constants/profileOptions";
 import { INTENT_OPTIONS } from "../constants/intents";
 import { MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { STORAGE_KEYS } from "../constants/limits";
 import { InterestPicker } from "../components/InterestPicker";
+import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import type {
   DatingProfile,
   Gender,
   IntentTag,
-  LookingFor,
-  Religion,
-  SocialLifestyle,
   UserProfile
 } from "../types";
 import { USER_MESSAGES } from "../constants/userMessages";
+import { SUCCESS_COPY } from "../constants/copy";
 import { trackEvent } from "../utils/analytics";
-import { isAdultDob } from "../utils/ageFromDob";
 import { defaultSafetySettings } from "../constants/safety";
 import { applyFemaleFirstDefaults } from "../utils/safety";
 import { markJoinedAt, persistCitySelection } from "../utils/launchSeed";
@@ -33,8 +30,13 @@ import { flowLog } from "../utils/flowLog";
 
 const STEPS = ["Basic info", "About you", "Photos", "Preferences"] as const;
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
-const LOOKING: LookingFor[] = ["Men", "Women"];
 const MAX_INTENTS = 2;
+const MIN_ONBOARDING_AGE = 17;
+const MAX_ONBOARDING_AGE = 75;
+const ONBOARDING_AGES = Array.from(
+  { length: MAX_ONBOARDING_AGE - MIN_ONBOARDING_AGE + 1 },
+  (_, i) => MIN_ONBOARDING_AGE + i
+);
 
 type OnboardingPageProps = {
   user: UserProfile;
@@ -52,13 +54,33 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   const [profile, setProfile] = useState<DatingProfile>(() => {
     const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
     if (stored.onboardingComplete) return { ...defaultDatingProfile(), onboardingComplete: false };
-    return normalizeDatingProfile(stored);
+    const normalized = normalizeDatingProfile(stored);
+    const resuming = Boolean(
+      stored.state ||
+        stored.city ||
+        stored.bio?.trim() ||
+        stored.photos?.length ||
+        (stored.age !== undefined && stored.age >= MIN_ONBOARDING_AGE && !stored.dateOfBirth)
+    );
+    if (!resuming) {
+      return {
+        ...normalized,
+        age: 0,
+        gender: "" as Gender,
+        dateOfBirth: undefined,
+        state: "",
+        city: ""
+      };
+    }
+    if (stored.dateOfBirth && !stored.age) {
+      return { ...normalized, dateOfBirth: undefined };
+    }
+    return normalized;
   });
   const [prefStates, setPrefStates] = useState<string[]>([]);
   const [prefCities, setPrefCities] = useState<string[]>([]);
-  const [prefStatePick, setPrefStatePick] = useState("");
-  const [ageMin, setAgeMin] = useState<number | "">(22);
-  const [ageMax, setAgeMax] = useState<number | "">(35);
+  const [ageMin, setAgeMin] = useState(22);
+  const [ageMax, setAgeMax] = useState(35);
 
   const progress = ((step + 1) / STEPS.length) * 100;
 
@@ -101,8 +123,14 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         ...readJson(STORAGE_KEYS.matchPreferences, {}),
         states: prefStates,
         cities: prefCities,
-        ageMin: ageMin === "" ? undefined : Number(ageMin),
-        ageMax: ageMax === "" ? undefined : Number(ageMax)
+        ageMin,
+        ageMax,
+        religions: profile.religion ? [profile.religion] : [],
+        lifestyles: profile.lifestyles?.length
+          ? profile.lifestyles
+          : profile.lifestyle
+            ? [profile.lifestyle]
+            : []
       })
     ) {
       setModMessage(USER_MESSAGES.progressSaveFailed);
@@ -120,7 +148,8 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     if (step === 0) {
       return (
         user.name.trim().length >= 2 &&
-        Boolean(profile.dateOfBirth && isAdultDob(profile.dateOfBirth)) &&
+        profile.age >= MIN_ONBOARDING_AGE &&
+        profile.age <= MAX_ONBOARDING_AGE &&
         Boolean(profile.gender) &&
         Boolean(profile.state && profile.city)
       );
@@ -155,20 +184,6 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     });
   };
 
-  const togglePrefState = (state: string) => {
-    setPrefStates((list) => {
-      const next = list.includes(state) ? list.filter((s) => s !== state) : [...list, state];
-      if (!next.includes(prefStatePick) && prefStatePick) setPrefStatePick("");
-      return next;
-    });
-  };
-
-  const togglePrefCity = (city: string) => {
-    setPrefCities((list) =>
-      list.includes(city) ? list.filter((c) => c !== city) : [...list, city]
-    );
-  };
-
   if (showWelcome) {
     return (
       <div className="page onboarding-page onboarding-welcome-screen">
@@ -176,11 +191,8 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           <div className="onboarding-welcome-icon" aria-hidden>
             <Heart size={48} />
           </div>
-          <h1>Welcome home, {user.name.split(" ")[0] || "friend"} 🤗</h1>
-          <p>
-            Your profile is live. Take a breath — explore your city home, see who's around, and signal when
-            someone feels right.
-          </p>
+          <h1>{SUCCESS_COPY.welcomeTitle}</h1>
+          <p>{SUCCESS_COPY.welcomeBody}</p>
           <button type="button" className="btn-primary btn-full btn-auth" onClick={onComplete}>
             Go to my home
           </button>
@@ -220,35 +232,50 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
               <input
                 value={user.name}
                 onChange={(e) => onUserChange({ ...user, name: e.target.value })}
-                placeholder="Your first name"
                 autoComplete="name"
               />
             </label>
-            <DateOfBirthPicker
-              value={profile.dateOfBirth ?? ""}
-              onChange={(iso, age) =>
-                setProfile((p) => ({
-                  ...p,
-                  dateOfBirth: iso,
-                  age: age ?? p.age
-                }))
-              }
-            />
-            <fieldset className="intent-fieldset onboarding-gender-field">
-              <legend>Gender</legend>
-              <div className="intent-tags selectable">
-                {GENDERS.map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    className={`intent-tag ${profile.gender === g ? "selected" : ""}`}
-                    onClick={() => setProfile({ ...profile, gender: g })}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+            <div className="onboarding-age-gender-row">
+              <label>
+                Age
+                <select
+                  value={profile.age >= MIN_ONBOARDING_AGE ? profile.age : ""}
+                  onChange={(e) =>
+                    setProfile((p) => ({
+                      ...p,
+                      age: Number(e.target.value),
+                      dateOfBirth: undefined
+                    }))
+                  }
+                >
+                  <option value="">Select Age</option>
+                  {ONBOARDING_AGES.map((age) => (
+                    <option key={age} value={age}>
+                      {age}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Gender
+                <select
+                  value={profile.gender || ""}
+                  onChange={(e) =>
+                    setProfile((p) => ({
+                      ...p,
+                      gender: e.target.value as Gender
+                    }))
+                  }
+                >
+                  <option value="">Select Gender</option>
+                  {GENDERS.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <StateCitySelect
               state={profile.state ?? ""}
               city={profile.city}
@@ -307,13 +334,8 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
 
       {step === 2 && (
         <section className="onboarding-step">
-          <h2>Your photos</h2>
-          <p className="onboarding-sub">Profile gallery photos only — you can add a cover photo later from Edit Profile.</p>
-          {profile.photos.some((photo) => photo && !isStoragePhotoUrl(photo)) ? (
-            <p className="onboarding-sub" role="status">
-              Uploading photos… wait until both are saved before continuing.
-            </p>
-          ) : null}
+          <h2>{SUCCESS_COPY.photoHeader}</h2>
+          <p className="onboarding-sub">{SUCCESS_COPY.photoSubtitle}</p>
           <PhotoUploadGrid
             photos={profile.photos}
             signupMode
@@ -342,118 +364,40 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       {step === 3 && (
         <section className="onboarding-step onboarding-step--prefs">
           <h2>Your preferences</h2>
-          <p className="onboarding-sub">Tap to select — refine anytime in Settings.</p>
-
-          <fieldset className="intent-fieldset onboarding-pref-block">
-            <legend>Interested in</legend>
-            <div className="intent-tags selectable">
-              {LOOKING.map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  className={`intent-tag intent-tag--large ${profile.lookingFor === l ? "selected" : ""}`}
-                  onClick={() => setProfile({ ...profile, lookingFor: l })}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="intent-fieldset onboarding-pref-block">
-            <legend>Faith <span className="label-optional">(optional)</span></legend>
-            <div className="intent-tags selectable">
-              {FILTER_RELIGIONS.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`intent-tag ${profile.religion === r ? "selected" : ""}`}
-                  onClick={() => setProfile({ ...profile, religion: r as Religion })}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="intent-fieldset onboarding-pref-block">
-            <legend>Lifestyle <span className="label-optional">(optional)</span></legend>
-            <div className="intent-tags selectable match-prefs-scroll">
-              {SOCIAL_LIFESTYLES.filter((l) => l !== "Prefer not to say").map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  className={`intent-tag ${profile.lifestyle === l ? "selected" : ""}`}
-                  onClick={() => setProfile({ ...profile, lifestyle: l as SocialLifestyle })}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="intent-fieldset onboarding-pref-block">
-            <legend>Preferred state</legend>
-            <div className="intent-tags selectable match-prefs-scroll">
-              {NIGERIAN_STATES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={`intent-tag ${prefStates.includes(s) ? "selected" : ""}`}
-                  onClick={() => {
-                    togglePrefState(s);
-                    setPrefStatePick(s);
-                  }}
-                >
-                  {s === "FCT" ? "Abuja" : s}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          {prefStatePick && (
-            <fieldset className="intent-fieldset onboarding-pref-block">
-              <legend>Preferred cities in {prefStatePick === "FCT" ? "Abuja" : prefStatePick}</legend>
-              <div className="intent-tags selectable match-prefs-scroll">
-                {citiesForState(prefStatePick).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    className={`intent-tag ${prefCities.includes(c) ? "selected" : ""}`}
-                    onClick={() => togglePrefCity(c)}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-          )}
-
-          <fieldset className="intent-fieldset onboarding-pref-block">
-            <legend>Preferred age range</legend>
-            <div className="match-prefs-age">
-              <label>
-                From
-                <input
-                  type="number"
-                  min={18}
-                  max={99}
-                  value={ageMin}
-                  onChange={(e) => setAgeMin(e.target.value ? Number(e.target.value) : "")}
-                />
-              </label>
-              <label>
-                To
-                <input
-                  type="number"
-                  min={18}
-                  max={99}
-                  value={ageMax}
-                  onChange={(e) => setAgeMax(e.target.value ? Number(e.target.value) : "")}
-                />
-              </label>
-            </div>
-          </fieldset>
+          <MatchPreferenceFields
+            className="onboarding-pref-block"
+            lookingFor={profile.lookingFor}
+            onLookingForChange={(lookingFor) =>
+              lookingFor && setProfile({ ...profile, lookingFor })
+            }
+            faith={profile.religion}
+            onFaithChange={(religion) => setProfile({ ...profile, religion })}
+            lifestyles={profile.lifestyles ?? (profile.lifestyle ? [profile.lifestyle] : [])}
+            onLifestylesChange={(lifestyles) =>
+              setProfile({
+                ...profile,
+                lifestyles,
+                lifestyle: lifestyles[0]
+              })
+            }
+            states={prefStates}
+            onStatesChange={(states) => {
+              setPrefStates(states);
+              setPrefCities((current) =>
+                current.filter((city) =>
+                  states.some((state) => citiesForState(state).includes(city))
+                )
+              );
+            }}
+            cities={prefCities}
+            onCitiesChange={setPrefCities}
+            ageMin={ageMin}
+            ageMax={ageMax}
+            onAgeRangeChange={(min, max) => {
+              setAgeMin(min);
+              setAgeMax(max);
+            }}
+          />
         </section>
       )}
 

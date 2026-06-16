@@ -75,28 +75,15 @@ export const ETHNIC_BACKGROUNDS = [
 export type EthnicBackground = (typeof ETHNIC_BACKGROUNDS)[number];
 
 export const SOCIAL_LIFESTYLES = [
-  "Student",
-  "Young Professional",
-  "Entrepreneur",
-  "Business Owner",
-  "Executive",
-  "Creative",
-  "Content Creator",
-  "Influencer",
-  "Freelancer",
-  "Remote Worker",
-  "Tech",
-  "Finance",
-  "Healthcare",
-  "Real Estate",
-  "Hospitality",
-  "Public Sector",
-  "Private Sector",
-  "NGO / Development",
-  "Military / Security",
-  "Fashion & Beauty",
-  "Nightlife & Events",
-  "Athlete / Sports",
+  "Quiet life",
+  "Family oriented",
+  "Career focused",
+  "Faith centered",
+  "Adventurous",
+  "Fitness conscious",
+  "Social",
+  "Travel lover",
+  "Food lover",
   "Prefer not to say"
 ] as const;
 
@@ -179,40 +166,18 @@ export const INTEREST_OPTIONS = [
 ] as const;
 
 export const OCCUPATIONS = [
-  "Software Engineer",
-  "Doctor",
-  "Nurse",
-  "Pharmacist",
-  "Lawyer",
-  "Accountant",
-  "Banker",
-  "Teacher",
-  "Entrepreneur",
-  "Business Owner",
-  "Civil Servant",
-  "Marketing",
-  "Sales",
-  "Designer",
-  "Content Creator",
+  "Healthcare",
+  "Education",
+  "Business",
+  "Tech",
+  "Engineering",
+  "Finance",
+  "Government",
+  "Law",
+  "Media",
+  "Creative",
   "Student",
-  "Graduate / NYSC",
-  "Trader",
-  "Fashion Designer",
-  "Real Estate Agent",
-  "Pilot",
-  "Architect",
-  "Engineer",
-  "Consultant",
-  "HR Professional",
-  "Chef",
-  "Hospitality",
-  "Military / Security",
-  "Clergy",
-  "Artist",
-  "Athlete",
-  "Driver / Logistics",
-  "Artisan",
-  "Farmer",
+  "Entrepreneur",
   "Other",
   "Prefer not to say"
 ] as const;
@@ -234,6 +199,47 @@ export const KIDS_PREFERENCES = [
 
 export type KidsPreference = (typeof KIDS_PREFERENCES)[number];
 
+export const BODY_TYPES = [
+  "Slim",
+  "Average",
+  "Athletic",
+  "Curvy",
+  "Plus-size",
+  "Thick",
+  "Petite",
+  "Prefer not to say"
+] as const;
+
+export type BodyType = (typeof BODY_TYPES)[number];
+
+export const RELATIONSHIP_INTENTIONS = [
+  "Friendship",
+  "Dating",
+  "Serious relationship",
+  "Marriage",
+  "Networking",
+  "Open to anything"
+] as const;
+
+export type RelationshipIntention = (typeof RELATIONSHIP_INTENTIONS)[number];
+
+export const VERIFICATION_PREFERENCES = [
+  "Anyone",
+  "Phone verified",
+  "Selfie verified",
+  "Premium verified",
+  "Fully verified",
+  "No preference"
+] as const;
+
+export type VerificationPreference = (typeof VERIFICATION_PREFERENCES)[number];
+
+export const HAS_KIDS_OPTIONS = ["Has kids", "No kids"] as const;
+export const WANTS_KIDS_OPTIONS = ["Wants kids", "Doesn't want kids", "Open to kids"] as const;
+
+export type HasKidsOption = (typeof HAS_KIDS_OPTIONS)[number];
+export type WantsKidsOption = (typeof WANTS_KIDS_OPTIONS)[number];
+
 /** Optional filter picklists — same values, excluding "Prefer not to say" for filters */
 export const FILTER_RELIGIONS = RELIGIONS.filter((r) => r !== "Prefer not to say");
 export const FILTER_ETHNICITIES = ETHNIC_BACKGROUNDS.filter((e) => e !== "Prefer not to say");
@@ -241,3 +247,31 @@ export const FILTER_LIFESTYLES = SOCIAL_LIFESTYLES.filter((l) => l !== "Prefer n
 export const FILTER_OCCUPATIONS = OCCUPATIONS.filter((o) => o !== "Prefer not to say");
 export const FILTER_GENOTYPES = GENOTYPES.filter((g) => g !== "Prefer not to say");
 export const FILTER_KIDS_PREFERENCES = KIDS_PREFERENCES.filter((k) => k !== "Prefer not to say");
+export const FILTER_BODY_TYPES = BODY_TYPES.filter((b) => b !== "Prefer not to say");
+export const FILTER_VERIFICATION_PREFERENCES = VERIFICATION_PREFERENCES.filter(
+  (v) => v !== "No preference" && v !== "Anyone"
+);
+
+export function stateDisplayLabel(state: string): string {
+  return state === "FCT" ? "Abuja" : state;
+}
+
+/** Map relationship-intention filters to profile intent tags for search */
+export function relationshipIntentionsToSearchIntents(
+  intentions: RelationshipIntention[]
+): string[] {
+  const map: Record<RelationshipIntention, string[]> = {
+    Friendship: ["Friendship"],
+    Dating: ["Relationship", "Chat"],
+    "Serious relationship": ["Relationship"],
+    Marriage: ["Relationship"],
+    Networking: ["Networking"],
+    "Open to anything": []
+  };
+  const out = new Set<string>();
+  for (const intent of intentions) {
+    if (intent === "Open to anything") continue;
+    for (const tag of map[intent] ?? []) out.add(tag);
+  }
+  return [...out];
+}

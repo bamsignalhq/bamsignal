@@ -14,7 +14,7 @@ export const HOME_SECTIONS = {
   cities: {
     eyebrow: "City Spotlight",
     title: "Featured Members Everywhere",
-    lede: "Pick a city — real people, real Naija energy."
+    lede: "Real people, real connections — pick a city and explore."
   },
   moments: {
     eyebrow: "Naija lifestyle",

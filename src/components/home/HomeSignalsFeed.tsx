@@ -18,6 +18,7 @@ import {
 import { getMemberCity } from "../../utils/memberCity";
 import { buildHomeFeedGridItems, filterProfilesByName } from "../../utils/homeFeed";
 import { homeAdvancedToSearchFilters, filterProfilesByDistance } from "../../utils/homeFilters";
+import { effectiveHomeDistanceKm } from "../../utils/cityMetroRadius";
 import { rankProfiles } from "../../utils/matching";
 import { normalizeMatchPreferences } from "../../utils/profile";
 import { blockUser, filterDiscoverDeck, isAutoFlagged } from "../../utils/safety";
@@ -148,7 +149,7 @@ export function HomeSignalsFeed({
       deck = deck.filter((p) => p.verified);
     }
 
-    deck = filterProfilesByDistance(deck, distanceKm);
+    deck = filterProfilesByDistance(deck, effectiveHomeDistanceKm(resolvedCity, resolvedState, distanceKm));
 
     const ranked = rankProfiles(deck, viewer, prefs as MatchPreferences);
     setProfiles(ranked);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { greetingForHour } from "../constants/copy";
 import { firstNameFromDisplayName, normalizeHomeDistanceKm } from "../constants/homeFilters";
+import { clampHomeDistanceForCity } from "../utils/cityMetroRadius";
 import { stateForCity } from "../constants/profileOptions";
 import { DEFAULT_HOME_FEED_ADS } from "../constants/homeFeedAds";
 import { STORAGE_KEYS } from "../constants/limits";
@@ -44,7 +45,11 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const defaultAgeMax = prefs.ageMax ?? 35;
   const defaultState = prefs.states[0] || viewer.state || "";
   const defaultCity = prefs.cities[0] || viewer.city || getMemberCity() || "";
-  const defaultDistanceKm = normalizeHomeDistanceKm(prefs.distanceMax);
+  const defaultDistanceKm = clampHomeDistanceForCity(
+    defaultCity,
+    defaultState,
+    normalizeHomeDistanceKm(prefs.distanceMax)
+  );
 
   const [adSettings, setAdSettings] = useState(DEFAULT_HOME_FEED_ADS);
   const [nameQuery, setNameQuery] = useState("");
@@ -114,6 +119,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     const resolvedState = nextCity ? stateForCity(nextCity) || nextState : nextState;
     setState(resolvedState);
     setCity(nextCity);
+    setDistanceKm((current) => clampHomeDistanceForCity(nextCity, resolvedState, current));
   }, []);
 
   const resetFilters = () => {

@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_PUBLIC_APP_URL?: string;
   readonly VITE_PAYSTACK_PUBLIC_KEY?: string;
   readonly NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY?: string;
+  readonly VITE_ENABLE_IMAGE_MODERATION?: string;
 }
 
 interface ImportMeta {

@@ -8,6 +8,8 @@ import {
   submitVerificationSelfie
 } from "../services/whatsappVerification";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
+import { PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
+import { PHOTO_UPLOAD_FAIL } from "../constants/photos";
 
 type PhoneVerificationPanelProps = {
   user: UserProfile;
@@ -91,9 +93,15 @@ export function PhoneVerificationPanel({
     e.target.value = "";
     if (!file || !phoneVerified) return;
 
+    const validation = await validatePhotoFile(file);
+    if (!validation.ok) {
+      onMessage?.(PHOTO_UPLOAD_FAIL);
+      return;
+    }
+
     const verdict = await moderatePhotoUpload(file, "selfie");
     if (!verdict.allowed) {
-      onMessage?.(verdict.message);
+      onMessage?.(PHOTO_UPLOAD_FAIL);
       return;
     }
 
@@ -214,8 +222,7 @@ export function PhoneVerificationPanel({
             <input
               id="verification-selfie-input"
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic,image/*"
-              capture="user"
+              accept={PHOTO_FILE_ACCEPT}
               className="photo-upload-grid__input"
               onChange={uploadSelfie}
             />

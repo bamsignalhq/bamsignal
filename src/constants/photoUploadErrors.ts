@@ -1,0 +1,19 @@
+/** Internal photo upload / validation error codes (not shown to users). */
+export type PhotoUploadErrorCode =
+  | "UPLOAD_FAILED"
+  | "IMAGE_DECODE_FAILED"
+  | "COMPRESSION_FAILED"
+  | "STORAGE_FAILED"
+  | "MODERATION_REJECTED"
+  | "FILE_MISSING"
+  | "NOT_IMAGE";
+
+export const PHOTO_UPLOAD_ERROR_CODES = {
+  UPLOAD_FAILED: "UPLOAD_FAILED",
+  IMAGE_DECODE_FAILED: "IMAGE_DECODE_FAILED",
+  COMPRESSION_FAILED: "COMPRESSION_FAILED",
+  STORAGE_FAILED: "STORAGE_FAILED",
+  MODERATION_REJECTED: "MODERATION_REJECTED",
+  FILE_MISSING: "FILE_MISSING",
+  NOT_IMAGE: "NOT_IMAGE"
+} as const satisfies Record<string, PhotoUploadErrorCode>;

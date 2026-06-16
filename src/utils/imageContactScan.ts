@@ -67,7 +67,7 @@ export type ImageContactScanResult = {
 
 export async function scanImageForContactDetails(
   file: File,
-  opts: { strictTextHeavy?: boolean; skipTextHeavy?: boolean } = {}
+  opts: { strictTextHeavy?: boolean; skipTextHeavy?: boolean; contactTextOnly?: boolean } = {}
 ): Promise<ImageContactScanResult> {
   const filename = file.name || "";
   if (containsContactInText(filename)) {
@@ -81,7 +81,7 @@ export async function scanImageForContactDetails(
     return { blocked: true, reason: "contact_text" };
   }
 
-  if (opts.skipTextHeavy) {
+  if (opts.skipTextHeavy || opts.contactTextOnly) {
     return { blocked: false, reason: "none" };
   }
 

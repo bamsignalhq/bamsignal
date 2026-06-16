@@ -4,11 +4,13 @@ import { MAX_PROFILE_PHOTOS, MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../co
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
+  mapUploadError,
   PhotoUploadError,
   uploadCompressedProfileBlob
 } from "../services/profilePhotos";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
-import { blobToDataUrl } from "../utils/photoUpload";
+import { blobToDataUrl, PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
+import { logPhotoUpload } from "../utils/photoUploadLog";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
 
 type PhotoUploadGridProps = {
@@ -16,7 +18,7 @@ type PhotoUploadGridProps = {
   coverPhoto?: string;
   onChange: (photos: string[]) => void;
   onModerationMessage?: (message: string) => void;
-  /** Signup/onboarding — light validation only */
+  /** Signup/onboarding — gallery only, no cover */
   signupMode?: boolean;
 };
 
@@ -37,6 +39,11 @@ export function PhotoUploadGrid({
     window.setTimeout(() => fileRef.current?.click(), 0);
   };
 
+  const failUpload = (code: string, internalReason: string) => {
+    logPhotoUpload("upload_rejected", { code, internalReason });
+    onModerationMessage?.(PHOTO_UPLOAD_FAIL);
+  };
+
   const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -47,9 +54,22 @@ export function PhotoUploadGrid({
     let previewUrl: string | null = null;
 
     try {
+      logPhotoUpload("pick", {
+        signupMode,
+        fileType: file.type,
+        fileName: file.name,
+        originalSize: file.size
+      });
+
+      const validation = await validatePhotoFile(file);
+      if (!validation.ok) {
+        failUpload(validation.code, validation.internalReason);
+        return;
+      }
+
       const verdict = await moderatePhotoUpload(file, signupMode ? "signup" : "profile");
       if (!verdict.allowed) {
-        onModerationMessage?.(verdict.message || PHOTO_UPLOAD_FAIL);
+        failUpload(verdict.code || "MODERATION_REJECTED", verdict.internalReason || "moderation");
         return;
       }
 
@@ -69,13 +89,12 @@ export function PhotoUploadGrid({
 
       const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
       onChange([...prior, remoteUrl].slice(0, MAX_PROFILE_PHOTOS));
+      logPhotoUpload("upload_ok", { signupMode });
     } catch (error) {
       onChange(prior);
-      if (error instanceof PhotoUploadError) {
-        onModerationMessage?.(error.message || PHOTO_UPLOAD_FAIL);
-      } else {
-        onModerationMessage?.(PHOTO_UPLOAD_FAIL);
-      }
+      const mapped = mapUploadError(error);
+      logPhotoUpload("upload_failed", { code: mapped.code, message: mapped.message });
+      onModerationMessage?.(mapped.message || PHOTO_UPLOAD_FAIL);
     } finally {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setUploading(false);
@@ -119,6 +138,7 @@ export function PhotoUploadGrid({
                 onClick={() => openPicker(i)}
                 disabled={uploading}
                 aria-label={i === 0 ? "Add main photo" : "Add photo"}
+                aria-busy={uploading && activeSlot === i}
               >
                 {uploading && activeSlot === i ? (
                   <Loader2 size={28} className="photo-upload-grid__spinner" aria-hidden />
@@ -135,7 +155,7 @@ export function PhotoUploadGrid({
       <input
         ref={fileRef}
         type="file"
-        accept="image/*"
+        accept={PHOTO_FILE_ACCEPT}
         className="photo-upload-grid__input"
         onChange={uploadPhoto}
         aria-hidden

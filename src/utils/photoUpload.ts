@@ -1,17 +1,28 @@
-/** User-facing message for any gallery/cover upload failure. */
-export { PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
+import { isLikelyImageFile } from "./mediaModeration";
+import { logPhotoUpload } from "./photoUploadLog";
 
 const DEFAULT_MAX_EDGE = 1280;
 const DEFAULT_QUALITY = 0.82;
 const MIN_QUALITY = 0.78;
 /** Target ~500–600KB raw before base64 inflation. */
 const DEFAULT_MAX_BYTES = 580_000;
+/** Hard limit after compression — ~1.2MB raw before base64. */
+const HARD_MAX_BYTES = 1_200_000;
+
+/** Gallery-friendly accept list for mobile WebViews (incl. HEIC). */
+export const PHOTO_FILE_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/gif,image/bmp,image/heic,image/heif,image/*";
 
 export type CompressedImage = {
   blob: Blob;
   mime: string;
   extension: "webp" | "jpg";
 };
+
+export type PhotoFileValidation =
+  | { ok: true }
+  | { ok: false; code: PhotoUploadErrorCode; internalReason: string };
 
 let webPSupported: boolean | null = null;
 
@@ -26,6 +37,21 @@ export function browserSupportsWebP(): boolean {
     webPSupported = false;
   }
   return webPSupported;
+}
+
+function isHeicLike(file: File): boolean {
+  const type = file.type.toLowerCase();
+  const name = (file.name || "").toLowerCase();
+  return type.includes("heic") || type.includes("heif") || /\.heic$|\.heif$/.test(name);
+}
+
+export async function probeImageFile(file: File): Promise<{
+  width: number;
+  height: number;
+  paint: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
+  cleanup: () => void;
+}> {
+  return decodeImageFile(file);
 }
 
 async function decodeImageFile(file: File): Promise<{
@@ -46,25 +72,78 @@ async function decodeImageFile(file: File): Promise<{
         },
         cleanup: () => bitmap.close?.()
       };
-    } catch {
+    } catch (error) {
+      if (isHeicLike(file)) {
+        throw new Error("HEIC_DECODE_UNSUPPORTED");
+      }
       /* fall through to Image() */
     }
   }
 
   const url = URL.createObjectURL(file);
-  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const el = new Image();
-    el.onload = () => resolve(el);
-    el.onerror = () => reject(new Error("Image decode failed"));
-    el.src = url;
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error(isHeicLike(file) ? "HEIC_DECODE_UNSUPPORTED" : "IMAGE_DECODE_FAILED"));
+      el.src = url;
+    });
+
+    return {
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+      paint: (ctx, w, h) => ctx.drawImage(img, 0, 0, w, h),
+      cleanup: () => URL.revokeObjectURL(url)
+    };
+  } catch (error) {
+    URL.revokeObjectURL(url);
+    throw error;
+  }
+}
+
+/** Pre-upload validation — no moderation heuristics. */
+export async function validatePhotoFile(file: File | null | undefined): Promise<PhotoFileValidation> {
+  if (!file) {
+    return { ok: false, code: "FILE_MISSING", internalReason: "no_file_selected" };
+  }
+
+  logPhotoUpload("validate_start", {
+    fileType: file.type || "unknown",
+    fileName: file.name || "",
+    originalSize: file.size
   });
 
-  return {
-    width: img.naturalWidth,
-    height: img.naturalHeight,
-    paint: (ctx, w, h) => ctx.drawImage(img, 0, 0, w, h),
-    cleanup: () => URL.revokeObjectURL(url)
-  };
+  if (!isLikelyImageFile(file)) {
+    return {
+      ok: false,
+      code: "NOT_IMAGE",
+      internalReason: `unsupported_type:${file.type || "empty"}`
+    };
+  }
+
+  try {
+    const decoded = await probeImageFile(file);
+    try {
+      if (!decoded.width || !decoded.height) {
+        return { ok: false, code: "IMAGE_DECODE_FAILED", internalReason: "zero_dimensions" };
+      }
+      logPhotoUpload("validate_decode_ok", {
+        width: decoded.width,
+        height: decoded.height
+      });
+      return { ok: true };
+    } finally {
+      decoded.cleanup();
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    logPhotoUpload("validate_decode_failed", { reason, heic: isHeicLike(file) });
+    return {
+      ok: false,
+      code: "IMAGE_DECODE_FAILED",
+      internalReason: reason
+    };
+  }
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement, mime: string, quality: number): Promise<Blob> {
@@ -72,7 +151,7 @@ function canvasToBlob(canvas: HTMLCanvasElement, mime: string, quality: number):
     canvas.toBlob(
       (blob) => {
         if (!blob) {
-          reject(new Error("Compression failed"));
+          reject(new Error("COMPRESSION_FAILED"));
           return;
         }
         resolve(blob);
@@ -95,10 +174,18 @@ export async function fileToCompressedImageBlob(
   const mime = useWebP ? "image/webp" : "image/jpeg";
   const extension = useWebP ? "webp" : "jpg";
 
+  logPhotoUpload("compress_start", {
+    fileType: file.type || "unknown",
+    originalSize: file.size,
+    outputFormat: mime,
+    maxEdge,
+    maxBytes
+  });
+
   const decoded = await decodeImageFile(file);
   try {
     if (!decoded.width || !decoded.height) {
-      throw new Error("Invalid image dimensions");
+      throw new Error("IMAGE_DECODE_FAILED");
     }
 
     const scale = Math.min(1, maxEdge / Math.max(decoded.width, decoded.height));
@@ -109,7 +196,7 @@ export async function fileToCompressedImageBlob(
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas unavailable");
+    if (!ctx) throw new Error("COMPRESSION_FAILED");
 
     decoded.paint(ctx, width, height);
 
@@ -119,11 +206,23 @@ export async function fileToCompressedImageBlob(
       blob = await canvasToBlob(canvas, mime, quality);
     }
 
-    if (blob.size > maxBytes * 1.25) {
-      throw new Error("Image is still too large after compression");
+    if (blob.size > HARD_MAX_BYTES) {
+      throw new Error("COMPRESSION_FAILED_SIZE_LIMIT");
     }
 
+    logPhotoUpload("compress_ok", {
+      compressedSize: blob.size,
+      outputFormat: mime,
+      width,
+      height,
+      quality
+    });
+
     return { blob, mime, extension };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    logPhotoUpload("compress_failed", { reason });
+    throw error;
   } finally {
     decoded.cleanup();
   }
@@ -133,7 +232,7 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Could not read compressed image"));
+    reader.onerror = () => reject(new Error("COMPRESSION_FAILED"));
     reader.readAsDataURL(blob);
   });
 }
@@ -146,7 +245,7 @@ export async function fileToCompressedDataUrl(
   const { blob } = await fileToCompressedImageBlob(file, opts);
   const dataUrl = await blobToDataUrl(blob);
   if (!dataUrl.startsWith("data:image/")) {
-    throw new Error("Compression failed");
+    throw new Error("COMPRESSION_FAILED");
   }
   return dataUrl;
 }

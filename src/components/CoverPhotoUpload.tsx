@@ -4,11 +4,12 @@ import { DEFAULT_PROFILE_COVER, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
-  PhotoUploadError,
+  mapUploadError,
   uploadCompressedCoverBlob
 } from "../services/profilePhotos";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
-import { blobToDataUrl } from "../utils/photoUpload";
+import { blobToDataUrl, PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
+import { logPhotoUpload } from "../utils/photoUploadLog";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
 
 type CoverPhotoUploadProps = {
@@ -27,6 +28,11 @@ export function CoverPhotoUpload({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
+  const openPicker = () => {
+    if (uploading) return;
+    window.setTimeout(() => fileRef.current?.click(), 0);
+  };
+
   const uploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -37,9 +43,26 @@ export function CoverPhotoUpload({
     let previewUrl: string | null = null;
 
     try {
+      logPhotoUpload("pick_cover", {
+        fileType: file.type,
+        fileName: file.name,
+        originalSize: file.size
+      });
+
+      const validation = await validatePhotoFile(file);
+      if (!validation.ok) {
+        logPhotoUpload("upload_rejected", { code: validation.code, internalReason: validation.internalReason });
+        onModerationMessage?.(PHOTO_UPLOAD_FAIL);
+        return;
+      }
+
       const verdict = await moderatePhotoUpload(file, "cover");
       if (!verdict.allowed) {
-        onModerationMessage?.(verdict.message || PHOTO_UPLOAD_FAIL);
+        logPhotoUpload("upload_rejected", {
+          code: verdict.code || "MODERATION_REJECTED",
+          internalReason: verdict.internalReason || "moderation"
+        });
+        onModerationMessage?.(PHOTO_UPLOAD_FAIL);
         return;
       }
 
@@ -58,13 +81,12 @@ export function CoverPhotoUpload({
       if (previousCover && isStoragePhotoUrl(previousCover)) {
         void deleteStoredPhoto(previousCover);
       }
+      logPhotoUpload("upload_cover_ok", {});
     } catch (error) {
       onChange(previousCover);
-      if (error instanceof PhotoUploadError) {
-        onModerationMessage?.(error.message || PHOTO_UPLOAD_FAIL);
-      } else {
-        onModerationMessage?.(PHOTO_UPLOAD_FAIL);
-      }
+      const mapped = mapUploadError(error);
+      logPhotoUpload("upload_cover_failed", { code: mapped.code });
+      onModerationMessage?.(mapped.message || PHOTO_UPLOAD_FAIL);
     } finally {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setUploading(false);
@@ -93,8 +115,9 @@ export function CoverPhotoUpload({
           <button
             type="button"
             className="btn-secondary btn-sm"
-            onClick={() => fileRef.current?.click()}
+            onClick={openPicker}
             disabled={uploading}
+            aria-busy={uploading}
           >
             {uploading ? <Loader2 size={16} className="photo-upload-grid__spinner" aria-hidden /> : <Camera size={16} aria-hidden />}
             {uploading ? "Uploading…" : hasCustomCover ? "Change cover" : "Add cover photo"}
@@ -107,7 +130,15 @@ export function CoverPhotoUpload({
           )}
         </div>
       </div>
-      <input ref={fileRef} type="file" accept="image/*" className="photo-upload-grid__input" onChange={uploadCover} aria-hidden tabIndex={-1} />
+      <input
+        ref={fileRef}
+        type="file"
+        accept={PHOTO_FILE_ACCEPT}
+        className="photo-upload-grid__input"
+        onChange={uploadCover}
+        aria-hidden
+        tabIndex={-1}
+      />
     </div>
   );
 }

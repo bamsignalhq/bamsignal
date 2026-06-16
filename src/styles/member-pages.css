@@ -1328,8 +1328,8 @@
 
 .profile-detail-sheet__social-row {
   display: flex;
-  gap: 10px;
-  padding: 0 16px 12px;
+  gap: 8px;
+  padding: 0 14px 8px;
 }
 
 .profile-detail-sheet__social-row .btn-secondary.active {
@@ -1375,10 +1375,16 @@
 }
 
 .profile-overview-block {
-  padding: 18px 4px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  padding: 12px 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
   background: transparent;
   box-shadow: none;
+}
+
+.profile-overview-block--facts {
+  padding-top: 4px;
+  padding-bottom: 14px;
+  border-bottom: none;
 }
 
 .profile-overview-block:last-child {
@@ -1795,12 +1801,12 @@
 
 .profile-overview-block h3,
 .profile-overview-card h3 {
-  margin: 0 0 10px;
-  font-size: 0.72rem;
+  margin: 0 0 6px;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: color-mix(in srgb, var(--brand-pink) 50%, var(--text-muted));
 }
 
 .profile-overview-bio {

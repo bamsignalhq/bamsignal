@@ -144,8 +144,10 @@ export function ProfileDetailSheet({
           )}
           <div className="profile-detail-sheet__meta">
             <h2 className="profile-detail-sheet__name">{profile.name}</h2>
-            <p className="profile-detail-sheet__age">{profile.age}</p>
-            <p className="profile-detail-sheet__city">{profile.city}</p>
+            <p className="profile-detail-sheet__subline">
+              {profile.age}
+              {profile.city ? ` · ${profile.city}` : ""}
+            </p>
             {verification && verification.tier > 0 && (
               <div className="profile-detail-sheet__badges">
                 <VerificationBadge info={verification} />
@@ -164,21 +166,22 @@ export function ProfileDetailSheet({
             </button>
           </div>
 
-          <section className="profile-detail-sheet__card">
-            <h3>Bio</h3>
-            <p className="profile-detail-sheet__bio">{profile.bio || "—"}</p>
+          <section className="profile-detail-sheet__card profile-detail-sheet__card--bio">
+            {profile.bio?.trim() ? (
+              <>
+                <p className="profile-detail-sheet__bio">{profile.bio}</p>
+              </>
+            ) : null}
+            {hasFilledProfileDetails(profile) ? (
+              <ProfileDetailsList profile={profile} variant="chips" />
+            ) : !profile.bio?.trim() ? (
+              <p className="profile-detail-sheet__empty">—</p>
+            ) : null}
           </section>
 
-          {hasFilledProfileDetails(profile) ? (
+          {profile.interests?.length ? (
             <section className="profile-detail-sheet__card">
-              <h3>Details</h3>
-              <ProfileDetailsList profile={profile} />
-            </section>
-          ) : null}
-
-          <section className="profile-detail-sheet__card">
-            <h3>Interests</h3>
-            {profile.interests?.length ? (
+              <h3>Interests</h3>
               <div className="intent-tags">
                 {profile.interests.map((tag) => (
                   <span key={tag} className="intent-tag selected">
@@ -186,14 +189,12 @@ export function ProfileDetailSheet({
                   </span>
                 ))}
               </div>
-            ) : (
-              <p className="profile-detail-sheet__empty">—</p>
-            )}
-          </section>
+            </section>
+          ) : null}
 
-          <section className="profile-detail-sheet__card">
-            <h3>Looking for</h3>
-            {profile.intents?.length ? (
+          {profile.intents?.length ? (
+            <section className="profile-detail-sheet__card">
+              <h3>Looking for</h3>
               <div className="intent-tags">
                 {profile.intents.slice(0, 3).map((tag) => (
                   <span key={tag} className="intent-tag selected">
@@ -201,10 +202,8 @@ export function ProfileDetailSheet({
                   </span>
                 ))}
               </div>
-            ) : (
-              <p className="profile-detail-sheet__empty">—</p>
-            )}
-          </section>
+            </section>
+          ) : null}
 
           {profile.voiceIntroUrl && (
             <section className="profile-detail-sheet__card">

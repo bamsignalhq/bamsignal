@@ -304,9 +304,8 @@ export function ProfilePage({
             ) : null}
 
             {hasFilledProfileDetails(profile) ? (
-              <section className="profile-overview-block">
-                <h3>Details</h3>
-                <ProfileDetailsList profile={profile} />
+              <section className="profile-overview-block profile-overview-block--facts">
+                <ProfileDetailsList profile={profile} variant="chips" />
               </section>
             ) : null}
           {profile.profilePrompts?.filter((p) => p.answer.trim()).length ? (
@@ -522,7 +521,7 @@ export function ProfilePage({
 
           <EditAccordion
             id="details"
-            title="Details"
+            title="Background"
             hint={detailsHint(profile)}
             open={editOpen === "details"}
             onToggle={toggleEditSection}

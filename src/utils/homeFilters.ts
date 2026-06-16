@@ -161,13 +161,13 @@ export function homeHasCustomFilters(options: {
   ageMax: number;
   city: string;
   state: string;
-  distanceKm: number | null;
+  distanceKm: number;
   advanced: HomeAdvancedFilters;
   defaultAgeMin: number;
   defaultAgeMax: number;
   defaultCity: string;
   defaultState: string;
-  defaultDistanceKm: number | null;
+  defaultDistanceKm: number;
 }): boolean {
   const {
     ageMin,
@@ -189,8 +189,7 @@ export function homeHasCustomFilters(options: {
   return homeAdvancedFilterCount(advanced) > 0;
 }
 
-export function filterProfilesByDistance(profiles: DiscoverProfile[], maxKm: number | null): DiscoverProfile[] {
-  if (maxKm == null) return profiles;
+export function filterProfilesByDistance(profiles: DiscoverProfile[], maxKm: number): DiscoverProfile[] {
   return profiles.filter((profile) => profile.distanceKm == null || profile.distanceKm <= maxKm);
 }
 

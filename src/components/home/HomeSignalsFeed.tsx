@@ -40,7 +40,7 @@ type HomeSignalsFeedProps = {
   ageMax: number;
   state: string;
   city: string;
-  distanceKm: number | null;
+  distanceKm: number;
   advanced: HomeAdvancedFilters;
   refreshKey: number;
   filtersApplied: boolean;

@@ -1741,18 +1741,11 @@
 }
 
 .home-top--compact {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
   padding: 2px 0 0;
 }
 
 .home-top__greeting {
   margin: 0;
-  flex: 1;
-  min-width: 0;
-  text-align: left;
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -2030,6 +2023,17 @@
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: color-mix(in srgb, var(--text-muted) 88%, transparent);
+}
+
+.state-city-select--compact .state-city-select__city-state {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.state-city-select--compact.state-city-select--city-only {
+  grid-template-columns: 1fr;
 }
 
 .state-city-select--compact select {

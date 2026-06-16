@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { greetingForHour } from "../constants/copy";
-import { firstNameFromDisplayName } from "../constants/homeFilters";
+import { firstNameFromDisplayName, normalizeHomeDistanceKm } from "../constants/homeFilters";
 import { stateForCity } from "../constants/profileOptions";
 import { DEFAULT_HOME_FEED_ADS } from "../constants/homeFeedAds";
 import { STORAGE_KEYS } from "../constants/limits";
@@ -12,7 +12,6 @@ import { HomeFeedFilters } from "../components/home/HomeFeedFilters";
 import { HomeFilterChips } from "../components/home/HomeFilterChips";
 import { HomeProfileVisitorsCard, HomeSavedSearches } from "../components/home/HomeSavedSearches";
 import { HomeQuickFilterSheet } from "../components/home/HomeQuickFilterSheet";
-import { HomeSignalLimitBar } from "../components/home/HomeSignalLimitBar";
 import { HomeSignalsFeed } from "../components/home/HomeSignalsFeed";
 import { fetchHomeFeedAds } from "../services/homeFeedAds";
 import { fetchVisitorsRemote } from "../services/memberData";
@@ -45,7 +44,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const defaultAgeMax = prefs.ageMax ?? 35;
   const defaultState = prefs.states[0] || viewer.state || "";
   const defaultCity = prefs.cities[0] || viewer.city || getMemberCity() || "";
-  const defaultDistanceKm = prefs.distanceMax ?? null;
+  const defaultDistanceKm = normalizeHomeDistanceKm(prefs.distanceMax);
 
   const [adSettings, setAdSettings] = useState(DEFAULT_HOME_FEED_ADS);
   const [nameQuery, setNameQuery] = useState("");
@@ -53,12 +52,11 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const [ageMax, setAgeMax] = useState(defaultAgeMax);
   const [state, setState] = useState(defaultState);
   const [city, setCity] = useState(defaultCity);
-  const [distanceKm, setDistanceKm] = useState<number | null>(defaultDistanceKm);
+  const [distanceKm, setDistanceKm] = useState<number>(defaultDistanceKm);
   const [advanced, setAdvanced] = useState(() => advancedFromMatchPreferences(prefs));
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [signalTick, setSignalTick] = useState(0);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(() => getSavedSearches());
   const [visitorCount, setVisitorCount] = useState(() => getProfileViews().count);
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(() =>
@@ -140,7 +138,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   };
 
   const handleSignalSent = () => {
-    setSignalTick((t) => t + 1);
     localStorage.removeItem(STORAGE_KEYS.pendingSignalProfileId);
     setPendingProfileId(null);
   };
@@ -151,7 +148,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         <h1 className="home-top__greeting">
           {greetingForHour()}, {firstName} 👋
         </h1>
-        <HomeSignalLimitBar isPremium={isPremium} onUpgrade={onOpenPremium} refreshKey={signalTick} />
       </header>
 
       <section className="home-discovery home-discovery--compact" aria-label="Find people">

@@ -8,7 +8,7 @@ type HomeFeedFiltersProps = {
   ageMax: number;
   city: string;
   state: string;
-  distanceKm: number | null;
+  distanceKm: number;
   hasCustomFilters: boolean;
   onOpenQuickFilters: () => void;
   onOpenAdvanced: () => void;

@@ -12,6 +12,8 @@ type StateCitySelectProps = {
   variant?: "default" | "compact";
   /** Compact mode: hide state picker when a city is already selected. */
   hideStateWhenCitySelected?: boolean;
+  /** Show resolved state after the city label (e.g. City, Lagos). */
+  showStateSuffixOnCity?: boolean;
 };
 
 export function StateCitySelect({
@@ -22,7 +24,8 @@ export function StateCitySelect({
   cityLabel = "City",
   stateOptional = false,
   variant = "default",
-  hideStateWhenCitySelected = false
+  hideStateWhenCitySelected = false,
+  showStateSuffixOnCity = false
 }: StateCitySelectProps) {
   const [citiesOpen, setCitiesOpen] = useState(false);
   const resolvedState = state || (city ? stateForCity(city) : "");
@@ -44,8 +47,14 @@ export function StateCitySelect({
 
   if (variant === "compact") {
     const showState = !hideStateWhenCitySelected || !city;
+    const stateSuffix =
+      showStateSuffixOnCity && city && resolvedState
+        ? `, ${resolvedState === "FCT" ? "Abuja" : resolvedState}`
+        : "";
     return (
-      <div className="state-city-select state-city-select--compact">
+      <div
+        className={`state-city-select state-city-select--compact${showState ? "" : " state-city-select--city-only"}`}
+      >
         {showState ? (
           <label className="state-city-select__field">
             <span>{stateLabel}</span>
@@ -66,7 +75,10 @@ export function StateCitySelect({
         ) : null}
 
         <label className="state-city-select__field">
-          <span>{cityLabel}</span>
+          <span>
+            {cityLabel}
+            {stateSuffix ? <span className="state-city-select__city-state">{stateSuffix}</span> : null}
+          </span>
           <select
             value={city}
             disabled={!resolvedState}

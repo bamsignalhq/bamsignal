@@ -1,5 +1,5 @@
 import { StateCitySelect } from "../StateCitySelect";
-import { HOME_DISTANCE_OPTIONS } from "../../constants/homeFilters";
+import { HOME_DISTANCE_OPTIONS, normalizeHomeDistanceKm } from "../../constants/homeFilters";
 
 type HomeQuickFilterSheetProps = {
   open: boolean;
@@ -7,11 +7,11 @@ type HomeQuickFilterSheetProps = {
   ageMax: number;
   state: string;
   city: string;
-  distanceKm: number | null;
+  distanceKm: number;
   onAgeMinChange: (value: number) => void;
   onAgeMaxChange: (value: number) => void;
   onLocationChange: (state: string, city: string) => void;
-  onDistanceKmChange: (value: number | null) => void;
+  onDistanceKmChange: (value: number) => void;
   onClose: () => void;
 };
 
@@ -70,6 +70,7 @@ export function HomeQuickFilterSheet({
           stateLabel="State"
           cityLabel="City"
           hideStateWhenCitySelected
+          showStateSuffixOnCity
         />
         <fieldset className="intent-fieldset home-filter-sheet__distance">
           <legend>Distance</legend>
@@ -79,18 +80,11 @@ export function HomeQuickFilterSheet({
                 key={km}
                 type="button"
                 className={`home-distance-options__btn ${distanceKm === km ? "home-distance-options__btn--active" : ""}`}
-                onClick={() => onDistanceKmChange(km)}
+                onClick={() => onDistanceKmChange(normalizeHomeDistanceKm(km))}
               >
                 {km}km
               </button>
             ))}
-            <button
-              type="button"
-              className={`home-distance-options__btn ${distanceKm == null ? "home-distance-options__btn--active" : ""}`}
-              onClick={() => onDistanceKmChange(null)}
-            >
-              Anywhere
-            </button>
           </div>
         </fieldset>
       </div>

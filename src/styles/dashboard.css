@@ -2075,12 +2075,14 @@
 }
 
 .home-insight--visitors {
-  width: fit-content;
-  max-width: 100%;
-  align-self: flex-end;
-  min-height: 36px;
+  width: 100%;
+  align-self: stretch;
+  min-height: 40px;
   padding: 0 12px;
   gap: 8px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: var(--input-bg);
 }
 
 .home-insight--visitors .home-insight__icon {
@@ -2095,9 +2097,10 @@
 }
 
 .home-insight--visitors .home-insight__copy {
-  flex: 0 1 auto;
-  font-size: 0.78rem;
-  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.88rem;
+  line-height: 1.3;
 }
 
 .home-insight--visitors .home-insight__chevron {

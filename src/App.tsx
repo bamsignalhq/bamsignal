@@ -474,10 +474,15 @@ export function App() {
       await applyRestoredSession(profileFromSessionUser(session.user));
     };
 
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      if (cancelled) return;
-      void restoreFromSession(session).finally(finishBootstrap);
-    });
+    void supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        void restoreFromSession(session).finally(finishBootstrap);
+      })
+      .catch(() => {
+        if (!cancelled) finishBootstrap();
+      });
 
     const {
       data: { subscription }
@@ -491,10 +496,8 @@ export function App() {
       }
 
       if (event === "SIGNED_IN" && session?.user) {
-        if (getAuthPath()) {
-          handleAuthenticated(profileFromSessionUser(session.user), { isNewSignup: false });
-          return;
-        }
+        // AuthPage calls onAuthenticated after password login / signup verify.
+        if (getAuthPath()) return;
         await restoreFromSession(session);
         return;
       }
@@ -525,7 +528,7 @@ export function App() {
       subscription.unsubscribe();
       window.clearTimeout(fallback);
     };
-  }, [applyRestoredSession, handleAuthenticated]);
+  }, [applyRestoredSession]);
 
   useEffect(() => {
     if (authLoading || !isAuthed || !authPath) return;
@@ -567,19 +570,25 @@ export function App() {
       setPaymentLoading(true);
       setAuthMessage("");
       trackEvent("payment_started", { plan: plan.id });
-      const result = await startPlanPayment(plan, user);
-      setPaymentLoading(false);
-      setPaymentFlowTick((v) => v + 1);
+      try {
+        const result = await startPlanPayment(plan, user);
+        setPaymentFlowTick((v) => v + 1);
 
-      if (!result.ok) {
-        if (result.cancelled) return;
-        setAuthMessage(result.error || PAYMENT_START_ERROR);
-        return;
-      }
+        if (!result.ok) {
+          if (result.cancelled) {
+            setAuthMessage(USER_MESSAGES.paymentNotCompleted);
+            return;
+          }
+          setAuthMessage(result.error || PAYMENT_START_ERROR);
+          return;
+        }
 
-      setPricingOpen(false);
-      if (result.needsVerify) {
-        await processPaymentReturn();
+        setPricingOpen(false);
+        if (result.needsVerify) {
+          await processPaymentReturn();
+        }
+      } finally {
+        setPaymentLoading(false);
       }
     },
     [isAuthed, openAuth, processPaymentReturn, tab, user]
@@ -613,23 +622,29 @@ export function App() {
       setPaymentFlowTick((v) => v + 1);
       setPaymentLoading(true);
       setAuthMessage("");
-      const result = await startBoostPayment(
-        product.id,
-        product.price,
-        user,
-        memberCity || datingProfile.city || "",
-        durationHours
-      );
-      setPaymentLoading(false);
-      setPaymentFlowTick((v) => v + 1);
-      if (!result.ok) {
-        if (result.cancelled) return;
-        setAuthMessage(result.error || PAYMENT_START_ERROR);
-        return;
-      }
-      setPricingOpen(false);
-      if (result.needsVerify) {
-        await processPaymentReturn();
+      try {
+        const result = await startBoostPayment(
+          product.id,
+          product.price,
+          user,
+          memberCity || datingProfile.city || "",
+          durationHours
+        );
+        setPaymentFlowTick((v) => v + 1);
+        if (!result.ok) {
+          if (result.cancelled) {
+            setAuthMessage(USER_MESSAGES.paymentNotCompleted);
+            return;
+          }
+          setAuthMessage(result.error || PAYMENT_START_ERROR);
+          return;
+        }
+        setPricingOpen(false);
+        if (result.needsVerify) {
+          await processPaymentReturn();
+        }
+      } finally {
+        setPaymentLoading(false);
       }
     },
     [isAuthed, openAuth, processPaymentReturn, tab, user]

@@ -88,15 +88,23 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       coverPhoto: undefined,
       coverPhotoExplicit: false
     };
-    writeJson(STORAGE_KEYS.datingProfile, final);
+    if (!writeJson(STORAGE_KEYS.datingProfile, final)) {
+      setModMessage(USER_MESSAGES.progressSaveFailed);
+      return;
+    }
     localStorage.removeItem(STORAGE_KEYS.onboardingStep);
-    writeJson(STORAGE_KEYS.matchPreferences, {
-      ...readJson(STORAGE_KEYS.matchPreferences, {}),
-      states: prefStates,
-      cities: prefCities,
-      ageMin: ageMin === "" ? undefined : Number(ageMin),
-      ageMax: ageMax === "" ? undefined : Number(ageMax)
-    });
+    if (
+      !writeJson(STORAGE_KEYS.matchPreferences, {
+        ...readJson(STORAGE_KEYS.matchPreferences, {}),
+        states: prefStates,
+        cities: prefCities,
+        ageMin: ageMin === "" ? undefined : Number(ageMin),
+        ageMax: ageMax === "" ? undefined : Number(ageMax)
+      })
+    ) {
+      setModMessage(USER_MESSAGES.progressSaveFailed);
+      return;
+    }
     localStorage.setItem(STORAGE_KEYS.firstSignalPromptAt, String(Date.now()));
     syncMemberProfileRemote(user, final);
     void completeOnboardingRemote(user);

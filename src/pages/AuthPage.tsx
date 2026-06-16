@@ -148,7 +148,7 @@ export function AuthPage({
   }, [resendIn]);
 
   useEffect(() => {
-    if (mode !== "verify" || pendingSignup?.email) return;
+    if (mode !== "verify" || pendingSignup?.email || restored.current.pendingSignup?.email) return;
     onMessage("Your verification session expired. Please sign up again.");
     onModeChange("signup");
   }, [mode, pendingSignup?.email, onModeChange, onMessage]);
@@ -303,7 +303,11 @@ export function AuthPage({
         setPendingSignup(null);
         onModeChange("signup");
       }
-      onMessage(friendlyAuthError(error));
+      onMessage(
+        error instanceof AuthEmailError && error.kind === "validation"
+          ? USER_MESSAGES.otpVerifyFailed
+          : friendlyAuthError(error)
+      );
     } finally {
       verifyInFlight.current = false;
       setVerifyBusy(false);

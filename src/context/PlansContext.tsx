@@ -21,9 +21,16 @@ export function PlansProvider({ children }: { children: React.ReactNode }) {
 
   const refreshPlans = useCallback(async () => {
     setLoading(true);
-    const next = await fetchPremiumPlans();
-    setPlans(next);
-    setLoading(false);
+    try {
+      const next = await fetchPremiumPlans();
+      setPlans(next);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error("[bamsignal] premium plans fetch failed", error);
+      }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {

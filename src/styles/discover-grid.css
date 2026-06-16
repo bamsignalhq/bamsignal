@@ -195,12 +195,21 @@
   background: var(--card);
   overflow: hidden;
   min-width: 0;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.discover-feed-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+@media (hover: hover) and (pointer: fine) {
+  .discover-feed-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .discover-feed-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  }
+}
+
+.discover-feed-card--preview {
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--border));
 }
 
 .discover-feed-card--skeleton {

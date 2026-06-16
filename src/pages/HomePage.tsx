@@ -56,7 +56,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const [advanced, setAdvanced] = useState(() => advancedFromMatchPreferences(prefs));
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(() => getSavedSearches());
   const [visitorCount, setVisitorCount] = useState(() => getProfileViews().count);
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(() =>
@@ -103,13 +102,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     ]
   );
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setRefreshKey((k) => k + 1);
-    }, 280);
-    return () => window.clearTimeout(timer);
-  }, [nameQuery, ageMin, ageMax, state, city, distanceKm, advanced]);
-
   const handleLocationChange = useCallback((nextState: string, nextCity: string) => {
     const resolvedState = nextCity ? stateForCity(nextCity) || nextState : nextState;
     setState(resolvedState);
@@ -126,7 +118,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     setAdvanced(emptyHomeAdvancedFilters());
     setNameQuery("");
     setQuickFiltersOpen(false);
-    setRefreshKey((k) => k + 1);
   };
 
   const applySavedSearch = (search: SavedSearch) => {
@@ -135,7 +126,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     setState(search.state);
     setCity(search.city);
     setAdvanced(search.advanced);
-    setRefreshKey((k) => k + 1);
   };
 
   const handleSignalSent = () => {
@@ -196,7 +186,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         city={city}
         distanceKm={distanceKm}
         advanced={advanced}
-        refreshKey={refreshKey}
         filtersApplied={hasCustomFilters}
         pendingProfileId={pendingProfileId}
         onUpgrade={onOpenPremium}

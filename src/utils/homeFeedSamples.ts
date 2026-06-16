@@ -6,8 +6,44 @@ export const HOME_FEED_PREVIEW_UNTIL_MEMBERS = 9;
 
 export const HOME_FEED_MIN_VISIBLE = 12;
 
+const SAMPLE_CACHE = new Map<string, DiscoverProfile[]>();
+
 function isSampleId(id: string): boolean {
   return id.startsWith("sample-");
+}
+
+function citySampleCacheKey(city: string, count: number): string {
+  return `${city.trim().toLowerCase() || "default"}::${count}`;
+}
+
+/** Same city always gets the same preview faces — avoids shuffle/blink on refetch. */
+function getStableSamplesForCity(city: string, count: number, excludeIds: string[]): DiscoverProfile[] {
+  const displayCity = city.trim() || "";
+  const cacheKey = citySampleCacheKey(displayCity, count);
+  const cached = SAMPLE_CACHE.get(cacheKey);
+  if (cached) return cached;
+
+  const exclude = new Set(excludeIds);
+  const sorted = [...MOCK_PROFILES].sort((a, b) => a.id.localeCompare(b.id));
+  let seed = 0;
+  const key = displayCity.toLowerCase() || "default";
+  for (let i = 0; i < key.length; i += 1) seed += key.charCodeAt(i);
+
+  const samples: DiscoverProfile[] = [];
+  for (let i = 0; i < sorted.length && samples.length < count; i += 1) {
+    const profile = sorted[(seed + i) % sorted.length];
+    const sampleId = `sample-${profile.id}`;
+    if (exclude.has(profile.id) || exclude.has(sampleId)) continue;
+    samples.push({
+      ...profile,
+      id: sampleId,
+      city: displayCity || profile.city,
+      distanceKm: profile.distanceKm ?? 2 + (samples.length % 7)
+    });
+  }
+
+  SAMPLE_CACHE.set(cacheKey, samples);
+  return samples;
 }
 
 /**
@@ -28,28 +64,17 @@ export function padHomeFeedWithSamples(
     return members;
   }
 
-  const exclude = new Set([
-    ...excludeIds,
-    ...profiles.map((profile) => profile.id),
-    ...profiles.map((profile) => (isSampleId(profile.id) ? profile.id : `sample-${profile.id}`))
-  ]);
-
   const displayCity = city.trim() || viewerCity.trim() || "";
   const targetCount = Math.max(HOME_FEED_PREVIEW_UNTIL_MEMBERS, HOME_FEED_MIN_VISIBLE);
   const needed = Math.max(0, targetCount - members.length);
+  if (needed === 0) return members;
 
-  const samples = MOCK_PROFILES.filter(
-    (profile) => !exclude.has(profile.id) && !exclude.has(`sample-${profile.id}`)
-  )
-    .slice(0, needed)
-    .map((profile, index) => ({
-      ...profile,
-      id: `sample-${profile.id}`,
-      city: displayCity || profile.city,
-      distanceKm: profile.distanceKm ?? 2 + (index % 7)
-    }));
+  const memberIds = new Set(members.map((profile) => profile.id));
+  const samples = getStableSamplesForCity(displayCity, targetCount, excludeIds).filter(
+    (profile) => !memberIds.has(profile.id) && !memberIds.has(profile.id.replace(/^sample-/, ""))
+  );
 
-  return [...samples, ...members];
+  return [...samples.slice(0, needed), ...members];
 }
 
 export function isSampleHomeProfile(profile: Pick<DiscoverProfile, "id">): boolean {

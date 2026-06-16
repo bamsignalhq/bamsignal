@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProfileDetailSheet } from "../ProfileDetailSheet";
 import { ReportBlockModal } from "../ReportBlockModal";
 import { HomeFeedCard } from "./HomeFeedCard";
@@ -31,6 +31,7 @@ import { readJson } from "../../utils/storage";
 import { incrementSignalsSent } from "../../utils/streaks";
 import { trackEvent } from "../../utils/analytics";
 import { getVerificationTier } from "../../utils/verification";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 
 type HomeSignalsFeedProps = {
   user: UserProfile;
@@ -44,7 +45,6 @@ type HomeSignalsFeedProps = {
   city: string;
   distanceKm: number;
   advanced: HomeAdvancedFilters;
-  refreshKey: number;
   filtersApplied: boolean;
   pendingProfileId?: string | null;
   onUpgrade: () => void;
@@ -88,7 +88,6 @@ export function HomeSignalsFeed({
   city,
   distanceKm,
   advanced,
-  refreshKey,
   filtersApplied,
   pendingProfileId,
   onUpgrade,
@@ -97,9 +96,13 @@ export function HomeSignalsFeed({
   onResultCount,
   onSignalSent
 }: HomeSignalsFeedProps) {
-  const prefs = normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));
+  const prefs = useMemo(
+    () => normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {})),
+    []
+  );
   const [profiles, setProfiles] = useState<DiscoverProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const loadedOnceRef = useRef(false);
   const [displayLimit, setDisplayLimit] = useState(HOME_FEED_PROFILE_COUNT);
   const [toast, setToast] = useState("");
   const [signalingId, setSignalingId] = useState<string | null>(null);
@@ -108,30 +111,39 @@ export function HomeSignalsFeed({
 
   const resolvedCity = city.trim() || viewer.city || getMemberCity() || "";
   const resolvedState = state.trim() || viewer.state || "";
-  const cityLabel = resolvedCity || "your city";
+
+  const debouncedAgeMin = useDebouncedValue(ageMin, 300);
+  const debouncedAgeMax = useDebouncedValue(ageMax, 300);
+  const debouncedState = useDebouncedValue(state, 300);
+  const debouncedCity = useDebouncedValue(city, 300);
+  const debouncedDistanceKm = useDebouncedValue(distanceKm, 300);
+  const debouncedAdvanced = useDebouncedValue(advanced, 300);
+
+  const fetchCity = debouncedCity.trim() || viewer.city || getMemberCity() || "";
+  const fetchState = debouncedState.trim() || viewer.state || "";
 
   const loadFeed = useCallback(async () => {
-    setLoading(true);
+    if (!loadedOnceRef.current) setLoading(true);
     setDisplayLimit(HOME_FEED_PROFILE_COUNT);
     const exclude = getExcludedProfileIds();
-    const searchFilters = homeAdvancedToSearchFilters(advanced);
+    const searchFilters = homeAdvancedToSearchFilters(debouncedAdvanced);
 
     let fetched: DiscoverProfile[] = [];
 
-    if (resolvedCity || resolvedState) {
+    if (fetchCity || fetchState) {
       fetched = await searchMemberProfiles(user, {
-        city: resolvedCity,
-        state: resolvedCity ? "" : resolvedState,
-        ageMin,
-        ageMax,
+        city: fetchCity,
+        state: fetchCity ? "" : fetchState,
+        ageMin: debouncedAgeMin,
+        ageMax: debouncedAgeMax,
         excludeProfileIds: exclude,
         limit: 96,
         ...searchFilters
       });
     }
 
-    if (fetched.length < HOME_FEED_PROFILE_COUNT && resolvedCity) {
-      const discover = await fetchDiscoverProfiles(user, resolvedCity, exclude);
+    if (fetched.length < HOME_FEED_PROFILE_COUNT && fetchCity) {
+      const discover = await fetchDiscoverProfiles(user, fetchCity, exclude);
       const seen = new Set(fetched.map((p) => p.id));
       for (const profile of discover) {
         if (!seen.has(profile.id)) {
@@ -144,34 +156,37 @@ export function HomeSignalsFeed({
     const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
     let deck = filterDiscoverDeck(fetched, viewer, blocked, []).filter((p) => !isAutoFlagged(p.id));
 
-    deck = deck.filter((p) => p.age >= ageMin && p.age <= ageMax);
+    deck = deck.filter((p) => p.age >= debouncedAgeMin && p.age <= debouncedAgeMax);
 
-    if (advanced.verifiedOnly) {
+    if (debouncedAdvanced.verifiedOnly) {
       deck = deck.filter((p) => p.verified);
     }
 
-    deck = filterProfilesByDistance(deck, effectiveHomeDistanceKm(resolvedCity, resolvedState, distanceKm));
+    deck = filterProfilesByDistance(
+      deck,
+      effectiveHomeDistanceKm(fetchCity, fetchState, debouncedDistanceKm)
+    );
 
     let ranked = rankProfiles(deck, viewer, prefs as MatchPreferences);
     ranked = padHomeFeedWithSamples(ranked, {
-      city: resolvedCity,
+      city: fetchCity,
       viewerCity: viewer.city || "",
       excludeIds: exclude
     });
     setProfiles(ranked);
     onResultCount?.(ranked.length);
+    loadedOnceRef.current = true;
     setLoading(false);
   }, [
     user,
     viewer,
     prefs,
-    resolvedCity,
-    resolvedState,
-    ageMin,
-    ageMax,
-    distanceKm,
-    advanced,
-    refreshKey,
+    fetchCity,
+    fetchState,
+    debouncedAgeMin,
+    debouncedAgeMax,
+    debouncedDistanceKm,
+    debouncedAdvanced,
     onResultCount
   ]);
 

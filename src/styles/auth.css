@@ -730,6 +730,45 @@
   gap: 16px;
 }
 
+.age-range-select__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.age-range-select__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.age-range-select__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.age-range-select__field > span {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.age-range-select__field select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .age-range-tap-select__row {
   display: grid;
   grid-template-columns: 1fr 1fr;

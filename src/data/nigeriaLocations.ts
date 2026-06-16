@@ -17,11 +17,15 @@ export function citiesForState(state: string): string[] {
   return [...(NIGERIA_STATE_CITIES[state] ?? [])];
 }
 
+function cityLooseKey(city: string): string {
+  return city.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 export function stateForCity(city: string): string | undefined {
   if (!city) return undefined;
-  const needle = city.trim().toLowerCase();
+  const needle = cityLooseKey(city);
   for (const [state, cities] of Object.entries(NIGERIA_STATE_CITIES)) {
-    if (cities.some((c) => c.toLowerCase() === needle)) return state;
+    if (cities.some((c) => cityLooseKey(c) === needle)) return state;
   }
   return undefined;
 }

@@ -91,14 +91,32 @@ function normalizeStateName(name) {
   return STATE_ALIASES[name] ?? name;
 }
 
+function cityLooseKey(name) {
+  return name.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** Collapse spelling variants to one canonical label (supplements win). */
+const CITY_ALIASES = {
+  badagary: "Badagry",
+  amuwoodofin: "Amuwo-Odofin",
+  ibejulekki: "Ibeju-Lekki",
+  ifakoijaye: "Ifako-Ijaiye",
+  oshodiisolo: "Oshodi-Isolo"
+};
+
+function canonicalCityName(name) {
+  const loose = cityLooseKey(name);
+  return CITY_ALIASES[loose] ?? name.trim();
+}
+
 function mergeCities(state, lgas) {
   const extra = SUPPLEMENTARY_CITIES[state] ?? [];
   const seen = new Set();
   const list = [];
   for (const name of [...extra, ...lgas]) {
-    const trimmed = name.trim();
+    const trimmed = canonicalCityName(name);
     if (!trimmed) continue;
-    const key = trimmed.toLowerCase();
+    const key = cityLooseKey(trimmed);
     if (seen.has(key)) continue;
     seen.add(key);
     list.push(trimmed);

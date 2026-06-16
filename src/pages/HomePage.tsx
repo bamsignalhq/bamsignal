@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { greetingForHour } from "../constants/copy";
-import { firstNameFromDisplayName, normalizeHomeDistanceKm } from "../constants/homeFilters";
+import { firstNameFromDisplayName } from "../constants/homeFilters";
 import { clampHomeDistanceForCity } from "../utils/cityMetroRadius";
 import { stateForCity } from "../constants/profileOptions";
 import { DEFAULT_HOME_FEED_ADS } from "../constants/homeFeedAds";
@@ -17,7 +17,7 @@ import { HomeSignalsFeed } from "../components/home/HomeSignalsFeed";
 import { fetchHomeFeedAds } from "../services/homeFeedAds";
 import { fetchVisitorsRemote } from "../services/memberData";
 import type { SavedSearch, UserProfile } from "../types";
-import { getMemberCity } from "../utils/memberCity";
+import { resolveHomeFilterDefaults } from "../utils/homeFilterDefaults";
 import {
   advancedFromMatchPreferences,
   buildHomeAdvancedChips,
@@ -41,23 +41,18 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const firstName = firstNameFromDisplayName(userName || user.name);
   const viewer = normalizeDatingProfile(getDatingProfile());
   const prefs = normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));
-  const defaultAgeMin = prefs.ageMin ?? 22;
-  const defaultAgeMax = prefs.ageMax ?? 35;
-  const defaultCity = prefs.cities[0] || viewer.city || getMemberCity() || "";
-  const defaultState = viewer.state || (defaultCity ? stateForCity(defaultCity) || "" : "");
-  const defaultDistanceKm = clampHomeDistanceForCity(
-    defaultCity,
-    defaultState,
-    normalizeHomeDistanceKm(prefs.distanceMax)
+  const filterDefaults = useMemo(
+    () => resolveHomeFilterDefaults(viewer, prefs),
+    [viewer.city, viewer.state, viewer.age, prefs.ageMin, prefs.ageMax, prefs.distanceMax]
   );
 
   const [adSettings, setAdSettings] = useState(DEFAULT_HOME_FEED_ADS);
   const [nameQuery, setNameQuery] = useState("");
-  const [ageMin, setAgeMin] = useState(defaultAgeMin);
-  const [ageMax, setAgeMax] = useState(defaultAgeMax);
-  const [state, setState] = useState(defaultState);
-  const [city, setCity] = useState(defaultCity);
-  const [distanceKm, setDistanceKm] = useState<number>(defaultDistanceKm);
+  const [ageMin, setAgeMin] = useState(filterDefaults.ageMin);
+  const [ageMax, setAgeMax] = useState(filterDefaults.ageMax);
+  const [state, setState] = useState(filterDefaults.state);
+  const [city, setCity] = useState(filterDefaults.city);
+  const [distanceKm, setDistanceKm] = useState<number>(filterDefaults.distanceKm);
   const [advanced, setAdvanced] = useState(() => advancedFromMatchPreferences(prefs));
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
@@ -87,11 +82,11 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         state,
         distanceKm,
         advanced,
-        defaultAgeMin,
-        defaultAgeMax,
-        defaultCity,
-        defaultState,
-        defaultDistanceKm
+        defaultAgeMin: filterDefaults.ageMin,
+        defaultAgeMax: filterDefaults.ageMax,
+        defaultCity: filterDefaults.city,
+        defaultState: filterDefaults.state,
+        defaultDistanceKm: filterDefaults.distanceKm
       }),
     [
       ageMin,
@@ -100,11 +95,11 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
       state,
       distanceKm,
       advanced,
-      defaultAgeMin,
-      defaultAgeMax,
-      defaultCity,
-      defaultState,
-      defaultDistanceKm
+      filterDefaults.ageMin,
+      filterDefaults.ageMax,
+      filterDefaults.city,
+      filterDefaults.state,
+      filterDefaults.distanceKm
     ]
   );
 
@@ -123,11 +118,11 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   }, []);
 
   const resetFilters = () => {
-    setAgeMin(defaultAgeMin);
-    setAgeMax(defaultAgeMax);
-    setState(defaultState);
-    setCity(defaultCity);
-    setDistanceKm(defaultDistanceKm);
+    setAgeMin(filterDefaults.ageMin);
+    setAgeMax(filterDefaults.ageMax);
+    setState(filterDefaults.state);
+    setCity(filterDefaults.city);
+    setDistanceKm(filterDefaults.distanceKm);
     setAdvanced(emptyHomeAdvancedFilters());
     setNameQuery("");
     setQuickFiltersOpen(false);

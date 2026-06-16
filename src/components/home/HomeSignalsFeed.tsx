@@ -155,9 +155,7 @@ export function HomeSignalsFeed({
     let ranked = rankProfiles(deck, viewer, prefs as MatchPreferences);
     ranked = padHomeFeedWithSamples(ranked, {
       city: resolvedCity,
-      ageMin,
-      ageMax,
-      viewer,
+      viewerCity: viewer.city || "",
       excludeIds: exclude
     });
     setProfiles(ranked);

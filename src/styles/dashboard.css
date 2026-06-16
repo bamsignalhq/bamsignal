@@ -2062,7 +2062,6 @@
 }
 
 .home-insight {
-  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2073,6 +2072,37 @@
   color: var(--text);
   text-align: left;
   cursor: pointer;
+}
+
+.home-insight--visitors {
+  width: fit-content;
+  max-width: 100%;
+  align-self: flex-end;
+  min-height: 36px;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.home-insight--visitors .home-insight__icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+}
+
+.home-insight--visitors .home-insight__icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.home-insight--visitors .home-insight__copy {
+  flex: 0 1 auto;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.home-insight--visitors .home-insight__chevron {
+  width: 14px;
+  height: 14px;
 }
 
 .home-insight--locked:hover {

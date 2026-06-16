@@ -3,6 +3,7 @@ import { stateForCity } from "./profileOptions";
 export const HOME_DISTANCE_OPTIONS = [5, 10, 25, 50, 100] as const;
 
 export const MIN_HOME_DISTANCE_KM = 5;
+export const MAX_HOME_DISTANCE_KM = 100;
 export const DEFAULT_HOME_DISTANCE_KM = 25;
 
 export type HomeDistanceKm = (typeof HOME_DISTANCE_OPTIONS)[number];
@@ -14,7 +15,7 @@ function formatStateLabel(state: string): string {
 
 export function normalizeHomeDistanceKm(value?: number | null): number {
   if (value == null || !Number.isFinite(value)) return DEFAULT_HOME_DISTANCE_KM;
-  return Math.round(Math.max(MIN_HOME_DISTANCE_KM, Math.min(100, value)));
+  return Math.round(Math.max(MIN_HOME_DISTANCE_KM, Math.min(MAX_HOME_DISTANCE_KM, value)));
 }
 
 export function resolveLocationState(city: string, state: string): string {

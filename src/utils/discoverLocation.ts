@@ -2,7 +2,8 @@ import { STORAGE_KEYS } from "../constants/limits";
 import { readJson, writeJson } from "./storage";
 
 export const FREE_DISCOVER_STATE_CHANGES = 2;
-export const MAX_DISCOVER_RADIUS_MILES = 50;
+/** ~100 km — matches home feed max distance per city */
+export const MAX_DISCOVER_RADIUS_MILES = 62;
 export const KM_PER_MILE = 1.60934;
 
 export type DiscoverLocationMeta = {

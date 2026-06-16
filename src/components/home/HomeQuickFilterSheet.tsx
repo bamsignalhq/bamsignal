@@ -8,6 +8,8 @@ type HomeQuickFilterSheetProps = {
   state: string;
   city: string;
   distanceKm: number;
+  signalsInRange?: number | null;
+  signalsLoading?: boolean;
   onAgeMinChange: (value: number) => void;
   onAgeMaxChange: (value: number) => void;
   onLocationChange: (state: string, city: string) => void;
@@ -22,6 +24,8 @@ export function HomeQuickFilterSheet({
   state,
   city,
   distanceKm,
+  signalsInRange = null,
+  signalsLoading = false,
   onAgeMinChange,
   onAgeMaxChange,
   onLocationChange,
@@ -75,6 +79,8 @@ export function HomeQuickFilterSheet({
           state={state}
           value={distanceKm}
           onChange={onDistanceKmChange}
+          availableCount={signalsInRange}
+          loading={signalsLoading}
         />
       </div>
     </div>

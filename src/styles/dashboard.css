@@ -1911,6 +1911,13 @@
   color: var(--text);
 }
 
+.home-distance-slider__reach {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--text-muted) 90%, var(--text));
+}
+
 .home-distance-slider__track-wrap {
   --distance-fill: 50%;
   padding: 6px 2px;
@@ -2258,9 +2265,19 @@
 
 .home-signals-feed__head {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: baseline;
   justify-content: space-between;
+  gap: 4px 10px;
   padding: 2px 2px 0;
+}
+
+.home-signals-feed__reach {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--brand-pink) 72%, var(--text-muted));
 }
 
 .home-signals-feed__head h2 {

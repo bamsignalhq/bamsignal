@@ -51,6 +51,7 @@ type HomeSignalsFeedProps = {
   onViewMore: () => void;
   onResetFilters?: () => void;
   onResultCount?: (count: number) => void;
+  onFeedLoading?: (loading: boolean) => void;
   onSignalSent?: () => void;
 };
 
@@ -94,13 +95,14 @@ export function HomeSignalsFeed({
   onViewMore,
   onResetFilters,
   onResultCount,
+  onFeedLoading,
   onSignalSent
 }: HomeSignalsFeedProps) {
   const prefs = useMemo(
     () => normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {})),
     []
   );
-  const [profiles, setProfiles] = useState<DiscoverProfile[]>([]);
+  const [baseProfiles, setBaseProfiles] = useState<DiscoverProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const loadedOnceRef = useRef(false);
   const [displayLimit, setDisplayLimit] = useState(HOME_FEED_PROFILE_COUNT);
@@ -109,18 +111,29 @@ export function HomeSignalsFeed({
   const [detailProfile, setDetailProfile] = useState<DiscoverProfile | null>(null);
   const [safetyOpen, setSafetyOpen] = useState(false);
 
-  const resolvedCity = city.trim() || viewer.city || getMemberCity() || "";
-  const resolvedState = state.trim() || viewer.state || "";
-
   const debouncedAgeMin = useDebouncedValue(ageMin, 300);
   const debouncedAgeMax = useDebouncedValue(ageMax, 300);
   const debouncedState = useDebouncedValue(state, 300);
   const debouncedCity = useDebouncedValue(city, 300);
-  const debouncedDistanceKm = useDebouncedValue(distanceKm, 300);
   const debouncedAdvanced = useDebouncedValue(advanced, 300);
 
   const fetchCity = debouncedCity.trim() || viewer.city || getMemberCity() || "";
   const fetchState = debouncedState.trim() || viewer.state || "";
+  const effectiveDistanceKm = effectiveHomeDistanceKm(
+    fetchCity,
+    fetchState,
+    distanceKm
+  );
+
+  const profiles = useMemo(() => {
+    let deck = filterProfilesByDistance(baseProfiles, effectiveDistanceKm);
+    deck = rankProfiles(deck, viewer, prefs as MatchPreferences);
+    return padHomeFeedWithSamples(deck, {
+      city: fetchCity,
+      viewerCity: viewer.city || "",
+      excludeIds: getExcludedProfileIds()
+    });
+  }, [baseProfiles, effectiveDistanceKm, viewer, prefs, fetchCity]);
 
   const loadFeed = useCallback(async () => {
     if (!loadedOnceRef.current) setLoading(true);
@@ -162,33 +175,26 @@ export function HomeSignalsFeed({
       deck = deck.filter((p) => p.verified);
     }
 
-    deck = filterProfilesByDistance(
-      deck,
-      effectiveHomeDistanceKm(fetchCity, fetchState, debouncedDistanceKm)
-    );
-
-    let ranked = rankProfiles(deck, viewer, prefs as MatchPreferences);
-    ranked = padHomeFeedWithSamples(ranked, {
-      city: fetchCity,
-      viewerCity: viewer.city || "",
-      excludeIds: exclude
-    });
-    setProfiles(ranked);
-    onResultCount?.(ranked.length);
+    setBaseProfiles(deck);
     loadedOnceRef.current = true;
     setLoading(false);
   }, [
     user,
     viewer,
-    prefs,
     fetchCity,
     fetchState,
     debouncedAgeMin,
     debouncedAgeMax,
-    debouncedDistanceKm,
-    debouncedAdvanced,
-    onResultCount
+    debouncedAdvanced
   ]);
+
+  useEffect(() => {
+    onFeedLoading?.(loading);
+  }, [loading, onFeedLoading]);
+
+  useEffect(() => {
+    onResultCount?.(profiles.length);
+  }, [profiles.length, onResultCount]);
 
   useEffect(() => {
     void loadFeed();
@@ -263,6 +269,11 @@ export function HomeSignalsFeed({
     <section className="home-signals-feed" aria-label="Signals near you">
       <header className="home-signals-feed__head">
         <h2>Near you</h2>
+        {!loading && profiles.length > 0 ? (
+          <p className="home-signals-feed__reach">
+            {profiles.length} signal{profiles.length === 1 ? "" : "s"} within {effectiveDistanceKm} km
+          </p>
+        ) : null}
       </header>
 
       {toast ? (

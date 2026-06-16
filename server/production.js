@@ -20,6 +20,8 @@ import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivit
 import viewSecurityHandler from "../api/diagnostics/view-security.js";
 import functionSecurityHandler from "../api/diagnostics/function-security.js";
 import memberDataHandler from "../api/member/data.js";
+import memberPhotosHandler from "../api/member/photos.js";
+import { isPhotoStorageConfigured } from "./services/photoStorage.js";
 import cityHomeHandler from "../api/city/home.js";
 import citySpotlightHandler from "../api/city/spotlight.js";
 import citySpotlightEventHandler from "../api/city/spotlight-event.js";
@@ -95,7 +97,8 @@ async function healthPayload() {
     firebase: Boolean(config.firebase.serviceAccount),
     telegram: Boolean(config.telegram.botToken),
     sendchamp: isSendchampConfigured(),
-    sendchampTrace: getSendchampHealthTrace()
+    sendchampTrace: getSendchampHealthTrace(),
+    photoStorage: isPhotoStorageConfigured()
   };
 }
 
@@ -116,6 +119,7 @@ mountHandler(app, "post", "/api/verify/whatsapp/confirm", whatsappVerifyConfirmH
 mountHandler(app, "post", "/api/verify/submissions", verificationSubmissionsHandler);
 mountHandler(app, "get", "/api/verify/submissions", verificationSubmissionsHandler);
 mountHandler(app, "post", "/api/member/data", memberDataHandler);
+mountHandler(app, "post", "/api/member/photos", memberPhotosHandler);
 mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);
 mountHandler(app, "get", "/api/diagnostics/paystack-connectivity", paystackConnectivityHandler);
 mountHandler(app, "get", "/api/diagnostics/view-security", viewSecurityHandler);

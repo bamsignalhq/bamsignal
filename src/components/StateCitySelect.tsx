@@ -10,6 +10,8 @@ type StateCitySelectProps = {
   cityLabel?: string;
   stateOptional?: boolean;
   variant?: "default" | "compact";
+  /** Compact mode: hide state picker when a city is already selected. */
+  hideStateWhenCitySelected?: boolean;
 };
 
 export function StateCitySelect({
@@ -19,10 +21,12 @@ export function StateCitySelect({
   stateLabel = "State",
   cityLabel = "City",
   stateOptional = false,
-  variant = "default"
+  variant = "default",
+  hideStateWhenCitySelected = false
 }: StateCitySelectProps) {
   const [citiesOpen, setCitiesOpen] = useState(false);
-  const cityOptions = useMemo(() => (state ? citiesForState(state) : []), [state]);
+  const resolvedState = state || (city ? stateForCity(city) : "");
+  const cityOptions = useMemo(() => (resolvedState ? citiesForState(resolvedState) : []), [resolvedState]);
 
   useEffect(() => {
     setCitiesOpen(false);
@@ -39,34 +43,41 @@ export function StateCitySelect({
   };
 
   if (variant === "compact") {
+    const showState = !hideStateWhenCitySelected || !city;
     return (
       <div className="state-city-select state-city-select--compact">
-        <label className="state-city-select__field">
-          <span>{stateLabel}</span>
-          <select
-            value={state}
-            onChange={(e) => handleStateChange(e.target.value)}
-            required={!stateOptional}
-          >
-            {stateOptional && <option value="">Select state</option>}
-            {!state && !stateOptional && <option value="">State</option>}
-            {NIGERIAN_STATES.map((s) => (
-              <option key={s} value={s}>
-                {s === "FCT" ? "FCT (Abuja)" : s}
-              </option>
-            ))}
-          </select>
-        </label>
+        {showState ? (
+          <label className="state-city-select__field">
+            <span>{stateLabel}</span>
+            <select
+              value={state}
+              onChange={(e) => handleStateChange(e.target.value)}
+              required={!stateOptional}
+            >
+              {stateOptional && <option value="">Select state</option>}
+              {!state && !stateOptional && <option value="">State</option>}
+              {NIGERIAN_STATES.map((s) => (
+                <option key={s} value={s}>
+                  {s === "FCT" ? "FCT (Abuja)" : s}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
 
         <label className="state-city-select__field">
           <span>{cityLabel}</span>
           <select
             value={city}
-            disabled={!state}
-            onChange={(e) => onLocationChange(state, e.target.value)}
+            disabled={!resolvedState}
+            onChange={(e) => {
+              const nextCity = e.target.value;
+              const nextState = state || stateForCity(nextCity) || resolvedState || "";
+              onLocationChange(nextState, nextCity);
+            }}
           >
-            {!state && <option value="">Select state first</option>}
-            {state && !city && <option value="">City</option>}
+            {!resolvedState && <option value="">Select state first</option>}
+            {resolvedState && !city && <option value="">City</option>}
             {cityOptions.map((c) => (
               <option key={c} value={c}>
                 {c}

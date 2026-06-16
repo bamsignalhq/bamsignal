@@ -17,7 +17,7 @@ import {
 } from "../../utils/compatibility";
 import { getMemberCity } from "../../utils/memberCity";
 import { buildHomeFeedGridItems, filterProfilesByName } from "../../utils/homeFeed";
-import { homeAdvancedToSearchFilters } from "../../utils/homeFilters";
+import { homeAdvancedToSearchFilters, filterProfilesByDistance } from "../../utils/homeFilters";
 import { rankProfiles } from "../../utils/matching";
 import { normalizeMatchPreferences } from "../../utils/profile";
 import { blockUser, filterDiscoverDeck, isAutoFlagged } from "../../utils/safety";
@@ -40,6 +40,7 @@ type HomeSignalsFeedProps = {
   ageMax: number;
   state: string;
   city: string;
+  distanceKm: number | null;
   advanced: HomeAdvancedFilters;
   refreshKey: number;
   filtersApplied: boolean;
@@ -83,6 +84,7 @@ export function HomeSignalsFeed({
   ageMax,
   state,
   city,
+  distanceKm,
   advanced,
   refreshKey,
   filtersApplied,
@@ -146,6 +148,8 @@ export function HomeSignalsFeed({
       deck = deck.filter((p) => p.verified);
     }
 
+    deck = filterProfilesByDistance(deck, distanceKm);
+
     const ranked = rankProfiles(deck, viewer, prefs as MatchPreferences);
     setProfiles(ranked);
     onResultCount?.(ranked.length);
@@ -158,6 +162,7 @@ export function HomeSignalsFeed({
     resolvedState,
     ageMin,
     ageMax,
+    distanceKm,
     advanced,
     refreshKey,
     onResultCount

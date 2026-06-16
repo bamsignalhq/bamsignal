@@ -10,7 +10,7 @@ function contactApiDevPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = req.url?.split("?")[0];
-        if (url !== "/api/contact" && url !== "/api/auth/email-code") {
+        if (url !== "/api/contact" && url !== "/api/auth/email-code" && url !== "/api/member/photos") {
           next();
           return;
         }
@@ -28,6 +28,37 @@ function contactApiDevPlugin(): Plugin {
               const { handleContactPost, sendContactJson } = await import("./server/services/contactMail.js");
               const result = await handleContactPost(body);
               sendContactJson(res, 200, result);
+              return;
+            }
+
+            if (url === "/api/member/photos") {
+              const memberPhotosHandler = (await import("./api/member/photos.js")).default;
+              const query = Object.fromEntries(new URL(req.url || "", "http://localhost").searchParams);
+              await memberPhotosHandler(
+                {
+                  method: "POST",
+                  query,
+                  headers: { authorization: req.headers.authorization || "" },
+                  body
+                },
+                {
+                  status(code: number) {
+                    res.statusCode = code;
+                    return this;
+                  },
+                  setHeader(name: string, value: string) {
+                    res.setHeader(name, value);
+                  },
+                  json(payload: unknown) {
+                    res.setHeader("Content-Type", "application/json");
+                    res.end(JSON.stringify(payload));
+                  },
+                  end() {
+                    res.end();
+                  },
+                  headersSent: false
+                }
+              );
               return;
             }
 

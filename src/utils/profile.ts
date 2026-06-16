@@ -6,7 +6,7 @@ import { normalizeIntents } from "../constants/intents";
 import { stateForCity } from "../constants/profileOptions";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { readJson } from "./storage";
-import { sameImageDataUrl } from "./imageContactScan";
+import { samePhotoRef } from "./photoRefs";
 
 export const defaultDatingProfile = (): DatingProfile => ({
   photos: [],
@@ -86,7 +86,7 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     !onboardingComplete || !raw.coverPhotoExplicit
       ? undefined
       : raw.coverPhoto &&
-          raw.photos?.some((p) => sameImageDataUrl(p, raw.coverPhoto))
+          raw.photos?.some((p) => samePhotoRef(p, raw.coverPhoto))
         ? undefined
         : raw.coverPhoto;
   return {
@@ -115,7 +115,7 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
 function sanitizeProfilePhotos(photos: string[], coverPhoto?: string): string[] {
   const list = photos.filter(Boolean);
   if (!coverPhoto) return list;
-  return list.filter((photo) => !sameImageDataUrl(photo, coverPhoto));
+  return list.filter((photo) => !samePhotoRef(photo, coverPhoto));
 }
 
 export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): MatchPreferences {

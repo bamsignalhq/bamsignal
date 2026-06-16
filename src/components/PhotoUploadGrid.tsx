@@ -1,9 +1,15 @@
 import { Camera, Loader2, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { MAX_PROFILE_PHOTOS, MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import {
+  compressPhotoForPreview,
+  deleteStoredPhoto,
+  PhotoUploadError,
+  uploadCompressedProfileBlob
+} from "../services/profilePhotos";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
-import { sameImageDataUrl } from "../utils/imageContactScan";
-import { fileToCompressedDataUrl } from "../utils/photoUpload";
+import { blobToDataUrl } from "../utils/photoUpload";
+import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
 
 type PhotoUploadGridProps = {
   photos: string[];
@@ -37,6 +43,9 @@ export function PhotoUploadGrid({
     if (!file || photos.length >= MAX_PROFILE_PHOTOS) return;
 
     setUploading(true);
+    const prior = photos;
+    let previewUrl: string | null = null;
+
     try {
       const verdict = await moderatePhotoUpload(file, signupMode ? "signup" : "profile");
       if (!verdict.allowed) {
@@ -44,27 +53,43 @@ export function PhotoUploadGrid({
         return;
       }
 
-      const dataUrl = await fileToCompressedDataUrl(file);
-      if (sameImageDataUrl(dataUrl, coverPhoto)) {
+      const compressed = await compressPhotoForPreview(file);
+      const tempDataUrl = await blobToDataUrl(compressed.blob);
+      if (samePhotoRef(tempDataUrl, coverPhoto)) {
         onModerationMessage?.("Please choose a different image from your cover photo.");
         return;
       }
-      if (photos.some((photo) => sameImageDataUrl(photo, dataUrl))) {
+      if (prior.some((photo) => samePhotoRef(photo, tempDataUrl))) {
         onModerationMessage?.("You already added this photo.");
         return;
       }
 
-      onChange([...photos, dataUrl].slice(0, MAX_PROFILE_PHOTOS));
-    } catch {
-      onModerationMessage?.(PHOTO_UPLOAD_FAIL);
+      previewUrl = URL.createObjectURL(compressed.blob);
+      onChange([...prior, previewUrl].slice(0, MAX_PROFILE_PHOTOS));
+
+      const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
+      onChange([...prior, remoteUrl].slice(0, MAX_PROFILE_PHOTOS));
+    } catch (error) {
+      onChange(prior);
+      if (error instanceof PhotoUploadError) {
+        onModerationMessage?.(error.message || PHOTO_UPLOAD_FAIL);
+      } else {
+        onModerationMessage?.(PHOTO_UPLOAD_FAIL);
+      }
     } finally {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       setUploading(false);
       setActiveSlot(null);
     }
   };
 
   const remove = (index: number) => {
-    onChange(photos.filter((_, i) => i !== index));
+    const url = photos[index];
+    const next = photos.filter((_, i) => i !== index);
+    onChange(next);
+    if (isStoragePhotoUrl(url)) {
+      void deleteStoredPhoto(url);
+    }
   };
 
   const slots = Array.from({ length: MAX_PROFILE_PHOTOS }, (_, i) => photos[i] ?? null);

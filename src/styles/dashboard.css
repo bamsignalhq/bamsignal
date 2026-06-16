@@ -1741,14 +1741,17 @@
 }
 
 .home-top--compact {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 2px 0 0;
 }
 
 .home-top__greeting {
   margin: 0;
+  flex: 1;
+  min-width: 0;
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -1756,7 +1759,8 @@
 }
 
 .home-signal-pill {
-  align-self: flex-start;
+  align-self: center;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   padding: 5px 10px;
@@ -1849,7 +1853,7 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-width: 88px;
+  min-width: 76px;
   min-height: 36px;
   padding: 0 12px;
   border-radius: 10px;
@@ -1860,6 +1864,52 @@
   font-weight: 600;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+.home-compact-filters__reset-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.home-filter-sheet__distance {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.home-distance-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.home-distance-options__btn {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  background: var(--input-bg);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.home-distance-options__btn--active {
+  border-color: color-mix(in srgb, var(--brand-pink) 40%, var(--border));
+  background: color-mix(in srgb, var(--brand-pink) 12%, var(--card));
+  color: var(--text);
 }
 
 .home-filter-scroll {
@@ -1894,18 +1944,6 @@
   white-space: nowrap;
 }
 
-.home-discovery__reset {
-  align-self: flex-start;
-  border: none;
-  background: none;
-  padding: 0 2px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
 
 .home-filter-sheet {
   position: fixed;

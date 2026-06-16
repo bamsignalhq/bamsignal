@@ -216,10 +216,9 @@ export function HomeAdvancedFiltersSheet({
             className="btn-primary"
             onClick={() => {
               onApply();
-              onClose();
             }}
           >
-            Apply filters
+            Done
           </button>
         </footer>
       </div>

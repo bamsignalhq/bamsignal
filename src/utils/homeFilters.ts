@@ -1,5 +1,6 @@
 import { intentDisplay } from "../constants/intents";
 import type {
+  DiscoverProfile,
   EthnicBackground,
   Genotype,
   HomeAdvancedFilters,
@@ -131,14 +132,28 @@ export function buildHomeFilterChips(options: {
   return chips;
 }
 
-export function buildHomeAdvancedChips(advanced: HomeAdvancedFilters): HomeFilterChip[] {
-  return buildHomeFilterChips({
+export function buildHomeAdvancedChips(
+  advanced: HomeAdvancedFilters,
+  options?: { city?: string; state?: string }
+): HomeFilterChip[] {
+  let chips = buildHomeFilterChips({
     ageMin: 0,
     ageMax: 0,
     city: "",
     state: "",
     advanced
   });
+
+  if (options?.city) {
+    const locationState = options.state || "";
+    chips = chips.filter(
+      (chip) =>
+        chip.kind !== "state" &&
+        !(chip.kind === "origin" && locationState && chip.value === locationState)
+    );
+  }
+
+  return chips;
 }
 
 export function homeHasCustomFilters(options: {
@@ -146,27 +161,37 @@ export function homeHasCustomFilters(options: {
   ageMax: number;
   city: string;
   state: string;
+  distanceKm: number | null;
   advanced: HomeAdvancedFilters;
   defaultAgeMin: number;
   defaultAgeMax: number;
   defaultCity: string;
   defaultState: string;
+  defaultDistanceKm: number | null;
 }): boolean {
   const {
     ageMin,
     ageMax,
     city,
     state,
+    distanceKm,
     advanced,
     defaultAgeMin,
     defaultAgeMax,
     defaultCity,
-    defaultState
+    defaultState,
+    defaultDistanceKm
   } = options;
 
   if (ageMin !== defaultAgeMin || ageMax !== defaultAgeMax) return true;
   if (city !== defaultCity || state !== defaultState) return true;
+  if (distanceKm !== defaultDistanceKm) return true;
   return homeAdvancedFilterCount(advanced) > 0;
+}
+
+export function filterProfilesByDistance(profiles: DiscoverProfile[], maxKm: number | null): DiscoverProfile[] {
+  if (maxKm == null) return profiles;
+  return profiles.filter((profile) => profile.distanceKm == null || profile.distanceKm <= maxKm);
 }
 
 export function removeHomeFilterChip(

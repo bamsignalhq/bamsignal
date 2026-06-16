@@ -1,9 +1,15 @@
 import { Camera, Loader2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { DEFAULT_PROFILE_COVER, PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import {
+  compressPhotoForPreview,
+  deleteStoredPhoto,
+  PhotoUploadError,
+  uploadCompressedCoverBlob
+} from "../services/profilePhotos";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
-import { sameImageDataUrl } from "../utils/imageContactScan";
-import { fileToCompressedDataUrl } from "../utils/photoUpload";
+import { blobToDataUrl } from "../utils/photoUpload";
+import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
 
 type CoverPhotoUploadProps = {
   coverPhoto?: string;
@@ -27,6 +33,9 @@ export function CoverPhotoUpload({
     if (!file) return;
 
     setUploading(true);
+    const previousCover = coverPhoto;
+    let previewUrl: string | null = null;
+
     try {
       const verdict = await moderatePhotoUpload(file, "cover");
       if (!verdict.allowed) {
@@ -34,16 +43,39 @@ export function CoverPhotoUpload({
         return;
       }
 
-      const dataUrl = await fileToCompressedDataUrl(file, { maxEdge: 1600, quality: 0.84 });
-      if (profilePhotos.some((photo) => sameImageDataUrl(photo, dataUrl))) {
+      const compressed = await compressPhotoForPreview(file);
+      const tempDataUrl = await blobToDataUrl(compressed.blob);
+      if (profilePhotos.some((photo) => samePhotoRef(photo, tempDataUrl))) {
         onModerationMessage?.("Please choose a different image for your cover.");
         return;
       }
-      onChange(dataUrl);
-    } catch {
-      onModerationMessage?.(PHOTO_UPLOAD_FAIL);
+
+      previewUrl = URL.createObjectURL(compressed.blob);
+      onChange(previewUrl);
+
+      const remoteUrl = await uploadCompressedCoverBlob(compressed.blob, file);
+      onChange(remoteUrl);
+      if (previousCover && isStoragePhotoUrl(previousCover)) {
+        void deleteStoredPhoto(previousCover);
+      }
+    } catch (error) {
+      onChange(previousCover);
+      if (error instanceof PhotoUploadError) {
+        onModerationMessage?.(error.message || PHOTO_UPLOAD_FAIL);
+      } else {
+        onModerationMessage?.(PHOTO_UPLOAD_FAIL);
+      }
     } finally {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       setUploading(false);
+    }
+  };
+
+  const removeCover = () => {
+    const previousCover = coverPhoto;
+    onChange(undefined);
+    if (previousCover && isStoragePhotoUrl(previousCover)) {
+      void deleteStoredPhoto(previousCover);
     }
   };
 
@@ -68,7 +100,7 @@ export function CoverPhotoUpload({
             {uploading ? "Uploading…" : hasCustomCover ? "Change cover" : "Add cover photo"}
           </button>
           {hasCustomCover && (
-            <button type="button" className="btn-secondary btn-sm" onClick={() => onChange(undefined)} disabled={uploading}>
+            <button type="button" className="btn-secondary btn-sm" onClick={removeCover} disabled={uploading}>
               <X size={16} aria-hidden />
               Remove
             </button>

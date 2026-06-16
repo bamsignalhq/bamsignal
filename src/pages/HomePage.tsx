@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { greetingForHour } from "../constants/copy";
+import { firstNameFromDisplayName } from "../constants/homeFilters";
 import { stateForCity } from "../constants/profileOptions";
 import { DEFAULT_HOME_FEED_ADS } from "../constants/homeFeedAds";
 import { STORAGE_KEYS } from "../constants/limits";
@@ -37,13 +38,14 @@ type HomePageProps = {
 };
 
 export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium }: HomePageProps) {
-  void userName;
+  const firstName = firstNameFromDisplayName(userName || user.name);
   const viewer = normalizeDatingProfile(getDatingProfile());
   const prefs = normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));
   const defaultAgeMin = prefs.ageMin ?? 22;
   const defaultAgeMax = prefs.ageMax ?? 35;
   const defaultState = prefs.states[0] || viewer.state || "";
   const defaultCity = prefs.cities[0] || viewer.city || getMemberCity() || "";
+  const defaultDistanceKm = prefs.distanceMax ?? null;
 
   const [adSettings, setAdSettings] = useState(DEFAULT_HOME_FEED_ADS);
   const [nameQuery, setNameQuery] = useState("");
@@ -51,6 +53,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const [ageMax, setAgeMax] = useState(defaultAgeMax);
   const [state, setState] = useState(defaultState);
   const [city, setCity] = useState(defaultCity);
+  const [distanceKm, setDistanceKm] = useState<number | null>(defaultDistanceKm);
   const [advanced, setAdvanced] = useState(() => advancedFromMatchPreferences(prefs));
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
@@ -70,7 +73,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     });
   }, [user]);
 
-  const advancedChips = useMemo(() => buildHomeAdvancedChips(advanced), [advanced]);
+  const advancedChips = useMemo(() => buildHomeAdvancedChips(advanced, { city, state }), [advanced, city, state]);
 
   const hasCustomFilters = useMemo(
     () =>
@@ -79,13 +82,27 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         ageMax,
         city,
         state,
+        distanceKm,
         advanced,
         defaultAgeMin,
         defaultAgeMax,
         defaultCity,
-        defaultState
+        defaultState,
+        defaultDistanceKm
       }),
-    [ageMin, ageMax, city, state, advanced, defaultAgeMin, defaultAgeMax, defaultCity, defaultState]
+    [
+      ageMin,
+      ageMax,
+      city,
+      state,
+      distanceKm,
+      advanced,
+      defaultAgeMin,
+      defaultAgeMax,
+      defaultCity,
+      defaultState,
+      defaultDistanceKm
+    ]
   );
 
   useEffect(() => {
@@ -93,7 +110,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
       setRefreshKey((k) => k + 1);
     }, 280);
     return () => window.clearTimeout(timer);
-  }, [nameQuery, ageMin, ageMax, state, city, advanced]);
+  }, [nameQuery, ageMin, ageMax, state, city, distanceKm, advanced]);
 
   const handleLocationChange = useCallback((nextState: string, nextCity: string) => {
     const resolvedState = nextCity ? stateForCity(nextCity) || nextState : nextState;
@@ -106,6 +123,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     setAgeMax(defaultAgeMax);
     setState(defaultState);
     setCity(defaultCity);
+    setDistanceKm(defaultDistanceKm);
     setAdvanced(emptyHomeAdvancedFilters());
     setNameQuery("");
     setQuickFiltersOpen(false);
@@ -130,7 +148,9 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   return (
     <div className="page home-page home-page--compact member-content-pad">
       <header className="home-top home-top--compact">
-        <h1 className="home-top__greeting">{greetingForHour()} 👋</h1>
+        <h1 className="home-top__greeting">
+          {greetingForHour()}, {firstName} 👋
+        </h1>
         <HomeSignalLimitBar isPremium={isPremium} onUpgrade={onOpenPremium} refreshKey={signalTick} />
       </header>
 
@@ -142,17 +162,14 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
           ageMax={ageMax}
           city={city}
           state={state}
+          distanceKm={distanceKm}
+          hasCustomFilters={hasCustomFilters}
           onOpenQuickFilters={() => setQuickFiltersOpen(true)}
           onOpenAdvanced={() => setAdvancedOpen(true)}
+          onReset={resetFilters}
         />
 
         <HomeFilterChips chips={advancedChips} />
-
-        {hasCustomFilters ? (
-          <button type="button" className="home-discovery__reset" onClick={resetFilters}>
-            Reset
-          </button>
-        ) : null}
       </section>
 
       <HomeSavedSearches
@@ -180,6 +197,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         ageMax={ageMax}
         state={state}
         city={city}
+        distanceKm={distanceKm}
         advanced={advanced}
         refreshKey={refreshKey}
         filtersApplied={hasCustomFilters}
@@ -196,9 +214,11 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         ageMax={ageMax}
         state={state}
         city={city}
+        distanceKm={distanceKm}
         onAgeMinChange={setAgeMin}
         onAgeMaxChange={setAgeMax}
         onLocationChange={handleLocationChange}
+        onDistanceKmChange={setDistanceKm}
         onClose={() => setQuickFiltersOpen(false)}
       />
 

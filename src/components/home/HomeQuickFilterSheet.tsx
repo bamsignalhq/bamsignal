@@ -1,4 +1,5 @@
 import { StateCitySelect } from "../StateCitySelect";
+import { HOME_DISTANCE_OPTIONS } from "../../constants/homeFilters";
 
 type HomeQuickFilterSheetProps = {
   open: boolean;
@@ -6,9 +7,11 @@ type HomeQuickFilterSheetProps = {
   ageMax: number;
   state: string;
   city: string;
+  distanceKm: number | null;
   onAgeMinChange: (value: number) => void;
   onAgeMaxChange: (value: number) => void;
   onLocationChange: (state: string, city: string) => void;
+  onDistanceKmChange: (value: number | null) => void;
   onClose: () => void;
 };
 
@@ -18,9 +21,11 @@ export function HomeQuickFilterSheet({
   ageMax,
   state,
   city,
+  distanceKm,
   onAgeMinChange,
   onAgeMaxChange,
   onLocationChange,
+  onDistanceKmChange,
   onClose
 }: HomeQuickFilterSheetProps) {
   if (!open) return null;
@@ -30,7 +35,7 @@ export function HomeQuickFilterSheet({
       <button type="button" className="home-filter-sheet__backdrop" onClick={onClose} aria-label="Close" />
       <div className="home-filter-sheet__panel card">
         <div className="home-filter-sheet__head">
-          <h3>Age & location</h3>
+          <h3>Filters</h3>
           <button type="button" className="home-filter-sheet__done" onClick={onClose}>
             Done
           </button>
@@ -64,7 +69,30 @@ export function HomeQuickFilterSheet({
           onLocationChange={onLocationChange}
           stateLabel="State"
           cityLabel="City"
+          hideStateWhenCitySelected
         />
+        <fieldset className="intent-fieldset home-filter-sheet__distance">
+          <legend>Distance</legend>
+          <div className="home-distance-options">
+            {HOME_DISTANCE_OPTIONS.map((km) => (
+              <button
+                key={km}
+                type="button"
+                className={`home-distance-options__btn ${distanceKm === km ? "home-distance-options__btn--active" : ""}`}
+                onClick={() => onDistanceKmChange(km)}
+              >
+                {km}km
+              </button>
+            ))}
+            <button
+              type="button"
+              className={`home-distance-options__btn ${distanceKm == null ? "home-distance-options__btn--active" : ""}`}
+              onClick={() => onDistanceKmChange(null)}
+            >
+              Anywhere
+            </button>
+          </div>
+        </fieldset>
       </div>
     </div>
   );

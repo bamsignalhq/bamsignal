@@ -1,4 +1,5 @@
 import { Search, SlidersHorizontal } from "lucide-react";
+import { formatHomeLocationSummary } from "../../constants/homeFilters";
 
 type HomeFeedFiltersProps = {
   nameQuery: string;
@@ -7,15 +8,12 @@ type HomeFeedFiltersProps = {
   ageMax: number;
   city: string;
   state: string;
+  distanceKm: number | null;
+  hasCustomFilters: boolean;
   onOpenQuickFilters: () => void;
   onOpenAdvanced: () => void;
+  onReset?: () => void;
 };
-
-function locationLabel(city: string, state: string): string {
-  if (city) return city;
-  if (state) return state === "FCT" ? "Abuja" : state;
-  return "Anywhere";
-}
 
 export function HomeFeedFilters({
   nameQuery,
@@ -24,10 +22,14 @@ export function HomeFeedFilters({
   ageMax,
   city,
   state,
+  distanceKm,
+  hasCustomFilters,
   onOpenQuickFilters,
-  onOpenAdvanced
+  onOpenAdvanced,
+  onReset
 }: HomeFeedFiltersProps) {
-  const summary = `${ageMin}–${ageMax} • ${locationLabel(city, state)}`;
+  const location = formatHomeLocationSummary(city, state, distanceKm);
+  const summary = `${ageMin}–${ageMax} • ${location}`;
 
   return (
     <div className="home-compact-filters" aria-label="Search filters">
@@ -50,6 +52,11 @@ export function HomeFeedFilters({
           <SlidersHorizontal size={15} aria-hidden />
           Filters
         </button>
+        {hasCustomFilters && onReset ? (
+          <button type="button" className="home-compact-filters__reset-btn" onClick={onReset}>
+            Reset
+          </button>
+        ) : null}
       </div>
     </div>
   );

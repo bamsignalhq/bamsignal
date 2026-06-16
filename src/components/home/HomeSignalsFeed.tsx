@@ -241,9 +241,9 @@ export function HomeSignalsFeed({
       ) : null}
 
       {loading ? (
-        <div className="home-feed-grid home-feed-grid--loading" aria-busy="true">
+        <div className="discover-feed-grid discover-feed-grid--loading" aria-busy="true">
           {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="home-feed-card home-feed-card--skeleton" />
+            <div key={i} className="discover-feed-card discover-feed-card--skeleton" />
           ))}
         </div>
       ) : gridItems.length === 0 ? (
@@ -258,7 +258,7 @@ export function HomeSignalsFeed({
         </div>
       ) : (
         <>
-          <div className="home-feed-grid">
+          <div className="discover-feed-grid">
             {gridItems.map((item, index) => {
               if (item.type === "ad") {
                 const slot = adSettings.slots[item.slotIndex];

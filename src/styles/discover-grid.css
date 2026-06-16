@@ -1,0 +1,396 @@
+/* Discover grid feed — 3-column portrait cards, sponsored rows, reference layout */
+
+.discover-page--grid {
+  padding-bottom: calc(var(--bottom-nav-height, 72px) + 1rem);
+}
+
+.discover-page__greeting h1 {
+  margin: 0 0 0.85rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.discover-page__density {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+/* Toolbar */
+.discover-feed-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+.discover-feed-toolbar__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text-muted);
+}
+
+.discover-feed-toolbar__search input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.92rem;
+  outline: none;
+  min-width: 0;
+}
+
+.discover-feed-toolbar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.discover-feed-toolbar__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.discover-feed-toolbar__chip-label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.discover-feed-toolbar__chip-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 7rem;
+}
+
+.discover-feed-toolbar__count {
+  font-style: normal;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+}
+
+/* Section header */
+.discover-grid-feed__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0.75rem;
+}
+
+.discover-grid-feed__head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.discover-grid-feed__head p {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.discover-grid-feed__view-all {
+  border: none;
+  background: none;
+  color: var(--brand);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+  white-space: nowrap;
+}
+
+.discover-grid-feed__toast {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.discover-grid-feed__empty {
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.discover-grid-feed__empty-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.discover-grid-feed__count {
+  margin: 0.75rem 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.discover-grid-feed__more {
+  margin-top: 0.65rem;
+}
+
+.discover-grid-feed__sentinel {
+  height: 1px;
+  width: 100%;
+}
+
+/* 3-column grid */
+.discover-feed-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.discover-feed-grid--loading {
+  min-height: 220px;
+}
+
+.discover-feed-grid .home-feed-ad {
+  grid-column: 1 / -1;
+}
+
+/* Profile card */
+.discover-feed-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: var(--card);
+  overflow: hidden;
+  min-width: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.discover-feed-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.discover-feed-card--skeleton {
+  aspect-ratio: 3 / 4.35;
+  background: linear-gradient(
+    110deg,
+    var(--input-bg) 8%,
+    color-mix(in srgb, var(--border) 60%, var(--input-bg)) 18%,
+    var(--input-bg) 33%
+  );
+  background-size: 200% 100%;
+  animation: discover-feed-shimmer 1.2s linear infinite;
+}
+
+@keyframes discover-feed-shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+.discover-feed-card__open {
+  flex: 1;
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  min-width: 0;
+}
+
+.discover-feed-card__media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 3.75;
+  overflow: hidden;
+}
+
+.discover-feed-card__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.discover-feed-card__verify {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  transform: scale(0.72);
+  transform-origin: top right;
+  pointer-events: none;
+}
+
+.discover-feed-card__overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 28px 8px 8px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.35) 55%, transparent 100%);
+}
+
+.discover-feed-card__name {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.discover-feed-card__name span {
+  font-weight: 500;
+  opacity: 0.92;
+}
+
+.discover-feed-card__city {
+  margin: 2px 0 0;
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.82);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.discover-feed-card__signal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 0;
+  padding: 8px 6px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 92%, var(--brand) 8%);
+  color: var(--brand);
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.discover-feed-card__signal:hover:not(:disabled) {
+  background: var(--brand-gradient);
+  color: #fff;
+}
+
+.discover-feed-card__signal:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Filter sheets */
+.discover-filter-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.discover-filter-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+
+.discover-filter-sheet__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  margin: 0 12px 12px;
+  padding: 1rem;
+  border-radius: 16px;
+}
+
+.discover-filter-sheet__panel h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.discover-filter-sheet__age {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.85rem;
+}
+
+.discover-filter-sheet__age label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.discover-filter-sheet__age input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+}
+
+@media (min-width: 480px) {
+  .discover-feed-toolbar__chip-value {
+    max-width: 10rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .discover-feed-card {
+    transition: none;
+  }
+
+  .discover-feed-card:hover {
+    transform: none;
+  }
+}

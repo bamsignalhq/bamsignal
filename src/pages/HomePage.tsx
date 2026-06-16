@@ -54,8 +54,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(() =>
     localStorage.getItem(STORAGE_KEYS.pendingSignalProfileId)
   );
-  const [signalsInRange, setSignalsInRange] = useState<number | null>(null);
-  const [signalsLoading, setSignalsLoading] = useState(true);
   const [signalRefresh, setSignalRefresh] = useState(0);
 
   useEffect(() => {
@@ -178,8 +176,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         onUpgrade={onOpenPremium}
         onViewMore={onDiscover}
         onResetFilters={resetFilters}
-        onResultCount={setSignalsInRange}
-        onFeedLoading={setSignalsLoading}
         onSignalSent={handleSignalSent}
       />
 
@@ -190,8 +186,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         state={state}
         city={city}
         distanceKm={distanceKm}
-        signalsInRange={signalsInRange}
-        signalsLoading={signalsLoading}
         onAgeMinChange={setAgeMin}
         onAgeMaxChange={setAgeMax}
         onLocationChange={handleLocationChange}

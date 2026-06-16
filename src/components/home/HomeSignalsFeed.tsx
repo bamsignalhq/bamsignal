@@ -51,8 +51,6 @@ type HomeSignalsFeedProps = {
   onUpgrade: () => void;
   onViewMore: () => void;
   onResetFilters?: () => void;
-  onResultCount?: (count: number) => void;
-  onFeedLoading?: (loading: boolean) => void;
   onSignalSent?: () => void;
 };
 
@@ -95,8 +93,6 @@ export function HomeSignalsFeed({
   onUpgrade,
   onViewMore,
   onResetFilters,
-  onResultCount,
-  onFeedLoading,
   onSignalSent
 }: HomeSignalsFeedProps) {
   const prefs = useMemo(
@@ -194,14 +190,6 @@ export function HomeSignalsFeed({
     debouncedAgeMax,
     debouncedAdvanced
   ]);
-
-  useEffect(() => {
-    onFeedLoading?.(loading);
-  }, [loading, onFeedLoading]);
-
-  useEffect(() => {
-    onResultCount?.(profiles.length);
-  }, [profiles.length, onResultCount]);
 
   useEffect(() => {
     void loadFeed();

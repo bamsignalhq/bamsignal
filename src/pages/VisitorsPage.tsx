@@ -33,7 +33,7 @@ export function VisitorsPage({
         </button>
         <div>
           <Eye size={24} aria-hidden />
-          <h1>Profile Visitors</h1>
+          <h1>{SUCCESS_COPY.profileVisitorsTitle}</h1>
           <p>
             {displayCount} profile view{displayCount === 1 ? "" : "s"} today
           </p>
@@ -44,7 +44,7 @@ export function VisitorsPage({
         <section className="visitors-page__locked card">
           <Crown size={28} aria-hidden />
           <h2>{displayCount} people viewed your profile</h2>
-          <p>{MONETIZATION_COPY.lockedFeature}</p>
+          <p>{SUCCESS_COPY.profileVisitorsPaywallHint}</p>
           <button type="button" className="btn-primary btn-full" onClick={onUpgrade}>
             {MONETIZATION_COPY.seeEveryone}
           </button>

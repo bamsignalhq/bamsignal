@@ -54,7 +54,7 @@ export function HomeProfileVisitorsCard({ isPremium, visitorCount, onUpgrade }: 
 
   if (isPremium) {
     return (
-      <div className="home-insight home-insight--visitors" aria-label={`${visitorCount} profile visitors`}>
+      <div className="home-insight home-insight--visitors" aria-label={SUCCESS_COPY.profileVisitorsTitle}>
         <span className="home-insight__icon">
           <Eye size={16} aria-hidden />
         </span>

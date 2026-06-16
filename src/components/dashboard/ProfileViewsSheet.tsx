@@ -1,5 +1,5 @@
 import { Crown, Eye, X } from "lucide-react";
-import { MONETIZATION_COPY } from "../../constants/copy";
+import { MONETIZATION_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { ShowcaseImage } from "../ShowcaseImage";
 import type { ProfileViewer } from "../../utils/profileViews";
 
@@ -34,7 +34,7 @@ export function ProfileViewsSheet({
       <article className="profile-views-sheet__panel">
         <header className="profile-views-sheet__head">
           <div>
-            <h2>Profile Views</h2>
+            <h2>{SUCCESS_COPY.profileVisitorsTitle}</h2>
             <p>
               👀 {displayCount} profile view{displayCount === 1 ? "" : "s"} today
             </p>
@@ -73,7 +73,7 @@ export function ProfileViewsSheet({
             <p className="profile-views-sheet__count-only">
               <strong>{displayCount}</strong> profile view{displayCount === 1 ? "" : "s"}
             </p>
-            <p>{MONETIZATION_COPY.lockedFeature}</p>
+            <p>{SUCCESS_COPY.profileVisitorsPaywallHint}</p>
             <button
               type="button"
               className="btn-primary btn-full"

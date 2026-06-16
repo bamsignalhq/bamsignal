@@ -6,17 +6,49 @@ import { setPremiumSnapshot } from "./premiumStatus";
 import { apiUrl } from "./supabase";
 import { normalizeDatingProfile } from "../utils/profile";
 import { mergeIncomingSocial } from "../utils/profileSocial";
+import { readResponseJson } from "../utils/httpJson";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
 
-async function postMemberAction(action: string, identity: MemberIdentity, body: Record<string, unknown> = {}) {
+type MemberBundle = {
+  matches?: Match[];
+  reports?: ReportRecord[];
+  chats?: Record<string, ChatThread>;
+  signalsSent?: number;
+  incomingSignals?: LikeEntry[];
+  referral?: { code?: string; successfulReferrals?: number; rewardsClaimed?: number };
+  premium?: { isPremium: boolean; premiumUntil: string | null };
+  user?: { premium_until?: string | null; is_premium?: boolean };
+  memberProfileId?: string;
+  datingProfile?: Record<string, unknown>;
+  incomingLikes?: Parameters<typeof mergeIncomingSocial>[0]["incomingLikes"];
+  incomingFollows?: Parameters<typeof mergeIncomingSocial>[0]["incomingFollows"];
+};
+
+type MemberActionPayload = {
+  ok?: boolean;
+  bundle?: MemberBundle;
+  signal?: unknown;
+  match?: Match;
+  referral?: MemberBundle["referral"];
+  result?: { rewardGranted?: boolean };
+  premium?: { isPremium: boolean; premiumUntil: string | null };
+  incomingSignals?: LikeEntry[];
+  viewers?: import("../utils/profileViews").ProfileViewer[];
+};
+
+async function postMemberAction(
+  action: string,
+  identity: MemberIdentity,
+  body: Record<string, unknown> = {}
+): Promise<MemberActionPayload | null> {
   try {
     const response = await fetch(apiUrl(`/api/member/data?action=${action}`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...identity, ...body })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<MemberActionPayload>(response);
     if (!response.ok || !payload?.ok) return null;
     return payload;
   } catch {

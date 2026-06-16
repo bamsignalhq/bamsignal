@@ -71,7 +71,7 @@ export function DiscoverPage({
   const [viewer] = useState(() =>
     normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
   );
-  const [deckReady, setDeckReady] = useState(false);
+  const [profilesLoading, setProfilesLoading] = useState(true);
   const [allProfiles, setAllProfiles] = useState<DiscoverProfile[]>([]);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [toast, setToast] = useState("");
@@ -79,13 +79,17 @@ export function DiscoverPage({
 
   useEffect(() => {
     let cancelled = false;
+    setProfilesLoading(true);
     const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const city = viewer.city || getMemberCity() || "";
-    void fetchDiscoverProfiles(user, city, [...blocked, ...passedIds]).then((profiles) => {
-      if (cancelled) return;
-      setAllProfiles(profiles);
-      setDeckReady(true);
-    });
+    void fetchDiscoverProfiles(user, city, [...blocked, ...passedIds])
+      .then((profiles) => {
+        if (cancelled) return;
+        setAllProfiles(profiles);
+      })
+      .finally(() => {
+        if (!cancelled) setProfilesLoading(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -111,12 +115,6 @@ export function DiscoverPage({
   useEffect(() => {
     markFirstDayStep("discover_opened");
   }, []);
-
-  useEffect(() => {
-    setDeckReady(false);
-    const t = window.setTimeout(() => setDeckReady(true), 180);
-    return () => window.clearTimeout(t);
-  }, [baseDeck.length, quickFilter]);
 
   useEffect(() => {
     if (current?.id) recordDiscoveryImpression(current.id);
@@ -244,11 +242,11 @@ export function DiscoverPage({
 
       {toast && <div className="toast">{toast}</div>}
 
-      {!deckReady && <ProfileCardSkeleton />}
+      {profilesLoading && <ProfileCardSkeleton />}
 
-      {deckReady && !current && renderEmpty()}
+      {!profilesLoading && !current && renderEmpty()}
 
-      {deckReady && current && (
+      {!profilesLoading && current && (
         <ProfileCard
           key={cardKey}
           profile={current}

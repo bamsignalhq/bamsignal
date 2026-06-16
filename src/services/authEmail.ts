@@ -1,3 +1,4 @@
+import { readResponseJson } from "../utils/httpJson";
 import { apiUrl } from "./supabase";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { normalizeUsername } from "../utils/authIdentity";
@@ -29,7 +30,7 @@ async function readApiResponse<T extends { ok?: boolean; error?: string; field?:
   let payload: T | null = null;
 
   if (contentType.includes("application/json")) {
-    payload = (await response.json().catch(() => null)) as T | null;
+    payload = await readResponseJson<T>(response);
   } else {
     const text = await response.text().catch(() => "");
     if (response.status === 503 || response.status === 502) {
@@ -181,7 +182,7 @@ export async function resolveLoginEmail(username: string): Promise<string | null
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: normalized })
     });
-    const payload = (await response.json().catch(() => null)) as { ok?: boolean; email?: string } | null;
+    const payload = await readResponseJson<{ ok?: boolean; email?: string }>(response);
     if (!response.ok || !payload?.ok || !payload.email) return null;
     return payload.email.trim().toLowerCase();
   } catch {

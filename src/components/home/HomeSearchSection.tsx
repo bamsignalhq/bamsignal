@@ -120,22 +120,25 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
     }
     setLoading(true);
     setSearched(true);
-    const profiles = await searchMemberProfiles(user, {
-      state,
-      city,
-      ageMin,
-      ageMax,
-      excludeProfileIds: blocked,
-      ...advanced
-    });
-    setResults(profiles);
-    setLoading(false);
-    trackEvent("home_search", {
-      city,
-      state,
-      count: String(profiles.length),
-      advanced: String(advancedCount)
-    });
+    try {
+      const profiles = await searchMemberProfiles(user, {
+        state,
+        city,
+        ageMin,
+        ageMax,
+        excludeProfileIds: blocked,
+        ...advanced
+      });
+      setResults(profiles);
+      trackEvent("home_search", {
+        city,
+        state,
+        count: String(profiles.length),
+        advanced: String(advancedCount)
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignal = async (profile: DiscoverProfile) => {

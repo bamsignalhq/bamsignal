@@ -44,6 +44,7 @@
   place-items: center;
   background: rgba(0, 0, 0, 0.45);
   padding: 24px;
+  pointer-events: auto;
 }
 
 .payment-loading-overlay__card {

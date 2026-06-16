@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Preloader } from "./components/Preloader";
@@ -122,6 +122,7 @@ export function App() {
   const [notifVersion, setNotifVersion] = useState(0);
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
   const [paymentFlowTick, setPaymentFlowTick] = useState(0);
+  const paymentVerifyInFlight = useRef(false);
   const [user, setUser] = useState<UserProfile>(() =>
     readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" })
   );
@@ -265,6 +266,8 @@ export function App() {
   );
 
   const processPaymentReturn = useCallback(async () => {
+    if (paymentVerifyInFlight.current) return;
+
     const params = new URLSearchParams(window.location.search);
     const urlRef = params.get("trxref") || params.get("reference");
     const state = getPaymentFlowState();
@@ -272,36 +275,42 @@ export function App() {
     if (!urlRef && (state === "initializing" || state === "checkout_open")) return;
     if (!urlRef && state !== "verifying") return;
 
-    if (urlRef && window.location.pathname === "/payment/success") {
-      navigateToPath("/");
-    }
+    paymentVerifyInFlight.current = true;
+    try {
+      if (urlRef && window.location.pathname === "/payment/success") {
+        navigateToPath("/");
+      }
 
-    logPaymentEvent("verification started", { reference: urlRef || localStorage.getItem(STORAGE_KEYS.paymentReference) });
-    const result = await completePendingPayment(user);
-    setPaymentFlowTick((v) => v + 1);
+      logPaymentEvent("verification started", { reference: urlRef || localStorage.getItem(STORAGE_KEYS.paymentReference) });
+      const result = await completePendingPayment(user);
+      setPaymentFlowTick((v) => v + 1);
 
-    if (result.ok) {
-      logPaymentEvent("verification result", { ok: true, kind: result.kind });
-      applyPaymentSuccess(result.kind);
-      return;
-    }
+      if (result.ok) {
+        logPaymentEvent("verification result", { ok: true, kind: result.kind });
+        applyPaymentSuccess(result.kind);
+        return;
+      }
 
-    if (result.pending) {
-      logPaymentEvent("verification result", { ok: false, pending: true, kind: result.kind });
-      return;
-    }
+      if (result.pending) {
+        logPaymentEvent("verification result", { ok: false, pending: true, kind: result.kind });
+        return;
+      }
 
-    if (result.cancelled) {
-      setPaymentFlowState("cancelled");
-      setAuthMessage(USER_MESSAGES.paymentNotCompleted);
-      return;
-    }
+      if (result.cancelled) {
+        setPaymentFlowState("cancelled");
+        setAuthMessage(USER_MESSAGES.paymentNotCompleted);
+        return;
+      }
 
-    if (getPaymentFlowState() !== "failed") {
-      setPaymentFlowState("failed");
+      if (getPaymentFlowState() !== "failed") {
+        setPaymentFlowState("failed");
+      }
+      logPaymentEvent("verification result", { ok: false, kind: result.kind, error: result.error });
+      if (result.error) setAuthMessage(result.error);
+    } finally {
+      paymentVerifyInFlight.current = false;
+      setPaymentLoading(false);
     }
-    logPaymentEvent("verification result", { ok: false, kind: result.kind, error: result.error });
-    if (result.error) setAuthMessage(result.error);
   }, [applyPaymentSuccess, user]);
 
   useEffect(() => {
@@ -355,6 +364,7 @@ export function App() {
         }));
         setIsAuthed(true);
         setAuthLoading(false);
+        void hydrateMemberData(profile);
         return;
       }
       if (isAuthed && readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }).email) {
@@ -374,13 +384,49 @@ export function App() {
 
     document.addEventListener("visibilitychange", onReturnToApp);
     window.addEventListener("pageshow", onReturnToApp);
-    window.addEventListener("focus", onReturnToApp);
     return () => {
       document.removeEventListener("visibilitychange", onReturnToApp);
       window.removeEventListener("pageshow", onReturnToApp);
-      window.removeEventListener("focus", onReturnToApp);
     };
   }, [isAuthed]);
+
+  useEffect(() => {
+    if (!isNative) return;
+
+    const listener = CapApp.addListener("backButton", () => {
+      if (pricingOpen) {
+        setPricingOpen(false);
+        return;
+      }
+      if (notificationsOpen) {
+        setNotificationsOpen(false);
+        return;
+      }
+      if (memberOverlay) {
+        setMemberOverlay(null);
+        return;
+      }
+      if (legalPath) {
+        navigateToPath("/");
+        setLegalPath(null);
+        return;
+      }
+      if (authPath) {
+        navigateToPath("/");
+        setAuthPath(null);
+        return;
+      }
+      if (tab !== "home") {
+        setTab("home");
+        return;
+      }
+      void CapApp.exitApp();
+    });
+
+    return () => {
+      void listener.then((handle) => handle.remove());
+    };
+  }, [isNative, pricingOpen, notificationsOpen, memberOverlay, legalPath, authPath, tab]);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
@@ -506,6 +552,7 @@ export function App() {
         const profile = profileFromSessionUser(session.user);
         setUser(profile);
         setIsAuthed(true);
+        void hydrateMemberData(profile);
         const premium = await refreshPremiumStatus(profile);
         setIsPremium(premium.isPremium || isPremiumTrialActive());
         return;

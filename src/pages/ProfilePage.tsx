@@ -43,6 +43,7 @@ import type {
   UserProfile
 } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
+import { USER_MESSAGES } from "../constants/userMessages";
 import { getVerificationTier } from "../utils/verification";
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
 import { readJson, writeJson } from "../utils/storage";
@@ -167,6 +168,7 @@ export function ProfilePage({
     normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}))
   );
   const [saved, setSaved] = useState(false);
+  const [saveBusy, setSaveBusy] = useState(false);
   const [modMessage, setModMessage] = useState("");
   const [view, setView] = useState<ProfileView>("overview");
   const [settingsPanel, setSettingsPanel] = useState<SettingsPanel>("hub");
@@ -188,14 +190,24 @@ export function ProfilePage({
     }
   }, [user.phone, profile.verified]);
 
-  const save = () => {
-    const normalized = normalizeDatingProfile({ ...profile, premium: isPremium });
-    writeJson(STORAGE_KEYS.datingProfile, normalized);
-    writeJson(STORAGE_KEYS.matchPreferences, prefs);
-    syncMemberProfileRemote(user, normalized);
-    onUserChange({ ...user, name: user.name });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const save = async () => {
+    if (saveBusy) return;
+    setSaveBusy(true);
+    try {
+      const normalized = normalizeDatingProfile({ ...profile, premium: isPremium });
+      writeJson(STORAGE_KEYS.datingProfile, normalized);
+      writeJson(STORAGE_KEYS.matchPreferences, prefs);
+      const synced = await syncMemberProfileRemote(user, normalized);
+      onUserChange({ ...user, name: user.name });
+      if (!synced) {
+        showModMessage(USER_MESSAGES.profileSaveFailed);
+        return;
+      }
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaveBusy(false);
+    }
   };
 
   const showModMessage = (msg: string) => {
@@ -707,8 +719,8 @@ export function ProfilePage({
           </EditAccordion>
 
           <div className="profile-edit-save-bar">
-            <button type="button" className="btn-primary btn-full" onClick={save}>
-              {saved ? "Saved" : "Save"}
+            <button type="button" className="btn-primary btn-full" onClick={() => void save()} disabled={saveBusy}>
+              {saveBusy ? "Saving…" : saved ? "Saved" : "Save"}
             </button>
           </div>
         </>

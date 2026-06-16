@@ -1,7 +1,8 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import type { UserProfile } from "../types";
 
-const SIGNUP_TTL_MS = 15 * 60 * 1000;
+/** Survives refresh and native app reopen (localStorage). */
+const SIGNUP_TTL_MS = 60 * 60 * 1000;
 const RESEND_COOLDOWN_SEC = 60;
 
 export type PendingSignupState = {
@@ -11,30 +12,50 @@ export type PendingSignupState = {
   verifyCode?: string;
 };
 
-function readSession<T>(key: string): T | null {
+function readRawSignup(): string | null {
   try {
-    const raw = sessionStorage.getItem(key);
-    if (!raw) return null;
-    return JSON.parse(raw) as T;
+    return (
+      localStorage.getItem(STORAGE_KEYS.pendingSignup) ||
+      sessionStorage.getItem(STORAGE_KEYS.pendingSignup)
+    );
   } catch {
     return null;
   }
 }
 
-function writeSession(key: string, value: unknown): boolean {
+function writeSignupRaw(value: string): boolean {
+  let ok = false;
   try {
-    sessionStorage.setItem(key, JSON.stringify(value));
-    return true;
+    localStorage.setItem(STORAGE_KEYS.pendingSignup, value);
+    ok = true;
   } catch (error) {
     if (import.meta.env.DEV) {
-      console.error("[bamsignal] signup session write failed", error);
+      console.error("[bamsignal] signup localStorage write failed", error);
     }
-    return false;
   }
+  try {
+    sessionStorage.setItem(STORAGE_KEYS.pendingSignup, value);
+    ok = true;
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.error("[bamsignal] signup sessionStorage write failed", error);
+    }
+  }
+  return ok;
 }
 
 export function loadPendingSignup(): PendingSignupState | null {
-  const state = readSession<PendingSignupState>(STORAGE_KEYS.pendingSignup);
+  const raw = readRawSignup();
+  if (!raw) return null;
+
+  let state: PendingSignupState | null = null;
+  try {
+    state = JSON.parse(raw) as PendingSignupState;
+  } catch {
+    clearPendingSignup();
+    return null;
+  }
+
   if (!state?.profile?.email || !state.pin) return null;
   if (Date.now() - state.codeSentAt > SIGNUP_TTL_MS) {
     clearPendingSignup();
@@ -49,32 +70,37 @@ export function savePendingSignup(input: {
   verifyCode?: string;
   codeSentAt?: number;
 }): boolean {
-  return writeSession(STORAGE_KEYS.pendingSignup, {
-    profile: input.profile,
-    pin: input.pin,
-    verifyCode: input.verifyCode || "",
-    codeSentAt: input.codeSentAt ?? Date.now()
-  });
+  return writeSignupRaw(
+    JSON.stringify({
+      profile: input.profile,
+      pin: input.pin,
+      verifyCode: input.verifyCode || "",
+      codeSentAt: input.codeSentAt ?? Date.now()
+    })
+  );
 }
 
 export function touchPendingVerifyCode(code: string): boolean {
   const current = loadPendingSignup();
   if (!current) return false;
-  return writeSession(STORAGE_KEYS.pendingSignup, { ...current, verifyCode: code });
+  return writeSignupRaw(JSON.stringify({ ...current, verifyCode: code }));
 }
 
 export function touchPendingCodeSent(): boolean {
   const current = loadPendingSignup();
   if (!current) return false;
-  return writeSession(STORAGE_KEYS.pendingSignup, {
-    ...current,
-    codeSentAt: Date.now(),
-    verifyCode: ""
-  });
+  return writeSignupRaw(
+    JSON.stringify({
+      ...current,
+      codeSentAt: Date.now(),
+      verifyCode: ""
+    })
+  );
 }
 
 export function clearPendingSignup(): void {
   try {
+    localStorage.removeItem(STORAGE_KEYS.pendingSignup);
     sessionStorage.removeItem(STORAGE_KEYS.pendingSignup);
   } catch {
     /* ignore */

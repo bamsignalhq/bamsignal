@@ -85,10 +85,11 @@ export function PhotoUploadGrid({
       }
 
       previewUrl = URL.createObjectURL(compressed.blob);
-      onChange([...prior, previewUrl].slice(0, MAX_PROFILE_PHOTOS));
+      const withPreview = [...prior, previewUrl].slice(0, MAX_PROFILE_PHOTOS);
+      onChange(withPreview);
 
       const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
-      onChange([...prior, remoteUrl].slice(0, MAX_PROFILE_PHOTOS));
+      onChange(withPreview.map((photo) => (photo === previewUrl ? remoteUrl : photo)));
       logPhotoUpload("upload_ok", { signupMode });
     } catch (error) {
       onChange(prior);

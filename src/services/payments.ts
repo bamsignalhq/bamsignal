@@ -16,6 +16,7 @@ import { PAYMENT_START_ERROR } from "../config/paystack";
 import { openPaystackCheckout } from "./paymentCheckout";
 import { apiUrl } from "./supabase";
 import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
+import { readResponseJson } from "../utils/httpJson";
 
 export { isPremiumActive, refreshPremiumStatus };
 export { clearPaymentSession } from "../utils/paymentState";
@@ -49,7 +50,7 @@ async function postInitialize(url: string, body: Record<string, unknown>): Promi
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
-  const payload = await response.json().catch(() => null);
+  const payload = await readResponseJson<InitPayload & { error?: string }>(response);
   if (!response.ok || !payload?.ok || !payload.authorization_url) {
     logPaymentEvent("initialize failed", { url, error: payload?.error });
     return { ok: false, error: payload?.error || INIT_ERROR };
@@ -176,7 +177,7 @@ export async function verifyPayment(user: UserProfile): Promise<{
         name: user.name
       })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; error?: string; premium_until?: string }>(response);
     if (response.status === 402) {
       return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
     }
@@ -243,7 +244,7 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
         productType: "quickie"
       })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; error?: string; premium_until?: string }>(response);
     if (response.status === 402) {
       return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
     }
@@ -321,7 +322,7 @@ export async function verifyBoostPayment(
         city: resolvedCity
       })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; error?: string; expiresAt?: string }>(response);
     if (response.status === 402) {
       return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
     }

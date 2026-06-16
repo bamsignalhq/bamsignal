@@ -4,6 +4,7 @@ import { apiUrl, supabase } from "./supabase";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { blobToDataUrl, fileToCompressedDataUrl, fileToCompressedImageBlob } from "../utils/photoUpload";
 import { logPhotoUpload } from "../utils/photoUploadLog";
+import { readResponseJson } from "../utils/httpJson";
 
 export class PhotoUploadError extends Error {
   readonly code: PhotoUploadErrorCode;
@@ -44,7 +45,7 @@ async function uploadCompressedBlob(
     headers: await authHeaders(),
     body: JSON.stringify(body)
   });
-  const payload = await response.json().catch(() => null);
+  const payload = await readResponseJson<{ ok?: boolean; url?: string; error?: string; storageUnavailable?: boolean; photoId?: string }>(response);
   if (!response.ok || !payload?.ok || !payload.url) {
     const storageUnavailable = Boolean(payload?.storageUnavailable) || response.status === 503;
     logPhotoUpload("storage_upload_failed", {
@@ -95,11 +96,15 @@ export async function deleteStoredPhoto(url: string): Promise<void> {
   const headers = await authHeaders();
   if (!headers.Authorization) return;
 
-  await fetch(apiUrl("/api/member/photos?action=delete"), {
+  const response = await fetch(apiUrl("/api/member/photos?action=delete"), {
     method: "POST",
     headers,
     body: JSON.stringify({ url })
-  }).catch(() => null);
+  });
+  if (!response.ok && import.meta.env.DEV) {
+    const payload = await readResponseJson<{ error?: string }>(response);
+    console.warn("[bamsignal] photo delete failed", payload?.error || response.status);
+  }
 }
 
 /** Compress only — for instant blob preview while storage upload runs. */

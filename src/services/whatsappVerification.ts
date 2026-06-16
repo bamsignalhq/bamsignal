@@ -1,6 +1,7 @@
 import { apiUrl } from "./supabase";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { normalizeNigerianPhone } from "../utils/authIdentity";
+import { readResponseJson } from "../utils/httpJson";
 
 export async function startWhatsappVerification(phone: string): Promise<{ ok: boolean; message?: string; error?: string }> {
   try {
@@ -9,7 +10,7 @@ export async function startWhatsappVerification(phone: string): Promise<{ ok: bo
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone: normalizeNigerianPhone(phone) || phone })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; message?: string; error?: string; status?: string }>(response);
     if (!response.ok || !payload?.ok) {
       return { ok: false, error: payload?.error || USER_MESSAGES.otpSendFailed };
     }
@@ -32,7 +33,7 @@ export async function confirmWhatsappVerification(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone: normalizeNigerianPhone(phone) || phone, code })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; message?: string; error?: string; status?: string }>(response);
     if (!response.ok || !payload?.ok) {
       return {
         ok: false,
@@ -61,7 +62,7 @@ export async function submitVerificationSelfie(input: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input)
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; message?: string; error?: string; status?: string }>(response);
     if (!response.ok || !payload?.ok) {
       return { ok: false, error: payload?.error || "Couldn't submit verification right now." };
     }

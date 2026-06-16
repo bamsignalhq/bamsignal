@@ -138,46 +138,49 @@ export function HomeSignalsFeed({
   const loadFeed = useCallback(async () => {
     if (!loadedOnceRef.current) setLoading(true);
     setDisplayLimit(HOME_FEED_PROFILE_COUNT);
-    const exclude = getExcludedProfileIds();
-    const searchFilters = homeAdvancedToSearchFilters(debouncedAdvanced);
+    try {
+      const exclude = getExcludedProfileIds();
+      const searchFilters = homeAdvancedToSearchFilters(debouncedAdvanced);
 
-    let fetched: DiscoverProfile[] = [];
+      let fetched: DiscoverProfile[] = [];
 
-    if (fetchCity || fetchState) {
-      fetched = await searchMemberProfiles(user, {
-        city: fetchCity,
-        state: fetchCity ? "" : fetchState,
-        ageMin: debouncedAgeMin,
-        ageMax: debouncedAgeMax,
-        excludeProfileIds: exclude,
-        limit: 96,
-        ...searchFilters
-      });
-    }
+      if (fetchCity || fetchState) {
+        fetched = await searchMemberProfiles(user, {
+          city: fetchCity,
+          state: fetchCity ? "" : fetchState,
+          ageMin: debouncedAgeMin,
+          ageMax: debouncedAgeMax,
+          excludeProfileIds: exclude,
+          limit: 96,
+          ...searchFilters
+        });
+      }
 
-    if (fetched.length < HOME_FEED_PROFILE_COUNT && fetchCity) {
-      const discover = await fetchDiscoverProfiles(user, fetchCity, exclude);
-      const seen = new Set(fetched.map((p) => p.id));
-      for (const profile of discover) {
-        if (!seen.has(profile.id)) {
-          fetched.push(profile);
-          seen.add(profile.id);
+      if (fetched.length < HOME_FEED_PROFILE_COUNT && fetchCity) {
+        const discover = await fetchDiscoverProfiles(user, fetchCity, exclude);
+        const seen = new Set(fetched.map((p) => p.id));
+        for (const profile of discover) {
+          if (!seen.has(profile.id)) {
+            fetched.push(profile);
+            seen.add(profile.id);
+          }
         }
       }
+
+      const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
+      let deck = filterDiscoverDeck(fetched, viewer, blocked, []).filter((p) => !isAutoFlagged(p.id));
+
+      deck = deck.filter((p) => p.age >= debouncedAgeMin && p.age <= debouncedAgeMax);
+
+      if (debouncedAdvanced.verifiedOnly) {
+        deck = deck.filter((p) => p.verified);
+      }
+
+      setBaseProfiles(deck);
+      loadedOnceRef.current = true;
+    } finally {
+      setLoading(false);
     }
-
-    const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
-    let deck = filterDiscoverDeck(fetched, viewer, blocked, []).filter((p) => !isAutoFlagged(p.id));
-
-    deck = deck.filter((p) => p.age >= debouncedAgeMin && p.age <= debouncedAgeMax);
-
-    if (debouncedAdvanced.verifiedOnly) {
-      deck = deck.filter((p) => p.verified);
-    }
-
-    setBaseProfiles(deck);
-    loadedOnceRef.current = true;
-    setLoading(false);
   }, [
     user,
     viewer,

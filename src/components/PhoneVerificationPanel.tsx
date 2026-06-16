@@ -12,6 +12,7 @@ import {
 import { moderatePhotoUpload } from "../utils/mediaModeration";
 import { PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
 import { PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import { useAndroidBack } from "../hooks/useAndroidBack";
 
 type PhoneVerificationPanelProps = {
   user: UserProfile;
@@ -54,6 +55,12 @@ export function PhoneVerificationPanel({
     window.setTimeout(() => codeInputRef.current?.focus({ preventScroll: true }), 120);
   }, [codeSent, phoneVerified]);
 
+  useAndroidBack(() => {
+    if (modalView === "closed") return false;
+    setModalView("closed");
+    return true;
+  });
+
   const sendOtp = async () => {
     if (!isValidNigerianPhone(phone)) return;
     setBusy("sending");
@@ -79,6 +86,7 @@ export function PhoneVerificationPanel({
       const result = await confirmWhatsappVerification(phone, code);
       if (!result.ok) {
         onMessage?.(result.error || USER_MESSAGES.otpVerifyFailed);
+        window.setTimeout(() => codeInputRef.current?.focus({ preventScroll: true }), 80);
         return;
       }
       setCodeSent(false);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Compass } from "lucide-react";
 import { BRAND } from "../constants/copy";
 import { FREE_DAILY_SWIPES, STORAGE_KEYS } from "../constants/limits";
@@ -37,6 +37,7 @@ import { getRemainingDaily, incrementDailyCount, readDailyCount, readJson, write
 import { applyDiscoverPreferences, applyQuickFilter, type DiscoverQuickFilter } from "../utils/discoverFilters";
 import { isViewerShadowBanned } from "../utils/shadowBan";
 import { consumePrioritySignal } from "../utils/activeBoosts";
+import { useAndroidBack } from "../hooks/useAndroidBack";
 
 const SIGNAL_ANIM_MS = 700;
 
@@ -72,6 +73,7 @@ export function DiscoverPage({
     normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
   );
   const [profilesLoading, setProfilesLoading] = useState(true);
+  const profilesLoadedOnce = useRef(false);
   const [allProfiles, setAllProfiles] = useState<DiscoverProfile[]>([]);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [toast, setToast] = useState("");
@@ -79,13 +81,14 @@ export function DiscoverPage({
 
   useEffect(() => {
     let cancelled = false;
-    setProfilesLoading(true);
+    if (!profilesLoadedOnce.current) setProfilesLoading(true);
     const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const city = viewer.city || getMemberCity() || "";
     void fetchDiscoverProfiles(user, city, [...blocked, ...passedIds])
       .then((profiles) => {
         if (cancelled) return;
         setAllProfiles(profiles);
+        profilesLoadedOnce.current = true;
       })
       .finally(() => {
         if (!cancelled) setProfilesLoading(false);
@@ -120,9 +123,21 @@ export function DiscoverPage({
     if (current?.id) recordDiscoveryImpression(current.id);
   }, [current?.id]);
 
-  useEffect(() => {
-    setCardKey((k) => k + 1);
-  }, [current?.id]);
+  useAndroidBack(() => {
+    if (safetyOpen) {
+      setSafetyOpen(false);
+      return true;
+    }
+    if (profileOpen) {
+      setProfileOpen(false);
+      return true;
+    }
+    if (paywallOpen) {
+      setPaywallOpen(false);
+      return true;
+    }
+    return false;
+  });
 
   const canSignal = () => {
     if (isPremium) return true;
@@ -143,6 +158,7 @@ export function DiscoverPage({
     const nextPassed = [...passedIds, profileId];
     setPassedIds(nextPassed);
     writeJson(STORAGE_KEYS.passed, nextPassed);
+    setCardKey((k) => k + 1);
   };
 
   const finishSignal = async (profile: DiscoverProfile, opts?: { priority?: boolean }) => {

@@ -44,9 +44,9 @@ export async function fetchCitySpotlightProfiles(city: string, limit = 8): Promi
       method: "GET",
       cache: "no-store"
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; profiles?: CityHomeProfile[] }>(response);
     if (!response.ok || !payload?.ok || !Array.isArray(payload.profiles)) return [];
-    return payload.profiles as CityHomeProfile[];
+    return payload.profiles;
   } catch {
     return [];
   }
@@ -59,9 +59,9 @@ export async function fetchCityHomeProfiles(city: string, limit = 6): Promise<Ci
       method: "GET",
       cache: "no-store"
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; profiles?: CityHomeProfile[] }>(response);
     if (!response.ok || !payload?.ok || !Array.isArray(payload.profiles)) return [];
-    return payload.profiles as CityHomeProfile[];
+    return payload.profiles;
   } catch {
     return [];
   }
@@ -85,7 +85,11 @@ export async function fetchAdminCityMembers(city: string): Promise<{
       headers: await adminHeaders(),
       body: JSON.stringify({ city })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{
+      ok?: boolean;
+      members?: CityHomeMember[];
+      placements?: unknown[];
+    }>(response);
     if (!response.ok || !payload?.ok) return null;
     return {
       members: payload.members || [],
@@ -109,7 +113,7 @@ export async function setAdminCityPlacement(input: {
       headers: await adminHeaders(),
       body: JSON.stringify(input)
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean }>(response);
     return Boolean(response.ok && payload?.ok);
   } catch {
     return false;
@@ -123,7 +127,7 @@ export async function setAdminCityHomeHidden(profileId: string, hidden: boolean)
       headers: await adminHeaders(),
       body: JSON.stringify({ profileId, hidden })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean }>(response);
     return Boolean(response.ok && payload?.ok);
   } catch {
     return false;

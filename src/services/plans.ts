@@ -6,6 +6,7 @@ import {
   type PremiumPlanInput
 } from "../constants/plans";
 import { STORAGE_KEYS } from "../constants/limits";
+import { readResponseJson } from "../utils/httpJson";
 import { apiUrl } from "./supabase";
 import { isAdminSessionActive } from "../utils/adminSession";
 import { readJson, writeJson } from "../utils/storage";
@@ -56,7 +57,7 @@ export async function fetchPremiumPlans(): Promise<PremiumPlan[]> {
       cache: "no-store"
     });
     if (response.ok) {
-      const payload = await response.json();
+      const payload = await readResponseJson<{ ok?: boolean; plans?: PremiumPlanInput[] }>(response);
       if (payload?.ok && Array.isArray(payload.plans) && payload.plans.length) {
         const plans = plansFromInputs(payload.plans);
         writeJson(STORAGE_KEYS.premiumPlans, payload.plans);
@@ -85,7 +86,7 @@ export async function savePremiumPlansAdmin(
       headers,
       body: JSON.stringify({ plans: normalizeInputs(inputs) })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; plans?: PremiumPlanInput[]; error?: string }>(response);
     if (!response.ok || !payload?.ok) {
       if (import.meta.env.DEV) {
         return { ok: true, plans, error: payload?.error || "Saved locally (API unavailable in dev)." };

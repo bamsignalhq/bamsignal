@@ -1,4 +1,5 @@
 import type { UserProfile } from "../types";
+import { readResponseJson } from "../utils/httpJson";
 import { isPremiumTrialActive } from "../utils/premiumTrial";
 import { apiUrl } from "./supabase";
 
@@ -37,7 +38,7 @@ export async function refreshPremiumStatus(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: user.email, phone: user.phone })
     });
-    const payload = await response.json().catch(() => null);
+    const payload = await readResponseJson<{ ok?: boolean; premium?: PremiumSnapshot }>(response);
     if (response.ok && payload?.ok && payload.premium) {
       setPremiumSnapshot(payload.premium);
       return payload.premium;

@@ -116,6 +116,7 @@ export function HomeSignalsFeed({
   const debouncedState = useDebouncedValue(state, 300);
   const debouncedCity = useDebouncedValue(city, 300);
   const debouncedAdvanced = useDebouncedValue(advanced, 300);
+  const debouncedNameQuery = useDebouncedValue(nameQuery, 300);
 
   const fetchCity = debouncedCity.trim() || viewer.city || getMemberCity() || "";
   const fetchState = debouncedState.trim() || viewer.state || "";
@@ -210,8 +211,8 @@ export function HomeSignalsFeed({
   }, [pendingProfileId, profiles]);
 
   const displayProfiles = useMemo(
-    () => filterProfilesByName(profiles, nameQuery),
-    [profiles, nameQuery]
+    () => filterProfilesByName(profiles, debouncedNameQuery),
+    [profiles, debouncedNameQuery]
   );
 
   const visibleProfiles = useMemo(

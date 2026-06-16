@@ -126,6 +126,8 @@ export function App() {
   const [user, setUser] = useState<UserProfile>(() =>
     readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" })
   );
+  const isAuthedRef = useRef(isAuthed);
+  const userRef = useRef(user);
 
   const isGuest = !isAuthed;
 
@@ -185,6 +187,11 @@ export function App() {
     const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
     if (favicon) favicon.href = BRAND_ASSETS.favicon;
   }, [theme]);
+
+  useEffect(() => {
+    isAuthedRef.current = isAuthed;
+    userRef.current = user;
+  }, [isAuthed, user]);
 
   useEffect(() => {
     sanitizeStalePaymentState();
@@ -332,6 +339,16 @@ export function App() {
     if (!isNative) return;
     const listener = CapApp.addListener("appStateChange", ({ isActive }) => {
       if (!isActive) return;
+      sanitizeStalePaymentState();
+      if (isAuthedRef.current) {
+        const profile = userRef.current;
+        if (profile.email || profile.phone) {
+          void hydrateMemberData(profile);
+          void refreshPremiumStatus(profile).then((premium) => {
+            setIsPremium(premium.isPremium || isPremiumTrialActive());
+          });
+        }
+      }
       const state = getPaymentFlowState();
       if (state === "checkout_open" || state === "verifying") {
         logPaymentEvent("app resumed during payment", { state });
@@ -365,9 +382,11 @@ export function App() {
         setIsAuthed(true);
         setAuthLoading(false);
         void hydrateMemberData(profile);
+        const premium = await refreshPremiumStatus(profile);
+        setIsPremium(premium.isPremium || isPremiumTrialActive());
         return;
       }
-      if (isAuthed && readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }).email) {
+      if (isAuthedRef.current && readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }).email) {
         setIsAuthed(true);
       }
     };
@@ -394,6 +413,11 @@ export function App() {
     if (!isNative) return;
 
     const listener = CapApp.addListener("backButton", () => {
+      const backEvent = new CustomEvent("bamsignal:back", { cancelable: true });
+      window.dispatchEvent(backEvent);
+      if (backEvent.defaultPrevented) return;
+
+      if (showOnboarding) return;
       if (pricingOpen) {
         setPricingOpen(false);
         return;
@@ -426,7 +450,7 @@ export function App() {
     return () => {
       void listener.then((handle) => handle.remove());
     };
-  }, [isNative, pricingOpen, notificationsOpen, memberOverlay, legalPath, authPath, tab]);
+  }, [isNative, showOnboarding, pricingOpen, notificationsOpen, memberOverlay, legalPath, authPath, tab]);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
@@ -559,6 +583,28 @@ export function App() {
       }
 
       if (event === "SIGNED_OUT") {
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            await restoreFromSession(session);
+            return;
+          }
+          const refreshed = await supabase.auth.refreshSession();
+          if (refreshed.data.session?.user) {
+            await restoreFromSession(refreshed.data.session);
+            return;
+          }
+        }
+        const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+        if (stored.email || stored.phone) {
+          setIsAuthed(true);
+          setUser((prev) => ({
+            ...stored,
+            phone: prev.phone || stored.phone,
+            phoneVerified: Boolean(prev.phoneVerified ?? stored.phoneVerified)
+          }));
+          return;
+        }
         clearMemberSessionCaches();
         setIsAuthed(false);
         setShowOnboarding(false);

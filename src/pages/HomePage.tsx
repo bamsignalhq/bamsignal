@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { greetingForHour } from "../constants/copy";
 import { firstNameFromDisplayName } from "../constants/homeFilters";
 import { clampHomeDistanceForCity } from "../utils/cityMetroRadius";
@@ -28,6 +28,7 @@ import {
 import { getDatingProfile, normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
 import { getProfileViews, setProfileViewsFromServer } from "../utils/profileViews";
 import { readJson } from "../utils/storage";
+import { useAndroidBack } from "../hooks/useAndroidBack";
 
 type HomePageProps = {
   user: UserProfile;
@@ -134,6 +135,18 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     localStorage.removeItem(STORAGE_KEYS.pendingSignalProfileId);
     setPendingProfileId(null);
   };
+
+  useAndroidBack(() => {
+    if (advancedOpen) {
+      setAdvancedOpen(false);
+      return true;
+    }
+    if (quickFiltersOpen) {
+      setQuickFiltersOpen(false);
+      return true;
+    }
+    return false;
+  });
 
   return (
     <div className="page home-page home-page--compact member-content-pad">

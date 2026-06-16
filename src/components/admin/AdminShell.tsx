@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { adminPathForTab } from "../../constants/adminRoutes";
+import { hardPathForTab } from "../../constants/hardRoutes";
 import {
-  ADMIN_AUTH_PATH,
-  isAdminAuthRoute,
-  isAdminRoute,
+  HARD_AUTH_PATH,
+  isHardAuthRoute,
+  isHardRoute,
   navigateToPath,
   normalizePath
 } from "../../constants/routes";
 import { AdminErrorBoundary } from "./AdminErrorBoundary";
-import { validateAdminSession } from "../../utils/adminSession";
+import { validateHardSession } from "../../utils/adminSession";
 
 type AdminShellProps = {
   children: ReactNode;
@@ -20,20 +20,20 @@ export function AdminShell({ children, authorized, onUnauthorized }: AdminShellP
   const [checking, setChecking] = useState(authorized === null);
 
   useEffect(() => {
-    document.documentElement.classList.add("admin-mode");
+    document.documentElement.classList.add("hard-mode");
     document.documentElement.dataset.theme = "dark";
     return () => {
-      document.documentElement.classList.remove("admin-mode");
+      document.documentElement.classList.remove("hard-mode");
     };
   }, []);
 
   useEffect(() => {
-    if (isAdminAuthRoute()) {
+    if (isHardAuthRoute()) {
       setChecking(false);
       return;
     }
     let cancelled = false;
-    void validateAdminSession().then((ok) => {
+    void validateHardSession().then((ok) => {
       if (cancelled) return;
       setChecking(false);
       if (!ok) onUnauthorized();
@@ -43,11 +43,11 @@ export function AdminShell({ children, authorized, onUnauthorized }: AdminShellP
     };
   }, [onUnauthorized]);
 
-  const handleAdminBack = useCallback(() => {
-    if (!isAdminRoute() || isAdminAuthRoute()) return;
+  const handleHardBack = useCallback(() => {
+    if (!isHardRoute() || isHardAuthRoute()) return;
 
     const path = normalizePath(window.location.pathname);
-    if (path === "/admin/command" || path === "/admin" || path === "/hard") {
+    if (path === "/hard/command" || path === "/hard") {
       return;
     }
 
@@ -56,34 +56,38 @@ export function AdminShell({ children, authorized, onUnauthorized }: AdminShellP
       return;
     }
 
-    navigateToPath(adminPathForTab("command"));
+    navigateToPath(hardPathForTab("command"));
   }, []);
 
   useEffect(() => {
     const onCustomBack = (event: Event) => {
-      if (!isAdminRoute() || isAdminAuthRoute()) return;
+      if (!isHardRoute() || isHardAuthRoute()) return;
       if (event.defaultPrevented) return;
-      handleAdminBack();
+      handleHardBack();
     };
+    window.addEventListener("bamsignal:hard-back", onCustomBack);
     window.addEventListener("bamsignal:admin-back", onCustomBack);
-    return () => window.removeEventListener("bamsignal:admin-back", onCustomBack);
-  }, [handleAdminBack]);
+    return () => {
+      window.removeEventListener("bamsignal:hard-back", onCustomBack);
+      window.removeEventListener("bamsignal:admin-back", onCustomBack);
+    };
+  }, [handleHardBack]);
 
   useEffect(() => {
     const onPopState = () => {
-      if (!isAdminRoute() || !isAdminAuthRoute()) return;
-      void validateAdminSession().then((ok) => {
-        if (ok) navigateToPath(adminPathForTab("command"));
+      if (!isHardRoute() || !isHardAuthRoute()) return;
+      void validateHardSession().then((ok) => {
+        if (ok) navigateToPath(hardPathForTab("command"));
       });
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  if (checking && !isAdminAuthRoute()) {
+  if (checking && !isHardAuthRoute()) {
     return (
       <div className="admin-console admin-console--boot">
-        <p className="admin-console__boot-msg">Restoring command session…</p>
+        <p className="admin-console__boot-msg">Authenticating…</p>
       </div>
     );
   }
@@ -95,6 +99,6 @@ export function AdminShell({ children, authorized, onUnauthorized }: AdminShellP
   );
 }
 
-export function openAdminLogin(): void {
-  navigateToPath(ADMIN_AUTH_PATH);
+export function openHardLogin(): void {
+  navigateToPath(HARD_AUTH_PATH);
 }

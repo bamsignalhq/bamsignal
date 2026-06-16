@@ -21,7 +21,7 @@ async function main() {
   } else {
     console.log("Password set from ADMIN_BOOTSTRAP_PASSWORD.");
   }
-  console.log("\nLogin at https://bamsignal.com/admin/auth");
+  console.log("\nLogin at https://bamsignal.com/hard/auth");
   console.log("Set ADMIN_ACTION_PIN in Coolify for action confirmation.");
 }
 

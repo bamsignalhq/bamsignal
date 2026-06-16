@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_CMS, getCms, saveCms, type CmsContent } from "../constants/cms";
 import {
   DEFAULT_DISCOVER_CITY_CONFIG,
@@ -34,8 +34,8 @@ import {
 } from "../utils/cityAnalytics";
 import { getLaunchLeads } from "../utils/launchLeads";
 import { readJson } from "../utils/storage";
-import { adminPathForTab, parseAdminTabFromPath } from "../constants/adminRoutes";
-import { ADMIN_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
+import { hardPathForTab, parseHardTabFromPath } from "../constants/hardRoutes";
+import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
 import { DEMO_USER } from "../constants/demoAccounts";
 import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
@@ -67,12 +67,12 @@ import { AdminTerminalEmpty } from "../components/admin/AdminTerminalEmpty";
 import { useAdminToast } from "../components/admin/AdminToast";
 import { AdminSecurityPanel, useAdminConsent } from "../components/admin/AdminConsentProvider";
 import { AdminAuthPage } from "./AdminAuthPage";
-import { ADMIN_TAB_TITLES, type AdminTab } from "../components/admin/adminConsoleNav";
+import { HARD_TAB_TITLES, type HardTab } from "../components/admin/adminConsoleNav";
 import {
-  logoutAdminSession,
-  restoreAdminRouteOnLoad,
-  saveAdminLastRoute,
-  validateAdminSession
+  exitHardSession,
+  restoreHardRouteOnLoad,
+  saveHardLastRoute,
+  validateHardSession
 } from "../utils/adminSession";
 import { supabase } from "../services/supabase";
 
@@ -83,10 +83,11 @@ type AdminHubPageProps = {
 export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const { pushToast } = useAdminToast();
   const { ensureConsent } = useAdminConsent();
-  const [tab, setTab] = useState<AdminTab>(() => restoreAdminRouteOnLoad());
+  const [tab, setTab] = useState<HardTab>(() => restoreHardRouteOnLoad());
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [dockOpen, setDockOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const securityRef = useRef<HTMLElement | null>(null);
   const [cmsDraft, setCmsDraft] = useState<CmsContent>(() => getCms());
   const [discoverDraft, setDiscoverDraft] = useState<DiscoverCityConfig>(() => getDiscoverCityConfig());
   const [rejectReason, setRejectReason] = useState("");
@@ -119,10 +120,10 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [purgeBusy, setPurgeBusy] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
 
-  const handleTabChange = useCallback((id: AdminTab) => {
+  const handleTabChange = useCallback((id: HardTab) => {
     setTab(id);
-    const path = adminPathForTab(id);
-    saveAdminLastRoute(path);
+    const path = hardPathForTab(id);
+    saveHardLastRoute(path);
     if (normalizePath(window.location.pathname) !== path) {
       navigateToPath(path);
     }
@@ -132,8 +133,8 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   }, []);
 
   const handleLogout = async () => {
-    await logoutAdminSession();
-    navigateToPath(ADMIN_AUTH_PATH);
+    await exitHardSession();
+    navigateToPath(HARD_AUTH_PATH);
     onLogout();
   };
 
@@ -182,7 +183,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
 
   useEffect(() => {
     const onPop = () => {
-      const fromUrl = parseAdminTabFromPath();
+      const fromUrl = parseHardTabFromPath();
       if (fromUrl) setTab(fromUrl);
     };
     window.addEventListener("popstate", onPop);
@@ -190,8 +191,8 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   }, []);
 
   useEffect(() => {
-    const path = adminPathForTab(tab);
-    saveAdminLastRoute(path);
+    const path = hardPathForTab(tab);
+    saveHardLastRoute(path);
   }, [tab]);
 
   useEffect(() => {
@@ -213,7 +214,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
 
   useEffect(() => {
     let cancelled = false;
-    void validateAdminSession().then((ok) => {
+    void validateHardSession().then((ok) => {
       if (cancelled) return;
       setAuthorized(ok);
       if (!ok) onLogout();
@@ -226,7 +227,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   if (authorized === null) {
     return (
       <div className="admin-console page admin-page">
-        <AdminTerminalEmpty>Authenticating admin session…</AdminTerminalEmpty>
+        <AdminTerminalEmpty>Authenticating…</AdminTerminalEmpty>
       </div>
     );
   }
@@ -234,7 +235,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   if (!authorized) {
     return (
       <div className="admin-console page admin-page">
-        <AdminTerminalEmpty>Admin session expired. Redirecting to login…</AdminTerminalEmpty>
+        <AdminTerminalEmpty>Session expired. Redirecting…</AdminTerminalEmpty>
       </div>
     );
   }
@@ -290,11 +291,17 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
         onLogout={() => void handleLogout()}
         onOpenDock={() => setDockOpen(true)}
         onChangePassword={() => setPasswordOpen(true)}
+        onOpenSecurity={() => {
+          handleTabChange("command");
+          window.setTimeout(() => {
+            securityRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 50);
+        }}
       />
       <div className="admin-console__body">
         <main className="admin-console__main">
           <header className="admin-console__view-header">
-            <h1 className="admin-console__view-title">{ADMIN_TAB_TITLES[tab]}</h1>
+            <h1 className="admin-console__view-title">{HARD_TAB_TITLES[tab]}</h1>
             {tab === "command" && (
               <p className="admin-console__view-desc">
                 Live moderation queue, trust metrics, and operational snapshot.
@@ -411,7 +418,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
             ))}
           </section>
 
-          <AdminSecurityPanel />
+          <AdminSecurityPanel ref={securityRef} />
         </>
       )}
 
@@ -533,7 +540,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                       setPurgeMessage("");
                       try {
                         if (!(await ensureConsent("Confirm permanent member deletion."))) {
-                          setPurgeMessage("Admin PIN required.");
+                          setPurgeMessage("Console PIN required.");
                           return;
                         }
                         const result = await purgeAdminMember(purgeTarget.id, purgeConfirm.trim());
@@ -1256,7 +1263,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                 void (async () => {
                   setEmailBrandingMessage("");
                   if (!(await ensureConsent("Save email branding changes."))) {
-                    setEmailBrandingMessage("Admin PIN required.");
+                    setEmailBrandingMessage("Console PIN required.");
                     return;
                   }
                   const { data } = await supabase?.auth.getSession() || { data: null };

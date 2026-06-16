@@ -1,13 +1,24 @@
 import { apiUrl, supabase } from "../services/supabase";
 
-const CONSENT_STORAGE_KEY = "bamsignal_admin_consent";
+const CONSENT_STORAGE_KEY = "bamsignal_hard_consent";
 
 type StoredConsent = {
   token: string;
   expiresAt: number;
 };
 
+const LEGACY_CONSENT_KEY = "bamsignal_admin_consent";
+
+function migrateConsentStorage(): void {
+  const legacy = sessionStorage.getItem(LEGACY_CONSENT_KEY);
+  if (legacy && !sessionStorage.getItem(CONSENT_STORAGE_KEY)) {
+    sessionStorage.setItem(CONSENT_STORAGE_KEY, legacy);
+  }
+  sessionStorage.removeItem(LEGACY_CONSENT_KEY);
+}
+
 export function getAdminConsentToken(): string | null {
+  migrateConsentStorage();
   try {
     const raw = sessionStorage.getItem(CONSENT_STORAGE_KEY);
     if (!raw) return null;
@@ -34,7 +45,7 @@ export async function fetchAdminPinStatus(): Promise<{ ok: boolean; pinConfigure
   try {
     const session = await supabase?.auth.getSession();
     const token = session?.data.session?.access_token;
-    if (!token) return { ok: false, error: "Admin session required." };
+    if (!token) return { ok: false, error: "Console session required." };
 
     const response = await fetch(apiUrl("/api/admin/consent?action=status"), {
       method: "POST",
@@ -46,7 +57,7 @@ export async function fetchAdminPinStatus(): Promise<{ ok: boolean; pinConfigure
     });
     const payload = await response.json();
     if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "Could not load admin PIN status." };
+      return { ok: false, error: payload?.error || "Could not load console PIN status." };
     }
     return { ok: true, pinConfigured: Boolean(payload.pinConfigured) };
   } catch (error) {
@@ -58,7 +69,7 @@ export async function verifyAdminActionPin(pin: string): Promise<{ ok: boolean; 
   try {
     const session = await supabase?.auth.getSession();
     const token = session?.data.session?.access_token;
-    if (!token) return { ok: false, error: "Admin session required." };
+    if (!token) return { ok: false, error: "Console session required." };
 
     const response = await fetch(apiUrl("/api/admin/consent?action=verify"), {
       method: "POST",
@@ -70,7 +81,7 @@ export async function verifyAdminActionPin(pin: string): Promise<{ ok: boolean; 
     });
     const payload = await response.json();
     if (!response.ok || !payload?.ok || !payload.consentToken) {
-      return { ok: false, error: payload?.error || "Invalid admin PIN." };
+      return { ok: false, error: payload?.error || "Invalid console PIN." };
     }
     setAdminConsentToken(payload.consentToken, Number(payload.expiresAt) || Date.now() + 15 * 60 * 1000);
     return { ok: true };
@@ -86,7 +97,7 @@ export async function rotateAdminActionPin(
   try {
     const session = await supabase?.auth.getSession();
     const token = session?.data.session?.access_token;
-    if (!token) return { ok: false, error: "Admin session required." };
+    if (!token) return { ok: false, error: "Console session required." };
 
     const response = await fetch(apiUrl("/api/admin/consent?action=rotate-pin"), {
       method: "POST",
@@ -98,7 +109,7 @@ export async function rotateAdminActionPin(
     });
     const payload = await response.json();
     if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "Could not update admin PIN." };
+      return { ok: false, error: payload?.error || "Could not update console PIN." };
     }
     clearAdminConsentToken();
     return { ok: true };
@@ -111,7 +122,7 @@ export async function setInitialAdminActionPin(pin: string): Promise<{ ok: boole
   try {
     const session = await supabase?.auth.getSession();
     const token = session?.data.session?.access_token;
-    if (!token) return { ok: false, error: "Admin session required." };
+    if (!token) return { ok: false, error: "Console session required." };
 
     const response = await fetch(apiUrl("/api/admin/consent?action=set-pin"), {
       method: "POST",
@@ -123,7 +134,7 @@ export async function setInitialAdminActionPin(pin: string): Promise<{ ok: boole
     });
     const payload = await response.json();
     if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "Could not set admin PIN." };
+      return { ok: false, error: payload?.error || "Could not set console PIN." };
     }
     return { ok: true };
   } catch (error) {

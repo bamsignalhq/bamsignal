@@ -1,21 +1,21 @@
 import { Menu } from "lucide-react";
-import { getAdminSessionEmail } from "../../utils/adminSession";
+import { getHardSessionEmail } from "../../utils/adminSession";
 import { useAdminHealthSummary } from "./AdminHealthPanel";
 
 type AdminConsoleTopBarProps = {
   onLogout: () => void;
   onOpenDock?: () => void;
   onChangePassword?: () => void;
-  version?: string;
+  onOpenSecurity?: () => void;
 };
 
 export function AdminConsoleTopBar({
   onLogout,
   onOpenDock,
   onChangePassword,
-  version = "1.0.5"
+  onOpenSecurity
 }: AdminConsoleTopBarProps) {
-  const userEmail = getAdminSessionEmail() || "ops@bamsignal.com";
+  const operatorEmail = getHardSessionEmail() || "operator";
   const { ok: healthOk } = useAdminHealthSummary();
 
   return (
@@ -26,24 +26,29 @@ export function AdminConsoleTopBar({
             <Menu size={18} />
           </button>
         )}
-        <span className="admin-console__brand">BamSignal Admin</span>
-        <span className="admin-console__version">v{version}</span>
+        <span className="admin-console__brand">BamSignal</span>
+        <span className="admin-console__console-label">COMMAND CENTER</span>
       </div>
       <div className="admin-console__topbar-right">
         <span className={`admin-console__health${healthOk === false ? " is-degraded" : ""}`}>
           <span className="admin-console__health-dot" aria-hidden />
-          {healthOk === null ? "Health…" : healthOk ? "Healthy" : "Degraded"}
+          {healthOk === null ? "Checking…" : healthOk ? "Production Healthy" : "Systems Degraded"}
         </span>
-        <span className="admin-console__user" title={userEmail}>
-          {userEmail}
+        <span className="admin-console__user" title={operatorEmail}>
+          {operatorEmail}
         </span>
         {onChangePassword && (
           <button type="button" className="admin-console__logout" onClick={onChangePassword}>
             Change password
           </button>
         )}
-        <button type="button" className="admin-console__logout" onClick={onLogout}>
-          Logout Admin
+        {onOpenSecurity && (
+          <button type="button" className="admin-console__logout" onClick={onOpenSecurity}>
+            Console Security
+          </button>
+        )}
+        <button type="button" className="admin-console__logout admin-console__exit" onClick={onLogout}>
+          Exit Console
         </button>
       </div>
     </header>

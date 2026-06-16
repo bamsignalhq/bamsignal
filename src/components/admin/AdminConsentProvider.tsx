@@ -1,5 +1,6 @@
 import {
   createContext,
+  forwardRef,
   useCallback,
   useContext,
   useEffect,
@@ -47,13 +48,13 @@ export function AdminConsentProvider({ children }: { children: ReactNode }) {
   }, [refreshPinStatus]);
 
   const ensureConsent = useCallback(
-    async (why = "Confirm this admin action.") => {
+    async (why = "Confirm this console action.") => {
       if (getAdminConsentToken()) return true;
 
       const status = await fetchAdminPinStatus();
       if (status.ok && !status.pinConfigured) {
         setSetupMode(true);
-        setReason("Set your admin action PIN before making changes.");
+        setReason("Set your console PIN before making changes.");
         setOpen(true);
       } else {
         setSetupMode(false);
@@ -129,14 +130,14 @@ export function AdminConsentProvider({ children }: { children: ReactNode }) {
       {open && (
         <div className="admin-consent-overlay" role="presentation">
           <div className="admin-consent-modal" role="dialog" aria-modal="true" aria-labelledby="admin-consent-title">
-            <p className="admin-consent-modal__kicker">ADMIN CONFIRMATION</p>
+            <p className="admin-consent-modal__kicker">CONSOLE CONFIRMATION</p>
             <h2 id="admin-consent-title" className="admin-consent-modal__title">
-              {setupMode ? "Set admin action PIN" : "Enter admin PIN"}
+              {setupMode ? "Set console PIN" : "Enter console PIN"}
             </h2>
             <p className="admin-consent-modal__body">{reason}</p>
             {setupMode ? (
               <label className="admin-consent-modal__field">
-                <span>New action PIN (4–8 digits)</span>
+                <span>New console PIN (4–8 digits)</span>
                 <input
                   type="password"
                   inputMode="numeric"
@@ -148,7 +149,7 @@ export function AdminConsentProvider({ children }: { children: ReactNode }) {
               </label>
             ) : (
               <label className="admin-consent-modal__field">
-                <span>Action PIN</span>
+                <span>Console PIN</span>
                 <input
                   type="password"
                   inputMode="numeric"
@@ -189,7 +190,7 @@ export function useAdminConsent(): AdminConsentContextValue {
   return ctx;
 }
 
-export function AdminSecurityPanel() {
+export const AdminSecurityPanel = forwardRef<HTMLElement>(function AdminSecurityPanel(_props, ref) {
   const { refreshPinStatus, pinConfigured } = useAdminConsent();
   const [currentPin, setCurrentPin] = useState("");
   const [nextPin, setNextPin] = useState("");
@@ -197,18 +198,18 @@ export function AdminSecurityPanel() {
   const [busy, setBusy] = useState(false);
 
   return (
-    <section className="card admin-security-panel">
-      <h3 className="admin-section-title">Admin security</h3>
+    <section ref={ref} className="card admin-security-panel">
+      <h3 className="admin-section-title">Console Security</h3>
       <p className="admin-help">
-        Action PIN is required before deleting members, changing pricing, approving verifications, and other
-        substantial console changes. It is separate from your login password.
+        Console PIN is required before deleting members, changing pricing, approving verifications, and other
+        substantial changes. It is separate from your login password. Unlocks last 15 minutes.
       </p>
       <p className="admin-inline-message">
         PIN status: {pinConfigured === null ? "Checking…" : pinConfigured ? "Configured" : "Not set yet"}
       </p>
       <div className="admin-security-panel__grid">
         <label className="admin-consent-modal__field">
-          <span>Current action PIN</span>
+          <span>Current console PIN</span>
           <input
             type="password"
             inputMode="numeric"
@@ -217,7 +218,7 @@ export function AdminSecurityPanel() {
           />
         </label>
         <label className="admin-consent-modal__field">
-          <span>New action PIN</span>
+          <span>New console PIN</span>
           <input
             type="password"
             inputMode="numeric"
@@ -244,14 +245,14 @@ export function AdminSecurityPanel() {
             }
             setCurrentPin("");
             setNextPin("");
-            setMessage("Admin action PIN updated.");
+            setMessage("Console PIN updated.");
             await refreshPinStatus();
           })();
         }}
       >
-        {busy ? "Saving…" : pinConfigured ? "Rotate action PIN" : "Set action PIN"}
+        {busy ? "Saving…" : pinConfigured ? "Rotate console PIN" : "Set console PIN"}
       </button>
       {message && <p className="admin-inline-message">{message}</p>}
     </section>
   );
-}
+});

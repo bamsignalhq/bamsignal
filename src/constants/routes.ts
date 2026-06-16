@@ -1,15 +1,16 @@
-import { adminPathForTab, parseAdminTabFromPath } from "./adminRoutes";
+import { hardPathForTab, parseHardTabFromPath } from "./hardRoutes";
 
 export const AUTH_LOGIN_PATH = "/love/login";
 export const AUTH_SIGNUP_PATH = "/love/sign";
-export const ADMIN_AUTH_PATH = "/admin/auth";
-export const ADMIN_HUB_PATH = "/admin/command";
+export const HARD_AUTH_PATH = "/hard/auth";
+export const HARD_HUB_PATH = "/hard/command";
 export const BLOG_INDEX_PATH = "/blog";
 export const MOMENTS_PATH_PREFIX = "/moments";
 
-/** Legacy obscured paths — redirect to /admin/* */
-export const LEGACY_ADMIN_AUTH_PATH = "/hard/auth";
-export const LEGACY_ADMIN_HUB_PATH = "/hard";
+/** @deprecated use HARD_AUTH_PATH */
+export const ADMIN_AUTH_PATH = HARD_AUTH_PATH;
+/** @deprecated use HARD_HUB_PATH */
+export const ADMIN_HUB_PATH = HARD_HUB_PATH;
 
 export function getMomentSlug(pathname = window.location.pathname): string | null {
   const path = normalizePath(pathname);
@@ -21,7 +22,7 @@ export function getMomentSlug(pathname = window.location.pathname): string | nul
 export const AUTH_PATHS = [AUTH_LOGIN_PATH, AUTH_SIGNUP_PATH] as const;
 export type AuthPath = (typeof AUTH_PATHS)[number];
 
-export const ADMIN_PATHS = [ADMIN_AUTH_PATH, ADMIN_HUB_PATH] as const;
+export const HARD_PATHS = [HARD_AUTH_PATH, HARD_HUB_PATH] as const;
 
 export function normalizePath(pathname = window.location.pathname): string {
   return pathname.replace(/\/$/, "") || "/";
@@ -32,21 +33,29 @@ export function getAuthPath(pathname = window.location.pathname): AuthPath | nul
   return AUTH_PATHS.includes(path as AuthPath) ? (path as AuthPath) : null;
 }
 
-export function isAdminRoute(pathname = window.location.pathname): boolean {
+export function isHardRoute(pathname = window.location.pathname): boolean {
   const path = normalizePath(pathname);
-  if (path === "/admin" || path.startsWith("/admin/")) return true;
   if (path === "/hard" || path.startsWith("/hard/")) return true;
+  if (path === "/admin" || path.startsWith("/admin/")) return true;
   return false;
 }
 
-export function isAdminAuthRoute(pathname = window.location.pathname): boolean {
-  const path = normalizePath(pathname);
-  return path === ADMIN_AUTH_PATH || path === LEGACY_ADMIN_AUTH_PATH;
+/** @deprecated use isHardRoute */
+export const isAdminRoute = isHardRoute;
+
+export function isHardAuthRoute(pathname = window.location.pathname): boolean {
+  return normalizePath(pathname) === HARD_AUTH_PATH;
 }
 
-export function isAdminHubRoute(pathname = window.location.pathname): boolean {
-  return isAdminRoute(pathname) && !isAdminAuthRoute(pathname);
+/** @deprecated use isHardAuthRoute */
+export const isAdminAuthRoute = isHardAuthRoute;
+
+export function isHardHubRoute(pathname = window.location.pathname): boolean {
+  return isHardRoute(pathname) && !isHardAuthRoute(pathname);
 }
+
+/** @deprecated use isHardHubRoute */
+export const isAdminHubRoute = isHardHubRoute;
 
 export function getBlogSlug(pathname = window.location.pathname): string | null {
   const path = normalizePath(pathname);
@@ -68,27 +77,31 @@ export function navigateToPath(path: string, replace = false) {
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
-/** Map legacy /hard and bare /admin to canonical admin hub paths. */
-export function redirectLegacyAdmin(pathname = window.location.pathname): boolean {
+/** Redirect legacy /admin/* URLs to canonical /hard/* console paths. */
+export function redirectLegacyConsolePaths(pathname = window.location.pathname): boolean {
   const path = normalizePath(pathname);
 
-  if (path === LEGACY_ADMIN_AUTH_PATH) {
-    navigateToPath(ADMIN_AUTH_PATH, true);
-    return true;
-  }
-
-  if (path === LEGACY_ADMIN_HUB_PATH || path.startsWith(`${LEGACY_ADMIN_HUB_PATH}/`)) {
-    const tab = parseAdminTabFromPath(path);
-    navigateToPath(tab ? adminPathForTab(tab) : adminPathForTab("command"), true);
-    return true;
-  }
-
   if (path === "/admin") {
-    navigateToPath(adminPathForTab("command"), true);
+    navigateToPath(hardPathForTab("command"), true);
+    return true;
+  }
+
+  if (path.startsWith("/admin/")) {
+    const suffix = path.slice("/admin".length);
+    navigateToPath(`/hard${suffix}`, true);
+    return true;
+  }
+
+  if (path === "/hard") {
+    navigateToPath(hardPathForTab("command"), true);
     return true;
   }
 
   return false;
 }
 
-export { parseAdminTabFromPath, adminPathForTab };
+/** @deprecated use redirectLegacyConsolePaths */
+export const redirectLegacyAdmin = redirectLegacyConsolePaths;
+
+export { parseHardTabFromPath, hardPathForTab };
+export { parseHardTabFromPath as parseAdminTabFromPath, hardPathForTab as adminPathForTab };

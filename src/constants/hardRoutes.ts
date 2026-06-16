@@ -1,0 +1,44 @@
+import type { HardTab } from "../components/admin/adminConsoleNav";
+import { normalizePath } from "./routes";
+
+const TAB_SLUGS: Record<HardTab, string> = {
+  command: "command",
+  overview: "metrics",
+  business: "business",
+  users: "users",
+  reports: "reports",
+  cities: "cities",
+  discover: "discover",
+  cityhome: "city-home",
+  pricing: "pricing",
+  verifications: "verify",
+  content: "content",
+  email: "email",
+  ads: "home-ads",
+  leads: "leads"
+};
+
+const SLUG_TO_TAB = Object.fromEntries(
+  Object.entries(TAB_SLUGS).map(([tab, slug]) => [slug, tab as HardTab])
+) as Record<string, HardTab>;
+
+export function hardPathForTab(tab: HardTab): string {
+  if (tab === "command") return "/hard/command";
+  const slug = TAB_SLUGS[tab];
+  return `/hard/${slug}`;
+}
+
+export function parseHardTabFromPath(pathname = window.location.pathname): HardTab | null {
+  const path = normalizePath(pathname);
+  if (path === "/hard" || path === "/hard/command") return "command";
+
+  const match = path.match(/^\/hard\/([^/]+)$/);
+  if (!match) return null;
+  return SLUG_TO_TAB[match[1]] ?? null;
+}
+
+export function isHardHubPath(pathname = window.location.pathname): boolean {
+  const path = normalizePath(pathname);
+  if (path === "/hard/auth") return false;
+  return path === "/hard" || path.startsWith("/hard/");
+}

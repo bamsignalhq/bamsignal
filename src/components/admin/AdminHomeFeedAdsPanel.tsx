@@ -33,7 +33,7 @@ export function AdminHomeFeedAdsPanel({ onMessage }: AdminHomeFeedAdsPanelProps)
     setSaving(true);
     if (!(await ensureConsent("Save home feed ad changes."))) {
       setSaving(false);
-      onMessage("Admin PIN required.");
+      onMessage("Console PIN required.");
       return;
     }
     const { data } = (await supabase?.auth.getSession()) || { data: null };

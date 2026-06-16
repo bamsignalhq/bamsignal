@@ -55,7 +55,7 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
       const token = data.session?.access_token;
       const ok = await verifyAdminSession(token);
       setAuthorized(ok);
-      if (!ok) setMessage("Admin access required. Log in with an approved admin account.");
+      if (!ok) setMessage("Console access required.");
     });
   }, []);
 
@@ -72,7 +72,7 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
     setMessage("");
     if (!(await ensureConsent("Save pricing changes."))) {
       setSavingKey(null);
-      setMessage("Admin PIN required.");
+      setMessage("Console PIN required.");
       return;
     }
     const { data } = (await supabase?.auth.getSession()) || { data: { session: null } };
@@ -102,7 +102,7 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
     return (
       <div className="page admin-page empty-state">
         <Loader2 className="spin" size={32} />
-        <p>Checking admin access...</p>
+        <p>Authenticating…</p>
       </div>
     );
   }
@@ -114,7 +114,7 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
           <ArrowLeft size={18} /> Back
         </button>
         <div className="card">
-          <h2>Admin only</h2>
+          <h2>Console access required</h2>
           <p>{message}</p>
         </div>
       </div>

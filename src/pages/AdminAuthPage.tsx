@@ -2,32 +2,31 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppLogo } from "../components/AppLogo";
 import { DEMO_ADMIN, matchDemoAdmin } from "../constants/demoAccounts";
-import { ADMIN_HUB_PATH, navigateToPath } from "../constants/routes";
+import { HARD_AUTH_PATH, HARD_HUB_PATH, navigateToPath } from "../constants/routes";
 import { friendlyAuthError, supabase } from "../services/supabase";
 import { verifyAdminSession } from "../services/plans";
 import {
-  getAdminLastRoute,
-  persistAdminSession,
-  snapshotMemberSessionBeforeAdminLogin
+  getHardLastRoute,
+  persistHardSession,
+  snapshotMemberSessionBeforeHardLogin
 } from "../utils/adminSession";
 
-type AdminAuthMode = "login" | "forgot" | "recovery" | "change-password";
+type AuthMode = "login" | "forgot" | "recovery" | "change-password";
 
 type AdminAuthPageProps = {
   onAuthed: () => void;
-  onBack: () => void;
+  onBack?: () => void;
   allowPasswordChange?: boolean;
   onPasswordChanged?: () => void;
 };
 
 export function AdminAuthPage({
   onAuthed,
-  onBack,
   allowPasswordChange = false,
   onPasswordChanged
 }: AdminAuthPageProps) {
-  const [mode, setMode] = useState<AdminAuthMode>(allowPasswordChange ? "change-password" : "login");
-  const [email, setEmail] = useState(import.meta.env.DEV ? DEMO_ADMIN.email : "ops@bamsignal.com");
+  const [mode, setMode] = useState<AuthMode>(allowPasswordChange ? "change-password" : "login");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -39,15 +38,15 @@ export function AdminAuthPage({
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setMode("recovery");
-        setMessage("Choose a new admin password.");
+        setMessage("Choose a new password.");
       }
     });
     return () => data.subscription.unsubscribe();
   }, [allowPasswordChange]);
 
   const finishAuthed = async (sessionEmail: string, accessToken?: string) => {
-    await persistAdminSession(sessionEmail, accessToken);
-    navigateToPath(getAdminLastRoute() || ADMIN_HUB_PATH);
+    await persistHardSession(sessionEmail, accessToken);
+    navigateToPath(getHardLastRoute() || HARD_HUB_PATH);
     onAuthed();
   };
 
@@ -55,11 +54,11 @@ export function AdminAuthPage({
     setBusy(true);
     setMessage("");
     try {
-      await snapshotMemberSessionBeforeAdminLogin();
+      await snapshotMemberSessionBeforeHardLogin();
 
-      if (matchDemoAdmin(email, password)) {
-        await persistAdminSession(DEMO_ADMIN.email);
-        navigateToPath(getAdminLastRoute() || ADMIN_HUB_PATH);
+      if (import.meta.env.DEV && matchDemoAdmin(email, password)) {
+        await persistHardSession(DEMO_ADMIN.email);
+        navigateToPath(getHardLastRoute() || HARD_HUB_PATH);
         onAuthed();
         return;
       }
@@ -72,20 +71,20 @@ export function AdminAuthPage({
         if (error) throw error;
         const token = data.session?.access_token;
         if (!token) {
-          setMessage("Invalid admin credentials.");
+          setMessage("Invalid credentials.");
           return;
         }
         const ok = await verifyAdminSession(token);
         if (!ok) {
           await supabase.auth.signOut();
-          setMessage("This account does not have admin access.");
+          setMessage("This account does not have console access.");
           return;
         }
         await finishAuthed(email.trim().toLowerCase(), token);
         return;
       }
 
-      setMessage("Invalid admin credentials.");
+      setMessage("Invalid credentials.");
     } catch (error) {
       setMessage(friendlyAuthError(error));
     } finally {
@@ -100,11 +99,11 @@ export function AdminAuthPage({
       if (!supabase) throw new Error("Authentication is not configured.");
       const target = email.trim().toLowerCase();
       if (!target) {
-        setMessage("Enter your admin email.");
+        setMessage("Enter your email.");
         return;
       }
       const { error } = await supabase.auth.resetPasswordForEmail(target, {
-        redirectTo: `${window.location.origin}/admin/auth`
+        redirectTo: `${window.location.origin}/hard/auth`
       });
       if (error) throw error;
       setMessage("Password reset link sent. Check your inbox.");
@@ -132,7 +131,7 @@ export function AdminAuthPage({
       if (error) throw error;
 
       if (allowPasswordChange) {
-        setMessage("Admin password updated.");
+        setMessage("Password updated.");
         setNewPassword("");
         setConfirmPassword("");
         onPasswordChanged?.();
@@ -155,51 +154,39 @@ export function AdminAuthPage({
     }
   };
 
-  const title =
+  const loginTitle = allowPasswordChange || mode === "recovery" ? "BamSignal" : "BamSignal";
+  const loginSubtitle =
     mode === "forgot"
-      ? "Reset admin password"
+      ? "Password reset"
       : mode === "recovery" || mode === "change-password"
-        ? "Set new admin password"
-        : "Operations access";
+        ? "Set new password"
+        : "Command Center";
 
   return (
-    <main className="auth-page admin-auth-page">
+    <main className="auth-page hard-auth-page">
       <div className="auth-shell">
         <div className="auth-shell__glow" aria-hidden />
-        <div className="auth-card auth-card--fintech">
+        <div className="auth-card auth-card--fintech hard-auth-card">
           <div className="auth-brand">
             <AppLogo size="lg" />
           </div>
-          <h1 className="auth-title">{title}</h1>
-          <p className="auth-sub">
-            {mode === "login"
-              ? "Approved admin accounts only."
-              : mode === "forgot"
-                ? "We will email a secure reset link."
-                : "Choose a strong password for console access."}
-          </p>
-
-          {import.meta.env.DEV && mode === "login" && (
-            <p className="auth-dev-hint">
-              Dev: <strong>{DEMO_ADMIN.email}</strong> / <strong>{DEMO_ADMIN.password}</strong>
-            </p>
-          )}
+          <h1 className="auth-title">{loginTitle}</h1>
+          <p className="auth-sub">{loginSubtitle}</p>
 
           <div className="auth-fields">
-            {mode === "login" || mode === "forgot" ? (
+            {(mode === "login" || mode === "forgot") && (
               <label className="auth-field">
-                <span>Admin email</span>
+                <span>Email</span>
                 <input
                   type="email"
                   autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="ops@bamsignal.com"
                 />
               </label>
-            ) : null}
+            )}
 
-            {mode === "login" ? (
+            {mode === "login" && (
               <label className="auth-field">
                 <span>Password</span>
                 <input
@@ -207,10 +194,9 @@ export function AdminAuthPage({
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your password"
                 />
               </label>
-            ) : null}
+            )}
 
             {(mode === "recovery" || mode === "change-password") && (
               <>
@@ -221,7 +207,6 @@ export function AdminAuthPage({
                     autoComplete="new-password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 8 characters"
                   />
                 </label>
                 <label className="auth-field">
@@ -231,7 +216,6 @@ export function AdminAuthPage({
                     autoComplete="new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat password"
                   />
                 </label>
               </>
@@ -240,7 +224,13 @@ export function AdminAuthPage({
 
           {mode === "login" && (
             <button type="button" className="btn-primary btn-full btn-auth" onClick={signIn} disabled={busy}>
-              {busy ? <Loader2 className="spin" size={20} /> : "Enter console"}
+              {busy ? (
+                <>
+                  <Loader2 className="spin" size={20} /> Authenticating…
+                </>
+              ) : (
+                "Access Console"
+              )}
             </button>
           )}
 
@@ -274,13 +264,11 @@ export function AdminAuthPage({
             </button>
           )}
 
-          {!allowPasswordChange && mode !== "change-password" && (
-            <button type="button" className="link-btn auth-switch" onClick={onBack}>
-              Back to BamSignal
-            </button>
-          )}
-
           {message && <p className="auth-message">{message}</p>}
+
+          {!allowPasswordChange && mode === "login" && (
+            <p className="hard-auth-foot">Internal Systems</p>
+          )}
         </div>
       </div>
     </main>

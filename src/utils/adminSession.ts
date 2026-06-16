@@ -1,30 +1,53 @@
 import { DEMO_ADMIN } from "../constants/demoAccounts";
-import type { AdminTab } from "../components/admin/adminConsoleNav";
-import { adminPathForTab, parseAdminTabFromPath } from "../constants/adminRoutes";
-import { ADMIN_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
+import type { HardTab } from "../components/admin/adminConsoleNav";
+import { hardPathForTab, parseHardTabFromPath } from "../constants/hardRoutes";
+import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
 import { supabase } from "../services/supabase";
 import { verifyAdminSession } from "../services/plans";
 
-/** Dedicated admin persistence — never reuse member STORAGE_KEYS. */
-export const ADMIN_STORAGE = {
-  session: "bamsignal_admin_session",
-  lastRoute: "bamsignal_admin_last_route",
-  authAt: "bamsignal_admin_auth_at",
+/** Console persistence — separate from member session keys. */
+export const HARD_STORAGE = {
+  session: "bamsignal_hard_session",
+  lastRoute: "bamsignal_hard_last_route",
+  authAt: "bamsignal_hard_auth_at",
   memberSnapshot: "bamsignal_member_session_snapshot"
 } as const;
 
-const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+/** @deprecated use HARD_STORAGE */
+export const ADMIN_STORAGE = HARD_STORAGE;
 
-export type AdminSessionRecord = {
+const LEGACY_STORAGE = {
+  session: "bamsignal_admin_session",
+  lastRoute: "bamsignal_admin_last_route",
+  authAt: "bamsignal_admin_auth_at"
+} as const;
+
+const HARD_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
+export type HardSessionRecord = {
   email: string;
   accessToken?: string;
 };
 
-function readSession(): AdminSessionRecord | null {
+/** @deprecated */
+export type AdminSessionRecord = HardSessionRecord;
+
+function migrateLegacyStorage(): void {
+  for (const key of ["session", "lastRoute", "authAt"] as const) {
+    const legacy = localStorage.getItem(LEGACY_STORAGE[key]);
+    if (legacy && !localStorage.getItem(HARD_STORAGE[key])) {
+      localStorage.setItem(HARD_STORAGE[key], legacy);
+    }
+    localStorage.removeItem(LEGACY_STORAGE[key]);
+  }
+}
+
+function readSession(): HardSessionRecord | null {
+  migrateLegacyStorage();
   try {
-    const raw = localStorage.getItem(ADMIN_STORAGE.session);
+    const raw = localStorage.getItem(HARD_STORAGE.session);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as AdminSessionRecord;
+    const parsed = JSON.parse(raw) as HardSessionRecord;
     if (!parsed?.email) return null;
     return parsed;
   } catch {
@@ -32,42 +55,52 @@ function readSession(): AdminSessionRecord | null {
   }
 }
 
-function writeSession(record: AdminSessionRecord): void {
-  localStorage.setItem(ADMIN_STORAGE.session, JSON.stringify(record));
-  localStorage.setItem(ADMIN_STORAGE.authAt, String(Date.now()));
+function writeSession(record: HardSessionRecord): void {
+  localStorage.setItem(HARD_STORAGE.session, JSON.stringify(record));
+  localStorage.setItem(HARD_STORAGE.authAt, String(Date.now()));
 }
 
-export function getAdminSessionEmail(): string | null {
+export function getHardSessionEmail(): string | null {
   return readSession()?.email ?? null;
 }
 
-export function getAdminAuthAt(): number | null {
-  const raw = localStorage.getItem(ADMIN_STORAGE.authAt);
+/** @deprecated use getHardSessionEmail */
+export const getAdminSessionEmail = getHardSessionEmail;
+
+export function getHardAuthAt(): number | null {
+  migrateLegacyStorage();
+  const raw = localStorage.getItem(HARD_STORAGE.authAt);
   if (!raw) return null;
   const n = Number(raw);
   return Number.isFinite(n) ? n : null;
 }
 
-export function isAdminSessionFresh(): boolean {
-  const at = getAdminAuthAt();
+/** @deprecated */
+export const getAdminAuthAt = getHardAuthAt;
+
+export function isHardSessionFresh(): boolean {
+  const at = getHardAuthAt();
   if (!at) return false;
-  return Date.now() - at < ADMIN_SESSION_TTL_MS;
+  return Date.now() - at < HARD_SESSION_TTL_MS;
 }
 
-export function hasLocalAdminSession(): boolean {
-  const email = getAdminSessionEmail();
+export function hasLocalHardSession(): boolean {
+  const email = getHardSessionEmail();
   if (!email) return false;
-  if (!isAdminSessionFresh()) return false;
+  if (!isHardSessionFresh()) return false;
   if (import.meta.env.DEV && email === DEMO_ADMIN.email.toLowerCase()) return true;
   return Boolean(readSession()?.accessToken);
 }
 
-export async function snapshotMemberSessionBeforeAdminLogin(): Promise<void> {
+/** @deprecated */
+export const hasLocalAdminSession = hasLocalHardSession;
+
+export async function snapshotMemberSessionBeforeHardLogin(): Promise<void> {
   if (!supabase) return;
   const { data } = await supabase.auth.getSession();
   if (!data.session?.access_token || !data.session.refresh_token) return;
   localStorage.setItem(
-    ADMIN_STORAGE.memberSnapshot,
+    HARD_STORAGE.memberSnapshot,
     JSON.stringify({
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token
@@ -75,9 +108,12 @@ export async function snapshotMemberSessionBeforeAdminLogin(): Promise<void> {
   );
 }
 
-export async function restoreMemberSessionAfterAdminLogout(): Promise<boolean> {
+/** @deprecated */
+export const snapshotMemberSessionBeforeAdminLogin = snapshotMemberSessionBeforeHardLogin;
+
+export async function restoreMemberSessionAfterHardLogout(): Promise<boolean> {
   if (!supabase) return false;
-  const raw = localStorage.getItem(ADMIN_STORAGE.memberSnapshot);
+  const raw = localStorage.getItem(HARD_STORAGE.memberSnapshot);
   if (!raw) return false;
   try {
     const snap = JSON.parse(raw) as { access_token?: string; refresh_token?: string };
@@ -90,75 +126,111 @@ export async function restoreMemberSessionAfterAdminLogout(): Promise<boolean> {
   } catch {
     return false;
   } finally {
-    localStorage.removeItem(ADMIN_STORAGE.memberSnapshot);
+    localStorage.removeItem(HARD_STORAGE.memberSnapshot);
   }
 }
 
-export async function persistAdminSession(email: string, accessToken?: string): Promise<void> {
+/** @deprecated */
+export const restoreMemberSessionAfterAdminLogout = restoreMemberSessionAfterHardLogout;
+
+export async function persistHardSession(email: string, accessToken?: string): Promise<void> {
   writeSession({
     email: email.trim().toLowerCase(),
     accessToken: accessToken || undefined
   });
-  saveAdminLastRoute(adminPathForTab("command"));
+  saveHardLastRoute(hardPathForTab("command"));
 }
 
-export function clearAdminSessionOnly(): void {
-  localStorage.removeItem(ADMIN_STORAGE.session);
-  localStorage.removeItem(ADMIN_STORAGE.authAt);
-  localStorage.removeItem(ADMIN_STORAGE.lastRoute);
+/** @deprecated */
+export const persistAdminSession = persistHardSession;
+
+export function clearHardSessionOnly(): void {
+  localStorage.removeItem(HARD_STORAGE.session);
+  localStorage.removeItem(HARD_STORAGE.authAt);
+  localStorage.removeItem(HARD_STORAGE.lastRoute);
 }
 
-export async function logoutAdminSession(): Promise<void> {
-  clearAdminSessionOnly();
-  await restoreMemberSessionAfterAdminLogout();
+/** @deprecated */
+export const clearAdminSessionOnly = clearHardSessionOnly;
+
+export async function exitHardSession(): Promise<void> {
+  clearHardSessionOnly();
+  await restoreMemberSessionAfterHardLogout();
 }
 
-export function saveAdminLastRoute(path: string): void {
+/** @deprecated */
+export const logoutAdminSession = exitHardSession;
+
+export function saveHardLastRoute(path: string): void {
   const normalized = normalizePath(path);
-  if (!normalized.startsWith("/admin")) return;
-  localStorage.setItem(ADMIN_STORAGE.lastRoute, normalized);
+  if (!normalized.startsWith("/hard")) return;
+  localStorage.setItem(HARD_STORAGE.lastRoute, normalized);
 }
 
-export function getAdminLastRoute(): string | null {
-  const path = localStorage.getItem(ADMIN_STORAGE.lastRoute);
+/** @deprecated */
+export const saveAdminLastRoute = saveHardLastRoute;
+
+export function getHardLastRoute(): string | null {
+  migrateLegacyStorage();
+  const path = localStorage.getItem(HARD_STORAGE.lastRoute);
   if (!path) return null;
-  return normalizePath(path);
+  const normalized = normalizePath(path);
+  if (normalized.startsWith("/admin")) {
+    const migrated = `/hard${normalized.slice("/admin".length)}`;
+    localStorage.setItem(HARD_STORAGE.lastRoute, migrated);
+    return migrated;
+  }
+  return normalized;
 }
 
-export function resolveAdminHubPath(pathname = window.location.pathname): string {
+/** @deprecated */
+export const getAdminLastRoute = getHardLastRoute;
+
+export function resolveHardHubPath(pathname = window.location.pathname): string {
   const path = normalizePath(pathname);
-  if (path === "/admin" || path === "/hard") return adminPathForTab("command");
-  const tab = parseAdminTabFromPath(path);
-  if (tab) return adminPathForTab(tab);
-  const last = getAdminLastRoute();
-  if (last && last !== ADMIN_AUTH_PATH) return last;
-  return adminPathForTab("command");
+  if (path === "/hard") return hardPathForTab("command");
+  if (path.startsWith("/admin")) {
+    return `/hard${path.slice("/admin".length)}` || hardPathForTab("command");
+  }
+  const tab = parseHardTabFromPath(path);
+  if (tab) return hardPathForTab(tab);
+  const last = getHardLastRoute();
+  if (last && last !== HARD_AUTH_PATH) return last;
+  return hardPathForTab("command");
 }
 
-export function restoreAdminRouteOnLoad(): AdminTab {
-  const fromPath = parseAdminTabFromPath(window.location.pathname);
+/** @deprecated */
+export const resolveAdminHubPath = resolveHardHubPath;
+
+export function restoreHardRouteOnLoad(): HardTab {
+  const fromPath = parseHardTabFromPath(window.location.pathname);
   if (fromPath) return fromPath;
-  const last = getAdminLastRoute();
+  const last = getHardLastRoute();
   if (last) {
-    const tab = parseAdminTabFromPath(last);
+    const tab = parseHardTabFromPath(last);
     if (tab) return tab;
   }
   return "command";
 }
 
-/** Dev-only fast path for demo admin without server token. */
-export function isDevDemoAdminSession(): boolean {
+/** @deprecated */
+export const restoreAdminRouteOnLoad = restoreHardRouteOnLoad;
+
+export function isDevDemoHardSession(): boolean {
   if (!import.meta.env.DEV) return false;
-  const email = getAdminSessionEmail();
-  return Boolean(email && email === DEMO_ADMIN.email.toLowerCase() && isAdminSessionFresh());
+  const email = getHardSessionEmail();
+  return Boolean(email && email === DEMO_ADMIN.email.toLowerCase() && isHardSessionFresh());
 }
 
-export async function validateAdminSession(): Promise<boolean> {
-  if (isDevDemoAdminSession()) return true;
+/** @deprecated */
+export const isDevDemoAdminSession = isDevDemoHardSession;
+
+export async function validateHardSession(): Promise<boolean> {
+  if (isDevDemoHardSession()) return true;
 
   const record = readSession();
-  if (!record?.email || !isAdminSessionFresh()) {
-    clearAdminSessionOnly();
+  if (!record?.email || !isHardSessionFresh()) {
+    clearHardSessionOnly();
     return false;
   }
 
@@ -172,33 +244,46 @@ export async function validateAdminSession(): Promise<boolean> {
   }
 
   if (!token) {
-    clearAdminSessionOnly();
+    clearHardSessionOnly();
     return false;
   }
 
   const ok = await verifyAdminSession(token);
   if (!ok) {
-    clearAdminSessionOnly();
+    clearHardSessionOnly();
     return false;
   }
 
   return true;
 }
 
-/** @deprecated use persistAdminSession */
-export function setAdminSession(email: string): void {
-  void persistAdminSession(email);
+/** @deprecated */
+export const validateAdminSession = validateHardSession;
+
+export function setHardSession(email: string): void {
+  void persistHardSession(email);
 }
 
-/** @deprecated use logoutAdminSession */
-export function clearAdminSession(): void {
-  void logoutAdminSession();
+/** @deprecated */
+export const setAdminSession = setHardSession;
+
+export function clearHardSession(): void {
+  void exitHardSession();
 }
 
-export function isAdminSessionActive(): boolean {
-  return hasLocalAdminSession() || isDevDemoAdminSession();
+/** @deprecated */
+export const clearAdminSession = clearHardSession;
+
+export function isHardSessionActive(): boolean {
+  return hasLocalHardSession() || isDevDemoHardSession();
 }
 
-export function redirectToAdminLogin(): void {
-  navigateToPath(ADMIN_AUTH_PATH);
+/** @deprecated */
+export const isAdminSessionActive = isHardSessionActive;
+
+export function redirectToHardLogin(): void {
+  navigateToPath(HARD_AUTH_PATH);
 }
+
+/** @deprecated */
+export const redirectToAdminLogin = redirectToHardLogin;

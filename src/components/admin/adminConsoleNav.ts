@@ -1,4 +1,4 @@
-export type AdminTab =
+export type HardTab =
   | "command"
   | "overview"
   | "business"
@@ -14,18 +14,25 @@ export type AdminTab =
   | "ads"
   | "leads";
 
-export type AdminNavItem = {
-  id: AdminTab;
+/** @deprecated use HardTab */
+export type AdminTab = HardTab;
+
+export type HardNavItem = {
+  id: HardTab;
   label: string;
   keywords: string[];
   badgeKey?: "reports" | "leads" | "verify";
 };
 
-export type AdminNavSection = {
+export type AdminNavItem = HardNavItem;
+
+export type HardNavSection = {
   id: string;
   title: string;
-  items: AdminNavItem[];
+  items: HardNavItem[];
 };
+
+export type AdminNavSection = HardNavSection;
 
 export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   {
@@ -73,7 +80,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
   }
 ];
 
-export const ADMIN_TAB_TITLES: Record<AdminTab, string> = {
+export const HARD_TAB_TITLES: Record<HardTab, string> = {
   command: "COMMAND CENTER",
   overview: "Metrics",
   business: "Business",
@@ -89,6 +96,8 @@ export const ADMIN_TAB_TITLES: Record<AdminTab, string> = {
   ads: "Home Ads",
   leads: "Leads"
 };
+
+export const ADMIN_TAB_TITLES = HARD_TAB_TITLES;
 
 export function filterAdminNavSections(query: string): AdminNavSection[] {
   const q = query.trim().toLowerCase();

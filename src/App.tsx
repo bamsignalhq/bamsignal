@@ -73,24 +73,27 @@ import { MomentPage } from "./pages/MomentPage";
 import { getBlogPost } from "./data/blogPosts";
 import { getMomentPage, type MomentPageId } from "./data/momentPages";
 import {
-  ADMIN_AUTH_PATH,
-  ADMIN_HUB_PATH,
   AUTH_LOGIN_PATH,
   AUTH_SIGNUP_PATH,
   getAuthPath,
   getBlogSlug,
   getMomentSlug,
+  isBlogIndex,
+  isHardAuthRoute,
+  isHardHubRoute,
+  isHardRoute,
   isAdminAuthRoute,
   isAdminHubRoute,
   isAdminRoute,
-  isBlogIndex,
   navigateToPath,
-  redirectLegacyAdmin,
   normalizePath,
+  redirectLegacyConsolePaths,
+  redirectLegacyAdmin,
+  HARD_AUTH_PATH,
   type AuthPath
 } from "./constants/routes";
 import { getLegalPath, type LegalPath } from "./constants/footer";
-import { resolveAdminHubPath } from "./utils/adminSession";
+import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
 import { boostNeedsMemberCity } from "./constants/boosts";
@@ -145,7 +148,7 @@ export function App() {
 
   useEffect(() => {
     const syncRoute = () => {
-      redirectLegacyAdmin();
+      redirectLegacyConsolePaths();
       setLegalPath(getLegalPath());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());
@@ -155,7 +158,7 @@ export function App() {
       const hub = isAdminHubRoute() && !isAdminAuthRoute();
       setShowAdminHub(hub);
       if (hub) {
-        const resolved = resolveAdminHubPath();
+        const resolved = resolveHardHubPath();
         if (normalizePath(window.location.pathname) !== resolved) {
           navigateToPath(resolved, true);
         }
@@ -437,9 +440,9 @@ export function App() {
     if (!isNative) return;
 
     const listener = CapApp.addListener("backButton", () => {
-      if (isAdminRoute()) {
-        const adminBack = new CustomEvent("bamsignal:admin-back", { cancelable: true });
-        window.dispatchEvent(adminBack);
+      if (isHardRoute()) {
+        const hardBack = new CustomEvent("bamsignal:hard-back", { cancelable: true });
+        window.dispatchEvent(hardBack);
         return;
       }
 
@@ -818,8 +821,8 @@ export function App() {
     [handleUpgrade, plans]
   );
 
-  const openAdminLogin = () => {
-    navigateToPath(ADMIN_AUTH_PATH);
+  const openHardLogin = () => {
+    navigateToPath(HARD_AUTH_PATH);
     setShowAdminHub(false);
     setShowAdminAuth(true);
   };
@@ -859,10 +862,6 @@ export function App() {
                 setShowAdminAuth(false);
                 setShowAdminHub(true);
               }}
-              onBack={() => {
-                navigateToPath("/");
-                setShowAdminAuth(false);
-              }}
             />
           </div>
         </AdminToastProvider>
@@ -872,8 +871,8 @@ export function App() {
     return (
       <AdminToastProvider>
         <AdminConsentProvider>
-          <AdminShell authorized={null} onUnauthorized={openAdminLogin}>
-            <AdminHubPage onLogout={openAdminLogin} />
+          <AdminShell authorized={null} onUnauthorized={openHardLogin}>
+            <AdminHubPage onLogout={openHardLogin} />
           </AdminShell>
         </AdminConsentProvider>
       </AdminToastProvider>

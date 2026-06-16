@@ -16,7 +16,7 @@ export class AdminErrorBoundary extends React.Component<AdminErrorBoundaryProps,
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("[bamsignal:admin] console crash", error, info.componentStack);
+    console.error("[bamsignal:hard] console crash", error, info.componentStack);
   }
 
   private reload = () => {
@@ -33,7 +33,7 @@ export class AdminErrorBoundary extends React.Component<AdminErrorBoundaryProps,
           <h1 className="admin-fault__title">Command Center interrupted.</h1>
           <p className="admin-fault__body">Reload console to continue operations.</p>
           <button type="button" className="admin-console__logout" onClick={this.reload}>
-            Reload Admin
+            Reload Console
           </button>
         </div>
       </main>

@@ -10,6 +10,7 @@ import { readResponseJson } from "../utils/httpJson";
 import { apiUrl } from "./supabase";
 import { isAdminSessionActive } from "../utils/adminSession";
 import { readJson, writeJson } from "../utils/storage";
+import { appendAdminConsentHeader } from "../utils/adminConsent";
 
 const VALID_IDS = new Set(["weekly", "monthly", "quarterly"]);
 
@@ -83,7 +84,7 @@ export async function savePremiumPlansAdmin(
 
     const response = await fetch(apiUrl("/api/auth/identity?action=pricing-save"), {
       method: "POST",
-      headers,
+      headers: appendAdminConsentHeader(headers),
       body: JSON.stringify({ plans: normalizeInputs(inputs) })
     });
     const payload = await readResponseJson<{ ok?: boolean; plans?: PremiumPlanInput[]; error?: string }>(response);

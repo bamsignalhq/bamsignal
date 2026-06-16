@@ -16,6 +16,7 @@ import { ChatsPage } from "./pages/ChatsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { AdminShell } from "./components/admin/AdminShell";
 import { AdminToastProvider } from "./components/admin/AdminToast";
+import { AdminConsentProvider } from "./components/admin/AdminConsentProvider";
 import { AdminHubPage } from "./pages/AdminHubPage";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
 import { PaymentLoadingOverlay } from "./components/PaymentLoadingOverlay";
@@ -870,9 +871,11 @@ export function App() {
 
     return (
       <AdminToastProvider>
-        <AdminShell authorized={null} onUnauthorized={openAdminLogin}>
-          <AdminHubPage onLogout={openAdminLogin} />
-        </AdminShell>
+        <AdminConsentProvider>
+          <AdminShell authorized={null} onUnauthorized={openAdminLogin}>
+            <AdminHubPage onLogout={openAdminLogin} />
+          </AdminShell>
+        </AdminConsentProvider>
       </AdminToastProvider>
     );
   }

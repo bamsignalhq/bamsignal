@@ -1,17 +1,18 @@
 import { readResponseJson } from "./httpJson";
 import { apiUrl, supabase } from "../services/supabase";
 import { getAdminSessionEmail } from "./adminSession";
+import { appendAdminConsentHeader } from "./adminConsent";
 
 export type AdminApiResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: string; status?: number };
+  | { ok: false; error: string; status?: number; code?: string };
 
 export async function adminAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const session = await supabase?.auth.getSession();
   const token = session?.data.session?.access_token;
   if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
+  return appendAdminConsentHeader(headers);
 }
 
 export async function adminPostJson<T>(
@@ -29,10 +30,14 @@ export async function adminPostJson<T>(
       const message =
         (payload && typeof payload === "object" && "error" in payload && String(payload.error)) ||
         `Request failed (${response.status})`;
+      const code =
+        payload && typeof payload === "object" && "code" in payload
+          ? String((payload as { code?: string }).code || "")
+          : undefined;
       if (import.meta.env.DEV) {
         console.warn("[bamsignal:admin-api]", path, message, getAdminSessionEmail());
       }
-      return { ok: false, error: message, status: response.status };
+      return { ok: false, error: message, status: response.status, code };
     }
     return { ok: true, data: payload as T };
   } catch (error) {

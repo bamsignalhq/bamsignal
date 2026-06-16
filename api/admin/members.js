@@ -1,4 +1,5 @@
 import { requireAdmin } from "../../server/adminAuth.js";
+import { requireAdminConsent } from "../../server/adminConsent.js";
 import { getDatabaseStatus } from "../../server/db.js";
 import {
   adminSearchMembers,
@@ -44,6 +45,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "purge") {
+      if (!(await requireAdminConsent(req, res))) return;
       const confirm = String(body.confirm || "").trim().toUpperCase();
       if (confirm !== "DELETE") {
         return res.status(400).json({

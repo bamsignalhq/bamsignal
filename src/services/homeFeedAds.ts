@@ -3,6 +3,7 @@ import {
   type HomeFeedAdsSettings
 } from "../constants/homeFeedAds";
 import { apiUrl } from "./supabase";
+import { appendAdminConsentHeader } from "../utils/adminConsent";
 
 function normalize(raw: unknown): HomeFeedAdsSettings {
   const source = raw && typeof raw === "object" ? (raw as Partial<HomeFeedAdsSettings>) : {};
@@ -52,7 +53,7 @@ export async function saveHomeFeedAdsAdmin(
 
     const response = await fetch(apiUrl("/api/auth/identity?action=home-feed-ads-save"), {
       method: "POST",
-      headers,
+      headers: appendAdminConsentHeader(headers),
       body: JSON.stringify({ value: normalized })
     });
     const payload = await response.json();

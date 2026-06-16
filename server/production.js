@@ -28,6 +28,8 @@ import citySpotlightEventHandler from "../api/city/spotlight-event.js";
 import adminCityHomeHandler from "../api/admin/city-home.js";
 import adminCitySpotlightHandler from "../api/admin/city-spotlight.js";
 import adminMembersHandler from "../api/admin/members.js";
+import adminConsentHandler from "../api/admin/consent.js";
+import adminBootstrapHandler from "../api/admin/bootstrap.js";
 import whatsappVerifyStartHandler from "../api/verify/whatsapp/start.js";
 import whatsappVerifyConfirmHandler from "../api/verify/whatsapp/confirm.js";
 import whatsappVerifyWebhookHandler from "../api/verify/whatsapp/webhook.js";
@@ -132,6 +134,8 @@ mountHandler(app, "get", "/api/diagnostics/function-security", functionSecurityH
 mountHandler(app, "post", "/api/diagnostics/function-security", functionSecurityHandler);
 mountHandler(app, "post", "/api/admin/city-home", adminCityHomeHandler);
 mountHandler(app, "post", "/api/admin/members", adminMembersHandler);
+mountHandler(app, "post", "/api/admin/consent", adminConsentHandler);
+mountHandler(app, "post", "/api/admin/bootstrap", adminBootstrapHandler);
 mountHandler(app, "get", "/api/admin/city-spotlight", adminCitySpotlightHandler);
 mountHandler(app, "get", "/api/city/home", cityHomeHandler);
 mountHandler(app, "get", "/api/city/spotlight", citySpotlightHandler);

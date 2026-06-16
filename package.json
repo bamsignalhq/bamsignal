@@ -15,6 +15,7 @@
     "generate:showcase": "node scripts/convert-showcase-images.mjs",
     "convert:showcase": "node scripts/convert-showcase-images.mjs",
     "verify:database": "node scripts/verify-database.mjs",
+    "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "test:photo-verification": "node scripts/test-photo-verification.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "start": "node server/production.js",

@@ -7,6 +7,7 @@ import {
 } from "../../server/services/verificationQueue.js";
 import { getPhoneVerifiedStatus } from "../../server/services/whatsappVerification.js";
 import { verifySupabaseAdmin } from "../../server/adminAuth.js";
+import { requireAdminConsent } from "../../server/adminConsent.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -80,6 +81,7 @@ export default async function handler(req, res) {
   }
 
   if (action === "approve" || action === "reject") {
+    if (!(await requireAdminConsent(req, res))) return;
     const id = String(body.id || "").trim();
     if (!id) {
       return res.status(400).json({ ok: false, error: "Submission id is required." });

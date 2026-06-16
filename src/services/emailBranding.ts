@@ -3,6 +3,7 @@ import {
   type EmailBrandingSettings
 } from "../constants/emailBranding";
 import { apiUrl } from "./supabase";
+import { appendAdminConsentHeader } from "../utils/adminConsent";
 
 function normalize(raw: unknown): EmailBrandingSettings {
   const source = raw && typeof raw === "object" ? (raw as Partial<EmailBrandingSettings>) : {};
@@ -44,7 +45,7 @@ export async function saveEmailBrandingAdmin(
 
     const response = await fetch(apiUrl("/api/auth/identity?action=email-branding-save"), {
       method: "POST",
-      headers,
+      headers: appendAdminConsentHeader(headers),
       body: JSON.stringify({ value: normalized })
     });
     const payload = await response.json();

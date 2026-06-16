@@ -5,10 +5,16 @@ import { useAdminHealthSummary } from "./AdminHealthPanel";
 type AdminConsoleTopBarProps = {
   onLogout: () => void;
   onOpenDock?: () => void;
+  onChangePassword?: () => void;
   version?: string;
 };
 
-export function AdminConsoleTopBar({ onLogout, onOpenDock, version = "1.0.5" }: AdminConsoleTopBarProps) {
+export function AdminConsoleTopBar({
+  onLogout,
+  onOpenDock,
+  onChangePassword,
+  version = "1.0.5"
+}: AdminConsoleTopBarProps) {
   const userEmail = getAdminSessionEmail() || "ops@bamsignal.com";
   const { ok: healthOk } = useAdminHealthSummary();
 
@@ -31,6 +37,11 @@ export function AdminConsoleTopBar({ onLogout, onOpenDock, version = "1.0.5" }: 
         <span className="admin-console__user" title={userEmail}>
           {userEmail}
         </span>
+        {onChangePassword && (
+          <button type="button" className="admin-console__logout" onClick={onChangePassword}>
+            Change password
+          </button>
+        )}
         <button type="button" className="admin-console__logout" onClick={onLogout}>
           Logout Admin
         </button>

@@ -65,6 +65,8 @@ import { AdminCommandDock } from "../components/admin/AdminCommandDock";
 import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
 import { AdminTerminalEmpty } from "../components/admin/AdminTerminalEmpty";
 import { useAdminToast } from "../components/admin/AdminToast";
+import { AdminSecurityPanel, useAdminConsent } from "../components/admin/AdminConsentProvider";
+import { AdminAuthPage } from "./AdminAuthPage";
 import { ADMIN_TAB_TITLES, type AdminTab } from "../components/admin/adminConsoleNav";
 import {
   logoutAdminSession,
@@ -80,9 +82,11 @@ type AdminHubPageProps = {
 
 export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const { pushToast } = useAdminToast();
+  const { ensureConsent } = useAdminConsent();
   const [tab, setTab] = useState<AdminTab>(() => restoreAdminRouteOnLoad());
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [dockOpen, setDockOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const [cmsDraft, setCmsDraft] = useState<CmsContent>(() => getCms());
   const [discoverDraft, setDiscoverDraft] = useState<DiscoverCityConfig>(() => getDiscoverCityConfig());
   const [rejectReason, setRejectReason] = useState("");
@@ -235,6 +239,17 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
     );
   }
 
+  if (passwordOpen) {
+    return (
+      <AdminAuthPage
+        allowPasswordChange
+        onAuthed={() => setPasswordOpen(false)}
+        onBack={() => {}}
+        onPasswordChanged={() => setPasswordOpen(false)}
+      />
+    );
+  }
+
   const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []).length;
   const reports = readJson<unknown[]>(STORAGE_KEYS.reports, []).length;
 
@@ -274,6 +289,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       <AdminConsoleTopBar
         onLogout={() => void handleLogout()}
         onOpenDock={() => setDockOpen(true)}
+        onChangePassword={() => setPasswordOpen(true)}
       />
       <div className="admin-console__body">
         <main className="admin-console__main">
@@ -394,6 +410,8 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
               </div>
             ))}
           </section>
+
+          <AdminSecurityPanel />
         </>
       )}
 
@@ -514,8 +532,32 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                       setPurgeBusy(true);
                       setPurgeMessage("");
                       try {
+                        if (!(await ensureConsent("Confirm permanent member deletion."))) {
+                          setPurgeMessage("Admin PIN required.");
+                          return;
+                        }
                         const result = await purgeAdminMember(purgeTarget.id, purgeConfirm.trim());
                         if (!result.ok) {
+                          if (result.code === "consent_required" && (await ensureConsent("Confirm permanent member deletion."))) {
+                            const retry = await purgeAdminMember(purgeTarget.id, purgeConfirm.trim());
+                            if (!retry.ok) {
+                              pushToast(retry.error);
+                              setPurgeMessage(retry.error);
+                              return;
+                            }
+                            const data = retry.data;
+                            if (!data.ok) {
+                              const message = data.error || "Delete failed.";
+                              pushToast(message);
+                              setPurgeMessage(message);
+                              return;
+                            }
+                            setMemberResults((rows) => rows.filter((row) => row.id !== purgeTarget.id));
+                            setPurgeTarget(null);
+                            setPurgeConfirm("");
+                            setPurgeMessage(`Removed ${data.member?.name || "member"} from the system.`);
+                            return;
+                          }
                           pushToast(result.error);
                           setPurgeMessage(result.error);
                           return;
@@ -784,8 +826,18 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                       type="button"
                       className="btn-primary btn-sm"
                       onClick={async () => {
+                        if (!(await ensureConsent("Approve this verification."))) return;
                         const result = await reviewVerificationSubmission({ id: v.id, action: "approve" });
                         if (!result.ok || !result.data.ok) {
+                          if (!result.ok && result.code === "consent_required" && (await ensureConsent("Approve this verification."))) {
+                            const retry = await reviewVerificationSubmission({ id: v.id, action: "approve" });
+                            if (!retry.ok || !retry.data.ok) {
+                              pushToast(retry.ok ? retry.data.error || "Approve failed." : retry.error);
+                              return;
+                            }
+                            await loadVerifications();
+                            return;
+                          }
                           pushToast(result.ok ? result.data.error || "Approve failed." : result.error);
                           return;
                         }
@@ -798,12 +850,27 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                       type="button"
                       className="btn-secondary btn-sm"
                       onClick={async () => {
+                        if (!(await ensureConsent("Reject this verification."))) return;
                         const result = await reviewVerificationSubmission({
                           id: v.id,
                           action: "reject",
                           rejectReason: rejectReason || "Did not meet guidelines"
                         });
                         if (!result.ok || !result.data.ok) {
+                          if (!result.ok && result.code === "consent_required" && (await ensureConsent("Reject this verification."))) {
+                            const retry = await reviewVerificationSubmission({
+                              id: v.id,
+                              action: "reject",
+                              rejectReason: rejectReason || "Did not meet guidelines"
+                            });
+                            if (!retry.ok || !retry.data.ok) {
+                              pushToast(retry.ok ? retry.data.error || "Reject failed." : retry.error);
+                              return;
+                            }
+                            setRejectReason("");
+                            await loadVerifications();
+                            return;
+                          }
                           pushToast(result.ok ? result.data.error || "Reject failed." : result.error);
                           return;
                         }
@@ -1188,6 +1255,10 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
               onClick={() => {
                 void (async () => {
                   setEmailBrandingMessage("");
+                  if (!(await ensureConsent("Save email branding changes."))) {
+                    setEmailBrandingMessage("Admin PIN required.");
+                    return;
+                  }
                   const { data } = await supabase?.auth.getSession() || { data: null };
                   const result = await saveEmailBrandingAdmin(
                     emailBrandingDraft,

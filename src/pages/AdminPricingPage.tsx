@@ -8,6 +8,7 @@ import { usePlans } from "../context/PlansContext";
 import { saveBoostProductsAdmin, fetchBoostProducts } from "../services/boosts";
 import { savePremiumPlansAdmin, verifyAdminSession } from "../services/plans";
 import { supabase } from "../services/supabase";
+import { useAdminConsent } from "../components/admin/AdminConsentProvider";
 
 type AdminPricingPageProps = {
   onBack: () => void;
@@ -16,6 +17,7 @@ type AdminPricingPageProps = {
 
 export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
   const { plans, refreshPlans } = usePlans();
+  const { ensureConsent } = useAdminConsent();
   const [draft, setDraft] = useState<PremiumPlanInput[]>([]);
   const [boostDraft, setBoostDraft] = useState<BoostProductInput[]>(DEFAULT_BOOST_INPUTS);
   const [authorized, setAuthorized] = useState<boolean | null>(null);
@@ -68,6 +70,11 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
   const savePlans = async (label: string) => {
     setSavingKey(label);
     setMessage("");
+    if (!(await ensureConsent("Save pricing changes."))) {
+      setSavingKey(null);
+      setMessage("Admin PIN required.");
+      return;
+    }
     const { data } = (await supabase?.auth.getSession()) || { data: { session: null } };
     const result = await savePremiumPlansAdmin(draft, data.session?.access_token);
     setSavingKey(null);

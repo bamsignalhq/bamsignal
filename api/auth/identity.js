@@ -13,6 +13,7 @@ import { normalizeHomeFeedAds } from "../../server/services/homeFeedAds.js";
 import { normalizePlans } from "../../server/pricing.js";
 import { registerDevicePush } from "../../server/firebase.js";
 import { bot, registerBotCommands } from "../../server/telegram.js";
+import { requireAdminConsent } from "../../server/adminConsent.js";
 
 function normalizePhone(value = "") {
   const digits = String(value).replace(/\D/g, "");
@@ -103,6 +104,7 @@ export default async function handler(req, res) {
 
     if (req.query.action === "pricing-save") {
       if (!await requireAdmin(req, res)) return;
+      if (!await requireAdminConsent(req, res)) return;
       const plans = normalizePlans(req.body?.plans || []);
       const value = await setPlatformSetting("premium_plans", plans);
       return res.status(200).json({ ok: true, plans: value });
@@ -110,6 +112,7 @@ export default async function handler(req, res) {
 
     if (req.query.action === "settings-save") {
       if (!await requireAdmin(req, res)) return;
+      if (!await requireAdminConsent(req, res)) return;
       const value = await setPlatformSetting("admin_content", req.body?.value || {});
       return res.status(200).json({ ok: true, value });
     }
@@ -121,6 +124,7 @@ export default async function handler(req, res) {
 
     if (req.query.action === "email-branding-save") {
       if (!await requireAdmin(req, res)) return;
+      if (!await requireAdminConsent(req, res)) return;
       const value = await setPlatformSetting("email_branding", normalizeEmailBranding(req.body?.value || {}));
       return res.status(200).json({ ok: true, value });
     }
@@ -132,6 +136,7 @@ export default async function handler(req, res) {
 
     if (req.query.action === "home-feed-ads-save") {
       if (!await requireAdmin(req, res)) return;
+      if (!await requireAdminConsent(req, res)) return;
       const value = await setPlatformSetting("home_feed_ads", normalizeHomeFeedAds(req.body?.value || {}));
       return res.status(200).json({ ok: true, value });
     }
@@ -147,12 +152,14 @@ export default async function handler(req, res) {
 
     if (req.query.action === "admin-add") {
       if (!await requireAdmin(req, res)) return;
+      if (!await requireAdminConsent(req, res)) return;
       const admin = await upsertPlatformAdmin(req.body?.email, req.body?.role || "admin");
       return res.status(200).json({ ok: true, admin, dbAdmins: await listPlatformAdmins() });
     }
 
     if (req.query.action === "admin-remove") {
       if (!await requireAdmin(req, res)) return;
+      if (!await requireAdminConsent(req, res)) return;
       const admin = await deactivatePlatformAdmin(req.body?.email);
       return res.status(200).json({ ok: true, admin, dbAdmins: await listPlatformAdmins() });
     }

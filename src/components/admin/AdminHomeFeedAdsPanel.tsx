@@ -6,6 +6,7 @@ import {
 } from "../../constants/homeFeedAds";
 import { fetchHomeFeedAds, saveHomeFeedAdsAdmin } from "../../services/homeFeedAds";
 import { supabase } from "../../services/supabase";
+import { useAdminConsent } from "./AdminConsentProvider";
 
 type AdminHomeFeedAdsPanelProps = {
   onMessage: (message: string) => void;
@@ -14,6 +15,7 @@ type AdminHomeFeedAdsPanelProps = {
 export function AdminHomeFeedAdsPanel({ onMessage }: AdminHomeFeedAdsPanelProps) {
   const [draft, setDraft] = useState<HomeFeedAdsSettings>(DEFAULT_HOME_FEED_ADS);
   const [saving, setSaving] = useState(false);
+  const { ensureConsent } = useAdminConsent();
 
   useEffect(() => {
     void fetchHomeFeedAds().then(setDraft);
@@ -29,6 +31,11 @@ export function AdminHomeFeedAdsPanel({ onMessage }: AdminHomeFeedAdsPanelProps)
 
   const save = async () => {
     setSaving(true);
+    if (!(await ensureConsent("Save home feed ad changes."))) {
+      setSaving(false);
+      onMessage("Admin PIN required.");
+      return;
+    }
     const { data } = (await supabase?.auth.getSession()) || { data: null };
     const result = await saveHomeFeedAdsAdmin(draft, data?.session?.access_token);
     setSaving(false);

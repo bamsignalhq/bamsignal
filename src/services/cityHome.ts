@@ -1,6 +1,7 @@
 import type { DatingProfile, DiscoverProfile, UserProfile } from "../types";
 import { apiUrl } from "./supabase";
 import { readResponseJson } from "../utils/httpJson";
+import { appendAdminConsentHeader } from "../utils/adminConsent";
 import { supabase } from "./supabase";
 
 export type CityHomeProfile = {
@@ -72,7 +73,7 @@ async function adminHeaders(): Promise<Record<string, string>> {
   const session = await supabase?.auth.getSession();
   const token = session?.data.session?.access_token;
   if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
+  return appendAdminConsentHeader(headers);
 }
 
 export async function fetchAdminCityMembers(city: string): Promise<{

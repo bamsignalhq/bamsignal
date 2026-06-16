@@ -1,4 +1,5 @@
 import { requireAdmin } from "../../server/adminAuth.js";
+import { requireAdminConsent } from "../../server/adminConsent.js";
 import { getDatabaseStatus } from "../../server/db.js";
 import {
   CITY_HOME_PLACEMENT_TYPES,
@@ -61,6 +62,7 @@ export default async function handler(req, res) {
     }
 
     if (req.query.action === "set-placement") {
+      if (!(await requireAdminConsent(req, res))) return;
       if (!city) return res.status(400).json({ ok: false, error: "City is required." });
       const profileId = String(body.profileId || "").trim();
       const placementType = String(body.placementType || "").trim();
@@ -84,6 +86,7 @@ export default async function handler(req, res) {
     }
 
     if (req.query.action === "hide") {
+      if (!(await requireAdminConsent(req, res))) return;
       const profileId = String(body.profileId || "").trim();
       if (!profileId) return res.status(400).json({ ok: false, error: "Profile id is required." });
       const hidden = body.hidden !== false;

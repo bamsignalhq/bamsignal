@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { greetingForHour, SUCCESS_COPY } from "../constants/copy";
+import { greetingForHour } from "../constants/copy";
 import { firstNameFromDisplayName } from "../constants/homeFilters";
 import { clampHomeDistanceForCity } from "../utils/cityMetroRadius";
 import { stateForCity } from "../constants/profileOptions";
@@ -143,7 +143,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
       </header>
 
       <section className="home-discovery home-discovery--compact" aria-label="Filters">
-        <h2 className="home-discovery__title">{SUCCESS_COPY.searchTitle}</h2>
         <HomeFeedFilters
           nameQuery={nameQuery}
           onNameQueryChange={setNameQuery}

@@ -1,4 +1,4 @@
-import { FREE_DAILY_SWIPES } from "../../constants/limits";
+import { useMemo } from "react";
 import { MONETIZATION_COPY } from "../../constants/copy";
 import { getFreeSignalsRemaining } from "../../utils/signalLimits";
 
@@ -9,8 +9,10 @@ type HomeSignalLimitBarProps = {
 };
 
 export function HomeSignalLimitBar({ isPremium, onUpgrade, refreshKey = 0 }: HomeSignalLimitBarProps) {
-  void refreshKey;
-  const remaining = getFreeSignalsRemaining(isPremium);
+  const remaining = useMemo(
+    () => getFreeSignalsRemaining(isPremium),
+    [isPremium, refreshKey]
+  );
   const atLimit = !isPremium && remaining <= 0;
 
   if (isPremium) {
@@ -34,9 +36,11 @@ export function HomeSignalLimitBar({ isPremium, onUpgrade, refreshKey = 0 }: Hom
     );
   }
 
+  const label = `${remaining} Signal${remaining === 1 ? "" : "s"} left`;
+
   return (
-    <span className="home-signal-pill" aria-label={`${remaining} signals available today`}>
-      {remaining} Signal{remaining === 1 ? "" : "s"} available today
+    <span className="home-signal-pill" aria-label={label}>
+      {label}
     </span>
   );
 }

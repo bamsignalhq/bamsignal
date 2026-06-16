@@ -45,7 +45,6 @@ export const SUCCESS_COPY = {
     `${count} ${count === 1 ? "person" : "people"} checked out your profile this week`,
   homeFeedEmpty: "People are joining every day ❤️",
   homeFeedEmptyHint: "Take your time and discover genuine connections.",
-  searchTitle: "Find Your Kind Of Person ❤️",
   searchEmpty: "Nothing here yet ❤️",
   searchEmptyHint: "Try adjusting your filters to meet more people.",
   discoverEmpty: "Explore beyond your usual preferences.",
@@ -104,7 +103,7 @@ export const MONETIZATION_COPY = {
   paymentCancelledBody: "Your upgrade is still available whenever you're ready.",
   lockedFeature: "Included with Signal Pass 🔒",
   seeEveryone: "See Everyone",
-  signalsExhaustedTitle: "You've used today's free signals.",
+  signalsExhaustedTitle: "No Signals left",
   signalsExhaustedHint: "Signal Pass lets you keep connecting."
 } as const;
 

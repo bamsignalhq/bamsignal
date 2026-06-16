@@ -23,8 +23,8 @@ export function signalsLeftTodayDisplay(isPremium: boolean): string {
 export function signalsRemainingLabel(isPremium: boolean): string | null {
   if (isPremium) return null;
   const left = getFreeSignalsRemaining(false);
-  if (left <= 0) return null;
-  return `${left} Signal${left === 1 ? "" : "s"} available today`;
+  if (left <= 0) return "No Signals left";
+  return `${left} Signal${left === 1 ? "" : "s"} left`;
 }
 
 export function signalLimitReachedMessage(): string {

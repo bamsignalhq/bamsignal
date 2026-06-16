@@ -176,8 +176,6 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
   return (
     <section className="home-search" aria-label="Search members">
       <div className="home-search__head">
-        <h2>{SUCCESS_COPY.searchTitle}</h2>
-        <p>Take your time — find people who feel right for you.</p>
         {remainingLabel ? <p className="home-search__limit">{remainingLabel}</p> : null}
       </div>
 

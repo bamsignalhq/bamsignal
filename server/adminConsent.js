@@ -70,7 +70,7 @@ export function verifyAdminConsentToken(token, email) {
   return true;
 }
 
-export export async function getAdminEmailFromRequest(req) {
+export async function getAdminEmailFromRequest(req) {
   const authHeader = req.headers.authorization || "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
   if (!bearer || !process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY) return null;

@@ -1,8 +1,9 @@
 import { Camera, Loader2, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { MAX_PROFILE_PHOTOS, MIN_PROFILE_PHOTOS } from "../constants/photos";
+import { MAX_PROFILE_PHOTOS, MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
 import { sameImageDataUrl } from "../utils/imageContactScan";
+import { fileToCompressedDataUrl } from "../utils/photoUpload";
 
 type PhotoUploadGridProps = {
   photos: string[];
@@ -27,7 +28,7 @@ export function PhotoUploadGrid({
   const openPicker = (slotIndex: number) => {
     if (uploading || photos.length >= MAX_PROFILE_PHOTOS) return;
     setActiveSlot(slotIndex);
-    fileRef.current?.click();
+    window.setTimeout(() => fileRef.current?.click(), 0);
   };
 
   const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,23 +40,23 @@ export function PhotoUploadGrid({
     try {
       const verdict = await moderatePhotoUpload(file, signupMode ? "signup" : "profile");
       if (!verdict.allowed) {
-        onModerationMessage?.(verdict.message);
+        onModerationMessage?.(verdict.message || PHOTO_UPLOAD_FAIL);
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const url = String(reader.result || "");
-        if (sameImageDataUrl(url, coverPhoto)) {
-          onModerationMessage?.("Please choose a different image from your cover photo.");
-          return;
-        }
-        onChange([...photos, url].slice(0, MAX_PROFILE_PHOTOS));
-      };
-      reader.onerror = () => {
-        onModerationMessage?.("We couldn't use that image. Try another clear photo.");
-      };
-      reader.readAsDataURL(file);
+      const dataUrl = await fileToCompressedDataUrl(file);
+      if (sameImageDataUrl(dataUrl, coverPhoto)) {
+        onModerationMessage?.("Please choose a different image from your cover photo.");
+        return;
+      }
+      if (photos.some((photo) => sameImageDataUrl(photo, dataUrl))) {
+        onModerationMessage?.("You already added this photo.");
+        return;
+      }
+
+      onChange([...photos, dataUrl].slice(0, MAX_PROFILE_PHOTOS));
+    } catch {
+      onModerationMessage?.(PHOTO_UPLOAD_FAIL);
     } finally {
       setUploading(false);
       setActiveSlot(null);
@@ -109,10 +110,11 @@ export function PhotoUploadGrid({
       <input
         ref={fileRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/*"
-        capture={signupMode && activeSlot === 0 ? "environment" : undefined}
+        accept="image/*"
         className="photo-upload-grid__input"
         onChange={uploadPhoto}
+        aria-hidden
+        tabIndex={-1}
       />
     </div>
   );

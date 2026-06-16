@@ -1,6 +1,7 @@
 import {
   GENERIC_PHOTO_REJECT,
-  GENERIC_PHOTO_REJECT_ALT
+  GENERIC_PHOTO_REJECT_ALT,
+  PHOTO_UPLOAD_FAIL
 } from "../constants/photos";
 import { STORAGE_KEYS } from "../constants/limits";
 import {
@@ -16,8 +17,8 @@ type StrikeRecord = { count: number };
 
 export type PhotoUploadKind = "profile" | "cover" | "selfie" | "signup";
 
-const FACE_MESSAGE = "Choose a photo that clearly shows only you.";
-const SIGNUP_REJECT = "We couldn't use that image. Try another clear photo.";
+const FACE_MESSAGE = PHOTO_UPLOAD_FAIL;
+const SIGNUP_REJECT = PHOTO_UPLOAD_FAIL;
 
 const IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i;
 

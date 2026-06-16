@@ -24,8 +24,13 @@ export function readJson<T>(key: string, fallback: T): T {
   }
 }
 
-export function writeJson(key: string, value: unknown): void {
-  localStorage.setItem(key, JSON.stringify(value));
+export function writeJson(key: string, value: unknown): boolean {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function readDailyCount(key: string): number {

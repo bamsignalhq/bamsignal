@@ -53,7 +53,7 @@ import {
 } from "../utils/verificationQueue";
 import { notifyVerificationApproved } from "../utils/notifyHelpers";
 import { StateCitySelect } from "../components/StateCitySelect";
-import { MAX_PROFILE_PHOTOS } from "../constants/photos";
+import { MAX_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { isAdultDob } from "../utils/ageFromDob";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { hasFilledProfileDetails } from "../utils/profileDetails";
@@ -463,7 +463,10 @@ export function ProfilePage({
                     coverPhoto,
                     coverPhotoExplicit: Boolean(coverPhoto)
                   });
-                  writeJson(STORAGE_KEYS.datingProfile, next);
+                  if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
+                    showModMessage(PHOTO_UPLOAD_FAIL);
+                    return p;
+                  }
                   syncMemberProfileRemote(user, next);
                   return next;
                 });
@@ -477,7 +480,10 @@ export function ProfilePage({
               onChange={(photos) => {
                 setProfile((p) => {
                   const next = normalizeDatingProfile({ ...p, photos });
-                  writeJson(STORAGE_KEYS.datingProfile, next);
+                  if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
+                    showModMessage(PHOTO_UPLOAD_FAIL);
+                    return p;
+                  }
                   syncMemberProfileRemote(user, next);
                   return next;
                 });

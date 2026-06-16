@@ -74,7 +74,7 @@ app.use((req, res, next) => {
     });
     return;
   }
-  express.json()(req, res, next);
+  express.json({ limit: "12mb" })(req, res, next);
 });
 
 async function healthPayload() {

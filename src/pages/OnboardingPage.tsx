@@ -5,7 +5,7 @@ import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
 import { FILTER_RELIGIONS, SOCIAL_LIFESTYLES, NIGERIAN_STATES, citiesForState } from "../constants/profileOptions";
 import { INTENT_OPTIONS } from "../constants/intents";
-import { MIN_PROFILE_PHOTOS } from "../constants/photos";
+import { MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { STORAGE_KEYS } from "../constants/limits";
 import { InterestPicker } from "../components/InterestPicker";
 import type {
@@ -301,8 +301,12 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
                 coverPhoto: undefined,
                 coverPhotoExplicit: false
               });
+              if (!writeJson(STORAGE_KEYS.datingProfile, { ...next, onboardingComplete: false })) {
+                setModMessage(PHOTO_UPLOAD_FAIL);
+                window.setTimeout(() => setModMessage(""), 4000);
+                return;
+              }
               setProfile(next);
-              writeJson(STORAGE_KEYS.datingProfile, { ...next, onboardingComplete: false });
             }}
             onModerationMessage={(msg) => {
               setModMessage(msg);

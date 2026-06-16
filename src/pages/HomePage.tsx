@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { greetingForHour } from "../constants/copy";
+import { stateForCity } from "../constants/profileOptions";
 import { DEFAULT_HOME_FEED_ADS } from "../constants/homeFeedAds";
 import { STORAGE_KEYS } from "../constants/limits";
 import {
@@ -9,6 +10,7 @@ import {
 import { HomeFeedFilters } from "../components/home/HomeFeedFilters";
 import { HomeFilterChips } from "../components/home/HomeFilterChips";
 import { HomeProfileVisitorsCard, HomeSavedSearches } from "../components/home/HomeSavedSearches";
+import { HomeQuickFilterSheet } from "../components/home/HomeQuickFilterSheet";
 import { HomeSignalLimitBar } from "../components/home/HomeSignalLimitBar";
 import { HomeSignalsFeed } from "../components/home/HomeSignalsFeed";
 import { fetchHomeFeedAds } from "../services/homeFeedAds";
@@ -17,12 +19,10 @@ import type { SavedSearch, UserProfile } from "../types";
 import { getMemberCity } from "../utils/memberCity";
 import {
   advancedFromMatchPreferences,
-  buildHomeFilterChips,
+  buildHomeAdvancedChips,
   deleteSavedSearch,
   getSavedSearches,
-  homeAdvancedFilterCount,
-  removeHomeFilterChip,
-  saveHomeSearch
+  homeHasCustomFilters
 } from "../utils/homeFilters";
 import { getDatingProfile, normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
 import { getProfileViews, setProfileViewsFromServer } from "../utils/profileViews";
@@ -37,23 +37,25 @@ type HomePageProps = {
 };
 
 export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium }: HomePageProps) {
+  void userName;
   const viewer = normalizeDatingProfile(getDatingProfile());
   const prefs = normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));
-  const firstName = userName.split(" ")[0] || "there";
+  const defaultAgeMin = prefs.ageMin ?? 22;
+  const defaultAgeMax = prefs.ageMax ?? 35;
+  const defaultState = prefs.states[0] || viewer.state || "";
+  const defaultCity = prefs.cities[0] || viewer.city || getMemberCity() || "";
 
   const [adSettings, setAdSettings] = useState(DEFAULT_HOME_FEED_ADS);
   const [nameQuery, setNameQuery] = useState("");
-  const [ageMin, setAgeMin] = useState(prefs.ageMin ?? 22);
-  const [ageMax, setAgeMax] = useState(prefs.ageMax ?? 35);
-  const [state, setState] = useState(prefs.states[0] || viewer.state || "");
-  const [city, setCity] = useState(prefs.cities[0] || viewer.city || getMemberCity() || "");
+  const [ageMin, setAgeMin] = useState(defaultAgeMin);
+  const [ageMax, setAgeMax] = useState(defaultAgeMax);
+  const [state, setState] = useState(defaultState);
+  const [city, setCity] = useState(defaultCity);
   const [advanced, setAdvanced] = useState(() => advancedFromMatchPreferences(prefs));
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [filtersLoading, setFiltersLoading] = useState(false);
   const [signalTick, setSignalTick] = useState(0);
-  const [resultCount, setResultCount] = useState(0);
-  const [filtersApplied, setFiltersApplied] = useState(false);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(() => getSavedSearches());
   const [visitorCount, setVisitorCount] = useState(() => getProfileViews().count);
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(() =>
@@ -68,44 +70,46 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     });
   }, [user]);
 
-  const chips = useMemo(
-    () => buildHomeFilterChips({ ageMin, ageMax, city, state, advanced }),
-    [ageMin, ageMax, city, state, advanced]
+  const advancedChips = useMemo(() => buildHomeAdvancedChips(advanced), [advanced]);
+
+  const hasCustomFilters = useMemo(
+    () =>
+      homeHasCustomFilters({
+        ageMin,
+        ageMax,
+        city,
+        state,
+        advanced,
+        defaultAgeMin,
+        defaultAgeMax,
+        defaultCity,
+        defaultState
+      }),
+    [ageMin, ageMax, city, state, advanced, defaultAgeMin, defaultAgeMax, defaultCity, defaultState]
   );
 
-  const applyFilters = useCallback(() => {
-    setFiltersLoading(true);
-    setFiltersApplied(true);
-    setRefreshKey((k) => k + 1);
-    window.setTimeout(() => setFiltersLoading(false), 400);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setRefreshKey((k) => k + 1);
+    }, 280);
+    return () => window.clearTimeout(timer);
+  }, [nameQuery, ageMin, ageMax, state, city, advanced]);
+
+  const handleLocationChange = useCallback((nextState: string, nextCity: string) => {
+    const resolvedState = nextCity ? stateForCity(nextCity) || nextState : nextState;
+    setState(resolvedState);
+    setCity(nextCity);
   }, []);
 
   const resetFilters = () => {
-    const resetPrefs = normalizeMatchPreferences({});
-    setAgeMin(resetPrefs.ageMin ?? 18);
-    setAgeMax(resetPrefs.ageMax ?? 99);
-    setState(viewer.state || "");
-    setCity(viewer.city || getMemberCity() || "");
+    setAgeMin(defaultAgeMin);
+    setAgeMax(defaultAgeMax);
+    setState(defaultState);
+    setCity(defaultCity);
     setAdvanced(emptyHomeAdvancedFilters());
     setNameQuery("");
-    setFiltersApplied(false);
+    setQuickFiltersOpen(false);
     setRefreshKey((k) => k + 1);
-  };
-
-  const handleRemoveChip = (chip: (typeof chips)[number]) => {
-    const next = removeHomeFilterChip(advanced, chip, ageMin, ageMax, city, state);
-    setAdvanced(next.advanced);
-    setAgeMin(next.ageMin);
-    setAgeMax(next.ageMax);
-    setCity(next.city);
-    setState(next.state);
-    setRefreshKey((k) => k + 1);
-  };
-
-  const handleSaveSearch = () => {
-    const saved = saveHomeSearch({ ageMin, ageMax, state, city, advanced, resultCount });
-    setSavedSearches(getSavedSearches());
-    void saved;
   };
 
   const applySavedSearch = (search: SavedSearch) => {
@@ -114,7 +118,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     setState(search.state);
     setCity(search.city);
     setAdvanced(search.advanced);
-    setFiltersApplied(true);
     setRefreshKey((k) => k + 1);
   };
 
@@ -125,42 +128,31 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   };
 
   return (
-    <div className="page home-page home-page--fintech member-content-pad">
-      <header className="home-top">
-        <div className="home-top__intro">
-          <p className="home-top__eyebrow">{greetingForHour()}</p>
-          <h1>{firstName}</h1>
-        </div>
+    <div className="page home-page home-page--compact member-content-pad">
+      <header className="home-top home-top--compact">
+        <h1 className="home-top__greeting">{greetingForHour()} 👋</h1>
         <HomeSignalLimitBar isPremium={isPremium} onUpgrade={onOpenPremium} refreshKey={signalTick} />
       </header>
 
-      <section className="home-discovery card" aria-label="Discover people">
+      <section className="home-discovery home-discovery--compact" aria-label="Find people">
         <HomeFeedFilters
           nameQuery={nameQuery}
           onNameQueryChange={setNameQuery}
           ageMin={ageMin}
           ageMax={ageMax}
-          onAgeMinChange={setAgeMin}
-          onAgeMaxChange={setAgeMax}
-          state={state}
           city={city}
-          onLocationChange={(nextState, nextCity) => {
-            setState(nextState);
-            setCity(nextCity);
-          }}
-          advancedCount={homeAdvancedFilterCount(advanced)}
+          state={state}
+          onOpenQuickFilters={() => setQuickFiltersOpen(true)}
           onOpenAdvanced={() => setAdvancedOpen(true)}
-          onApply={applyFilters}
-          loading={filtersLoading}
         />
 
-        <HomeFilterChips
-          chips={chips}
-          onRemove={handleRemoveChip}
-          onReset={resetFilters}
-          onSave={handleSaveSearch}
-          showSave={filtersApplied && chips.length > 0}
-        />
+        <HomeFilterChips chips={advancedChips} />
+
+        {hasCustomFilters ? (
+          <button type="button" className="home-discovery__reset" onClick={resetFilters}>
+            Reset
+          </button>
+        ) : null}
       </section>
 
       <HomeSavedSearches
@@ -190,13 +182,24 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         city={city}
         advanced={advanced}
         refreshKey={refreshKey}
-        filtersApplied={filtersApplied}
+        filtersApplied={hasCustomFilters}
         pendingProfileId={pendingProfileId}
         onUpgrade={onOpenPremium}
         onViewMore={onDiscover}
         onResetFilters={resetFilters}
-        onResultCount={setResultCount}
         onSignalSent={handleSignalSent}
+      />
+
+      <HomeQuickFilterSheet
+        open={quickFiltersOpen}
+        ageMin={ageMin}
+        ageMax={ageMax}
+        state={state}
+        city={city}
+        onAgeMinChange={setAgeMin}
+        onAgeMaxChange={setAgeMax}
+        onLocationChange={handleLocationChange}
+        onClose={() => setQuickFiltersOpen(false)}
       />
 
       <HomeAdvancedFiltersSheet
@@ -205,7 +208,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         onChange={setAdvanced}
         onClose={() => setAdvancedOpen(false)}
         onClear={() => setAdvanced(emptyHomeAdvancedFilters())}
-        onApply={applyFilters}
+        onApply={() => setAdvancedOpen(false)}
       />
     </div>
   );

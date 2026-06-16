@@ -131,6 +131,44 @@ export function buildHomeFilterChips(options: {
   return chips;
 }
 
+export function buildHomeAdvancedChips(advanced: HomeAdvancedFilters): HomeFilterChip[] {
+  return buildHomeFilterChips({
+    ageMin: 0,
+    ageMax: 0,
+    city: "",
+    state: "",
+    advanced
+  });
+}
+
+export function homeHasCustomFilters(options: {
+  ageMin: number;
+  ageMax: number;
+  city: string;
+  state: string;
+  advanced: HomeAdvancedFilters;
+  defaultAgeMin: number;
+  defaultAgeMax: number;
+  defaultCity: string;
+  defaultState: string;
+}): boolean {
+  const {
+    ageMin,
+    ageMax,
+    city,
+    state,
+    advanced,
+    defaultAgeMin,
+    defaultAgeMax,
+    defaultCity,
+    defaultState
+  } = options;
+
+  if (ageMin !== defaultAgeMin || ageMax !== defaultAgeMax) return true;
+  if (city !== defaultCity || state !== defaultState) return true;
+  return homeAdvancedFilterCount(advanced) > 0;
+}
+
 export function removeHomeFilterChip(
   advanced: HomeAdvancedFilters,
   chip: HomeFilterChip,

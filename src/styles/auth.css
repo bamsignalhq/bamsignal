@@ -627,15 +627,14 @@
 }
 
 .photo-upload-grid__input {
-  position: absolute;
+  position: fixed;
+  left: 0;
+  top: 0;
   width: 1px;
   height: 1px;
-  padding: 0;
-  margin: -1px;
+  opacity: 0.01;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+  pointer-events: none;
 }
 
 .photo-upload-grid__spinner {

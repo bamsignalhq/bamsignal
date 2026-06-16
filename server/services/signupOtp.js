@@ -206,6 +206,18 @@ export async function verifySignupOtp(email, code) {
   return { ok: true, email: normalized };
 }
 
+function buildSupabaseAdminHeaders(serviceKey) {
+  const headers = {
+    apikey: serviceKey,
+    "Content-Type": "application/json"
+  };
+  // Legacy JWT service_role keys work in Authorization. New sb_secret_* keys must not.
+  if (serviceKey.startsWith("eyJ")) {
+    headers.Authorization = `Bearer ${serviceKey}`;
+  }
+  return headers;
+}
+
 export async function createConfirmedSupabaseUser({ email, password, name, username, phone }) {
   const config = supabaseServiceHeaders();
   if (!config) {
@@ -216,11 +228,7 @@ export async function createConfirmedSupabaseUser({ email, password, name, usern
   }
 
   const normalized = normalizeEmail(email);
-  const headers = {
-    apikey: config.serviceKey,
-    Authorization: `Bearer ${config.serviceKey}`,
-    "Content-Type": "application/json"
-  };
+  const headers = buildSupabaseAdminHeaders(config.serviceKey);
   const userMetadata = {
     name: String(name || "").trim(),
     username: String(username || "").trim(),

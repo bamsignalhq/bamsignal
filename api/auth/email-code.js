@@ -17,9 +17,14 @@ export default async function handler(req, res) {
       return res.status(error.status).json({ ok: false, error: error.message });
     }
     console.error("[bamsignal] email-code error:", error);
+    const action = String((req.body && req.body.action) || "send").toLowerCase();
+    const fallback =
+      action === "verify"
+        ? "We couldn't finish creating your account. Try again shortly."
+        : "We couldn't send the code right now. Wait a minute and try again, or check your spam folder.";
     return res.status(500).json({
       ok: false,
-      error: "We couldn't send the code right now. Wait a minute and try again, or check your spam folder."
+      error: fallback
     });
   }
 }

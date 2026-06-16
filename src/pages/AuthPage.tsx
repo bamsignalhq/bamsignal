@@ -65,7 +65,9 @@ export function AuthPage({
   const [resetEmail, setResetEmail] = useState("");
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(null);
   const [resendIn, setResendIn] = useState(0);
+  const [verifyBusy, setVerifyBusy] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const verifyInFlight = useRef(false);
 
   const phoneDigits = (value: string) => normalizeNigerianPhone(value);
   const pinDigits = (value: string) => value.replace(/\D/g, "").slice(0, 6);
@@ -180,8 +182,10 @@ export function AuthPage({
   };
 
   const verifySignup = async (code = verifyCode) => {
-    if (!pendingSignup || code.length !== OTP_LENGTH) return;
+    if (!pendingSignup || code.length !== OTP_LENGTH || verifyInFlight.current) return;
+    verifyInFlight.current = true;
     setBusy("verify");
+    setVerifyBusy(true);
     onMessage("");
     try {
       if (!supabase) {
@@ -197,20 +201,28 @@ export function AuthPage({
         phone: pendingSignup.phone || ""
       });
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: pendingSignup.email,
-        password: signupForm.pin
-      });
-      if (error) throw error;
-      if (data.user) {
-        onAuthenticated(profileFromSessionUser(data.user), { isNewSignup: true });
-        return;
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: pendingSignup.email,
+          password: signupForm.pin
+        });
+        if (!error && data.user) {
+          onAuthenticated(profileFromSessionUser(data.user), { isNewSignup: true });
+          return;
+        }
+        lastError = error;
+        if (attempt < 3) {
+          await new Promise((resolve) => window.setTimeout(resolve, 400));
+        }
       }
 
-      throw new Error("We couldn't finish creating your account. Try again shortly.");
+      throw lastError || new Error("We couldn't finish creating your account. Try again shortly.");
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {
+      verifyInFlight.current = false;
+      setVerifyBusy(false);
       setBusy(null);
     }
   };
@@ -445,7 +457,7 @@ export function AuthPage({
                     maxLength={1}
                     value={verifyCode[index] ?? ""}
                     aria-label={`Digit ${index + 1}`}
-                    disabled={busy === "verify"}
+                    disabled={busy === "verify" || verifyBusy || verifyCode.length !== OTP_LENGTH}
                     onChange={(event) => handleOtpInput(index, event.target.value)}
                     onKeyDown={(event) => handleOtpKeyDown(index, event.key)}
                   />
@@ -456,7 +468,7 @@ export function AuthPage({
                 type="button"
                 className="btn-primary btn-full btn-auth auth-verify__submit"
                 onClick={() => verifySignup()}
-                disabled={busy === "verify" || verifyCode.length !== OTP_LENGTH}
+                disabled={busy === "verify" || verifyBusy || verifyCode.length !== OTP_LENGTH}
               >
                 {busy === "verify" ? <Loader2 className="spin" size={20} /> : "Verify & continue"}
               </button>

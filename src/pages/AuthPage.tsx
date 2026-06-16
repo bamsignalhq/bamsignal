@@ -5,7 +5,7 @@ import { AuthField } from "../components/AuthField";
 import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
 import { friendlyAuthError, supabase } from "../services/supabase";
-import { resolveLoginEmail, checkSignupAvailability, sendSignupEmailCode, verifySignupEmailCode, AuthEmailError } from "../services/authEmail";
+import { resolveLoginEmail, checkSignupAvailability, checkSignupField, sendSignupEmailCode, verifySignupEmailCode, AuthEmailError } from "../services/authEmail";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { trackEvent } from "../utils/analytics";
 import {
@@ -50,6 +50,17 @@ const emptySignup = {
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SEC = 60;
+const FIELD_CHECK_DELAY_MS = 450;
+
+type SignupField = "email" | "phone" | "username";
+type SignupFieldErrors = Partial<Record<SignupField, string>>;
+type SignupFieldChecking = Partial<Record<SignupField, boolean>>;
+
+function isLikelyEmail(value: string): boolean {
+  const email = value.trim().toLowerCase();
+  const [local, domain] = email.split("@");
+  return Boolean(local && domain && domain.includes("."));
+}
 
 function restoredSignupState() {
   const pending = loadPendingSignup();
@@ -101,6 +112,8 @@ export function AuthPage({
   const [busy, setBusy] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ username: "", pin: "" });
   const [signupForm, setSignupForm] = useState(restored.current.signupForm);
+  const [signupFieldErrors, setSignupFieldErrors] = useState<SignupFieldErrors>({});
+  const [signupFieldChecking, setSignupFieldChecking] = useState<SignupFieldChecking>({});
   const [verifyCode, setVerifyCode] = useState(restored.current.verifyCode);
   const [resetEmail, setResetEmail] = useState("");
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
@@ -152,6 +165,124 @@ export function AuthPage({
     onMessage("Your verification session expired. Please sign up again.");
     onModeChange("signup");
   }, [mode, pendingSignup?.email, onModeChange, onMessage]);
+
+  const setSignupFieldError = (field: SignupField, message: string) => {
+    setSignupFieldErrors((current) => ({ ...current, [field]: message }));
+  };
+
+  const clearSignupFieldError = (field: SignupField) => {
+    setSignupFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const username = normalizeUsername(signupForm.username);
+    if (!isValidSignupUsername(username)) {
+      clearSignupFieldError("username");
+      setSignupFieldChecking((current) => ({ ...current, username: false }));
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setSignupFieldChecking((current) => ({ ...current, username: true }));
+      void checkSignupField("username", username)
+        .then(() => {
+          if (cancelled) return;
+          clearSignupFieldError("username");
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          if (error instanceof AuthEmailError && error.kind === "exists") {
+            setSignupFieldError("username", error.message);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setSignupFieldChecking((current) => ({ ...current, username: false }));
+          }
+        });
+    }, FIELD_CHECK_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [signupForm.username]);
+
+  useEffect(() => {
+    const phone = phoneDigits(signupForm.phone);
+    if (!isValidNigerianPhone(phone)) {
+      clearSignupFieldError("phone");
+      setSignupFieldChecking((current) => ({ ...current, phone: false }));
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setSignupFieldChecking((current) => ({ ...current, phone: true }));
+      void checkSignupField("phone", phone)
+        .then(() => {
+          if (cancelled) return;
+          clearSignupFieldError("phone");
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          if (error instanceof AuthEmailError && error.kind === "exists") {
+            setSignupFieldError("phone", error.message);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setSignupFieldChecking((current) => ({ ...current, phone: false }));
+          }
+        });
+    }, FIELD_CHECK_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [signupForm.phone]);
+
+  useEffect(() => {
+    const email = signupForm.email.trim().toLowerCase();
+    if (!isLikelyEmail(email)) {
+      clearSignupFieldError("email");
+      setSignupFieldChecking((current) => ({ ...current, email: false }));
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setSignupFieldChecking((current) => ({ ...current, email: true }));
+      void checkSignupField("email", email)
+        .then(() => {
+          if (cancelled) return;
+          clearSignupFieldError("email");
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          if (error instanceof AuthEmailError && error.kind === "exists") {
+            setSignupFieldError("email", error.message);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setSignupFieldChecking((current) => ({ ...current, email: false }));
+          }
+        });
+    }, FIELD_CHECK_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [signupForm.email]);
 
   const signIn = async () => {
     const username = normalizeUsername(loginForm.username);
@@ -225,6 +356,19 @@ export function AuthPage({
       onMessage("PINs do not match.");
       return;
     }
+    if (signupFieldErrors.email || signupFieldErrors.phone || signupFieldErrors.username) {
+      onMessage(
+        signupFieldErrors.email ||
+          signupFieldErrors.phone ||
+          signupFieldErrors.username ||
+          "Fix the highlighted fields before continuing."
+      );
+      return;
+    }
+    if (signupFieldChecking.email || signupFieldChecking.phone || signupFieldChecking.username) {
+      onMessage("Still checking your details — wait a moment.");
+      return;
+    }
 
     setBusy("signup");
     onMessage("");
@@ -250,6 +394,9 @@ export function AuthPage({
       return;
     } catch (error) {
       if (error instanceof AuthEmailError && error.kind === "exists") {
+        if (error.field) {
+          setSignupFieldError(error.field, error.message);
+        }
         clearPendingSignup();
         onModeChange("signup");
       }
@@ -450,31 +597,42 @@ export function AuthPage({
                 <AuthField
                   label="Username"
                   value={signupForm.username}
-                  onChange={(username) =>
-                    setSignupForm({ ...signupForm, username: formatUsernameInput(username) })
-                  }
+                  onChange={(username) => {
+                    clearSignupFieldError("username");
+                    setSignupForm({ ...signupForm, username: formatUsernameInput(username) });
+                  }}
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
                   maxLength={24}
+                  error={signupFieldErrors.username}
+                  checking={signupFieldChecking.username}
                 />
                 <AuthField
                   label="Phone"
                   value={signupForm.phone}
-                  onChange={(phone) =>
-                    setSignupForm({ ...signupForm, phone: phoneDigits(phone).slice(0, 11) })
-                  }
+                  onChange={(phone) => {
+                    clearSignupFieldError("phone");
+                    setSignupForm({ ...signupForm, phone: phoneDigits(phone).slice(0, 11) });
+                  }}
                   type="tel"
                   inputMode="numeric"
                   autoComplete="tel"
                   maxLength={11}
+                  error={signupFieldErrors.phone}
+                  checking={signupFieldChecking.phone}
                 />
                 <AuthField
                   label="Email"
                   value={signupForm.email}
-                  onChange={(email) => setSignupForm({ ...signupForm, email })}
+                  onChange={(email) => {
+                    clearSignupFieldError("email");
+                    setSignupForm({ ...signupForm, email });
+                  }}
                   type="email"
                   autoComplete="email"
+                  error={signupFieldErrors.email}
+                  checking={signupFieldChecking.email}
                 />
                 <AuthField
                   label="PIN"

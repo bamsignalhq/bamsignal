@@ -121,6 +121,22 @@ export async function checkSignupAvailability(input: {
   );
 }
 
+export async function checkSignupField(
+  field: "email" | "phone" | "username",
+  value: string
+): Promise<void> {
+  const body: Record<string, unknown> = { action: "check", field };
+  if (field === "email") body.email = value.trim().toLowerCase();
+  if (field === "phone") body.phone = value;
+  if (field === "username") body.username = value;
+
+  const response = await postEmailCode(body);
+  await readApiResponse<{ ok: boolean }>(
+    response,
+    "We couldn't verify your details. Try again shortly."
+  );
+}
+
 export async function sendSignupEmailCode(
   email: string,
   name: string,

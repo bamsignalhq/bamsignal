@@ -1,5 +1,6 @@
 import {
   assertSignupIdentityAvailable,
+  checkSignupIdentityField,
   normalizeSignupEmail
 } from "./signupIdentity.js";
 export { SignupIdentityError } from "./signupIdentity.js";
@@ -274,6 +275,10 @@ export async function handleSignupEmailCodeRequest(body = {}) {
   const action = String(body.action || "send").toLowerCase();
 
   if (action === "check") {
+    const field = String(body.field || "").toLowerCase();
+    if (field === "email" || field === "phone" || field === "username") {
+      return checkSignupIdentityField(field, body[field] ?? body.email ?? body.phone ?? body.username);
+    }
     await assertSignupIdentityAvailable({
       email: body.email,
       phone: body.phone,

@@ -131,6 +131,31 @@
   margin-bottom: 20px;
 }
 
+.auth-field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auth-field-wrap--error .auth-field input {
+  border-color: color-mix(in srgb, #ef4444 55%, var(--border));
+}
+
+.auth-field__error {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #f87171;
+}
+
+.auth-field__hint {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .auth-field {
   display: flex;
   flex-direction: column;

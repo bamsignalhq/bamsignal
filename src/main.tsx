@@ -12,6 +12,7 @@ import "./styles/auth.css";
 import "./styles/v6.css";
 import "./styles/safety.css";
 import "./styles/launch.css";
+import "./styles/admin-console.css";
 import "./styles/discover-v2.css";
 import "./styles/discover-grid.css";
 import "./styles/footer.css";

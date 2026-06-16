@@ -1,12 +1,16 @@
 import {
   assertSignupIdentityAvailable,
   checkSignupIdentityField,
-  normalizeSignupEmail
+  normalizeSignupEmail,
+  normalizeSignupPhone,
+  normalizeSignupUsername,
+  SignupIdentityError
 } from "./signupIdentity.js";
 export { SignupIdentityError } from "./signupIdentity.js";
 import crypto from "node:crypto";
 import dotenv from "dotenv";
-import { query } from "../db.js";
+import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query, upsertAppUserIdentity } from "../db.js";
+import { findMemberProfileByUserKey, upsertMemberProfile } from "../cityHome.js";
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
 import { escapeHtml, loadEmailBranding, wrapEmailLayoutAsync } from "./emailBranding.js";
 
@@ -15,15 +19,27 @@ dotenv.config();
 const OTP_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_VERIFY_ATTEMPTS = 8;
+const DEFAULT_SIGNUP_CITY = "Lagos";
+const DEFAULT_SIGNUP_STATE = "Lagos";
+const SIGNUP_USER_MESSAGE = "We couldn't complete your signup. Please try again.";
 
 /** @type {Map<string, { hash: string; expires: number; attempts: number; lastSent: number }>} */
 const memoryStore = new Map();
 
 export class SignupOtpError extends Error {
-  constructor(status, message) {
+  constructor(status, message, code = null) {
     super(message);
     this.name = "SignupOtpError";
     this.status = status;
+    this.code = code;
+  }
+}
+
+function signupFlowLog(event, detail = undefined) {
+  if (detail !== undefined) {
+    console.info(`[bamsignal:signup-flow] ${event}`, detail);
+  } else {
+    console.info(`[bamsignal:signup-flow] ${event}`);
   }
 }
 
@@ -104,7 +120,7 @@ async function clearStored(email) {
 async function sendResendEmail({ to, subject, html, text }) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
-    throw new SignupOtpError(503, "Email delivery is not configured. Try again shortly.");
+    throw new SignupOtpError(503, "Email delivery is not configured. Try again shortly.", "resend_not_configured");
   }
 
   const from =
@@ -126,7 +142,8 @@ async function sendResendEmail({ to, subject, html, text }) {
     console.error("[bamsignal] Signup OTP email failed:", detail);
     throw new SignupOtpError(
       502,
-      "We couldn't send the code right now. Wait a minute and try again, or check your spam folder."
+      "We couldn't send the code right now. Wait a minute and try again, or check your spam folder.",
+      "otp_send_failed"
     );
   }
 }
@@ -223,29 +240,93 @@ function buildSupabaseAdminHeaders(serviceKey) {
     apikey: serviceKey,
     "Content-Type": "application/json"
   };
-  // Legacy JWT service_role keys work in Authorization. New sb_secret_* keys must not.
   if (serviceKey.startsWith("eyJ")) {
     headers.Authorization = `Bearer ${serviceKey}`;
   }
   return headers;
 }
 
-export async function createConfirmedSupabaseUser({ email, password, name, username, phone }) {
+function authUserEmailMatches(user, email) {
+  const normalized = normalizeSignupEmail(email);
+  const userEmail = normalizeSignupEmail(user?.email || "");
+  return Boolean(normalized && userEmail && userEmail === normalized);
+}
+
+async function findSupabaseUserByEmail(email) {
+  const config = supabaseServiceHeaders();
+  if (!config) return null;
+
+  const normalized = normalizeSignupEmail(email);
+  const headers = buildSupabaseAdminHeaders(config.serviceKey);
+  const list = await fetch(
+    `${config.url}/auth/v1/admin/users?${new URLSearchParams({
+      page: "1",
+      per_page: "1",
+      email: normalized
+    })}`,
+    { headers }
+  );
+  if (!list.ok) return null;
+
+  const payload = await list.json();
+  const user = payload?.users?.[0];
+  if (!user?.id || !authUserEmailMatches(user, normalized)) return null;
+  return user;
+}
+
+async function updateSupabaseAuthUser(userId, { password, name, username, phone }) {
   const config = supabaseServiceHeaders();
   if (!config) {
-    throw new SignupOtpError(
-      503,
-      "Account setup is not fully configured. Contact support@bamsignal.com."
-    );
+    throw new SignupOtpError(503, SIGNUP_USER_MESSAGE, "service_role_missing");
   }
 
-  const normalized = normalizeEmail(email);
+  const headers = buildSupabaseAdminHeaders(config.serviceKey);
+  const response = await fetch(`${config.url}/auth/v1/admin/users/${userId}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify({
+      password: String(password),
+      email_confirm: true,
+      user_metadata: {
+        name: String(name || "").trim(),
+        username: normalizeSignupUsername(username),
+        phone: normalizeSignupPhone(phone)
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    signupFlowLog("user_create_failed", {
+      reason: "supabase_update_failed",
+      status: response.status,
+      detail: detail.slice(0, 240)
+    });
+    throw new SignupOtpError(502, SIGNUP_USER_MESSAGE, "session_failed");
+  }
+
+  return { id: userId, created: false };
+}
+
+async function ensureSupabaseAuthUser({ email, password, name, username, phone }) {
+  const config = supabaseServiceHeaders();
+  if (!config) {
+    signupFlowLog("user_create_failed", { reason: "service_role_missing" });
+    throw new SignupOtpError(503, SIGNUP_USER_MESSAGE, "service_role_missing");
+  }
+
+  const normalized = normalizeSignupEmail(email);
   const headers = buildSupabaseAdminHeaders(config.serviceKey);
   const userMetadata = {
     name: String(name || "").trim(),
     username: normalizeSignupUsername(username),
     phone: normalizeSignupPhone(phone)
   };
+
+  const existing = await findSupabaseUserByEmail(normalized);
+  if (existing?.id) {
+    return updateSupabaseAuthUser(existing.id, { password, name, username, phone });
+  }
 
   const response = await fetch(`${config.url}/auth/v1/admin/users`, {
     method: "POST",
@@ -259,16 +340,242 @@ export async function createConfirmedSupabaseUser({ email, password, name, usern
   });
 
   if (response.ok) {
-    return response.json();
+    const user = await response.json();
+    return { id: user.id, created: true };
   }
 
   const detail = await response.text();
   if (/already registered|already exists|duplicate/i.test(detail)) {
-    throw new SignupOtpError(409, "An account with this email already exists. Try logging in instead.");
+    const raced = await findSupabaseUserByEmail(normalized);
+    if (raced?.id) {
+      signupFlowLog("duplicate_recover", { userId: raced.id });
+      return updateSupabaseAuthUser(raced.id, { password, name, username, phone });
+    }
+    signupFlowLog("user_create_failed", { reason: "duplicate_user_unresolved", detail: detail.slice(0, 240) });
+    throw new SignupOtpError(
+      409,
+      "An account with this email already exists. Try logging in instead.",
+      "duplicate_user"
+    );
   }
 
-  console.error("[bamsignal] Supabase admin create user failed:", detail);
-  throw new SignupOtpError(502, "We couldn't finish creating your account. Try again shortly.");
+  signupFlowLog("user_create_failed", {
+    reason: "supabase_create_failed",
+    status: response.status,
+    detail: detail.slice(0, 240)
+  });
+  throw new SignupOtpError(502, SIGNUP_USER_MESSAGE, "user_insert_failed");
+}
+
+/** @deprecated use ensureSupabaseAuthUser */
+export async function createConfirmedSupabaseUser(input) {
+  const result = await ensureSupabaseAuthUser(input);
+  return { id: result.id };
+}
+
+async function usernameTakenByOther(username, userKey) {
+  const normalized = normalizeSignupUsername(username);
+  if (!normalized || normalized.length < 7 || !isDatabaseReady()) return false;
+
+  const result = await query(
+    `select id from app_member_profiles
+     where lower(username) = lower($1)
+       and user_key <> $2
+     limit 1`,
+    [normalized, userKey]
+  );
+  return Boolean(result.rows[0]);
+}
+
+async function phoneTakenByOther(phone, userKey) {
+  const normalized = normalizeSignupPhone(phone);
+  if (!normalized || normalized.length !== 11 || !isDatabaseReady()) return false;
+
+  const keys = [normalized, normalized.slice(1), `234${normalized.slice(1)}`];
+  const result = await query(
+    `select id from app_member_profiles
+     where phone is not null
+       and phone <> ''
+       and regexp_replace(phone, '\\D', '', 'g') = any($1::text[])
+       and user_key <> $2
+     limit 1`,
+    [keys, userKey]
+  );
+  return Boolean(result.rows[0]);
+}
+
+async function resolveSignupProvisioningMode({ email, phone }) {
+  const normalizedEmail = normalizeSignupEmail(email);
+  const normalizedPhone = normalizeSignupPhone(phone);
+  const userKey = normalizeUserKey({ email: normalizedEmail, phone: normalizedPhone });
+
+  const member = await findMemberProfileByUserKey(normalizedEmail, normalizedPhone);
+  if (member?.onboarding_complete) {
+    return { mode: "complete", member, userKey };
+  }
+
+  const authUser = await findSupabaseUserByEmail(normalizedEmail);
+  const appUser = isDatabaseReady()
+    ? await findAppUserIdentity({ email: normalizedEmail, phone: normalizedPhone })
+    : null;
+
+  if (authUser || appUser || member) {
+    return { mode: "repair", member, userKey, authUser, appUser };
+  }
+
+  return { mode: "fresh", member: null, userKey };
+}
+
+async function assertRepairIdentityAvailable({ email, phone, username, userKey, member }) {
+  const normalizedUsername = normalizeSignupUsername(username);
+  const normalizedPhone = normalizeSignupPhone(phone);
+
+  if (normalizedUsername.length >= 7) {
+    const taken = await usernameTakenByOther(normalizedUsername, userKey || member?.user_key || "");
+    if (taken) {
+      throw new SignupIdentityError(409, "username", "This username is already taken. Choose another or log in.");
+    }
+  }
+
+  if (normalizedPhone.length === 11) {
+    const taken = await phoneTakenByOther(normalizedPhone, userKey || member?.user_key || "");
+    if (taken) {
+      throw new SignupIdentityError(
+        409,
+        "phone",
+        "This phone number is already linked to an account. Try logging in instead."
+      );
+    }
+  }
+
+  return { email: normalizeSignupEmail(email), phone: normalizedPhone, username: normalizedUsername };
+}
+
+async function ensureAppUserRecord({ email, phone, name }) {
+  if (!isDatabaseReady()) {
+    signupFlowLog("user_insert_failed", { reason: "database_disconnected" });
+    throw new SignupOtpError(503, SIGNUP_USER_MESSAGE, "database_disconnected");
+  }
+
+  const user = await upsertAppUserIdentity({
+    email: normalizeSignupEmail(email),
+    phone: normalizeSignupPhone(phone),
+    name: String(name || "").trim()
+  });
+
+  if (!user?.id) {
+    signupFlowLog("user_insert_failed", { reason: "app_users_upsert_null" });
+    throw new SignupOtpError(502, SIGNUP_USER_MESSAGE, "user_insert_failed");
+  }
+
+  return user;
+}
+
+async function ensureMemberProfileStub({ email, phone, name, username, existingMember }) {
+  if (!isDatabaseReady()) {
+    signupFlowLog("profile_insert_failed", { reason: "database_disconnected" });
+    throw new SignupOtpError(503, SIGNUP_USER_MESSAGE, "profile_insert_failed");
+  }
+
+  if (existingMember?.onboarding_complete) {
+    return existingMember;
+  }
+
+  const existingProfile =
+    existingMember?.profile && typeof existingMember.profile === "object" ? existingMember.profile : {};
+
+  const row = await upsertMemberProfile({
+    email: normalizeSignupEmail(email),
+    phone: normalizeSignupPhone(phone),
+    name: String(name || "").trim(),
+    username: normalizeSignupUsername(username),
+    city: existingMember?.city || DEFAULT_SIGNUP_CITY,
+    state: existingMember?.state || DEFAULT_SIGNUP_STATE,
+    profile: {
+      ...existingProfile,
+      name: String(name || "").trim(),
+      username: normalizeSignupUsername(username),
+      onboardingComplete: false,
+      photos: Array.isArray(existingProfile.photos) ? existingProfile.photos : []
+    },
+    discoverable: false,
+    onboardingComplete: false,
+    cityHomeHidden: true
+  });
+
+  if (!row?.id) {
+    signupFlowLog("profile_insert_failed", { reason: "member_profile_upsert_null" });
+    throw new SignupOtpError(502, SIGNUP_USER_MESSAGE, "profile_insert_failed");
+  }
+
+  return row;
+}
+
+async function completeSignupAfterOtp(body = {}) {
+  signupFlowLog("otp_verify_start");
+  await verifySignupOtp(body.email, body.code);
+  signupFlowLog("otp_verified");
+
+  const { mode, member, userKey } = await resolveSignupProvisioningMode(body);
+
+  if (mode === "fresh") {
+    await assertSignupIdentityAvailable({
+      email: body.email,
+      phone: body.phone,
+      username: body.username
+    });
+  } else if (mode === "complete") {
+    signupFlowLog("duplicate_recover", { mode });
+    await assertRepairIdentityAvailable({
+      email: body.email,
+      phone: body.phone,
+      username: body.username,
+      userKey,
+      member
+    });
+  } else {
+    signupFlowLog("profile_repair", { mode });
+    await assertRepairIdentityAvailable({
+      email: body.email,
+      phone: body.phone,
+      username: body.username,
+      userKey,
+      member
+    });
+  }
+
+  signupFlowLog("user_create_start", { mode });
+  const authUser = await ensureSupabaseAuthUser({
+    email: body.email,
+    password: body.password,
+    name: body.name,
+    username: body.username,
+    phone: body.phone
+  });
+  signupFlowLog("user_create_success", { userId: authUser.id, created: authUser.created, mode });
+
+  signupFlowLog("profile_create_start");
+  await ensureAppUserRecord({
+    email: body.email,
+    phone: body.phone,
+    name: body.name
+  });
+  const profileRow = await ensureMemberProfileStub({
+    email: body.email,
+    phone: body.phone,
+    name: body.name,
+    username: body.username,
+    existingMember: member
+  });
+  signupFlowLog("profile_create_success", { profileId: profileRow.id, onboardingComplete: profileRow.onboarding_complete });
+
+  return {
+    ok: true,
+    email: normalizeSignupEmail(body.email),
+    memberProfileId: profileRow.id,
+    onboardingComplete: Boolean(profileRow.onboarding_complete),
+    recovered: mode !== "fresh"
+  };
 }
 
 export async function handleSignupEmailCodeRequest(body = {}) {
@@ -295,20 +602,7 @@ export async function handleSignupEmailCodeRequest(body = {}) {
   }
 
   if (action === "verify") {
-    await verifySignupOtp(body.email, body.code);
-    await assertSignupIdentityAvailable({
-      email: body.email,
-      phone: body.phone,
-      username: body.username
-    });
-    await createConfirmedSupabaseUser({
-      email: body.email,
-      password: body.password,
-      name: body.name,
-      username: body.username,
-      phone: body.phone
-    });
-    return { ok: true, email: normalizeSignupEmail(body.email) };
+    return completeSignupAfterOtp(body);
   }
 
   throw new SignupOtpError(400, "Invalid action.");

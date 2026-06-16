@@ -27,11 +27,13 @@ import citySpotlightHandler from "../api/city/spotlight.js";
 import citySpotlightEventHandler from "../api/city/spotlight-event.js";
 import adminCityHomeHandler from "../api/admin/city-home.js";
 import adminCitySpotlightHandler from "../api/admin/city-spotlight.js";
+import adminMembersHandler from "../api/admin/members.js";
 import whatsappVerifyStartHandler from "../api/verify/whatsapp/start.js";
 import whatsappVerifyConfirmHandler from "../api/verify/whatsapp/confirm.js";
 import whatsappVerifyWebhookHandler from "../api/verify/whatsapp/webhook.js";
 import verificationSubmissionsHandler from "../api/verify/submissions.js";
 import { getSendchampHealthTrace, isSendchampConfigured } from "./services/sendchamp.js";
+import { getFirebaseHealth } from "./firebase.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "..", "dist");
@@ -95,7 +97,7 @@ async function healthPayload() {
     resend: Boolean(process.env.RESEND_API_KEY?.trim()),
     signupEmail: isSignupEmailConfigured(),
     signupEmailTrace: getSignupEmailHealthTrace(),
-    firebase: Boolean(config.firebase.serviceAccount),
+    ...getFirebaseHealth(),
     telegram: Boolean(config.telegram.botToken),
     sendchamp: isSendchampConfigured(),
     sendchampTrace: getSendchampHealthTrace(),
@@ -129,6 +131,7 @@ mountHandler(app, "post", "/api/diagnostics/view-security", viewSecurityHandler)
 mountHandler(app, "get", "/api/diagnostics/function-security", functionSecurityHandler);
 mountHandler(app, "post", "/api/diagnostics/function-security", functionSecurityHandler);
 mountHandler(app, "post", "/api/admin/city-home", adminCityHomeHandler);
+mountHandler(app, "post", "/api/admin/members", adminMembersHandler);
 mountHandler(app, "get", "/api/admin/city-spotlight", adminCitySpotlightHandler);
 mountHandler(app, "get", "/api/city/home", cityHomeHandler);
 mountHandler(app, "get", "/api/city/spotlight", citySpotlightHandler);

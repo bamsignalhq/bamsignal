@@ -14,6 +14,8 @@ import { DiscoverPage } from "./pages/DiscoverPage";
 import { LikesPage } from "./pages/LikesPage";
 import { ChatsPage } from "./pages/ChatsPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { AdminShell } from "./components/admin/AdminShell";
+import { AdminToastProvider } from "./components/admin/AdminToast";
 import { AdminHubPage } from "./pages/AdminHubPage";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
 import { PaymentLoadingOverlay } from "./components/PaymentLoadingOverlay";
@@ -79,13 +81,15 @@ import {
   getMomentSlug,
   isAdminAuthRoute,
   isAdminHubRoute,
+  isAdminRoute,
   isBlogIndex,
   navigateToPath,
   redirectLegacyAdmin,
+  normalizePath,
   type AuthPath
 } from "./constants/routes";
 import { getLegalPath, type LegalPath } from "./constants/footer";
-import { isAdminSessionActive } from "./utils/adminSession";
+import { resolveAdminHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
 import { boostNeedsMemberCity } from "./constants/boosts";
@@ -147,7 +151,14 @@ export function App() {
       setMomentSlug(getMomentSlug());
       setShowBlogIndex(isBlogIndex());
       setShowAdminAuth(isAdminAuthRoute());
-      setShowAdminHub(isAdminHubRoute() && !isAdminAuthRoute());
+      const hub = isAdminHubRoute() && !isAdminAuthRoute();
+      setShowAdminHub(hub);
+      if (hub) {
+        const resolved = resolveAdminHubPath();
+        if (normalizePath(window.location.pathname) !== resolved) {
+          navigateToPath(resolved, true);
+        }
+      }
     };
     window.addEventListener("popstate", syncRoute);
     syncRoute();
@@ -425,6 +436,12 @@ export function App() {
     if (!isNative) return;
 
     const listener = CapApp.addListener("backButton", () => {
+      if (isAdminRoute()) {
+        const adminBack = new CustomEvent("bamsignal:admin-back", { cancelable: true });
+        window.dispatchEvent(adminBack);
+        return;
+      }
+
       const backEvent = new CustomEvent("bamsignal:back", { cancelable: true });
       window.dispatchEvent(backEvent);
       if (backEvent.defaultPrevented) return;
@@ -497,15 +514,24 @@ export function App() {
       setAuthMessage("");
       recordStreakActivity();
       checkPremiumTrialExpiry();
-      flowLog("auth_signed_in", { isNewSignup: Boolean(meta?.isNewSignup) });
+      flowLog("auth_signed_in", {
+        isNewSignup: Boolean(meta?.isNewSignup),
+        recovered: Boolean(meta?.recovered)
+      });
       const ref = new URLSearchParams(window.location.search).get("ref");
-      try {
-        await registerMember(withPhone, ref);
-        flowLog("profile_register_ok");
-      } catch {
-        flowLog("profile_register_failed");
+      const registered = await registerMember(withPhone, ref);
+      flowLog(registered ? "profile_register_ok" : "profile_register_failed");
+      const hydrated = await hydrateMemberData(withPhone);
+      if (!hydrated) {
+        flowLog("profile_hydrate_failed");
+        const repaired = await registerMember(withPhone, ref);
+        if (repaired) {
+          await hydrateMemberData(withPhone);
+          flowLog("profile_repair_ok");
+        }
+      } else {
+        flowLog("profile_hydrate_ok");
       }
-      await hydrateMemberData(withPhone);
       const premium = await refreshPremiumStatus(withPhone);
       setIsPremium(premium.isPremium || isPremiumTrialActive());
       if (meta?.isNewSignup) {
@@ -514,6 +540,8 @@ export function App() {
         markFirstDayStep("welcome");
         if (maybeGrantPremiumTrial(true)) setIsPremium(true);
         if (ref) trackEvent("referral_signup", { code: ref.toUpperCase() });
+      } else if (meta?.recovered) {
+        flowLog("signup_recovered_existing");
       }
       if (getAuthPath()) {
         navigateToPath("/");
@@ -789,10 +817,10 @@ export function App() {
     [handleUpgrade, plans]
   );
 
-  const closeAdmin = () => {
-    navigateToPath("/");
+  const openAdminLogin = () => {
+    navigateToPath(ADMIN_AUTH_PATH);
     setShowAdminHub(false);
-    setShowAdminAuth(false);
+    setShowAdminAuth(true);
   };
 
   const goHome = () => {
@@ -820,6 +848,35 @@ export function App() {
   ).length;
   const messageCount = filterBlockedByProfileId(readJson<Match[]>(STORAGE_KEYS.matches, [])).length;
 
+  if (showAdminAuth || showAdminHub) {
+    if (showAdminAuth) {
+      return (
+        <AdminToastProvider>
+          <div className="admin-console-root">
+            <AdminAuthPage
+              onAuthed={() => {
+                setShowAdminAuth(false);
+                setShowAdminHub(true);
+              }}
+              onBack={() => {
+                navigateToPath("/");
+                setShowAdminAuth(false);
+              }}
+            />
+          </div>
+        </AdminToastProvider>
+      );
+    }
+
+    return (
+      <AdminToastProvider>
+        <AdminShell authorized={null} onUnauthorized={openAdminLogin}>
+          <AdminHubPage onLogout={openAdminLogin} />
+        </AdminShell>
+      </AdminToastProvider>
+    );
+  }
+
   if (authLoading) {
     return (
       <div className={`app ${theme}`}>
@@ -837,55 +894,6 @@ export function App() {
     return (
       <div className={`app ${theme}`}>
         <Preloader exiting={bootExit} />
-      </div>
-    );
-  }
-
-  if (showAdminAuth) {
-    return (
-      <div className={`app ${theme}`}>
-        <AdminAuthPage
-          onAuthed={() => {
-            setShowAdminAuth(false);
-            setShowAdminHub(true);
-          }}
-          onBack={() => {
-            navigateToPath("/");
-            setShowAdminAuth(false);
-          }}
-        />
-      </div>
-    );
-  }
-
-  if (showAdminHub) {
-    if (!isAdminSessionActive()) {
-      return (
-        <div className={`app ${theme}`}>
-          <AdminAuthPage
-            onAuthed={() => {
-              setShowAdminAuth(false);
-              setShowAdminHub(true);
-            }}
-            onBack={closeAdmin}
-          />
-        </div>
-      );
-    }
-    return (
-      <div className={`app ${theme} platform-root`}>
-        <div className="platform-shell platform-shell--admin">
-          <TopNav
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            isPremium={isPremium}
-            isGuest={false}
-            onLogoClick={closeAdmin}
-          />
-          <main className="app-main app-main--member">
-            <AdminHubPage onBack={closeAdmin} />
-          </main>
-        </div>
       </div>
     );
   }

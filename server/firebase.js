@@ -1,5 +1,10 @@
 import admin from "firebase-admin";
-import { config } from "./config.js";
+import {
+  getFirebaseEnvTrace,
+  getFirebaseHealthTrace,
+  isFirebaseConfigured,
+  resolveFirebaseServiceAccount
+} from "./firebaseEnv.js";
 
 let app = null;
 let initError = null;
@@ -7,15 +12,17 @@ let initError = null;
 function getFirebaseApp() {
   if (app) return app;
   if (initError) return null;
-  if (!config.firebase.serviceAccount) return null;
-  if (admin.apps.length) {
-    app = admin.app();
-    return app;
-  }
+
+  const serviceAccount = resolveFirebaseServiceAccount();
+  if (!serviceAccount) return null;
 
   try {
+    if (admin.apps.length) {
+      app = admin.app();
+      return app;
+    }
     app = admin.initializeApp({
-      credential: admin.credential.cert(config.firebase.serviceAccount)
+      credential: admin.credential.cert(serviceAccount)
     });
     return app;
   } catch (error) {
@@ -28,15 +35,41 @@ function getFirebaseApp() {
   }
 }
 
+export function getFirebaseHealth() {
+  const envTrace = getFirebaseEnvTrace();
+  const hasCredentials =
+    envTrace.hasServiceAccountJson ||
+    envTrace.hasProjectId ||
+    envTrace.hasClientEmail ||
+    envTrace.hasPrivateKey;
+
+  if (hasCredentials && envTrace.hasResolvedAccount) {
+    getFirebaseApp();
+  }
+
+  const probe = {
+    initialized: Boolean(app),
+    error: initError
+      ? initError instanceof Error
+        ? initError.message.slice(0, 160)
+        : String(initError).slice(0, 160)
+      : envTrace.error
+  };
+
+  return {
+    firebase: isFirebaseConfigured(probe),
+    firebaseTrace: getFirebaseHealthTrace(probe)
+  };
+}
+
 export async function registerDevicePush({ token, isPremium = false }) {
   const firebaseApp = getFirebaseApp();
   if (!firebaseApp) {
+    const health = getFirebaseHealth();
     return {
       ok: false,
       skipped: true,
-      reason: initError
-        ? "FIREBASE_SERVICE_ACCOUNT_JSON is invalid"
-        : "FIREBASE_SERVICE_ACCOUNT_JSON is not configured"
+      reason: health.firebaseTrace.error || "Firebase is not configured"
     };
   }
   if (!token) return { ok: false, error: "Push token is required" };

@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { Capacitor } from "@capacitor/core";
+import { USER_MESSAGES } from "../constants/userMessages";
 
 export const publicAppUrl = (
   (import.meta.env.VITE_PUBLIC_APP_URL as string | undefined) || "https://bamsignal.com"
@@ -71,8 +72,8 @@ export function friendlyAuthError(error: unknown): string {
     return "Email verification is temporarily unavailable. Please try again shortly.";
   }
 
-  if (/trouble creating your account|couldn't finish creating/i.test(message)) {
-    return message;
+  if (/trouble creating your account|couldn't finish creating|couldn't complete your signup/i.test(message)) {
+    return USER_MESSAGES.signupCompleteFailed;
   }
 
   if (/invalid login|invalid credentials|invalid email or password/i.test(lower)) {

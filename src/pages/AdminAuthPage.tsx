@@ -4,7 +4,12 @@ import { AppLogo } from "../components/AppLogo";
 import { DEMO_ADMIN, matchDemoAdmin } from "../constants/demoAccounts";
 import { ADMIN_HUB_PATH, navigateToPath } from "../constants/routes";
 import { friendlyAuthError, supabase } from "../services/supabase";
-import { setAdminSession } from "../utils/adminSession";
+import { verifyAdminSession } from "../services/plans";
+import {
+  getAdminLastRoute,
+  persistAdminSession,
+  snapshotMemberSessionBeforeAdminLogin
+} from "../utils/adminSession";
 
 type AdminAuthPageProps = {
   onAuthed: () => void;
@@ -21,9 +26,11 @@ export function AdminAuthPage({ onAuthed, onBack }: AdminAuthPageProps) {
     setBusy(true);
     setMessage("");
     try {
+      await snapshotMemberSessionBeforeAdminLogin();
+
       if (matchDemoAdmin(email, password)) {
-        setAdminSession(DEMO_ADMIN.email);
-        navigateToPath(ADMIN_HUB_PATH);
+        await persistAdminSession(DEMO_ADMIN.email);
+        navigateToPath(getAdminLastRoute() || ADMIN_HUB_PATH);
         onAuthed();
         return;
       }
@@ -34,12 +41,20 @@ export function AdminAuthPage({ onAuthed, onBack }: AdminAuthPageProps) {
           password
         });
         if (error) throw error;
-        if (data.session) {
-          setAdminSession(email.trim().toLowerCase());
-          navigateToPath(ADMIN_HUB_PATH);
-          onAuthed();
+        const token = data.session?.access_token;
+        if (!token) {
+          setMessage("Invalid admin credentials.");
           return;
         }
+        const ok = await verifyAdminSession(token);
+        if (!ok) {
+          setMessage("This account does not have admin access.");
+          return;
+        }
+        await persistAdminSession(email.trim().toLowerCase(), token);
+        navigateToPath(getAdminLastRoute() || ADMIN_HUB_PATH);
+        onAuthed();
+        return;
       }
 
       setMessage("Invalid admin credentials.");
@@ -51,7 +66,7 @@ export function AdminAuthPage({ onAuthed, onBack }: AdminAuthPageProps) {
   };
 
   return (
-    <main className="auth-page">
+    <main className="auth-page admin-auth-page">
       <div className="auth-shell">
         <div className="auth-shell__glow" aria-hidden />
         <div className="auth-card auth-card--fintech">
@@ -95,7 +110,7 @@ export function AdminAuthPage({ onAuthed, onBack }: AdminAuthPageProps) {
           </button>
 
           <button type="button" className="link-btn auth-switch" onClick={onBack}>
-            ← Back to BamSignal
+            Back to BamSignal
           </button>
 
           {message && <p className="auth-message">{message}</p>}

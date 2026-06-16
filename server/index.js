@@ -1,6 +1,7 @@
 import express from "express";
 import { config } from "./config.js";
 import { getDatabaseStatus, initDatabase, pingDatabase } from "./db.js";
+import { getFirebaseHealth } from "./firebase.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
 import { registerBotCommands, bot } from "./telegram.js";
@@ -29,8 +30,8 @@ app.get("/health", async (_req, res) => {
     ok: true,
     service: "bamsignal-api",
     database,
-    telegram: Boolean(config.telegram.botToken),
-    firebase: Boolean(config.firebase.serviceAccount)
+    ...getFirebaseHealth(),
+    telegram: Boolean(config.telegram.botToken)
   });
 });
 

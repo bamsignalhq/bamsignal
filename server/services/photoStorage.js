@@ -146,6 +146,31 @@ export async function deletePhotoStorageObject(bucket, objectPath) {
   }
 }
 
+export async function deleteAllUserPhotoStorage(userId) {
+  if (!userId || !isPhotoStorageConfigured()) return { deleted: 0 };
+  const prefix = `${String(userId).replace(/[^a-zA-Z0-9_-]/g, "")}/`;
+  if (!prefix || prefix === "/") return { deleted: 0 };
+
+  let deleted = 0;
+  for (const bucket of [PROFILE_PHOTOS_BUCKET, COVER_PHOTOS_BUCKET]) {
+    const list = await storageRequest(`/object/list/${bucket}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prefix, limit: 100, offset: 0 })
+    });
+    if (!list.ok) continue;
+    const objects = await list.json().catch(() => []);
+    if (!Array.isArray(objects)) continue;
+    for (const obj of objects) {
+      const path = String(obj?.name || "").trim();
+      if (!path) continue;
+      await deletePhotoStorageObject(bucket, path);
+      deleted += 1;
+    }
+  }
+  return { deleted };
+}
+
 export function decodeBase64ImagePayload(dataUrl = "") {
   const match = String(dataUrl).match(/^data:(image\/[\w.+-]+);base64,(.+)$/);
   if (!match) throw new PhotoStorageError("Invalid image payload.", 400);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_CMS, getCms, saveCms, type CmsContent } from "../constants/cms";
 import {
   DEFAULT_DISCOVER_CITY_CONFIG,
@@ -34,10 +34,8 @@ import {
 } from "../utils/cityAnalytics";
 import { getLaunchLeads } from "../utils/launchLeads";
 import { readJson } from "../utils/storage";
-import { verifyAdminSession } from "../services/plans";
-import { supabase } from "../services/supabase";
-import { isAdminSessionActive } from "../utils/adminSession";
-import { ADMIN_AUTH_PATH, navigateToPath } from "../constants/routes";
+import { adminPathForTab, parseAdminTabFromPath } from "../constants/adminRoutes";
+import { ADMIN_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
 import { DEMO_USER } from "../constants/demoAccounts";
 import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
@@ -58,30 +56,33 @@ import {
 } from "../constants/emailBranding";
 import { getTrustAnalyticsSummary } from "../utils/trustAnalytics";
 import { fetchEmailBranding, saveEmailBrandingAdmin } from "../services/emailBranding";
+import {
+  purgeAdminMember,
+  searchAdminMembers,
+  type AdminMemberSummary
+} from "../services/adminMembers";
+import { AdminCommandDock } from "../components/admin/AdminCommandDock";
+import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
+import { AdminTerminalEmpty } from "../components/admin/AdminTerminalEmpty";
+import { useAdminToast } from "../components/admin/AdminToast";
+import { ADMIN_TAB_TITLES, type AdminTab } from "../components/admin/adminConsoleNav";
+import {
+  logoutAdminSession,
+  restoreAdminRouteOnLoad,
+  saveAdminLastRoute,
+  validateAdminSession
+} from "../utils/adminSession";
+import { supabase } from "../services/supabase";
 
 type AdminHubPageProps = {
-  onBack: () => void;
+  onLogout: () => void;
 };
 
-type AdminTab =
-  | "command"
-  | "overview"
-  | "business"
-  | "users"
-  | "reports"
-  | "cities"
-  | "discover"
-  | "cityhome"
-  | "pricing"
-  | "verifications"
-  | "content"
-  | "email"
-  | "ads"
-  | "leads";
-
-export function AdminHubPage({ onBack }: AdminHubPageProps) {
-  const [tab, setTab] = useState<AdminTab>("command");
+export function AdminHubPage({ onLogout }: AdminHubPageProps) {
+  const { pushToast } = useAdminToast();
+  const [tab, setTab] = useState<AdminTab>(() => restoreAdminRouteOnLoad());
   const [authorized, setAuthorized] = useState<boolean | null>(null);
+  const [dockOpen, setDockOpen] = useState(false);
   const [cmsDraft, setCmsDraft] = useState<CmsContent>(() => getCms());
   const [discoverDraft, setDiscoverDraft] = useState<DiscoverCityConfig>(() => getDiscoverCityConfig());
   const [rejectReason, setRejectReason] = useState("");
@@ -105,18 +106,59 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
   const [emailBrandingMessage, setEmailBrandingMessage] = useState("");
   const [adsMessage, setAdsMessage] = useState("");
   const launchConfig = getLaunchConfig();
+  const [memberSearch, setMemberSearch] = useState("");
+  const [memberResults, setMemberResults] = useState<AdminMemberSummary[]>([]);
+  const [memberSearchBusy, setMemberSearchBusy] = useState(false);
+  const [memberSearchMessage, setMemberSearchMessage] = useState("");
+  const [purgeTarget, setPurgeTarget] = useState<AdminMemberSummary | null>(null);
+  const [purgeConfirm, setPurgeConfirm] = useState("");
+  const [purgeBusy, setPurgeBusy] = useState(false);
+  const [purgeMessage, setPurgeMessage] = useState("");
+
+  const handleTabChange = useCallback((id: AdminTab) => {
+    setTab(id);
+    const path = adminPathForTab(id);
+    saveAdminLastRoute(path);
+    if (normalizePath(window.location.pathname) !== path) {
+      navigateToPath(path);
+    }
+    setDockOpen(false);
+    if (id === "leads") setLeads(getLaunchLeads());
+    if (id === "command") setModeration(getModerationQueue());
+  }, []);
+
+  const handleLogout = async () => {
+    await logoutAdminSession();
+    navigateToPath(ADMIN_AUTH_PATH);
+    onLogout();
+  };
+
+  const loadVerifications = useCallback(async () => {
+    const result = await fetchVerificationSubmissions(verificationFilter);
+    if (!result.ok) {
+      pushToast(result.error);
+      setServerVerifications([]);
+      return;
+    }
+    setServerVerifications(result.data.submissions ?? []);
+  }, [pushToast, verificationFilter]);
 
   const loadCityHomeMembers = async (city = cityHomeCity) => {
     setCityHomeLoading(true);
     setCityHomeMessage("");
-    const data = await fetchAdminCityMembers(city);
-    setCityHomeLoading(false);
-    if (!data) {
-      setCityHomeMessage("Could not load city members. Check database connection and admin session.");
-      setCityHomeMembers([]);
-      return;
+    try {
+      const data = await fetchAdminCityMembers(city);
+      if (!data) {
+        const message = "No city data available.";
+        pushToast("Could not load city members.");
+        setCityHomeMessage(message);
+        setCityHomeMembers([]);
+        return;
+      }
+      setCityHomeMembers(data.members);
+    } finally {
+      setCityHomeLoading(false);
     }
-    setCityHomeMembers(data.members);
   };
 
   useEffect(() => {
@@ -131,37 +173,64 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
 
   useEffect(() => {
     if (tab !== "verifications" || !authorized) return;
-    void fetchVerificationSubmissions().then(setServerVerifications);
-  }, [tab, authorized, verificationFilter]);
+    void loadVerifications();
+  }, [tab, authorized, loadVerifications]);
 
   useEffect(() => {
-    if (isAdminSessionActive()) {
-      setAuthorized(true);
-      return;
-    }
-    supabase?.auth.getSession().then(async ({ data }) => {
-      const ok = await verifyAdminSession(data.session?.access_token);
-      setAuthorized(ok);
-      if (!ok) navigateToPath(ADMIN_AUTH_PATH);
-    });
+    const onPop = () => {
+      const fromUrl = parseAdminTabFromPath();
+      if (fromUrl) setTab(fromUrl);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+  useEffect(() => {
+    const path = adminPathForTab(tab);
+    saveAdminLastRoute(path);
+  }, [tab]);
+
+  useEffect(() => {
+    const onAdminBack = (event: Event) => {
+      if (purgeTarget) {
+        event.preventDefault();
+        setPurgeTarget(null);
+        setPurgeConfirm("");
+        return;
+      }
+      if (dockOpen) {
+        event.preventDefault();
+        setDockOpen(false);
+      }
+    };
+    window.addEventListener("bamsignal:admin-back", onAdminBack);
+    return () => window.removeEventListener("bamsignal:admin-back", onAdminBack);
+  }, [purgeTarget, dockOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void validateAdminSession().then((ok) => {
+      if (cancelled) return;
+      setAuthorized(ok);
+      if (!ok) onLogout();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [onLogout]);
 
   if (authorized === null) {
     return (
-      <div className="page admin-page">
-        <p>Checking admin access…</p>
+      <div className="admin-console page admin-page">
+        <AdminTerminalEmpty>Authenticating admin session…</AdminTerminalEmpty>
       </div>
     );
   }
 
   if (!authorized) {
     return (
-      <div className="page admin-page empty-state">
-        <h2>Admin access required</h2>
-        <p>Log in with an approved admin account.</p>
-        <button type="button" className="btn-secondary" onClick={onBack}>
-          Back to app
-        </button>
+      <div className="admin-console page admin-page">
+        <AdminTerminalEmpty>Admin session expired. Redirecting to login…</AdminTerminalEmpty>
       </div>
     );
   }
@@ -201,48 +270,21 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
   ];
 
   return (
-    <div className="page admin-hub">
-      <header className="page-header admin-hub__head">
-        <button type="button" className="link-btn" onClick={onBack}>
-          ← Back
-        </button>
-        <h2>Command center</h2>
-        <p className="admin-hub__subtitle">Run the platform — moderation, pricing, content, and live ops.</p>
-      </header>
-
-      <nav className="admin-tabs" aria-label="Admin sections">
-        {(
-          [
-            ["command", "Command"],
-            ["overview", "Metrics"],
-            ["business", "Business"],
-            ["users", "Users"],
-            ["reports", `Reports (${modStats.totalReports})`],
-            ["cities", "Cities"],
-            ["discover", "Discover"],
-            ["cityhome", "City home"],
-            ["leads", `Leads (${leads.length})`],
-            ["verifications", `Verify (${pendingVerificationCount})`],
-            ["pricing", "Pricing"],
-            ["content", "Content"],
-            ["email", "Email"],
-            ["ads", "Home ads"]
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            className={tab === id ? "active" : ""}
-            onClick={() => {
-              setTab(id);
-              if (id === "leads") setLeads(getLaunchLeads());
-              if (id === "command") setModeration(getModerationQueue());
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
+    <div className="admin-console">
+      <AdminConsoleTopBar
+        onLogout={() => void handleLogout()}
+        onOpenDock={() => setDockOpen(true)}
+      />
+      <div className="admin-console__body">
+        <main className="admin-console__main">
+          <header className="admin-console__view-header">
+            <h1 className="admin-console__view-title">{ADMIN_TAB_TITLES[tab]}</h1>
+            {tab === "command" && (
+              <p className="admin-console__view-desc">
+                Live moderation queue, trust metrics, and operational snapshot.
+              </p>
+            )}
+          </header>
 
       {tab === "command" && (
         <>
@@ -293,11 +335,11 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
                   Shadow ban demo member (test)
                 </button>
               )}
-              <button type="button" className="btn-secondary btn-sm" onClick={() => setTab("pricing")}>
+              <button type="button" className="btn-secondary btn-sm" onClick={() => handleTabChange("pricing")}>
                 Pricing →
               </button>
             </div>
-            {moderation.length === 0 && <p className="admin-empty">No reports filed yet.</p>}
+            {moderation.length === 0 && <AdminTerminalEmpty>No reports pending.</AdminTerminalEmpty>}
             {moderation.map((entry) => (
               <article
                 key={entry.profileId}
@@ -382,6 +424,139 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
 
       {tab === "users" && (
         <>
+          <section className="card admin-member-purge">
+            <h3 className="admin-section-title">Find & delete member</h3>
+            <p className="admin-help">
+              Permanently removes the member profile, auth account, photos, signals, matches, messages,
+              verifications, and referral history. This cannot be undone.
+            </p>
+            <div className="admin-member-purge__search">
+              <input
+                type="search"
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                placeholder="Email, username, phone, or name"
+                aria-label="Search members"
+              />
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={memberSearchBusy || memberSearch.trim().length < 2}
+                onClick={async () => {
+                  setMemberSearchBusy(true);
+                  setMemberSearchMessage("");
+                  setPurgeTarget(null);
+                  setPurgeMessage("");
+                  try {
+                    const result = await searchAdminMembers(memberSearch.trim());
+                    if (!result.ok) {
+                      pushToast(result.error);
+                      setMemberResults([]);
+                      setMemberSearchMessage("Search failed.");
+                      return;
+                    }
+                    const rows = result.data.members ?? [];
+                    setMemberResults(rows);
+                    setMemberSearchMessage(
+                      rows.length ? `${rows.length} member(s) found.` : "No users found."
+                    );
+                  } finally {
+                    setMemberSearchBusy(false);
+                  }
+                }}
+              >
+                {memberSearchBusy ? "Searching…" : "Search"}
+              </button>
+            </div>
+            {memberSearchMessage && <p className="admin-inline-message">{memberSearchMessage}</p>}
+            {memberResults.map((member) => (
+              <article key={member.id} className="admin-moderation-row admin-member-purge__row">
+                <div>
+                  <strong>{member.name}</strong>
+                  <p>
+                    {member.username ? `@${member.username} · ` : ""}
+                    {member.email || member.phone || member.id}
+                    {member.city ? ` · ${member.city}` : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn-danger"
+                  onClick={() => {
+                    setPurgeTarget(member);
+                    setPurgeConfirm("");
+                    setPurgeMessage("");
+                  }}
+                >
+                  Delete permanently
+                </button>
+              </article>
+            ))}
+            {purgeTarget && (
+              <div className="admin-member-purge__confirm">
+                <p>
+                  Delete <strong>{purgeTarget.name}</strong> ({purgeTarget.email || purgeTarget.phone})?
+                  Type <strong>DELETE</strong> to confirm.
+                </p>
+                <input
+                  type="text"
+                  value={purgeConfirm}
+                  onChange={(e) => setPurgeConfirm(e.target.value)}
+                  placeholder="DELETE"
+                  aria-label="Type DELETE to confirm"
+                />
+                <div className="admin-member-purge__confirm-actions">
+                  <button
+                    type="button"
+                    className="btn-danger"
+                    disabled={purgeBusy || purgeConfirm.trim().toUpperCase() !== "DELETE"}
+                    onClick={async () => {
+                      setPurgeBusy(true);
+                      setPurgeMessage("");
+                      try {
+                        const result = await purgeAdminMember(purgeTarget.id, purgeConfirm.trim());
+                        if (!result.ok) {
+                          pushToast(result.error);
+                          setPurgeMessage(result.error);
+                          return;
+                        }
+                        const data = result.data;
+                        if (!data.ok) {
+                          const message = data.error || "Delete failed.";
+                          pushToast(message);
+                          setPurgeMessage(message);
+                          return;
+                        }
+                        setMemberResults((rows) => rows.filter((row) => row.id !== purgeTarget.id));
+                        setPurgeTarget(null);
+                        setPurgeConfirm("");
+                        setPurgeMessage(
+                          `Removed ${data.member?.name || "member"} from the system.`
+                        );
+                      } finally {
+                        setPurgeBusy(false);
+                      }
+                    }}
+                  >
+                    {purgeBusy ? "Deleting…" : "Confirm delete"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={purgeBusy}
+                    onClick={() => {
+                      setPurgeTarget(null);
+                      setPurgeConfirm("");
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {purgeMessage && <p className="admin-inline-message">{purgeMessage}</p>}
+          </section>
+
           <section className="admin-stats-grid admin-stats-grid--highlight">
             <div className="card admin-stat admin-stat--highlight">
               <strong>{countEvent("signup_completed")}</strong>
@@ -449,7 +624,7 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
             ))}
           </div>
           {filterModerationQueue(moderation, reportFilter).length === 0 && (
-            <p className="admin-empty">No reports in this filter.</p>
+            <AdminTerminalEmpty>No reports pending.</AdminTerminalEmpty>
           )}
           {filterModerationQueue(moderation, reportFilter).map((entry) => (
             <article
@@ -468,8 +643,8 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
                 {entry.lastReason && <small>Reason: {entry.lastReason.replace(/_/g, " ")}</small>}
               </div>
               <div className="admin-moderation-row__actions">
-                <button type="button" className="btn-secondary btn-sm" onClick={() => setTab("command")}>
-                  Review in Command
+                <button type="button" className="btn-secondary btn-sm" onClick={() => handleTabChange("command")}>
+                  Review in Command Center
                 </button>
               </div>
             </article>
@@ -534,7 +709,7 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
 
       {tab === "leads" && (
         <section className="admin-leads">
-          {leads.length === 0 && <p className="admin-empty">No launch leads yet.</p>}
+          {leads.length === 0 && <AdminTerminalEmpty>No leads available.</AdminTerminalEmpty>}
           {leads.map((lead) => (
             <article key={lead.id} className="card admin-lead-row">
               <strong>{lead.email || lead.phone}</strong>
@@ -580,7 +755,7 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
           </div>
           {serverVerifications.filter((v) => v.status === verificationFilter).length === 0 &&
             localVerifications.filter((v) => v.status === verificationFilter).length === 0 && (
-            <p className="admin-empty">No {verificationFilter} verifications.</p>
+            <AdminTerminalEmpty>No verification requests.</AdminTerminalEmpty>
           )}
           {serverVerifications
             .filter((v) => v.status === verificationFilter)
@@ -609,8 +784,12 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
                       type="button"
                       className="btn-primary btn-sm"
                       onClick={async () => {
-                        await reviewVerificationSubmission({ id: v.id, action: "approve" });
-                        setServerVerifications(await fetchVerificationSubmissions());
+                        const result = await reviewVerificationSubmission({ id: v.id, action: "approve" });
+                        if (!result.ok || !result.data.ok) {
+                          pushToast(result.ok ? result.data.error || "Approve failed." : result.error);
+                          return;
+                        }
+                        await loadVerifications();
                       }}
                     >
                       Approve
@@ -619,13 +798,17 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
                       type="button"
                       className="btn-secondary btn-sm"
                       onClick={async () => {
-                        await reviewVerificationSubmission({
+                        const result = await reviewVerificationSubmission({
                           id: v.id,
                           action: "reject",
                           rejectReason: rejectReason || "Did not meet guidelines"
                         });
+                        if (!result.ok || !result.data.ok) {
+                          pushToast(result.ok ? result.data.error || "Reject failed." : result.error);
+                          return;
+                        }
                         setRejectReason("");
-                        setServerVerifications(await fetchVerificationSubmissions());
+                        await loadVerifications();
                       }}
                     >
                       Reject
@@ -906,7 +1089,7 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
         </section>
       )}
 
-      {tab === "pricing" && <AdminPricingPage onBack={onBack} embedded />}
+      {tab === "pricing" && <AdminPricingPage onBack={() => handleTabChange("command")} embedded />}
 
       {tab === "content" && (
         <section className="card admin-cms">
@@ -1045,6 +1228,19 @@ export function AdminHubPage({ onBack }: AdminHubPageProps) {
           ) : null}
         </>
       )}
+        </main>
+        <AdminCommandDock
+          activeTab={tab}
+          onTabChange={handleTabChange}
+          mobileOpen={dockOpen}
+          onMobileClose={() => setDockOpen(false)}
+          badges={{
+            reports: modStats.totalReports,
+            leads: leads.length,
+            verify: pendingVerificationCount
+          }}
+        />
+      </div>
     </div>
   );
 }

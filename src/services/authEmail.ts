@@ -4,7 +4,15 @@ import { USER_MESSAGES } from "../constants/userMessages";
 import { normalizeUsername } from "../utils/authIdentity";
 
 type SendCodeResponse = { ok: boolean; email?: string; error?: string };
-type VerifyCodeResponse = { ok: boolean; email?: string; error?: string };
+type VerifyCodeResponse = {
+  ok: boolean;
+  email?: string;
+  error?: string;
+  code?: string;
+  onboardingComplete?: boolean;
+  recovered?: boolean;
+  memberProfileId?: string;
+};
 
 export class AuthEmailError extends Error {
   readonly kind: "network" | "server" | "validation" | "rate_limit" | "exists";
@@ -22,7 +30,7 @@ export class AuthEmailError extends Error {
   }
 }
 
-async function readApiResponse<T extends { ok?: boolean; error?: string; field?: string }>(
+async function readApiResponse<T extends { ok?: boolean; error?: string; field?: string; code?: string }>(
   response: Response,
   fallbackError: string
 ): Promise<T> {
@@ -52,6 +60,9 @@ async function readApiResponse<T extends { ok?: boolean; error?: string; field?:
 
   if (!response.ok || payload?.ok === false) {
     const message = payload?.error || fallbackError;
+    if (payload?.code && import.meta.env.DEV) {
+      console.info(`[bamsignal:flow] signup_api_error`, { code: payload.code });
+    }
     if (response.status === 429) {
       throw new AuthEmailError(message, "rate_limit");
     }
@@ -167,7 +178,7 @@ export async function verifySignupEmailCode(input: {
   const response = await postEmailCode({ action: "verify", ...input });
   return readApiResponse<VerifyCodeResponse>(
     response,
-    USER_MESSAGES.otpVerifyFailed
+    USER_MESSAGES.signupCompleteFailed
   );
 }
 

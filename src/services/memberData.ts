@@ -59,8 +59,9 @@ async function postMemberAction(
 export async function registerMember(
   user: MemberIdentity,
   referralCode?: string | null
-): Promise<void> {
-  await postMemberAction("register", user, referralCode ? { referralCode } : {});
+): Promise<boolean> {
+  const payload = await postMemberAction("register", user, referralCode ? { referralCode } : {});
+  return Boolean(payload?.ok);
 }
 
 export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> {

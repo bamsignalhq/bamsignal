@@ -2,6 +2,7 @@
 export const USER_MESSAGES = {
   otpSendFailed: "We couldn't send the code. Please try again.",
   otpVerifyFailed: "We couldn't verify that code. Check it and try again.",
+  signupCompleteFailed: "We couldn't complete your signup. Please try again.",
   progressSaveFailed: "We couldn't save your progress. Please try again.",
   photoUploadFailed: "We couldn't upload that photo. Try another clear photo.",
   profileSaveFailed: "We couldn't sync your profile. Changes are saved on this device — try again.",

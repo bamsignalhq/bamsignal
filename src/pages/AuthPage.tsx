@@ -417,7 +417,7 @@ export function AuthPage({
       }
 
       flowLog("otp_verify_start");
-      await verifySignupEmailCode({
+      const verifyResult = await verifySignupEmailCode({
         email: pendingSignup.email,
         code,
         password: signupForm.pin,
@@ -425,7 +425,13 @@ export function AuthPage({
         username: pendingSignup.username || "",
         phone: pendingSignup.phone || ""
       });
+      flowLog("otp_verified", {
+        recovered: Boolean(verifyResult.recovered),
+        onboardingComplete: Boolean(verifyResult.onboardingComplete)
+      });
 
+      flowLog("session_create_start");
+      let sessionUser = null;
       let lastError: unknown = null;
       for (let attempt = 0; attempt < 4; attempt += 1) {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -433,23 +439,43 @@ export function AuthPage({
           password: signupForm.pin
         });
         if (!error && data.user) {
-          flowLog("supabase_user_signin_ok");
-          clearPendingSignup();
-          void onAuthenticated(profileFromSessionUser(data.user), { isNewSignup: true });
-          return;
+          sessionUser = data.user;
+          break;
         }
         lastError = error;
+        flowLog("session_create_retry", { attempt: attempt + 1, reason: error?.message || "unknown" });
         if (attempt < 3) {
           await new Promise((resolve) => window.setTimeout(resolve, 400));
         }
       }
 
-      throw lastError || new Error("We couldn't finish creating your account. Try again shortly.");
+      if (!sessionUser) {
+        flowLog("session_create_failed", {
+          reason: lastError instanceof Error ? lastError.message : "sign_in_failed"
+        });
+        throw lastError || new Error(USER_MESSAGES.signupCompleteFailed);
+      }
+
+      flowLog("session_create_success");
+      clearPendingSignup();
+      const profile = profileFromSessionUser(sessionUser);
+      await onAuthenticated(profile, {
+        isNewSignup: !verifyResult.onboardingComplete,
+        recovered: verifyResult.recovered
+      });
+      if (!verifyResult.onboardingComplete) {
+        flowLog("redirect_onboarding");
+      } else {
+        flowLog("redirect_home");
+      }
     } catch (error) {
       if (error instanceof AuthEmailError && error.kind === "exists") {
         clearPendingSignup();
         setPendingSignup(null);
         onModeChange("signup");
+      }
+      if (import.meta.env.DEV && error instanceof Error) {
+        flowLog("signup_verify_failed", { reason: error.message });
       }
       onMessage(
         error instanceof AuthEmailError && error.kind === "validation"

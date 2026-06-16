@@ -36,9 +36,6 @@ export const config = {
     freeChannelId: process.env.TELEGRAM_FREE_CHANNEL_ID,
     vipGroupId: process.env.TELEGRAM_VIP_GROUP_ID
   },
-  firebase: {
-    serviceAccount: parseJson(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
-  },
   sendchamp: {
     apiKey: process.env.SENDCHAMP_API_KEY?.trim() || "",
     sender: process.env.SENDCHAMP_SENDER?.trim() || "",

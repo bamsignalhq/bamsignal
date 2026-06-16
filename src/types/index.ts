@@ -278,6 +278,7 @@ export type AuthMode = "login" | "signup" | "verify" | "reset";
 
 export type AuthMeta = {
   isNewSignup?: boolean;
+  recovered?: boolean;
 };
 
 export type DiscoverMode = "signals" | "radar" | "trending";

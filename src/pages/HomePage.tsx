@@ -148,10 +148,10 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   return (
     <div className="page home-page home-page--compact member-content-pad">
       <header className="home-top home-top--compact">
-        <HomeSignalLimitBar isPremium={isPremium} onUpgrade={onOpenPremium} refreshKey={signalTick} />
         <h1 className="home-top__greeting">
           {greetingForHour()}, {firstName} 👋
         </h1>
+        <HomeSignalLimitBar isPremium={isPremium} onUpgrade={onOpenPremium} refreshKey={signalTick} />
       </header>
 
       <section className="home-discovery home-discovery--compact" aria-label="Find people">

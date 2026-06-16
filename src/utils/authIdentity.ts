@@ -1,13 +1,43 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import { readJson, writeJson } from "./storage";
 
-export function normalizeUsername(value: string): string {
-  return value.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+export const USERNAME_SIGNUP_MIN_LENGTH = 7;
+export const USERNAME_LOGIN_MIN_LENGTH = 3;
+export const USERNAME_MAX_LENGTH = 24;
+
+/** Strip digits/symbols and lowercase — handles phone keyboards capitalizing the first letter. */
+export function formatUsernameInput(value: string): string {
+  const letters = value.replace(/[^a-zA-Z]/g, "");
+  return letters.toLowerCase();
 }
 
-export function isValidUsername(value: string): boolean {
+export function normalizeUsername(value: string): string {
+  return formatUsernameInput(value);
+}
+
+/** Signup — more than 6 letters, letters only. */
+export function isValidSignupUsername(value: string): boolean {
   const u = normalizeUsername(value);
-  return u.length >= 3 && u.length <= 24;
+  return (
+    u.length >= USERNAME_SIGNUP_MIN_LENGTH &&
+    u.length <= USERNAME_MAX_LENGTH &&
+    /^[a-z]+$/.test(u)
+  );
+}
+
+/** Login — allows shorter legacy usernames (e.g. demo). */
+export function isValidLoginUsername(value: string): boolean {
+  const u = normalizeUsername(value);
+  return (
+    u.length >= USERNAME_LOGIN_MIN_LENGTH &&
+    u.length <= USERNAME_MAX_LENGTH &&
+    /^[a-z]+$/.test(u)
+  );
+}
+
+/** @deprecated Use isValidSignupUsername or isValidLoginUsername */
+export function isValidUsername(value: string): boolean {
+  return isValidSignupUsername(value);
 }
 
 /** Login — any saved 6-digit PIN */

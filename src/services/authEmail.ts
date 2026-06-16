@@ -1,19 +1,26 @@
 import { apiUrl } from "./supabase";
+import { normalizeUsername } from "../utils/authIdentity";
 
 type SendCodeResponse = { ok: boolean; email?: string; error?: string };
 type VerifyCodeResponse = { ok: boolean; email?: string; error?: string };
 
 export class AuthEmailError extends Error {
   readonly kind: "network" | "server" | "validation" | "rate_limit" | "exists";
+  readonly field?: "email" | "phone" | "username";
 
-  constructor(message: string, kind: AuthEmailError["kind"] = "server") {
+  constructor(
+    message: string,
+    kind: AuthEmailError["kind"] = "server",
+    field?: AuthEmailError["field"]
+  ) {
     super(message);
     this.name = "AuthEmailError";
     this.kind = kind;
+    this.field = field;
   }
 }
 
-async function readApiResponse<T extends { ok?: boolean; error?: string }>(
+async function readApiResponse<T extends { ok?: boolean; error?: string; field?: string }>(
   response: Response,
   fallbackError: string
 ): Promise<T> {
@@ -46,8 +53,9 @@ async function readApiResponse<T extends { ok?: boolean; error?: string }>(
     if (response.status === 429) {
       throw new AuthEmailError(message, "rate_limit");
     }
-    if (response.status === 409 || /already exists/i.test(message)) {
-      throw new AuthEmailError(message, "exists");
+    if (response.status === 409 || /already exists|already taken|already linked/i.test(message)) {
+      const field = payload?.field as AuthEmailError["field"] | undefined;
+      throw new AuthEmailError(message, "exists", field);
     }
     if (response.status === 400) {
       throw new AuthEmailError(message, "validation");
@@ -95,8 +103,35 @@ async function postEmailCode(body: Record<string, unknown>) {
   return response;
 }
 
-export async function sendSignupEmailCode(email: string, name: string): Promise<SendCodeResponse> {
-  const response = await postEmailCode({ action: "send", email, name });
+export async function checkSignupAvailability(input: {
+  email: string;
+  phone: string;
+  username: string;
+}): Promise<void> {
+  const response = await postEmailCode({
+    action: "check",
+    email: input.email.trim().toLowerCase(),
+    phone: input.phone,
+    username: input.username
+  });
+  await readApiResponse<{ ok: boolean }>(
+    response,
+    "We couldn't verify your details. Try again shortly."
+  );
+}
+
+export async function sendSignupEmailCode(
+  email: string,
+  name: string,
+  identity?: { phone: string; username: string }
+): Promise<SendCodeResponse> {
+  const response = await postEmailCode({
+    action: "send",
+    email,
+    name,
+    phone: identity?.phone || "",
+    username: identity?.username || ""
+  });
   return readApiResponse<SendCodeResponse>(
     response,
     "We couldn't send the code right now. Wait a minute and try again, or check your spam folder."
@@ -120,7 +155,7 @@ export async function verifySignupEmailCode(input: {
 
 /** Resolve username → email for login on fresh installs (Play review, new devices). */
 export async function resolveLoginEmail(username: string): Promise<string | null> {
-  const normalized = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+  const normalized = normalizeUsername(username);
   if (!normalized) return null;
 
   try {

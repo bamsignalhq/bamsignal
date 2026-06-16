@@ -96,6 +96,14 @@ function contactApiDevPlugin(): Plugin {
               return;
             }
 
+            const { SignupIdentityError } = await import("./server/services/signupIdentity.js");
+            if (error instanceof SignupIdentityError) {
+              res.statusCode = error.status;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ ok: false, error: error.message, field: error.field }));
+              return;
+            }
+
             res.statusCode = 500;
             res.setHeader("Content-Type", "application/json");
             res.end(

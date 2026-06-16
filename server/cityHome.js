@@ -38,6 +38,16 @@ export async function ensureMemberProfilesTable() {
   await query(
     "create index if not exists app_member_profiles_city_idx on app_member_profiles (city, onboarding_complete, discoverable)"
   );
+  await query(
+    `create unique index if not exists app_member_profiles_email_lower_idx
+     on app_member_profiles (lower(email))
+     where email is not null and email <> ''`
+  );
+  await query(
+    `create unique index if not exists app_member_profiles_username_lower_idx
+     on app_member_profiles (lower(username))
+     where username is not null and username <> ''`
+  );
 }
 
 export async function ensureCityHomePlacementsTable() {
@@ -136,7 +146,7 @@ export async function findEmailByUsername(username) {
   const key = String(username || "")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9_]/g, "");
+    .replace(/[^a-z]/g, "");
   if (!key) return null;
   await ensureMemberProfilesTable();
 
@@ -170,6 +180,17 @@ export async function upsertMemberProfile({
   const userKey = normalizeUserKey({ email, phone });
   if (!userKey || !city) return null;
 
+  const normalizedUsername = username
+    ? String(username).trim().toLowerCase().replace(/[^a-z]/g, "")
+    : null;
+  let normalizedPhone = String(phone || "").replace(/\D/g, "");
+  if (normalizedPhone.startsWith("234") && normalizedPhone.length === 13) {
+    normalizedPhone = `0${normalizedPhone.slice(3)}`;
+  } else if (normalizedPhone.length === 10 && /^[789]/.test(normalizedPhone)) {
+    normalizedPhone = `0${normalizedPhone}`;
+  }
+  const storedPhone = normalizedPhone || null;
+
   const result = await query(
     `insert into app_member_profiles (
        user_key, email, phone, name, username, city, state, profile,
@@ -193,9 +214,9 @@ export async function upsertMemberProfile({
     [
       userKey,
       email || null,
-      phone || null,
+      storedPhone,
       name || null,
-      username || null,
+      normalizedUsername,
       city,
       state || null,
       profile,

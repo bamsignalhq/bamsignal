@@ -10,6 +10,8 @@ type AuthFieldProps = {
   autoComplete?: string;
   maxLength?: number;
   pin?: boolean;
+  autoCapitalize?: "off" | "none" | "on" | "sentences" | "words" | "characters";
+  spellCheck?: boolean;
   className?: string;
 };
 
@@ -22,6 +24,8 @@ export function AuthField({
   autoComplete,
   maxLength,
   pin = false,
+  autoCapitalize,
+  spellCheck,
   className = ""
 }: AuthFieldProps) {
   const [visible, setVisible] = useState(false);
@@ -37,6 +41,8 @@ export function AuthField({
         inputMode={pin ? "numeric" : inputMode}
         autoComplete={autoComplete}
         maxLength={maxLength}
+        autoCapitalize={autoCapitalize}
+        spellCheck={spellCheck}
         placeholder=" "
         className={pin ? "auth-code-input" : undefined}
       />

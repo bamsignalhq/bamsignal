@@ -333,6 +333,16 @@
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
   margin-top: 4px;
+  position: relative;
+}
+
+.auth-verify__autofill {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  left: -9999px;
 }
 
 .auth-verify__digit {
@@ -347,6 +357,8 @@
   font-size: clamp(1.15rem, 4.5vw, 1.35rem);
   font-weight: 800;
   text-align: center;
+  touch-action: manipulation;
+  cursor: text;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -884,6 +896,10 @@
 
 .auth-field--pin input {
   padding-right: 48px;
+}
+
+.auth-field--centered input {
+  text-align: center;
 }
 
 .auth-field__toggle {

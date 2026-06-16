@@ -5,19 +5,29 @@ import { AuthField } from "../components/AuthField";
 import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
 import { friendlyAuthError, supabase } from "../services/supabase";
-import { resolveLoginEmail, sendSignupEmailCode, verifySignupEmailCode } from "../services/authEmail";
+import { resolveLoginEmail, checkSignupAvailability, sendSignupEmailCode, verifySignupEmailCode, AuthEmailError } from "../services/authEmail";
 import { trackEvent } from "../utils/analytics";
 import {
   emailForUsername,
+  formatUsernameInput,
   isStrongPin,
+  isValidLoginUsername,
   isValidNigerianPhone,
   isValidPin,
-  isValidUsername,
+  isValidSignupUsername,
   normalizeNigerianPhone,
   normalizeUsername,
   rememberUsernameEmail,
   profileFromSessionUser
 } from "../utils/authIdentity";
+import {
+  clearPendingSignup,
+  loadPendingSignup,
+  resendCooldownRemaining,
+  savePendingSignup,
+  touchPendingCodeSent,
+  touchPendingVerifyCode
+} from "../utils/signupPersistence";
 
 type AuthPageProps = {
   mode: AuthMode;
@@ -40,6 +50,34 @@ const emptySignup = {
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SEC = 60;
 
+function restoredSignupState() {
+  const pending = loadPendingSignup();
+  if (!pending) {
+    return {
+      pendingSignup: null as UserProfile | null,
+      signupForm: emptySignup,
+      verifyCode: "",
+      resendIn: 0
+    };
+  }
+
+  const { profile, pin, verifyCode = "", codeSentAt } = pending;
+  return {
+    pendingSignup: profile,
+    signupForm: {
+      ...emptySignup,
+      name: profile.name || "",
+      username: profile.username || "",
+      phone: profile.phone || "",
+      email: profile.email || "",
+      pin,
+      confirmPin: pin
+    },
+    verifyCode,
+    resendIn: resendCooldownRemaining(codeSentAt, RESEND_COOLDOWN_SEC)
+  };
+}
+
 function maskEmail(email: string): string {
   const trimmed = email.trim().toLowerCase();
   const [local, domain] = trimmed.split("@");
@@ -58,26 +96,51 @@ export function AuthPage({
   onMessage,
   embedded
 }: AuthPageProps) {
+  const restored = useRef(restoredSignupState());
   const [busy, setBusy] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ username: "", pin: "" });
-  const [signupForm, setSignupForm] = useState(emptySignup);
-  const [verifyCode, setVerifyCode] = useState("");
+  const [signupForm, setSignupForm] = useState(restored.current.signupForm);
+  const [verifyCode, setVerifyCode] = useState(restored.current.verifyCode);
   const [resetEmail, setResetEmail] = useState("");
-  const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(null);
-  const [resendIn, setResendIn] = useState(0);
+  const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
+  const [resendIn, setResendIn] = useState(restored.current.resendIn);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const verifyInFlight = useRef(false);
+  const autofillRef = useRef<HTMLInputElement | null>(null);
 
   const phoneDigits = (value: string) => normalizeNigerianPhone(value);
   const pinDigits = (value: string) => value.replace(/\D/g, "").slice(0, 6);
 
+  const focusOtpDigit = (index = verifyCode.length) => {
+    const safeIndex = Math.min(Math.max(index, 0), OTP_LENGTH - 1);
+    window.setTimeout(() => {
+      otpRefs.current[safeIndex]?.focus();
+    }, 80);
+  };
+
+  useEffect(() => {
+    if (mode !== "verify" || !pendingSignup?.email) return;
+    focusOtpDigit(verifyCode.length);
+  }, [mode, pendingSignup?.email]);
+
   useEffect(() => {
     if (mode !== "verify") return;
-    setVerifyCode("");
-    setResendIn(RESEND_COOLDOWN_SEC);
-    window.setTimeout(() => otpRefs.current[0]?.focus(), 120);
-  }, [mode, pendingSignup?.email]);
+
+    const refocusOtp = () => {
+      if (document.visibilityState && document.visibilityState !== "visible") return;
+      focusOtpDigit(verifyCode.length);
+    };
+
+    document.addEventListener("visibilitychange", refocusOtp);
+    window.addEventListener("pageshow", refocusOtp);
+    window.addEventListener("focus", refocusOtp);
+    return () => {
+      document.removeEventListener("visibilitychange", refocusOtp);
+      window.removeEventListener("pageshow", refocusOtp);
+      window.removeEventListener("focus", refocusOtp);
+    };
+  }, [mode, verifyCode.length]);
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -85,9 +148,15 @@ export function AuthPage({
     return () => window.clearTimeout(timer);
   }, [resendIn]);
 
+  useEffect(() => {
+    if (mode !== "verify" || pendingSignup?.email) return;
+    onMessage("Your verification session expired. Please sign up again.");
+    onModeChange("signup");
+  }, [mode, pendingSignup?.email, onModeChange, onMessage]);
+
   const signIn = async () => {
     const username = normalizeUsername(loginForm.username);
-    if (!isValidUsername(username)) {
+    if (!isValidLoginUsername(username)) {
       onMessage("Enter a valid username.");
       return;
     }
@@ -137,8 +206,8 @@ export function AuthPage({
       onMessage("Enter your full name.");
       return;
     }
-    if (!isValidUsername(username)) {
-      onMessage("Username must be 3–24 characters (letters, numbers, underscore).");
+    if (!isValidSignupUsername(username)) {
+      onMessage("Username must be at least 7 letters with no numbers.");
       return;
     }
     if (!isValidNigerianPhone(phone)) {
@@ -169,12 +238,20 @@ export function AuthPage({
         throw new Error("Authentication is not configured. Please update the app and try again.");
       }
 
-      await sendSignupEmailCode(email, name);
+      await checkSignupAvailability({ email, phone, username });
+      await sendSignupEmailCode(email, name, { phone, username });
       rememberUsernameEmail(username, email);
+      setVerifyCode("");
+      setResendIn(RESEND_COOLDOWN_SEC);
       setPendingSignup(profile);
+      savePendingSignup({ profile, pin: signupForm.pin, verifyCode: "" });
       onModeChange("verify");
       return;
     } catch (error) {
+      if (error instanceof AuthEmailError && error.kind === "exists") {
+        clearPendingSignup();
+        onModeChange("signup");
+      }
       onMessage(friendlyAuthError(error));
     } finally {
       setBusy(null);
@@ -208,6 +285,7 @@ export function AuthPage({
           password: signupForm.pin
         });
         if (!error && data.user) {
+          clearPendingSignup();
           onAuthenticated(profileFromSessionUser(data.user), { isNewSignup: true });
           return;
         }
@@ -219,6 +297,11 @@ export function AuthPage({
 
       throw lastError || new Error("We couldn't finish creating your account. Try again shortly.");
     } catch (error) {
+      if (error instanceof AuthEmailError && error.kind === "exists") {
+        clearPendingSignup();
+        setPendingSignup(null);
+        onModeChange("signup");
+      }
       onMessage(friendlyAuthError(error));
     } finally {
       verifyInFlight.current = false;
@@ -230,6 +313,7 @@ export function AuthPage({
   const updateVerifyCode = (next: string) => {
     const cleaned = next.replace(/\D/g, "").slice(0, OTP_LENGTH);
     setVerifyCode(cleaned);
+    touchPendingVerifyCode(cleaned);
     return cleaned;
   };
 
@@ -245,6 +329,10 @@ export function AuthPage({
     if (next.length === OTP_LENGTH) {
       void verifySignup(next);
     }
+  };
+
+  const handleOtpClick = (index: number) => {
+    otpRefs.current[index]?.focus();
   };
 
   const handleOtpKeyDown = (index: number, key: string) => {
@@ -284,11 +372,15 @@ export function AuthPage({
         throw new Error("Authentication is not configured. Please update the app and try again.");
       }
 
-      await sendSignupEmailCode(pendingSignup.email, pendingSignup.name);
+      await sendSignupEmailCode(pendingSignup.email, pendingSignup.name, {
+        phone: pendingSignup.phone || "",
+        username: pendingSignup.username || ""
+      });
       onMessage("Fresh code sent — check your inbox.");
       setResendIn(RESEND_COOLDOWN_SEC);
       setVerifyCode("");
-      otpRefs.current[0]?.focus();
+      touchPendingCodeSent();
+      focusOtpDigit(0);
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {
@@ -337,8 +429,14 @@ export function AuthPage({
                 <AuthField
                   label="Username"
                   value={loginForm.username}
-                  onChange={(username) => setLoginForm({ ...loginForm, username })}
+                  onChange={(username) =>
+                    setLoginForm({ ...loginForm, username: formatUsernameInput(username) })
+                  }
                   autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  maxLength={24}
+                  className="auth-field--centered"
                 />
                 <AuthField
                   label="PIN"
@@ -376,8 +474,13 @@ export function AuthPage({
                 <AuthField
                   label="Username"
                   value={signupForm.username}
-                  onChange={(username) => setSignupForm({ ...signupForm, username })}
+                  onChange={(username) =>
+                    setSignupForm({ ...signupForm, username: formatUsernameInput(username) })
+                  }
                   autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  maxLength={24}
                 />
                 <AuthField
                   label="Phone"
@@ -444,6 +547,24 @@ export function AuthPage({
                 aria-label="Verification code"
                 onPaste={handleOtpPaste}
               >
+                <input
+                  ref={autofillRef}
+                  className="auth-verify__autofill"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  tabIndex={-1}
+                  aria-hidden
+                  value={verifyCode}
+                  onChange={(event) => {
+                    const next = updateVerifyCode(event.target.value.replace(/\D/g, "").slice(0, OTP_LENGTH));
+                    if (next.length === OTP_LENGTH) {
+                      void verifySignup(next);
+                    } else {
+                      focusOtpDigit(next.length);
+                    }
+                  }}
+                />
                 {Array.from({ length: OTP_LENGTH }, (_, index) => (
                   <input
                     key={index}
@@ -453,11 +574,12 @@ export function AuthPage({
                     className={`auth-verify__digit ${verifyCode[index] ? "auth-verify__digit--filled" : ""}`}
                     type="text"
                     inputMode="numeric"
-                    autoComplete={index === 0 ? "one-time-code" : "off"}
+                    autoComplete="off"
                     maxLength={1}
                     value={verifyCode[index] ?? ""}
                     aria-label={`Digit ${index + 1}`}
-                    disabled={busy === "verify" || verifyBusy || verifyCode.length !== OTP_LENGTH}
+                    disabled={busy === "verify" || verifyBusy}
+                    onClick={() => handleOtpClick(index)}
                     onChange={(event) => handleOtpInput(index, event.target.value)}
                     onKeyDown={(event) => handleOtpKeyDown(index, event.key)}
                   />
@@ -496,6 +618,8 @@ export function AuthPage({
                   type="button"
                   className="link-btn auth-verify__back"
                   onClick={() => {
+                    clearPendingSignup();
+                    setPendingSignup(null);
                     setVerifyCode("");
                     onModeChange("signup");
                   }}

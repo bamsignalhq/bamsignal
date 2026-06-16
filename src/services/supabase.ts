@@ -53,8 +53,10 @@ export function friendlyAuthError(error: unknown): string {
     return "That code is not valid anymore. Request a fresh one and try again.";
   }
 
-  if (/already exists|already registered|user already registered/i.test(message)) {
-    return "An account already exists for this email. Try logging in instead.";
+  if (/already exists|already registered|user already registered|already taken|already linked/i.test(message)) {
+    return message.includes("email")
+      ? message
+      : message || "An account already exists with these details. Try logging in instead.";
   }
 
   if (/not configured|temporarily unavailable|email delivery is not configured/i.test(message)) {

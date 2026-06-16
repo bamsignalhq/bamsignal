@@ -75,7 +75,7 @@ export default async function handler(req, res) {
       const username = String(body.username || "")
         .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9_]/g, "");
+        .replace(/[^a-z]/g, "");
       if (!username) {
         return res.status(400).json({ ok: false, error: "Username is required." });
       }

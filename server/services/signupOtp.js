@@ -1,3 +1,8 @@
+import {
+  assertSignupIdentityAvailable,
+  normalizeSignupEmail
+} from "./signupIdentity.js";
+export { SignupIdentityError } from "./signupIdentity.js";
 import crypto from "node:crypto";
 import dotenv from "dotenv";
 import { query } from "../db.js";
@@ -22,7 +27,7 @@ export class SignupOtpError extends Error {
 }
 
 function normalizeEmail(email = "") {
-  return String(email).trim().toLowerCase();
+  return normalizeSignupEmail(email);
 }
 
 function hashCode(code) {
@@ -125,13 +130,19 @@ async function sendResendEmail({ to, subject, html, text }) {
   }
 }
 
-export async function sendSignupOtp(email, name = "") {
+export async function sendSignupOtp(email, name = "", identity = {}) {
   await ensureEmailVerificationTable();
 
-  const normalized = normalizeEmail(email);
+  const normalized = normalizeSignupEmail(email);
   if (!normalized.includes("@")) {
     throw new SignupOtpError(400, "Enter a valid email.");
   }
+
+  await assertSignupIdentityAvailable({
+    email: normalized,
+    phone: identity.phone || "",
+    username: identity.username || ""
+  });
 
   const existing = await readStored(normalized);
   const now = Date.now();
@@ -231,41 +242,9 @@ export async function createConfirmedSupabaseUser({ email, password, name, usern
   const headers = buildSupabaseAdminHeaders(config.serviceKey);
   const userMetadata = {
     name: String(name || "").trim(),
-    username: String(username || "").trim(),
-    phone: String(phone || "").trim()
+    username: normalizeSignupUsername(username),
+    phone: normalizeSignupPhone(phone)
   };
-
-  async function findExistingUserId() {
-    const list = await fetch(
-      `${config.url}/auth/v1/admin/users?${new URLSearchParams({
-        page: "1",
-        per_page: "1",
-        email: normalized
-      })}`,
-      { headers }
-    );
-    if (!list.ok) return null;
-    const payload = await list.json();
-    return payload?.users?.[0]?.id || null;
-  }
-
-  async function updateExistingUser(userId) {
-    const update = await fetch(`${config.url}/auth/v1/admin/users/${userId}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({
-        password: String(password),
-        email_confirm: true,
-        user_metadata: userMetadata
-      })
-    });
-    if (!update.ok) {
-      const detail = await update.text();
-      console.error("[bamsignal] Supabase admin update user failed:", detail);
-      throw new SignupOtpError(502, "We couldn't finish creating your account. Try again shortly.");
-    }
-    return { id: userId };
-  }
 
   const response = await fetch(`${config.url}/auth/v1/admin/users`, {
     method: "POST",
@@ -284,38 +263,7 @@ export async function createConfirmedSupabaseUser({ email, password, name, usern
 
   const detail = await response.text();
   if (/already registered|already exists|duplicate/i.test(detail)) {
-    const userId = await findExistingUserId();
-    if (!userId) {
-      throw new SignupOtpError(409, "An account with this email already exists. Try logging in instead.");
-    }
-
-    await fetch(`${config.url}/auth/v1/admin/users/${userId}`, {
-      method: "DELETE",
-      headers
-    });
-
-    const retry = await fetch(`${config.url}/auth/v1/admin/users`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        email: normalized,
-        password: String(password),
-        email_confirm: true,
-        user_metadata: userMetadata
-      })
-    });
-
-    if (retry.ok) {
-      return retry.json();
-    }
-
-    const retryDetail = await retry.text();
-    if (/already registered|already exists|duplicate/i.test(retryDetail)) {
-      return updateExistingUser(userId);
-    }
-
-    console.error("[bamsignal] Supabase admin recreate user failed:", retryDetail);
-    throw new SignupOtpError(502, "We couldn't finish creating your account. Try again shortly.");
+    throw new SignupOtpError(409, "An account with this email already exists. Try logging in instead.");
   }
 
   console.error("[bamsignal] Supabase admin create user failed:", detail);
@@ -325,12 +273,29 @@ export async function createConfirmedSupabaseUser({ email, password, name, usern
 export async function handleSignupEmailCodeRequest(body = {}) {
   const action = String(body.action || "send").toLowerCase();
 
+  if (action === "check") {
+    await assertSignupIdentityAvailable({
+      email: body.email,
+      phone: body.phone,
+      username: body.username
+    });
+    return { ok: true };
+  }
+
   if (action === "send") {
-    return sendSignupOtp(body.email, body.name);
+    return sendSignupOtp(body.email, body.name, {
+      phone: body.phone || "",
+      username: body.username || ""
+    });
   }
 
   if (action === "verify") {
     await verifySignupOtp(body.email, body.code);
+    await assertSignupIdentityAvailable({
+      email: body.email,
+      phone: body.phone,
+      username: body.username
+    });
     await createConfirmedSupabaseUser({
       email: body.email,
       password: body.password,
@@ -338,7 +303,7 @@ export async function handleSignupEmailCodeRequest(body = {}) {
       username: body.username,
       phone: body.phone
     });
-    return { ok: true, email: normalizeEmail(body.email) };
+    return { ok: true, email: normalizeSignupEmail(body.email) };
   }
 
   throw new SignupOtpError(400, "Invalid action.");

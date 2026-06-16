@@ -2,6 +2,7 @@ import {
   SignupOtpError,
   handleSignupEmailCodeRequest
 } from "../../server/services/signupOtp.js";
+import { SignupIdentityError } from "../../server/services/signupIdentity.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -13,8 +14,12 @@ export default async function handler(req, res) {
     const result = await handleSignupEmailCodeRequest(req.body || {});
     return res.status(200).json(result);
   } catch (error) {
-    if (error instanceof SignupOtpError) {
-      return res.status(error.status).json({ ok: false, error: error.message });
+    if (error instanceof SignupOtpError || error instanceof SignupIdentityError) {
+      return res.status(error.status).json({
+        ok: false,
+        error: error.message,
+        field: error.field || undefined
+      });
     }
     console.error("[bamsignal] email-code error:", error);
     const action = String((req.body && req.body.action) || "send").toLowerCase();

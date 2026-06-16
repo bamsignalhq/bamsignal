@@ -7,6 +7,7 @@ import {
   navigateToPath,
   type AuthPath
 } from "../constants/routes";
+import { hasRestorableSignupVerify } from "../utils/signupPersistence";
 
 type LoveAuthRoutePageProps = {
   path: AuthPath;
@@ -15,6 +16,11 @@ type LoveAuthRoutePageProps = {
   onMessage: (msg: string) => void;
 };
 
+function initialAuthMode(path: AuthPath): AuthMode {
+  if (hasRestorableSignupVerify()) return "verify";
+  return path === AUTH_SIGNUP_PATH ? "signup" : "login";
+}
+
 export function LoveAuthRoutePage({
   path,
   onAuthenticated,
@@ -22,10 +28,14 @@ export function LoveAuthRoutePage({
   onMessage
 }: LoveAuthRoutePageProps) {
   const pathMode: AuthMode = path === AUTH_SIGNUP_PATH ? "signup" : "login";
-  const [mode, setMode] = useState<AuthMode>(pathMode);
+  const [mode, setMode] = useState<AuthMode>(() => initialAuthMode(path));
 
   useEffect(() => {
     if (mode === "verify" || mode === "reset") return;
+    if (hasRestorableSignupVerify()) {
+      setMode("verify");
+      return;
+    }
     setMode(pathMode);
   }, [pathMode, mode]);
 

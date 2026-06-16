@@ -59,5 +59,6 @@ export const STORAGE_KEYS = {
   onboardingStep: "bamsignal-onboarding-step",
   spotlightCity: "bamsignal-spotlight-city",
   pendingSignalProfileId: "bamsignal-pending-signal-profile-id",
+  pendingSignup: "bamsignal-pending-signup",
   savedSearches: "bamsignal-saved-searches"
 } as const;

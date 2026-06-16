@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Mail, ShieldCheck } from "lucide-react";
 import { AppLogo } from "../components/AppLogo";
 import { AuthField } from "../components/AuthField";
+import { OtpCodeInput } from "../components/OtpCodeInput";
 import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
 import { friendlyAuthError, supabase } from "../services/supabase";
@@ -118,7 +119,6 @@ export function AuthPage({
   const [resetEmail, setResetEmail] = useState("");
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
   const [resendIn, setResendIn] = useState(restored.current.resendIn);
-  const [verifyBusy, setVerifyBusy] = useState(false);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const verifyInFlight = useRef(false);
 
@@ -126,9 +126,9 @@ export function AuthPage({
   const pinDigits = (value: string) => value.replace(/\D/g, "").slice(0, 6);
 
   const focusOtpInput = () => {
-    window.setTimeout(() => {
+    window.requestAnimationFrame(() => {
       otpInputRef.current?.focus({ preventScroll: true });
-    }, 120);
+    });
   };
 
   useEffect(() => {
@@ -139,19 +139,16 @@ export function AuthPage({
   useEffect(() => {
     if (mode !== "verify") return;
 
-    const refocusOtp = () => {
-      if (document.visibilityState && document.visibilityState !== "visible") return;
+    const refocusAfterEmailApp = () => {
+      if (document.visibilityState !== "visible") return;
+      const active = document.activeElement;
+      if (active === otpInputRef.current) return;
+      if (active && active !== document.body) return;
       focusOtpInput();
     };
 
-    document.addEventListener("visibilitychange", refocusOtp);
-    window.addEventListener("pageshow", refocusOtp);
-    window.addEventListener("focus", refocusOtp);
-    return () => {
-      document.removeEventListener("visibilitychange", refocusOtp);
-      window.removeEventListener("pageshow", refocusOtp);
-      window.removeEventListener("focus", refocusOtp);
-    };
+    document.addEventListener("visibilitychange", refocusAfterEmailApp);
+    return () => document.removeEventListener("visibilitychange", refocusAfterEmailApp);
   }, [mode]);
 
   useEffect(() => {
@@ -410,7 +407,6 @@ export function AuthPage({
     if (!pendingSignup || code.length !== OTP_LENGTH || verifyInFlight.current) return;
     verifyInFlight.current = true;
     setBusy("verify");
-    setVerifyBusy(true);
     onMessage("");
     try {
       if (!supabase) {
@@ -455,34 +451,19 @@ export function AuthPage({
           ? USER_MESSAGES.otpVerifyFailed
           : friendlyAuthError(error)
       );
+      focusOtpInput();
+      otpInputRef.current?.select();
     } finally {
       verifyInFlight.current = false;
-      setVerifyBusy(false);
       setBusy(null);
     }
   };
 
-  const updateVerifyCode = (next: string) => {
-    const cleaned = next.replace(/\D/g, "").slice(0, OTP_LENGTH);
+  const handleOtpChange = (cleaned: string) => {
     setVerifyCode(cleaned);
     touchPendingVerifyCode(cleaned);
-    return cleaned;
-  };
-
-  const handleOtpChange = (raw: string) => {
-    const next = updateVerifyCode(raw);
-    if (next.length === OTP_LENGTH) {
-      void verifySignup(next);
-    }
-  };
-
-  const handleOtpPaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
-    const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
-    if (!pasted) return;
-    event.preventDefault();
-    const next = updateVerifyCode(pasted);
-    if (next.length === OTP_LENGTH) {
-      void verifySignup(next);
+    if (cleaned.length === OTP_LENGTH) {
+      void verifySignup(cleaned);
     }
   };
 
@@ -675,29 +656,38 @@ export function AuthPage({
                 </p>
               </div>
 
-              <label className="auth-verify__otp-field">
+              <label
+                className="auth-verify__otp-field"
+                onClick={(event) => {
+                  if (event.target === event.currentTarget) focusOtpInput();
+                }}
+              >
                 <span className="auth-verify__otp-label">Verification code</span>
-                <input
+                <OtpCodeInput
                   ref={otpInputRef}
                   className="auth-verify__code-input"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  enterKeyHint="done"
-                  maxLength={OTP_LENGTH}
                   value={verifyCode}
-                  aria-label="Email verification code"
-                  disabled={busy === "verify" || verifyBusy}
-                  onChange={(event) => handleOtpChange(event.target.value)}
-                  onPaste={handleOtpPaste}
+                  verifying={busy === "verify"}
+                  onChange={handleOtpChange}
                 />
               </label>
+
+              {message ? (
+                <p
+                  className={`auth-message auth-verify__message ${
+                    message.toLowerCase().includes("sent") ? "auth-message--success" : ""
+                  }`}
+                  role="status"
+                >
+                  {message}
+                </p>
+              ) : null}
 
               <button
                 type="button"
                 className="btn-primary btn-full btn-auth auth-verify__submit"
                 onClick={() => verifySignup()}
-                disabled={busy === "verify" || verifyBusy || verifyCode.length !== OTP_LENGTH}
+                disabled={busy === "verify" || verifyCode.length !== OTP_LENGTH}
               >
                 {busy === "verify" ? <Loader2 className="spin" size={20} /> : "Verify & continue"}
               </button>
@@ -755,11 +745,11 @@ export function AuthPage({
             </>
           )}
 
-          {message && (
+          {message && mode !== "verify" ? (
             <p className={`auth-message ${message.toLowerCase().includes("sent") ? "auth-message--success" : ""}`}>
               {message}
             </p>
-          )}
+          ) : null}
         </div>
       </div>
     </main>

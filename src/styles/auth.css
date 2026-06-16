@@ -23,7 +23,7 @@
   width: 100%;
   max-width: 420px;
   padding: 4px 16px 24px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .auth-shell__glow {
@@ -78,7 +78,8 @@
 .auth-card--fintech > .auth-switch,
 .auth-card--fintech > .btn-auth,
 .auth-card--fintech > .auth-dev-hint,
-.auth-card--fintech > .auth-verify {
+.auth-card--fintech > .auth-verify,
+.auth-card--fintech > .auth-message {
   padding-left: 22px;
   padding-right: 22px;
 }
@@ -282,6 +283,7 @@
   background: var(--brand-gradient-soft);
   display: grid;
   place-items: center;
+  pointer-events: none;
 }
 
 .auth-verify__icon-ring::before {
@@ -295,6 +297,7 @@
   mask-composite: exclude;
   opacity: 0.55;
   animation: authVerifyRing 3s ease-in-out infinite;
+  pointer-events: none;
 }
 
 @keyframes authVerifyRing {
@@ -358,14 +361,19 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 4px;
+  position: relative;
+  z-index: 2;
+  cursor: text;
 }
 
 .auth-verify__otp-label {
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-muted);
+  pointer-events: none;
 }
 
+.otp-code-input,
 .auth-verify__code-input {
   width: 100%;
   min-height: 56px;
@@ -376,10 +384,16 @@
   color: var(--text);
   font-size: 1.35rem;
   font-weight: 800;
-  letter-spacing: 0.35em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2em;
   text-align: center;
   touch-action: manipulation;
   cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -387,6 +401,7 @@
     background 0.2s ease;
 }
 
+.otp-code-input:focus,
 .auth-verify__code-input:focus {
   outline: none;
   border-color: rgba(233, 30, 140, 0.55);
@@ -396,12 +411,17 @@
   transform: translateY(-1px);
 }
 
-.auth-verify__code-input:disabled {
-  opacity: 0.72;
+.otp-code-input[aria-busy="true"],
+.auth-verify__code-input[aria-busy="true"] {
+  opacity: 0.92;
 }
 
 .auth-verify__submit {
   margin-top: 2px;
+}
+
+.auth-verify__message {
+  margin: 0;
 }
 
 .auth-verify__meta {
@@ -689,13 +709,18 @@
   min-width: 0;
 }
 
-.verification-code-row__field input {
+.verification-code-row__field input,
+.verification-code-row__input {
   width: 100%;
   min-height: 48px;
   touch-action: manipulation;
   letter-spacing: 0.2em;
   text-align: center;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  -webkit-user-select: text;
+  user-select: text;
+  pointer-events: auto;
 }
 
 .verification-phone-row__verify,

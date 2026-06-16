@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
+import { OtpCodeInput } from "./OtpCodeInput";
 import type { UserProfile } from "../types";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { isValidNigerianPhone, normalizeNigerianPhone } from "../utils/authIdentity";
@@ -202,23 +203,12 @@ export function PhoneVerificationPanel({
           <div className="verification-code-row">
             <label className="verification-code-row__field">
               <span className="profile-form-row__label">Verification code</span>
-              <input
+              <OtpCodeInput
                 ref={codeInputRef}
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                enterKeyHint="done"
-                maxLength={6}
+                className="verification-code-row__input"
                 value={code}
-                disabled={busy === "verifying"}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                onPaste={(event) => {
-                  const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-                  if (!pasted) return;
-                  event.preventDefault();
-                  setCode(pasted);
-                }}
-                placeholder="6-digit code"
+                verifying={busy === "verifying"}
+                onChange={setCode}
               />
             </label>
             <button

@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { NIGERIAN_STATES, citiesForState, stateForCity } from "../constants/profileOptions";
+import { ChevronDown, Search } from "lucide-react";
+import {
+  NIGERIAN_STATES,
+  citiesForState,
+  searchCitiesInState,
+  stateForCity
+} from "../constants/profileOptions";
 
 type StateCitySelectProps = {
   state: string;
@@ -12,9 +17,84 @@ type StateCitySelectProps = {
   variant?: "default" | "compact";
   /** Compact mode: hide state picker when a city is already selected. */
   hideStateWhenCitySelected?: boolean;
-  /** Show resolved state after the city label (e.g. City, Lagos). */
-  showStateSuffixOnCity?: boolean;
 };
+
+const SUGGESTION_LIMIT = 80;
+
+function CitySearchField({
+  state,
+  city,
+  disabled,
+  compact,
+  onPick
+}: {
+  state: string;
+  city: string;
+  disabled: boolean;
+  compact?: boolean;
+  onPick: (city: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const suggestions = useMemo(() => {
+    if (!state || disabled) return [];
+    return searchCitiesInState(state, open ? query : "").slice(0, SUGGESTION_LIMIT);
+  }, [state, disabled, open, query]);
+
+  const close = () => {
+    setOpen(false);
+    setQuery("");
+  };
+
+  const handlePick = (nextCity: string) => {
+    onPick(nextCity);
+    close();
+  };
+
+  return (
+    <div
+      className={`state-city-select__search${compact ? " state-city-select__search--compact" : ""}`}
+    >
+      <Search size={compact ? 14 : 16} className="state-city-select__search-icon" aria-hidden />
+      <input
+        type="search"
+        value={open ? query : city}
+        disabled={disabled}
+        placeholder={disabled ? "Select state first" : city || "Search city or LGA"}
+        autoComplete="off"
+        onFocus={() => {
+          if (disabled) return;
+          setOpen(true);
+          setQuery(city);
+        }}
+        onBlur={() => {
+          window.setTimeout(close, 150);
+        }}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          if (!open) setOpen(true);
+        }}
+        aria-expanded={open}
+        aria-autocomplete="list"
+      />
+      {open && suggestions.length > 0 ? (
+        <ul className="state-city-select__suggestions" role="listbox">
+          {suggestions.map((option) => (
+            <li key={option}>
+              <button type="button" onMouseDown={() => handlePick(option)}>
+                {option}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {open && query && suggestions.length === 0 ? (
+        <p className="state-city-select__empty">No matches — try another spelling</p>
+      ) : null}
+    </div>
+  );
+}
 
 export function StateCitySelect({
   state,
@@ -24,15 +104,20 @@ export function StateCitySelect({
   cityLabel = "City",
   stateOptional = false,
   variant = "default",
-  hideStateWhenCitySelected = false,
-  showStateSuffixOnCity = false
+  hideStateWhenCitySelected = false
 }: StateCitySelectProps) {
   const [citiesOpen, setCitiesOpen] = useState(false);
+  const [cityFilter, setCityFilter] = useState("");
   const resolvedState = state || (city ? stateForCity(city) : "");
   const cityOptions = useMemo(() => (resolvedState ? citiesForState(resolvedState) : []), [resolvedState]);
+  const filteredCityOptions = useMemo(
+    () => searchCitiesInState(resolvedState || "", cityFilter),
+    [resolvedState, cityFilter]
+  );
 
   useEffect(() => {
     setCitiesOpen(false);
+    setCityFilter("");
   }, [state]);
 
   const handleStateChange = (nextState: string) => {
@@ -41,16 +126,14 @@ export function StateCitySelect({
   };
 
   const pickCity = (nextCity: string) => {
-    onLocationChange(state, nextCity);
+    const nextState = state || stateForCity(nextCity) || resolvedState || "";
+    onLocationChange(nextState, nextCity);
     setCitiesOpen(false);
+    setCityFilter("");
   };
 
   if (variant === "compact") {
     const showState = !hideStateWhenCitySelected || !city;
-    const stateSuffix =
-      showStateSuffixOnCity && city && resolvedState
-        ? `, ${resolvedState === "FCT" ? "Abuja" : resolvedState}`
-        : "";
     return (
       <div
         className={`state-city-select state-city-select--compact${showState ? "" : " state-city-select--city-only"}`}
@@ -75,27 +158,14 @@ export function StateCitySelect({
         ) : null}
 
         <label className="state-city-select__field">
-          <span>
-            {cityLabel}
-            {stateSuffix ? <span className="state-city-select__city-state">{stateSuffix}</span> : null}
-          </span>
-          <select
-            value={city}
+          <span>{cityLabel}</span>
+          <CitySearchField
+            state={resolvedState || ""}
+            city={city}
             disabled={!resolvedState}
-            onChange={(e) => {
-              const nextCity = e.target.value;
-              const nextState = state || stateForCity(nextCity) || resolvedState || "";
-              onLocationChange(nextState, nextCity);
-            }}
-          >
-            {!resolvedState && <option value="">Select state first</option>}
-            {resolvedState && !city && <option value="">City</option>}
-            {cityOptions.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+            compact
+            onPick={pickCity}
+          />
         </label>
       </div>
     );
@@ -135,18 +205,34 @@ export function StateCitySelect({
             <ChevronDown size={18} className={citiesOpen ? "rotated" : ""} aria-hidden />
           </button>
           {citiesOpen && (
-            <div className="state-city-select__city-grid intent-tags selectable">
-              {cityOptions.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`intent-tag ${city === c ? "selected" : ""}`}
-                  onClick={() => pickCity(c)}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="state-city-select__search">
+                <Search size={16} className="state-city-select__search-icon" aria-hidden />
+                <input
+                  type="search"
+                  value={cityFilter}
+                  placeholder={`Search ${cityOptions.length} cities & LGAs`}
+                  autoComplete="off"
+                  onChange={(e) => setCityFilter(e.target.value)}
+                />
+              </div>
+              <div className="state-city-select__city-grid intent-tags selectable">
+                {filteredCityOptions.length > 0 ? (
+                  filteredCityOptions.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`intent-tag ${city === c ? "selected" : ""}`}
+                      onClick={() => pickCity(c)}
+                    >
+                      {c}
+                    </button>
+                  ))
+                ) : (
+                  <p className="state-city-select__empty">No matches — try another spelling</p>
+                )}
+              </div>
+            </>
           )}
         </div>
       )}

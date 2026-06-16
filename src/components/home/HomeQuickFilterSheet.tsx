@@ -1,5 +1,5 @@
 import { StateCitySelect } from "../StateCitySelect";
-import { clampHomeDistanceForCity, distanceOptionsForCity } from "../../utils/cityMetroRadius";
+import { HomeDistanceSlider } from "./HomeDistanceSlider";
 
 type HomeQuickFilterSheetProps = {
   open: boolean;
@@ -29,8 +29,6 @@ export function HomeQuickFilterSheet({
   onClose
 }: HomeQuickFilterSheetProps) {
   if (!open) return null;
-
-  const distanceOptions = distanceOptionsForCity(city, state);
 
   return (
     <div className="home-filter-sheet" role="dialog" aria-modal="true" aria-label="Age and location">
@@ -71,23 +69,13 @@ export function HomeQuickFilterSheet({
           onLocationChange={onLocationChange}
           stateLabel="State"
           cityLabel="City"
-          showStateSuffixOnCity
         />
-        <fieldset className="intent-fieldset home-filter-sheet__distance">
-          <legend>Distance</legend>
-          <div className="home-distance-options">
-            {distanceOptions.map((km) => (
-              <button
-                key={km}
-                type="button"
-                className={`home-distance-options__btn ${distanceKm === km ? "home-distance-options__btn--active" : ""}`}
-                onClick={() => onDistanceKmChange(clampHomeDistanceForCity(city, state, km))}
-              >
-                {km}km
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <HomeDistanceSlider
+          city={city}
+          state={state}
+          value={distanceKm}
+          onChange={onDistanceKmChange}
+        />
       </div>
     </div>
   );

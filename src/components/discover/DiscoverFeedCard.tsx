@@ -1,3 +1,4 @@
+import { isSampleHomeProfile } from "../../utils/homeFeedSamples";
 import { MapPin, Send } from "lucide-react";
 import type { DiscoverProfile } from "../../types";
 import type { VerificationInfo } from "../../utils/verification";
@@ -20,8 +21,10 @@ export function DiscoverFeedCard({
   onOpen,
   onSignal
 }: DiscoverFeedCardProps) {
+  const preview = isSampleHomeProfile(profile);
+
   return (
-    <article className="discover-feed-card">
+    <article className={`discover-feed-card${preview ? " discover-feed-card--preview" : ""}`}>
       <button type="button" className="discover-feed-card__open" onClick={onOpen} aria-label={`View ${profile.name}`}>
         <div className="discover-feed-card__media">
           <ShowcaseImage
@@ -35,6 +38,7 @@ export function DiscoverFeedCard({
               <VerificationBadge info={verification} />
             </span>
           ) : null}
+          {preview ? <span className="discover-feed-card__preview">Preview</span> : null}
           <div className="discover-feed-card__overlay">
             <h3 className="discover-feed-card__name">
               {profile.name}

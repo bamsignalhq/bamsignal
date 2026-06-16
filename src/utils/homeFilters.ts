@@ -134,26 +134,15 @@ export function buildHomeFilterChips(options: {
 
 export function buildHomeAdvancedChips(
   advanced: HomeAdvancedFilters,
-  options?: { city?: string; state?: string }
+  _options?: { city?: string; state?: string }
 ): HomeFilterChip[] {
-  let chips = buildHomeFilterChips({
+  return buildHomeFilterChips({
     ageMin: 0,
     ageMax: 0,
     city: "",
     state: "",
     advanced
-  });
-
-  if (options?.city) {
-    const locationState = options.state || "";
-    chips = chips.filter(
-      (chip) =>
-        chip.kind !== "state" &&
-        !(chip.kind === "origin" && locationState && chip.value === locationState)
-    );
-  }
-
-  return chips;
+  }).filter((chip) => chip.kind !== "origin" && chip.kind !== "state");
 }
 
 export function homeHasCustomFilters(options: {

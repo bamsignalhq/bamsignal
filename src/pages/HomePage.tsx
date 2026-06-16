@@ -43,8 +43,8 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const prefs = normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));
   const defaultAgeMin = prefs.ageMin ?? 22;
   const defaultAgeMax = prefs.ageMax ?? 35;
-  const defaultState = prefs.states[0] || viewer.state || "";
   const defaultCity = prefs.cities[0] || viewer.city || getMemberCity() || "";
+  const defaultState = viewer.state || (defaultCity ? stateForCity(defaultCity) || "" : "");
   const defaultDistanceKm = clampHomeDistanceForCity(
     defaultCity,
     defaultState,

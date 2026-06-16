@@ -4,6 +4,7 @@ import { DEFAULT_PREMIUM_PLANS } from "../constants/plans";
 import { STORAGE_KEYS } from "../constants/limits";
 import type { UserProfile } from "../types";
 import { readJson } from "../utils/storage";
+import { getMemberCity } from "../utils/memberCity";
 import {
   beginPaymentSession,
   checkoutWasOpened,
@@ -298,8 +299,9 @@ export async function startBoostPayment(
 export async function verifyBoostPayment(
   user: UserProfile,
   boostId = "city-boost",
-  city = "Lagos"
+  city?: string
 ): Promise<{ ok: boolean; error?: string; expiresAt?: string; pending?: boolean }> {
+  const resolvedCity = city?.trim() || getMemberCity();
   const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
   if (!reference) {
     return { ok: false, error: "No payment reference found." };
@@ -316,7 +318,7 @@ export async function verifyBoostPayment(
         name: user.name,
         productType: "boost",
         boostId,
-        city
+        city: resolvedCity
       })
     });
     const payload = await response.json().catch(() => null);
@@ -360,7 +362,7 @@ export async function completePendingPayment(user: UserProfile): Promise<{
   if (kind === "boost") {
     const datingProfile = readJson<{ city?: string }>(STORAGE_KEYS.datingProfile, {});
     const boostId = localStorage.getItem(STORAGE_KEYS.paymentBoostId) || "city-boost";
-    const result = await verifyBoostPayment(user, boostId, datingProfile.city || "Lagos");
+    const result = await verifyBoostPayment(user, boostId, datingProfile.city || getMemberCity());
     if (result.ok) {
       logPaymentEvent("verification result", { reference, ok: true, kind: "boost" });
       return { ok: true, kind: "boost" };

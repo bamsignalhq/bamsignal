@@ -1,10 +1,6 @@
 import { EXPANSION_CITIES, LAUNCH_PRIMARY_CITIES } from "../constants/seedCities";
 import { metroForCity, stateForCity } from "../constants/profileOptions";
-import {
-  DEFAULT_HOME_DISTANCE_KM,
-  HOME_DISTANCE_OPTIONS,
-  type HomeDistanceKm
-} from "../constants/homeFilters";
+import { DEFAULT_HOME_DISTANCE_KM, MIN_HOME_DISTANCE_KM } from "../constants/homeFilters";
 
 /**
  * Lagos metropolitan reach is ~40–50 km from the urban core (Lagos Island).
@@ -69,7 +65,6 @@ export function getCityMetroRadiusKm(city: string, state = ""): number {
     return STATE_METRO_RADIUS_KM[resolvedState];
   }
 
-  // Satellite towns in the Lagos corridor still use Lagos reach.
   if (resolvedState === "Ogun" && ["Abeokuta", "Sagamu", "Ota", "Mowe", "Agbara"].includes(city)) {
     return 30;
   }
@@ -77,24 +72,16 @@ export function getCityMetroRadiusKm(city: string, state = ""): number {
   return 22;
 }
 
-export function distanceOptionsForCity(city: string, state = ""): HomeDistanceKm[] {
-  const maxRadius = getCityMetroRadiusKm(city, state);
-  const options = HOME_DISTANCE_OPTIONS.filter((km) => km <= maxRadius);
-  return options.length ? options : [DEFAULT_HOME_DISTANCE_KM];
-}
-
-export function clampHomeDistanceForCity(city: string, state: string, distanceKm: number): HomeDistanceKm {
-  const options = distanceOptionsForCity(city, state);
-  if (options.includes(distanceKm as HomeDistanceKm)) {
-    return distanceKm as HomeDistanceKm;
+export function clampHomeDistanceForCity(city: string, state: string, distanceKm: number): number {
+  const max = getCityMetroRadiusKm(city, state);
+  const min = MIN_HOME_DISTANCE_KM;
+  if (!Number.isFinite(distanceKm)) {
+    return Math.min(DEFAULT_HOME_DISTANCE_KM, max);
   }
-  const within = options.filter((km) => km <= distanceKm);
-  if (within.length) return within[within.length - 1];
-  if (options.includes(DEFAULT_HOME_DISTANCE_KM)) return DEFAULT_HOME_DISTANCE_KM;
-  return options[options.length - 1];
+  return Math.round(Math.min(max, Math.max(min, distanceKm)));
 }
 
 /** Selected filter radius, capped to the city's metro model. */
 export function effectiveHomeDistanceKm(city: string, state: string, distanceKm: number): number {
-  return Math.min(distanceKm, getCityMetroRadiusKm(city, state));
+  return clampHomeDistanceForCity(city, state, distanceKm);
 }

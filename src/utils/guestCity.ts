@@ -22,7 +22,7 @@ export function saveSpotlightCity(city: string): void {
   writeJson(STORAGE_KEYS.spotlightCity, normalized);
 }
 
-/** Prefer profile city, then spotlight picker, then Lagos. */
+/** Prefer profile city, then spotlight picker — no hardcoded default. */
 export function resolveGuestCity(): string {
   const profileCity = normalizeCityName(getDatingProfile().city || "");
   if (profileCity) return profileCity;
@@ -30,10 +30,11 @@ export function resolveGuestCity(): string {
   const stored = readSpotlightCity();
   if (stored) return stored;
 
-  return "Lagos";
+  return "";
 }
 
 export function cityVisualId(cityName: string): string {
   const normalized = normalizeCityName(cityName);
-  return CITIES_VISUAL.find((city) => city.name.toLowerCase() === normalized.toLowerCase())?.id ?? "lagos";
+  const match = CITIES_VISUAL.find((city) => city.name.toLowerCase() === normalized.toLowerCase());
+  return match?.id ?? CITIES_VISUAL[0]?.id ?? "enugu";
 }

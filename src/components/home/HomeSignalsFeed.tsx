@@ -15,6 +15,7 @@ import {
   computeCompatibilityPercent,
   getProfileMatchReasons
 } from "../../utils/compatibility";
+import { isSampleHomeProfile, padHomeFeedWithSamples } from "../../utils/homeFeedSamples";
 import { getMemberCity } from "../../utils/memberCity";
 import { buildHomeFeedGridItems, filterProfilesByName } from "../../utils/homeFeed";
 import { homeAdvancedToSearchFilters, filterProfilesByDistance } from "../../utils/homeFilters";
@@ -151,7 +152,14 @@ export function HomeSignalsFeed({
 
     deck = filterProfilesByDistance(deck, effectiveHomeDistanceKm(resolvedCity, resolvedState, distanceKm));
 
-    const ranked = rankProfiles(deck, viewer, prefs as MatchPreferences);
+    let ranked = rankProfiles(deck, viewer, prefs as MatchPreferences);
+    ranked = padHomeFeedWithSamples(ranked, {
+      city: resolvedCity,
+      ageMin,
+      ageMax,
+      viewer,
+      excludeIds: exclude
+    });
     setProfiles(ranked);
     onResultCount?.(ranked.length);
     setLoading(false);
@@ -200,6 +208,11 @@ export function HomeSignalsFeed({
   };
 
   const handleSignal = async (profile: DiscoverProfile) => {
+    if (isSampleHomeProfile(profile)) {
+      showToast("Preview profile — real matches appear as more people join near you.");
+      return;
+    }
+
     const gate = evaluateSignalGate(isPremium, user);
     if (!gate.allowed) {
       localStorage.setItem(STORAGE_KEYS.pendingSignalProfileId, profile.id);

@@ -71,7 +71,7 @@ export function activateBoost(
   const city =
     datingProfile?.city ||
     readJson<DatingProfile | null>(STORAGE_KEYS.datingProfile, null)?.city ||
-    "Lagos";
+    "";
   const activatedAt = new Date().toISOString();
   const expiresAt =
     productId === "priority-signal-once"

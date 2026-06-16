@@ -3,14 +3,7 @@ import { isOnlineNow } from "./activity";
 import { boostedProfileIds } from "./activeBoosts";
 import { computeCompatibilityPercent, hasActivePreferences, matchesPreferences } from "./compatibility";
 
-export type DiscoverQuickFilter =
-  | "all"
-  | "online"
-  | "relationship"
-  | "friendship"
-  | "networking"
-  | "verified"
-  | "nearby";
+export type DiscoverQuickFilter = "all" | "verified" | "online" | "new";
 
 export function applyDiscoverPreferences(
   profiles: DiscoverProfile[],
@@ -43,16 +36,13 @@ export function applyQuickFilter(
   switch (filter) {
     case "online":
       return profiles.filter((p) => isOnlineNow(p.lastActiveAt));
-    case "relationship":
-      return profiles.filter((p) => p.intents.includes("Relationship"));
-    case "friendship":
-      return profiles.filter((p) => p.intents.includes("Friendship"));
-    case "networking":
-      return profiles.filter((p) => p.intents.includes("Networking"));
     case "verified":
       return profiles.filter((p) => p.verified);
-    case "nearby":
-      return profiles.filter((p) => (p.distanceKm ?? 99) <= 15);
+    case "new":
+      return profiles.filter((p) => {
+        if (!p.createdAt) return false;
+        return Date.now() - new Date(p.createdAt).getTime() < 7 * 86400000;
+      });
     default:
       return profiles;
   }

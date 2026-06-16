@@ -4,54 +4,39 @@ import { BRAND } from "../constants/copy";
 import { FREE_DAILY_SWIPES, STORAGE_KEYS } from "../constants/limits";
 import { fetchDiscoverProfiles } from "../services/discoverProfiles";
 import { sendSignalRemote } from "../services/memberData";
-import { DiscoverFilters } from "../components/DiscoverFilters";
-import { DiscoverCityHeader } from "../components/discover/DiscoverCityHeader";
-import { DiscoverLimitsBar } from "../components/discover/DiscoverLimitsBar";
+import { DiscoverHeader } from "../components/discover/DiscoverHeader";
 import { DiscoverPremiumNudge } from "../components/discover/DiscoverPremiumNudge";
 import { DiscoverQuickFilters } from "../components/discover/DiscoverQuickFilters";
-import { DiscoverTrending } from "../components/discover/DiscoverTrending";
 import { ProfileCardSkeleton } from "../components/Skeleton";
 import { EmptyState } from "../components/EmptyState";
 import { PaywallModal } from "../components/PaywallModal";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
 import { ProfileCard } from "../components/ProfileCard";
 import { ReportBlockModal } from "../components/ReportBlockModal";
-import { SignalRadar, profilesToRadarNodes } from "../components/SignalRadar";
-import type { DiscoverMode, DiscoverProfile, Match, MatchPreferences, UserProfile } from "../types";
+import type { DiscoverProfile, Match, MatchPreferences, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import {
   computeCompatibilityPercent,
   getProfileMatchReasons
 } from "../utils/compatibility";
-import { buildDiscoveryDeck, recordDiscoveryImpression } from "../utils/launchSeed";
+import { recordDiscoveryImpression } from "../utils/launchSeed";
 import { buildDensityAwareDeck } from "../utils/cityDensity";
 import { markFirstDayStep } from "../utils/firstDayJourney";
 import { trackUpgradeImpression } from "../utils/premiumConversion";
 import {
   defaultDatingProfile,
-  defaultMatchPreferences,
   normalizeDatingProfile,
   normalizeMatchPreferences
 } from "../utils/profile";
 import { blockUser, canUserSignalTarget, filterDiscoverDeck } from "../utils/safety";
 import { getVerificationTier } from "../utils/verification";
-import { getSignalsSentCount, incrementSignalsSent } from "../utils/streaks";
+import { incrementSignalsSent } from "../utils/streaks";
 import { trackEvent } from "../utils/analytics";
+import { getMemberCity } from "../utils/memberCity";
 import { getRemainingDaily, incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
-import {
-  evaluateDiscoverStateChange,
-  milesToKm,
-  recordDiscoverStateChange,
-  remainingFreeStateChanges
-} from "../utils/discoverLocation";
-import {
-  applyDiscoverPreferences,
-  applyQuickFilter,
-  trendingSections,
-  type DiscoverQuickFilter
-} from "../utils/discoverFilters";
+import { applyDiscoverPreferences, applyQuickFilter, type DiscoverQuickFilter } from "../utils/discoverFilters";
 import { isViewerShadowBanned } from "../utils/shadowBan";
-import { consumePrioritySignal, getViewerBoostSummary } from "../utils/activeBoosts";
+import { consumePrioritySignal } from "../utils/activeBoosts";
 
 const SIGNAL_ANIM_MS = 700;
 
@@ -66,36 +51,36 @@ type DiscoverPageProps = {
 export function DiscoverPage({
   isPremium,
   plans,
-  onMatch,
+  onMatch: _onMatch,
   onUpgrade,
   paymentLoading
 }: DiscoverPageProps) {
-  const [mode, setMode] = useState<DiscoverMode>("signals");
+  void _onMatch;
+
   const [quickFilter, setQuickFilter] = useState<DiscoverQuickFilter>("all");
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [passedIds, setPassedIds] = useState<string[]>(() =>
     readJson<string[]>(STORAGE_KEYS.passed, [])
   );
-  const [prefs, setPrefs] = useState<MatchPreferences>(() =>
+  const [prefs] = useState<MatchPreferences>(() =>
     normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}))
   );
-  const [radarSelected, setRadarSelected] = useState<string | null>(null);
-  const [focusedId, setFocusedId] = useState<string | null>(null);
-  const [safetyOpen, setSafetyOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [signalSent, setSignalSent] = useState(false);
   const [cardKey, setCardKey] = useState(0);
   const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
-  const [viewer, setViewer] = useState(() =>
+  const [viewer] = useState(() =>
     normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
   );
   const [deckReady, setDeckReady] = useState(false);
   const [allProfiles, setAllProfiles] = useState<DiscoverProfile[]>([]);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [toast, setToast] = useState("");
+  const [safetyOpen, setSafetyOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
-    const city = viewer.city || "Lagos";
+    const city = viewer.city || getMemberCity() || "";
     void fetchDiscoverProfiles(user, city, [...blocked, ...passedIds]).then((profiles) => {
       if (cancelled) return;
       setAllProfiles(profiles);
@@ -106,13 +91,10 @@ export function DiscoverPage({
     };
   }, [viewer.city, blocked.length, passedIds.length]);
 
-  const { baseDeck, densityMessage } = useMemo(() => {
+  const baseDeck = useMemo(() => {
     const available = filterDiscoverDeck(allProfiles, viewer, blocked, passedIds);
-    const { deck, density } = buildDensityAwareDeck(available, viewer, prefs, blocked, passedIds);
-    return {
-      baseDeck: applyDiscoverPreferences(deck, prefs, viewer),
-      densityMessage: density.message
-    };
+    const { deck } = buildDensityAwareDeck(available, viewer, prefs, blocked, passedIds);
+    return applyDiscoverPreferences(deck, prefs, viewer);
   }, [passedIds, blocked, viewer, prefs, allProfiles]);
 
   const deck = useMemo(
@@ -120,28 +102,11 @@ export function DiscoverPage({
     [baseDeck, quickFilter]
   );
 
-  const trending = useMemo(() => trendingSections(baseDeck), [baseDeck]);
-
   const memberUser = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
-  const boostSummary = useMemo(() => getViewerBoostSummary(memberUser), [memberUser.email, memberUser.phone]);
-  const boostBanner =
-    boostSummary.profileBoost || boostSummary.signalBoost || boostSummary.priorityPending;
-
-  const [paywallOpen, setPaywallOpen] = useState(false);
-  const [toast, setToast] = useState("");
-
-  const current =
-    deck.find((p) => p.id === (focusedId ?? radarSelected)) ?? deck[0];
-  const radarNodes = profilesToRadarNodes(deck.slice(0, 8));
-
+  const current = deck[0];
   const remaining = getRemainingDaily(STORAGE_KEYS.dailySwipes, FREE_DAILY_SWIPES);
   const atLimit = !isPremium && remaining <= 0;
-
   const signalGate = current ? canUserSignalTarget(viewer, current, prefs) : { allowed: true as const };
-  const showFirstSignalNudge =
-    getSignalsSentCount() === 0 &&
-    Boolean(localStorage.getItem(STORAGE_KEYS.firstSignalPromptAt)) &&
-    Date.now() - Number(localStorage.getItem(STORAGE_KEYS.firstSignalPromptAt)) < 5 * 60 * 1000;
 
   useEffect(() => {
     markFirstDayStep("discover_opened");
@@ -151,7 +116,7 @@ export function DiscoverPage({
     setDeckReady(false);
     const t = window.setTimeout(() => setDeckReady(true), 180);
     return () => window.clearTimeout(t);
-  }, [baseDeck.length, quickFilter, prefs]);
+  }, [baseDeck.length, quickFilter]);
 
   useEffect(() => {
     if (current?.id) recordDiscoveryImpression(current.id);
@@ -160,33 +125,6 @@ export function DiscoverPage({
   useEffect(() => {
     setCardKey((k) => k + 1);
   }, [current?.id]);
-
-  const savePrefs = (next: MatchPreferences) => {
-    setPrefs(next);
-    writeJson(STORAGE_KEYS.matchPreferences, next);
-  };
-
-  const discoverState = viewer.state ?? "Lagos";
-  const freeStateChangesLeft = remainingFreeStateChanges(isPremium);
-
-  const updateDiscoverLocation = (state: string, city: string) => {
-    const prevState = discoverState;
-    if (state !== prevState) {
-      const gate = evaluateDiscoverStateChange(prevState, state, isPremium);
-      if (!gate.allowed) {
-        trackEvent("paywall_seen", { source: "discover_state_change" });
-        trackUpgradeImpression("discover_state_change");
-        setPaywallOpen(true);
-        return;
-      }
-      recordDiscoverStateChange();
-    }
-    const nextViewer = { ...viewer, state, city };
-    setViewer(nextViewer);
-    writeJson(STORAGE_KEYS.datingProfile, { ...nextViewer, premium: isPremium });
-    setPassedIds([]);
-    writeJson(STORAGE_KEYS.passed, []);
-  };
 
   const canSignal = () => {
     if (isPremium) return true;
@@ -207,13 +145,10 @@ export function DiscoverPage({
     const nextPassed = [...passedIds, profileId];
     setPassedIds(nextPassed);
     writeJson(STORAGE_KEYS.passed, nextPassed);
-    setRadarSelected(null);
-    setFocusedId(null);
   };
 
   const finishSignal = async (profile: DiscoverProfile, opts?: { priority?: boolean }) => {
     const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
-    const suppressed = isViewerShadowBanned(user.phone, user.email);
     const priority = opts?.priority ?? false;
     const sent = await sendSignalRemote(user, profile.id, priority ? "priority" : "signal");
 
@@ -224,19 +159,11 @@ export function DiscoverPage({
       return;
     }
 
-    if (suppressed) {
-      setToast(
-        priority
-          ? `${BRAND.prioritySignal} sent to ${profile.name}! ⚡`
-          : `${BRAND.signalSent} to ${profile.name} ⚡`
-      );
-    } else {
-      setToast(
-        priority
-          ? `${BRAND.prioritySignal} sent to ${profile.name}! ⚡`
-          : `${BRAND.signalSent} to ${profile.name} ⚡`
-      );
-    }
+    setToast(
+      priority
+        ? `${BRAND.prioritySignal} sent to ${profile.name}!`
+        : `${BRAND.signalSent} to ${profile.name}`
+    );
     setTimeout(() => setToast(""), 3000);
     advance(profile.id);
   };
@@ -290,68 +217,19 @@ export function DiscoverPage({
     setTimeout(() => setToast(""), 3000);
   };
 
-  const handleTrendingSelect = (profile: DiscoverProfile) => {
-    setFocusedId(profile.id);
-    setMode("signals");
-    setProfileOpen(true);
-  };
-
   const renderEmpty = () => {
     const filteredEmpty = baseDeck.length > 0 && deck.length === 0;
 
     return (
       <EmptyState
         icon={Compass}
-        title={filteredEmpty ? "No matches for this filter" : "No signals nearby"}
-        message={filteredEmpty ? "Try another filter." : "Expand your distance to see more people."}
-        actionLabel={filteredEmpty ? "Clear filter" : "Expand discovery"}
-        onAction={() =>
-          filteredEmpty
-            ? setQuickFilter("all")
-            : savePrefs({
-                ...prefs,
-                distanceMax: Math.max(prefs.distanceMax ?? milesToKm(15), milesToKm(50))
-              })
-        }
+        title={filteredEmpty ? "No matches for this filter" : "No profiles to discover"}
+        message={filteredEmpty ? "Try another filter." : "Check back soon for more people."}
+        actionLabel={filteredEmpty ? "Clear filter" : undefined}
+        onAction={filteredEmpty ? () => setQuickFilter("all") : undefined}
       />
     );
   };
-
-  if (!current && mode !== "trending") {
-    return (
-      <div className="page discover-page discover-v2">
-        <DiscoverCityHeader
-          city={viewer.city}
-          profiles={allProfiles}
-          blocked={blocked}
-          passedIds={passedIds}
-        />
-        <DiscoverQuickFilters
-          active={quickFilter}
-          onChange={setQuickFilter}
-          isPremium={isPremium}
-          onAdvancedFilters={() => setFiltersOpen(true)}
-        />
-        {renderEmpty()}
-        <DiscoverFilters
-          prefs={prefs}
-          onChange={savePrefs}
-          discoverState={discoverState}
-          discoverCity={viewer.city}
-          onDiscoverLocationChange={updateDiscoverLocation}
-          freeStateChangesRemaining={freeStateChangesLeft}
-          isPremium={isPremium}
-          onRequirePremium={() => {
-            trackEvent("paywall_seen", { source: "online_now_filter" });
-            setPaywallOpen(true);
-          }}
-          open={filtersOpen}
-          onOpenChange={setFiltersOpen}
-          hideTrigger
-        />
-      </div>
-    );
-  }
 
   const compatibility = current ? computeCompatibilityPercent(viewer, current) : 0;
   const matchReasons = current ? getProfileMatchReasons(viewer, current) : [];
@@ -360,87 +238,17 @@ export function DiscoverPage({
     : getVerificationTier(defaultDatingProfile(), false, true);
 
   return (
-    <div className="page discover-page discover-v2">
-      <DiscoverCityHeader
-        city={viewer.city}
-        profiles={allProfiles}
-        blocked={blocked}
-        passedIds={passedIds}
-      />
-
-      <DiscoverQuickFilters
-        active={quickFilter}
-        onChange={setQuickFilter}
-        isPremium={isPremium}
-        onAdvancedFilters={() => setFiltersOpen(true)}
-      />
-
-      {densityMessage && (
-        <p className="discover-density-note" role="status">
-          {densityMessage}
-        </p>
-      )}
-
-      <DiscoverLimitsBar isPremium={isPremium} />
-
-      {boostBanner && (
-        <p className="discover-boost-banner" role="status">
-          {boostSummary.profileBoost && "Profile Boost active — you're featured at the top of local results. "}
-          {boostSummary.signalBoost && "Signal Boost active — extra visibility in your city. "}
-          {boostSummary.priorityPending && "Priority Signal ready — your next signal lands first."}
-        </p>
-      )}
-
-      <div className="discover-mode-tabs" role="tablist" aria-label="Discover modes">
-        {(["signals", "radar", "trending"] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={mode === tab}
-            className={mode === tab ? "active" : ""}
-            onClick={() => setMode(tab)}
-          >
-            {tab === "signals" ? "Signals" : tab === "radar" ? "Radar" : "Trending"}
-          </button>
-        ))}
-      </div>
+    <div className="page discover-page discover-v2 discover-v2--clean">
+      <DiscoverHeader />
+      <DiscoverQuickFilters active={quickFilter} onChange={setQuickFilter} />
 
       {toast && <div className="toast">{toast}</div>}
 
-      {showFirstSignalNudge && mode === "signals" && (
-        <div className="first-signal-nudge card" role="status">
-          <strong>Nearby signals are ready</strong>
-          <p>Send your first signal — it takes less than a minute.</p>
-        </div>
-      )}
+      {!deckReady && <ProfileCardSkeleton />}
 
-      {mode === "radar" && (
-        <div className="discover-radar-wrap">
-          <h2 className="discover-radar-title">{BRAND.nearbySignals}</h2>
-          <SignalRadar
-            nodes={radarNodes}
-            selectedId={current?.id}
-            onSelect={(id) => {
-              setRadarSelected(id);
-              setMode("signals");
-            }}
-          />
-        </div>
-      )}
+      {deckReady && !current && renderEmpty()}
 
-      {mode === "trending" && (
-        <DiscoverTrending
-          active={trending.active}
-          verified={trending.verified}
-          newMembers={trending.newMembers}
-          onSelect={handleTrendingSelect}
-        />
-      )}
-
-      {mode === "signals" && !deckReady && <ProfileCardSkeleton />}
-
-      {mode === "signals" && deckReady && current && (
+      {deckReady && current && (
         <ProfileCard
           key={cardKey}
           profile={current}
@@ -481,24 +289,6 @@ export function DiscoverPage({
       )}
 
       {atLimit && <DiscoverPremiumNudge onUpgrade={() => setPaywallOpen(true)} />}
-
-      <DiscoverFilters
-        prefs={prefs}
-        onChange={savePrefs}
-        discoverState={discoverState}
-        discoverCity={viewer.city}
-        onDiscoverLocationChange={updateDiscoverLocation}
-        freeStateChangesRemaining={freeStateChangesLeft}
-        isPremium={isPremium}
-        onRequirePremium={() => {
-          trackUpgradeImpression("premium_filter");
-          trackEvent("paywall_seen", { source: "online_now_filter" });
-          setPaywallOpen(true);
-        }}
-        open={filtersOpen}
-        onOpenChange={setFiltersOpen}
-        hideTrigger
-      />
 
       <PaywallModal
         open={paywallOpen}

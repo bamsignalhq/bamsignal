@@ -1,31 +1,20 @@
-import { SlidersHorizontal } from "lucide-react";
 import type { DiscoverQuickFilter } from "../../utils/discoverFilters";
 
 const CHIPS: { id: DiscoverQuickFilter; label: string }[] = [
   { id: "all", label: "All" },
-  { id: "online", label: "Online Now" },
-  { id: "relationship", label: "Relationship" },
-  { id: "friendship", label: "Friendship" },
-  { id: "networking", label: "Networking" },
   { id: "verified", label: "Verified" },
-  { id: "nearby", label: "Nearby" }
+  { id: "online", label: "Online" },
+  { id: "new", label: "New" }
 ];
 
 type DiscoverQuickFiltersProps = {
   active: DiscoverQuickFilter;
   onChange: (filter: DiscoverQuickFilter) => void;
-  isPremium?: boolean;
-  onAdvancedFilters?: () => void;
 };
 
-export function DiscoverQuickFilters({
-  active,
-  onChange,
-  isPremium,
-  onAdvancedFilters
-}: DiscoverQuickFiltersProps) {
+export function DiscoverQuickFilters({ active, onChange }: DiscoverQuickFiltersProps) {
   return (
-    <div className="discover-quick-filters" role="toolbar" aria-label="Quick filters">
+    <div className="discover-quick-filters discover-quick-filters--compact" role="toolbar" aria-label="Discover filters">
       <div className="discover-quick-filters__scroll">
         {CHIPS.map((chip) => (
           <button
@@ -37,12 +26,6 @@ export function DiscoverQuickFilters({
             {chip.label}
           </button>
         ))}
-        {isPremium && onAdvancedFilters && (
-          <button type="button" className="discover-quick-filters__chip discover-quick-filters__chip--advanced" onClick={onAdvancedFilters}>
-            <SlidersHorizontal size={14} />
-            Advanced Filters
-          </button>
-        )}
       </div>
     </div>
   );

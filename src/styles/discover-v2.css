@@ -1,7 +1,43 @@
 /* Discover V2 — premium discovery experience */
 
-.discover-v2 {
-  padding-bottom: 1.5rem;
+.discover-v2--clean {
+  padding-bottom: 1rem;
+  gap: 6px;
+}
+
+.discover-v2--clean .discover-v2__header {
+  margin-bottom: 0.35rem;
+}
+
+.discover-v2--clean .discover-v2__header h1 {
+  font-size: 1.35rem;
+  margin: 0 0 0.15rem;
+}
+
+.discover-v2--clean .discover-v2__header p {
+  font-size: 0.8rem;
+}
+
+.discover-quick-filters--compact {
+  margin: 0 -1rem 0.5rem;
+  padding: 0.25rem 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.discover-quick-filters--compact .discover-quick-filters__chip {
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.discover-quick-filters--compact .discover-quick-filters__chip:hover {
+  transform: none;
+}
+
+.discover-v2--clean .profile-card-stack {
+  margin-top: 0.25rem;
 }
 
 /* City header system */

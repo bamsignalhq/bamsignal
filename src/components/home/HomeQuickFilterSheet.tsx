@@ -1,5 +1,4 @@
 import { StateCitySelect } from "../StateCitySelect";
-import { AgeRangeTapSelect } from "../AgeRangeTapSelect";
 import { HomeDistanceSlider } from "./HomeDistanceSlider";
 
 type HomeQuickFilterSheetProps = {
@@ -41,18 +40,30 @@ export function HomeQuickFilterSheet({
             Done
           </button>
         </div>
-        <AgeRangeTapSelect
-          label="Age range"
-          ageMin={ageMin}
-          ageMax={ageMax}
-          onChange={(min, max) => {
-            onAgeMinChange(min);
-            onAgeMaxChange(max);
-          }}
-        />
+        <label className="home-filter-sheet__age">
+          <span>Age range</span>
+          <div className="home-filter-sheet__range">
+            <input
+              type="number"
+              min={18}
+              max={99}
+              value={ageMin}
+              onChange={(e) => onAgeMinChange(Number(e.target.value) || 18)}
+              aria-label="Minimum age"
+            />
+            <span aria-hidden>–</span>
+            <input
+              type="number"
+              min={18}
+              max={99}
+              value={ageMax}
+              onChange={(e) => onAgeMaxChange(Number(e.target.value) || 99)}
+              aria-label="Maximum age"
+            />
+          </div>
+        </label>
         <StateCitySelect
           variant="compact"
-          hideStateWhenCitySelected
           state={state}
           city={city}
           onLocationChange={onLocationChange}

@@ -19,85 +19,6 @@ type StateCitySelectProps = {
   hideStateWhenCitySelected?: boolean;
 };
 
-const SUGGESTION_LIMIT = 80;
-
-function CitySearchField({
-  state,
-  city,
-  disabled,
-  compact,
-  onPick
-}: {
-  state: string;
-  city: string;
-  disabled: boolean;
-  compact?: boolean;
-  onPick: (city: string) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-
-  const suggestions = useMemo(() => {
-    if (!state || disabled) return [];
-    return searchCitiesInState(state, open ? query : "").slice(0, SUGGESTION_LIMIT);
-  }, [state, disabled, open, query]);
-
-  const close = () => {
-    setOpen(false);
-    setQuery("");
-  };
-
-  const handlePick = (nextCity: string) => {
-    onPick(nextCity);
-    close();
-  };
-
-  const placeholder = disabled ? "Select state first" : city ? "" : "Search city or LGA";
-
-  return (
-    <div
-      className={`state-city-select__search${compact ? " state-city-select__search--compact" : ""}`}
-    >
-      <Search size={compact ? 14 : 16} className="state-city-select__search-icon" aria-hidden />
-      <input
-        type="search"
-        value={open ? query : city}
-        disabled={disabled}
-        placeholder={placeholder}
-        autoComplete="off"
-        onFocus={() => {
-          if (disabled) return;
-          setOpen(true);
-          setQuery(city);
-        }}
-        onBlur={() => {
-          window.setTimeout(close, 150);
-        }}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          if (!open) setOpen(true);
-        }}
-        aria-expanded={open}
-        aria-autocomplete="list"
-      />
-      {open && suggestions.length > 0 ? (
-        <ul className="state-city-select__suggestions" role="listbox">
-          {suggestions.map((option) => (
-            <li key={option}>
-              <button type="button" onMouseDown={() => handlePick(option)}>
-                {option}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {open && query && suggestions.length === 0 ? (
-        <p className="state-city-select__empty">No matches — try another spelling</p>
-      ) : null}
-    </div>
-  );
-}
-
 export function StateCitySelect({
   state,
   city,
@@ -111,7 +32,10 @@ export function StateCitySelect({
   const [citiesOpen, setCitiesOpen] = useState(false);
   const [cityFilter, setCityFilter] = useState("");
   const resolvedState = state || (city ? stateForCity(city) : "");
-  const cityOptions = useMemo(() => (resolvedState ? citiesForState(resolvedState) : []), [resolvedState]);
+  const cityOptions = useMemo(
+    () => (resolvedState ? citiesForState(resolvedState) : []),
+    [resolvedState]
+  );
   const filteredCityOptions = useMemo(
     () => searchCitiesInState(resolvedState || "", cityFilter),
     [resolvedState, cityFilter]
@@ -127,12 +51,54 @@ export function StateCitySelect({
     setCitiesOpen(Boolean(nextState));
   };
 
-  const pickCity = (nextCity: string) => {
+  const handleCityChange = (nextCity: string) => {
     const nextState = state || stateForCity(nextCity) || resolvedState || "";
     onLocationChange(nextState, nextCity);
+  };
+
+  const pickCity = (nextCity: string) => {
+    handleCityChange(nextCity);
     setCitiesOpen(false);
     setCityFilter("");
   };
+
+  const stateSelect = (
+    <label className="state-city-select__field">
+      <span>{stateLabel}</span>
+      <select
+        value={state}
+        onChange={(e) => handleStateChange(e.target.value)}
+        required={!stateOptional}
+      >
+        {stateOptional && <option value="">Select state</option>}
+        {!state && !stateOptional && <option value="">{variant === "compact" ? "State" : "Choose your state"}</option>}
+        {NIGERIAN_STATES.map((s) => (
+          <option key={s} value={s}>
+            {s === "FCT" ? "FCT (Abuja)" : s}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  const citySelect = (
+    <label className="state-city-select__field">
+      <span>{cityLabel}</span>
+      <select
+        value={city}
+        disabled={!resolvedState}
+        onChange={(e) => handleCityChange(e.target.value)}
+        required
+      >
+        {!city && <option value=""></option>}
+        {cityOptions.map((c) => (
+          <option key={c} value={c}>
+            {c}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 
   if (variant === "compact") {
     const showState = !hideStateWhenCitySelected || !city;
@@ -140,58 +106,15 @@ export function StateCitySelect({
       <div
         className={`state-city-select state-city-select--compact${showState ? "" : " state-city-select--city-only"}`}
       >
-        {showState ? (
-          <label className="state-city-select__field">
-            <span>{stateLabel}</span>
-            <select
-              value={state}
-              onChange={(e) => handleStateChange(e.target.value)}
-              required={!stateOptional}
-            >
-              {stateOptional && <option value="">Select state</option>}
-              {!state && !stateOptional && <option value="">State</option>}
-              {NIGERIAN_STATES.map((s) => (
-                <option key={s} value={s}>
-                  {s === "FCT" ? "FCT (Abuja)" : s}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-
-        <label className="state-city-select__field">
-          <span>{cityLabel}</span>
-          <CitySearchField
-            state={resolvedState || ""}
-            city={city}
-            disabled={!resolvedState}
-            compact
-            onPick={pickCity}
-          />
-        </label>
+        {showState ? stateSelect : null}
+        {citySelect}
       </div>
     );
   }
 
   return (
     <div className="state-city-select state-city-select--stacked">
-      <label className="state-city-select__field">
-        {stateLabel}
-        <select
-          value={state}
-          onChange={(e) => handleStateChange(e.target.value)}
-          required={!stateOptional}
-        >
-          {stateOptional && <option value="">Select state</option>}
-          {!state && !stateOptional && <option value="">Choose your state</option>}
-          {NIGERIAN_STATES.map((s) => (
-            <option key={s} value={s}>
-              {s === "FCT" ? "FCT (Abuja)" : s}
-            </option>
-          ))}
-        </select>
-      </label>
-
+      {stateSelect}
       {state && (
         <div className="state-city-select__city-block">
           <button

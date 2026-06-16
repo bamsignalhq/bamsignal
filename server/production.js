@@ -29,6 +29,7 @@ import adminCityHomeHandler from "../api/admin/city-home.js";
 import adminCitySpotlightHandler from "../api/admin/city-spotlight.js";
 import whatsappVerifyStartHandler from "../api/verify/whatsapp/start.js";
 import whatsappVerifyConfirmHandler from "../api/verify/whatsapp/confirm.js";
+import whatsappVerifyWebhookHandler from "../api/verify/whatsapp/webhook.js";
 import verificationSubmissionsHandler from "../api/verify/submissions.js";
 import { getSendchampHealthTrace, isSendchampConfigured } from "./services/sendchamp.js";
 
@@ -116,6 +117,7 @@ mountHandler(app, "post", "/api/auth/play-reviewer-finish", playReviewerFinishHa
 mountHandler(app, "post", "/api/auth/identity", identityHandler);
 mountHandler(app, "post", "/api/verify/whatsapp/start", whatsappVerifyStartHandler);
 mountHandler(app, "post", "/api/verify/whatsapp/confirm", whatsappVerifyConfirmHandler);
+mountHandler(app, "post", "/api/verify/whatsapp/webhook", whatsappVerifyWebhookHandler);
 mountHandler(app, "post", "/api/verify/submissions", verificationSubmissionsHandler);
 mountHandler(app, "get", "/api/verify/submissions", verificationSubmissionsHandler);
 mountHandler(app, "post", "/api/member/data", memberDataHandler);
@@ -133,7 +135,17 @@ mountHandler(app, "get", "/api/city/spotlight", citySpotlightHandler);
 mountHandler(app, "post", "/api/city/spotlight-event", citySpotlightEventHandler);
 app.use(paystackRouter);
 
-app.use(express.static(distDir, { index: false, maxAge: "1d" }));
+app.use(
+  express.static(distDir, {
+    index: false,
+    maxAge: "1d",
+    setHeaders(res, filePath) {
+      if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      }
+    }
+  })
+);
 
 app.use((req, res, next) => {
   if (req.method !== "GET" && req.method !== "HEAD") return next();

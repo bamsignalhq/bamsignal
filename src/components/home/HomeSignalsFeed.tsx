@@ -32,6 +32,7 @@ import { incrementSignalsSent } from "../../utils/streaks";
 import { trackEvent } from "../../utils/analytics";
 import { getVerificationTier } from "../../utils/verification";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { flowLog } from "../../utils/flowLog";
 
 type HomeSignalsFeedProps = {
   user: UserProfile;
@@ -139,6 +140,7 @@ export function HomeSignalsFeed({
   const loadFeed = useCallback(async () => {
     if (!loadedOnceRef.current) setLoading(true);
     setDisplayLimit(HOME_FEED_PROFILE_COUNT);
+    flowLog("home_feed_load_start");
     try {
       const exclude = getExcludedProfileIds();
       const searchFilters = homeAdvancedToSearchFilters(debouncedAdvanced);
@@ -179,6 +181,7 @@ export function HomeSignalsFeed({
 
       setBaseProfiles(deck);
       loadedOnceRef.current = true;
+      flowLog("home_feed_load_ok", { count: deck.length });
     } finally {
       setLoading(false);
     }

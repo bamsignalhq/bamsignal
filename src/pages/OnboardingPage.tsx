@@ -28,6 +28,8 @@ import { syncMemberProfileRemote } from "../services/cityHome";
 import { completeOnboardingRemote } from "../services/memberData";
 import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { writeJson, readJson } from "../utils/storage";
+import { isStoragePhotoUrl } from "../utils/photoRefs";
+import { flowLog } from "../utils/flowLog";
 
 const STEPS = ["Basic info", "About you", "Photos", "Preferences"] as const;
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
@@ -61,6 +63,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   const progress = ((step + 1) / STEPS.length) * 100;
 
   useEffect(() => {
+    flowLog("onboarding_step", { step });
     if (!writeJson(STORAGE_KEYS.onboardingStep, step)) {
       setModMessage(USER_MESSAGES.progressSaveFailed);
     }
@@ -125,12 +128,14 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     if (step === 1) {
       return profile.bio.trim().length >= 8 && profile.intents.length >= 1;
     }
-    if (step === 2) return profile.photos.length >= MIN_PROFILE_PHOTOS;
+    if (step === 2) return profile.photos.filter(isStoragePhotoUrl).length >= MIN_PROFILE_PHOTOS;
     return true;
   };
 
   const next = () => {
-    if (step === 2 && profile.photos.length >= MIN_PROFILE_PHOTOS) trackEvent("photo_uploaded");
+    if (step === 2 && profile.photos.filter(isStoragePhotoUrl).length >= MIN_PROFILE_PHOTOS) {
+      trackEvent("photo_uploaded");
+    }
     if (step === STEPS.length - 1) {
       saveAndFinish();
       return;
@@ -304,6 +309,11 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         <section className="onboarding-step">
           <h2>Your photos</h2>
           <p className="onboarding-sub">Profile gallery photos only — you can add a cover photo later from Edit Profile.</p>
+          {profile.photos.some((photo) => photo && !isStoragePhotoUrl(photo)) ? (
+            <p className="onboarding-sub" role="status">
+              Uploading photos… wait until both are saved before continuing.
+            </p>
+          ) : null}
           <PhotoUploadGrid
             photos={profile.photos}
             signupMode

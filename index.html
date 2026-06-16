@@ -31,6 +31,15 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      window.setTimeout(function () {
+        var root = document.getElementById("root");
+        if (root && !root.children.length) {
+          root.innerHTML =
+            '<main class="app-fallback" role="alert"><div class="app-fallback__card card"><h1>Something went wrong</h1><p>Tap below to reload BamSignal.</p><button type="button" class="btn-primary btn-full" onclick="location.reload()">Reload</button></div></main>';
+        }
+      }, 15000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

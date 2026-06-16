@@ -11,6 +11,7 @@ import {
 import { moderatePhotoUpload } from "../utils/mediaModeration";
 import { blobToDataUrl, PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
 import { logPhotoUpload } from "../utils/photoUploadLog";
+import { flowLog } from "../utils/flowLog";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
 
 type PhotoUploadGridProps = {
@@ -50,6 +51,7 @@ export function PhotoUploadGrid({
     if (!file || photos.length >= MAX_PROFILE_PHOTOS) return;
 
     setUploading(true);
+    flowLog("photo_upload_start", { signupMode });
     const prior = photos;
     let previewUrl: string | null = null;
 
@@ -91,10 +93,12 @@ export function PhotoUploadGrid({
       const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
       onChange(withPreview.map((photo) => (photo === previewUrl ? remoteUrl : photo)));
       logPhotoUpload("upload_ok", { signupMode });
+      flowLog("photo_upload_ok", { signupMode });
     } catch (error) {
       onChange(prior);
       const mapped = mapUploadError(error);
       logPhotoUpload("upload_failed", { code: mapped.code, message: mapped.message });
+      flowLog("photo_upload_failed", { code: mapped.code });
       onModerationMessage?.(mapped.message || PHOTO_UPLOAD_FAIL);
     } finally {
       if (previewUrl) URL.revokeObjectURL(previewUrl);

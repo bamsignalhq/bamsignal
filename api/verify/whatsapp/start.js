@@ -11,13 +11,14 @@ export default async function handler(req, res) {
 
   const body = req.body || {};
   const phone = String(body.phone || "").trim();
+  const email = String(body.email || "").trim().toLowerCase();
 
   if (!phone) {
     return res.status(400).json({ ok: false, error: "Phone number is required." });
   }
 
   try {
-    const result = await startWhatsappVerification(phone);
+    const result = await startWhatsappVerification(phone, { email: email || undefined });
     return res.status(200).json(result);
   } catch (error) {
     if (error instanceof WhatsappVerificationError) {

@@ -1,6 +1,7 @@
-import React from "react";
+import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { PlansProvider } from "./context/PlansContext";
 import "./styles.css";
 import "./styles/experience.css";
@@ -23,14 +24,23 @@ import "./styles/theme-contrast.css";
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((registration) => {
+        registration.update().catch(() => undefined);
+      })
+      .catch(() => undefined);
   });
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <PlansProvider>
-      <App />
-    </PlansProvider>
+    <AppErrorBoundary>
+      <PlansProvider>
+        <Suspense fallback={null}>
+          <App />
+        </Suspense>
+      </PlansProvider>
+    </AppErrorBoundary>
   </React.StrictMode>
 );

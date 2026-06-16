@@ -93,6 +93,7 @@ import { PAYMENT_START_ERROR } from "./config/paystack";
 import { USER_MESSAGES } from "./constants/userMessages";
 import { DEMO_USER } from "./constants/demoAccounts";
 import { getMemberCity } from "./utils/memberCity";
+import { flowLog } from "./utils/flowLog";
 import { usePlans } from "./context/PlansContext";
 
 export function App() {
@@ -122,6 +123,7 @@ export function App() {
   const [notifVersion, setNotifVersion] = useState(0);
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
   const [paymentFlowTick, setPaymentFlowTick] = useState(0);
+  const [bootStalled, setBootStalled] = useState(false);
   const paymentVerifyInFlight = useRef(false);
   const [user, setUser] = useState<UserProfile>(() =>
     readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" })
@@ -154,7 +156,7 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
-    const minMs = isNative ? 2200 : 1500;
+    const minMs = isNative ? 1200 : 800;
     const start = Date.now();
     const img = new Image();
     img.src = BRAND_ASSETS.logo;
@@ -204,6 +206,7 @@ export function App() {
   }, [user]);
 
   const applyRestoredSession = useCallback(async (profile: UserProfile) => {
+    flowLog("session_restore_start");
     const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const merged: UserProfile = {
       ...profile,
@@ -214,14 +217,23 @@ export function App() {
     setIsAuthed(true);
     if (!isOnboardingComplete()) {
       setShowOnboarding(true);
+      flowLog("session_restore_onboarding");
     } else {
       setShowOnboarding(false);
+      flowLog("session_restore_home");
     }
     recordStreakActivity();
     checkPremiumTrialExpiry();
-    await hydrateMemberData(profile);
-    const premium = await refreshPremiumStatus(profile);
+    let hydrated = await hydrateMemberData(merged);
+    if (!hydrated) {
+      flowLog("profile_repair_register");
+      await registerMember(merged);
+      hydrated = await hydrateMemberData(merged);
+    }
+    flowLog("profile_hydrate", { ok: hydrated });
+    const premium = await refreshPremiumStatus(merged);
     setIsPremium(premium.isPremium || isPremiumTrialActive());
+    flowLog("session_restore_done");
   }, []);
 
   useEffect(() => {
@@ -473,7 +485,7 @@ export function App() {
   }, []);
 
   const handleAuthenticated = useCallback(
-    (profile: UserProfile, meta?: AuthMeta) => {
+    async (profile: UserProfile, meta?: AuthMeta) => {
       const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
       const withPhone = {
         ...profile,
@@ -485,17 +497,22 @@ export function App() {
       setAuthMessage("");
       recordStreakActivity();
       checkPremiumTrialExpiry();
-      void registerMember(withPhone, new URLSearchParams(window.location.search).get("ref")).then(async () => {
-        await hydrateMemberData(withPhone);
-        const premium = await refreshPremiumStatus(withPhone);
-        setIsPremium(premium.isPremium || isPremiumTrialActive());
-      });
+      flowLog("auth_signed_in", { isNewSignup: Boolean(meta?.isNewSignup) });
+      const ref = new URLSearchParams(window.location.search).get("ref");
+      try {
+        await registerMember(withPhone, ref);
+        flowLog("profile_register_ok");
+      } catch {
+        flowLog("profile_register_failed");
+      }
+      await hydrateMemberData(withPhone);
+      const premium = await refreshPremiumStatus(withPhone);
+      setIsPremium(premium.isPremium || isPremiumTrialActive());
       if (meta?.isNewSignup) {
         trackEvent("signup_completed");
         markJoinedAt();
         markFirstDayStep("welcome");
         if (maybeGrantPremiumTrial(true)) setIsPremium(true);
-        const ref = new URLSearchParams(window.location.search).get("ref");
         if (ref) trackEvent("referral_signup", { code: ref.toUpperCase() });
       }
       if (getAuthPath()) {
@@ -505,6 +522,7 @@ export function App() {
       if (meta?.isNewSignup || !isOnboardingComplete()) {
         setShowOnboarding(true);
         setPendingTab(null);
+        flowLog("onboarding_start");
         return;
       }
       if (pendingTab) {
@@ -513,9 +531,19 @@ export function App() {
       } else {
         setTab("home");
       }
+      flowLog("home_enter");
     },
     [pendingTab]
   );
+
+  useEffect(() => {
+    if (!authLoading) {
+      setBootStalled(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setBootStalled(true), 12000);
+    return () => window.clearTimeout(timer);
+  }, [authLoading]);
 
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -625,9 +653,19 @@ export function App() {
 
   useEffect(() => {
     if (authLoading || !isAuthed || !authPath) return;
+    if (!isOnboardingComplete()) {
+      navigateToPath("/");
+      setAuthPath(null);
+      setShowOnboarding(true);
+      return;
+    }
     navigateToPath("/");
     setAuthPath(null);
   }, [authLoading, isAuthed, authPath]);
+
+  const reloadApp = useCallback(() => {
+    window.location.reload();
+  }, []);
 
   const finishOnboarding = useCallback(() => {
     setShowOnboarding(false);
@@ -782,13 +820,23 @@ export function App() {
   ).length;
   const messageCount = filterBlockedByProfileId(readJson<Match[]>(STORAGE_KEYS.matches, [])).length;
 
-  if (booting || authLoading) {
+  if (authLoading) {
     return (
       <div className={`app ${theme}`}>
         <Preloader
-          exiting={bootExit}
-          subtitle={!booting && authLoading ? "Restoring your session…" : undefined}
+          exiting={false}
+          subtitle="Restoring your session…"
+          showReload={bootStalled}
+          onReload={reloadApp}
         />
+      </div>
+    );
+  }
+
+  if (booting) {
+    return (
+      <div className={`app ${theme}`}>
+        <Preloader exiting={bootExit} />
       </div>
     );
   }

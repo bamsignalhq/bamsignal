@@ -75,7 +75,11 @@ async function uploadWithEmergencyFallback(
     const result = await uploadCompressedBlob(kind, blob, photoId);
     return result.url;
   } catch (error) {
-    if (error instanceof PhotoUploadError && error.fallbackAllowed) {
+    if (
+      !import.meta.env.PROD &&
+      error instanceof PhotoUploadError &&
+      error.fallbackAllowed
+    ) {
       logPhotoUpload("storage_fallback_dataurl", { kind });
       return fileToCompressedDataUrl(file, compressOpts);
     }
@@ -117,7 +121,12 @@ export async function uploadCompressedProfileBlob(blob: Blob, fallbackFile?: Fil
     const result = await uploadCompressedBlob("profile", blob, crypto.randomUUID());
     return result.url;
   } catch (error) {
-    if (error instanceof PhotoUploadError && error.fallbackAllowed && fallbackFile) {
+    if (
+      !import.meta.env.PROD &&
+      error instanceof PhotoUploadError &&
+      error.fallbackAllowed &&
+      fallbackFile
+    ) {
       return fileToCompressedDataUrl(fallbackFile);
     }
     throw error;
@@ -129,7 +138,12 @@ export async function uploadCompressedCoverBlob(blob: Blob, fallbackFile?: File)
     const result = await uploadCompressedBlob("cover", blob);
     return result.url;
   } catch (error) {
-    if (error instanceof PhotoUploadError && error.fallbackAllowed && fallbackFile) {
+    if (
+      !import.meta.env.PROD &&
+      error instanceof PhotoUploadError &&
+      error.fallbackAllowed &&
+      fallbackFile
+    ) {
       return fileToCompressedDataUrl(fallbackFile, { maxEdge: 1280, quality: 0.82 });
     }
     throw error;

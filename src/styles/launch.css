@@ -903,3 +903,32 @@
   z-index: 120;
 }
 
+.app-fallback {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: var(--bg, #1a0a2e);
+  color: var(--text, #f8fafc);
+}
+
+.app-fallback__card {
+  width: min(100%, 22rem);
+  text-align: center;
+}
+
+.app-fallback__card h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+}
+
+.app-fallback__card p {
+  margin: 0 0 1rem;
+  color: var(--text-muted, #b7c3d9);
+  line-height: 1.5;
+}
+
+.preloader__reload {
+  margin-top: 1rem;
+}
+

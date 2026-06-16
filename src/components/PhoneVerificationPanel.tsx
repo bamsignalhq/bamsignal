@@ -65,7 +65,7 @@ export function PhoneVerificationPanel({
     if (!isValidNigerianPhone(phone)) return;
     setBusy("sending");
     try {
-      const result = await startWhatsappVerification(phone);
+      const result = await startWhatsappVerification(phone, user.email);
       if (!result.ok) {
         onMessage?.(result.error || USER_MESSAGES.otpSendFailed);
         return;
@@ -73,7 +73,7 @@ export function PhoneVerificationPanel({
       setModalView("closed");
       setCodeSent(true);
       setCode("");
-      onMessage?.("Code sent to WhatsApp.");
+      onMessage?.(result.message || "Code sent on WhatsApp.");
     } finally {
       setBusy("idle");
     }
@@ -83,7 +83,7 @@ export function PhoneVerificationPanel({
     if (!codeReady || busy === "verifying") return;
     setBusy("verifying");
     try {
-      const result = await confirmWhatsappVerification(phone, code);
+      const result = await confirmWhatsappVerification(phone, code, user.email);
       if (!result.ok) {
         onMessage?.(result.error || USER_MESSAGES.otpVerifyFailed);
         window.setTimeout(() => codeInputRef.current?.focus({ preventScroll: true }), 80);
@@ -92,7 +92,7 @@ export function PhoneVerificationPanel({
       setCodeSent(false);
       setCode("");
       onPhoneVerified(normalizeNigerianPhone(phone));
-      onMessage?.("Phone verified.");
+      onMessage?.(result.message || "Phone verified successfully.");
     } finally {
       setBusy("idle");
     }

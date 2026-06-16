@@ -8,6 +8,7 @@ import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/de
 import { friendlyAuthError, supabase } from "../services/supabase";
 import { resolveLoginEmail, checkSignupAvailability, checkSignupField, sendSignupEmailCode, verifySignupEmailCode, AuthEmailError } from "../services/authEmail";
 import { USER_MESSAGES } from "../constants/userMessages";
+import { flowLog } from "../utils/flowLog";
 import { trackEvent } from "../utils/analytics";
 import {
   emailForUsername,
@@ -34,7 +35,7 @@ import {
 type AuthPageProps = {
   mode: AuthMode;
   onModeChange: (mode: AuthMode) => void;
-  onAuthenticated: (profile: UserProfile, meta?: AuthMeta) => void;
+  onAuthenticated: (profile: UserProfile, meta?: AuthMeta) => void | Promise<void>;
   message?: string;
   onMessage: (msg: string) => void;
   embedded?: boolean;
@@ -379,7 +380,9 @@ export function AuthPage({
       }
 
       await checkSignupAvailability({ email, phone, username });
+      flowLog("otp_send_start");
       await sendSignupEmailCode(email, name, { phone, username });
+      flowLog("otp_send_ok");
       rememberUsernameEmail(username, email);
       setVerifyCode("");
       setResendIn(RESEND_COOLDOWN_SEC);
@@ -413,6 +416,7 @@ export function AuthPage({
         throw new Error("Authentication is not configured. Please update the app and try again.");
       }
 
+      flowLog("otp_verify_start");
       await verifySignupEmailCode({
         email: pendingSignup.email,
         code,
@@ -429,8 +433,9 @@ export function AuthPage({
           password: signupForm.pin
         });
         if (!error && data.user) {
+          flowLog("supabase_user_signin_ok");
           clearPendingSignup();
-          onAuthenticated(profileFromSessionUser(data.user), { isNewSignup: true });
+          void onAuthenticated(profileFromSessionUser(data.user), { isNewSignup: true });
           return;
         }
         lastError = error;

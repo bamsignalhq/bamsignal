@@ -5,9 +5,11 @@ import { SignalRipple } from "./signals/SignalRipple";
 type PreloaderProps = {
   exiting?: boolean;
   subtitle?: string;
+  showReload?: boolean;
+  onReload?: () => void;
 };
 
-export function Preloader({ exiting = false, subtitle }: PreloaderProps) {
+export function Preloader({ exiting = false, subtitle, showReload, onReload }: PreloaderProps) {
   return (
     <main className={`preloader ${exiting ? "preloader--exit" : ""}`} aria-label="Loading BamSignal">
       <div className="preloader__gradient" />
@@ -17,6 +19,11 @@ export function Preloader({ exiting = false, subtitle }: PreloaderProps) {
       </div>
       <h1 className="preloader__title">{BRAND.name}</h1>
       {subtitle ? <p className="preloader__status">{subtitle}</p> : null}
+      {showReload ? (
+        <button type="button" className="btn-secondary preloader__reload" onClick={onReload}>
+          Taking too long — tap to reload
+        </button>
+      ) : null}
       <p className="preloader__tagline">
         {BRAND.tagline.split("\n").map((line, i) => (
           <span key={line}>

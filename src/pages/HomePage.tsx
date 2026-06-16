@@ -66,11 +66,14 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const [signalsLoading, setSignalsLoading] = useState(true);
 
   useEffect(() => {
-    void fetchHomeFeedAds().then(setAdSettings);
-    void fetchVisitorsRemote(user).then((viewers) => {
-      if (viewers.length) setProfileViewsFromServer(viewers);
-      setVisitorCount(getProfileViews().count);
-    });
+    const timer = window.setTimeout(() => {
+      void fetchHomeFeedAds().then(setAdSettings);
+      void fetchVisitorsRemote(user).then((viewers) => {
+        if (viewers.length) setProfileViewsFromServer(viewers);
+        setVisitorCount(getProfileViews().count);
+      });
+    }, 250);
+    return () => window.clearTimeout(timer);
   }, [user]);
 
   const advancedChips = useMemo(() => buildHomeAdvancedChips(advanced, { city, state }), [advanced, city, state]);

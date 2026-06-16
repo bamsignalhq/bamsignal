@@ -3,18 +3,24 @@ import { USER_MESSAGES } from "../constants/userMessages";
 import { normalizeNigerianPhone } from "../utils/authIdentity";
 import { readResponseJson } from "../utils/httpJson";
 
-export async function startWhatsappVerification(phone: string): Promise<{ ok: boolean; message?: string; error?: string }> {
+export async function startWhatsappVerification(
+  phone: string,
+  email?: string
+): Promise<{ ok: boolean; message?: string; error?: string }> {
   try {
     const response = await fetch(apiUrl("/api/verify/whatsapp/start"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalizeNigerianPhone(phone) || phone })
+      body: JSON.stringify({
+        phone: normalizeNigerianPhone(phone) || phone,
+        email: email?.trim().toLowerCase() || undefined
+      })
     });
-    const payload = await readResponseJson<{ ok?: boolean; message?: string; error?: string; status?: string }>(response);
+    const payload = await readResponseJson<{ ok?: boolean; message?: string; error?: string }>(response);
     if (!response.ok || !payload?.ok) {
       return { ok: false, error: payload?.error || USER_MESSAGES.otpSendFailed };
     }
-    return { ok: true, message: payload.message || "Verification code sent." };
+    return { ok: true, message: payload.message || "Code sent on WhatsApp." };
   } catch (error) {
     if (import.meta.env.DEV) {
       console.error("[bamsignal] whatsapp otp send failed", error);
@@ -25,22 +31,27 @@ export async function startWhatsappVerification(phone: string): Promise<{ ok: bo
 
 export async function confirmWhatsappVerification(
   phone: string,
-  code: string
-): Promise<{ ok: boolean; phoneVerified?: boolean; error?: string }> {
+  code: string,
+  email?: string
+): Promise<{ ok: boolean; phoneVerified?: boolean; error?: string; message?: string }> {
   try {
     const response = await fetch(apiUrl("/api/verify/whatsapp/confirm"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalizeNigerianPhone(phone) || phone, code })
+      body: JSON.stringify({
+        phone: normalizeNigerianPhone(phone) || phone,
+        code,
+        email: email?.trim().toLowerCase() || undefined
+      })
     });
-    const payload = await readResponseJson<{ ok?: boolean; message?: string; error?: string; status?: string }>(response);
+    const payload = await readResponseJson<{ ok?: boolean; message?: string; error?: string }>(response);
     if (!response.ok || !payload?.ok) {
       return {
         ok: false,
         error: payload?.error || USER_MESSAGES.otpVerifyFailed
       };
     }
-    return { ok: true, phoneVerified: true };
+    return { ok: true, phoneVerified: true, message: payload.message || "Phone verified successfully." };
   } catch (error) {
     if (import.meta.env.DEV) {
       console.error("[bamsignal] whatsapp otp verify failed", error);

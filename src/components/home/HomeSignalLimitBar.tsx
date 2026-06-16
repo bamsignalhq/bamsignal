@@ -1,8 +1,7 @@
 import { FREE_DAILY_SWIPES } from "../../constants/limits";
 import {
   getFreeSignalsRemaining,
-  signalLimitReachedMessage,
-  signalsLeftTodayDisplay
+  signalLimitReachedMessage
 } from "../../utils/signalLimits";
 
 type HomeSignalLimitBarProps = {
@@ -13,28 +12,38 @@ type HomeSignalLimitBarProps = {
 
 export function HomeSignalLimitBar({ isPremium, onUpgrade, refreshKey = 0 }: HomeSignalLimitBarProps) {
   void refreshKey;
-  const display = signalsLeftTodayDisplay(isPremium);
   const remaining = getFreeSignalsRemaining(isPremium);
   const atLimit = !isPremium && remaining <= 0;
 
-  return (
-    <section className={`home-signal-limit card ${atLimit ? "home-signal-limit--full" : ""}`} aria-label="Signals left today">
-      <div className="home-signal-limit__row">
-        <span className="home-signal-limit__label">Signals Left Today</span>
-        <strong className="home-signal-limit__count">{display}</strong>
+  if (isPremium) {
+    return (
+      <div className="home-signal-meter home-signal-meter--premium" aria-label="Signals">
+        <span className="home-signal-meter__value">Unlimited</span>
       </div>
+    );
+  }
+
+  return (
+    <div
+      className={`home-signal-meter ${atLimit ? "home-signal-meter--full" : ""}`}
+      aria-label={`${remaining} of ${FREE_DAILY_SWIPES} signals left today`}
+    >
+      <div className="home-signal-meter__dots" aria-hidden>
+        {Array.from({ length: FREE_DAILY_SWIPES }).map((_, i) => (
+          <span key={i} className={i < remaining ? "on" : ""} />
+        ))}
+      </div>
+      <span className="home-signal-meter__value">
+        {remaining}/{FREE_DAILY_SWIPES}
+      </span>
       {atLimit ? (
-        <div className="home-signal-limit__upgrade">
-          <p>{signalLimitReachedMessage()}</p>
-          <button type="button" className="btn-primary btn-sm" onClick={onUpgrade}>
-            Get Signal Pass
-          </button>
-        </div>
-      ) : !isPremium ? (
-        <p className="home-signal-limit__hint">{remaining} of {FREE_DAILY_SWIPES} free Signals remaining</p>
-      ) : (
-        <p className="home-signal-limit__hint">Unlimited Signals with Signal Pass</p>
-      )}
-    </section>
+        <button type="button" className="home-signal-meter__upgrade" onClick={onUpgrade}>
+          Upgrade
+        </button>
+      ) : null}
+      {atLimit ? (
+        <p className="home-signal-meter__message">{signalLimitReachedMessage()}</p>
+      ) : null}
+    </div>
   );
 }

@@ -9,6 +9,7 @@ type StateCitySelectProps = {
   stateLabel?: string;
   cityLabel?: string;
   stateOptional?: boolean;
+  variant?: "default" | "compact";
 };
 
 export function StateCitySelect({
@@ -17,7 +18,8 @@ export function StateCitySelect({
   onLocationChange,
   stateLabel = "State",
   cityLabel = "City",
-  stateOptional = false
+  stateOptional = false,
+  variant = "default"
 }: StateCitySelectProps) {
   const [citiesOpen, setCitiesOpen] = useState(false);
   const cityOptions = useMemo(() => (state ? citiesForState(state) : []), [state]);
@@ -35,6 +37,46 @@ export function StateCitySelect({
     onLocationChange(state, nextCity);
     setCitiesOpen(false);
   };
+
+  if (variant === "compact") {
+    return (
+      <div className="state-city-select state-city-select--compact">
+        <label className="state-city-select__field">
+          <span>{stateLabel}</span>
+          <select
+            value={state}
+            onChange={(e) => handleStateChange(e.target.value)}
+            required={!stateOptional}
+          >
+            {stateOptional && <option value="">Select state</option>}
+            {!state && !stateOptional && <option value="">State</option>}
+            {NIGERIAN_STATES.map((s) => (
+              <option key={s} value={s}>
+                {s === "FCT" ? "FCT (Abuja)" : s}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="state-city-select__field">
+          <span>{cityLabel}</span>
+          <select
+            value={city}
+            disabled={!state}
+            onChange={(e) => onLocationChange(state, e.target.value)}
+          >
+            {!state && <option value="">Select state first</option>}
+            {state && !city && <option value="">City</option>}
+            {cityOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    );
+  }
 
   return (
     <div className="state-city-select state-city-select--stacked">

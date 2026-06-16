@@ -26,13 +26,13 @@ export function HomeFilterChips({ chips, onRemove, onReset, onSave, showSave }: 
         </button>
       ))}
       {chips.length > 0 ? (
-        <button type="button" className="home-filter-chips__reset" onClick={onReset}>
-          Reset Filters
+        <button type="button" className="home-filter-chips__clear" onClick={onReset}>
+          Clear all
         </button>
       ) : null}
       {showSave && onSave ? (
         <button type="button" className="home-filter-chips__save" onClick={onSave}>
-          Save Search
+          Save
         </button>
       ) : null}
     </div>

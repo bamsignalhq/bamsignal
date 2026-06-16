@@ -125,41 +125,43 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   };
 
   return (
-    <div className="page home-page member-content-pad">
-      <header className="home-page__greeting">
-        <h1>
-          {greetingForHour()}, {firstName}
-        </h1>
+    <div className="page home-page home-page--fintech member-content-pad">
+      <header className="home-top">
+        <div className="home-top__intro">
+          <p className="home-top__eyebrow">{greetingForHour()}</p>
+          <h1>{firstName}</h1>
+        </div>
+        <HomeSignalLimitBar isPremium={isPremium} onUpgrade={onOpenPremium} refreshKey={signalTick} />
       </header>
 
-      <HomeSignalLimitBar isPremium={isPremium} onUpgrade={onOpenPremium} refreshKey={signalTick} />
+      <section className="home-discovery card" aria-label="Discover people">
+        <HomeFeedFilters
+          nameQuery={nameQuery}
+          onNameQueryChange={setNameQuery}
+          ageMin={ageMin}
+          ageMax={ageMax}
+          onAgeMinChange={setAgeMin}
+          onAgeMaxChange={setAgeMax}
+          state={state}
+          city={city}
+          onLocationChange={(nextState, nextCity) => {
+            setState(nextState);
+            setCity(nextCity);
+          }}
+          advancedCount={homeAdvancedFilterCount(advanced)}
+          onOpenAdvanced={() => setAdvancedOpen(true)}
+          onApply={applyFilters}
+          loading={filtersLoading}
+        />
 
-      <HomeFeedFilters
-        nameQuery={nameQuery}
-        onNameQueryChange={setNameQuery}
-        ageMin={ageMin}
-        ageMax={ageMax}
-        onAgeMinChange={setAgeMin}
-        onAgeMaxChange={setAgeMax}
-        state={state}
-        city={city}
-        onLocationChange={(nextState, nextCity) => {
-          setState(nextState);
-          setCity(nextCity);
-        }}
-        advancedCount={homeAdvancedFilterCount(advanced)}
-        onOpenAdvanced={() => setAdvancedOpen(true)}
-        onApply={applyFilters}
-        loading={filtersLoading}
-      />
-
-      <HomeFilterChips
-        chips={chips}
-        onRemove={handleRemoveChip}
-        onReset={resetFilters}
-        onSave={handleSaveSearch}
-        showSave={filtersApplied && chips.length > 0}
-      />
+        <HomeFilterChips
+          chips={chips}
+          onRemove={handleRemoveChip}
+          onReset={resetFilters}
+          onSave={handleSaveSearch}
+          showSave={filtersApplied && chips.length > 0}
+        />
+      </section>
 
       <HomeSavedSearches
         searches={savedSearches}

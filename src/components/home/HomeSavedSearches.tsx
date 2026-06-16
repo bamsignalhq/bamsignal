@@ -1,4 +1,4 @@
-import { Lock, Users } from "lucide-react";
+import { ChevronRight, Eye, Lock } from "lucide-react";
 import type { SavedSearch } from "../../types";
 
 type HomeSavedSearchesProps = {
@@ -12,15 +12,13 @@ export function HomeSavedSearches({ searches, onApply, onDelete }: HomeSavedSear
 
   return (
     <section className="home-saved-searches" aria-label="Saved searches">
-      <h3 className="home-saved-searches__title">Saved searches</h3>
+      <h3 className="home-saved-searches__title">Saved</h3>
       <ul className="home-saved-searches__list">
         {searches.map((search) => (
           <li key={search.id}>
             <button type="button" className="home-saved-searches__item" onClick={() => onApply(search)}>
               <strong>{search.label}</strong>
-              <span>
-                {search.resultCount != null ? `${search.resultCount} profiles` : "Tap to apply"}
-              </span>
+              <span>{search.resultCount != null ? `${search.resultCount} matches` : "Apply"}</span>
             </button>
             <button
               type="button"
@@ -44,26 +42,37 @@ type HomeProfileVisitorsCardProps = {
 };
 
 export function HomeProfileVisitorsCard({ isPremium, visitorCount, onUpgrade }: HomeProfileVisitorsCardProps) {
+  const copy = isPremium ? (
+    <>
+      <strong>{visitorCount}</strong> profile visitors this week
+    </>
+  ) : (
+    <>Profile visitors — unlock with Signal Pass</>
+  );
+
+  if (isPremium) {
+    return (
+      <div className="home-insight home-insight--visitors" aria-label={`${visitorCount} profile visitors`}>
+        <span className="home-insight__icon">
+          <Eye size={16} aria-hidden />
+        </span>
+        <span className="home-insight__copy">{copy}</span>
+      </div>
+    );
+  }
+
   return (
-    <section className={`home-visitors card ${!isPremium ? "home-visitors--locked" : ""}`} aria-label="Profile visitors">
-      <div className="home-visitors__icon">
-        {isPremium ? <Users size={20} aria-hidden /> : <Lock size={20} aria-hidden />}
-      </div>
-      <div className="home-visitors__copy">
-        <h3>Profile Visitors</h3>
-        {isPremium ? (
-          <p>
-            <strong>{visitorCount}</strong> people viewed your profile this week
-          </p>
-        ) : (
-          <p>See who viewed your profile with Signal Pass</p>
-        )}
-      </div>
-      {!isPremium ? (
-        <button type="button" className="btn-secondary btn-sm" onClick={onUpgrade}>
-          Unlock
-        </button>
-      ) : null}
-    </section>
+    <button
+      type="button"
+      className="home-insight home-insight--visitors home-insight--locked"
+      onClick={onUpgrade}
+      aria-label="Unlock profile visitors"
+    >
+      <span className="home-insight__icon">
+        <Lock size={16} aria-hidden />
+      </span>
+      <span className="home-insight__copy">{copy}</span>
+      <ChevronRight size={16} className="home-insight__chevron" aria-hidden />
+    </button>
   );
 }

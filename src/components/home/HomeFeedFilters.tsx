@@ -33,23 +33,22 @@ export function HomeFeedFilters({
   loading
 }: HomeFeedFiltersProps) {
   return (
-    <section className="home-feed-filters card" aria-label="Find people">
-      <p className="home-feed-filters__tagline">Find people by what matters to you.</p>
+    <div className="home-feed-filters__body" aria-label="Search filters">
       <label className="home-feed-filters__search">
-        <Search size={18} aria-hidden />
+        <Search size={16} strokeWidth={2} aria-hidden />
         <input
           type="search"
           value={nameQuery}
           onChange={(e) => onNameQueryChange(e.target.value)}
-          placeholder="Find people"
-          aria-label="Find people by name"
+          placeholder="Search by name"
+          aria-label="Search by name"
         />
       </label>
 
-      <div className="home-feed-filters__row">
-        <label className="home-feed-filters__age">
-          <span>Age</span>
-          <div className="home-feed-filters__age-inputs">
+      <div className="home-feed-filters__grid">
+        <label className="home-feed-filters__field">
+          <span>Age range</span>
+          <div className="home-feed-filters__range">
             <input
               type="number"
               min={18}
@@ -69,26 +68,27 @@ export function HomeFeedFilters({
             />
           </div>
         </label>
+
+        <StateCitySelect
+          variant="compact"
+          state={state}
+          city={city}
+          onLocationChange={onLocationChange}
+          stateLabel="State"
+          cityLabel="City"
+        />
       </div>
 
-      <StateCitySelect
-        state={state}
-        city={city}
-        onLocationChange={onLocationChange}
-        stateLabel="State"
-        cityLabel="City"
-      />
-
-      <div className="home-feed-filters__actions">
-        <button type="button" className="btn-secondary btn-sm home-feed-filters__advanced" onClick={onOpenAdvanced}>
-          <SlidersHorizontal size={16} aria-hidden />
-          Advanced Filters
+      <div className="home-feed-filters__toolbar">
+        <button type="button" className="home-feed-filters__filters-btn" onClick={onOpenAdvanced}>
+          <SlidersHorizontal size={15} aria-hidden />
+          Filters
           {advancedCount > 0 ? <em>{advancedCount}</em> : null}
         </button>
-        <button type="button" className="btn-primary btn-sm" disabled={loading} onClick={onApply}>
+        <button type="button" className="home-feed-filters__apply" disabled={loading} onClick={onApply}>
           {loading ? "Updating…" : "Apply"}
         </button>
       </div>
-    </section>
+    </div>
   );
 }

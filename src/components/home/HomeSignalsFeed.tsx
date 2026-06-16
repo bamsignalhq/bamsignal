@@ -230,8 +230,7 @@ export function HomeSignalsFeed({
   return (
     <section className="home-signals-feed" aria-label="Signals near you">
       <header className="home-signals-feed__head">
-        <h2>Signals Near You</h2>
-        <p>People around you looking for something real.</p>
+        <h2>Near you</h2>
       </header>
 
       {toast ? (

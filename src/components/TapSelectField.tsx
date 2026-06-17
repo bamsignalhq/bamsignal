@@ -1,5 +1,6 @@
 import { ChevronDown, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatMultiSelectSummary } from "../utils/selectSummary";
 
 export type TapSelectOption<T extends string> = T | { value: T; label: string };
@@ -45,6 +46,15 @@ export function TapSelectField<T extends string>({
       : [];
   const format = formatValue ?? ((v: T) => v);
 
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   const toggle = (opt: T) => {
     if (multiple) {
       const next = selected.includes(opt) ? selected.filter((v) => v !== opt) : [...selected, opt];
@@ -71,11 +81,75 @@ export function TapSelectField<T extends string>({
       : format(selected[0]);
   const hasSelection = selected.length > 0;
 
+  const sheet =
+    open && typeof document !== "undefined"
+      ? createPortal(
+          <div className="tap-select-sheet" role="dialog" aria-modal="true" aria-label={label}>
+            <button
+              type="button"
+              className="tap-select-sheet__backdrop"
+              onClick={() => setOpen(false)}
+              aria-label="Close"
+            />
+            <div className="tap-select-sheet__panel">
+              <header className="tap-select-sheet__head">
+                <div>
+                  <h3>{label}</h3>
+                  {multiple && selected.length > 0 ? (
+                    <p className="tap-select-sheet__count">{selected.length} selected</p>
+                  ) : null}
+                </div>
+                <button type="button" className="tap-select-sheet__done" onClick={() => setOpen(false)}>
+                  Done
+                </button>
+              </header>
+
+              {multiple && selected.length > 0 ? (
+                <div className="tap-select-sheet__selected">
+                  <div className="tap-select-sheet__chips">
+                    {selected.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        className="tap-select-chip"
+                        onClick={() => remove(item)}
+                        aria-label={`Remove ${format(item)}`}
+                      >
+                        {format(item)}
+                        <X size={14} aria-hidden />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="tap-select-sheet__options intent-tags selectable">
+                {options.map((opt) => {
+                  const v = optionValue(opt);
+                  const isSelected = selected.includes(v);
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      className={`intent-tag ${isSelected ? "selected" : ""}`}
+                      onClick={() => toggle(v)}
+                    >
+                      {optionLabel(opt)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
     <div className={`tap-select-field${disabled ? " tap-select-field--disabled" : ""}`}>
       <span className="tap-select-field__label">
         {label}
-        {optional ? <span className="label-optional"> (optional)</span> : null}
+        {optional ? <span className="label-optional"> optional</span> : null}
       </span>
 
       <button
@@ -94,65 +168,7 @@ export function TapSelectField<T extends string>({
         <ChevronDown size={18} className="tap-select-field__chevron" aria-hidden />
       </button>
 
-      {open ? (
-        <div className="tap-select-sheet" role="dialog" aria-modal="true" aria-label={label}>
-          <button
-            type="button"
-            className="tap-select-sheet__backdrop"
-            onClick={() => setOpen(false)}
-            aria-label="Close"
-          />
-          <div className="tap-select-sheet__panel">
-            <header className="tap-select-sheet__head">
-              <div>
-                <h3>{label}</h3>
-                {multiple && selected.length > 0 ? (
-                  <p className="tap-select-sheet__count">{selected.length} selected</p>
-                ) : null}
-              </div>
-              <button type="button" className="tap-select-sheet__done" onClick={() => setOpen(false)}>
-                Done
-              </button>
-            </header>
-
-            {multiple && selected.length > 0 ? (
-              <div className="tap-select-sheet__selected">
-                <div className="tap-select-sheet__chips">
-                  {selected.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className="tap-select-chip"
-                      onClick={() => remove(item)}
-                      aria-label={`Remove ${format(item)}`}
-                    >
-                      {format(item)}
-                      <X size={14} aria-hidden />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            <div className="tap-select-sheet__options intent-tags selectable">
-              {options.map((opt) => {
-                const v = optionValue(opt);
-                const isSelected = selected.includes(v);
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    className={`intent-tag ${isSelected ? "selected" : ""}`}
-                    onClick={() => toggle(v)}
-                  >
-                    {optionLabel(opt)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {sheet}
     </div>
   );
 }

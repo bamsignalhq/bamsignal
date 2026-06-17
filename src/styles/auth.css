@@ -689,7 +689,7 @@
 
 .tap-select-field__trigger {
   width: 100%;
-  min-height: 50px;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -758,6 +758,13 @@
   font-size: 0.84rem;
 }
 
+/* Chips and option tags only inside bottom sheets — never in collapsed fields */
+.match-pref-fields > .intent-tags,
+.tap-select-field > .intent-tags,
+.tap-select-field > .tap-select-field__chips {
+  display: none !important;
+}
+
 .match-pref-fields {
   display: flex;
   flex-direction: column;
@@ -770,37 +777,38 @@
   gap: 10px;
 }
 
+.age-range-select__field {
+  display: block;
+  margin: 0;
+}
+
+.age-range-select__control {
+  width: 100%;
+  min-height: 50px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  background: var(--input-bg, var(--card));
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+}
+
+.age-range-select__field > span {
+  display: none;
+}
+
 .age-range-select__label {
   display: block;
   margin-bottom: 8px;
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-muted);
-}
-
-.age-range-select__field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.age-range-select__field > span {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.age-range-select__field select {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--input-bg);
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text);
 }
 
 .age-range-tap-select__row {
@@ -875,6 +883,7 @@
 .tap-select-sheet__options {
   padding: 14px 16px 24px;
   overflow-y: auto;
+  margin-bottom: 0;
 }
 
 .onboarding-age-gender-row {

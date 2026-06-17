@@ -1,34 +1,23 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, Search, Zap } from "lucide-react";
 import { BRAND, ERROR_COPY, MONETIZATION_COPY, SUCCESS_COPY } from "../../constants/copy";
-import { INTENT_OPTIONS } from "../../constants/intents";
 import { STORAGE_KEYS } from "../../constants/limits";
-import {
-  FILTER_ETHNICITIES,
-  FILTER_GENOTYPES,
-  FILTER_KIDS_PREFERENCES,
-  FILTER_OCCUPATIONS,
-  FILTER_RELIGIONS,
-  NIGERIAN_STATES
-} from "../../constants/profileOptions";
 import { DEFAULT_PROFILE_COVER } from "../../constants/photos";
+import { AgeRangeTapSelect } from "../AgeRangeTapSelect";
 import { StateCitySelect } from "../StateCitySelect";
+import { MatchPreferenceFields } from "../preferences/MatchPreferenceFields";
 import { ShowcaseImage } from "../ShowcaseImage";
 import { VerificationBadge } from "../VerificationBadge";
 import { searchMemberProfiles } from "../../services/discoverProfiles";
 import { sendSignalRemote } from "../../services/memberData";
-import type {
-  DiscoverProfile,
-  EthnicBackground,
-  Genotype,
-  IntentTag,
-  KidsPreference,
-  Occupation,
-  Religion,
-  UserProfile
-} from "../../types";
+import type { DiscoverProfile, HomeAdvancedFilters, UserProfile } from "../../types";
 import { getVerificationTier } from "../../utils/verification";
 import { getMemberCity } from "../../utils/memberCity";
+import {
+  emptyHomeAdvancedFilters,
+  homeAdvancedFilterCount,
+  homeAdvancedToSearchFilters
+} from "../../utils/homeFilters";
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../../utils/profile";
 import {
   evaluateSignalGate,
@@ -49,42 +38,6 @@ type HomeSearchSectionProps = {
   onOpenDiscover?: (profileId: string) => void;
 };
 
-type AdvancedFilters = {
-  tribes: EthnicBackground[];
-  religions: Religion[];
-  occupations: Occupation[];
-  statesOfOrigin: string[];
-  relationshipIntentions: IntentTag[];
-  genotypes: Genotype[];
-  kidsPreferences: KidsPreference[];
-};
-
-const emptyAdvanced = (): AdvancedFilters => ({
-  tribes: [],
-  religions: [],
-  occupations: [],
-  statesOfOrigin: [],
-  relationshipIntentions: [],
-  genotypes: [],
-  kidsPreferences: []
-});
-
-function toggleList<T extends string>(list: T[], value: T): T[] {
-  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
-}
-
-function advancedFilterCount(filters: AdvancedFilters): number {
-  return (
-    filters.tribes.length +
-    filters.religions.length +
-    filters.occupations.length +
-    filters.statesOfOrigin.length +
-    filters.relationshipIntentions.length +
-    filters.genotypes.length +
-    filters.kidsPreferences.length
-  );
-}
-
 export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }: HomeSearchSectionProps) {
   const viewer = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
   const prefs = normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));
@@ -95,7 +48,7 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
   const [ageMin, setAgeMin] = useState<number>(prefs.ageMin ?? 22);
   const [ageMax, setAgeMax] = useState<number>(prefs.ageMax ?? 35);
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [advanced, setAdvanced] = useState<AdvancedFilters>(emptyAdvanced);
+  const [advanced, setAdvanced] = useState<HomeAdvancedFilters>(emptyHomeAdvancedFilters);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<DiscoverProfile[]>([]);
   const [searched, setSearched] = useState(false);
@@ -103,16 +56,9 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
   const [signalingId, setSignalingId] = useState<string | null>(null);
 
   const remainingLabel = signalsRemainingLabel(isPremium);
-  const advancedCount = advancedFilterCount(advanced);
+  const advancedCount = homeAdvancedFilterCount(advanced);
 
-  const toggleAdvanced = <K extends keyof AdvancedFilters>(key: K, value: AdvancedFilters[K][number]) => {
-    setAdvanced((current) => ({
-      ...current,
-      [key]: toggleList(current[key] as string[], value as string) as AdvancedFilters[K]
-    }));
-  };
-
-  const clearAdvanced = () => setAdvanced(emptyAdvanced());
+  const clearAdvanced = () => setAdvanced(emptyHomeAdvancedFilters());
 
   const runSearch = async () => {
     if (!city.trim() && !state.trim()) {
@@ -129,7 +75,7 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
         ageMin,
         ageMax,
         excludeProfileIds: blocked,
-        ...advanced
+        ...homeAdvancedToSearchFilters(advanced)
       });
       setResults(profiles);
       trackEvent("home_search", {
@@ -183,28 +129,15 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
       <div className="home-search__form card">
         <p className="home-search__section-label">Basic</p>
 
-        <div className="home-search__ages">
-          <label>
-            Min age
-            <input
-              type="number"
-              min={18}
-              max={99}
-              value={ageMin}
-              onChange={(e) => setAgeMin(Number(e.target.value) || 18)}
-            />
-          </label>
-          <label>
-            Max age
-            <input
-              type="number"
-              min={18}
-              max={99}
-              value={ageMax}
-              onChange={(e) => setAgeMax(Number(e.target.value) || 99)}
-            />
-          </label>
-        </div>
+        <AgeRangeTapSelect
+          ageMin={ageMin}
+          ageMax={ageMax}
+          label="Age"
+          onChange={(min, max) => {
+            setAgeMin(min);
+            setAgeMax(max);
+          }}
+        />
 
         <StateCitySelect
           state={state}
@@ -239,117 +172,34 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
 
         {advancedOpen ? (
           <div className="home-search__advanced">
-            <fieldset className="intent-fieldset">
-              <legend>Tribe</legend>
-              <div className="intent-tags selectable home-search__tag-scroll">
-                {FILTER_ETHNICITIES.map((tribe) => (
-                  <button
-                    key={tribe}
-                    type="button"
-                    className={`intent-tag ${advanced.tribes.includes(tribe) ? "selected" : ""}`}
-                    onClick={() => toggleAdvanced("tribes", tribe)}
-                  >
-                    {tribe}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset">
-              <legend>Religion</legend>
-              <div className="intent-tags selectable">
-                {FILTER_RELIGIONS.map((religion) => (
-                  <button
-                    key={religion}
-                    type="button"
-                    className={`intent-tag ${advanced.religions.includes(religion) ? "selected" : ""}`}
-                    onClick={() => toggleAdvanced("religions", religion)}
-                  >
-                    {religion}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset">
-              <legend>Occupation</legend>
-              <div className="intent-tags selectable home-search__tag-scroll">
-                {FILTER_OCCUPATIONS.map((occupation) => (
-                  <button
-                    key={occupation}
-                    type="button"
-                    className={`intent-tag ${advanced.occupations.includes(occupation) ? "selected" : ""}`}
-                    onClick={() => toggleAdvanced("occupations", occupation)}
-                  >
-                    {occupation}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset">
-              <legend>State of origin</legend>
-              <div className="intent-tags selectable home-search__tag-scroll">
-                {NIGERIAN_STATES.map((origin) => (
-                  <button
-                    key={origin}
-                    type="button"
-                    className={`intent-tag ${advanced.statesOfOrigin.includes(origin) ? "selected" : ""}`}
-                    onClick={() => toggleAdvanced("statesOfOrigin", origin)}
-                  >
-                    {origin === "FCT" ? "Abuja" : origin}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset">
-              <legend>Relationship intention</legend>
-              <div className="intent-tags selectable">
-                {INTENT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    className={`intent-tag ${advanced.relationshipIntentions.includes(opt.id) ? "selected" : ""}`}
-                    onClick={() => toggleAdvanced("relationshipIntentions", opt.id)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset">
-              <legend>Genotype</legend>
-              <div className="intent-tags selectable">
-                {FILTER_GENOTYPES.map((genotype) => (
-                  <button
-                    key={genotype}
-                    type="button"
-                    className={`intent-tag ${advanced.genotypes.includes(genotype) ? "selected" : ""}`}
-                    onClick={() => toggleAdvanced("genotypes", genotype)}
-                  >
-                    {genotype}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="intent-fieldset">
-              <legend>Kids preference</legend>
-              <div className="intent-tags selectable">
-                {FILTER_KIDS_PREFERENCES.map((pref) => (
-                  <button
-                    key={pref}
-                    type="button"
-                    className={`intent-tag ${advanced.kidsPreferences.includes(pref) ? "selected" : ""}`}
-                    onClick={() => toggleAdvanced("kidsPreferences", pref)}
-                  >
-                    {pref}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+            <MatchPreferenceFields
+              ethnicities={advanced.tribes}
+              onEthnicitiesChange={(tribes) => setAdvanced((current) => ({ ...current, tribes }))}
+              religions={advanced.religions}
+              onReligionsChange={(religions) => setAdvanced((current) => ({ ...current, religions }))}
+              occupations={advanced.occupations}
+              onOccupationsChange={(occupations) => setAdvanced((current) => ({ ...current, occupations }))}
+              statesOfOrigin={advanced.statesOfOrigin}
+              onStatesOfOriginChange={(statesOfOrigin) =>
+                setAdvanced((current) => ({ ...current, statesOfOrigin }))
+              }
+              relationshipIntentions={advanced.relationshipIntentions}
+              onRelationshipIntentionsChange={(relationshipIntentions) =>
+                setAdvanced((current) => ({ ...current, relationshipIntentions }))
+              }
+              genotypes={advanced.genotypes}
+              onGenotypesChange={(genotypes) => setAdvanced((current) => ({ ...current, genotypes }))}
+              hasKids={advanced.hasKids}
+              onHasKidsChange={(hasKids) => setAdvanced((current) => ({ ...current, hasKids }))}
+              wantsKids={advanced.wantsKids}
+              onWantsKidsChange={(wantsKids) => setAdvanced((current) => ({ ...current, wantsKids }))}
+              bodyTypes={advanced.bodyTypes}
+              onBodyTypesChange={(bodyTypes) => setAdvanced((current) => ({ ...current, bodyTypes }))}
+              verificationPreferences={advanced.verificationPreferences}
+              onVerificationPreferencesChange={(verificationPreferences) =>
+                setAdvanced((current) => ({ ...current, verificationPreferences, verifiedOnly: false }))
+              }
+            />
           </div>
         ) : null}
 

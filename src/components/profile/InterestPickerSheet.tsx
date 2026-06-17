@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   INTEREST_CATEGORIES,
   MAX_PROFILE_INTERESTS,
@@ -76,7 +77,7 @@ export function InterestPickerSheet({
     return `${MIN_PROFILE_INTERESTS}–${MAX_PROFILE_INTERESTS} recommended`;
   };
 
-  return (
+  return createPortal(
     <div className="interest-sheet" role="dialog" aria-modal="true" aria-label="Choose your interests">
       <button type="button" className="interest-sheet__backdrop" onClick={onClose} aria-label="Close" />
       <div className="interest-sheet__panel card">
@@ -156,6 +157,7 @@ export function InterestPickerSheet({
           </div>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

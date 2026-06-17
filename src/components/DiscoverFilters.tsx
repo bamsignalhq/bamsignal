@@ -3,14 +3,8 @@ import { useState } from "react";
 import { MONETIZATION_COPY } from "../constants/copy";
 import { StateCitySelect } from "./StateCitySelect";
 import { INTENT_OPTIONS } from "../constants/intents";
-import {
-  FILTER_ETHNICITIES,
-  FILTER_LIFESTYLES,
-  FILTER_RELIGIONS,
-  ALL_NIGERIAN_CITIES,
-  NIGERIAN_STATES,
-  citiesForState
-} from "../constants/profileOptions";
+import { citiesForState } from "../constants/profileOptions";
+import { MatchPreferenceFields } from "./preferences/MatchPreferenceFields";
 import { MAX_DISCOVER_RADIUS_MILES, kmToMiles, milesToKm } from "../utils/discoverLocation";
 import type { MatchPreferences, PreferenceMode } from "../types";
 import { defaultMatchPreferences } from "../utils/profile";
@@ -177,34 +171,30 @@ export function DiscoverFilters({
             </div>
           </fieldset>
 
-          <div className="match-prefs-age">
-            <label>
-              Age from
-              <input
-                type="number"
-                min={18}
-                max={99}
-                placeholder="18"
-                value={prefs.ageMin ?? ""}
-                onChange={(e) =>
-                  onChange({ ...prefs, ageMin: e.target.value ? Number(e.target.value) : undefined })
-                }
-              />
-            </label>
-            <label>
-              Age to
-              <input
-                type="number"
-                min={18}
-                max={99}
-                placeholder="45"
-                value={prefs.ageMax ?? ""}
-                onChange={(e) =>
-                  onChange({ ...prefs, ageMax: e.target.value ? Number(e.target.value) : undefined })
-                }
-              />
-            </label>
-          </div>
+          <MatchPreferenceFields
+            religions={prefs.religions}
+            onReligionsChange={(religions) => onChange({ ...prefs, religions })}
+            ethnicities={prefs.ethnicities}
+            onEthnicitiesChange={(ethnicities) => onChange({ ...prefs, ethnicities })}
+            prefLifestyles={prefs.lifestyles}
+            onPrefLifestylesChange={(lifestyles) => onChange({ ...prefs, lifestyles })}
+            states={prefs.states}
+            onStatesChange={(states) =>
+              onChange({
+                ...prefs,
+                states,
+                cities: prefs.cities.filter((city) =>
+                  states.some((state) => citiesForState(state).includes(city))
+                )
+              })
+            }
+            cities={prefs.cities}
+            onCitiesChange={(cities) => onChange({ ...prefs, cities })}
+            ageMin={prefs.ageMin ?? 22}
+            ageMax={prefs.ageMax ?? 35}
+            ageLabel="Age"
+            onAgeRangeChange={(ageMin, ageMax) => onChange({ ...prefs, ageMin, ageMax })}
+          />
 
           <label>
             Max distance (miles)
@@ -222,88 +212,6 @@ export function DiscoverFilters({
               }
             />
           </label>
-
-          <fieldset className="intent-fieldset">
-            <legend>Preferred state</legend>
-            <div className="intent-tags selectable match-prefs-scroll">
-              {NIGERIAN_STATES.map((state) => (
-                <button
-                  key={state}
-                  type="button"
-                  className={`intent-tag ${prefs.states.includes(state) ? "selected" : ""}`}
-                  onClick={() => toggle("states", state)}
-                >
-                  {state === "FCT" ? "Abuja" : state}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          {prefs.states.length > 0 && (
-            <fieldset className="intent-fieldset">
-              <legend>Preferred city</legend>
-              <div className="intent-tags selectable match-prefs-scroll">
-                {prefs.states.flatMap((s) => citiesForState(s)).map((city) => (
-                  <button
-                    key={city}
-                    type="button"
-                    className={`intent-tag ${prefs.cities.includes(city) ? "selected" : ""}`}
-                    onClick={() => toggle("cities", city)}
-                  >
-                    {city}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-          )}
-
-          <fieldset className={`intent-fieldset ${!isPremium ? "discover-filter--locked" : ""}`}>
-            <legend>Faith {!isPremium && `· ${MONETIZATION_COPY.lockedFeature}`}</legend>
-            <div className="intent-tags selectable">
-              {FILTER_RELIGIONS.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`intent-tag ${prefs.religions.includes(r) ? "selected" : ""}`}
-                  onClick={() => requirePremium(() => toggle("religions", r))}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className="intent-fieldset">
-            <legend>Background (optional)</legend>
-            <div className="intent-tags selectable match-prefs-scroll">
-              {FILTER_ETHNICITIES.map((e) => (
-                <button
-                  key={e}
-                  type="button"
-                  className={`intent-tag ${prefs.ethnicities.includes(e) ? "selected" : ""}`}
-                  onClick={() => toggle("ethnicities", e)}
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset className={`intent-fieldset ${!isPremium ? "discover-filter--locked" : ""}`}>
-            <legend>Lifestyle {!isPremium && `· ${MONETIZATION_COPY.lockedFeature}`}</legend>
-            <div className="intent-tags selectable">
-              {FILTER_LIFESTYLES.map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  className={`intent-tag ${prefs.lifestyles.includes(l) ? "selected" : ""}`}
-                  onClick={() => requirePremium(() => toggle("lifestyles", l))}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          </fieldset>
 
           <fieldset className={`intent-fieldset discover-premium-filters ${!isPremium ? "discover-filter--locked" : ""}`}>
             <legend>Advanced preferences {!isPremium && `· ${MONETIZATION_COPY.lockedFeature}`}</legend>

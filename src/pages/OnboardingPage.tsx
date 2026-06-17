@@ -464,6 +464,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
             onCitiesChange={setPrefCities}
             ageMin={ageMin}
             ageMax={ageMax}
+            ageLabel="Age"
             onAgeRangeChange={(min, max) => {
               setAgeMin(min);
               setAgeMax(max);

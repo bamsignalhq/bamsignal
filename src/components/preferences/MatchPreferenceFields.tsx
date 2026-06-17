@@ -74,6 +74,7 @@ type MatchPreferenceFieldsProps = {
   /** Profile details — single tribe */
   tribe?: EthnicBackground;
   onTribeChange?: (value: EthnicBackground | undefined) => void;
+  ageLabel?: string;
   className?: string;
 };
 
@@ -117,6 +118,7 @@ export function MatchPreferenceFields({
   onVerificationPreferencesChange,
   tribe,
   onTribeChange,
+  ageLabel = "Preferred age range",
   className = ""
 }: MatchPreferenceFieldsProps) {
   const cityOptions = Array.from(
@@ -221,7 +223,7 @@ export function MatchPreferenceFields({
       ) : null}
 
       {onAgeRangeChange && ageMin != null && ageMax != null ? (
-        <AgeRangeTapSelect ageMin={ageMin} ageMax={ageMax} onChange={onAgeRangeChange} />
+        <AgeRangeTapSelect ageMin={ageMin} ageMax={ageMax} onChange={onAgeRangeChange} label={ageLabel} />
       ) : null}
 
       {onOccupationsChange ? (

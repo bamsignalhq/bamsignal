@@ -277,11 +277,24 @@ export async function sendSignalToProfile({
   if (!isDatabaseReady() || !targetProfileId) return null;
   await ensureSocialSchema();
 
+  const { assertSignalCooldown } = await import("./services/signalCooldown.js");
+  const cooldown = await assertSignalCooldown({ email, phone });
+  if (!cooldown.ok) return cooldown;
+
   const sender = await findMemberProfileByUserKey(email, phone);
   if (!sender?.id || sender.id === targetProfileId) return null;
   if (sender.shadow_banned) {
     return { id: `suppressed-${Date.now()}`, suppressed: true };
   }
+  if (sender.profile_paused_at) {
+    return { ok: false, error: "Unpause your profile to send signals." };
+  }
+
+  const target = await query(
+    `select id, profile_paused_at, shadow_banned from app_member_profiles where id = $1 limit 1`,
+    [targetProfileId]
+  );
+  if (!target.rows[0] || target.rows[0].shadow_banned) return null;
 
   const duplicate = await query(
     `select id from app_signals
@@ -428,6 +441,22 @@ export async function declineIncomingSignal({ email, phone, signalId }) {
 
   const result = await query(
     `update app_signals set status = 'declined'
+     where id = $1 and target_profile_id = $2 and status = 'pending'
+     returning id`,
+    [signalId, own.id]
+  );
+  return result.rowCount > 0;
+}
+
+export async function ignoreIncomingSignal({ email, phone, signalId }) {
+  if (!isDatabaseReady() || !signalId) return false;
+  await ensureSocialSchema();
+
+  const own = await findMemberProfileByUserKey(email, phone);
+  if (!own?.id) return false;
+
+  const result = await query(
+    `update app_signals set status = 'ignored'
      where id = $1 and target_profile_id = $2 and status = 'pending'
      returning id`,
     [signalId, own.id]

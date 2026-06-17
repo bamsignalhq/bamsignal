@@ -173,6 +173,15 @@ export async function pauseMemberProfile({ email, phone, reason = "" }) {
      returning *`,
     [member.id, String(reason || "").trim() || null]
   );
+  if (result.rows[0]) {
+    const { writePlatformAudit } = await import("./services/auditTrail.js");
+    await writePlatformAudit({
+      action: "profile_pause",
+      targetUserId: member.id,
+      targetUserKey: member.user_key,
+      details: { reason: String(reason || "").trim() || null }
+    });
+  }
   return { ok: Boolean(result.rows[0]), profile: result.rows[0] };
 }
 
@@ -196,6 +205,15 @@ export async function unpauseMemberProfile({ email, phone }) {
      returning *`,
     [member.id, discoverable]
   );
+  if (result.rows[0]) {
+    const { writePlatformAudit } = await import("./services/auditTrail.js");
+    await writePlatformAudit({
+      action: "profile_unpause",
+      targetUserId: member.id,
+      targetUserKey: member.user_key,
+      details: {}
+    });
+  }
   return { ok: Boolean(result.rows[0]), profile: result.rows[0] };
 }
 

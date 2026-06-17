@@ -184,8 +184,8 @@ export function DiscoverPage({
     const priority = opts?.priority ?? false;
     const sent = await sendSignalRemote(user, profile.id, priority ? "priority" : "signal");
 
-    if (!sent) {
-      setToast(ERROR_COPY.signalFailed);
+    if (!sent.ok) {
+      setToast(sent.error || ERROR_COPY.signalFailed);
       setTimeout(() => setToast(""), 3500);
       advance(profile.id);
       return;

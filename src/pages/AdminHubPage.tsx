@@ -40,7 +40,7 @@ import { DEMO_USER } from "../constants/demoAccounts";
 import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
 import { AdminShadowBannedSection } from "../components/admin/AdminShadowBannedSection";
 import { fetchContactLeakAttempts, shadowBanAdmin, type ContactLeakAttempt } from "../services/adminModeration";
-import { fetchContactExchangeMetricsAdmin } from "../services/subscriptionCatalog";
+import { fetchContactExchangeMetricsAdmin, fetchAuditTrailAdmin, fetchSpamSuspectsAdmin } from "../services/subscriptionCatalog";
 import { CONTACT_LEAK_BLOCK_MESSAGE, validateUserText } from "../utils/contactGuard";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
 import {
@@ -128,9 +128,13 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [contactLeaksLoading, setContactLeaksLoading] = useState(false);
   const [exchangeMetrics, setExchangeMetrics] = useState<{
     totals: Record<string, number>;
+    windows?: Record<string, Record<string, number>>;
     recent: Array<Record<string, unknown>>;
+    audit?: Array<Record<string, unknown>>;
   } | null>(null);
   const [exchangeMetricsLoading, setExchangeMetricsLoading] = useState(false);
+  const [auditRows, setAuditRows] = useState<Array<Record<string, unknown>>>([]);
+  const [spamSuspects, setSpamSuspects] = useState<Array<Record<string, unknown>>>([]);
 
   const handleTabChange = useCallback((id: HardTab) => {
     setTab(id);
@@ -202,6 +206,12 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
         if (result?.ok && result.metrics) setExchangeMetrics(result.metrics);
       })
       .finally(() => setExchangeMetricsLoading(false));
+    void fetchAuditTrailAdmin({ limit: 30 }).then((result) => {
+      if (result?.ok && result.rows) setAuditRows(result.rows);
+    });
+    void fetchSpamSuspectsAdmin(20).then((result) => {
+      if (result?.ok && result.suspects) setSpamSuspects(result.suspects);
+    });
   }, [tab, authorized]);
 
   useEffect(() => {
@@ -397,25 +407,63 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
             </p>
             {exchangeMetricsLoading && <AdminTerminalEmpty>Loading contact exchange metrics…</AdminTerminalEmpty>}
             {!exchangeMetricsLoading && exchangeMetrics && (
-              <div className="admin-stats-grid admin-stats-grid--highlight">
-                <div className="card admin-stat admin-stat--highlight">
-                  <strong>{exchangeMetrics.totals.exchange_requested || 0}</strong>
-                  <span>Requests</span>
+              <>
+                <div className="admin-stats-grid admin-stats-grid--highlight">
+                  <div className="card admin-stat admin-stat--highlight">
+                    <strong>{exchangeMetrics.totals.exchange_requested || 0}</strong>
+                    <span>Requests (all time)</span>
+                  </div>
+                  <div className="card admin-stat admin-stat--highlight">
+                    <strong>{exchangeMetrics.totals.exchange_accepted || 0}</strong>
+                    <span>Accepted</span>
+                  </div>
+                  <div className="card admin-stat admin-stat--highlight">
+                    <strong>{exchangeMetrics.totals.exchange_declined || 0}</strong>
+                    <span>Declined</span>
+                  </div>
+                  <div className="card admin-stat admin-stat--highlight">
+                    <strong>
+                      {exchangeMetrics.totals.contact_request_expired ||
+                        exchangeMetrics.totals.status_expired ||
+                        0}
+                    </strong>
+                    <span>Expired</span>
+                  </div>
+                  <div className="card admin-stat admin-stat--highlight">
+                    <strong>{exchangeMetrics.totals.exchange_completed || 0}</strong>
+                    <span>Completed</span>
+                  </div>
                 </div>
-                <div className="card admin-stat admin-stat--highlight">
-                  <strong>{exchangeMetrics.totals.exchange_accepted || 0}</strong>
-                  <span>Accepted</span>
-                </div>
-                <div className="card admin-stat admin-stat--highlight">
-                  <strong>{exchangeMetrics.totals.exchange_declined || 0}</strong>
-                  <span>Declined</span>
-                </div>
-                <div className="card admin-stat admin-stat--highlight">
-                  <strong>{exchangeMetrics.totals.exchange_completed || 0}</strong>
-                  <span>Completed</span>
-                </div>
-              </div>
+                {exchangeMetrics.windows ? (
+                  <div className="admin-stats-grid">
+                    <div className="card admin-stat">
+                      <strong>{exchangeMetrics.windows.last7d?.exchange_requested || 0}</strong>
+                      <span>Requests (7d)</span>
+                    </div>
+                    <div className="card admin-stat">
+                      <strong>{exchangeMetrics.windows.last30d?.exchange_requested || 0}</strong>
+                      <span>Requests (30d)</span>
+                    </div>
+                  </div>
+                ) : null}
+              </>
             )}
+            {!exchangeMetricsLoading && exchangeMetrics?.audit?.length ? (
+              <div className="admin-exchange-recent">
+                <h4>Exchange audit trail</h4>
+                {exchangeMetrics.audit.slice(0, 10).map((row, index) => (
+                  <article key={`audit-${row.id}-${index}`} className="card admin-moderation-row">
+                    <div className="admin-moderation-row__main">
+                      <strong>{String(row.status || "—")}</strong>
+                      <span>
+                        {String(row.requester_name || "Requester")} → {String(row.recipient_name || "Recipient")} ·{" "}
+                        {new Date(String(row.created_at)).toLocaleString()}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
             {!exchangeMetricsLoading && exchangeMetrics?.recent?.length ? (
               <div className="admin-exchange-recent">
                 {exchangeMetrics.recent.slice(0, 12).map((row, index) => (
@@ -433,6 +481,46 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
             ) : null}
             {!exchangeMetricsLoading && !exchangeMetrics?.recent?.length && (
               <AdminTerminalEmpty>No contact exchange events logged yet.</AdminTerminalEmpty>
+            )}
+          </section>
+
+          <section className="card admin-command-panel">
+            <h3>Potential spam activity</h3>
+            <p className="match-prefs-note">Repeated copy-paste patterns flagged for review — no auto-ban.</p>
+            {spamSuspects.length === 0 ? (
+              <AdminTerminalEmpty>No spam suspects in the last 7 days.</AdminTerminalEmpty>
+            ) : (
+              spamSuspects.map((row, index) => (
+                <article key={`spam-${row.userKey}-${index}`} className="card admin-moderation-row">
+                  <div className="admin-moderation-row__main">
+                    <strong>{String(row.name || row.userKey)}</strong>
+                    <span>
+                      hash {String(row.messageHash)} · {String(row.count)} sends · {String(row.severity)} ·{" "}
+                      {new Date(String(row.lastAt)).toLocaleString()}
+                    </span>
+                  </div>
+                </article>
+              ))
+            )}
+          </section>
+
+          <section className="card admin-command-panel">
+            <h3>Audit trail</h3>
+            <p className="match-prefs-note">Operator actions, pricing saves, profile pause, and trust events.</p>
+            {auditRows.length === 0 ? (
+              <AdminTerminalEmpty>No audit events logged yet.</AdminTerminalEmpty>
+            ) : (
+              auditRows.map((row) => (
+                <article key={String(row.id)} className="card admin-moderation-row">
+                  <div className="admin-moderation-row__main">
+                    <strong>{String(row.action)}</strong>
+                    <span>
+                      {String(row.operator_email || "system")} · target {String(row.target_user_key || "—")} ·{" "}
+                      {new Date(String(row.created_at)).toLocaleString()}
+                    </span>
+                  </div>
+                </article>
+              ))
             )}
           </section>
 

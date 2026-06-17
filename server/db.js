@@ -566,8 +566,14 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
     [threadId, identity.userKey]
   );
   const hasMatch = Boolean(matchResult.rows[0]);
-  const exchangeStatus = threadMeta?.contactExchange?.status;
-  const allowContactExchange = hasMatch && exchangeAllowsContactSharing(exchangeStatus);
+  const threadRow = await query(
+    `select meta from app_chat_threads where match_id = $1 and user_key = $2 limit 1`,
+    [threadId, identity.userKey]
+  );
+  const storedMeta =
+    threadRow.rows[0]?.meta && typeof threadRow.rows[0].meta === "object" ? threadRow.rows[0].meta : {};
+  const contactExchange = storedMeta.contactExchange || threadMeta?.contactExchange || null;
+  const allowContactExchange = hasMatch && exchangeAllowsContactSharing(contactExchange);
   const messageCheck = await assertTextSafeForContactLeak({
     email,
     phone,
@@ -580,6 +586,18 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
     error.code = "CONTACT_LEAK_BLOCKED";
     throw error;
   }
+
+  const { analyzeOutgoingMessage } = await import("./services/spamDetection.js");
+  const member = await query(`select id from app_member_profiles where user_key = $1 limit 1`, [
+    identity.userKey
+  ]);
+  await analyzeOutgoingMessage({
+    email,
+    phone,
+    text: message.text,
+    recipientProfileId: threadMeta?.recipientProfileId || null,
+    profileId: member.rows[0]?.id
+  });
 
   await ensureAppMessagesTable();
   await ensureAppChatThreadsTable();

@@ -6,13 +6,15 @@ import { getCachedMemberProfile, fetchMemberProfileById } from "../services/disc
 import { ActivityStatus } from "../components/ActivityStatus";
 import { ChatInput } from "../components/ChatInput";
 import { EmptyState } from "../components/EmptyState";
+import { DisableContactSharingModal } from "../components/DisableContactSharingModal";
+import { MessageRequestCard } from "../components/MessageRequestCard";
 import { ContactExchangeConsentCard } from "../components/ContactExchangeConsentCard";
 import { ContactExchangeEnabledModal } from "../components/ContactExchangeEnabledModal";
 import { ContactExchangeLimitModal } from "../components/ContactExchangeLimitModal";
 import { PaywallModal } from "../components/PaywallModal";
 import { QuickiePaywallModal } from "../components/QuickiePaywallModal";
 import { ReportBlockModal } from "../components/ReportBlockModal";
-import type { ChatMessage, ChatThread, ContactExchangeShared, ContactExchangeState, Match, UserProfile } from "../types";
+import type { ChatMessage, ChatThread, ContactExchangeShared, ContactExchangeState, LikeEntry, Match, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { FEMALE_SAFETY_COPY } from "../constants/safety";
 import { readReceiptsAllowed } from "../utils/activityPrivacy";
@@ -26,12 +28,13 @@ import { incrementDailyCount, readDailyCount, readJson, writeJson } from "../uti
 import {
   completeContactExchangeRemote,
   contactExchangeAllowsSharing,
+  disableContactSharingRemote,
   fetchContactExchangeState,
   mapServerExchange,
   requestContactExchangeRemote,
   respondContactExchangeRemote
 } from "../services/contactExchange";
-import { persistMessageRemote } from "../services/memberData";
+import { persistMessageRemote, acceptSignalRemote, declineSignalRemote, fetchIncomingSignalsRemote, ignoreSignalRemote } from "../services/memberData";
 import { startQuickiePassPayment, completePendingPayment } from "../services/payments";
 import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch, activateQuickiePass } from "../utils/quickie";
 
@@ -89,6 +92,12 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [listTick, setListTick] = useState(0);
+  const [messageRequests, setMessageRequests] = useState<LikeEntry[]>([]);
+  const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+
+  useEffect(() => {
+    void fetchIncomingSignalsRemote(user).then(setMessageRequests);
+  }, [user.email, user.phone, listTick]);
 
   const threads = useMemo(
     () => readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {}),
@@ -123,7 +132,7 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
     return rows.filter(({ match }) => match.name.toLowerCase().includes(q) || match.city.toLowerCase().includes(q));
   }, [query, rows]);
 
-  if (!matches.length && !activeMatch) {
+  if (!matches.length && !messageRequests.length && !activeMatch) {
     return (
       <div className="page member-page messages-page">
         <header className="member-page-head member-page-head--minimal">
@@ -180,6 +189,35 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
           placeholder={EXPERIENCE_COPY.searchConversations}
         />
       </label>
+
+      {messageRequests.length > 0 ? (
+        <div className="message-requests-list">
+          {messageRequests.map((entry) => (
+            <MessageRequestCard
+              key={entry.id || entry.profileId}
+              entry={entry}
+              onAccept={async () => {
+                if (!entry.id) return;
+                const match = await acceptSignalRemote(user, entry.id);
+                if (match) {
+                  setListTick((v) => v + 1);
+                  setActiveMatch(match);
+                }
+              }}
+              onIgnore={async () => {
+                if (!entry.id) return;
+                await ignoreSignalRemote(user, entry.id);
+                setMessageRequests((current) => current.filter((row) => row.id !== entry.id));
+              }}
+              onDecline={async () => {
+                if (!entry.id) return;
+                await declineSignalRemote(user, entry.id);
+                setMessageRequests((current) => current.filter((row) => row.id !== entry.id));
+              }}
+            />
+          ))}
+        </div>
+      ) : null}
 
       <ul className="messages-list">
         {filtered.map(({ match, thread, messages, lastAt, unread }) => {
@@ -272,12 +310,19 @@ function ChatDetail({
   const anniversary = matchAnniversaryBanner(match);
   const lastMine = [...messages].reverse().find((m) => m.from === "me");
   const showSeen = receiptsOn && lastMine && threadMeta.peerSeenAt;
+  const [disableModalOpen, setDisableModalOpen] = useState(false);
   const exchangeStatus = threadMeta.contactExchange?.status;
+  const sharingDisabled = threadMeta.contactExchange?.contactSharingEnabled === false;
   const exchangeApproved =
-    contactExchangeAllowsSharing(exchangeStatus) || Boolean(threadMeta.offPlatformApproved);
+    contactExchangeAllowsSharing(threadMeta.contactExchange) || Boolean(threadMeta.offPlatformApproved);
   const showExchangeButton =
     !exchangeApproved &&
-    (!exchangeStatus || exchangeStatus === "declined" || exchangeStatus === "cancelled");
+    (!exchangeStatus ||
+      exchangeStatus === "declined" ||
+      exchangeStatus === "cancelled" ||
+      exchangeStatus === "expired" ||
+      sharingDisabled);
+  const canDisableSharing = exchangeApproved && !sharingDisabled;
   const showRecipientConsent = exchangeStatus === "pending" && exchangeRole === "recipient";
   const showRequesterWaiting = exchangeStatus === "pending" && exchangeRole === "requester";
   const requesterFirstName = match.name.trim().split(/\s+/)[0] || match.name;
@@ -338,7 +383,7 @@ function ChatDetail({
     setBlockWarning("");
 
     const contactApproved =
-      contactExchangeAllowsSharing(threadMeta.contactExchange?.status) ||
+      contactExchangeAllowsSharing(threadMeta.contactExchange) ||
       Boolean(threadMeta.offPlatformApproved);
     const contactCheck = checkOutgoingChatMessage(text, {
       connectionAccepted: contactApproved
@@ -452,6 +497,23 @@ function ChatDetail({
     setTimeout(() => setToast(""), 3500);
   };
 
+  const disableSharing = async () => {
+    const result = await disableContactSharingRemote(user, match.id, requesterProfileId);
+    setDisableModalOpen(false);
+    if (!result?.ok) {
+      if (result?.error) {
+        setToast(result.error);
+        setTimeout(() => setToast(""), 4000);
+      }
+      return;
+    }
+    trackEvent("contact_sharing_disabled", { matchId: match.id });
+    const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
+    if (mapped) updateMeta({ contactExchange: mapped });
+    setToast("Contact sharing disabled for this conversation.");
+    setTimeout(() => setToast(""), 3500);
+  };
+
   const handleBlock = () => {
     blockUser(match.profileId);
     onBack();
@@ -510,6 +572,10 @@ function ChatDetail({
       {showRequesterWaiting && (
         <p className="chat-exchange-waiting">Waiting for {match.name} to accept your contact exchange request.</p>
       )}
+
+      {exchangeStatus === "expired" ? (
+        <p className="chat-exchange-waiting">Contact request expired. You can request again when you are ready.</p>
+      ) : null}
 
       {exchangeApproved ? (
         <p className="chat-exchange-enabled">❤️ Contact exchange enabled — share only what you're comfortable with.</p>
@@ -605,10 +671,21 @@ function ChatDetail({
         }}
       />
 
+      <DisableContactSharingModal
+        open={disableModalOpen}
+        onClose={() => setDisableModalOpen(false)}
+        onConfirm={() => void disableSharing()}
+      />
+
       <ReportBlockModal
         open={safetyOpen}
         userName={match.name}
         profileId={match.profileId}
+        showDisableContactSharing={canDisableSharing}
+        onDisableContactSharing={() => {
+          setSafetyOpen(false);
+          setDisableModalOpen(true);
+        }}
         onClose={() => setSafetyOpen(false)}
         onBlock={handleBlock}
         onUnmatch={handleUnmatch}

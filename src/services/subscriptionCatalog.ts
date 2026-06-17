@@ -96,6 +96,48 @@ export async function fetchContactExchangeMetricsAdmin(limit = 100) {
   });
   return readResponseJson<{
     ok?: boolean;
-    metrics?: { totals: Record<string, number>; recent: Array<Record<string, unknown>> };
+    metrics?: {
+      totals: Record<string, number>;
+      windows?: Record<string, Record<string, number>>;
+      recent: Array<Record<string, unknown>>;
+      audit?: Array<Record<string, unknown>>;
+    };
   }>(response);
+}
+
+export async function fetchAuditTrailAdmin(filters: {
+  limit?: number;
+  action?: string;
+  operatorEmail?: string;
+  targetUserKey?: string;
+} = {}) {
+  const session = await supabase?.auth.getSession();
+  const headers = await appendAdminConsentHeader({
+    "Content-Type": "application/json",
+    ...(session?.data.session?.access_token
+      ? { Authorization: `Bearer ${session.data.session.access_token}` }
+      : {})
+  });
+  const response = await fetch(apiUrl("/api/auth/identity?action=audit-trail"), {
+    method: "POST",
+    headers,
+    body: JSON.stringify(filters)
+  });
+  return readResponseJson<{ ok?: boolean; rows?: Array<Record<string, unknown>> }>(response);
+}
+
+export async function fetchSpamSuspectsAdmin(limit = 50) {
+  const session = await supabase?.auth.getSession();
+  const headers = await appendAdminConsentHeader({
+    "Content-Type": "application/json",
+    ...(session?.data.session?.access_token
+      ? { Authorization: `Bearer ${session.data.session.access_token}` }
+      : {})
+  });
+  const response = await fetch(apiUrl("/api/auth/identity?action=spam-suspects"), {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ limit })
+  });
+  return readResponseJson<{ ok?: boolean; suspects?: Array<Record<string, unknown>> }>(response);
 }

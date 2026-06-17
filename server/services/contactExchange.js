@@ -4,7 +4,8 @@ import { isDatabaseReady, normalizeUserKey, query } from "../db.js";
 import { createModerationFlag } from "../memberTrust.js";
 import { getSubscriptionCatalog } from "./subscriptionCatalog.js";
 
-export const EXCHANGE_STATUSES = ["pending", "accepted", "declined", "completed", "cancelled"];
+export const EXCHANGE_STATUSES = ["pending", "accepted", "declined", "completed", "cancelled", "expired"];
+export const REQUEST_EXPIRY_DAYS = 7;
 
 function hashMeta(value = "") {
   return createHash("sha256").update(String(value)).digest("hex").slice(0, 16);
@@ -193,6 +194,63 @@ export async function assertContactExchangeEligibility({ email, phone, profileId
   return { ok: true, entitlements };
 }
 
+async function getThreadContactExchange(matchId, userKey) {
+  if (!matchId || !userKey) return null;
+  const existing = await query(
+    `select meta from app_chat_threads where match_id = $1 and user_key = $2 limit 1`,
+    [matchId, userKey]
+  );
+  const meta = existing.rows[0]?.meta;
+  return meta?.contactExchange && typeof meta.contactExchange === "object" ? meta.contactExchange : null;
+}
+
+async function expireStalePendingRequests(matchId = null) {
+  if (!isDatabaseReady()) return [];
+  await ensureContactExchangeSchema();
+
+  const params = [REQUEST_EXPIRY_DAYS];
+  let matchClause = "";
+  if (matchId) {
+    params.push(matchId);
+    matchClause = `and match_id = $${params.length}`;
+  }
+
+  const stale = await query(
+    `update contact_exchange_requests
+     set status = 'expired',
+         responded_at = coalesce(responded_at, now()),
+         updated_at = now()
+     where status = 'pending'
+       and requested_at < now() - ($1 || ' days')::interval
+       ${matchClause}
+     returning *`,
+    params
+  );
+
+  for (const row of stale.rows) {
+    const exchangePatch = { status: "expired", expiredAt: new Date().toISOString() };
+    await upsertThreadMeta(row.match_id, row.requester_user_key, exchangePatch);
+    await upsertThreadMeta(row.match_id, row.recipient_user_key, exchangePatch);
+    await logExchangeEvent({
+      matchId: row.match_id,
+      userKey: row.requester_user_key,
+      profileId: row.requester_profile_id,
+      eventType: "contact_request_expired"
+    });
+  }
+  return stale.rows;
+}
+
+function canStartNewExchange(latest, meta) {
+  if (!latest) return true;
+  if (latest.status === "pending") return false;
+  if (["declined", "cancelled", "expired"].includes(latest.status)) return true;
+  if (["accepted", "completed"].includes(latest.status)) {
+    return meta?.contactSharingEnabled === false;
+  }
+  return false;
+}
+
 async function getLatestExchangeForMatch(matchId) {
   await ensureContactExchangeSchema();
   const result = await query(
@@ -207,8 +265,10 @@ async function getLatestExchangeForMatch(matchId) {
 
 export async function getContactExchangeState({ email, phone, matchId }) {
   const userKey = normalizeUserKey({ email, phone });
+  if (matchId) await expireStalePendingRequests(matchId);
   const row = matchId ? await getLatestExchangeForMatch(matchId) : null;
   const entitlements = await getContactExchangeEntitlements({ email, phone });
+  const threadExchange = matchId && userKey ? await getThreadContactExchange(matchId, userKey) : null;
 
   if (!row) {
     return { ok: true, exchange: null, entitlements, role: null };
@@ -217,19 +277,24 @@ export async function getContactExchangeState({ email, phone, matchId }) {
   const role =
     row.requester_user_key === userKey ? "requester" : row.recipient_user_key === userKey ? "recipient" : null;
 
+  const exchange = {
+    id: row.id,
+    matchId: row.match_id,
+    status: row.status,
+    requesterUserKey: row.requester_user_key,
+    recipientUserKey: row.recipient_user_key,
+    requestedAt: row.requested_at,
+    respondedAt: row.responded_at,
+    completedAt: row.completed_at,
+    sharedContacts: row.shared_contacts || {},
+    contactSharingEnabled: threadExchange?.contactSharingEnabled !== false,
+    contactSharingDisabledAt: threadExchange?.contactSharingDisabledAt || null,
+    contactSharingDisabledBy: threadExchange?.contactSharingDisabledBy || null
+  };
+
   return {
     ok: true,
-    exchange: {
-      id: row.id,
-      matchId: row.match_id,
-      status: row.status,
-      requesterUserKey: row.requester_user_key,
-      recipientUserKey: row.recipient_user_key,
-      requestedAt: row.requested_at,
-      respondedAt: row.responded_at,
-      completedAt: row.completed_at,
-      sharedContacts: row.shared_contacts || {}
-    },
+    exchange,
     entitlements,
     role
   };
@@ -272,8 +337,12 @@ export async function requestContactExchange({
   }
 
   const latest = await getLatestExchangeForMatch(matchId);
-  if (latest && ["pending", "accepted", "completed"].includes(latest.status)) {
-    return { ok: true, exchange: latest, alreadyExists: true };
+  const requesterMeta = await getThreadContactExchange(matchId, requesterKey);
+  if (latest && !canStartNewExchange(latest, requesterMeta)) {
+    if (latest.status === "pending") {
+      return { ok: true, exchange: latest, alreadyExists: true };
+    }
+    return { ok: false, error: "Contact sharing is already enabled for this chat." };
   }
 
   await ensureContactExchangeSchema();
@@ -403,6 +472,35 @@ export async function completeContactExchange({
   return { ok: true, exchange: updated };
 }
 
+export async function disableContactSharing({ email, phone, matchId, profileId }) {
+  const userKey = normalizeUserKey({ email, phone });
+  const row = await getLatestExchangeForMatch(matchId);
+  if (!row || !["accepted", "completed"].includes(row.status)) {
+    return { ok: false, error: "Contact sharing is not enabled for this chat." };
+  }
+  if (![row.requester_user_key, row.recipient_user_key].includes(userKey)) {
+    return { ok: false, error: "You are not part of this exchange." };
+  }
+
+  const exchangePatch = {
+    status: row.status,
+    contactSharingEnabled: false,
+    contactSharingDisabledAt: new Date().toISOString(),
+    contactSharingDisabledBy: userKey
+  };
+
+  await upsertThreadMeta(matchId, row.requester_user_key, exchangePatch);
+  await upsertThreadMeta(matchId, row.recipient_user_key, exchangePatch);
+  await logExchangeEvent({
+    matchId,
+    userKey,
+    profileId,
+    eventType: "contact_sharing_disabled"
+  });
+
+  return { ok: true, exchange: { ...row, ...exchangePatch } };
+}
+
 export async function cancelContactExchange({ email, phone, matchId, profileId }) {
   const userKey = normalizeUserKey({ email, phone });
   const row = await getLatestExchangeForMatch(matchId);
@@ -431,8 +529,9 @@ export async function cancelContactExchange({ email, phone, matchId, profileId }
 }
 
 export async function listContactExchangeMetrics({ limit = 100 } = {}) {
-  if (!isDatabaseReady()) return { totals: {}, recent: [] };
+  if (!isDatabaseReady()) return { totals: {}, windows: {}, recent: [], audit: [] };
   await ensureContactExchangeSchema();
+  await expireStalePendingRequests();
 
   const totalsResult = await query(
     `select event_type, count(*)::int as count
@@ -440,6 +539,27 @@ export async function listContactExchangeMetrics({ limit = 100 } = {}) {
      group by event_type`
   );
   const totals = Object.fromEntries(totalsResult.rows.map((row) => [row.event_type, row.count]));
+
+  const windows = {};
+  for (const days of [7, 30]) {
+    const windowResult = await query(
+      `select event_type, count(*)::int as count
+       from contact_exchange_events
+       where created_at >= now() - ($1 || ' days')::interval
+       group by event_type`,
+      [days]
+    );
+    windows[`last${days}d`] = Object.fromEntries(windowResult.rows.map((row) => [row.event_type, row.count]));
+  }
+
+  const statusTotals = await query(
+    `select status, count(*)::int as count
+     from contact_exchange_requests
+     group by status`
+  );
+  for (const row of statusTotals.rows) {
+    totals[`status_${row.status}`] = row.count;
+  }
 
   const recent = await query(
     `select e.event_type, e.match_id, e.user_key, e.field, e.text_hash, e.created_at,
@@ -451,9 +571,31 @@ export async function listContactExchangeMetrics({ limit = 100 } = {}) {
     [Math.min(200, Math.max(1, limit))]
   );
 
-  return { totals, recent: recent.rows };
+  const audit = await query(
+    `select r.id, r.match_id, r.status, r.requested_at as created_at,
+            r.responded_at as resolved_at, r.completed_at,
+            req.name as requester_name, req.username as requester_username,
+            rec.name as recipient_name, rec.username as recipient_username,
+            r.requester_profile_id, r.recipient_profile_id
+     from contact_exchange_requests r
+     left join app_member_profiles req on req.id = r.requester_profile_id
+     left join app_member_profiles rec on rec.id = r.recipient_profile_id
+     order by r.updated_at desc
+     limit $1`,
+    [Math.min(200, Math.max(1, limit))]
+  );
+
+  return {
+    totals,
+    windows,
+    recent: recent.rows,
+    audit: audit.rows
+  };
 }
 
-export function exchangeAllowsContactSharing(status) {
+export function exchangeAllowsContactSharing(contactExchange) {
+  if (!contactExchange) return false;
+  if (contactExchange.contactSharingEnabled === false) return false;
+  const status = typeof contactExchange === "string" ? contactExchange : contactExchange.status;
   return status === "accepted" || status === "completed";
 }

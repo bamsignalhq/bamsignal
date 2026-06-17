@@ -396,10 +396,42 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
               Active
             </label>
             <label>
+              Visibility
+              <select
+                value={fastConnectionProduct.visibility}
+                onChange={(e) =>
+                  updateCatalogProduct("fast_connection_pass", {
+                    visibility: e.target.value as "public" | "hidden"
+                  })
+                }
+              >
+                <option value="public">Public</option>
+                <option value="hidden">Hidden</option>
+              </select>
+            </label>
+            <label>
+              Sort order
+              <input
+                type="number"
+                min={0}
+                value={fastConnectionProduct.sortOrder}
+                onChange={(e) =>
+                  updateCatalogProduct("fast_connection_pass", { sortOrder: Number(e.target.value) })
+                }
+              />
+            </label>
+            <label>
               Badge text
               <input
                 value={fastConnectionProduct.badgeText || ""}
                 onChange={(e) => updateCatalogProduct("fast_connection_pass", { badgeText: e.target.value })}
+              />
+            </label>
+            <label>
+              Description
+              <input
+                value={fastConnectionProduct.description}
+                onChange={(e) => updateCatalogProduct("fast_connection_pass", { description: e.target.value })}
               />
             </label>
             <label>

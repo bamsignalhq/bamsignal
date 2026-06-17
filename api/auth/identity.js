@@ -125,6 +125,33 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, metrics });
     }
 
+    if (req.query.action === "audit-trail") {
+      if (!await requireAdmin(req, res)) return;
+      const { listPlatformAudit } = await import("../../server/services/auditTrail.js");
+      const rows = await listPlatformAudit({
+        limit: Number(req.body?.limit) || 100,
+        action: req.body?.action || null,
+        operatorEmail: req.body?.operatorEmail || null,
+        targetUserKey: req.body?.targetUserKey || null
+      });
+      return res.status(200).json({ ok: true, rows });
+    }
+
+    if (req.query.action === "audit-trail-export") {
+      if (!await requireAdmin(req, res)) return;
+      if (!await requireAdminConsent(req, res)) return;
+      const { listPlatformAudit, auditCsvRows } = await import("../../server/services/auditTrail.js");
+      const rows = await listPlatformAudit({ limit: Number(req.body?.limit) || 500 });
+      return res.status(200).json({ ok: true, csv: auditCsvRows(rows) });
+    }
+
+    if (req.query.action === "spam-suspects") {
+      if (!await requireAdmin(req, res)) return;
+      const { listSpamSuspects } = await import("../../server/services/spamDetection.js");
+      const suspects = await listSpamSuspects({ limit: Number(req.body?.limit) || 50 });
+      return res.status(200).json({ ok: true, suspects });
+    }
+
     if (req.query.action === "settings-save") {
       if (!await requireAdmin(req, res)) return;
       if (!await requireAdminConsent(req, res)) return;

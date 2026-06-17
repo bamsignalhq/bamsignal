@@ -30,6 +30,8 @@ type MemberBundle = {
 
 type MemberActionPayload = {
   ok?: boolean;
+  error?: string;
+  cooldown?: boolean;
   bundle?: MemberBundle;
   signal?: unknown;
   match?: Match;
@@ -219,9 +221,15 @@ export async function sendSignalRemote(
   user: MemberIdentity,
   targetProfileId: string,
   signalType: "signal" | "priority" = "signal"
-): Promise<boolean> {
+): Promise<{ ok: boolean; error?: string }> {
   const payload = await postMemberAction("signal", user, { targetProfileId, signalType });
-  return Boolean(payload?.signal);
+  if (payload?.cooldown) {
+    return { ok: false, error: String(payload.error || "Please slow down a little.") };
+  }
+  if (payload?.ok === false) {
+    return { ok: false, error: String(payload.error || "Could not send signal.") };
+  }
+  return { ok: Boolean(payload?.signal) };
 }
 
 export async function acceptSignalRemote(
@@ -248,6 +256,16 @@ export async function acceptSignalRemote(
 
 export async function declineSignalRemote(user: MemberIdentity, signalId: string): Promise<boolean> {
   const payload = await postMemberAction("decline-signal", user, { signalId });
+  if (!payload?.ok) return false;
+
+  const incoming = readJson<LikeEntry[]>(STORAGE_KEYS.likedBy, []).filter((s) => s.id !== signalId);
+  writeJson(STORAGE_KEYS.likedBy, incoming);
+  writeJson(STORAGE_KEYS.signalsReceived, incoming.length);
+  return true;
+}
+
+export async function ignoreSignalRemote(user: MemberIdentity, signalId: string): Promise<boolean> {
+  const payload = await postMemberAction("ignore-signal", user, { signalId });
   if (!payload?.ok) return false;
 
   const incoming = readJson<LikeEntry[]>(STORAGE_KEYS.likedBy, []).filter((s) => s.id !== signalId);

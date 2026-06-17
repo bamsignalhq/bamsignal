@@ -35,7 +35,10 @@ async function postExchange(
   return readResponseJson<ExchangePayload>(response);
 }
 
-export function contactExchangeAllowsSharing(status?: ContactExchangeStatus) {
+export function contactExchangeAllowsSharing(contactExchange?: ContactExchangeState | ContactExchangeStatus) {
+  if (!contactExchange) return false;
+  if (typeof contactExchange === "object" && contactExchange.contactSharingEnabled === false) return false;
+  const status = typeof contactExchange === "string" ? contactExchange : contactExchange.status;
   return status === "accepted" || status === "completed";
 }
 
@@ -77,6 +80,14 @@ export async function completeContactExchangeRemote(
   return postExchange(user, "contact-exchange-complete", { matchId, sharedContacts, profileId });
 }
 
+export async function disableContactSharingRemote(
+  user: Pick<UserProfile, "email" | "phone">,
+  matchId: string,
+  profileId?: string
+) {
+  return postExchange(user, "contact-exchange-disable", { matchId, profileId });
+}
+
 export async function cancelContactExchangeRemote(
   user: Pick<UserProfile, "email" | "phone">,
   matchId: string,
@@ -97,6 +108,15 @@ export function mapServerExchange(row: Record<string, unknown> | null | undefine
     respondedAt: (row.responded_at || row.respondedAt) as string | undefined,
     acceptedAt: (row.accepted_at || row.acceptedAt) as string | undefined,
     completedAt: (row.completed_at || row.completedAt) as string | undefined,
+    expiredAt: (row.expired_at || row.expiredAt) as string | undefined,
+    contactSharingEnabled:
+      row.contactSharingEnabled !== false && row.contact_sharing_enabled !== false,
+    contactSharingDisabledAt: (row.contactSharingDisabledAt || row.contact_sharing_disabled_at) as
+      | string
+      | undefined,
+    contactSharingDisabledBy: String(
+      row.contactSharingDisabledBy || row.contact_sharing_disabled_by || ""
+    ) || undefined,
     sharedContacts: (row.shared_contacts || row.sharedContacts) as ContactExchangeState["sharedContacts"]
   };
 }

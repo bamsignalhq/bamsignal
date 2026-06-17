@@ -155,8 +155,8 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
     const sent = await sendSignalRemote(user, profile.id, "signal");
     setSignalingId(null);
 
-    if (!sent) {
-      setToast(ERROR_COPY.signalFailed);
+    if (!sent.ok) {
+      setToast(sent.error || ERROR_COPY.signalFailed);
       window.setTimeout(() => setToast(""), 3500);
       return;
     }

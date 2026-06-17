@@ -127,6 +127,14 @@ async function writeModerationAudit({
       payload
     ]
   );
+  const { writePlatformAudit } = await import("./auditTrail.js");
+  await writePlatformAudit({
+    action,
+    targetUserId: targetProfileId,
+    targetUserKey,
+    operatorEmail: String(operatorEmail || "").toLowerCase(),
+    details: { reason, ...payload }
+  });
 }
 
 export async function listShadowBannedUsers() {

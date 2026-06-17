@@ -191,6 +191,19 @@ export async function saveSubscriptionCatalog(catalog) {
     );
   }
 
+  const { writePlatformAudit } = await import("./auditTrail.js");
+  await writePlatformAudit({
+    action: "pricing_catalog_save",
+    details: {
+      products: normalized.products.map((product) => ({
+        id: product.id,
+        active: product.active,
+        visibility: product.visibility
+      })),
+      contactExchangePolicy: normalized.contactExchangePolicy
+    }
+  });
+
   return normalized;
 }
 

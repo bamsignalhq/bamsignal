@@ -238,8 +238,8 @@ export function HomeSignalsFeed({
     const sent = await sendSignalRemote(user, profile.id, "signal");
     setSignalingId(null);
 
-    if (!sent) {
-      showToast(ERROR_COPY.signalFailed);
+    if (!sent.ok) {
+      showToast(sent.error || ERROR_COPY.signalFailed);
       return;
     }
 

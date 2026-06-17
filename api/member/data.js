@@ -16,6 +16,7 @@ import {
   fetchProfileVisitors,
   fetchReferralStats,
   getMemberProfileById,
+  ignoreIncomingSignal,
   listDiscoverProfiles,
   searchMemberProfiles,
   likeMemberProfile,
@@ -56,6 +57,21 @@ function requireDatabase(res) {
       error: "Database is not connected.",
       database
     });
+    return false;
+  }
+  return true;
+}
+
+async function enforceRate(req, res, identity, endpoint) {
+  const { checkRateLimit } = await import("../../server/services/rateLimit.js");
+  const result = await checkRateLimit({
+    req,
+    endpoint,
+    email: identity.email,
+    phone: identity.phone
+  });
+  if (!result.ok) {
+    res.status(429).json({ ok: false, error: result.error, retryAfterMs: result.retryAfterMs });
     return false;
   }
   return true;
@@ -117,6 +133,7 @@ export default async function handler(req, res) {
 
     if (req.query.action === "discover") {
       if (!requireDatabase(res)) return;
+      if (!(await enforceRate(req, res, identity, "discover"))) return;
       const city = String(body.city || "").trim();
       if (!city) return res.status(400).json({ ok: false, error: "City is required." });
       const profiles = await listDiscoverProfiles({
@@ -131,6 +148,7 @@ export default async function handler(req, res) {
 
     if (req.query.action === "search") {
       if (!requireDatabase(res)) return;
+      if (!(await enforceRate(req, res, identity, "search"))) return;
       const city = String(body.city || "").trim();
       const state = String(body.state || "").trim();
       if (!city && !state) {
@@ -160,6 +178,7 @@ export default async function handler(req, res) {
 
     if (req.query.action === "profile-by-id") {
       if (!requireDatabase(res)) return;
+      if (!(await enforceRate(req, res, identity, "profile-view"))) return;
       const profile = await getMemberProfileById(String(body.profileId || "").trim());
       return res.status(200).json({ ok: Boolean(profile), profile });
     }
@@ -191,6 +210,12 @@ export default async function handler(req, res) {
         signalType: String(body.signalType || "signal"),
         payload: body.payload || {}
       });
+      if (row?.cooldown) {
+        return res.status(429).json({ ok: false, error: row.error, cooldown: true });
+      }
+      if (row?.ok === false) {
+        return res.status(400).json(row);
+      }
       return res.status(row ? 200 : 503).json({ ok: Boolean(row), signal: row });
     }
 
@@ -207,6 +232,16 @@ export default async function handler(req, res) {
     if (req.query.action === "decline-signal") {
       if (!requireDatabase(res)) return;
       const ok = await declineIncomingSignal({
+        email: identity.email,
+        phone: identity.phone,
+        signalId: String(body.signalId || "").trim()
+      });
+      return res.status(ok ? 200 : 404).json({ ok });
+    }
+
+    if (req.query.action === "ignore-signal") {
+      if (!requireDatabase(res)) return;
+      const ok = await ignoreIncomingSignal({
         email: identity.email,
         phone: identity.phone,
         signalId: String(body.signalId || "").trim()
@@ -504,6 +539,18 @@ export default async function handler(req, res) {
       if (!requireDatabase(res)) return;
       const { cancelContactExchange } = await import("../../server/services/contactExchange.js");
       const result = await cancelContactExchange({
+        email: identity.email,
+        phone: identity.phone,
+        matchId: String(body.matchId || "").trim(),
+        profileId: body.profileId || null
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "contact-exchange-disable") {
+      if (!requireDatabase(res)) return;
+      const { disableContactSharing } = await import("../../server/services/contactExchange.js");
+      const result = await disableContactSharing({
         email: identity.email,
         phone: identity.phone,
         matchId: String(body.matchId || "").trim(),

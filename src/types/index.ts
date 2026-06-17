@@ -309,7 +309,13 @@ export type ChatMessage = {
   blocked?: boolean;
 };
 
-export type ContactExchangeStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
+export type ContactExchangeStatus =
+  | "pending"
+  | "accepted"
+  | "declined"
+  | "completed"
+  | "cancelled"
+  | "expired";
 
 export type ContactExchangeShared = {
   whatsapp?: string;
@@ -326,6 +332,10 @@ export type ContactExchangeState = {
   respondedAt?: string;
   acceptedAt?: string;
   completedAt?: string;
+  expiredAt?: string;
+  contactSharingEnabled?: boolean;
+  contactSharingDisabledAt?: string;
+  contactSharingDisabledBy?: string;
   sharedContacts?: Record<string, ContactExchangeShared>;
 };
 

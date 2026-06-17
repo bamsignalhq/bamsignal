@@ -14,6 +14,8 @@ type ReportBlockModalProps = {
   onReport?: (reason: ReportReason, details?: string) => void;
   onBlock: () => void;
   onUnmatch?: () => void;
+  showDisableContactSharing?: boolean;
+  onDisableContactSharing?: () => void;
 };
 
 export function ReportBlockModal({
@@ -23,7 +25,9 @@ export function ReportBlockModal({
   onClose,
   onReport,
   onBlock,
-  onUnmatch
+  onUnmatch,
+  showDisableContactSharing,
+  onDisableContactSharing
 }: ReportBlockModalProps) {
   const [view, setView] = useState<"menu" | "report" | "done">("menu");
   const [reason, setReason] = useState<ReportReason | null>(null);
@@ -100,6 +104,18 @@ export function ReportBlockModal({
                   }}
                 >
                   <UserX size={18} /> {EXPERIENCE_COPY.unmatch}
+                </button>
+              ) : null}
+              {showDisableContactSharing && onDisableContactSharing ? (
+                <button
+                  type="button"
+                  className="safety-action-btn"
+                  onClick={() => {
+                    onDisableContactSharing();
+                    close();
+                  }}
+                >
+                  Disable Contact Sharing
                 </button>
               ) : null}
             </div>

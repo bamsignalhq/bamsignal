@@ -25,6 +25,8 @@ export type AnalyticsEvent =
   | "exchange_accepted"
   | "exchange_declined"
   | "exchange_completed"
+  | "contact_sharing_disabled"
+  | "contact_request_expired"
   | "boost_activated"
   | "upgrade_impression"
   | "upgrade_click"

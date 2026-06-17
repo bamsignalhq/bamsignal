@@ -11,7 +11,7 @@ import {
 } from "../services/whatsappVerification";
 import { moderatePhotoUpload } from "../utils/mediaModeration";
 import { PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
-import { PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import { useAndroidBack } from "../hooks/useAndroidBack";
 
 type PhoneVerificationPanelProps = {
@@ -117,13 +117,13 @@ export function PhoneVerificationPanel({
 
     const validation = await validatePhotoFile(file);
     if (!validation.ok) {
-      onMessage?.(PHOTO_UPLOAD_FAIL);
+      onMessage?.(photoUploadUserMessage(validation.code));
       return;
     }
 
     const verdict = await moderatePhotoUpload(file, "selfie");
     if (!verdict.allowed) {
-      onMessage?.(PHOTO_UPLOAD_FAIL);
+      onMessage?.(verdict.message || photoUploadUserMessage(verdict.code));
       return;
     }
 

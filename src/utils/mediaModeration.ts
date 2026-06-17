@@ -1,5 +1,5 @@
 import { isImageModerationEnabled } from "../config/imageModeration";
-import { PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import { PHOTO_REJECTED, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
 import { STORAGE_KEYS } from "../constants/limits";
 import {
@@ -71,7 +71,7 @@ export async function moderatePhotoUpload(
   if (!isLikelyImageFile(file)) {
     return {
       allowed: false,
-      message: PHOTO_UPLOAD_FAIL,
+      message: PHOTO_REJECTED,
       code: "NOT_IMAGE",
       internalReason: `invalid_mime:${file.type}`
     };
@@ -90,7 +90,7 @@ export async function moderatePhotoUpload(
     });
     return {
       allowed: false,
-      message: PHOTO_UPLOAD_FAIL,
+      message: PHOTO_REJECTED,
       code: "MODERATION_REJECTED",
       internalReason: contactScan.reason
     };

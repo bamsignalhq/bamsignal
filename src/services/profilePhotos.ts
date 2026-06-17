@@ -1,4 +1,4 @@
-import { PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
 import { apiUrl, supabase } from "./supabase";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
@@ -154,7 +154,9 @@ export function mapUploadError(error: unknown): PhotoUploadError {
   if (error instanceof PhotoUploadError) return error;
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("HEIC_DECODE_UNSUPPORTED") || message.includes("IMAGE_DECODE_FAILED")) {
-    return new PhotoUploadError(PHOTO_UPLOAD_FAIL, { code: "IMAGE_DECODE_FAILED" });
+    return new PhotoUploadError(photoUploadUserMessage("IMAGE_DECODE_FAILED"), {
+      code: "IMAGE_DECODE_FAILED"
+    });
   }
   if (message.includes("COMPRESSION_FAILED")) {
     return new PhotoUploadError(PHOTO_UPLOAD_FAIL, { code: "COMPRESSION_FAILED" });

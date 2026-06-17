@@ -1,6 +1,6 @@
 import { Camera, Loader2, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { DEFAULT_PROFILE_COVER, PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import { DEFAULT_PROFILE_COVER, PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
@@ -58,7 +58,7 @@ export function CoverPhotoUpload({
       const validation = await validatePhotoFile(file);
       if (!validation.ok) {
         logPhotoUpload("upload_rejected", { code: validation.code, internalReason: validation.internalReason });
-        onModerationMessage?.(PHOTO_UPLOAD_FAIL);
+        onModerationMessage?.(photoUploadUserMessage(validation.code));
         return;
       }
 
@@ -68,7 +68,7 @@ export function CoverPhotoUpload({
           code: verdict.code || "MODERATION_REJECTED",
           internalReason: verdict.internalReason || "moderation"
         });
-        onModerationMessage?.(PHOTO_UPLOAD_FAIL);
+        onModerationMessage?.(verdict.message || photoUploadUserMessage(verdict.code));
         return;
       }
 

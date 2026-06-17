@@ -1,6 +1,12 @@
 import { Camera, Loader2, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { MAX_PROFILE_PHOTOS, MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
+import {
+  MAX_PROFILE_PHOTOS,
+  MIN_PROFILE_PHOTOS,
+  PHOTO_UPLOAD_FAIL,
+  photoUploadUserMessage
+} from "../constants/photos";
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
@@ -53,9 +59,9 @@ export function PhotoUploadGrid({
     window.setTimeout(() => fileRef.current?.click(), 0);
   };
 
-  const failUpload = (code: string, internalReason: string) => {
+  const failUpload = (code: PhotoUploadErrorCode, internalReason: string, message?: string) => {
     logPhotoUpload("upload_rejected", { code, internalReason });
-    onModerationMessage?.(PHOTO_UPLOAD_FAIL);
+    onModerationMessage?.(message || photoUploadUserMessage(code));
   };
 
   const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +91,11 @@ export function PhotoUploadGrid({
 
       const verdict = await moderatePhotoUpload(file, signupMode ? "signup" : "profile");
       if (!verdict.allowed) {
-        failUpload(verdict.code || "MODERATION_REJECTED", verdict.internalReason || "moderation");
+        failUpload(
+          verdict.code || "MODERATION_REJECTED",
+          verdict.internalReason || "moderation",
+          verdict.message
+        );
         return;
       }
 

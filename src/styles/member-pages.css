@@ -1863,6 +1863,12 @@
   color: #fff;
 }
 
+.profile-read-chip--picked {
+  background: var(--brand-gradient);
+  border-color: transparent;
+  color: #fff;
+}
+
 [data-theme="light"] .profile-read-chip {
   background: rgba(0, 0, 0, 0.05);
   border-color: rgba(0, 0, 0, 0.12);
@@ -1873,6 +1879,12 @@
   background: linear-gradient(135deg, rgba(244, 114, 182, 0.28) 0%, rgba(236, 72, 153, 0.22) 100%);
   border-color: rgba(219, 39, 119, 0.25);
   color: #831843;
+}
+
+[data-theme="light"] .profile-read-chip--picked {
+  background: var(--brand-gradient);
+  border-color: transparent;
+  color: #fff;
 }
 
 .profile-overview-block.profile-read-section .profile-read__heading {
@@ -2035,14 +2047,20 @@
   font-weight: 500;
   line-height: 1.2;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.interest-sheet-chip:hover:not(.interest-sheet-chip--disabled):not(.interest-sheet-chip--selected) {
+  border-color: color-mix(in srgb, var(--brand-pink) 40%, transparent);
+  background: color-mix(in srgb, var(--brand-pink) 10%, rgba(255, 255, 255, 0.06));
 }
 
 .interest-sheet-chip--selected {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: var(--brand-gradient);
+  border-color: transparent;
   color: #fff;
   font-weight: 600;
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--brand-pink) 38%, transparent);
 }
 
 .interest-sheet-chip--disabled {
@@ -2056,11 +2074,18 @@
   color: rgba(0, 0, 0, 0.78);
 }
 
+[data-theme="light"] .interest-sheet-chip:hover:not(.interest-sheet-chip--disabled):not(.interest-sheet-chip--selected) {
+  border-color: color-mix(in srgb, var(--brand-pink) 45%, transparent);
+  background: var(--brand-gradient-soft);
+  color: var(--brand-purple);
+}
+
 [data-theme="light"] .interest-sheet-chip--selected {
-  background: rgba(0, 0, 0, 0.08);
-  border-color: rgba(0, 0, 0, 0.16);
-  color: var(--text);
+  background: var(--brand-gradient);
+  border-color: transparent;
+  color: #fff;
   font-weight: 600;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--brand-pink) 28%, transparent);
 }
 
 .interest-sheet__foot {

@@ -14,7 +14,7 @@ export function ProfileInterestsPreview({ interests, onMoreClick }: ProfileInter
   return (
     <div className="profile-read-chips profile-interests-preview">
       {visible.map((interest) => (
-        <span key={interest} className="profile-read-chip">
+        <span key={interest} className="profile-read-chip profile-read-chip--picked">
           {interest}
         </span>
       ))}

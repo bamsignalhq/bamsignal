@@ -46,6 +46,7 @@ COPY --from=builder /app/dist ./dist
 COPY server ./server
 COPY api ./api
 COPY public ./public
+COPY shared ./shared
 
 EXPOSE 3000
 

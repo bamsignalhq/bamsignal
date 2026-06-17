@@ -6,6 +6,14 @@ import {
   containsNigerianPhoneInText,
   scanPhotoSafetyText
 } from "../shared/photoSafetyPatterns.mjs";
+import {
+  classifyCoverRisk,
+  classifyProfileRisk,
+  containsBusinessFlyerText,
+  faceAreaPassesProfileCheck,
+  PHOTO_RISK_REJECT_THRESHOLD,
+  shouldRejectByRiskScore
+} from "../shared/photoQualityScore.mjs";
 
 function testDocumentKeywords() {
   const mustFail = [
@@ -94,11 +102,116 @@ function testVerificationSelfieAllowsDocuments() {
   console.log("✓ Verification selfie document exception");
 }
 
+function testFaceAreaThreshold() {
+  assert.equal(faceAreaPassesProfileCheck(0.03, 0.03), true);
+  assert.equal(faceAreaPassesProfileCheck(0.01, 0.01), false);
+  assert.equal(faceAreaPassesProfileCheck(0.015, 0.04), true);
+  console.log("✓ Face area threshold");
+}
+
+function testProfileRiskScoring() {
+  const logoNoFace = classifyProfileRisk({
+    hasAdequateFace: false,
+    logoLikelihood: 0.8,
+    textDensity: 0.05,
+    hasQr: false,
+    hasDocumentKeywords: false,
+    hasContactLeak: false
+  });
+  assert.equal(logoNoFace.reject, true);
+  assert.equal(logoNoFace.category, "no_face");
+  assert.ok(logoNoFace.riskScore >= PHOTO_RISK_REJECT_THRESHOLD);
+
+  const selfiePass = classifyProfileRisk({
+    hasAdequateFace: true,
+    logoLikelihood: 0.1,
+    textDensity: 0.05,
+    hasQr: false,
+    hasDocumentKeywords: false,
+    hasContactLeak: false
+  });
+  assert.equal(selfiePass.reject, false);
+
+  const memeText = classifyProfileRisk({
+    hasAdequateFace: false,
+    logoLikelihood: 0.2,
+    textDensity: 0.19,
+    hasQr: false,
+    hasDocumentKeywords: false,
+    hasContactLeak: false
+  });
+  assert.equal(memeText.reject, true);
+  assert.equal(memeText.category, "text_heavy");
+
+  console.log("✓ Profile risk scoring");
+}
+
+function testCoverRiskScoring() {
+  const landscapePass = classifyCoverRisk({
+    textDensity: 0.05,
+    hasQr: false,
+    hasDocumentKeywords: false,
+    hasContactLeak: false,
+    hasFlyerText: false
+  });
+  assert.equal(landscapePass.reject, false);
+
+  const carCoverPass = classifyCoverRisk({
+    textDensity: 0.08,
+    hasQr: false,
+    hasDocumentKeywords: false,
+    hasContactLeak: false,
+    hasFlyerText: false
+  });
+  assert.equal(carCoverPass.reject, false);
+
+  const flyerFail = classifyCoverRisk({
+    textDensity: 0.1,
+    hasQr: true,
+    hasDocumentKeywords: false,
+    hasContactLeak: false,
+    hasFlyerText: true
+  });
+  assert.equal(flyerFail.reject, true);
+
+  const ninFail = classifyCoverRisk({
+    textDensity: 0.04,
+    hasQr: false,
+    hasDocumentKeywords: true,
+    hasContactLeak: false,
+    hasFlyerText: false
+  });
+  assert.equal(ninFail.reject, true);
+  assert.equal(ninFail.category, "document");
+
+  console.log("✓ Cover risk scoring (relaxed for scenery)");
+}
+
+function testBusinessFlyerKeywords() {
+  assert.equal(containsBusinessFlyerText("Arsenal Football Club official"), true);
+  assert.equal(containsBusinessFlyerText("Acme Services Limited"), true);
+  assert.equal(containsBusinessFlyerText("Follow us @brandname"), true);
+  assert.equal(containsBusinessFlyerText("Beach sunset"), false);
+  console.log("✓ Business flyer keyword detection");
+}
+
+function testRiskThreshold() {
+  assert.equal(shouldRejectByRiskScore(59), false);
+  assert.equal(shouldRejectByRiskScore(60), true);
+  assert.equal(shouldRejectByRiskScore(90), true);
+  console.log("✓ Risk threshold at 60");
+}
+
 async function main() {
   testDocumentKeywords();
   testPhoneDetection();
   testUrlDetection();
   testVerificationSelfieAllowsDocuments();
+  testFaceAreaThreshold();
+  testProfileRiskScoring();
+  testCoverRiskScoring();
+  testBusinessFlyerKeywords();
+  testRiskThreshold();
   console.log("\nAll photo safety pattern checks passed.");
 }
 

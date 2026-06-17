@@ -47,7 +47,8 @@ function moderationKillSwitchActive(): boolean {
 }
 
 /**
- * Profile, cover, and signup photos must pass document/OCR/face safety checks.
+ * Profile and signup photos require a visible face with reasonable area, plus human-confidence checks.
+ * Cover photos allow landscapes/travel but still block documents, flyers, and contact leaks.
  * Verification selfies allow ID-in-hand but still require a visible face.
  * Set VITE_ENABLE_IMAGE_MODERATION=false to disable all checks (local debugging only).
  */

@@ -2,17 +2,26 @@ import {
   containsDocumentKeywords,
   scanPhotoSafetyText
 } from "../../shared/photoSafetyPatterns.mjs";
+import {
+  classifyCoverRisk,
+  classifyProfileRisk,
+  containsBusinessFlyerText,
+  PHOTO_RISK_REJECT_THRESHOLD
+} from "../../shared/photoQualityScore.mjs";
 import { containsContactInText } from "./contactGuard";
 import { trackPhotoRejection } from "./photoRejectionMetrics";
 import type { PhotoUploadKind } from "../constants/photoUploadKinds";
 import { bitmapToCanvas, loadImageBitmap } from "./photoImageBitmap";
+import { analyzeFaces } from "./photoFaceAnalysis";
+import { analyzeVisualHeuristics } from "./photoVisualHeuristics";
 
 export type PhotoRejectionCategory =
   | "no_face"
-  | "document_detected"
-  | "too_much_text"
-  | "contact_information"
+  | "logo"
+  | "document"
+  | "text_heavy"
   | "qr_code"
+  | "contact_info"
   | "other";
 
 export type PhotoSafetyScanResult = {
@@ -21,11 +30,6 @@ export type PhotoSafetyScanResult = {
   internalReason?: string;
   riskScore: number;
 };
-
-const TEXT_DENSITY_REJECT = 0.18;
-const TEXT_DENSITY_STRICT = 0.14;
-const QR_RISK_SCORE = 45;
-const RISK_REJECT_THRESHOLD = 55;
 
 const OCR_KEYWORDS = [
   "nin",
@@ -41,10 +45,6 @@ const OCR_KEYWORDS = [
   "card number",
   "date of birth"
 ];
-
-let blazefaceModel: { estimateFaces: (input: HTMLCanvasElement, flip?: boolean) => Promise<unknown[]> } | null =
-  null;
-let blazefaceLoadFailed = false;
 
 async function tryOcrText(file: File): Promise<string> {
   try {
@@ -106,81 +106,14 @@ async function detectQrCode(file: File): Promise<boolean> {
   }
 }
 
-async function loadBlazeface() {
-  if (blazefaceModel) return blazefaceModel;
-  if (blazefaceLoadFailed) return null;
-  try {
-    const tf = await import("@tensorflow/tfjs-core");
-    await import("@tensorflow/tfjs-backend-webgl");
-    await tf.setBackend("webgl");
-    await tf.ready();
-    const blazeface = await import("@tensorflow-models/blazeface");
-    blazefaceModel = await blazeface.load();
-    return blazefaceModel;
-  } catch {
-    blazefaceLoadFailed = true;
-    return null;
-  }
-}
-
-function heuristicFacePresent(data: Uint8ClampedArray, width: number, height: number): boolean {
-  let skinPixels = 0;
-  let samples = 0;
-  const yStart = Math.floor(height * 0.08);
-  const yEnd = Math.floor(height * 0.82);
-  const xStart = Math.floor(width * 0.12);
-  const xEnd = Math.floor(width * 0.88);
-
-  for (let y = yStart; y < yEnd; y += 2) {
-    for (let x = xStart; x < xEnd; x += 2) {
-      const i = (y * width + x) * 4;
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      const isSkin =
-        r > 55 &&
-        g > 35 &&
-        b > 20 &&
-        max - min > 12 &&
-        Math.abs(r - g) > 10 &&
-        r > g &&
-        r > b;
-      if (isSkin) skinPixels++;
-      samples++;
-    }
-  }
-  return samples > 0 && skinPixels / samples > 0.045;
-}
-
-async function detectFace(file: File): Promise<boolean> {
-  const bitmap = await loadImageBitmap(file);
-  try {
-    const canvas = bitmapToCanvas(bitmap, 640);
-    const model = await loadBlazeface();
-    if (model) {
-      const faces = await model.estimateFaces(canvas, false);
-      if (faces.length > 0) return true;
-    }
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return false;
-    const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    return heuristicFacePresent(data, width, height);
-  } finally {
-    bitmap.close?.();
-  }
-}
-
 function ocrHasRiskKeywords(text: string): boolean {
   const lower = text.toLowerCase();
   return OCR_KEYWORDS.some((keyword) => lower.includes(keyword));
 }
 
-function looksLikeScreenshot(aspect: number, density: number, kind: PhotoUploadKind): boolean {
-  if (kind === "cover") return false;
-  if (aspect >= 1.75 && density >= TEXT_DENSITY_STRICT) return true;
-  if (aspect <= 0.55 && density >= TEXT_DENSITY_STRICT) return true;
+function looksLikeScreenshot(aspect: number, density: number): boolean {
+  if (aspect >= 1.75 && density >= 0.13) return true;
+  if (aspect <= 0.55 && density >= 0.13) return true;
   return false;
 }
 
@@ -194,76 +127,148 @@ function reject(
   return { allowed: false, category, internalReason, riskScore };
 }
 
+function mapSharedCategory(category: string): PhotoRejectionCategory {
+  if (category === "contact_information") return "contact_info";
+  if (category === "document_detected") return "document";
+  if (category === "too_much_text") return "text_heavy";
+  return category as PhotoRejectionCategory;
+}
+
+async function scanVerificationSelfie(
+  file: File,
+  ocrText: string,
+  density: number,
+  hasQr: boolean,
+  faceAnalysis: Awaited<ReturnType<typeof analyzeFaces>>
+): Promise<PhotoSafetyScanResult> {
+  const filename = file.name || "";
+  if (containsContactInText(filename) || containsContactInText(ocrText)) {
+    return reject("contact_info", "selfie_contact", PHOTO_RISK_REJECT_THRESHOLD, "selfie");
+  }
+
+  const combinedText = [filename, ocrText].filter(Boolean).join("\n");
+  const textScan = scanPhotoSafetyText(combinedText, { allowDocuments: true });
+  if (textScan.blocked && textScan.category === "contact_information") {
+    return reject("contact_info", "selfie_contact_scan", PHOTO_RISK_REJECT_THRESHOLD, "selfie");
+  }
+
+  if (!faceAnalysis.hasAdequateFace) {
+    return reject("no_face", "selfie_no_face", 50, "selfie");
+  }
+
+  let riskScore = 0;
+  if (density >= 0.17) riskScore += 20;
+  if (hasQr) riskScore += 20;
+  if (riskScore >= PHOTO_RISK_REJECT_THRESHOLD) {
+    return reject("other", `selfie_risk:${riskScore}`, riskScore, "selfie");
+  }
+
+  return { allowed: true, riskScore };
+}
+
 export async function scanPhotoSafety(
   file: File,
   kind: PhotoUploadKind
 ): Promise<PhotoSafetyScanResult> {
+  const isCover = kind === "cover";
   const isVerificationSelfie = kind === "selfie";
-  const requiresFace = !isVerificationSelfie;
+  const isPublicProfile = kind === "profile" || kind === "signup";
   const allowDocuments = isVerificationSelfie;
-  let riskScore = 0;
 
   const filename = file.name || "";
-  if (containsContactInText(filename)) {
-    return reject("contact_information", "filename_contact", riskScore, kind);
-  }
-  if (!allowDocuments && containsDocumentKeywords(filename)) {
-    return reject("document_detected", "filename_document", riskScore, kind);
-  }
-
-  const [ocrText, density, hasQr, hasFace] = await Promise.all([
+  const [ocrText, density, hasQr, faceAnalysis] = await Promise.all([
     tryOcrText(file),
     measureTextDensity(file).catch(() => 0),
     detectQrCode(file).catch(() => false),
-    requiresFace || isVerificationSelfie ? detectFace(file).catch(() => false) : Promise.resolve(true)
+    isCover ? Promise.resolve({
+      faceCount: 0,
+      largestFaceAreaRatio: 0,
+      totalFaceAreaRatio: 0,
+      hasAdequateFace: false,
+      detected: false
+    }) : analyzeFaces(file).catch(() => ({
+      faceCount: 0,
+      largestFaceAreaRatio: 0,
+      totalFaceAreaRatio: 0,
+      hasAdequateFace: false,
+      detected: false
+    }))
   ]);
 
+  if (isVerificationSelfie) {
+    return scanVerificationSelfie(file, ocrText, density, hasQr, faceAnalysis);
+  }
+
   const combinedText = [filename, ocrText].filter(Boolean).join("\n");
+  const hasDocumentKeywords =
+    !allowDocuments &&
+    (containsDocumentKeywords(combinedText) || ocrHasRiskKeywords(ocrText) || containsDocumentKeywords(filename));
+  const hasContactLeak = containsContactInText(combinedText) || containsContactInText(ocrText);
+  const hasFlyerText = containsBusinessFlyerText(combinedText);
+
   const textScan = scanPhotoSafetyText(combinedText, { allowDocuments });
   if (textScan.blocked && textScan.category) {
-    return reject(textScan.category as PhotoRejectionCategory, `text_scan:${textScan.category}`, riskScore, kind);
-  }
-  if (containsContactInText(ocrText)) {
-    return reject("contact_information", "ocr_contact", riskScore, kind);
-  }
-  if (!allowDocuments && (containsDocumentKeywords(ocrText) || ocrHasRiskKeywords(ocrText))) {
-    return reject("document_detected", "ocr_document", riskScore, kind);
-  }
-
-  if (density >= TEXT_DENSITY_REJECT) {
-    return reject("too_much_text", `text_density:${density.toFixed(3)}`, riskScore, kind);
-  }
-  if (density >= TEXT_DENSITY_STRICT) {
-    riskScore += 25;
+    return reject(
+      mapSharedCategory(textScan.category),
+      `text_scan:${textScan.category}`,
+      PHOTO_RISK_REJECT_THRESHOLD,
+      kind
+    );
   }
 
-  if (hasQr) {
-    riskScore += QR_RISK_SCORE;
-    if (riskScore >= RISK_REJECT_THRESHOLD) {
-      return reject("qr_code", "qr_high_risk", riskScore, kind);
+  if (isCover) {
+    const verdict = classifyCoverRisk({
+      textDensity: density,
+      hasQr,
+      hasDocumentKeywords,
+      hasContactLeak,
+      hasFlyerText
+    });
+    if (verdict.reject) {
+      return reject(verdict.category as PhotoRejectionCategory, "cover_risk", verdict.riskScore, kind);
     }
+    return { allowed: true, riskScore: verdict.riskScore };
   }
+
+  const visual = await analyzeVisualHeuristics(file, faceAnalysis, density).catch(() => ({
+    logoLikelihood: 0,
+    landscapeLikelihood: 0,
+    humanConfidence: faceAnalysis.hasAdequateFace ? 0.8 : 0.15
+  }));
 
   const bitmap = await loadImageBitmap(file).catch(() => null);
-  if (bitmap) {
+  if (bitmap && isPublicProfile) {
     const aspect = bitmap.width / Math.max(bitmap.height, 1);
     bitmap.close?.();
-    if (looksLikeScreenshot(aspect, density, kind)) {
-      return reject("other", `screenshot:${aspect.toFixed(2)}`, riskScore, kind);
+    if (looksLikeScreenshot(aspect, density)) {
+      return reject("other", `screenshot:${aspect.toFixed(2)}`, 65, kind);
     }
+  } else {
+    bitmap?.close?.();
   }
 
-  if (requiresFace && !hasFace) {
-    return reject("no_face", "no_face_detected", riskScore, kind);
+  const logoLikelihood = Math.max(visual.logoLikelihood, hasFlyerText ? 0.7 : 0);
+  const verdict = classifyProfileRisk({
+    hasAdequateFace: faceAnalysis.hasAdequateFace,
+    logoLikelihood,
+    textDensity: density,
+    hasQr,
+    hasDocumentKeywords,
+    hasContactLeak
+  });
+
+  if (!faceAnalysis.hasAdequateFace && visual.landscapeLikelihood > 0.55 && !verdict.reject) {
+    const landscapeRisk = 50;
+    return reject("no_face", "landscape_no_person", landscapeRisk, kind);
   }
 
-  if (isVerificationSelfie && !hasFace) {
-    return reject("no_face", "selfie_no_face", riskScore, kind);
+  if (verdict.reject) {
+    return reject(verdict.category as PhotoRejectionCategory, "profile_risk", verdict.riskScore, kind);
   }
 
-  if (riskScore >= RISK_REJECT_THRESHOLD) {
-    return reject("other", `risk_score:${riskScore}`, riskScore, kind);
+  if (visual.humanConfidence < 0.28 && !faceAnalysis.hasAdequateFace) {
+    return reject("logo", "low_human_confidence", 65, kind);
   }
 
-  return { allowed: true, riskScore };
+  return { allowed: true, riskScore: verdict.riskScore };
 }

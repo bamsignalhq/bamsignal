@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay } from "../constants/intents";
+import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay, profileIntentLabel } from "../constants/intents";
 import { DateOfBirthPicker } from "../components/DateOfBirthPicker";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
@@ -10,6 +10,7 @@ import { TapSelectField } from "../components/TapSelectField";
 import { citiesForState } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
 import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
+import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
 import { ProfileDetailsList } from "../components/profile/ProfileDetailsList";
 import { InterestPicker } from "../components/InterestPicker";
 import { VoiceIntroRecorder } from "../components/VoiceIntro";
@@ -279,25 +280,19 @@ export function ProfilePage({
             ) : null}
 
             {profile.interests?.length > 0 ? (
-              <section className="profile-overview-block">
-                <h3>Interests</h3>
-                <div className="intent-tags">
-                  {profile.interests.map((interest) => (
-                    <span key={interest} className="intent-tag selected">
-                      {interest}
-                    </span>
-                  ))}
-                </div>
+              <section className="profile-overview-block profile-read-section">
+                <h3 className="profile-read__heading">Interests</h3>
+                <ProfileInterestsPreview interests={profile.interests} />
               </section>
             ) : null}
 
             {profile.intents.length > 0 ? (
-              <section className="profile-overview-block">
-                <h3>Looking for</h3>
-                <div className="intent-tags">
+              <section className="profile-overview-block profile-read-section">
+                <h3 className="profile-read__heading">Looking For</h3>
+                <div className="profile-read-chips">
                   {profile.intents.slice(0, MAX_INTENT_SELECTIONS).map((intent) => (
-                    <span key={intent} className="intent-tag selected">
-                      {intentDisplay(intent)}
+                    <span key={intent} className="profile-read-chip profile-read-chip--intent">
+                      {profileIntentLabel(intent)}
                     </span>
                   ))}
                 </div>
@@ -487,6 +482,7 @@ export function ProfilePage({
             onToggle={toggleEditSection}
           >
             <InterestPicker
+              variant="edit"
               selected={profile.interests ?? []}
               onChange={(interests) => setProfile({ ...profile, interests })}
             />

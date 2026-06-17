@@ -1,13 +1,14 @@
 import { ChevronLeft, ChevronRight, Heart, MoreHorizontal, UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BRAND } from "../constants/copy";
-import { intentDisplay } from "../constants/intents";
+import { profileIntentLabel } from "../constants/intents";
 import type { DiscoverProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
 import { ShowcaseImage } from "./ShowcaseImage";
 import { VerificationBadge } from "./VerificationBadge";
 import { VoiceIntro } from "./VoiceIntro";
 import { WhyThisProfile } from "./WhyThisProfile";
+import { ProfileInterestsPreview } from "./profile/ProfileInterestsPreview";
 import { ProfileDetailsList } from "./profile/ProfileDetailsList";
 import { hasFilledProfileDetails } from "../utils/profileDetails";
 import { DEFAULT_PROFILE_COVER } from "../constants/photos";
@@ -187,25 +188,19 @@ export function ProfileDetailSheet({
           </section>
 
           {profile.interests?.length ? (
-            <section className="profile-detail-sheet__card">
-              <h3>Interests</h3>
-              <div className="intent-tags">
-                {profile.interests.map((tag) => (
-                  <span key={tag} className="intent-tag selected">
-                    {tag}
-                  </span>
-                ))}
-              </div>
+            <section className="profile-detail-sheet__card profile-read-section">
+              <h3 className="profile-read__heading">Interests</h3>
+              <ProfileInterestsPreview interests={profile.interests} />
             </section>
           ) : null}
 
           {profile.intents?.length ? (
-            <section className="profile-detail-sheet__card">
-              <h3>Looking for</h3>
-              <div className="intent-tags">
+            <section className="profile-detail-sheet__card profile-read-section">
+              <h3 className="profile-read__heading">Looking For</h3>
+              <div className="profile-read-chips">
                 {profile.intents.slice(0, 3).map((tag) => (
-                  <span key={tag} className="intent-tag selected">
-                    {intentDisplay(tag)}
+                  <span key={tag} className="profile-read-chip profile-read-chip--intent">
+                    {profileIntentLabel(tag)}
                   </span>
                 ))}
               </div>

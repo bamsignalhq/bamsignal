@@ -326,6 +326,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
             </div>
           </fieldset>
           <InterestPicker
+            variant="onboarding"
             selected={profile.interests}
             onChange={(interests) => setProfile({ ...profile, interests })}
           />

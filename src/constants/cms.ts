@@ -40,7 +40,7 @@ export const DEFAULT_CMS: CmsContent = {
   safetyText: "Meet in public first. Keep conversations inside BamSignal until you're comfortable.",
   welcomeTitle: "Welcome to BamSignal",
   welcomeBody: "Meet people who match your vibe.",
-  welcomePhotoHint: "Clear photos help people know the real you.",
+  welcomePhotoHint: "",
   welcomeReadyTitle: "Welcome to BamSignal ❤️",
   welcomeReadyBody:
     "Your profile is ready. Discover genuine people around you and take things one signal at a time.",

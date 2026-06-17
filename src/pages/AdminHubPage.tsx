@@ -59,6 +59,7 @@ import {
   type EmailBrandingSettings
 } from "../constants/emailBranding";
 import { getTrustAnalyticsSummary } from "../utils/trustAnalytics";
+import { getPhotoRejectionMetrics, totalPhotoRejectionsToday } from "../utils/photoRejectionMetrics";
 import { fetchEmailBranding, saveEmailBrandingAdmin } from "../services/emailBranding";
 import {
   purgeAdminMember,
@@ -107,6 +108,8 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const pendingVerificationCount =
     serverVerifications.filter((v) => v.status === "pending").length || pendingCount();
   const trustMetrics = getTrustAnalyticsSummary();
+  const photoRejectionMetrics = getPhotoRejectionMetrics();
+  const photoRejectionsToday = totalPhotoRejectionsToday();
   const [cityHomeCity, setCityHomeCity] = useState(CITIES_VISUAL[0]?.name || "Lagos");
   const [cityHomeMembers, setCityHomeMembers] = useState<CityHomeMember[]>([]);
   const [cityHomeLoading, setCityHomeLoading] = useState(false);
@@ -398,6 +401,28 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                 </div>
               </article>
             ))}
+          </section>
+
+          <section className="card admin-command-panel">
+            <h3>Photo rejections</h3>
+            <p className="match-prefs-note">
+              Client-side upload blocks for profile and cover photos. Reasons are logged internally only —
+              members always see a generic message.
+            </p>
+            <div className="admin-stats-grid admin-stats-grid--highlight">
+              <div className="card admin-stat admin-stat--highlight">
+                <strong>{photoRejectionsToday}</strong>
+                <span>Rejected today</span>
+              </div>
+              {photoRejectionMetrics.map((row) => (
+                <div key={row.category} className="card admin-stat admin-stat--highlight">
+                  <strong>{row.today}</strong>
+                  <span>
+                    {row.label} today ({row.total} total)
+                  </span>
+                </div>
+              ))}
+            </div>
           </section>
 
           <section className="card admin-command-panel">

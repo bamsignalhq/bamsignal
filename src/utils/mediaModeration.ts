@@ -1,19 +1,16 @@
 import { isImageModerationEnabled } from "../config/imageModeration";
-import { PHOTO_REJECTED, PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import { PHOTO_REJECTED } from "../constants/photos";
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
+import type { PhotoUploadKind } from "../constants/photoUploadKinds";
 import { STORAGE_KEYS } from "../constants/limits";
-import {
-  CONTACT_LEAK_BLOCK_MESSAGE,
-  containsContactInText,
-  scanTextForContactLeak
-} from "./contactGuard";
-import { scanImageForContactDetails } from "./imageContactScan";
+import { CONTACT_LEAK_BLOCK_MESSAGE, scanTextForContactLeak } from "./contactGuard";
+import { scanPhotoSafety } from "./photoSafetyScan";
 import { logPhotoUpload } from "./photoUploadLog";
 import { readJson, writeJson } from "./storage";
 
 type StrikeRecord = { count: number };
 
-export type PhotoUploadKind = "profile" | "cover" | "selfie" | "signup";
+export type { PhotoUploadKind } from "../constants/photoUploadKinds";
 
 const IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i;
 
@@ -44,9 +41,15 @@ export function resetVoiceModerationStrikes(): void {
   writeJson(STORAGE_KEYS.voiceModerationStrikes, { count: 0 });
 }
 
+function moderationKillSwitchActive(): boolean {
+  const raw = import.meta.env.VITE_ENABLE_IMAGE_MODERATION;
+  return raw === "false" || raw === "0";
+}
+
 /**
- * When moderation is disabled (default), never blocks.
- * When enabled, only blocks high-confidence contact text (filename / OCR), not heuristics.
+ * Profile, cover, and signup photos must pass document/OCR/face safety checks.
+ * Verification selfies allow ID-in-hand but still require a visible face.
+ * Set VITE_ENABLE_IMAGE_MODERATION=false to disable all checks (local debugging only).
  */
 export async function moderatePhotoUpload(
   file: File,
@@ -62,8 +65,8 @@ export async function moderatePhotoUpload(
     moderationEnabled
   });
 
-  if (!moderationEnabled) {
-    logPhotoUpload("moderation_skipped", { kind, reason: "feature_flag_disabled" });
+  if (moderationKillSwitchActive()) {
+    logPhotoUpload("moderation_skipped", { kind, reason: "kill_switch" });
     resetPhotoModerationStrikes();
     return { allowed: true, message: "" };
   }
@@ -72,32 +75,30 @@ export async function moderatePhotoUpload(
     return {
       allowed: false,
       message: PHOTO_REJECTED,
-      code: "NOT_IMAGE",
+      code: "MODERATION_REJECTED",
       internalReason: `invalid_mime:${file.type}`
     };
   }
 
-  const contactScan = await scanImageForContactDetails(file, {
-    skipTextHeavy: true,
-    contactTextOnly: true
-  });
-
-  if (contactScan.blocked) {
+  const safety = await scanPhotoSafety(file, kind);
+  if (!safety.allowed) {
     logPhotoUpload("moderation_rejected", {
       kind,
       code: "MODERATION_REJECTED",
-      reason: contactScan.reason
+      category: safety.category,
+      reason: safety.internalReason,
+      riskScore: safety.riskScore
     });
     return {
       allowed: false,
       message: PHOTO_REJECTED,
       code: "MODERATION_REJECTED",
-      internalReason: contactScan.reason
+      internalReason: `${safety.category}:${safety.internalReason}`
     };
   }
 
   resetPhotoModerationStrikes();
-  logPhotoUpload("moderation_passed", { kind });
+  logPhotoUpload("moderation_passed", { kind, riskScore: safety.riskScore });
   return { allowed: true, message: "" };
 }
 

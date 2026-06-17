@@ -39,6 +39,7 @@ export type AnalyticsEvent =
   | "referral_signup"
   | "verification_approved"
   | "photo_rejected_contact_text"
+  | "photo_rejected"
   | "home_search";
 
 type EventRow = { event: AnalyticsEvent; at: string; meta?: Record<string, string> };

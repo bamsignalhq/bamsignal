@@ -141,7 +141,15 @@ export default defineConfig({
           react: ["react", "react-dom"],
           supabase: ["@supabase/supabase-js"],
           capacitor: ["@capacitor/app", "@capacitor/browser", "@capacitor/core", "@capacitor/push-notifications"],
-          icons: ["lucide-react"]
+          icons: ["lucide-react"],
+          photoSafety: [
+            "tesseract.js",
+            "jsqr",
+            "@tensorflow-models/blazeface",
+            "@tensorflow/tfjs-core",
+            "@tensorflow/tfjs-converter",
+            "@tensorflow/tfjs-backend-webgl"
+          ]
         }
       }
     }

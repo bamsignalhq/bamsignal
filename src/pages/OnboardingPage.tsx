@@ -6,6 +6,7 @@ import { citiesForState } from "../constants/profileOptions";
 import { INTENT_OPTIONS } from "../constants/intents";
 import { MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { MIN_PROFILE_INTERESTS } from "../constants/interestCategories";
+import { CONTACT_LEAK_BLOCK_MESSAGE, validateDisplayName, validateProfileContactLeaks, validateUserText } from "../utils/contactGuard";
 import { STORAGE_KEYS } from "../constants/limits";
 import { InterestPicker } from "../components/InterestPicker";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
@@ -110,6 +111,21 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   }, [profile]);
 
   const saveAndFinish = () => {
+    const nameError = validateDisplayName(user.name);
+    if (nameError) {
+      setModMessage(nameError);
+      return;
+    }
+    const bioError = validateUserText(profile.bio);
+    if (bioError) {
+      setModMessage(bioError);
+      return;
+    }
+    const profileLeak = validateProfileContactLeaks(profile, user);
+    if (profileLeak.blocked) {
+      setModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
+      return;
+    }
     const located = resolveProfileLocation(profile.city, profile.state);
     const withSafety = applyFemaleFirstDefaults({
       ...profile,
@@ -177,6 +193,25 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   };
 
   const next = () => {
+    if (step === 0) {
+      const nameError = validateDisplayName(user.name);
+      if (nameError) {
+        setModMessage(nameError);
+        return;
+      }
+    }
+    if (step === 1) {
+      const bioError = validateUserText(profile.bio);
+      if (bioError) {
+        setModMessage(bioError);
+        return;
+      }
+      const profileLeak = validateProfileContactLeaks(profile);
+      if (profileLeak.blocked) {
+        setModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
+        return;
+      }
+    }
     if (step === 2 && profile.photos.filter(isStoragePhotoUrl).length >= MIN_PROFILE_PHOTOS) {
       trackEvent("photo_uploaded");
     }

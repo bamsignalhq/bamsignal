@@ -3,9 +3,9 @@ import { PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
 import { STORAGE_KEYS } from "../constants/limits";
 import {
-  containsDigits,
-  containsOtherOffPlatform,
-  containsTelegramOrHandle
+  CONTACT_LEAK_BLOCK_MESSAGE,
+  containsContactInText,
+  scanTextForContactLeak
 } from "./contactGuard";
 import { scanImageForContactDetails } from "./imageContactScan";
 import { logPhotoUpload } from "./photoUploadLog";
@@ -111,14 +111,8 @@ export function checkVoiceIntroTranscript(text: string): { allowed: boolean; rea
   if (!normalized) {
     return { allowed: true, reason: "" };
   }
-  if (containsDigits(normalized)) {
-    return { allowed: false, reason: "Numbers aren't allowed in voice intros." };
-  }
-  if (containsTelegramOrHandle(normalized)) {
-    return { allowed: false, reason: "Telegram or @ handles aren't allowed in voice intros." };
-  }
-  if (containsOtherOffPlatform(normalized)) {
-    return { allowed: false, reason: "Social handles and off-app contact details aren't allowed." };
+  if (scanTextForContactLeak(normalized).blocked) {
+    return { allowed: false, reason: CONTACT_LEAK_BLOCK_MESSAGE };
   }
   return { allowed: true, reason: "" };
 }

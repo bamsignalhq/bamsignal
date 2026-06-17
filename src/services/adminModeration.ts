@@ -42,3 +42,24 @@ export async function shadowBanAdmin(profileId: string, reason: string, moderati
     moderationNotes
   });
 }
+
+export type ContactLeakAttempt = {
+  id: string;
+  user_key: string;
+  profile_id?: string | null;
+  field: string;
+  text_hash: string;
+  created_at: string;
+  name?: string | null;
+  username?: string | null;
+  email?: string | null;
+};
+
+export async function fetchContactLeakAttempts(limit = 50) {
+  const result = await adminPostJson<{ attempts?: ContactLeakAttempt[]; count?: number }>(
+    "/api/admin/moderation?action=list-contact-leaks",
+    { limit }
+  );
+  if (!result.ok) return { ok: false as const, attempts: [] as ContactLeakAttempt[], error: result.error };
+  return { ok: true as const, attempts: result.data.attempts || [], count: result.data.count };
+}

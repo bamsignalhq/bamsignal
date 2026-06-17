@@ -21,6 +21,7 @@ import {
   isValidSignupUsername
 } from "../../utils/authIdentity";
 import { readJson, writeJson } from "../../utils/storage";
+import { validateUserText } from "../../utils/contactGuard";
 
 type ProfileAccountPanelProps = {
   user: UserProfile;
@@ -65,6 +66,11 @@ export function ProfileAccountPanel({
     const next = formatUsernameInput(usernameDraft);
     if (!isValidSignupUsername(next)) {
       onMessage("Username must be 4–20 characters (letters, numbers, underscore).");
+      return;
+    }
+    const usernameLeak = validateUserText(next);
+    if (usernameLeak) {
+      onMessage(usernameLeak);
       return;
     }
     if (!canChangeUsername(usernameLastChangedAt, user.username, next)) {
@@ -132,6 +138,11 @@ export function ProfileAccountPanel({
   };
 
   const submitStory = async () => {
+    const storyLeak = validateUserText(successStory);
+    if (storyLeak) {
+      onMessage(storyLeak);
+      return;
+    }
     setBusy(true);
     const ok = await submitSuccessStoryRemote(user, successStory, true);
     setBusy(false);

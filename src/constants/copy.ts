@@ -10,9 +10,9 @@ export const BRAND = {
   paywallTitle: "Signal Pass",
   paywallBody: "Connect without limits.",
   contactBlockMessage:
-    "For your safety, contact details are blocked. Keep chats inside BamSignal.",
+    "We couldn't save that information. Please try something different.",
   contactTelegramBlocked:
-    "For your safety, contact details are blocked. Keep chats inside BamSignal.",
+    "We couldn't save that information. Please try something different.",
   contactRetryHint: "",
   chatSafetyNotice:
     "To protect everyone, contact exchange is blocked until trust is built.",

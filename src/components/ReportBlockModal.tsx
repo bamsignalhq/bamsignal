@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Flag, ShieldBan, ShieldCheck, UserX, X } from "lucide-react";
 import { BUTTON_COPY, EXPERIENCE_COPY } from "../constants/copy";
+import { CONTACT_LEAK_BLOCK_MESSAGE, validateUserText } from "../utils/contactGuard";
 import { FEMALE_SAFETY_COPY, REPORT_REASONS } from "../constants/safety";
 import type { ReportReason } from "../types";
 import { recordReport } from "../utils/safety";
@@ -27,6 +28,7 @@ export function ReportBlockModal({
   const [view, setView] = useState<"menu" | "report" | "done">("menu");
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState("");
+  const [detailsError, setDetailsError] = useState("");
 
   if (!open) return null;
 
@@ -44,6 +46,12 @@ export function ReportBlockModal({
   const submitReport = () => {
     if (!reason || !profileId) return;
     if (reason === "other" && !details.trim()) return;
+    const leakError = validateUserText(details);
+    if (leakError) {
+      setDetailsError(CONTACT_LEAK_BLOCK_MESSAGE);
+      return;
+    }
+    setDetailsError("");
     recordReport(profileId, reason, details);
     onReport?.(reason, details);
     setView("done");
@@ -119,12 +127,20 @@ export function ReportBlockModal({
               Additional details (optional)
               <textarea
                 value={details}
-                onChange={(e) => setDetails(e.target.value)}
+                onChange={(e) => {
+                  setDetails(e.target.value);
+                  if (detailsError) setDetailsError("");
+                }}
                 placeholder="Share what happened, in your own words…"
                 rows={3}
                 maxLength={500}
               />
             </label>
+            {detailsError ? (
+              <p className="safety-modal__lead" role="status">
+                {detailsError}
+              </p>
+            ) : null}
             <div className="safety-modal__actions">
               <button type="button" className="btn-secondary" onClick={() => setView("menu")}>
                 Back

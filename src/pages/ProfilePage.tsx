@@ -31,6 +31,12 @@ import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { getVerificationTier } from "../utils/verification";
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
+import {
+  CONTACT_LEAK_BLOCK_MESSAGE,
+  validateDisplayName,
+  validateProfileContactLeaks,
+  validateUserText
+} from "../utils/contactGuard";
 import { readJson, writeJson } from "../utils/storage";
 import { SafetySettingsCard } from "../components/SafetySettingsCard";
 import {
@@ -177,6 +183,21 @@ export function ProfilePage({
 
   const save = async () => {
     if (saveBusy) return;
+    const nameError = validateDisplayName(user.name);
+    if (nameError) {
+      showModMessage(nameError);
+      return;
+    }
+    const bioError = validateUserText(profile.bio);
+    if (bioError) {
+      showModMessage(bioError);
+      return;
+    }
+    const profileLeak = validateProfileContactLeaks(profile, user);
+    if (profileLeak.blocked) {
+      showModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
+      return;
+    }
     setSaveBusy(true);
     try {
       const normalized = normalizeDatingProfile({ ...profile, premium: isPremium });
@@ -592,6 +613,7 @@ export function ProfilePage({
             <ProfilePromptsEditor
               prompts={profile.profilePrompts}
               onChange={(profilePrompts) => setProfile({ ...profile, profilePrompts })}
+              onBlocked={showModMessage}
             />
           </EditAccordion>
 

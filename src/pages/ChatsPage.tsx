@@ -1,6 +1,6 @@
 import { ArrowLeft, MessageCircle, MoreVertical, Pin, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { BRAND, EXPERIENCE_COPY } from "../constants/copy";
+import { EXPERIENCE_COPY } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
 import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
 import { ActivityStatus } from "../components/ActivityStatus";
@@ -17,7 +17,7 @@ import { FEMALE_SAFETY_COPY } from "../constants/safety";
 import { readReceiptsAllowed } from "../utils/activityPrivacy";
 import { matchAnniversaryBanner } from "../utils/connectionAnniversary";
 import { getDatingProfile } from "../utils/profile";
-import { checkOutgoingChatMessage } from "../utils/contactGuard";
+import { checkOutgoingChatMessage, CONTACT_LEAK_BLOCK_MESSAGE } from "../utils/contactGuard";
 import { blockUser, canUseInbox, filterBlockedByProfileId, unmatchUser } from "../utils/safety";
 import { trackEvent } from "../utils/analytics";
 import { pushNotification } from "../utils/notifications";
@@ -307,27 +307,11 @@ function ChatDetail({
     setBlockWarning("");
 
     const contactCheck = checkOutgoingChatMessage(text, {
-      offPlatformApproved: Boolean(threadMeta.offPlatformApproved)
+      connectionAccepted: true
     });
 
     if (contactCheck.blocked) {
-      if (contactCheck.kind === "digits") {
-        setBlockWarning(BRAND.contactBlockMessage);
-        return;
-      }
-      if (contactCheck.needsConsent) {
-        setBlockWarning(BRAND.contactTelegramBlocked);
-        updateMeta({ pendingOffPlatformRequest: true, offPlatformDeclined: false });
-        pushNotification({
-          type: "off_platform_request",
-          title: `${match.name} wants to chat off-app`,
-          body: "Open Messages to say if you're comfortable leaving BamSignal."
-        });
-        setToast(`${match.name} wants to continue off-app — see the prompt below.`);
-        setTimeout(() => setToast(""), 4000);
-        return;
-      }
-      setBlockWarning(BRAND.contactBlockMessage);
+      setBlockWarning(CONTACT_LEAK_BLOCK_MESSAGE);
       return;
     }
 

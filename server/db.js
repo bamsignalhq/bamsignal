@@ -514,6 +514,26 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
   if (!isDatabaseReady() || !threadId || !message?.id) return null;
   const identity = memberIdentity({ email, phone });
   if (!identity.userKey) return null;
+
+  const { assertTextSafeForContactLeak } = await import("./services/contactLeak.js");
+  const matchResult = await query(
+    `select id from app_matches where id = $1 and user_key = $2 limit 1`,
+    [threadId, identity.userKey]
+  );
+  const connectionAccepted = Boolean(matchResult.rows[0]);
+  const messageCheck = await assertTextSafeForContactLeak({
+    email,
+    phone,
+    text: message.text,
+    field: "message",
+    allowContactExchange: connectionAccepted
+  });
+  if (!messageCheck.ok) {
+    const error = new Error(messageCheck.error);
+    error.code = "CONTACT_LEAK_BLOCKED";
+    throw error;
+  }
+
   await ensureAppMessagesTable();
   await ensureAppChatThreadsTable();
 
@@ -550,6 +570,22 @@ export async function persistReport({ email, phone, report }) {
   if (!isDatabaseReady() || !report?.profileId || !report?.reason) return null;
   const identity = memberIdentity({ email, phone });
   if (!identity.userKey) return null;
+
+  const { assertTextSafeForContactLeak } = await import("./services/contactLeak.js");
+  if (report.details) {
+    const detailsCheck = await assertTextSafeForContactLeak({
+      email,
+      phone,
+      text: report.details,
+      field: "report_note"
+    });
+    if (!detailsCheck.ok) {
+      const error = new Error(detailsCheck.error);
+      error.code = "CONTACT_LEAK_BLOCKED";
+      throw error;
+    }
+  }
+
   await ensureAppReportsTable();
   const { ensureModerationSchema, maybeAutoShadowBanProfile } = await import("./services/moderation.js");
   await ensureModerationSchema();

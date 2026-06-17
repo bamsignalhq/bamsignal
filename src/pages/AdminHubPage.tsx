@@ -39,7 +39,8 @@ import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/rout
 import { DEMO_USER } from "../constants/demoAccounts";
 import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
 import { AdminShadowBannedSection } from "../components/admin/AdminShadowBannedSection";
-import { shadowBanAdmin } from "../services/adminModeration";
+import { fetchContactLeakAttempts, shadowBanAdmin, type ContactLeakAttempt } from "../services/adminModeration";
+import { CONTACT_LEAK_BLOCK_MESSAGE, validateUserText } from "../utils/contactGuard";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
 import {
   fetchAdminCityMembers,
@@ -91,6 +92,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [passwordOpen, setPasswordOpen] = useState(false);
   const securityRef = useRef<HTMLElement | null>(null);
   const [cmsDraft, setCmsDraft] = useState<CmsContent>(() => getCms());
+  const [cmsMessage, setCmsMessage] = useState("");
   const [discoverDraft, setDiscoverDraft] = useState<DiscoverCityConfig>(() => getDiscoverCityConfig());
   const [rejectReason, setRejectReason] = useState("");
   const [serverVerifications, setServerVerifications] = useState<ServerVerificationSubmission[]>([]);
@@ -121,6 +123,8 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [purgeConfirm, setPurgeConfirm] = useState("");
   const [purgeBusy, setPurgeBusy] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
+  const [contactLeaks, setContactLeaks] = useState<ContactLeakAttempt[]>([]);
+  const [contactLeaksLoading, setContactLeaksLoading] = useState(false);
 
   const handleTabChange = useCallback((id: HardTab) => {
     setTab(id);
@@ -177,6 +181,16 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
     if (tab !== "cityhome" || !authorized) return;
     void loadCityHomeMembers(cityHomeCity);
   }, [tab, authorized, cityHomeCity]);
+
+  useEffect(() => {
+    if (tab !== "command" || !authorized) return;
+    setContactLeaksLoading(true);
+    void fetchContactLeakAttempts(50)
+      .then((result) => {
+        if (result.ok) setContactLeaks(result.attempts);
+      })
+      .finally(() => setContactLeaksLoading(false));
+  }, [tab, authorized]);
 
   useEffect(() => {
     if (tab !== "verifications" || !authorized) return;
@@ -338,6 +352,29 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                 <strong>{item.value}</strong>
                 <span>{item.label}</span>
               </div>
+            ))}
+          </section>
+
+          <section className="card admin-command-panel">
+            <h3>Contact leak attempts</h3>
+            <p className="match-prefs-note">
+              Blocked contact-info patterns in user text. Only hashed snippets are stored — never full
+              offending text.
+            </p>
+            {contactLeaksLoading && <AdminTerminalEmpty>Loading contact leak attempts…</AdminTerminalEmpty>}
+            {!contactLeaksLoading && contactLeaks.length === 0 && (
+              <AdminTerminalEmpty>No contact leak attempts logged yet.</AdminTerminalEmpty>
+            )}
+            {contactLeaks.map((attempt) => (
+              <article key={attempt.id} className="card admin-moderation-row">
+                <div className="admin-moderation-row__main">
+                  <strong>{attempt.name || attempt.username || attempt.user_key}</strong>
+                  <span>
+                    {attempt.field} · hash {attempt.text_hash} ·{" "}
+                    {new Date(attempt.created_at).toLocaleString()}
+                  </span>
+                </div>
+              </article>
             ))}
           </section>
 
@@ -1210,7 +1247,26 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
             </label>
           ))}
           <div className="admin-cms-actions">
-            <button type="button" className="btn-primary" onClick={() => saveCms(cmsDraft)}>
+            {cmsMessage ? (
+              <p className="match-prefs-note" role="status">
+                {cmsMessage}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                for (const [key, value] of Object.entries(cmsDraft)) {
+                  if (key === "supportWhatsapp") continue;
+                  if (validateUserText(String(value || ""))) {
+                    setCmsMessage(CONTACT_LEAK_BLOCK_MESSAGE);
+                    return;
+                  }
+                }
+                setCmsMessage("");
+                saveCms(cmsDraft);
+              }}
+            >
               Save content
             </button>
             <button type="button" className="btn-secondary" onClick={() => setCmsDraft({ ...DEFAULT_CMS })}>

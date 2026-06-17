@@ -256,24 +256,38 @@ export default async function handler(req, res) {
     if (req.query.action === "message") {
       if (!requireDatabase(res)) return;
       const { persistMessage } = await import("../../server/db.js");
-      const row = await persistMessage({
-        email: identity.email,
-        phone: identity.phone,
-        threadId: String(body.threadId || "").trim(),
-        message: body.message,
-        threadMeta: body.threadMeta || {}
-      });
-      return res.status(row ? 200 : 503).json({ ok: Boolean(row), message: row });
+      try {
+        const row = await persistMessage({
+          email: identity.email,
+          phone: identity.phone,
+          threadId: String(body.threadId || "").trim(),
+          message: body.message,
+          threadMeta: body.threadMeta || {}
+        });
+        return res.status(row ? 200 : 503).json({ ok: Boolean(row), message: row });
+      } catch (error) {
+        if (error?.code === "CONTACT_LEAK_BLOCKED") {
+          return res.status(400).json({ ok: false, error: error.message });
+        }
+        throw error;
+      }
     }
 
     if (req.query.action === "report") {
       if (!requireDatabase(res)) return;
-      const row = await persistReport({
-        email: identity.email,
-        phone: identity.phone,
-        report: body.report
-      });
-      return res.status(row ? 200 : 503).json({ ok: Boolean(row), report: row });
+      try {
+        const row = await persistReport({
+          email: identity.email,
+          phone: identity.phone,
+          report: body.report
+        });
+        return res.status(row ? 200 : 503).json({ ok: Boolean(row), report: row });
+      } catch (error) {
+        if (error?.code === "CONTACT_LEAK_BLOCKED") {
+          return res.status(400).json({ ok: false, error: error.message });
+        }
+        throw error;
+      }
     }
 
     if (req.query.action === "profile") {
@@ -284,6 +298,18 @@ export default async function handler(req, res) {
       }
 
       const profile = body.profile || {};
+      const { assertProfileSafeForContactLeak } = await import("../../server/services/contactLeak.js");
+      const leakCheck = await assertProfileSafeForContactLeak({
+        email: identity.email,
+        phone: identity.phone,
+        name: identity.name || body.name,
+        username: String(body.username || "").trim() || null,
+        profile
+      });
+      if (!leakCheck.ok) {
+        return res.status(400).json({ ok: false, error: leakCheck.error });
+      }
+
       const hideFromDiscovery = Boolean(profile.safetySettings?.hideFromDiscovery);
       const discoverable =
         body.discoverable !== false && !hideFromDiscovery && body.accountStatus !== "deleted_pending";

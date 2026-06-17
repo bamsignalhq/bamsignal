@@ -94,6 +94,11 @@ export async function checkUsernameAvailable(username, excludeProfileId = null) 
     return { ok: false, available: false, error: "Username must be 4–20 characters (letters, numbers, underscore)." };
   }
 
+  const { scanTextForContactLeak, CONTACT_LEAK_BLOCK_MESSAGE } = await import("./utils/contactGuard.js");
+  if (scanTextForContactLeak(normalized).blocked) {
+    return { ok: false, available: false, error: CONTACT_LEAK_BLOCK_MESSAGE };
+  }
+
   const result = await query(
     `select id from app_member_profiles
      where lower(username) = lower($1)
@@ -274,7 +279,20 @@ export async function upsertConnectionNote({ email, phone, targetProfileId, note
   const owner = await findMemberProfileByUserKey(email, phone);
   if (!owner?.id || !targetProfileId) return { ok: false, error: "Invalid note target." };
 
+  const { assertTextSafeForContactLeak, CONTACT_LEAK_BLOCK_MESSAGE } = await import(
+    "./services/contactLeak.js"
+  );
   const trimmed = String(note || "").trim().slice(0, 500);
+  const leakCheck = await assertTextSafeForContactLeak({
+    email,
+    phone,
+    text: trimmed,
+    field: "connection_note"
+  });
+  if (!leakCheck.ok) {
+    return { ok: false, error: CONTACT_LEAK_BLOCK_MESSAGE };
+  }
+
   const result = await query(
     `insert into connection_notes (owner_profile_id, target_profile_id, note, updated_at)
      values ($1, $2, $3, now())
@@ -319,6 +337,22 @@ export async function sendMemberIntroduction({
     return { ok: false, error: "Choose a different connection." };
   }
 
+  const { assertTextSafeForContactLeak, CONTACT_LEAK_BLOCK_MESSAGE } = await import(
+    "./services/contactLeak.js"
+  );
+  const introNote = String(note || "").trim().slice(0, 280);
+  if (introNote) {
+    const leakCheck = await assertTextSafeForContactLeak({
+      email,
+      phone,
+      text: introNote,
+      field: "introduction"
+    });
+    if (!leakCheck.ok) {
+      return { ok: false, error: CONTACT_LEAK_BLOCK_MESSAGE };
+    }
+  }
+
   const result = await query(
     `insert into member_introductions (introducer_profile_id, target_profile_id, recipient_profile_id, note)
      values ($1, $2, $3, $4)
@@ -327,7 +361,7 @@ export async function sendMemberIntroduction({
       introducer.id,
       targetProfileId,
       recipientProfileId,
-      String(note || "").trim().slice(0, 280) || null
+      introNote || null
     ]
   );
   return { ok: Boolean(result.rows[0]), introduction: result.rows[0] };
@@ -341,6 +375,19 @@ export async function submitSuccessStory({ email, phone, story, anonymous = true
   const trimmed = String(story || "").trim();
   if (!userKey || trimmed.length < 20) {
     return { ok: false, error: "Please share a little more detail." };
+  }
+
+  const { assertTextSafeForContactLeak, CONTACT_LEAK_BLOCK_MESSAGE } = await import(
+    "./services/contactLeak.js"
+  );
+  const leakCheck = await assertTextSafeForContactLeak({
+    email,
+    phone,
+    text: trimmed,
+    field: "success_story"
+  });
+  if (!leakCheck.ok) {
+    return { ok: false, error: CONTACT_LEAK_BLOCK_MESSAGE };
   }
 
   const result = await query(

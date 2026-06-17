@@ -1,16 +1,23 @@
 import { PROFILE_PROMPT_ANSWER_MAX, PROFILE_PROMPT_MAX, PROFILE_PROMPT_OPTIONS } from "../../constants/profilePrompts";
 import type { DatingProfile } from "../../types";
+import { CONTACT_LEAK_BLOCK_MESSAGE, validateUserText } from "../../utils/contactGuard";
 
 type ProfilePromptsEditorProps = {
   prompts: DatingProfile["profilePrompts"];
   onChange: (prompts: DatingProfile["profilePrompts"]) => void;
+  onBlocked?: (message: string) => void;
 };
 
-export function ProfilePromptsEditor({ prompts = [], onChange }: ProfilePromptsEditorProps) {
+export function ProfilePromptsEditor({ prompts = [], onChange, onBlocked }: ProfilePromptsEditorProps) {
   const entries = prompts.slice(0, PROFILE_PROMPT_MAX);
 
   const updateAnswer = (prompt: string, answer: string) => {
     const trimmed = answer.slice(0, PROFILE_PROMPT_ANSWER_MAX);
+    const leakError = validateUserText(trimmed);
+    if (leakError) {
+      onBlocked?.(leakError);
+      return;
+    }
     const rest = entries.filter((e) => e.prompt !== prompt);
     const next = trimmed
       ? [...rest, { prompt, answer: trimmed }]

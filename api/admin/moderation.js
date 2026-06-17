@@ -98,9 +98,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, flags, count: flags.length });
     }
 
+    if (action === "list-contact-leaks") {
+      const operatorEmail = await requireModerationAdmin(req, res);
+      if (!operatorEmail) return;
+      const { listContactLeakAttempts } = await import("../../server/services/contactLeak.js");
+      const attempts = await listContactLeakAttempts({ limit: Number(body.limit) || 50 });
+      return res.status(200).json({ ok: true, attempts, count: attempts.length });
+    }
+
     return res.status(400).json({
       ok: false,
-      error: "Unknown action. Use list-shadow-banned, lift-shadow-ban, or shadow-ban."
+      error: "Unknown action. Use list-shadow-banned, lift-shadow-ban, shadow-ban, list-flags, or list-contact-leaks."
     });
   } catch (error) {
     console.error("[bamsignal] admin moderation error:", error);

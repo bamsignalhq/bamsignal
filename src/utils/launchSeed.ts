@@ -1,5 +1,6 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
+import { safeArray, safeString } from "./safeProfile";
 import { cityProximityTier } from "../constants/seedCities";
 import { metroForCity } from "../constants/profileOptions";
 import { getDiscoverCityConfig } from "../constants/discoverCityConfig";
@@ -16,10 +17,10 @@ export function meetsDiscoveryQuality(
 ): boolean {
   const hasPhoto =
     "photos" in profile
-      ? profile.photos.length >= 1 && Boolean(profile.photos[0])
-      : Boolean(profile.photo?.trim());
-  const hasBio = profile.bio.trim().length >= 8;
-  const hasIntent = (profile.intents?.length ?? 0) >= 1;
+      ? safeArray<string>(profile.photos).length >= 1 && Boolean(safeArray<string>(profile.photos)[0])
+      : Boolean(safeString(profile.photo).trim());
+  const hasBio = safeString(profile.bio).trim().length >= 8;
+  const hasIntent = safeArray(profile.intents).length >= 1;
   return hasPhoto && hasBio && hasIntent;
 }
 

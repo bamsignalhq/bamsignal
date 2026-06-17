@@ -1,4 +1,5 @@
 import type { DatingProfile } from "../types";
+import { safeString } from "./safeProfile";
 import { isPreferNot } from "./profile";
 
 export type ProfileCompletenessItem = {
@@ -19,7 +20,7 @@ const CHECKLIST: { id: ProfileCompletenessItem["id"]; label: string }[] = [
 export function getProfileCompletenessChecklist(profile: DatingProfile): ProfileCompletenessItem[] {
   const doneMap: Record<ProfileCompletenessItem["id"], boolean> = {
     photo: profile.photos.length > 0,
-    bio: profile.bio.trim().length >= 12,
+    bio: safeString(profile.bio).trim().length >= 12,
     interests: (profile.interests?.length ?? 0) >= 2,
     intent: (profile.intents?.length ?? 0) >= 1,
     verification: profile.verified,
@@ -85,7 +86,7 @@ export type ProfileStrengthBreakdown = {
 export function getProfileStrengthBreakdown(profile: DatingProfile): ProfileStrengthBreakdown {
   return {
     photo: profile.photos.length > 0,
-    bio: profile.bio.trim().length >= 12,
+    bio: safeString(profile.bio).trim().length >= 12,
     city: Boolean(profile.city?.trim()),
     interests: (profile.interests?.length ?? 0) >= 2,
     intent: (profile.intents?.length ?? 0) >= 1,

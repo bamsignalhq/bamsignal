@@ -96,6 +96,7 @@ import { getLegalPath, type LegalPath } from "./constants/footer";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
+import { safeUserProfile } from "./utils/safeProfile";
 import { boostNeedsMemberCity } from "./constants/boosts";
 import { PAYMENT_START_ERROR } from "./config/paystack";
 import { boostSuccessCopy } from "./constants/boosts";
@@ -104,6 +105,8 @@ import { USER_MESSAGES } from "./constants/userMessages";
 import { DEMO_USER } from "./constants/demoAccounts";
 import { getMemberCity } from "./utils/memberCity";
 import { flowLog } from "./utils/flowLog";
+import { repairMemberCaches } from "./utils/repairMemberCaches";
+import { memberFirstName } from "./utils/safeProfile";
 import { usePlans } from "./context/PlansContext";
 
 export function App() {
@@ -136,7 +139,7 @@ export function App() {
   const [bootStalled, setBootStalled] = useState(false);
   const paymentVerifyInFlight = useRef(false);
   const [user, setUser] = useState<UserProfile>(() =>
-    readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" })
+    safeUserProfile(readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }))
   );
   const isAuthedRef = useRef(isAuthed);
   const userRef = useRef(user);
@@ -219,11 +222,12 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    writeJson(STORAGE_KEYS.userProfile, user);
+    writeJson(STORAGE_KEYS.userProfile, safeUserProfile(user));
   }, [user]);
 
   const applyRestoredSession = useCallback(async (profile: UserProfile) => {
     flowLog("session_restore_start");
+    repairMemberCaches();
     const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const merged: UserProfile = {
       ...profile,
@@ -924,7 +928,7 @@ export function App() {
             onNotificationsClick={() => setNotificationsOpen(true)}
             showFoundingMember={false}
             memberFirstName={
-              isAuthed ? user.name.split(" ")[0] || user.username || undefined : undefined
+              isAuthed ? memberFirstName(user) : undefined
             }
           />
           <main className="app-main app-main--legal">
@@ -952,7 +956,7 @@ export function App() {
             onNotificationsClick={() => setNotificationsOpen(true)}
             showFoundingMember={false}
             memberFirstName={
-              isAuthed ? user.name.split(" ")[0] || user.username || undefined : undefined
+              isAuthed ? memberFirstName(user) : undefined
             }
           />
           <main className="app-main app-main--legal">
@@ -991,7 +995,7 @@ export function App() {
             onNotificationsClick={() => setNotificationsOpen(true)}
             showFoundingMember={false}
             memberFirstName={
-              isAuthed ? user.name.split(" ")[0] || user.username || undefined : undefined
+              isAuthed ? memberFirstName(user) : undefined
             }
           />
           <main className="app-main app-main--legal">
@@ -1041,7 +1045,7 @@ export function App() {
           likeCount={incomingSignals}
           messageCount={messageCount}
           memberFirstName={
-            isAuthed && !showOnboarding ? user.name.split(" ")[0] || user.username || "there" : undefined
+            isAuthed && !showOnboarding ? memberFirstName(user) : undefined
           }
         />
 

@@ -7,7 +7,7 @@ import { stateForCity } from "../constants/profileOptions";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
-import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safePhotos, safeString } from "./safeProfile";
+import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString } from "./safeProfile";
 
 export const defaultDatingProfile = (): DatingProfile => ({
   photos: [],
@@ -77,60 +77,62 @@ export function isPreferNot(value?: string): boolean {
 
 export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfile {
   const base = defaultDatingProfile();
-  const city = raw.city ?? base.city;
-  const state = raw.state ?? stateForCity(city) ?? base.state;
+  const cleaned = safeProfile(raw);
+  const city = safeString(cleaned.city) || base.city;
+  const state = safeString(cleaned.state) || stateForCity(city) || base.state;
   const dateOfBirth =
-    raw.dateOfBirth !== undefined
-      ? raw.dateOfBirth
-      : raw.age !== undefined
+    cleaned.dateOfBirth !== undefined
+      ? safeString(cleaned.dateOfBirth) || undefined
+      : cleaned.age !== undefined
         ? undefined
         : base.dateOfBirth;
   const computedAge = dateOfBirth ? ageFromDateOfBirth(dateOfBirth) : null;
-  const age = raw.age ?? computedAge ?? base.age;
+  const age = safeNumber(cleaned.age, computedAge ?? base.age);
   const gender =
-    raw.gender && (raw.gender as string) !== "Prefer not to say"
-      ? (raw.gender as DatingProfile["gender"])
+    cleaned.gender && (cleaned.gender as string) !== "Prefer not to say"
+      ? (cleaned.gender as DatingProfile["gender"])
       : base.gender;
   const lookingFor =
-    raw.lookingFor && (raw.lookingFor as string) !== "Everyone"
-      ? (raw.lookingFor as DatingProfile["lookingFor"])
+    cleaned.lookingFor && (cleaned.lookingFor as string) !== "Everyone"
+      ? (cleaned.lookingFor as DatingProfile["lookingFor"])
       : base.lookingFor;
-  const onboardingComplete = Boolean(raw.onboardingComplete);
-  const photosList = safePhotos(raw.photos ?? base.photos);
-  const persistableCover = safeCoverPhoto(raw.coverPhoto);
+  const onboardingComplete = Boolean(cleaned.onboardingComplete);
+  const photosList = safePhotos(cleaned.photos ?? base.photos);
+  const persistableCover = safeCoverPhoto(cleaned.coverPhoto);
 
   let coverPhoto: string | undefined;
   let coverPhotoExplicit = false;
-  if (onboardingComplete && persistableCover && raw.coverPhotoExplicit !== false) {
+  if (onboardingComplete && persistableCover && cleaned.coverPhotoExplicit !== false) {
     if (!photosList.some((photo) => samePhotoRef(photo, persistableCover))) {
       coverPhoto = persistableCover;
-      coverPhotoExplicit = raw.coverPhotoExplicit ?? true;
+      coverPhotoExplicit = cleaned.coverPhotoExplicit ?? true;
     }
   }
 
   return {
     ...base,
-    ...raw,
+    ...cleaned,
     state,
     city,
     dateOfBirth,
     age,
     gender: gender as DatingProfile["gender"],
     lookingFor: lookingFor as DatingProfile["lookingFor"],
-    intents: normalizeIntents(raw.intents as string[] | undefined),
-    interests: safeArray<string>(raw.interests).map((item) => safeString(item)).filter(Boolean),
+    bio: safeString(cleaned.bio),
+    intents: normalizeIntents(safeArray<string>(cleaned.intents) as string[] | undefined),
+    interests: safeArray<string>(cleaned.interests).map((item) => safeString(item)).filter(Boolean),
     coverPhoto,
     coverPhotoExplicit: onboardingComplete ? coverPhotoExplicit : false,
     photos: sanitizeProfilePhotos(photosList, coverPhoto),
-    verificationSelfie: isPersistablePhotoUrl(raw.verificationSelfie)
-      ? raw.verificationSelfie
+    verificationSelfie: isPersistablePhotoUrl(cleaned.verificationSelfie)
+      ? cleaned.verificationSelfie
       : undefined,
-    verificationStatus: raw.verificationStatus ?? "none",
-    visibility: { ...base.visibility!, ...raw.visibility },
-    matchingPrivacy: { ...base.matchingPrivacy!, ...raw.matchingPrivacy },
-    safetySettings: { ...defaultSafetySettings(raw.gender ?? base.gender), ...raw.safetySettings },
-    profilePrompts: safeArray(raw.profilePrompts),
-    createdAt: raw.createdAt ?? base.createdAt ?? new Date().toISOString()
+    verificationStatus: cleaned.verificationStatus ?? "none",
+    visibility: { ...base.visibility!, ...(cleaned.visibility ?? {}) },
+    matchingPrivacy: { ...base.matchingPrivacy!, ...(cleaned.matchingPrivacy ?? {}) },
+    safetySettings: { ...defaultSafetySettings(gender ?? base.gender), ...(cleaned.safetySettings ?? {}) },
+    profilePrompts: safeArray(cleaned.profilePrompts),
+    createdAt: cleaned.createdAt ?? base.createdAt ?? new Date().toISOString()
   };
 }
 
@@ -159,12 +161,16 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
   return {
     ...base,
     ...raw,
-    states: raw.states ?? base.states,
-    statesOfOrigin: raw.statesOfOrigin ?? base.statesOfOrigin,
-    occupations: raw.occupations ?? base.occupations,
-    genotypes: raw.genotypes ?? base.genotypes,
-    bodyTypes: raw.bodyTypes ?? base.bodyTypes,
-    relationshipIntentions: raw.relationshipIntentions ?? base.relationshipIntentions,
+    religions: safeArray(raw.religions),
+    ethnicities: safeArray(raw.ethnicities),
+    lifestyles: safeArray(raw.lifestyles),
+    cities: safeArray(raw.cities),
+    states: safeArray(raw.states),
+    statesOfOrigin: safeArray(raw.statesOfOrigin),
+    occupations: safeArray(raw.occupations),
+    genotypes: safeArray(raw.genotypes),
+    bodyTypes: safeArray(raw.bodyTypes),
+    relationshipIntentions: safeArray(raw.relationshipIntentions),
     hasKids,
     wantsKids,
     verificationPreferences,
@@ -173,7 +179,7 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
     minCompatibility: raw.minCompatibility,
     requireVoiceIntro: raw.requireVoiceIntro ?? false,
     requireVerified: raw.requireVerified ?? false,
-    kidsPreferences: raw.kidsPreferences ?? base.kidsPreferences,
+    kidsPreferences: safeArray(raw.kidsPreferences),
     intents: raw.intents?.length ? normalizeIntents(raw.intents as string[]) : base.intents
   };
 }

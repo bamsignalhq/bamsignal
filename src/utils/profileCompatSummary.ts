@@ -1,12 +1,14 @@
 import { intentDisplay } from "../constants/intents";
-import type { DatingProfile, MatchPreferences } from "../types";
+import type { DatingProfile, IntentTag, MatchPreferences } from "../types";
+import { safeArray } from "./safeProfile";
 
 /** Short chips for own profile highlights footer */
 export function getOwnProfileChips(profile: DatingProfile, prefs: MatchPreferences): string[] {
   const chips: string[] = [];
 
-  if (profile.intents.length) {
-    chips.push(intentDisplay(profile.intents[0]));
+  const intents = safeArray<IntentTag>(profile.intents);
+  if (intents.length) {
+    chips.push(intentDisplay(intents[0]));
   } else if (prefs.intents.length) {
     chips.push(intentDisplay(prefs.intents[0]));
   }

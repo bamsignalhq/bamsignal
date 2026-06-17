@@ -1,5 +1,7 @@
 import { intentLabel } from "../constants/intents";
 import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
+import type { IntentTag } from "../types";
+import { safeArray } from "./safeProfile";
 import { isPreferNot } from "./profile";
 import { isOnlineNow } from "./activity";
 
@@ -24,7 +26,7 @@ function interestScore(viewer: DatingProfile, candidate: DiscoverProfile): numbe
 
 function intentScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
   const a = viewer.intents ?? [];
-  const b = candidate.intents ?? [];
+  const b = safeArray<IntentTag>(candidate.intents);
   if (!a.length || !b.length) return 0;
   const shared = a.filter((i) => b.includes(i)).length;
   if (!shared) return 0;
@@ -106,7 +108,9 @@ function similarAgeRange(viewer: DatingProfile, candidate: DiscoverProfile): boo
 /** Dynamic reasons for "Why this profile?" — never hardcoded per profile */
 export function getProfileMatchReasons(viewer: DatingProfile, candidate: DiscoverProfile): string[] {
   const reasons: MatchReason[] = [];
-  const sharedIntents = (viewer.intents ?? []).filter((intent) => candidate.intents.includes(intent));
+  const sharedIntents = (viewer.intents ?? []).filter((intent) =>
+    safeArray<IntentTag>(candidate.intents).includes(intent)
+  );
   const interests = sharedInterests(viewer, candidate);
 
   if (interests.length >= 2) {
@@ -183,7 +187,8 @@ export function hasActivePreferences(prefs: MatchPreferences): boolean {
 }
 
 export function matchesPreferences(candidate: DiscoverProfile, prefs: MatchPreferences): boolean {
-  if (prefs.intents.length && !candidate.intents.some((i) => prefs.intents.includes(i))) return false;
+  const candidateIntents = safeArray<IntentTag>(candidate.intents);
+  if (prefs.intents.length && !candidateIntents.some((i) => prefs.intents.includes(i))) return false;
   if (prefs.religions.length && candidate.religion && !prefs.religions.includes(candidate.religion)) return false;
   if (prefs.ethnicities.length && candidate.ethnicity && !prefs.ethnicities.includes(candidate.ethnicity))
     return false;

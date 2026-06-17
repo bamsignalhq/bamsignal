@@ -1,5 +1,6 @@
 import { MoreHorizontal, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { BRAND } from "../constants/copy";
 import type { DiscoverProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
@@ -66,7 +67,13 @@ export function ProfileCard({
           onClick={onViewProfile}
           aria-label={`View ${profile.name}'s profile`}
         >
-          <ShowcaseImage src={profile.photo} alt={profile.name} loading="lazy" className="profile-card-v2__img--face" />
+          <ShowcaseImage
+            src={profile.photo || DEFAULT_PROFILE_COVER}
+            alt={profile.name}
+            fallbackSrc={DEFAULT_PROFILE_COVER}
+            loading="lazy"
+            className="profile-card-v2__img--face"
+          />
           <div className="profile-card-gradient" />
           <div className="profile-card-v2__overlay">
             <div className="profile-card-v2__identity">

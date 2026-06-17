@@ -24,7 +24,9 @@ import "./styles/moment-pages.css";
 import "./styles/theme-contrast.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";
+import { repairMemberCaches } from "./utils/repairMemberCaches";
 
+repairMemberCaches();
 checkBuildVersion();
 registerServiceWorker();
 

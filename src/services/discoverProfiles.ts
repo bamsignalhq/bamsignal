@@ -1,8 +1,13 @@
 import type { DiscoverProfile, MemberSearchFilters, UserProfile } from "../types";
 import { readResponseJson } from "../utils/httpJson";
+import { safeDiscoverProfile } from "../utils/safeProfile";
 import { apiUrl } from "./supabase";
 
 const profileCache = new Map<string, DiscoverProfile>();
+
+function sanitizeProfiles(profiles: DiscoverProfile[]): DiscoverProfile[] {
+  return profiles.map((profile) => safeDiscoverProfile(profile));
+}
 
 export function cacheDiscoverProfiles(profiles: DiscoverProfile[]): void {
   for (const profile of profiles) {
@@ -34,8 +39,9 @@ export async function fetchDiscoverProfiles(
     });
     const payload = await readResponseJson<{ ok?: boolean; profiles?: DiscoverProfile[] }>(response);
     if (!response.ok || !payload?.ok || !Array.isArray(payload.profiles)) return [];
-    cacheDiscoverProfiles(payload.profiles);
-    return payload.profiles;
+    const profiles = sanitizeProfiles(payload.profiles);
+    cacheDiscoverProfiles(profiles);
+    return profiles;
   } catch {
     return [];
   }
@@ -86,8 +92,9 @@ export async function searchMemberProfiles(
     });
     const payload = await readResponseJson<{ ok?: boolean; profiles?: DiscoverProfile[] }>(response);
     if (!response.ok || !payload?.ok || !Array.isArray(payload.profiles)) return [];
-    cacheDiscoverProfiles(payload.profiles);
-    return payload.profiles;
+    const profiles = sanitizeProfiles(payload.profiles);
+    cacheDiscoverProfiles(profiles);
+    return profiles;
   } catch {
     return [];
   }
@@ -108,7 +115,7 @@ export async function fetchMemberProfileById(
     });
     const payload = await readResponseJson<{ profile?: DiscoverProfile }>(response);
     if (!response.ok || !payload?.profile) return null;
-    const profile = payload.profile;
+    const profile = safeDiscoverProfile(payload.profile);
     profileCache.set(profile.id, profile);
     return profile;
   } catch {

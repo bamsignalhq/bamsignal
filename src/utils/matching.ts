@@ -1,4 +1,5 @@
-import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
+import type { DatingProfile, DiscoverProfile, IntentTag, MatchPreferences } from "../types";
+import { safeArray, safeString } from "./safeProfile";
 import { computeCompatibilityPercent, hasActivePreferences, matchesPreferences } from "./compatibility";
 import { isOnlineNow } from "./activity";
 import { isPreferNot } from "./profile";
@@ -17,9 +18,9 @@ const PREF_BONUS = 6;
 function profileCompleteness(candidate: DiscoverProfile): number {
   let score = 0;
   if (candidate.photo) score += 25;
-  if (candidate.bio.trim().length >= 12) score += 20;
-  if ((candidate.interests?.length ?? 0) >= 2) score += 20;
-  if (candidate.intents.length >= 1) score += 15;
+  if (safeString(candidate.bio).trim().length >= 12) score += 20;
+  if (safeArray(candidate.interests).length >= 2) score += 20;
+  if (safeArray(candidate.intents).length >= 1) score += 15;
   if (candidate.voiceIntroUrl) score += 10;
   if (candidate.verified) score += 10;
   return score;
@@ -37,7 +38,8 @@ function responseRateScore(candidate: DiscoverProfile): number {
 
 function preferenceBonus(candidate: DiscoverProfile, prefs: MatchPreferences): number {
   let bonus = 0;
-  if (prefs.intents.length && candidate.intents.some((i) => prefs.intents.includes(i))) bonus += PREF_BONUS;
+  const candidateIntents = safeArray<IntentTag>(candidate.intents);
+  if (prefs.intents.length && candidateIntents.some((i) => prefs.intents.includes(i))) bonus += PREF_BONUS;
   if (prefs.religions.length && candidate.religion && prefs.religions.includes(candidate.religion)) bonus += PREF_BONUS;
   if (prefs.lifestyles.length && candidate.lifestyle && prefs.lifestyles.includes(candidate.lifestyle)) bonus += PREF_BONUS;
   if (prefs.cities.length && prefs.cities.includes(candidate.city)) bonus += PREF_BONUS;

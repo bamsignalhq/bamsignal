@@ -140,16 +140,10 @@ export function PhotoUploadGrid({
   const canAdd = displayPhotos.length < MAX_PROFILE_PHOTOS;
   const visibleSlots = Math.max(displayPhotos.length + (canAdd ? 1 : 0), MIN_PROFILE_PHOTOS);
   const photoCount = displayPhotos.filter(Boolean).length;
-  const belowMin = photoCount < MIN_PROFILE_PHOTOS;
   const aboveMax = photoCount > MAX_PROFILE_PHOTOS;
 
   return (
     <div className="photo-upload-grid">
-      {belowMin ? (
-        <p className="photo-upload-grid__hint photo-upload-grid__hint--warn" role="status">
-          Add {MIN_PROFILE_PHOTOS} photos so people can recognize you.
-        </p>
-      ) : null}
       {aboveMax ? (
         <p className="photo-upload-grid__hint photo-upload-grid__hint--warn" role="status">
           Maximum {MAX_PROFILE_PHOTOS} photos allowed.

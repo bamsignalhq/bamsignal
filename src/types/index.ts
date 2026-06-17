@@ -309,9 +309,30 @@ export type ChatMessage = {
   blocked?: boolean;
 };
 
+export type ContactExchangeStatus = "pending" | "accepted" | "declined" | "completed" | "cancelled";
+
+export type ContactExchangeShared = {
+  whatsapp?: string;
+  phone?: string;
+  telegram?: string;
+  instagram?: string;
+};
+
+export type ContactExchangeState = {
+  status: ContactExchangeStatus;
+  requesterUserKey?: string;
+  recipientUserKey?: string;
+  requestedAt?: string;
+  respondedAt?: string;
+  acceptedAt?: string;
+  completedAt?: string;
+  sharedContacts?: Record<string, ContactExchangeShared>;
+};
+
 export type ChatThread = {
   matchId: string;
   messages: ChatMessage[];
+  contactExchange?: ContactExchangeState;
   offPlatformApproved?: boolean;
   pendingOffPlatformRequest?: boolean;
   offPlatformDeclined?: boolean;

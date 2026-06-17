@@ -17,6 +17,8 @@ import { openPaystackCheckout } from "./paymentCheckout";
 import { apiUrl } from "./supabase";
 import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
 import { readResponseJson } from "../utils/httpJson";
+import { fastConnectionWeeklyAmount, quickiePassDays } from "../utils/quickie";
+import { fetchSubscriptionCatalog } from "./subscriptionCatalog";
 
 export { isPremiumActive, refreshPremiumStatus };
 export { clearPaymentSession } from "../utils/paymentState";
@@ -195,18 +197,23 @@ export async function verifyPayment(user: UserProfile): Promise<{
 
 export async function startQuickiePassPayment(user: UserProfile): Promise<StartPaymentResult> {
   if (!user.email) {
-    return { ok: false, error: "Add a verified email before purchasing a Quickie pass." };
+    return { ok: false, error: "Add a verified email before purchasing a Fast Connection Pass." };
   }
 
   beginPaymentSession();
   markPaymentSessionStarted();
 
   try {
+    const catalog = await fetchSubscriptionCatalog();
+    const amount = fastConnectionWeeklyAmount() || undefined;
+    const days = quickiePassDays();
+
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize-quickie"), {
       email: user.email,
       phone: user.phone,
       name: user.name,
-      amount: 999,
+      amount,
+      days,
       platform: paymentPlatform()
     });
 
@@ -226,6 +233,7 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
   ok: boolean;
   error?: string;
   pending?: boolean;
+  quickiePassUntil?: string;
 }> {
   const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
   if (!reference) {
@@ -244,14 +252,22 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
         productType: "quickie"
       })
     });
-    const payload = await readResponseJson<{ ok?: boolean; error?: string; premium_until?: string }>(response);
+    const payload = await readResponseJson<{
+      ok?: boolean;
+      error?: string;
+      quickiePassUntil?: string;
+      fastConnectionPassUntil?: string;
+    }>(response);
     if (response.status === 402) {
       return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
     }
     if (!response.ok || !payload?.ok) {
       return { ok: false, error: payload?.error || "Payment not verified yet." };
     }
-    return { ok: true };
+    return {
+      ok: true,
+      quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil
+    };
   } catch {
     return { ok: false, error: "Verification failed." };
   }
@@ -381,6 +397,10 @@ export async function completePendingPayment(user: UserProfile): Promise<{
   if (kind === "quickie") {
     const result = await verifyQuickiePayment(user);
     if (result.ok) {
+      if (result.quickiePassUntil) {
+        const { activateQuickiePass } = await import("../utils/quickie");
+        activateQuickiePass(result.quickiePassUntil);
+      }
       logPaymentEvent("verification result", { reference, ok: true, kind: "quickie" });
       return { ok: true, kind: "quickie" };
     }

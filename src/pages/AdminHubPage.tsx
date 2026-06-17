@@ -40,6 +40,7 @@ import { DEMO_USER } from "../constants/demoAccounts";
 import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
 import { AdminShadowBannedSection } from "../components/admin/AdminShadowBannedSection";
 import { fetchContactLeakAttempts, shadowBanAdmin, type ContactLeakAttempt } from "../services/adminModeration";
+import { fetchContactExchangeMetricsAdmin } from "../services/subscriptionCatalog";
 import { CONTACT_LEAK_BLOCK_MESSAGE, validateUserText } from "../utils/contactGuard";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
 import {
@@ -125,6 +126,11 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [purgeMessage, setPurgeMessage] = useState("");
   const [contactLeaks, setContactLeaks] = useState<ContactLeakAttempt[]>([]);
   const [contactLeaksLoading, setContactLeaksLoading] = useState(false);
+  const [exchangeMetrics, setExchangeMetrics] = useState<{
+    totals: Record<string, number>;
+    recent: Array<Record<string, unknown>>;
+  } | null>(null);
+  const [exchangeMetricsLoading, setExchangeMetricsLoading] = useState(false);
 
   const handleTabChange = useCallback((id: HardTab) => {
     setTab(id);
@@ -185,11 +191,17 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   useEffect(() => {
     if (tab !== "command" || !authorized) return;
     setContactLeaksLoading(true);
+    setExchangeMetricsLoading(true);
     void fetchContactLeakAttempts(50)
       .then((result) => {
         if (result.ok) setContactLeaks(result.attempts);
       })
       .finally(() => setContactLeaksLoading(false));
+    void fetchContactExchangeMetricsAdmin(50)
+      .then((result) => {
+        if (result?.ok && result.metrics) setExchangeMetrics(result.metrics);
+      })
+      .finally(() => setExchangeMetricsLoading(false));
   }, [tab, authorized]);
 
   useEffect(() => {
@@ -376,6 +388,52 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                 </div>
               </article>
             ))}
+          </section>
+
+          <section className="card admin-command-panel">
+            <h3>Contact exchange metrics</h3>
+            <p className="match-prefs-note">
+              Mutual consent flow — requests, accepts, declines, and completed exchanges.
+            </p>
+            {exchangeMetricsLoading && <AdminTerminalEmpty>Loading contact exchange metrics…</AdminTerminalEmpty>}
+            {!exchangeMetricsLoading && exchangeMetrics && (
+              <div className="admin-stats-grid admin-stats-grid--highlight">
+                <div className="card admin-stat admin-stat--highlight">
+                  <strong>{exchangeMetrics.totals.exchange_requested || 0}</strong>
+                  <span>Requests</span>
+                </div>
+                <div className="card admin-stat admin-stat--highlight">
+                  <strong>{exchangeMetrics.totals.exchange_accepted || 0}</strong>
+                  <span>Accepted</span>
+                </div>
+                <div className="card admin-stat admin-stat--highlight">
+                  <strong>{exchangeMetrics.totals.exchange_declined || 0}</strong>
+                  <span>Declined</span>
+                </div>
+                <div className="card admin-stat admin-stat--highlight">
+                  <strong>{exchangeMetrics.totals.exchange_completed || 0}</strong>
+                  <span>Completed</span>
+                </div>
+              </div>
+            )}
+            {!exchangeMetricsLoading && exchangeMetrics?.recent?.length ? (
+              <div className="admin-exchange-recent">
+                {exchangeMetrics.recent.slice(0, 12).map((row, index) => (
+                  <article key={`${row.event_type}-${row.created_at}-${index}`} className="card admin-moderation-row">
+                    <div className="admin-moderation-row__main">
+                      <strong>{String(row.event_type || "").replace(/_/g, " ")}</strong>
+                      <span>
+                        {String(row.name || row.username || row.user_key || "Member")} · match{" "}
+                        {String(row.match_id || "—")} · {new Date(String(row.created_at)).toLocaleString()}
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+            {!exchangeMetricsLoading && !exchangeMetrics?.recent?.length && (
+              <AdminTerminalEmpty>No contact exchange events logged yet.</AdminTerminalEmpty>
+            )}
           </section>
 
           <section className="card admin-command-panel">

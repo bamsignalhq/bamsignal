@@ -450,6 +450,74 @@ export default async function handler(req, res) {
       return res.status(flag ? 200 : 400).json({ ok: Boolean(flag), flag });
     }
 
+    if (req.query.action === "contact-exchange-state") {
+      if (!requireDatabase(res)) return;
+      const { getContactExchangeState } = await import("../../server/services/contactExchange.js");
+      const result = await getContactExchangeState({
+        email: identity.email,
+        phone: identity.phone,
+        matchId: String(body.matchId || "").trim()
+      });
+      return res.status(200).json(result);
+    }
+
+    if (req.query.action === "contact-exchange-request") {
+      if (!requireDatabase(res)) return;
+      const { requestContactExchange } = await import("../../server/services/contactExchange.js");
+      const result = await requestContactExchange({
+        email: identity.email,
+        phone: identity.phone,
+        matchId: String(body.matchId || "").trim(),
+        recipientProfileId: String(body.recipientProfileId || "").trim(),
+        requesterProfileId: body.requesterProfileId || null
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "contact-exchange-respond") {
+      if (!requireDatabase(res)) return;
+      const { respondContactExchange } = await import("../../server/services/contactExchange.js");
+      const result = await respondContactExchange({
+        email: identity.email,
+        phone: identity.phone,
+        matchId: String(body.matchId || "").trim(),
+        accept: Boolean(body.accept),
+        profileId: body.profileId || null
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "contact-exchange-complete") {
+      if (!requireDatabase(res)) return;
+      const { completeContactExchange } = await import("../../server/services/contactExchange.js");
+      const result = await completeContactExchange({
+        email: identity.email,
+        phone: identity.phone,
+        matchId: String(body.matchId || "").trim(),
+        sharedContacts: body.sharedContacts || {},
+        profileId: body.profileId || null
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "contact-exchange-cancel") {
+      if (!requireDatabase(res)) return;
+      const { cancelContactExchange } = await import("../../server/services/contactExchange.js");
+      const result = await cancelContactExchange({
+        email: identity.email,
+        phone: identity.phone,
+        matchId: String(body.matchId || "").trim(),
+        profileId: body.profileId || null
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
+    if (req.query.action === "subscription-catalog") {
+      const { getSubscriptionCatalog } = await import("../../server/services/subscriptionCatalog.js");
+      const catalog = await getSubscriptionCatalog();
+      return res.status(200).json({ ok: true, catalog });
+    }
+
     return res.status(400).json({ ok: false, error: "Unknown action." });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Member data request failed." });

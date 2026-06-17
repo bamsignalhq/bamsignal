@@ -10,7 +10,7 @@ export const INTENT_OPTIONS: {
   { id: "Networking", label: "Networking", emoji: "🌍" },
   { id: "Social Events", label: "Social Events", emoji: "🎉" },
   { id: "Chat", label: "Chat", emoji: "💬" },
-  { id: "Quickie", label: "Quickie", emoji: "🔥" }
+  { id: "Quickie", label: "Fast Connection", emoji: "⚡" }
 ];
 
 export const MAX_INTENT_SELECTIONS = 2;

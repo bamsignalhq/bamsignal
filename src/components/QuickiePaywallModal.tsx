@@ -1,5 +1,6 @@
-import { Flame } from "lucide-react";
-import { quickiePriceLabel } from "../utils/quickie";
+import { Zap } from "lucide-react";
+import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
+import { durationLabel } from "../constants/plans";
 
 type QuickiePaywallModalProps = {
   open: boolean;
@@ -18,21 +19,26 @@ export function QuickiePaywallModal({
 }: QuickiePaywallModalProps) {
   if (!open) return null;
 
+  const passDays = quickiePassDays();
+  const price = quickiePriceLabel();
+
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Quickie daily pass">
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Fast Connection Pass">
       <div className="modal-card quickie-paywall">
         <div className="quickie-paywall__icon" aria-hidden>
-          <Flame size={32} />
+          <Zap size={32} />
         </div>
-        <h3>Quickie daily pass</h3>
+        <h3>Fast Connection Pass</h3>
         <p className="quickie-paywall__fine">
           {context === "intent"
-            ? "Quickie profiles need an active daily pass to appear in discovery and receive messages."
-            : "Message this member with a Quickie daily pass — one day of full access."}
+            ? "Fast Connection members need an active pass to appear in discovery and receive messages."
+            : "Message this member with a Fast Connection Pass — faster-paced connections, on your terms."}
         </p>
-        <p className="quickie-paywall__price">{quickiePriceLabel()} / 24 hours</p>
+        <p className="quickie-paywall__price">
+          {price} / {durationLabel(passDays)}
+        </p>
         <button type="button" className="btn-primary btn-full" onClick={onPay} disabled={loading}>
-          {loading ? "Opening Paystack…" : `Pay ${quickiePriceLabel()}`}
+          {loading ? "Opening Paystack…" : `Pay ${price}`}
         </button>
         <button type="button" className="link-btn" onClick={onClose}>
           Not now

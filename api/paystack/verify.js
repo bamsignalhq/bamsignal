@@ -1,4 +1,4 @@
-import { activateAppUserPremium } from "../../server/db.js";
+import { activateAppUserPremium, activateAppUserFastConnectionPass } from "../../server/db.js";
 import { getPlatformSetting } from "../../server/db.js";
 import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../../server/cityHome.js";
 import { createVipInviteLink } from "../../server/telegram.js";
@@ -11,6 +11,11 @@ import {
   paystackErrorResponse,
   verifyPaystackTransaction
 } from "../../server/services/paystackClient.js";
+import {
+  activePlanPrice,
+  getProductFromCatalog,
+  getSubscriptionCatalog
+} from "../../server/services/subscriptionCatalog.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -205,11 +210,19 @@ export default async function handler(req, res) {
       const email = String(body.email || "").trim().toLowerCase();
       const phone = normalizePhone(body.phone);
       const name = String(body.name || "").trim();
-      const priceNaira = Math.max(0, Math.round(Number(body.amount || 999)));
+      const catalog = await getSubscriptionCatalog();
+      const product = getProductFromCatalog(catalog, "fast_connection_pass");
+      const weeklyPlan = product?.plans?.find((plan) => plan.id === "weekly" && plan.active !== false);
+      const defaultPrice = activePlanPrice(product, "weekly");
+      const priceNaira = Math.max(0, Math.round(Number(body.amount || defaultPrice)));
+      const passDays = Math.max(1, Math.round(Number(body.days || weeklyPlan?.days || 7)));
       const amount = priceNaira * 100;
 
       if (!email) {
         return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
+      }
+      if (!priceNaira) {
+        return res.status(400).json({ ok: false, error: "Fast Connection Pass pricing is not configured yet." });
       }
 
       const reference = buildReference("quickie");
@@ -226,7 +239,7 @@ export default async function handler(req, res) {
             name,
             phone,
             product_type: "quickie",
-            quickie_hours: 24
+            quickie_days: passDays
           }
         });
 
@@ -235,7 +248,9 @@ export default async function handler(req, res) {
           reference: data?.reference || reference,
           authorization_url: data?.authorization_url,
           access_code: data?.access_code,
-          productType: "quickie"
+          productType: "quickie",
+          amount: priceNaira,
+          days: passDays
         });
       } catch (error) {
         logPaystackFailure("initialize-quickie", error, { email, amount });
@@ -278,11 +293,20 @@ export default async function handler(req, res) {
     const productType = String(transaction?.metadata?.product_type || body.productType || "premium").trim();
 
     if (productType === "quickie") {
-      const passUntil = new Date(Date.now() + 24 * 3600000).toISOString();
+      const passDays = Math.max(1, Math.round(Number(transaction?.metadata?.quickie_days || 7)));
+      const passUntil = new Date(Date.now() + passDays * 24 * 3600000).toISOString();
+      await activateAppUserFastConnectionPass({
+        email: email || transactionEmail,
+        phone,
+        name,
+        passUntil,
+        paystackReference: reference
+      });
       return res.status(200).json({
         ok: true,
         productType: "quickie",
-        quickiePassUntil: passUntil
+        quickiePassUntil: passUntil,
+        fastConnectionPassUntil: passUntil
       });
     }
 

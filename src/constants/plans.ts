@@ -103,10 +103,13 @@ export const DEFAULT_PREMIUM_PLANS: PremiumPlan[] = DEFAULT_PREMIUM_PLAN_INPUTS.
 /** Shown on Signal Pass upgrade */
 export const SIGNAL_PASS_INCLUDES = [
   "Unlimited Signals",
-  "See who's interested in you",
-  "Advanced preferences",
-  "Priority visibility",
-  "Premium verification badge"
+  "People Interested In You",
+  "Advanced Filters",
+  "Priority Visibility",
+  "Unlimited Undo",
+  "Unlimited Contact Exchanges",
+  "Premium badge",
+  "Faster support"
 ] as const;
 
 /** @deprecated use SIGNAL_PASS_INCLUDES */

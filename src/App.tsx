@@ -49,7 +49,8 @@ import { getProfileViewsToday } from "./utils/profileViews";
 import { unreadCount } from "./utils/notifications";
 import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { activateBoost } from "./utils/activeBoosts";
-import { activateQuickiePass } from "./utils/quickie";
+import { activateQuickiePass, cacheSubscriptionCatalogPricing } from "./utils/quickie";
+import { fetchSubscriptionCatalog } from "./services/subscriptionCatalog";
 import {
   getPaymentFlowState,
   isActivePaymentFlow,
@@ -150,6 +151,10 @@ export function App() {
     if (!isNative) return;
     document.documentElement.classList.add("capacitor-native");
   }, [isNative]);
+
+  useEffect(() => {
+    void fetchSubscriptionCatalog().then(cacheSubscriptionCatalogPricing);
+  }, []);
 
   useEffect(() => {
     const syncRoute = () => {
@@ -279,7 +284,7 @@ export function App() {
         activateQuickiePass();
         setPaymentSuccess({
           title: "Payment successful",
-          body: "Your Quickie daily pass is active."
+          body: "Your Fast Connection Pass is active."
         });
         trackEvent("quickie_unlock");
       } else {

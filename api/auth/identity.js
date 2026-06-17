@@ -104,6 +104,27 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, plans: value });
     }
 
+    if (req.query.action === "subscription-catalog") {
+      const { getSubscriptionCatalog } = await import("../../server/services/subscriptionCatalog.js");
+      const catalog = await getSubscriptionCatalog();
+      return res.status(200).json({ ok: true, catalog });
+    }
+
+    if (req.query.action === "subscription-catalog-save") {
+      if (!await requireAdmin(req, res)) return;
+      if (!await requireAdminConsent(req, res)) return;
+      const { saveSubscriptionCatalog } = await import("../../server/services/subscriptionCatalog.js");
+      const catalog = await saveSubscriptionCatalog(req.body?.catalog || {});
+      return res.status(200).json({ ok: true, catalog });
+    }
+
+    if (req.query.action === "contact-exchange-metrics") {
+      if (!await requireAdmin(req, res)) return;
+      const { listContactExchangeMetrics } = await import("../../server/services/contactExchange.js");
+      const metrics = await listContactExchangeMetrics({ limit: Number(req.body?.limit) || 100 });
+      return res.status(200).json({ ok: true, metrics });
+    }
+
     if (req.query.action === "settings-save") {
       if (!await requireAdmin(req, res)) return;
       if (!await requireAdminConsent(req, res)) return;

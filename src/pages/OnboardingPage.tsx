@@ -4,6 +4,7 @@ import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
 import { citiesForState } from "../constants/profileOptions";
 import { INTENT_OPTIONS } from "../constants/intents";
+import { durationLabel } from "../constants/plans";
 import { MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { MIN_PROFILE_INTERESTS } from "../constants/interestCategories";
 import { CONTACT_LEAK_BLOCK_MESSAGE, validateDisplayName, validateProfileContactLeaks, validateUserText } from "../utils/contactGuard";
@@ -27,6 +28,7 @@ import { syncMemberProfileRemote } from "../services/cityHome";
 import { completeOnboardingRemote } from "../services/memberData";
 import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { writeJson, readJson } from "../utils/storage";
+import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { flowLog } from "../utils/flowLog";
 
@@ -369,7 +371,11 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
                   >
                     <span className="intent-tag__emoji">{opt.emoji}</span>
                     {opt.label}
-                    {opt.id === "Quickie" && <small className="intent-tag__price">₦999/day</small>}
+                    {opt.id === "Quickie" && (
+                      <small className="intent-tag__price">
+                        {quickiePriceLabel()} / {durationLabel(quickiePassDays())}
+                      </small>
+                    )}
                   </button>
                 );
               })}

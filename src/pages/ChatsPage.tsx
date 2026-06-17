@@ -6,12 +6,13 @@ import { getCachedMemberProfile, fetchMemberProfileById } from "../services/disc
 import { ActivityStatus } from "../components/ActivityStatus";
 import { ChatInput } from "../components/ChatInput";
 import { EmptyState } from "../components/EmptyState";
-import { OffPlatformConsentCard } from "../components/OffPlatformConsentCard";
-import { OffPlatformEducationModal } from "../components/OffPlatformEducationModal";
+import { ContactExchangeConsentCard } from "../components/ContactExchangeConsentCard";
+import { ContactExchangeEnabledModal } from "../components/ContactExchangeEnabledModal";
+import { ContactExchangeLimitModal } from "../components/ContactExchangeLimitModal";
 import { PaywallModal } from "../components/PaywallModal";
 import { QuickiePaywallModal } from "../components/QuickiePaywallModal";
 import { ReportBlockModal } from "../components/ReportBlockModal";
-import type { ChatMessage, ChatThread, Match, UserProfile } from "../types";
+import type { ChatMessage, ChatThread, ContactExchangeShared, ContactExchangeState, Match, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { FEMALE_SAFETY_COPY } from "../constants/safety";
 import { readReceiptsAllowed } from "../utils/activityPrivacy";
@@ -20,9 +21,16 @@ import { getDatingProfile } from "../utils/profile";
 import { checkOutgoingChatMessage, CONTACT_LEAK_BLOCK_MESSAGE } from "../utils/contactGuard";
 import { blockUser, canUseInbox, filterBlockedByProfileId, unmatchUser } from "../utils/safety";
 import { trackEvent } from "../utils/analytics";
-import { pushNotification } from "../utils/notifications";
 import { isViewerShadowBanned } from "../utils/shadowBan";
 import { incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
+import {
+  completeContactExchangeRemote,
+  contactExchangeAllowsSharing,
+  fetchContactExchangeState,
+  mapServerExchange,
+  requestContactExchangeRemote,
+  respondContactExchangeRemote
+} from "../services/contactExchange";
 import { persistMessageRemote } from "../services/memberData";
 import { startQuickiePassPayment, completePendingPayment } from "../services/payments";
 import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch, activateQuickiePass } from "../utils/quickie";
@@ -209,9 +217,6 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
     </div>
   );
 }
-
-const OFF_APP_MESSAGE_THRESHOLD = 8;
-
 function ChatDetail({
   match,
   isPremium,
@@ -241,6 +246,7 @@ function ChatDetail({
   const initialThread = allThreads[match.id] || { matchId: match.id, messages: [] };
   const [threadMeta, setThreadMeta] = useState<Omit<ChatThread, "messages">>({
     matchId: match.id,
+    contactExchange: initialThread.contactExchange,
     offPlatformApproved: initialThread.offPlatformApproved,
     pendingOffPlatformRequest: initialThread.pendingOffPlatformRequest,
     offPlatformDeclined: initialThread.offPlatformDeclined,
@@ -248,7 +254,9 @@ function ChatDetail({
     readAt: initialThread.readAt
   });
   const [messages, setMessages] = useState<ChatMessage[]>(initialThread.messages);
-  const [educationOpen, setEducationOpen] = useState(false);
+  const [exchangeRole, setExchangeRole] = useState<"requester" | "recipient" | null>(null);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
+  const [enabledModalOpen, setEnabledModalOpen] = useState(false);
   const [blockWarning, setBlockWarning] = useState("");
   const [toast, setToast] = useState("");
   const [screenshotNotice, setScreenshotNotice] = useState(false);
@@ -264,11 +272,16 @@ function ChatDetail({
   const anniversary = matchAnniversaryBanner(match);
   const lastMine = [...messages].reverse().find((m) => m.from === "me");
   const showSeen = receiptsOn && lastMine && threadMeta.peerSeenAt;
-  const sentByMe = messages.filter((m) => m.from === "me").length;
-  const showOffAppLink =
-    messages.length >= OFF_APP_MESSAGE_THRESHOLD &&
-    !threadMeta.offPlatformApproved &&
-    !threadMeta.pendingOffPlatformRequest;
+  const exchangeStatus = threadMeta.contactExchange?.status;
+  const exchangeApproved =
+    contactExchangeAllowsSharing(exchangeStatus) || Boolean(threadMeta.offPlatformApproved);
+  const showExchangeButton =
+    !exchangeApproved &&
+    (!exchangeStatus || exchangeStatus === "declined" || exchangeStatus === "cancelled");
+  const showRecipientConsent = exchangeStatus === "pending" && exchangeRole === "recipient";
+  const showRequesterWaiting = exchangeStatus === "pending" && exchangeRole === "requester";
+  const requesterFirstName = match.name.trim().split(/\s+/)[0] || match.name;
+  const requesterProfileId = localStorage.getItem(STORAGE_KEYS.memberProfileId) || undefined;
 
   useEffect(() => {
     void fetchMemberProfileById(user, match.profileId);
@@ -278,6 +291,24 @@ function ChatDetail({
       setScreenshotNotice(true);
       localStorage.setItem(STORAGE_KEYS.screenshotPrivacyNoticeSeen, "true");
     }
+    void fetchContactExchangeState(user, match.id).then((result) => {
+      if (!result?.ok) return;
+      if (result.role) setExchangeRole(result.role);
+      const mapped = mapServerExchange(result.exchange as Record<string, unknown> | null);
+      if (mapped) {
+        setThreadMeta((prev) => {
+          const meta = { ...prev, contactExchange: mapped, matchId: match.id };
+          writeJson(STORAGE_KEYS.chats, {
+            ...readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {}),
+            [match.id]: { ...meta, messages }
+          });
+          return meta;
+        });
+        if (mapped.status === "accepted") {
+          setEnabledModalOpen(true);
+        }
+      }
+    });
   }, [match.profileId, user.email, user.phone, match.id]);
 
   const persistThread = (nextMessages: ChatMessage[], meta = threadMeta) => {
@@ -306,8 +337,11 @@ function ChatDetail({
   const handleSend = (text: string) => {
     setBlockWarning("");
 
+    const contactApproved =
+      contactExchangeAllowsSharing(threadMeta.contactExchange?.status) ||
+      Boolean(threadMeta.offPlatformApproved);
     const contactCheck = checkOutgoingChatMessage(text, {
-      connectionAccepted: true
+      connectionAccepted: contactApproved
     });
 
     if (contactCheck.blocked) {
@@ -341,35 +375,80 @@ function ChatDetail({
     if (isFirstMessage) trackEvent("message_started", { matchId: match.id });
   };
 
-  const requestOffApp = () => {
-    updateMeta({ pendingOffPlatformRequest: true, offPlatformDeclined: false });
-    pushNotification({
-      type: "off_platform_request",
-      title: `${match.name} wants to chat off-app`,
-      body: "Say if you're comfortable leaving BamSignal."
-    });
-    setToast("We'll ask if they're OK continuing off-app before anything is shared.");
+  const requestContactExchange = async () => {
+    if (!user.phoneVerified) {
+      setToast("Verify your phone number before exchanging contacts.");
+      setTimeout(() => setToast(""), 3500);
+      return;
+    }
+    const result = await requestContactExchangeRemote(
+      user,
+      match.id,
+      match.profileId,
+      requesterProfileId
+    );
+    if (!result) return;
+    if (!result.ok) {
+      if (result.limitReached) {
+        setLimitModalOpen(true);
+        trackEvent("paywall_seen", { context: "contact_exchange" });
+      } else if (result.error) {
+        setToast(result.error);
+        setTimeout(() => setToast(""), 4000);
+      }
+      return;
+    }
+    trackEvent("exchange_requested", { matchId: match.id });
+    const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
+    if (mapped) updateMeta({ contactExchange: mapped });
+    setExchangeRole("requester");
+    setToast("We'll ask if they're comfortable continuing outside BamSignal.");
     setTimeout(() => setToast(""), 3500);
   };
 
-  const acceptOffPlatform = () => {
-    setEducationOpen(true);
+  const acceptContactExchange = async () => {
+    const result = await respondContactExchangeRemote(user, match.id, true, requesterProfileId);
+    if (!result) return;
+    if (!result.ok) {
+      if (result.limitReached) {
+        setLimitModalOpen(true);
+      } else if (result.error) {
+        setToast(result.error);
+        setTimeout(() => setToast(""), 4000);
+      }
+      return;
+    }
+    trackEvent("exchange_accepted", { matchId: match.id });
+    const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
+    if (mapped) updateMeta({ contactExchange: mapped });
+    setEnabledModalOpen(true);
   };
 
-  const finishOffPlatformAccept = () => {
-    setEducationOpen(false);
-    updateMeta({
-      offPlatformApproved: true,
-      pendingOffPlatformRequest: false,
-      offPlatformDeclined: false
-    });
-    setToast("You can share handles off-app — stay safe and meet in public first.");
+  const declineContactExchange = async () => {
+    const result = await respondContactExchangeRemote(user, match.id, false, requesterProfileId);
+    if (result?.ok) {
+      trackEvent("exchange_declined", { matchId: match.id });
+      const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
+      if (mapped) updateMeta({ contactExchange: mapped });
+    }
+    setToast("Kept inside BamSignal for now.");
     setTimeout(() => setToast(""), 3500);
   };
 
-  const declineOffPlatform = () => {
-    updateMeta({ pendingOffPlatformRequest: false, offPlatformDeclined: true });
-    setToast("Kept inside BamSignal. They'll need to keep chatting here.");
+  const finishContactExchange = async (shared: ContactExchangeShared) => {
+    const result = await completeContactExchangeRemote(user, match.id, shared || {}, requesterProfileId);
+    if (!result) return;
+    if (!result.ok) {
+      if (result.error) {
+        setToast(result.error);
+        setTimeout(() => setToast(""), 4000);
+      }
+      return;
+    }
+    trackEvent("exchange_completed", { matchId: match.id });
+    const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
+    if (mapped) updateMeta({ contactExchange: mapped, offPlatformApproved: true });
+    setToast("Contact exchange saved. Share only what you're comfortable with.");
     setTimeout(() => setToast(""), 3500);
   };
 
@@ -404,9 +483,9 @@ function ChatDetail({
             variant="subtle"
           />
           <span>{match.city}</span>
-          {showOffAppLink && (
-            <button type="button" className="chat-off-app-link" onClick={requestOffApp}>
-              Continue off-app?
+          {showExchangeButton && (
+            <button type="button" className="chat-off-app-link" onClick={() => void requestContactExchange()}>
+              Exchange Contacts 🔒
             </button>
           )}
         </div>
@@ -420,13 +499,21 @@ function ChatDetail({
 
       {toast && <div className="toast toast--member">{toast}</div>}
 
-      {threadMeta.pendingOffPlatformRequest && (
-        <OffPlatformConsentCard
-          matchName={match.name}
-          onAccept={acceptOffPlatform}
-          onDecline={declineOffPlatform}
+      {showRecipientConsent && (
+        <ContactExchangeConsentCard
+          requesterFirstName={requesterFirstName}
+          onAccept={() => void acceptContactExchange()}
+          onDecline={() => void declineContactExchange()}
         />
       )}
+
+      {showRequesterWaiting && (
+        <p className="chat-exchange-waiting">Waiting for {match.name} to accept your contact exchange request.</p>
+      )}
+
+      {exchangeApproved ? (
+        <p className="chat-exchange-enabled">❤️ Contact exchange enabled — share only what you're comfortable with.</p>
+      ) : null}
 
       {screenshotNotice ? (
         <p className="chat-privacy-notice">{FEMALE_SAFETY_COPY.screenshotNotice}</p>
@@ -460,10 +547,20 @@ function ChatDetail({
         />
       )}
 
-      <OffPlatformEducationModal
-        open={educationOpen}
-        onClose={() => setEducationOpen(false)}
-        onContinue={finishOffPlatformAccept}
+      <ContactExchangeEnabledModal
+        open={enabledModalOpen}
+        onClose={() => setEnabledModalOpen(false)}
+        onSave={(shared) => void finishContactExchange(shared)}
+      />
+
+      <ContactExchangeLimitModal
+        open={limitModalOpen}
+        onClose={() => setLimitModalOpen(false)}
+        plans={plans}
+        onUpgrade={(plan) => {
+          onUpgrade(plan);
+          setLimitModalOpen(false);
+        }}
       />
 
       <PaywallModal

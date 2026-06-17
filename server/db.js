@@ -260,6 +260,7 @@ export async function ensureAppUsersTable() {
   await query("alter table app_users add column if not exists user_key text");
   await query("alter table app_users add column if not exists phone_verified boolean not null default false");
   await query("alter table app_users add column if not exists phone_verified_at timestamptz");
+  await query("alter table app_users add column if not exists fast_connection_pass_until timestamptz");
   await query("create unique index if not exists app_users_user_key_idx on app_users (user_key) where user_key is not null");
   await query("create unique index if not exists app_users_email_unique_idx on app_users (lower(email)) where email is not null and email <> ''");
   await query("create unique index if not exists app_users_phone_unique_idx on app_users (phone) where phone is not null and phone <> ''");
@@ -449,6 +450,49 @@ export async function activateAppUserPremium({ email, phone, name, premiumUntil,
   return result.rows[0];
 }
 
+export async function activateAppUserFastConnectionPass({
+  email,
+  phone,
+  name,
+  passUntil,
+  paystackReference
+}) {
+  if (!isDatabaseReady()) return null;
+  await ensureAppUsersTable();
+
+  if (paystackReference) {
+    const duplicate = await query("select * from app_users where paystack_reference = $1 limit 1", [
+      paystackReference
+    ]);
+    if (duplicate.rows[0]) {
+      return duplicate.rows[0];
+    }
+  }
+
+  const existing = await findAppUserIdentity({ email, phone });
+  const result = existing
+    ? await query(
+        `update app_users
+         set email = coalesce($1, email),
+             phone = coalesce($2, phone),
+             name = coalesce($3, name),
+             fast_connection_pass_until = $4,
+             paystack_reference = coalesce($5, paystack_reference),
+             updated_at = now()
+         where ($1::text is not null and lower(email) = lower($1::text))
+            or ($2::text is not null and phone = $2::text)
+         returning *`,
+        [email || null, phone || null, name || null, passUntil, paystackReference || null]
+      )
+    : await query(
+        `insert into app_users (email, phone, name, fast_connection_pass_until, paystack_reference)
+         values ($1, $2, $3, $4, $5)
+         returning *`,
+        [email || null, phone || null, name || null, passUntil, paystackReference || null]
+      );
+  return result.rows[0];
+}
+
 function memberIdentity({ email, phone }) {
   const userKey = normalizeUserKey({ email, phone });
   const normalizedPhone = String(phone || "")
@@ -516,17 +560,20 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
   if (!identity.userKey) return null;
 
   const { assertTextSafeForContactLeak } = await import("./services/contactLeak.js");
+  const { exchangeAllowsContactSharing } = await import("./services/contactExchange.js");
   const matchResult = await query(
     `select id from app_matches where id = $1 and user_key = $2 limit 1`,
     [threadId, identity.userKey]
   );
-  const connectionAccepted = Boolean(matchResult.rows[0]);
+  const hasMatch = Boolean(matchResult.rows[0]);
+  const exchangeStatus = threadMeta?.contactExchange?.status;
+  const allowContactExchange = hasMatch && exchangeAllowsContactSharing(exchangeStatus);
   const messageCheck = await assertTextSafeForContactLeak({
     email,
     phone,
     text: message.text,
     field: "message",
-    allowContactExchange: connectionAccepted
+    allowContactExchange: allowContactExchange
   });
   if (!messageCheck.ok) {
     const error = new Error(messageCheck.error);
@@ -621,7 +668,7 @@ export async function fetchMemberBundle({ email, phone }) {
 
   const { fetchMemberSocialBundle } = await import("./memberSocial.js");
 
-  const [matches, messages, reports, signals, user, social] = await Promise.all([
+  const [matches, messages, threadMetaRows, reports, signals, user, social] = await Promise.all([
     query(
       `select payload, matched_at
        from app_matches
@@ -634,6 +681,12 @@ export async function fetchMemberBundle({ email, phone }) {
        from app_messages
        where user_key = $1
        order by created_at asc`,
+      [identity.userKey]
+    ),
+    query(
+      `select match_id, meta
+       from app_chat_threads
+       where user_key = $1`,
       [identity.userKey]
     ),
     query(
@@ -653,14 +706,38 @@ export async function fetchMemberBundle({ email, phone }) {
     fetchMemberSocialBundle({ email, phone })
   ]);
 
+  const threadMetaById = Object.fromEntries(
+    threadMetaRows.rows.map((row) => [row.match_id, row.meta && typeof row.meta === "object" ? row.meta : {}])
+  );
+
   const threads = {};
   for (const row of messages.rows) {
     const threadId = row.thread_id;
     const payload = row.payload || {};
     if (!threads[threadId]) {
-      threads[threadId] = { matchId: threadId, messages: [] };
+      const meta = threadMetaById[threadId] || {};
+      threads[threadId] = {
+        matchId: threadId,
+        messages: [],
+        ...(meta.contactExchange ? { contactExchange: meta.contactExchange } : {}),
+        ...(meta.offPlatformApproved ? { offPlatformApproved: meta.offPlatformApproved } : {}),
+        ...(meta.pendingOffPlatformRequest
+          ? { pendingOffPlatformRequest: meta.pendingOffPlatformRequest }
+          : {}),
+        ...(meta.offPlatformDeclined ? { offPlatformDeclined: meta.offPlatformDeclined } : {})
+      };
     }
     threads[threadId].messages.push(payload);
+  }
+
+  for (const [threadId, meta] of Object.entries(threadMetaById)) {
+    if (!threads[threadId]) {
+      threads[threadId] = {
+        matchId: threadId,
+        messages: [],
+        ...(meta.contactExchange ? { contactExchange: meta.contactExchange } : {})
+      };
+    }
   }
 
   return {

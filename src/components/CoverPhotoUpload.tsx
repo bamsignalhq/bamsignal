@@ -11,6 +11,7 @@ import { moderatePhotoUpload } from "../utils/mediaModeration";
 import { blobToDataUrl, PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
 import { logPhotoUpload } from "../utils/photoUploadLog";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
+import { safeCoverPhoto } from "../utils/safeProfile";
 
 type CoverPhotoUploadProps = {
   coverPhoto?: string;
@@ -27,6 +28,11 @@ export function CoverPhotoUpload({
 }: CoverPhotoUploadProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+
+  const persistedCover = safeCoverPhoto(coverPhoto);
+  const preview = localPreview || persistedCover || DEFAULT_PROFILE_COVER;
+  const hasCustomCover = Boolean(localPreview || persistedCover);
 
   const openPicker = () => {
     if (uploading) return;
@@ -39,7 +45,7 @@ export function CoverPhotoUpload({
     if (!file) return;
 
     setUploading(true);
-    const previousCover = coverPhoto;
+    const previousCover = persistedCover;
     let previewUrl: string | null = null;
 
     try {
@@ -74,15 +80,17 @@ export function CoverPhotoUpload({
       }
 
       previewUrl = URL.createObjectURL(compressed.blob);
-      onChange(previewUrl);
+      setLocalPreview(previewUrl);
 
       const remoteUrl = await uploadCompressedCoverBlob(compressed.blob, file);
+      setLocalPreview(null);
       onChange(remoteUrl);
       if (previousCover && isStoragePhotoUrl(previousCover)) {
         void deleteStoredPhoto(previousCover);
       }
       logPhotoUpload("upload_cover_ok", {});
     } catch (error) {
+      setLocalPreview(null);
       onChange(previousCover);
       const mapped = mapUploadError(error);
       logPhotoUpload("upload_cover_failed", { code: mapped.code });
@@ -94,15 +102,13 @@ export function CoverPhotoUpload({
   };
 
   const removeCover = () => {
-    const previousCover = coverPhoto;
+    const previousCover = persistedCover;
+    setLocalPreview(null);
     onChange(undefined);
     if (previousCover && isStoragePhotoUrl(previousCover)) {
       void deleteStoredPhoto(previousCover);
     }
   };
-
-  const preview = coverPhoto || DEFAULT_PROFILE_COVER;
-  const hasCustomCover = Boolean(coverPhoto);
 
   return (
     <div className="cover-photo-upload">

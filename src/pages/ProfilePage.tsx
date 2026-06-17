@@ -40,6 +40,7 @@ import { notifyVerificationApproved } from "../utils/notifyHelpers";
 import { StateCitySelect } from "../components/StateCitySelect";
 import { MAX_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { isAdultDob } from "../utils/ageFromDob";
+import { safeCoverPhoto } from "../utils/safeProfile";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { ProfilePromptsEditor, ProfilePromptsDisplay } from "../components/profile/ProfilePromptsEditor";
@@ -424,10 +425,11 @@ export function ProfilePage({
               profilePhotos={profile.photos}
               onChange={(coverPhoto) => {
                 setProfile((p) => {
+                  const persistable = safeCoverPhoto(coverPhoto);
                   const next = normalizeDatingProfile({
                     ...p,
-                    coverPhoto,
-                    coverPhotoExplicit: Boolean(coverPhoto)
+                    coverPhoto: persistable,
+                    coverPhotoExplicit: Boolean(persistable)
                   });
                   if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
                     showModMessage(PHOTO_UPLOAD_FAIL);

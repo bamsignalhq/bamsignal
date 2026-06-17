@@ -7,6 +7,7 @@ import { stateForCity } from "../constants/profileOptions";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
+import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safePhotos, safeString } from "./safeProfile";
 
 export const defaultDatingProfile = (): DatingProfile => ({
   photos: [],
@@ -95,13 +96,18 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
       ? (raw.lookingFor as DatingProfile["lookingFor"])
       : base.lookingFor;
   const onboardingComplete = Boolean(raw.onboardingComplete);
-  const coverFromRaw =
-    !onboardingComplete || !raw.coverPhotoExplicit
-      ? undefined
-      : raw.coverPhoto &&
-          raw.photos?.some((p) => samePhotoRef(p, raw.coverPhoto))
-        ? undefined
-        : raw.coverPhoto;
+  const photosList = safePhotos(raw.photos ?? base.photos);
+  const persistableCover = safeCoverPhoto(raw.coverPhoto);
+
+  let coverPhoto: string | undefined;
+  let coverPhotoExplicit = false;
+  if (onboardingComplete && persistableCover && raw.coverPhotoExplicit !== false) {
+    if (!photosList.some((photo) => samePhotoRef(photo, persistableCover))) {
+      coverPhoto = persistableCover;
+      coverPhotoExplicit = raw.coverPhotoExplicit ?? true;
+    }
+  }
+
   return {
     ...base,
     ...raw,
@@ -112,16 +118,18 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     gender: gender as DatingProfile["gender"],
     lookingFor: lookingFor as DatingProfile["lookingFor"],
     intents: normalizeIntents(raw.intents as string[] | undefined),
-    interests: raw.interests ?? base.interests,
-    coverPhoto: coverFromRaw,
-    coverPhotoExplicit: onboardingComplete ? raw.coverPhotoExplicit : false,
-    photos: sanitizeProfilePhotos(raw.photos ?? base.photos, coverFromRaw),
-    verificationSelfie: raw.verificationSelfie,
+    interests: safeArray<string>(raw.interests).map((item) => safeString(item)).filter(Boolean),
+    coverPhoto,
+    coverPhotoExplicit: onboardingComplete ? coverPhotoExplicit : false,
+    photos: sanitizeProfilePhotos(photosList, coverPhoto),
+    verificationSelfie: isPersistablePhotoUrl(raw.verificationSelfie)
+      ? raw.verificationSelfie
+      : undefined,
     verificationStatus: raw.verificationStatus ?? "none",
     visibility: { ...base.visibility!, ...raw.visibility },
     matchingPrivacy: { ...base.matchingPrivacy!, ...raw.matchingPrivacy },
     safetySettings: { ...defaultSafetySettings(raw.gender ?? base.gender), ...raw.safetySettings },
-    profilePrompts: raw.profilePrompts ?? [],
+    profilePrompts: safeArray(raw.profilePrompts),
     createdAt: raw.createdAt ?? base.createdAt ?? new Date().toISOString()
   };
 }

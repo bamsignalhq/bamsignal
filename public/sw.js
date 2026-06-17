@@ -1,4 +1,4 @@
-const CACHE_NAME = "bamsignal-static-v5";
+const CACHE_NAME = "bamsignal-static-v6";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -29,6 +29,12 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 function networkFirst(request) {
   return fetch(request)
     .then((response) => {
@@ -55,9 +61,9 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin !== self.location.origin) return;
 
-  // Hashed JS/CSS must always prefer network — stale bundles cause blank screens.
+  // Hashed bundles must never be served from a stale cache — mismatched chunks blank the app.
   if (url.pathname.startsWith("/assets/")) {
-    event.respondWith(networkFirst(request));
+    event.respondWith(fetch(request));
     return;
   }
 

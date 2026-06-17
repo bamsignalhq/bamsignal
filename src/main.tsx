@@ -23,16 +23,10 @@ import "./styles/member-pages.css";
 import "./styles/moment-pages.css";
 import "./styles/theme-contrast.css";
 
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker
-      .register("/sw.js")
-      .then((registration) => {
-        registration.update().catch(() => undefined);
-      })
-      .catch(() => undefined);
-  });
-}
+import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";
+
+checkBuildVersion();
+registerServiceWorker();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

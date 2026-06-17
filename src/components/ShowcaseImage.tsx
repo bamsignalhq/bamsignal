@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BRAND_ASSETS } from "../constants/brand";
 
 type ShowcaseImageProps = {
@@ -10,6 +10,7 @@ type ShowcaseImageProps = {
   width?: number;
   height?: number;
   objectPosition?: string;
+  fallbackSrc?: string;
 };
 
 export function ShowcaseImage({
@@ -20,10 +21,17 @@ export function ShowcaseImage({
   fetchPriority,
   width,
   height,
-  objectPosition
+  objectPosition,
+  fallbackSrc
 }: ShowcaseImageProps) {
+  const [activeSrc, setActiveSrc] = useState(src);
   const [failed, setFailed] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+
+  useEffect(() => {
+    setActiveSrc(src);
+    setFailed(false);
+  }, [src]);
 
   if (failed) {
     return (
@@ -34,6 +42,7 @@ export function ShowcaseImage({
           className="link-btn showcase-fallback__retry"
           onClick={() => {
             setFailed(false);
+            setActiveSrc(src);
             setRetryKey((k) => k + 1);
           }}
         >
@@ -46,7 +55,7 @@ export function ShowcaseImage({
   return (
     <img
       key={retryKey}
-      src={src}
+      src={activeSrc}
       alt={alt}
       className={className}
       loading={loading}
@@ -55,7 +64,13 @@ export function ShowcaseImage({
       width={width}
       height={height}
       style={objectPosition ? { objectPosition } : undefined}
-      onError={() => setFailed(true)}
+      onError={() => {
+        if (fallbackSrc && activeSrc !== fallbackSrc) {
+          setActiveSrc(fallbackSrc);
+          return;
+        }
+        setFailed(true);
+      }}
     />
   );
 }

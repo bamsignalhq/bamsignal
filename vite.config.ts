@@ -1,8 +1,14 @@
+import crypto from "node:crypto";
 import dotenv from "dotenv";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
 dotenv.config();
+
+const appBuildId =
+  process.env.VITE_APP_BUILD_ID ||
+  process.env.GITHUB_SHA?.slice(0, 8) ||
+  crypto.createHash("sha256").update(String(Date.now())).digest("hex").slice(0, 10);
 
 function contactApiDevPlugin(): Plugin {
   return {
@@ -125,6 +131,9 @@ function contactApiDevPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), contactApiDevPlugin()],
+  define: {
+    __APP_BUILD_ID__: JSON.stringify(appBuildId)
+  },
   build: {
     rollupOptions: {
       output: {

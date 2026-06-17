@@ -13,6 +13,7 @@ import { blobToDataUrl, PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/ph
 import { logPhotoUpload } from "../utils/photoUploadLog";
 import { flowLog } from "../utils/flowLog";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
+import { safePhotos } from "../utils/safeProfile";
 
 type PhotoUploadGridProps = {
   photos: string[];
@@ -33,9 +34,21 @@ export function PhotoUploadGrid({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewSlot, setPreviewSlot] = useState<number | null>(null);
+
+  const persistedPhotos = safePhotos(photos);
+  const displayPhotos = [...persistedPhotos];
+  if (previewUrl && previewSlot !== null) {
+    if (previewSlot < displayPhotos.length) {
+      displayPhotos[previewSlot] = previewUrl;
+    } else {
+      displayPhotos.push(previewUrl);
+    }
+  }
 
   const openPicker = (slotIndex: number) => {
-    if (uploading || photos.length >= MAX_PROFILE_PHOTOS) return;
+    if (uploading || persistedPhotos.length >= MAX_PROFILE_PHOTOS) return;
     setActiveSlot(slotIndex);
     window.setTimeout(() => fileRef.current?.click(), 0);
   };
@@ -48,12 +61,13 @@ export function PhotoUploadGrid({
   const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file || photos.length >= MAX_PROFILE_PHOTOS) return;
+    if (!file || persistedPhotos.length >= MAX_PROFILE_PHOTOS) return;
 
     setUploading(true);
     flowLog("photo_upload_start", { signupMode });
-    const prior = photos;
-    let previewUrl: string | null = null;
+    const prior = persistedPhotos;
+    let tempPreviewUrl: string | null = null;
+    const slotIndex = activeSlot ?? prior.length;
 
     try {
       logPhotoUpload("pick", {
@@ -86,12 +100,16 @@ export function PhotoUploadGrid({
         return;
       }
 
-      previewUrl = URL.createObjectURL(compressed.blob);
-      const withPreview = [...prior, previewUrl].slice(0, MAX_PROFILE_PHOTOS);
-      onChange(withPreview);
+      tempPreviewUrl = URL.createObjectURL(compressed.blob);
+      setPreviewUrl(tempPreviewUrl);
+      setPreviewSlot(slotIndex);
 
       const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
-      onChange(withPreview.map((photo) => (photo === previewUrl ? remoteUrl : photo)));
+      const withRemote =
+        slotIndex < prior.length
+          ? prior.map((photo, index) => (index === slotIndex ? remoteUrl : photo))
+          : [...prior, remoteUrl];
+      onChange(withRemote.slice(0, MAX_PROFILE_PHOTOS));
       logPhotoUpload("upload_ok", { signupMode });
       flowLog("photo_upload_ok", { signupMode });
     } catch (error) {
@@ -101,25 +119,27 @@ export function PhotoUploadGrid({
       flowLog("photo_upload_failed", { code: mapped.code });
       onModerationMessage?.(mapped.message || PHOTO_UPLOAD_FAIL);
     } finally {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (tempPreviewUrl) URL.revokeObjectURL(tempPreviewUrl);
+      setPreviewUrl(null);
+      setPreviewSlot(null);
       setUploading(false);
       setActiveSlot(null);
     }
   };
 
   const remove = (index: number) => {
-    const url = photos[index];
-    const next = photos.filter((_, i) => i !== index);
+    const url = persistedPhotos[index];
+    const next = persistedPhotos.filter((_, i) => i !== index);
     onChange(next);
     if (isStoragePhotoUrl(url)) {
       void deleteStoredPhoto(url);
     }
   };
 
-  const slots = Array.from({ length: MAX_PROFILE_PHOTOS }, (_, i) => photos[i] ?? null);
-  const canAdd = photos.length < MAX_PROFILE_PHOTOS;
-  const visibleSlots = Math.max(photos.length + (canAdd ? 1 : 0), MIN_PROFILE_PHOTOS);
-  const photoCount = photos.filter(Boolean).length;
+  const slots = Array.from({ length: MAX_PROFILE_PHOTOS }, (_, i) => displayPhotos[i] ?? null);
+  const canAdd = displayPhotos.length < MAX_PROFILE_PHOTOS;
+  const visibleSlots = Math.max(displayPhotos.length + (canAdd ? 1 : 0), MIN_PROFILE_PHOTOS);
+  const photoCount = displayPhotos.filter(Boolean).length;
   const belowMin = photoCount < MIN_PROFILE_PHOTOS;
   const aboveMax = photoCount > MAX_PROFILE_PHOTOS;
 

@@ -1,3 +1,4 @@
+import { DEFAULT_PROFILE_COVER } from "../../constants/photos";
 import { isSampleHomeProfile } from "../../utils/homeFeedSamples";
 import { MapPin, Send } from "lucide-react";
 import type { DiscoverProfile } from "../../types";
@@ -28,8 +29,9 @@ export function DiscoverFeedCard({
       <button type="button" className="discover-feed-card__open" onClick={onOpen} aria-label={`View ${profile.name}`}>
         <div className="discover-feed-card__media">
           <ShowcaseImage
-            src={profile.photo}
+            src={profile.photo || DEFAULT_PROFILE_COVER}
             alt=""
+            fallbackSrc={DEFAULT_PROFILE_COVER}
             className="discover-feed-card__photo"
             loading="lazy"
           />

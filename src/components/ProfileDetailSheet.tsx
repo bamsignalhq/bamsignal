@@ -10,6 +10,8 @@ import { VoiceIntro } from "./VoiceIntro";
 import { WhyThisProfile } from "./WhyThisProfile";
 import { ProfileDetailsList } from "./profile/ProfileDetailsList";
 import { hasFilledProfileDetails } from "../utils/profileDetails";
+import { DEFAULT_PROFILE_COVER } from "../constants/photos";
+import { safePhotos } from "../utils/safeProfile";
 import { likeProfile, followProfile, hasLikedProfile, hasFollowedProfile } from "../utils/profileSocial";
 import { likeProfileRemote, followProfileRemote } from "../services/memberData";
 import type { UserProfile } from "../types";
@@ -54,8 +56,8 @@ export function ProfileDetailSheet({
   const [followed, setFollowed] = useState(() => hasFollowedProfile(profile.id));
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const gallery = (profile.photos?.length ? profile.photos : [profile.photo]).filter(Boolean);
-  const heroPhoto = gallery[photoIndex] ?? profile.photo;
+  const gallery = safePhotos(profile.photos?.length ? profile.photos : [profile.photo]);
+  const heroPhoto = gallery[photoIndex] ?? gallery[0] ?? DEFAULT_PROFILE_COVER;
 
   const goPhoto = (dir: -1 | 1) => {
     if (gallery.length <= 1) return;
@@ -116,7 +118,12 @@ export function ProfileDetailSheet({
       <button type="button" className="profile-detail-sheet__backdrop" onClick={onClose} aria-label="Close profile" />
       <article className="profile-detail-sheet__panel profile-detail-sheet__panel--actions">
         <header className="profile-detail-sheet__hero">
-          <ShowcaseImage src={heroPhoto} alt={profile.name} className="profile-detail-sheet__img--face" />
+          <ShowcaseImage
+            src={heroPhoto}
+            alt={profile.name}
+            fallbackSrc={DEFAULT_PROFILE_COVER}
+            className="profile-detail-sheet__img--face"
+          />
           {gallery.length > 1 && (
             <>
               <button type="button" className="profile-detail-sheet__nav profile-detail-sheet__nav--prev" onClick={() => goPhoto(-1)} aria-label="Previous photo" />

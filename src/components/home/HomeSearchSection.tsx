@@ -11,6 +11,7 @@ import {
   FILTER_RELIGIONS,
   NIGERIAN_STATES
 } from "../../constants/profileOptions";
+import { DEFAULT_PROFILE_COVER } from "../../constants/photos";
 import { StateCitySelect } from "../StateCitySelect";
 import { ShowcaseImage } from "../ShowcaseImage";
 import { VerificationBadge } from "../VerificationBadge";
@@ -410,7 +411,13 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
                   onClick={() => onOpenDiscover?.(profile.id)}
                   aria-label={`View ${profile.name}'s profile`}
                 >
-                  <ShowcaseImage src={profile.photo} alt="" className="home-search-card__photo" loading="lazy" />
+                  <ShowcaseImage
+                    src={profile.photo || DEFAULT_PROFILE_COVER}
+                    alt=""
+                    fallbackSrc={DEFAULT_PROFILE_COVER}
+                    className="home-search-card__photo"
+                    loading="lazy"
+                  />
                 </button>
                 <div className="home-search-card__body">
                   <h3>

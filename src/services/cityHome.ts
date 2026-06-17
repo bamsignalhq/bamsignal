@@ -3,6 +3,7 @@ import { apiUrl } from "./supabase";
 import { readResponseJson } from "../utils/httpJson";
 import { appendAdminConsentHeader } from "../utils/adminConsent";
 import { shouldHideFromDiscovery } from "../utils/safety";
+import { normalizeDatingProfile } from "../utils/profile";
 import { supabase } from "./supabase";
 
 export type CityHomeProfile = {
@@ -152,7 +153,7 @@ export async function syncMemberProfileRemote(
         username: user.username,
         city: profile.city,
         state: profile.state,
-        profile,
+        profile: normalizeDatingProfile(profile),
         onboardingComplete: profile.onboardingComplete,
         discoverable: !shouldHideFromDiscovery(profile) && !paused
       })

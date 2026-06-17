@@ -5,6 +5,7 @@ import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { ShowcaseImage } from "./ShowcaseImage";
 import type { DatingProfile, UserProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
+import { hasExplicitCover, resolveCoverPhoto, safePhotos } from "../utils/safeProfile";
 
 type ProfileCoverHeaderProps = {
   user: UserProfile;
@@ -20,10 +21,11 @@ function formatLocation(profile: DatingProfile): string {
 }
 
 export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHeaderProps) {
-  const photos = profile.photos.filter(Boolean);
+  const photos = safePhotos(profile.photos);
   const [index, setIndex] = useState(0);
   const avatar = photos[index] ?? photos[0] ?? null;
-  const cover = profile.coverPhotoExplicit && profile.coverPhoto ? profile.coverPhoto : DEFAULT_PROFILE_COVER;
+  const cover = resolveCoverPhoto(profile);
+  const customCover = hasExplicitCover(profile);
 
   const shift = (dir: -1 | 1) => {
     if (photos.length <= 1) return;
@@ -32,16 +34,18 @@ export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHea
 
   return (
     <header className="profile-hero">
-      <div className="profile-hero__cover" aria-hidden={!avatar && !(profile.coverPhotoExplicit && profile.coverPhoto)}>
+      <div className="profile-hero__cover" aria-hidden={!avatar && !customCover}>
         <ShowcaseImage
           src={cover}
           alt=""
-          className={`profile-hero__cover-blur profile-hero__cover-img${profile.coverPhotoExplicit && profile.coverPhoto ? "" : " profile-hero__cover-img--default"}`}
+          fallbackSrc={DEFAULT_PROFILE_COVER}
+          className={`profile-hero__cover-blur profile-hero__cover-img${customCover ? "" : " profile-hero__cover-img--default"}`}
         />
         <ShowcaseImage
           src={cover}
           alt=""
-          className={`profile-hero__cover-img${profile.coverPhotoExplicit && profile.coverPhoto ? "" : " profile-hero__cover-img--default"}`}
+          fallbackSrc={DEFAULT_PROFILE_COVER}
+          className={`profile-hero__cover-img${customCover ? "" : " profile-hero__cover-img--default"}`}
         />
         {photos.length > 1 && (
           <>
@@ -87,13 +91,19 @@ export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHea
         <div className="profile-hero__thumbs">
           {photos.map((src, i) => (
             <button
-              key={`${src.slice(0, 16)}-${i}`}
+              key={`${src}-${i}`}
               type="button"
               className={i === index ? "active" : ""}
               onClick={() => setIndex(i)}
               aria-label={`Photo ${i + 1}`}
             >
-              <img src={src} alt="" />
+              <img
+                src={src}
+                alt=""
+                onError={(event) => {
+                  event.currentTarget.style.visibility = "hidden";
+                }}
+              />
             </button>
           ))}
         </div>

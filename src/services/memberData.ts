@@ -8,6 +8,7 @@ import { apiUrl } from "./supabase";
 import { normalizeDatingProfile } from "../utils/profile";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import { readResponseJson } from "../utils/httpJson";
+import { safeCoverPhoto, safePhotos } from "../utils/safeProfile";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
 
@@ -135,16 +136,29 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
   if (bundle.datingProfile && typeof bundle.datingProfile === "object") {
     const local = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
     const remote = bundle.datingProfile as Record<string, unknown>;
-    const remotePhotos = Array.isArray(remote.photos) ? (remote.photos as string[]) : [];
-    const localPhotos = local.photos || [];
+    const remotePhotos = safePhotos(remote.photos);
+    const localPhotos = safePhotos(local.photos);
     const mergedPhotos = remotePhotos.length >= localPhotos.length ? remotePhotos : localPhotos;
+    const remoteCover = safeCoverPhoto(remote.coverPhoto);
+    const localCover = safeCoverPhoto(local.coverPhoto);
+    const coverPhoto = remoteCover || localCover;
+    const coverPhotoExplicit = Boolean(
+      (remote.coverPhotoExplicit ?? local.coverPhotoExplicit) && coverPhoto
+    );
     const merged = normalizeDatingProfile({
       ...local,
       ...remote,
-      photos: mergedPhotos.length ? mergedPhotos : localPhotos
+      photos: mergedPhotos.length ? mergedPhotos : localPhotos,
+      coverPhoto,
+      coverPhotoExplicit
     });
     writeJson(STORAGE_KEYS.datingProfile, merged);
   }
+
+  writeJson(
+    STORAGE_KEYS.datingProfile,
+    normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
+  );
 
   if (Array.isArray(bundle.incomingLikes) || Array.isArray(bundle.incomingFollows)) {
     mergeIncomingSocial({

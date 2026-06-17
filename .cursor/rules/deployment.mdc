@@ -12,8 +12,9 @@ alwaysApply: true
 ## How to deploy
 
 1. Commit and push to `main` on `github.com/bamsignalhq/bamsignal`.
-2. Coolify rebuilds from the repo `Dockerfile` (`npm run build` → `node server/production.js`).
-3. Confirm deploy status in Coolify at control.bamsignal.com (manual redeploy if webhook did not fire).
+2. Before pushing, run the server import smoke test: `npm run test:server-import` (also enforced by the `.githooks/pre-push` hook after `npm install`).
+3. Coolify rebuilds from the repo `Dockerfile` (`npm run build` → server import smoke test → `node server/production.js`).
+4. Confirm deploy status in Coolify at control.bamsignal.com (manual redeploy if webhook did not fire).
 
 ## Build args / env
 

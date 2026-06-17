@@ -47,6 +47,8 @@ COPY server ./server
 COPY api ./api
 COPY public ./public
 COPY shared ./shared
+COPY scripts/smoke-server-import.mjs ./scripts/smoke-server-import.mjs
+RUN node scripts/smoke-server-import.mjs
 
 EXPOSE 3000
 

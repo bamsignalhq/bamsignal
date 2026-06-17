@@ -18,6 +18,8 @@
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "test:photo-verification": "node scripts/test-photo-verification.mjs",
     "test:photo-safety": "node scripts/test-photo-safety.mjs",
+    "test:server-import": "node scripts/smoke-server-import.mjs",
+    "prepare": "node scripts/install-githooks.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "start": "node server/production.js",
     "server": "node server/index.js",

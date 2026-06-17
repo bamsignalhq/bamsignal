@@ -7,6 +7,7 @@ import {
   upsertAppUserIdentity
 } from "./db.js";
 import { discoverVisibilitySql, ensureMemberTrustSchema } from "./memberTrust.js";
+import { publicPhotosFromProfile } from "./services/photoReview.js";
 
 export async function ensureSocialSchema() {
   if (!isDatabaseReady()) return;
@@ -85,7 +86,7 @@ export async function ensureUserReferralCode({ email, phone }) {
 export function rowToDiscoverProfile(row) {
   if (!row) return null;
   const profile = row.profile || {};
-  const photos = Array.isArray(profile.photos) ? profile.photos : [];
+  const photos = publicPhotosFromProfile(profile);
   return {
     id: row.id,
     name: row.name || profile.name || "Member",

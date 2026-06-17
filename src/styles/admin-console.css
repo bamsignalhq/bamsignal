@@ -836,3 +836,17 @@ html.admin-mode .bottom-nav {
   }
 }
 
+.admin-console .admin-photo-review-row__thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.admin-console .admin-photo-review-row .admin-moderation-row__main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+

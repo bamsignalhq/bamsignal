@@ -63,3 +63,38 @@ export async function fetchContactLeakAttempts(limit = 50) {
   if (!result.ok) return { ok: false as const, attempts: [] as ContactLeakAttempt[], error: result.error };
   return { ok: true as const, attempts: result.data.attempts || [], count: result.data.count };
 }
+
+export type PhotoReviewItem = {
+  id: string;
+  profileId?: string | null;
+  userKey?: string | null;
+  memberName: string;
+  photoUrl: string;
+  photoType: "profile" | "cover";
+  photoReviewStatus: "approved" | "pending_review" | "rejected";
+  photoRiskFlags: string[];
+  rejectReason?: string | null;
+  uploadedAt: string;
+};
+
+export async function fetchPhotoReviews(limit = 50) {
+  const result = await adminPostJson<{ reviews?: PhotoReviewItem[]; count?: number }>(
+    "/api/admin/moderation?action=list-photo-reviews",
+    { status: "pending_review", limit }
+  );
+  if (!result.ok) return { ok: false as const, reviews: [] as PhotoReviewItem[], error: result.error };
+  return { ok: true as const, reviews: result.data.reviews || [], count: result.data.count };
+}
+
+export async function approvePhotoReviewAdmin(reviewId: string) {
+  return adminPostJson<{ ok?: boolean; error?: string }>("/api/admin/moderation?action=approve-photo-review", {
+    reviewId
+  });
+}
+
+export async function rejectPhotoReviewAdmin(reviewId: string, reason: string) {
+  return adminPostJson<{ ok?: boolean; error?: string }>("/api/admin/moderation?action=reject-photo-review", {
+    reviewId,
+    reason
+  });
+}

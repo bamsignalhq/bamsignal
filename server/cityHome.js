@@ -3,6 +3,7 @@ import {
   normalizeUserKey,
   query
 } from "./db.js";
+import { publicPhotosFromProfile } from "./services/photoReview.js";
 
 /** Lower rank = shown first on city home */
 export const PLACEMENT_RANK = {
@@ -104,7 +105,7 @@ export async function ensureCityHomeTables() {
 
 function profilePayload(row) {
   const profile = row.profile || {};
-  const photos = Array.isArray(profile.photos) ? profile.photos : [];
+  const photos = publicPhotosFromProfile(profile);
   const bio = String(profile.bio || "");
   const interests = Array.isArray(profile.interests) ? profile.interests : [];
   const intents = Array.isArray(profile.intents) ? profile.intents : [];

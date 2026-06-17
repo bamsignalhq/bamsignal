@@ -2,14 +2,12 @@ import {
   containsDocumentKeywords,
   scanPhotoSafetyText
 } from "../../shared/photoSafetyPatterns.mjs";
-import {
-  containsBusinessFlyerText,
-  PHOTO_RISK_REJECT_THRESHOLD
-} from "../../shared/photoQualityScore.mjs";
+import { assessCoverPhoto, assessProfilePhoto } from "../../shared/photoQualityScore.mjs";
 import type { PhotoModerationMode } from "../config/imageModeration";
+import type { PhotoUploadKind } from "../constants/photoUploadKinds";
+import type { PhotoReviewStatus, PhotoRiskFlag } from "../types";
 import { containsContactInText } from "./contactGuard";
 import { trackPhotoRejection } from "./photoRejectionMetrics";
-import type { PhotoUploadKind } from "../constants/photoUploadKinds";
 import { logPhotoUpload } from "./photoUploadLog";
 
 export type PhotoRejectionCategory =
@@ -23,10 +21,12 @@ export type PhotoRejectionCategory =
 
 export type PhotoSafetyScanResult = {
   allowed: boolean;
+  hardBlock?: boolean;
   category?: PhotoRejectionCategory;
   internalReason?: string;
   riskScore: number;
-  warnOnly?: boolean;
+  photoReviewStatus?: PhotoReviewStatus;
+  photoRiskFlags?: PhotoRiskFlag[];
 };
 
 function mapSharedCategory(category: string): PhotoRejectionCategory {
@@ -36,17 +36,23 @@ function mapSharedCategory(category: string): PhotoRejectionCategory {
   return category as PhotoRejectionCategory;
 }
 
-function reject(
+function hardReject(
   category: PhotoRejectionCategory,
   internalReason: string,
   riskScore: number,
   kind: PhotoUploadKind
 ): PhotoSafetyScanResult {
   trackPhotoRejection(category, kind);
-  return { allowed: false, category, internalReason, riskScore };
+  return {
+    allowed: false,
+    hardBlock: true,
+    category,
+    internalReason,
+    riskScore
+  };
 }
 
-/** Instant filename / metadata checks — safe to run on every upload. */
+/** High-confidence filename / metadata checks before upload. */
 export function scanPhotoSafetyFast(
   file: File,
   kind: PhotoUploadKind
@@ -57,31 +63,47 @@ export function scanPhotoSafetyFast(
   const combinedText = filename;
 
   if (containsContactInText(combinedText)) {
-    return reject("contact_info", "filename_contact", PHOTO_RISK_REJECT_THRESHOLD, kind);
+    return hardReject("contact_info", "filename_contact", 100, kind);
   }
 
   const textScan = scanPhotoSafetyText(combinedText, { allowDocuments });
   if (textScan.blocked && textScan.category) {
-    return reject(
+    return hardReject(
       mapSharedCategory(textScan.category),
       `filename:${textScan.category}`,
-      PHOTO_RISK_REJECT_THRESHOLD,
+      100,
       kind
     );
   }
 
   if (!allowDocuments && containsDocumentKeywords(filename)) {
-    return reject("document", "filename_document", PHOTO_RISK_REJECT_THRESHOLD, kind);
+    return hardReject("document", "filename_document", 100, kind);
   }
 
-  if (kind === "cover" && containsBusinessFlyerText(filename)) {
-    return reject("logo", "filename_flyer", PHOTO_RISK_REJECT_THRESHOLD, kind);
-  }
-
-  return { allowed: true, riskScore: 0 };
+  return { allowed: true, riskScore: 0, photoReviewStatus: "approved", photoRiskFlags: [] };
 }
 
-/** Full vision pipeline — disabled in warn mode; never used for hard blocks until proven stable. */
+async function detectQrCode(file: File): Promise<boolean> {
+  try {
+    const jsQR = (await import("jsqr")).default;
+    const { bitmapToCanvas, loadImageBitmap } = await import("./photoImageBitmap");
+    const bitmap = await loadImageBitmap(file);
+    try {
+      const canvas = bitmapToCanvas(bitmap, 640);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return false;
+      const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const result = jsQR(new Uint8ClampedArray(data), width, height);
+      return Boolean(result);
+    } finally {
+      bitmap.close?.();
+    }
+  } catch {
+    return false;
+  }
+}
+
+/** Vision pipeline — flags suspicious content; never hard-blocks except contact/doc in scanned text. */
 export async function scanPhotoSafetyDeep(
   file: File,
   kind: PhotoUploadKind
@@ -95,13 +117,14 @@ export async function scanPhotoSafetyDeep(
 
   const isCover = kind === "cover";
   const isPublicProfile = kind === "profile" || kind === "signup";
+  const isVerificationSelfie = kind === "selfie";
 
-  const faceAnalysis = isCover
+  const faceAnalysis = isCover || isVerificationSelfie
     ? {
         faceCount: 0,
         largestFaceAreaRatio: 0,
         totalFaceAreaRatio: 0,
-        hasAdequateFace: false,
+        hasAdequateFace: isVerificationSelfie,
         detected: false
       }
     : await analyzeFaces(file).catch(() => ({
@@ -113,7 +136,6 @@ export async function scanPhotoSafetyDeep(
       }));
 
   let density = 0;
-  let hasQr = false;
   let ocrText = "";
 
   try {
@@ -143,6 +165,8 @@ export async function scanPhotoSafetyDeep(
     density = 0;
   }
 
+  const hasQr = await detectQrCode(file);
+
   const visual = await analyzeVisualHeuristics(file, faceAnalysis, density).catch(() => ({
     logoLikelihood: 0,
     landscapeLikelihood: 0,
@@ -150,53 +174,83 @@ export async function scanPhotoSafetyDeep(
   }));
 
   const filename = file.name || "";
-  const hasFlyerText = containsBusinessFlyerText([filename, ocrText].join("\n"));
-  const logoLikelihood = Math.max(visual.logoLikelihood, hasFlyerText ? 0.7 : 0);
+  const combinedText = [filename, ocrText].filter(Boolean).join("\n");
+  const textScan = scanPhotoSafetyText(combinedText, { allowDocuments: isVerificationSelfie });
+  const hasContactLeak = Boolean(textScan.blocked && textScan.category === "contact_information");
+  const hasDocumentKeywords =
+    !isVerificationSelfie &&
+    (Boolean(textScan.blocked && textScan.category === "document_detected") ||
+      containsDocumentKeywords(combinedText));
 
-  let riskScore = 0;
-  if (!faceAnalysis.hasAdequateFace && isPublicProfile) riskScore += 50;
-  if (logoLikelihood >= 0.62) riskScore += 40;
-  if (density >= 0.13) riskScore += 20;
-  if (hasQr) riskScore += 20;
+  const assessment = isCover
+    ? assessCoverPhoto({
+        textDensity: density,
+        hasQr,
+        hasDocumentKeywords,
+        hasContactLeak,
+        hasFlyerText: false
+      })
+    : assessProfilePhoto({
+        hasAdequateFace: faceAnalysis.hasAdequateFace,
+        logoLikelihood: visual.logoLikelihood,
+        textDensity: density,
+        hasQr,
+        hasDocumentKeywords,
+        hasContactLeak,
+        ocrText
+      });
+
+  if (assessment.hardBlock) {
+    return hardReject(
+      mapSharedCategory(assessment.hardBlockCategory || "other"),
+      `deep_scan:${assessment.hardBlockCategory}`,
+      assessment.riskScore,
+      kind
+    );
+  }
+
+  const photoReviewStatus: PhotoReviewStatus = assessment.pendingReview ? "pending_review" : "approved";
 
   return {
     allowed: true,
-    riskScore,
-    warnOnly: true,
-    category: riskScore >= 60 ? "other" : undefined,
-    internalReason: `deep_scan:${riskScore}`
+    riskScore: assessment.riskScore,
+    photoReviewStatus,
+    photoRiskFlags: assessment.riskFlags as PhotoRiskFlag[]
   };
 }
 
+/** Pre-upload: hard-block only high-confidence filename contact/doc leaks. */
 export async function scanPhotoSafety(
   file: File,
   kind: PhotoUploadKind,
-  mode: PhotoModerationMode = "warn"
+  _mode: PhotoModerationMode = "warn"
 ): Promise<PhotoSafetyScanResult> {
-  if (mode === "warn") {
-    const fast = scanPhotoSafetyFast(file, kind);
-    logPhotoUpload("moderation_warn", {
-      kind,
-      riskScore: fast.riskScore,
-      wouldBlock: !fast.allowed,
-      category: fast.category || null
-    });
-    return { allowed: true, riskScore: fast.riskScore, warnOnly: true };
-  }
-
-  return scanPhotoSafetyFast(file, kind);
+  const fast = scanPhotoSafetyFast(file, kind);
+  logPhotoUpload("moderation_fast", {
+    kind,
+    allowed: fast.allowed,
+    category: fast.category || null,
+    riskScore: fast.riskScore
+  });
+  return fast;
 }
 
-/** Fire-and-forget deep risk logging after a successful upload. */
-export function logPhotoSafetyRiskAsync(file: File, kind: PhotoUploadKind): void {
+/** Post-upload risk assessment — upload-first; flags for admin review. */
+export function logPhotoSafetyRiskAsync(
+  file: File,
+  kind: PhotoUploadKind,
+  onResult?: (result: PhotoSafetyScanResult) => void
+): void {
   void scanPhotoSafetyDeep(file, kind)
     .then((result) => {
       logPhotoUpload("moderation_risk", {
         kind,
         riskScore: result.riskScore,
-        category: result.category || null,
-        reason: result.internalReason || null
+        photoReviewStatus: result.photoReviewStatus || null,
+        flags: result.photoRiskFlags || [],
+        hardBlock: Boolean(result.hardBlock)
       });
+      onResult?.(result);
     })
     .catch((error) => {
       logPhotoUpload("moderation_risk_failed", {

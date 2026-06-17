@@ -39,7 +39,15 @@ import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/rout
 import { DEMO_USER } from "../constants/demoAccounts";
 import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
 import { AdminShadowBannedSection } from "../components/admin/AdminShadowBannedSection";
-import { fetchContactLeakAttempts, shadowBanAdmin, type ContactLeakAttempt } from "../services/adminModeration";
+import {
+  approvePhotoReviewAdmin,
+  fetchContactLeakAttempts,
+  fetchPhotoReviews,
+  rejectPhotoReviewAdmin,
+  shadowBanAdmin,
+  type ContactLeakAttempt,
+  type PhotoReviewItem
+} from "../services/adminModeration";
 import { fetchContactExchangeMetricsAdmin, fetchAuditTrailAdmin, fetchSpamSuspectsAdmin } from "../services/subscriptionCatalog";
 import { CONTACT_LEAK_BLOCK_MESSAGE, validateUserText } from "../utils/contactGuard";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
@@ -60,6 +68,7 @@ import {
 } from "../constants/emailBranding";
 import { getTrustAnalyticsSummary } from "../utils/trustAnalytics";
 import { getPhotoRejectionMetrics, totalPhotoRejectionsToday } from "../utils/photoRejectionMetrics";
+import { riskFlagLabel } from "../utils/photoMeta";
 import { fetchEmailBranding, saveEmailBrandingAdmin } from "../services/emailBranding";
 import {
   purgeAdminMember,
@@ -129,6 +138,10 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [purgeMessage, setPurgeMessage] = useState("");
   const [contactLeaks, setContactLeaks] = useState<ContactLeakAttempt[]>([]);
   const [contactLeaksLoading, setContactLeaksLoading] = useState(false);
+  const [photoReviews, setPhotoReviews] = useState<PhotoReviewItem[]>([]);
+  const [photoReviewsLoading, setPhotoReviewsLoading] = useState(false);
+  const [photoReviewBusyId, setPhotoReviewBusyId] = useState<string | null>(null);
+  const [photoRejectReason, setPhotoRejectReason] = useState("");
   const [exchangeMetrics, setExchangeMetrics] = useState<{
     totals: Record<string, number>;
     windows?: Record<string, Record<string, number>>;
@@ -204,6 +217,12 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
         if (result.ok) setContactLeaks(result.attempts);
       })
       .finally(() => setContactLeaksLoading(false));
+    setPhotoReviewsLoading(true);
+    void fetchPhotoReviews(50)
+      .then((result) => {
+        if (result.ok) setPhotoReviews(result.reviews);
+      })
+      .finally(() => setPhotoReviewsLoading(false));
     void fetchContactExchangeMetricsAdmin(50)
       .then((result) => {
         if (result?.ok && result.metrics) setExchangeMetrics(result.metrics);
@@ -404,10 +423,83 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
           </section>
 
           <section className="card admin-command-panel">
-            <h3>Photo rejections</h3>
+            <h3>Photo review</h3>
             <p className="match-prefs-note">
-              Client-side upload blocks for profile and cover photos. Reasons are logged internally only —
-              members always see a generic message.
+              Suspicious uploads flagged after storage — approve to keep public, or reject to hide from
+              discovery. Hard blocks (contact info, documents) are rejected at upload.
+            </p>
+            {photoReviewsLoading && <AdminTerminalEmpty>Loading photo review queue…</AdminTerminalEmpty>}
+            {!photoReviewsLoading && photoReviews.length === 0 && (
+              <AdminTerminalEmpty>No photos pending review.</AdminTerminalEmpty>
+            )}
+            {photoReviews.map((item) => (
+              <article key={item.id} className="card admin-moderation-row admin-photo-review-row">
+                <div className="admin-moderation-row__main">
+                  <img src={item.photoUrl} alt="" className="admin-photo-review-row__thumb" />
+                  <div>
+                    <strong>{item.memberName}</strong>
+                    <span>
+                      {item.photoType} · {item.photoRiskFlags.map((flag) => riskFlagLabel(flag as never)).join(", ") || "No flags"} ·{" "}
+                      {new Date(item.uploadedAt).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="admin-moderation-row__actions">
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Reject reason (optional)"
+                    value={photoReviewBusyId === item.id ? photoRejectReason : ""}
+                    onChange={(e) => {
+                      setPhotoReviewBusyId(item.id);
+                      setPhotoRejectReason(e.target.value);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    disabled={photoReviewBusyId === item.id && photoReviewsLoading}
+                    onClick={async () => {
+                      setPhotoReviewBusyId(item.id);
+                      const result = await approvePhotoReviewAdmin(item.id);
+                      if (!result.ok) {
+                        pushToast(result.error || "Approve failed.");
+                        return;
+                      }
+                      pushToast("Photo approved.");
+                      setPhotoReviews((rows) => rows.filter((row) => row.id !== item.id));
+                    }}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    disabled={photoReviewBusyId === item.id && photoReviewsLoading}
+                    onClick={async () => {
+                      setPhotoReviewBusyId(item.id);
+                      const result = await rejectPhotoReviewAdmin(item.id, photoRejectReason);
+                      if (!result.ok) {
+                        pushToast(result.error || "Reject failed.");
+                        return;
+                      }
+                      pushToast("Photo rejected.");
+                      setPhotoRejectReason("");
+                      setPhotoReviews((rows) => rows.filter((row) => row.id !== item.id));
+                    }}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </article>
+            ))}
+          </section>
+
+          <section className="card admin-command-panel">
+            <h3>Hard upload blocks (local)</h3>
+            <p className="match-prefs-note">
+              Client-side hard blocks for contact info and documents in filenames. Weak signals are
+              flagged for review instead.
             </p>
             <div className="admin-stats-grid admin-stats-grid--highlight">
               <div className="card admin-stat admin-stat--highlight">

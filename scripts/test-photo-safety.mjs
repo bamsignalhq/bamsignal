@@ -7,13 +7,17 @@ import {
   scanPhotoSafetyText
 } from "../shared/photoSafetyPatterns.mjs";
 import {
-  classifyCoverRisk,
-  classifyProfileRisk,
+  assessCoverPhoto,
+  assessProfilePhoto,
   containsBusinessFlyerText,
   faceAreaPassesProfileCheck,
   PHOTO_RISK_REJECT_THRESHOLD,
   shouldRejectByRiskScore
 } from "../shared/photoQualityScore.mjs";
+import {
+  filterPhotosForPublicView,
+  isPhotoCountableForSignup
+} from "../shared/photoReview.mjs";
 
 function testDocumentKeywords() {
   const mustFail = [
@@ -59,7 +63,7 @@ function testDocumentKeywords() {
 }
 
 function testPhoneDetection() {
-  const mustFail = ["07012345678", "08012345678", "08123456789", "09087654321", "+2348012345678"];
+  const mustFail = ["07012345678", "08012345678", "08123456789", "09087654321", "09123456789", "+2348012345678"];
   for (const sample of mustFail) {
     assert.equal(containsNigerianPhoneInText(sample), true, `should flag phone: ${sample}`);
     const scan = scanPhotoSafetyText(sample);
@@ -77,7 +81,9 @@ function testUrlDetection() {
     "tiktok profile",
     "name@gmail.com",
     "https://example.com",
-    "wa.me/2348012345678"
+    "www.example.com",
+    "wa.me/2348012345678",
+    "t.me/username"
   ];
   for (const sample of mustFail) {
     assert.equal(containsImageUrlLeak(sample), true, `should flag url/social: ${sample}`);
@@ -110,7 +116,7 @@ function testFaceAreaThreshold() {
 }
 
 function testProfileRiskScoring() {
-  const logoNoFace = classifyProfileRisk({
+  const logoNoFace = assessProfilePhoto({
     hasAdequateFace: false,
     logoLikelihood: 0.8,
     textDensity: 0.05,
@@ -118,11 +124,11 @@ function testProfileRiskScoring() {
     hasDocumentKeywords: false,
     hasContactLeak: false
   });
-  assert.equal(logoNoFace.reject, true);
-  assert.equal(logoNoFace.category, "no_face");
-  assert.ok(logoNoFace.riskScore >= PHOTO_RISK_REJECT_THRESHOLD);
+  assert.equal(logoNoFace.hardBlock, false);
+  assert.equal(logoNoFace.pendingReview, true);
+  assert.ok(logoNoFace.riskFlags.includes("no_face_detected"));
 
-  const selfiePass = classifyProfileRisk({
+  const selfiePass = assessProfilePhoto({
     hasAdequateFace: true,
     logoLikelihood: 0.1,
     textDensity: 0.05,
@@ -130,9 +136,10 @@ function testProfileRiskScoring() {
     hasDocumentKeywords: false,
     hasContactLeak: false
   });
-  assert.equal(selfiePass.reject, false);
+  assert.equal(selfiePass.hardBlock, false);
+  assert.equal(selfiePass.pendingReview, false);
 
-  const memeText = classifyProfileRisk({
+  const memeText = assessProfilePhoto({
     hasAdequateFace: false,
     logoLikelihood: 0.2,
     textDensity: 0.19,
@@ -140,49 +147,52 @@ function testProfileRiskScoring() {
     hasDocumentKeywords: false,
     hasContactLeak: false
   });
-  assert.equal(memeText.reject, true);
-  assert.equal(memeText.category, "text_heavy");
+  assert.equal(memeText.hardBlock, false);
+  assert.equal(memeText.pendingReview, true);
+  assert.ok(memeText.riskFlags.includes("text_heavy"));
 
-  console.log("✓ Profile risk scoring");
+  const ninHard = assessProfilePhoto({
+    hasAdequateFace: true,
+    logoLikelihood: 0.1,
+    textDensity: 0.05,
+    hasQr: false,
+    hasDocumentKeywords: true,
+    hasContactLeak: false
+  });
+  assert.equal(ninHard.hardBlock, true);
+
+  console.log("✓ Profile risk scoring (upload-first)");
 }
 
 function testCoverRiskScoring() {
-  const landscapePass = classifyCoverRisk({
+  const landscapePass = assessCoverPhoto({
     textDensity: 0.05,
     hasQr: false,
     hasDocumentKeywords: false,
     hasContactLeak: false,
     hasFlyerText: false
   });
-  assert.equal(landscapePass.reject, false);
+  assert.equal(landscapePass.hardBlock, false);
+  assert.equal(landscapePass.pendingReview, false);
 
-  const carCoverPass = classifyCoverRisk({
-    textDensity: 0.08,
-    hasQr: false,
-    hasDocumentKeywords: false,
-    hasContactLeak: false,
-    hasFlyerText: false
-  });
-  assert.equal(carCoverPass.reject, false);
-
-  const flyerFail = classifyCoverRisk({
+  const flyerFlag = assessCoverPhoto({
     textDensity: 0.1,
-    hasQr: true,
+    hasQr: false,
     hasDocumentKeywords: false,
     hasContactLeak: false,
     hasFlyerText: true
   });
-  assert.equal(flyerFail.reject, true);
+  assert.equal(flyerFlag.hardBlock, false);
+  assert.equal(flyerFlag.pendingReview, true);
 
-  const ninFail = classifyCoverRisk({
+  const ninFail = assessCoverPhoto({
     textDensity: 0.04,
     hasQr: false,
     hasDocumentKeywords: true,
     hasContactLeak: false,
     hasFlyerText: false
   });
-  assert.equal(ninFail.reject, true);
-  assert.equal(ninFail.category, "document");
+  assert.equal(ninFail.hardBlock, true);
 
   console.log("✓ Cover risk scoring (relaxed for scenery)");
 }
@@ -202,6 +212,19 @@ function testRiskThreshold() {
   console.log("✓ Risk threshold at 60");
 }
 
+function testPhotoReviewVisibility() {
+  const url = "https://example.com/photo.webp";
+  const rejectedUrl = "https://example.com/rejected.webp";
+  const photos = [url, rejectedUrl];
+  const photoMeta = {
+    [rejectedUrl]: { photoReviewStatus: "rejected", photoRiskFlags: [], type: "profile", uploadedAt: "" }
+  };
+  assert.deepEqual(filterPhotosForPublicView(photos, photoMeta), [url]);
+  assert.equal(isPhotoCountableForSignup(rejectedUrl, photoMeta), false);
+  assert.equal(isPhotoCountableForSignup(url, photoMeta), true);
+  console.log("✓ Photo review visibility rules");
+}
+
 async function main() {
   testDocumentKeywords();
   testPhoneDetection();
@@ -212,6 +235,7 @@ async function main() {
   testCoverRiskScoring();
   testBusinessFlyerKeywords();
   testRiskThreshold();
+  testPhotoReviewVisibility();
   console.log("\nAll photo safety pattern checks passed.");
 }
 

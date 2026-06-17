@@ -164,3 +164,32 @@ export function mapUploadError(error: unknown): PhotoUploadError {
   }
   return new PhotoUploadError(PHOTO_UPLOAD_FAIL, { code: "UPLOAD_FAILED" });
 }
+
+export type PhotoReviewSubmitPayload = {
+  photoUrl: string;
+  photoType: "profile" | "cover";
+  photoReviewStatus: "approved" | "pending_review" | "rejected";
+  photoRiskFlags: string[];
+  memberName?: string;
+};
+
+export async function submitPhotoReviewRemote(payload: PhotoReviewSubmitPayload): Promise<void> {
+  const headers = await authHeaders();
+  if (!headers.Authorization) return;
+
+  try {
+    const response = await fetch(apiUrl("/api/member/photos?action=submit-review"), {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok && import.meta.env.DEV) {
+      const body = await readResponseJson<{ error?: string }>(response);
+      console.warn("[bamsignal] photo review submit failed", body?.error || response.status);
+    }
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn("[bamsignal] photo review submit error", error);
+    }
+  }
+}

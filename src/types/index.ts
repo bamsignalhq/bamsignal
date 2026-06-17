@@ -117,8 +117,29 @@ export type UserProfile = {
 
 export type VerificationReviewStatus = "none" | "pending" | "approved" | "rejected";
 
+export type PhotoReviewStatus = "approved" | "pending_review" | "rejected";
+
+export type PhotoRiskFlag =
+  | "no_face_detected"
+  | "possible_ai"
+  | "possible_logo"
+  | "text_heavy"
+  | "document_like"
+  | "qr_detected"
+  | "contact_info_detected";
+
+export type PhotoReviewMeta = {
+  photoReviewStatus: PhotoReviewStatus;
+  photoRiskFlags: PhotoRiskFlag[];
+  type: "profile" | "cover";
+  uploadedAt: string;
+  rejectReason?: string;
+};
+
 export type DatingProfile = {
   photos: string[];
+  /** Per-photo moderation metadata keyed by storage URL */
+  photoMeta?: Record<string, PhotoReviewMeta>;
   /** Wide hero backdrop — separate from profile gallery photos */
   coverPhoto?: string;
   /** Set only when member explicitly adds cover in Profile (not signup). */

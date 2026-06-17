@@ -12,20 +12,27 @@ import {
   compressPhotoForPreview,
   deleteStoredPhoto,
   mapUploadError,
-  PhotoUploadError,
+  submitPhotoReviewRemote,
   uploadCompressedProfileBlob
 } from "../services/profilePhotos";
-import { moderatePhotoUpload, reviewUploadedPhotoAsync } from "../utils/mediaModeration";
+import {
+  assessUploadedPhoto,
+  moderatePhotoUpload,
+  toPhotoReviewMeta
+} from "../utils/mediaModeration";
 import { blobToDataUrl, PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
-import { logPhotoPipeline, logPhotoUpload } from "../utils/photoUploadLog";
+import { logPhotoPipeline } from "../utils/photoUploadLog";
 import { flowLog } from "../utils/flowLog";
+import { upsertPhotoMeta } from "../utils/photoMeta";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
 import { safePhotos } from "../utils/safeProfile";
+import type { PhotoReviewMeta } from "../types";
 
 type PhotoUploadGridProps = {
   photos: string[];
+  photoMeta?: Record<string, PhotoReviewMeta>;
   coverPhoto?: string;
-  onChange: (photos: string[]) => void;
+  onChange: (photos: string[], photoMeta?: Record<string, PhotoReviewMeta>) => void;
   onModerationMessage?: (message: string) => void;
   /** Signup/onboarding — gallery only, no cover */
   signupMode?: boolean;
@@ -33,6 +40,7 @@ type PhotoUploadGridProps = {
 
 export function PhotoUploadGrid({
   photos,
+  photoMeta,
   coverPhoto,
   onChange,
   onModerationMessage,
@@ -80,8 +88,10 @@ export function PhotoUploadGrid({
     setUploading(true);
     flowLog("photo_upload_start", { signupMode });
     const prior = persistedPhotos;
+    const priorMeta = photoMeta;
     let tempPreviewUrl: string | null = null;
     const slotIndex = activeSlot ?? prior.length;
+    const uploadKind = signupMode ? "signup" : "profile";
 
     try {
       logPhotoPipeline("selected", {
@@ -105,7 +115,7 @@ export function PhotoUploadGrid({
         format: compressed.mime
       });
 
-      const verdict = await moderatePhotoUpload(file, signupMode ? "signup" : "profile");
+      const verdict = await moderatePhotoUpload(file, uploadKind);
       if (!verdict.allowed) {
         failUpload(
           verdict.code || "MODERATION_REJECTED",
@@ -134,16 +144,40 @@ export function PhotoUploadGrid({
       const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
       logPhotoPipeline("uploaded", { signupMode, kind: "profile" });
 
+      const assessment = await assessUploadedPhoto(file, uploadKind);
+      if (assessment.hardBlock) {
+        await deleteStoredPhoto(remoteUrl);
+        failUpload(
+          "MODERATION_REJECTED",
+          "post_upload_hard_block",
+          assessment.hardBlockMessage,
+          true
+        );
+        return;
+      }
+
+      const meta = toPhotoReviewMeta(uploadKind, assessment);
+      const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
+
       const withRemote =
         slotIndex < prior.length
           ? prior.map((photo, index) => (index === slotIndex ? remoteUrl : photo))
           : [...prior, remoteUrl];
-      onChange(withRemote.slice(0, MAX_PROFILE_PHOTOS));
-      logPhotoPipeline("saved", { signupMode, photoCount: withRemote.length });
-      reviewUploadedPhotoAsync(file, signupMode ? "signup" : "profile");
+      onChange(withRemote.slice(0, MAX_PROFILE_PHOTOS), nextMeta);
+
+      if (meta.photoReviewStatus === "pending_review") {
+        void submitPhotoReviewRemote({
+          photoUrl: remoteUrl,
+          photoType: "profile",
+          photoReviewStatus: meta.photoReviewStatus,
+          photoRiskFlags: meta.photoRiskFlags
+        });
+      }
+
+      logPhotoPipeline("saved", { signupMode, photoCount: withRemote.length, reviewStatus: meta.photoReviewStatus });
       flowLog("photo_upload_ok", { signupMode });
     } catch (error) {
-      onChange(prior);
+      onChange(prior, priorMeta);
       const mapped = mapUploadError(error);
       logPhotoPipeline("failed", { code: mapped.code, reason: mapped.message });
       flowLog("photo_upload_failed", { code: mapped.code });
@@ -160,7 +194,9 @@ export function PhotoUploadGrid({
   const remove = (index: number) => {
     const url = persistedPhotos[index];
     const next = persistedPhotos.filter((_, i) => i !== index);
-    onChange(next);
+    const nextMeta = { ...photoMeta };
+    if (url && nextMeta[url]) delete nextMeta[url];
+    onChange(next, nextMeta);
     if (isStoragePhotoUrl(url)) {
       void deleteStoredPhoto(url);
     }

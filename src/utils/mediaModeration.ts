@@ -7,9 +7,12 @@ import { PHOTO_UPLOAD_FAIL, photoModerationUserMessage } from "../constants/phot
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
 import type { PhotoUploadKind } from "../constants/photoUploadKinds";
 import { STORAGE_KEYS } from "../constants/limits";
+import type { PhotoReviewMeta, PhotoReviewStatus, PhotoRiskFlag } from "../types";
 import { CONTACT_LEAK_BLOCK_MESSAGE, scanTextForContactLeak } from "./contactGuard";
-import { logPhotoSafetyRiskAsync, scanPhotoSafety } from "./photoSafetyScan";
+import { buildPhotoMetaEntry } from "./photoMeta";
+import { logPhotoSafetyRiskAsync, scanPhotoSafety, scanPhotoSafetyDeep } from "./photoSafetyScan";
 import { logPhotoUpload } from "./photoUploadLog";
+import { submitPhotoReviewRemote } from "../services/profilePhotos";
 import { readJson, writeJson } from "./storage";
 
 type StrikeRecord = { count: number };
@@ -25,6 +28,8 @@ export type PhotoModerationResult = {
   internalReason?: string;
   mode: PhotoModerationMode;
   riskScore?: number;
+  photoReviewStatus?: PhotoReviewStatus;
+  photoRiskFlags?: PhotoRiskFlag[];
 };
 
 export function isLikelyImageFile(file: File): boolean {
@@ -53,9 +58,8 @@ function moderationKillSwitchActive(): boolean {
 }
 
 /**
- * warn (default) — never blocks uploads; logs risk for ops review.
- * block — rejects only fast high-confidence filename/text issues.
- * Heavy checks (OCR, face, QR) are warn-only until the pipeline is stable.
+ * Upload-first policy: only hard-block invalid file type or high-confidence contact/doc in filename.
+ * Weak heuristics (face, blur, logo, AI) never block — they flag for admin review after upload.
  */
 export async function moderatePhotoUpload(
   file: File,
@@ -76,7 +80,7 @@ export async function moderatePhotoUpload(
   if (moderationKillSwitchActive() || !moderationEnabled) {
     logPhotoUpload("moderation_skipped", { kind, reason: "disabled" });
     resetPhotoModerationStrikes();
-    return { allowed: true, message: "", mode };
+    return { allowed: true, message: "", mode, photoReviewStatus: "approved", photoRiskFlags: [] };
   }
 
   if (!isLikelyImageFile(file)) {
@@ -92,21 +96,9 @@ export async function moderatePhotoUpload(
   try {
     const safety = await scanPhotoSafety(file, kind, mode);
 
-    if (mode === "warn") {
-      resetPhotoModerationStrikes();
-      logPhotoUpload("moderation_passed", {
-        kind,
-        mode,
-        riskScore: safety.riskScore,
-        warnOnly: true
-      });
-      return { allowed: true, message: "", mode, riskScore: safety.riskScore };
-    }
-
-    if (!safety.allowed) {
+    if (!safety.allowed && safety.hardBlock) {
       logPhotoUpload("moderation_blocked", {
         kind,
-        mode,
         category: safety.category,
         reason: safety.internalReason,
         riskScore: safety.riskScore
@@ -123,20 +115,88 @@ export async function moderatePhotoUpload(
 
     resetPhotoModerationStrikes();
     logPhotoUpload("moderation_passed", { kind, mode, riskScore: safety.riskScore });
-    return { allowed: true, message: "", mode, riskScore: safety.riskScore };
+    return {
+      allowed: true,
+      message: "",
+      mode,
+      riskScore: safety.riskScore,
+      photoReviewStatus: "approved",
+      photoRiskFlags: []
+    };
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     logPhotoUpload("moderation_error", { kind, mode, reason });
     resetPhotoModerationStrikes();
-    return { allowed: true, message: "", mode };
+    return { allowed: true, message: "", mode, photoReviewStatus: "approved", photoRiskFlags: [] };
   }
 }
 
-/** Call after a successful storage upload to log deep risk without blocking. */
-export function reviewUploadedPhotoAsync(file: File, kind: PhotoUploadKind): void {
+export type PhotoReviewAssessment = {
+  photoReviewStatus: PhotoReviewStatus;
+  photoRiskFlags: PhotoRiskFlag[];
+  hardBlock: boolean;
+  hardBlockMessage?: string;
+};
+
+/** Assess after storage upload; may flag pending_review or rare post-OCR hard block. */
+export async function assessUploadedPhoto(
+  file: File,
+  kind: PhotoUploadKind
+): Promise<PhotoReviewAssessment> {
+  if (moderationKillSwitchActive() || !isImageModerationEnabled()) {
+    return { photoReviewStatus: "approved", photoRiskFlags: [], hardBlock: false };
+  }
+
+  const result = await scanPhotoSafetyDeep(file, kind);
+  if (!result.allowed && result.hardBlock) {
+    return {
+      photoReviewStatus: "rejected",
+      photoRiskFlags: result.photoRiskFlags || [],
+      hardBlock: true,
+      hardBlockMessage: photoModerationUserMessage()
+    };
+  }
+
+  return {
+    photoReviewStatus: result.photoReviewStatus || "approved",
+    photoRiskFlags: result.photoRiskFlags || [],
+    hardBlock: false
+  };
+}
+
+export function toPhotoReviewMeta(
+  kind: PhotoUploadKind,
+  assessment: PhotoReviewAssessment
+): PhotoReviewMeta {
+  const type = kind === "cover" ? "cover" : "profile";
+  return buildPhotoMetaEntry(type, assessment.photoReviewStatus, assessment.photoRiskFlags);
+}
+
+/** Fire-and-forget: assess risk, report to server review queue. */
+export function reviewUploadedPhotoAsync(
+  file: File,
+  kind: PhotoUploadKind,
+  photoUrl: string,
+  onAssessed?: (meta: PhotoReviewMeta) => void
+): void {
   if (moderationKillSwitchActive() || !isImageModerationEnabled()) return;
-  if (getPhotoModerationMode() !== "warn") return;
-  logPhotoSafetyRiskAsync(file, kind);
+
+  logPhotoSafetyRiskAsync(file, kind, async (result) => {
+    const type = kind === "cover" ? "cover" : "profile";
+    const status = result.photoReviewStatus || "approved";
+    const flags = result.photoRiskFlags || [];
+    const meta = buildPhotoMetaEntry(type, status, flags);
+    onAssessed?.(meta);
+
+    if (photoUrl && status === "pending_review") {
+      void submitPhotoReviewRemote({
+        photoUrl,
+        photoType: type,
+        photoReviewStatus: status,
+        photoRiskFlags: flags
+      });
+    }
+  });
 }
 
 /** @deprecated Signup uses moderatePhotoUpload with kind=signup */

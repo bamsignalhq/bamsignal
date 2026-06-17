@@ -40,9 +40,12 @@ export const IMAGE_URL_PATTERNS = [
   /\btelegram\b/i,
   /\binstagram\b/i,
   /\btiktok\b/i,
-  /\bgmail\.com\b/i,
+  /\bgmail\b/i,
+  /\byahoo\b/i,
   /https?:\/\//i,
-  /\bwa\.me\b/i
+  /\bwww\./i,
+  /\bwa\.me\b/i,
+  /\bt\.me\b/i
 ];
 
 export const NIGERIAN_PHONE_PATTERNS = [

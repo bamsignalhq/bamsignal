@@ -438,14 +438,16 @@ export function ProfilePage({
             <h4 className="profile-form-row__label">Cover photo</h4>
             <CoverPhotoUpload
               coverPhoto={profile.coverPhoto}
+              photoMeta={profile.photoMeta}
               profilePhotos={profile.photos}
-              onChange={(coverPhoto) => {
+              onChange={(coverPhoto, nextPhotoMeta) => {
                 setProfile((p) => {
                   const persistable = safeCoverPhoto(coverPhoto);
                   const next = normalizeDatingProfile({
                     ...p,
                     coverPhoto: persistable,
-                    coverPhotoExplicit: Boolean(persistable)
+                    coverPhotoExplicit: Boolean(persistable),
+                    photoMeta: nextPhotoMeta ?? p.photoMeta
                   });
                   if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
                     showModMessage(PHOTO_UPLOAD_FAIL);
@@ -460,10 +462,15 @@ export function ProfilePage({
             <h4 className="profile-form-row__label">Profile photos</h4>
             <PhotoUploadGrid
               photos={profile.photos}
+              photoMeta={profile.photoMeta}
               coverPhoto={profile.coverPhoto}
-              onChange={(photos) => {
+              onChange={(photos, nextPhotoMeta) => {
                 setProfile((p) => {
-                  const next = normalizeDatingProfile({ ...p, photos });
+                  const next = normalizeDatingProfile({
+                    ...p,
+                    photos,
+                    photoMeta: nextPhotoMeta ?? p.photoMeta
+                  });
                   if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
                     showModMessage(PHOTO_UPLOAD_FAIL);
                     return p;

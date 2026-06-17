@@ -18,6 +18,14 @@ declare module "*/shared/photoSafetyPatterns.mjs" {
   ): { blocked: boolean; category: "document_detected" | "contact_information" | null };
 }
 
+type PhotoAssessResult = {
+  hardBlock: boolean;
+  hardBlockCategory: string | null;
+  pendingReview: boolean;
+  riskFlags: string[];
+  riskScore: number;
+};
+
 declare module "../../shared/photoQualityScore.mjs" {
   export const PHOTO_RISK_WEIGHTS: Record<string, number>;
   export const PHOTO_RISK_REJECT_THRESHOLD: number;
@@ -45,6 +53,22 @@ declare module "../../shared/photoQualityScore.mjs" {
     hasContactLeak: boolean;
     hasFlyerText: boolean;
   }): { reject: boolean; category: string; riskScore: number };
+  export function assessProfilePhoto(input: {
+    hasAdequateFace: boolean;
+    logoLikelihood: number;
+    textDensity: number;
+    hasQr: boolean;
+    hasDocumentKeywords: boolean;
+    hasContactLeak: boolean;
+    ocrText?: string;
+  }): PhotoAssessResult;
+  export function assessCoverPhoto(input: {
+    textDensity: number;
+    hasQr: boolean;
+    hasDocumentKeywords: boolean;
+    hasContactLeak: boolean;
+    hasFlyerText: boolean;
+  }): PhotoAssessResult;
 }
 
 declare module "*/shared/photoQualityScore.mjs" {
@@ -74,4 +98,44 @@ declare module "*/shared/photoQualityScore.mjs" {
     hasContactLeak: boolean;
     hasFlyerText: boolean;
   }): { reject: boolean; category: string; riskScore: number };
+  export function assessProfilePhoto(input: {
+    hasAdequateFace: boolean;
+    logoLikelihood: number;
+    textDensity: number;
+    hasQr: boolean;
+    hasDocumentKeywords: boolean;
+    hasContactLeak: boolean;
+    ocrText?: string;
+  }): PhotoAssessResult;
+  export function assessCoverPhoto(input: {
+    textDensity: number;
+    hasQr: boolean;
+    hasDocumentKeywords: boolean;
+    hasContactLeak: boolean;
+    hasFlyerText: boolean;
+  }): PhotoAssessResult;
+}
+
+declare module "../../shared/photoReview.mjs" {
+  export function filterPhotosForPublicView(
+    photos: string[],
+    photoMeta?: Record<string, { photoReviewStatus?: string }>
+  ): string[];
+  export function isPhotoCountableForSignup(
+    url: string,
+    photoMeta?: Record<string, { photoReviewStatus?: string }>
+  ): boolean;
+  export function normalizePhotoMetaMap(raw: unknown): Record<string, unknown>;
+}
+
+declare module "*/shared/photoReview.mjs" {
+  export function filterPhotosForPublicView(
+    photos: string[],
+    photoMeta?: Record<string, { photoReviewStatus?: string }>
+  ): string[];
+  export function isPhotoCountableForSignup(
+    url: string,
+    photoMeta?: Record<string, { photoReviewStatus?: string }>
+  ): boolean;
+  export function normalizePhotoMetaMap(raw: unknown): Record<string, unknown>;
 }

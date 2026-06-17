@@ -30,7 +30,14 @@ import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { writeJson, readJson } from "../utils/storage";
 import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
+import { isSignupPhotoCountable } from "../utils/photoMeta";
 import { flowLog } from "../utils/flowLog";
+
+function countSignupPhotos(profile: Pick<DatingProfile, "photos" | "photoMeta">): number {
+  return profile.photos.filter(
+    (url) => isStoragePhotoUrl(url) && isSignupPhotoCountable(url, profile.photoMeta)
+  ).length;
+}
 
 const STEPS = ["Basic info", "About you", "Photos", "Preferences"] as const;
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
@@ -200,7 +207,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         (profile.interests?.length ?? 0) >= MIN_PROFILE_INTERESTS
       );
     }
-    if (step === 2) return profile.photos.filter(isStoragePhotoUrl).length >= MIN_PROFILE_PHOTOS;
+    if (step === 2) return countSignupPhotos(profile) >= MIN_PROFILE_PHOTOS;
     return true;
   };
 
@@ -224,7 +231,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         return;
       }
     }
-    if (step === 2 && profile.photos.filter(isStoragePhotoUrl).length >= MIN_PROFILE_PHOTOS) {
+    if (step === 2 && countSignupPhotos(profile) >= MIN_PROFILE_PHOTOS) {
       trackEvent("photo_uploaded");
     }
     if (step === STEPS.length - 1) {
@@ -404,11 +411,13 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           <h2>{SUCCESS_COPY.photoHeader}</h2>
           <PhotoUploadGrid
             photos={profile.photos}
+            photoMeta={profile.photoMeta}
             signupMode
-            onChange={(photos) => {
+            onChange={(photos, nextPhotoMeta) => {
               const next = normalizeDatingProfile({
                 ...profile,
                 photos,
+                photoMeta: nextPhotoMeta,
                 coverPhoto: undefined,
                 coverPhotoExplicit: false
               });

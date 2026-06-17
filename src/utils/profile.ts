@@ -8,6 +8,7 @@ import type { DatingProfile, MatchPreferences } from "../types";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
 import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString } from "./safeProfile";
+import { prunePhotoMeta, safePhotoMeta } from "./photoMeta";
 
 export const defaultDatingProfile = (): DatingProfile => ({
   photos: [],
@@ -100,17 +101,20 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
   const interestsTouched = Boolean(cleaned.interestsTouched);
   const rawInterests = safeArray<string>(cleaned.interests).map((item) => safeString(item)).filter(Boolean);
   const interests = onboardingComplete || interestsTouched ? rawInterests : [];
-  const photosList = safePhotos(cleaned.photos ?? base.photos);
+  const rawPhotosList = safePhotos(cleaned.photos ?? base.photos);
   const persistableCover = safeCoverPhoto(cleaned.coverPhoto);
 
   let coverPhoto: string | undefined;
   let coverPhotoExplicit = false;
   if (onboardingComplete && persistableCover && cleaned.coverPhotoExplicit !== false) {
-    if (!photosList.some((photo) => samePhotoRef(photo, persistableCover))) {
+    if (!rawPhotosList.some((photo) => samePhotoRef(photo, persistableCover))) {
       coverPhoto = persistableCover;
       coverPhotoExplicit = cleaned.coverPhotoExplicit ?? true;
     }
   }
+
+  const photosList = sanitizeProfilePhotos(rawPhotosList, coverPhoto);
+  const photoMeta = prunePhotoMeta(safePhotoMeta(cleaned.photoMeta), photosList, coverPhoto);
 
   return {
     ...base,
@@ -127,7 +131,8 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     interestsTouched: onboardingComplete ? interests.length > 0 || interestsTouched : interestsTouched,
     coverPhoto,
     coverPhotoExplicit: onboardingComplete ? coverPhotoExplicit : false,
-    photos: sanitizeProfilePhotos(photosList, coverPhoto),
+    photos: photosList,
+    photoMeta,
     verificationSelfie: isPersistablePhotoUrl(cleaned.verificationSelfie)
       ? cleaned.verificationSelfie
       : undefined,

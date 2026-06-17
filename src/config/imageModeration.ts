@@ -9,8 +9,8 @@ export function isImageModerationEnabled(): boolean {
 }
 
 /**
- * warn — uploads always proceed; risk is logged for Command Center review.
- * block — reject only high-confidence filename/text issues (no OCR/face/QR yet).
+ * Upload-first policy — mode is retained for logging only.
+ * Weak heuristics never hard-block; only contact/doc filename leaks do.
  */
 export function getPhotoModerationMode(): PhotoModerationMode {
   const raw = String(import.meta.env.VITE_PHOTO_MODERATION_MODE || "warn")

@@ -5,23 +5,32 @@ import {
   compressPhotoForPreview,
   deleteStoredPhoto,
   mapUploadError,
+  submitPhotoReviewRemote,
   uploadCompressedCoverBlob
 } from "../services/profilePhotos";
-import { moderatePhotoUpload, reviewUploadedPhotoAsync } from "../utils/mediaModeration";
+import {
+  assessUploadedPhoto,
+  moderatePhotoUpload,
+  toPhotoReviewMeta
+} from "../utils/mediaModeration";
 import { blobToDataUrl, PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
 import { logPhotoPipeline } from "../utils/photoUploadLog";
+import { upsertPhotoMeta } from "../utils/photoMeta";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
 import { safeCoverPhoto } from "../utils/safeProfile";
+import type { PhotoReviewMeta } from "../types";
 
 type CoverPhotoUploadProps = {
   coverPhoto?: string;
+  photoMeta?: Record<string, PhotoReviewMeta>;
   profilePhotos: string[];
-  onChange: (coverPhoto: string | undefined) => void;
+  onChange: (coverPhoto: string | undefined, photoMeta?: Record<string, PhotoReviewMeta>) => void;
   onModerationMessage?: (message: string) => void;
 };
 
 export function CoverPhotoUpload({
   coverPhoto,
+  photoMeta,
   profilePhotos,
   onChange,
   onModerationMessage
@@ -46,6 +55,7 @@ export function CoverPhotoUpload({
 
     setUploading(true);
     const previousCover = persistedCover;
+    const priorMeta = photoMeta;
     let previewUrl: string | null = null;
 
     try {
@@ -95,16 +105,36 @@ export function CoverPhotoUpload({
       logPhotoPipeline("uploading", { kind: "cover" });
       const remoteUrl = await uploadCompressedCoverBlob(compressed.blob, file);
       logPhotoPipeline("uploaded", { kind: "cover" });
+
+      const assessment = await assessUploadedPhoto(file, "cover");
+      if (assessment.hardBlock) {
+        await deleteStoredPhoto(remoteUrl);
+        onModerationMessage?.(assessment.hardBlockMessage || photoModerationUserMessage());
+        return;
+      }
+
+      const meta = toPhotoReviewMeta("cover", assessment);
+      const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
+
       setLocalPreview(null);
-      onChange(remoteUrl);
+      onChange(remoteUrl, nextMeta);
+
+      if (meta.photoReviewStatus === "pending_review") {
+        void submitPhotoReviewRemote({
+          photoUrl: remoteUrl,
+          photoType: "cover",
+          photoReviewStatus: meta.photoReviewStatus,
+          photoRiskFlags: meta.photoRiskFlags
+        });
+      }
+
       if (previousCover && isStoragePhotoUrl(previousCover)) {
         void deleteStoredPhoto(previousCover);
       }
-      logPhotoPipeline("saved", { kind: "cover" });
-      reviewUploadedPhotoAsync(file, "cover");
+      logPhotoPipeline("saved", { kind: "cover", reviewStatus: meta.photoReviewStatus });
     } catch (error) {
       setLocalPreview(null);
-      onChange(previousCover);
+      onChange(previousCover, priorMeta);
       const mapped = mapUploadError(error);
       logPhotoPipeline("failed", { kind: "cover", code: mapped.code, reason: mapped.message });
       onModerationMessage?.(mapped.message || PHOTO_UPLOAD_FAIL);
@@ -116,8 +146,10 @@ export function CoverPhotoUpload({
 
   const removeCover = () => {
     const previousCover = persistedCover;
+    const nextMeta = { ...photoMeta };
+    if (previousCover && nextMeta[previousCover]) delete nextMeta[previousCover];
     setLocalPreview(null);
-    onChange(undefined);
+    onChange(undefined, nextMeta);
     if (previousCover && isStoragePhotoUrl(previousCover)) {
       void deleteStoredPhoto(previousCover);
     }

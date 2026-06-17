@@ -8,6 +8,7 @@ import {
   uploadProfilePhotoObject,
   PhotoStorageError
 } from "../../server/services/photoStorage.js";
+import { submitPhotoReview } from "../../server/services/photoReview.js";
 import { resolveSupabaseUrl } from "../../server/supabaseEnv.js";
 
 function parseBody(req) {
@@ -96,6 +97,32 @@ export default async function handler(req, res) {
       assertUserOwnsStoragePath(userId, parsed.path);
       await deletePhotoStorageObject(parsed.bucket, parsed.path);
       return res.status(200).json({ ok: true });
+    }
+
+    if (action === "submit-review") {
+      const photoUrl = String(body.photoUrl || "").trim();
+      const photoType = String(body.photoType || "profile").trim();
+      const photoReviewStatus = String(body.photoReviewStatus || "pending_review").trim();
+      const photoRiskFlags = Array.isArray(body.photoRiskFlags) ? body.photoRiskFlags : [];
+
+      if (!photoUrl) {
+        return res.status(400).json({ ok: false, error: "Photo URL required." });
+      }
+
+      const parsed = parsePhotoStorageUrl(photoUrl);
+      if (parsed) {
+        assertUserOwnsStoragePath(userId, parsed.path);
+      }
+
+      const review = await submitPhotoReview({
+        photoUrl,
+        photoType,
+        photoReviewStatus,
+        photoRiskFlags,
+        memberName: body.memberName || null
+      });
+
+      return res.status(200).json({ ok: true, review });
     }
 
     return res.status(400).json({ ok: false, error: "Unknown action." });

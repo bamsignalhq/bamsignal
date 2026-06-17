@@ -106,9 +106,40 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, attempts, count: attempts.length });
     }
 
+    if (action === "list-photo-reviews") {
+      const operatorEmail = await requireModerationAdmin(req, res);
+      if (!operatorEmail) return;
+      const { listPhotoReviews } = await import("../../server/services/photoReview.js");
+      const status = String(body.status || "pending_review").trim();
+      const reviews = await listPhotoReviews({ status, limit: Number(body.limit) || 50 });
+      return res.status(200).json({ ok: true, reviews, count: reviews.length });
+    }
+
+    if (action === "approve-photo-review") {
+      const operatorEmail = await requireModerationAdmin(req, res);
+      if (!operatorEmail) return;
+      const { approvePhotoReview } = await import("../../server/services/photoReview.js");
+      const reviewId = String(body.reviewId || "").trim();
+      const result = await approvePhotoReview({ reviewId, operatorEmail });
+      if (!result.ok) return res.status(400).json(result);
+      return res.status(200).json(result);
+    }
+
+    if (action === "reject-photo-review") {
+      const operatorEmail = await requireModerationAdmin(req, res);
+      if (!operatorEmail) return;
+      const { rejectPhotoReview } = await import("../../server/services/photoReview.js");
+      const reviewId = String(body.reviewId || "").trim();
+      const reason = String(body.reason || "").trim();
+      const result = await rejectPhotoReview({ reviewId, operatorEmail, reason });
+      if (!result.ok) return res.status(400).json(result);
+      return res.status(200).json(result);
+    }
+
     return res.status(400).json({
       ok: false,
-      error: "Unknown action. Use list-shadow-banned, lift-shadow-ban, shadow-ban, list-flags, or list-contact-leaks."
+      error:
+        "Unknown action. Use list-shadow-banned, lift-shadow-ban, shadow-ban, list-flags, list-contact-leaks, list-photo-reviews, approve-photo-review, or reject-photo-review."
     });
   } catch (error) {
     console.error("[bamsignal] admin moderation error:", error);

@@ -1,15 +1,15 @@
 import { Camera, Loader2, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { DEFAULT_PROFILE_COVER, PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
+import { DEFAULT_PROFILE_COVER, PHOTO_UPLOAD_FAIL, photoModerationUserMessage, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
   mapUploadError,
   uploadCompressedCoverBlob
 } from "../services/profilePhotos";
-import { moderatePhotoUpload } from "../utils/mediaModeration";
+import { moderatePhotoUpload, reviewUploadedPhotoAsync } from "../utils/mediaModeration";
 import { blobToDataUrl, PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
-import { logPhotoUpload } from "../utils/photoUploadLog";
+import { logPhotoPipeline } from "../utils/photoUploadLog";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
 import { safeCoverPhoto } from "../utils/safeProfile";
 
@@ -49,7 +49,8 @@ export function CoverPhotoUpload({
     let previewUrl: string | null = null;
 
     try {
-      logPhotoUpload("pick_cover", {
+      logPhotoPipeline("selected", {
+        kind: "cover",
         fileType: file.type,
         fileName: file.name,
         originalSize: file.size
@@ -57,22 +58,31 @@ export function CoverPhotoUpload({
 
       const validation = await validatePhotoFile(file);
       if (!validation.ok) {
-        logPhotoUpload("upload_rejected", { code: validation.code, internalReason: validation.internalReason });
+        logPhotoPipeline("failed", { kind: "cover", code: validation.code, internalReason: validation.internalReason });
         onModerationMessage?.(photoUploadUserMessage(validation.code));
         return;
       }
+      logPhotoPipeline("decoded", { kind: "cover" });
+
+      const compressed = await compressPhotoForPreview(file);
+      logPhotoPipeline("compressed", {
+        kind: "cover",
+        compressedSize: compressed.blob.size,
+        format: compressed.mime
+      });
 
       const verdict = await moderatePhotoUpload(file, "cover");
       if (!verdict.allowed) {
-        logPhotoUpload("upload_rejected", {
+        logPhotoPipeline("failed", {
+          kind: "cover",
           code: verdict.code || "MODERATION_REJECTED",
-          internalReason: verdict.internalReason || "moderation"
+          internalReason: verdict.internalReason || "moderation",
+          moderation: true
         });
-        onModerationMessage?.(verdict.message || photoUploadUserMessage(verdict.code));
+        onModerationMessage?.(verdict.message || photoModerationUserMessage());
         return;
       }
 
-      const compressed = await compressPhotoForPreview(file);
       const tempDataUrl = await blobToDataUrl(compressed.blob);
       if (profilePhotos.some((photo) => samePhotoRef(photo, tempDataUrl))) {
         onModerationMessage?.("Please choose a different image for your cover.");
@@ -82,18 +92,21 @@ export function CoverPhotoUpload({
       previewUrl = URL.createObjectURL(compressed.blob);
       setLocalPreview(previewUrl);
 
+      logPhotoPipeline("uploading", { kind: "cover" });
       const remoteUrl = await uploadCompressedCoverBlob(compressed.blob, file);
+      logPhotoPipeline("uploaded", { kind: "cover" });
       setLocalPreview(null);
       onChange(remoteUrl);
       if (previousCover && isStoragePhotoUrl(previousCover)) {
         void deleteStoredPhoto(previousCover);
       }
-      logPhotoUpload("upload_cover_ok", {});
+      logPhotoPipeline("saved", { kind: "cover" });
+      reviewUploadedPhotoAsync(file, "cover");
     } catch (error) {
       setLocalPreview(null);
       onChange(previousCover);
       const mapped = mapUploadError(error);
-      logPhotoUpload("upload_cover_failed", { code: mapped.code });
+      logPhotoPipeline("failed", { kind: "cover", code: mapped.code, reason: mapped.message });
       onModerationMessage?.(mapped.message || PHOTO_UPLOAD_FAIL);
     } finally {
       if (previewUrl) URL.revokeObjectURL(previewUrl);

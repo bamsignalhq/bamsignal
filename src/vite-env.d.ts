@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_PAYSTACK_PUBLIC_KEY?: string;
   readonly NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY?: string;
   readonly VITE_ENABLE_IMAGE_MODERATION?: string;
+  readonly VITE_PHOTO_MODERATION_MODE?: string;
 }
 
 interface ImportMeta {

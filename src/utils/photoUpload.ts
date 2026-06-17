@@ -1,6 +1,6 @@
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
 import { isLikelyImageFile } from "./mediaModeration";
-import { logPhotoUpload } from "./photoUploadLog";
+import { logPhotoPipeline, logPhotoUpload } from "./photoUploadLog";
 
 const DEFAULT_MAX_EDGE = 1280;
 const DEFAULT_QUALITY = 0.82;
@@ -127,7 +127,7 @@ export async function validatePhotoFile(file: File | null | undefined): Promise<
       if (!decoded.width || !decoded.height) {
         return { ok: false, code: "IMAGE_DECODE_FAILED", internalReason: "zero_dimensions" };
       }
-      logPhotoUpload("validate_decode_ok", {
+      logPhotoPipeline("decoded", {
         width: decoded.width,
         height: decoded.height
       });
@@ -137,7 +137,7 @@ export async function validatePhotoFile(file: File | null | undefined): Promise<
     }
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    logPhotoUpload("validate_decode_failed", { reason, heic: isHeicLike(file) });
+    logPhotoPipeline("failed", { reason, stage: "decode", heic: isHeicLike(file) });
     return {
       ok: false,
       code: "IMAGE_DECODE_FAILED",
@@ -210,7 +210,7 @@ export async function fileToCompressedImageBlob(
       throw new Error("COMPRESSION_FAILED_SIZE_LIMIT");
     }
 
-    logPhotoUpload("compress_ok", {
+    logPhotoPipeline("compressed", {
       compressedSize: blob.size,
       outputFormat: mime,
       width,
@@ -221,7 +221,7 @@ export async function fileToCompressedImageBlob(
     return { blob, mime, extension };
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    logPhotoUpload("compress_failed", { reason });
+    logPhotoPipeline("failed", { reason, stage: "compress" });
     throw error;
   } finally {
     decoded.cleanup();

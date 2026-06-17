@@ -3,7 +3,7 @@ import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
 import { apiUrl, supabase } from "./supabase";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { blobToDataUrl, fileToCompressedDataUrl, fileToCompressedImageBlob } from "../utils/photoUpload";
-import { logPhotoUpload } from "../utils/photoUploadLog";
+import { logPhotoPipeline, logPhotoUpload } from "../utils/photoUploadLog";
 import { readResponseJson } from "../utils/httpJson";
 
 export class PhotoUploadError extends Error {
@@ -38,7 +38,7 @@ async function uploadCompressedBlob(
   const body: Record<string, string> = { kind, imageBase64 };
   if (photoId) body.photoId = photoId;
 
-  logPhotoUpload("storage_upload_start", { kind, compressedSize: blob.size, photoId: photoId || null });
+  logPhotoPipeline("uploading", { kind, compressedSize: blob.size, photoId: photoId || null });
 
   const response = await fetch(apiUrl("/api/member/photos?action=upload"), {
     method: "POST",
@@ -48,8 +48,9 @@ async function uploadCompressedBlob(
   const payload = await readResponseJson<{ ok?: boolean; url?: string; error?: string; storageUnavailable?: boolean; photoId?: string }>(response);
   if (!response.ok || !payload?.ok || !payload.url) {
     const storageUnavailable = Boolean(payload?.storageUnavailable) || response.status === 503;
-    logPhotoUpload("storage_upload_failed", {
+    logPhotoPipeline("failed", {
       kind,
+      stage: "storage",
       status: response.status,
       storageUnavailable,
       error: payload?.error || "unknown"
@@ -60,7 +61,7 @@ async function uploadCompressedBlob(
     });
   }
 
-  logPhotoUpload("storage_upload_ok", { kind, url: String(payload.url) });
+  logPhotoPipeline("uploaded", { kind, url: String(payload.url) });
   return { url: String(payload.url), photoId: payload.photoId ? String(payload.photoId) : photoId };
 }
 

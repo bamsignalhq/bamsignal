@@ -5,6 +5,7 @@ import {
   MAX_PROFILE_PHOTOS,
   MIN_PROFILE_PHOTOS,
   PHOTO_UPLOAD_FAIL,
+  photoModerationUserMessage,
   photoUploadUserMessage
 } from "../constants/photos";
 import {
@@ -14,9 +15,9 @@ import {
   PhotoUploadError,
   uploadCompressedProfileBlob
 } from "../services/profilePhotos";
-import { moderatePhotoUpload } from "../utils/mediaModeration";
+import { moderatePhotoUpload, reviewUploadedPhotoAsync } from "../utils/mediaModeration";
 import { blobToDataUrl, PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
-import { logPhotoUpload } from "../utils/photoUploadLog";
+import { logPhotoPipeline, logPhotoUpload } from "../utils/photoUploadLog";
 import { flowLog } from "../utils/flowLog";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
 import { safePhotos } from "../utils/safeProfile";
@@ -59,9 +60,16 @@ export function PhotoUploadGrid({
     window.setTimeout(() => fileRef.current?.click(), 0);
   };
 
-  const failUpload = (code: PhotoUploadErrorCode, internalReason: string, message?: string) => {
-    logPhotoUpload("upload_rejected", { code, internalReason });
-    onModerationMessage?.(message || photoUploadUserMessage(code));
+  const failUpload = (
+    code: PhotoUploadErrorCode,
+    internalReason: string,
+    message?: string,
+    moderation = false
+  ) => {
+    logPhotoPipeline("failed", { code, internalReason, moderation });
+    onModerationMessage?.(
+      message || (moderation ? photoModerationUserMessage() : photoUploadUserMessage(code))
+    );
   };
 
   const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,7 +84,7 @@ export function PhotoUploadGrid({
     const slotIndex = activeSlot ?? prior.length;
 
     try {
-      logPhotoUpload("pick", {
+      logPhotoPipeline("selected", {
         signupMode,
         fileType: file.type,
         fileName: file.name,
@@ -88,18 +96,26 @@ export function PhotoUploadGrid({
         failUpload(validation.code, validation.internalReason);
         return;
       }
+      logPhotoPipeline("decoded", { signupMode });
+
+      const compressed = await compressPhotoForPreview(file);
+      logPhotoPipeline("compressed", {
+        signupMode,
+        compressedSize: compressed.blob.size,
+        format: compressed.mime
+      });
 
       const verdict = await moderatePhotoUpload(file, signupMode ? "signup" : "profile");
       if (!verdict.allowed) {
         failUpload(
           verdict.code || "MODERATION_REJECTED",
           verdict.internalReason || "moderation",
-          verdict.message
+          verdict.message,
+          true
         );
         return;
       }
 
-      const compressed = await compressPhotoForPreview(file);
       const tempDataUrl = await blobToDataUrl(compressed.blob);
       if (samePhotoRef(tempDataUrl, coverPhoto)) {
         onModerationMessage?.("Please choose a different image from your cover photo.");
@@ -114,18 +130,22 @@ export function PhotoUploadGrid({
       setPreviewUrl(tempPreviewUrl);
       setPreviewSlot(slotIndex);
 
+      logPhotoPipeline("uploading", { signupMode, kind: "profile" });
       const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
+      logPhotoPipeline("uploaded", { signupMode, kind: "profile" });
+
       const withRemote =
         slotIndex < prior.length
           ? prior.map((photo, index) => (index === slotIndex ? remoteUrl : photo))
           : [...prior, remoteUrl];
       onChange(withRemote.slice(0, MAX_PROFILE_PHOTOS));
-      logPhotoUpload("upload_ok", { signupMode });
+      logPhotoPipeline("saved", { signupMode, photoCount: withRemote.length });
+      reviewUploadedPhotoAsync(file, signupMode ? "signup" : "profile");
       flowLog("photo_upload_ok", { signupMode });
     } catch (error) {
       onChange(prior);
       const mapped = mapUploadError(error);
-      logPhotoUpload("upload_failed", { code: mapped.code, message: mapped.message });
+      logPhotoPipeline("failed", { code: mapped.code, reason: mapped.message });
       flowLog("photo_upload_failed", { code: mapped.code });
       onModerationMessage?.(mapped.message || PHOTO_UPLOAD_FAIL);
     } finally {

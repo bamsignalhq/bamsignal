@@ -1,10 +1,14 @@
-import { isImageModerationEnabled } from "../config/imageModeration";
-import { PHOTO_REJECTED } from "../constants/photos";
+import {
+  getPhotoModerationMode,
+  isImageModerationEnabled,
+  type PhotoModerationMode
+} from "../config/imageModeration";
+import { PHOTO_UPLOAD_FAIL, photoModerationUserMessage } from "../constants/photos";
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
 import type { PhotoUploadKind } from "../constants/photoUploadKinds";
 import { STORAGE_KEYS } from "../constants/limits";
 import { CONTACT_LEAK_BLOCK_MESSAGE, scanTextForContactLeak } from "./contactGuard";
-import { scanPhotoSafety } from "./photoSafetyScan";
+import { logPhotoSafetyRiskAsync, scanPhotoSafety } from "./photoSafetyScan";
 import { logPhotoUpload } from "./photoUploadLog";
 import { readJson, writeJson } from "./storage";
 
@@ -19,6 +23,8 @@ export type PhotoModerationResult = {
   message: string;
   code?: PhotoUploadErrorCode;
   internalReason?: string;
+  mode: PhotoModerationMode;
+  riskScore?: number;
 };
 
 export function isLikelyImageFile(file: File): boolean {
@@ -47,60 +53,90 @@ function moderationKillSwitchActive(): boolean {
 }
 
 /**
- * Profile and signup photos require a visible face with reasonable area, plus human-confidence checks.
- * Cover photos allow landscapes/travel but still block documents, flyers, and contact leaks.
- * Verification selfies allow ID-in-hand but still require a visible face.
- * Set VITE_ENABLE_IMAGE_MODERATION=false to disable all checks (local debugging only).
+ * warn (default) — never blocks uploads; logs risk for ops review.
+ * block — rejects only fast high-confidence filename/text issues.
+ * Heavy checks (OCR, face, QR) are warn-only until the pipeline is stable.
  */
 export async function moderatePhotoUpload(
   file: File,
   kind: PhotoUploadKind = "profile"
 ): Promise<PhotoModerationResult> {
+  const mode = getPhotoModerationMode();
   const moderationEnabled = isImageModerationEnabled();
 
   logPhotoUpload("moderation_check", {
     kind,
+    mode,
     fileType: file.type || "unknown",
     fileName: file.name || "",
     originalSize: file.size,
     moderationEnabled
   });
 
-  if (moderationKillSwitchActive()) {
-    logPhotoUpload("moderation_skipped", { kind, reason: "kill_switch" });
+  if (moderationKillSwitchActive() || !moderationEnabled) {
+    logPhotoUpload("moderation_skipped", { kind, reason: "disabled" });
     resetPhotoModerationStrikes();
-    return { allowed: true, message: "" };
+    return { allowed: true, message: "", mode };
   }
 
   if (!isLikelyImageFile(file)) {
     return {
       allowed: false,
-      message: PHOTO_REJECTED,
-      code: "MODERATION_REJECTED",
-      internalReason: `invalid_mime:${file.type}`
+      message: PHOTO_UPLOAD_FAIL,
+      code: "NOT_IMAGE",
+      internalReason: `invalid_mime:${file.type}`,
+      mode
     };
   }
 
-  const safety = await scanPhotoSafety(file, kind);
-  if (!safety.allowed) {
-    logPhotoUpload("moderation_rejected", {
-      kind,
-      code: "MODERATION_REJECTED",
-      category: safety.category,
-      reason: safety.internalReason,
-      riskScore: safety.riskScore
-    });
-    return {
-      allowed: false,
-      message: PHOTO_REJECTED,
-      code: "MODERATION_REJECTED",
-      internalReason: `${safety.category}:${safety.internalReason}`
-    };
-  }
+  try {
+    const safety = await scanPhotoSafety(file, kind, mode);
 
-  resetPhotoModerationStrikes();
-  logPhotoUpload("moderation_passed", { kind, riskScore: safety.riskScore });
-  return { allowed: true, message: "" };
+    if (mode === "warn") {
+      resetPhotoModerationStrikes();
+      logPhotoUpload("moderation_passed", {
+        kind,
+        mode,
+        riskScore: safety.riskScore,
+        warnOnly: true
+      });
+      return { allowed: true, message: "", mode, riskScore: safety.riskScore };
+    }
+
+    if (!safety.allowed) {
+      logPhotoUpload("moderation_blocked", {
+        kind,
+        mode,
+        category: safety.category,
+        reason: safety.internalReason,
+        riskScore: safety.riskScore
+      });
+      return {
+        allowed: false,
+        message: photoModerationUserMessage(),
+        code: "MODERATION_REJECTED",
+        internalReason: `${safety.category}:${safety.internalReason}`,
+        mode,
+        riskScore: safety.riskScore
+      };
+    }
+
+    resetPhotoModerationStrikes();
+    logPhotoUpload("moderation_passed", { kind, mode, riskScore: safety.riskScore });
+    return { allowed: true, message: "", mode, riskScore: safety.riskScore };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    logPhotoUpload("moderation_error", { kind, mode, reason });
+    resetPhotoModerationStrikes();
+    return { allowed: true, message: "", mode };
+  }
+}
+
+/** Call after a successful storage upload to log deep risk without blocking. */
+export function reviewUploadedPhotoAsync(file: File, kind: PhotoUploadKind): void {
+  if (moderationKillSwitchActive() || !isImageModerationEnabled()) return;
+  if (getPhotoModerationMode() !== "warn") return;
+  logPhotoSafetyRiskAsync(file, kind);
 }
 
 /** @deprecated Signup uses moderatePhotoUpload with kind=signup */

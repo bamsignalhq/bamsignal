@@ -35,7 +35,6 @@ export const SUCCESS_COPY = {
   welcomeTitle: "Welcome to BamSignal ❤️",
   welcomeBody:
     "Your profile is ready. Discover genuine people around you and take things one signal at a time.",
-  photoHeader: "Show your best side ❤️",
   profileVisitorsTitle: "People Interested In You",
   profileVisitorsLocked: "People Interested In You 🔒",
   profileVisitorsSubtitle: "Someone may already be noticing you ❤️",

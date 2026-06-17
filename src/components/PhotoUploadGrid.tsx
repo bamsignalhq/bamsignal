@@ -147,7 +147,7 @@ export function PhotoUploadGrid({
     <div className="photo-upload-grid">
       {belowMin ? (
         <p className="photo-upload-grid__hint photo-upload-grid__hint--warn" role="status">
-          Please add at least {MIN_PROFILE_PHOTOS} photos.
+          Add {MIN_PROFILE_PHOTOS} photos so people can recognize you.
         </p>
       ) : null}
       {aboveMax ? (

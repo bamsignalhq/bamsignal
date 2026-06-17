@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
 import { citiesForState } from "../constants/profileOptions";
@@ -54,7 +54,17 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     return Number.isFinite(saved) ? Math.min(Math.max(0, saved), STEPS.length - 1) : 0;
   });
   const [modMessage, setModMessage] = useState("");
+  const modMessageTimerRef = useRef<number | undefined>(undefined);
   const [showWelcome, setShowWelcome] = useState(false);
+
+  const showModMessage = (msg: string) => {
+    if (modMessageTimerRef.current !== undefined) clearTimeout(modMessageTimerRef.current);
+    setModMessage(msg);
+    modMessageTimerRef.current = window.setTimeout(() => {
+      setModMessage("");
+      modMessageTimerRef.current = undefined;
+    }, 4000);
+  };
   const [profile, setProfile] = useState<DatingProfile>(() => {
     const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
     if (stored.onboardingComplete) return { ...defaultDatingProfile(), onboardingComplete: false };
@@ -101,31 +111,31 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   useEffect(() => {
     flowLog("onboarding_step", { step });
     if (!writeJson(STORAGE_KEYS.onboardingStep, step)) {
-      setModMessage(USER_MESSAGES.progressSaveFailed);
+      showModMessage(USER_MESSAGES.progressSaveFailed);
     }
   }, [step]);
 
   useEffect(() => {
     if (profile.onboardingComplete) return;
     if (!writeJson(STORAGE_KEYS.datingProfile, { ...profile, onboardingComplete: false })) {
-      setModMessage(USER_MESSAGES.progressSaveFailed);
+      showModMessage(USER_MESSAGES.progressSaveFailed);
     }
   }, [profile]);
 
   const saveAndFinish = () => {
     const nameError = validateDisplayName(user.name);
     if (nameError) {
-      setModMessage(nameError);
+      showModMessage(nameError);
       return;
     }
     const bioError = validateUserText(profile.bio);
     if (bioError) {
-      setModMessage(bioError);
+      showModMessage(bioError);
       return;
     }
     const profileLeak = validateProfileContactLeaks(profile, user);
     if (profileLeak.blocked) {
-      setModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
+      showModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
       return;
     }
     const located = resolveProfileLocation(profile.city, profile.state);
@@ -143,7 +153,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       coverPhotoExplicit: false
     };
     if (!writeJson(STORAGE_KEYS.datingProfile, final)) {
-      setModMessage(USER_MESSAGES.progressSaveFailed);
+      showModMessage(USER_MESSAGES.progressSaveFailed);
       return;
     }
     localStorage.removeItem(STORAGE_KEYS.onboardingStep);
@@ -162,7 +172,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
             : []
       })
     ) {
-      setModMessage(USER_MESSAGES.progressSaveFailed);
+      showModMessage(USER_MESSAGES.progressSaveFailed);
       return;
     }
     localStorage.setItem(STORAGE_KEYS.firstSignalPromptAt, String(Date.now()));
@@ -198,19 +208,19 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     if (step === 0) {
       const nameError = validateDisplayName(user.name);
       if (nameError) {
-        setModMessage(nameError);
+        showModMessage(nameError);
         return;
       }
     }
     if (step === 1) {
       const bioError = validateUserText(profile.bio);
       if (bioError) {
-        setModMessage(bioError);
+        showModMessage(bioError);
         return;
       }
       const profileLeak = validateProfileContactLeaks(profile);
       if (profileLeak.blocked) {
-        setModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
+        showModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
         return;
       }
     }
@@ -391,7 +401,6 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
 
       {step === 2 && (
         <section className="onboarding-step">
-          <h2>{SUCCESS_COPY.photoHeader}</h2>
           <PhotoUploadGrid
             photos={profile.photos}
             signupMode
@@ -403,16 +412,12 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
                 coverPhotoExplicit: false
               });
               if (!writeJson(STORAGE_KEYS.datingProfile, { ...next, onboardingComplete: false })) {
-                setModMessage(PHOTO_UPLOAD_FAIL);
-                window.setTimeout(() => setModMessage(""), 4000);
+                showModMessage(PHOTO_UPLOAD_FAIL);
                 return;
               }
               setProfile(next);
             }}
-            onModerationMessage={(msg) => {
-              setModMessage(msg);
-              window.setTimeout(() => setModMessage(""), 4000);
-            }}
+            onModerationMessage={showModMessage}
           />
         </section>
       )}

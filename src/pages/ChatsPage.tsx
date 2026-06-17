@@ -1,5 +1,5 @@
 import { ArrowLeft, MessageCircle, MoreVertical, Pin, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EXPERIENCE_COPY } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
 import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
@@ -296,6 +296,15 @@ function ChatDetail({
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [enabledModalOpen, setEnabledModalOpen] = useState(false);
   const [blockWarning, setBlockWarning] = useState("");
+  const blockWarningTimerRef = useRef<number | undefined>(undefined);
+  const showBlockWarning = (msg: string) => {
+    if (blockWarningTimerRef.current !== undefined) clearTimeout(blockWarningTimerRef.current);
+    setBlockWarning(msg);
+    blockWarningTimerRef.current = window.setTimeout(() => {
+      setBlockWarning("");
+      blockWarningTimerRef.current = undefined;
+    }, 4000);
+  };
   const [toast, setToast] = useState("");
   const [screenshotNotice, setScreenshotNotice] = useState(false);
   const [quickiePaywallOpen, setQuickiePaywallOpen] = useState(false);
@@ -390,7 +399,7 @@ function ChatDetail({
     });
 
     if (contactCheck.blocked) {
-      setBlockWarning(CONTACT_LEAK_BLOCK_MESSAGE);
+      showBlockWarning(CONTACT_LEAK_BLOCK_MESSAGE);
       return;
     }
 
@@ -609,7 +618,10 @@ function ChatDetail({
           onSend={handleSend}
           placeholder={`Message ${match.name}…`}
           blockWarning={blockWarning}
-          onClearWarning={() => setBlockWarning("")}
+          onClearWarning={() => {
+            if (blockWarningTimerRef.current !== undefined) clearTimeout(blockWarningTimerRef.current);
+            setBlockWarning("");
+          }}
         />
       )}
 

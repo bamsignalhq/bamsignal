@@ -2045,6 +2045,11 @@
   font-weight: 600;
 }
 
+.interest-sheet-chip--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 [data-theme="light"] .interest-sheet-chip {
   background: rgba(0, 0, 0, 0.04);
   border-color: rgba(0, 0, 0, 0.1);

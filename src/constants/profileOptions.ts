@@ -89,7 +89,7 @@ export const SOCIAL_LIFESTYLES = [
 
 export type SocialLifestyle = (typeof SOCIAL_LIFESTYLES)[number];
 
-export { INTEREST_OPTIONS, ALL_CATEGORIZED_INTERESTS, MAX_PROFILE_INTERESTS } from "./interestCategories";
+export { INTEREST_OPTIONS, ALL_CATEGORIZED_INTERESTS, MIN_PROFILE_INTERESTS, MAX_PROFILE_INTERESTS } from "./interestCategories";
 
 export const OCCUPATIONS = [
   "Healthcare",

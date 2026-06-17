@@ -5,6 +5,7 @@ import { StateCitySelect, resolveProfileLocation } from "../components/StateCity
 import { citiesForState } from "../constants/profileOptions";
 import { INTENT_OPTIONS } from "../constants/intents";
 import { MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import { MIN_PROFILE_INTERESTS } from "../constants/interestCategories";
 import { STORAGE_KEYS } from "../constants/limits";
 import { InterestPicker } from "../components/InterestPicker";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
@@ -155,7 +156,11 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       );
     }
     if (step === 1) {
-      return profile.bio.trim().length >= 8 && profile.intents.length >= 1;
+      return (
+        profile.bio.trim().length >= 8 &&
+        profile.intents.length >= 1 &&
+        (profile.interests?.length ?? 0) >= MIN_PROFILE_INTERESTS
+      );
     }
     if (step === 2) return profile.photos.filter(isStoragePhotoUrl).length >= MIN_PROFILE_PHOTOS;
     return true;

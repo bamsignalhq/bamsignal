@@ -1,4 +1,5 @@
-export const MAX_PROFILE_INTERESTS = 12;
+export const MIN_PROFILE_INTERESTS = 3;
+export const MAX_PROFILE_INTERESTS = 10;
 export const PROFILE_INTERESTS_PREVIEW = 4;
 
 export type InterestCategory = {

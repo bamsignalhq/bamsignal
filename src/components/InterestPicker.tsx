@@ -42,6 +42,7 @@ export function InterestPicker({ selected, onChange, variant = "edit" }: Interes
         selected={selected}
         onChange={onChange}
         onClose={() => setSheetOpen(false)}
+        requireMinimum={variant === "onboarding"}
       />
     </fieldset>
   );

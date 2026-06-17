@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import {
   INTEREST_CATEGORIES,
-  MAX_PROFILE_INTERESTS
+  MAX_PROFILE_INTERESTS,
+  MIN_PROFILE_INTERESTS
 } from "../../constants/interestCategories";
 
 type InterestPickerSheetProps = {
@@ -9,10 +10,19 @@ type InterestPickerSheetProps = {
   selected: string[];
   onChange: (interests: string[]) => void;
   onClose: () => void;
+  /** Onboarding — show minimum required for Continue */
+  requireMinimum?: boolean;
 };
 
-export function InterestPickerSheet({ open, selected, onChange, onClose }: InterestPickerSheetProps) {
+export function InterestPickerSheet({
+  open,
+  selected,
+  onChange,
+  onClose,
+  requireMinimum = false
+}: InterestPickerSheetProps) {
   const [limitMessage, setLimitMessage] = useState("");
+  const atMax = selected.length >= MAX_PROFILE_INTERESTS;
 
   useEffect(() => {
     if (!open) {
@@ -34,8 +44,8 @@ export function InterestPickerSheet({ open, selected, onChange, onClose }: Inter
       onChange(selected.filter((item) => item !== interest));
       return;
     }
-    if (selected.length >= MAX_PROFILE_INTERESTS) {
-      setLimitMessage("You can choose up to 12 interests.");
+    if (atMax) {
+      setLimitMessage(`You can choose up to ${MAX_PROFILE_INTERESTS} interests.`);
       return;
     }
     setLimitMessage("");
@@ -45,6 +55,19 @@ export function InterestPickerSheet({ open, selected, onChange, onClose }: Inter
   const clearAll = () => {
     setLimitMessage("");
     onChange([]);
+  };
+
+  const countHint = () => {
+    if (requireMinimum && selected.length < MIN_PROFILE_INTERESTS) {
+      return `Pick at least ${MIN_PROFILE_INTERESTS} to continue · ${selected.length} selected`;
+    }
+    if (selected.length > 0) {
+      return `${selected.length} selected · ${MAX_PROFILE_INTERESTS} max`;
+    }
+    if (requireMinimum) {
+      return `Pick at least ${MIN_PROFILE_INTERESTS} to continue`;
+    }
+    return `${MIN_PROFILE_INTERESTS}–${MAX_PROFILE_INTERESTS} recommended`;
   };
 
   return (
@@ -65,12 +88,14 @@ export function InterestPickerSheet({ open, selected, onChange, onClose }: Inter
               <div className="interest-sheet__chips">
                 {category.interests.map((interest) => {
                   const isSelected = selected.includes(interest);
+                  const blocked = !isSelected && atMax;
                   return (
                     <button
                       key={interest}
                       type="button"
-                      className={`interest-sheet-chip${isSelected ? " interest-sheet-chip--selected" : ""}`}
+                      className={`interest-sheet-chip${isSelected ? " interest-sheet-chip--selected" : ""}${blocked ? " interest-sheet-chip--disabled" : ""}`}
                       onClick={() => toggle(interest)}
+                      disabled={blocked}
                       aria-pressed={isSelected}
                     >
                       {interest}
@@ -87,12 +112,8 @@ export function InterestPickerSheet({ open, selected, onChange, onClose }: Inter
             <p className="interest-sheet__limit" role="status">
               {limitMessage}
             </p>
-          ) : selected.length > 0 ? (
-            <p className="interest-sheet__count">
-              {selected.length} selected · {MAX_PROFILE_INTERESTS} max
-            </p>
           ) : (
-            <p className="interest-sheet__count">5–8 recommended · optional</p>
+            <p className="interest-sheet__count">{countHint()}</p>
           )}
           <div className="interest-sheet__actions">
             <button type="button" className="btn-secondary" onClick={clearAll} disabled={!selected.length}>

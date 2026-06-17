@@ -3,7 +3,7 @@ import { STORAGE_KEYS } from "../constants/limits";
 import { MIN_PROFILE_PHOTOS } from "../constants/photos";
 import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
-import { stateForCity } from "../constants/profileOptions";
+import { stateForCity, citiesForState } from "../constants/profileOptions";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
@@ -173,8 +173,11 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
     religions: safeArray(raw.religions),
     ethnicities: safeArray(raw.ethnicities),
     lifestyles: safeArray(raw.lifestyles),
-    cities: safeArray(raw.cities),
-    states: safeArray(raw.states),
+    cities: safeArray<string>(raw.cities).filter((city) => {
+      const state = safeArray<string>(raw.states)[0];
+      return !state || citiesForState(state).includes(city);
+    }),
+    states: safeArray<string>(raw.states).slice(0, 1),
     statesOfOrigin: safeArray(raw.statesOfOrigin),
     occupations: safeArray(raw.occupations),
     genotypes: safeArray(raw.genotypes),

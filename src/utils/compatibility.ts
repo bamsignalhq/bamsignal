@@ -1,4 +1,5 @@
 import { intentLabel } from "../constants/intents";
+import { stateForCity } from "../constants/profileOptions";
 import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
 import type { IntentTag } from "../types";
 import { safeArray } from "./safeProfile";
@@ -168,6 +169,10 @@ export function getProfileMatchReasons(viewer: DatingProfile, candidate: Discove
     .map((reason) => reason.label);
 }
 
+function candidateLocationState(candidate: DiscoverProfile): string | undefined {
+  return candidate.state?.trim() || (candidate.city ? stateForCity(candidate.city) : undefined);
+}
+
 export function hasActivePreferences(prefs: MatchPreferences): boolean {
   return (
     prefs.religions.length > 0 ||
@@ -195,8 +200,11 @@ export function matchesPreferences(candidate: DiscoverProfile, prefs: MatchPrefe
   if (prefs.lifestyles.length && candidate.lifestyle && !prefs.lifestyles.includes(candidate.lifestyle))
     return false;
   if (prefs.cities.length && !prefs.cities.includes(candidate.city)) return false;
-  if (prefs.states.length && candidate.stateOfOrigin && !prefs.states.includes(candidate.stateOfOrigin))
-    return false;
+  if (prefs.states.length) {
+    const searchState = prefs.states[0];
+    const locationState = candidateLocationState(candidate);
+    if (locationState && searchState !== locationState) return false;
+  }
   if (prefs.ageMin != null && candidate.age < prefs.ageMin) return false;
   if (prefs.ageMax != null && candidate.age > prefs.ageMax) return false;
   if (prefs.distanceMax != null && candidate.distanceKm != null && candidate.distanceKm > prefs.distanceMax)

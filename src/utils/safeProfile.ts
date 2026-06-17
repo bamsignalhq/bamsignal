@@ -109,6 +109,7 @@ export function safeDiscoverProfile(raw: Partial<DiscoverProfile>): DiscoverProf
     gender: raw.gender,
     lookingFor: raw.lookingFor,
     city: safeString(raw.city),
+    state: safeString(raw.state) || undefined,
     bio: safeString(raw.bio),
     photo: isPersistablePhotoUrl(photo) ? photo : DEFAULT_PROFILE_COVER,
     photos: photos.length ? photos : [DEFAULT_PROFILE_COVER],

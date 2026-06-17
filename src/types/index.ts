@@ -272,6 +272,7 @@ export type DiscoverProfile = {
   gender?: Gender;
   lookingFor?: LookingFor;
   city: string;
+  state?: string;
   bio: string;
   photo: string;
   photos?: string[];

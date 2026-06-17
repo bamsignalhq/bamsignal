@@ -75,7 +75,7 @@ export function advancedFromMatchPreferences(prefs: MatchPreferences): HomeAdvan
     tribes: prefs.ethnicities ?? [],
     religions: prefs.religions ?? [],
     occupations: prefs.occupations ?? [],
-    statesOfOrigin: prefs.statesOfOrigin?.length ? prefs.statesOfOrigin : (prefs.states ?? []),
+    statesOfOrigin: prefs.statesOfOrigin ?? [],
     relationshipIntentions: prefs.relationshipIntentions ?? [],
     genotypes: prefs.genotypes ?? [],
     hasKids: prefs.hasKids?.length

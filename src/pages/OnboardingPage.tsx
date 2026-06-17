@@ -2,7 +2,6 @@ import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
-import { citiesForState } from "../constants/profileOptions";
 import { INTENT_OPTIONS } from "../constants/intents";
 import { durationLabel } from "../constants/plans";
 import { MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
@@ -101,7 +100,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     }
     return normalized;
   });
-  const [prefStates, setPrefStates] = useState<string[]>([]);
+  const [prefSearchState, setPrefSearchState] = useState("");
   const [prefCities, setPrefCities] = useState<string[]>([]);
   const [ageMin, setAgeMin] = useState(22);
   const [ageMax, setAgeMax] = useState(35);
@@ -167,7 +166,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     if (
       !writeJson(STORAGE_KEYS.matchPreferences, {
         ...readJson(STORAGE_KEYS.matchPreferences, {}),
-        states: prefStates,
+        states: prefSearchState ? [prefSearchState] : [],
         cities: prefCities,
         ageMin,
         ageMax,
@@ -451,17 +450,16 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
                 lifestyle: lifestyles[0]
               })
             }
-            states={prefStates}
-            onStatesChange={(states) => {
-              setPrefStates(states);
-              setPrefCities((current) =>
-                current.filter((city) =>
-                  states.some((state) => citiesForState(state).includes(city))
-                )
-              );
+            searchState={prefSearchState || undefined}
+            onSearchStateChange={(searchState) => {
+              const next = searchState || "";
+              if (next !== prefSearchState) {
+                setPrefCities([]);
+              }
+              setPrefSearchState(next);
             }}
-            cities={prefCities}
-            onCitiesChange={setPrefCities}
+            searchCities={prefCities}
+            onSearchCitiesChange={setPrefCities}
             ageMin={ageMin}
             ageMax={ageMax}
             ageLabel="Age"

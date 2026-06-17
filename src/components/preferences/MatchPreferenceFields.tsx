@@ -48,10 +48,10 @@ type MatchPreferenceFieldsProps = {
   onEthnicitiesChange?: (value: EthnicBackground[]) => void;
   prefLifestyles?: SocialLifestyle[];
   onPrefLifestylesChange?: (value: SocialLifestyle[]) => void;
-  states?: string[];
-  onStatesChange?: (value: string[]) => void;
-  cities?: string[];
-  onCitiesChange?: (value: string[]) => void;
+  searchState?: string;
+  onSearchStateChange?: (value: string | undefined) => void;
+  searchCities?: string[];
+  onSearchCitiesChange?: (value: string[]) => void;
   ageMin?: number;
   ageMax?: number;
   onAgeRangeChange?: (min: number, max: number) => void;
@@ -93,10 +93,10 @@ export function MatchPreferenceFields({
   onEthnicitiesChange,
   prefLifestyles,
   onPrefLifestylesChange,
-  states,
-  onStatesChange,
-  cities,
-  onCitiesChange,
+  searchState,
+  onSearchStateChange,
+  searchCities,
+  onSearchCitiesChange,
   ageMin,
   ageMax,
   onAgeRangeChange,
@@ -121,9 +121,7 @@ export function MatchPreferenceFields({
   ageLabel = "Preferred age range",
   className = ""
 }: MatchPreferenceFieldsProps) {
-  const cityOptions = Array.from(
-    new Set((states ?? []).flatMap((state) => citiesForState(state)))
-  ).sort();
+  const cityOptions = searchState ? citiesForState(searchState) : [];
 
   return (
     <div className={`match-pref-fields ${className}`.trim()}>
@@ -200,25 +198,24 @@ export function MatchPreferenceFields({
         />
       ) : null}
 
-      {onStatesChange ? (
+      {onSearchStateChange ? (
         <TapSelectField
-          label="Preferred state"
-          multiple
+          label="Search State"
           options={STATE_OPTIONS}
-          value={states ?? []}
+          value={searchState}
           formatValue={stateDisplayLabel}
-          onChange={(next) => onStatesChange((next as string[]) ?? [])}
+          onChange={(next) => onSearchStateChange(next as string | undefined)}
         />
       ) : null}
 
-      {onCitiesChange ? (
+      {onSearchCitiesChange ? (
         <TapSelectField
-          label="Preferred cities"
+          label="Search Cities"
           multiple
-          disabled={!cityOptions.length}
+          disabled={!searchState}
           options={cityOptions}
-          value={cities ?? []}
-          onChange={(next) => onCitiesChange((next as string[]) ?? [])}
+          value={searchCities ?? []}
+          onChange={(next) => onSearchCitiesChange((next as string[]) ?? [])}
         />
       ) : null}
 

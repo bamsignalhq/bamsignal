@@ -7,7 +7,7 @@ import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
 import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import { TapSelectField } from "../components/TapSelectField";
-import { citiesForState } from "../constants/profileOptions";
+import { searchStateFromPrefs, withSearchStateChange } from "../utils/searchLocationPrefs";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
 import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
 import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
@@ -711,18 +711,12 @@ export function ProfilePage({
                 onEthnicitiesChange={(ethnicities) => setPrefs({ ...prefs, ethnicities })}
                 prefLifestyles={prefs.lifestyles}
                 onPrefLifestylesChange={(lifestyles) => setPrefs({ ...prefs, lifestyles })}
-                states={prefs.states}
-                onStatesChange={(states) => {
-                  setPrefs((current) => ({
-                    ...current,
-                    states,
-                    cities: current.cities.filter((city) =>
-                      states.some((state) => citiesForState(state).includes(city))
-                    )
-                  }));
-                }}
-                cities={prefs.cities}
-                onCitiesChange={(cities) => setPrefs({ ...prefs, cities })}
+                searchState={searchStateFromPrefs(prefs)}
+                onSearchStateChange={(searchState) =>
+                  setPrefs(withSearchStateChange(prefs, searchState))
+                }
+                searchCities={prefs.cities}
+                onSearchCitiesChange={(cities) => setPrefs({ ...prefs, cities })}
                 ageMin={prefs.ageMin ?? 22}
                 ageMax={prefs.ageMax ?? 35}
                 onAgeRangeChange={(ageMin, ageMax) => setPrefs({ ...prefs, ageMin, ageMax })}

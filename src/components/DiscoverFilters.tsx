@@ -3,7 +3,7 @@ import { useState } from "react";
 import { MONETIZATION_COPY } from "../constants/copy";
 import { StateCitySelect } from "./StateCitySelect";
 import { INTENT_OPTIONS } from "../constants/intents";
-import { citiesForState } from "../constants/profileOptions";
+import { searchStateFromPrefs, withSearchStateChange } from "../utils/searchLocationPrefs";
 import { MatchPreferenceFields } from "./preferences/MatchPreferenceFields";
 import { MAX_DISCOVER_RADIUS_MILES, kmToMiles, milesToKm } from "../utils/discoverLocation";
 import type { MatchPreferences, PreferenceMode } from "../types";
@@ -178,18 +178,12 @@ export function DiscoverFilters({
             onEthnicitiesChange={(ethnicities) => onChange({ ...prefs, ethnicities })}
             prefLifestyles={prefs.lifestyles}
             onPrefLifestylesChange={(lifestyles) => onChange({ ...prefs, lifestyles })}
-            states={prefs.states}
-            onStatesChange={(states) =>
-              onChange({
-                ...prefs,
-                states,
-                cities: prefs.cities.filter((city) =>
-                  states.some((state) => citiesForState(state).includes(city))
-                )
-              })
+            searchState={searchStateFromPrefs(prefs)}
+            onSearchStateChange={(searchState) =>
+              onChange(withSearchStateChange(prefs, searchState))
             }
-            cities={prefs.cities}
-            onCitiesChange={(cities) => onChange({ ...prefs, cities })}
+            searchCities={prefs.cities}
+            onSearchCitiesChange={(cities) => onChange({ ...prefs, cities })}
             ageMin={prefs.ageMin ?? 22}
             ageMax={prefs.ageMax ?? 35}
             ageLabel="Age"

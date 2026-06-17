@@ -401,6 +401,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
 
       {step === 2 && (
         <section className="onboarding-step">
+          <h2>{SUCCESS_COPY.photoHeader}</h2>
           <PhotoUploadGrid
             photos={profile.photos}
             signupMode

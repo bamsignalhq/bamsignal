@@ -61,11 +61,14 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         stored.city ||
         stored.bio?.trim() ||
         stored.photos?.length ||
+        stored.interestsTouched ||
         (stored.age !== undefined && stored.age >= MIN_ONBOARDING_AGE && !stored.dateOfBirth)
     );
     if (!resuming) {
       return {
         ...normalized,
+        interests: [],
+        interestsTouched: false,
         age: 0,
         gender: "" as Gender,
         dateOfBirth: undefined,
@@ -84,6 +87,13 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   const [ageMax, setAgeMax] = useState(35);
 
   const progress = ((step + 1) / STEPS.length) * 100;
+
+  useEffect(() => {
+    setProfile((prev) => {
+      if (prev.interestsTouched || !prev.interests?.length) return prev;
+      return { ...prev, interests: [], interestsTouched: false };
+    });
+  }, []);
 
   useEffect(() => {
     flowLog("onboarding_step", { step });
@@ -333,7 +343,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           <InterestPicker
             variant="onboarding"
             selected={profile.interests}
-            onChange={(interests) => setProfile({ ...profile, interests })}
+            onChange={(interests) => setProfile({ ...profile, interests, interestsTouched: true })}
           />
         </section>
       )}

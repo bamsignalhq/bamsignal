@@ -27,7 +27,7 @@ import { STORAGE_KEYS } from "./constants/limits";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./types";
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
-import { isOnboardingComplete, normalizeDatingProfile } from "./utils/profile";
+import { isOnboardingComplete, getDatingProfile, normalizeDatingProfile } from "./utils/profile";
 import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
@@ -543,6 +543,16 @@ export function App() {
         markFirstDayStep("welcome");
         if (maybeGrantPremiumTrial(true)) setIsPremium(true);
         if (ref) trackEvent("referral_signup", { code: ref.toUpperCase() });
+        const current = getDatingProfile();
+        writeJson(
+          STORAGE_KEYS.datingProfile,
+          normalizeDatingProfile({
+            ...current,
+            interests: [],
+            interestsTouched: false,
+            onboardingComplete: false
+          })
+        );
       } else if (meta?.recovered) {
         flowLog("signup_recovered_existing");
       }

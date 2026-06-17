@@ -484,7 +484,7 @@ export function ProfilePage({
             <InterestPicker
               variant="edit"
               selected={profile.interests ?? []}
-              onChange={(interests) => setProfile({ ...profile, interests })}
+              onChange={(interests) => setProfile({ ...profile, interests, interestsTouched: true })}
             />
           </EditAccordion>
 

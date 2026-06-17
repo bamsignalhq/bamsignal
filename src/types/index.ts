@@ -133,6 +133,8 @@ export type DatingProfile = {
   lookingFor: LookingFor;
   intents: IntentTag[];
   interests: string[];
+  /** True once member picks interests in the picker (prevents stale auto-filled chips during onboarding). */
+  interestsTouched?: boolean;
   religion?: Religion;
   /** Tribe / ethnic background */
   ethnicity?: EthnicBackground;

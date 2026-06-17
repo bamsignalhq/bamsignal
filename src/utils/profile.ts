@@ -97,6 +97,9 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
       ? (cleaned.lookingFor as DatingProfile["lookingFor"])
       : base.lookingFor;
   const onboardingComplete = Boolean(cleaned.onboardingComplete);
+  const interestsTouched = Boolean(cleaned.interestsTouched);
+  const rawInterests = safeArray<string>(cleaned.interests).map((item) => safeString(item)).filter(Boolean);
+  const interests = onboardingComplete || interestsTouched ? rawInterests : [];
   const photosList = safePhotos(cleaned.photos ?? base.photos);
   const persistableCover = safeCoverPhoto(cleaned.coverPhoto);
 
@@ -120,7 +123,8 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     lookingFor: lookingFor as DatingProfile["lookingFor"],
     bio: safeString(cleaned.bio),
     intents: normalizeIntents(safeArray<string>(cleaned.intents) as string[] | undefined),
-    interests: safeArray<string>(cleaned.interests).map((item) => safeString(item)).filter(Boolean),
+    interests,
+    interestsTouched: onboardingComplete ? interests.length > 0 || interestsTouched : interestsTouched,
     coverPhoto,
     coverPhotoExplicit: onboardingComplete ? coverPhotoExplicit : false,
     photos: sanitizeProfilePhotos(photosList, coverPhoto),

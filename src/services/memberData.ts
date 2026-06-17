@@ -8,7 +8,7 @@ import { apiUrl } from "./supabase";
 import { normalizeDatingProfile } from "../utils/profile";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import { readResponseJson } from "../utils/httpJson";
-import { safeCoverPhoto, safePhotos } from "../utils/safeProfile";
+import { safeArray, safeCoverPhoto, safePhotos } from "../utils/safeProfile";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
 
@@ -145,12 +145,27 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
     const coverPhotoExplicit = Boolean(
       (remote.coverPhotoExplicit ?? local.coverPhotoExplicit) && coverPhoto
     );
+    const onboardingIncomplete = !Boolean(local.onboardingComplete || remote.onboardingComplete);
+    const interestsTouched = Boolean(
+      onboardingIncomplete ? local.interestsTouched : local.interestsTouched || remote.interestsTouched
+    );
+    const localInterests = safeArray<string>(local.interests);
+    const remoteInterests = safeArray<string>(remote.interests as string[] | undefined);
+    const interests = onboardingIncomplete
+      ? interestsTouched
+        ? localInterests
+        : []
+      : remoteInterests.length >= localInterests.length
+        ? remoteInterests
+        : localInterests;
     const merged = normalizeDatingProfile({
       ...local,
       ...remote,
       photos: mergedPhotos.length ? mergedPhotos : localPhotos,
       coverPhoto,
-      coverPhotoExplicit
+      coverPhotoExplicit,
+      interests,
+      interestsTouched
     });
     writeJson(STORAGE_KEYS.datingProfile, merged);
   }

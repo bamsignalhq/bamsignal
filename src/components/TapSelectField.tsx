@@ -1,5 +1,6 @@
 import { ChevronDown, X } from "lucide-react";
 import { useState } from "react";
+import { formatMultiSelectSummary } from "../utils/selectSummary";
 
 export type TapSelectOption<T extends string> = T | { value: T; label: string };
 
@@ -63,14 +64,12 @@ export function TapSelectField<T extends string>({
     onChange(undefined);
   };
 
-  const triggerLabel =
-    selected.length === 0
+  const triggerLabel = multiple
+    ? formatMultiSelectSummary(selected, format, placeholder)
+    : selected.length === 0
       ? placeholder
-      : multiple
-        ? selected.length === 1
-          ? format(selected[0])
-          : `${selected.length} selected`
-        : format(selected[0]);
+      : format(selected[0]);
+  const hasSelection = selected.length > 0;
 
   return (
     <div className={`tap-select-field${disabled ? " tap-select-field--disabled" : ""}`}>
@@ -78,23 +77,6 @@ export function TapSelectField<T extends string>({
         {label}
         {optional ? <span className="label-optional"> (optional)</span> : null}
       </span>
-
-      {selected.length > 0 ? (
-        <div className="tap-select-field__chips">
-          {selected.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className="tap-select-chip"
-              onClick={() => remove(item)}
-              aria-label={`Remove ${format(item)}`}
-            >
-              {format(item)}
-              <X size={14} aria-hidden />
-            </button>
-          ))}
-        </div>
-      ) : null}
 
       <button
         type="button"
@@ -104,8 +86,12 @@ export function TapSelectField<T extends string>({
         aria-haspopup="dialog"
         aria-expanded={open}
       >
-        <span>{triggerLabel}</span>
-        <ChevronDown size={18} aria-hidden />
+        <span
+          className={`tap-select-field__value${hasSelection ? "" : " tap-select-field__value--placeholder"}`}
+        >
+          {triggerLabel}
+        </span>
+        <ChevronDown size={18} className="tap-select-field__chevron" aria-hidden />
       </button>
 
       {open ? (
@@ -118,11 +104,36 @@ export function TapSelectField<T extends string>({
           />
           <div className="tap-select-sheet__panel">
             <header className="tap-select-sheet__head">
-              <h3>{label}</h3>
+              <div>
+                <h3>{label}</h3>
+                {multiple && selected.length > 0 ? (
+                  <p className="tap-select-sheet__count">{selected.length} selected</p>
+                ) : null}
+              </div>
               <button type="button" className="tap-select-sheet__done" onClick={() => setOpen(false)}>
                 Done
               </button>
             </header>
+
+            {multiple && selected.length > 0 ? (
+              <div className="tap-select-sheet__selected">
+                <div className="tap-select-sheet__chips">
+                  {selected.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className="tap-select-chip"
+                      onClick={() => remove(item)}
+                      aria-label={`Remove ${format(item)}`}
+                    >
+                      {format(item)}
+                      <X size={14} aria-hidden />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             <div className="tap-select-sheet__options intent-tags selectable">
               {options.map((opt) => {
                 const v = optionValue(opt);

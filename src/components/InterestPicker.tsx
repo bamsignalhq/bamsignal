@@ -1,41 +1,38 @@
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { PROFILE_INTERESTS_PREVIEW } from "../constants/interestCategories";
+import { formatMultiSelectSummary } from "../utils/selectSummary";
 import { InterestPickerSheet } from "./profile/InterestPickerSheet";
-import { ProfileInterestsPreview } from "./profile/ProfileInterestsPreview";
 
 type InterestPickerProps = {
   selected: string[];
   onChange: (interests: string[]) => void;
-  /** Onboarding uses “Choose interests”; edit profile uses “Edit interests” when empty vs filled */
+  /** Onboarding uses minimum required in sheet */
   variant?: "onboarding" | "edit";
 };
 
 export function InterestPicker({ selected, onChange, variant = "edit" }: InterestPickerProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const openSheet = () => setSheetOpen(true);
   const hasSelection = selected.length > 0;
-  const showMoreChip = selected.length > PROFILE_INTERESTS_PREVIEW;
+  const summary = formatMultiSelectSummary(selected, (item) => item, "Select");
 
   return (
-    <fieldset className="intent-fieldset interest-picker interest-picker--collapsed">
-      <legend>Interests</legend>
+    <div className="tap-select-field interest-picker interest-picker--collapsed">
+      <span className="tap-select-field__label">Interests</span>
 
-      {hasSelection ? (
-        <>
-          <ProfileInterestsPreview interests={selected} onMoreClick={showMoreChip ? openSheet : undefined} />
-          {variant === "onboarding" && !showMoreChip ? (
-            <button type="button" className="link-btn interest-picker__change" onClick={openSheet}>
-              Change interests
-            </button>
-          ) : null}
-        </>
-      ) : null}
-
-      {variant === "edit" || !hasSelection ? (
-        <button type="button" className="interest-picker__open btn-secondary btn-full" onClick={openSheet}>
-          {hasSelection ? "Edit interests" : "Choose interests"}
-        </button>
-      ) : null}
+      <button
+        type="button"
+        className="tap-select-field__trigger"
+        onClick={() => setSheetOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={sheetOpen}
+      >
+        <span
+          className={`tap-select-field__value${hasSelection ? "" : " tap-select-field__value--placeholder"}`}
+        >
+          {summary}
+        </span>
+        <ChevronDown size={18} className="tap-select-field__chevron" aria-hidden />
+      </button>
 
       <InterestPickerSheet
         open={sheetOpen}
@@ -44,6 +41,6 @@ export function InterestPicker({ selected, onChange, variant = "edit" }: Interes
         onClose={() => setSheetOpen(false)}
         requireMinimum={variant === "onboarding"}
       />
-    </fieldset>
+    </div>
   );
 }

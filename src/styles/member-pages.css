@@ -1902,43 +1902,18 @@
   margin-top: 14px;
 }
 
-/* Interest picker — collapsed + bottom sheet */
+/* Interest picker — collapsed trigger + bottom sheet */
 .interest-picker--collapsed {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   border: none;
 }
 
-.interest-picker--collapsed legend {
-  margin-bottom: 4px;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-[data-theme="light"] .interest-picker--collapsed legend {
-  color: rgba(0, 0, 0, 0.78);
-}
-
-.interest-picker__open {
-  min-height: 48px;
-}
-
-.interest-picker__change {
-  align-self: flex-start;
-  margin-top: -4px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.82);
-}
-
-[data-theme="light"] .interest-picker__change {
-  color: rgba(0, 0, 0, 0.65);
+.interest-sheet__selected {
+  padding: 12px 18px 0;
 }
 
 .interest-sheet__body {
@@ -1988,6 +1963,10 @@
 
 .interest-sheet__head {
   flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   padding: 16px 18px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: var(--card);

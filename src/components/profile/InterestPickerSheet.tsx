@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   INTEREST_CATEGORIES,
@@ -52,6 +53,11 @@ export function InterestPickerSheet({
     onChange([...selected, interest]);
   };
 
+  const remove = (interest: string) => {
+    setLimitMessage("");
+    onChange(selected.filter((item) => item !== interest));
+  };
+
   const clearAll = () => {
     setLimitMessage("");
     onChange([]);
@@ -78,8 +84,33 @@ export function InterestPickerSheet({
           <div>
             <h3>Choose your interests</h3>
             <p>Pick a few that feel like you.</p>
+            {selected.length > 0 ? (
+              <p className="tap-select-sheet__count">{selected.length} selected</p>
+            ) : null}
           </div>
+          <button type="button" className="tap-select-sheet__done" onClick={onClose}>
+            Done
+          </button>
         </header>
+
+        {selected.length > 0 ? (
+          <div className="tap-select-sheet__selected interest-sheet__selected">
+            <div className="tap-select-sheet__chips">
+              {selected.map((interest) => (
+                <button
+                  key={interest}
+                  type="button"
+                  className="tap-select-chip"
+                  onClick={() => remove(interest)}
+                  aria-label={`Remove ${interest}`}
+                >
+                  {interest}
+                  <X size={14} aria-hidden />
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="interest-sheet__body">
           {INTEREST_CATEGORIES.map((category) => (

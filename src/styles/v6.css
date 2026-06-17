@@ -1017,7 +1017,7 @@
   margin-top: 10px;
 }
 
-.profile-detail-sheet__card h3 {
+.profile-detail-sheet__card h3:not(.profile-read__heading) {
   margin: 0 0 6px;
   font-size: 0.68rem;
   font-weight: 700;

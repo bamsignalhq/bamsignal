@@ -19,10 +19,14 @@ export function ProfileDetailsList({
   if (!rows.length) return null;
 
   if (variant === "chips") {
+    const lastIsWide = rows.length % 2 === 1;
     return (
       <div className={`profile-details-chips ${className}`.trim()} aria-label="Profile highlights">
-        {rows.map(({ label, value }) => (
-          <div key={label} className="profile-details-chip">
+        {rows.map(({ label, value }, index) => (
+          <div
+            key={label}
+            className={`profile-details-chip${lastIsWide && index === rows.length - 1 ? " profile-details-chip--wide" : ""}`}
+          >
             <span className="profile-details-chip__value">{value}</span>
             <span className="profile-details-chip__label">{label}</span>
           </div>

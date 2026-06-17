@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PROFILE_INTERESTS_PREVIEW } from "../constants/interestCategories";
 import { InterestPickerSheet } from "./profile/InterestPickerSheet";
 import { ProfileInterestsPreview } from "./profile/ProfileInterestsPreview";
 
@@ -11,24 +12,30 @@ type InterestPickerProps = {
 
 export function InterestPicker({ selected, onChange, variant = "edit" }: InterestPickerProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
-  const openLabel =
-    selected.length === 0
-      ? variant === "onboarding"
-        ? "Choose interests"
-        : "Choose interests"
-      : "Edit interests";
+  const openSheet = () => setSheetOpen(true);
+  const hasSelection = selected.length > 0;
+  const showMoreChip = selected.length > PROFILE_INTERESTS_PREVIEW;
 
   return (
     <fieldset className="intent-fieldset interest-picker interest-picker--collapsed">
       <legend>Interests</legend>
 
-      {selected.length > 0 ? (
-        <ProfileInterestsPreview interests={selected} onMoreClick={() => setSheetOpen(true)} />
+      {hasSelection ? (
+        <>
+          <ProfileInterestsPreview interests={selected} onMoreClick={showMoreChip ? openSheet : undefined} />
+          {variant === "onboarding" && !showMoreChip ? (
+            <button type="button" className="link-btn interest-picker__change" onClick={openSheet}>
+              Change interests
+            </button>
+          ) : null}
+        </>
       ) : null}
 
-      <button type="button" className="interest-picker__open btn-secondary btn-full" onClick={() => setSheetOpen(true)}>
-        {openLabel}
-      </button>
+      {variant === "edit" || !hasSelection ? (
+        <button type="button" className="interest-picker__open btn-secondary btn-full" onClick={openSheet}>
+          {hasSelection ? "Edit interests" : "Choose interests"}
+        </button>
+      ) : null}
 
       <InterestPickerSheet
         open={sheetOpen}

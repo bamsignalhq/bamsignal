@@ -42,16 +42,16 @@ export function getFilledProfileDetails(
   pushList(rows, "Occupation", profile.occupations ?? (profile.occupation ? [profile.occupation] : []));
   pushList(
     rows,
-    "State of origin",
+    "State of Origin",
     profile.statesOfOrigin ?? (profile.stateOfOrigin ? [profile.stateOfOrigin] : [])
   );
   pushList(rows, "Genotype", profile.genotypes ?? (profile.genotype ? [profile.genotype] : []));
   pushList(rows, "Lifestyle", profile.lifestyles ?? (profile.lifestyle ? [profile.lifestyle] : []));
-  pushList(rows, "Body type", profile.bodyTypes);
+  pushList(rows, "Body Type", profile.bodyTypes);
   if (profile.hasKidsOptions?.length) {
-    pushList(rows, "Has kids", profile.hasKidsOptions);
+    pushList(rows, "Has Kids", profile.hasKidsOptions);
   } else if (profile.wantsKidsOptions?.length) {
-    pushList(rows, "Wants kids", profile.wantsKidsOptions);
+    pushList(rows, "Wants Kids", profile.wantsKidsOptions);
   } else {
     pushIfFilled(rows, "Kids", profile.kidsPreference);
   }

@@ -24,6 +24,12 @@ export function intentDisplay(id: IntentTag): string {
   return opt ? `${opt.emoji} ${opt.label}` : id;
 }
 
+/** Profile read view — no emoji, high-contrast outdoor readability */
+export function profileIntentLabel(id: IntentTag): string {
+  if (id === "Relationship") return "Serious Relationship";
+  return intentLabel(id);
+}
+
 /** Map legacy intent values from older saves */
 export function normalizeIntent(raw: string): IntentTag | null {
   const map: Record<string, IntentTag> = {

@@ -627,11 +627,6 @@ export function AuthPage({
             <>
               <h1 className="auth-title">Welcome back</h1>
               <p className="auth-sub">Sign in with your username and PIN.</p>
-              {import.meta.env.DEV && (
-                <p className="auth-dev-hint">
-                  Demo: <strong>{DEMO_USER.username}</strong> / <strong>{DEMO_USER.pin}</strong>
-                </p>
-              )}
               <div className="auth-fields">
                 <AuthField
                   label="Username"

@@ -56,23 +56,28 @@ export function DiscoverFeedCard({
             </span>
           ) : null}
           {!isDashboard && preview ? <span className="discover-feed-card__preview">Preview</span> : null}
-          <div className="discover-feed-card__overlay">
+          {!isDashboard ? (
+            <div className="discover-feed-card__overlay">
+              <h3 className="discover-feed-card__name">
+                {profile.name}
+                <span>, {profile.age}</span>
+              </h3>
+              <p className="discover-feed-card__city">
+                <MapPin size={10} aria-hidden />
+                {profile.city}
+              </p>
+            </div>
+          ) : null}
+        </div>
+        {isDashboard ? (
+          <div className="discover-feed-card__caption">
             <h3 className="discover-feed-card__name">
               {profile.name}
               <span>, {profile.age}</span>
             </h3>
-            <p className="discover-feed-card__city">
-              {isDashboard ? (
-                <>📍 {profile.city}</>
-              ) : (
-                <>
-                  <MapPin size={10} aria-hidden />
-                  {profile.city}
-                </>
-              )}
-            </p>
+            <p className="discover-feed-card__city">📍 {profile.city}</p>
           </div>
-        </div>
+        ) : null}
       </button>
       <button
         type="button"

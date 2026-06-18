@@ -450,6 +450,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  color: inherit;
+  -webkit-text-fill-color: inherit;
 }
 
 .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__media {
@@ -488,32 +490,33 @@
   z-index: 3;
 }
 
-.home-signals-feed .discover-feed-card--dashboard .discover-feed-card__overlay {
-  padding: 18px 10px 10px;
-  background: linear-gradient(
-    to top,
-    rgba(255, 255, 255, 0.98) 0%,
-    rgba(255, 255, 255, 0.72) 38%,
-    transparent 100%
-  );
+.home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption {
+  flex-shrink: 0;
+  padding: 10px 12px 8px;
+  background: #fff;
+  text-align: left;
 }
 
-.home-signals-feed .discover-feed-card--dashboard .discover-feed-card__name {
+.home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption .discover-feed-card__name {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #170b35;
+  -webkit-text-fill-color: #170b35;
   line-height: 1.2;
 }
 
-.home-signals-feed .discover-feed-card--dashboard .discover-feed-card__name span {
+.home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption .discover-feed-card__name span {
   font-weight: 700;
   opacity: 1;
+  color: inherit;
+  -webkit-text-fill-color: inherit;
 }
 
-.home-signals-feed .discover-feed-card--dashboard .discover-feed-card__city {
+.home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption .discover-feed-card__city {
   margin-top: 3px;
   font-size: 13px;
-  color: #777;
+  color: #746587;
+  -webkit-text-fill-color: #746587;
   line-height: 1.25;
 }
 
@@ -550,19 +553,21 @@
   background: color-mix(in srgb, var(--card) 92%, #fff);
 }
 
-.app.dark .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__overlay,
-[data-theme="dark"] .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__overlay {
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--card) 96%, #fff) 0%,
-    color-mix(in srgb, var(--card) 70%, transparent) 45%,
-    transparent 100%
-  );
+.app.dark .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption,
+[data-theme="dark"] .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption {
+  background: color-mix(in srgb, var(--card) 98%, #fff);
 }
 
-.app.dark .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__name,
-[data-theme="dark"] .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__name {
+.app.dark .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption .discover-feed-card__name,
+[data-theme="dark"] .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption .discover-feed-card__name {
   color: var(--text);
+  -webkit-text-fill-color: var(--text);
+}
+
+.app.dark .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption .discover-feed-card__city,
+[data-theme="dark"] .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__caption .discover-feed-card__city {
+  color: var(--text-muted);
+  -webkit-text-fill-color: var(--text-muted);
 }
 
 .app.dark .home-signals-feed .discover-feed-card--dashboard .discover-feed-card__signal,

@@ -428,10 +428,10 @@
 
 .messages-row__online {
   position: absolute;
-  right: 2px;
-  bottom: 2px;
-  width: 13px;
-  height: 13px;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #34c759;
   border: 2.5px solid #fff;
@@ -453,7 +453,7 @@
 }
 
 .messages-row__top strong {
-  font-size: 1.125rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: #1b0b2e;
   line-height: 1.2;
@@ -535,17 +535,51 @@
 
 .messages-row__badge {
   flex-shrink: 0;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 7px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
   border-radius: 999px;
   background: #e91e8f;
   color: #fff;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.app.dark .messages-list--premium,
+[data-theme="dark"] .messages-list--premium {
+  background: color-mix(in srgb, var(--card) 94%, #fff);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.app.dark .messages-row,
+[data-theme="dark"] .messages-row {
+  background: color-mix(in srgb, var(--card) 94%, #fff);
+  color: var(--text);
+}
+
+.app.dark .messages-row--unread,
+[data-theme="dark"] .messages-row--unread {
+  background: color-mix(in srgb, #fff4fa 72%, var(--card));
+}
+
+.app.dark .messages-row__top strong,
+[data-theme="dark"] .messages-row__top strong,
+.app.dark .messages-row--unread .messages-row__top strong,
+[data-theme="dark"] .messages-row--unread .messages-row__top strong {
+  color: var(--text);
+}
+
+.app.dark .messages-page--premium .member-page-head h1,
+[data-theme="dark"] .messages-page--premium .member-page-head h1 {
+  color: var(--text);
+}
+
+.app.dark .messages-empty--compact h2,
+[data-theme="dark"] .messages-empty--compact h2 {
+  color: var(--text);
 }
 
 .chat-match-banner {

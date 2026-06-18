@@ -216,10 +216,15 @@
   border-radius: var(--radius-md);
   border: none;
   background: transparent;
+  color: var(--text);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.notification-item:hover {
+  background: color-mix(in srgb, var(--input-bg) 85%, transparent);
 }
 
 .notification-item.unread {

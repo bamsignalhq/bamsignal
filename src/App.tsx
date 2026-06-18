@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Preloader } from "./components/Preloader";
@@ -860,7 +860,7 @@ export function App() {
     !isActivePaymentFlow() &&
     shouldShowPaymentRecovery();
   void paymentFlowTick;
-  const notificationUnread = unreadCount();
+  const notificationUnread = useMemo(() => unreadCount(), [notifVersion]);
   const incomingSignals = filterBlockedByProfileId(
     readJson<{ profileId: string }[]>(STORAGE_KEYS.likedBy, [])
   ).length;
@@ -1025,6 +1025,7 @@ export function App() {
             setNotificationsOpen(false);
             setNotifVersion((v) => v + 1);
           }}
+          onReadChange={() => setNotifVersion((v) => v + 1)}
         />
 
         <PricingModal
@@ -1216,6 +1217,7 @@ export function App() {
           setNotificationsOpen(false);
           setNotifVersion((v) => v + 1);
         }}
+        onReadChange={() => setNotifVersion((v) => v + 1)}
       />
 
       <PricingModal

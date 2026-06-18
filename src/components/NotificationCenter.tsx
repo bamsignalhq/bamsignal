@@ -1,9 +1,16 @@
 import { Bell, X } from "lucide-react";
-import { getNotifications, markAllRead, markRead } from "../utils/notifications";
+import { useCallback, useEffect, useState } from "react";
+import {
+  getNotifications,
+  markAllRead,
+  markRead,
+  type AppNotification
+} from "../utils/notifications";
 
 type NotificationCenterProps = {
   open: boolean;
   onClose: () => void;
+  onReadChange?: () => void;
 };
 
 export function NotificationBell({
@@ -21,9 +28,31 @@ export function NotificationBell({
   );
 }
 
-export function NotificationCenter({ open, onClose }: NotificationCenterProps) {
+export function NotificationCenter({ open, onClose, onReadChange }: NotificationCenterProps) {
+  const [items, setItems] = useState<AppNotification[]>([]);
+
+  const refresh = useCallback(() => {
+    setItems(getNotifications());
+    onReadChange?.();
+  }, [onReadChange]);
+
+  useEffect(() => {
+    if (open) refresh();
+  }, [open, refresh]);
+
+  const handleMarkRead = (id: string) => {
+    markRead(id);
+    refresh();
+  };
+
+  const handleMarkAllRead = () => {
+    markAllRead();
+    refresh();
+  };
+
   if (!open) return null;
-  const items = getNotifications();
+
+  const hasUnread = items.some((n) => !n.read);
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -31,11 +60,11 @@ export function NotificationCenter({ open, onClose }: NotificationCenterProps) {
         <header className="notification-panel__head">
           <h3>Notifications</h3>
           <div className="notification-panel__actions">
-            {items.some((n) => !n.read) && (
-              <button type="button" className="link-btn" onClick={markAllRead}>
-                Mark all read
+            {hasUnread ? (
+              <button type="button" className="link-btn" onClick={handleMarkAllRead}>
+                Read all
               </button>
-            )}
+            ) : null}
             <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">
               <X size={18} />
             </button>
@@ -48,7 +77,7 @@ export function NotificationCenter({ open, onClose }: NotificationCenterProps) {
               <button
                 type="button"
                 className={`notification-item ${n.read ? "" : "unread"}`}
-                onClick={() => markRead(n.id)}
+                onClick={() => handleMarkRead(n.id)}
               >
                 <strong>{n.title}</strong>
                 <span>{n.body}</span>

@@ -30,7 +30,7 @@ type ProfileAccountPanelProps = {
   onProfileChange: (profile: DatingProfile) => void;
   onUsernameChange: (username: string) => void;
   onLogout: () => void;
-  onMessage: (message: string) => void;
+  onMessage: (message: string, success?: boolean) => void;
 };
 
 export function ProfileAccountPanel({
@@ -92,7 +92,7 @@ export function ProfileAccountPanel({
     }
     onUsernameChange(next);
     setUsernameLastChangedAt(new Date().toISOString());
-    onMessage("Username saved.");
+    onMessage("Username saved.", true);
   };
 
   const togglePause = async () => {
@@ -109,7 +109,10 @@ export function ProfileAccountPanel({
     onProfileChange(nextProfile);
     writeJson(STORAGE_KEYS.datingProfile, { ...nextProfile, premium: isPremium });
     void syncMemberProfileRemote({ ...user, username: user.username }, nextProfile);
-    onMessage(pausedAt ? "Welcome back — you're visible again." : "Taking a break ❤️ Your connections can still reach you.");
+    onMessage(
+      pausedAt ? "Welcome back — you're visible again." : "Taking a break — hidden from Home and Discover.",
+      true
+    );
   };
 
   const requestDelete = async () => {
@@ -134,7 +137,7 @@ export function ProfileAccountPanel({
       return;
     }
     setDeletePending(false);
-    onMessage("Welcome back — your account is restored.");
+    onMessage("Welcome back — your account is restored.", true);
   };
 
   const submitStory = async () => {
@@ -151,15 +154,15 @@ export function ProfileAccountPanel({
       return;
     }
     setSuccessStory("");
-    onMessage("Thank you — we'll review your story.");
+    onMessage("Thank you — we'll review your story.", true);
   };
 
   if (deletePending) {
     return (
-      <section className="card settings-card settings-card--quiet">
-        <p className="profile-overview-empty">Your account is scheduled for deletion.</p>
+      <section className="account-settings-block">
+        <p className="account-settings-hint">Your account is scheduled for deletion.</p>
         <button type="button" className="btn-primary btn-full" disabled={busy} onClick={() => void restoreAccount()}>
-          Restore Account
+          Restore account
         </button>
       </section>
     );
@@ -167,56 +170,79 @@ export function ProfileAccountPanel({
 
   return (
     <>
-      <section className="card settings-card">
-        <label className="settings-field">
-          <span>Username</span>
+      <section className="account-settings-block" aria-label="Username">
+        <label className="profile-form-row profile-form-row--stack">
+          <span className="profile-form-row__label">Username</span>
           <input
+            className="profile-form-row__input"
             value={usernameDraft}
             onChange={(e) => setUsernameDraft(formatUsernameInput(e.target.value))}
             autoComplete="username"
             maxLength={20}
+            placeholder="yourname"
           />
         </label>
-        <button type="button" className="btn-secondary btn-full" disabled={busy} onClick={() => void saveUsername()}>
+        <button
+          type="button"
+          className="btn-primary btn-full account-settings-block__btn"
+          disabled={busy}
+          onClick={() => void saveUsername()}
+        >
           {BUTTON_COPY.save}
         </button>
       </section>
 
-      <section className="card settings-card">
-        <button type="button" className="settings-row" disabled={busy} onClick={() => void togglePause()}>
-          <span>{pausedAt ? "Unpause profile" : "Pause profile"}</span>
+      <section className="account-settings-block" aria-label="Profile visibility">
+        <button
+          type="button"
+          className="account-settings-action"
+          disabled={busy}
+          onClick={() => void togglePause()}
+        >
+          {pausedAt ? "Unpause profile" : "Pause profile"}
         </button>
         {pausedAt ? (
-          <p className="profile-overview-empty">Taking a break ❤️ — hidden from Home and Discover.</p>
+          <p className="account-settings-hint">Hidden from Home and Discover. Your connections can still reach you.</p>
         ) : null}
       </section>
 
-      <section className="card settings-card settings-card--quiet">
-        <p className="settings-field-label">Share a success story</p>
-        <textarea
-          value={successStory}
-          onChange={(e) => setSuccessStory(e.target.value)}
-          rows={3}
-          maxLength={2000}
-          placeholder="Optional — not public yet."
-        />
-        <button type="button" className="btn-secondary btn-full" disabled={busy || successStory.trim().length < 20} onClick={() => void submitStory()}>
+      <section className="account-settings-block" aria-label="Success story">
+        <label className="profile-form-row profile-form-row--stack">
+          <span className="profile-form-row__label">Share a success story</span>
+          <textarea
+            className="profile-form-row__textarea account-settings-textarea"
+            value={successStory}
+            onChange={(e) => setSuccessStory(e.target.value)}
+            rows={4}
+            maxLength={2000}
+            placeholder="Optional — not public yet."
+          />
+        </label>
+        <button
+          type="button"
+          className="btn-primary btn-full account-settings-block__btn"
+          disabled={busy || successStory.trim().length < 20}
+          onClick={() => void submitStory()}
+        >
           Submit story
         </button>
       </section>
 
-      <section className="card settings-card">
-        <button type="button" className="settings-row settings-row--danger" disabled={busy} onClick={() => void requestDelete()}>
+      <section className="account-settings-block" aria-label="Delete account">
+        <button
+          type="button"
+          className="account-settings-action account-settings-action--danger"
+          disabled={busy}
+          onClick={() => void requestDelete()}
+        >
           Delete account
         </button>
-        <p className="profile-overview-empty">
+        <p className="account-settings-hint">
           Your profile hides immediately. Restore within 30 days by logging in.
         </p>
       </section>
 
-      {!isPremium ? (
-        <p className="profile-overview-empty">{MONETIZATION_COPY.signalsExhaustedHint}</p>
-      ) : null}
+      {!isPremium ? <p className="account-settings-hint">{MONETIZATION_COPY.signalsExhaustedHint}</p> : null}
     </>
   );
 }

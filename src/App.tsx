@@ -38,6 +38,7 @@ import {
   clearPaymentSession
 } from "./services/payments";
 import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive } from "./utils/premiumTrial";
+import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
 import { hydrateMemberData, registerMember } from "./services/memberData";
@@ -47,7 +48,6 @@ import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
 import { getProfileViewsToday } from "./utils/profileViews";
 import { unreadCount, notificationDestination, type AppNotification } from "./utils/notifications";
-import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { activateBoost } from "./utils/activeBoosts";
 import { activateQuickiePass, cacheSubscriptionCatalogPricing } from "./utils/quickie";
 import { fetchSubscriptionCatalog } from "./services/subscriptionCatalog";
@@ -260,7 +260,11 @@ export function App() {
     }
     flowLog("profile_hydrate", { ok: hydrated });
     const premium = await refreshPremiumStatus(merged);
-    setIsPremium(premium.isPremium || isPremiumTrialActive());
+    setIsPremium(
+      !isOnboardingComplete()
+        ? Boolean(premium.isPremium)
+        : premium.isPremium || isPremiumTrialActive()
+    );
     flowLog("session_restore_done");
   }, []);
 
@@ -543,12 +547,12 @@ export function App() {
         flowLog("profile_hydrate_ok");
       }
       const premium = await refreshPremiumStatus(withPhone);
-      setIsPremium(premium.isPremium || isPremiumTrialActive());
+      const enteringOnboarding = Boolean(meta?.isNewSignup || !isOnboardingComplete());
       if (meta?.isNewSignup) {
         trackEvent("signup_completed");
         markJoinedAt();
         markFirstDayStep("welcome");
-        if (maybeGrantPremiumTrial(true)) setIsPremium(true);
+        maybeGrantPremiumTrial(true, { notify: false });
         if (ref) trackEvent("referral_signup", { code: ref.toUpperCase() });
         const current = getDatingProfile();
         writeJson(
@@ -563,6 +567,11 @@ export function App() {
       } else if (meta?.recovered) {
         flowLog("signup_recovered_existing");
       }
+      setIsPremium(
+        enteringOnboarding
+          ? Boolean(premium.isPremium)
+          : premium.isPremium || isPremiumTrialActive()
+      );
       if (getAuthPath()) {
         navigateToPath("/");
         setAuthPath(null);
@@ -721,7 +730,14 @@ export function App() {
     setShowOnboarding(false);
     localStorage.removeItem(STORAGE_KEYS.onboardingStep);
     setTab("home");
-  }, []);
+    void refreshPremiumStatus(user).then((premium) => {
+      const trialActive = isPremiumTrialActive();
+      setIsPremium(premium.isPremium || trialActive);
+      if (trialActive && !premium.isPremium) {
+        notifyPremiumActivated();
+      }
+    });
+  }, [user]);
 
   const resetLoggedOutState = useCallback(() => {
     clearMemberSessionCaches();
@@ -1086,25 +1102,27 @@ export function App() {
       <div
         className="platform-shell"
       >
-        <TopNav
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          isPremium={isPremium}
-          isGuest={isGuest}
-          onLogin={() => openAuth("login")}
-          onLogoClick={goHome}
-          showNotifications={isAuthed && !showOnboarding}
-          notificationCount={notificationUnread}
-          onNotificationsClick={() => setNotificationsOpen(true)}
-          showEarlyAccess={false}
-          showMemberNav={isAuthed && !showOnboarding}
-          memberTab={tab}
-          onMemberNavigate={navigateTab}
-          likeCount={incomingSignals}
-          messageCount={messageCount}
-          showBrandText={!isAuthed}
-          showGreeting={false}
-        />
+        {!showOnboarding && (
+          <TopNav
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            isPremium={isPremium}
+            isGuest={isGuest}
+            onLogin={() => openAuth("login")}
+            onLogoClick={goHome}
+            showNotifications={isAuthed}
+            notificationCount={notificationUnread}
+            onNotificationsClick={() => setNotificationsOpen(true)}
+            showEarlyAccess={false}
+            showMemberNav={isAuthed}
+            memberTab={tab}
+            onMemberNavigate={navigateTab}
+            likeCount={incomingSignals}
+            messageCount={messageCount}
+            showBrandText={!isAuthed}
+            showGreeting={false}
+          />
+        )}
 
         {paymentLoading && !showOnboarding && <PaymentLoadingOverlay />}
 
@@ -1130,7 +1148,15 @@ export function App() {
           />
         )}
 
-        <main className={`app-main ${isAuthed ? "app-main--member" : "app-main--experience"}`}>
+        <main
+          className={`app-main ${
+            isAuthed
+              ? showOnboarding
+                ? "app-main--onboarding"
+                : "app-main--member"
+              : "app-main--experience"
+          }`}
+        >
           {isAuthed && showOnboarding && (
             <OnboardingPage user={user} onUserChange={setUser} onComplete={finishOnboarding} />
           )}

@@ -27,7 +27,10 @@ export function isPremiumTrialExpired(): boolean {
 }
 
 /** Grant trial on new signup when admin experiment is enabled */
-export function maybeGrantPremiumTrial(isNewSignup: boolean): boolean {
+export function maybeGrantPremiumTrial(
+  isNewSignup: boolean,
+  { notify = true }: { notify?: boolean } = {}
+): boolean {
   if (!isNewSignup) return false;
   const config = getLaunchConfig();
   if (!config.premiumTrialEnabled) return false;
@@ -37,7 +40,7 @@ export function maybeGrantPremiumTrial(isNewSignup: boolean): boolean {
   const expiresAt = new Date(Date.now() + config.premiumTrialHours * 3600000).toISOString();
   writeJson(STORAGE_KEYS.premiumTrial, { startedAt, expiresAt, used: true });
   trackEvent("premium_trial_started", { hours: String(config.premiumTrialHours) });
-  notifyPremiumActivated();
+  if (notify) notifyPremiumActivated();
   return true;
 }
 

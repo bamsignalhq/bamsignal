@@ -148,7 +148,12 @@ export function PhotoUploadGrid({
 
       const assessment = await assessUploadedPhoto(file, uploadKind);
       if (assessment.hardBlock) {
-        await deleteStoredPhoto(remoteUrl);
+        void submitPhotoReviewRemote({
+          photoUrl: remoteUrl,
+          photoType: "profile",
+          photoReviewStatus: "pending_review",
+          photoRiskFlags: assessment.photoRiskFlags
+        });
         failUpload(
           "MODERATION_REJECTED",
           "post_upload_hard_block",
@@ -167,7 +172,7 @@ export function PhotoUploadGrid({
           : [...prior, remoteUrl];
       onChange(withRemote.slice(0, MAX_PROFILE_PHOTOS), nextMeta);
 
-      if (meta.photoReviewStatus === "pending_review") {
+      if (meta.photoReviewStatus === "pending_review" || meta.photoReviewStatus === "rejected") {
         void submitPhotoReviewRemote({
           photoUrl: remoteUrl,
           photoType: "profile",

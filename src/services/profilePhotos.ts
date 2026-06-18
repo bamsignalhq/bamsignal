@@ -1,6 +1,7 @@
 import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
 import { apiUrl, supabase } from "./supabase";
+import { STORAGE_KEYS } from "../constants/limits";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { blobToDataUrl, fileToCompressedDataUrl, fileToCompressedImageBlob } from "../utils/photoUpload";
 import { logPhotoPipeline, logPhotoUpload } from "../utils/photoUploadLog";
@@ -178,7 +179,13 @@ export type PhotoReviewSubmitPayload = {
   photoReviewStatus: "approved" | "pending_review" | "rejected";
   photoRiskFlags: string[];
   memberName?: string;
+  profileId?: string;
 };
+
+function currentMemberProfileId(): string | undefined {
+  const id = localStorage.getItem(STORAGE_KEYS.memberProfileId);
+  return id?.trim() || undefined;
+}
 
 export async function submitPhotoReviewRemote(payload: PhotoReviewSubmitPayload): Promise<void> {
   const headers = await authHeaders();
@@ -188,7 +195,10 @@ export async function submitPhotoReviewRemote(payload: PhotoReviewSubmitPayload)
     const response = await fetch(apiUrl("/api/member/photos?action=submit-review"), {
       method: "POST",
       headers,
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        ...payload,
+        profileId: payload.profileId || currentMemberProfileId()
+      })
     });
     if (!response.ok && import.meta.env.DEV) {
       const body = await readResponseJson<{ error?: string }>(response);
@@ -197,6 +207,35 @@ export async function submitPhotoReviewRemote(payload: PhotoReviewSubmitPayload)
   } catch (error) {
     if (import.meta.env.DEV) {
       console.warn("[bamsignal] photo review submit error", error);
+    }
+  }
+}
+
+export async function reportPhotoViolationRemote(payload: {
+  reason: string;
+  photoRiskFlags?: string[];
+  photoUrl?: string;
+  profileId?: string;
+}): Promise<void> {
+  const headers = await authHeaders();
+  if (!headers.Authorization) return;
+
+  const profileId = payload.profileId || currentMemberProfileId();
+  if (!profileId) return;
+
+  try {
+    const response = await fetch(apiUrl("/api/member/photos?action=report-violation"), {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ ...payload, profileId })
+    });
+    if (!response.ok && import.meta.env.DEV) {
+      const body = await readResponseJson<{ error?: string }>(response);
+      console.warn("[bamsignal] photo violation report failed", body?.error || response.status);
+    }
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn("[bamsignal] photo violation report error", error);
     }
   }
 }

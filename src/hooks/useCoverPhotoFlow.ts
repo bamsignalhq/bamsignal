@@ -111,7 +111,12 @@ export function useCoverPhotoFlow({
 
         const assessment = await assessUploadedPhoto(croppedFile, "cover");
         if (assessment.hardBlock) {
-          await deleteStoredPhoto(remoteUrl);
+          void submitPhotoReviewRemote({
+            photoUrl: remoteUrl,
+            photoType: "cover",
+            photoReviewStatus: "pending_review",
+            photoRiskFlags: assessment.photoRiskFlags
+          });
           onModerationMessage?.(assessment.hardBlockMessage || photoModerationUserMessage());
           return;
         }
@@ -122,7 +127,7 @@ export function useCoverPhotoFlow({
         setLocalPreview(null);
         onChange(remoteUrl, nextMeta);
 
-        if (meta.photoReviewStatus === "pending_review") {
+        if (meta.photoReviewStatus === "pending_review" || meta.photoReviewStatus === "rejected") {
           void submitPhotoReviewRemote({
             photoUrl: remoteUrl,
             photoType: "cover",

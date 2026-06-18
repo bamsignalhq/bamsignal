@@ -41,6 +41,7 @@ import { filterModerationQueue, getModerationQueue, moderationStats, type Report
 import { AdminShadowBannedSection } from "../components/admin/AdminShadowBannedSection";
 import {
   approvePhotoReviewAdmin,
+  deletePhotoReviewAdmin,
   fetchContactLeakAttempts,
   fetchPhotoReviews,
   rejectPhotoReviewAdmin,
@@ -425,8 +426,9 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
           <section className="card admin-command-panel">
             <h3>Photo review</h3>
             <p className="match-prefs-note">
-              Suspicious uploads flagged after storage — approve to keep public, or reject to hide from
-              discovery. Hard blocks (contact info, documents) are rejected at upload.
+              Unhealthy uploads are reported here automatically. Delete instantly to remove storage and
+              profile copies. After 3 unhealthy uploads, the member is shadow banned — they can browse
+              and send, but signals and messages do not reach others.
             </p>
             {photoReviewsLoading && <AdminTerminalEmpty>Loading photo review queue…</AdminTerminalEmpty>}
             {!photoReviewsLoading && photoReviews.length === 0 && (
@@ -440,6 +442,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                     <strong>{item.memberName}</strong>
                     <span>
                       {item.photoType} · {item.photoRiskFlags.map((flag) => riskFlagLabel(flag as never)).join(", ") || "No flags"} ·{" "}
+                      {item.photoViolationCount ? `${item.photoViolationCount} unhealthy upload${item.photoViolationCount === 1 ? "" : "s"}` : "First flag"} ·{" "}
                       {new Date(item.uploadedAt).toLocaleString()}
                     </span>
                   </div>
@@ -471,6 +474,27 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                     }}
                   >
                     Approve
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    disabled={photoReviewBusyId === item.id && photoReviewsLoading}
+                    onClick={async () => {
+                      setPhotoReviewBusyId(item.id);
+                      const result = await deletePhotoReviewAdmin(
+                        item.id,
+                        photoRejectReason || "Deleted instantly by moderator"
+                      );
+                      if (!result.ok) {
+                        pushToast(result.error || "Delete failed.");
+                        return;
+                      }
+                      pushToast("Photo deleted.");
+                      setPhotoRejectReason("");
+                      setPhotoReviews((rows) => rows.filter((row) => row.id !== item.id));
+                    }}
+                  >
+                    Delete now
                   </button>
                   <button
                     type="button"

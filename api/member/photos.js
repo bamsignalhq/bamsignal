@@ -9,6 +9,7 @@ import {
   PhotoStorageError
 } from "../../server/services/photoStorage.js";
 import { submitPhotoReview } from "../../server/services/photoReview.js";
+import { recordPhotoViolation } from "../../server/services/moderation.js";
 import { resolveSupabaseUrl } from "../../server/supabaseEnv.js";
 
 function parseBody(req) {
@@ -119,10 +120,32 @@ export default async function handler(req, res) {
         photoType,
         photoReviewStatus,
         photoRiskFlags,
-        memberName: body.memberName || null
+        memberName: body.memberName || null,
+        profileId: body.profileId || null
       });
 
       return res.status(200).json({ ok: true, review });
+    }
+
+    if (action === "report-violation") {
+      const profileId = String(body.profileId || "").trim();
+      const reason = String(body.reason || "").trim() || "Blocked unhealthy photo before upload";
+      const photoRiskFlags = Array.isArray(body.photoRiskFlags) ? body.photoRiskFlags : [];
+
+      if (!profileId) {
+        return res.status(400).json({ ok: false, error: "Profile id required." });
+      }
+
+      const violation = await recordPhotoViolation({
+        profileId,
+        photoUrl: body.photoUrl ? String(body.photoUrl).trim() : null,
+        reason,
+        source: "system",
+        operatorEmail: "system",
+        photoRiskFlags
+      });
+
+      return res.status(200).json({ ok: true, violation });
     }
 
     return res.status(400).json({ ok: false, error: "Unknown action." });

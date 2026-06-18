@@ -588,16 +588,20 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
   }
 
   const { analyzeOutgoingMessage } = await import("./services/spamDetection.js");
-  const member = await query(`select id from app_member_profiles where user_key = $1 limit 1`, [
+  const member = await query(`select id, shadow_banned from app_member_profiles where user_key = $1 limit 1`, [
     identity.userKey
   ]);
-  await analyzeOutgoingMessage({
-    email,
-    phone,
-    text: message.text,
-    recipientProfileId: threadMeta?.recipientProfileId || null,
-    profileId: member.rows[0]?.id
-  });
+  const senderShadowBanned = Boolean(member.rows[0]?.shadow_banned);
+
+  if (!senderShadowBanned) {
+    await analyzeOutgoingMessage({
+      email,
+      phone,
+      text: message.text,
+      recipientProfileId: threadMeta?.recipientProfileId || null,
+      profileId: member.rows[0]?.id
+    });
+  }
 
   await ensureAppMessagesTable();
   await ensureAppChatThreadsTable();
@@ -628,7 +632,12 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
     [threadId, identity.userKey, identity.email || null, identity.phone, threadMeta]
   );
 
-  return messageResult.rows[0] || null;
+  const row = messageResult.rows[0] || null;
+  if (!row) return null;
+  if (senderShadowBanned) {
+    return { ...row, payload: { ...(row.payload || message), suppressed: true }, suppressed: true };
+  }
+  return row;
 }
 
 export async function persistReport({ email, phone, report }) {

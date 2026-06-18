@@ -12,7 +12,7 @@ import { CONTACT_LEAK_BLOCK_MESSAGE, scanTextForContactLeak } from "./contactGua
 import { buildPhotoMetaEntry } from "./photoMeta";
 import { logPhotoSafetyRiskAsync, scanPhotoSafety, scanPhotoSafetyDeep } from "./photoSafetyScan";
 import { logPhotoUpload } from "./photoUploadLog";
-import { submitPhotoReviewRemote } from "../services/profilePhotos";
+import { submitPhotoReviewRemote, reportPhotoViolationRemote } from "../services/profilePhotos";
 import { readJson, writeJson } from "./storage";
 
 type StrikeRecord = { count: number };
@@ -111,6 +111,10 @@ export async function moderatePhotoUpload(
         reason: safety.internalReason,
         riskScore: safety.riskScore
       });
+      void reportPhotoViolationRemote({
+        reason: `Blocked before upload: ${safety.category || "moderation"}`,
+        photoRiskFlags: safety.photoRiskFlags || []
+      });
       return {
         allowed: false,
         message: photoModerationUserMessage(),
@@ -196,7 +200,7 @@ export function reviewUploadedPhotoAsync(
     const meta = buildPhotoMetaEntry(type, status, flags);
     onAssessed?.(meta);
 
-    if (photoUrl && status === "pending_review") {
+    if (photoUrl && (status === "pending_review" || status === "rejected")) {
       void submitPhotoReviewRemote({
         photoUrl,
         photoType: type,

@@ -173,6 +173,93 @@ export async function countShadowBannedUsers() {
   return Number(result.rows[0]?.count || 0);
 }
 
+export const PHOTO_VIOLATION_SHADOW_BAN_THRESHOLD = 3;
+
+export async function ensurePhotoViolationSchema() {
+  if (!isDatabaseReady()) return;
+  await ensureModerationSchema();
+  await query(
+    "alter table app_member_profiles add column if not exists photo_violation_count int not null default 0"
+  );
+  await query(
+    "alter table app_member_profiles add column if not exists last_photo_violation_at timestamptz"
+  );
+}
+
+export function isUnhealthyPhotoSubmission({ photoReviewStatus, photoRiskFlags = [] } = {}) {
+  const status = String(photoReviewStatus || "").trim();
+  if (status === "pending_review" || status === "rejected") return true;
+  return Array.isArray(photoRiskFlags) && photoRiskFlags.length > 0;
+}
+
+export async function recordPhotoViolation({
+  profileId,
+  userKey,
+  photoUrl = null,
+  reason,
+  source = "system",
+  operatorEmail = "system",
+  photoRiskFlags = []
+}) {
+  if (!isDatabaseReady() || !profileId) {
+    return { ok: false, count: 0, shadowBanned: false };
+  }
+  await ensurePhotoViolationSchema();
+
+  const normalizedReason = String(reason || "").trim() || "Unhealthy photo upload";
+  const updated = await query(
+    `update app_member_profiles
+     set photo_violation_count = coalesce(photo_violation_count, 0) + 1,
+         last_photo_violation_at = now(),
+         updated_at = now()
+     where id = $1
+     returning id, user_key, photo_violation_count, shadow_banned`,
+    [profileId]
+  );
+  const row = updated.rows[0];
+  if (!row) return { ok: false, count: 0, shadowBanned: false };
+
+  const count = Number(row.photo_violation_count || 0);
+  const resolvedUserKey = userKey || row.user_key || null;
+
+  const { createModerationFlag } = await import("../memberTrust.js");
+  await createModerationFlag({
+    userKey: resolvedUserKey,
+    profileId,
+    reason: "unhealthy_photo_upload",
+    severity: count >= PHOTO_VIOLATION_SHADOW_BAN_THRESHOLD ? "high" : "medium",
+    metadata: {
+      source,
+      photoUrl,
+      photoRiskFlags,
+      violationCount: count,
+      detail: normalizedReason
+    }
+  });
+
+  await writeModerationAudit({
+    action: "photo_violation_recorded",
+    targetProfileId: profileId,
+    targetUserKey: resolvedUserKey,
+    operatorEmail,
+    reason: normalizedReason,
+    payload: { photoUrl, source, photoRiskFlags, violationCount: count }
+  });
+
+  let shadowBanned = Boolean(row.shadow_banned);
+  if (!shadowBanned && count >= PHOTO_VIOLATION_SHADOW_BAN_THRESHOLD) {
+    const ban = await applyShadowBan({
+      profileId,
+      operatorEmail: "system",
+      reason: `Automatic shadow ban after ${count} unhealthy photo uploads.`,
+      moderationNotes: `Photo violations: ${count}. Last reason: ${normalizedReason}`
+    });
+    shadowBanned = Boolean(ban.ok);
+  }
+
+  return { ok: true, count, shadowBanned };
+}
+
 export async function applyShadowBan({
   profileId,
   operatorEmail,

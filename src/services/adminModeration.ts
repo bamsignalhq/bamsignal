@@ -75,6 +75,7 @@ export type PhotoReviewItem = {
   photoRiskFlags: string[];
   rejectReason?: string | null;
   uploadedAt: string;
+  photoViolationCount?: number;
 };
 
 export async function fetchPhotoReviews(limit = 50) {
@@ -96,5 +97,12 @@ export async function rejectPhotoReviewAdmin(reviewId: string, reason: string) {
   return adminPostJson<{ ok?: boolean; error?: string }>("/api/admin/moderation?action=reject-photo-review", {
     reviewId,
     reason
+  });
+}
+
+export async function deletePhotoReviewAdmin(reviewId: string, reason?: string) {
+  return adminPostJson<{ ok?: boolean; error?: string }>("/api/admin/moderation?action=delete-photo-review", {
+    reviewId,
+    reason: reason || "Deleted instantly by moderator"
   });
 }

@@ -1,6 +1,14 @@
 import { isDatabaseReady, query } from "../db.js";
 import { ensureMemberProfilesTable } from "../cityHome.js";
 import { filterPhotosForPublicView, normalizePhotoMetaMap } from "../../shared/photoReview.mjs";
+import {
+  deletePhotoStorageObject,
+  parsePhotoStorageUrl
+} from "./photoStorage.js";
+import {
+  isUnhealthyPhotoSubmission,
+  recordPhotoViolation
+} from "./moderation.js";
 
 export async function ensurePhotoReviewSchema() {
   if (!isDatabaseReady()) return;
@@ -45,7 +53,62 @@ function mapReviewRow(row) {
     rejectReason: row.reject_reason,
     reviewedAt: row.reviewed_at,
     reviewedBy: row.reviewed_by,
-    uploadedAt: row.created_at
+    uploadedAt: row.created_at,
+    photoViolationCount: Number(row.photo_violation_count || 0)
+  };
+}
+
+async function deleteStoredPhotoUrl(photoUrl) {
+  const parsed = parsePhotoStorageUrl(photoUrl);
+  if (!parsed) return false;
+  try {
+    await deletePhotoStorageObject(parsed.bucket, parsed.path);
+    return true;
+  } catch (error) {
+    console.error("[bamsignal] photo storage delete failed:", error);
+    return false;
+  }
+}
+
+async function purgeUnhealthyPhoto(review, { operatorEmail, reason, status = "rejected" }) {
+  if (!review) return { ok: false, error: "Review not found." };
+
+  const rejectReason = String(reason || "").trim() || "Removed by moderator";
+
+  await deleteStoredPhotoUrl(review.photo_url);
+
+  if (review.profile_id) {
+    const row = await query("select profile from app_member_profiles where id = $1 limit 1", [
+      review.profile_id
+    ]);
+    if (row.rows[0]) {
+      const nextProfile = removePhotoFromProfile(row.rows[0].profile, review.photo_url);
+      await query(
+        `update app_member_profiles set profile = $2::jsonb, updated_at = now() where id = $1`,
+        [review.profile_id, nextProfile]
+      );
+    }
+  }
+
+  await query(
+    `update photo_reviews
+     set photo_review_status = $3,
+         reject_reason = $4,
+         reviewed_at = now(),
+         reviewed_by = $2,
+         updated_at = now()
+     where id = $1`,
+    [review.id, operatorEmail, status, rejectReason]
+  );
+
+  return {
+    ok: true,
+    review: mapReviewRow({
+      ...review,
+      photo_review_status: status,
+      reject_reason: rejectReason,
+      reviewed_by: operatorEmail
+    })
   };
 }
 
@@ -102,7 +165,8 @@ export async function submitPhotoReview({
   photoReviewStatus = "pending_review",
   photoRiskFlags = [],
   memberName = null,
-  userKey = null
+  userKey = null,
+  profileId: explicitProfileId = null
 }) {
   if (!isDatabaseReady()) return null;
   await ensurePhotoReviewSchema();
@@ -110,10 +174,23 @@ export async function submitPhotoReview({
   const url = String(photoUrl || "").trim();
   if (!url) return null;
 
-  const profileRow = await findProfileByPhotoUrl(url);
-  const profileId = profileRow?.id || null;
+  let profileRow = await findProfileByPhotoUrl(url);
+  if (!profileRow && explicitProfileId) {
+    const byId = await query("select * from app_member_profiles where id = $1 limit 1", [
+      explicitProfileId
+    ]);
+    profileRow = byId.rows[0] || null;
+  }
+
+  const profileId = profileRow?.id || explicitProfileId || null;
   const resolvedUserKey = userKey || profileRow?.user_key || null;
   const resolvedName = memberName || profileRow?.name || profileRow?.profile?.name || null;
+
+  const existingReview = await query(
+    "select photo_review_status from photo_reviews where photo_url = $1 limit 1",
+    [url]
+  );
+  const previousStatus = existingReview.rows[0]?.photo_review_status || null;
 
   if (profileRow) {
     const meta = {
@@ -158,7 +235,34 @@ export async function submitPhotoReview({
     ]
   );
 
-  return mapReviewRow(result.rows[0]);
+  const reviewRow = mapReviewRow(result.rows[0]);
+  const unhealthy = isUnhealthyPhotoSubmission({
+    photoReviewStatus,
+    photoRiskFlags
+  });
+  const newlyFlagged =
+    unhealthy &&
+    previousStatus !== "pending_review" &&
+    previousStatus !== "rejected" &&
+    photoReviewStatus !== "approved";
+
+  if (newlyFlagged && profileId) {
+    const violation = await recordPhotoViolation({
+      profileId,
+      userKey: resolvedUserKey,
+      photoUrl: url,
+      reason:
+        photoReviewStatus === "rejected"
+          ? "Rejected unhealthy photo upload"
+          : "Flagged unhealthy photo for admin review",
+      source: "system",
+      operatorEmail: "system",
+      photoRiskFlags
+    });
+    if (reviewRow) reviewRow.photoViolationCount = violation.count;
+  }
+
+  return reviewRow;
 }
 
 export async function listPhotoReviews({ status = "pending_review", limit = 50 } = {}) {
@@ -166,10 +270,11 @@ export async function listPhotoReviews({ status = "pending_review", limit = 50 }
   await ensurePhotoReviewSchema();
 
   const result = await query(
-    `select *
-     from photo_reviews
-     where photo_review_status = $1
-     order by created_at desc
+    `select pr.*, coalesce(p.photo_violation_count, 0)::int as photo_violation_count
+     from photo_reviews pr
+     left join app_member_profiles p on p.id = pr.profile_id
+     where pr.photo_review_status = $1
+     order by pr.created_at desc
      limit $2`,
     [status, Math.min(200, Math.max(1, Number(limit) || 50))]
   );
@@ -224,31 +329,24 @@ export async function rejectPhotoReview({ reviewId, operatorEmail, reason = "" }
   const review = existing.rows[0];
   if (!review) return { ok: false, error: "Review not found." };
 
-  const rejectReason = String(reason || "").trim() || "Rejected by moderator";
+  return purgeUnhealthyPhoto(review, {
+    operatorEmail,
+    reason: String(reason || "").trim() || "Rejected by moderator",
+    status: "rejected"
+  });
+}
 
-  await query(
-    `update photo_reviews
-     set photo_review_status = 'rejected',
-         reject_reason = $3,
-         reviewed_at = now(),
-         reviewed_by = $2,
-         updated_at = now()
-     where id = $1`,
-    [reviewId, operatorEmail, rejectReason]
-  );
+export async function deletePhotoReview({ reviewId, operatorEmail, reason = "" }) {
+  if (!isDatabaseReady()) return { ok: false, error: "Database unavailable." };
+  await ensurePhotoReviewSchema();
 
-  if (review.profile_id) {
-    const row = await query("select profile from app_member_profiles where id = $1 limit 1", [
-      review.profile_id
-    ]);
-    if (row.rows[0]) {
-      const nextProfile = removePhotoFromProfile(row.rows[0].profile, review.photo_url);
-      await query(
-        `update app_member_profiles set profile = $2::jsonb, updated_at = now() where id = $1`,
-        [review.profile_id, nextProfile]
-      );
-    }
-  }
+  const existing = await query("select * from photo_reviews where id = $1 limit 1", [reviewId]);
+  const review = existing.rows[0];
+  if (!review) return { ok: false, error: "Review not found." };
 
-  return { ok: true, review: mapReviewRow({ ...review, photo_review_status: "rejected", reject_reason: rejectReason }) };
+  return purgeUnhealthyPhoto(review, {
+    operatorEmail,
+    reason: String(reason || "").trim() || "Deleted instantly by moderator",
+    status: "rejected"
+  });
 }

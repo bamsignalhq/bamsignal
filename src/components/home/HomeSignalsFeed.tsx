@@ -22,7 +22,7 @@ import { homeAdvancedToSearchFilters, filterProfilesByDistance } from "../../uti
 import { effectiveHomeDistanceKm } from "../../utils/cityMetroRadius";
 import { rankProfiles } from "../../utils/matching";
 import { normalizeMatchPreferences } from "../../utils/profile";
-import { blockUser, filterDiscoverDeck, isAutoFlagged } from "../../utils/safety";
+import { blockAndReportUser, blockUser, filterDiscoverDeck, isAutoFlagged } from "../../utils/safety";
 import {
   evaluateSignalGate,
   recordSignalUsage
@@ -376,6 +376,7 @@ export function HomeSignalsFeed({
             setDetailProfile(null);
             void loadFeed();
           }}
+          onBlockAndReport={() => setSafetyOpen(true)}
         />
       ) : null}
 
@@ -387,6 +388,12 @@ export function HomeSignalsFeed({
           onClose={() => setSafetyOpen(false)}
           onBlock={() => {
             blockUser(detailProfile.id);
+            setSafetyOpen(false);
+            setDetailProfile(null);
+            void loadFeed();
+          }}
+          onBlockAndReport={(reason, details) => {
+            blockAndReportUser(detailProfile.id, reason, details);
             setSafetyOpen(false);
             setDetailProfile(null);
             void loadFeed();

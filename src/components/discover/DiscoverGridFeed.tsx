@@ -13,7 +13,7 @@ import {
   getProfileMatchReasons
 } from "../../utils/compatibility";
 import { buildHomeFeedGridItems } from "../../utils/homeFeed";
-import { blockUser } from "../../utils/safety";
+import { blockAndReportUser, blockUser } from "../../utils/safety";
 import { evaluateSignalGate, recordSignalUsage } from "../../utils/signalLimits";
 import { incrementSignalsSent } from "../../utils/streaks";
 import { trackEvent } from "../../utils/analytics";
@@ -234,6 +234,7 @@ export function DiscoverGridFeed({
             setDetailProfile(null);
             onReload?.();
           }}
+          onBlockAndReport={() => setSafetyOpen(true)}
         />
       ) : null}
 
@@ -245,6 +246,12 @@ export function DiscoverGridFeed({
           onClose={() => setSafetyOpen(false)}
           onBlock={() => {
             blockUser(detailProfile.id);
+            setSafetyOpen(false);
+            setDetailProfile(null);
+            onReload?.();
+          }}
+          onBlockAndReport={(reason, details) => {
+            blockAndReportUser(detailProfile.id, reason, details);
             setSafetyOpen(false);
             setDetailProfile(null);
             onReload?.();

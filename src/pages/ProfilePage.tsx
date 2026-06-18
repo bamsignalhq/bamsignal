@@ -48,7 +48,7 @@ import {
 } from "../utils/verificationQueue";
 import { notifyVerificationApproved } from "../utils/notifyHelpers";
 import { MAX_PROFILE_PHOTOS } from "../constants/photos";
-import { safeCoverPhoto } from "../utils/safeProfile";
+import { safeUserCoverPhoto } from "../utils/safeProfile";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { ContactForm } from "../components/ContactForm";
@@ -75,6 +75,7 @@ type ProfilePageProps = {
   onLogout: () => void;
   onUpgrade: () => void;
   onReturnToDashboard: () => void;
+  onOpenSafetyCenter?: () => void;
 };
 
 function bioHint(bio: string): string {
@@ -161,7 +162,8 @@ export function ProfilePage({
   onUserChange,
   onLogout,
   onUpgrade,
-  onReturnToDashboard
+  onReturnToDashboard,
+  onOpenSafetyCenter
 }: ProfilePageProps) {
   const [profile, setProfile] = useState<DatingProfile>(() =>
     normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
@@ -336,7 +338,7 @@ export function ProfilePage({
             photoMeta={profile.photoMeta}
             onCoverChange={(nextCover, nextPhotoMeta) => {
               setProfile((p) => {
-                const persistable = safeCoverPhoto(nextCover);
+                const persistable = safeUserCoverPhoto(nextCover);
                 const next = normalizeDatingProfile({
                   ...p,
                   coverPhoto: persistable,
@@ -530,11 +532,12 @@ export function ProfilePage({
             <h4 className="profile-form-row__label">Backdrop photo</h4>
             <CoverPhotoUpload
               coverPhoto={profile.coverPhoto}
+              coverPhotoExplicit={profile.coverPhotoExplicit}
               photoMeta={profile.photoMeta}
               profilePhotos={profile.photos}
               onChange={(coverPhoto, nextPhotoMeta) => {
                 setProfile((p) => {
-                  const persistable = safeCoverPhoto(coverPhoto);
+                  const persistable = safeUserCoverPhoto(coverPhoto);
                   const next = normalizeDatingProfile({
                     ...p,
                     coverPhoto: persistable,
@@ -776,6 +779,7 @@ export function ProfilePage({
             <>
               <section className="card settings-hub-card">
                 <SettingsRow label="Account" onClick={() => setSettingsPanel("account")} />
+                <SettingsRow label="Safety Center" onClick={() => onOpenSafetyCenter?.()} />
                 <SettingsRow label="Privacy & Safety" onClick={() => setSettingsPanel("privacy")} />
                 <SettingsRow label="Notifications" onClick={() => setSettingsPanel("notifications")} />
                 <SettingsRow label="Preferences" onClick={() => setSettingsPanel("preferences")} />

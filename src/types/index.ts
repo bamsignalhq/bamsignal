@@ -78,19 +78,27 @@ export type SafetySettings = {
 
 export type ReportReason =
   | "fake_profile"
-  | "harassment"
-  | "spam"
-  | "inappropriate_photos"
-  | "underage"
-  | "off_platform_solicitation"
   | "scammer"
-  | "other";
+  | "asking_for_money"
+  | "harassment"
+  | "sexual_content"
+  | "impersonation"
+  | "underage_account"
+  | "off_platform_solicitation"
+  | "abusive_language"
+  | "spam"
+  | "other"
+  /** @deprecated legacy stored reports */
+  | "inappropriate_photos"
+  /** @deprecated legacy stored reports */
+  | "underage";
 
 export type ReportRecord = {
   profileId: string;
   reason: ReportReason;
   details?: string;
   at: string;
+  blocked?: boolean;
 };
 
 export type ProfileVisibility = {
@@ -127,6 +135,12 @@ export type MemberCompliance = {
   safetyPledgeAccepted?: boolean;
   safetyPledgeAcceptedAt?: string;
   safetyPledgeVersion?: string;
+  adultRiskAcknowledged?: boolean;
+  adultRiskAcknowledgedAt?: string;
+  adultRiskVersion?: string;
+  offlineSafetyAcknowledged?: boolean;
+  offlineSafetyAcknowledgedAt?: string;
+  offlineSafetyVersion?: string;
   signupIp?: string;
   signupUserAgent?: string;
 };

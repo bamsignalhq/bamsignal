@@ -17,7 +17,7 @@ import {
   computeCompatibilityPercent,
   getProfileMatchReasons
 } from "../utils/compatibility";
-import { blockUser, filterBlockedByProfileId } from "../utils/safety";
+import { blockAndReportUser, blockUser, filterBlockedByProfileId } from "../utils/safety";
 import { trackEvent } from "../utils/analytics";
 import { notifySignalAccepted } from "../utils/notifyHelpers";
 import { getDatingProfile } from "../utils/profile";
@@ -227,6 +227,13 @@ export function LikesPage({ isPremium, onUpgrade, onDiscover, onOpenSafety }: Li
     showToast(`${entry.name} blocked.`);
   };
 
+  const handleBlockAndReport = (entry: LikeEntry, reason: import("../types").ReportReason, details?: string) => {
+    blockAndReportUser(entry.profileId, reason, details);
+    if (!isDemoSignalEntry(entry) && entry.id) void declineSignalRemote(user, entry.id);
+    removeSignal(entry);
+    showToast(`${entry.name} blocked and reported.`);
+  };
+
   const openProfile = async (entry: LikeEntry) => {
     if (!isPremium && !isDemoSignalEntry(entry)) {
       onUpgrade();
@@ -346,6 +353,7 @@ export function LikesPage({ isPremium, onUpgrade, onDiscover, onOpenSafety }: Li
           profileId={safetyTarget.profileId}
           onClose={() => setSafetyTarget(null)}
           onBlock={() => handleBlock(safetyTarget)}
+          onBlockAndReport={(reason, details) => handleBlockAndReport(safetyTarget, reason, details)}
         />
       ) : null}
     </div>

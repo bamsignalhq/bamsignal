@@ -1,19 +1,75 @@
 import type { DmControl, Gender, ReportReason, SafetySettings, WhoCanSignalMe, ActivityVisibility } from "../types";
 
+export const SUPPORT_WHATSAPP = "+2348035143299";
+export const SUPPORT_WHATSAPP_URL = "https://wa.me/2348035143299";
+
+export const BACKGROUND_CHECK_DISCLAIMER =
+  "BamSignal does not conduct criminal background checks on users. Users are responsible for exercising caution and making safe decisions when interacting with others online or offline. BamSignal is not responsible for the conduct of users outside the platform.";
+
 export const REPORT_REASONS: { id: ReportReason; label: string; hint: string }[] = [
   { id: "fake_profile", label: "Fake profile", hint: "Photos or identity seem misleading" },
+  { id: "scammer", label: "Scammer", hint: "Suspicious behaviour or fraud attempts" },
+  { id: "asking_for_money", label: "Asking for money", hint: "Requests for cash, transfers, or gifts" },
   { id: "harassment", label: "Harassment", hint: "Rude, threatening, or unwanted behaviour" },
-  { id: "spam", label: "Spam", hint: "Repeated or unwanted promotional messages" },
-  { id: "inappropriate_photos", label: "Inappropriate photos", hint: "Sexual or offensive images" },
-  { id: "underage", label: "Underage concern", hint: "Person appears under 18" },
+  { id: "sexual_content", label: "Sexual content", hint: "Unwanted sexual messages or images" },
+  { id: "impersonation", label: "Impersonation", hint: "Pretending to be someone else" },
+  { id: "underage_account", label: "Underage account", hint: "Person appears under 18" },
   {
     id: "off_platform_solicitation",
     label: "Off-platform solicitation",
     hint: "Pressure to chat or pay outside BamSignal"
   },
-  { id: "scammer", label: "Scammer", hint: "Money requests, crypto, or suspicious links" },
+  { id: "abusive_language", label: "Abusive language", hint: "Hate speech or severe insults" },
+  { id: "spam", label: "Spam", hint: "Repeated or unwanted promotional messages" },
   { id: "other", label: "Other", hint: "Add a short note below" }
 ];
+
+/** Panic flow uses a focused subset — same ids, shorter list in UI. */
+export const PANIC_REPORT_REASONS = REPORT_REASONS.filter((item) =>
+  [
+    "fake_profile",
+    "scammer",
+    "asking_for_money",
+    "harassment",
+    "sexual_content",
+    "impersonation",
+    "underage_account",
+    "off_platform_solicitation",
+    "other"
+  ].includes(item.id)
+);
+
+const LEGACY_REASON_LABELS: Partial<Record<ReportReason, string>> = {
+  inappropriate_photos: "Sexual content",
+  underage: "Underage account"
+};
+
+export function reportReasonLabel(reason: ReportReason): string {
+  return REPORT_REASONS.find((item) => item.id === reason)?.label || LEGACY_REASON_LABELS[reason] || reason.replace(/_/g, " ");
+}
+
+export const SAFETY_CENTER_SECTIONS = [
+  {
+    title: "Meet Safely",
+    body: "Meet in public places and tell someone you trust."
+  },
+  {
+    title: "Never Send Money",
+    body: "BamSignal will never ask you to send money to another user."
+  },
+  {
+    title: "Avoid OTP Fraud",
+    body: "Never share verification codes or login codes."
+  },
+  {
+    title: "Protect Your Privacy",
+    body: "Do not rush to share personal information."
+  },
+  {
+    title: "Block & Report",
+    body: "If someone makes you uncomfortable, block and report them immediately."
+  }
+] as const;
 
 export const WHO_CAN_SIGNAL_OPTIONS: { id: WhoCanSignalMe; label: string; hint: string }[] = [
   { id: "everyone", label: "Everyone", hint: "Any verified BamSignal member can signal you" },

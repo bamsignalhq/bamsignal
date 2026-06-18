@@ -127,6 +127,11 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
           "Trust your instincts — leave if something feels off",
           "Use in-app report tools if behaviour crosses a line"
         ]
+      },
+      {
+        heading: "Background checks",
+        body:
+          "BamSignal does not conduct criminal background checks on users. Users are responsible for exercising caution and making safe decisions when interacting with others online or offline. BamSignal is not responsible for the conduct of users outside the platform."
       }
     ]
   },
@@ -229,6 +234,11 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
         heading: "Disclaimer",
         body:
           "BamSignal is provided \"as is.\" We do not guarantee matches or outcomes. You are responsible for your offline interactions — meet safely and use your judgment."
+      },
+      {
+        heading: "Background checks",
+        body:
+          "BamSignal does not conduct criminal background checks on users. Users are responsible for exercising caution and making safe decisions when interacting with others online or offline. BamSignal is not responsible for the conduct of users outside the platform."
       }
     ]
   },

@@ -33,6 +33,7 @@ type ProfileDetailSheetProps = {
   onPrioritySignal?: () => void;
   onReport?: () => void;
   onBlock?: () => void;
+  onBlockAndReport?: () => void;
   isPremium?: boolean;
   signalSent?: boolean;
   viewer?: Pick<UserProfile, "email" | "phone" | "name">;
@@ -50,6 +51,7 @@ export function ProfileDetailSheet({
   onPrioritySignal,
   onReport,
   onBlock,
+  onBlockAndReport,
   isPremium = false,
   signalSent = false,
   viewer
@@ -277,7 +279,7 @@ export function ProfileDetailSheet({
                         onReport();
                       }}
                     >
-                      Report
+                      Report user
                     </button>
                   )}
                   {onBlock && (
@@ -290,7 +292,20 @@ export function ProfileDetailSheet({
                         onClose();
                       }}
                     >
-                      Block
+                      Block user
+                    </button>
+                  )}
+                  {onBlockAndReport && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="profile-card-overflow__menu-item--alert"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onBlockAndReport();
+                      }}
+                    >
+                      Block &amp; Report
                     </button>
                   )}
                   {isPremium && onPrioritySignal && (

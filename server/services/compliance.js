@@ -4,12 +4,16 @@ import { ensureMemberProfilesTable, findMemberProfileByUserKey } from "../cityHo
 export const TERMS_VERSION = "2026-06-18";
 export const PRIVACY_VERSION = "2026-06-18";
 export const SAFETY_PLEDGE_VERSION = "2026-06-18";
+export const ADULT_RISK_VERSION = "2026-06-18";
+export const OFFLINE_SAFETY_VERSION = "2026-06-18";
 
 const VERSION_BY_TYPE = {
   terms: TERMS_VERSION,
   privacy: PRIVACY_VERSION,
   age_18: TERMS_VERSION,
-  safety_pledge: SAFETY_PLEDGE_VERSION
+  safety_pledge: SAFETY_PLEDGE_VERSION,
+  adult_risk: ADULT_RISK_VERSION,
+  offline_safety: OFFLINE_SAFETY_VERSION
 };
 
 const VALID_ACK_TYPES = new Set(Object.keys(VERSION_BY_TYPE));
@@ -69,6 +73,16 @@ function buildComplianceSummary(existing = {}, ackTypes, { ip, userAgent } = {})
       next.safetyPledgeAccepted = true;
       next.safetyPledgeAcceptedAt = now;
       next.safetyPledgeVersion = version;
+    }
+    if (type === "adult_risk") {
+      next.adultRiskAcknowledged = true;
+      next.adultRiskAcknowledgedAt = now;
+      next.adultRiskVersion = version;
+    }
+    if (type === "offline_safety") {
+      next.offlineSafetyAcknowledged = true;
+      next.offlineSafetyAcknowledgedAt = now;
+      next.offlineSafetyVersion = version;
     }
   }
 

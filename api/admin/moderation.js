@@ -53,6 +53,14 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, users, count: users.length });
     }
 
+    if (action === "list-reports") {
+      const operatorEmail = await requireModerationAdmin(req, res);
+      if (!operatorEmail) return;
+      const { listReportQueue } = await import("../../server/services/moderation.js");
+      const reports = await listReportQueue({ limit: Number(body.limit) || 200 });
+      return res.status(200).json({ ok: true, reports, count: reports.length });
+    }
+
     if (action === "lift-shadow-ban") {
       const operatorEmail = await requireModerationAdmin(req, res);
       if (!operatorEmail) return;

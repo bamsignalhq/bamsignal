@@ -1,37 +1,16 @@
-import { ArrowLeft, BookOpen, LifeBuoy, Shield, ShieldAlert } from "lucide-react";
+import { ArrowLeft, ExternalLink, Shield } from "lucide-react";
+import {
+  BACKGROUND_CHECK_DISCLAIMER,
+  SAFETY_CENTER_SECTIONS,
+  SUPPORT_WHATSAPP,
+  SUPPORT_WHATSAPP_URL
+} from "../constants/safety";
 import { navigateToPath } from "../constants/routes";
 
 type SafetyCenterPageProps = {
   onBack: () => void;
-  onOpenProfile: () => void;
+  onOpenProfile?: () => void;
 };
-
-const SAFETY_LINKS = [
-  {
-    icon: ShieldAlert,
-    title: "Report a user",
-    body: "Report fake profiles, scams, or harassment from any profile or chat.",
-    action: "profile" as const
-  },
-  {
-    icon: Shield,
-    title: "Block a user",
-    body: "Block someone — they won't see you or contact you again.",
-    action: "profile" as const
-  },
-  {
-    icon: BookOpen,
-    title: "Community guidelines",
-    body: "How we keep BamSignal respectful and real.",
-    action: "guidelines" as const
-  },
-  {
-    icon: LifeBuoy,
-    title: "Contact support",
-    body: "Reach our team for urgent safety issues.",
-    action: "contact" as const
-  }
-];
 
 export function SafetyCenterPage({ onBack, onOpenProfile }: SafetyCenterPageProps) {
   return (
@@ -42,37 +21,64 @@ export function SafetyCenterPage({ onBack, onOpenProfile }: SafetyCenterPageProp
         </button>
         <div>
           <h1>Safety Center</h1>
-          <p>Report, block, and manage your experience.</p>
+          <p>Tools and tips to stay safe on BamSignal.</p>
         </div>
       </header>
 
-      <nav className="safety-center-clean" aria-label="Safety tools">
-        {SAFETY_LINKS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.title}
-              type="button"
-              className="safety-center-clean__row card"
-              onClick={() => {
-                if (item.action === "profile") onOpenProfile();
-                else if (item.action === "guidelines") navigateToPath("/safety");
-                else navigateToPath("/contact");
-              }}
-            >
-              <Icon size={20} aria-hidden />
-              <div>
-                <strong>{item.title}</strong>
-                <span>{item.body}</span>
-              </div>
-            </button>
-          );
-        })}
-      </nav>
+      <div className="safety-center-cards">
+        {SAFETY_CENTER_SECTIONS.map((section) => (
+          <article key={section.title} className="card safety-center-card">
+            <div className="safety-center-card__icon" aria-hidden>
+              <Shield size={18} />
+            </div>
+            <div>
+              <h2 className="safety-center-card__title">{section.title}</h2>
+              <p className="safety-center-card__body">{section.body}</p>
+            </div>
+          </article>
+        ))}
 
-      <p className="safety-center-clean__note">
-        Privacy and matching controls live in <button type="button" className="link-btn" onClick={onOpenProfile}>Settings</button>.
-      </p>
+        <article className="card safety-center-card safety-center-card--support">
+          <div>
+            <h2 className="safety-center-card__title">Contact Support</h2>
+            <p className="safety-center-card__body">
+              WhatsApp:{" "}
+              <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+                {SUPPORT_WHATSAPP}
+              </a>
+            </p>
+          </div>
+          <a
+            className="btn-secondary btn-sm safety-center-card__link"
+            href={SUPPORT_WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Message us <ExternalLink size={14} aria-hidden />
+          </a>
+        </article>
+
+        <article className="card safety-center-card safety-center-card--muted">
+          <h2 className="safety-center-card__title">Background checks</h2>
+          <p className="safety-center-card__body safety-center-card__body--small">
+            {BACKGROUND_CHECK_DISCLAIMER}
+          </p>
+        </article>
+      </div>
+
+      <div className="safety-center-clean__links">
+        <button type="button" className="link-btn" onClick={() => navigateToPath("/safety")}>
+          Community guidelines
+        </button>
+        <button type="button" className="link-btn" onClick={() => navigateToPath("/terms")}>
+          Terms of Service
+        </button>
+        {onOpenProfile ? (
+          <button type="button" className="link-btn" onClick={onOpenProfile}>
+            Privacy &amp; safety settings
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

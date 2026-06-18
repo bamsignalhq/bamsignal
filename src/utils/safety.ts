@@ -58,17 +58,28 @@ export function getReportCount(profileId: string): number {
   return reports.filter((r) => r.profileId === profileId).length;
 }
 
+export function isUserBlocked(profileId: string): boolean {
+  const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
+  return blocked.includes(profileId);
+}
+
 export function isAutoFlagged(profileId: string): boolean {
   return getReportCount(profileId) >= 3;
 }
 
-export function recordReport(profileId: string, reason: ReportReason, details?: string): void {
+export function recordReport(
+  profileId: string,
+  reason: ReportReason,
+  details?: string,
+  options?: { blocked?: boolean }
+): void {
   const reports = readJson<ReportRecord[]>(STORAGE_KEYS.reports, []);
   const report: ReportRecord = {
     profileId,
     reason,
     details: details?.trim() || undefined,
-    at: new Date().toISOString()
+    at: new Date().toISOString(),
+    blocked: Boolean(options?.blocked)
   };
   reports.push(report);
   writeJson(STORAGE_KEYS.reports, reports);
@@ -92,7 +103,7 @@ export function blockUser(profileId: string): void {
     writeJson(STORAGE_KEYS.blocked, [...blocked, profileId]);
     trackSafetyBlock(profileId);
   }
-  const matches = readJson<{ profileId: string }[]>(STORAGE_KEYS.matches, []);
+  const matches = readJson<{ profileId: string; id?: string }[]>(STORAGE_KEYS.matches, []);
   writeJson(
     STORAGE_KEYS.matches,
     matches.filter((m) => m.profileId !== profileId)
@@ -102,6 +113,18 @@ export function blockUser(profileId: string): void {
     STORAGE_KEYS.likedBy,
     likedBy.filter((l) => l.profileId !== profileId)
   );
+  const matchIds = matches.filter((m) => m.profileId === profileId).map((m) => m.id).filter(Boolean) as string[];
+  if (matchIds.length) {
+    const chats = readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {});
+    const nextChats = { ...chats };
+    for (const id of matchIds) delete nextChats[id];
+    writeJson(STORAGE_KEYS.chats, nextChats);
+  }
+}
+
+export function blockAndReportUser(profileId: string, reason: ReportReason, details?: string): void {
+  recordReport(profileId, reason, details, { blocked: true });
+  blockUser(profileId);
 }
 
 export function unmatchUser(matchId: string, profileId: string): void {
@@ -124,6 +147,10 @@ export function canUserSignalTarget(
   recipient: DiscoverProfile,
   recipientPrefs: MatchPreferences = defaultMatchPreferences()
 ): SignalGateResult {
+  if (isUserBlocked(recipient.id)) {
+    return { allowed: false, reason: "You've blocked this person." };
+  }
+
   const safety = resolveSafetySettings({
     gender: recipient.gender,
     safetySettings: recipient.safetySettings

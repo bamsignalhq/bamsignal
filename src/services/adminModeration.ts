@@ -43,6 +43,32 @@ export async function shadowBanAdmin(profileId: string, reason: string, moderati
   });
 }
 
+export type AdminReportRow = {
+  id: string;
+  profileId: string;
+  reportedName: string;
+  reportedCity: string;
+  reporterEmail?: string | null;
+  reporterPhone?: string | null;
+  reason: string;
+  details?: string | null;
+  note?: string | null;
+  blocked: boolean;
+  at: string;
+  reportCount: number;
+  shadowBanned: boolean;
+  status: "pending" | "reviewed" | "action_taken";
+};
+
+export async function fetchAdminReports(limit = 200) {
+  const result = await adminPostJson<{ reports?: AdminReportRow[]; count?: number }>(
+    "/api/admin/moderation?action=list-reports",
+    { limit }
+  );
+  if (!result.ok) return { ok: false as const, reports: [] as AdminReportRow[], error: result.error };
+  return { ok: true as const, reports: result.data.reports || [], count: result.data.count };
+}
+
 export type ContactLeakAttempt = {
   id: string;
   user_key: string;

@@ -30,7 +30,7 @@ import {
   normalizeDatingProfile,
   normalizeMatchPreferences
 } from "../utils/profile";
-import { blockUser, canUserSignalTarget, filterDiscoverDeck } from "../utils/safety";
+import { blockAndReportUser, blockUser, canUserSignalTarget, filterDiscoverDeck } from "../utils/safety";
 import { pushPassedProfile, canUndoPass, undoLastPass } from "../utils/undoPass";
 import { getVerificationTier } from "../utils/verification";
 import { incrementSignalsSent } from "../utils/streaks";
@@ -280,6 +280,16 @@ export function DiscoverPage({
     setTimeout(() => setToast(""), 3000);
   };
 
+  const handleBlockAndReport = (reason: import("../types").ReportReason, details?: string) => {
+    if (!current) return;
+    blockAndReportUser(current.id, reason, details);
+    advance(current.id);
+    setProfileOpen(false);
+    setSafetyOpen(false);
+    setToast(`${current.name} blocked and reported.`);
+    setTimeout(() => setToast(""), 3500);
+  };
+
   const handleSave = () => {
     if (!current) return;
     const alreadySaved = savedIds.includes(current.id);
@@ -393,6 +403,7 @@ export function DiscoverPage({
           onPrioritySignal={handlePrioritySignal}
           onReport={() => setSafetyOpen(true)}
           onBlock={handleBlock}
+          onBlockAndReport={() => setSafetyOpen(true)}
           isPremium={isPremium}
           signalSent={signalSent}
           viewer={memberUser}
@@ -419,6 +430,7 @@ export function DiscoverPage({
           profileId={current.id}
           onClose={() => setSafetyOpen(false)}
           onBlock={handleBlock}
+          onBlockAndReport={handleBlockAndReport}
         />
       )}
     </div>

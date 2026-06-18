@@ -1,5 +1,5 @@
 import { ArrowLeft, MoreVertical, Pin, Search } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EXPERIENCE_COPY } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
 import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
@@ -13,7 +13,8 @@ import { ContactExchangeLimitModal } from "../components/ContactExchangeLimitMod
 import { PaywallModal } from "../components/PaywallModal";
 import { QuickiePaywallModal } from "../components/QuickiePaywallModal";
 import { ReportBlockModal } from "../components/ReportBlockModal";
-import type { ChatMessage, ChatThread, ContactExchangeShared, ContactExchangeState, LikeEntry, Match, UserProfile } from "../types";
+import { OfflineSafetyAckModal } from "../components/OfflineSafetyAckModal";
+import type { ChatMessage, ChatThread, ContactExchangeShared, ContactExchangeState, LikeEntry, Match, ReportReason, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { FEMALE_SAFETY_COPY } from "../constants/safety";
 import { chatListStatus, formatBubbleTime, formatThreadTime } from "../utils/chatListStatus";
@@ -22,7 +23,8 @@ import { isDemoTypingMatch, seedReviewerDemoChatsIfNeeded } from "../utils/revie
 import { matchAnniversaryBanner } from "../utils/connectionAnniversary";
 import { getDatingProfile } from "../utils/profile";
 import { checkOutgoingChatMessage, CONTACT_LEAK_BLOCK_MESSAGE } from "../utils/contactGuard";
-import { blockUser, canUseInbox, filterBlockedByProfileId, unmatchUser } from "../utils/safety";
+import { blockAndReportUser, blockUser, canUseInbox, filterBlockedByProfileId, isUserBlocked, unmatchUser } from "../utils/safety";
+import { hasOfflineSafetyAck } from "../utils/compliance";
 import { trackEvent } from "../utils/analytics";
 import { isViewerShadowBanned } from "../utils/shadowBan";
 import { incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
@@ -336,6 +338,8 @@ function ChatDetail({
   const lastMine = [...messages].reverse().find((m) => m.from === "me");
   const showSeen = receiptsOn && lastMine && threadMeta.peerSeenAt;
   const [disableModalOpen, setDisableModalOpen] = useState(false);
+  const [offlineSafetyOpen, setOfflineSafetyOpen] = useState(false);
+  const pendingExchangeActionRef = useRef<(() => void) | null>(null);
   const exchangeStatus = threadMeta.contactExchange?.status;
   const sharingDisabled = threadMeta.contactExchange?.contactSharingEnabled === false;
   const exchangeApproved =
@@ -352,6 +356,15 @@ function ChatDetail({
   const showRequesterWaiting = exchangeStatus === "pending" && exchangeRole === "requester";
   const requesterFirstName = match.name.trim().split(/\s+/)[0] || match.name;
   const requesterProfileId = localStorage.getItem(STORAGE_KEYS.memberProfileId) || undefined;
+
+  const runAfterOfflineSafety = useCallback((action: () => void) => {
+    if (hasOfflineSafetyAck(getDatingProfile().compliance)) {
+      action();
+      return;
+    }
+    pendingExchangeActionRef.current = action;
+    setOfflineSafetyOpen(true);
+  }, []);
 
   useEffect(() => {
     void fetchMemberProfileById(user, match.profileId);
@@ -375,11 +388,11 @@ function ChatDetail({
           return meta;
         });
         if (mapped.status === "accepted") {
-          setEnabledModalOpen(true);
+          runAfterOfflineSafety(() => setEnabledModalOpen(true));
         }
       }
     });
-  }, [match.profileId, user.email, user.phone, match.id]);
+  }, [match.profileId, user.email, user.phone, match.id, messages, runAfterOfflineSafety]);
 
   const persistThread = (nextMessages: ChatMessage[], meta = threadMeta) => {
     const nextMeta = { ...meta, matchId: match.id };
@@ -406,6 +419,11 @@ function ChatDetail({
 
   const handleSend = (text: string) => {
     setBlockWarning("");
+
+    if (isUserBlocked(match.profileId)) {
+      showBlockWarning("You've blocked this person.");
+      return;
+    }
 
     const contactApproved =
       contactExchangeAllowsSharing(threadMeta.contactExchange) ||
@@ -451,6 +469,10 @@ function ChatDetail({
       setTimeout(() => setToast(""), 3500);
       return;
     }
+    runAfterOfflineSafety(() => void executeContactExchangeRequest());
+  };
+
+  const executeContactExchangeRequest = async () => {
     const result = await requestContactExchangeRemote(
       user,
       match.id,
@@ -477,6 +499,10 @@ function ChatDetail({
   };
 
   const acceptContactExchange = async () => {
+    runAfterOfflineSafety(() => void executeAcceptContactExchange());
+  };
+
+  const executeAcceptContactExchange = async () => {
     const result = await respondContactExchangeRemote(user, match.id, true, requesterProfileId);
     if (!result) return;
     if (!result.ok) {
@@ -491,7 +517,7 @@ function ChatDetail({
     trackEvent("exchange_accepted", { matchId: match.id });
     const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
     if (mapped) updateMeta({ contactExchange: mapped });
-    setEnabledModalOpen(true);
+    runAfterOfflineSafety(() => setEnabledModalOpen(true));
   };
 
   const declineContactExchange = async () => {
@@ -541,6 +567,11 @@ function ChatDetail({
 
   const handleBlock = () => {
     blockUser(match.profileId);
+    onBack();
+  };
+
+  const handleBlockAndReport = (reason: ReportReason, details?: string) => {
+    blockAndReportUser(match.profileId, reason, details);
     onBack();
   };
 
@@ -718,7 +749,23 @@ function ChatDetail({
         }}
         onClose={() => setSafetyOpen(false)}
         onBlock={handleBlock}
+        onBlockAndReport={handleBlockAndReport}
         onUnmatch={handleUnmatch}
+      />
+
+      <OfflineSafetyAckModal
+        open={offlineSafetyOpen}
+        user={user}
+        onClose={() => {
+          setOfflineSafetyOpen(false);
+          pendingExchangeActionRef.current = null;
+        }}
+        onComplete={() => {
+          setOfflineSafetyOpen(false);
+          const action = pendingExchangeActionRef.current;
+          pendingExchangeActionRef.current = null;
+          action?.();
+        }}
       />
     </div>
   );

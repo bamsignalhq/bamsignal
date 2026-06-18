@@ -194,7 +194,89 @@
   cursor: pointer;
 }
 
-.profile-card-signal-gate {
+.safety-action-btn--panic {
+  border-color: color-mix(in srgb, #e91e8c 35%, transparent);
+  background: color-mix(in srgb, #e91e8c 8%, transparent);
+}
+
+.safety-btn--destructive {
+  background: linear-gradient(135deg, #ff4db8 0%, #6d5ef8 100%);
+}
+
+.safety-ack-modal {
+  max-width: 420px;
+}
+
+.safety-center-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.safety-center-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 16px;
+}
+
+.safety-center-card__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #e91e8c 12%, transparent);
+  color: var(--accent, #e91e8c);
+  flex-shrink: 0;
+}
+
+.safety-center-card__title {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+
+.safety-center-card__body {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  opacity: 0.88;
+}
+
+.safety-center-card__body--small {
+  font-size: 0.82rem;
+  opacity: 0.78;
+}
+
+.safety-center-card--support {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.safety-center-card--muted {
+  background: color-mix(in srgb, var(--input-bg) 70%, transparent);
+}
+
+.safety-center-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.safety-center-clean__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 16px;
+  padding: 0 4px 12px;
+}
+
+.profile-card-overflow__menu-item--alert {
+  color: #c0265a;
+}
   margin: 0 0 12px;
   padding: 10px 12px;
   border-radius: 10px;

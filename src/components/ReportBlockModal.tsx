@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { Flag, ShieldBan, ShieldCheck, UserX, X } from "lucide-react";
+import { Flag, ShieldAlert, ShieldBan, ShieldCheck, UserX, X } from "lucide-react";
 import { BUTTON_COPY, EXPERIENCE_COPY } from "../constants/copy";
 import { CONTACT_LEAK_BLOCK_MESSAGE, validateUserText } from "../utils/contactGuard";
-import { FEMALE_SAFETY_COPY, REPORT_REASONS } from "../constants/safety";
+import {
+  FEMALE_SAFETY_COPY,
+  PANIC_REPORT_REASONS,
+  REPORT_REASONS
+} from "../constants/safety";
 import type { ReportReason } from "../types";
 import { recordReport } from "../utils/safety";
 
@@ -13,10 +17,13 @@ type ReportBlockModalProps = {
   onClose: () => void;
   onReport?: (reason: ReportReason, details?: string) => void;
   onBlock: () => void;
+  onBlockAndReport?: (reason: ReportReason, details?: string) => void;
   onUnmatch?: () => void;
   showDisableContactSharing?: boolean;
   onDisableContactSharing?: () => void;
 };
+
+type ModalView = "menu" | "report" | "block_and_report" | "done" | "panic_done";
 
 export function ReportBlockModal({
   open,
@@ -25,11 +32,12 @@ export function ReportBlockModal({
   onClose,
   onReport,
   onBlock,
+  onBlockAndReport,
   onUnmatch,
   showDisableContactSharing,
   onDisableContactSharing
 }: ReportBlockModalProps) {
-  const [view, setView] = useState<"menu" | "report" | "done">("menu");
+  const [view, setView] = useState<ModalView>("menu");
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState("");
   const [detailsError, setDetailsError] = useState("");
@@ -40,6 +48,7 @@ export function ReportBlockModal({
     setView("menu");
     setReason(null);
     setDetails("");
+    setDetailsError("");
   };
 
   const close = () => {
@@ -47,19 +56,36 @@ export function ReportBlockModal({
     onClose();
   };
 
-  const submitReport = () => {
-    if (!reason || !profileId) return;
-    if (reason === "other" && !details.trim()) return;
+  const validateDetails = (): boolean => {
     const leakError = validateUserText(details);
     if (leakError) {
       setDetailsError(CONTACT_LEAK_BLOCK_MESSAGE);
-      return;
+      return false;
     }
     setDetailsError("");
+    return true;
+  };
+
+  const submitReport = () => {
+    if (!reason || !profileId) return;
+    if (reason === "other" && !details.trim()) return;
+    if (!validateDetails()) return;
     recordReport(profileId, reason, details);
     onReport?.(reason, details);
     setView("done");
   };
+
+  const submitBlockAndReport = () => {
+    if (!reason || !profileId || !onBlockAndReport) return;
+    if (reason === "other" && !details.trim()) return;
+    if (!validateDetails()) return;
+    onBlockAndReport(reason, details);
+    setView("panic_done");
+  };
+
+  const reasonList = view === "block_and_report" ? PANIC_REPORT_REASONS : REPORT_REASONS;
+  const noteRequired = reason === "other";
+  const canSubmit = Boolean(reason && (!noteRequired || details.trim()));
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={close}>
@@ -94,6 +120,16 @@ export function ReportBlockModal({
               >
                 <ShieldBan size={18} /> {EXPERIENCE_COPY.blockUser}
               </button>
+              {onBlockAndReport ? (
+                <button
+                  type="button"
+                  className="safety-action-btn safety-action-btn--panic"
+                  onClick={() => setView("block_and_report")}
+                  disabled={!profileId}
+                >
+                  <ShieldAlert size={18} /> Block &amp; Report
+                </button>
+              ) : null}
               {onUnmatch ? (
                 <button
                   type="button"
@@ -122,12 +158,18 @@ export function ReportBlockModal({
           </>
         )}
 
-        {view === "report" && (
+        {(view === "report" || view === "block_and_report") && (
           <>
-            <h3>Report {userName}</h3>
-            <p className="safety-modal__lead">What happened? Choose the closest reason.</p>
+            <h3>
+              {view === "block_and_report" ? `Block and report ${userName}?` : `Report ${userName}`}
+            </h3>
+            <p className="safety-modal__lead">
+              {view === "block_and_report"
+                ? "This will stop them from contacting you and send a report to BamSignal for review."
+                : "What happened? Choose the closest reason."}
+            </p>
             <div className="safety-reason-list">
-              {REPORT_REASONS.map((item) => (
+              {reasonList.map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -140,14 +182,18 @@ export function ReportBlockModal({
               ))}
             </div>
             <label className="safety-details-label">
-              Additional details (optional)
+              {noteRequired ? "Tell us what happened" : "Additional details (optional)"}
               <textarea
                 value={details}
                 onChange={(e) => {
                   setDetails(e.target.value);
                   if (detailsError) setDetailsError("");
                 }}
-                placeholder="Share what happened, in your own words…"
+                placeholder={
+                  noteRequired
+                    ? "Please share a short note so we can review…"
+                    : "Share what happened, in your own words…"
+                }
                 rows={3}
                 maxLength={500}
               />
@@ -159,15 +205,15 @@ export function ReportBlockModal({
             ) : null}
             <div className="safety-modal__actions">
               <button type="button" className="btn-secondary" onClick={() => setView("menu")}>
-                Back
+                Cancel
               </button>
               <button
                 type="button"
-                className="btn-primary"
-                disabled={!reason || (reason === "other" && !details.trim())}
-                onClick={submitReport}
+                className={view === "block_and_report" ? "btn-primary safety-btn--destructive" : "btn-primary"}
+                disabled={!canSubmit}
+                onClick={view === "block_and_report" ? submitBlockAndReport : submitReport}
               >
-                {BUTTON_COPY.done}
+                {view === "block_and_report" ? "Block & Report" : BUTTON_COPY.done}
               </button>
             </div>
           </>
@@ -191,6 +237,23 @@ export function ReportBlockModal({
               >
                 {EXPERIENCE_COPY.blockUser}
               </button>
+              <button type="button" className="btn-primary" onClick={close}>
+                Done
+              </button>
+            </div>
+          </>
+        )}
+
+        {view === "panic_done" && (
+          <>
+            <div className="safety-modal__icon safety-modal__icon--success">
+              <ShieldCheck size={28} />
+            </div>
+            <h3>User blocked and reported</h3>
+            <p className="safety-modal__lead">
+              They can no longer contact you. Our team will review this report.
+            </p>
+            <div className="safety-modal__actions">
               <button type="button" className="btn-primary" onClick={close}>
                 Done
               </button>

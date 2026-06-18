@@ -164,6 +164,55 @@ export async function listShadowBannedUsers() {
   return result.rows.map(mapShadowBannedRow).filter(Boolean);
 }
 
+export async function listReportQueue({ limit = 200 } = {}) {
+  if (!isDatabaseReady()) return [];
+  const { ensureAppReportsTable } = await import("../db.js");
+  await ensureAppReportsTable();
+  await ensureModerationSchema();
+
+  const result = await query(
+    `select r.id,
+            r.profile_id,
+            r.reason,
+            r.details,
+            r.payload,
+            r.created_at,
+            r.reporter_email,
+            r.reporter_phone,
+            p.name as reported_name,
+            p.city as reported_city,
+            p.shadow_banned,
+            count(*) over (partition by r.profile_id) as profile_report_count
+     from app_reports r
+     left join app_member_profiles p on p.id::text = r.profile_id
+     order by r.created_at desc
+     limit $1`,
+    [Math.min(Math.max(Number(limit) || 200, 1), 500)]
+  );
+
+  return result.rows.map((row) => {
+    const payload = row.payload && typeof row.payload === "object" ? row.payload : {};
+    const reportCount = Number(row.profile_report_count || 1);
+    const shadowBanned = Boolean(row.shadow_banned);
+    return {
+      id: row.id,
+      profileId: row.profile_id,
+      reportedName: row.reported_name || `Member ${String(row.profile_id || "").slice(0, 8)}`,
+      reportedCity: row.reported_city || "—",
+      reporterEmail: row.reporter_email || null,
+      reporterPhone: row.reporter_phone || null,
+      reason: row.reason,
+      details: row.details || null,
+      note: row.details || null,
+      blocked: Boolean(payload.blocked),
+      at: row.created_at,
+      reportCount,
+      shadowBanned,
+      status: shadowBanned ? "action_taken" : reportCount >= 3 ? "pending" : "reviewed"
+    };
+  });
+}
+
 export async function countShadowBannedUsers() {
   if (!isDatabaseReady()) return 0;
   await ensureModerationSchema();

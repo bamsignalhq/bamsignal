@@ -1273,6 +1273,7 @@ export function App() {
               onLogout={handleLogout}
               onUpgrade={openPricing}
               onReturnToDashboard={() => setTab("home")}
+              onOpenSafetyCenter={() => setMemberOverlay("safety")}
             />
           )}
         </main>

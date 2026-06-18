@@ -42,6 +42,7 @@ export function AuthModal({
           message={message}
           onMessage={onMessage}
           embedded
+          onLogoClick={onClose}
         />
       </div>
     </div>

@@ -105,6 +105,26 @@
   margin-bottom: 18px;
 }
 
+.auth-brand-btn {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 14px;
+  color: inherit;
+  font: inherit;
+}
+
+.auth-brand-btn:hover {
+  opacity: 0.88;
+}
+
+.auth-brand-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand-pink) 55%, transparent);
+  outline-offset: 4px;
+}
+
 .auth-title {
   margin: 0 0 6px;
   font-size: clamp(1.55rem, 5vw, 1.85rem);

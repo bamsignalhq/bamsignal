@@ -39,6 +39,7 @@ type AuthPageProps = {
   message?: string;
   onMessage: (msg: string) => void;
   embedded?: boolean;
+  onLogoClick?: () => void;
 };
 
 const emptySignup = {
@@ -108,7 +109,8 @@ export function AuthPage({
   onAuthenticated,
   message,
   onMessage,
-  embedded
+  embedded,
+  onLogoClick
 }: AuthPageProps) {
   const restored = useRef(restoredSignupState());
   const [busy, setBusy] = useState<string | null>(null);
@@ -548,7 +550,13 @@ export function AuthPage({
         <div className="auth-shell__glow" aria-hidden />
         <div className="auth-card auth-card--fintech">
           <div className="auth-brand">
-            <AppLogo size="lg" />
+            {onLogoClick ? (
+              <button type="button" className="auth-brand-btn" onClick={onLogoClick} aria-label="Back to BamSignal home">
+                <AppLogo size="lg" />
+              </button>
+            ) : (
+              <AppLogo size="lg" />
+            )}
           </div>
 
           {mode === "login" && (

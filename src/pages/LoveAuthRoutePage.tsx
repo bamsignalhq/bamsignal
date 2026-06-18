@@ -53,6 +53,7 @@ export function LoveAuthRoutePage({
       onAuthenticated={onAuthenticated}
       message={message}
       onMessage={onMessage}
+      onLogoClick={() => navigateToPath("/")}
     />
   );
 }

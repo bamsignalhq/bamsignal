@@ -1,11 +1,10 @@
-import { ArrowLeft, MessageCircle, MoreVertical, Pin, Search } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pin, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EXPERIENCE_COPY } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
 import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
 import { ActivityStatus } from "../components/ActivityStatus";
 import { ChatInput } from "../components/ChatInput";
-import { EmptyState } from "../components/EmptyState";
 import { DisableContactSharingModal } from "../components/DisableContactSharingModal";
 import { MessageRequestCard } from "../components/MessageRequestCard";
 import { ContactExchangeConsentCard } from "../components/ContactExchangeConsentCard";
@@ -17,7 +16,9 @@ import { ReportBlockModal } from "../components/ReportBlockModal";
 import type { ChatMessage, ChatThread, ContactExchangeShared, ContactExchangeState, LikeEntry, Match, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { FEMALE_SAFETY_COPY } from "../constants/safety";
+import { chatListStatus, formatBubbleTime, formatThreadTime } from "../utils/chatListStatus";
 import { readReceiptsAllowed } from "../utils/activityPrivacy";
+import { isDemoTypingMatch, seedReviewerDemoChatsIfNeeded } from "../utils/reviewerDemoChats";
 import { matchAnniversaryBanner } from "../utils/connectionAnniversary";
 import { getDatingProfile } from "../utils/profile";
 import { checkOutgoingChatMessage, CONTACT_LEAK_BLOCK_MESSAGE } from "../utils/contactGuard";
@@ -46,18 +47,8 @@ type ChatsPageProps = {
   onDiscover?: () => void;
 };
 
-function formatThreadTime(iso?: string): string {
-  if (!iso) return "";
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.round(diff / 60000);
-  if (mins < 1) return "Now";
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  return new Date(iso).toLocaleDateString("en-NG", { weekday: "short" });
-}
-
-function lastPreview(messages: ChatMessage[]): string {
+function lastPreview(messages: ChatMessage[], matchId: string): string {
+  if (isDemoTypingMatch(matchId)) return "…";
   if (!messages.length) return EXPERIENCE_COPY.chatNewPreview;
   const last = messages[messages.length - 1];
   const prefix = last.from === "me" ? "You: " : "";
@@ -94,10 +85,17 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
   const [listTick, setListTick] = useState(0);
   const [messageRequests, setMessageRequests] = useState<LikeEntry[]>([]);
   const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+  const viewer = getDatingProfile();
 
   useEffect(() => {
     void fetchIncomingSignalsRemote(user).then(setMessageRequests);
   }, [user.email, user.phone, listTick]);
+
+  useEffect(() => {
+    if (seedReviewerDemoChatsIfNeeded(user)) {
+      setListTick((v) => v + 1);
+    }
+  }, [user.email, user.username]);
 
   const threads = useMemo(
     () => readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {}),
@@ -132,23 +130,6 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
     return rows.filter(({ match }) => match.name.toLowerCase().includes(q) || match.city.toLowerCase().includes(q));
   }, [query, rows]);
 
-  if (!matches.length && !messageRequests.length && !activeMatch) {
-    return (
-      <div className="page member-page messages-page">
-        <header className="member-page-head member-page-head--minimal">
-          <h1>{EXPERIENCE_COPY.chatsTitle}</h1>
-        </header>
-        <EmptyState
-          icon={MessageCircle}
-          title={EXPERIENCE_COPY.chatEmptyTitle}
-          message={EXPERIENCE_COPY.chatEmptyBody}
-          actionLabel="Discover people"
-          onAction={onDiscover}
-        />
-      </div>
-    );
-  }
-
   if (activeMatch) {
     return (
       <ChatDetail
@@ -174,14 +155,16 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
     setActiveMatch(match);
   };
 
+  const showEmpty = !matches.length && !messageRequests.length;
+
   return (
-    <div className="page member-page messages-page">
+    <div className="page member-page messages-page messages-page--premium">
       <header className="member-page-head member-page-head--minimal">
         <h1>{EXPERIENCE_COPY.chatsTitle}</h1>
       </header>
 
-      <label className="member-search">
-        <Search size={18} />
+      <label className="member-search member-search--chats">
+        <Search size={18} aria-hidden />
         <input
           type="search"
           value={query}
@@ -189,6 +172,18 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
           placeholder={EXPERIENCE_COPY.searchConversations}
         />
       </label>
+
+      {showEmpty ? (
+        <div className="messages-empty messages-empty--compact">
+          <h2>{EXPERIENCE_COPY.chatEmptyTitle}</h2>
+          <p>{EXPERIENCE_COPY.chatEmptyBody}</p>
+          {onDiscover ? (
+            <button type="button" className="btn-primary" onClick={onDiscover}>
+              Discover people
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {messageRequests.length > 0 ? (
         <div className="message-requests-list">
@@ -219,39 +214,60 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
         </div>
       ) : null}
 
-      <ul className="messages-list">
-        {filtered.map(({ match, thread, messages, lastAt, unread }) => {
-          const pinned = Boolean(thread?.pinned);
-          return (
-            <li key={match.id}>
-              <button
-                type="button"
-                className={`messages-row${unread > 0 ? " messages-row--unread" : ""}${pinned ? " messages-row--pinned" : ""}`}
-                onClick={() => openConversation(match)}
-              >
-                <span className="messages-row__avatar">
-                  <img src={match.photo} alt="" />
-                </span>
-                <span className="messages-row__body">
-                  <span className="messages-row__top">
-                    <strong>
-                      {pinned ? <Pin size={12} className="messages-row__pin" aria-hidden /> : null}
-                      {match.name}
-                    </strong>
-                    <time>{formatThreadTime(lastAt)}</time>
+      {filtered.length > 0 ? (
+        <ul className="messages-list messages-list--premium">
+          {filtered.map(({ match, thread, messages, lastAt, lastActiveAt, unread }) => {
+            const pinned = Boolean(thread?.pinned);
+            const lastMessage = messages[messages.length - 1];
+            const discoverProfile = getCachedMemberProfile(match.profileId);
+            const receiptsOn = readReceiptsAllowed(viewer, discoverProfile ?? {});
+            const status = chatListStatus({
+              matchId: match.id,
+              lastActiveAt,
+              lastMessage,
+              peerSeenAt: thread?.peerSeenAt,
+              receiptsOn
+            });
+            const preview = lastPreview(messages, match.id);
+            return (
+              <li key={match.id}>
+                <button
+                  type="button"
+                  className={`messages-row messages-row--premium${unread > 0 ? " messages-row--unread" : ""}${pinned ? " messages-row--pinned" : ""}`}
+                  onClick={() => openConversation(match)}
+                >
+                  <span className="messages-row__avatar">
+                    <img src={match.photo} alt="" loading="lazy" decoding="async" />
+                    {status?.showOnlineDot ? <span className="messages-row__online" aria-hidden /> : null}
                   </span>
-                  <span className="messages-row__preview">{lastPreview(messages)}</span>
-                </span>
-                {unread > 0 ? (
-                  <span className="messages-row__badge" aria-label={`${unread} unread`}>
-                    {unread > 9 ? "9+" : unread}
+                  <span className="messages-row__body">
+                    <span className="messages-row__top">
+                      <strong>
+                        {pinned ? <Pin size={12} className="messages-row__pin" aria-hidden /> : null}
+                        {match.name}
+                      </strong>
+                      <time dateTime={lastAt}>{formatThreadTime(lastAt)}</time>
+                    </span>
+                    {status ? (
+                      <span className={`messages-row__status messages-row__status--${status.kind}`}>
+                        {status.text}
+                      </span>
+                    ) : null}
+                    <span className="messages-row__preview-row">
+                      <span className="messages-row__preview">{preview}</span>
+                      {unread > 0 ? (
+                        <span className="messages-row__badge" aria-label={`${unread} unread`}>
+                          {unread > 9 ? "9+" : unread}
+                        </span>
+                      ) : null}
+                    </span>
                   </span>
-                ) : null}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -553,7 +569,6 @@ function ChatDetail({
             isConnection
             variant="subtle"
           />
-          <span>{match.city}</span>
           {showExchangeButton && (
             <button type="button" className="chat-off-app-link" onClick={() => void requestContactExchange()}>
               Exchange Contacts 🔒
@@ -604,8 +619,11 @@ function ChatDetail({
           </div>
         ) : null}
         {messages.map((m) => (
-          <div key={m.id} className={`chat-bubble ${m.from}`}>
-            {m.text}
+          <div key={m.id} className={`chat-bubble chat-bubble--premium ${m.from}`}>
+            <span className="chat-bubble__text">{m.text}</span>
+            <time className="chat-bubble__time" dateTime={m.at}>
+              {formatBubbleTime(m.at)}
+            </time>
           </div>
         ))}
         {showSeen ? <p className="chat-read-receipt">Seen</p> : null}

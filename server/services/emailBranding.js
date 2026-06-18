@@ -170,6 +170,12 @@ export function buildEmailFooter({ year = new Date().getFullYear() } = {}) {
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
             <td style="border-top:1px solid #2a3a57;padding-top:24px;text-align:center">
+              <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#f8fafc">BamSignal</p>
+              <p style="margin:0 0 4px;font-size:12px;color:#9db0cf">Send a Signal.</p>
+              <p style="margin:0 0 18px;font-size:12px;color:#9db0cf">Meet people who match your vibe.</p>
+              <p style="margin:0 0 18px;font-size:12px;line-height:1.5">
+                <a href="mailto:${SUPPORT_EMAIL}" style="color:#c4b5fd;text-decoration:none">${SUPPORT_EMAIL}</a>
+              </p>
               <p style="margin:0 0 16px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#7f93b5">Follow BamSignal</p>
               ${buildSocialIconsRow()}
 
@@ -224,6 +230,97 @@ export function emailButton(label, href) {
       </tr>
     </table>
   `;
+}
+
+export function emailKicker(text) {
+  return `<p style="margin:0 0 8px;color:#b7c3d9;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">${escapeHtml(text)}</p>`;
+}
+
+export function emailHeading(text, { marginBottom = 16 } = {}) {
+  return `<h1 style="margin:0 0 ${marginBottom}px;font-size:26px;line-height:1.2;color:#f8fafc;font-weight:700">${escapeHtml(text)}</h1>`;
+}
+
+export function emailLead(text) {
+  return `<p style="margin:0 0 12px;color:#dbe5f4;line-height:1.7">${escapeHtml(text)}</p>`;
+}
+
+export function emailMuted(text) {
+  return `<p style="margin:0;color:#9db0cf;line-height:1.7;font-size:14px">${escapeHtml(text)}</p>`;
+}
+
+export function emailFieldCard(label, value, { prewrap = false } = {}) {
+  const valueStyle = prewrap
+    ? "margin:0;white-space:pre-wrap;line-height:1.65;color:#dbe5f4;font-size:15px"
+    : "margin:0;color:#dbe5f4;font-size:15px;line-height:1.6";
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px">
+      <tr>
+        <td style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px 16px">
+          <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#f8fafc">${escapeHtml(label)}</p>
+          <p style="${valueStyle}">${escapeHtml(value)}</p>
+        </td>
+      </tr>
+    </table>
+  `;
+}
+
+export function emailFieldCards(cards) {
+  return cards.map((card) => emailFieldCard(card.label, card.value, { prewrap: card.prewrap })).join("");
+}
+
+export function buildContactSupportEmailBody({ topic, name, email, message }) {
+  return `
+    ${emailKicker("New support request")}
+    ${emailHeading(topic, { marginBottom: 20 })}
+    ${emailFieldCards([
+      { label: "Name", value: name },
+      { label: "Email", value: email },
+      { label: "Message", value: message, prewrap: true }
+    ])}
+    ${emailMuted("Reply directly to this email to reach the member.")}
+  `;
+}
+
+export function buildContactAcknowledgementEmailBody({ name, topic }) {
+  return `
+    ${emailKicker("Support request received")}
+    ${emailHeading(`Thanks for reaching out, ${name}.`)}
+    ${emailLead("We've received your message and the BamSignal team will get back to you as soon as possible.")}
+    ${emailFieldCard("Topic", topic)}
+    ${emailMuted("You do not need to send the message again unless you have more details to add.")}
+    ${emailMuted("We typically respond within a few hours, 9am–6pm WAT.")}
+    ${emailButton("Open BamSignal", BAMSIGNAL_SITE)}
+  `;
+}
+
+export function buildContactSupportPlainText({ topic, name, email, message }) {
+  return [
+    "New BamSignal support request",
+    "",
+    `Topic: ${topic}`,
+    `Name: ${name}`,
+    `Email: ${email}`,
+    "",
+    message,
+    "",
+    "Reply directly to this email to reach the member.",
+    buildPlainEmailFooter()
+  ].join("\n");
+}
+
+export function buildContactAcknowledgementPlainText({ name, topic }) {
+  return [
+    `Hi ${name},`,
+    "",
+    `We've received your BamSignal message about "${topic}" and will get back to you as soon as possible.`,
+    "",
+    "You do not need to send the message again unless you have more details to add.",
+    "",
+    "We typically respond within a few hours, 9am–6pm WAT.",
+    "",
+    `Open BamSignal: ${BAMSIGNAL_SITE}`,
+    buildPlainEmailFooter()
+  ].join("\n");
 }
 
 export function wrapEmailLayout({ bodyHtml, branding, preheader = "", headerHtml }) {

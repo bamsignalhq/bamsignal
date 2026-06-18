@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
 import {
-  buildPlainEmailFooter,
-  escapeHtml,
+  buildContactAcknowledgementEmailBody,
+  buildContactAcknowledgementPlainText,
+  buildContactSupportEmailBody,
+  buildContactSupportPlainText,
   loadEmailBranding,
   wrapEmailLayoutAsync
 } from "./emailBranding.js";
@@ -77,37 +79,18 @@ export async function handleContactPost(body) {
   const from = process.env.SUPPORT_EMAIL_FROM || "BamSignal <support@bamsignal.com>";
   const to = process.env.SUPPORT_EMAIL_TO || process.env.VITE_SUPPORT_EMAIL || "support@bamsignal.com";
   const supportSubject = `BamSignal support: ${safeTopic}`;
-  const plainMessage = [`Name: ${safeName}`, `Email: ${safeEmail}`, `Topic: ${safeTopic}`, "", safeMessage].join("\n");
 
-  const supportBody = `
-    <p style="margin:0 0 8px;color:#b7c3d9;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">New support request</p>
-    <h1 style="margin:0 0 20px;font-size:26px;line-height:1.15;color:#f8fafc;font-weight:700">${escapeHtml(safeTopic)}</h1>
-    <div style="display:grid;gap:12px">
-      <div style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px">
-        <strong style="display:block;margin-bottom:6px;color:#f8fafc">Name</strong>
-        <span>${escapeHtml(safeName)}</span>
-      </div>
-      <div style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px">
-        <strong style="display:block;margin-bottom:6px;color:#f8fafc">Email</strong>
-        <span>${escapeHtml(safeEmail)}</span>
-      </div>
-      <div style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px">
-        <strong style="display:block;margin-bottom:6px;color:#f8fafc">Message</strong>
-        <div style="white-space:pre-wrap;line-height:1.6">${escapeHtml(safeMessage)}</div>
-      </div>
-    </div>
-  `;
+  const supportBody = buildContactSupportEmailBody({
+    topic: safeTopic,
+    name: safeName,
+    email: safeEmail,
+    message: safeMessage
+  });
 
-  const acknowledgementBody = `
-    <p style="margin:0 0 8px;color:#b7c3d9;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Support request received</p>
-    <h1 style="margin:0 0 16px;font-size:26px;line-height:1.15;color:#f8fafc;font-weight:700">Thanks for reaching out, ${escapeHtml(safeName)}.</h1>
-    <p style="margin:0 0 12px;color:#dbe5f4;line-height:1.7">We’ve received your message and the BamSignal team will get back to you as soon as possible.</p>
-    <div style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px;margin:16px 0">
-      <strong style="display:block;margin-bottom:6px;color:#f8fafc">Topic</strong>
-      <span>${escapeHtml(safeTopic)}</span>
-    </div>
-    <p style="margin:0;color:#9db0cf;line-height:1.7">You do not need to send the message again unless you have more details to add.</p>
-  `;
+  const acknowledgementBody = buildContactAcknowledgementEmailBody({
+    name: safeName,
+    topic: safeTopic
+  });
 
   const supportHtml = await wrapEmailLayoutAsync({
     branding,
@@ -126,7 +109,12 @@ export async function handleContactPost(body) {
     to,
     reply_to: safeEmail,
     subject: supportSubject,
-    text: plainMessage,
+    text: buildContactSupportPlainText({
+      topic: safeTopic,
+      name: safeName,
+      email: safeEmail,
+      message: safeMessage
+    }),
     html: supportHtml
   });
 
@@ -141,7 +129,7 @@ export async function handleContactPost(body) {
       from,
       to: safeEmail,
       subject: "We received your BamSignal message",
-      text: `Hi ${safeName},\n\nWe’ve received your BamSignal message about "${safeTopic}" and will get back to you as soon as possible.${buildPlainEmailFooter()}`,
+      text: buildContactAcknowledgementPlainText({ name: safeName, topic: safeTopic }),
       html: acknowledgementHtml
     });
 

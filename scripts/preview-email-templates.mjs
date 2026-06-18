@@ -3,6 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   DEFAULT_EMAIL_BRANDING,
+  buildContactAcknowledgementEmailBody,
+  buildContactSupportEmailBody,
   emailButton,
   escapeHtml,
   wrapEmailLayout
@@ -27,38 +29,20 @@ const samples = {
   "support-request": {
     title: "Support request (to team)",
     subject: "BamSignal support: Account help",
-    body: `
-      <p style="margin:0 0 8px;color:#b7c3d9;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">New support request</p>
-      <h1 style="margin:0 0 20px;font-size:26px;line-height:1.15;color:#f8fafc;font-weight:700">Account help</h1>
-      <div style="display:grid;gap:12px">
-        <div style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px">
-          <strong style="display:block;margin-bottom:6px;color:#f8fafc">Name</strong>
-          <span>Ada O.</span>
-        </div>
-        <div style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px">
-          <strong style="display:block;margin-bottom:6px;color:#f8fafc">Email</strong>
-          <span>ada@example.com</span>
-        </div>
-        <div style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px">
-          <strong style="display:block;margin-bottom:6px;color:#f8fafc">Message</strong>
-          <div style="white-space:pre-wrap;line-height:1.6">Hi — I can't see new profiles in Discover after updating my city. Can you help?</div>
-        </div>
-      </div>
-    `
+    body: buildContactSupportEmailBody({
+      topic: "Account help",
+      name: "Ada O.",
+      email: "ada@example.com",
+      message: "Hi — I can't see new profiles in Discover after updating my city. Can you help?"
+    })
   },
   "support-acknowledgement": {
     title: "Support acknowledgement (to user)",
     subject: "We received your BamSignal message",
-    body: `
-      <p style="margin:0 0 8px;color:#b7c3d9;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Support request received</p>
-      <h1 style="margin:0 0 16px;font-size:26px;line-height:1.15;color:#f8fafc;font-weight:700">Thanks for reaching out, Ada.</h1>
-      <p style="margin:0 0 12px;color:#dbe5f4;line-height:1.7">We've received your message and the BamSignal team will get back to you as soon as possible.</p>
-      <div style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px;margin:16px 0">
-        <strong style="display:block;margin-bottom:6px;color:#f8fafc">Topic</strong>
-        <span>Account help</span>
-      </div>
-      <p style="margin:0;color:#9db0cf;line-height:1.7">You do not need to send the message again unless you have more details to add.</p>
-    `
+    body: buildContactAcknowledgementEmailBody({
+      name: "Ada",
+      topic: "Account help"
+    })
   },
   "welcome": {
     title: "Welcome (mock — Supabase today)",

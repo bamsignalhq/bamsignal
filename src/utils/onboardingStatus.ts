@@ -1,20 +1,36 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import { MIN_PROFILE_PHOTOS } from "../constants/photos";
-import type { DatingProfile } from "../types";
+import type { DatingProfile, UserProfile } from "../types";
 import { clearPendingSignup } from "./signupPersistence";
 import { isPersistablePhotoUrl, safePhotos, safeString } from "./safeProfile";
 import { readJson } from "./storage";
 import { normalizeDatingProfile } from "./profile";
 
-const ONBOARDING_FINAL_STEP = 3;
+const STALE_ONBOARDING_KEYS = [
+  STORAGE_KEYS.onboardingStep,
+  STORAGE_KEYS.pendingSignup,
+  "bamsignal-onboarding-draft",
+  "bamsignal-signup-draft",
+  "bamsignal-setup-step",
+  "bamsignal_onboarding_draft",
+  "bamsignal_signup_draft",
+  "bamsignal_setup_step",
+  "bamsignal_onboarding_step"
+] as const;
 
-export function hasMinimumProfileData(profile: Partial<DatingProfile>): boolean {
+export function hasMinimumProfileData(
+  profile: Partial<DatingProfile>,
+  user?: Pick<UserProfile, "name">
+): boolean {
   const normalized = normalizeDatingProfile(profile);
   const photos = safePhotos(normalized.photos).filter(isPersistablePhotoUrl);
   const hasLocation = Boolean(safeString(normalized.state) && safeString(normalized.city));
-  const hasGender = Boolean(normalized.gender && normalized.gender !== ("Prefer not to say" as DatingProfile["gender"]));
+  const hasGender = Boolean(
+    normalized.gender && normalized.gender !== ("Prefer not to say" as DatingProfile["gender"])
+  );
   const hasAge = normalized.age >= 17;
-  return hasAge && hasGender && hasLocation && photos.length >= MIN_PROFILE_PHOTOS;
+  const hasName = user ? Boolean(safeString(user.name)?.trim()) : true;
+  return hasName && hasAge && hasGender && hasLocation && photos.length >= MIN_PROFILE_PHOTOS;
 }
 
 export function isProfileOnboardingMarkedComplete(profile: Partial<DatingProfile>): boolean {
@@ -27,32 +43,35 @@ export function isProfileOnboardingMarkedComplete(profile: Partial<DatingProfile
   );
 }
 
-export function isOnboardingFullyComplete(profile: Partial<DatingProfile>): boolean {
+export function isOnboardingFullyComplete(
+  profile: Partial<DatingProfile>,
+  user?: Pick<UserProfile, "name">
+): boolean {
   if (isProfileOnboardingMarkedComplete(profile)) return true;
-  return hasMinimumProfileData(profile) && Boolean(safeString(profile.bio)?.trim());
+  return hasMinimumProfileData(profile, user);
 }
 
-export function hasActiveOnboardingDraft(): boolean {
-  const step = readJson<number>(STORAGE_KEYS.onboardingStep, -1);
-  return Number.isFinite(step) && step >= 0 && step < ONBOARDING_FINAL_STEP;
-}
-
-export function profileQualifiesForLegacyRepair(profile: Partial<DatingProfile>): boolean {
+export function profileQualifiesForLegacyRepair(
+  profile: Partial<DatingProfile>,
+  user?: Pick<UserProfile, "name">
+): boolean {
   if (isProfileOnboardingMarkedComplete(profile)) return false;
-  if (!hasMinimumProfileData(profile)) return false;
-  if (hasActiveOnboardingDraft()) return false;
-  return true;
+  return hasMinimumProfileData(profile, user);
 }
 
-export function repairCompletedProfile(profile: Partial<DatingProfile>): {
+export function repairCompletedProfile(
+  profile: Partial<DatingProfile>,
+  user?: Pick<UserProfile, "name">
+): {
   profile: DatingProfile;
   repaired: boolean;
 } {
   const normalized = normalizeDatingProfile(profile);
-  if (!profileQualifiesForLegacyRepair(normalized)) {
+  if (!profileQualifiesForLegacyRepair(normalized, user)) {
     return { profile: normalized, repaired: false };
   }
 
+  clearOnboardingDrafts();
   const now = new Date().toISOString();
   return {
     profile: normalizeDatingProfile({
@@ -80,6 +99,45 @@ export function mergeOnboardingCompleteFlag(
 }
 
 export function clearOnboardingDrafts(): void {
-  localStorage.removeItem(STORAGE_KEYS.onboardingStep);
+  for (const key of STALE_ONBOARDING_KEYS) {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }
   clearPendingSignup();
+}
+
+export function logRouteDecision(
+  user: Pick<UserProfile, "email" | "phone" | "name">,
+  profile: Partial<DatingProfile>,
+  route: "home" | "onboarding",
+  extra?: Record<string, unknown>
+): void {
+  if (!import.meta.env.DEV) return;
+  const normalized = normalizeDatingProfile(profile);
+  const userId = user.email || user.phone || "unknown";
+  const photos = safePhotos(normalized.photos).filter(isPersistablePhotoUrl);
+  console.info("[route-decision] userId", userId);
+  console.info("[route-decision] profile exists", Boolean(profile && Object.keys(profile).length));
+  console.info("[route-decision] onboardingCompleted", Boolean(normalized.onboardingComplete));
+  console.info("[route-decision] setupCompleted", Boolean(normalized.setupCompleted));
+  console.info("[route-decision] profileCompletedAt", normalized.profileCompletedAt ?? null);
+  console.info("[route-decision] photos count", photos.length);
+  console.info("[route-decision] final route", route);
+  if (extra && Object.keys(extra).length) {
+    console.info("[route-decision] context", extra);
+  }
+}
+
+export function shouldRouteToOnboarding(
+  user: Pick<UserProfile, "name" | "email" | "phone">,
+  profile?: Partial<DatingProfile>,
+  options?: { forceOnboarding?: boolean }
+): boolean {
+  if (options?.forceOnboarding) return true;
+  const resolved = normalizeDatingProfile(profile ?? readJson(STORAGE_KEYS.datingProfile, {}));
+  return !isOnboardingFullyComplete(resolved, user);
 }

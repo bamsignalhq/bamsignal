@@ -68,13 +68,22 @@ export function getMatchPreferences(): MatchPreferences {
   return normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));
 }
 
-export function isOnboardingComplete(): boolean {
+export function isOnboardingComplete(user?: Pick<import("../types").UserProfile, "name">): boolean {
   const profile = getDatingProfile();
-  return isOnboardingFullyComplete(profile);
+  const resolvedUser =
+    user ??
+    readJson<import("../types").UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+  return isOnboardingFullyComplete(profile, resolvedUser);
 }
 
-export function profileNeedsOnboarding(profile: Partial<DatingProfile> = getDatingProfile()): boolean {
-  return !isOnboardingFullyComplete(profile);
+export function profileNeedsOnboarding(
+  profile: Partial<DatingProfile> = getDatingProfile(),
+  user?: Pick<import("../types").UserProfile, "name">
+): boolean {
+  const resolvedUser =
+    user ??
+    readJson<import("../types").UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+  return !isOnboardingFullyComplete(profile, resolvedUser);
 }
 
 export function isPreferNot(value?: string): boolean {

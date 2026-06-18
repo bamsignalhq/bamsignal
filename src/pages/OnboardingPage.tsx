@@ -26,7 +26,7 @@ import { markFirstDayStep } from "../utils/firstDayJourney";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { completeOnboardingRemote } from "../services/memberData";
 import { defaultDatingProfile, normalizeDatingProfile, isOnboardingComplete } from "../utils/profile";
-import { clearOnboardingDrafts, isProfileOnboardingMarkedComplete } from "../utils/onboardingStatus";
+import { clearOnboardingDrafts, isProfileOnboardingMarkedComplete, shouldRouteToOnboarding } from "../utils/onboardingStatus";
 import { writeJson, readJson } from "../utils/storage";
 import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
@@ -58,6 +58,10 @@ type OnboardingPageProps = {
 
 export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPageProps) {
   const [step, setStep] = useState(() => {
+    const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
+    if (isOnboardingComplete(user) || isProfileOnboardingMarkedComplete(stored)) {
+      return STEPS.length - 1;
+    }
     const saved = readJson<number>(STORAGE_KEYS.onboardingStep, 0);
     return Number.isFinite(saved) ? Math.min(Math.max(0, saved), STEPS.length - 1) : 0;
   });
@@ -75,7 +79,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   };
   const [profile, setProfile] = useState<DatingProfile>(() => {
     const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
-    if (isOnboardingComplete() || isProfileOnboardingMarkedComplete(stored)) {
+    if (isOnboardingComplete(user) || isProfileOnboardingMarkedComplete(stored)) {
       return normalizeDatingProfile(stored);
     }
     const normalized = normalizeDatingProfile(stored);
@@ -112,6 +116,20 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   const progress = ((step + 1) / STEPS.length) * 100;
 
   useEffect(() => {
+    const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
+    if (isOnboardingComplete(user) || isProfileOnboardingMarkedComplete(stored)) {
+      clearOnboardingDrafts();
+      onComplete();
+    }
+  }, [onComplete, user]);
+
+  useEffect(() => {
+    if (shouldRouteToOnboarding(user, profile)) return;
+    clearOnboardingDrafts();
+    onComplete();
+  }, [onComplete, profile, user]);
+
+  useEffect(() => {
     setProfile((prev) => {
       if (prev.interestsTouched || !prev.interests?.length) return prev;
       return { ...prev, interests: [], interestsTouched: false };
@@ -126,7 +144,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   }, [step]);
 
   useEffect(() => {
-    if (profile.onboardingComplete || isOnboardingComplete()) return;
+    if (profile.onboardingComplete || isOnboardingComplete(user)) return;
     if (!writeJson(STORAGE_KEYS.datingProfile, { ...profile, onboardingComplete: false })) {
       showModMessage(USER_MESSAGES.progressSaveFailed);
     }

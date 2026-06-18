@@ -13,8 +13,10 @@ import { mergeMemberCover, safeArray, safePhotos, safeString, isPersistablePhoto
 import { syncMemberProfileRemote } from "./cityHome";
 import {
   clearOnboardingDrafts,
+  logRouteDecision,
   mergeOnboardingCompleteFlag,
-  repairCompletedProfile
+  repairCompletedProfile,
+  shouldRouteToOnboarding
 } from "../utils/onboardingStatus";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
@@ -154,6 +156,9 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
     const remotePersistable = remotePhotos.filter(isPersistablePhotoUrl);
     const localPersistable = localPhotos.filter(isPersistablePhotoUrl);
     const remoteComplete = mergeOnboardingCompleteFlag(local, remote as Partial<import("../types").DatingProfile>);
+    if (remoteComplete) {
+      clearOnboardingDrafts();
+    }
     const mergedPhotos =
       remoteComplete || remotePersistable.length >= localPersistable.length
         ? remotePhotos.length
@@ -187,6 +192,19 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
       coverPhoto,
       coverPhotoExplicit,
       onboardingComplete: remoteComplete,
+      setupCompleted: remoteComplete || Boolean(local.setupCompleted || remote.setupCompleted),
+      onboardingCompletedAt:
+        safeString(remote.onboardingCompletedAt) ||
+        safeString(local.onboardingCompletedAt) ||
+        undefined,
+      profileCompletedAt:
+        safeString(remote.profileCompletedAt) ||
+        safeString(local.profileCompletedAt) ||
+        undefined,
+      completedAt:
+        safeString(remote.completedAt) ||
+        safeString(local.completedAt) ||
+        undefined,
       interests,
       interestsTouched,
       compliance: isComplianceComplete(normalizeCompliance(remote.compliance))
@@ -198,15 +216,20 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
               ...(typeof remote.compliance === "object" && remote.compliance ? remote.compliance : {})
             })
     });
-    const { profile: merged, repaired } = repairCompletedProfile(mergedBase);
+    const { profile: merged, repaired } = repairCompletedProfile(mergedBase, user);
     if (repaired) {
       console.info("[onboarding-repair] completed profile repaired");
       void syncMemberProfileRemote(user, merged);
     }
-    if (remoteComplete) {
+    if (!shouldRouteToOnboarding(user, merged)) {
       clearOnboardingDrafts();
     }
     writeJson(STORAGE_KEYS.datingProfile, merged);
+    logRouteDecision(user, merged, shouldRouteToOnboarding(user, merged) ? "onboarding" : "home", {
+      hydrated: true,
+      repaired,
+      remoteComplete
+    });
   }
 
   writeJson(

@@ -28,7 +28,7 @@ import { ComplianceGateModal } from "./components/ComplianceGateModal";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./types";
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
-import { isOnboardingComplete, getDatingProfile, normalizeDatingProfile, profileNeedsOnboarding } from "./utils/profile";
+import { getDatingProfile, normalizeDatingProfile } from "./utils/profile";
 import { isComplianceComplete } from "./utils/compliance";
 import { recordStreakActivity } from "./utils/streaks";
 import {
@@ -107,7 +107,7 @@ import { USER_MESSAGES } from "./constants/userMessages";
 import { DEMO_USER } from "./constants/demoAccounts";
 import { getMemberCity } from "./utils/memberCity";
 import { flowLog } from "./utils/flowLog";
-import { clearOnboardingDrafts } from "./utils/onboardingStatus";
+import { clearOnboardingDrafts, logRouteDecision, shouldRouteToOnboarding } from "./utils/onboardingStatus";
 import { repairMemberCaches } from "./utils/repairMemberCaches";
 import { memberFirstName } from "./utils/safeProfile";
 import { usePlans } from "./context/PlansContext";
@@ -123,6 +123,7 @@ export function App() {
   const { plans } = usePlans();
   const [booting, setBooting] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
+  const [memberHydrating, setMemberHydrating] = useState(false);
   const [bootExit, setBootExit] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => getSavedTheme());
   const [tab, setTab] = useState<NavTab>("home");
@@ -267,9 +268,14 @@ export function App() {
       hydrated = await hydrateMemberData(merged);
     }
     flowLog("profile_hydrate", { ok: hydrated });
-    const complete = isOnboardingComplete();
-    setShowOnboarding(!complete);
-    if (complete) {
+    const datingProfile = getDatingProfile();
+    const needsOnboarding = shouldRouteToOnboarding(merged, datingProfile);
+    setShowOnboarding(needsOnboarding);
+    logRouteDecision(merged, datingProfile, needsOnboarding ? "onboarding" : "home", {
+      source: "session_restore",
+      hydrated
+    });
+    if (!needsOnboarding) {
       clearOnboardingDrafts();
       flowLog("session_restore_home");
     } else {
@@ -277,7 +283,7 @@ export function App() {
     }
     const premium = await refreshPremiumStatus(merged);
     setIsPremium(
-      !complete
+      needsOnboarding
         ? Boolean(premium.isPremium)
         : premium.isPremium || isPremiumTrialActive()
     );
@@ -533,6 +539,7 @@ export function App() {
 
   const handleAuthenticated = useCallback(
     async (profile: UserProfile, meta?: AuthMeta) => {
+      setMemberHydrating(true);
       const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
       const withPhone = {
         ...profile,
@@ -563,7 +570,7 @@ export function App() {
         flowLog("profile_hydrate_ok");
       }
       const premium = await refreshPremiumStatus(withPhone);
-      const enteringOnboarding = Boolean(meta?.isNewSignup || profileNeedsOnboarding());
+      const forceOnboarding = Boolean(meta?.isNewSignup);
       if (meta?.isNewSignup) {
         trackEvent("signup_completed");
         markJoinedAt();
@@ -584,22 +591,30 @@ export function App() {
       } else if (meta?.recovered) {
         flowLog("signup_recovered_existing");
       }
+      const needsOnboarding = shouldRouteToOnboarding(withPhone, getDatingProfile(), {
+        forceOnboarding
+      });
+      logRouteDecision(withPhone, getDatingProfile(), needsOnboarding ? "onboarding" : "home", {
+        source: "auth_login",
+        isNewSignup: forceOnboarding,
+        hydrated
+      });
       setIsPremium(
-        enteringOnboarding
-          ? Boolean(premium.isPremium)
-          : premium.isPremium || isPremiumTrialActive()
+        needsOnboarding ? Boolean(premium.isPremium) : premium.isPremium || isPremiumTrialActive()
       );
       if (getAuthPath()) {
         navigateToPath("/");
         setAuthPath(null);
       }
-      if (meta?.isNewSignup || profileNeedsOnboarding()) {
+      if (needsOnboarding) {
         setShowOnboarding(true);
         setPendingTab(null);
         flowLog("onboarding_start");
+        setMemberHydrating(false);
         return;
       }
       clearOnboardingDrafts();
+      setShowOnboarding(false);
       if (pendingTab) {
         setTab(pendingTab);
         setPendingTab(null);
@@ -607,6 +622,7 @@ export function App() {
         setTab("home");
       }
       flowLog("home_enter");
+      setMemberHydrating(false);
     },
     [pendingTab]
   );
@@ -679,7 +695,11 @@ export function App() {
         const profile = profileFromSessionUser(session.user);
         setUser(profile);
         setIsAuthed(true);
-        void hydrateMemberData(profile);
+        void hydrateMemberData(profile).then(() => {
+          const needsOnboarding = shouldRouteToOnboarding(profile);
+          setShowOnboarding(needsOnboarding);
+          if (!needsOnboarding) clearOnboardingDrafts();
+        });
         const premium = await refreshPremiumStatus(profile);
         setIsPremium(premium.isPremium || isPremiumTrialActive());
         return;
@@ -729,16 +749,16 @@ export function App() {
   }, [applyRestoredSession]);
 
   useEffect(() => {
-    if (authLoading || !isAuthed || !authPath) return;
-    if (!isOnboardingComplete()) {
-      navigateToPath("/");
-      setAuthPath(null);
-      setShowOnboarding(true);
-      return;
-    }
+    if (authLoading || memberHydrating || !isAuthed || !authPath) return;
+    const profile = getDatingProfile();
+    const needsOnboarding = shouldRouteToOnboarding(user, profile);
+    logRouteDecision(user, profile, needsOnboarding ? "onboarding" : "home", { source: "auth_path_guard" });
     navigateToPath("/");
     setAuthPath(null);
-  }, [authLoading, isAuthed, authPath]);
+    if (needsOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, [authLoading, memberHydrating, isAuthed, authPath, user]);
 
   const reloadApp = useCallback(() => {
     window.location.reload();
@@ -997,7 +1017,7 @@ export function App() {
     );
   }
 
-  if (authLoading) {
+  if (authLoading || memberHydrating) {
     return (
       <div className={`app ${theme}`}>
         <Preloader

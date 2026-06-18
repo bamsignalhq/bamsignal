@@ -711,6 +711,7 @@ export async function fetchMemberSocialBundle({ email, phone }) {
   const photos = Array.isArray(profileJson.photos) ? profileJson.photos : [];
   const markedComplete = Boolean(
     ownProfile?.onboarding_complete ||
+      profileJson.onboardingComplete ||
       profileJson.setupCompleted ||
       profileJson.profileCompletedAt ||
       profileJson.onboardingCompletedAt ||

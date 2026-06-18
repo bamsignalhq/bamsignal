@@ -9,6 +9,9 @@ const config: CapacitorConfig = {
   android: {
     backgroundColor: "#1a0a2e"
   },
+  server: {
+    androidScheme: "https"
+  },
   plugins: {
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"]

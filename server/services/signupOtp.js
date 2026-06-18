@@ -12,7 +12,7 @@ import dotenv from "dotenv";
 import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query, upsertAppUserIdentity } from "../db.js";
 import { findMemberProfileByUserKey, upsertMemberProfile } from "../cityHome.js";
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
-import { escapeHtml, loadEmailBranding, wrapEmailLayoutAsync } from "./emailBranding.js";
+import { loadEmailBranding, buildSignupVerificationEmailBody, wrapEmailLayoutAsync } from "./emailBranding.js";
 
 dotenv.config();
 
@@ -180,16 +180,10 @@ export async function sendSignupOtp(email, name = "", identity = {}) {
 
   const safeName = String(name || "there").trim() || "there";
   const branding = await loadEmailBranding();
-  const bodyHtml = `
-    <p style="margin:0 0 8px;color:#b7c3d9;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Verify your email</p>
-    <h1 style="margin:0 0 16px;font-size:26px;line-height:1.15;color:#f8fafc;font-weight:700">Your BamSignal code</h1>
-    <p style="margin:0 0 20px;color:#dbe5f4;line-height:1.7">Hi ${escapeHtml(safeName)}, enter this code in the app to finish signing up. It expires in 10 minutes.</p>
-    <div style="display:inline-block;padding:16px 28px;border-radius:16px;background:#18243b;border:1px solid #253553;font-size:32px;font-weight:800;letter-spacing:0.35em;color:#f8fafc">${code}</div>
-    <p style="margin:20px 0 0;color:#9db0cf;line-height:1.6;font-size:14px">If you didn't request this, you can ignore this email.</p>
-  `;
+  const bodyHtml = buildSignupVerificationEmailBody({ name: safeName, code });
   const html = await wrapEmailLayoutAsync({
     branding,
-    preheader: `Your BamSignal verification code is ${code}`,
+    preheader: `Your verification code is ${code}`,
     bodyHtml
   });
 
@@ -197,7 +191,7 @@ export async function sendSignupOtp(email, name = "", identity = {}) {
     to: normalized,
     subject: `${code} is your BamSignal verification code`,
     html,
-    text: `Your BamSignal verification code is ${code}. It expires in 10 minutes.`
+    text: `Your verification code is ${code}. It expires in 10 minutes.`
   });
 
   return { ok: true, email: normalized };

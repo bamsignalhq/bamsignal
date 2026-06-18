@@ -5,6 +5,23 @@ export const BAMSIGNAL_LOGO = `${BAMSIGNAL_SITE}/brand/logo.webp`;
 export const BAMSIGNAL_LOGO_2X = `${BAMSIGNAL_SITE}/brand/logo.png`;
 export const SUPPORT_EMAIL = "support@bamsignal.com";
 
+/** Light brand theme — matches app tokens (--bg, --brand-purple, etc.) */
+export const EMAIL_THEME = {
+  pageBg: "#fdf2f8",
+  cardBg: "#ffffff",
+  cardBorder: "rgba(123, 31, 162, 0.12)",
+  text: "#1a0a2e",
+  textMuted: "#6b5b7b",
+  kicker: "#7b1fa2",
+  otpBg: "#faf5ff",
+  otpBorder: "rgba(123, 31, 162, 0.18)",
+  divider: "rgba(123, 31, 162, 0.1)",
+  link: "#7b1fa2",
+  fieldBg: "#faf5ff",
+  fieldBorder: "rgba(123, 31, 162, 0.14)",
+  legal: "#8a7a9a"
+};
+
 export const SOCIAL_LINKS = [
   {
     id: "instagram",
@@ -169,21 +186,21 @@ export function buildEmailFooter({ year = new Date().getFullYear() } = {}) {
       <td style="padding:28px 28px 8px">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
-            <td style="border-top:1px solid #2a3a57;padding-top:24px;text-align:center">
-              <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#f8fafc">BamSignal</p>
-              <p style="margin:0 0 4px;font-size:12px;color:#9db0cf">Send a Signal.</p>
-              <p style="margin:0 0 18px;font-size:12px;color:#9db0cf">Meet people who match your vibe.</p>
+            <td style="border-top:1px solid ${EMAIL_THEME.divider};padding-top:24px;text-align:center">
+              <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:${EMAIL_THEME.text}">BamSignal</p>
+              <p style="margin:0 0 4px;font-size:12px;color:${EMAIL_THEME.textMuted}">Send a Signal.</p>
+              <p style="margin:0 0 18px;font-size:12px;color:${EMAIL_THEME.textMuted}">Meet people who match your vibe.</p>
               <p style="margin:0 0 18px;font-size:12px;line-height:1.5">
-                <a href="mailto:${SUPPORT_EMAIL}" style="color:#c4b5fd;text-decoration:none">${SUPPORT_EMAIL}</a>
+                <a href="mailto:${SUPPORT_EMAIL}" style="color:${EMAIL_THEME.link};text-decoration:none">${SUPPORT_EMAIL}</a>
               </p>
-              <p style="margin:0 0 16px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#7f93b5">Follow BamSignal</p>
+              <p style="margin:0 0 16px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${EMAIL_THEME.textMuted}">Follow BamSignal</p>
               ${buildSocialIconsRow()}
 
-              <p style="margin:18px 0 0;font-size:11px;line-height:1.5;color:#8b9bb8">
+              <p style="margin:18px 0 0;font-size:11px;line-height:1.5;color:${EMAIL_THEME.textMuted}">
                 You can reply to this email — we&rsquo;ll see it.
               </p>
 
-              <p style="margin:20px 0 0;font-size:11px;line-height:1.6;color:#6f84a8">
+              <p style="margin:20px 0 0;font-size:11px;line-height:1.6;color:${EMAIL_THEME.legal}">
                 &copy; ${year} BamSignal. All rights reserved.
               </p>
             </td>
@@ -200,13 +217,13 @@ export function buildEmailLegalStrip() {
   return `
     <tr>
       <td align="center" style="padding:20px 24px 28px">
-        <p style="margin:0 0 12px;max-width:420px;font-size:10px;line-height:1.55;color:#5c6f8f">
+        <p style="margin:0 0 12px;max-width:420px;font-size:10px;line-height:1.55;color:${EMAIL_THEME.legal}">
           BamSignal is provided as is. We do not guarantee matches or outcomes. Meet safely and use your judgment.
         </p>
-        <p style="margin:0;font-size:10px;line-height:1.5;color:#5c6f8f">
-          <a href="${privacyUrl}" style="color:#7f93b5;text-decoration:underline">Privacy</a>
+        <p style="margin:0;font-size:10px;line-height:1.5;color:${EMAIL_THEME.legal}">
+          <a href="${privacyUrl}" style="color:${EMAIL_THEME.link};text-decoration:underline">Privacy</a>
           &nbsp;&middot;&nbsp;
-          <a href="${termsUrl}" style="color:#7f93b5;text-decoration:underline">Terms</a>
+          <a href="${termsUrl}" style="color:${EMAIL_THEME.link};text-decoration:underline">Terms</a>
         </p>
       </td>
     </tr>
@@ -219,7 +236,7 @@ export function emailButton(label, href) {
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:24px auto 8px">
       <tr>
-        <td align="center" style="border-radius:12px;background:linear-gradient(135deg,#e91e8c 0%,#8b5cf6 100%)">
+        <td align="center" style="border-radius:12px;background:linear-gradient(135deg,#e91e8c 0%,#9c27b0 50%,#673ab7 100%)">
           <a
             href="${safeHref}"
             target="_blank"
@@ -232,31 +249,80 @@ export function emailButton(label, href) {
   `;
 }
 
-export function emailKicker(text) {
-  return `<p style="margin:0 0 8px;color:#b7c3d9;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">${escapeHtml(text)}</p>`;
+export function emailCenterBlock(innerHtml) {
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td align="center" style="text-align:center">${innerHtml}</td>
+      </tr>
+    </table>
+  `;
 }
 
-export function emailHeading(text, { marginBottom = 16 } = {}) {
-  return `<h1 style="margin:0 0 ${marginBottom}px;font-size:26px;line-height:1.2;color:#f8fafc;font-weight:700">${escapeHtml(text)}</h1>`;
+export function emailOtpCode(code) {
+  const safe = escapeHtml(String(code));
+  return `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 4px">
+      <tr>
+        <td align="center">
+          <div style="display:inline-block;padding:16px 32px;border-radius:16px;background:${EMAIL_THEME.otpBg};border:1px solid ${EMAIL_THEME.otpBorder};font-size:32px;font-weight:800;letter-spacing:0.35em;color:${EMAIL_THEME.text}">${safe}</div>
+        </td>
+      </tr>
+    </table>
+  `;
 }
 
-export function emailLead(text) {
-  return `<p style="margin:0 0 12px;color:#dbe5f4;line-height:1.7">${escapeHtml(text)}</p>`;
+export function emailKicker(text, { center = false } = {}) {
+  const align = center ? "center" : "left";
+  return `<p style="margin:0 0 8px;color:${EMAIL_THEME.kicker};font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;text-align:${align}">${escapeHtml(text)}</p>`;
 }
 
-export function emailMuted(text) {
-  return `<p style="margin:0;color:#9db0cf;line-height:1.7;font-size:14px">${escapeHtml(text)}</p>`;
+export function emailHeading(text, { marginBottom = 16, center = false } = {}) {
+  const align = center ? "center" : "left";
+  return `<h1 style="margin:0 0 ${marginBottom}px;font-size:26px;line-height:1.2;color:${EMAIL_THEME.text};font-weight:700;text-align:${align}">${escapeHtml(text)}</h1>`;
+}
+
+export function emailLead(text, { center = false } = {}) {
+  const align = center ? "center" : "left";
+  return `<p style="margin:0 0 12px;color:${EMAIL_THEME.textMuted};line-height:1.7;text-align:${align}">${escapeHtml(text)}</p>`;
+}
+
+export function emailMuted(text, { center = false, marginTop = 0 } = {}) {
+  const align = center ? "center" : "left";
+  return `<p style="margin:${marginTop}px 0 0;color:${EMAIL_THEME.textMuted};line-height:1.7;font-size:14px;text-align:${align}">${escapeHtml(text)}</p>`;
+}
+
+export function buildSignupVerificationEmailBody({ name, code }) {
+  const displayName = String(name || "there").trim() || "there";
+  return emailCenterBlock(`
+    ${emailKicker("Verify your email", { center: true })}
+    ${emailHeading("Your verification code", { center: true })}
+    ${emailLead(`Hi ${displayName}, enter this code in the app to finish signing up. It expires in 10 minutes.`, { center: true })}
+    ${emailOtpCode(code)}
+    ${emailMuted("If you didn't request this, you can ignore this email.", { center: true, marginTop: 16 })}
+  `);
+}
+
+export function buildLoginVerificationEmailBody({ name, code }) {
+  const displayName = String(name || "there").trim() || "there";
+  return emailCenterBlock(`
+    ${emailKicker("Verify it's you", { center: true })}
+    ${emailHeading("Your login code", { center: true })}
+    ${emailLead(`Hi ${displayName}, enter this code to finish signing in on a new device. It expires in 10 minutes.`, { center: true })}
+    ${emailOtpCode(code)}
+    ${emailMuted("If you didn't try to sign in, change your PIN and contact support.", { center: true, marginTop: 16 })}
+  `);
 }
 
 export function emailFieldCard(label, value, { prewrap = false } = {}) {
   const valueStyle = prewrap
-    ? "margin:0;white-space:pre-wrap;line-height:1.65;color:#dbe5f4;font-size:15px"
-    : "margin:0;color:#dbe5f4;font-size:15px;line-height:1.6";
+    ? `margin:0;white-space:pre-wrap;line-height:1.65;color:${EMAIL_THEME.text};font-size:15px`
+    : `margin:0;color:${EMAIL_THEME.text};font-size:15px;line-height:1.6`;
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px">
       <tr>
-        <td style="background:#18243b;border:1px solid #253553;border-radius:14px;padding:14px 16px">
-          <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#f8fafc">${escapeHtml(label)}</p>
+        <td style="background:${EMAIL_THEME.fieldBg};border:1px solid ${EMAIL_THEME.fieldBorder};border-radius:14px;padding:14px 16px">
+          <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:${EMAIL_THEME.kicker}">${escapeHtml(label)}</p>
           <p style="${valueStyle}">${escapeHtml(value)}</p>
         </td>
       </tr>
@@ -337,19 +403,19 @@ export function wrapEmailLayout({ bodyHtml, branding, preheader = "", headerHtml
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="color-scheme" content="light dark" />
-        <meta name="supported-color-schemes" content="light dark" />
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
         <title>BamSignal</title>
       </head>
-      <body style="margin:0;padding:0;background:#0b1220;color:#f8fafc;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
+      <body style="margin:0;padding:0;background:${EMAIL_THEME.pageBg};color:${EMAIL_THEME.text};font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif">
         ${hiddenPreheader}
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1220">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${EMAIL_THEME.pageBg}">
           <tr>
             <td align="center" style="padding:24px 12px">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#131d31;border:1px solid #23314d;border-radius:20px;overflow:hidden">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:${EMAIL_THEME.cardBg};border:1px solid ${EMAIL_THEME.cardBorder};border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(123,31,162,0.08)">
                 ${header}
                 <tr>
-                  <td style="padding:12px 28px 8px;font-size:15px;line-height:1.65;color:#dbe5f4">
+                  <td style="padding:12px 28px 8px;font-size:15px;line-height:1.65;color:${EMAIL_THEME.text}">
                     ${bodyHtml}
                   </td>
                 </tr>

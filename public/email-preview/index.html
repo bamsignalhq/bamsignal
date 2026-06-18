@@ -6,23 +6,23 @@
   <title>BamSignal email previews</title>
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #0b1220; color: #dbe5f4; }
-    header { padding: 28px 24px; border-bottom: 1px solid #23314d; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #fdf2f8; color: #1a0a2e; }
+    header { padding: 28px 24px; border-bottom: 1px solid rgba(123,31,162,0.1); background: #fff; }
     h1 { margin: 0 0 8px; font-size: 1.5rem; }
-    p { margin: 0; color: #9db0cf; line-height: 1.6; max-width: 60ch; }
+    p { margin: 0; color: #6b5b7b; line-height: 1.6; max-width: 60ch; }
     main { display: grid; gap: 20px; padding: 24px; max-width: 1200px; margin: 0 auto; }
-    .card { background: #131d31; border: 1px solid #23314d; border-radius: 16px; overflow: hidden; }
-    .card-head { padding: 16px 18px; border-bottom: 1px solid #23314d; }
+    .card { background: #fff; border: 1px solid rgba(123,31,162,0.1); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(123,31,162,0.06); }
+    .card-head { padding: 16px 18px; border-bottom: 1px solid rgba(123,31,162,0.1); }
     .card-head h2 { margin: 0 0 4px; font-size: 1rem; }
-    .card-head span { font-size: 0.85rem; color: #9db0cf; }
-    iframe { width: 100%; height: 720px; border: 0; background: #0b1220; }
-    a.open { display: inline-block; margin-top: 10px; color: #e879f9; font-size: 0.85rem; }
+    .card-head span { font-size: 0.85rem; color: #6b5b7b; }
+    iframe { width: 100%; height: 720px; border: 0; background: #fdf2f8; }
+    a.open { display: inline-block; margin-top: 10px; color: #7b1fa2; font-size: 0.85rem; font-weight: 600; }
   </style>
 </head>
 <body>
   <header>
     <h1>BamSignal email previews</h1>
-    <p>Review before deploy. Run <code>npm run dev</code> and open <code>/email-preview/</code>. Mocks marked Supabase are not in-repo yet.</p>
+    <p>Light brand theme. Run <code>npm run dev</code> and open <code>/email-preview/</code>.</p>
   </header>
   <main>
     
@@ -52,11 +52,19 @@
       </section>
       <section class="card">
         <div class="card-head">
-          <h2>Verification OTP (mock — Supabase today)</h2>
-          <span>Subject: Your BamSignal verification code</span>
+          <h2>Signup verification OTP</h2>
+          <span>Subject: 482913 is your BamSignal verification code</span>
           <a class="open" href="./verification.html" target="_blank" rel="noopener">Open full page →</a>
         </div>
-        <iframe src="./verification.html" title="Verification OTP (mock — Supabase today)"></iframe>
+        <iframe src="./verification.html" title="Signup verification OTP"></iframe>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <h2>Login verification OTP</h2>
+          <span>Subject: 482913 is your BamSignal login code</span>
+          <a class="open" href="./login-2fa.html" target="_blank" rel="noopener">Open full page →</a>
+        </div>
+        <iframe src="./login-2fa.html" title="Login verification OTP"></iframe>
       </section>
       <section class="card">
         <div class="card-head">

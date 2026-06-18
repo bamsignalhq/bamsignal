@@ -1,62 +1,11 @@
-/* Discover premium — screenshot-aligned layout */
-
-.platform-shell--discover-premium {
-  background: #fdf7fc;
-}
-
-.platform-shell--discover-premium .top-nav {
-  background: #fdf7fc;
-  border-bottom: none;
-  padding-top: calc(10px + env(safe-area-inset-top, 0px));
-  padding-bottom: 10px;
-}
-
-.platform-shell--discover-premium .top-nav-brand .app-logo-text {
-  display: inline;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #170b35;
-  letter-spacing: -0.02em;
-}
-
-.platform-shell--discover-premium .top-nav-greeting {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #170b35;
-  font-size: 1rem;
-  font-weight: 700;
-  max-width: none;
-}
-
-.platform-shell--discover-premium .top-nav-actions .icon-btn,
-.platform-shell--discover-premium .top-nav-actions .notification-bell {
-  width: 56px;
-  height: 56px;
-  border-radius: 24px;
-  border: 1px solid #f1e7f3;
-  background: #fff;
-  color: #170b35;
-  box-shadow: none;
-}
-
-.platform-shell--discover-premium .notification-bell__badge {
-  top: 10px;
-  right: 10px;
-  min-width: 18px;
-  height: 18px;
-  background: #ff2e92;
-  border: 2px solid #fff;
-}
-
-.platform-shell--discover-premium .app-main--member {
-  background: #fdf7fc;
-}
+/* Discover premium — card and page content */
 
 .discover-page--premium {
-  background: #fdf7fc;
+  background: transparent;
   color: #170b35;
-  padding: 0 16px calc(120px + env(safe-area-inset-bottom, 0px));
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
   gap: 18px;
 }
 
@@ -83,6 +32,34 @@
   line-height: 1.35;
   color: #746587;
   max-width: 18ch;
+}
+
+.discover-premium-head__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.discover-premium-head__filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid #f1e7f3;
+  background: #fff;
+  color: #170b35;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.discover-premium-head__filters:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(27, 10, 54, 0.08);
 }
 
 .discover-premium-head__city {
@@ -544,29 +521,6 @@
   color: #746587;
   font-size: 0.82rem;
   font-weight: 700;
-}
-
-.platform-shell--discover-premium .bottom-nav {
-  left: 16px;
-  right: 16px;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  width: auto;
-  margin: 0;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
-  border-radius: 40px;
-  border: 1px solid #f1e7f3;
-  background: #fff;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
-}
-
-.platform-shell--discover-premium .bottom-nav-item {
-  color: #746587;
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.platform-shell--discover-premium .bottom-nav-item.active {
-  color: #ff2e92;
 }
 
 @media (max-width: 380px) {

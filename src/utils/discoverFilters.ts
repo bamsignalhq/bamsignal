@@ -80,3 +80,21 @@ export function trendingSections(profiles: DiscoverProfile[]) {
     ).slice(0, 8)
   };
 }
+
+export function countActiveDiscoverFilters(prefs: MatchPreferences): number {
+  return (
+    prefs.religions.length +
+    prefs.ethnicities.length +
+    prefs.lifestyles.length +
+    prefs.cities.length +
+    prefs.states.length +
+    prefs.intents.length +
+    (prefs.ageMin != null || prefs.ageMax != null ? 1 : 0) +
+    (prefs.distanceMax != null ? 1 : 0) +
+    (prefs.preferenceMode === "strict" ? 1 : 0) +
+    (prefs.onlineNow ? 1 : 0) +
+    (prefs.minCompatibility != null ? 1 : 0) +
+    (prefs.requireVoiceIntro ? 1 : 0) +
+    (prefs.requireVerified ? 1 : 0)
+  );
+}

@@ -38,7 +38,7 @@ import { trackEvent } from "../utils/analytics";
 import { getMemberCity } from "../utils/memberCity";
 import { resolveSearchLocationFromPrefs } from "../utils/searchLocationPrefs";
 import { getRemainingDaily, incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
-import { applyDiscoverPreferences, applyQuickFilter, type DiscoverQuickFilter } from "../utils/discoverFilters";
+import { applyDiscoverPreferences, applyQuickFilter, countActiveDiscoverFilters, type DiscoverQuickFilter } from "../utils/discoverFilters";
 import { isViewerShadowBanned } from "../utils/shadowBan";
 import { checkSignalBurst } from "../utils/suspicionDetection";
 import { reportModerationFlagRemote } from "../services/memberTrust";
@@ -53,8 +53,6 @@ type DiscoverPageProps = {
   onMatch: (match: Match) => void;
   onUpgrade: (plan: PremiumPlan) => void;
   paymentLoading?: boolean;
-  filterOpen?: boolean;
-  onFilterOpenChange?: (open: boolean) => void;
   onOpenSafety?: () => void;
 };
 
@@ -64,13 +62,12 @@ export function DiscoverPage({
   onMatch: _onMatch,
   onUpgrade,
   paymentLoading,
-  filterOpen = false,
-  onFilterOpenChange,
   onOpenSafety
 }: DiscoverPageProps) {
   void _onMatch;
 
   const [quickFilter, setQuickFilter] = useState<DiscoverQuickFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [passedIds, setPassedIds] = useState<string[]>(() =>
     readJson<string[]>(STORAGE_KEYS.passed, [])
   );
@@ -154,8 +151,8 @@ export function DiscoverPage({
   }, [current?.id]);
 
   useAndroidBack(() => {
-    if (filterOpen) {
-      onFilterOpenChange?.(false);
+    if (filtersOpen) {
+      setFiltersOpen(false);
       return true;
     }
     if (safetyOpen) {
@@ -318,8 +315,12 @@ export function DiscoverPage({
     : getVerificationTier(defaultDatingProfile(), false, true);
 
   return (
-    <div className="page discover-page discover-page--premium">
-      <DiscoverHeader cityLabel={browseLocation} />
+    <div className="page discover-page discover-page--premium member-content-pad">
+      <DiscoverHeader
+        cityLabel={browseLocation}
+        filterCount={countActiveDiscoverFilters(prefs)}
+        onOpenFilters={() => setFiltersOpen(true)}
+      />
       <DiscoverQuickFilters active={quickFilter} onChange={setQuickFilter} />
       {passedIds.length > 0 ? (
         <button type="button" className="discover-undo-btn" onClick={handleUndoPass}>
@@ -374,8 +375,8 @@ export function DiscoverPage({
         }}
         isPremium={isPremium}
         onRequirePremium={() => setPaywallOpen(true)}
-        open={filterOpen}
-        onOpenChange={onFilterOpenChange}
+        open={filtersOpen}
+        onOpenChange={setFiltersOpen}
         hideTrigger
       />
 

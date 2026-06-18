@@ -54,6 +54,7 @@ import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { TwoFactorSettingsCard } from "../components/TwoFactorSettingsCard";
 import { ContactForm } from "../components/ContactForm";
+import { ProfileBoostSheet } from "../components/profile/ProfileBoostSheet";
 import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
 import { ProfileOverviewCard } from "../components/profile/ProfileOverviewCard";
 import {
@@ -61,6 +62,11 @@ import {
   getAboutSnippet,
   shouldShowAboutCard
 } from "../utils/ownProfileOverview";
+import type { BoostProduct } from "../constants/boosts";
+import { boostNeedsMemberCity } from "../constants/boosts";
+import { fetchAccountStateRemote } from "../services/memberTrust";
+import { getMemberCity } from "../utils/memberCity";
+import { canShowProfileBoostEntry } from "../utils/profileBoostEntry";
 
 type ProfileView = "overview" | "edit" | "settings";
 type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help";
@@ -78,6 +84,8 @@ type ProfilePageProps = {
   onUpgrade: () => void;
   onReturnToDashboard: () => void;
   onOpenSafetyCenter?: () => void;
+  onPurchaseBoost?: (product: BoostProduct) => void;
+  boostCheckoutLoading?: boolean;
 };
 
 function bioHint(bio: string): string {
@@ -174,7 +182,9 @@ export function ProfilePage({
   onLogout,
   onUpgrade,
   onReturnToDashboard,
-  onOpenSafetyCenter
+  onOpenSafetyCenter,
+  onPurchaseBoost,
+  boostCheckoutLoading = false
 }: ProfilePageProps) {
   const [profile, setProfile] = useState<DatingProfile>(() =>
     normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
@@ -189,6 +199,8 @@ export function ProfilePage({
   const [view, setView] = useState<ProfileView>("overview");
   const [settingsPanel, setSettingsPanel] = useState<SettingsPanel>("hub");
   const [editOpen, setEditOpen] = useState<EditSection | null>(null);
+  const [boostSheetOpen, setBoostSheetOpen] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
   const [verifySubmitted, setVerifySubmitted] = useState(
     () => profile.verificationStatus === "pending" || isUserVerificationPending(user.phone)
   );
@@ -209,6 +221,33 @@ export function ProfilePage({
       notifyVerificationApproved();
     }
   }, [user.phone, profile.verified]);
+
+  useEffect(() => {
+    void fetchAccountStateRemote(user).then((state) => {
+      if (!state) return;
+      setDeletePending(state.accountStatus === "deleted_pending");
+      if (state.profilePausedAt !== undefined && state.profilePausedAt !== profile.profilePausedAt) {
+        setProfile((p) => ({ ...p, profilePausedAt: state.profilePausedAt ?? undefined }));
+      }
+    });
+  }, [user.email, user.phone]);
+
+  const showBoostEntry = canShowProfileBoostEntry(user, profile, { deletePending }) && Boolean(onPurchaseBoost);
+  const memberCity = getMemberCity() || profile.city?.trim() || "";
+
+  const handlePurchaseBoost = (product: BoostProduct) => {
+    if (!onPurchaseBoost) return;
+    if (!user.email) {
+      showModMessage("Add a verified email before purchasing a boost.");
+      return;
+    }
+    if (boostNeedsMemberCity(product.id) && !memberCity) {
+      showModMessage("Set your city in Edit Profile first.");
+      return;
+    }
+    setBoostSheetOpen(false);
+    onPurchaseBoost(product);
+  };
 
   const save = async () => {
     if (saveBusy) return;
@@ -458,6 +497,14 @@ export function ProfilePage({
               </button>
             </div>
           </div>
+
+          {showBoostEntry ? (
+            <div className="profile-boost-entry-wrap">
+              <button type="button" className="profile-boost-entry" onClick={() => setBoostSheetOpen(true)}>
+                Boost my profile
+              </button>
+            </div>
+          ) : null}
         </>
       )}
 
@@ -1029,6 +1076,14 @@ export function ProfilePage({
           )}
         </>
       )}
+
+      <ProfileBoostSheet
+        open={boostSheetOpen}
+        onClose={() => setBoostSheetOpen(false)}
+        onPurchase={handlePurchaseBoost}
+        loading={boostCheckoutLoading}
+        memberCity={memberCity}
+      />
     </div>
   );
 }

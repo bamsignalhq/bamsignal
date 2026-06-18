@@ -45,7 +45,7 @@ export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
     id: "priority-signal-once",
     name: "Priority Introduction",
     price: 250,
-    description: "Make sure your next signal gets noticed first.",
+    description: "Make sure your next Signal gets noticed first.",
     cta: "Send priority"
   },
   {
@@ -60,12 +60,12 @@ export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
 export const DEFAULT_BOOST_PRODUCTS: BoostProduct[] = DEFAULT_BOOST_INPUTS.map(hydrateBoost);
 
 export function shopBoostDescription(product: BoostProduct, cityLabel: string): string {
-  const place = cityLabel.trim() || "your area";
+  const place = cityLabel.trim() || "your city";
   switch (product.id) {
     case "signal-boost":
       return "Stand out in Discover for 24 hours.";
     case "priority-signal-once":
-      return "Make sure your next signal gets noticed first.";
+      return "Make sure your next Signal gets noticed first.";
     case "profile-boost":
       return `Appear at the top of local recommendations in ${place} for 48 hours.`;
     default:

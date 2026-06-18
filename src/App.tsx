@@ -1318,6 +1318,8 @@ export function App() {
               onUpgrade={startPremiumCheckout}
               onReturnToDashboard={() => setTab("home")}
               onOpenSafetyCenter={() => setMemberOverlay("safety")}
+              onPurchaseBoost={(product) => void handlePurchaseBoost(product)}
+              boostCheckoutLoading={paymentLoading}
             />
           )}
         </main>

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { MONETIZATION_COPY } from "../constants/copy";
 import { StateCitySelect } from "./StateCitySelect";
 import { INTENT_OPTIONS } from "../constants/intents";
-import { searchStateFromPrefs, withSearchStateChange } from "../utils/searchLocationPrefs";
+import { searchStateFromPrefs, withSearchStateChange, normalizeSearchCities } from "../utils/searchLocationPrefs";
 import { normalizeLifestyleTraits } from "../constants/profileOptions";
 import { MatchPreferenceFields } from "./preferences/MatchPreferenceFields";
 import { MAX_DISCOVER_RADIUS_MILES, kmToMiles, milesToKm } from "../utils/discoverLocation";
@@ -186,7 +186,12 @@ export function DiscoverFilters({
               onChange(withSearchStateChange(prefs, searchState))
             }
             searchCities={prefs.cities}
-            onSearchCitiesChange={(cities) => onChange({ ...prefs, cities })}
+            onSearchCitiesChange={(cities) =>
+              onChange({
+                ...prefs,
+                cities: normalizeSearchCities(cities, searchStateFromPrefs(prefs))
+              })
+            }
             ageMin={prefs.ageMin ?? 22}
             ageMax={prefs.ageMax ?? 35}
             ageLabel="Age"

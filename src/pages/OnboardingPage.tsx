@@ -31,6 +31,7 @@ import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { isSignupPhotoCountable } from "../utils/photoMeta";
 import { flowLog } from "../utils/flowLog";
+import { normalizeSearchCities } from "../utils/searchLocationPrefs";
 
 function countSignupPhotos(profile: Pick<DatingProfile, "photos" | "photoMeta">): number {
   return profile.photos.filter(
@@ -459,7 +460,9 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
               setPrefSearchState(next);
             }}
             searchCities={prefCities}
-            onSearchCitiesChange={setPrefCities}
+            onSearchCitiesChange={(cities) =>
+              setPrefCities(normalizeSearchCities(cities, prefSearchState || undefined))
+            }
             ageMin={ageMin}
             ageMax={ageMax}
             ageLabel="Age"

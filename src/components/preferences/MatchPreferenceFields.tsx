@@ -1,3 +1,8 @@
+import {
+  MAX_SEARCH_CITIES,
+  normalizeSearchCities,
+  SEARCH_CITIES_LIMIT_MESSAGE
+} from "../../utils/searchLocationPrefs";
 import { AgeRangeTapSelect } from "../AgeRangeTapSelect";
 import { TapSelectField } from "../TapSelectField";
 import {
@@ -212,10 +217,14 @@ export function MatchPreferenceFields({
         <TapSelectField
           label="Search Cities"
           multiple
+          maxSelections={MAX_SEARCH_CITIES}
+          limitMessage={SEARCH_CITIES_LIMIT_MESSAGE}
           disabled={!searchState}
           options={cityOptions}
-          value={searchCities ?? []}
-          onChange={(next) => onSearchCitiesChange((next as string[]) ?? [])}
+          value={normalizeSearchCities(searchCities ?? [], searchState)}
+          onChange={(next) =>
+            onSearchCitiesChange(normalizeSearchCities((next as string[]) ?? [], searchState))
+          }
         />
       ) : null}
 

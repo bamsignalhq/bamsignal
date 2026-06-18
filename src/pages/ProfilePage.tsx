@@ -7,7 +7,7 @@ import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
 import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import { TapSelectField } from "../components/TapSelectField";
-import { searchStateFromPrefs, withSearchStateChange } from "../utils/searchLocationPrefs";
+import { searchStateFromPrefs, withSearchStateChange, normalizeSearchCities } from "../utils/searchLocationPrefs";
 import { normalizeLifestyleTraits } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
 import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
@@ -719,7 +719,12 @@ export function ProfilePage({
                   setPrefs(withSearchStateChange(prefs, searchState))
                 }
                 searchCities={prefs.cities}
-                onSearchCitiesChange={(cities) => setPrefs({ ...prefs, cities })}
+                onSearchCitiesChange={(cities) =>
+                  setPrefs({
+                    ...prefs,
+                    cities: normalizeSearchCities(cities, searchStateFromPrefs(prefs))
+                  })
+                }
                 ageMin={prefs.ageMin ?? 22}
                 ageMax={prefs.ageMax ?? 35}
                 onAgeRangeChange={(ageMin, ageMax) => setPrefs({ ...prefs, ageMin, ageMax })}

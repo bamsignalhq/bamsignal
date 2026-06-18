@@ -331,6 +331,23 @@ export function ProfilePage({
               });
             }}
             onCoverModerationMessage={showModMessage}
+            editablePhotos
+            onPhotosChange={(photos, nextPhotoMeta) => {
+              setProfile((p) => {
+                const next = normalizeDatingProfile({
+                  ...p,
+                  photos,
+                  photoMeta: nextPhotoMeta ?? p.photoMeta
+                });
+                if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
+                  showModMessage(USER_MESSAGES.profileSaveFailed);
+                  return next;
+                }
+                syncMemberProfileRemote(user, next);
+                return next;
+              });
+            }}
+            onPhotoModerationMessage={showModMessage}
           />
 
           <div className="profile-overview-sections profile-overview-sections--clean">

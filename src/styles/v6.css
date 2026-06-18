@@ -1072,3 +1072,55 @@
     max-height: min(92dvh, 860px);
   }
 }
+
+/* Owner profile photo viewer */
+.profile-detail-sheet__panel--photo-owner {
+  display: flex;
+  flex-direction: column;
+  max-height: 96dvh;
+}
+
+.profile-detail-sheet__hero--full {
+  aspect-ratio: auto;
+  flex: 1 1 auto;
+  min-height: min(72dvh, 640px);
+  max-height: 78dvh;
+}
+
+.profile-photo-viewer__empty {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  color: rgba(255, 255, 255, 0.85);
+  background: color-mix(in srgb, var(--input-bg) 40%, #1a1a2e);
+}
+
+.profile-photo-viewer__empty p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.profile-photo-viewer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.profile-photo-viewer__btn {
+  flex: 1 1 calc(50% - 5px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.profile-photo-viewer__btn--wide {
+  flex: 1 1 100%;
+}

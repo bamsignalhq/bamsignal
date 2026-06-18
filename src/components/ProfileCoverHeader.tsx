@@ -1,10 +1,12 @@
 import { ImagePlus, Loader2, MapPin, UserRound } from "lucide-react";
+import { useState } from "react";
 import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { useCoverPhotoFlow } from "../hooks/useCoverPhotoFlow";
 import { ShowcaseImage } from "./ShowcaseImage";
 import { VerificationBadge } from "./VerificationBadge";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { CoverPhotoCropModal } from "./CoverPhotoCropModal";
+import { ProfilePhotoViewerSheet } from "./profile/ProfilePhotoViewerSheet";
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
 import { hasExplicitCover, resolveCoverPhoto, safePhotos } from "../utils/safeProfile";
@@ -18,6 +20,9 @@ type ProfileCoverHeaderProps = {
   photoMeta?: Record<string, PhotoReviewMeta>;
   onCoverChange?: (coverPhoto: string | undefined, photoMeta?: Record<string, PhotoReviewMeta>) => void;
   onCoverModerationMessage?: (message: string) => void;
+  editablePhotos?: boolean;
+  onPhotosChange?: (photos: string[], photoMeta?: Record<string, PhotoReviewMeta>) => void;
+  onPhotoModerationMessage?: (message: string) => void;
 };
 
 function formatLocation(profile: DatingProfile): string {
@@ -34,8 +39,13 @@ export function ProfileCoverHeader({
   coverPhoto,
   photoMeta,
   onCoverChange,
-  onCoverModerationMessage
+  onCoverModerationMessage,
+  editablePhotos = false,
+  onPhotosChange,
+  onPhotoModerationMessage
 }: ProfileCoverHeaderProps) {
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
+  const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
   const photos = safePhotos(profile.photos);
   const avatar = photos[0] ?? null;
   const cover = resolveCoverPhoto(profile);
@@ -53,6 +63,12 @@ export function ProfileCoverHeader({
 
   const ageText = profile.age != null && profile.age > 0 ? String(profile.age) : null;
   const locationText = profile.city?.trim() ? formatLocation(profile) : null;
+
+  const openPhotoViewer = (index: number) => {
+    if (!editablePhotos || !onPhotosChange) return;
+    setPhotoViewerIndex(index);
+    setPhotoViewerOpen(true);
+  };
 
   return (
     <>
@@ -89,7 +105,13 @@ export function ProfileCoverHeader({
 
         <div className="profile-hero__body">
           <div className="profile-hero__avatar-block">
-            <div className="profile-hero__avatar-ring">
+            <button
+              type="button"
+              className={`profile-hero__avatar-ring${editablePhotos && onPhotosChange ? " profile-hero__avatar-ring--tappable" : ""}`}
+              onClick={() => openPhotoViewer(0)}
+              disabled={!editablePhotos || !onPhotosChange}
+              aria-label={avatar ? "View your profile photos" : "Add profile photo"}
+            >
               {avatar ? (
                 <ShowcaseImage
                   src={avatar}
@@ -101,7 +123,7 @@ export function ProfileCoverHeader({
                   <UserRound size={40} aria-hidden />
                 </div>
               )}
-            </div>
+            </button>
           </div>
 
           <div className="profile-hero__meta">
@@ -130,12 +152,16 @@ export function ProfileCoverHeader({
         {photos.length > 0 ? (
           <div className="profile-hero__photo-strip" aria-label="Profile photos">
             {photos.map((src, index) => (
-              <div
+              <button
                 key={`${src}-${index}`}
-                className={`profile-hero__photo-thumb-wrap${index === 0 ? " profile-hero__photo-thumb-wrap--main" : ""}`}
+                type="button"
+                className={`profile-hero__photo-thumb-wrap${index === 0 ? " profile-hero__photo-thumb-wrap--main" : ""}${editablePhotos && onPhotosChange ? " profile-hero__photo-thumb-wrap--tappable" : ""}`}
+                onClick={() => openPhotoViewer(index)}
+                disabled={!editablePhotos || !onPhotosChange}
+                aria-label={index === 0 ? "View main profile photo" : `View profile photo ${index + 1}`}
               >
-                <img src={src} alt={index === 0 ? "Main profile photo" : `Profile photo ${index + 1}`} />
-              </div>
+                <img src={src} alt="" />
+              </button>
             ))}
           </div>
         ) : null}
@@ -158,6 +184,20 @@ export function ProfileCoverHeader({
           imageSrc={flow.cropSrc}
           onClose={flow.cancelCrop}
           onConfirm={(blob) => void flow.confirmCrop(blob)}
+        />
+      ) : null}
+
+      {editablePhotos && onPhotosChange ? (
+        <ProfilePhotoViewerSheet
+          open={photoViewerOpen}
+          initialIndex={photoViewerIndex}
+          memberName={user.name}
+          photos={photos}
+          photoMeta={photoMeta}
+          coverPhoto={coverPhoto ?? profile.coverPhoto}
+          onClose={() => setPhotoViewerOpen(false)}
+          onChange={onPhotosChange}
+          onModerationMessage={onPhotoModerationMessage ?? onCoverModerationMessage}
         />
       ) : null}
     </>

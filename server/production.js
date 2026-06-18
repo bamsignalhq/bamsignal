@@ -14,6 +14,7 @@ import { registerBotCommands, bot } from "./telegram.js";
 import { mountHandler } from "./mountHandler.js";
 import identityHandler from "../api/auth/identity.js";
 import emailCodeHandler from "../api/auth/email-code.js";
+import loginSecurityHandler from "../api/auth/login-security.js";
 import playReviewerFinishHandler from "../api/auth/play-reviewer-finish.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
 import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivity.js";
@@ -119,6 +120,7 @@ app.head("/health", (_req, res) => {
 
 app.post("/api/contact", handleContactNodeRequest);
 mountHandler(app, "post", "/api/auth/email-code", emailCodeHandler);
+mountHandler(app, "post", "/api/auth/login-security", loginSecurityHandler);
 mountHandler(app, "post", "/api/auth/play-reviewer-finish", playReviewerFinishHandler);
 mountHandler(app, "post", "/api/auth/identity", identityHandler);
 mountHandler(app, "post", "/api/verify/whatsapp/start", whatsappVerifyStartHandler);
@@ -205,6 +207,15 @@ void initDatabase()
       console.log(
         `[bamsignal] function security hardened: search_path=${functionFix.searchPathFixed.join(", ") || "none"}; rpc_revoked=${functionFix.rpcRevoked.join(", ") || "none"}`
       );
+    }
+
+    const { processExpiredAccountDeletions } = await import("./memberTrust.js");
+    const deletionResult = await processExpiredAccountDeletions().catch((error) => {
+      console.warn("[bamsignal] account deletion sweep skipped:", error.message || error);
+      return { processed: 0 };
+    });
+    if (deletionResult?.processed) {
+      console.log(`[bamsignal] finalized ${deletionResult.processed} scheduled account deletion(s)`);
     }
   })
   .catch((error) => {

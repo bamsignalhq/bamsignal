@@ -2,7 +2,7 @@ import { DEMO_ADMIN } from "../constants/demoAccounts";
 import type { HardTab } from "../components/admin/adminConsoleNav";
 import { hardPathForTab, parseHardTabFromPath } from "../constants/hardRoutes";
 import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
-import { supabase } from "../services/supabase";
+import { apiUrl, supabase } from "../services/supabase";
 import { verifyAdminSession } from "../services/plans";
 
 /** Console persistence — separate from member session keys. */
@@ -154,6 +154,21 @@ export function clearHardSessionOnly(): void {
 export const clearAdminSessionOnly = clearHardSessionOnly;
 
 export async function exitHardSession(): Promise<void> {
+  const session = readSession();
+  if (session?.accessToken) {
+    try {
+      await fetch(apiUrl("/api/auth/identity?action=operator-logout"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken}`
+        },
+        body: "{}"
+      });
+    } catch {
+      /* best effort */
+    }
+  }
   clearHardSessionOnly();
   await restoreMemberSessionAfterHardLogout();
 }

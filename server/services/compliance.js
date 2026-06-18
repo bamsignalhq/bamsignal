@@ -155,5 +155,26 @@ export async function recordComplianceAcknowledgements({
     [member.id, nextProfile]
   );
 
+  const { writeAuditLog } = await import("./auditLog.js");
+  const ackActionByType = {
+    terms: "terms_accepted",
+    privacy: "privacy_accepted",
+    age_18: "age_confirmed",
+    safety_pledge: "safety_pledge_accepted",
+    adult_risk: "adult_risk_acknowledged",
+    offline_safety: "offline_safety_acknowledged"
+  };
+  for (const type of ackTypes) {
+    const auditAction = ackActionByType[type];
+    if (!auditAction) continue;
+    await writeAuditLog({
+      userId: member.id,
+      action: auditAction,
+      details: { version: VERSION_BY_TYPE[type], ackType: type },
+      ip,
+      userAgent
+    });
+  }
+
   return { ok: true, compliance };
 }

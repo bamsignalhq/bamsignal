@@ -17,6 +17,7 @@ import { defaultMatchPreferences } from "./profile";
 import { meetsDiscoveryQuality } from "./launchSeed";
 import { readJson, writeJson } from "./storage";
 import { persistReportRemote } from "../services/memberData";
+import { apiUrl } from "../services/supabase";
 import { trackSafetyBlock, trackSafetyReport } from "./safetyAnalytics";
 
 export function resolveSafetySettings(profile: {
@@ -102,6 +103,21 @@ export function blockUser(profileId: string): void {
   if (!blocked.includes(profileId)) {
     writeJson(STORAGE_KEYS.blocked, [...blocked, profileId]);
     trackSafetyBlock(profileId);
+    const user = readJson<{ email?: string; phone?: string }>(STORAGE_KEYS.userProfile, {
+      email: "",
+      phone: ""
+    });
+    if (user.email || user.phone) {
+      void fetch(apiUrl("/api/member/data?action=user-block"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: user.email || "",
+          phone: user.phone || "",
+          targetProfileId: profileId
+        })
+      }).catch(() => undefined);
+    }
   }
   const matches = readJson<{ profileId: string; id?: string }[]>(STORAGE_KEYS.matches, []);
   writeJson(

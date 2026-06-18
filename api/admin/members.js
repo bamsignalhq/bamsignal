@@ -5,6 +5,10 @@ import {
   adminSearchMembers,
   purgeMemberCompletely
 } from "../../server/services/adminMemberPurge.js";
+import {
+  fetchMemberAuditTrailAdmin,
+  fetchMemberComplianceAdmin
+} from "../../server/services/memberCompliance.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -69,7 +73,28 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
-    return res.status(400).json({ ok: false, error: "Unknown action. Use search or purge." });
+    if (action === "compliance") {
+      const profileId = String(body.profileId || "").trim();
+      if (!profileId) {
+        return res.status(400).json({ ok: false, error: "profileId is required." });
+      }
+      const compliance = await fetchMemberComplianceAdmin(profileId);
+      if (!compliance) {
+        return res.status(404).json({ ok: false, error: "Member not found." });
+      }
+      return res.status(200).json({ ok: true, compliance });
+    }
+
+    if (action === "audit-trail") {
+      const profileId = String(body.profileId || "").trim();
+      if (!profileId) {
+        return res.status(400).json({ ok: false, error: "profileId is required." });
+      }
+      const rows = await fetchMemberAuditTrailAdmin(profileId, Number(body.limit) || 100);
+      return res.status(200).json({ ok: true, rows });
+    }
+
+    return res.status(400).json({ ok: false, error: "Unknown action. Use search, purge, compliance, or audit-trail." });
   } catch (error) {
     console.error("[bamsignal] admin members error:", error);
     return res.status(500).json({ ok: false, error: error.message || "Admin member request failed." });

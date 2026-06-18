@@ -451,6 +451,24 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
+    if (req.query.action === "user-block") {
+      if (!requireDatabase(res)) return;
+      const targetProfileId = String(body.targetProfileId || "").trim();
+      if (!targetProfileId) {
+        return res.status(400).json({ ok: false, error: "targetProfileId is required." });
+      }
+      const { findMemberProfileByUserKey } = await import("../../server/cityHome.js");
+      const reporter = await findMemberProfileByUserKey(identity.email, identity.phone);
+      const { writeAuditLog } = await import("../../server/services/auditLog.js");
+      await writeAuditLog({
+        userId: reporter?.id || null,
+        targetUserId: targetProfileId,
+        action: "user_blocked",
+        details: {}
+      });
+      return res.status(200).json({ ok: true });
+    }
+
     if (req.query.action === "connection-note") {
       if (!requireDatabase(res)) return;
       const { fetchConnectionNote, upsertConnectionNote } = await import("../../server/memberTrust.js");

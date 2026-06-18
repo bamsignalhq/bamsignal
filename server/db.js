@@ -685,6 +685,20 @@ export async function persistReport({ email, phone, report }) {
       console.error("[bamsignal] auto shadow ban failed:", error);
     });
   }
+  if (row) {
+    const { findMemberProfileByUserKey } = await import("./cityHome.js");
+    const reporter = await findMemberProfileByUserKey(email, phone);
+    const { writeAuditLog } = await import("./services/auditLog.js");
+    await writeAuditLog({
+      userId: reporter?.id || null,
+      targetUserId: report.profileId,
+      action: report.blocked ? "block_and_report_submitted" : "report_submitted",
+      details: {
+        reason: report.reason,
+        hasDetails: Boolean(report.details)
+      }
+    });
+  }
   return row;
 }
 

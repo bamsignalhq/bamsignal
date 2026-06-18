@@ -80,8 +80,57 @@ export default async function handler(req, res) {
       return;
     }
 
+    if (req.query.action === "operator-logout") {
+      if (!(await requireAdmin(req, res))) return;
+      try {
+        const { getAdminEmailFromRequest } = await import("../../server/adminConsent.js");
+        const operatorEmail = await getAdminEmailFromRequest(req);
+        if (operatorEmail) {
+          const { writeAuditLog } = await import("../../server/services/auditLog.js");
+          const forwarded = req.headers["x-forwarded-for"];
+          const ip =
+            typeof forwarded === "string" && forwarded.length
+              ? forwarded.split(",")[0].trim()
+              : req.socket?.remoteAddress || null;
+          await writeAuditLog({
+            operatorId: operatorEmail,
+            action: "operator_logout",
+            details: {},
+            ip,
+            userAgent: String(req.headers["user-agent"] || "").slice(0, 512) || null
+          });
+        }
+      } catch {
+        /* best effort */
+      }
+      return res.status(200).json({ ok: true });
+    }
+
     if (req.query.action === "admin-session") {
-      if (await requireAdmin(req, res)) return res.status(200).json({ ok: true, method: "admin" });
+      if (await requireAdmin(req, res)) {
+        try {
+          const { getAdminEmailFromRequest } = await import("../../server/adminConsent.js");
+          const operatorEmail = await getAdminEmailFromRequest(req);
+          if (operatorEmail) {
+            const { writeAuditLog } = await import("../../server/services/auditLog.js");
+            const forwarded = req.headers["x-forwarded-for"];
+            const ip =
+              typeof forwarded === "string" && forwarded.length
+                ? forwarded.split(",")[0].trim()
+                : req.socket?.remoteAddress || null;
+            await writeAuditLog({
+              operatorId: operatorEmail,
+              action: "operator_login",
+              details: {},
+              ip,
+              userAgent: String(req.headers["user-agent"] || "").slice(0, 512) || null
+            });
+          }
+        } catch {
+          /* best effort */
+        }
+        return res.status(200).json({ ok: true, method: "admin" });
+      }
       return res.status(401).json({ ok: false, error: "Admin login required." });
     }
 

@@ -22,6 +22,7 @@ import {
 } from "../../utils/authIdentity";
 import { readJson, writeJson } from "../../utils/storage";
 import { validateUserText } from "../../utils/contactGuard";
+import { DeleteAccountModal } from "../DeleteAccountModal";
 
 type ProfileAccountPanelProps = {
   user: UserProfile;
@@ -46,6 +47,7 @@ export function ProfileAccountPanel({
   const [usernameLastChangedAt, setUsernameLastChangedAt] = useState<string | null>(null);
   const [pausedAt, setPausedAt] = useState<string | null>(profile.profilePausedAt ?? null);
   const [deletePending, setDeletePending] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [successStory, setSuccessStory] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -115,16 +117,16 @@ export function ProfileAccountPanel({
     );
   };
 
-  const requestDelete = async () => {
-    if (!window.confirm("Your profile will be hidden for 30 days. You can restore by logging in.")) return;
+  const scheduleDeletion = async () => {
     setBusy(true);
     const result = await softDeleteAccountRemote(user);
     setBusy(false);
+    setDeleteModalOpen(false);
     if (!result?.ok) {
       onMessage("We couldn't start account deletion right now.");
       return;
     }
-    setDeletePending(true);
+    onMessage("Your account has been scheduled for deletion.", true);
     onLogout();
   };
 
@@ -228,21 +230,29 @@ export function ProfileAccountPanel({
         </button>
       </section>
 
-      <section className="account-settings-block" aria-label="Delete account">
+      <section className="account-settings-block account-settings-block--danger" aria-label="Danger zone">
+        <h3 className="account-settings-block__heading">Danger Zone</h3>
         <button
           type="button"
           className="account-settings-action account-settings-action--danger"
           disabled={busy}
-          onClick={() => void requestDelete()}
+          onClick={() => setDeleteModalOpen(true)}
         >
-          Delete account
+          Permanently Delete Account
         </button>
         <p className="account-settings-hint">
-          Your profile hides immediately. Restore within 30 days by logging in.
+          Your profile hides immediately. Permanent deletion happens within 30 days.
         </p>
       </section>
 
       {!isPremium ? <p className="account-settings-hint">{MONETIZATION_COPY.signalsExhaustedHint}</p> : null}
+
+      <DeleteAccountModal
+        open={deleteModalOpen}
+        busy={busy}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={() => void scheduleDeletion()}
+      />
     </>
   );
 }

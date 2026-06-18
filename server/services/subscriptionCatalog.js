@@ -193,7 +193,7 @@ export async function saveSubscriptionCatalog(catalog) {
 
   const { writePlatformAudit } = await import("./auditTrail.js");
   await writePlatformAudit({
-    action: "pricing_catalog_save",
+    action: "pricing_changed",
     details: {
       products: normalized.products.map((product) => ({
         id: product.id,

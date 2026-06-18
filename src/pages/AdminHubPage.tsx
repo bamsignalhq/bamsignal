@@ -75,8 +75,12 @@ import { riskFlagLabel } from "../utils/photoMeta";
 import { reportReasonLabel } from "../constants/safety";
 import { fetchEmailBranding, saveEmailBrandingAdmin } from "../services/emailBranding";
 import {
+  fetchAdminMemberAuditTrail,
+  fetchAdminMemberCompliance,
   purgeAdminMember,
   searchAdminMembers,
+  type AdminAuditLogRow,
+  type AdminMemberCompliance,
   type AdminMemberSummary
 } from "../services/adminMembers";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
@@ -142,6 +146,11 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [purgeConfirm, setPurgeConfirm] = useState("");
   const [purgeBusy, setPurgeBusy] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState("");
+  const [memberDetail, setMemberDetail] = useState<AdminMemberSummary | null>(null);
+  const [memberCompliance, setMemberCompliance] = useState<AdminMemberCompliance | null>(null);
+  const [memberAuditRows, setMemberAuditRows] = useState<AdminAuditLogRow[]>([]);
+  const [memberAuditOpen, setMemberAuditOpen] = useState(false);
+  const [memberComplianceBusy, setMemberComplianceBusy] = useState(false);
   const [contactLeaks, setContactLeaks] = useState<ContactLeakAttempt[]>([]);
   const [contactLeaksLoading, setContactLeaksLoading] = useState(false);
   const [photoReviews, setPhotoReviews] = useState<PhotoReviewItem[]>([]);
@@ -884,21 +893,172 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                     {member.username ? `@${member.username} · ` : ""}
                     {member.email || member.phone || member.id}
                     {member.city ? ` · ${member.city}` : ""}
+                    {member.accountStatus && member.accountStatus !== "active"
+                      ? ` · ${member.accountStatus}`
+                      : ""}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="btn-danger"
-                  onClick={() => {
-                    setPurgeTarget(member);
-                    setPurgeConfirm("");
-                    setPurgeMessage("");
-                  }}
-                >
-                  Delete permanently
-                </button>
+                <div className="admin-member-purge__row-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    onClick={() => {
+                      void (async () => {
+                        setMemberDetail(member);
+                        setMemberCompliance(null);
+                        setMemberAuditRows([]);
+                        setMemberAuditOpen(false);
+                        setMemberComplianceBusy(true);
+                        try {
+                          const result = await fetchAdminMemberCompliance(member.id);
+                          if (!result.ok) {
+                            pushToast(result.error || "Could not load compliance.");
+                            return;
+                          }
+                          if (!result.data.compliance) {
+                            pushToast("Could not load compliance.");
+                            return;
+                          }
+                          setMemberCompliance(result.data.compliance);
+                        } finally {
+                          setMemberComplianceBusy(false);
+                        }
+                      })();
+                    }}
+                  >
+                    Compliance
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-danger btn-sm"
+                    onClick={() => {
+                      setPurgeTarget(member);
+                      setPurgeConfirm("");
+                      setPurgeMessage("");
+                    }}
+                  >
+                    Delete permanently
+                  </button>
+                </div>
               </article>
             ))}
+            {memberDetail && (
+              <section className="card admin-member-compliance">
+                <h4 className="admin-section-title">Compliance — {memberDetail.name}</h4>
+                {memberComplianceBusy ? (
+                  <p className="admin-inline-message">Loading compliance…</p>
+                ) : memberCompliance ? (
+                  <>
+                    <dl className="admin-compliance-grid">
+                      <div>
+                        <dt>Account status</dt>
+                        <dd>{memberCompliance.accountStatus}</dd>
+                      </div>
+                      {memberCompliance.accountDeleteScheduledFor ? (
+                        <div>
+                          <dt>Deletion scheduled</dt>
+                          <dd>{new Date(memberCompliance.accountDeleteScheduledFor).toLocaleString()}</dd>
+                        </div>
+                      ) : null}
+                      <div>
+                        <dt>Terms</dt>
+                        <dd>
+                          {memberCompliance.compliance.termsAcceptedAt
+                            ? `${new Date(memberCompliance.compliance.termsAcceptedAt).toLocaleDateString()} (${memberCompliance.compliance.termsVersion || "—"})`
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Privacy</dt>
+                        <dd>
+                          {memberCompliance.compliance.privacyAcceptedAt
+                            ? `${new Date(memberCompliance.compliance.privacyAcceptedAt).toLocaleDateString()} (${memberCompliance.compliance.privacyVersion || "—"})`
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Age confirmed</dt>
+                        <dd>
+                          {memberCompliance.compliance.ageConfirmedAt
+                            ? new Date(memberCompliance.compliance.ageConfirmedAt).toLocaleString()
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Safety pledge</dt>
+                        <dd>
+                          {memberCompliance.compliance.safetyPledgeAcceptedAt
+                            ? `${new Date(memberCompliance.compliance.safetyPledgeAcceptedAt).toLocaleDateString()} (${memberCompliance.compliance.safetyPledgeVersion || "—"})`
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Adult risk ack</dt>
+                        <dd>
+                          {memberCompliance.compliance.adultRiskAcknowledgedAt
+                            ? new Date(memberCompliance.compliance.adultRiskAcknowledgedAt).toLocaleString()
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Offline safety ack</dt>
+                        <dd>
+                          {memberCompliance.compliance.offlineSafetyAcknowledgedAt
+                            ? new Date(memberCompliance.compliance.offlineSafetyAcknowledgedAt).toLocaleString()
+                            : "—"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>2FA</dt>
+                        <dd>
+                          {memberCompliance.twoFactorEnabled
+                            ? `On (${memberCompliance.twoFactorMethod || "email"})`
+                            : "Off"}
+                        </dd>
+                      </div>
+                    </dl>
+                    <button
+                      type="button"
+                      className="btn-secondary btn-sm"
+                      onClick={() => {
+                        void (async () => {
+                          if (memberAuditOpen) {
+                            setMemberAuditOpen(false);
+                            return;
+                          }
+                          const result = await fetchAdminMemberAuditTrail(memberDetail.id);
+                          if (!result.ok) {
+                            pushToast(result.error || "Could not load audit trail.");
+                            return;
+                          }
+                          setMemberAuditRows(result.data.rows ?? []);
+                          setMemberAuditOpen(true);
+                        })();
+                      }}
+                    >
+                      {memberAuditOpen ? "Hide Audit Trail" : "View Audit Trail"}
+                    </button>
+                    {memberAuditOpen ? (
+                      <div className="admin-audit-trail">
+                        {memberAuditRows.length ? (
+                          memberAuditRows.map((row) => (
+                            <div key={row.id} className="admin-audit-trail__row">
+                              <span>{new Date(row.created_at).toLocaleString()}</span>
+                              <strong>{row.action}</strong>
+                              <span>{row.operator_id || row.user_id || "—"}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="admin-inline-message">No audit events yet.</p>
+                        )}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className="admin-inline-message">Select Compliance on a member to view legal evidence.</p>
+                )}
+              </section>
+            )}
             {purgeTarget && (
               <div className="admin-member-purge__confirm">
                 <p>

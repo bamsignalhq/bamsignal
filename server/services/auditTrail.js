@@ -34,7 +34,8 @@ export async function writePlatformAudit({
   operatorId = null,
   operatorEmail = null,
   details = {},
-  ip = null
+  ip = null,
+  userAgent = null
 }) {
   if (!isDatabaseReady() || !action) return null;
   await ensureAuditTrailSchema();
@@ -53,6 +54,20 @@ export async function writePlatformAudit({
       ip || null
     ]
   );
+
+  const { writeAuditLog } = await import("./auditLog.js");
+  await writeAuditLog({
+    targetUserId: targetUserId || null,
+    operatorId: operatorEmail || operatorId || null,
+    action: String(action),
+    details: {
+      ...(details && typeof details === "object" ? details : {}),
+      ...(targetUserKey ? { targetUserKey } : {})
+    },
+    ip,
+    userAgent
+  });
+
   return result.rows[0] || null;
 }
 

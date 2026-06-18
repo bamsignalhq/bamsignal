@@ -15,9 +15,20 @@ async function postMemberTrust(
   return readResponseJson<Record<string, unknown>>(response);
 }
 
+export type MemberAccountState = {
+  accountStatus?: string;
+  accountDeletedAt?: string | null;
+  accountDeleteScheduledFor?: string | null;
+  profilePausedAt?: string | null;
+  profilePauseReason?: string | null;
+  usernameLastChangedAt?: string | null;
+  usernameChangeCount?: number;
+  discoverable?: boolean;
+};
+
 export async function fetchAccountStateRemote(user: Pick<UserProfile, "email" | "phone">) {
   const payload = await postMemberTrust(user, "account-state");
-  return payload?.account ?? null;
+  return (payload?.account as MemberAccountState | undefined) ?? null;
 }
 
 export async function checkUsernameRemote(

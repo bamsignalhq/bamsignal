@@ -51,6 +51,7 @@ import { MAX_PROFILE_PHOTOS } from "../constants/photos";
 import { safeUserCoverPhoto } from "../utils/safeProfile";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
+import { TwoFactorSettingsCard } from "../components/TwoFactorSettingsCard";
 import { ContactForm } from "../components/ContactForm";
 import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
 import { ProfileOverviewCard } from "../components/profile/ProfileOverviewCard";
@@ -879,6 +880,7 @@ export function ProfilePage({
 
           {settingsPanel === "privacy" && (
             <>
+              <TwoFactorSettingsCard user={user} onMessage={showModMessage} />
               <section className="card profile-privacy-card">
                 {(
                   [

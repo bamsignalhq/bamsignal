@@ -269,28 +269,32 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
   "/delete-account": {
     eyebrow: "Account",
     title: "Delete your BamSignal account",
-    lede: "You can request permanent deletion of your account and associated profile data.",
+    lede: "You can delete your BamSignal account in Settings. Your profile is hidden immediately and permanent deletion is scheduled within 30 days.",
     heroImage: SHOWCASE.sundayHangout,
     heroAlt: "Account settings",
     highlights: [
-      { label: "Processing time", value: "Up to 7 days" },
-      { label: "Support email", value: "support@bamsignal.com" }
+      { label: "In-app deletion", value: "Settings → Account" },
+      { label: "Grace period", value: "30 days to restore" }
     ],
     sections: [
       {
-        heading: "How to request deletion",
+        heading: "Delete in the app",
         body:
-          "Send a message from the email linked to your BamSignal account. Include your username and the phone number on your profile. We will confirm before deleting.",
+          "Open Settings → Account → Danger Zone → Permanently Delete Account. Confirm in two steps, including typing DELETE. Your profile is hidden from discovery immediately and messaging delivery stops.",
         bullets: [
-          "Use the form below with topic \"Delete my account\"",
-          "Or email support@bamsignal.com with subject \"Delete my account\"",
-          "Deletion removes your profile, photos, and match data where applicable"
+          "Profile hidden right away",
+          "Permanent deletion scheduled within 30 days",
+          "Log in during the grace period to restore your account"
         ]
       },
       {
-        heading: "What we keep",
+        heading: "What we may keep",
         body:
-          "We may retain minimal records where required for fraud prevention, legal compliance, or unresolved safety reports."
+          "Some records may be retained where required for safety, fraud prevention, legal compliance, payment records, or dispute handling. We do not keep full private message bodies in audit logs unless needed for an active safety review."
+      },
+      {
+        heading: "Need help?",
+        body: "Email support@bamsignal.com from the address on your account if you cannot access the app."
       }
     ]
   }

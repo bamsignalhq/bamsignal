@@ -34,6 +34,14 @@ import {
 } from "../utils/signupPersistence";
 import { mergeLocalCompliance, saveComplianceAcknowledgements } from "../services/compliance";
 import { signupLegalAckTypes } from "../utils/compliance";
+import { Login2faModal } from "../components/Login2faModal";
+import { AccountRestoreModal } from "../components/AccountRestoreModal";
+import {
+  checkLogin2faRemote,
+  sendLogin2faRemote,
+  verifyLogin2faRemote
+} from "../services/accountSecurity";
+import { fetchAccountStateRemote, restoreAccountRemote } from "../services/memberTrust";
 
 type AuthPageProps = {
   mode: AuthMode;
@@ -128,6 +136,14 @@ export function AuthPage({
   const [resetEmail, setResetEmail] = useState("");
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
   const [resendIn, setResendIn] = useState(restored.current.resendIn);
+  const [pendingAuthProfile, setPendingAuthProfile] = useState<UserProfile | null>(null);
+  const [login2faOpen, setLogin2faOpen] = useState(false);
+  const [login2faMethod, setLogin2faMethod] = useState<"email" | "whatsapp">("email");
+  const [login2faMaskedEmail, setLogin2faMaskedEmail] = useState<string | null>(null);
+  const [login2faMaskedPhone, setLogin2faMaskedPhone] = useState<string | null>(null);
+  const [login2faMessage, setLogin2faMessage] = useState("");
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoreScheduledFor, setRestoreScheduledFor] = useState<string | null>(null);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const verifyInFlight = useRef(false);
 
@@ -290,6 +306,43 @@ export function AuthPage({
     };
   }, [signupForm.email]);
 
+  const completeAuthenticated = async (profile: UserProfile, meta?: AuthMeta) => {
+    await onAuthenticated(profile, meta);
+    setPendingAuthProfile(null);
+    setLogin2faOpen(false);
+    setRestoreOpen(false);
+  };
+
+  const proceedAfterSecurityChecks = async (profile: UserProfile, meta?: AuthMeta) => {
+    const state = await fetchAccountStateRemote(profile);
+    if (state?.accountStatus === "deleted_pending") {
+      setPendingAuthProfile(profile);
+      setRestoreScheduledFor(state.accountDeleteScheduledFor ?? null);
+      setRestoreOpen(true);
+      return;
+    }
+    await completeAuthenticated(profile, meta);
+  };
+
+  const finishLoginAfterPassword = async (profile: UserProfile, meta?: AuthMeta) => {
+    setPendingAuthProfile(profile);
+    const check = await checkLogin2faRemote(profile);
+    if (check.required) {
+      setLogin2faMethod(check.method || "email");
+      setLogin2faMaskedEmail(check.maskedEmail ?? null);
+      setLogin2faMaskedPhone(check.maskedPhone ?? null);
+      setLogin2faMessage("");
+      setLogin2faOpen(true);
+      try {
+        await sendLogin2faRemote(profile);
+      } catch (error) {
+        setLogin2faMessage(error instanceof Error ? error.message : "We couldn't verify this login. Please try again.");
+      }
+      return;
+    }
+    await proceedAfterSecurityChecks(profile, meta);
+  };
+
   const signIn = async () => {
     const username = normalizeUsername(loginForm.username);
     if (!isValidLoginUsername(username)) {
@@ -307,7 +360,7 @@ export function AuthPage({
       if (matchDemoUser(username, loginForm.pin)) {
         rememberUsernameEmail(DEMO_USER.username, DEMO_USER.profile.email);
         seedDemoMemberProfile();
-        onAuthenticated(DEMO_USER.profile, { isNewSignup: false });
+        await completeAuthenticated(DEMO_USER.profile, { isNewSignup: false });
         return;
       }
 
@@ -320,7 +373,8 @@ export function AuthPage({
         });
         if (error) throw error;
         rememberUsernameEmail(username, email);
-        onAuthenticated(profileFromSessionUser(data.user!), { isNewSignup: false });
+        const profile = profileFromSessionUser(data.user!);
+        await finishLoginAfterPassword(profile, { isNewSignup: false });
         return;
       }
 
@@ -821,6 +875,82 @@ export function AuthPage({
           ) : null}
         </div>
       </div>
+
+      <Login2faModal
+        open={login2faOpen}
+        method={login2faMethod}
+        maskedEmail={login2faMaskedEmail}
+        maskedPhone={login2faMaskedPhone}
+        busy={busy === "login-2fa"}
+        message={login2faMessage}
+        onClose={() => {
+          setLogin2faOpen(false);
+          setPendingAuthProfile(null);
+          void supabase?.auth.signOut();
+        }}
+        onResend={() => {
+          if (!pendingAuthProfile) return;
+          void (async () => {
+            setBusy("login-2fa");
+            setLogin2faMessage("");
+            try {
+              await sendLogin2faRemote(pendingAuthProfile);
+              setLogin2faMessage("Code sent.");
+            } catch (error) {
+              setLogin2faMessage(
+                error instanceof Error ? error.message : "We couldn't verify this login. Please try again."
+              );
+            } finally {
+              setBusy(null);
+            }
+          })();
+        }}
+        onVerify={(code) => {
+          if (!pendingAuthProfile) return;
+          void (async () => {
+            setBusy("login-2fa");
+            setLogin2faMessage("");
+            try {
+              await verifyLogin2faRemote(pendingAuthProfile, code);
+              setLogin2faOpen(false);
+              await proceedAfterSecurityChecks(pendingAuthProfile, { isNewSignup: false });
+            } catch (error) {
+              setLogin2faMessage(
+                error instanceof Error ? error.message : "We couldn't verify this login. Please try again."
+              );
+            } finally {
+              setBusy(null);
+            }
+          })();
+        }}
+      />
+
+      <AccountRestoreModal
+        open={restoreOpen}
+        scheduledFor={restoreScheduledFor}
+        busy={busy === "restore"}
+        onContinueDeletion={() => {
+          setRestoreOpen(false);
+          setPendingAuthProfile(null);
+          void supabase?.auth.signOut();
+          onMessage("Your account remains scheduled for deletion.");
+        }}
+        onRestore={() => {
+          if (!pendingAuthProfile) return;
+          void (async () => {
+            setBusy("restore");
+            const ok = await restoreAccountRemote(pendingAuthProfile);
+            setBusy(null);
+            if (!ok) {
+              onMessage("We couldn't restore your account right now.");
+              return;
+            }
+            setRestoreOpen(false);
+            await completeAuthenticated(pendingAuthProfile, { isNewSignup: false, recovered: true });
+            onMessage("Welcome back — your account is restored.");
+          })();
+        }}
+      />
     </main>
   );
 }

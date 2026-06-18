@@ -96,7 +96,8 @@ export async function adminSearchMembers(searchText, limit = 25) {
 
   const result = await query(
     `select id, user_key, email, phone, name, username, city, state, profile,
-            onboarding_complete, created_at, updated_at
+            onboarding_complete, created_at, updated_at,
+            account_status, account_delete_scheduled_for
      from app_member_profiles
      where lower(email) like lower($1)
         or lower(name) like lower($1)
@@ -124,7 +125,9 @@ export async function adminSearchMembers(searchText, limit = 25) {
       onboardingComplete: row.onboarding_complete,
       photo: photos[0] || "",
       createdAt: row.created_at,
-      updatedAt: row.updated_at
+      updatedAt: row.updated_at,
+      accountStatus: row.account_status || "active",
+      accountDeleteScheduledFor: row.account_delete_scheduled_for || null
     };
   });
 }

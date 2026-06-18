@@ -128,8 +128,14 @@ async function writeModerationAudit({
     ]
   );
   const { writePlatformAudit } = await import("./auditTrail.js");
+  const auditAction =
+    action === "shadow_ban"
+      ? "shadow_ban_applied"
+      : action === "shadow_ban_lifted"
+        ? "shadow_ban_lifted"
+        : action;
   await writePlatformAudit({
-    action,
+    action: auditAction,
     targetUserId: targetProfileId,
     targetUserKey,
     operatorEmail: String(operatorEmail || "").toLowerCase(),

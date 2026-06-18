@@ -2006,6 +2006,50 @@
   line-height: 1.45;
 }
 
+.account-settings-block--danger {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid color-mix(in srgb, #c45c5c 22%, var(--border));
+}
+
+.account-settings-block__heading {
+  margin: 0 0 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #c45c5c;
+}
+
+.auth-2fa-modal__icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: var(--brand-pink);
+}
+
+.auth-2fa-modal__lede,
+.auth-2fa-modal__message {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.auth-2fa-method {
+  margin-top: 12px;
+}
+
+.delete-account-modal__actions,
+.account-restore-modal .delete-account-modal__actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.settings-row__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .account-settings-textarea {
   min-height: 104px;
 }

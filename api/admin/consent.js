@@ -41,6 +41,27 @@ export default async function handler(req, res) {
       if (!result.ok) {
         return res.status(result.status || 400).json({ ok: false, error: result.error });
       }
+      try {
+        const { getAdminEmailFromRequest } = await import("../../server/adminConsent.js");
+        const operatorEmail = await getAdminEmailFromRequest(req);
+        if (operatorEmail) {
+          const { writeAuditLog } = await import("../../server/services/auditLog.js");
+          const forwarded = req.headers["x-forwarded-for"];
+          const ip =
+            typeof forwarded === "string" && forwarded.length
+              ? forwarded.split(",")[0].trim()
+              : req.socket?.remoteAddress || null;
+          await writeAuditLog({
+            operatorId: operatorEmail,
+            action: "console_pin_unlocked",
+            details: {},
+            ip,
+            userAgent: String(req.headers["user-agent"] || "").slice(0, 512) || null
+          });
+        }
+      } catch {
+        /* best effort */
+      }
       return res.status(200).json({
         ok: true,
         consentToken: result.consentToken,

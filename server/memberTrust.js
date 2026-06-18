@@ -237,6 +237,14 @@ export async function softDeleteMemberAccount({ email, phone }) {
      returning *`,
     [member.id, scheduledFor.toISOString()]
   );
+  if (result.rows[0]) {
+    const { writeAuditLog } = await import("./services/auditLog.js");
+    await writeAuditLog({
+      userId: member.id,
+      action: "account_deletion_scheduled",
+      details: { scheduledFor: scheduledFor.toISOString() }
+    });
+  }
   return {
     ok: Boolean(result.rows[0]),
     profile: result.rows[0],
@@ -271,7 +279,33 @@ export async function restoreMemberAccount({ email, phone }) {
      returning *`,
     [member.id, discoverable]
   );
+  if (result.rows[0]) {
+    const { writeAuditLog } = await import("./services/auditLog.js");
+    await writeAuditLog({
+      userId: member.id,
+      action: "account_restored",
+      details: {}
+    });
+  }
   return { ok: Boolean(result.rows[0]), profile: result.rows[0] };
+}
+
+export async function processExpiredAccountDeletions() {
+  if (!isDatabaseReady()) return { processed: 0 };
+  await ensureMemberTrustSchema();
+
+  const result = await query(
+    `update app_member_profiles
+     set account_status = 'deleted',
+         discoverable = false,
+         updated_at = now()
+     where account_status = 'deleted_pending'
+       and account_delete_scheduled_for is not null
+       and account_delete_scheduled_for <= now()
+     returning id`
+  );
+
+  return { processed: result.rows.length };
 }
 
 export async function fetchMemberAccountState({ email, phone }) {

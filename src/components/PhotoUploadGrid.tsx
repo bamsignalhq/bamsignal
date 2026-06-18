@@ -143,7 +143,7 @@ export function PhotoUploadGrid({
       setPreviewSlot(slotIndex);
 
       logPhotoPipeline("uploading", { signupMode, kind: "profile" });
-      const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
+      const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file, compressed.mime);
       logPhotoPipeline("uploaded", { signupMode, kind: "profile" });
 
       const assessment = await assessUploadedPhoto(file, uploadKind);

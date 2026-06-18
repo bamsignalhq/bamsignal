@@ -253,12 +253,39 @@ export async function fileToCompressedImageBlob(
   }
 }
 
-export function blobToDataUrl(blob: Blob): Promise<string> {
+function resolveImageMime(blob: Blob, mime?: string): string {
+  if (mime) {
+    const normalized = mime.toLowerCase();
+    if (normalized === "image/jpg" || normalized === "image/pjpeg") return "image/jpeg";
+    if (normalized.startsWith("image/")) return normalized;
+  }
+  const type = (blob.type || "").toLowerCase();
+  if (type === "image/jpg" || type === "image/pjpeg") return "image/jpeg";
+  if (type.startsWith("image/")) return type;
+  return "image/jpeg";
+}
+
+export function blobToDataUrl(blob: Blob, mime?: string): Promise<string> {
+  const resolved = resolveImageMime(blob, mime);
+  const typed = blob.type === resolved ? blob : new Blob([blob], { type: resolved });
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      if (result.startsWith("data:image/")) {
+        resolve(result);
+        return;
+      }
+      const comma = result.indexOf(",");
+      if (comma > 0) {
+        resolve(`data:${resolved};base64,${result.slice(comma + 1)}`);
+        return;
+      }
+      reject(new Error("COMPRESSION_FAILED"));
+    };
     reader.onerror = () => reject(new Error("COMPRESSION_FAILED"));
-    reader.readAsDataURL(blob);
+    reader.readAsDataURL(typed);
   });
 }
 

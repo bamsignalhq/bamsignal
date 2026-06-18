@@ -10,7 +10,7 @@ import {
 } from "../../server/services/photoStorage.js";
 import { submitPhotoReview } from "../../server/services/photoReview.js";
 import { recordPhotoViolation } from "../../server/services/moderation.js";
-import { resolveSupabaseUrl } from "../../server/supabaseEnv.js";
+import { verifySupabaseBearerUserId } from "../../server/supabaseEnv.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -27,21 +27,7 @@ function parseBody(req) {
 async function verifyBearerUserId(req) {
   const authHeader = req.headers.authorization || "";
   const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
-  if (!bearer) return null;
-
-  const url = resolveSupabaseUrl();
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "";
-  if (!url || !anonKey) return null;
-
-  const response = await fetch(`${url}/auth/v1/user`, {
-    headers: {
-      apikey: anonKey,
-      Authorization: `Bearer ${bearer}`
-    }
-  });
-  if (!response.ok) return null;
-  const user = await response.json().catch(() => null);
-  return user?.id ? String(user.id) : null;
+  return verifySupabaseBearerUserId(bearer);
 }
 
 export default async function handler(req, res) {

@@ -103,3 +103,28 @@ export function supabaseServiceHeaders() {
   if (!serviceKey || !url || !isSupabaseServiceKeyFormat(serviceKey)) return null;
   return { url, serviceKey };
 }
+
+/** Runtime anon key for verifying member JWTs (photo upload API). */
+export function resolveSupabaseAnonKey() {
+  return normalizeEnvValue(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "");
+}
+
+/** Resolve Supabase user id from a member access token. */
+export async function verifySupabaseBearerUserId(bearer = "") {
+  const token = String(bearer || "").trim();
+  if (!token) return null;
+
+  const url = resolveSupabaseUrl();
+  const apiKey = resolveSupabaseAnonKey() || resolveSupabaseServiceKey();
+  if (!url || !apiKey || !isSupabaseServiceKeyFormat(apiKey)) return null;
+
+  const response = await fetch(`${url}/auth/v1/user`, {
+    headers: {
+      apikey: apiKey,
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!response.ok) return null;
+  const user = await response.json().catch(() => null);
+  return user?.id ? String(user.id) : null;
+}

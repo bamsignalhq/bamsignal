@@ -119,7 +119,7 @@ export function useCoverPhotoFlow({
         setLocalPreview(previewUrl);
 
         logPhotoPipeline("uploading", { kind: "cover" });
-        const remoteUrl = await uploadCompressedCoverBlob(compressed.blob, croppedFile);
+        const remoteUrl = await uploadCompressedCoverBlob(compressed.blob, croppedFile, compressed.mime);
         logPhotoPipeline("uploaded", { kind: "cover" });
 
         const assessment = await assessUploadedPhoto(croppedFile, "cover");

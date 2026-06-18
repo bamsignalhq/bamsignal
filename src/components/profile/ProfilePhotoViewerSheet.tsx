@@ -147,7 +147,7 @@ export function ProfilePhotoViewerSheet({
         return;
       }
 
-      const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
+      const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file, compressed.mime);
       const assessment = await assessUploadedPhoto(file, "profile");
       const meta = toPhotoReviewMeta("profile", assessment);
       const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);

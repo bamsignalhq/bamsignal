@@ -172,9 +172,23 @@ export async function deleteAllUserPhotoStorage(userId) {
 }
 
 export function decodeBase64ImagePayload(dataUrl = "") {
-  const match = String(dataUrl).match(/^data:(image\/[\w.+-]+);base64,(.+)$/);
-  if (!match) throw new PhotoStorageError("Invalid image payload.", 400);
-  const contentType = match[1] === "image/jpg" ? "image/jpeg" : match[1];
+  const raw = String(dataUrl).trim();
+  const match = raw.match(/^data:([^;]+);base64,(.+)$/i);
+  if (!match) {
+    throw new PhotoStorageError("Invalid image payload.", 400);
+  }
+
+  let contentType = String(match[1] || "").toLowerCase();
+  if (contentType === "image/jpg" || contentType === "image/pjpeg") {
+    contentType = "image/jpeg";
+  }
+  if (contentType === "application/octet-stream" || !contentType.startsWith("image/")) {
+    contentType = "image/jpeg";
+  }
+  if (contentType !== "image/jpeg" && contentType !== "image/webp") {
+    throw new PhotoStorageError("Unsupported image type. Use WebP or JPEG.", 400);
+  }
+
   const buffer = Buffer.from(match[2], "base64");
   if (!buffer.length) throw new PhotoStorageError("Empty image.", 400);
   if (buffer.length > 8 * 1024 * 1024) {

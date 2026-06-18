@@ -40,37 +40,55 @@ async function authHeaders(): Promise<Record<string, string>> {
 async function uploadCompressedBlob(
   kind: "profile" | "cover",
   blob: Blob,
-  photoId?: string
+  photoId?: string,
+  mime?: string
 ): Promise<{ url: string; photoId?: string }> {
-  const imageBase64 = await blobToDataUrl(blob);
+  const imageBase64 = await blobToDataUrl(blob, mime);
   const body: Record<string, string> = { kind, imageBase64 };
   if (photoId) body.photoId = photoId;
 
-  logPhotoPipeline("uploading", { kind, compressedSize: blob.size, photoId: photoId || null });
+  logPhotoPipeline("uploading", { kind, compressedSize: blob.size, photoId: photoId || null, mime: mime || blob.type || null });
 
-  const response = await fetch(apiUrl("/api/member/photos?action=upload"), {
-    method: "POST",
-    headers: await authHeaders(),
-    body: JSON.stringify(body)
-  });
-  const payload = await readResponseJson<{ ok?: boolean; url?: string; error?: string; storageUnavailable?: boolean; photoId?: string }>(response);
-  if (!response.ok || !payload?.ok || !payload.url) {
-    const storageUnavailable = Boolean(payload?.storageUnavailable) || response.status === 503;
-    logPhotoPipeline("failed", {
-      kind,
-      stage: "storage",
-      status: response.status,
-      storageUnavailable,
-      error: payload?.error || "unknown"
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const response = await fetch(apiUrl("/api/member/photos?action=upload"), {
+      method: "POST",
+      headers: await authHeaders(),
+      body: JSON.stringify(body)
     });
-    throw new PhotoUploadError(String(payload?.error || PHOTO_UPLOAD_FAIL), {
-      code: "STORAGE_FAILED",
-      fallbackAllowed: storageUnavailable
-    });
+    const payload = await readResponseJson<{ ok?: boolean; url?: string; error?: string; storageUnavailable?: boolean; photoId?: string }>(response);
+
+    if (response.status === 401 && attempt === 0 && supabase) {
+      logPhotoUpload("upload_auth_retry", { kind });
+      await supabase.auth.refreshSession();
+      continue;
+    }
+
+    if (!response.ok || !payload?.ok || !payload.url) {
+      const storageUnavailable = Boolean(payload?.storageUnavailable) || response.status === 503;
+      const serverMessage = payload?.error?.trim();
+      const message =
+        serverMessage ||
+        (response.status === 401
+          ? "Login required to upload photos. Sign out and sign in again."
+          : PHOTO_UPLOAD_FAIL);
+      logPhotoPipeline("failed", {
+        kind,
+        stage: "storage",
+        status: response.status,
+        storageUnavailable,
+        error: serverMessage || "unknown"
+      });
+      throw new PhotoUploadError(message, {
+        code: response.status === 401 ? "UPLOAD_FAILED" : "STORAGE_FAILED",
+        fallbackAllowed: storageUnavailable
+      });
+    }
+
+    logPhotoPipeline("uploaded", { kind, url: String(payload.url) });
+    return { url: String(payload.url), photoId: payload.photoId ? String(payload.photoId) : photoId };
   }
 
-  logPhotoPipeline("uploaded", { kind, url: String(payload.url) });
-  return { url: String(payload.url), photoId: payload.photoId ? String(payload.photoId) : photoId };
+  throw new PhotoUploadError(PHOTO_UPLOAD_FAIL, { code: "UPLOAD_FAILED" });
 }
 
 async function uploadWithEmergencyFallback(
@@ -78,10 +96,10 @@ async function uploadWithEmergencyFallback(
   file: File,
   compressOpts?: { maxEdge?: number; quality?: number; maxBytes?: number }
 ): Promise<string> {
-  const { blob } = await fileToCompressedImageBlob(file, compressOpts);
+  const compressed = await fileToCompressedImageBlob(file, compressOpts);
   const photoId = kind === "profile" ? crypto.randomUUID() : undefined;
   try {
-    const result = await uploadCompressedBlob(kind, blob, photoId);
+    const result = await uploadCompressedBlob(kind, compressed.blob, photoId, compressed.mime);
     return result.url;
   } catch (error) {
     if (
@@ -125,9 +143,13 @@ export async function compressPhotoForPreview(file: File) {
   return fileToCompressedImageBlob(file);
 }
 
-export async function uploadCompressedProfileBlob(blob: Blob, fallbackFile?: File): Promise<string> {
+export async function uploadCompressedProfileBlob(
+  blob: Blob,
+  fallbackFile?: File,
+  mime?: string
+): Promise<string> {
   try {
-    const result = await uploadCompressedBlob("profile", blob, crypto.randomUUID());
+    const result = await uploadCompressedBlob("profile", blob, crypto.randomUUID(), mime);
     return result.url;
   } catch (error) {
     if (
@@ -142,9 +164,13 @@ export async function uploadCompressedProfileBlob(blob: Blob, fallbackFile?: Fil
   }
 }
 
-export async function uploadCompressedCoverBlob(blob: Blob, fallbackFile?: File): Promise<string> {
+export async function uploadCompressedCoverBlob(
+  blob: Blob,
+  fallbackFile?: File,
+  mime?: string
+): Promise<string> {
   try {
-    const result = await uploadCompressedBlob("cover", blob);
+    const result = await uploadCompressedBlob("cover", blob, undefined, mime);
     return result.url;
   } catch (error) {
     if (
@@ -169,6 +195,11 @@ export function mapUploadError(error: unknown): PhotoUploadError {
   }
   if (message.includes("COMPRESSION_FAILED")) {
     return new PhotoUploadError(PHOTO_UPLOAD_FAIL, { code: "COMPRESSION_FAILED" });
+  }
+  if (/failed to fetch|network error|load failed/i.test(message)) {
+    return new PhotoUploadError("Unable to connect. Check your internet and try again.", {
+      code: "UPLOAD_FAILED"
+    });
   }
   return new PhotoUploadError(PHOTO_UPLOAD_FAIL, { code: "UPLOAD_FAILED" });
 }

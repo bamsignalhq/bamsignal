@@ -33,8 +33,13 @@ export type PhotoModerationResult = {
 };
 
 export function isLikelyImageFile(file: File): boolean {
-  if (file.type.startsWith("image/")) return true;
-  return IMAGE_EXTENSIONS.test(file.name || "");
+  const type = (file.type || "").toLowerCase();
+  if (type.startsWith("image/")) return true;
+  const name = file.name || "";
+  if (IMAGE_EXTENSIONS.test(name)) return true;
+  // Mobile camera/gallery picks often omit MIME type and file extension.
+  if (!type && file.size > 0) return true;
+  return false;
 }
 
 function recordStrike(storageKey: string): { count: number; isFinal: boolean } {
@@ -83,7 +88,7 @@ export async function moderatePhotoUpload(
     return { allowed: true, message: "", mode, photoReviewStatus: "approved", photoRiskFlags: [] };
   }
 
-  if (!isLikelyImageFile(file)) {
+  if (file.type && !file.type.startsWith("image/") && !isLikelyImageFile(file)) {
     return {
       allowed: false,
       message: PHOTO_UPLOAD_FAIL,

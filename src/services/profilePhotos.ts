@@ -23,8 +23,15 @@ export class PhotoUploadError extends Error {
 
 async function authHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const session = await supabase?.auth.getSession();
-  const token = session?.data.session?.access_token;
+  if (!supabase) return headers;
+
+  let session = (await supabase.auth.getSession()).data.session;
+  if (!session?.access_token) {
+    const refreshed = await supabase.auth.refreshSession();
+    session = refreshed.data.session;
+  }
+
+  const token = session?.access_token;
   if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
 }

@@ -2607,3 +2607,26 @@ body {
   font-weight: 600;
   cursor: pointer;
 }
+
+.settings-card--logout {
+  margin-top: 12px;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.settings-row--logout {
+  border-color: color-mix(in srgb, #ef4444 40%, var(--border));
+  background: color-mix(in srgb, #ef4444 10%, var(--card));
+  color: #ef4444;
+}
+
+.app.light .settings-row--logout {
+  color: #dc2626;
+  background: color-mix(in srgb, #ef4444 8%, var(--card));
+}
+
+.settings-row--logout:hover {
+  background: color-mix(in srgb, #ef4444 16%, var(--card));
+}

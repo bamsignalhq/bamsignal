@@ -48,7 +48,7 @@ import {
   isUserVerificationPending
 } from "../utils/verificationQueue";
 import { notifyVerificationApproved } from "../utils/notifyHelpers";
-import { MAX_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import { MAX_PROFILE_PHOTOS } from "../constants/photos";
 import { safeCoverPhoto } from "../utils/safeProfile";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
@@ -323,8 +323,8 @@ export function ProfilePage({
                   photoMeta: nextPhotoMeta ?? p.photoMeta
                 });
                 if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
-                  showModMessage(PHOTO_UPLOAD_FAIL);
-                  return p;
+                  showModMessage(USER_MESSAGES.profileSaveFailed);
+                  return next;
                 }
                 syncMemberProfileRemote(user, next);
                 return next;
@@ -488,8 +488,8 @@ export function ProfilePage({
                     photoMeta: nextPhotoMeta ?? p.photoMeta
                   });
                   if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
-                    showModMessage(PHOTO_UPLOAD_FAIL);
-                    return p;
+                    showModMessage(USER_MESSAGES.profileSaveFailed);
+                    return next;
                   }
                   syncMemberProfileRemote(user, next);
                   return next;
@@ -511,8 +511,8 @@ export function ProfilePage({
                     photoMeta: nextPhotoMeta ?? p.photoMeta
                   });
                   if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
-                    showModMessage(PHOTO_UPLOAD_FAIL);
-                    return p;
+                    showModMessage(USER_MESSAGES.profileSaveFailed);
+                    return next;
                   }
                   syncMemberProfileRemote(user, next);
                   return next;
@@ -728,6 +728,12 @@ export function ProfilePage({
                 <SettingsRow label="Verification" onClick={() => setSettingsPanel("verification")} />
                 <SettingsRow label="Subscription" onClick={() => setSettingsPanel("subscription")} />
                 <SettingsRow label="Help" onClick={() => setSettingsPanel("help")} />
+              </section>
+              <section className="card settings-card settings-card--logout">
+                <button type="button" className="settings-row settings-row--logout" onClick={handleLogout}>
+                  <LogOut size={20} aria-hidden />
+                  <span>Log out</span>
+                </button>
               </section>
             </>
           )}

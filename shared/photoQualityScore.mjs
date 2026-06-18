@@ -106,26 +106,26 @@ export function assessProfilePhoto({
   }
 
   if (hasQr) {
-    return {
-      hardBlock: true,
-      hardBlockCategory: "qr_code",
-      pendingReview: false,
-      riskFlags: ["qr_detected"],
-      riskScore: PHOTO_RISK_WEIGHTS.qr_code
-    };
+    riskFlags.push("qr_detected");
+    riskScore = addRisk(riskScore, "qr_code");
   }
 
   const combinedText = String(ocrText || "");
   const hasFlyerText = containsBusinessFlyerText(combinedText);
 
-  if (hasFlyerText || textDensity >= TEXT_HEAVY_DENSITY) {
+  if (hasFlyerText) {
     return {
       hardBlock: true,
-      hardBlockCategory: hasFlyerText ? "logo" : "text_heavy",
+      hardBlockCategory: "logo",
       pendingReview: false,
-      riskFlags: [hasFlyerText ? "possible_logo" : "text_heavy"],
-      riskScore: addRisk(0, hasFlyerText ? "logo" : "text_heavy")
+      riskFlags: ["possible_logo"],
+      riskScore: addRisk(0, "logo")
     };
+  }
+
+  if (textDensity >= TEXT_HEAVY_DENSITY) {
+    riskFlags.push("text_heavy");
+    riskScore = addRisk(riskScore, "text_heavy");
   }
 
   if (!hasAdequateFace) {

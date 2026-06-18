@@ -147,8 +147,9 @@ function testProfileRiskScoring() {
     hasDocumentKeywords: false,
     hasContactLeak: false
   });
-  assert.equal(memeText.hardBlock, true);
-  assert.equal(memeText.hardBlockCategory, "text_heavy");
+  assert.equal(memeText.hardBlock, false);
+  assert.equal(memeText.pendingReview, true);
+  assert.ok(memeText.riskFlags.includes("text_heavy"));
 
   const ninHard = assessProfilePhoto({
     hasAdequateFace: true,

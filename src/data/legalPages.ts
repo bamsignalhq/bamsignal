@@ -251,7 +251,7 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
     highlights: [
       { label: "Response time", value: "Few hours" },
       { label: "Support hours", value: "Weekdays" },
-      { label: "Quick Response", value: "WhatsApp" }
+      { label: "Reach us", value: "Email" }
     ],
     sections: [
       {
@@ -262,7 +262,7 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
       {
         heading: "Other ways to reach us",
         body:
-          "Prefer WhatsApp or email? Message us on WhatsApp for a quick reply, or write to support@bamsignal.com — we aim to respond within a few hours on weekdays."
+          "Write to support@bamsignal.com from the email on your account — we aim to respond within a few hours on weekdays."
       }
     ]
   },

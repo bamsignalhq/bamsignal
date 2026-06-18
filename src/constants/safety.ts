@@ -1,8 +1,5 @@
 import type { DmControl, Gender, ReportReason, SafetySettings, WhoCanSignalMe, ActivityVisibility } from "../types";
 
-export const SUPPORT_WHATSAPP = "+2348035143299";
-export const SUPPORT_WHATSAPP_URL = "https://wa.me/2348035143299";
-
 export const BACKGROUND_CHECK_DISCLAIMER =
   "BamSignal does not conduct criminal background checks on users. Users are responsible for exercising caution and making safe decisions when interacting with others online or offline. BamSignal is not responsible for the conduct of users outside the platform.";
 

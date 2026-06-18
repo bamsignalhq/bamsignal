@@ -1,11 +1,9 @@
-import { ArrowLeft, ExternalLink, Shield } from "lucide-react";
-import {
-  BACKGROUND_CHECK_DISCLAIMER,
-  SAFETY_CENTER_SECTIONS,
-  SUPPORT_WHATSAPP,
-  SUPPORT_WHATSAPP_URL
-} from "../constants/safety";
+import { ArrowLeft, ExternalLink, Mail, Shield } from "lucide-react";
+import { BACKGROUND_CHECK_DISCLAIMER, SAFETY_CENTER_SECTIONS } from "../constants/safety";
+import { getCms } from "../constants/cms";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "../constants/support";
 import { navigateToPath } from "../constants/routes";
+import { whatsappHref } from "../utils/whatsapp";
 
 type SafetyCenterPageProps = {
   onBack: () => void;
@@ -13,6 +11,8 @@ type SafetyCenterPageProps = {
 };
 
 export function SafetyCenterPage({ onBack, onOpenProfile }: SafetyCenterPageProps) {
+  const supportWhatsapp = getCms().supportWhatsapp.trim();
+
   return (
     <div className="page safety-center-page safety-center-page--clean">
       <header className="safety-center-page__head">
@@ -42,20 +42,35 @@ export function SafetyCenterPage({ onBack, onOpenProfile }: SafetyCenterPageProp
           <div>
             <h2 className="safety-center-card__title">Contact Support</h2>
             <p className="safety-center-card__body">
-              WhatsApp:{" "}
-              <a href={SUPPORT_WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
-                {SUPPORT_WHATSAPP}
-              </a>
+              {supportWhatsapp ? (
+                <>
+                  WhatsApp:{" "}
+                  <a href={whatsappHref(supportWhatsapp)} target="_blank" rel="noopener noreferrer">
+                    {supportWhatsapp}
+                  </a>
+                </>
+              ) : (
+                <>
+                  Email us at{" "}
+                  <a href={SUPPORT_MAILTO}>{SUPPORT_EMAIL}</a>
+                </>
+              )}
             </p>
           </div>
-          <a
-            className="btn-secondary btn-sm safety-center-card__link"
-            href={SUPPORT_WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Message us <ExternalLink size={14} aria-hidden />
-          </a>
+          {supportWhatsapp ? (
+            <a
+              className="btn-secondary btn-sm safety-center-card__link"
+              href={whatsappHref(supportWhatsapp)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Message us <ExternalLink size={14} aria-hidden />
+            </a>
+          ) : (
+            <a className="btn-secondary btn-sm safety-center-card__link" href={SUPPORT_MAILTO}>
+              Email support <Mail size={14} aria-hidden />
+            </a>
+          )}
         </article>
 
         <article className="card safety-center-card safety-center-card--muted">

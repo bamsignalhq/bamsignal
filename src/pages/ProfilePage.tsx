@@ -944,7 +944,7 @@ export function ProfilePage({
               <p className="settings-help-intro">
                 {getCms().supportWhatsapp
                   ? `Reach us on WhatsApp. ${getCms().supportResponseTime}.`
-                  : `We're here to help. ${getCms().supportResponseTime}.`}
+                  : `Reach us by email. ${getCms().supportResponseTime}.`}
               </p>
               <p className="settings-help-hours">{getCms().supportHours}</p>
               <ContactForm

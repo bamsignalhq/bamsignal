@@ -1071,15 +1071,22 @@
   pointer-events: none;
 }
 
+.profile-hero--me {
+  text-align: center;
+}
+
 .profile-hero__cover-edit {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  left: 50%;
+  right: auto;
+  top: auto;
+  bottom: 12px;
+  transform: translateX(-50%);
   z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 8px 16px;
   border: 1px solid color-mix(in srgb, #fff 28%, transparent);
   border-radius: 999px;
   background: color-mix(in srgb, #0f172a 62%, transparent);
@@ -1089,6 +1096,7 @@
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 4px 16px color-mix(in srgb, #000 24%, transparent);
+  white-space: nowrap;
 }
 
 .profile-hero__cover-edit:disabled {
@@ -1103,15 +1111,16 @@
   justify-content: flex-start;
   gap: 0;
   text-align: center;
+  width: 100%;
   margin-top: -54px;
-  padding: 0 20px 20px;
+  padding: 0 20px 4px;
   position: relative;
   z-index: 1;
 }
 
 .profile-hero--me .profile-hero__body {
   margin-top: -54px;
-  padding-bottom: 8px;
+  padding-bottom: 0;
 }
 
 .profile-hero__avatar-block {
@@ -1120,6 +1129,43 @@
   align-items: center;
   gap: 0;
   flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.profile-hero__photo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+  margin: 10px auto 0;
+  padding: 0 16px 14px;
+}
+
+.profile-hero__photo-thumb-wrap {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: var(--input-bg);
+  box-shadow: 0 2px 8px color-mix(in srgb, #000 10%, transparent);
+}
+
+.profile-hero__photo-thumb-wrap--main {
+  border-color: color-mix(in srgb, var(--brand-pink) 55%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-pink) 22%, transparent);
+}
+
+.profile-hero__photo-thumb-wrap img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
 }
 
 .profile-hero__avatar-nav,
@@ -1261,11 +1307,12 @@
 }
 
 .profile-hero__meta {
-  margin: 14px 0 0;
+  margin: 14px auto 0;
   padding-bottom: 0;
   min-width: 0;
   width: 100%;
   max-width: 360px;
+  text-align: center;
 }
 
 .profile-hero__name {
@@ -1274,6 +1321,7 @@
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.12;
+  text-align: center;
 }
 
 .profile-hero__meta-line {

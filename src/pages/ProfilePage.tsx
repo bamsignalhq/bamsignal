@@ -499,6 +499,7 @@ export function ProfilePage({
             />
             <h4 className="profile-form-row__label">Profile photos</h4>
             <PhotoUploadGrid
+              className="photo-upload-grid--centered"
               photos={profile.photos}
               photoMeta={profile.photoMeta}
               coverPhoto={profile.coverPhoto}

@@ -36,6 +36,7 @@ type PhotoUploadGridProps = {
   onModerationMessage?: (message: string) => void;
   /** Signup/onboarding — gallery only, no cover */
   signupMode?: boolean;
+  className?: string;
 };
 
 export function PhotoUploadGrid({
@@ -44,7 +45,8 @@ export function PhotoUploadGrid({
   coverPhoto,
   onChange,
   onModerationMessage,
-  signupMode = false
+  signupMode = false,
+  className = ""
 }: PhotoUploadGridProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -209,7 +211,7 @@ export function PhotoUploadGrid({
   const aboveMax = photoCount > MAX_PROFILE_PHOTOS;
 
   return (
-    <div className="photo-upload-grid">
+    <div className={`photo-upload-grid ${className}`.trim()}>
       {aboveMax ? (
         <p className="photo-upload-grid__hint photo-upload-grid__hint--warn" role="status">
           Maximum {MAX_PROFILE_PHOTOS} photos allowed.

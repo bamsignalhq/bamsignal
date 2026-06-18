@@ -78,7 +78,7 @@ export function ProfileCoverHeader({
               ) : (
                 <ImagePlus size={15} aria-hidden />
               )}
-              {flow.hasCustomCover ? "Change backdrop" : "Add backdrop"}
+              {flow.hasCustomCover ? "Change backdrop photo" : "Add backdrop photo"}
             </button>
           ) : null}
         </div>
@@ -122,6 +122,19 @@ export function ProfileCoverHeader({
             )}
           </div>
         </div>
+
+        {photos.length > 0 ? (
+          <div className="profile-hero__photo-strip" aria-label="Profile photos">
+            {photos.map((src, index) => (
+              <div
+                key={`${src}-${index}`}
+                className={`profile-hero__photo-thumb-wrap${index === 0 ? " profile-hero__photo-thumb-wrap--main" : ""}`}
+              >
+                <img src={src} alt={index === 0 ? "Main profile photo" : `Profile photo ${index + 1}`} />
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {editableCover && onCoverChange ? (
           <input

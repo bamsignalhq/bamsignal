@@ -131,10 +131,6 @@ export function onboardingWelcomeTitle(name = ""): string {
   return `Welcome to BamSignal, ${first} ❤️`;
 }
 
-export function onboardingWelcomeBody(name = ""): string {
-  const first = firstNameFromDisplayName(name);
-  if (!first) {
-    return "Your profile is ready. Discover genuine people around you and take things one signal at a time.";
-  }
-  return `${first}, your profile is ready. Discover genuine people around you and take things one signal at a time.`;
+export function onboardingWelcomeBody(_name = ""): string {
+  return "Your profile is ready. Discover genuine people around you and take things one signal at a time.";
 }

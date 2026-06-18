@@ -177,7 +177,6 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
           ageMax={ageMax}
           city={city}
           state={state}
-          searchCities={fetchCitiesForFeed.length > 1 ? fetchCitiesForFeed : searchCities}
           distanceKm={distanceKm}
           hasCustomFilters={hasCustomFilters}
           onOpenQuickFilters={() => setQuickFiltersOpen(true)}

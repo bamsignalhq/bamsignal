@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { Check, X } from "lucide-react";
-import type { PlanId, PremiumPlan } from "../constants/plans";
-import { SIGNAL_PASS_INCLUDES, durationLabel, planBadge, planShortLabel } from "../constants/plans";
+import type { PremiumPlan } from "../constants/plans";
+import { SIGNAL_PASS_INCLUDES, durationLabel, planBadge, planCheckoutLabel } from "../constants/plans";
 import { BRAND, MONETIZATION_COPY } from "../constants/copy";
 import { trackEvent } from "../utils/analytics";
 import { trackUpgradeClick, trackUpgradeImpression } from "../utils/premiumConversion";
@@ -14,29 +14,18 @@ type PaywallModalProps = {
   loading?: boolean;
 };
 
-function defaultPlanId(plans: PremiumPlan[]): PlanId {
-  return plans.find((p) => p.id === "monthly")?.id ?? plans[0]?.id ?? "monthly";
-}
-
 export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: PaywallModalProps) {
-  const [selectedId, setSelectedId] = useState<PlanId>(() => defaultPlanId(plans));
-  const selected = useMemo(
-    () => plans.find((p) => p.id === selectedId) ?? plans[0],
-    [plans, selectedId]
-  );
-
   useEffect(() => {
     if (open) {
       trackEvent("paywall_seen", { source: "paywall_modal" });
       trackUpgradeImpression("paywall_modal");
-      setSelectedId(defaultPlanId(plans));
     }
-  }, [open, plans]);
+  }, [open]);
 
   if (!open) return null;
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation" onClick={loading ? undefined : onClose}>
       <div
         className="paywall-modal paywall-modal--fintech"
         role="dialog"
@@ -44,7 +33,7 @@ export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: Pa
         aria-labelledby="paywall-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
+        <button type="button" className="modal-close" onClick={onClose} aria-label="Close" disabled={loading}>
           <X size={20} />
         </button>
 
@@ -55,18 +44,20 @@ export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: Pa
 
         <div className="premium-plan-strip premium-plan-strip--modal" aria-label="Signal Pass plans">
           {plans.map((plan) => {
-            const active = plan.id === selectedId;
             const badge = planBadge(plan);
             return (
               <button
                 key={plan.id}
                 type="button"
-                className={`premium-plan-strip__card${active ? " premium-plan-strip__card--selected" : ""}`}
-                onClick={() => setSelectedId(plan.id)}
-                aria-pressed={active}
+                className="premium-plan-strip__card premium-plan-strip__card--checkout"
+                disabled={loading}
+                onClick={() => {
+                  trackUpgradeClick("paywall_modal");
+                  onSelectPlan(plan);
+                }}
               >
                 <div className="premium-plan-strip__main">
-                  <span className="premium-plan-strip__name">{planShortLabel(plan)}</span>
+                  <span className="premium-plan-strip__name">{planCheckoutLabel(plan)}</span>
                   <span className="premium-plan-strip__duration">{durationLabel(plan.days)}</span>
                 </div>
                 <div className="premium-plan-strip__aside">
@@ -90,18 +81,11 @@ export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: Pa
           </ul>
         </div>
 
-        <button
-          type="button"
-          className="btn-primary btn-full premium-page__upgrade"
-          disabled={loading || !selected}
-          onClick={() => {
-            if (!selected) return;
-            trackUpgradeClick("paywall_modal");
-            onSelectPlan(selected);
-          }}
-        >
-          {loading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.getSignalPass}
-        </button>
+        {loading ? (
+          <p className="paywall-modal__status" role="status">
+            {MONETIZATION_COPY.checkoutLoading}
+          </p>
+        ) : null}
       </div>
     </div>
   );

@@ -53,6 +53,7 @@ type DiscoverPageProps = {
   plans: PremiumPlan[];
   onMatch: (match: Match) => void;
   onUpgrade: (plan: PremiumPlan) => void;
+  onStartPremiumCheckout: () => void;
   paymentLoading?: boolean;
   onOpenSafety?: () => void;
 };
@@ -62,6 +63,7 @@ export function DiscoverPage({
   plans,
   onMatch: _onMatch,
   onUpgrade,
+  onStartPremiumCheckout,
   paymentLoading,
   onOpenSafety
 }: DiscoverPageProps) {
@@ -334,7 +336,7 @@ export function DiscoverPage({
       />
       <DiscoverQuickFilters active={quickFilter} onChange={setQuickFilter} />
       {!isPremium ? (
-        <DiscoverSignalPassPill onClick={() => setPaywallOpen(true)} />
+        <DiscoverSignalPassPill onClick={onStartPremiumCheckout} />
       ) : null}
       {passedIds.length > 0 ? (
         <button type="button" className="discover-undo-btn" onClick={handleUndoPass}>
@@ -414,7 +416,7 @@ export function DiscoverPage({
         />
       )}
 
-      {atLimit && <DiscoverPremiumNudge onUpgrade={() => setPaywallOpen(true)} />}
+      {atLimit && <DiscoverPremiumNudge onUpgrade={onStartPremiumCheckout} />}
 
       <PaywallModal
         open={paywallOpen}

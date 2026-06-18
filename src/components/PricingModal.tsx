@@ -1,9 +1,9 @@
 import { Check, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { BoostShop } from "./BoostShop";
 import type { BoostProduct } from "../constants/boosts";
-import type { PlanId, PremiumPlan } from "../constants/plans";
-import { SIGNAL_PASS_INCLUDES, durationLabel, planBadge, planShortLabel } from "../constants/plans";
+import type { PremiumPlan } from "../constants/plans";
+import { SIGNAL_PASS_INCLUDES, durationLabel, planBadge, planCheckoutLabel } from "../constants/plans";
 import { BRAND, MONETIZATION_COPY } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
 import { fetchBoostProducts } from "../services/boosts";
@@ -20,10 +20,6 @@ type PricingModalProps = {
   memberCity?: string;
 };
 
-function defaultPlanId(plans: PremiumPlan[]): PlanId {
-  return plans.find((p) => p.id === "monthly")?.id ?? plans[0]?.id ?? "monthly";
-}
-
 export function PricingModal({
   open,
   onClose,
@@ -35,11 +31,6 @@ export function PricingModal({
 }: PricingModalProps) {
   const [boosts, setBoosts] = useState<BoostProduct[]>([]);
   const [memberCity, setMemberCity] = useState("");
-  const [selectedId, setSelectedId] = useState<PlanId>(() => defaultPlanId(plans));
-  const selected = useMemo(
-    () => plans.find((p) => p.id === selectedId) ?? plans[0],
-    [plans, selectedId]
-  );
 
   useEffect(() => {
     if (!open) return;
@@ -47,13 +38,12 @@ export function PricingModal({
     const profile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
     const user = readJson<{ city?: string }>(STORAGE_KEYS.userProfile, {});
     setMemberCity(memberCityProp?.trim() || profile.city?.trim() || user.city?.trim() || "");
-    setSelectedId(defaultPlanId(plans));
-  }, [open, plans, memberCityProp]);
+  }, [open, memberCityProp]);
 
   if (!open) return null;
 
   return (
-    <div className="modal-backdrop pricing-modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop pricing-modal-backdrop" role="presentation" onClick={loading ? undefined : onClose}>
       <div
         className="pricing-modal pricing-modal--v6 pricing-modal--fintech"
         role="dialog"
@@ -72,18 +62,17 @@ export function PricingModal({
 
         <div className="premium-plan-strip premium-plan-strip--modal" aria-label="Signal Pass plans">
           {plans.map((plan) => {
-            const active = plan.id === selectedId;
             const badge = planBadge(plan);
             return (
               <button
                 key={plan.id}
                 type="button"
-                className={`premium-plan-strip__card${active ? " premium-plan-strip__card--selected" : ""}`}
-                onClick={() => setSelectedId(plan.id)}
-                aria-pressed={active}
+                className="premium-plan-strip__card premium-plan-strip__card--checkout"
+                disabled={loading}
+                onClick={() => onSelectPlan(plan)}
               >
                 <div className="premium-plan-strip__main">
-                  <span className="premium-plan-strip__name">{planShortLabel(plan)}</span>
+                  <span className="premium-plan-strip__name">{planCheckoutLabel(plan)}</span>
                   <span className="premium-plan-strip__duration">{durationLabel(plan.days)}</span>
                 </div>
                 <div className="premium-plan-strip__aside">
@@ -107,14 +96,11 @@ export function PricingModal({
           </ul>
         </div>
 
-        <button
-          type="button"
-          className="btn-primary btn-full premium-page__upgrade"
-          disabled={loading || !selected}
-          onClick={() => selected && onSelectPlan(selected)}
-        >
-          {loading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.getSignalPass}
-        </button>
+        {loading ? (
+          <p className="paywall-modal__status" role="status">
+            {MONETIZATION_COPY.checkoutLoading}
+          </p>
+        ) : null}
 
         {boosts.length > 0 && onPurchaseBoost && (
           <BoostShop

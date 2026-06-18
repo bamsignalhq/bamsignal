@@ -44,7 +44,6 @@ import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelp
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
 import { hydrateMemberData, registerMember } from "./services/memberData";
-import { syncMemberProfileRemote } from "./services/cityHome";
 import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
@@ -102,7 +101,6 @@ import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdent
 import { clearMemberSessionCaches } from "./utils/authSession";
 import { safeUserProfile } from "./utils/safeProfile";
 import { boostNeedsMemberCity } from "./constants/boosts";
-import { PAYMENT_START_ERROR } from "./config/paystack";
 import { boostSuccessCopy } from "./constants/boosts";
 import { MONETIZATION_COPY } from "./constants/copy";
 import { USER_MESSAGES } from "./constants/userMessages";
@@ -112,6 +110,12 @@ import { flowLog } from "./utils/flowLog";
 import { repairMemberCaches } from "./utils/repairMemberCaches";
 import { memberFirstName } from "./utils/safeProfile";
 import { usePlans } from "./context/PlansContext";
+import {
+  PremiumCheckoutProvider,
+  type CheckoutPhase
+} from "./context/PremiumCheckoutContext";
+import { defaultPremiumPlan } from "./utils/premiumPlan";
+import { checkoutWasOpened } from "./utils/paymentState";
 
 export function App() {
   const isNative = Capacitor.getPlatform() !== "web";
@@ -135,6 +139,7 @@ export function App() {
   const [authMessage, setAuthMessage] = useState("");
   const [isPremium, setIsPremium] = useState(() => isPremiumActive());
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentPhase, setPaymentPhase] = useState<CheckoutPhase>("idle");
   const [pricingOpen, setPricingOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [memberOverlay, setMemberOverlay] = useState<"visitors" | "premium" | "safety" | null>(null);
@@ -800,37 +805,50 @@ export function App() {
         openAuth("signup", tab === "home" ? "discover" : tab);
         return;
       }
+      if (paymentLoading) return;
+
       setPaymentFlowTick((v) => v + 1);
       setPaymentLoading(true);
+      setPaymentPhase("preparing");
       setAuthMessage("");
       trackEvent("payment_started", { plan: plan.id });
       try {
-        const result = await startPlanPayment(plan, user);
+        const result = await startPlanPayment(plan, user, {
+          onPhase: (phase) => setPaymentPhase(phase)
+        });
         setPaymentFlowTick((v) => v + 1);
 
         if (!result.ok) {
           if (result.cancelled) {
-            setAuthMessage(USER_MESSAGES.paymentNotCompleted);
+            if (checkoutWasOpened()) {
+              setAuthMessage(USER_MESSAGES.paymentNotCompleted);
+            }
             return;
           }
-          setAuthMessage(result.error || PAYMENT_START_ERROR);
+          setAuthMessage(result.error || MONETIZATION_COPY.checkoutStartFailed);
           return;
         }
 
         setPricingOpen(false);
+        setMemberOverlay(null);
         if (result.needsVerify) {
           await processPaymentReturn();
         }
       } finally {
         setPaymentLoading(false);
+        setPaymentPhase("idle");
       }
     },
-    [isAuthed, openAuth, processPaymentReturn, tab, user]
+    [isAuthed, openAuth, paymentLoading, processPaymentReturn, tab, user]
   );
 
-  const openPricing = useCallback(() => {
-    setPricingOpen(true);
-  }, []);
+  const startPremiumCheckout = useCallback(
+    (plan?: PremiumPlan) => {
+      const target = plan ?? defaultPremiumPlan(plans);
+      if (target) void handleUpgrade(target);
+    },
+    [handleUpgrade, plans]
+  );
 
   const handlePurchaseBoost = useCallback(
     async (product: BoostProduct) => {
@@ -849,12 +867,11 @@ export function App() {
       }
 
       const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
-      syncMemberProfileRemote(user, datingProfile);
-
       const durationHours = product.id === "profile-boost" ? 48 : 24;
 
       setPaymentFlowTick((v) => v + 1);
       setPaymentLoading(true);
+      setPaymentPhase("preparing");
       setAuthMessage("");
       try {
         const result = await startBoostPayment(
@@ -862,15 +879,18 @@ export function App() {
           product.price,
           user,
           memberCity || datingProfile.city || "",
-          durationHours
+          durationHours,
+          { onPhase: (phase) => setPaymentPhase(phase) }
         );
         setPaymentFlowTick((v) => v + 1);
         if (!result.ok) {
           if (result.cancelled) {
-            setAuthMessage(USER_MESSAGES.paymentNotCompleted);
+            if (checkoutWasOpened()) {
+              setAuthMessage(USER_MESSAGES.paymentNotCompleted);
+            }
             return;
           }
-          setAuthMessage(result.error || PAYMENT_START_ERROR);
+          setAuthMessage(result.error || MONETIZATION_COPY.checkoutStartFailed);
           return;
         }
         setPricingOpen(false);
@@ -879,10 +899,16 @@ export function App() {
         }
       } finally {
         setPaymentLoading(false);
+        setPaymentPhase("idle");
       }
     },
     [isAuthed, openAuth, processPaymentReturn, tab, user]
   );
+
+  const paymentOverlayMessage =
+    paymentPhase === "opening"
+      ? MONETIZATION_COPY.checkoutOpening
+      : MONETIZATION_COPY.checkoutLoading;
 
   const upgradeById = useCallback(
     (planId: string) => {
@@ -890,6 +916,16 @@ export function App() {
       if (plan) void handleUpgrade(plan);
     },
     [handleUpgrade, plans]
+  );
+
+  const premiumCheckoutValue = useMemo(
+    () => ({
+      busy: paymentLoading,
+      phase: paymentPhase,
+      label: paymentOverlayMessage,
+      startPremiumCheckout
+    }),
+    [paymentLoading, paymentOverlayMessage, paymentPhase, startPremiumCheckout]
   );
 
   const openHardLogin = () => {
@@ -1107,6 +1143,7 @@ export function App() {
   }
 
   return (
+    <PremiumCheckoutProvider value={premiumCheckoutValue}>
     <div className={`app ${theme} platform-root ${isAuthed ? "platform-root--member" : ""}`}>
       <div
         className="platform-shell"
@@ -1133,14 +1170,16 @@ export function App() {
           />
         )}
 
-        {paymentLoading && memberAccessReady && <PaymentLoadingOverlay />}
+        {paymentLoading && memberAccessReady && (
+          <PaymentLoadingOverlay message={paymentOverlayMessage} />
+        )}
 
         {showPaymentRecovery && memberAccessReady && (
           <PaymentRecoveryBanner
             onRetry={() => {
               clearPaymentSession();
               setPaymentFlowTick((v) => v + 1);
-              setPricingOpen(true);
+              startPremiumCheckout();
             }}
             onDismiss={() => {
               clearPaymentSession();
@@ -1186,9 +1225,7 @@ export function App() {
               viewsToday={getProfileViewsToday()}
               isPremium={isPremium}
               onBack={() => setMemberOverlay(null)}
-              onUpgrade={() => {
-                setMemberOverlay("premium");
-              }}
+              onUpgrade={startPremiumCheckout}
               onSendSignal={() => {
                 setMemberOverlay(null);
                 setTab("discover");
@@ -1214,7 +1251,7 @@ export function App() {
               userName={user.name}
               isPremium={isPremium}
               onDiscover={() => setTab("discover")}
-              onOpenPremium={() => setMemberOverlay("premium")}
+              onOpenPremium={startPremiumCheckout}
             />
           )}
           {tab === "home" && isGuest && (
@@ -1231,6 +1268,7 @@ export function App() {
               plans={plans}
               onMatch={() => undefined}
               onUpgrade={handleUpgrade}
+              onStartPremiumCheckout={startPremiumCheckout}
               paymentLoading={paymentLoading}
               onOpenSafety={() => setMemberOverlay("safety")}
             />
@@ -1242,7 +1280,8 @@ export function App() {
           {memberAccessReady && tab === "likes" && (
             <LikesPage
               isPremium={isPremium}
-              onUpgrade={openPricing}
+              onUpgrade={startPremiumCheckout}
+              paymentLoading={paymentLoading}
               onCompleteProfile={() => setTab("me")}
               onDiscover={() => setTab("discover")}
               onOpenSafety={() => setMemberOverlay("safety")}
@@ -1256,6 +1295,7 @@ export function App() {
               isPremium={isPremium}
               plans={plans}
               onUpgrade={handleUpgrade}
+              onStartPremiumCheckout={startPremiumCheckout}
               paymentLoading={paymentLoading}
               onDiscover={() => setTab("discover")}
             />
@@ -1271,7 +1311,7 @@ export function App() {
               onToggleTheme={toggleTheme}
               onUserChange={setUser}
               onLogout={handleLogout}
-              onUpgrade={openPricing}
+              onUpgrade={startPremiumCheckout}
               onReturnToDashboard={() => setTab("home")}
               onOpenSafetyCenter={() => setMemberOverlay("safety")}
             />
@@ -1317,5 +1357,6 @@ export function App() {
         memberCity={getMemberCity()}
       />
     </div>
+    </PremiumCheckoutProvider>
   );
 }

@@ -1,6 +1,6 @@
 import { ArrowLeft, MoreVertical, Pin, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { EXPERIENCE_COPY, MONETIZATION_COPY } from "../constants/copy";
+import { EXPERIENCE_COPY } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
 import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
 import { ActivityStatus } from "../components/ActivityStatus";
@@ -45,6 +45,7 @@ type ChatsPageProps = {
   isPremium: boolean;
   plans: PremiumPlan[];
   onUpgrade: (plan: PremiumPlan) => void;
+  onStartPremiumCheckout: () => void;
   paymentLoading?: boolean;
   onDiscover?: () => void;
 };
@@ -79,7 +80,14 @@ function toggleThreadPinned(matchId: string): boolean {
   return pinned;
 }
 
-export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDiscover }: ChatsPageProps) {
+export function ChatsPage({
+  isPremium,
+  plans,
+  onUpgrade,
+  onStartPremiumCheckout,
+  paymentLoading,
+  onDiscover
+}: ChatsPageProps) {
   const [activeMatch, setActiveMatch] = useState<Match | null>(null);
   const [query, setQuery] = useState("");
   const [paywallOpen, setPaywallOpen] = useState(false);
@@ -186,8 +194,8 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
               </button>
             ) : null}
             {!isPremium ? (
-              <button type="button" className="btn-secondary" onClick={() => setPaywallOpen(true)}>
-                {MONETIZATION_COPY.upgradeToday}
+              <button type="button" className="btn-secondary" onClick={onStartPremiumCheckout} disabled={paymentLoading}>
+                {paymentLoading ? "Preparing secure checkout..." : "Upgrade Today"}
               </button>
             ) : null}
           </div>

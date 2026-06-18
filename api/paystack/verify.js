@@ -39,9 +39,18 @@ function buildReference(prefix) {
   return `bs_${prefix}_${stamp}_${random}`.slice(0, 64);
 }
 
+let pricingPlansCache = null;
+let pricingPlansCacheAt = 0;
+
 async function loadPricingPlans() {
+  const now = Date.now();
+  if (pricingPlansCache && now - pricingPlansCacheAt < 60_000) {
+    return pricingPlansCache;
+  }
   const stored = await getPlatformSetting("premium_plans", null);
-  return normalizePlans(stored);
+  pricingPlansCache = normalizePlans(stored);
+  pricingPlansCacheAt = now;
+  return pricingPlansCache;
 }
 
 async function premiumDaysFromTransaction(data) {
@@ -114,6 +123,7 @@ export default async function handler(req, res) {
 
       const planMeta = String(body.plan || plans.find((item) => item.days === days)?.id || "monthly");
       const reference = buildReference(planMeta);
+      const startedAt = Date.now();
 
       try {
         const data = await initializePaystackTransaction({
@@ -138,7 +148,8 @@ export default async function handler(req, res) {
           email,
           plan: planMeta,
           amount,
-          hasAccessCode: Boolean(data?.access_code)
+          hasAccessCode: Boolean(data?.access_code),
+          ms: Date.now() - startedAt
         });
 
         return res.status(200).json({

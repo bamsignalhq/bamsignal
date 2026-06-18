@@ -1,5 +1,5 @@
 import { ArrowLeft, Check, Star } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { BRAND, MONETIZATION_COPY } from "../constants/copy";
 import type { PlanId, PremiumPlan } from "../constants/plans";
 import { SIGNAL_PASS_INCLUDES, planBadge, planCheckoutLabel } from "../constants/plans";
@@ -12,10 +12,6 @@ type PremiumPageProps = {
   loading?: boolean;
 };
 
-function defaultPlanId(plans: PremiumPlan[]): PlanId {
-  return plans.find((p) => p.id === "monthly")?.id ?? plans[0]?.id ?? "monthly";
-}
-
 const FEATURED_PLAN_ORDER: PlanId[] = ["monthly", "quarterly", "weekly"];
 
 export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }: PremiumPageProps) {
@@ -26,12 +22,6 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
     );
     return featured.length ? featured : plans;
   }, [plans]);
-
-  const [selectedId, setSelectedId] = useState<PlanId>(() => defaultPlanId(orderedPlans));
-  const selected = useMemo(
-    () => orderedPlans.find((p) => p.id === selectedId) ?? orderedPlans[0],
-    [orderedPlans, selectedId]
-  );
 
   return (
     <div className="page premium-page premium-page--fintech">
@@ -56,15 +46,14 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
         <>
           <section className="premium-plan-buttons" aria-label="Signal Pass plans">
             {orderedPlans.map((plan) => {
-              const active = plan.id === selectedId;
               const badge = planBadge(plan);
               return (
                 <button
                   key={plan.id}
                   type="button"
-                  className={`premium-plan-button${active ? " premium-plan-button--selected" : ""}`}
-                  onClick={() => setSelectedId(plan.id)}
-                  aria-pressed={active}
+                  className="premium-plan-button"
+                  disabled={loading}
+                  onClick={() => onSelectPlan(plan)}
                 >
                   <span>
                     <span className="premium-plan-button__name">{planCheckoutLabel(plan)}</span>
@@ -90,14 +79,11 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
             </ul>
           </section>
 
-          <button
-            type="button"
-            className="btn-primary btn-full premium-page__upgrade"
-            disabled={loading || !selected}
-            onClick={() => selected && onSelectPlan(selected)}
-          >
-            {loading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.upgradeToday}
-          </button>
+          {loading ? (
+            <p className="premium-page__checkout-status" role="status">
+              {MONETIZATION_COPY.checkoutLoading}
+            </p>
+          ) : null}
         </>
       )}
     </div>

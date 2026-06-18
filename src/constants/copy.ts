@@ -98,6 +98,8 @@ export const MONETIZATION_COPY = {
   goPremium: "Go Premium",
   getSignalPass: "Upgrade Today",
   checkoutLoading: "Preparing secure checkout...",
+  checkoutOpening: "Opening checkout...",
+  checkoutStartFailed: "We couldn't start checkout. Please try again.",
   paymentSuccessTitle: "Welcome to Signal Pass ❤️",
   paymentSuccessBody: "Enjoy unlimited connections.",
   paymentCancelledTitle: "No worries ❤️",

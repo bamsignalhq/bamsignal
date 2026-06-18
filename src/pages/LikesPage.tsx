@@ -35,6 +35,7 @@ import { useAndroidBack } from "../hooks/useAndroidBack";
 type LikesPageProps = {
   isPremium: boolean;
   onUpgrade: () => void;
+  paymentLoading?: boolean;
   onCompleteProfile?: () => void;
   onDiscover?: () => void;
   onOpenSafety?: () => void;
@@ -104,7 +105,14 @@ function applySegment(signals: LikeEntry[], segment: SignalsSegment): LikeEntry[
   }
 }
 
-export function LikesPage({ isPremium, onUpgrade, onDiscover, onOpenSafety }: LikesPageProps) {
+export function LikesPage({
+  isPremium,
+  onUpgrade,
+  paymentLoading,
+  onCompleteProfile,
+  onDiscover,
+  onOpenSafety
+}: LikesPageProps) {
   const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
   const viewer = getDatingProfile();
   const [signals, setSignals] = useState<LikeEntry[]>(() =>
@@ -288,8 +296,8 @@ export function LikesPage({ isPremium, onUpgrade, onDiscover, onOpenSafety }: Li
           <p>{PREMIUM_COPY.signalsEmptyBody}</p>
           <div className="premium-empty-actions">
             {!isPremium ? (
-              <button type="button" className="btn-primary" onClick={onUpgrade}>
-                {MONETIZATION_COPY.upgradeToday}
+              <button type="button" className="btn-primary" onClick={onUpgrade} disabled={paymentLoading}>
+                {paymentLoading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.upgradeToday}
               </button>
             ) : null}
             <button

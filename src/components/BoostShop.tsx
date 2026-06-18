@@ -1,5 +1,6 @@
 import type { BoostProduct } from "../constants/boosts";
 import { boostNeedsMemberCity, shopBoostDescription } from "../constants/boosts";
+import { MONETIZATION_COPY } from "../constants/copy";
 
 type BoostShopProps = {
   products: BoostProduct[];
@@ -40,7 +41,7 @@ export function BoostShop({ products, onPurchase, loading, memberCity = "" }: Bo
                 disabled={disabled}
                 onClick={() => onPurchase(product)}
               >
-                {product.cta}
+                {loading ? MONETIZATION_COPY.checkoutLoading : product.cta}
               </button>
             </article>
           );

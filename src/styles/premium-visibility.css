@@ -227,7 +227,15 @@
   text-transform: uppercase;
 }
 
-.premium-includes__list li svg {
-  color: var(--brand-pink);
-  flex-shrink: 0;
+.premium-page__checkout-status,
+.paywall-modal__status {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.premium-plan-strip__card--checkout:disabled {
+  opacity: 0.72;
+  cursor: wait;
 }

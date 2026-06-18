@@ -46,7 +46,14 @@ type StartPaymentResult = {
   needsVerify?: boolean;
 };
 
+export type PaymentCheckoutPhase = "preparing" | "opening";
+
+type CheckoutCallbacks = {
+  onPhase?: (phase: PaymentCheckoutPhase) => void;
+};
+
 async function postInitialize(url: string, body: Record<string, unknown>): Promise<InitPayload> {
+  const started = typeof performance !== "undefined" ? performance.now() : 0;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -59,7 +66,8 @@ async function postInitialize(url: string, body: Record<string, unknown>): Promi
   }
   logPaymentEvent("payment initialized", {
     reference: payload.reference,
-    hasAccessCode: Boolean(payload.access_code)
+    hasAccessCode: Boolean(payload.access_code),
+    ms: started ? Math.round(performance.now() - started) : undefined
   });
   return payload as InitPayload;
 }
@@ -111,13 +119,18 @@ async function launchCheckout(
   return { ok: true, reference: outcome.reference, needsVerify: true };
 }
 
-export async function startPlanPayment(plan: PremiumPlan, user: UserProfile): Promise<StartPaymentResult> {
+export async function startPlanPayment(
+  plan: PremiumPlan,
+  user: UserProfile,
+  callbacks: CheckoutCallbacks = {}
+): Promise<StartPaymentResult> {
   if (!user.email) {
     return { ok: false, error: "Add a verified email before upgrading." };
   }
 
   beginPaymentSession();
   markPaymentSessionStarted();
+  callbacks.onPhase?.("preparing");
 
   try {
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize"), {
@@ -135,6 +148,7 @@ export async function startPlanPayment(plan: PremiumPlan, user: UserProfile): Pr
       return { ok: false, error: init.error || INIT_ERROR };
     }
 
+    callbacks.onPhase?.("opening");
     return await launchCheckout(init, "premium");
   } catch {
     setPaymentFlowState("idle");
@@ -142,19 +156,31 @@ export async function startPlanPayment(plan: PremiumPlan, user: UserProfile): Pr
   }
 }
 
-export function startWeeklyPassPayment(user: UserProfile, plans = DEFAULT_PREMIUM_PLANS) {
+export function startWeeklyPassPayment(
+  user: UserProfile,
+  plans = DEFAULT_PREMIUM_PLANS,
+  callbacks: CheckoutCallbacks = {}
+) {
   const plan = plans.find((p) => p.id === "weekly") || plans[0];
-  return startPlanPayment(plan, user);
+  return startPlanPayment(plan, user, callbacks);
 }
 
-export function startMonthlyPassPayment(user: UserProfile, plans = DEFAULT_PREMIUM_PLANS) {
+export function startMonthlyPassPayment(
+  user: UserProfile,
+  plans = DEFAULT_PREMIUM_PLANS,
+  callbacks: CheckoutCallbacks = {}
+) {
   const plan = plans.find((p) => p.id === "monthly") || plans[1] || plans[0];
-  return startPlanPayment(plan, user);
+  return startPlanPayment(plan, user, callbacks);
 }
 
-export function startQuarterlyPassPayment(user: UserProfile, plans = DEFAULT_PREMIUM_PLANS) {
+export function startQuarterlyPassPayment(
+  user: UserProfile,
+  plans = DEFAULT_PREMIUM_PLANS,
+  callbacks: CheckoutCallbacks = {}
+) {
   const plan = plans.find((p) => p.id === "quarterly") || plans[2] || plans[0];
-  return startPlanPayment(plan, user);
+  return startPlanPayment(plan, user, callbacks);
 }
 
 export async function verifyPayment(user: UserProfile): Promise<{
@@ -195,13 +221,17 @@ export async function verifyPayment(user: UserProfile): Promise<{
   }
 }
 
-export async function startQuickiePassPayment(user: UserProfile): Promise<StartPaymentResult> {
+export async function startQuickiePassPayment(
+  user: UserProfile,
+  callbacks: CheckoutCallbacks = {}
+): Promise<StartPaymentResult> {
   if (!user.email) {
     return { ok: false, error: "Add a verified email before purchasing a Fast Connection Pass." };
   }
 
   beginPaymentSession();
   markPaymentSessionStarted();
+  callbacks.onPhase?.("preparing");
 
   try {
     const catalog = await fetchSubscriptionCatalog();
@@ -222,6 +252,7 @@ export async function startQuickiePassPayment(user: UserProfile): Promise<StartP
       return { ok: false, error: init.error || INIT_ERROR };
     }
 
+    callbacks.onPhase?.("opening");
     return await launchCheckout(init, "quickie");
   } catch {
     setPaymentFlowState("idle");
@@ -278,7 +309,8 @@ export async function startBoostPayment(
   price: number,
   user: UserProfile,
   city: string,
-  durationHours = 48
+  durationHours = 48,
+  callbacks: CheckoutCallbacks = {}
 ): Promise<StartPaymentResult> {
   if (!user.email) {
     return { ok: false, error: "Add a verified email before purchasing a boost." };
@@ -286,6 +318,7 @@ export async function startBoostPayment(
 
   beginPaymentSession();
   markPaymentSessionStarted();
+  callbacks.onPhase?.("preparing");
 
   try {
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize-boost"), {
@@ -304,6 +337,7 @@ export async function startBoostPayment(
       return { ok: false, error: init.error || INIT_ERROR };
     }
 
+    callbacks.onPhase?.("opening");
     return await launchCheckout(init, "boost", {
       [STORAGE_KEYS.paymentBoostId]: boostId
     });

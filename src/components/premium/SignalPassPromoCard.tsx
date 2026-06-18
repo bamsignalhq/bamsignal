@@ -1,9 +1,10 @@
 import { Heart, Star, X } from "lucide-react";
 import { MONETIZATION_COPY, PREMIUM_COPY } from "../../constants/copy";
+import { usePremiumCheckout } from "../../context/PremiumCheckoutContext";
 
 type SignalPassPromoCardProps = {
   variant?: "settings" | "profile" | "home";
-  onUpgrade: () => void;
+  onUpgrade?: () => void;
   onDismiss?: () => void;
 };
 
@@ -12,7 +13,19 @@ export function SignalPassPromoCard({
   onUpgrade,
   onDismiss
 }: SignalPassPromoCardProps) {
+  const checkout = usePremiumCheckout();
   const Icon = variant === "profile" ? Star : Heart;
+  const busy = checkout.busy;
+  const ctaLabel = busy ? checkout.label : MONETIZATION_COPY.upgradeToday;
+
+  const handleUpgrade = () => {
+    if (busy) return;
+    if (onUpgrade) {
+      onUpgrade();
+      return;
+    }
+    checkout.startPremiumCheckout();
+  };
 
   return (
     <section
@@ -25,6 +38,7 @@ export function SignalPassPromoCard({
           className="signal-pass-promo__dismiss"
           onClick={onDismiss}
           aria-label="Dismiss for 7 days"
+          disabled={busy}
         >
           <X size={16} aria-hidden />
         </button>
@@ -60,8 +74,14 @@ export function SignalPassPromoCard({
         )}
       </div>
 
-      <button type="button" className="signal-pass-promo__cta" onClick={onUpgrade}>
-        {MONETIZATION_COPY.upgradeToday}
+      <button
+        type="button"
+        className="signal-pass-promo__cta"
+        onClick={handleUpgrade}
+        disabled={busy}
+        aria-busy={busy}
+      >
+        {ctaLabel}
       </button>
     </section>
   );

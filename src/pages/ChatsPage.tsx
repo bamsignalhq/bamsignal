@@ -45,7 +45,6 @@ type ChatsPageProps = {
   isPremium: boolean;
   plans: PremiumPlan[];
   onUpgrade: (plan: PremiumPlan) => void;
-  onStartPremiumCheckout: () => void;
   paymentLoading?: boolean;
   onDiscover?: () => void;
 };
@@ -84,7 +83,6 @@ export function ChatsPage({
   isPremium,
   plans,
   onUpgrade,
-  onStartPremiumCheckout,
   paymentLoading,
   onDiscover
 }: ChatsPageProps) {
@@ -194,8 +192,8 @@ export function ChatsPage({
               </button>
             ) : null}
             {!isPremium ? (
-              <button type="button" className="btn-secondary" onClick={onStartPremiumCheckout} disabled={paymentLoading}>
-                {paymentLoading ? "Preparing secure checkout..." : "Upgrade Today"}
+              <button type="button" className="btn-secondary" onClick={() => setPaywallOpen(true)}>
+                Upgrade Today
               </button>
             ) : null}
           </div>

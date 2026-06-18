@@ -1299,7 +1299,6 @@ export function App() {
               isPremium={isPremium}
               plans={plans}
               onUpgrade={handleUpgrade}
-              onStartPremiumCheckout={startPremiumCheckout}
               paymentLoading={paymentLoading}
               onDiscover={() => setTab("discover")}
             />

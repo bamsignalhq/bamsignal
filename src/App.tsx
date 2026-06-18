@@ -1097,7 +1097,7 @@ export function App() {
           notificationCount={notificationUnread}
           onNotificationsClick={() => setNotificationsOpen(true)}
           showEarlyAccess={false}
-          showMemberNav={false}
+          showMemberNav={isAuthed && !showOnboarding}
           memberTab={tab}
           onMemberNavigate={navigateTab}
           likeCount={incomingSignals}
@@ -1243,17 +1243,17 @@ export function App() {
         {!isNative && isGuest && !showOnboarding && tab !== "home" && (
           <SiteFooter className="site-footer--compact" onLogoClick={goHome} />
         )}
-
-        {!showOnboarding && (
-          <BottomNav
-            active={tab}
-            onNavigate={navigateTab}
-            isGuest={isGuest}
-            onJoin={() => openAuth("signup")}
-            likeCount={isAuthed ? incomingSignals : 0}
-          />
-        )}
       </div>
+
+      {!showOnboarding && (
+        <BottomNav
+          active={tab}
+          onNavigate={navigateTab}
+          isGuest={isGuest}
+          onJoin={() => openAuth("signup")}
+          likeCount={isAuthed ? incomingSignals : 0}
+        />
+      )}
 
       <NotificationCenter
         open={notificationsOpen}

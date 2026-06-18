@@ -33,6 +33,28 @@ async function sendEmail(payload) {
   return response;
 }
 
+function contactSuccessResult(acknowledgement) {
+  return {
+    ok: true,
+    acknowledgement,
+    message: "Support request received."
+  };
+}
+
+function parseContactRequestBody(req) {
+  const raw = req?.body;
+  if (!raw) return {};
+  if (typeof raw === "object" && !Buffer.isBuffer(raw)) return raw;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 export async function handleContactPost(body) {
   const { name, email, topic, message } = body || {};
 
@@ -113,30 +135,35 @@ export async function handleContactPost(body) {
     throw new ContactError(502, "We're unable to send your message right now. Please try again shortly.", detail);
   }
 
-  const acknowledgementResponse = await sendEmail({
-    from,
-    to: safeEmail,
-    subject: "We received your BamSignal message",
-    text: `Hi ${safeName},\n\nWe’ve received your BamSignal message about "${safeTopic}" and will get back to you as soon as possible.${buildPlainEmailFooter()}`,
-    html: acknowledgementHtml
-  });
+  // User acknowledgement is best-effort — inbox delivery already succeeded.
+  try {
+    const acknowledgementResponse = await sendEmail({
+      from,
+      to: safeEmail,
+      subject: "We received your BamSignal message",
+      text: `Hi ${safeName},\n\nWe’ve received your BamSignal message about "${safeTopic}" and will get back to you as soon as possible.${buildPlainEmailFooter()}`,
+      html: acknowledgementHtml
+    });
 
-  if (!acknowledgementResponse.ok) {
-    return {
-      ok: true,
-      acknowledgement: false,
-      message: "Support request received."
-    };
+    if (!acknowledgementResponse.ok) {
+      const detail = await acknowledgementResponse.text().catch(() => "");
+      console.warn("[bamsignal] contact acknowledgement failed:", detail.slice(0, 240));
+      return contactSuccessResult(false);
+    }
+
+    return contactSuccessResult(true);
+  } catch (error) {
+    console.warn("[bamsignal] contact acknowledgement error:", error);
+    return contactSuccessResult(false);
   }
-
-  return {
-    ok: true,
-    acknowledgement: true,
-    message: "Support request received."
-  };
 }
 
 export function sendContactJson(res, status, payload) {
+  if (typeof res.status === "function" && typeof res.json === "function") {
+    res.status(status).json(payload);
+    return;
+  }
+
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(payload));
@@ -149,7 +176,7 @@ export async function handleContactNodeRequest(req, res) {
   }
 
   try {
-    const result = await handleContactPost(req.body || {});
+    const result = await handleContactPost(parseContactRequestBody(req));
     return sendContactJson(res, 200, result);
   } catch (error) {
     if (error instanceof ContactError) {
@@ -160,6 +187,7 @@ export async function handleContactNodeRequest(req, res) {
       });
     }
 
+    console.error("[bamsignal] contact form error:", error);
     return sendContactJson(res, 500, {
       ok: false,
       error: "We're unable to send your message right now. Please try again shortly."

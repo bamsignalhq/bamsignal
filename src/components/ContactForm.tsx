@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Loader2, Send } from "lucide-react";
 import { apiUrl } from "../services/supabase";
+import { readResponseJson } from "../utils/httpJson";
 import { createAdditionPuzzle, parseCaptchaAnswer } from "../utils/mathCaptcha";
 
 const TOPICS = [
@@ -95,22 +96,19 @@ export function ContactForm({
         })
       });
 
-      const contentType = response.headers.get("content-type") || "";
-      let data: { ok?: boolean; error?: string; message?: string } = {};
+      const data = await readResponseJson<{ ok?: boolean; error?: string; message?: string }>(response);
 
-      if (contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const text = (await response.text()).trim();
-        throw new Error(text && text.length < 160 ? "send_failed" : "send_failed");
+      if (response.ok && (data == null || data.ok !== false)) {
+        setStatus("success");
+        setForm(EMPTY);
+        refreshCaptcha();
+        return;
       }
 
-      if (!response.ok || !data.ok) {
-        throw new Error("send_failed");
-      }
-
-      setStatus("success");
-      setForm(EMPTY);
+      setStatus("error");
+      setError(
+        data?.error || "We're unable to send your message right now. Please try again shortly."
+      );
       refreshCaptcha();
     } catch {
       setStatus("error");

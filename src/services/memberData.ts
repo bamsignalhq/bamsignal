@@ -9,7 +9,7 @@ import { normalizeDatingProfile } from "../utils/profile";
 import { isComplianceComplete, normalizeCompliance } from "../utils/compliance";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import { readResponseJson } from "../utils/httpJson";
-import { safeArray, safeCoverPhoto, safePhotos } from "../utils/safeProfile";
+import { mergeMemberCover, safeArray, safePhotos } from "../utils/safeProfile";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
 
@@ -142,12 +142,7 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
     const remotePhotos = safePhotos(remote.photos);
     const localPhotos = safePhotos(local.photos);
     const mergedPhotos = remotePhotos.length >= localPhotos.length ? remotePhotos : localPhotos;
-    const remoteCover = safeCoverPhoto(remote.coverPhoto);
-    const localCover = safeCoverPhoto(local.coverPhoto);
-    const coverPhoto = remoteCover || localCover;
-    const coverPhotoExplicit = Boolean(
-      (remote.coverPhotoExplicit ?? local.coverPhotoExplicit) && coverPhoto
-    );
+    const { coverPhoto, coverPhotoExplicit } = mergeMemberCover(local, remote);
     const onboardingIncomplete = !Boolean(local.onboardingComplete || remote.onboardingComplete);
     const interestsTouched = Boolean(
       onboardingIncomplete ? local.interestsTouched : local.interestsTouched || remote.interestsTouched

@@ -9,7 +9,7 @@ import type { DatingProfile, MatchPreferences } from "../types";
 import { normalizeCompliance } from "./compliance";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
-import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString } from "./safeProfile";
+import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString, safeUserCoverPhoto } from "./safeProfile";
 import { prunePhotoMeta, safePhotoMeta } from "./photoMeta";
 
 export const defaultDatingProfile = (): DatingProfile => ({
@@ -104,7 +104,7 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
   const rawInterests = safeArray<string>(cleaned.interests).map((item) => safeString(item)).filter(Boolean);
   const interests = onboardingComplete || interestsTouched ? rawInterests : [];
   const rawPhotosList = safePhotos(cleaned.photos ?? base.photos);
-  const persistableCover = safeCoverPhoto(cleaned.coverPhoto);
+  const persistableCover = safeUserCoverPhoto(cleaned.coverPhoto);
 
   let coverPhoto: string | undefined;
   let coverPhotoExplicit = false;

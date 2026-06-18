@@ -1,11 +1,11 @@
 import { Camera, Loader2, X } from "lucide-react";
-import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { CoverPhotoCropModal } from "./CoverPhotoCropModal";
 import { useCoverPhotoFlow } from "../hooks/useCoverPhotoFlow";
 import type { PhotoReviewMeta } from "../types";
 
 type CoverPhotoUploadProps = {
   coverPhoto?: string;
+  coverPhotoExplicit?: boolean;
   photoMeta?: Record<string, PhotoReviewMeta>;
   profilePhotos: string[];
   onChange: (coverPhoto: string | undefined, photoMeta?: Record<string, PhotoReviewMeta>) => void;
@@ -14,6 +14,7 @@ type CoverPhotoUploadProps = {
 
 export function CoverPhotoUpload({
   coverPhoto,
+  coverPhotoExplicit,
   photoMeta,
   profilePhotos,
   onChange,
@@ -21,19 +22,24 @@ export function CoverPhotoUpload({
 }: CoverPhotoUploadProps) {
   const flow = useCoverPhotoFlow({
     coverPhoto,
+    coverPhotoExplicit,
     photoMeta,
     profilePhotos,
     onChange,
     onModerationMessage
   });
 
-  const preview = flow.localPreview || flow.persistedCover || DEFAULT_PROFILE_COVER;
+  const preview = flow.displayCover;
 
   return (
     <>
       <div className="cover-photo-upload">
         <div className="cover-photo-upload__frame">
-          <img src={preview} alt="" className="cover-photo-upload__preview" />
+          {preview ? (
+            <img src={preview} alt="" className="cover-photo-upload__preview" />
+          ) : (
+            <div className="cover-photo-upload__empty" aria-hidden />
+          )}
           <div className="cover-photo-upload__actions">
             <button
               type="button"

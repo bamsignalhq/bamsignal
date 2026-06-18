@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { PHOTO_UPLOAD_FAIL, photoModerationUserMessage, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
@@ -17,10 +17,11 @@ import { PHOTO_FILE_ACCEPT, blobToDataUrl, validatePhotoFile } from "../utils/ph
 import { logPhotoPipeline } from "../utils/photoUploadLog";
 import { upsertPhotoMeta } from "../utils/photoMeta";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
-import { safeCoverPhoto } from "../utils/safeProfile";
+import { isShowcasePhotoUrl, safeUserCoverPhoto } from "../utils/safeProfile";
 
 type UseCoverPhotoFlowOptions = {
   coverPhoto?: string;
+  coverPhotoExplicit?: boolean;
   photoMeta?: Record<string, PhotoReviewMeta>;
   profilePhotos: string[];
   onChange: (coverPhoto: string | undefined, photoMeta?: Record<string, PhotoReviewMeta>) => void;
@@ -29,6 +30,7 @@ type UseCoverPhotoFlowOptions = {
 
 export function useCoverPhotoFlow({
   coverPhoto,
+  coverPhotoExplicit,
   photoMeta,
   profilePhotos,
   onChange,
@@ -37,11 +39,26 @@ export function useCoverPhotoFlow({
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [pendingCover, setPendingCover] = useState<string | null>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const cropSrcRef = useRef<string | null>(null);
 
-  const persistedCover = safeCoverPhoto(coverPhoto);
-  const hasCustomCover = Boolean(localPreview || persistedCover);
+  const persistedCover = safeUserCoverPhoto(coverPhoto);
+  const hasPersistedCover = coverPhotoExplicit !== false && Boolean(persistedCover);
+
+  useEffect(() => {
+    if (!pendingCover || !persistedCover) return;
+    if (samePhotoRef(pendingCover, persistedCover)) {
+      setPendingCover(null);
+    }
+  }, [pendingCover, persistedCover]);
+
+  const displayCover =
+    localPreview ||
+    pendingCover ||
+    (hasPersistedCover ? persistedCover : null);
+
+  const hasCustomCover = Boolean(displayCover);
 
   const setCropPreview = useCallback((next: string | null) => {
     if (cropSrcRef.current) URL.revokeObjectURL(cropSrcRef.current);
@@ -65,7 +82,7 @@ export function useCoverPhotoFlow({
       });
 
       setUploading(true);
-      const previousCover = persistedCover;
+      const previousCover = hasPersistedCover ? persistedCover : undefined;
       const priorMeta = photoMeta;
       let previewUrl: string | null = null;
 
@@ -115,6 +132,7 @@ export function useCoverPhotoFlow({
         const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
 
         setLocalPreview(null);
+        setPendingCover(remoteUrl);
         onChange(remoteUrl, nextMeta);
 
         if (meta.photoReviewStatus === "pending_review" || meta.photoReviewStatus === "rejected") {
@@ -132,7 +150,12 @@ export function useCoverPhotoFlow({
         logPhotoPipeline("saved", { kind: "cover", reviewStatus: meta.photoReviewStatus });
       } catch (error) {
         setLocalPreview(null);
-        onChange(previousCover, priorMeta);
+        setPendingCover(null);
+        if (previousCover && !isShowcasePhotoUrl(previousCover)) {
+          onChange(previousCover, priorMeta);
+        } else {
+          onChange(undefined, priorMeta);
+        }
         const mapped = mapUploadError(error);
         logPhotoPipeline("failed", { kind: "cover", code: mapped.code, reason: mapped.message });
         onModerationMessage?.(mapped.message || PHOTO_UPLOAD_FAIL);
@@ -141,7 +164,7 @@ export function useCoverPhotoFlow({
         setUploading(false);
       }
     },
-    [onChange, persistedCover, photoMeta, profilePhotos, onModerationMessage]
+    [hasPersistedCover, onChange, persistedCover, photoMeta, profilePhotos, onModerationMessage]
   );
 
   const handleFileChange = useCallback(
@@ -184,6 +207,7 @@ export function useCoverPhotoFlow({
     const nextMeta = { ...photoMeta };
     if (previousCover && nextMeta[previousCover]) delete nextMeta[previousCover];
     setLocalPreview(null);
+    setPendingCover(null);
     onChange(undefined, nextMeta);
     if (previousCover && isStoragePhotoUrl(previousCover)) {
       void deleteStoredPhoto(previousCover);
@@ -194,6 +218,7 @@ export function useCoverPhotoFlow({
     fileRef,
     uploading,
     hasCustomCover,
+    displayCover,
     localPreview,
     persistedCover,
     cropSrc,

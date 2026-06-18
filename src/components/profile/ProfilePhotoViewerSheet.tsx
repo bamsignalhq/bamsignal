@@ -196,7 +196,7 @@ export function ProfilePhotoViewerSheet({
               src={heroPhoto}
               alt={memberName ? `${memberName} photo ${photoIndex + 1}` : `Profile photo ${photoIndex + 1}`}
               fallbackSrc={DEFAULT_PROFILE_COVER}
-              className="profile-detail-sheet__img--face"
+              className="profile-detail-sheet__img--full"
             />
           ) : (
             <div className="profile-photo-viewer__empty">

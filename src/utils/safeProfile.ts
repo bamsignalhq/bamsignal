@@ -4,6 +4,11 @@ import { normalizeIntents } from "../constants/intents";
 import type { DatingProfile, DiscoverProfile, IntentTag, UserProfile } from "../types";
 import { isBlobPreviewUrl, isDataUrl, isStoragePhotoUrl } from "./photoRefs";
 
+/** Marketing / demo assets — never a member's backdrop. */
+export function isShowcasePhotoUrl(src?: string | null): boolean {
+  return Boolean(src?.startsWith("/showcase/"));
+}
+
 export function safeString(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
 }
@@ -40,6 +45,52 @@ export function safeCoverPhoto(coverPhoto: unknown): string | undefined {
   return isPersistablePhotoUrl(value) ? value : undefined;
 }
 
+/** Member backdrop — excludes bundled marketing / demo showcase assets. */
+export function safeUserCoverPhoto(coverPhoto: unknown): string | undefined {
+  const value = safeCoverPhoto(coverPhoto);
+  if (!value || isShowcasePhotoUrl(value)) return undefined;
+  return value;
+}
+
+/** Prefer a member-uploaded backdrop when merging local + server profile snapshots. */
+export function mergeMemberCover(
+  local: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit">,
+  remote: Record<string, unknown>
+): Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit"> {
+  const localCover = safeUserCoverPhoto(local.coverPhoto);
+  const remoteCover = safeUserCoverPhoto(remote.coverPhoto);
+  const localExplicit = local.coverPhotoExplicit === true;
+  const remoteExplicit = remote.coverPhotoExplicit === true;
+
+  if (localExplicit && localCover) {
+    return { coverPhoto: localCover, coverPhotoExplicit: true };
+  }
+  if (
+    localCover &&
+    remoteCover &&
+    localCover !== remoteCover &&
+    isStoragePhotoUrl(localCover)
+  ) {
+    return { coverPhoto: localCover, coverPhotoExplicit: true };
+  }
+  if (remoteExplicit && remoteCover) {
+    return { coverPhoto: remoteCover, coverPhotoExplicit: true };
+  }
+  if (localCover && isStoragePhotoUrl(localCover)) {
+    return { coverPhoto: localCover, coverPhotoExplicit: localExplicit || remoteExplicit || true };
+  }
+  if (remoteCover && isStoragePhotoUrl(remoteCover)) {
+    return { coverPhoto: remoteCover, coverPhotoExplicit: remoteExplicit || localExplicit || true };
+  }
+  if (localCover) {
+    return { coverPhoto: localCover, coverPhotoExplicit: localExplicit };
+  }
+  if (remoteCover) {
+    return { coverPhoto: remoteCover, coverPhotoExplicit: remoteExplicit };
+  }
+  return { coverPhoto: undefined, coverPhotoExplicit: false };
+}
+
 export function resolveCoverPhoto(
   profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit" | "onboardingComplete">
 ): string {
@@ -54,7 +105,7 @@ export function hasExplicitCover(
   profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit" | "onboardingComplete">
 ): boolean {
   if (!profile.onboardingComplete) return false;
-  if (!safeCoverPhoto(profile.coverPhoto)) return false;
+  if (!safeUserCoverPhoto(profile.coverPhoto)) return false;
   return profile.coverPhotoExplicit !== false;
 }
 

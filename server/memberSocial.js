@@ -680,6 +680,8 @@ export async function fetchMemberSocialBundle({ email, phone }) {
       ? {
           photos,
           coverPhoto: profileJson.coverPhoto,
+          coverPhotoExplicit: profileJson.coverPhotoExplicit,
+          photoMeta: profileJson.photoMeta,
           age: profileJson.age || 25,
           dateOfBirth: profileJson.dateOfBirth,
           gender: profileJson.gender,

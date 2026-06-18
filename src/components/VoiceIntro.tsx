@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { moderateVoiceIntroTranscript } from "../utils/mediaModeration";
 
 const MIN_VOICE_SECONDS = 3;
-const MAX_VOICE_SECONDS = 60;
-const RECOMMENDED_MIN = 30;
+const MAX_VOICE_SECONDS = 20;
 
 type VoiceIntroProps = {
   url?: string;
@@ -176,7 +175,7 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
           return;
         }
         if (secondsRecorded > MAX_VOICE_SECONDS) {
-          onRejected?.("Voice intro can be up to 60 seconds.");
+          onRejected?.("Voice intro can be up to 20 seconds.");
           return;
         }
 
@@ -217,9 +216,7 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
 
   return (
     <div className="voice-intro-recorder">
-      <p className="voice-intro-recorder__hint">
-        Record a voice introduction between {MIN_VOICE_SECONDS} and {MAX_VOICE_SECONDS} seconds. About {RECOMMENDED_MIN} seconds is a good length.
-      </p>
+      <p className="voice-intro-recorder__hint">Record your voice introduction</p>
       {url ? (
         <div className="voice-intro-recorder__row">
           <VoiceIntro url={url} />

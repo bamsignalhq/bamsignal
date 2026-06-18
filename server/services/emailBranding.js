@@ -3,7 +3,6 @@ import { getPlatformSetting } from "../db.js";
 export const BAMSIGNAL_SITE = "https://bamsignal.com";
 export const BAMSIGNAL_LOGO = `${BAMSIGNAL_SITE}/brand/logo.webp`;
 export const BAMSIGNAL_LOGO_2X = `${BAMSIGNAL_SITE}/brand/logo.png`;
-export const SUPPORT_EMAIL = "support@bamsignal.com";
 
 /** Light brand theme — matches app tokens (--bg, --brand-purple, etc.) */
 export const EMAIL_THEME = {
@@ -190,9 +189,6 @@ export function buildEmailFooter({ year = new Date().getFullYear() } = {}) {
               <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:${EMAIL_THEME.text}">BamSignal</p>
               <p style="margin:0 0 4px;font-size:12px;color:${EMAIL_THEME.textMuted}">Send a Signal.</p>
               <p style="margin:0 0 18px;font-size:12px;color:${EMAIL_THEME.textMuted}">Meet people who match your vibe.</p>
-              <p style="margin:0 0 18px;font-size:12px;line-height:1.5">
-                <a href="mailto:${SUPPORT_EMAIL}" style="color:${EMAIL_THEME.link};text-decoration:none">${SUPPORT_EMAIL}</a>
-              </p>
               <p style="margin:0 0 16px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${EMAIL_THEME.textMuted}">Follow BamSignal</p>
               ${buildSocialIconsRow()}
 

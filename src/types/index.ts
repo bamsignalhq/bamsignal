@@ -168,6 +168,8 @@ export type PhotoReviewMeta = {
 
 export type DatingProfile = {
   photos: string[];
+  /** Primary profile photo URL — used for avatars and cards */
+  mainPhotoUrl?: string;
   /** Per-photo moderation metadata keyed by storage URL */
   photoMeta?: Record<string, PhotoReviewMeta>;
   /** Wide hero backdrop — separate from profile gallery photos */
@@ -309,6 +311,7 @@ export type DiscoverProfile = {
   bio: string;
   photo: string;
   photos?: string[];
+  mainPhotoUrl?: string;
   intents: IntentTag[];
   interests?: string[];
   religion?: Religion;

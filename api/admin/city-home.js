@@ -1,3 +1,4 @@
+import { discoverPhotoFromProfile } from "../../shared/mainPhoto.mjs";
 import { requireAdmin } from "../../server/adminAuth.js";
 import { requireAdminConsent } from "../../server/adminConsent.js";
 import { getDatabaseStatus } from "../../server/db.js";
@@ -30,7 +31,7 @@ function memberSummary(row) {
     city: row.city,
     email: row.email,
     phone: row.phone,
-    photo: photos[0] || "",
+    photo: discoverPhotoFromProfile(profile),
     cityHomeHidden: row.city_home_hidden,
     onboardingComplete: row.onboarding_complete,
     updatedAt: row.updated_at

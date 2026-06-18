@@ -3,6 +3,7 @@ import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { normalizeIntents } from "../constants/intents";
 import type { DatingProfile, DiscoverProfile, IntentTag, UserProfile } from "../types";
 import { isBlobPreviewUrl, isDataUrl, isStoragePhotoUrl } from "./photoRefs";
+import { resolveMainPhotoUrl } from "./mainPhoto";
 
 /** Marketing / demo assets — never a member's backdrop. */
 export function isShowcasePhotoUrl(src?: string | null): boolean {
@@ -155,7 +156,10 @@ export function memberFirstName(
 
 export function safeDiscoverProfile(raw: Partial<DiscoverProfile>): DiscoverProfile {
   const photos = safePhotos(raw.photos?.length ? raw.photos : raw.photo ? [raw.photo] : []);
-  const photo = photos[0] || safeString(raw.photo) || DEFAULT_PROFILE_COVER;
+  const photo =
+    resolveMainPhotoUrl(photos, safeString(raw.mainPhotoUrl) || undefined) ||
+    safeString(raw.photo) ||
+    DEFAULT_PROFILE_COVER;
   return {
     id: safeString(raw.id, "unknown"),
     name: safeString(raw.name, "Member"),

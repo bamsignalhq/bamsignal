@@ -26,6 +26,7 @@ import { upsertPhotoMeta } from "../../utils/photoMeta";
 import { PHOTO_FILE_ACCEPT, blobToDataUrl, validatePhotoFile } from "../../utils/photoUpload";
 import { logPhotoPipeline } from "../../utils/photoUploadLog";
 import { isStoragePhotoUrl, samePhotoRef } from "../../utils/photoRefs";
+import { mainPhotoAfterDelete, resolveMainPhotoUrl, setMainPhoto, isMainPhoto, addProfilePhotos } from "../../utils/mainPhoto";
 import { safePhotos } from "../../utils/safeProfile";
 import { ShowcaseImage } from "../ShowcaseImage";
 
@@ -34,10 +35,15 @@ type ProfilePhotoViewerSheetProps = {
   initialIndex?: number;
   memberName?: string;
   photos: string[];
+  mainPhotoUrl?: string;
   photoMeta?: Record<string, PhotoReviewMeta>;
   coverPhoto?: string;
   onClose: () => void;
-  onChange: (photos: string[], photoMeta?: Record<string, PhotoReviewMeta>) => void;
+  onChange: (
+    photos: string[],
+    photoMeta?: Record<string, PhotoReviewMeta>,
+    mainPhotoUrl?: string
+  ) => void;
   onModerationMessage?: (message: string) => void;
 };
 
@@ -48,6 +54,7 @@ export function ProfilePhotoViewerSheet({
   initialIndex = 0,
   memberName,
   photos,
+  mainPhotoUrl,
   photoMeta,
   coverPhoto,
   onClose,
@@ -61,7 +68,9 @@ export function ProfilePhotoViewerSheet({
   const [replaceSlot, setReplaceSlot] = useState(0);
 
   const gallery = safePhotos(photos);
+  const mainUrl = resolveMainPhotoUrl(gallery, mainPhotoUrl);
   const heroPhoto = gallery[photoIndex] ?? gallery[0] ?? null;
+  const heroIsMain = heroPhoto ? isMainPhoto(heroPhoto, { photos: gallery, mainPhotoUrl }) : false;
   const canDelete = gallery.length > MIN_PROFILE_PHOTOS;
   const canAdd = gallery.length < MAX_PROFILE_PHOTOS;
 
@@ -97,13 +106,20 @@ export function ProfilePhotoViewerSheet({
   const handleDelete = () => {
     if (!canDelete || !gallery[photoIndex]) return;
     const url = gallery[photoIndex];
-    const next = gallery.filter((_, i) => i !== photoIndex);
+    const next = mainPhotoAfterDelete(gallery, mainPhotoUrl, url);
     const nextMeta = { ...photoMeta };
     if (url && nextMeta[url]) delete nextMeta[url];
-    onChange(next, nextMeta);
+    onChange(next.photos, nextMeta, next.mainPhotoUrl);
     if (isStoragePhotoUrl(url)) void deleteStoredPhoto(url);
-    setPhotoIndex((i) => Math.min(i, Math.max(0, next.length - 1)));
-    if (next.length === 0) onClose();
+    setPhotoIndex((i) => Math.min(i, Math.max(0, next.photos.length - 1)));
+    if (next.photos.length === 0) onClose();
+  };
+
+  const makeMain = () => {
+    if (!heroPhoto) return;
+    const next = setMainPhoto(gallery, heroPhoto);
+    onChange(next.photos, photoMeta, next.mainPhotoUrl);
+    setPhotoIndex(0);
   };
 
   const uploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,7 +176,15 @@ export function ProfilePhotoViewerSheet({
             : [...prior, remoteUrl];
 
       const trimmed = withRemote.slice(0, MAX_PROFILE_PHOTOS);
-      onChange(trimmed, nextMeta);
+      let nextMain = mainPhotoUrl;
+      if (pickMode === "replace" && prior[slotIndex] && samePhotoRef(prior[slotIndex], mainUrl)) {
+        nextMain = remoteUrl;
+      }
+      const normalized =
+        pickMode === "add"
+          ? addProfilePhotos(prior, mainPhotoUrl, [remoteUrl])
+          : setMainPhoto(trimmed, nextMain || resolveMainPhotoUrl(trimmed, mainPhotoUrl));
+      onChange(normalized.photos, nextMeta, normalized.mainPhotoUrl);
 
       if (meta.photoReviewStatus === "pending_review" || meta.photoReviewStatus === "rejected") {
         void submitPhotoReviewRemote({
@@ -175,7 +199,11 @@ export function ProfilePhotoViewerSheet({
         void deleteStoredPhoto(prior[slotIndex]);
       }
 
-      setPhotoIndex(pickMode === "add" ? trimmed.length - 1 : slotIndex);
+      setPhotoIndex(
+        pickMode === "add"
+          ? normalized.photos.length - 1
+          : normalized.photos.findIndex((photo) => samePhotoRef(photo, remoteUrl))
+      );
     } catch (error) {
       const mapped = mapUploadError(error);
       onModerationMessage?.(mapped.message || PHOTO_UPLOAD_FAIL);
@@ -243,7 +271,7 @@ export function ProfilePhotoViewerSheet({
             <h2 className="profile-detail-sheet__name">{memberName || "Your photos"}</h2>
             <p className="profile-detail-sheet__subline">
               {gallery.length
-                ? `Photo ${photoIndex + 1} of ${gallery.length}${photoIndex === 0 ? " · Main" : ""}`
+                ? `Photo ${photoIndex + 1} of ${gallery.length}${heroIsMain ? " · Main" : ""}`
                 : "This is how others see your profile"}
             </p>
           </div>
@@ -276,6 +304,16 @@ export function ProfilePhotoViewerSheet({
           ) : null}
           {heroPhoto ? (
             <>
+              {!heroIsMain ? (
+                <button
+                  type="button"
+                  className="btn-secondary profile-photo-viewer__btn"
+                  disabled={uploading}
+                  onClick={makeMain}
+                >
+                  Set as main
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="btn-secondary profile-photo-viewer__btn"

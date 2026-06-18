@@ -34,6 +34,7 @@ import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { getVerificationTier } from "../utils/verification";
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
+import { resolveProfileMainPhoto } from "../utils/mainPhoto";
 import {
   CONTACT_LEAK_BLOCK_MESSAGE,
   validateDisplayName,
@@ -366,12 +367,13 @@ export function ProfilePage({
             }}
             onCoverModerationMessage={showModMessage}
             editablePhotos
-            onPhotosChange={(photos, nextPhotoMeta) => {
+            onPhotosChange={(photos, nextPhotoMeta, nextMainPhotoUrl) => {
               setProfile((p) => {
                 const next = normalizeDatingProfile({
                   ...p,
                   photos,
-                  photoMeta: nextPhotoMeta ?? p.photoMeta
+                  photoMeta: nextPhotoMeta ?? p.photoMeta,
+                  mainPhotoUrl: nextMainPhotoUrl
                 });
                 if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
                   showModMessage(USER_MESSAGES.profileSaveFailed);
@@ -571,14 +573,16 @@ export function ProfilePage({
             <PhotoUploadGrid
               className="photo-upload-grid--centered"
               photos={profile.photos}
+              mainPhotoUrl={profile.mainPhotoUrl}
               photoMeta={profile.photoMeta}
               coverPhoto={profile.coverPhoto}
-              onChange={(photos, nextPhotoMeta) => {
+              onChange={(photos, nextPhotoMeta, nextMainPhotoUrl) => {
                 setProfile((p) => {
                   const next = normalizeDatingProfile({
                     ...p,
                     photos,
-                    photoMeta: nextPhotoMeta ?? p.photoMeta
+                    photoMeta: nextPhotoMeta ?? p.photoMeta,
+                    mainPhotoUrl: nextMainPhotoUrl
                   });
                   if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
                     showModMessage(USER_MESSAGES.profileSaveFailed);
@@ -983,7 +987,7 @@ export function ProfilePage({
             <PhoneVerificationPanel
               user={user}
               phoneVerified={phoneVerified}
-              profilePhoto={profile.photos[0]}
+              profilePhoto={resolveProfileMainPhoto(profile) || undefined}
               verificationStatus={
                 profile.verified
                   ? "approved"

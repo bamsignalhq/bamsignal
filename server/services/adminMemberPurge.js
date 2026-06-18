@@ -1,3 +1,4 @@
+import { discoverPhotoFromProfile } from "../../shared/mainPhoto.mjs";
 import {
   findAppUserIdentity,
   isDatabaseReady,
@@ -123,7 +124,7 @@ export async function adminSearchMembers(searchText, limit = 25) {
       city: row.city,
       state: row.state,
       onboardingComplete: row.onboarding_complete,
-      photo: photos[0] || "",
+      photo: discoverPhotoFromProfile(profile),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       accountStatus: row.account_status || "active",

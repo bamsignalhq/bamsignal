@@ -11,6 +11,7 @@ import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
 import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString, safeUserCoverPhoto } from "./safeProfile";
 import { prunePhotoMeta, safePhotoMeta } from "./photoMeta";
+import { normalizeMainPhoto } from "./mainPhoto";
 
 export const defaultDatingProfile = (): DatingProfile => ({
   photos: [],
@@ -115,6 +116,10 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
 
   const photosList = sanitizeProfilePhotos(rawPhotosList, coverPhoto);
   const photoMeta = prunePhotoMeta(safePhotoMeta(cleaned.photoMeta), photosList, coverPhoto);
+  const { photos: orderedPhotos, mainPhotoUrl } = normalizeMainPhoto(
+    photosList,
+    safeString(cleaned.mainPhotoUrl) || undefined
+  );
   const lifestyles = normalizeLifestyleTraits([
     ...safeArray<string>(cleaned.lifestyles),
     ...(cleaned.lifestyle && !isPreferNot(cleaned.lifestyle) ? [cleaned.lifestyle] : [])
@@ -144,7 +149,8 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     interestsTouched: onboardingComplete ? interests.length > 0 || interestsTouched : interestsTouched,
     coverPhoto,
     coverPhotoExplicit,
-    photos: photosList,
+    photos: orderedPhotos,
+    mainPhotoUrl,
     photoMeta,
     verificationSelfie: isPersistablePhotoUrl(cleaned.verificationSelfie)
       ? cleaned.verificationSelfie

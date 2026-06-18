@@ -10,6 +10,8 @@ export const DEFAULT_PROFILE_COVER = MOMENT_SETS.lagosRooftop[1];
 
 export const PHOTO_UPLOAD_FAIL = USER_MESSAGES.photoUploadFailed;
 export const PHOTO_REJECTED = USER_MESSAGES.photoRejected;
+export const PHOTO_LIMIT_MESSAGE = "You can add up to 10 photos.";
+export const PHOTO_BATCH_PARTIAL_FAIL = "Some photos couldn't upload. Please try those again.";
 
 /** Upload / decode / compression / storage failures */
 export function photoUploadUserMessage(code?: PhotoUploadErrorCode): string {

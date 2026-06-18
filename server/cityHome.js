@@ -1,3 +1,4 @@
+import { discoverPhotoFromProfile } from "../shared/mainPhoto.mjs";
 import {
   isDatabaseReady,
   normalizeUserKey,
@@ -115,7 +116,7 @@ function profilePayload(row) {
     name: row.name || profile.name || "Member",
     city: row.city,
     state: row.state,
-    photo: photos[0] || "",
+    photo: discoverPhotoFromProfile(profile),
     photos,
     bio,
     age: profile.age,

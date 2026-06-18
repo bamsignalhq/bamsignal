@@ -676,40 +676,44 @@
 .photo-upload-grid__tiles {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
+  gap: 11px;
 }
 
 .photo-upload-grid--centered .photo-upload-grid__tiles {
   max-width: 320px;
   margin: 0 auto;
-  justify-items: center;
-}
-
-.photo-upload-grid--centered .photo-upload-grid__tile--main {
-  grid-column: 1 / -1;
-  grid-row: auto;
-  max-width: 180px;
-  width: 100%;
-  margin: 0 auto;
 }
 
 .photo-upload-grid__tile {
   position: relative;
-  aspect-ratio: 3/4;
+  aspect-ratio: 1;
   border-radius: 12px;
   overflow: hidden;
   background: color-mix(in srgb, var(--border) 40%, transparent);
+  border: 2px solid transparent;
 }
 
 .photo-upload-grid__tile--main {
-  grid-column: span 2;
-  grid-row: span 2;
+  border-color: var(--brand-pink);
 }
 
 .photo-upload-grid__tile img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.photo-upload-grid__add-tile {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-muted);
+  aspect-ratio: 1;
 }
 
 .photo-upload-grid__add {
@@ -736,6 +740,48 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.photo-upload-grid__remove:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.photo-upload-grid__star {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-upload-grid__star--active {
+  background: color-mix(in srgb, var(--brand-pink) 85%, #000);
+  color: #fff;
+}
+
+.photo-upload-grid__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+}
+
+.photo-upload-grid__overlay--failed {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.photo-upload-grid__tile--failed img {
+  opacity: 0.55;
 }
 
 .photo-upload-grid__badge {

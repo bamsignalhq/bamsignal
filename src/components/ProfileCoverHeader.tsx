@@ -9,6 +9,7 @@ import { ProfilePhotoViewerSheet } from "./profile/ProfilePhotoViewerSheet";
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
 import { hasExplicitCover, safePhotos } from "../utils/safeProfile";
+import { resolveProfileMainPhoto, isMainPhoto } from "../utils/mainPhoto";
 
 type ProfileCoverHeaderProps = {
   user: UserProfile;
@@ -21,7 +22,11 @@ type ProfileCoverHeaderProps = {
   onCoverChange?: (coverPhoto: string | undefined, photoMeta?: Record<string, PhotoReviewMeta>) => void;
   onCoverModerationMessage?: (message: string) => void;
   editablePhotos?: boolean;
-  onPhotosChange?: (photos: string[], photoMeta?: Record<string, PhotoReviewMeta>) => void;
+  onPhotosChange?: (
+    photos: string[],
+    photoMeta?: Record<string, PhotoReviewMeta>,
+    mainPhotoUrl?: string
+  ) => void;
   onPhotoModerationMessage?: (message: string) => void;
 };
 
@@ -55,7 +60,7 @@ export function ProfileCoverHeader({
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
   const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
   const photos = safePhotos(profile.photos);
-  const avatar = photos[0] ?? null;
+  const avatar = resolveProfileMainPhoto(profile) || null;
   const resolvedCoverPhoto = coverPhoto ?? profile.coverPhoto;
   const coverProfile = { ...profile, coverPhoto: resolvedCoverPhoto };
   const customCover = hasExplicitCover(coverProfile);
@@ -186,10 +191,10 @@ export function ProfileCoverHeader({
               <button
                 key={`${src}-${index}`}
                 type="button"
-                className={`profile-hero__photo-thumb-wrap${index === 0 ? " profile-hero__photo-thumb-wrap--main" : ""}${editablePhotos && onPhotosChange ? " profile-hero__photo-thumb-wrap--tappable" : ""}`}
+                className={`profile-hero__photo-thumb-wrap${isMainPhoto(src, profile) ? " profile-hero__photo-thumb-wrap--main" : ""}${editablePhotos && onPhotosChange ? " profile-hero__photo-thumb-wrap--tappable" : ""}`}
                 onClick={() => openPhotoViewer(index)}
                 disabled={!editablePhotos || !onPhotosChange}
-                aria-label={index === 0 ? "View main profile photo" : `View profile photo ${index + 1}`}
+                aria-label={isMainPhoto(src, profile) ? "View main profile photo" : `View profile photo ${index + 1}`}
               >
                 <img src={src} alt="" />
               </button>
@@ -224,6 +229,7 @@ export function ProfileCoverHeader({
           initialIndex={photoViewerIndex}
           memberName={user.name}
           photos={photos}
+          mainPhotoUrl={profile.mainPhotoUrl}
           photoMeta={photoMeta}
           coverPhoto={coverPhoto ?? profile.coverPhoto}
           onClose={() => setPhotoViewerOpen(false)}

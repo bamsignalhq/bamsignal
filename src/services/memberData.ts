@@ -9,7 +9,7 @@ import { normalizeDatingProfile } from "../utils/profile";
 import { isComplianceComplete, normalizeCompliance } from "../utils/compliance";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import { readResponseJson } from "../utils/httpJson";
-import { mergeMemberCover, safeArray, safePhotos } from "../utils/safeProfile";
+import { mergeMemberCover, safeArray, safePhotos, safeString } from "../utils/safeProfile";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
 
@@ -164,6 +164,10 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
       ...local,
       ...remote,
       photos: mergedPhotos.length ? mergedPhotos : localPhotos,
+      mainPhotoUrl:
+        safeString(remote.mainPhotoUrl) ||
+        safeString(local.mainPhotoUrl) ||
+        undefined,
       coverPhoto,
       coverPhotoExplicit,
       interests,

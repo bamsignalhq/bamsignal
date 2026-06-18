@@ -13,6 +13,7 @@ import type {
   SafetySettings
 } from "../types";
 import { matchesPreferences } from "./compatibility";
+import { resolveProfileMainPhoto } from "./mainPhoto";
 import { defaultMatchPreferences } from "./profile";
 import { meetsDiscoveryQuality } from "./launchSeed";
 import { readJson, writeJson } from "./storage";
@@ -36,7 +37,7 @@ export function senderAsDiscoverProfile(sender: DatingProfile, id = "viewer"): D
     lookingFor: sender.lookingFor,
     city: sender.city,
     bio: sender.bio,
-    photo: sender.photos[0] ?? "",
+    photo: resolveProfileMainPhoto(sender) || "",
     intents: sender.intents,
     interests: sender.interests,
     religion: sender.religion,

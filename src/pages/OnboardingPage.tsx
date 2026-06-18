@@ -411,13 +411,15 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           <h2>{SUCCESS_COPY.photoHeader}</h2>
           <PhotoUploadGrid
             photos={profile.photos}
+            mainPhotoUrl={profile.mainPhotoUrl}
             photoMeta={profile.photoMeta}
             signupMode
-            onChange={(photos, nextPhotoMeta) => {
+            onChange={(photos, nextPhotoMeta, nextMainPhotoUrl) => {
               const next = normalizeDatingProfile({
                 ...profile,
                 photos,
                 photoMeta: nextPhotoMeta,
+                mainPhotoUrl: nextMainPhotoUrl,
                 coverPhoto: undefined,
                 coverPhotoExplicit: false
               });

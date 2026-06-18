@@ -1,3 +1,4 @@
+import { discoverPhotoFromProfile } from "../shared/mainPhoto.mjs";
 import {
   findAppUserIdentity,
   isDatabaseReady,
@@ -96,7 +97,7 @@ export function rowToDiscoverProfile(row) {
     city: row.city,
     state: row.state,
     bio: profile.bio || "",
-    photo: photos[0] || "",
+    photo: discoverPhotoFromProfile(profile),
     photos,
     intents: profile.intents || [],
     interests: profile.interests || [],
@@ -330,12 +331,12 @@ export async function sendSignalToProfile({
 
 function signalToLikeEntry(row, senderProfile) {
   const profile = senderProfile || {};
-  const photos = Array.isArray(profile.profile?.photos) ? profile.profile.photos : [];
+  const nested = profile.profile || {};
   return {
     id: row.id,
     profileId: profile.id || row.user_key,
     name: profile.name || row.sender_email || "Member",
-    photo: photos[0] || "",
+    photo: discoverPhotoFromProfile(nested),
     city: profile.city || "",
     at: row.created_at,
     superLike: row.signal_type === "priority" || row.signal_type === "priority-signal-once"
@@ -759,11 +760,11 @@ async function fetchIncomingProfileLikes({ email, phone }) {
     [own.id]
   );
   return result.rows.map((row) => {
-    const photos = Array.isArray(row.profile?.photos) ? row.profile.photos : [];
+    const profile = row.profile || {};
     return {
       profileId: row.actor_profile_id,
       name: row.name || "Member",
-      photo: photos[0] || "",
+      photo: discoverPhotoFromProfile(profile),
       at: row.created_at
     };
   });
@@ -782,11 +783,11 @@ async function fetchIncomingProfileFollows({ email, phone }) {
     [own.id]
   );
   return result.rows.map((row) => {
-    const photos = Array.isArray(row.profile?.photos) ? row.profile.photos : [];
+    const profile = row.profile || {};
     return {
       profileId: row.actor_profile_id,
       name: row.name || "Member",
-      photo: photos[0] || "",
+      photo: discoverPhotoFromProfile(profile),
       at: row.created_at
     };
   });

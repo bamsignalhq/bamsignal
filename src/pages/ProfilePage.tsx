@@ -54,13 +54,9 @@ import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { ContactForm } from "../components/ContactForm";
 import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
 import { ProfileOverviewCard } from "../components/profile/ProfileOverviewCard";
-import { ProfileCompatibilityBars } from "../components/profile/ProfileCompatibilityBars";
-import { WhyThisProfile } from "../components/WhyThisProfile";
-import { getOwnProfileDimensionScores } from "../utils/ownProfileDimensions";
 import {
   getAboutMeText,
   getAboutSnippet,
-  getOwnWhyReasons,
   shouldShowAboutCard
 } from "../utils/ownProfileOverview";
 
@@ -407,16 +403,6 @@ export function ProfilePage({
                 </p>
               </ProfileOverviewCard>
             ) : null}
-
-            {getOwnWhyReasons(profile).length > 0 ? (
-              <ProfileOverviewCard title="Why this profile">
-                <WhyThisProfile reasons={getOwnWhyReasons(profile)} title="Why this profile" />
-              </ProfileOverviewCard>
-            ) : null}
-
-            <ProfileOverviewCard title="Compatibility">
-              <ProfileCompatibilityBars dimensions={getOwnProfileDimensionScores(profile)} />
-            </ProfileOverviewCard>
 
             <ProfileOverviewCard title="Voice intro" onEdit={() => openEdit("voice")}>
               {profile.voiceIntroUrl ? (

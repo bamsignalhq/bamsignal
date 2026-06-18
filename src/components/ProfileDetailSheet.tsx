@@ -10,7 +10,10 @@ import { VoiceIntro } from "./VoiceIntro";
 import { WhyThisProfile } from "./WhyThisProfile";
 import { ProfileInterestsPreview } from "./profile/ProfileInterestsPreview";
 import { ProfileDetailsList } from "./profile/ProfileDetailsList";
+import { ProfileCompatibilityBars } from "./profile/ProfileCompatibilityBars";
 import { hasFilledProfileDetails } from "../utils/profileDetails";
+import { getDatingProfile } from "../utils/profile";
+import { getProfileDimensionScores } from "../utils/compatibility";
 import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { safePhotos } from "../utils/safeProfile";
 import { likeProfile, followProfile, hasLikedProfile, hasFollowedProfile } from "../utils/profileSocial";
@@ -59,6 +62,8 @@ export function ProfileDetailSheet({
 
   const gallery = safePhotos(profile.photos?.length ? profile.photos : [profile.photo]);
   const heroPhoto = gallery[photoIndex] ?? gallery[0] ?? DEFAULT_PROFILE_COVER;
+  const viewerProfile = getDatingProfile();
+  const compatibilityDimensions = getProfileDimensionScores(viewerProfile, profile);
 
   const goPhoto = (dir: -1 | 1) => {
     if (gallery.length <= 1) return;
@@ -220,14 +225,15 @@ export function ProfileDetailSheet({
             </section>
           )}
 
-          {compatibilityPercent != null && (
-            <section className="profile-detail-sheet__card">
-              <h3>Compatibility</h3>
+          <section className="profile-detail-sheet__card">
+            <h3>Compatibility</h3>
+            {compatibilityPercent != null ? (
               <p className="profile-detail-sheet__compat-line">
                 <strong>{compatibilityPercent}%</strong> match
               </p>
-            </section>
-          )}
+            ) : null}
+            <ProfileCompatibilityBars dimensions={compatibilityDimensions} />
+          </section>
         </div>
 
         {(onSendSignal || onPass) && (

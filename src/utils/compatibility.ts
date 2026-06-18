@@ -185,6 +185,51 @@ export function getProfileMatchReasons(viewer: DatingProfile, candidate: Discove
     .map((reason) => reason.label);
 }
 
+/** Dimension bars when viewing someone else's profile */
+export function getProfileDimensionScores(
+  viewer: DatingProfile,
+  candidate: DiscoverProfile
+): { label: string; percent: number }[] {
+  const viewerTraits = profileLifestyleTraits(viewer);
+  const candidateTraits = profileLifestyleTraits(candidate);
+  const lifestyleMatch = lifestyleScore(viewer, candidate);
+  const lifestylePct =
+    lifestyleMatch >= 1
+      ? 92
+      : viewerTraits.length && candidateTraits.length
+        ? 68
+        : viewerTraits.length || candidateTraits.length
+          ? 62
+          : 52;
+
+  const useReligion = viewer.matchingPrivacy?.useReligionForMatching !== false;
+  const faithMatch = religionScore(viewer, candidate);
+  const faithPct =
+    faithMatch >= 1
+      ? 88
+      : useReligion && !isPreferNot(viewer.religion) && viewer.religion && candidate.religion
+        ? 72
+        : 55;
+
+  const intentMatch = intentScore(viewer, candidate);
+  const intentPct =
+    intentMatch >= 1
+      ? 95
+      : intentMatch >= 0.65
+        ? 88
+        : intentMatch > 0
+          ? 76
+          : (viewer.intents?.length ?? 0) > 0 && safeArray<IntentTag>(candidate.intents).length > 0
+            ? 58
+            : 52;
+
+  return [
+    { label: "Lifestyle", percent: lifestylePct },
+    { label: "Faith", percent: faithPct },
+    { label: "Relationship goals", percent: intentPct }
+  ];
+}
+
 function candidateLocationState(candidate: DiscoverProfile): string | undefined {
   const fromRow = candidate.state?.trim();
   if (fromRow) return resolveStateName(fromRow) || fromRow;

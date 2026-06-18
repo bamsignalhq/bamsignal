@@ -1,4 +1,4 @@
-import { Camera, Loader2, Trash2, X } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, Loader2, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PhotoUploadErrorCode } from "../../constants/photoUploadErrors";
 import {
@@ -266,6 +266,30 @@ export function ProfilePhotoViewerSheet({
         </header>
 
         <footer className="profile-photo-viewer__actions">
+          {gallery.length > 1 && heroPhoto ? (
+            <div className="profile-photo-viewer__nav-row">
+              <button
+                type="button"
+                className="btn-secondary profile-photo-viewer__nav-btn"
+                disabled={uploading}
+                onClick={() => goPhoto(-1)}
+                aria-label="Previous photo"
+              >
+                <ChevronLeft size={18} aria-hidden />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="btn-secondary profile-photo-viewer__nav-btn"
+                disabled={uploading}
+                onClick={() => goPhoto(1)}
+                aria-label="Next photo"
+              >
+                Next
+                <ChevronRight size={18} aria-hidden />
+              </button>
+            </div>
+          ) : null}
           {heroPhoto ? (
             <>
               <button

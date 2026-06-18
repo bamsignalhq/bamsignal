@@ -1103,6 +1103,21 @@
   background: var(--bg);
 }
 
+.profile-photo-viewer__nav-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.profile-photo-viewer__nav-btn {
+  flex: 1 1 calc(50% - 5px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+}
+
 .profile-photo-viewer__btn {
   flex: 1 1 calc(50% - 5px);
   display: inline-flex;

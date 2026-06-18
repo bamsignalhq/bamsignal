@@ -51,6 +51,9 @@ export function ProfileCoverHeader({
 
   const coverPreview = flow.localPreview || cover;
 
+  const ageText = profile.age != null && profile.age > 0 ? String(profile.age) : null;
+  const locationText = profile.city?.trim() ? formatLocation(profile) : null;
+
   return (
     <>
       <header className="profile-hero profile-hero--me">
@@ -99,14 +102,18 @@ export function ProfileCoverHeader({
 
           <div className="profile-hero__meta">
             <h1 className="profile-hero__name">{user.name || "Your profile"}</h1>
-            <p className="profile-hero__meta-line">
-              {profile.age ? <span className="profile-hero__age">{profile.age}</span> : null}
-              {profile.age && profile.city ? <span className="profile-hero__meta-dot" aria-hidden>·</span> : null}
-              <span className="profile-hero__location">
-                <MapPin size={13} aria-hidden />
-                {formatLocation(profile)}
-              </span>
-            </p>
+            {(ageText || locationText) && (
+              <p className="profile-hero__meta-line">
+                {ageText ? <span className="profile-hero__age">{ageText}</span> : null}
+                {ageText && locationText ? <span className="profile-hero__meta-dot" aria-hidden>·</span> : null}
+                {locationText ? (
+                  <span className="profile-hero__location">
+                    <MapPin size={13} aria-hidden />
+                    {locationText}
+                  </span>
+                ) : null}
+              </p>
+            )}
             {(verification.tier > 0 || profile.verified) && (
               <div className="profile-hero__badges">
                 {verification.tier > 0 ? <VerificationBadge info={verification} /> : null}

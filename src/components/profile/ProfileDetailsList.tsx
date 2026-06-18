@@ -7,7 +7,7 @@ type ProfileDetailsListProps = {
     "ethnicity" | "religion" | "occupation" | "stateOfOrigin" | "genotype" | "kidsPreference"
   >;
   className?: string;
-  variant?: "list" | "chips";
+  variant?: "list" | "chips" | "rows";
 };
 
 export function ProfileDetailsList({
@@ -29,6 +29,19 @@ export function ProfileDetailsList({
           >
             <span className="profile-details-chip__value">{value}</span>
             <span className="profile-details-chip__label">{label}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (variant === "rows") {
+    return (
+      <div className={`profile-details-rows ${className}`.trim()} aria-label="Profile highlights">
+        {rows.map(({ label, value }) => (
+          <div key={label} className="profile-details-row">
+            <span className="profile-details-row__label">{label}</span>
+            <span className="profile-details-row__value">{value}</span>
           </div>
         ))}
       </div>

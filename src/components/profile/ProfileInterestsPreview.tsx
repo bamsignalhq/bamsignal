@@ -12,7 +12,7 @@ export function ProfileInterestsPreview({ interests, onMoreClick }: ProfileInter
   const hiddenCount = interests.length - visible.length;
 
   return (
-    <div className="profile-read-chips profile-interests-preview">
+    <div className="profile-read-chips profile-read-chips--compact profile-interests-preview">
       {visible.map((interest) => (
         <span key={interest} className="profile-read-chip profile-read-chip--picked">
           {interest}

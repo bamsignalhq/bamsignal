@@ -336,22 +336,22 @@ export function ProfilePage({
           <div className="profile-overview-sections profile-overview-sections--clean">
             {profile.bio?.trim() ? (
               <section className="profile-overview-block">
-                <h3>About</h3>
+                <h3 className="profile-overview__label">About</h3>
                 <p className="profile-overview-bio">{profile.bio}</p>
               </section>
             ) : null}
 
             {profile.interests?.length > 0 ? (
-              <section className="profile-overview-block profile-read-section">
-                <h3 className="profile-read__heading">Interests</h3>
+              <section className="profile-overview-block">
+                <h3 className="profile-overview__label">Interests</h3>
                 <ProfileInterestsPreview interests={profile.interests} />
               </section>
             ) : null}
 
             {profile.intents.length > 0 ? (
-              <section className="profile-overview-block profile-read-section">
-                <h3 className="profile-read__heading">Looking For</h3>
-                <div className="profile-read-chips">
+              <section className="profile-overview-block">
+                <h3 className="profile-overview__label">Looking for</h3>
+                <div className="profile-read-chips profile-read-chips--compact">
                   {profile.intents.slice(0, MAX_INTENT_SELECTIONS).map((intent) => (
                     <span key={intent} className="profile-read-chip profile-read-chip--intent">
                       {profileIntentLabel(intent)}
@@ -363,19 +363,20 @@ export function ProfilePage({
 
             {hasFilledProfileDetails(profile) ? (
               <section className="profile-overview-block profile-overview-block--facts">
-                <ProfileDetailsList profile={profile} variant="chips" />
+                <h3 className="profile-overview__label">Details</h3>
+                <ProfileDetailsList profile={profile} variant="rows" />
               </section>
             ) : null}
           {profile.profilePrompts?.filter((p) => p.answer.trim()).length ? (
             <section className="profile-overview-block">
-              <h3>Prompts</h3>
+              <h3 className="profile-overview__label">Prompts</h3>
               <ProfilePromptsDisplay prompts={profile.profilePrompts} />
             </section>
           ) : null}
 
             {profile.voiceIntroUrl ? (
               <section className="profile-overview-block">
-                <h3>Voice intro</h3>
+                <h3 className="profile-overview__label">Voice intro</h3>
                 <VoiceIntro url={profile.voiceIntroUrl} label="Listen" />
               </section>
             ) : null}

@@ -146,7 +146,7 @@ export function PhotoUploadGrid({
         setPending((current) =>
           current.map((item) => (item.key === entry.key ? { ...item, status: "failed" as const } : item))
         );
-        if (result.moderation) onModerationMessage?.(result.message);
+        onModerationMessage?.(result.message);
       }
 
       return result;

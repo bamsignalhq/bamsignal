@@ -6,22 +6,16 @@ import {
   MAX_PROFILE_PHOTOS,
   MIN_PROFILE_PHOTOS,
   PHOTO_UPLOAD_FAIL,
-  photoModerationUserMessage,
   photoUploadUserMessage
 } from "../../constants/photos";
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
   mapUploadError,
-  submitPhotoReviewRemote,
   uploadCompressedProfileBlob
 } from "../../services/profilePhotos";
 import type { PhotoReviewMeta } from "../../types";
-import {
-  assessUploadedPhoto,
-  moderatePhotoUpload,
-  toPhotoReviewMeta
-} from "../../utils/mediaModeration";
+import { defaultApprovedPhotoMeta } from "../../utils/photoMeta";
 import { upsertPhotoMeta } from "../../utils/photoMeta";
 import { PHOTO_FILE_ACCEPT, blobToDataUrl, validatePhotoFile } from "../../utils/photoUpload";
 import { logPhotoPipeline } from "../../utils/photoUploadLog";
@@ -84,16 +78,9 @@ export function ProfilePhotoViewerSheet({
     setPhotoIndex((i) => (i + dir + gallery.length) % gallery.length);
   };
 
-  const failUpload = (
-    code: PhotoUploadErrorCode,
-    internalReason: string,
-    message?: string,
-    moderation = false
-  ) => {
-    logPhotoPipeline("failed", { code, internalReason, moderation });
-    onModerationMessage?.(
-      message || (moderation ? photoModerationUserMessage() : photoUploadUserMessage(code))
-    );
+  const failUpload = (code: PhotoUploadErrorCode, internalReason: string, message?: string) => {
+    logPhotoPipeline("failed", { code, internalReason });
+    onModerationMessage?.(message || photoUploadUserMessage(code));
   };
 
   const openPicker = (mode: PickMode, slot: number) => {
@@ -141,17 +128,6 @@ export function ProfilePhotoViewerSheet({
         return;
       }
 
-      const verdict = await moderatePhotoUpload(file, "profile");
-      if (!verdict.allowed) {
-        failUpload(
-          verdict.code || "MODERATION_REJECTED",
-          verdict.internalReason || "moderation",
-          verdict.message,
-          true
-        );
-        return;
-      }
-
       const compressed = await compressPhotoForPreview(file);
       const tempDataUrl = await blobToDataUrl(compressed.blob);
       if (samePhotoRef(tempDataUrl, coverPhoto)) {
@@ -164,8 +140,7 @@ export function ProfilePhotoViewerSheet({
       }
 
       const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file, compressed.mime);
-      const assessment = await assessUploadedPhoto(file, "profile");
-      const meta = toPhotoReviewMeta("profile", assessment);
+      const meta = defaultApprovedPhotoMeta("profile");
       const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
 
       const withRemote =
@@ -185,15 +160,6 @@ export function ProfilePhotoViewerSheet({
           ? addProfilePhotos(prior, mainPhotoUrl, [remoteUrl])
           : setMainPhoto(trimmed, nextMain || resolveMainPhotoUrl(trimmed, mainPhotoUrl));
       onChange(normalized.photos, nextMeta, normalized.mainPhotoUrl);
-
-      if (meta.photoReviewStatus === "pending_review" || meta.photoReviewStatus === "rejected") {
-        void submitPhotoReviewRemote({
-          photoUrl: remoteUrl,
-          photoType: "profile",
-          photoReviewStatus: meta.photoReviewStatus,
-          photoRiskFlags: meta.photoRiskFlags
-        });
-      }
 
       if (pickMode === "replace" && prior[slotIndex] && isStoragePhotoUrl(prior[slotIndex])) {
         void deleteStoredPhoto(prior[slotIndex]);

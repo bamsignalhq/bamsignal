@@ -13,12 +13,12 @@ export const PHOTO_REJECTED = USER_MESSAGES.photoRejected;
 export const PHOTO_LIMIT_MESSAGE = "You can add up to 10 photos.";
 export const PHOTO_BATCH_PARTIAL_FAIL = "Some photos couldn't upload. Please try those again.";
 
-/** Upload / decode / compression / storage failures */
+/** Upload / decode / compression / storage failures only */
 export function photoUploadUserMessage(code?: PhotoUploadErrorCode): string {
-  if (code === "MODERATION_REJECTED") return PHOTO_REJECTED;
   return PHOTO_UPLOAD_FAIL;
 }
 
+/** Shown only when an admin has rejected a photo — not during upload. */
 export function photoModerationUserMessage(): string {
   return PHOTO_REJECTED;
 }

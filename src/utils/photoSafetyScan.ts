@@ -1,13 +1,6 @@
-import {
-  containsDocumentKeywords,
-  scanPhotoFilenameSafetyText,
-  scanPhotoSafetyText
-} from "../../shared/photoSafetyPatterns.mjs";
-import { assessCoverPhoto, assessProfilePhoto, containsBusinessFlyerText } from "../../shared/photoQualityScore.mjs";
 import type { PhotoModerationMode } from "../config/imageModeration";
 import type { PhotoUploadKind } from "../constants/photoUploadKinds";
 import type { PhotoReviewStatus, PhotoRiskFlag } from "../types";
-import { trackPhotoRejection } from "./photoRejectionMetrics";
 import { logPhotoUpload } from "./photoUploadLog";
 
 export type PhotoRejectionCategory =
@@ -29,184 +22,23 @@ export type PhotoSafetyScanResult = {
   photoRiskFlags?: PhotoRiskFlag[];
 };
 
-function mapSharedCategory(category: string): PhotoRejectionCategory {
-  if (category === "contact_information") return "contact_info";
-  if (category === "document_detected") return "document";
-  if (category === "too_much_text") return "text_heavy";
-  return category as PhotoRejectionCategory;
-}
-
-function hardReject(
-  category: PhotoRejectionCategory,
-  internalReason: string,
-  riskScore: number,
-  kind: PhotoUploadKind
-): PhotoSafetyScanResult {
-  trackPhotoRejection(category, kind);
-  return {
-    allowed: false,
-    hardBlock: true,
-    category,
-    internalReason,
-    riskScore
-  };
-}
-
-/** High-confidence filename / metadata checks before upload. */
+/** Pre-upload scan — upload-first; never hard-blocks (admin review later). */
 export function scanPhotoSafetyFast(
   file: File,
   kind: PhotoUploadKind
 ): PhotoSafetyScanResult {
-  const isVerificationSelfie = kind === "selfie";
-  const allowDocuments = isVerificationSelfie;
-  const filename = file.name || "";
-
-  const textScan = scanPhotoFilenameSafetyText(filename, { allowDocuments });
-  if (textScan.blocked && textScan.category) {
-    return hardReject(
-      mapSharedCategory(textScan.category),
-      `filename:${textScan.category}`,
-      100,
-      kind
-    );
-  }
-
+  void file;
+  void kind;
   return { allowed: true, riskScore: 0, photoReviewStatus: "approved", photoRiskFlags: [] };
 }
 
-async function detectQrCode(file: File): Promise<boolean> {
-  try {
-    const jsQR = (await import("jsqr")).default;
-    const { bitmapToCanvas, loadImageBitmap } = await import("./photoImageBitmap");
-    const bitmap = await loadImageBitmap(file);
-    try {
-      const canvas = bitmapToCanvas(bitmap, 640);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return false;
-      const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const result = jsQR(new Uint8ClampedArray(data), width, height);
-      return Boolean(result);
-    } finally {
-      bitmap.close?.();
-    }
-  } catch {
-    return false;
-  }
-}
-
-/** Vision pipeline — flags suspicious content; never hard-blocks except contact/doc in scanned text. */
+/** Post-upload assessment — upload-first; always approved for now. */
 export async function scanPhotoSafetyDeep(
-  file: File,
+  _file: File,
   kind: PhotoUploadKind
 ): Promise<PhotoSafetyScanResult> {
-  const [{ analyzeFaces }, { analyzeVisualHeuristics }, { bitmapToCanvas, loadImageBitmap }] =
-    await Promise.all([
-      import("./photoFaceAnalysis"),
-      import("./photoVisualHeuristics"),
-      import("./photoImageBitmap")
-    ]);
-
-  const isCover = kind === "cover";
-  const isPublicProfile = kind === "profile" || kind === "signup";
-  const isVerificationSelfie = kind === "selfie";
-
-  const faceAnalysis = isCover || isVerificationSelfie
-    ? {
-        faceCount: 0,
-        largestFaceAreaRatio: 0,
-        totalFaceAreaRatio: 0,
-        hasAdequateFace: isVerificationSelfie,
-        detected: false
-      }
-    : await analyzeFaces(file).catch(() => ({
-        faceCount: 0,
-        largestFaceAreaRatio: 0,
-        totalFaceAreaRatio: 0,
-        hasAdequateFace: false,
-        detected: false
-      }));
-
-  let density = 0;
-  let ocrText = "";
-
-  try {
-    const bitmap = await loadImageBitmap(file);
-    try {
-      const canvas = bitmapToCanvas(bitmap, 160);
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        let edges = 0;
-        let samples = 0;
-        for (let y = 1; y < height - 1; y++) {
-          for (let x = 1; x < width - 1; x++) {
-            const i = (y * width + x) * 4;
-            const lum = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-            const right = data[i + 4] * 0.299 + data[i + 5] * 0.587 + data[i + 6] * 0.114;
-            if (Math.abs(lum - right) > 42) edges++;
-            samples++;
-          }
-        }
-        density = samples ? edges / samples : 0;
-      }
-    } finally {
-      bitmap.close?.();
-    }
-  } catch {
-    density = 0;
-  }
-
-  const hasQr = await detectQrCode(file);
-
-  const visual = await analyzeVisualHeuristics(file, faceAnalysis, density).catch(() => ({
-    logoLikelihood: 0,
-    landscapeLikelihood: 0,
-    humanConfidence: faceAnalysis.hasAdequateFace ? 0.8 : 0.15
-  }));
-
-  const filename = file.name || "";
-  const filenameScan = scanPhotoFilenameSafetyText(filename, {
-    allowDocuments: isVerificationSelfie
-  });
-  const contentScan = ocrText
-    ? scanPhotoSafetyText(ocrText, { allowDocuments: isVerificationSelfie })
-    : { blocked: false as const, category: null };
-  const hasContactLeak = Boolean(
-    (filenameScan.blocked && filenameScan.category === "contact_information") ||
-      (contentScan.blocked && contentScan.category === "contact_information")
-  );
-  const hasDocumentKeywords =
-    !isVerificationSelfie &&
-    (Boolean(filenameScan.blocked && filenameScan.category === "document_detected") ||
-      Boolean(contentScan.blocked && contentScan.category === "document_detected") ||
-      containsDocumentKeywords(ocrText));
-
-  const assessment = isCover
-    ? assessCoverPhoto({
-        textDensity: 0,
-        hasQr,
-        hasDocumentKeywords,
-        hasContactLeak,
-        hasFlyerText: containsBusinessFlyerText(ocrText)
-      })
-    : assessProfilePhoto({
-        hasAdequateFace: faceAnalysis.hasAdequateFace,
-        logoLikelihood: visual.logoLikelihood,
-        textDensity: density,
-        hasQr,
-        hasDocumentKeywords,
-        hasContactLeak,
-        ocrText
-      });
-
-  const photoReviewStatus: PhotoReviewStatus = assessment.pendingReview ? "pending_review" : "approved";
-
-  return {
-    allowed: true,
-    riskScore: assessment.riskScore,
-    photoReviewStatus,
-    photoRiskFlags: assessment.riskFlags as PhotoRiskFlag[]
-  };
+  void kind;
+  return { allowed: true, riskScore: 0, photoReviewStatus: "approved", photoRiskFlags: [] };
 }
 
 /** Pre-upload: hard-block only high-confidence filename contact/doc leaks. */

@@ -1,9 +1,9 @@
 export type PhotoModerationMode = "warn" | "block";
 
-/** Master switch — when false, all moderation checks are skipped. */
+/** Master switch — upload-first: moderation heuristics disabled by default. */
 export function isImageModerationEnabled(): boolean {
   const raw = import.meta.env.VITE_ENABLE_IMAGE_MODERATION;
-  if (raw === undefined || raw === "") return true;
+  if (raw === undefined || raw === "") return false;
   if (raw === "false" || raw === "0") return false;
   return raw === "true" || raw === "1";
 }

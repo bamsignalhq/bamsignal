@@ -24,6 +24,10 @@ export function buildPhotoMetaEntry(
   };
 }
 
+export function defaultApprovedPhotoMeta(type: "profile" | "cover"): PhotoReviewMeta {
+  return buildPhotoMetaEntry(type, "approved", []);
+}
+
 export function upsertPhotoMeta(
   photoMeta: Record<string, PhotoReviewMeta> | undefined,
   url: string,

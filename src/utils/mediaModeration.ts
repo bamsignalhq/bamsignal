@@ -1,19 +1,16 @@
 import {
   getPhotoModerationMode,
-  isImageModerationEnabled,
   type PhotoModerationMode
 } from "../config/imageModeration";
-import { PHOTO_UPLOAD_FAIL, photoModerationUserMessage } from "../constants/photos";
+import { PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
 import type { PhotoUploadKind } from "../constants/photoUploadKinds";
-import { STORAGE_KEYS } from "../constants/limits";
 import type { PhotoReviewMeta, PhotoReviewStatus, PhotoRiskFlag } from "../types";
 import { CONTACT_LEAK_BLOCK_MESSAGE, scanTextForContactLeak } from "./contactGuard";
-import { buildPhotoMetaEntry } from "./photoMeta";
-import { logPhotoSafetyRiskAsync, scanPhotoSafetyDeep, scanPhotoSafetyFast } from "./photoSafetyScan";
+import { defaultApprovedPhotoMeta } from "./photoMeta";
 import { logPhotoUpload } from "./photoUploadLog";
-import { submitPhotoReviewRemote, reportPhotoViolationRemote } from "../services/profilePhotos";
 import { readJson, writeJson } from "./storage";
+import { STORAGE_KEYS } from "../constants/limits";
 
 type StrikeRecord = { count: number };
 
@@ -37,7 +34,6 @@ export function isLikelyImageFile(file: File): boolean {
   if (type.startsWith("image/")) return true;
   const name = file.name || "";
   if (IMAGE_EXTENSIONS.test(name)) return true;
-  // Desktop downloads from messengers often use application/octet-stream.
   if ((type === "application/octet-stream" || !type) && file.size > 0) return true;
   return false;
 }
@@ -57,36 +53,16 @@ export function resetVoiceModerationStrikes(): void {
   writeJson(STORAGE_KEYS.voiceModerationStrikes, { count: 0 });
 }
 
-function moderationKillSwitchActive(): boolean {
-  const raw = import.meta.env.VITE_ENABLE_IMAGE_MODERATION;
-  return raw === "false" || raw === "0";
-}
-
 /**
- * Upload-first policy: only hard-block invalid file type or high-confidence contact/doc in filename.
- * Weak heuristics (face, blur, logo, AI) never block — they flag for admin review after upload.
+ * Upload-first: never block on heuristics (face, blur, logo, OCR, etc.).
+ * Only reject files that are clearly not images.
  */
 export async function moderatePhotoUpload(
   file: File,
   kind: PhotoUploadKind = "profile"
 ): Promise<PhotoModerationResult> {
   const mode = getPhotoModerationMode();
-  const moderationEnabled = isImageModerationEnabled();
-
-  logPhotoUpload("moderation_check", {
-    kind,
-    mode,
-    fileType: file.type || "unknown",
-    fileName: file.name || "",
-    originalSize: file.size,
-    moderationEnabled
-  });
-
-  if (moderationKillSwitchActive() || !moderationEnabled) {
-    logPhotoUpload("moderation_skipped", { kind, reason: "disabled" });
-    resetPhotoModerationStrikes();
-    return { allowed: true, message: "", mode, photoReviewStatus: "approved", photoRiskFlags: [] };
-  }
+  logPhotoUpload("moderation_skipped", { kind, mode, reason: "upload_first" });
 
   if (file.type && !file.type.startsWith("image/") && !isLikelyImageFile(file)) {
     return {
@@ -98,46 +74,14 @@ export async function moderatePhotoUpload(
     };
   }
 
-  try {
-    const safety = scanPhotoSafetyFast(file, kind);
-
-    if (!safety.allowed && safety.hardBlock) {
-      logPhotoUpload("moderation_blocked", {
-        kind,
-        category: safety.category,
-        reason: safety.internalReason,
-        riskScore: safety.riskScore
-      });
-      void reportPhotoViolationRemote({
-        reason: `Blocked before upload: ${safety.category || "moderation"}`,
-        photoRiskFlags: safety.photoRiskFlags || []
-      });
-      return {
-        allowed: false,
-        message: photoModerationUserMessage(),
-        code: "MODERATION_REJECTED",
-        internalReason: `${safety.category}:${safety.internalReason}`,
-        mode,
-        riskScore: safety.riskScore
-      };
-    }
-
-    resetPhotoModerationStrikes();
-    logPhotoUpload("moderation_passed", { kind, mode, riskScore: safety.riskScore });
-    return {
-      allowed: true,
-      message: "",
-      mode,
-      riskScore: safety.riskScore,
-      photoReviewStatus: "approved",
-      photoRiskFlags: []
-    };
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    logPhotoUpload("moderation_error", { kind, mode, reason });
-    resetPhotoModerationStrikes();
-    return { allowed: true, message: "", mode, photoReviewStatus: "approved", photoRiskFlags: [] };
-  }
+  resetPhotoModerationStrikes();
+  return {
+    allowed: true,
+    message: "",
+    mode,
+    photoReviewStatus: "approved",
+    photoRiskFlags: []
+  };
 }
 
 export type PhotoReviewAssessment = {
@@ -147,56 +91,31 @@ export type PhotoReviewAssessment = {
   hardBlockMessage?: string;
 };
 
-/** Assess after storage upload — upload-first; flags for admin review only. */
+/** Post-upload metadata — always approved until admin review changes it. */
 export async function assessUploadedPhoto(
-  file: File,
+  _file: File,
   kind: PhotoUploadKind
 ): Promise<PhotoReviewAssessment> {
-  if (moderationKillSwitchActive() || !isImageModerationEnabled()) {
-    return { photoReviewStatus: "approved", photoRiskFlags: [], hardBlock: false };
-  }
-
-  const result = await scanPhotoSafetyDeep(file, kind);
-  return {
-    photoReviewStatus: result.photoReviewStatus || "approved",
-    photoRiskFlags: result.photoRiskFlags || [],
-    hardBlock: false
-  };
+  void kind;
+  return { photoReviewStatus: "approved", photoRiskFlags: [], hardBlock: false };
 }
 
 export function toPhotoReviewMeta(
   kind: PhotoUploadKind,
-  assessment: PhotoReviewAssessment
+  _assessment?: PhotoReviewAssessment
 ): PhotoReviewMeta {
   const type = kind === "cover" ? "cover" : "profile";
-  return buildPhotoMetaEntry(type, assessment.photoReviewStatus, assessment.photoRiskFlags);
+  return defaultApprovedPhotoMeta(type);
 }
 
-/** Fire-and-forget: assess risk, report to server review queue. */
+/** Reserved for future background admin queue — does not block upload. */
 export function reviewUploadedPhotoAsync(
-  file: File,
+  _file: File,
   kind: PhotoUploadKind,
-  photoUrl: string,
+  _photoUrl: string,
   onAssessed?: (meta: PhotoReviewMeta) => void
 ): void {
-  if (moderationKillSwitchActive() || !isImageModerationEnabled()) return;
-
-  logPhotoSafetyRiskAsync(file, kind, async (result) => {
-    const type = kind === "cover" ? "cover" : "profile";
-    const status = result.photoReviewStatus || "approved";
-    const flags = result.photoRiskFlags || [];
-    const meta = buildPhotoMetaEntry(type, status, flags);
-    onAssessed?.(meta);
-
-    if (photoUrl && (status === "pending_review" || status === "rejected")) {
-      void submitPhotoReviewRemote({
-        photoUrl,
-        photoType: type,
-        photoReviewStatus: status,
-        photoRiskFlags: flags
-      });
-    }
-  });
+  onAssessed?.(defaultApprovedPhotoMeta(kind === "cover" ? "cover" : "profile"));
 }
 
 /** @deprecated Signup uses moderatePhotoUpload with kind=signup */

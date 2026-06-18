@@ -1,18 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
-import { PHOTO_UPLOAD_FAIL, photoModerationUserMessage, photoUploadUserMessage } from "../constants/photos";
+import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
   mapUploadError,
-  submitPhotoReviewRemote,
   uploadCompressedCoverBlob
 } from "../services/profilePhotos";
 import type { PhotoReviewMeta } from "../types";
-import {
-  assessUploadedPhoto,
-  moderatePhotoUpload,
-  toPhotoReviewMeta
-} from "../utils/mediaModeration";
+import { defaultApprovedPhotoMeta } from "../utils/photoMeta";
 import { PHOTO_FILE_ACCEPT, blobToDataUrl, validatePhotoFile } from "../utils/photoUpload";
 import { logPhotoPipeline } from "../utils/photoUploadLog";
 import { upsertPhotoMeta } from "../utils/photoMeta";
@@ -90,18 +85,6 @@ export function useCoverPhotoFlow({
           originalSize: croppedFile.size
         });
 
-        const verdict = await moderatePhotoUpload(croppedFile, "cover");
-        if (!verdict.allowed) {
-          logPhotoPipeline("failed", {
-            kind: "cover",
-            code: verdict.code || "MODERATION_REJECTED",
-            internalReason: verdict.internalReason || "moderation",
-            moderation: true
-          });
-          onModerationMessage?.(verdict.message || photoModerationUserMessage());
-          return;
-        }
-
         const compressed = await compressPhotoForPreview(croppedFile);
         logPhotoPipeline("compressed", {
           kind: "cover",
@@ -122,23 +105,12 @@ export function useCoverPhotoFlow({
         const remoteUrl = await uploadCompressedCoverBlob(compressed.blob, croppedFile, compressed.mime);
         logPhotoPipeline("uploaded", { kind: "cover" });
 
-        const assessment = await assessUploadedPhoto(croppedFile, "cover");
-        const meta = toPhotoReviewMeta("cover", assessment);
-
+        const meta = defaultApprovedPhotoMeta("cover");
         const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
 
         setLocalPreview(null);
         setPendingCover(remoteUrl);
         onChange(remoteUrl, nextMeta);
-
-        if (meta.photoReviewStatus === "pending_review" || meta.photoReviewStatus === "rejected") {
-          void submitPhotoReviewRemote({
-            photoUrl: remoteUrl,
-            photoType: "cover",
-            photoReviewStatus: meta.photoReviewStatus,
-            photoRiskFlags: meta.photoRiskFlags
-          });
-        }
 
         if (previousCover && isStoragePhotoUrl(previousCover)) {
           void deleteStoredPhoto(previousCover);

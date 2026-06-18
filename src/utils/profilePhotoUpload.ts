@@ -1,17 +1,12 @@
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
-import { photoModerationUserMessage, photoUploadUserMessage } from "../constants/photos";
+import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
   mapUploadError,
-  submitPhotoReviewRemote,
   uploadCompressedProfileBlob
 } from "../services/profilePhotos";
 import type { PhotoReviewMeta } from "../types";
-import {
-  assessUploadedPhoto,
-  moderatePhotoUpload,
-  toPhotoReviewMeta
-} from "./mediaModeration";
+import { defaultApprovedPhotoMeta } from "./photoMeta";
 import { blobToDataUrl, validatePhotoFile } from "./photoUpload";
 import { logPhotoPipeline } from "./photoUploadLog";
 import { samePhotoRef } from "./photoRefs";
@@ -27,7 +22,6 @@ export async function uploadSingleProfilePhotoFile(options: {
   existingPhotos?: string[];
 }): Promise<ProfilePhotoUploadResult> {
   const { file, signupMode = false, coverPhoto, existingPhotos = [] } = options;
-  const uploadKind = signupMode ? "signup" : "profile";
 
   try {
     const validation = await validatePhotoFile(file);
@@ -40,16 +34,6 @@ export async function uploadSingleProfilePhotoFile(options: {
     }
 
     const compressed = await compressPhotoForPreview(file);
-    const verdict = await moderatePhotoUpload(file, uploadKind);
-    if (!verdict.allowed) {
-      return {
-        ok: false,
-        message: verdict.message || photoModerationUserMessage(),
-        code: verdict.code || "MODERATION_REJECTED",
-        moderation: true
-      };
-    }
-
     const tempDataUrl = await blobToDataUrl(compressed.blob);
     if (samePhotoRef(tempDataUrl, coverPhoto)) {
       return { ok: false, message: "Please choose a different image from your cover photo." };
@@ -62,23 +46,12 @@ export async function uploadSingleProfilePhotoFile(options: {
     const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file, compressed.mime);
     logPhotoPipeline("uploaded", { signupMode, kind: "profile" });
 
-    const assessment = await assessUploadedPhoto(file, uploadKind);
-    const meta = toPhotoReviewMeta(uploadKind, assessment);
-
-    if (meta.photoReviewStatus === "pending_review" || meta.photoReviewStatus === "rejected") {
-      void submitPhotoReviewRemote({
-        photoUrl: remoteUrl,
-        photoType: "profile",
-        photoReviewStatus: meta.photoReviewStatus,
-        photoRiskFlags: meta.photoRiskFlags
-      });
-    }
-
+    const meta = defaultApprovedPhotoMeta("profile");
     return { ok: true, url: remoteUrl, meta };
   } catch (error) {
     const mapped = mapUploadError(error);
     logPhotoPipeline("failed", { code: mapped.code, reason: mapped.message });
-    return { ok: false, message: mapped.message, code: mapped.code };
+    return { ok: false, message: mapped.message || PHOTO_UPLOAD_FAIL, code: mapped.code };
   }
 }
 

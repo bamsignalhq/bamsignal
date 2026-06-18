@@ -163,7 +163,8 @@ export function assessProfilePhoto({
 }
 
 /**
- * Cover photos: only hard-block contact info and sensitive documents.
+ * Cover photos: hard-block only contact info and sensitive documents.
+ * Scenery, QR codes, and text-heavy graphics are flagged for review — not rejected.
  */
 export function assessCoverPhoto({
   textDensity,
@@ -196,34 +197,29 @@ export function assessCoverPhoto({
   }
 
   if (hasQr) {
-    return {
-      hardBlock: true,
-      hardBlockCategory: "qr_code",
-      pendingReview: false,
-      riskFlags: ["qr_detected"],
-      riskScore: PHOTO_RISK_WEIGHTS.qr_code
-    };
+    riskFlags.push("qr_detected");
+    riskScore = addRisk(riskScore, "qr_code");
   }
 
-  if (hasFlyerText || textDensity >= COVER_TEXT_HARD_BLOCK) {
-    return {
-      hardBlock: true,
-      hardBlockCategory: hasFlyerText ? "logo" : "text_heavy",
-      pendingReview: false,
-      riskFlags: [hasFlyerText ? "possible_logo" : "text_heavy"],
-      riskScore: addRisk(0, hasFlyerText ? "logo" : "text_heavy")
-    };
+  if (hasFlyerText) {
+    riskFlags.push("possible_logo");
+    riskScore = addRisk(riskScore, "logo");
   }
 
-  if (textDensity >= TEXT_HEAVY_RISK_DENSITY) {
+  if (textDensity >= COVER_TEXT_HARD_BLOCK) {
+    riskFlags.push("text_heavy");
+    riskScore = addRisk(riskScore, "text_heavy");
+  } else if (textDensity >= TEXT_HEAVY_RISK_DENSITY) {
     riskFlags.push("text_heavy");
     riskScore = addRisk(riskScore, "text_heavy");
   }
 
+  const pendingReview = riskFlags.length > 0;
+
   return {
     hardBlock: false,
     hardBlockCategory: null,
-    pendingReview: riskFlags.length > 0,
+    pendingReview,
     riskFlags,
     riskScore
   };

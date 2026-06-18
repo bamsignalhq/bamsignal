@@ -2,7 +2,7 @@ import {
   containsDocumentKeywords,
   scanPhotoSafetyText
 } from "../../shared/photoSafetyPatterns.mjs";
-import { assessCoverPhoto, assessProfilePhoto, containsBusinessFlyerText, TEXT_HEAVY_RISK_DENSITY } from "../../shared/photoQualityScore.mjs";
+import { assessCoverPhoto, assessProfilePhoto, containsBusinessFlyerText } from "../../shared/photoQualityScore.mjs";
 import type { PhotoModerationMode } from "../config/imageModeration";
 import type { PhotoUploadKind } from "../constants/photoUploadKinds";
 import type { PhotoReviewStatus, PhotoRiskFlag } from "../types";
@@ -184,12 +184,11 @@ export async function scanPhotoSafetyDeep(
 
   const assessment = isCover
     ? assessCoverPhoto({
-        textDensity: density,
+        textDensity: 0,
         hasQr,
         hasDocumentKeywords,
         hasContactLeak,
-        hasFlyerText:
-          containsBusinessFlyerText(combinedText) || density >= TEXT_HEAVY_RISK_DENSITY
+        hasFlyerText: containsBusinessFlyerText(combinedText)
       })
     : assessProfilePhoto({
         hasAdequateFace: faceAnalysis.hasAdequateFace,

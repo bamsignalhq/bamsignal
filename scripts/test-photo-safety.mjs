@@ -182,7 +182,9 @@ function testCoverRiskScoring() {
     hasContactLeak: false,
     hasFlyerText: true
   });
-  assert.equal(flyerFail.hardBlock, true);
+  assert.equal(flyerFail.hardBlock, false);
+  assert.equal(flyerFail.pendingReview, true);
+  assert.ok(flyerFail.riskFlags.includes("possible_logo"));
 
   const textHeavyFail = assessCoverPhoto({
     textDensity: 0.11,
@@ -191,7 +193,19 @@ function testCoverRiskScoring() {
     hasContactLeak: false,
     hasFlyerText: false
   });
-  assert.equal(textHeavyFail.hardBlock, true);
+  assert.equal(textHeavyFail.hardBlock, false);
+  assert.equal(textHeavyFail.pendingReview, true);
+  assert.ok(textHeavyFail.riskFlags.includes("text_heavy"));
+
+  const qrFlag = assessCoverPhoto({
+    textDensity: 0.04,
+    hasQr: true,
+    hasDocumentKeywords: false,
+    hasContactLeak: false,
+    hasFlyerText: false
+  });
+  assert.equal(qrFlag.hardBlock, false);
+  assert.equal(qrFlag.pendingReview, true);
 
   const ninFail = assessCoverPhoto({
     textDensity: 0.04,

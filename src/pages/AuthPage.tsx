@@ -626,7 +626,7 @@ export function AuthPage({
           {mode === "login" && (
             <>
               <h1 className="auth-title">Welcome back</h1>
-              <p className="auth-sub">Sign in with your username and PIN.</p>
+              <p className="auth-sub">Good to have you back ❤️</p>
               <div className="auth-fields">
                 <AuthField
                   label="Username"

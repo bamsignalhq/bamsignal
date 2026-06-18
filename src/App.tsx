@@ -1102,7 +1102,7 @@ export function App() {
           onMemberNavigate={navigateTab}
           likeCount={incomingSignals}
           messageCount={messageCount}
-          showBrandText={!isAuthed || showOnboarding || tab === "home"}
+          showBrandText={!isAuthed}
           showGreeting={false}
         />
 

@@ -4,7 +4,6 @@ import type { BoostProduct } from "../../constants/boosts";
 import { boostNeedsMemberCity, shopBoostDescription } from "../../constants/boosts";
 import { MONETIZATION_COPY } from "../../constants/copy";
 import { fetchBoostProducts } from "../../services/boosts";
-import { memberCityLabel } from "../../utils/memberCity";
 
 type ProfileBoostSheetProps = {
   open: boolean;
@@ -22,7 +21,6 @@ export function ProfileBoostSheet({
   memberCity = ""
 }: ProfileBoostSheetProps) {
   const [products, setProducts] = useState<BoostProduct[]>([]);
-  const cityLabel = memberCity.trim() || memberCityLabel();
 
   useEffect(() => {
     if (!open) return;
@@ -53,24 +51,22 @@ export function ProfileBoostSheet({
 
             return (
               <article key={product.id} className="profile-boost-card">
-                <div className="profile-boost-card__copy">
+                <div className="profile-boost-card__top">
                   <h3>{product.name}</h3>
-                  <p>{shopBoostDescription(product, cityLabel)}</p>
-                </div>
-                <div className="profile-boost-card__footer">
                   <span className="profile-boost-card__price">{product.priceLabel}</span>
-                  {needsCity && !cityReady ? (
-                    <p className="profile-boost-card__hint">Set your city in Edit Profile first.</p>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="btn-secondary btn-sm profile-boost-card__cta"
-                    disabled={disabled}
-                    onClick={() => onPurchase(product)}
-                  >
-                    {loading ? MONETIZATION_COPY.checkoutLoading : product.cta}
-                  </button>
                 </div>
+                <p className="profile-boost-card__desc">{shopBoostDescription(product)}</p>
+                {needsCity && !cityReady ? (
+                  <p className="profile-boost-card__hint">Set your city in Edit Profile first.</p>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn-secondary btn-sm profile-boost-card__cta"
+                  disabled={disabled}
+                  onClick={() => onPurchase(product)}
+                >
+                  {loading ? MONETIZATION_COPY.checkoutLoading : product.cta}
+                </button>
               </article>
             );
           })}

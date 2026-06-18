@@ -52,22 +52,21 @@ export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
     id: "profile-boost",
     name: "Featured Profile",
     price: 750,
-    description: "Appear at the top of local recommendations for 48 hours.",
+    description: "Appear at the top of statewide recommendations for 48 hours.",
     cta: "Go featured"
   }
 ];
 
 export const DEFAULT_BOOST_PRODUCTS: BoostProduct[] = DEFAULT_BOOST_INPUTS.map(hydrateBoost);
 
-export function shopBoostDescription(product: BoostProduct, cityLabel: string): string {
-  const place = cityLabel.trim() || "your city";
+export function shopBoostDescription(product: BoostProduct, _cityLabel?: string): string {
   switch (product.id) {
     case "signal-boost":
       return "Stand out in Discover for 24 hours.";
     case "priority-signal-once":
       return "Make sure your next Signal gets noticed first.";
     case "profile-boost":
-      return `Appear at the top of local recommendations in ${place} for 48 hours.`;
+      return "Appear at the top of statewide recommendations for 48 hours.";
     default:
       return product.description;
   }
@@ -109,7 +108,7 @@ export function boostSuccessCopy(
     case "profile-boost":
       return {
         title: "Featured Profile is live",
-        body: `You're at the top of local recommendations in ${place} for 48 hours.`
+        body: "You're featured at the top of statewide recommendations for 48 hours."
       };
     case "city-spotlight":
       return {

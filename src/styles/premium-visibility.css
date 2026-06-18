@@ -335,7 +335,7 @@
   padding: 8px 16px;
   border: 1px solid color-mix(in srgb, var(--brand-pink) 38%, var(--border));
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface);
   color: var(--brand-pink);
   font-size: 0.86rem;
   font-weight: 600;
@@ -345,7 +345,7 @@
 
 .profile-boost-entry:hover {
   border-color: color-mix(in srgb, var(--brand-pink) 55%, var(--border));
-  background: color-mix(in srgb, var(--brand-pink) 5%, #fff);
+  background: color-mix(in srgb, var(--brand-pink) 8%, var(--surface));
 }
 
 .profile-boost-sheet {
@@ -361,7 +361,7 @@
   position: absolute;
   inset: 0;
   border: none;
-  background: rgba(23, 11, 53, 0.35);
+  background: rgba(0, 0, 0, 0.45);
   cursor: pointer;
 }
 
@@ -369,86 +369,120 @@
   position: relative;
   z-index: 1;
   width: min(100%, 480px);
-  max-height: min(88vh, 640px);
+  max-height: min(82vh, 520px);
   overflow-y: auto;
   margin: 0;
-  padding: 20px 18px calc(18px + env(safe-area-inset-bottom, 0px));
-  border-radius: 20px 20px 0 0;
-  background: color-mix(in srgb, var(--brand-pink) 4%, #fff);
-  box-shadow: 0 -8px 32px rgba(233, 30, 140, 0.08);
+  padding: 16px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-radius: 18px 18px 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--brand-pink) 22%, var(--border));
+  background: var(--card);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
+  color: var(--text);
 }
 
 .profile-boost-sheet__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .profile-boost-sheet__head h2 {
-  margin: 0 0 4px;
-  font-size: 1.12rem;
+  margin: 0 0 2px;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  color: var(--text);
 }
 
 .profile-boost-sheet__subtitle {
   margin: 0;
-  font-size: 0.88rem;
-  line-height: 1.45;
-  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--text) 88%, var(--text-muted));
 }
 
 .profile-boost-sheet__cards {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .profile-boost-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border: 1px solid color-mix(in srgb, var(--brand-pink) 16%, var(--border));
-  border-radius: 14px;
-  background: #fff;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--brand-pink) 20%, var(--border));
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
 }
 
-.profile-boost-card__copy h3 {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.profile-boost-card__copy p {
-  margin: 0;
-  font-size: 0.84rem;
-  line-height: 1.45;
-  color: var(--text-muted);
-}
-
-.profile-boost-card__footer {
+.profile-boost-card__top {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile-boost-card__top h3 {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.profile-boost-card__desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--text) 90%, var(--text-muted));
 }
 
 .profile-boost-card__price {
-  font-size: 0.92rem;
+  flex-shrink: 0;
+  font-size: 0.86rem;
   font-weight: 700;
   color: var(--text);
 }
 
 .profile-boost-card__hint {
-  flex: 1 1 100%;
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
 }
 
 .profile-boost-card__cta {
-  margin-left: auto;
+  align-self: flex-start;
+  min-height: 34px;
+  padding-inline: 12px;
+  font-size: 0.8rem;
+}
+
+.app.dark .profile-boost-sheet__panel,
+[data-theme="dark"] .profile-boost-sheet__panel {
+  background: var(--card);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.app.dark .profile-boost-card,
+[data-theme="dark"] .profile-boost-card {
+  background: var(--bg-elevated, var(--surface));
+  border-color: color-mix(in srgb, var(--brand-pink) 28%, var(--border));
+}
+
+.app.dark .profile-boost-card__desc,
+[data-theme="dark"] .profile-boost-card__desc,
+.app.dark .profile-boost-sheet__subtitle,
+[data-theme="dark"] .profile-boost-sheet__subtitle {
+  color: color-mix(in srgb, var(--text) 94%, transparent);
+}
+
+.app.dark .profile-boost-card__cta.btn-secondary,
+[data-theme="dark"] .profile-boost-card__cta.btn-secondary {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--brand-pink) 35%, var(--border));
+  background: color-mix(in srgb, var(--brand-pink) 12%, var(--surface));
 }

@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, Settings, Sun } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Mic, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay, profileIntentLabel } from "../constants/intents";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
@@ -16,7 +16,6 @@ import {
 } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
 import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
-import { ProfileDetailsList } from "../components/profile/ProfileDetailsList";
 import { InterestPicker } from "../components/InterestPicker";
 import { VoiceIntroRecorder } from "../components/VoiceIntro";
 import { VoiceIntro } from "../components/VoiceIntro";
@@ -53,8 +52,17 @@ import { safeCoverPhoto } from "../utils/safeProfile";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { ContactForm } from "../components/ContactForm";
-import { ProfilePromptsEditor, ProfilePromptsDisplay } from "../components/profile/ProfilePromptsEditor";
-import { hasFilledProfileDetails } from "../utils/profileDetails";
+import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
+import { ProfileOverviewCard } from "../components/profile/ProfileOverviewCard";
+import { ProfileCompatibilityBars } from "../components/profile/ProfileCompatibilityBars";
+import { WhyThisProfile } from "../components/WhyThisProfile";
+import { getOwnProfileDimensionScores } from "../utils/ownProfileDimensions";
+import {
+  getAboutMeText,
+  getAboutSnippet,
+  getOwnWhyReasons,
+  shouldShowAboutCard
+} from "../utils/ownProfileOverview";
 
 type ProfileView = "overview" | "edit" | "settings";
 type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help";
@@ -285,6 +293,11 @@ export function ProfilePage({
     setEditOpen((current) => (current === id ? null : id));
   };
 
+  const openEdit = (section: EditSection) => {
+    setEditOpen(section);
+    setView("edit");
+  };
+
   const phoneVerified = Boolean(user.phoneVerified);
   const verification = getVerificationTier(profile, isPremium, phoneVerified);
 
@@ -303,7 +316,9 @@ export function ProfilePage({
   };
 
   return (
-    <div className={`page profile-page profile-page--hero member-content-pad ${view === "edit" ? "profile-page--editing" : ""}`}>
+    <div
+      className={`page profile-page profile-page--hero profile-page--premium member-content-pad ${view === "edit" ? "profile-page--editing" : ""}`}
+    >
       {modMessage && (
         <p
           className={`profile-mod-toast${modMessageSuccess ? " profile-mod-toast--success" : ""}`}
@@ -319,6 +334,7 @@ export function ProfilePage({
             user={user}
             profile={profile}
             verification={verification}
+            variant="premium"
             editableCover
             coverPhoto={profile.coverPhoto}
             photoMeta={profile.photoMeta}
@@ -359,53 +375,72 @@ export function ProfilePage({
             onPhotoModerationMessage={showModMessage}
           />
 
-          <div className="profile-overview-sections profile-overview-sections--clean">
-            {profile.bio?.trim() ? (
-              <section className="profile-overview-block">
-                <h3 className="profile-overview__label">About</h3>
-                <p className="profile-overview-bio">{profile.bio}</p>
-              </section>
+          <div className="profile-premium-sections">
+            {shouldShowAboutCard(profile) ? (
+              <ProfileOverviewCard title="About" onEdit={() => openEdit("prompts")}>
+                <p className="profile-premium-card__text">{getAboutSnippet(profile)}</p>
+              </ProfileOverviewCard>
             ) : null}
 
             {profile.interests?.length > 0 ? (
-              <section className="profile-overview-block">
-                <h3 className="profile-overview__label">Interests</h3>
-                <ProfileInterestsPreview interests={profile.interests} />
-              </section>
+              <ProfileOverviewCard title="Interests" onEdit={() => openEdit("interests")}>
+                <ProfileInterestsPreview interests={profile.interests} variant="premium" />
+              </ProfileOverviewCard>
             ) : null}
 
             {profile.intents.length > 0 ? (
-              <section className="profile-overview-block">
-                <h3 className="profile-overview__label">Looking for</h3>
-                <div className="profile-read-chips profile-read-chips--compact">
+              <ProfileOverviewCard title="Looking for" onEdit={() => openEdit("intent")}>
+                <div className="profile-premium-pills">
                   {profile.intents.slice(0, MAX_INTENT_SELECTIONS).map((intent) => (
-                    <span key={intent} className="profile-read-chip profile-read-chip--intent">
+                    <span key={intent} className="profile-premium-pill profile-premium-pill--outline">
                       {profileIntentLabel(intent)}
                     </span>
                   ))}
                 </div>
-              </section>
+              </ProfileOverviewCard>
             ) : null}
 
-            {hasFilledProfileDetails(profile) ? (
-              <section className="profile-overview-block profile-overview-block--facts">
-                <h3 className="profile-overview__label">Details</h3>
-                <ProfileDetailsList profile={profile} variant="rows" />
-              </section>
+            {getAboutMeText(profile) ? (
+              <ProfileOverviewCard title="About me" onEdit={() => openEdit("bio")}>
+                <p className="profile-premium-card__text profile-premium-card__text--about-me">
+                  {getAboutMeText(profile)}
+                </p>
+              </ProfileOverviewCard>
             ) : null}
-          {profile.profilePrompts?.filter((p) => p.answer.trim()).length ? (
-            <section className="profile-overview-block">
-              <h3 className="profile-overview__label">Prompts</h3>
-              <ProfilePromptsDisplay prompts={profile.profilePrompts} />
-            </section>
-          ) : null}
 
-            {profile.voiceIntroUrl ? (
-              <section className="profile-overview-block">
-                <h3 className="profile-overview__label">Voice intro</h3>
-                <VoiceIntro url={profile.voiceIntroUrl} label="Listen" />
-              </section>
+            {getOwnWhyReasons(profile).length > 0 ? (
+              <ProfileOverviewCard title="Why this profile">
+                <WhyThisProfile reasons={getOwnWhyReasons(profile)} title="Why this profile" />
+              </ProfileOverviewCard>
             ) : null}
+
+            <ProfileOverviewCard title="Compatibility">
+              <ProfileCompatibilityBars dimensions={getOwnProfileDimensionScores(profile)} />
+            </ProfileOverviewCard>
+
+            <ProfileOverviewCard title="Voice intro" onEdit={() => openEdit("voice")}>
+              {profile.voiceIntroUrl ? (
+                <div className="profile-premium-voice">
+                  <span className="profile-premium-voice__icon" aria-hidden>
+                    <Mic size={22} strokeWidth={1.75} />
+                  </span>
+                  <VoiceIntro url={profile.voiceIntroUrl} label="Play voice intro" />
+                </div>
+              ) : (
+                <div className="profile-premium-voice">
+                  <span className="profile-premium-voice__icon" aria-hidden>
+                    <Mic size={22} strokeWidth={1.75} />
+                  </span>
+                  <button
+                    type="button"
+                    className="profile-premium-voice__cta"
+                    onClick={() => openEdit("voice")}
+                  >
+                    Play voice intro
+                  </button>
+                </div>
+              )}
+            </ProfileOverviewCard>
           </div>
 
           <div className="profile-edit-cta profile-edit-cta--split">

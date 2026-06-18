@@ -1089,6 +1089,8 @@ export function App() {
           isAuthed && !showOnboarding && tab === "discover" ? " platform-shell--discover-premium" : ""
         }${
           isAuthed && !showOnboarding && tab === "likes" ? " platform-shell--signals-premium" : ""
+        }${
+          isAuthed && !showOnboarding && tab === "me" ? " platform-shell--profile-premium" : ""
         }`}
       >
         <TopNav

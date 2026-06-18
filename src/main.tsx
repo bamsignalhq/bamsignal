@@ -21,6 +21,7 @@ import "./styles/footer.css";
 import "./styles/dashboard.css";
 import "./styles/blog.css";
 import "./styles/legal-pages.css";
+import "./styles/profile-premium.css";
 import "./styles/member-pages.css";
 import "./styles/moment-pages.css";
 import "./styles/theme-contrast.css";

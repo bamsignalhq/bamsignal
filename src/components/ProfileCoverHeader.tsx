@@ -15,6 +15,7 @@ type ProfileCoverHeaderProps = {
   user: UserProfile;
   profile: DatingProfile;
   verification: VerificationInfo;
+  variant?: "default" | "premium";
   editableCover?: boolean;
   coverPhoto?: string;
   photoMeta?: Record<string, PhotoReviewMeta>;
@@ -31,10 +32,18 @@ function formatLocation(profile: DatingProfile): string {
   return state ? `${profile.city} · ${state}` : profile.city;
 }
 
+function formatPremiumLocation(profile: DatingProfile): string | null {
+  const city = profile.city?.trim();
+  if (!city) return null;
+  const state = profile.state ? (profile.state === "FCT" ? "Abuja" : profile.state) : null;
+  return state ? `${city} • ${state}` : city;
+}
+
 export function ProfileCoverHeader({
   user,
   profile,
   verification,
+  variant = "default",
   editableCover = false,
   coverPhoto,
   photoMeta,
@@ -61,8 +70,14 @@ export function ProfileCoverHeader({
 
   const coverPreview = flow.localPreview || cover;
 
+  const premium = variant === "premium";
   const ageText = profile.age != null && profile.age > 0 ? String(profile.age) : null;
-  const locationText = profile.city?.trim() ? formatLocation(profile) : null;
+  const locationText = profile.city?.trim()
+    ? premium
+      ? formatPremiumLocation(profile)
+      : formatLocation(profile)
+    : null;
+  const stripPhotos = premium ? photos.slice(0, 2) : photos;
 
   const openPhotoViewer = (index: number) => {
     if (!editablePhotos || !onPhotosChange) return;
@@ -72,7 +87,7 @@ export function ProfileCoverHeader({
 
   return (
     <>
-      <header className="profile-hero profile-hero--me">
+      <header className={`profile-hero profile-hero--me${premium ? " profile-hero--premium" : ""}`}>
         <div className="profile-hero__cover" aria-hidden={!avatar && !customCover}>
           <ShowcaseImage
             src={coverPreview}
@@ -127,31 +142,42 @@ export function ProfileCoverHeader({
           </div>
 
           <div className="profile-hero__meta">
-            <h1 className="profile-hero__name">{user.name || "Your profile"}</h1>
+            <h1 className="profile-hero__name">
+              <span>{user.name || "Your profile"}</span>
+              {premium && (verification.tier > 0 || profile.verified) ? (
+                <span className="profile-hero__name-badge">
+                  {verification.tier > 0 ? (
+                    <VerificationBadge info={verification} />
+                  ) : (
+                    <VerifiedBadge size="sm" />
+                  )}
+                </span>
+              ) : null}
+            </h1>
             {(ageText || locationText) && (
               <p className="profile-hero__meta-line">
                 {ageText ? <span className="profile-hero__age">{ageText}</span> : null}
-                {ageText && locationText ? <span className="profile-hero__meta-dot" aria-hidden>·</span> : null}
+                {ageText && locationText ? <span className="profile-hero__meta-dot" aria-hidden>•</span> : null}
                 {locationText ? (
                   <span className="profile-hero__location">
-                    <MapPin size={13} aria-hidden />
+                    {premium ? <span aria-hidden>📍</span> : <MapPin size={13} aria-hidden />}
                     {locationText}
                   </span>
                 ) : null}
               </p>
             )}
-            {(verification.tier > 0 || profile.verified) && (
+            {!premium && (verification.tier > 0 || profile.verified) ? (
               <div className="profile-hero__badges">
                 {verification.tier > 0 ? <VerificationBadge info={verification} /> : null}
                 {profile.verified && !verification.tier ? <VerifiedBadge /> : null}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {photos.length > 0 ? (
+        {stripPhotos.length > 0 ? (
           <div className="profile-hero__photo-strip" aria-label="Profile photos">
-            {photos.map((src, index) => (
+            {stripPhotos.map((src, index) => (
               <button
                 key={`${src}-${index}`}
                 type="button"

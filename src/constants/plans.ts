@@ -40,6 +40,16 @@ export const PLAN_DEFAULT_BADGES: Partial<Record<PlanId, string>> = {
   quarterly: "Best Value"
 };
 
+export const PLAN_CHECKOUT_LABELS: Record<PlanId, string> = {
+  weekly: "Weekly Plan",
+  monthly: "Monthly Plan",
+  quarterly: "3 Months Plan"
+};
+
+export function planCheckoutLabel(plan: PremiumPlan): string {
+  return PLAN_CHECKOUT_LABELS[plan.id] ?? planShortLabel(plan);
+}
+
 export function planShortLabel(plan: PremiumPlan): string {
   return PLAN_SHORT_NAMES[plan.id] ?? plan.name.replace(/\s*Signal Pass$/i, "");
 }
@@ -102,14 +112,11 @@ export const DEFAULT_PREMIUM_PLANS: PremiumPlan[] = DEFAULT_PREMIUM_PLAN_INPUTS.
 
 /** Shown on Signal Pass upgrade */
 export const SIGNAL_PASS_INCLUDES = [
-  "Unlimited Signals",
-  "People Interested In You",
-  "Advanced Filters",
-  "Priority Visibility",
-  "Unlimited Undo",
-  "Unlimited Contact Exchanges",
+  "Unlimited contact exchanges",
+  "Priority visibility",
   "Premium badge",
-  "Faster support"
+  "More Signals",
+  "Exclusive features as BamSignal grows"
 ] as const;
 
 /** @deprecated use SIGNAL_PASS_INCLUDES */

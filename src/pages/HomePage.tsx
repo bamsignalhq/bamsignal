@@ -9,6 +9,7 @@ import {
 } from "../components/home/HomeAdvancedFiltersSheet";
 import { HomeFeedFilters } from "../components/home/HomeFeedFilters";
 import { HomeSignalLimitBar } from "../components/home/HomeSignalLimitBar";
+import { HomePremiumBanner } from "../components/premium/HomePremiumBanner";
 import { HomeQuickFilterSheet } from "../components/home/HomeQuickFilterSheet";
 import { HomeSignalsFeed } from "../components/home/HomeSignalsFeed";
 import { fetchHomeFeedAds } from "../services/homeFeedAds";
@@ -168,6 +169,8 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
           refreshKey={signalRefresh}
         />
       </header>
+
+      {!isPremium ? <HomePremiumBanner onUpgrade={onOpenPremium} /> : null}
 
       <section className="home-discovery home-discovery--compact" aria-label="Filters">
         <HomeFeedFilters

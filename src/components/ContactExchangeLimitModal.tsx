@@ -1,4 +1,5 @@
 import type { PremiumPlan } from "../constants/plans";
+import { MONETIZATION_COPY } from "../constants/copy";
 
 type ContactExchangeLimitModalProps = {
   open: boolean;
@@ -33,7 +34,7 @@ export function ContactExchangeLimitModal({
           </button>
           {recommended ? (
             <button type="button" className="btn-primary" onClick={() => onUpgrade(recommended)}>
-              Get Signal Pass
+              {MONETIZATION_COPY.upgradeToday}
             </button>
           ) : null}
         </div>

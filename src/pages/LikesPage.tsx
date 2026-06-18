@@ -1,6 +1,6 @@
 import { ChevronRight, Shield } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { BRAND, BUTTON_COPY, SUCCESS_COPY } from "../constants/copy";
+import { BRAND, MONETIZATION_COPY, PREMIUM_COPY } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
 import { ReportBlockModal } from "../components/ReportBlockModal";
@@ -284,11 +284,22 @@ export function LikesPage({ isPremium, onUpgrade, onDiscover, onOpenSafety }: Li
 
       {!hasSignals ? (
         <div className="signals-premium-empty">
-          <h2>{SUCCESS_COPY.emptyPremiumState}</h2>
-          <p>When someone signals you, they&apos;ll appear here.</p>
-          <button type="button" className="btn-primary" onClick={onDiscover ?? onUpgrade}>
-            {BUTTON_COPY.explore}
-          </button>
+          <h2>{PREMIUM_COPY.signalsEmptyTitle}</h2>
+          <p>{PREMIUM_COPY.signalsEmptyBody}</p>
+          <div className="premium-empty-actions">
+            {!isPremium ? (
+              <button type="button" className="btn-primary" onClick={onUpgrade}>
+                {MONETIZATION_COPY.upgradeToday}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={!isPremium ? "btn-secondary" : "btn-primary"}
+              onClick={onDiscover ?? onUpgrade}
+            >
+              {PREMIUM_COPY.explorePeople}
+            </button>
+          </div>
         </div>
       ) : (
         <div className="signals-premium-list">

@@ -1,8 +1,8 @@
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, Star } from "lucide-react";
 import { useMemo, useState } from "react";
 import { BRAND, MONETIZATION_COPY } from "../constants/copy";
 import type { PlanId, PremiumPlan } from "../constants/plans";
-import { SIGNAL_PASS_INCLUDES, durationLabel, planBadge, planShortLabel } from "../constants/plans";
+import { SIGNAL_PASS_INCLUDES, planBadge, planCheckoutLabel } from "../constants/plans";
 
 type PremiumPageProps = {
   isPremium: boolean;
@@ -16,11 +16,21 @@ function defaultPlanId(plans: PremiumPlan[]): PlanId {
   return plans.find((p) => p.id === "monthly")?.id ?? plans[0]?.id ?? "monthly";
 }
 
+const FEATURED_PLAN_ORDER: PlanId[] = ["monthly", "quarterly", "weekly"];
+
 export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }: PremiumPageProps) {
-  const [selectedId, setSelectedId] = useState<PlanId>(() => defaultPlanId(plans));
+  const orderedPlans = useMemo(() => {
+    const byId = new Map(plans.map((plan) => [plan.id, plan]));
+    const featured = FEATURED_PLAN_ORDER.map((id) => byId.get(id)).filter(
+      (plan): plan is PremiumPlan => Boolean(plan)
+    );
+    return featured.length ? featured : plans;
+  }, [plans]);
+
+  const [selectedId, setSelectedId] = useState<PlanId>(() => defaultPlanId(orderedPlans));
   const selected = useMemo(
-    () => plans.find((p) => p.id === selectedId) ?? plans[0],
-    [plans, selectedId]
+    () => orderedPlans.find((p) => p.id === selectedId) ?? orderedPlans[0],
+    [orderedPlans, selectedId]
   );
 
   return (
@@ -30,7 +40,9 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
           <ArrowLeft size={22} />
         </button>
         <div>
-          <h1 className="premium-page__title">Signal Pass</h1>
+          <h1 className="premium-page__title premium-page__title-row">
+            Signal Pass <Star size={20} className="premium-page__star" aria-hidden fill="currentColor" />
+          </h1>
           {!isPremium && <p className="premium-page__subtitle">{BRAND.paywallBody}</p>}
         </div>
       </header>
@@ -42,26 +54,23 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
         </section>
       ) : (
         <>
-          <section className="premium-plan-strip" aria-label="Signal Pass plans">
-            {plans.map((plan) => {
+          <section className="premium-plan-buttons" aria-label="Signal Pass plans">
+            {orderedPlans.map((plan) => {
               const active = plan.id === selectedId;
               const badge = planBadge(plan);
               return (
                 <button
                   key={plan.id}
                   type="button"
-                  className={`premium-plan-strip__card${active ? " premium-plan-strip__card--selected" : ""}`}
+                  className={`premium-plan-button${active ? " premium-plan-button--selected" : ""}`}
                   onClick={() => setSelectedId(plan.id)}
                   aria-pressed={active}
                 >
-                  <div className="premium-plan-strip__main">
-                    <span className="premium-plan-strip__name">{planShortLabel(plan)}</span>
-                    <span className="premium-plan-strip__duration">{durationLabel(plan.days)}</span>
-                  </div>
-                  <div className="premium-plan-strip__aside">
-                    {badge ? <span className="premium-plan-strip__badge">{badge}</span> : null}
-                    <span className="premium-plan-strip__price">{plan.priceLabel}</span>
-                  </div>
+                  <span>
+                    <span className="premium-plan-button__name">{planCheckoutLabel(plan)}</span>
+                    <span className="premium-plan-button__price">{plan.priceLabel}</span>
+                  </span>
+                  {badge ? <span className="premium-plan-button__badge">{badge}</span> : null}
                 </button>
               );
             })}
@@ -69,7 +78,7 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
 
           <section className="premium-includes" aria-labelledby="premium-includes-title">
             <h2 id="premium-includes-title" className="premium-includes__title">
-              Included with Signal Pass
+              Benefits
             </h2>
             <ul className="premium-includes__list">
               {SIGNAL_PASS_INCLUDES.map((item) => (
@@ -87,7 +96,7 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
             disabled={loading || !selected}
             onClick={() => selected && onSelectPlan(selected)}
           >
-            {loading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.getSignalPass}
+            {loading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.upgradeToday}
           </button>
         </>
       )}

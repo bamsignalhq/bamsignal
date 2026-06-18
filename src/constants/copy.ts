@@ -6,9 +6,9 @@ export const BRAND = {
   tagline: "Real people.\nReal vibes.\nNo stories.",
   cta: "Discover Signals",
   nearbySignals: "Nearby Signals",
-  premiumCta: "Get Signal Pass",
+  premiumCta: "Upgrade Today",
   paywallTitle: "Signal Pass",
-  paywallBody: "Connect without limits.",
+  paywallBody: "Unlock unlimited connections and enjoy a premium BamSignal experience.",
   contactBlockMessage:
     "We couldn't save that information. Please try something different.",
   contactTelegramBlocked:
@@ -60,7 +60,7 @@ export const BUTTON_COPY = {
   done: "Done",
   explore: "Explore",
   sendSignal: "Send Signal",
-  getSignalPass: "Get Signal Pass"
+  getSignalPass: "Upgrade Today"
 } as const;
 
 export const ERROR_COPY = {
@@ -93,7 +93,10 @@ export const EXPERIENCE_COPY = {
 } as const;
 
 export const MONETIZATION_COPY = {
-  getSignalPass: "Get Signal Pass",
+  unlockSignalPass: "Unlock Signal Pass",
+  upgradeToday: "Upgrade Today",
+  goPremium: "Go Premium",
+  getSignalPass: "Upgrade Today",
   checkoutLoading: "Preparing secure checkout...",
   paymentSuccessTitle: "Welcome to Signal Pass ❤️",
   paymentSuccessBody: "Enjoy unlimited connections.",
@@ -103,6 +106,25 @@ export const MONETIZATION_COPY = {
   seeEveryone: "See Everyone",
   signalsExhaustedTitle: "No Signals left",
   signalsExhaustedHint: "Signal Pass lets you keep connecting."
+} as const;
+
+export const PREMIUM_COPY = {
+  unlockTitle: "Unlock Signal Pass",
+  settingsEyebrow: "Premium",
+  settingsSubtitle: "Unlimited connections and premium benefits.",
+  profileEyebrow: "Signal Pass",
+  profileSubtitle: "Unlock unlimited connections and premium features.",
+  homeBannerEyebrow: "Upgrade to Signal Pass",
+  homeBannerTitle: "Unlimited connections. Priority visibility. Premium experience.",
+  homeBannerBullets: ["Unlimited connections.", "Priority visibility.", "Premium experience."],
+  discoverPillTitle: "Signal Pass",
+  discoverPillHint: "Unlimited experience",
+  signalsEmptyTitle: "No signals yet ❤️",
+  signalsEmptyBody: "Put yourself in front of more people with Signal Pass.",
+  explorePeople: "Explore People",
+  subscriptionManage: "Manage your subscription",
+  subscriptionActive: "Signal Pass is active on your account.",
+  helpSupport: "Help & Support"
 } as const;
 
 export const LANDING = {

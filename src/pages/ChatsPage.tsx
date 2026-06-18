@@ -1,6 +1,6 @@
 import { ArrowLeft, MoreVertical, Pin, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { EXPERIENCE_COPY } from "../constants/copy";
+import { EXPERIENCE_COPY, MONETIZATION_COPY } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
 import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
 import { ActivityStatus } from "../components/ActivityStatus";
@@ -179,11 +179,18 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
         <div className="messages-empty messages-empty--compact">
           <h2>{EXPERIENCE_COPY.chatEmptyTitle}</h2>
           <p>{EXPERIENCE_COPY.chatEmptyBody}</p>
-          {onDiscover ? (
-            <button type="button" className="btn-primary" onClick={onDiscover}>
-              Discover people
-            </button>
-          ) : null}
+          <div className="premium-empty-actions">
+            {onDiscover ? (
+              <button type="button" className="btn-primary" onClick={onDiscover}>
+                Discover People
+              </button>
+            ) : null}
+            {!isPremium ? (
+              <button type="button" className="btn-secondary" onClick={() => setPaywallOpen(true)}>
+                {MONETIZATION_COPY.upgradeToday}
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -270,6 +277,17 @@ export function ChatsPage({ isPremium, plans, onUpgrade, paymentLoading, onDisco
           })}
         </ul>
       ) : null}
+
+      <PaywallModal
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        plans={plans}
+        onSelectPlan={(plan) => {
+          onUpgrade(plan);
+          setPaywallOpen(false);
+        }}
+        loading={paymentLoading}
+      />
     </div>
   );
 }

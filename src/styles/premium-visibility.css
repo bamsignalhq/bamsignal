@@ -1,0 +1,233 @@
+/* Signal Pass discovery — premium cards & pills */
+
+.signal-pass-promo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #e91e8c 0%, #c2185b 42%, #9c27b0 100%);
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(233, 30, 140, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.signal-pass-promo--home {
+  margin-bottom: 14px;
+  padding: 16px 16px 14px;
+}
+
+.signal-pass-promo--profile {
+  margin-bottom: 14px;
+}
+
+.signal-pass-promo--settings {
+  margin-bottom: 14px;
+}
+
+.signal-pass-promo__dismiss {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+}
+
+.signal-pass-promo__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.signal-pass-promo--home .signal-pass-promo__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.signal-pass-promo__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+
+.signal-pass-promo__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.signal-pass-promo__title--compact {
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.signal-pass-promo__subtitle {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  opacity: 0.94;
+}
+
+.signal-pass-promo__bullets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  opacity: 0.95;
+}
+
+.signal-pass-promo__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #fff;
+  color: #e91e8c;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.signal-pass-promo--home .signal-pass-promo__cta {
+  margin-top: 2px;
+}
+
+.discover-signal-pass-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--brand-pink) 28%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-pink) 8%, var(--surface));
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.discover-signal-pass-pill__label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--brand-pink);
+}
+
+.discover-signal-pass-pill__hint {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.premium-empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+  margin-top: 4px;
+}
+
+.premium-empty-actions .btn-secondary {
+  width: 100%;
+}
+
+.premium-page__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.premium-page__star {
+  color: #f5b942;
+}
+
+.premium-plan-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.premium-plan-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #e91e8c 0%, #9c27b0 55%, #673ab7 100%);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(156, 39, 176, 0.22);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.premium-plan-button:hover {
+  transform: translateY(-1px);
+}
+
+.premium-plan-button--selected {
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 10px 28px rgba(233, 30, 140, 0.35);
+}
+
+.premium-plan-button__name {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.premium-plan-button__price {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.82rem;
+  opacity: 0.92;
+}
+
+.premium-plan-button__badge {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.premium-includes__list li svg {
+  color: var(--brand-pink);
+  flex-shrink: 0;
+}

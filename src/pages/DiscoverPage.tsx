@@ -6,6 +6,7 @@ import { fetchDiscoverProfiles, searchMemberProfiles } from "../services/discove
 import { sendSignalRemote } from "../services/memberData";
 import { DiscoverHeader } from "../components/discover/DiscoverHeader";
 import { DiscoverPremiumNudge } from "../components/discover/DiscoverPremiumNudge";
+import { DiscoverSignalPassPill } from "../components/premium/DiscoverSignalPassPill";
 import { DiscoverQuickFilters } from "../components/discover/DiscoverQuickFilters";
 import { ProfileCardSkeleton } from "../components/Skeleton";
 import { EmptyState } from "../components/EmptyState";
@@ -332,6 +333,9 @@ export function DiscoverPage({
         onOpenFilters={() => setFiltersOpen(true)}
       />
       <DiscoverQuickFilters active={quickFilter} onChange={setQuickFilter} />
+      {!isPremium ? (
+        <DiscoverSignalPassPill onClick={() => setPaywallOpen(true)} />
+      ) : null}
       {passedIds.length > 0 ? (
         <button type="button" className="discover-undo-btn" onClick={handleUndoPass}>
           Undo

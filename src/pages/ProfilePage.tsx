@@ -29,7 +29,7 @@ import type {
   UserProfile
 } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
-import { BUTTON_COPY } from "../constants/copy";
+import { BUTTON_COPY, PREMIUM_COPY } from "../constants/copy";
 import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { getVerificationTier } from "../utils/verification";
@@ -53,6 +53,7 @@ import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { TwoFactorSettingsCard } from "../components/TwoFactorSettingsCard";
 import { ContactForm } from "../components/ContactForm";
+import { SignalPassPromoCard } from "../components/premium/SignalPassPromoCard";
 import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
 import { ProfileOverviewCard } from "../components/profile/ProfileOverviewCard";
 import {
@@ -115,11 +116,20 @@ function photosHint(count: number): string {
   return `${count} of ${MAX_PROFILE_PHOTOS} added`;
 }
 
-function SettingsRow({ label, onClick }: { label: string; onClick: () => void }) {
+function SettingsRow({
+  label,
+  hint,
+  onClick
+}: {
+  label: string;
+  hint?: string;
+  onClick: () => void;
+}) {
   return (
     <button type="button" className="settings-hub-row" onClick={onClick}>
       <span>
         <strong>{label}</strong>
+        {hint ? <small>{hint}</small> : null}
       </span>
       <ChevronRight size={18} aria-hidden="true" />
     </button>
@@ -373,6 +383,8 @@ export function ProfilePage({
             }}
             onPhotoModerationMessage={showModMessage}
           />
+
+          {!isPremium ? <SignalPassPromoCard variant="profile" onUpgrade={onUpgrade} /> : null}
 
           <div className="profile-premium-sections">
             {shouldShowAboutCard(profile) ? (
@@ -778,15 +790,23 @@ export function ProfilePage({
 
           {settingsPanel === "hub" && (
             <>
+              {!isPremium ? <SignalPassPromoCard variant="settings" onUpgrade={onUpgrade} /> : null}
               <section className="card settings-hub-card">
-                <SettingsRow label="Account" onClick={() => setSettingsPanel("account")} />
-                <SettingsRow label="Safety Center" onClick={() => onOpenSafetyCenter?.()} />
+                <SettingsRow
+                  label="Subscription"
+                  hint={PREMIUM_COPY.subscriptionManage}
+                  onClick={() => setSettingsPanel("subscription")}
+                />
                 <SettingsRow label="Privacy & Safety" onClick={() => setSettingsPanel("privacy")} />
                 <SettingsRow label="Notifications" onClick={() => setSettingsPanel("notifications")} />
+                <SettingsRow label="Account" onClick={() => setSettingsPanel("account")} />
+                <SettingsRow label="Safety Center" onClick={() => onOpenSafetyCenter?.()} />
                 <SettingsRow label="Preferences" onClick={() => setSettingsPanel("preferences")} />
                 <SettingsRow label="Verification" onClick={() => setSettingsPanel("verification")} />
-                <SettingsRow label="Subscription" onClick={() => setSettingsPanel("subscription")} />
-                <SettingsRow label="Help" onClick={() => setSettingsPanel("help")} />
+                <SettingsRow
+                  label={PREMIUM_COPY.helpSupport}
+                  onClick={() => setSettingsPanel("help")}
+                />
               </section>
               <section className="card settings-card settings-card--logout">
                 <button type="button" className="settings-row settings-row--logout" onClick={handleLogout}>
@@ -930,11 +950,12 @@ export function ProfilePage({
           {settingsPanel === "subscription" && (
             <section className="card settings-card">
               {isPremium ? (
-                <p className="profile-overview-empty">Signal Pass is active on your account.</p>
+                <>
+                  <p className="profile-overview-empty">{PREMIUM_COPY.subscriptionActive}</p>
+                  <p className="settings-help-hours">{PREMIUM_COPY.subscriptionManage}</p>
+                </>
               ) : (
-                <button type="button" className="settings-row" onClick={onUpgrade}>
-                  <span>Get Signal Pass</span>
-                </button>
+                <SignalPassPromoCard variant="settings" onUpgrade={onUpgrade} />
               )}
             </section>
           )}

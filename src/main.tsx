@@ -25,6 +25,7 @@ import "./styles/profile-premium.css";
 import "./styles/member-pages.css";
 import "./styles/moment-pages.css";
 import "./styles/theme-contrast.css";
+import "./styles/premium-visibility.css";
 import "./styles/compliance.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";

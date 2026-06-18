@@ -30,7 +30,7 @@ import type {
 } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
 import { BUTTON_COPY, PREMIUM_COPY } from "../constants/copy";
-import { APP_BUILD_LABEL } from "../constants/appRelease";
+import { APP_BUILD_LABEL, APP_BUILD_TIME } from "../constants/appRelease";
 import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { getVerificationTier } from "../utils/verification";
@@ -1022,7 +1022,8 @@ export function ProfilePage({
               </p>
               <p className="settings-help-hours">{getCms().supportHours}</p>
               <p className="settings-help-build" aria-hidden="true">
-                Build: {APP_BUILD_LABEL}
+                {APP_BUILD_LABEL}
+                {APP_BUILD_TIME ? ` · ${APP_BUILD_TIME.slice(0, 19).replace("T", " ")} UTC` : null}
               </p>
               <ContactForm
                 className="contact-form--embedded"

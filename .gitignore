@@ -15,6 +15,7 @@ android/key.properties
 android/app/*.jks
 *.jks
 *.keystore
+*firebase-adminsdk*.json
 android/.idea/deploymentTargetSelector.xml
 android/.idea/deviceManager.xml
 

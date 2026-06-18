@@ -7,7 +7,8 @@ dotenv.config();
 const appBuildId =
   process.env.VITE_APP_BUILD_ID ||
   process.env.GITHUB_SHA?.slice(0, 8) ||
-  "1.0.11-14";
+  "1.0.12-15";
+const appBuildTime = process.env.VITE_APP_BUILD_TIME || new Date().toISOString();
 
 function contactApiDevPlugin(): Plugin {
   return {
@@ -131,7 +132,8 @@ function contactApiDevPlugin(): Plugin {
 export default defineConfig({
   plugins: [react(), contactApiDevPlugin()],
   define: {
-    __APP_BUILD_ID__: JSON.stringify(appBuildId)
+    __APP_BUILD_ID__: JSON.stringify(appBuildId),
+    __APP_BUILD_TIME__: JSON.stringify(appBuildTime)
   },
   build: {
     rollupOptions: {

@@ -5,9 +5,12 @@ import {
 } from "../constants/homeFeedAds";
 import type { DiscoverProfile, MemberSearchFilters } from "../types";
 
+export const SIGNAL_PASS_PROMO_INTERVAL = 12;
+
 export type HomeFeedGridItem =
   | { type: "profile"; profile: DiscoverProfile }
-  | { type: "ad"; slotIndex: 0 | 1 | 2 };
+  | { type: "ad"; slotIndex: 0 | 1 | 2 }
+  | { type: "signal-pass-promo"; variant: "signals" | "visibility" };
 
 function isSlotLive(settings: HomeFeedAdsSettings, slotIndex: number): boolean {
   if (!settings.enabled) return false;
@@ -37,6 +40,35 @@ export function buildHomeFeedGridItems(
   }
 
   return items;
+}
+
+/** Insert one subtle Signal Pass chip after every N real (non-sample) profile cards. */
+export function injectSignalPassPromos(
+  items: HomeFeedGridItem[],
+  options: { enabled: boolean; isSampleProfile?: (profile: DiscoverProfile) => boolean }
+): HomeFeedGridItem[] {
+  if (!options.enabled) return items;
+
+  const isSample = options.isSampleProfile ?? (() => false);
+  const out: HomeFeedGridItem[] = [];
+  let realCount = 0;
+  let promoIndex = 0;
+
+  for (const item of items) {
+    out.push(item);
+    if (item.type !== "profile" || isSample(item.profile)) continue;
+
+    realCount += 1;
+    if (realCount > 0 && realCount % SIGNAL_PASS_PROMO_INTERVAL === 0) {
+      out.push({
+        type: "signal-pass-promo",
+        variant: promoIndex % 2 === 0 ? "signals" : "visibility"
+      });
+      promoIndex += 1;
+    }
+  }
+
+  return out;
 }
 
 export function filterProfilesByName(profiles: DiscoverProfile[], query: string): DiscoverProfile[] {

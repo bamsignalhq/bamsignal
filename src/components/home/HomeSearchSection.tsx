@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, Search, Zap } from "lucide-react";
-import { BRAND, ERROR_COPY, MONETIZATION_COPY, SUCCESS_COPY } from "../../constants/copy";
+import { BRAND, ERROR_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { STORAGE_KEYS } from "../../constants/limits";
 import { DEFAULT_PROFILE_COVER } from "../../constants/photos";
 import { AgeRangeTapSelect } from "../AgeRangeTapSelect";
 import { StateCitySelect } from "../StateCitySelect";
 import { MatchPreferenceFields } from "../preferences/MatchPreferenceFields";
+import { SignalLimitModal } from "../premium/SignalLimitModal";
 import { ShowcaseImage } from "../ShowcaseImage";
 import { VerificationBadge } from "../VerificationBadge";
 import { searchMemberProfiles } from "../../services/discoverProfiles";
@@ -21,10 +22,7 @@ import {
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../../utils/profile";
 import {
   evaluateSignalGate,
-  isAtFreeSignalLimit,
   recordSignalUsage,
-  signalLimitReachedMessage,
-  signalLimitReachedHint,
   signalsRemainingLabel
 } from "../../utils/signalLimits";
 import { readJson } from "../../utils/storage";
@@ -54,6 +52,7 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
   const [searched, setSearched] = useState(false);
   const [toast, setToast] = useState("");
   const [signalingId, setSignalingId] = useState<string | null>(null);
+  const [signalLimitOpen, setSignalLimitOpen] = useState(false);
 
   const remainingLabel = signalsRemainingLabel(isPremium);
   const advancedCount = homeAdvancedFilterCount(advanced);
@@ -93,7 +92,7 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
     const gate = evaluateSignalGate(isPremium, user);
     if (!gate.allowed) {
       localStorage.setItem(STORAGE_KEYS.pendingSignalProfileId, profile.id);
-      onUpgrade();
+      setSignalLimitOpen(true);
       return;
     }
 
@@ -215,18 +214,6 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
         </p>
       ) : null}
 
-      {!isPremium && isAtFreeSignalLimit(isPremium) ? (
-        <div className="home-search__limit-banner card">
-          <p>{signalLimitReachedMessage()}</p>
-          <p className="home-search__limit-hint">{signalLimitReachedHint()}</p>
-          <div className="home-search__limit-actions">
-            <button type="button" className="btn-primary btn-sm" onClick={onUpgrade}>
-              {MONETIZATION_COPY.getSignalPass}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
       {emptyMessage ? (
         <div className="home-search__empty">
           <p>{emptyMessage.title}</p>
@@ -295,6 +282,15 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
           })}
         </ul>
       ) : null}
+
+      <SignalLimitModal
+        open={signalLimitOpen}
+        onClose={() => setSignalLimitOpen(false)}
+        onGetSignalPass={() => {
+          setSignalLimitOpen(false);
+          onUpgrade();
+        }}
+      />
     </section>
   );
 }

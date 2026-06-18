@@ -89,7 +89,7 @@ function SceneHome() {
         <h1 className="home-top__greeting">
           {greetingForHour()}, {firstName} 👋
         </h1>
-        <HomeSignalLimitBar isPremium={false} onUpgrade={() => undefined} refreshKey={0} />
+        <HomeSignalLimitBar isPremium={false} onAtLimit={() => undefined} refreshKey={0} />
       </header>
       <section className="home-discovery home-discovery--compact" aria-label="Filters">
         <HomeFeedFilters
@@ -249,7 +249,7 @@ function SceneFilters() {
     <div className="page home-page home-page--compact member-content-pad">
       <header className="home-top home-top--compact home-top--row">
         <h1 className="home-top__greeting">Good afternoon, Chioma 👋</h1>
-        <HomeSignalLimitBar isPremium={false} onUpgrade={() => undefined} refreshKey={0} />
+        <HomeSignalLimitBar isPremium={false} onAtLimit={() => undefined} refreshKey={0} />
       </header>
       <section className="home-discovery home-discovery--compact">
         <HomeFeedFilters

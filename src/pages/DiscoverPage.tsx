@@ -5,9 +5,8 @@ import { FREE_DAILY_SWIPES, STORAGE_KEYS } from "../constants/limits";
 import { fetchDiscoverProfiles, searchMemberProfiles } from "../services/discoverProfiles";
 import { sendSignalRemote } from "../services/memberData";
 import { DiscoverHeader } from "../components/discover/DiscoverHeader";
-import { DiscoverPremiumNudge } from "../components/discover/DiscoverPremiumNudge";
-import { DiscoverSignalPassPill } from "../components/premium/DiscoverSignalPassPill";
 import { DiscoverQuickFilters } from "../components/discover/DiscoverQuickFilters";
+import { SignalLimitModal } from "../components/premium/SignalLimitModal";
 import { ProfileCardSkeleton } from "../components/Skeleton";
 import { EmptyState } from "../components/EmptyState";
 import { PaywallModal } from "../components/PaywallModal";
@@ -91,6 +90,7 @@ export function DiscoverPage({
   const profilesLoadedOnce = useRef(false);
   const [allProfiles, setAllProfiles] = useState<DiscoverProfile[]>([]);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const [signalLimitOpen, setSignalLimitOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [safetyOpen, setSafetyOpen] = useState(false);
 
@@ -166,6 +166,10 @@ export function DiscoverPage({
       setProfileOpen(false);
       return true;
     }
+    if (signalLimitOpen) {
+      setSignalLimitOpen(false);
+      return true;
+    }
     if (paywallOpen) {
       setPaywallOpen(false);
       return true;
@@ -178,7 +182,7 @@ export function DiscoverPage({
     if (readDailyCount(STORAGE_KEYS.dailySwipes) >= FREE_DAILY_SWIPES) {
       trackEvent("paywall_seen", { source: "discover_swipes" });
       trackUpgradeImpression("signal_limit");
-      setPaywallOpen(true);
+      setSignalLimitOpen(true);
       return false;
     }
     return true;
@@ -335,9 +339,6 @@ export function DiscoverPage({
         onOpenFilters={() => setFiltersOpen(true)}
       />
       <DiscoverQuickFilters active={quickFilter} onChange={setQuickFilter} />
-      {!isPremium ? (
-        <DiscoverSignalPassPill onClick={onStartPremiumCheckout} />
-      ) : null}
       {passedIds.length > 0 ? (
         <button type="button" className="discover-undo-btn" onClick={handleUndoPass}>
           Undo
@@ -416,7 +417,15 @@ export function DiscoverPage({
         />
       )}
 
-      {atLimit && <DiscoverPremiumNudge onUpgrade={onStartPremiumCheckout} />}
+      <SignalLimitModal
+        open={signalLimitOpen}
+        onClose={() => setSignalLimitOpen(false)}
+        onGetSignalPass={() => {
+          setSignalLimitOpen(false);
+          onStartPremiumCheckout();
+        }}
+        loading={paymentLoading}
+      />
 
       <PaywallModal
         open={paywallOpen}

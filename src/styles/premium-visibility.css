@@ -239,3 +239,84 @@
   opacity: 0.72;
   cursor: wait;
 }
+
+/* Subtle inline Signal Pass chip (feed) */
+.signal-pass-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--brand-pink) 32%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand-pink) 6%, var(--surface));
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.signal-pass-inline:hover {
+  border-color: color-mix(in srgb, var(--brand-pink) 48%, var(--border));
+  background: color-mix(in srgb, var(--brand-pink) 10%, var(--surface));
+}
+
+.signal-pass-inline:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.signal-pass-inline__lead {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.signal-pass-inline__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--brand-pink);
+}
+
+.signal-pass-inline--grid {
+  grid-column: 1 / -1;
+}
+
+/* Signal limit modal */
+.signal-limit-modal {
+  position: relative;
+  width: min(100%, 360px);
+  padding: 24px 20px 20px;
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+}
+
+.signal-limit-modal__title {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.signal-limit-modal__body {
+  margin: 0 0 18px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.signal-limit-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-hub-row--cta {
+  width: 100%;
+}

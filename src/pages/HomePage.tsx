@@ -9,7 +9,7 @@ import {
 } from "../components/home/HomeAdvancedFiltersSheet";
 import { HomeFeedFilters } from "../components/home/HomeFeedFilters";
 import { HomeSignalLimitBar } from "../components/home/HomeSignalLimitBar";
-import { HomePremiumBanner } from "../components/premium/HomePremiumBanner";
+import { SignalLimitModal } from "../components/premium/SignalLimitModal";
 import { HomeQuickFilterSheet } from "../components/home/HomeQuickFilterSheet";
 import { HomeSignalsFeed } from "../components/home/HomeSignalsFeed";
 import { fetchHomeFeedAds } from "../services/homeFeedAds";
@@ -67,6 +67,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     localStorage.getItem(STORAGE_KEYS.pendingSignalProfileId)
   );
   const [signalRefresh, setSignalRefresh] = useState(0);
+  const [signalLimitOpen, setSignalLimitOpen] = useState(false);
 
   const fetchCitiesForFeed = useMemo(() => {
     const usingSavedSearch =
@@ -165,12 +166,10 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         </h1>
         <HomeSignalLimitBar
           isPremium={isPremium}
-          onUpgrade={onOpenPremium}
+          onAtLimit={() => setSignalLimitOpen(true)}
           refreshKey={signalRefresh}
         />
       </header>
-
-      {!isPremium ? <HomePremiumBanner onUpgrade={onOpenPremium} /> : null}
 
       <section className="home-discovery home-discovery--compact" aria-label="Filters">
         <HomeFeedFilters
@@ -206,6 +205,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         filtersApplied={hasCustomFilters}
         pendingProfileId={pendingProfileId}
         onUpgrade={onOpenPremium}
+        onSignalLimit={() => setSignalLimitOpen(true)}
         onViewMore={onDiscover}
         onResetFilters={resetFilters}
         onSignalSent={handleSignalSent}
@@ -232,6 +232,12 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         onClose={() => setAdvancedOpen(false)}
         onClear={() => setAdvanced(emptyHomeAdvancedFilters())}
         onApply={() => setAdvancedOpen(false)}
+      />
+
+      <SignalLimitModal
+        open={signalLimitOpen}
+        onClose={() => setSignalLimitOpen(false)}
+        onGetSignalPass={onOpenPremium}
       />
     </div>
   );

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProfileDetailSheet } from "../ProfileDetailSheet";
 import { ReportBlockModal } from "../ReportBlockModal";
 import { HomeSponsoredBanner } from "../home/HomeSponsoredBanner";
+import { SignalPassInlineChip } from "../premium/SignalPassInlineChip";
+import { SignalLimitModal } from "../premium/SignalLimitModal";
 import { DiscoverFeedCard } from "./DiscoverFeedCard";
 import { BRAND, ERROR_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { HOME_FEED_PROFILE_COUNT } from "../../constants/homeFeedAds";
@@ -12,7 +14,7 @@ import {
   computeCompatibilityPercent,
   getProfileMatchReasons
 } from "../../utils/compatibility";
-import { buildHomeFeedGridItems } from "../../utils/homeFeed";
+import { buildHomeFeedGridItems, injectSignalPassPromos } from "../../utils/homeFeed";
 import { blockAndReportUser, blockUser } from "../../utils/safety";
 import { evaluateSignalGate, recordSignalUsage } from "../../utils/signalLimits";
 import { incrementSignalsSent } from "../../utils/streaks";
@@ -62,6 +64,7 @@ export function DiscoverGridFeed({
   const [signalingId, setSignalingId] = useState<string | null>(null);
   const [detailProfile, setDetailProfile] = useState<DiscoverProfile | null>(null);
   const [safetyOpen, setSafetyOpen] = useState(false);
+  const [signalLimitOpen, setSignalLimitOpen] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -73,10 +76,10 @@ export function DiscoverGridFeed({
     [profiles, displayLimit]
   );
 
-  const gridItems = useMemo(
-    () => buildHomeFeedGridItems(visibleProfiles, adSettings, displayLimit),
-    [visibleProfiles, adSettings, displayLimit]
-  );
+  const gridItems = useMemo(() => {
+    const base = buildHomeFeedGridItems(visibleProfiles, adSettings, displayLimit);
+    return injectSignalPassPromos(base, { enabled: !isPremium });
+  }, [visibleProfiles, adSettings, displayLimit, isPremium]);
 
   const hasMore = profiles.length > displayLimit;
   const showingCount = Math.min(displayLimit, profiles.length);
@@ -107,7 +110,7 @@ export function DiscoverGridFeed({
   const handleSignal = async (profile: DiscoverProfile) => {
     const gate = evaluateSignalGate(isPremium, user);
     if (!gate.allowed) {
-      onUpgrade();
+      setSignalLimitOpen(true);
       return;
     }
 
@@ -169,6 +172,17 @@ export function DiscoverGridFeed({
         <>
           <div className="discover-feed-grid">
             {gridItems.map((item, index) => {
+              if (item.type === "signal-pass-promo") {
+                return (
+                  <SignalPassInlineChip
+                    key={`promo-${item.variant}-${index}`}
+                    variant={item.variant}
+                    onUpgrade={onUpgrade}
+                    className="signal-pass-inline--grid"
+                  />
+                );
+              }
+
               if (item.type === "ad") {
                 const slot = adSettings.slots[item.slotIndex];
                 return (
@@ -258,6 +272,15 @@ export function DiscoverGridFeed({
           }}
         />
       ) : null}
+
+      <SignalLimitModal
+        open={signalLimitOpen}
+        onClose={() => setSignalLimitOpen(false)}
+        onGetSignalPass={() => {
+          setSignalLimitOpen(false);
+          onUpgrade();
+        }}
+      />
     </section>
   );
 }

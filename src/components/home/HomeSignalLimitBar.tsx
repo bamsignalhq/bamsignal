@@ -4,11 +4,11 @@ import { getFreeSignalsRemaining } from "../../utils/signalLimits";
 
 type HomeSignalLimitBarProps = {
   isPremium: boolean;
-  onUpgrade: () => void;
+  onAtLimit?: () => void;
   refreshKey?: number;
 };
 
-export function HomeSignalLimitBar({ isPremium, onUpgrade, refreshKey = 0 }: HomeSignalLimitBarProps) {
+export function HomeSignalLimitBar({ isPremium, onAtLimit, refreshKey = 0 }: HomeSignalLimitBarProps) {
   const remaining = useMemo(
     () => getFreeSignalsRemaining(isPremium),
     [isPremium, refreshKey]
@@ -28,7 +28,7 @@ export function HomeSignalLimitBar({ isPremium, onUpgrade, refreshKey = 0 }: Hom
       <button
         type="button"
         className="home-signal-pill home-signal-pill--full"
-        onClick={onUpgrade}
+        onClick={() => onAtLimit?.()}
         aria-label={MONETIZATION_COPY.signalsExhaustedTitle}
       >
         {MONETIZATION_COPY.signalsExhaustedTitle}

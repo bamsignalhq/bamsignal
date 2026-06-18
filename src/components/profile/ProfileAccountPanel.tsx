@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BUTTON_COPY, MONETIZATION_COPY } from "../../constants/copy";
+import { BUTTON_COPY } from "../../constants/copy";
 import { STORAGE_KEYS } from "../../constants/limits";
 import type { DatingProfile, UserProfile } from "../../types";
 import {
@@ -244,8 +244,6 @@ export function ProfileAccountPanel({
           Your profile hides immediately. Permanent deletion happens within 30 days.
         </p>
       </section>
-
-      {!isPremium ? <p className="account-settings-hint">{MONETIZATION_COPY.signalsExhaustedHint}</p> : null}
 
       <DeleteAccountModal
         open={deleteModalOpen}

@@ -54,7 +54,6 @@ import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { TwoFactorSettingsCard } from "../components/TwoFactorSettingsCard";
 import { ContactForm } from "../components/ContactForm";
-import { SignalPassPromoCard } from "../components/premium/SignalPassPromoCard";
 import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
 import { ProfileOverviewCard } from "../components/profile/ProfileOverviewCard";
 import {
@@ -385,8 +384,6 @@ export function ProfilePage({
             }}
             onPhotoModerationMessage={showModMessage}
           />
-
-          {!isPremium ? <SignalPassPromoCard variant="profile" onUpgrade={onUpgrade} /> : null}
 
           <div className="profile-premium-sections">
             {shouldShowAboutCard(profile) ? (
@@ -794,11 +791,10 @@ export function ProfilePage({
 
           {settingsPanel === "hub" && (
             <>
-              {!isPremium ? <SignalPassPromoCard variant="settings" onUpgrade={onUpgrade} /> : null}
               <section className="card settings-hub-card">
                 <SettingsRow
-                  label="Subscription"
-                  hint={PREMIUM_COPY.subscriptionManage}
+                  label={isPremium ? "Manage Signal Pass" : "Signal Pass"}
+                  hint={isPremium ? PREMIUM_COPY.subscriptionManage : undefined}
                   onClick={() => setSettingsPanel("subscription")}
                 />
                 <SettingsRow label="Privacy & Safety" onClick={() => setSettingsPanel("privacy")} />
@@ -959,7 +955,12 @@ export function ProfilePage({
                   <p className="settings-help-hours">{PREMIUM_COPY.subscriptionManage}</p>
                 </>
               ) : (
-                <SignalPassPromoCard variant="settings" onUpgrade={onUpgrade} />
+                <button type="button" className="settings-hub-row settings-hub-row--cta" onClick={onUpgrade}>
+                  <span>
+                    <strong>Signal Pass</strong>
+                  </span>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </button>
               )}
             </section>
           )}

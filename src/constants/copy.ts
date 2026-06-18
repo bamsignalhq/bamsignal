@@ -96,7 +96,6 @@ export const MONETIZATION_COPY = {
   unlockSignalPass: "Unlock Signal Pass",
   upgradeToday: "Upgrade Today",
   goPremium: "Go Premium",
-  getSignalPass: "Upgrade Today",
   checkoutLoading: "Preparing secure checkout...",
   checkoutOpening: "Opening checkout...",
   checkoutStartFailed: "We couldn't start checkout. Please try again.",
@@ -106,8 +105,10 @@ export const MONETIZATION_COPY = {
   paymentCancelledBody: "Your upgrade is still available whenever you're ready.",
   lockedFeature: "Included with Signal Pass 🔒",
   seeEveryone: "See Everyone",
-  signalsExhaustedTitle: "No Signals left",
-  signalsExhaustedHint: "Signal Pass lets you keep connecting."
+  signalsExhaustedTitle: "No Signals left today",
+  signalsExhaustedHint: "Signal Pass lets you keep connecting without waiting.",
+  getSignalPass: "Get Signal Pass",
+  maybeLater: "Maybe later"
 } as const;
 
 export const PREMIUM_COPY = {
@@ -125,6 +126,7 @@ export const PREMIUM_COPY = {
   signalsEmptyBody: "Put yourself in front of more people with Signal Pass.",
   explorePeople: "Explore People",
   subscriptionManage: "Manage your subscription",
+  subscriptionFreeHint: "Upgrade when you want more Signals.",
   subscriptionActive: "Signal Pass is active on your account.",
   helpSupport: "Help & Support"
 } as const;

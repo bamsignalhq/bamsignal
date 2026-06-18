@@ -3,6 +3,8 @@ import { ProfileDetailSheet } from "../ProfileDetailSheet";
 import { ReportBlockModal } from "../ReportBlockModal";
 import { HomeFeedCard } from "./HomeFeedCard";
 import { HomeSponsoredBanner } from "./HomeSponsoredBanner";
+import { SignalPassInlineChip } from "../premium/SignalPassInlineChip";
+import { SignalLimitModal } from "../premium/SignalLimitModal";
 import { BRAND, ERROR_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { HOME_FEED_PROFILE_COUNT } from "../../constants/homeFeedAds";
 import { STORAGE_KEYS } from "../../constants/limits";
@@ -17,7 +19,7 @@ import {
 } from "../../utils/compatibility";
 import { isSampleHomeProfile, padHomeFeedWithSamples } from "../../utils/homeFeedSamples";
 import { getMemberCity } from "../../utils/memberCity";
-import { buildHomeFeedGridItems, filterProfilesByName } from "../../utils/homeFeed";
+import { buildHomeFeedGridItems, filterProfilesByName, injectSignalPassPromos } from "../../utils/homeFeed";
 import { homeAdvancedToSearchFilters, filterProfilesByDistance } from "../../utils/homeFilters";
 import { effectiveHomeDistanceKm } from "../../utils/cityMetroRadius";
 import { rankProfiles } from "../../utils/matching";
@@ -52,6 +54,7 @@ type HomeSignalsFeedProps = {
   filtersApplied: boolean;
   pendingProfileId?: string | null;
   onUpgrade: () => void;
+  onSignalLimit?: () => void;
   onViewMore: () => void;
   onResetFilters?: () => void;
   onSignalSent?: () => void;
@@ -97,6 +100,7 @@ export function HomeSignalsFeed({
   filtersApplied,
   pendingProfileId,
   onUpgrade,
+  onSignalLimit,
   onViewMore,
   onResetFilters,
   onSignalSent
@@ -113,6 +117,7 @@ export function HomeSignalsFeed({
   const [signalingId, setSignalingId] = useState<string | null>(null);
   const [detailProfile, setDetailProfile] = useState<DiscoverProfile | null>(null);
   const [safetyOpen, setSafetyOpen] = useState(false);
+  const [signalLimitOpen, setSignalLimitOpen] = useState(false);
 
   const debouncedAgeMin = useDebouncedValue(ageMin, 300);
   const debouncedAgeMax = useDebouncedValue(ageMax, 300);
@@ -232,10 +237,13 @@ export function HomeSignalsFeed({
     [displayProfiles, displayLimit]
   );
 
-  const gridItems = useMemo(
-    () => buildHomeFeedGridItems(visibleProfiles, adSettings, displayLimit),
-    [visibleProfiles, adSettings, displayLimit]
-  );
+  const gridItems = useMemo(() => {
+    const base = buildHomeFeedGridItems(visibleProfiles, adSettings, displayLimit);
+    return injectSignalPassPromos(base, {
+      enabled: !isPremium,
+      isSampleProfile: isSampleHomeProfile
+    });
+  }, [visibleProfiles, adSettings, displayLimit, isPremium]);
 
   const showToast = (message: string) => {
     setToast(message);
@@ -251,7 +259,8 @@ export function HomeSignalsFeed({
     const gate = evaluateSignalGate(isPremium, user);
     if (!gate.allowed) {
       localStorage.setItem(STORAGE_KEYS.pendingSignalProfileId, profile.id);
-      onUpgrade();
+      setSignalLimitOpen(true);
+      onSignalLimit?.();
       return;
     }
 
@@ -313,6 +322,17 @@ export function HomeSignalsFeed({
         <>
           <div className="discover-feed-grid">
             {gridItems.map((item, index) => {
+              if (item.type === "signal-pass-promo") {
+                return (
+                  <SignalPassInlineChip
+                    key={`promo-${item.variant}-${index}`}
+                    variant={item.variant}
+                    onUpgrade={onUpgrade}
+                    className="signal-pass-inline--grid"
+                  />
+                );
+              }
+
               if (item.type === "ad") {
                 const slot = adSettings.slots[item.slotIndex];
                 return (
@@ -400,6 +420,15 @@ export function HomeSignalsFeed({
           }}
         />
       ) : null}
+
+      <SignalLimitModal
+        open={signalLimitOpen}
+        onClose={() => setSignalLimitOpen(false)}
+        onGetSignalPass={() => {
+          setSignalLimitOpen(false);
+          onUpgrade();
+        }}
+      />
     </section>
   );
 }

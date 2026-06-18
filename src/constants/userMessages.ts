@@ -9,5 +9,6 @@ export const USER_MESSAGES = {
   photoUploadFailed: "We couldn't upload that photo. Please try again.",
   photoRejected: "We couldn't use that image. Try another clear photo.",
   profileSaveFailed: "We couldn't save just now. Your changes are kept on this device — please try again.",
+  profileSaved: "Your profile was saved.",
   paymentNotCompleted: "No worries — your upgrade is still available whenever you're ready."
 } as const;

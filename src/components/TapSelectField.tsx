@@ -78,7 +78,7 @@ export function TapSelectField<T extends string>({
       ? [value as T]
       : [];
   const format = formatValue ?? ((v: T) => v);
-  const showSelectedChips = multiple && selected.length > 0 && maxSelections == null;
+  const showSelectedChips = false;
 
   useEffect(() => {
     if (!multiple || !Array.isArray(value)) return;

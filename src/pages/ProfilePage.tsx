@@ -166,6 +166,7 @@ export function ProfilePage({
   const [saved, setSaved] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
   const [modMessage, setModMessage] = useState("");
+  const [modMessageSuccess, setModMessageSuccess] = useState(false);
   const [view, setView] = useState<ProfileView>("overview");
   const [settingsPanel, setSettingsPanel] = useState<SettingsPanel>("hub");
   const [editOpen, setEditOpen] = useState<EditSection | null>(null);
@@ -219,15 +220,20 @@ export function ProfilePage({
         return;
       }
       setSaved(true);
+      showModMessage(USER_MESSAGES.profileSaved, true);
       window.setTimeout(() => setSaved(false), 2000);
     } finally {
       setSaveBusy(false);
     }
   };
 
-  const showModMessage = (msg: string) => {
+  const showModMessage = (msg: string, success = false) => {
     setModMessage(msg);
-    window.setTimeout(() => setModMessage(""), 4000);
+    setModMessageSuccess(success);
+    window.setTimeout(() => {
+      setModMessage("");
+      setModMessageSuccess(false);
+    }, 4000);
   };
 
   const startSelfieVerification = () => {
@@ -291,7 +297,10 @@ export function ProfilePage({
   return (
     <div className={`page profile-page profile-page--hero member-content-pad ${view === "edit" ? "profile-page--editing" : ""}`}>
       {modMessage && (
-        <p className="profile-mod-toast" role="status">
+        <p
+          className={`profile-mod-toast${modMessageSuccess ? " profile-mod-toast--success" : ""}`}
+          role="status"
+        >
           {modMessage}
         </p>
       )}
@@ -573,9 +582,6 @@ export function ProfilePage({
                   lifestyle: lifestyles[0]
                 })
               }
-              occupations={
-                profile.occupations ?? (profile.occupation ? [profile.occupation] : [])
-              }
               occupation={profile.occupation ?? profile.occupations?.[0]}
               onOccupationChange={(occupation) =>
                 setProfile({
@@ -742,22 +748,34 @@ export function ProfilePage({
                 ageMin={prefs.ageMin ?? 22}
                 ageMax={prefs.ageMax ?? 35}
                 onAgeRangeChange={(ageMin, ageMax) => setPrefs({ ...prefs, ageMin, ageMax })}
-                occupations={prefs.occupations}
-                onOccupationsChange={(occupations) => setPrefs({ ...prefs, occupations })}
-                statesOfOrigin={prefs.statesOfOrigin}
-                onStatesOfOriginChange={(statesOfOrigin) => setPrefs({ ...prefs, statesOfOrigin })}
+                occupation={prefs.occupations[0]}
+                onOccupationChange={(occupation) =>
+                  setPrefs({ ...prefs, occupations: occupation ? [occupation] : [] })
+                }
+                stateOfOrigin={prefs.statesOfOrigin[0]}
+                onStateOfOriginChange={(stateOfOrigin) =>
+                  setPrefs({ ...prefs, statesOfOrigin: stateOfOrigin ? [stateOfOrigin] : [] })
+                }
                 relationshipIntentions={prefs.relationshipIntentions}
                 onRelationshipIntentionsChange={(relationshipIntentions) =>
                   setPrefs({ ...prefs, relationshipIntentions })
                 }
-                genotypes={prefs.genotypes}
-                onGenotypesChange={(genotypes) => setPrefs({ ...prefs, genotypes })}
-                hasKids={prefs.hasKids}
-                onHasKidsChange={(hasKids) => setPrefs({ ...prefs, hasKids })}
-                wantsKids={prefs.wantsKids}
-                onWantsKidsChange={(wantsKids) => setPrefs({ ...prefs, wantsKids })}
-                bodyTypes={prefs.bodyTypes}
-                onBodyTypesChange={(bodyTypes) => setPrefs({ ...prefs, bodyTypes })}
+                genotype={prefs.genotypes[0]}
+                onGenotypeChange={(genotype) =>
+                  setPrefs({ ...prefs, genotypes: genotype ? [genotype] : [] })
+                }
+                hasKidsOption={prefs.hasKids[0]}
+                onHasKidsOptionChange={(hasKidsOption) =>
+                  setPrefs({ ...prefs, hasKids: hasKidsOption ? [hasKidsOption] : [] })
+                }
+                wantsKidsOption={prefs.wantsKids[0]}
+                onWantsKidsOptionChange={(wantsKidsOption) =>
+                  setPrefs({ ...prefs, wantsKids: wantsKidsOption ? [wantsKidsOption] : [] })
+                }
+                bodyType={prefs.bodyTypes[0]}
+                onBodyTypeChange={(bodyType) =>
+                  setPrefs({ ...prefs, bodyTypes: bodyType ? [bodyType] : [] })
+                }
                 verificationPreferences={prefs.verificationPreferences}
                 onVerificationPreferencesChange={(verificationPreferences) =>
                   setPrefs({ ...prefs, verificationPreferences, requireVerified: false })

@@ -54,8 +54,8 @@ export const DEFAULT_CMS: CmsContent = {
     premiumActivated: "Enjoy unlimited connections."
   },
   supportWhatsapp: "",
-  supportResponseTime: "Within 24 hours",
-  supportHours: "Mon–Sat, 9am–6pm WAT",
+  supportResponseTime: "Within few hours",
+  supportHours: "9am–6pm WAT",
   growthVerifiedProfiles: "ID verified",
   growthCitiesLive: "Nationwide",
   growthSignalsSent: "5 free daily",
@@ -66,6 +66,9 @@ export const DEFAULT_CMS: CmsContent = {
 const REMOVED_HERO_SUBHEADLINE =
   "Meet verified people nearby for friendship, dating, and meaningful connections.";
 
+const LEGACY_SUPPORT_RESPONSE_TIME = "Within 24 hours";
+const LEGACY_SUPPORT_HOURS = "Mon–Sat, 9am–6pm WAT";
+
 export function getCms(): CmsContent {
   const saved = readJson<Partial<CmsContent>>(STORAGE_KEYS.cms, {});
   const merged = { ...DEFAULT_CMS, ...saved };
@@ -74,6 +77,15 @@ export function getCms(): CmsContent {
     if (saved.heroSubheadline === REMOVED_HERO_SUBHEADLINE) {
       writeJson(STORAGE_KEYS.cms, { ...saved, heroSubheadline: "" });
     }
+  }
+  if (
+    merged.supportResponseTime === LEGACY_SUPPORT_RESPONSE_TIME &&
+    saved.supportResponseTime === LEGACY_SUPPORT_RESPONSE_TIME
+  ) {
+    merged.supportResponseTime = DEFAULT_CMS.supportResponseTime;
+  }
+  if (merged.supportHours === LEGACY_SUPPORT_HOURS && saved.supportHours === LEGACY_SUPPORT_HOURS) {
+    merged.supportHours = DEFAULT_CMS.supportHours;
   }
   return merged;
 }

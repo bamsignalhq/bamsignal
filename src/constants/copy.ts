@@ -132,5 +132,5 @@ export function onboardingWelcomeTitle(name = ""): string {
 }
 
 export function onboardingWelcomeBody(_name = ""): string {
-  return "Your profile is ready. Discover genuine people around you and take things one signal at a time.";
+  return "Your profile is ready. Meet people around you at your own pace — one signal at a time.";
 }

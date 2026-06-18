@@ -43,7 +43,7 @@ export const DEFAULT_CMS: CmsContent = {
   welcomePhotoHint: "",
   welcomeReadyTitle: "Welcome to BamSignal ❤️",
   welcomeReadyBody:
-    "Your profile is ready. Discover genuine people around you and take things one signal at a time.",
+    "Your profile is ready. Meet people around you at your own pace — one signal at a time.",
   earlyAccessLabel: "Early Access",
   foundingMemberLabel: "Early member",
   notificationTemplates: {

@@ -30,6 +30,7 @@ import type {
 } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
 import { BUTTON_COPY, PREMIUM_COPY } from "../constants/copy";
+import { APP_BUILD_LABEL } from "../constants/appRelease";
 import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { getVerificationTier } from "../utils/verification";
@@ -1020,6 +1021,9 @@ export function ProfilePage({
                   : `Reach us by email. ${getCms().supportResponseTime}.`}
               </p>
               <p className="settings-help-hours">{getCms().supportHours}</p>
+              <p className="settings-help-build" aria-hidden="true">
+                Build: {APP_BUILD_LABEL}
+              </p>
               <ContactForm
                 className="contact-form--embedded"
                 initialName={user.name}

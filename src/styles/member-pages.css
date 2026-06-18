@@ -1943,6 +1943,13 @@
   color: var(--text-muted);
 }
 
+.settings-help-build {
+  margin: -8px 0 16px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  opacity: 0.72;
+}
+
 .contact-form--embedded {
   margin-top: 4px;
 }

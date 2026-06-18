@@ -6,6 +6,7 @@ import { cacheDiscoverProfiles } from "./discoverProfiles";
 import { setPremiumSnapshot } from "./premiumStatus";
 import { apiUrl } from "./supabase";
 import { normalizeDatingProfile } from "../utils/profile";
+import { isComplianceComplete, normalizeCompliance } from "../utils/compliance";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import { readResponseJson } from "../utils/httpJson";
 import { safeArray, safeCoverPhoto, safePhotos } from "../utils/safeProfile";
@@ -167,7 +168,15 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
       coverPhoto,
       coverPhotoExplicit,
       interests,
-      interestsTouched
+      interestsTouched,
+      compliance: isComplianceComplete(normalizeCompliance(remote.compliance))
+        ? normalizeCompliance(remote.compliance)
+        : isComplianceComplete(local.compliance)
+          ? local.compliance
+          : normalizeCompliance({
+              ...(local.compliance || {}),
+              ...(typeof remote.compliance === "object" && remote.compliance ? remote.compliance : {})
+            })
     });
     writeJson(STORAGE_KEYS.datingProfile, merged);
   }

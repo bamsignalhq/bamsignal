@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
 import { Loader2, Mail, ShieldCheck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { AppLogo } from "../components/AppLogo";
 import { AuthField } from "../components/AuthField";
 import { OtpCodeInput } from "../components/OtpCodeInput";
+import { SignupLegalCheckboxes, isSignupLegalComplete } from "../components/SignupLegalCheckboxes";
 import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
 import { friendlyAuthError, supabase } from "../services/supabase";
@@ -31,6 +32,8 @@ import {
   touchPendingCodeSent,
   touchPendingVerifyCode
 } from "../utils/signupPersistence";
+import { mergeLocalCompliance, saveComplianceAcknowledgements } from "../services/compliance";
+import { signupLegalAckTypes } from "../utils/compliance";
 
 type AuthPageProps = {
   mode: AuthMode;
@@ -119,6 +122,9 @@ export function AuthPage({
   const [signupFieldErrors, setSignupFieldErrors] = useState<SignupFieldErrors>({});
   const [signupFieldChecking, setSignupFieldChecking] = useState<SignupFieldChecking>({});
   const [verifyCode, setVerifyCode] = useState(restored.current.verifyCode);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
   const [resendIn, setResendIn] = useState(restored.current.resendIn);
@@ -369,6 +375,10 @@ export function AuthPage({
       onMessage("Still checking your details — wait a moment.");
       return;
     }
+    if (!isSignupLegalComplete(termsAccepted, privacyAccepted, ageConfirmed)) {
+      onMessage("Please accept the terms, privacy policy, and age confirmation to continue.");
+      return;
+    }
 
     setBusy("signup");
     onMessage("");
@@ -461,6 +471,8 @@ export function AuthPage({
       flowLog("session_create_success");
       clearPendingSignup();
       const profile = profileFromSessionUser(sessionUser);
+      mergeLocalCompliance(signupLegalAckTypes());
+      void saveComplianceAcknowledgements(profile, signupLegalAckTypes());
       await onAuthenticated(profile, {
         isNewSignup: !verifyResult.onboardingComplete,
         recovered: verifyResult.recovered
@@ -671,7 +683,25 @@ export function AuthPage({
                   autoComplete="new-password"
                 />
               </div>
-              <button type="button" className="btn-primary btn-full btn-auth" onClick={signUp} disabled={busy === "signup"}>
+
+              <SignupLegalCheckboxes
+                termsAccepted={termsAccepted}
+                privacyAccepted={privacyAccepted}
+                ageConfirmed={ageConfirmed}
+                onTermsChange={setTermsAccepted}
+                onPrivacyChange={setPrivacyAccepted}
+                onAgeChange={setAgeConfirmed}
+              />
+
+              <button
+                type="button"
+                className="btn-primary btn-full btn-auth"
+                onClick={signUp}
+                disabled={
+                  busy === "signup" ||
+                  !isSignupLegalComplete(termsAccepted, privacyAccepted, ageConfirmed)
+                }
+              >
                 {busy === "signup" ? <Loader2 className="spin" size={20} /> : "Continue"}
               </button>
               <button type="button" className="link-btn auth-switch" onClick={() => onModeChange("login")}>

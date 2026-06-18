@@ -6,6 +6,7 @@ import { normalizeIntents } from "../constants/intents";
 import { stateForCity, citiesForState, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
 import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
+import { normalizeCompliance } from "./compliance";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
 import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString } from "./safeProfile";
@@ -166,7 +167,8 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     hasKidsOptions,
     wantsKidsOptions,
     bodyTypes,
-    createdAt: cleaned.createdAt ?? base.createdAt ?? new Date().toISOString()
+    createdAt: cleaned.createdAt ?? base.createdAt ?? new Date().toISOString(),
+    compliance: normalizeCompliance(cleaned.compliance)
   };
 }
 

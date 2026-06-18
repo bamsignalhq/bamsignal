@@ -115,6 +115,22 @@ export type UserProfile = {
   phoneVerified?: boolean;
 };
 
+export type MemberCompliance = {
+  tosAccepted?: boolean;
+  tosAcceptedAt?: string;
+  tosVersion?: string;
+  privacyAccepted?: boolean;
+  privacyAcceptedAt?: string;
+  privacyVersion?: string;
+  ageConfirmed18?: boolean;
+  ageConfirmedAt?: string;
+  safetyPledgeAccepted?: boolean;
+  safetyPledgeAcceptedAt?: string;
+  safetyPledgeVersion?: string;
+  signupIp?: string;
+  signupUserAgent?: string;
+};
+
 export type VerificationReviewStatus = "none" | "pending" | "approved" | "rejected";
 
 export type PhotoReviewStatus = "approved" | "pending_review" | "rejected";
@@ -188,6 +204,8 @@ export type DatingProfile = {
   /** Local-only until synced */
   screenshotPrivacyNoticeSeen?: boolean;
   profilePausedAt?: string;
+  /** Legal and safety acknowledgements */
+  compliance?: MemberCompliance;
 };
 
 export type MatchPreferences = {

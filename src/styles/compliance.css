@@ -1,0 +1,125 @@
+.signup-legal {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.35rem 0 1rem;
+  padding: 0.9rem 0.95rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(236, 72, 153, 0.14);
+}
+
+.signup-legal__intro {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
+.signup-legal__row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem;
+  align-items: start;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.signup-legal__row input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.15rem;
+  accent-color: #db2777;
+}
+
+.signup-legal__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  color: #be185d;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.compliance-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.compliance-gate__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(253, 242, 248, 0.82);
+  backdrop-filter: blur(6px);
+}
+
+.compliance-gate__panel {
+  position: relative;
+  width: min(100%, 28rem);
+  max-height: min(92vh, 44rem);
+  overflow: auto;
+  padding: 1.25rem 1.1rem 1.1rem;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff7fb 0%, #ffffff 100%);
+  border: 1px solid rgba(236, 72, 153, 0.16);
+  box-shadow: 0 24px 60px rgba(190, 24, 93, 0.12);
+}
+
+.compliance-gate__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #be185d;
+}
+
+.compliance-gate__title {
+  margin: 0 0 0.55rem;
+  font-size: 1.45rem;
+  line-height: 1.15;
+  color: #111827;
+}
+
+.compliance-gate__lede {
+  margin: 0 0 1rem;
+  color: #4b5563;
+  line-height: 1.55;
+}
+
+.compliance-gate__rules {
+  margin: 0 0 1.1rem;
+  padding-left: 1.1rem;
+  color: #374151;
+  line-height: 1.55;
+}
+
+.compliance-gate__rules li + li {
+  margin-top: 0.45rem;
+}
+
+.compliance-gate__cta {
+  margin-top: 0.35rem;
+}
+
+.compliance-gate__error {
+  margin: 0.85rem 0 0;
+  color: #b91c1c;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.compliance-gate .signup-legal {
+  margin-bottom: 0.85rem;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.app-main--compliance {
+  min-height: 100dvh;
+}

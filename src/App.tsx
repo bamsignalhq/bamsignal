@@ -24,10 +24,12 @@ import { NotificationCenter } from "./components/NotificationCenter";
 import type { PremiumPlan } from "./constants/plans";
 import type { BoostProduct } from "./constants/boosts";
 import { STORAGE_KEYS } from "./constants/limits";
+import { ComplianceGateModal } from "./components/ComplianceGateModal";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./types";
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
 import { isOnboardingComplete, getDatingProfile, normalizeDatingProfile } from "./utils/profile";
+import { isComplianceComplete } from "./utils/compliance";
 import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
@@ -127,6 +129,7 @@ export function App() {
   const [showAdminAuth, setShowAdminAuth] = useState(() => isAdminAuthRoute());
   const [showAdminHub, setShowAdminHub] = useState(() => isAdminHubRoute() && !isAdminAuthRoute());
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [complianceTick, setComplianceTick] = useState(0);
   const [pendingTab, setPendingTab] = useState<NavTab | null>(null);
   const [isAuthed, setIsAuthed] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
@@ -148,6 +151,12 @@ export function App() {
   const logoutInProgressRef = useRef(false);
 
   const isGuest = !isAuthed;
+  void complianceTick;
+  const showComplianceGate =
+    isAuthed &&
+    !showOnboarding &&
+    !isComplianceComplete(getDatingProfile().compliance);
+  const memberAccessReady = isAuthed && !showOnboarding && !showComplianceGate;
 
   useEffect(() => {
     if (!isNative) return;
@@ -269,8 +278,8 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (isAuthed && !showOnboarding) recordDailyActive();
-  }, [isAuthed, showOnboarding]);
+    if (memberAccessReady) recordDailyActive();
+  }, [isAuthed, memberAccessReady]);
 
   const applyPaymentSuccess = useCallback(
     (kind: "premium" | "boost" | "quickie") => {
@@ -1102,7 +1111,7 @@ export function App() {
       <div
         className="platform-shell"
       >
-        {!showOnboarding && (
+        {!showOnboarding && !showComplianceGate && (
           <TopNav
             theme={theme}
             onToggleTheme={toggleTheme}
@@ -1124,9 +1133,9 @@ export function App() {
           />
         )}
 
-        {paymentLoading && !showOnboarding && <PaymentLoadingOverlay />}
+        {paymentLoading && memberAccessReady && <PaymentLoadingOverlay />}
 
-        {showPaymentRecovery && !showOnboarding && (
+        {showPaymentRecovery && memberAccessReady && (
           <PaymentRecoveryBanner
             onRetry={() => {
               clearPaymentSession();
@@ -1140,7 +1149,7 @@ export function App() {
           />
         )}
 
-        {paymentSuccess && !showOnboarding && (
+        {paymentSuccess && memberAccessReady && (
           <PaymentSuccessToast
             title={paymentSuccess.title}
             body={paymentSuccess.body}
@@ -1153,6 +1162,8 @@ export function App() {
             isAuthed
               ? showOnboarding
                 ? "app-main--onboarding"
+                : showComplianceGate
+                  ? "app-main--compliance"
                 : "app-main--member"
               : "app-main--experience"
           }`}
@@ -1160,7 +1171,7 @@ export function App() {
           {isAuthed && showOnboarding && (
             <OnboardingPage user={user} onUserChange={setUser} onComplete={finishOnboarding} />
           )}
-          {isAuthed && !showOnboarding && memberOverlay === "premium" && (
+          {isAuthed && memberAccessReady && memberOverlay === "premium" && (
             <PremiumPage
               isPremium={isPremium}
               plans={plans}
@@ -1169,7 +1180,7 @@ export function App() {
               loading={paymentLoading}
             />
           )}
-          {isAuthed && !showOnboarding && memberOverlay === "visitors" && (
+          {isAuthed && memberAccessReady && memberOverlay === "visitors" && (
             <VisitorsPage
               viewers={readJson(STORAGE_KEYS.profileViews, { count: 0, viewers: [] }).viewers}
               viewsToday={getProfileViewsToday()}
@@ -1188,7 +1199,7 @@ export function App() {
               }}
             />
           )}
-          {isAuthed && !showOnboarding && memberOverlay === "safety" && (
+          {isAuthed && memberAccessReady && memberOverlay === "safety" && (
             <SafetyCenterPage
               onBack={() => setMemberOverlay(null)}
               onOpenProfile={() => {
@@ -1197,7 +1208,7 @@ export function App() {
               }}
             />
           )}
-          {isAuthed && !showOnboarding && !memberOverlay && tab === "home" && (
+          {memberAccessReady && !memberOverlay && tab === "home" && (
             <HomePage
               user={user}
               userName={user.name}
@@ -1214,7 +1225,7 @@ export function App() {
               onLogoClick={goHome}
             />
           )}
-          {isAuthed && !showOnboarding && tab === "discover" && (
+          {memberAccessReady && tab === "discover" && (
             <DiscoverPage
               isPremium={isPremium}
               plans={plans}
@@ -1228,7 +1239,7 @@ export function App() {
           {tab === "likes" && isGuest && (
             <GuestGate tab="likes" onJoin={() => openAuth("signup", "likes")} onLogin={() => openAuth("login", "likes")} />
           )}
-          {isAuthed && !showOnboarding && tab === "likes" && (
+          {memberAccessReady && tab === "likes" && (
             <LikesPage
               isPremium={isPremium}
               onUpgrade={openPricing}
@@ -1240,7 +1251,7 @@ export function App() {
           {tab === "chats" && isGuest && (
             <GuestGate tab="chats" onJoin={() => openAuth("signup", "chats")} onLogin={() => openAuth("login", "chats")} />
           )}
-          {isAuthed && !showOnboarding && tab === "chats" && (
+          {memberAccessReady && tab === "chats" && (
             <ChatsPage
               isPremium={isPremium}
               plans={plans}
@@ -1252,7 +1263,7 @@ export function App() {
           {tab === "me" && isGuest && (
             <GuestGate tab="me" onJoin={() => openAuth("signup", "me")} onLogin={() => openAuth("login", "me")} />
           )}
-          {isAuthed && !showOnboarding && tab === "me" && (
+          {memberAccessReady && tab === "me" && (
             <ProfilePage
               user={user}
               isPremium={isPremium}
@@ -1271,7 +1282,11 @@ export function App() {
         )}
       </div>
 
-      {!showOnboarding && (
+      {showComplianceGate && (
+        <ComplianceGateModal user={user} onComplete={() => setComplianceTick((tick) => tick + 1)} />
+      )}
+
+      {!showOnboarding && !showComplianceGate && (
         <BottomNav
           active={tab}
           onNavigate={navigateTab}

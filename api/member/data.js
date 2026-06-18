@@ -281,6 +281,29 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, result, referral });
     }
 
+    if (req.query.action === "compliance-ack") {
+      const { recordComplianceAcknowledgements } = await import(
+        "../../server/services/compliance.js"
+      );
+      const forwarded = String(req.headers["x-forwarded-for"] || "")
+        .split(",")[0]
+        .trim();
+      const ip = forwarded || req.socket?.remoteAddress || null;
+      const userAgent = String(req.headers["user-agent"] || "").trim() || null;
+      const result = await recordComplianceAcknowledgements({
+        email: identity.email,
+        phone: identity.phone,
+        acks: Array.isArray(body.acks) ? body.acks : [],
+        ip,
+        userAgent,
+        metadata: body.metadata && typeof body.metadata === "object" ? body.metadata : {}
+      });
+      if (!result.ok) {
+        return res.status(result.error === "Member profile not found." ? 404 : 400).json(result);
+      }
+      return res.status(200).json(result);
+    }
+
     if (req.query.action === "match") {
       if (!requireDatabase(res)) return;
       const { persistMatch } = await import("../../server/db.js");

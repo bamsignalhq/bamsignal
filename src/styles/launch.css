@@ -172,6 +172,10 @@
   place-items: center;
 }
 
+.notification-backdrop {
+  z-index: 120;
+}
+
 .notification-panel {
   position: fixed;
   top: 56px;

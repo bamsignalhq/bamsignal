@@ -46,7 +46,7 @@ import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
 import { getProfileViewsToday } from "./utils/profileViews";
-import { unreadCount } from "./utils/notifications";
+import { unreadCount, notificationDestination, type AppNotification } from "./utils/notifications";
 import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { activateBoost } from "./utils/activeBoosts";
 import { activateQuickiePass, cacheSubscriptionCatalogPricing } from "./utils/quickie";
@@ -737,6 +737,21 @@ export function App() {
     setTab(next);
   }, []);
 
+  const handleNotificationOpen = useCallback(
+    (notification: AppNotification) => {
+      setNotificationsOpen(false);
+      setNotifVersion((v) => v + 1);
+      const destination = notificationDestination(notification.type);
+      if (!destination) return;
+      if (destination.kind === "tab") {
+        navigateTab(destination.tab);
+        return;
+      }
+      setMemberOverlay(destination.overlay);
+    },
+    [navigateTab]
+  );
+
   const handleUpgrade = useCallback(
     async (plan: PremiumPlan) => {
       if (!isAuthed) {
@@ -1026,6 +1041,7 @@ export function App() {
             setNotifVersion((v) => v + 1);
           }}
           onReadChange={() => setNotifVersion((v) => v + 1)}
+          onOpenNotification={handleNotificationOpen}
         />
 
         <PricingModal
@@ -1218,6 +1234,7 @@ export function App() {
           setNotifVersion((v) => v + 1);
         }}
         onReadChange={() => setNotifVersion((v) => v + 1)}
+        onOpenNotification={handleNotificationOpen}
       />
 
       <PricingModal

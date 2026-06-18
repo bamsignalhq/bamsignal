@@ -39,8 +39,8 @@ export function HomeFeedFilters({
           type="search"
           value={nameQuery}
           onChange={(e) => onNameQueryChange(e.target.value)}
-          placeholder="Search by name"
-          aria-label="Search by name"
+          placeholder="Search by name or city"
+          aria-label="Search by name or city"
         />
       </label>
 

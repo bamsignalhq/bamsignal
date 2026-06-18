@@ -1,5 +1,6 @@
 import { Bell, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   getNotifications,
   markAllRead,
@@ -11,6 +12,7 @@ type NotificationCenterProps = {
   open: boolean;
   onClose: () => void;
   onReadChange?: () => void;
+  onOpenNotification?: (notification: AppNotification) => void;
 };
 
 export function NotificationBell({
@@ -28,34 +30,43 @@ export function NotificationBell({
   );
 }
 
-export function NotificationCenter({ open, onClose, onReadChange }: NotificationCenterProps) {
+export function NotificationCenter({
+  open,
+  onClose,
+  onReadChange,
+  onOpenNotification
+}: NotificationCenterProps) {
   const [items, setItems] = useState<AppNotification[]>([]);
 
-  const refresh = useCallback(() => {
+  const syncItems = useCallback(() => {
     setItems(getNotifications());
-    onReadChange?.();
-  }, [onReadChange]);
+  }, []);
 
   useEffect(() => {
-    if (open) refresh();
-  }, [open, refresh]);
+    if (open) syncItems();
+  }, [open, syncItems]);
 
-  const handleMarkRead = (id: string) => {
-    markRead(id);
-    refresh();
+  const handleOpen = (notification: AppNotification) => {
+    if (!notification.read) {
+      markRead(notification.id);
+      syncItems();
+      onReadChange?.();
+    }
+    onOpenNotification?.(notification);
   };
 
   const handleMarkAllRead = () => {
     markAllRead();
-    refresh();
+    syncItems();
+    onReadChange?.();
   };
 
   if (!open) return null;
 
   const hasUnread = items.some((n) => !n.read);
 
-  return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+  const panel = (
+    <div className="modal-backdrop notification-backdrop" role="presentation" onClick={onClose}>
       <div className="notification-panel" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <header className="notification-panel__head">
           <h3>Notifications</h3>
@@ -77,7 +88,7 @@ export function NotificationCenter({ open, onClose, onReadChange }: Notification
               <button
                 type="button"
                 className={`notification-item ${n.read ? "" : "unread"}`}
-                onClick={() => handleMarkRead(n.id)}
+                onClick={() => handleOpen(n)}
               >
                 <strong>{n.title}</strong>
                 <span>{n.body}</span>
@@ -89,4 +100,6 @@ export function NotificationCenter({ open, onClose, onReadChange }: Notification
       </div>
     </div>
   );
+
+  return createPortal(panel, document.body);
 }

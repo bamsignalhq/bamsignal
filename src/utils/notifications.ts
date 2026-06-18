@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from "../constants/limits";
+import type { NavTab } from "../types";
 import { readJson, writeJson } from "./storage";
 
 export type AppNotification = {
@@ -17,6 +18,33 @@ export type AppNotification = {
   at: string;
   read: boolean;
 };
+
+export type NotificationDestination =
+  | { kind: "tab"; tab: NavTab }
+  | { kind: "overlay"; overlay: "visitors" | "premium" | "safety" };
+
+export function notificationDestination(
+  type: AppNotification["type"]
+): NotificationDestination | null {
+  switch (type) {
+    case "signal_received":
+      return { kind: "tab", tab: "likes" };
+    case "signal_accepted":
+    case "off_platform_request":
+      return { kind: "tab", tab: "chats" };
+    case "profile_viewed":
+      return { kind: "overlay", overlay: "visitors" };
+    case "boost_activated":
+      return { kind: "tab", tab: "discover" };
+    case "premium_activated":
+      return { kind: "overlay", overlay: "premium" };
+    case "verification_approved":
+    case "referral_reward":
+      return { kind: "tab", tab: "me" };
+    default:
+      return null;
+  }
+}
 
 export function getNotifications(): AppNotification[] {
   return readJson<AppNotification[]>(STORAGE_KEYS.notifications, []);

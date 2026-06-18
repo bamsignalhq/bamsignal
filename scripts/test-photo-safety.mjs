@@ -147,9 +147,8 @@ function testProfileRiskScoring() {
     hasDocumentKeywords: false,
     hasContactLeak: false
   });
-  assert.equal(memeText.hardBlock, false);
-  assert.equal(memeText.pendingReview, true);
-  assert.ok(memeText.riskFlags.includes("text_heavy"));
+  assert.equal(memeText.hardBlock, true);
+  assert.equal(memeText.hardBlockCategory, "text_heavy");
 
   const ninHard = assessProfilePhoto({
     hasAdequateFace: true,
@@ -175,15 +174,23 @@ function testCoverRiskScoring() {
   assert.equal(landscapePass.hardBlock, false);
   assert.equal(landscapePass.pendingReview, false);
 
-  const flyerFlag = assessCoverPhoto({
+  const flyerFail = assessCoverPhoto({
     textDensity: 0.1,
     hasQr: false,
     hasDocumentKeywords: false,
     hasContactLeak: false,
     hasFlyerText: true
   });
-  assert.equal(flyerFlag.hardBlock, false);
-  assert.equal(flyerFlag.pendingReview, true);
+  assert.equal(flyerFail.hardBlock, true);
+
+  const textHeavyFail = assessCoverPhoto({
+    textDensity: 0.11,
+    hasQr: false,
+    hasDocumentKeywords: false,
+    hasContactLeak: false,
+    hasFlyerText: false
+  });
+  assert.equal(textHeavyFail.hardBlock, true);
 
   const ninFail = assessCoverPhoto({
     textDensity: 0.04,

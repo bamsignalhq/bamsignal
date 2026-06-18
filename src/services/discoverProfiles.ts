@@ -54,6 +54,7 @@ export async function searchMemberProfiles(
   const {
     state = "",
     city = "",
+    cities = [],
     ageMin = 18,
     ageMax = 99,
     excludeProfileIds = [],
@@ -66,7 +67,7 @@ export async function searchMemberProfiles(
     kidsPreferences = [],
     limit = 72
   } = options;
-  if (!city.trim() && !state.trim()) return [];
+  if (!city.trim() && !state.trim() && cities.length === 0) return [];
 
   try {
     const response = await fetch(apiUrl("/api/member/data?action=search"), {
@@ -77,6 +78,7 @@ export async function searchMemberProfiles(
         phone: user.phone,
         state,
         city,
+        cities,
         ageMin,
         ageMax,
         excludeProfileIds,

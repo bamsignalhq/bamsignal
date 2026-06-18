@@ -1,14 +1,19 @@
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, Settings, Sun } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay, profileIntentLabel } from "../constants/intents";
-import { DateOfBirthPicker } from "../components/DateOfBirthPicker";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
 import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import { TapSelectField } from "../components/TapSelectField";
 import { searchStateFromPrefs, withSearchStateChange, normalizeSearchCities } from "../utils/searchLocationPrefs";
-import { normalizeLifestyleTraits } from "../constants/profileOptions";
+import {
+  citiesForState,
+  cityBelongsToState,
+  NIGERIAN_STATES,
+  normalizeLifestyleTraits,
+  stateDisplayLabel
+} from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
 import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
 import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
@@ -18,7 +23,6 @@ import { VoiceIntroRecorder } from "../components/VoiceIntro";
 import { VoiceIntro } from "../components/VoiceIntro";
 import type {
   DatingProfile,
-  Gender,
   IntentTag,
   LookingFor,
   MatchPreferences,
@@ -45,19 +49,18 @@ import {
   isUserVerificationPending
 } from "../utils/verificationQueue";
 import { notifyVerificationApproved } from "../utils/notifyHelpers";
-import { StateCitySelect } from "../components/StateCitySelect";
 import { MAX_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
-import { isAdultDob } from "../utils/ageFromDob";
 import { safeCoverPhoto } from "../utils/safeProfile";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { ProfilePromptsEditor, ProfilePromptsDisplay } from "../components/profile/ProfilePromptsEditor";
 import { hasFilledProfileDetails } from "../utils/profileDetails";
 
-const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
 type ProfileView = "overview" | "edit" | "settings";
 type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help";
 type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "details" | "prompts" | "voice";
+
+const PROFILE_STATE_OPTIONS = NIGERIAN_STATES.map((s) => ({ value: s, label: stateDisplayLabel(s) }));
 
 type ProfilePageProps = {
   user: UserProfile;
@@ -173,6 +176,11 @@ export function ProfilePage({
     verifySubmitted ||
     profile.verificationStatus === "pending" ||
     isUserVerificationPending(user.phone);
+
+  const profileCityOptions = useMemo(
+    () => (profile.state ? citiesForState(profile.state) : []),
+    [profile.state]
+  );
 
   useEffect(() => {
     if (profile.verified || !user.phone) return;
@@ -385,39 +393,35 @@ export function ProfilePage({
                   onChange={(e) => onUserChange({ ...user, name: e.target.value })}
                 />
               </label>
-              <div className="profile-form-row profile-form-row--dob">
-                <DateOfBirthPicker
-                  value={profile.dateOfBirth ?? ""}
-                  onChange={(iso, age) =>
-                    setProfile((p) => ({
-                      ...p,
-                      dateOfBirth: iso,
-                      age: age ?? p.age
-                    }))
-                  }
-                />
-              </div>
-              <fieldset className="intent-fieldset profile-form-row">
-                <legend>Gender</legend>
-                <div className="intent-tags selectable">
-                  {GENDERS.map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      className={`intent-tag ${profile.gender === g ? "selected" : ""}`}
-                      onClick={() => setProfile({ ...profile, gender: g })}
-                    >
-                      {g}
-                    </button>
-                  ))}
+              <div className="profile-readonly-row">
+                <div className="profile-readonly-field">
+                  <span className="profile-form-row__label">Age</span>
+                  <p className="profile-readonly-field__value">{profile.age || "—"}</p>
                 </div>
-              </fieldset>
-              <div className="profile-form-row profile-form-row--location">
-                <span className="profile-form-row__label">Location</span>
-                <StateCitySelect
-                  state={profile.state ?? ""}
-                  city={profile.city}
-                  onLocationChange={(state, city) => setProfile({ ...profile, state, city })}
+                <div className="profile-readonly-field">
+                  <span className="profile-form-row__label">Gender</span>
+                  <p className="profile-readonly-field__value">{profile.gender || "—"}</p>
+                </div>
+              </div>
+              <div className="profile-location-row">
+                <TapSelectField
+                  label="State"
+                  options={PROFILE_STATE_OPTIONS}
+                  value={profile.state}
+                  formatValue={stateDisplayLabel}
+                  onChange={(next) => {
+                    const state = (next as string | undefined) ?? "";
+                    const city =
+                      state && cityBelongsToState(profile.city, state) ? profile.city : "";
+                    setProfile({ ...profile, state, city });
+                  }}
+                />
+                <TapSelectField
+                  label="City"
+                  disabled={!profile.state}
+                  options={profileCityOptions}
+                  value={profile.city || undefined}
+                  onChange={(next) => setProfile({ ...profile, city: (next as string | undefined) ?? "" })}
                 />
               </div>
               <TapSelectField
@@ -579,15 +583,12 @@ export function ProfilePage({
                   occupation: occupations[0]
                 })
               }
-              statesOfOrigin={
-                profile.statesOfOrigin ??
-                (profile.stateOfOrigin ? [profile.stateOfOrigin] : [])
-              }
-              onStatesOfOriginChange={(statesOfOrigin) =>
+              stateOfOrigin={profile.stateOfOrigin ?? profile.statesOfOrigin?.[0]}
+              onStateOfOriginChange={(stateOfOrigin) =>
                 setProfile({
                   ...profile,
-                  statesOfOrigin,
-                  stateOfOrigin: statesOfOrigin[0]
+                  stateOfOrigin,
+                  statesOfOrigin: stateOfOrigin ? [stateOfOrigin] : []
                 })
               }
               genotypes={profile.genotypes ?? (profile.genotype ? [profile.genotype] : [])}
@@ -598,12 +599,24 @@ export function ProfilePage({
                   genotype: genotypes[0]
                 })
               }
-              hasKids={profile.hasKidsOptions ?? []}
-              onHasKidsChange={(hasKidsOptions) => setProfile({ ...profile, hasKidsOptions })}
-              wantsKids={profile.wantsKidsOptions ?? []}
-              onWantsKidsChange={(wantsKidsOptions) => setProfile({ ...profile, wantsKidsOptions })}
-              bodyTypes={profile.bodyTypes ?? []}
-              onBodyTypesChange={(bodyTypes) => setProfile({ ...profile, bodyTypes })}
+              hasKidsOption={profile.hasKidsOptions?.[0]}
+              onHasKidsOptionChange={(hasKidsOption) =>
+                setProfile({
+                  ...profile,
+                  hasKidsOptions: hasKidsOption ? [hasKidsOption] : []
+                })
+              }
+              wantsKidsOption={profile.wantsKidsOptions?.[0]}
+              onWantsKidsOptionChange={(wantsKidsOption) =>
+                setProfile({
+                  ...profile,
+                  wantsKidsOptions: wantsKidsOption ? [wantsKidsOption] : []
+                })
+              }
+              bodyType={profile.bodyTypes?.[0]}
+              onBodyTypeChange={(bodyType) =>
+                setProfile({ ...profile, bodyTypes: bodyType ? [bodyType] : [] })
+              }
             />
           </EditAccordion>
 

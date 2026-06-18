@@ -44,6 +44,9 @@ type HomeSignalsFeedProps = {
   ageMax: number;
   state: string;
   city: string;
+  searchCities?: string[];
+  defaultCity?: string;
+  defaultState?: string;
   distanceKm: number;
   advanced: HomeAdvancedFilters;
   filtersApplied: boolean;
@@ -86,6 +89,9 @@ export function HomeSignalsFeed({
   ageMax,
   state,
   city,
+  searchCities = [],
+  defaultCity = "",
+  defaultState = "",
   distanceKm,
   advanced,
   filtersApplied,
@@ -115,7 +121,20 @@ export function HomeSignalsFeed({
   const debouncedAdvanced = useDebouncedValue(advanced, 300);
   const debouncedNameQuery = useDebouncedValue(nameQuery, 300);
 
-  const fetchCity = debouncedCity.trim() || viewer.city || getMemberCity() || "";
+  const fetchCities = useMemo(() => {
+    const quickCity = debouncedCity.trim();
+    const quickState = debouncedState.trim();
+    const usingSavedSearch =
+      quickCity === defaultCity &&
+      quickState === defaultState &&
+      searchCities.length > 0;
+    if (usingSavedSearch && searchCities.length > 1) return searchCities;
+    if (quickCity) return [quickCity];
+    if (searchCities.length) return searchCities;
+    return [];
+  }, [debouncedCity, debouncedState, searchCities, defaultCity, defaultState]);
+
+  const fetchCity = fetchCities[0] || viewer.city || getMemberCity() || "";
   const fetchState = debouncedState.trim() || viewer.state || "";
   const effectiveDistanceKm = effectiveHomeDistanceKm(
     fetchCity,
@@ -143,10 +162,11 @@ export function HomeSignalsFeed({
 
       let fetched: DiscoverProfile[] = [];
 
-      if (fetchCity || fetchState) {
+      if (fetchCities.length > 0 || fetchState) {
         fetched = await searchMemberProfiles(user, {
-          city: fetchCity,
-          state: fetchCity ? "" : fetchState,
+          cities: fetchCities.length > 1 ? fetchCities : undefined,
+          city: fetchCities.length === 1 ? fetchCities[0] : "",
+          state: fetchCities.length > 0 ? fetchState : fetchState,
           ageMin: debouncedAgeMin,
           ageMax: debouncedAgeMax,
           excludeProfileIds: exclude,
@@ -184,6 +204,7 @@ export function HomeSignalsFeed({
   }, [
     user,
     viewer,
+    fetchCities,
     fetchCity,
     fetchState,
     debouncedAgeMin,

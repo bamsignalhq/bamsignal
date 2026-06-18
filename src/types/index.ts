@@ -251,6 +251,7 @@ export type HomeAdvancedFilters = {
 export type MemberSearchFilters = {
   state?: string;
   city?: string;
+  cities?: string[];
   ageMin?: number;
   ageMax?: number;
   excludeProfileIds?: string[];

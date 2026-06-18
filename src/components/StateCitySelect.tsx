@@ -1,9 +1,12 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   NIGERIAN_STATES,
   citiesForState,
+  cityBelongsToState,
+  resolveStateName,
   stateForCity
 } from "../constants/profileOptions";
+import { sanitizeStateCityPair } from "../utils/searchLocationPrefs";
 
 type StateCitySelectProps = {
   state: string;
@@ -27,26 +30,34 @@ export function StateCitySelect({
   variant = "default",
   hideStateWhenCitySelected = false
 }: StateCitySelectProps) {
-  const resolvedState = state || (city ? stateForCity(city) : "");
+  const resolvedState = resolveStateName(state) || state || (city ? stateForCity(city) : "");
   const cityOptions = useMemo(
     () => (resolvedState ? citiesForState(resolvedState) : []),
     [resolvedState]
   );
 
+  useEffect(() => {
+    if (!resolvedState || !city) return;
+    if (!cityBelongsToState(city, resolvedState)) {
+      onLocationChange(resolvedState, "");
+    }
+  }, [resolvedState, city, onLocationChange]);
+
   const handleStateChange = (nextState: string) => {
-    onLocationChange(nextState, "");
+    const canonical = resolveStateName(nextState) || nextState;
+    onLocationChange(canonical, "");
   };
 
   const handleCityChange = (nextCity: string) => {
-    const nextState = state || stateForCity(nextCity) || resolvedState || "";
-    onLocationChange(nextState, nextCity);
+    const aligned = sanitizeStateCityPair(resolvedState || state, nextCity);
+    onLocationChange(aligned.state, aligned.city);
   };
 
   const stateSelect = (
     <label className="state-city-select__field">
       <span>{stateLabel}</span>
       <select
-        value={state}
+        value={resolvedState}
         onChange={(e) => handleStateChange(e.target.value)}
         required={!stateOptional}
       >

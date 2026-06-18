@@ -6,12 +6,14 @@ import { stateForCity } from "../constants/profileOptions";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { clampHomeDistanceForCity } from "./cityMetroRadius";
 import { getMemberCity } from "./memberCity";
+import { resolveSearchLocationFromPrefs, sanitizeStateCityPair } from "./searchLocationPrefs";
 
 export type HomeFilterDefaults = {
   ageMin: number;
   ageMax: number;
   city: string;
   state: string;
+  searchCities: string[];
   distanceKm: number;
 };
 
@@ -28,15 +30,27 @@ function resolveDefaultAgeRange(
 }
 
 /**
- * Home feed filter defaults from the member profile + saved match preferences.
- * Location uses where the member lives (profile city), not preferred cities from onboarding.
+ * Home feed filter defaults from saved search preferences, then profile location.
  */
 export function resolveHomeFilterDefaults(
   viewer: DatingProfile,
   prefs: MatchPreferences
 ): HomeFilterDefaults {
-  const city = viewer.city?.trim() || getMemberCity() || "";
-  const state = viewer.state?.trim() || (city ? stateForCity(city) || "" : "");
+  const search = resolveSearchLocationFromPrefs(prefs);
+  let city = viewer.city?.trim() || getMemberCity() || "";
+  let state = viewer.state?.trim() || (city ? stateForCity(city) || "" : "");
+
+  if (search.state) {
+    state = search.state;
+    city = search.primaryCity;
+  } else if (search.cities.length) {
+    city = search.primaryCity;
+    state = stateForCity(city) || state;
+  }
+
+  const aligned = sanitizeStateCityPair(state, city);
+  state = aligned.state;
+  city = aligned.city;
   const { ageMin, ageMax } = resolveDefaultAgeRange(viewer, prefs);
   const distanceKm = clampHomeDistanceForCity(
     city,
@@ -44,5 +58,5 @@ export function resolveHomeFilterDefaults(
     normalizeHomeDistanceKm(prefs.distanceMax ?? DEFAULT_HOME_DISTANCE_KM)
   );
 
-  return { ageMin, ageMax, city, state, distanceKm };
+  return { ageMin, ageMax, city, state, searchCities: search.cities, distanceKm };
 }

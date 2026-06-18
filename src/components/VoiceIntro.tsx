@@ -218,7 +218,7 @@ export function VoiceIntroRecorder({ url, onRecorded, onClear, onRejected }: Voi
   return (
     <div className="voice-intro-recorder">
       <p className="voice-intro-recorder__hint">
-        Record {MIN_VOICE_SECONDS}–{MAX_VOICE_SECONDS} seconds — {RECOMMENDED_MIN}–{MAX_VOICE_SECONDS} is ideal.
+        Record a voice introduction between {MIN_VOICE_SECONDS} and {MAX_VOICE_SECONDS} seconds. About {RECOMMENDED_MIN} seconds is a good length.
       </p>
       {url ? (
         <div className="voice-intro-recorder__row">

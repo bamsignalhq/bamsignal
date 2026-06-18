@@ -1,4 +1,5 @@
 import { stateForCity } from "./profileOptions";
+import { formatSearchLocationSummary } from "../utils/searchLocationPrefs";
 
 export const HOME_DISTANCE_OPTIONS = [5, 10, 25, 50, 100] as const;
 export const HOME_DISTANCE_ANYWHERE = 0;
@@ -19,8 +20,16 @@ export function normalizeHomeDistanceKm(value?: number | null): number {
   return Math.round(Math.max(MIN_HOME_DISTANCE_KM, Math.min(MAX_HOME_DISTANCE_KM, value)));
 }
 
-export function formatHomeLocationSummary(city: string, state: string, distanceKm: number): string {
-  const place = formatCityWithState(city, state);
+export function formatHomeLocationSummary(
+  city: string,
+  state: string,
+  distanceKm: number,
+  cities?: string[]
+): string {
+  const place =
+    cities && cities.length > 0
+      ? formatSearchLocationSummary(state, cities)
+      : formatCityWithState(city, state);
   if (isAnywhereDistance(distanceKm)) return `${place} • Anywhere`;
   return `${place} • ${distanceKm} km`;
 }

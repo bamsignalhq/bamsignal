@@ -158,6 +158,7 @@ export async function searchMemberProfiles({
   phone,
   state = "",
   city = "",
+  cities = [],
   ageMin = 18,
   ageMax = 99,
   excludeProfileIds = [],
@@ -182,8 +183,11 @@ export async function searchMemberProfiles({
   const maxAge = Math.max(minAge, Math.min(99, Math.round(Number(ageMax) || 99)));
   const stateQ = String(state || "").trim();
   const cityQ = String(city || "").trim();
+  const cityList = Array.isArray(cities)
+    ? [...new Set(cities.map((c) => String(c || "").trim()).filter(Boolean))]
+    : [];
 
-  if (!cityQ && !stateQ) return [];
+  if (!cityQ && !stateQ && cityList.length === 0) return [];
 
   const params = [own.user_key, exclude, minAge, maxAge];
   const where = [
@@ -197,18 +201,21 @@ export async function searchMemberProfiles({
     "coalesce((profile->>'age')::int, 25) <= $4"
   ];
 
-  if (cityQ) {
+  if (cityList.length > 0) {
+    params.push(cityList.map((c) => c.toLowerCase()));
+    where.push(`lower(city) = any($${params.length}::text[])`);
+    if (stateQ) {
+      params.push(stateQ);
+      where.push(`lower(state) = lower($${params.length})`);
+    }
+  } else if (cityQ) {
     params.push(cityQ);
     where.push(`lower(city) = lower($${params.length})`);
-  } else {
-    params.push(stateQ);
-    where.push(`lower(state) = lower($${params.length})`);
-  }
-
-  if (cityQ) {
-    params.push(cityQ);
-    where.push(`lower(city) = lower($${params.length})`);
-  } else {
+    if (stateQ) {
+      params.push(stateQ);
+      where.push(`lower(state) = lower($${params.length})`);
+    }
+  } else if (stateQ) {
     params.push(stateQ);
     where.push(`lower(state) = lower($${params.length})`);
   }

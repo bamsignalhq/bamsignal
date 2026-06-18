@@ -217,7 +217,10 @@ export function PhotoUploadGrid({
       ) : null}
       <div className="photo-upload-grid__tiles">
         {slots.slice(0, visibleSlots).map((src, i) => (
-          <div key={i} className={`photo-upload-grid__tile ${i === 0 ? "photo-upload-grid__tile--main" : ""}`}>
+          <div
+            key={src ? `photo-${src}` : `empty-slot-${i}`}
+            className={`photo-upload-grid__tile ${i === 0 ? "photo-upload-grid__tile--main" : ""}`}
+          >
             {src ? (
               <>
                 <img src={src} alt="" />

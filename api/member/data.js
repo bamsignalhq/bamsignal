@@ -151,7 +151,10 @@ export default async function handler(req, res) {
       if (!(await enforceRate(req, res, identity, "search"))) return;
       const city = String(body.city || "").trim();
       const state = String(body.state || "").trim();
-      if (!city && !state) {
+      const cities = Array.isArray(body.cities)
+        ? body.cities.map((c) => String(c || "").trim()).filter(Boolean)
+        : [];
+      if (!city && !state && cities.length === 0) {
         return res.status(400).json({ ok: false, error: "City or state is required." });
       }
       const profiles = await searchMemberProfiles({
@@ -159,6 +162,7 @@ export default async function handler(req, res) {
         phone: identity.phone,
         state,
         city,
+        cities,
         ageMin: Number(body.ageMin) || 18,
         ageMax: Number(body.ageMax) || 99,
         excludeProfileIds: Array.isArray(body.excludeProfileIds) ? body.excludeProfileIds : [],

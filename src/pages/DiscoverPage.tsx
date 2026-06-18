@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Compass } from "lucide-react";
 import { BRAND, ERROR_COPY, SUCCESS_COPY } from "../constants/copy";
 import { FREE_DAILY_SWIPES, STORAGE_KEYS } from "../constants/limits";
-import { fetchDiscoverProfiles } from "../services/discoverProfiles";
+import { fetchDiscoverProfiles, searchMemberProfiles } from "../services/discoverProfiles";
 import { sendSignalRemote } from "../services/memberData";
 import { DiscoverHeader } from "../components/discover/DiscoverHeader";
 import { DiscoverPremiumNudge } from "../components/discover/DiscoverPremiumNudge";
@@ -34,6 +34,7 @@ import { getVerificationTier } from "../utils/verification";
 import { incrementSignalsSent } from "../utils/streaks";
 import { trackEvent } from "../utils/analytics";
 import { getMemberCity } from "../utils/memberCity";
+import { resolveSearchLocationFromPrefs } from "../utils/searchLocationPrefs";
 import { getRemainingDaily, incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
 import { applyDiscoverPreferences, applyQuickFilter, type DiscoverQuickFilter } from "../utils/discoverFilters";
 import { isViewerShadowBanned } from "../utils/shadowBan";
@@ -86,20 +87,32 @@ export function DiscoverPage({
     let cancelled = false;
     if (!profilesLoadedOnce.current) setProfilesLoading(true);
     const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
-    const city = viewer.city || getMemberCity() || "";
-    void fetchDiscoverProfiles(user, city, [...blocked, ...passedIds])
-      .then((profiles) => {
-        if (cancelled) return;
-        setAllProfiles(profiles);
-        profilesLoadedOnce.current = true;
-      })
-      .finally(() => {
-        if (!cancelled) setProfilesLoading(false);
-      });
+    const search = resolveSearchLocationFromPrefs(prefs);
+    const fallbackCity = viewer.city || getMemberCity() || "";
+
+    void (async () => {
+      let profiles: DiscoverProfile[] = [];
+      if (search.state || search.cities.length > 0) {
+        profiles = await searchMemberProfiles(user, {
+          state: search.state,
+          cities: search.cities,
+          city: search.primaryCity,
+          excludeProfileIds: [...blocked, ...passedIds],
+          limit: 72
+        });
+      } else if (fallbackCity) {
+        profiles = await fetchDiscoverProfiles(user, fallbackCity, [...blocked, ...passedIds]);
+      }
+      if (cancelled) return;
+      setAllProfiles(profiles);
+      profilesLoadedOnce.current = true;
+      if (!cancelled) setProfilesLoading(false);
+    })();
+
     return () => {
       cancelled = true;
     };
-  }, [viewer.city, blocked.length, passedIds.length]);
+  }, [viewer.city, blocked.length, passedIds.length, prefs.states, prefs.cities]);
 
   const baseDeck = useMemo(() => {
     const available = filterDiscoverDeck(allProfiles, viewer, blocked, passedIds);

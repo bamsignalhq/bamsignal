@@ -13,8 +13,40 @@ export const NIGERIAN_STATES = [
 ] as readonly string[];
 
 export function citiesForState(state: string): string[] {
-  if (!state) return [];
-  return [...(NIGERIA_STATE_CITIES[state] ?? [])];
+  const resolved = resolveStateName(state);
+  if (!resolved) return [];
+  return [...(NIGERIA_STATE_CITIES[resolved] ?? [])];
+}
+
+function normalizeStateKey(state: string): string {
+  return state.trim().toLowerCase().replace(/[^a-z]/g, "");
+}
+
+/** Resolve user input to a canonical Nigerian state name. */
+export function resolveStateName(state: string): string | undefined {
+  const trimmed = String(state || "").trim();
+  if (!trimmed) return undefined;
+  if (NIGERIA_STATE_CITIES[trimmed]) return trimmed;
+
+  const needle = normalizeStateKey(trimmed);
+  for (const name of NIGERIAN_STATES) {
+    if (normalizeStateKey(name) === needle) return name;
+  }
+
+  const aliases: Record<string, string> = {
+    crossrivers: "Cross River",
+    crossriverstate: "Cross River",
+    fctabuja: "FCT",
+    abuja: "FCT",
+    federalcapitalterritory: "FCT"
+  };
+  return aliases[needle];
+}
+
+export function cityBelongsToState(city: string, state: string): boolean {
+  const resolvedState = resolveStateName(state) || state;
+  const needle = cityLooseKey(city);
+  return citiesForState(resolvedState).some((c) => cityLooseKey(c) === needle);
 }
 
 function cityLooseKey(city: string): string {

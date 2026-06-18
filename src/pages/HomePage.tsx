@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { greetingForHour } from "../constants/copy";
 import { firstNameFromDisplayName } from "../constants/homeFilters";
-import { clampHomeDistanceForCity } from "../utils/cityMetroRadius";
-import { stateForCity } from "../constants/profileOptions";
 import { DEFAULT_HOME_FEED_ADS } from "../constants/homeFeedAds";
 import { STORAGE_KEYS } from "../constants/limits";
 import {
@@ -15,7 +13,9 @@ import { HomeQuickFilterSheet } from "../components/home/HomeQuickFilterSheet";
 import { HomeSignalsFeed } from "../components/home/HomeSignalsFeed";
 import { fetchHomeFeedAds } from "../services/homeFeedAds";
 import type { UserProfile } from "../types";
+import { clampHomeDistanceForCity } from "../utils/cityMetroRadius";
 import { resolveHomeFilterDefaults } from "../utils/homeFilterDefaults";
+import { sanitizeStateCityPair } from "../utils/searchLocationPrefs";
 import {
   advancedFromMatchPreferences,
   homeHasCustomFilters
@@ -38,8 +38,19 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const prefs = normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));
   const filterDefaults = useMemo(
     () => resolveHomeFilterDefaults(viewer, prefs),
-    [viewer.city, viewer.state, viewer.age, prefs.ageMin, prefs.ageMax, prefs.distanceMax]
+    [
+      viewer.city,
+      viewer.state,
+      viewer.age,
+      prefs.ageMin,
+      prefs.ageMax,
+      prefs.distanceMax,
+      prefs.states,
+      prefs.cities
+    ]
   );
+
+  const searchCities = filterDefaults.searchCities;
 
   const [adSettings, setAdSettings] = useState(DEFAULT_HOME_FEED_ADS);
   const [nameQuery, setNameQuery] = useState("");
@@ -55,6 +66,22 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     localStorage.getItem(STORAGE_KEYS.pendingSignalProfileId)
   );
   const [signalRefresh, setSignalRefresh] = useState(0);
+
+  const fetchCitiesForFeed = useMemo(() => {
+    const usingSavedSearch =
+      city === filterDefaults.city &&
+      state === filterDefaults.state &&
+      searchCities.length > 0;
+    if (usingSavedSearch && searchCities.length > 1) return searchCities;
+    if (city.trim()) return [city.trim()];
+    if (searchCities.length) return searchCities;
+    return [];
+  }, [city, state, searchCities, filterDefaults.city, filterDefaults.state]);
+
+  useEffect(() => {
+    setState(filterDefaults.state);
+    setCity(filterDefaults.city);
+  }, [JSON.stringify(prefs.states), JSON.stringify(prefs.cities), filterDefaults.state, filterDefaults.city]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -94,10 +121,10 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   );
 
   const handleLocationChange = useCallback((nextState: string, nextCity: string) => {
-    const resolvedState = nextCity ? stateForCity(nextCity) || nextState : nextState;
-    setState(resolvedState);
-    setCity(nextCity);
-    setDistanceKm((current) => clampHomeDistanceForCity(nextCity, resolvedState, current));
+    const aligned = sanitizeStateCityPair(nextState, nextCity);
+    setState(aligned.state);
+    setCity(aligned.city);
+    setDistanceKm((current) => clampHomeDistanceForCity(aligned.city, aligned.state, current));
   }, []);
 
   const resetFilters = () => {
@@ -150,6 +177,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
           ageMax={ageMax}
           city={city}
           state={state}
+          searchCities={fetchCitiesForFeed.length > 1 ? fetchCitiesForFeed : searchCities}
           distanceKm={distanceKm}
           hasCustomFilters={hasCustomFilters}
           onOpenQuickFilters={() => setQuickFiltersOpen(true)}
@@ -168,6 +196,9 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         ageMax={ageMax}
         state={state}
         city={city}
+        searchCities={searchCities}
+        defaultCity={filterDefaults.city}
+        defaultState={filterDefaults.state}
         distanceKm={distanceKm}
         advanced={advanced}
         filtersApplied={hasCustomFilters}

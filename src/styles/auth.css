@@ -1030,9 +1030,35 @@
 }
 
 .cover-photo-upload__actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: 2rem 0.75rem 0.75rem;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.72));
+}
+
+.cover-photo-upload__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  color: #111;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cover-photo-upload__btn--ghost {
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .profile-hero__cover-img--default {

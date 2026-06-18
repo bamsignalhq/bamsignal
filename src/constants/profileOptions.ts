@@ -3,12 +3,14 @@ import {
   ALL_NIGERIAN_CITIES,
   NIGERIAN_STATES,
   citiesForState,
+  cityBelongsToState,
   metroForCity,
+  resolveStateName,
   searchCitiesInState,
   stateForCity
 } from "../data/nigeriaLocations";
 
-export { NIGERIAN_STATES, citiesForState, stateForCity, ALL_NIGERIAN_CITIES, searchCitiesInState, metroForCity };
+export { NIGERIAN_STATES, citiesForState, stateForCity, resolveStateName, cityBelongsToState, ALL_NIGERIAN_CITIES, searchCitiesInState, metroForCity };
 
 /** @deprecated Use ALL_NIGERIAN_CITIES or citiesForState */
 export const NIGERIAN_CITIES = ALL_NIGERIAN_CITIES;

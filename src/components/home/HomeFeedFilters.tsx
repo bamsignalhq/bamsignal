@@ -8,6 +8,7 @@ type HomeFeedFiltersProps = {
   ageMax: number;
   city: string;
   state: string;
+  searchCities?: string[];
   distanceKm: number;
   hasCustomFilters: boolean;
   onOpenQuickFilters: () => void;
@@ -22,13 +23,14 @@ export function HomeFeedFilters({
   ageMax,
   city,
   state,
+  searchCities = [],
   distanceKm,
   hasCustomFilters,
   onOpenQuickFilters,
   onOpenAdvanced,
   onReset
 }: HomeFeedFiltersProps) {
-  const location = formatHomeLocationSummary(city, state, distanceKm);
+  const location = formatHomeLocationSummary(city, state, distanceKm, searchCities);
   const summary = `${ageMin}–${ageMax} • ${location}`;
 
   return (

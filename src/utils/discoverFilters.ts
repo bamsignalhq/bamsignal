@@ -1,7 +1,12 @@
 import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
 import { isOnlineNow } from "./activity";
 import { boostedProfileIds } from "./activeBoosts";
-import { computeCompatibilityPercent, hasActivePreferences, matchesPreferences } from "./compatibility";
+import {
+  computeCompatibilityPercent,
+  hasActivePreferences,
+  matchesPreferences,
+  matchesSearchLocation
+} from "./compatibility";
 
 export type DiscoverQuickFilter = "all" | "verified" | "online" | "new";
 
@@ -10,7 +15,7 @@ export function applyDiscoverPreferences(
   prefs: MatchPreferences,
   viewer?: DatingProfile
 ): DiscoverProfile[] {
-  let result = profiles;
+  let result = profiles.filter((p) => matchesSearchLocation(p, prefs));
 
   if (prefs.preferenceMode === "strict" && hasActivePreferences(prefs)) {
     result = result.filter((p) => matchesPreferences(p, prefs));

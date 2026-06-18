@@ -1673,6 +1673,42 @@
   margin-bottom: 2px;
 }
 
+.profile-readonly-row,
+.profile-location-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+}
+
+.profile-readonly-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-readonly-field__value {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--input-bg) 88%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.profile-location-row .tap-select-field {
+  min-width: 0;
+}
+
+@media (max-width: 380px) {
+  .profile-readonly-row,
+  .profile-location-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .profile-form-row__label {
   font-size: 0.72rem;
   font-weight: 700;

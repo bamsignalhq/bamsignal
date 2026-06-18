@@ -39,8 +39,15 @@ export const BUSINESS_FLYER_PATTERNS = [
   /\bdiscount\b/i,
   /\bsale\b/i,
   /\bfollow\s+us\b/i,
+  /\bchat\s+with\s+us\b/i,
+  /\bfast\s+replies\b/i,
+  /\btrusted\s+support\b/i,
+  /\bwe(?:'|')?re\s+here\s+for\s+you\b/i,
   /\b@\w{3,}\b/
 ];
+
+/** Cover photos with noticeable text or promo graphics are not allowed. */
+export const COVER_TEXT_HARD_BLOCK = 0.1;
 
 export function containsBusinessFlyerText(text) {
   const raw = String(text || "");
@@ -98,6 +105,29 @@ export function assessProfilePhoto({
     };
   }
 
+  if (hasQr) {
+    return {
+      hardBlock: true,
+      hardBlockCategory: "qr_code",
+      pendingReview: false,
+      riskFlags: ["qr_detected"],
+      riskScore: PHOTO_RISK_WEIGHTS.qr_code
+    };
+  }
+
+  const combinedText = String(ocrText || "");
+  const hasFlyerText = containsBusinessFlyerText(combinedText);
+
+  if (hasFlyerText || textDensity >= TEXT_HEAVY_DENSITY) {
+    return {
+      hardBlock: true,
+      hardBlockCategory: hasFlyerText ? "logo" : "text_heavy",
+      pendingReview: false,
+      riskFlags: [hasFlyerText ? "possible_logo" : "text_heavy"],
+      riskScore: addRisk(0, hasFlyerText ? "logo" : "text_heavy")
+    };
+  }
+
   if (!hasAdequateFace) {
     riskFlags.push("no_face_detected");
     riskScore = addRisk(riskScore, "no_face");
@@ -116,14 +146,9 @@ export function assessProfilePhoto({
     riskScore = addRisk(riskScore, "text_heavy");
   }
 
-  if (hasQr) {
-    riskFlags.push("qr_detected");
-    riskScore = addRisk(riskScore, "qr_code");
-  }
-
-  const combinedText = String(ocrText || "");
-  if (combinedText && containsBusinessFlyerText(combinedText) && !riskFlags.includes("possible_logo")) {
+  if (combinedText && hasFlyerText && !riskFlags.includes("possible_logo")) {
     riskFlags.push("possible_logo");
+    riskScore = addRisk(riskScore, "logo");
   }
 
   const pendingReview = riskFlags.length > 0;
@@ -170,19 +195,29 @@ export function assessCoverPhoto({
     };
   }
 
-  if (hasFlyerText) {
-    riskFlags.push("possible_logo");
-    riskScore = addRisk(riskScore, "logo");
+  if (hasQr) {
+    return {
+      hardBlock: true,
+      hardBlockCategory: "qr_code",
+      pendingReview: false,
+      riskFlags: ["qr_detected"],
+      riskScore: PHOTO_RISK_WEIGHTS.qr_code
+    };
+  }
+
+  if (hasFlyerText || textDensity >= COVER_TEXT_HARD_BLOCK) {
+    return {
+      hardBlock: true,
+      hardBlockCategory: hasFlyerText ? "logo" : "text_heavy",
+      pendingReview: false,
+      riskFlags: [hasFlyerText ? "possible_logo" : "text_heavy"],
+      riskScore: addRisk(0, hasFlyerText ? "logo" : "text_heavy")
+    };
   }
 
   if (textDensity >= TEXT_HEAVY_RISK_DENSITY) {
     riskFlags.push("text_heavy");
     riskScore = addRisk(riskScore, "text_heavy");
-  }
-
-  if (hasQr) {
-    riskFlags.push("qr_detected");
-    riskScore = addRisk(riskScore, "qr_code");
   }
 
   return {

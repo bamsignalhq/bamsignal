@@ -3,7 +3,7 @@ import { STORAGE_KEYS } from "../constants/limits";
 import { MIN_PROFILE_PHOTOS } from "../constants/photos";
 import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
-import { stateForCity, citiesForState, normalizeLifestyleTraits } from "../constants/profileOptions";
+import { stateForCity, citiesForState, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
 import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { readJson } from "./storage";
@@ -120,6 +120,11 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     ...safeArray<string>(cleaned.lifestyles),
     ...(cleaned.lifestyle && !isPreferNot(cleaned.lifestyle) ? [cleaned.lifestyle] : [])
   ]);
+  const statesOfOrigin = safeArray<string>(cleaned.statesOfOrigin).slice(0, 1);
+  const stateOfOrigin = safeString(cleaned.stateOfOrigin) || statesOfOrigin[0];
+  const hasKidsOptions = safeArray<import("../types").HasKidsOption>(cleaned.hasKidsOptions).slice(0, 1);
+  const wantsKidsOptions = safeArray<import("../types").WantsKidsOption>(cleaned.wantsKidsOptions).slice(0, 1);
+  const bodyTypes = safeArray<import("../types").BodyType>(cleaned.bodyTypes).slice(0, 1);
 
   return {
     ...base,
@@ -148,6 +153,11 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     profilePrompts: safeArray(cleaned.profilePrompts),
     lifestyles,
     lifestyle: lifestyles[0],
+    statesOfOrigin: stateOfOrigin ? [stateOfOrigin] : statesOfOrigin,
+    stateOfOrigin: stateOfOrigin || undefined,
+    hasKidsOptions,
+    wantsKidsOptions,
+    bodyTypes,
     createdAt: cleaned.createdAt ?? base.createdAt ?? new Date().toISOString()
   };
 }
@@ -174,14 +184,17 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
     raw.verificationPreferences ??
     (raw.requireVerified ? (["Selfie verified"] as import("../types").VerificationPreference[]) : []);
 
+  const rawState = safeArray<string>(raw.states)[0];
+  const normalizedState = rawState?.trim() ? resolveStateName(rawState) || rawState.trim() : undefined;
+
   return {
     ...base,
     ...raw,
     religions: safeArray(raw.religions),
     ethnicities: safeArray(raw.ethnicities),
     lifestyles: normalizeLifestyleTraits(raw.lifestyles),
-    cities: normalizeSearchCities(raw.cities, safeArray<string>(raw.states)[0]),
-    states: safeArray<string>(raw.states).slice(0, 1),
+    cities: normalizeSearchCities(raw.cities, normalizedState),
+    states: normalizedState ? [normalizedState] : [],
     statesOfOrigin: safeArray(raw.statesOfOrigin),
     occupations: safeArray(raw.occupations),
     genotypes: safeArray(raw.genotypes),

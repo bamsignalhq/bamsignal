@@ -65,16 +65,28 @@ type MatchPreferenceFieldsProps = {
   onAgeRangeChange?: (min: number, max: number) => void;
   occupations?: Occupation[];
   onOccupationsChange?: (value: Occupation[]) => void;
+  /** Profile — single state of origin */
+  stateOfOrigin?: string;
+  onStateOfOriginChange?: (value: string | undefined) => void;
   statesOfOrigin?: string[];
   onStatesOfOriginChange?: (value: string[]) => void;
   relationshipIntentions?: RelationshipIntention[];
   onRelationshipIntentionsChange?: (value: RelationshipIntention[]) => void;
   genotypes?: Genotype[];
   onGenotypesChange?: (value: Genotype[]) => void;
+  /** Profile — single has-kids answer */
+  hasKidsOption?: HasKidsOption;
+  onHasKidsOptionChange?: (value: HasKidsOption | undefined) => void;
   hasKids?: HasKidsOption[];
   onHasKidsChange?: (value: HasKidsOption[]) => void;
+  /** Profile — single wants-kids answer */
+  wantsKidsOption?: WantsKidsOption;
+  onWantsKidsOptionChange?: (value: WantsKidsOption | undefined) => void;
   wantsKids?: WantsKidsOption[];
   onWantsKidsChange?: (value: WantsKidsOption[]) => void;
+  /** Profile — single body type */
+  bodyType?: import("../../types").BodyType;
+  onBodyTypeChange?: (value: import("../../types").BodyType | undefined) => void;
   bodyTypes?: import("../../types").BodyType[];
   onBodyTypesChange?: (value: import("../../types").BodyType[]) => void;
   verificationPreferences?: VerificationPreference[];
@@ -110,16 +122,24 @@ export function MatchPreferenceFields({
   onAgeRangeChange,
   occupations,
   onOccupationsChange,
+  stateOfOrigin,
+  onStateOfOriginChange,
   statesOfOrigin,
   onStatesOfOriginChange,
   relationshipIntentions,
   onRelationshipIntentionsChange,
   genotypes,
   onGenotypesChange,
+  hasKidsOption,
+  onHasKidsOptionChange,
   hasKids,
   onHasKidsChange,
+  wantsKidsOption,
+  onWantsKidsOptionChange,
   wantsKids,
   onWantsKidsChange,
+  bodyType,
+  onBodyTypeChange,
   bodyTypes,
   onBodyTypesChange,
   verificationPreferences,
@@ -243,13 +263,24 @@ export function MatchPreferenceFields({
         />
       ) : null}
 
-      {onStatesOfOriginChange ? (
+      {onStateOfOriginChange ? (
+        <TapSelectField
+          label="State of origin"
+          optional
+          options={STATE_OPTIONS}
+          value={stateOfOrigin}
+          formatValue={stateDisplayLabel}
+          onChange={(next) => onStateOfOriginChange(next as string | undefined)}
+        />
+      ) : onStatesOfOriginChange ? (
         <TapSelectField
           label="State of origin"
           optional
           multiple
+          maxSelections={1}
+          limitMessage="Choose one state of origin."
           options={STATE_OPTIONS}
-          value={statesOfOrigin ?? []}
+          value={(statesOfOrigin ?? []).slice(0, 1)}
           formatValue={stateDisplayLabel}
           onChange={(next) => onStatesOfOriginChange((next as string[]) ?? [])}
         />
@@ -279,35 +310,65 @@ export function MatchPreferenceFields({
         />
       ) : null}
 
-      {onHasKidsChange ? (
+      {onHasKidsOptionChange ? (
+        <TapSelectField
+          label="Has kids"
+          optional
+          options={HAS_KIDS_OPTIONS}
+          value={hasKidsOption}
+          onChange={(next) => onHasKidsOptionChange(next as HasKidsOption | undefined)}
+        />
+      ) : onHasKidsChange ? (
         <TapSelectField
           label="Has kids"
           optional
           multiple
+          maxSelections={1}
+          limitMessage="Choose one option."
           options={HAS_KIDS_OPTIONS}
-          value={hasKids ?? []}
+          value={(hasKids ?? []).slice(0, 1)}
           onChange={(next) => onHasKidsChange((next as HasKidsOption[]) ?? [])}
         />
       ) : null}
 
-      {onWantsKidsChange ? (
+      {onWantsKidsOptionChange ? (
+        <TapSelectField
+          label="Wants kids"
+          optional
+          options={WANTS_KIDS_OPTIONS}
+          value={wantsKidsOption}
+          onChange={(next) => onWantsKidsOptionChange(next as WantsKidsOption | undefined)}
+        />
+      ) : onWantsKidsChange ? (
         <TapSelectField
           label="Wants kids"
           optional
           multiple
+          maxSelections={1}
+          limitMessage="Choose one option."
           options={WANTS_KIDS_OPTIONS}
-          value={wantsKids ?? []}
+          value={(wantsKids ?? []).slice(0, 1)}
           onChange={(next) => onWantsKidsChange((next as WantsKidsOption[]) ?? [])}
         />
       ) : null}
 
-      {onBodyTypesChange ? (
+      {onBodyTypeChange ? (
+        <TapSelectField
+          label="Body type"
+          optional
+          options={FILTER_BODY_TYPES}
+          value={bodyType}
+          onChange={(next) => onBodyTypeChange(next as import("../../types").BodyType | undefined)}
+        />
+      ) : onBodyTypesChange ? (
         <TapSelectField
           label="Body type"
           optional
           multiple
+          maxSelections={1}
+          limitMessage="Choose one body type."
           options={FILTER_BODY_TYPES}
-          value={bodyTypes ?? []}
+          value={(bodyTypes ?? []).slice(0, 1)}
           onChange={(next) => onBodyTypesChange((next as import("../../types").BodyType[]) ?? [])}
         />
       ) : null}

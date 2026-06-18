@@ -157,15 +157,12 @@ export function CoverPhotoUpload({
 
   return (
     <div className="cover-photo-upload">
-      <p className="cover-photo-upload__hint">
-        One wide lifestyle photo for your profile backdrop. No contact details or text overlays.
-      </p>
       <div className="cover-photo-upload__frame">
         <img src={preview} alt="" className="cover-photo-upload__preview" />
         <div className="cover-photo-upload__actions">
           <button
             type="button"
-            className="btn-secondary btn-sm"
+            className="cover-photo-upload__btn"
             onClick={openPicker}
             disabled={uploading}
             aria-busy={uploading}
@@ -174,7 +171,7 @@ export function CoverPhotoUpload({
             {uploading ? "Uploading…" : hasCustomCover ? "Change cover" : "Add cover photo"}
           </button>
           {hasCustomCover && (
-            <button type="button" className="btn-secondary btn-sm" onClick={removeCover} disabled={uploading}>
+            <button type="button" className="cover-photo-upload__btn cover-photo-upload__btn--ghost" onClick={removeCover} disabled={uploading}>
               <X size={16} aria-hidden />
               Remove
             </button>

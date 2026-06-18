@@ -94,7 +94,10 @@ export async function moderatePhotoUpload(
   }
 
   try {
-    const safety = await scanPhotoSafety(file, kind, mode);
+    const safety =
+      kind === "selfie"
+        ? await scanPhotoSafety(file, kind, mode)
+        : await scanPhotoSafetyDeep(file, kind);
 
     if (!safety.allowed && safety.hardBlock) {
       logPhotoUpload("moderation_blocked", {

@@ -1,5 +1,6 @@
 import { intentLabel } from "../constants/intents";
-import { stateForCity, normalizeLifestyleTraits } from "../constants/profileOptions";
+import { stateForCity, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
+import { normalizeSearchCities, searchStateFromPrefs } from "./searchLocationPrefs";
 import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
 import type { IntentTag } from "../types";
 import { safeArray } from "./safeProfile";
@@ -185,7 +186,21 @@ export function getProfileMatchReasons(viewer: DatingProfile, candidate: Discove
 }
 
 function candidateLocationState(candidate: DiscoverProfile): string | undefined {
-  return candidate.state?.trim() || (candidate.city ? stateForCity(candidate.city) : undefined);
+  const fromRow = candidate.state?.trim();
+  if (fromRow) return resolveStateName(fromRow) || fromRow;
+  return candidate.city ? stateForCity(candidate.city) : undefined;
+}
+
+/** Location filter — always applied when search state or cities are set. */
+export function matchesSearchLocation(candidate: DiscoverProfile, prefs: MatchPreferences): boolean {
+  const searchState = searchStateFromPrefs(prefs);
+  const searchCities = normalizeSearchCities(prefs.cities, searchState);
+  if (!searchState && searchCities.length === 0) return true;
+
+  const candidateState = candidateLocationState(candidate);
+  if (searchState && candidateState && candidateState !== searchState) return false;
+  if (searchCities.length && !searchCities.includes(candidate.city)) return false;
+  return true;
 }
 
 export function hasActivePreferences(prefs: MatchPreferences): boolean {
@@ -221,12 +236,7 @@ export function matchesPreferences(candidate: DiscoverProfile, prefs: MatchPrefe
       return false;
     }
   }
-  if (prefs.cities.length && !prefs.cities.includes(candidate.city)) return false;
-  if (prefs.states.length) {
-    const searchState = prefs.states[0];
-    const locationState = candidateLocationState(candidate);
-    if (locationState && searchState !== locationState) return false;
-  }
+  if (!matchesSearchLocation(candidate, prefs)) return false;
   if (prefs.ageMin != null && candidate.age < prefs.ageMin) return false;
   if (prefs.ageMax != null && candidate.age > prefs.ageMax) return false;
   if (prefs.distanceMax != null && candidate.distanceKm != null && candidate.distanceKm > prefs.distanceMax)

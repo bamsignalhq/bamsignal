@@ -61,31 +61,22 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
+  padding: 6px 12px;
   border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 600;
-  backdrop-filter: blur(8px);
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(135deg, #ff4db8 0%, #6d5ef8 100%);
+  box-shadow: 0 4px 14px rgba(109, 94, 248, 0.22);
 }
 
-.verification-badge--green {
-  background: rgba(76, 175, 80, 0.2);
-  color: #a5d6a7;
-}
-
-.verification-badge--blue {
-  background: rgba(33, 150, 243, 0.2);
-  color: #90caf9;
-}
-
-.verification-badge--purple {
-  background: rgba(156, 39, 176, 0.25);
-  color: #ce93d8;
-}
-
+.verification-badge--green,
+.verification-badge--blue,
+.verification-badge--purple,
 .verification-badge--neutral {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.78);
+  color: #fff;
+  background: linear-gradient(135deg, #ff4db8 0%, #6d5ef8 100%);
 }
 
 .trust-badge--trusted-member {

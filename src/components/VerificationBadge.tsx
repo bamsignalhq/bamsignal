@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import type { VerificationInfo } from "../utils/verification";
 
 type VerificationBadgeProps = {
@@ -9,8 +10,8 @@ export function VerificationBadge({ info }: VerificationBadgeProps) {
 
   return (
     <span className={`verification-badge verification-badge--${info.color}`} title={info.label}>
-      {info.emoji ? <span aria-hidden>{info.emoji}</span> : null}
-      {info.label}
+      <Check size={11} strokeWidth={3} aria-hidden />
+      <span>{info.label}</span>
     </span>
   );
 }

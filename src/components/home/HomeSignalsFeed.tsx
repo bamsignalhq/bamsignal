@@ -296,7 +296,7 @@ export function HomeSignalsFeed({
       {loading ? (
         <div className="discover-feed-grid discover-feed-grid--loading" aria-busy="true">
           {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="discover-feed-card discover-feed-card--skeleton" />
+            <div key={i} className="discover-feed-card discover-feed-card--dashboard discover-feed-card--skeleton" />
           ))}
         </div>
       ) : gridItems.length === 0 ? (

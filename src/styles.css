@@ -1801,12 +1801,27 @@ body {
 /* Verified badge */
 .verified-badge {
   display: inline-flex;
-  color: #2196f3;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(135deg, #ff4db8 0%, #6d5ef8 100%);
+  box-shadow: 0 4px 14px rgba(109, 94, 248, 0.22);
+}
+
+.verified-badge--sm {
+  padding: 5px 10px;
+  font-size: 0.62rem;
+  gap: 3px;
 }
 
 .verified-badge--sm svg {
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
 }
 
 /* Chat */

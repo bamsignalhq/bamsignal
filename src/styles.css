@@ -1,5 +1,6 @@
 /* BamSignal Dating — brand tokens */
 :root {
+  --bottom-nav-height: 72px;
   --brand-pink: #e91e8c;
   --brand-purple: #7b1fa2;
   --brand-gradient: linear-gradient(135deg, #e91e8c 0%, #9c27b0 50%, #673ab7 100%);

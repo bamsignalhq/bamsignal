@@ -692,7 +692,7 @@
 .platform-root:not(.platform-root--member) .visual-hero--minimal .visual-hero__layout--minimal {
   justify-content: flex-end;
   min-height: 100dvh;
-  padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px) + 28px);
   padding-top: env(safe-area-inset-top, 0px);
 }
 
@@ -731,7 +731,7 @@
 }
 
 .visual-hero__copy--minimal .visual-hero__actions {
-  margin: 0;
+  margin: 0 0 6px;
 }
 
 .visual-hero--minimal .visual-hero__dots {

@@ -1,4 +1,4 @@
-import { Moon, Sun } from "lucide-react";
+import { Moon, SlidersHorizontal, Sun } from "lucide-react";
 import { AppLogo } from "./AppLogo";
 import { FoundingMemberBadge } from "./FoundingMemberBadge";
 import { MemberNav } from "./MemberNav";
@@ -23,6 +23,8 @@ type TopNavProps = {
   messageCount?: number;
   showMemberNav?: boolean;
   memberFirstName?: string;
+  discoverPremium?: boolean;
+  onDiscoverFilterClick?: () => void;
 };
 
 export function TopNav({
@@ -42,12 +44,14 @@ export function TopNav({
   likeCount = 0,
   messageCount = 0,
   showMemberNav = false,
-  memberFirstName
+  memberFirstName,
+  discoverPremium = false,
+  onDiscoverFilterClick
 }: TopNavProps) {
   return (
-    <header className="top-nav">
+    <header className={`top-nav${discoverPremium ? " top-nav--discover-premium" : ""}`}>
       <button type="button" className="top-nav-brand" onClick={onLogoClick} aria-label="BamSignal home">
-        <AppLogo size="sm" showText={false} />
+        <AppLogo size="sm" showText={discoverPremium} />
         {showFoundingMember && <FoundingMemberBadge className="top-nav-early" />}
         {!showFoundingMember && showEarlyAccess && <FoundingMemberBadge className="top-nav-early" />}
       </button>
@@ -84,9 +88,20 @@ export function TopNav({
             {showNotifications && onNotificationsClick && (
               <NotificationBell count={notificationCount} onClick={onNotificationsClick} />
             )}
-            <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme">
-              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+            {discoverPremium && onDiscoverFilterClick ? (
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={onDiscoverFilterClick}
+                aria-label="Discover filters"
+              >
+                <SlidersHorizontal size={20} />
+              </button>
+            ) : (
+              <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme">
+                {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+            )}
           </>
         )}
       </div>

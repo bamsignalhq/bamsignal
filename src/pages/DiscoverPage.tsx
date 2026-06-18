@@ -11,7 +11,9 @@ import { ProfileCardSkeleton } from "../components/Skeleton";
 import { EmptyState } from "../components/EmptyState";
 import { PaywallModal } from "../components/PaywallModal";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
-import { ProfileCard } from "../components/ProfileCard";
+import { DiscoverProfileCard } from "../components/discover/DiscoverProfileCard";
+import { DiscoverSafetyCard } from "../components/discover/DiscoverSafetyCard";
+import { DiscoverFilters } from "../components/DiscoverFilters";
 import { ReportBlockModal } from "../components/ReportBlockModal";
 import type { DiscoverProfile, Match, MatchPreferences, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
@@ -51,6 +53,9 @@ type DiscoverPageProps = {
   onMatch: (match: Match) => void;
   onUpgrade: (plan: PremiumPlan) => void;
   paymentLoading?: boolean;
+  filterOpen?: boolean;
+  onFilterOpenChange?: (open: boolean) => void;
+  onOpenSafety?: () => void;
 };
 
 export function DiscoverPage({
@@ -58,7 +63,10 @@ export function DiscoverPage({
   plans,
   onMatch: _onMatch,
   onUpgrade,
-  paymentLoading
+  paymentLoading,
+  filterOpen = false,
+  onFilterOpenChange,
+  onOpenSafety
 }: DiscoverPageProps) {
   void _onMatch;
 
@@ -66,8 +74,11 @@ export function DiscoverPage({
   const [passedIds, setPassedIds] = useState<string[]>(() =>
     readJson<string[]>(STORAGE_KEYS.passed, [])
   );
-  const [prefs] = useState<MatchPreferences>(() =>
+  const [prefs, setPrefs] = useState<MatchPreferences>(() =>
     normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}))
+  );
+  const [savedIds, setSavedIds] = useState<string[]>(() =>
+    readJson<string[]>(STORAGE_KEYS.savedDiscoverProfiles, [])
   );
   const [profileOpen, setProfileOpen] = useState(false);
   const [signalSent, setSignalSent] = useState(false);
@@ -125,7 +136,10 @@ export function DiscoverPage({
     [baseDeck, quickFilter]
   );
 
-  const memberUser = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+  const memberCity = viewer.city || getMemberCity() || "Lagos";
+  const cityLabel = prefs.cities?.[0] || memberCity;
+  const stateLabel = prefs.states?.[0] || viewer.state || "";
+  const browseLocation = stateLabel ? `${cityLabel}, ${stateLabel}` : `${cityLabel}, Nigeria`;
   const current = deck[0];
   const remaining = getRemainingDaily(STORAGE_KEYS.dailySwipes, FREE_DAILY_SWIPES);
   const atLimit = !isPremium && remaining <= 0;
@@ -140,6 +154,10 @@ export function DiscoverPage({
   }, [current?.id]);
 
   useAndroidBack(() => {
+    if (filterOpen) {
+      onFilterOpenChange?.(false);
+      return true;
+    }
     if (safetyOpen) {
       setSafetyOpen(false);
       return true;
@@ -265,6 +283,20 @@ export function DiscoverPage({
     setTimeout(() => setToast(""), 3000);
   };
 
+  const handleSave = () => {
+    if (!current) return;
+    const alreadySaved = savedIds.includes(current.id);
+    const next = alreadySaved
+      ? savedIds.filter((id) => id !== current.id)
+      : [...savedIds, current.id];
+    setSavedIds(next);
+    writeJson(STORAGE_KEYS.savedDiscoverProfiles, next);
+    setToast(alreadySaved ? "Removed from saved" : "Saved for later");
+    setTimeout(() => setToast(""), 2500);
+  };
+
+  const memberUser = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+
   const renderEmpty = () => {
     const filteredEmpty = baseDeck.length > 0 && deck.length === 0;
 
@@ -286,8 +318,8 @@ export function DiscoverPage({
     : getVerificationTier(defaultDatingProfile(), false, true);
 
   return (
-    <div className="page discover-page discover-v2 discover-v2--clean">
-      <DiscoverHeader />
+    <div className="page discover-page discover-page--premium">
+      <DiscoverHeader cityLabel={browseLocation} />
       <DiscoverQuickFilters active={quickFilter} onChange={setQuickFilter} />
       {passedIds.length > 0 ? (
         <button type="button" className="discover-undo-btn" onClick={handleUndoPass}>
@@ -302,25 +334,50 @@ export function DiscoverPage({
       {!profilesLoading && !current && renderEmpty()}
 
       {!profilesLoading && current && (
-        <ProfileCard
-          key={cardKey}
-          profile={current}
-          verification={verification.tier ? verification : undefined}
-          isPremium={isPremium}
-          onIgnore={handleIgnore}
-          onSendSignal={handleSendSignal}
-          onPrioritySignal={handlePrioritySignal}
-          onReport={() => setSafetyOpen(true)}
-          onBlock={handleBlock}
-          onViewProfile={() => {
-            markFirstDayStep("compat_viewed");
-            setProfileOpen(true);
-          }}
-          signalBlockedReason={!signalGate.allowed ? signalGate.reason : undefined}
-          signalSent={signalSent}
-          entering
-        />
+        <>
+          <DiscoverProfileCard
+            key={cardKey}
+            profile={current}
+            verification={verification.tier ? verification : undefined}
+            saved={savedIds.includes(current.id)}
+            onIgnore={handleIgnore}
+            onSave={handleSave}
+            onSendSignal={handleSendSignal}
+            onViewProfile={() => {
+              markFirstDayStep("compat_viewed");
+              setProfileOpen(true);
+            }}
+            signalBlockedReason={!signalGate.allowed ? signalGate.reason : undefined}
+            signalSent={signalSent}
+            entering
+          />
+          <DiscoverSafetyCard onClick={onOpenSafety} />
+        </>
       )}
+
+      <DiscoverFilters
+        prefs={prefs}
+        onChange={(next) => {
+          setPrefs(next);
+          writeJson(STORAGE_KEYS.matchPreferences, next);
+        }}
+        discoverState={stateLabel || prefs.states?.[0] || ""}
+        discoverCity={cityLabel}
+        onDiscoverLocationChange={(state, city) => {
+          const next = {
+            ...prefs,
+            states: state ? [state] : [],
+            cities: city ? [city] : []
+          };
+          setPrefs(next);
+          writeJson(STORAGE_KEYS.matchPreferences, next);
+        }}
+        isPremium={isPremium}
+        onRequirePremium={() => setPaywallOpen(true)}
+        open={filterOpen}
+        onOpenChange={onFilterOpenChange}
+        hideTrigger
+      />
 
       {current && (
         <ProfileDetailSheet

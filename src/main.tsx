@@ -14,6 +14,7 @@ import "./styles/safety.css";
 import "./styles/launch.css";
 import "./styles/admin-console.css";
 import "./styles/discover-v2.css";
+import "./styles/discover-premium.css";
 import "./styles/discover-grid.css";
 import "./styles/footer.css";
 import "./styles/dashboard.css";

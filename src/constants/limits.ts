@@ -48,6 +48,7 @@ export const STORAGE_KEYS = {
   memberProfileId: "bamsignal-member-profile-id",
   authUsernameIndex: "bamsignal-auth-usernames",
   discoverLocationMeta: "bamsignal-discover-location-meta",
+  savedDiscoverProfiles: "bamsignal-saved-discover-profiles",
   shadowBanned: "bamsignal-shadow-banned",
   photoModerationStrikes: "bamsignal-photo-mod-strikes",
   voiceModerationStrikes: "bamsignal-voice-mod-strikes",

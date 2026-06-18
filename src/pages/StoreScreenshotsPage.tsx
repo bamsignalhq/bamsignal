@@ -146,7 +146,7 @@ function SceneDiscover() {
 
   return (
     <div className="page discover-page discover-v2 member-content-pad">
-      <DiscoverHeader />
+      <DiscoverHeader cityLabel="Lagos, Nigeria" />
       <p className="store-shot__activity" aria-hidden>
         ✓ 12 new signals in Lagos today · Abuja · Port Harcourt
       </p>

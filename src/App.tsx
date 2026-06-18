@@ -135,6 +135,7 @@ export function App() {
   const [pricingOpen, setPricingOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [memberOverlay, setMemberOverlay] = useState<"visitors" | "premium" | "safety" | null>(null);
+  const [discoverFilterOpen, setDiscoverFilterOpen] = useState(false);
   const [notifVersion, setNotifVersion] = useState(0);
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
   const [paymentFlowTick, setPaymentFlowTick] = useState(0);
@@ -1083,7 +1084,11 @@ export function App() {
 
   return (
     <div className={`app ${theme} platform-root ${isAuthed ? "platform-root--member" : ""}`}>
-      <div className="platform-shell">
+      <div
+        className={`platform-shell${
+          isAuthed && !showOnboarding && tab === "discover" ? " platform-shell--discover-premium" : ""
+        }`}
+      >
         <TopNav
           theme={theme}
           onToggleTheme={toggleTheme}
@@ -1095,7 +1100,7 @@ export function App() {
           notificationCount={notificationUnread}
           onNotificationsClick={() => setNotificationsOpen(true)}
           showEarlyAccess={false}
-          showMemberNav={isAuthed && !showOnboarding}
+          showMemberNav={isAuthed && !showOnboarding && tab !== "discover"}
           memberTab={tab}
           onMemberNavigate={navigateTab}
           likeCount={incomingSignals}
@@ -1103,6 +1108,8 @@ export function App() {
           memberFirstName={
             isAuthed && !showOnboarding ? memberFirstName(user) : undefined
           }
+          discoverPremium={isAuthed && !showOnboarding && tab === "discover"}
+          onDiscoverFilterClick={() => setDiscoverFilterOpen(true)}
         />
 
         {paymentLoading && !showOnboarding && <PaymentLoadingOverlay />}
@@ -1194,6 +1201,9 @@ export function App() {
               onMatch={() => undefined}
               onUpgrade={handleUpgrade}
               paymentLoading={paymentLoading}
+              filterOpen={discoverFilterOpen}
+              onFilterOpenChange={setDiscoverFilterOpen}
+              onOpenSafety={() => setMemberOverlay("safety")}
             />
           )}
           {tab === "discover" && isGuest && <GuestDiscoverPage onJoin={() => openAuth("signup", "discover")} />}

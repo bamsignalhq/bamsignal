@@ -8,7 +8,7 @@ import {
   matchesSearchLocation
 } from "./compatibility";
 
-export type DiscoverQuickFilter = "all" | "verified" | "online" | "new";
+export type DiscoverQuickFilter = "all" | "nearby" | "online" | "new";
 
 export function applyDiscoverPreferences(
   profiles: DiscoverProfile[],
@@ -41,8 +41,10 @@ export function applyQuickFilter(
   switch (filter) {
     case "online":
       return profiles.filter((p) => isOnlineNow(p.lastActiveAt));
-    case "verified":
-      return profiles.filter((p) => p.verified);
+    case "nearby":
+      return [...profiles].sort(
+        (a, b) => (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER)
+      );
     case "new":
       return profiles.filter((p) => {
         if (!p.createdAt) return false;

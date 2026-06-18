@@ -15,7 +15,6 @@ import {
   stateDisplayLabel
 } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
-import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
 import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
 import { ProfileDetailsList } from "../components/profile/ProfileDetailsList";
 import { InterestPicker } from "../components/InterestPicker";
@@ -307,8 +306,32 @@ export function ProfilePage({
 
       {view === "overview" && (
         <>
-          <ProfileCoverHeader user={user} profile={profile} verification={verification} coverOnly />
-          <ProfileIdentityStrip user={user} profile={profile} verification={verification} />
+          <ProfileCoverHeader
+            user={user}
+            profile={profile}
+            verification={verification}
+            editableCover
+            coverPhoto={profile.coverPhoto}
+            photoMeta={profile.photoMeta}
+            onCoverChange={(nextCover, nextPhotoMeta) => {
+              setProfile((p) => {
+                const persistable = safeCoverPhoto(nextCover);
+                const next = normalizeDatingProfile({
+                  ...p,
+                  coverPhoto: persistable,
+                  coverPhotoExplicit: Boolean(persistable),
+                  photoMeta: nextPhotoMeta ?? p.photoMeta
+                });
+                if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
+                  showModMessage(PHOTO_UPLOAD_FAIL);
+                  return p;
+                }
+                syncMemberProfileRemote(user, next);
+                return next;
+              });
+            }}
+            onCoverModerationMessage={showModMessage}
+          />
 
           <div className="profile-overview-sections profile-overview-sections--clean">
             {profile.bio?.trim() ? (
@@ -449,7 +472,7 @@ export function ProfilePage({
             open={editOpen === "photos"}
             onToggle={toggleEditSection}
           >
-            <h4 className="profile-form-row__label">Cover photo</h4>
+            <h4 className="profile-form-row__label">Backdrop photo</h4>
             <CoverPhotoUpload
               coverPhoto={profile.coverPhoto}
               photoMeta={profile.photoMeta}

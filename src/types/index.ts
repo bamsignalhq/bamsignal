@@ -213,6 +213,11 @@ export type DatingProfile = {
   verificationSelfie?: string;
   verificationStatus?: VerificationReviewStatus;
   onboardingComplete?: boolean;
+  /** Legacy / explicit setup completion marker stored in profile JSON */
+  setupCompleted?: boolean;
+  onboardingCompletedAt?: string;
+  profileCompletedAt?: string;
+  completedAt?: string;
   createdAt?: string;
   reportCount?: number;
   /** Optional profile prompt answers (max 3) */

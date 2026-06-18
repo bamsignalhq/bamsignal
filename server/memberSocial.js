@@ -562,6 +562,45 @@ async function extendUserPremium({ email, phone }, days) {
   return result.rows[0] || null;
 }
 
+export async function markMemberOnboardingComplete({ email, phone }) {
+  if (!isDatabaseReady()) return { ok: false };
+  const { findMemberProfileByUserKey, upsertMemberProfile } = await import("./cityHome.js");
+  const member = await findMemberProfileByUserKey(email, phone);
+  if (!member?.city) return { ok: false, reason: "no_profile" };
+
+  const profileJson = { ...(member.profile || {}) };
+  const now = new Date().toISOString();
+  profileJson.onboardingComplete = true;
+  profileJson.setupCompleted = true;
+  profileJson.onboardingCompletedAt = profileJson.onboardingCompletedAt || now;
+  profileJson.profileCompletedAt = profileJson.profileCompletedAt || now;
+  profileJson.completedAt = profileJson.completedAt || now;
+
+  const hideFromDiscovery = Boolean(profileJson.safetySettings?.hideFromDiscovery);
+  await upsertMemberProfile({
+    email,
+    phone,
+    name: member.name,
+    username: member.username,
+    city: member.city,
+    state: member.state,
+    profile: profileJson,
+    discoverable: !hideFromDiscovery,
+    onboardingComplete: true,
+    cityHomeHidden: Boolean(member.city_home_hidden)
+  });
+
+  await query(
+    `update app_users
+     set onboarding_completed_at = coalesce(onboarding_completed_at, now()), updated_at = now()
+     where ($1::text is not null and lower(email) = lower($1::text))
+        or ($2::text is not null and phone = $2::text)`,
+    [email || null, phone || null]
+  );
+
+  return { ok: true };
+}
+
 export async function completeOnboardingReferral({ email, phone }) {
   if (!isDatabaseReady()) return null;
   await ensureSocialSchema();
@@ -670,6 +709,13 @@ export async function fetchMemberSocialBundle({ email, phone }) {
 
   const profileJson = ownProfile?.profile || {};
   const photos = Array.isArray(profileJson.photos) ? profileJson.photos : [];
+  const markedComplete = Boolean(
+    ownProfile?.onboarding_complete ||
+      profileJson.setupCompleted ||
+      profileJson.profileCompletedAt ||
+      profileJson.onboardingCompletedAt ||
+      profileJson.completedAt
+  );
   const rawCover =
     typeof profileJson.coverPhoto === "string" && !profileJson.coverPhoto.startsWith("/showcase/")
       ? profileJson.coverPhoto
@@ -708,7 +754,12 @@ export async function fetchMemberSocialBundle({ email, phone }) {
           premium: Boolean(profileJson.premium),
           verificationSelfie: profileJson.verificationSelfie,
           verificationStatus: profileJson.verificationStatus || "none",
-          onboardingComplete: Boolean(ownProfile.onboarding_complete),
+          onboardingComplete: markedComplete,
+          setupCompleted: Boolean(profileJson.setupCompleted || ownProfile?.onboarding_complete),
+          onboardingCompletedAt: profileJson.onboardingCompletedAt,
+          profileCompletedAt: profileJson.profileCompletedAt || profileJson.completedAt,
+          completedAt: profileJson.completedAt || profileJson.profileCompletedAt,
+          mainPhotoUrl: profileJson.mainPhotoUrl,
           createdAt: profileJson.createdAt || ownProfile.created_at
         }
       : null,

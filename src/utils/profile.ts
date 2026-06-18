@@ -1,6 +1,5 @@
 import { ageFromDateOfBirth, defaultAdultDob } from "./ageFromDob";
 import { STORAGE_KEYS } from "../constants/limits";
-import { MIN_PROFILE_PHOTOS } from "../constants/photos";
 import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
 import { stateForCity, citiesForState, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
@@ -12,6 +11,9 @@ import { samePhotoRef } from "./photoRefs";
 import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString, safeUserCoverPhoto } from "./safeProfile";
 import { prunePhotoMeta, safePhotoMeta } from "./photoMeta";
 import { normalizeMainPhoto } from "./mainPhoto";
+import {
+  isOnboardingFullyComplete
+} from "./onboardingStatus";
 
 export const defaultDatingProfile = (): DatingProfile => ({
   photos: [],
@@ -68,11 +70,11 @@ export function getMatchPreferences(): MatchPreferences {
 
 export function isOnboardingComplete(): boolean {
   const profile = getDatingProfile();
-  return Boolean(
-    profile.onboardingComplete &&
-      profile.bio.trim() &&
-      profile.photos.length >= MIN_PROFILE_PHOTOS
-  );
+  return isOnboardingFullyComplete(profile);
+}
+
+export function profileNeedsOnboarding(profile: Partial<DatingProfile> = getDatingProfile()): boolean {
+  return !isOnboardingFullyComplete(profile);
 }
 
 export function isPreferNot(value?: string): boolean {
@@ -100,7 +102,13 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     cleaned.lookingFor && (cleaned.lookingFor as string) !== "Everyone"
       ? (cleaned.lookingFor as DatingProfile["lookingFor"])
       : base.lookingFor;
-  const onboardingComplete = Boolean(cleaned.onboardingComplete);
+  const onboardingComplete = Boolean(
+    cleaned.onboardingComplete ||
+      cleaned.setupCompleted ||
+      cleaned.profileCompletedAt ||
+      cleaned.onboardingCompletedAt ||
+      cleaned.completedAt
+  );
   const interestsTouched = Boolean(cleaned.interestsTouched);
   const rawInterests = safeArray<string>(cleaned.interests).map((item) => safeString(item)).filter(Boolean);
   const interests = onboardingComplete || interestsTouched ? rawInterests : [];
@@ -172,7 +180,11 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     wantsKidsOptions,
     bodyTypes,
     createdAt: cleaned.createdAt ?? base.createdAt ?? new Date().toISOString(),
-    compliance: normalizeCompliance(cleaned.compliance)
+    compliance: normalizeCompliance(cleaned.compliance),
+    setupCompleted: Boolean(cleaned.setupCompleted),
+    onboardingCompletedAt: safeString(cleaned.onboardingCompletedAt) || undefined,
+    profileCompletedAt: safeString(cleaned.profileCompletedAt) || undefined,
+    completedAt: safeString(cleaned.completedAt) || undefined
   };
 }
 

@@ -9,7 +9,13 @@ import { normalizeDatingProfile } from "../utils/profile";
 import { isComplianceComplete, normalizeCompliance } from "../utils/compliance";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import { readResponseJson } from "../utils/httpJson";
-import { mergeMemberCover, safeArray, safePhotos, safeString } from "../utils/safeProfile";
+import { mergeMemberCover, safeArray, safePhotos, safeString, isPersistablePhotoUrl } from "../utils/safeProfile";
+import { syncMemberProfileRemote } from "./cityHome";
+import {
+  clearOnboardingDrafts,
+  mergeOnboardingCompleteFlag,
+  repairCompletedProfile
+} from "../utils/onboardingStatus";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
 
@@ -145,9 +151,19 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
     }
     const remotePhotos = safePhotos(remote.photos);
     const localPhotos = safePhotos(local.photos);
-    const mergedPhotos = remotePhotos.length >= localPhotos.length ? remotePhotos : localPhotos;
+    const remotePersistable = remotePhotos.filter(isPersistablePhotoUrl);
+    const localPersistable = localPhotos.filter(isPersistablePhotoUrl);
+    const remoteComplete = mergeOnboardingCompleteFlag(local, remote as Partial<import("../types").DatingProfile>);
+    const mergedPhotos =
+      remoteComplete || remotePersistable.length >= localPersistable.length
+        ? remotePhotos.length
+          ? remotePhotos
+          : localPhotos
+        : localPhotos.length >= remotePhotos.length
+          ? localPhotos
+          : remotePhotos;
     const { coverPhoto, coverPhotoExplicit } = mergeMemberCover(local, remote);
-    const onboardingIncomplete = !Boolean(local.onboardingComplete || remote.onboardingComplete);
+    const onboardingIncomplete = !remoteComplete;
     const interestsTouched = Boolean(
       onboardingIncomplete ? local.interestsTouched : local.interestsTouched || remote.interestsTouched
     );
@@ -160,7 +176,7 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
       : remoteInterests.length >= localInterests.length
         ? remoteInterests
         : localInterests;
-    const merged = normalizeDatingProfile({
+    const mergedBase = normalizeDatingProfile({
       ...local,
       ...remote,
       photos: mergedPhotos.length ? mergedPhotos : localPhotos,
@@ -170,6 +186,7 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
         undefined,
       coverPhoto,
       coverPhotoExplicit,
+      onboardingComplete: remoteComplete,
       interests,
       interestsTouched,
       compliance: isComplianceComplete(normalizeCompliance(remote.compliance))
@@ -181,6 +198,14 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
               ...(typeof remote.compliance === "object" && remote.compliance ? remote.compliance : {})
             })
     });
+    const { profile: merged, repaired } = repairCompletedProfile(mergedBase);
+    if (repaired) {
+      console.info("[onboarding-repair] completed profile repaired");
+      void syncMemberProfileRemote(user, merged);
+    }
+    if (remoteComplete) {
+      clearOnboardingDrafts();
+    }
     writeJson(STORAGE_KEYS.datingProfile, merged);
   }
 
@@ -286,8 +311,9 @@ export async function ignoreSignalRemote(user: MemberIdentity, signalId: string)
   return true;
 }
 
-export async function completeOnboardingRemote(user: MemberIdentity): Promise<void> {
+export async function completeOnboardingRemote(user: MemberIdentity): Promise<boolean> {
   const payload = await postMemberAction("complete-onboarding", user);
+  if (!payload?.ok) return false;
   if (payload?.referral) {
     writeJson(STORAGE_KEYS.referrals, {
       code: payload.referral.code,
@@ -301,6 +327,7 @@ export async function completeOnboardingRemote(user: MemberIdentity): Promise<vo
       if (status?.premium) setPremiumSnapshot(status.premium);
     });
   }
+  return true;
 }
 
 export async function fetchIncomingSignalsRemote(user: MemberIdentity): Promise<LikeEntry[]> {

@@ -25,7 +25,8 @@ import { markJoinedAt, persistCitySelection } from "../utils/launchSeed";
 import { markFirstDayStep } from "../utils/firstDayJourney";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { completeOnboardingRemote } from "../services/memberData";
-import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
+import { defaultDatingProfile, normalizeDatingProfile, isOnboardingComplete } from "../utils/profile";
+import { clearOnboardingDrafts, isProfileOnboardingMarkedComplete } from "../utils/onboardingStatus";
 import { writeJson, readJson } from "../utils/storage";
 import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
@@ -74,7 +75,9 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   };
   const [profile, setProfile] = useState<DatingProfile>(() => {
     const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
-    if (stored.onboardingComplete) return { ...defaultDatingProfile(), onboardingComplete: false };
+    if (isOnboardingComplete() || isProfileOnboardingMarkedComplete(stored)) {
+      return normalizeDatingProfile(stored);
+    }
     const normalized = normalizeDatingProfile(stored);
     const resuming = Boolean(
       stored.state ||
@@ -123,13 +126,13 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   }, [step]);
 
   useEffect(() => {
-    if (profile.onboardingComplete) return;
+    if (profile.onboardingComplete || isOnboardingComplete()) return;
     if (!writeJson(STORAGE_KEYS.datingProfile, { ...profile, onboardingComplete: false })) {
       showModMessage(USER_MESSAGES.progressSaveFailed);
     }
   }, [profile]);
 
-  const saveAndFinish = () => {
+  const saveAndFinish = async () => {
     const nameError = validateDisplayName(user.name);
     if (nameError) {
       showModMessage(nameError);
@@ -152,18 +155,34 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       safetySettings: profile.safetySettings ?? defaultSafetySettings(profile.gender)
     });
     const joinedAt = markJoinedAt();
+    const now = new Date().toISOString();
     const final: DatingProfile = {
       ...withSafety,
       onboardingComplete: true,
+      setupCompleted: true,
+      onboardingCompletedAt: now,
+      profileCompletedAt: now,
+      completedAt: now,
       createdAt: joinedAt,
       coverPhoto: undefined,
       coverPhotoExplicit: false
     };
+
+    const synced = await syncMemberProfileRemote(user, final);
+    if (!synced) {
+      showModMessage("We couldn't finish setup. Please try again.");
+      return;
+    }
+    const completed = await completeOnboardingRemote(user);
+    if (!completed) {
+      showModMessage("We couldn't finish setup. Please try again.");
+      return;
+    }
     if (!writeJson(STORAGE_KEYS.datingProfile, final)) {
       showModMessage(USER_MESSAGES.progressSaveFailed);
       return;
     }
-    localStorage.removeItem(STORAGE_KEYS.onboardingStep);
+    clearOnboardingDrafts();
     if (
       !writeJson(STORAGE_KEYS.matchPreferences, {
         ...readJson(STORAGE_KEYS.matchPreferences, {}),
@@ -183,8 +202,6 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       return;
     }
     localStorage.setItem(STORAGE_KEYS.firstSignalPromptAt, String(Date.now()));
-    syncMemberProfileRemote(user, final);
-    void completeOnboardingRemote(user);
     trackEvent("profile_completed", { city: final.city, state: final.state ?? "" });
     markFirstDayStep("profile_complete");
     setShowWelcome(true);
@@ -235,7 +252,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       trackEvent("photo_uploaded");
     }
     if (step === STEPS.length - 1) {
-      saveAndFinish();
+      void saveAndFinish();
       return;
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));

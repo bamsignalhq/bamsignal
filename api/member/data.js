@@ -276,6 +276,13 @@ export default async function handler(req, res) {
 
     if (req.query.action === "complete-onboarding") {
       if (!requireDatabase(res)) return;
+      const { markMemberOnboardingComplete, completeOnboardingReferral } = await import(
+        "../../server/memberSocial.js"
+      );
+      const marked = await markMemberOnboardingComplete(identity);
+      if (!marked.ok) {
+        return res.status(400).json({ ok: false, error: "Could not complete onboarding." });
+      }
       const result = await completeOnboardingReferral(identity);
       const referral = await fetchReferralStats(identity);
       return res.status(200).json({ ok: true, result, referral });

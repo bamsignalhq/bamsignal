@@ -28,7 +28,7 @@ import { ComplianceGateModal } from "./components/ComplianceGateModal";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./types";
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
-import { isOnboardingComplete, getDatingProfile, normalizeDatingProfile } from "./utils/profile";
+import { isOnboardingComplete, getDatingProfile, normalizeDatingProfile, profileNeedsOnboarding } from "./utils/profile";
 import { isComplianceComplete } from "./utils/compliance";
 import { recordStreakActivity } from "./utils/streaks";
 import {
@@ -107,6 +107,7 @@ import { USER_MESSAGES } from "./constants/userMessages";
 import { DEMO_USER } from "./constants/demoAccounts";
 import { getMemberCity } from "./utils/memberCity";
 import { flowLog } from "./utils/flowLog";
+import { clearOnboardingDrafts } from "./utils/onboardingStatus";
 import { repairMemberCaches } from "./utils/repairMemberCaches";
 import { memberFirstName } from "./utils/safeProfile";
 import { usePlans } from "./context/PlansContext";
@@ -257,13 +258,6 @@ export function App() {
     };
     setUser(merged);
     setIsAuthed(true);
-    if (!isOnboardingComplete()) {
-      setShowOnboarding(true);
-      flowLog("session_restore_onboarding");
-    } else {
-      setShowOnboarding(false);
-      flowLog("session_restore_home");
-    }
     recordStreakActivity();
     checkPremiumTrialExpiry();
     let hydrated = await hydrateMemberData(merged);
@@ -273,9 +267,17 @@ export function App() {
       hydrated = await hydrateMemberData(merged);
     }
     flowLog("profile_hydrate", { ok: hydrated });
+    const complete = isOnboardingComplete();
+    setShowOnboarding(!complete);
+    if (complete) {
+      clearOnboardingDrafts();
+      flowLog("session_restore_home");
+    } else {
+      flowLog("session_restore_onboarding");
+    }
     const premium = await refreshPremiumStatus(merged);
     setIsPremium(
-      !isOnboardingComplete()
+      !complete
         ? Boolean(premium.isPremium)
         : premium.isPremium || isPremiumTrialActive()
     );
@@ -561,7 +563,7 @@ export function App() {
         flowLog("profile_hydrate_ok");
       }
       const premium = await refreshPremiumStatus(withPhone);
-      const enteringOnboarding = Boolean(meta?.isNewSignup || !isOnboardingComplete());
+      const enteringOnboarding = Boolean(meta?.isNewSignup || profileNeedsOnboarding());
       if (meta?.isNewSignup) {
         trackEvent("signup_completed");
         markJoinedAt();
@@ -575,7 +577,8 @@ export function App() {
             ...current,
             interests: [],
             interestsTouched: false,
-            onboardingComplete: false
+            onboardingComplete: false,
+            setupCompleted: false
           })
         );
       } else if (meta?.recovered) {
@@ -590,12 +593,13 @@ export function App() {
         navigateToPath("/");
         setAuthPath(null);
       }
-      if (meta?.isNewSignup || !isOnboardingComplete()) {
+      if (meta?.isNewSignup || profileNeedsOnboarding()) {
         setShowOnboarding(true);
         setPendingTab(null);
         flowLog("onboarding_start");
         return;
       }
+      clearOnboardingDrafts();
       if (pendingTab) {
         setTab(pendingTab);
         setPendingTab(null);
@@ -742,7 +746,7 @@ export function App() {
 
   const finishOnboarding = useCallback(() => {
     setShowOnboarding(false);
-    localStorage.removeItem(STORAGE_KEYS.onboardingStep);
+    clearOnboardingDrafts();
     setTab("home");
     void refreshPremiumStatus(user).then((premium) => {
       const trialActive = isPremiumTrialActive();

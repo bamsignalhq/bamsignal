@@ -260,8 +260,8 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           <div className="onboarding-welcome-icon" aria-hidden>
             <Heart size={48} />
           </div>
-          <h1>{SUCCESS_COPY.welcomeTitle}</h1>
-          <p>{SUCCESS_COPY.welcomeBody}</p>
+          <h1>{SUCCESS_COPY.welcomeTitle(user.name)}</h1>
+          <p>{SUCCESS_COPY.welcomeBody(user.name)}</p>
           <button type="button" className="btn-primary btn-full btn-auth" onClick={onComplete}>
             Go to my home
           </button>

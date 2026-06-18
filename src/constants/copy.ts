@@ -32,9 +32,8 @@ export const BRAND = {
 } as const;
 
 export const SUCCESS_COPY = {
-  welcomeTitle: "Welcome to BamSignal ❤️",
-  welcomeBody:
-    "Your profile is ready. Discover genuine people around you and take things one signal at a time.",
+  welcomeTitle: (name = "") => onboardingWelcomeTitle(name),
+  welcomeBody: (name = "") => onboardingWelcomeBody(name),
   photoHeader: "Show your best side ❤️",
   profileVisitorsTitle: "People Interested In You",
   profileVisitorsLocked: "People Interested In You 🔒",
@@ -118,4 +117,24 @@ export function greetingForHour(hour = new Date().getHours()): string {
   if (hour < 12) return "Good morning";
   if (hour < 17) return "Good afternoon";
   return "Good evening";
+}
+
+function firstNameFromDisplayName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  return trimmed.split(/\s+/)[0];
+}
+
+export function onboardingWelcomeTitle(name = ""): string {
+  const first = firstNameFromDisplayName(name);
+  if (!first) return "Welcome to BamSignal ❤️";
+  return `Welcome to BamSignal, ${first} ❤️`;
+}
+
+export function onboardingWelcomeBody(name = ""): string {
+  const first = firstNameFromDisplayName(name);
+  if (!first) {
+    return "Your profile is ready. Discover genuine people around you and take things one signal at a time.";
+  }
+  return `${first}, your profile is ready. Discover genuine people around you and take things one signal at a time.`;
 }

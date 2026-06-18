@@ -10,7 +10,7 @@ import { STORAGE_KEYS } from "../constants/limits";
 import type { PhotoReviewMeta, PhotoReviewStatus, PhotoRiskFlag } from "../types";
 import { CONTACT_LEAK_BLOCK_MESSAGE, scanTextForContactLeak } from "./contactGuard";
 import { buildPhotoMetaEntry } from "./photoMeta";
-import { logPhotoSafetyRiskAsync, scanPhotoSafety, scanPhotoSafetyDeep, scanPhotoSafetyFast } from "./photoSafetyScan";
+import { logPhotoSafetyRiskAsync, scanPhotoSafetyDeep, scanPhotoSafetyFast } from "./photoSafetyScan";
 import { logPhotoUpload } from "./photoUploadLog";
 import { submitPhotoReviewRemote, reportPhotoViolationRemote } from "../services/profilePhotos";
 import { readJson, writeJson } from "./storage";
@@ -99,12 +99,7 @@ export async function moderatePhotoUpload(
   }
 
   try {
-    const safety =
-      kind === "selfie"
-        ? await scanPhotoSafety(file, kind, mode)
-        : kind === "cover"
-          ? scanPhotoSafetyFast(file, kind)
-          : await scanPhotoSafetyDeep(file, kind);
+    const safety = scanPhotoSafetyFast(file, kind);
 
     if (!safety.allowed && safety.hardBlock) {
       logPhotoUpload("moderation_blocked", {

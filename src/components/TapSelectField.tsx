@@ -23,6 +23,8 @@ type TapSelectFieldProps<T extends string> = {
   disabled?: boolean;
   onChange: (value: T | T[] | undefined) => void;
   formatValue?: (value: T) => string;
+  maxSelections?: number;
+  limitMessage?: string;
 };
 
 export function TapSelectField<T extends string>({
@@ -34,9 +36,12 @@ export function TapSelectField<T extends string>({
   multiple = false,
   disabled = false,
   onChange,
-  formatValue
+  formatValue,
+  maxSelections,
+  limitMessage
 }: TapSelectFieldProps<T>) {
   const [open, setOpen] = useState(false);
+  const [selectionLimitMessage, setSelectionLimitMessage] = useState("");
   const selected: T[] = multiple
     ? Array.isArray(value)
       ? value
@@ -47,7 +52,10 @@ export function TapSelectField<T extends string>({
   const format = formatValue ?? ((v: T) => v);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setSelectionLimitMessage("");
+      return;
+    }
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
@@ -57,8 +65,17 @@ export function TapSelectField<T extends string>({
 
   const toggle = (opt: T) => {
     if (multiple) {
-      const next = selected.includes(opt) ? selected.filter((v) => v !== opt) : [...selected, opt];
-      onChange(next);
+      if (selected.includes(opt)) {
+        setSelectionLimitMessage("");
+        onChange(selected.filter((v) => v !== opt));
+        return;
+      }
+      if (maxSelections != null && selected.length >= maxSelections) {
+        setSelectionLimitMessage(limitMessage ?? `Choose up to ${maxSelections}.`);
+        return;
+      }
+      setSelectionLimitMessage("");
+      onChange([...selected, opt]);
       return;
     }
     onChange(opt === value ? undefined : opt);
@@ -96,7 +113,11 @@ export function TapSelectField<T extends string>({
                 <div>
                   <h3>{label}</h3>
                   {multiple && selected.length > 0 ? (
-                    <p className="tap-select-sheet__count">{selected.length} selected</p>
+                    <p className="tap-select-sheet__count">
+                      {maxSelections != null
+                        ? `${selected.length} of ${maxSelections} selected`
+                        : `${selected.length} selected`}
+                    </p>
                   ) : null}
                 </div>
                 <button type="button" className="tap-select-sheet__done" onClick={() => setOpen(false)}>
@@ -123,16 +144,29 @@ export function TapSelectField<T extends string>({
                 </div>
               ) : null}
 
+              {selectionLimitMessage ? (
+                <p className="tap-select-sheet__limit" role="status">
+                  {selectionLimitMessage}
+                </p>
+              ) : null}
+
               <div className="tap-select-sheet__options intent-tags selectable">
                 {options.map((opt) => {
                   const v = optionValue(opt);
                   const isSelected = selected.includes(v);
+                  const blocked =
+                    multiple &&
+                    !isSelected &&
+                    maxSelections != null &&
+                    selected.length >= maxSelections;
                   return (
                     <button
                       key={v}
                       type="button"
-                      className={`intent-tag ${isSelected ? "selected" : ""}`}
+                      className={`intent-tag ${isSelected ? "selected" : ""}${blocked ? " intent-tag--disabled" : ""}`}
                       onClick={() => toggle(v)}
+                      disabled={blocked}
+                      aria-pressed={isSelected}
                     >
                       {optionLabel(opt)}
                     </button>

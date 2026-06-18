@@ -170,6 +170,26 @@ export type WantsKidsOption = (typeof WANTS_KIDS_OPTIONS)[number];
 export const FILTER_RELIGIONS = RELIGIONS.filter((r) => r !== "Prefer not to say");
 export const FILTER_ETHNICITIES = ETHNIC_BACKGROUNDS.filter((e) => e !== "Prefer not to say");
 export const FILTER_LIFESTYLES = SOCIAL_LIFESTYLES.filter((l) => l !== "Prefer not to say");
+
+export const MAX_LIFESTYLE_TRAITS = 3;
+export const LIFESTYLE_TRAITS_LIMIT_MESSAGE = "Choose up to 3 lifestyle traits.";
+
+/** Dedupe lifestyle traits and cap at MAX_LIFESTYLE_TRAITS. */
+export function normalizeLifestyleTraits(values: unknown): SocialLifestyle[] {
+  const allowed = new Set<SocialLifestyle>(FILTER_LIFESTYLES);
+  const seen = new Set<SocialLifestyle>();
+  const out: SocialLifestyle[] = [];
+  const list = Array.isArray(values) ? values : [];
+  for (const raw of list) {
+    if (typeof raw !== "string") continue;
+    const value = raw as SocialLifestyle;
+    if (!allowed.has(value) || seen.has(value)) continue;
+    seen.add(value);
+    out.push(value);
+    if (out.length >= MAX_LIFESTYLE_TRAITS) break;
+  }
+  return out;
+}
 export const FILTER_OCCUPATIONS = OCCUPATIONS.filter((o) => o !== "Prefer not to say");
 export const FILTER_GENOTYPES = GENOTYPES.filter((g) => g !== "Prefer not to say");
 export const FILTER_KIDS_PREFERENCES = KIDS_PREFERENCES.filter((k) => k !== "Prefer not to say");

@@ -1,3 +1,4 @@
+import { normalizeLifestyleTraits } from "../constants/profileOptions";
 import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { normalizeIntents } from "../constants/intents";
 import type { DatingProfile, DiscoverProfile, IntentTag, UserProfile } from "../types";
@@ -127,7 +128,7 @@ export function safeDiscoverProfile(raw: Partial<DiscoverProfile>): DiscoverProf
     hasKidsOptions: safeArray(raw.hasKidsOptions),
     wantsKidsOptions: safeArray(raw.wantsKidsOptions),
     lifestyle: raw.lifestyle,
-    lifestyles: safeArray(raw.lifestyles),
+    lifestyles: normalizeLifestyleTraits(raw.lifestyles),
     bodyTypes: safeArray(raw.bodyTypes),
     voiceIntroUrl: raw.voiceIntroUrl ? safeString(raw.voiceIntroUrl) : undefined,
     distanceKm: raw.distanceKm != null ? safeNumber(raw.distanceKm) : undefined,

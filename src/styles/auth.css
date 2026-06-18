@@ -746,6 +746,18 @@
   color: var(--text-muted);
 }
 
+.tap-select-sheet__limit {
+  margin: 0 16px 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--brand-pink);
+}
+
+.tap-select-sheet__options .intent-tag--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .tap-select-chip {
   display: inline-flex;
   align-items: center;

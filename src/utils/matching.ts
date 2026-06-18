@@ -1,3 +1,4 @@
+import { normalizeLifestyleTraits } from "../constants/profileOptions";
 import type { DatingProfile, DiscoverProfile, IntentTag, MatchPreferences } from "../types";
 import { safeArray, safeString } from "./safeProfile";
 import { computeCompatibilityPercent, hasActivePreferences, matchesPreferences } from "./compatibility";
@@ -41,7 +42,15 @@ function preferenceBonus(candidate: DiscoverProfile, prefs: MatchPreferences): n
   const candidateIntents = safeArray<IntentTag>(candidate.intents);
   if (prefs.intents.length && candidateIntents.some((i) => prefs.intents.includes(i))) bonus += PREF_BONUS;
   if (prefs.religions.length && candidate.religion && prefs.religions.includes(candidate.religion)) bonus += PREF_BONUS;
-  if (prefs.lifestyles.length && candidate.lifestyle && prefs.lifestyles.includes(candidate.lifestyle)) bonus += PREF_BONUS;
+  if (
+    prefs.lifestyles.length &&
+    normalizeLifestyleTraits([
+      ...safeArray<string>(candidate.lifestyles),
+      ...(candidate.lifestyle && !isPreferNot(candidate.lifestyle) ? [candidate.lifestyle] : [])
+    ]).some((trait) => prefs.lifestyles.includes(trait))
+  ) {
+    bonus += PREF_BONUS;
+  }
   if (prefs.cities.length && prefs.cities.includes(candidate.city)) bonus += PREF_BONUS;
   return bonus;
 }

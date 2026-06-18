@@ -1,5 +1,6 @@
 import type { DatingProfile, DiscoverProfile } from "../types";
 import { isPreferNot } from "./profile";
+import { normalizeLifestyleTraits } from "../constants/profileOptions";
 
 export type ProfileDetailRow = { label: string; value: string };
 
@@ -46,7 +47,11 @@ export function getFilledProfileDetails(
     profile.statesOfOrigin ?? (profile.stateOfOrigin ? [profile.stateOfOrigin] : [])
   );
   pushList(rows, "Genotype", profile.genotypes ?? (profile.genotype ? [profile.genotype] : []));
-  pushList(rows, "Lifestyle", profile.lifestyles ?? (profile.lifestyle ? [profile.lifestyle] : []));
+  pushList(
+    rows,
+    "Lifestyle",
+    normalizeLifestyleTraits(profile.lifestyles ?? (profile.lifestyle ? [profile.lifestyle] : []))
+  );
   pushList(rows, "Body Type", profile.bodyTypes);
   if (profile.hasKidsOptions?.length) {
     pushList(rows, "Has Kids", profile.hasKidsOptions);

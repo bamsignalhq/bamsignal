@@ -1,5 +1,5 @@
 import { intentLabel } from "../constants/intents";
-import { stateForCity } from "../constants/profileOptions";
+import { stateForCity, normalizeLifestyleTraits } from "../constants/profileOptions";
 import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
 import type { IntentTag } from "../types";
 import { safeArray } from "./safeProfile";
@@ -35,9 +35,20 @@ function intentScore(viewer: DatingProfile, candidate: DiscoverProfile): number 
   return 0.65 + (shared / Math.max(a.length, b.length)) * 0.35;
 }
 
+function profileLifestyleTraits(
+  profile: Pick<DatingProfile | DiscoverProfile, "lifestyle" | "lifestyles">
+): import("../constants/profileOptions").SocialLifestyle[] {
+  return normalizeLifestyleTraits([
+    ...safeArray<string>(profile.lifestyles),
+    ...(profile.lifestyle && !isPreferNot(profile.lifestyle) ? [profile.lifestyle] : [])
+  ]);
+}
+
 function lifestyleScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
-  if (isPreferNot(viewer.lifestyle) || !viewer.lifestyle || !candidate.lifestyle) return 0;
-  return candidate.lifestyle === viewer.lifestyle ? 1 : 0;
+  const viewerTraits = profileLifestyleTraits(viewer);
+  const candidateTraits = profileLifestyleTraits(candidate);
+  if (!viewerTraits.length || !candidateTraits.length) return 0;
+  return viewerTraits.some((trait) => candidateTraits.includes(trait)) ? 1 : 0;
 }
 
 function locationScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
@@ -86,7 +97,9 @@ export function compatibilitySubtitle(
 ): string {
   if (percent >= 90) return "Strong match · Shared values";
   if (interestScore(viewer, candidate) >= 0.5) return "Shared interests · Good fit";
-  if (!isPreferNot(viewer.lifestyle) && candidate.lifestyle === viewer.lifestyle) {
+  const viewerTraits = profileLifestyleTraits(viewer);
+  const candidateTraits = profileLifestyleTraits(candidate);
+  if (viewerTraits.length && viewerTraits.some((trait) => candidateTraits.includes(trait))) {
     return "Similar lifestyle";
   }
   if (viewer.city === candidate.city) return "Same city · Your kind of vibe";
@@ -136,7 +149,9 @@ export function getProfileMatchReasons(viewer: DatingProfile, candidate: Discove
     reasons.push({ score: 82, label: "Nearby" });
   }
 
-  if (!isPreferNot(viewer.lifestyle) && candidate.lifestyle === viewer.lifestyle) {
+  const viewerTraits = profileLifestyleTraits(viewer);
+  const candidateTraits = profileLifestyleTraits(candidate);
+  if (viewerTraits.length && candidateTraits.some((trait) => viewerTraits.includes(trait))) {
     reasons.push({ score: 84, label: "Similar lifestyle" });
   }
 
@@ -197,8 +212,15 @@ export function matchesPreferences(candidate: DiscoverProfile, prefs: MatchPrefe
   if (prefs.religions.length && candidate.religion && !prefs.religions.includes(candidate.religion)) return false;
   if (prefs.ethnicities.length && candidate.ethnicity && !prefs.ethnicities.includes(candidate.ethnicity))
     return false;
-  if (prefs.lifestyles.length && candidate.lifestyle && !prefs.lifestyles.includes(candidate.lifestyle))
-    return false;
+  if (prefs.lifestyles.length) {
+    const candidateTraits = profileLifestyleTraits(candidate);
+    if (
+      candidateTraits.length &&
+      !candidateTraits.some((trait) => prefs.lifestyles.includes(trait))
+    ) {
+      return false;
+    }
+  }
   if (prefs.cities.length && !prefs.cities.includes(candidate.city)) return false;
   if (prefs.states.length) {
     const searchState = prefs.states[0];

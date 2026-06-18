@@ -5,6 +5,9 @@ import {
   FILTER_ETHNICITIES,
   FILTER_GENOTYPES,
   FILTER_LIFESTYLES,
+  LIFESTYLE_TRAITS_LIMIT_MESSAGE,
+  MAX_LIFESTYLE_TRAITS,
+  normalizeLifestyleTraits,
   FILTER_OCCUPATIONS,
   FILTER_RELIGIONS,
   FILTER_VERIFICATION_PREFERENCES,
@@ -149,9 +152,13 @@ export function MatchPreferenceFields({
           label="Lifestyle"
           optional
           multiple
+          maxSelections={MAX_LIFESTYLE_TRAITS}
+          limitMessage={LIFESTYLE_TRAITS_LIMIT_MESSAGE}
           options={FILTER_LIFESTYLES}
           value={lifestyles ?? []}
-          onChange={(next) => onLifestylesChange((next as SocialLifestyle[]) ?? [])}
+          onChange={(next) =>
+            onLifestylesChange(normalizeLifestyleTraits((next as SocialLifestyle[]) ?? []))
+          }
         />
       ) : null}
 
@@ -192,9 +199,13 @@ export function MatchPreferenceFields({
           label="Lifestyle"
           optional
           multiple
+          maxSelections={MAX_LIFESTYLE_TRAITS}
+          limitMessage={LIFESTYLE_TRAITS_LIMIT_MESSAGE}
           options={FILTER_LIFESTYLES}
           value={prefLifestyles ?? []}
-          onChange={(next) => onPrefLifestylesChange((next as SocialLifestyle[]) ?? [])}
+          onChange={(next) =>
+            onPrefLifestylesChange(normalizeLifestyleTraits((next as SocialLifestyle[]) ?? []))
+          }
         />
       ) : null}
 

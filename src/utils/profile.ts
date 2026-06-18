@@ -3,7 +3,7 @@ import { STORAGE_KEYS } from "../constants/limits";
 import { MIN_PROFILE_PHOTOS } from "../constants/photos";
 import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
-import { stateForCity, citiesForState } from "../constants/profileOptions";
+import { stateForCity, citiesForState, normalizeLifestyleTraits } from "../constants/profileOptions";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
@@ -115,6 +115,10 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
 
   const photosList = sanitizeProfilePhotos(rawPhotosList, coverPhoto);
   const photoMeta = prunePhotoMeta(safePhotoMeta(cleaned.photoMeta), photosList, coverPhoto);
+  const lifestyles = normalizeLifestyleTraits([
+    ...safeArray<string>(cleaned.lifestyles),
+    ...(cleaned.lifestyle && !isPreferNot(cleaned.lifestyle) ? [cleaned.lifestyle] : [])
+  ]);
 
   return {
     ...base,
@@ -141,6 +145,8 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     matchingPrivacy: { ...base.matchingPrivacy!, ...(cleaned.matchingPrivacy ?? {}) },
     safetySettings: { ...defaultSafetySettings(gender ?? base.gender), ...(cleaned.safetySettings ?? {}) },
     profilePrompts: safeArray(cleaned.profilePrompts),
+    lifestyles,
+    lifestyle: lifestyles[0],
     createdAt: cleaned.createdAt ?? base.createdAt ?? new Date().toISOString()
   };
 }
@@ -172,7 +178,7 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
     ...raw,
     religions: safeArray(raw.religions),
     ethnicities: safeArray(raw.ethnicities),
-    lifestyles: safeArray(raw.lifestyles),
+    lifestyles: normalizeLifestyleTraits(raw.lifestyles),
     cities: safeArray<string>(raw.cities).filter((city) => {
       const state = safeArray<string>(raw.states)[0];
       return !state || citiesForState(state).includes(city);

@@ -10,8 +10,7 @@ export const FOOTER_QUICK_LINKS = [
   { href: "/safety", label: "Safety" },
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },
-  { href: "/contact", label: "Contact" },
-  { href: "/delete-account", label: "Delete account" }
+  { href: "/contact", label: "Contact" }
 ] as const;
 
 /** @deprecated Use FOOTER_QUICK_LINKS */

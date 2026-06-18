@@ -147,22 +147,6 @@ export function PhotoUploadGrid({
       logPhotoPipeline("uploaded", { signupMode, kind: "profile" });
 
       const assessment = await assessUploadedPhoto(file, uploadKind);
-      if (assessment.hardBlock) {
-        void submitPhotoReviewRemote({
-          photoUrl: remoteUrl,
-          photoType: "profile",
-          photoReviewStatus: "pending_review",
-          photoRiskFlags: assessment.photoRiskFlags
-        });
-        failUpload(
-          "MODERATION_REJECTED",
-          "post_upload_hard_block",
-          assessment.hardBlockMessage,
-          true
-        );
-        return;
-      }
-
       const meta = toPhotoReviewMeta(uploadKind, assessment);
       const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
 

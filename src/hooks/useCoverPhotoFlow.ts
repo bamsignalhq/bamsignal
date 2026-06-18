@@ -112,18 +112,6 @@ export function useCoverPhotoFlow({
         const assessment = await assessUploadedPhoto(croppedFile, "cover");
         const meta = toPhotoReviewMeta("cover", assessment);
 
-        if (assessment.hardBlock) {
-          void submitPhotoReviewRemote({
-            photoUrl: remoteUrl,
-            photoType: "cover",
-            photoReviewStatus: "pending_review",
-            photoRiskFlags: assessment.photoRiskFlags
-          });
-          await deleteStoredPhoto(remoteUrl);
-          onModerationMessage?.(assessment.hardBlockMessage || photoModerationUserMessage());
-          return;
-        }
-
         const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
 
         setLocalPreview(null);

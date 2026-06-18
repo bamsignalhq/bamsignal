@@ -70,8 +70,8 @@ export function faceAreaPassesProfileCheck(largestRatio, totalRatio) {
 }
 
 /**
- * Upload-first policy: hard-block only high-confidence contact or document leaks.
- * Weak signals become risk flags for admin review — never hard-block.
+ * Upload-first policy: never hard-block after upload.
+ * High-confidence contact/document signals become review flags for admins.
  */
 export function assessProfilePhoto({
   hasAdequateFace,
@@ -86,22 +86,26 @@ export function assessProfilePhoto({
   let riskScore = 0;
 
   if (hasContactLeak) {
+    riskFlags.push("contact_info_detected");
+    riskScore = 100;
     return {
-      hardBlock: true,
-      hardBlockCategory: "contact_info",
-      pendingReview: false,
-      riskFlags: ["contact_info_detected"],
-      riskScore: 100
+      hardBlock: false,
+      hardBlockCategory: null,
+      pendingReview: true,
+      riskFlags,
+      riskScore
     };
   }
 
   if (hasDocumentKeywords) {
+    riskFlags.push("document_like");
+    riskScore = PHOTO_RISK_WEIGHTS.document;
     return {
-      hardBlock: true,
-      hardBlockCategory: "document",
-      pendingReview: false,
-      riskFlags: ["document_like"],
-      riskScore: PHOTO_RISK_WEIGHTS.document
+      hardBlock: false,
+      hardBlockCategory: null,
+      pendingReview: true,
+      riskFlags,
+      riskScore
     };
   }
 
@@ -114,13 +118,8 @@ export function assessProfilePhoto({
   const hasFlyerText = containsBusinessFlyerText(combinedText);
 
   if (hasFlyerText) {
-    return {
-      hardBlock: true,
-      hardBlockCategory: "logo",
-      pendingReview: false,
-      riskFlags: ["possible_logo"],
-      riskScore: addRisk(0, "logo")
-    };
+    riskFlags.push("possible_logo");
+    riskScore = addRisk(riskScore, "logo");
   }
 
   if (textDensity >= TEXT_HEAVY_DENSITY) {
@@ -163,8 +162,7 @@ export function assessProfilePhoto({
 }
 
 /**
- * Cover photos: hard-block only contact info and sensitive documents.
- * Scenery, QR codes, and text-heavy graphics are flagged for review — not rejected.
+ * Cover photos: upload-first — flag suspicious content for review, never reject after upload.
  */
 export function assessCoverPhoto({
   textDensity,
@@ -177,21 +175,23 @@ export function assessCoverPhoto({
   let riskScore = 0;
 
   if (hasContactLeak) {
+    riskFlags.push("contact_info_detected");
     return {
-      hardBlock: true,
-      hardBlockCategory: "contact_info",
-      pendingReview: false,
-      riskFlags: ["contact_info_detected"],
+      hardBlock: false,
+      hardBlockCategory: null,
+      pendingReview: true,
+      riskFlags,
       riskScore: 100
     };
   }
 
   if (hasDocumentKeywords) {
+    riskFlags.push("document_like");
     return {
-      hardBlock: true,
-      hardBlockCategory: "document",
-      pendingReview: false,
-      riskFlags: ["document_like"],
+      hardBlock: false,
+      hardBlockCategory: null,
+      pendingReview: true,
+      riskFlags,
       riskScore: PHOTO_RISK_WEIGHTS.document
     };
   }

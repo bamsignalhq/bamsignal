@@ -37,8 +37,8 @@ export function isLikelyImageFile(file: File): boolean {
   if (type.startsWith("image/")) return true;
   const name = file.name || "";
   if (IMAGE_EXTENSIONS.test(name)) return true;
-  // Mobile camera/gallery picks often omit MIME type and file extension.
-  if (!type && file.size > 0) return true;
+  // Desktop downloads from messengers often use application/octet-stream.
+  if ((type === "application/octet-stream" || !type) && file.size > 0) return true;
   return false;
 }
 
@@ -147,7 +147,7 @@ export type PhotoReviewAssessment = {
   hardBlockMessage?: string;
 };
 
-/** Assess after storage upload; may flag pending_review or rare post-OCR hard block. */
+/** Assess after storage upload — upload-first; flags for admin review only. */
 export async function assessUploadedPhoto(
   file: File,
   kind: PhotoUploadKind
@@ -157,15 +157,6 @@ export async function assessUploadedPhoto(
   }
 
   const result = await scanPhotoSafetyDeep(file, kind);
-  if (!result.allowed && result.hardBlock) {
-    return {
-      photoReviewStatus: "rejected",
-      photoRiskFlags: result.photoRiskFlags || [],
-      hardBlock: true,
-      hardBlockMessage: photoModerationUserMessage()
-    };
-  }
-
   return {
     photoReviewStatus: result.photoReviewStatus || "approved",
     photoRiskFlags: result.photoRiskFlags || [],

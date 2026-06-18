@@ -149,22 +149,6 @@ export function ProfilePhotoViewerSheet({
 
       const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file);
       const assessment = await assessUploadedPhoto(file, "profile");
-      if (assessment.hardBlock) {
-        void submitPhotoReviewRemote({
-          photoUrl: remoteUrl,
-          photoType: "profile",
-          photoReviewStatus: "pending_review",
-          photoRiskFlags: assessment.photoRiskFlags
-        });
-        failUpload(
-          "MODERATION_REJECTED",
-          "post_upload_hard_block",
-          assessment.hardBlockMessage,
-          true
-        );
-        return;
-      }
-
       const meta = toPhotoReviewMeta("profile", assessment);
       const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
 

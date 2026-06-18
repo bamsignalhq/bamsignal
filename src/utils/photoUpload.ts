@@ -45,6 +45,29 @@ function isHeicLike(file: File): boolean {
   return type.includes("heic") || type.includes("heif") || /\.heic$|\.heif$/.test(name);
 }
 
+async function normalizeHeicFile(file: File): Promise<File> {
+  if (!isHeicLike(file)) return file;
+  try {
+    const heic2any = (await import("heic2any")).default;
+    const converted = await heic2any({
+      blob: file,
+      toType: "image/jpeg",
+      quality: 0.92
+    });
+    const blob = Array.isArray(converted) ? converted[0] : converted;
+    const nextName = (file.name || "photo.heic").replace(/\.heic$/i, ".jpg").replace(/\.heif$/i, ".jpg");
+    return new File([blob], nextName, { type: "image/jpeg" });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    logPhotoPipeline("failed", { reason, stage: "heic_convert" });
+    throw new Error("HEIC_DECODE_UNSUPPORTED");
+  }
+}
+
+export async function preparePhotoFileForDecode(file: File): Promise<File> {
+  return normalizeHeicFile(file);
+}
+
 export async function probeImageFile(file: File): Promise<{
   width: number;
   height: number;
@@ -60,9 +83,11 @@ async function decodeImageFile(file: File): Promise<{
   paint: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
   cleanup: () => void;
 }> {
+  const source = await preparePhotoFileForDecode(file);
+
   if (typeof createImageBitmap === "function") {
     try {
-      const bitmap = await createImageBitmap(file);
+      const bitmap = await createImageBitmap(source);
       return {
         width: bitmap.width,
         height: bitmap.height,
@@ -80,7 +105,7 @@ async function decodeImageFile(file: File): Promise<{
     }
   }
 
-  const url = URL.createObjectURL(file);
+  const url = URL.createObjectURL(source);
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const el = new Image();
@@ -113,7 +138,7 @@ export async function validatePhotoFile(file: File | null | undefined): Promise<
     originalSize: file.size
   });
 
-  if (!isLikelyImageFile(file)) {
+  if (file.type && !file.type.startsWith("image/") && !isLikelyImageFile(file)) {
     return {
       ok: false,
       code: "NOT_IMAGE",

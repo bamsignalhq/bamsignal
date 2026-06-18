@@ -386,9 +386,16 @@ export function ProfilePage({
             <button type="button" className="btn-primary btn-full" onClick={() => setView("edit")}>
               Edit profile
             </button>
-            <button type="button" className="btn-secondary btn-full" onClick={() => openSettings()}>
-              Settings
-            </button>
+            <div className="profile-edit-cta__actions">
+              <button type="button" className="btn-secondary btn-full" onClick={() => openSettings()}>
+                <Settings size={16} aria-hidden />
+                Settings
+              </button>
+              <button type="button" className="btn-secondary btn-full profile-edit-cta__logout" onClick={handleLogout}>
+                <LogOut size={16} aria-hidden />
+                Log out
+              </button>
+            </div>
           </div>
         </>
       )}

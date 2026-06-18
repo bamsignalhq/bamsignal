@@ -72,13 +72,17 @@ export function ProfileCoverHeader({
               onClick={flow.openPicker}
               disabled={flow.uploading}
               aria-busy={flow.uploading}
+              aria-label={flow.hasCustomCover ? "Change backdrop photo" : "Add backdrop photo"}
+              title={flow.hasCustomCover ? "Change backdrop photo" : "Add backdrop photo"}
             >
               {flow.uploading ? (
-                <Loader2 size={15} className="photo-upload-grid__spinner" aria-hidden />
+                <Loader2 size={13} className="photo-upload-grid__spinner" aria-hidden />
               ) : (
-                <ImagePlus size={15} aria-hidden />
+                <ImagePlus size={13} aria-hidden />
               )}
-              {flow.hasCustomCover ? "Change backdrop photo" : "Add backdrop photo"}
+              <span className="profile-hero__cover-edit-label">
+                {flow.hasCustomCover ? "Change" : "Add backdrop"}
+              </span>
             </button>
           ) : null}
         </div>

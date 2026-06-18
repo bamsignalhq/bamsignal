@@ -1084,11 +1084,7 @@ export function App() {
   return (
     <div className={`app ${theme} platform-root ${isAuthed ? "platform-root--member" : ""}`}>
       <div
-        className={`platform-shell${
-          isAuthed && !showOnboarding && tab === "likes" ? " platform-shell--signals-premium" : ""
-        }${
-          isAuthed && !showOnboarding && tab === "me" ? " platform-shell--profile-premium" : ""
-        }`}
+        className="platform-shell"
       >
         <TopNav
           theme={theme}
@@ -1101,14 +1097,13 @@ export function App() {
           notificationCount={notificationUnread}
           onNotificationsClick={() => setNotificationsOpen(true)}
           showEarlyAccess={false}
-          showMemberNav={isAuthed && !showOnboarding}
+          showMemberNav={false}
           memberTab={tab}
           onMemberNavigate={navigateTab}
           likeCount={incomingSignals}
           messageCount={messageCount}
-          memberFirstName={
-            isAuthed && !showOnboarding ? memberFirstName(user) : undefined
-          }
+          showBrandText={!isAuthed || showOnboarding || tab === "home"}
+          showGreeting={false}
         />
 
         {paymentLoading && !showOnboarding && <PaymentLoadingOverlay />}

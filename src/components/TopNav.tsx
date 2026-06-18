@@ -23,6 +23,8 @@ type TopNavProps = {
   messageCount?: number;
   showMemberNav?: boolean;
   memberFirstName?: string;
+  showBrandText?: boolean;
+  showGreeting?: boolean;
 };
 
 export function TopNav({
@@ -42,12 +44,14 @@ export function TopNav({
   likeCount = 0,
   messageCount = 0,
   showMemberNav = false,
-  memberFirstName
+  memberFirstName,
+  showBrandText = true,
+  showGreeting = false
 }: TopNavProps) {
   return (
     <header className="top-nav">
       <button type="button" className="top-nav-brand" onClick={onLogoClick} aria-label="BamSignal home">
-        <AppLogo size="sm" />
+        <AppLogo size="sm" showText={showBrandText} />
         {showFoundingMember && <FoundingMemberBadge className="top-nav-early" />}
         {!showFoundingMember && showEarlyAccess && <FoundingMemberBadge className="top-nav-early" />}
       </button>
@@ -75,11 +79,11 @@ export function TopNav({
           </>
         ) : (
           <>
-            {memberFirstName && (
+            {showGreeting && memberFirstName ? (
               <span className="top-nav-greeting" aria-label={`Signed in as ${memberFirstName}`}>
                 Hi, {memberFirstName}
               </span>
-            )}
+            ) : null}
             {isPremium && <span className="premium-pill">Premium</span>}
             {showNotifications && onNotificationsClick && (
               <NotificationBell count={notificationCount} onClick={onNotificationsClick} />

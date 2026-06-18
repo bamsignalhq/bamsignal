@@ -317,7 +317,7 @@ export function ProfilePage({
 
   return (
     <div
-      className={`page profile-page profile-page--hero profile-page--premium member-content-pad ${view === "edit" ? "profile-page--editing" : ""}`}
+      className={`page profile-page profile-page--hero profile-page--premium ${view === "edit" ? "profile-page--editing" : ""}`}
     >
       {modMessage && (
         <p

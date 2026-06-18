@@ -89,6 +89,7 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow-x: hidden;
 }
 
 .app-main {
@@ -102,7 +103,7 @@ body {
 }
 
 .app-main--member {
-  padding: 0 16px 96px;
+  padding: 0 16px calc(var(--bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px) + 16px);
   overflow-x: hidden;
 }
 
@@ -215,6 +216,9 @@ body {
   border: none;
   padding: 0;
   cursor: pointer;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 52%;
 }
 
 /* Landing page — premium emotional layout */
@@ -960,6 +964,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: calc(14px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) 14px
     calc(16px + env(safe-area-inset-left, 0px));
   position: relative;
@@ -990,7 +995,10 @@ body {
 .top-nav-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: 0;
 }
 
 .premium-pill {

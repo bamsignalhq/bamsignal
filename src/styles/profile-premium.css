@@ -1,60 +1,14 @@
-/* Profile / Me — premium screenshot-aligned layout */
-
-.platform-shell--profile-premium {
-  background: #faf3fa;
-}
-
-.platform-shell--profile-premium .top-nav {
-  background: #faf3fa;
-  border-bottom: none;
-}
-
-.platform-shell--profile-premium .app-main--member {
-  background: #faf3fa;
-}
-
-.platform-shell--profile-premium .top-nav-greeting {
-  color: #1b0a36;
-  font-weight: 700;
-}
-
-.platform-shell--profile-premium .top-nav-actions .icon-btn,
-.platform-shell--profile-premium .top-nav-actions .notification-bell {
-  border: 1px solid #efe3f2;
-  background: #fff;
-  color: #1b0a36;
-  box-shadow: 0 2px 12px rgba(27, 10, 54, 0.04);
-}
-
-.platform-shell--profile-premium .bottom-nav {
-  left: 16px;
-  right: 16px;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  width: auto;
-  margin: 0;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
-  border-radius: 40px;
-  border: 1px solid #efe3f2;
-  background: #fff;
-  box-shadow: 0 8px 28px rgba(27, 10, 54, 0.08);
-}
-
-.platform-shell--profile-premium .bottom-nav-item {
-  color: #746185;
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.platform-shell--profile-premium .bottom-nav-item.active {
-  color: #ff2e92;
-}
-
 .profile-page--premium {
   padding-top: 0;
-  padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 16px;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
   background: #faf3fa;
   color: #1b0a36;
   overflow-x: hidden;
+  min-height: 0;
 }
 
 .profile-page--premium.profile-page--editing {
@@ -513,31 +467,56 @@
   color: #7b6a8e;
 }
 
-/* Dark app theme — keep premium light palette readable */
-.app.dark .platform-shell--profile-premium,
-.app.dark .platform-shell--profile-premium .top-nav,
-.app.dark .platform-shell--profile-premium .app-main--member,
-.app.dark .profile-page--premium {
-  background: #faf3fa;
-  color: #1b0a36;
-}
-
-.app.dark .platform-shell--profile-premium .top-nav-greeting,
-.app.dark .platform-shell--profile-premium .top-nav-actions .icon-btn,
-.app.dark .platform-shell--profile-premium .top-nav-actions .notification-bell {
-  color: #1b0a36;
+/* Dark theme — premium profile on BamSignal dark palette */
+.app.dark .profile-page--premium,
+[data-theme="dark"] .profile-page--premium {
+  background: #14071f;
+  color: #fff;
 }
 
 .app.dark .profile-premium-card,
-.app.dark .platform-shell--profile-premium .bottom-nav {
-  background: #fff;
+[data-theme="dark"] .profile-premium-card {
+  background: #24112f;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.28);
 }
 
 .app.dark .profile-premium-card__text,
 .app.dark .profile-premium-card__body,
 .app.dark .profile-premium-compat__label-row,
-.app.dark .profile-premium-card .why-this-profile__list li {
-  color: #1b0a36;
+.app.dark .profile-premium-card .why-this-profile__list li,
+[data-theme="dark"] .profile-premium-card__text,
+[data-theme="dark"] .profile-premium-card__body,
+[data-theme="dark"] .profile-premium-compat__label-row,
+[data-theme="dark"] .profile-premium-card .why-this-profile__list li {
+  color: #fff;
+}
+
+.app.dark .profile-premium-card__title,
+[data-theme="dark"] .profile-premium-card__title {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.app.dark .profile-hero--premium .profile-hero__cover-shade,
+[data-theme="dark"] .profile-hero--premium .profile-hero__cover-shade {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 55%,
+    rgba(20, 7, 31, 0.45) 78%,
+    #14071f 100%
+  );
+}
+
+.app.dark .profile-hero--premium .profile-hero__cover::after,
+[data-theme="dark"] .profile-hero--premium .profile-hero__cover::after {
+  mask-image: linear-gradient(to bottom, transparent, #000 85%);
+}
+
+.app.dark .profile-page--premium .profile-edit-cta__actions .btn-secondary,
+[data-theme="dark"] .profile-page--premium .profile-edit-cta__actions .btn-secondary {
+  background: #24112f;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 @media (prefers-reduced-motion: reduce) {

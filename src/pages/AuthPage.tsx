@@ -130,9 +130,7 @@ export function AuthPage({
   const [signupFieldErrors, setSignupFieldErrors] = useState<SignupFieldErrors>({});
   const [signupFieldChecking, setSignupFieldChecking] = useState<SignupFieldChecking>({});
   const [verifyCode, setVerifyCode] = useState(restored.current.verifyCode);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
   const [resendIn, setResendIn] = useState(restored.current.resendIn);
@@ -429,8 +427,8 @@ export function AuthPage({
       onMessage("Still checking your details — wait a moment.");
       return;
     }
-    if (!isSignupLegalComplete(termsAccepted, privacyAccepted, ageConfirmed)) {
-      onMessage("Please accept the terms, privacy policy, and age confirmation to continue.");
+    if (!isSignupLegalComplete(legalAccepted)) {
+      onMessage("Please accept the terms to continue.");
       return;
     }
 
@@ -660,11 +658,12 @@ export function AuthPage({
                 {busy === "login" ? <Loader2 className="spin" size={20} /> : "Login"}
               </button>
               <div className="auth-links auth-links--stack">
-                <button type="button" className="link-btn" onClick={() => onModeChange("reset")}>
+                <button type="button" className="auth-link-secondary" onClick={() => onModeChange("reset")}>
                   Forgot PIN?
                 </button>
-                <button type="button" className="link-btn link-btn--accent" onClick={() => onModeChange("signup")}>
-                  Create account
+                <button type="button" className="auth-switch auth-switch--inline" onClick={() => onModeChange("signup")}>
+                  <span className="auth-switch__lead">New here?</span>
+                  <span className="auth-switch__action">Create account</span>
                 </button>
               </div>
             </>
@@ -738,28 +737,19 @@ export function AuthPage({
                 />
               </div>
 
-              <SignupLegalCheckboxes
-                termsAccepted={termsAccepted}
-                privacyAccepted={privacyAccepted}
-                ageConfirmed={ageConfirmed}
-                onTermsChange={setTermsAccepted}
-                onPrivacyChange={setPrivacyAccepted}
-                onAgeChange={setAgeConfirmed}
-              />
+              <SignupLegalCheckboxes accepted={legalAccepted} onChange={setLegalAccepted} />
 
               <button
                 type="button"
                 className="btn-primary btn-full btn-auth"
                 onClick={signUp}
-                disabled={
-                  busy === "signup" ||
-                  !isSignupLegalComplete(termsAccepted, privacyAccepted, ageConfirmed)
-                }
+                disabled={busy === "signup" || !isSignupLegalComplete(legalAccepted)}
               >
                 {busy === "signup" ? <Loader2 className="spin" size={20} /> : "Continue"}
               </button>
-              <button type="button" className="link-btn auth-switch" onClick={() => onModeChange("login")}>
-                Already have an account? Login
+              <button type="button" className="auth-switch" onClick={() => onModeChange("login")}>
+                <span className="auth-switch__lead">Already have an account?</span>
+                <span className="auth-switch__action">Log in</span>
               </button>
             </>
           )}
@@ -862,8 +852,9 @@ export function AuthPage({
               <button type="button" className="btn-primary btn-full btn-auth" onClick={sendReset} disabled={busy === "reset"}>
                 {busy === "reset" ? <Loader2 className="spin" size={20} /> : "Send link"}
               </button>
-              <button type="button" className="link-btn auth-switch" onClick={() => onModeChange("login")}>
-                Back to login
+              <button type="button" className="auth-switch" onClick={() => onModeChange("login")}>
+                <span className="auth-switch__lead">Remember your PIN?</span>
+                <span className="auth-switch__action">Back to login</span>
               </button>
             </>
           )}

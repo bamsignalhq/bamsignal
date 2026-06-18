@@ -30,19 +30,13 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
     return "legal";
   }, []);
   const [phase, setPhase] = useState<GatePhase>(initialPhase);
-  const [termsAccepted, setTermsAccepted] = useState(() =>
-    hasLegalCompliance(getDatingProfile().compliance)
-  );
-  const [privacyAccepted, setPrivacyAccepted] = useState(() =>
-    hasLegalCompliance(getDatingProfile().compliance)
-  );
-  const [ageConfirmed, setAgeConfirmed] = useState(() =>
+  const [legalAccepted, setLegalAccepted] = useState(() =>
     hasLegalCompliance(getDatingProfile().compliance)
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const legalReady = isSignupLegalComplete(termsAccepted, privacyAccepted, ageConfirmed);
+  const legalReady = isSignupLegalComplete(legalAccepted);
 
   const saveLegal = async () => {
     if (!legalReady || busy) return;
@@ -109,14 +103,7 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
               To keep BamSignal safe, please confirm our latest terms and community standards.
             </p>
 
-            <SignupLegalCheckboxes
-              termsAccepted={termsAccepted}
-              privacyAccepted={privacyAccepted}
-              ageConfirmed={ageConfirmed}
-              onTermsChange={setTermsAccepted}
-              onPrivacyChange={setPrivacyAccepted}
-              onAgeChange={setAgeConfirmed}
-            />
+            <SignupLegalCheckboxes accepted={legalAccepted} onChange={setLegalAccepted} />
 
             <button
               type="button"

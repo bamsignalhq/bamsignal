@@ -576,11 +576,12 @@ export function ProfilePage({
               occupations={
                 profile.occupations ?? (profile.occupation ? [profile.occupation] : [])
               }
-              onOccupationsChange={(occupations) =>
+              occupation={profile.occupation ?? profile.occupations?.[0]}
+              onOccupationChange={(occupation) =>
                 setProfile({
                   ...profile,
-                  occupations,
-                  occupation: occupations[0]
+                  occupation,
+                  occupations: occupation ? [occupation] : []
                 })
               }
               stateOfOrigin={profile.stateOfOrigin ?? profile.statesOfOrigin?.[0]}
@@ -591,12 +592,12 @@ export function ProfilePage({
                   statesOfOrigin: stateOfOrigin ? [stateOfOrigin] : []
                 })
               }
-              genotypes={profile.genotypes ?? (profile.genotype ? [profile.genotype] : [])}
-              onGenotypesChange={(genotypes) =>
+              genotype={profile.genotype ?? profile.genotypes?.[0]}
+              onGenotypeChange={(genotype) =>
                 setProfile({
                   ...profile,
-                  genotypes,
-                  genotype: genotypes[0]
+                  genotype,
+                  genotypes: genotype ? [genotype] : []
                 })
               }
               hasKidsOption={profile.hasKidsOptions?.[0]}

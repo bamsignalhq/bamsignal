@@ -1,6 +1,5 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, UserRound } from "lucide-react";
 import { useState } from "react";
-import { MapPin, UserRound } from "lucide-react";
 import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { ShowcaseImage } from "./ShowcaseImage";
 import type { DatingProfile, UserProfile } from "../types";
@@ -33,56 +32,49 @@ export function ProfileCoverHeader({ user, profile, coverOnly }: ProfileCoverHea
   };
 
   return (
-    <header className="profile-hero">
+    <header className={`profile-hero${coverOnly ? " profile-hero--me" : ""}`}>
       <div className="profile-hero__cover" aria-hidden={!avatar && !customCover}>
         <ShowcaseImage
           src={cover}
           alt=""
           fallbackSrc={DEFAULT_PROFILE_COVER}
-          className={`profile-hero__cover-blur profile-hero__cover-img${customCover ? "" : " profile-hero__cover-img--default"}`}
+          className={`profile-hero__cover-media${customCover ? "" : " profile-hero__cover-media--default"}`}
         />
-        <ShowcaseImage
-          src={cover}
-          alt=""
-          fallbackSrc={DEFAULT_PROFILE_COVER}
-          className={`profile-hero__cover-img${customCover ? "" : " profile-hero__cover-img--default"}`}
-        />
-        {photos.length > 1 && (
-          <>
-            <button type="button" className="profile-hero__nav profile-hero__nav--prev" onClick={() => shift(-1)} aria-label="Previous photo">
-              <ChevronLeft size={22} />
-            </button>
-            <button type="button" className="profile-hero__nav profile-hero__nav--next" onClick={() => shift(1)} aria-label="Next photo">
-              <ChevronRight size={22} />
-            </button>
-          </>
-        )}
         <div className="profile-hero__cover-shade" />
       </div>
 
       <div className="profile-hero__body">
-        <div className="profile-hero__avatar-ring">
-          {avatar ? (
-            <ShowcaseImage
-              src={avatar}
-              alt={user.name || "Profile photo"}
-              className="profile-hero__avatar profile-hero__avatar-img--face"
-            />
-          ) : (
-            <div className="profile-hero__avatar profile-hero__avatar--empty">
-              <UserRound size={40} aria-hidden />
+        <div className="profile-hero__avatar-block">
+          <div className="profile-hero__avatar-ring">
+            {avatar ? (
+              <ShowcaseImage
+                src={avatar}
+                alt={user.name || "Profile photo"}
+                className="profile-hero__avatar profile-hero__avatar-img--face"
+              />
+            ) : (
+              <div className="profile-hero__avatar profile-hero__avatar--empty">
+                <UserRound size={40} aria-hidden />
+              </div>
+            )}
+          </div>
+          {photos.length > 1 ? (
+            <div className="profile-hero__avatar-nav" aria-label="Profile photos">
+              <button type="button" className="profile-hero__nav" onClick={() => shift(-1)} aria-label="Previous photo">
+                <ChevronLeft size={18} />
+              </button>
+              <button type="button" className="profile-hero__nav" onClick={() => shift(1)} aria-label="Next photo">
+                <ChevronRight size={18} />
+              </button>
             </div>
-          )}
+          ) : null}
         </div>
 
         {!coverOnly && (
           <div className="profile-hero__meta">
             <h1 className="profile-hero__name">{user.name || "Your profile"}</h1>
             {profile.age ? <p className="profile-hero__age">{profile.age}</p> : null}
-            <p className="profile-hero__location">
-              <MapPin size={14} aria-hidden />
-              {formatLocation(profile)}
-            </p>
+            <p className="profile-hero__location">{formatLocation(profile)}</p>
           </div>
         )}
       </div>

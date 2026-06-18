@@ -102,6 +102,12 @@ export function TapSelectField<T extends string>({
 
   const toggle = (opt: T) => {
     if (multiple) {
+      if (maxSelections === 1) {
+        setSelectionLimitMessage("");
+        onChange(selected.includes(opt) ? [] : [opt]);
+        setOpen(false);
+        return;
+      }
       if (selected.includes(opt)) {
         setSelectionLimitMessage("");
         onChange(selected.filter((v) => v !== opt));

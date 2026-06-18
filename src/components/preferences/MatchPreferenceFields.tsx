@@ -74,6 +74,12 @@ type MatchPreferenceFieldsProps = {
   onRelationshipIntentionsChange?: (value: RelationshipIntention[]) => void;
   genotypes?: Genotype[];
   onGenotypesChange?: (value: Genotype[]) => void;
+  /** Profile — single genotype */
+  genotype?: Genotype;
+  onGenotypeChange?: (value: Genotype | undefined) => void;
+  /** Profile — single occupation */
+  occupation?: Occupation;
+  onOccupationChange?: (value: Occupation | undefined) => void;
   /** Profile — single has-kids answer */
   hasKidsOption?: HasKidsOption;
   onHasKidsOptionChange?: (value: HasKidsOption | undefined) => void;
@@ -130,6 +136,10 @@ export function MatchPreferenceFields({
   onRelationshipIntentionsChange,
   genotypes,
   onGenotypesChange,
+  genotype,
+  onGenotypeChange,
+  occupation,
+  onOccupationChange,
   hasKidsOption,
   onHasKidsOptionChange,
   hasKids,
@@ -252,13 +262,23 @@ export function MatchPreferenceFields({
         <AgeRangeTapSelect ageMin={ageMin} ageMax={ageMax} onChange={onAgeRangeChange} label={ageLabel} />
       ) : null}
 
-      {onOccupationsChange ? (
+      {onOccupationChange ? (
+        <TapSelectField
+          label="Occupation"
+          optional
+          options={FILTER_OCCUPATIONS}
+          value={occupation}
+          onChange={(next) => onOccupationChange(next as Occupation | undefined)}
+        />
+      ) : onOccupationsChange ? (
         <TapSelectField
           label="Occupation"
           optional
           multiple
+          maxSelections={1}
+          limitMessage="Choose one occupation."
           options={FILTER_OCCUPATIONS}
-          value={occupations ?? []}
+          value={(occupations ?? []).slice(0, 1)}
           onChange={(next) => onOccupationsChange((next as Occupation[]) ?? [])}
         />
       ) : null}
@@ -299,13 +319,23 @@ export function MatchPreferenceFields({
         />
       ) : null}
 
-      {onGenotypesChange ? (
+      {onGenotypeChange ? (
+        <TapSelectField
+          label="Genotype"
+          optional
+          options={FILTER_GENOTYPES}
+          value={genotype}
+          onChange={(next) => onGenotypeChange(next as Genotype | undefined)}
+        />
+      ) : onGenotypesChange ? (
         <TapSelectField
           label="Genotype"
           optional
           multiple
+          maxSelections={1}
+          limitMessage="Choose one genotype."
           options={FILTER_GENOTYPES}
-          value={genotypes ?? []}
+          value={(genotypes ?? []).slice(0, 1)}
           onChange={(next) => onGenotypesChange((next as Genotype[]) ?? [])}
         />
       ) : null}

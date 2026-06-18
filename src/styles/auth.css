@@ -1025,8 +1025,11 @@
 .cover-photo-upload__preview {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 7;
+  aspect-ratio: 2.5 / 1;
+  min-height: 140px;
+  max-height: 220px;
   object-fit: cover;
+  object-position: center;
 }
 
 .cover-photo-upload__actions {

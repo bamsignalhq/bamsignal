@@ -125,6 +125,10 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
   const hasKidsOptions = safeArray<import("../types").HasKidsOption>(cleaned.hasKidsOptions).slice(0, 1);
   const wantsKidsOptions = safeArray<import("../types").WantsKidsOption>(cleaned.wantsKidsOptions).slice(0, 1);
   const bodyTypes = safeArray<import("../types").BodyType>(cleaned.bodyTypes).slice(0, 1);
+  const genotypes = safeArray<import("../types").Genotype>(cleaned.genotypes).slice(0, 1);
+  const genotype = safeString(cleaned.genotype) || genotypes[0] || undefined;
+  const occupations = safeArray<import("../types").Occupation>(cleaned.occupations).slice(0, 1);
+  const occupation = safeString(cleaned.occupation) || occupations[0] || undefined;
 
   return {
     ...base,
@@ -155,6 +159,10 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     lifestyle: lifestyles[0],
     statesOfOrigin: stateOfOrigin ? [stateOfOrigin] : statesOfOrigin,
     stateOfOrigin: stateOfOrigin || undefined,
+    genotype: genotype as import("../types").Genotype | undefined,
+    genotypes: genotype ? [genotype as import("../types").Genotype] : genotypes,
+    occupation: occupation as import("../types").Occupation | undefined,
+    occupations: occupation ? [occupation as import("../types").Occupation] : occupations,
     hasKidsOptions,
     wantsKidsOptions,
     bodyTypes,

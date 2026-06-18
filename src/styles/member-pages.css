@@ -1725,6 +1725,37 @@
   padding: 18px;
 }
 
+.settings-card--help {
+  padding: 18px 16px 20px;
+}
+
+.settings-help-intro {
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.settings-help-hours {
+  margin: 0 0 16px;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.contact-form--embedded {
+  margin-top: 4px;
+}
+
+.contact-form--embedded .contact-form__grid {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+  .contact-form--embedded .contact-form__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .account-settings-block {
   margin-bottom: 20px;
   padding-bottom: 20px;

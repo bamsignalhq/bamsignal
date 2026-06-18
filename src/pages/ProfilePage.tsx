@@ -52,6 +52,7 @@ import { MAX_PROFILE_PHOTOS } from "../constants/photos";
 import { safeCoverPhoto } from "../utils/safeProfile";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
+import { ContactForm } from "../components/ContactForm";
 import { ProfilePromptsEditor, ProfilePromptsDisplay } from "../components/profile/ProfilePromptsEditor";
 import { hasFilledProfileDetails } from "../utils/profileDetails";
 
@@ -69,6 +70,7 @@ type ProfilePageProps = {
   onUserChange: (user: UserProfile) => void;
   onLogout: () => void;
   onUpgrade: () => void;
+  onReturnToDashboard: () => void;
 };
 
 function bioHint(bio: string): string {
@@ -154,7 +156,8 @@ export function ProfilePage({
   onToggleTheme,
   onUserChange,
   onLogout,
-  onUpgrade
+  onUpgrade,
+  onReturnToDashboard
 }: ProfilePageProps) {
   const [profile, setProfile] = useState<DatingProfile>(() =>
     normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
@@ -269,7 +272,7 @@ export function ProfilePage({
     });
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     onLogout();
   };
 
@@ -291,6 +294,12 @@ export function ProfilePage({
     } else {
       setSettingsPanel("hub");
     }
+  };
+
+  const handleHelpComplete = () => {
+    setView("overview");
+    setSettingsPanel("hub");
+    onReturnToDashboard();
   };
 
   return (
@@ -904,13 +913,21 @@ export function ProfilePage({
           )}
 
           {settingsPanel === "help" && (
-            <section className="card settings-card settings-card--quiet">
-              <p className="profile-overview-empty">
+            <section className="card settings-card settings-card--help">
+              <p className="settings-help-intro">
                 {getCms().supportWhatsapp
                   ? `Reach us on WhatsApp. ${getCms().supportResponseTime}.`
                   : `We're here to help. ${getCms().supportResponseTime}.`}
               </p>
-              <p className="profile-overview-empty">{getCms().supportHours}</p>
+              <p className="settings-help-hours">{getCms().supportHours}</p>
+              <ContactForm
+                className="contact-form--embedded"
+                initialName={user.name}
+                initialEmail={user.email}
+                defaultTopic="Account help"
+                onSuccess={handleHelpComplete}
+                successActionLabel="Back to dashboard"
+              />
             </section>
           )}
 

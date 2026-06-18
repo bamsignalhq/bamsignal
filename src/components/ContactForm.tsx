@@ -29,8 +29,29 @@ const EMPTY: FormState = {
   captcha: ""
 };
 
-export function ContactForm() {
-  const [form, setForm] = useState<FormState>(EMPTY);
+type ContactFormProps = {
+  initialName?: string;
+  initialEmail?: string;
+  defaultTopic?: (typeof TOPICS)[number];
+  onSuccess?: () => void;
+  successActionLabel?: string;
+  className?: string;
+};
+
+export function ContactForm({
+  initialName = "",
+  initialEmail = "",
+  defaultTopic = TOPICS[0],
+  onSuccess,
+  successActionLabel = "Back to dashboard",
+  className = ""
+}: ContactFormProps) {
+  const [form, setForm] = useState<FormState>(() => ({
+    ...EMPTY,
+    name: initialName,
+    email: initialEmail,
+    topic: defaultTopic
+  }));
   const [puzzle, setPuzzle] = useState(createAdditionPuzzle);
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [error, setError] = useState("");
@@ -100,18 +121,22 @@ export function ContactForm() {
 
   if (status === "success") {
     return (
-      <div className="contact-form contact-form--success">
+      <div className={`contact-form contact-form--success${className ? ` ${className}` : ""}`}>
         <h3>Message sent successfully</h3>
         <p>We&apos;ll get back to you as soon as possible.</p>
-        <button type="button" className="contact-form__btn contact-form__btn--secondary" onClick={() => setStatus("idle")}>
-          Send another message
+        <button
+          type="button"
+          className="contact-form__btn contact-form__btn--secondary"
+          onClick={() => (onSuccess ? onSuccess() : setStatus("idle"))}
+        >
+          {onSuccess ? successActionLabel : "Send another message"}
         </button>
       </div>
     );
   }
 
   return (
-    <form className="contact-form" onSubmit={handleSubmit} noValidate>
+    <form className={`contact-form${className ? ` ${className}` : ""}`} onSubmit={handleSubmit} noValidate>
       <div className="contact-form__grid">
         <label className="contact-form__field">
           <span className="sr-only">Your name</span>

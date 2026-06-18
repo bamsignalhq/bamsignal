@@ -67,6 +67,7 @@ import { VisitorsPage } from "./pages/VisitorsPage";
 import { SafetyCenterPage } from "./pages/SafetyCenterPage";
 import { SiteFooter } from "./components/SiteFooter";
 import { LoveAuthRoutePage } from "./pages/LoveAuthRoutePage";
+import { StoreScreenshotsPage } from "./pages/StoreScreenshotsPage";
 import { AdminAuthPage } from "./pages/AdminAuthPage";
 import { BlogIndexPage } from "./pages/BlogIndexPage";
 import { BlogPostPage } from "./pages/BlogPostPage";
@@ -144,6 +145,7 @@ export function App() {
   );
   const isAuthedRef = useRef(isAuthed);
   const userRef = useRef(user);
+  const logoutInProgressRef = useRef(false);
 
   const isGuest = !isAuthed;
 
@@ -657,6 +659,8 @@ export function App() {
       }
 
       if (event === "SIGNED_OUT") {
+        if (logoutInProgressRef.current) return;
+
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
@@ -719,18 +723,31 @@ export function App() {
     setTab("home");
   }, []);
 
-  const handleLogout = useCallback(async () => {
-    await supabase?.auth.signOut().catch(() => undefined);
+  const resetLoggedOutState = useCallback(() => {
     clearMemberSessionCaches();
     setIsAuthed(false);
     setShowOnboarding(false);
     setIsPremium(false);
+    setPaymentLoading(false);
+    setPricingOpen(false);
+    setNotificationsOpen(false);
+    setMemberOverlay(null);
     setUser({ name: "", email: "", phone: "" });
     setTab("home");
     navigateToPath("/");
     setAuthPath(null);
     setLegalPath(null);
   }, []);
+
+  const handleLogout = useCallback(() => {
+    logoutInProgressRef.current = true;
+    resetLoggedOutState();
+    void supabase?.auth.signOut().catch(() => undefined).finally(() => {
+      window.setTimeout(() => {
+        logoutInProgressRef.current = false;
+      }, 3000);
+    });
+  }, [resetLoggedOutState]);
 
   const navigateTab = useCallback((next: NavTab) => {
     setMemberOverlay(null);
@@ -880,6 +897,13 @@ export function App() {
     readJson<{ profileId: string }[]>(STORAGE_KEYS.likedBy, [])
   ).length;
   const messageCount = filterBlockedByProfileId(readJson<Match[]>(STORAGE_KEYS.matches, [])).length;
+
+  if (
+    normalizePath(window.location.pathname) === "/store-screenshots" &&
+    (import.meta.env.VITE_STORE_SCREENSHOTS === "true" || import.meta.env.DEV)
+  ) {
+    return <StoreScreenshotsPage />;
+  }
 
   if (showAdminAuth || showAdminHub) {
     if (showAdminAuth) {
@@ -1208,6 +1232,7 @@ export function App() {
               onUserChange={setUser}
               onLogout={handleLogout}
               onUpgrade={openPricing}
+              onReturnToDashboard={() => setTab("home")}
             />
           )}
         </main>

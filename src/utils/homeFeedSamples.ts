@@ -1,4 +1,5 @@
 import { MOCK_PROFILES } from "../data/mockProfiles";
+import { SHOWCASE_PROFILE_POOL } from "../constants/showcase";
 import type { DiscoverProfile } from "../types";
 
 /** Show preview cards until the feed has this many real member profiles. */
@@ -16,6 +17,18 @@ function citySampleCacheKey(city: string, count: number): string {
   return `${city.trim().toLowerCase() || "default"}::${count}`;
 }
 
+function uniqueDemoPhoto(index: number, usedPhotos: Set<string>, fallback: string): string {
+  for (let i = 0; i < SHOWCASE_PROFILE_POOL.length; i += 1) {
+    const photo = SHOWCASE_PROFILE_POOL[(index + i) % SHOWCASE_PROFILE_POOL.length];
+    if (!usedPhotos.has(photo)) {
+      usedPhotos.add(photo);
+      return photo;
+    }
+  }
+  usedPhotos.add(fallback);
+  return fallback;
+}
+
 /** Same city always gets the same preview faces — avoids shuffle/blink on refetch. */
 function getStableSamplesForCity(city: string, count: number, excludeIds: string[]): DiscoverProfile[] {
   const displayCity = city.trim() || "";
@@ -30,6 +43,7 @@ function getStableSamplesForCity(city: string, count: number, excludeIds: string
   for (let i = 0; i < key.length; i += 1) seed += key.charCodeAt(i);
 
   const samples: DiscoverProfile[] = [];
+  const usedPhotos = new Set<string>();
   for (let i = 0; i < sorted.length && samples.length < count; i += 1) {
     const profile = sorted[(seed + i) % sorted.length];
     const sampleId = `sample-${profile.id}`;
@@ -38,6 +52,7 @@ function getStableSamplesForCity(city: string, count: number, excludeIds: string
       ...profile,
       id: sampleId,
       city: displayCity || profile.city,
+      photo: uniqueDemoPhoto(samples.length, usedPhotos, profile.photo),
       distanceKm: profile.distanceKm ?? 2 + (samples.length % 7)
     });
   }

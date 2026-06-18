@@ -105,3 +105,6 @@ export const CITY_PROFILE_PHOTOS: Record<string, string> = {
 export function photoForCity(city: string): string {
   return CITY_PROFILE_PHOTOS[city] ?? SHOWCASE.hero;
 }
+
+/** Flat pool of showcase portraits — one unique image per demo feed card */
+export const SHOWCASE_PROFILE_POOL: string[] = Object.values(MOMENT_SETS).flat();

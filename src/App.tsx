@@ -975,7 +975,7 @@ export function App() {
             onToggleTheme={toggleTheme}
             isPremium={isPremium}
             isGuest={isGuest}
-            onGetStarted={() => openAuth("signup")}
+            onLogin={() => openAuth("login")}
             onLogoClick={goHome}
             showNotifications={isAuthed}
             notificationCount={notificationUnread}
@@ -1003,7 +1003,7 @@ export function App() {
             onToggleTheme={toggleTheme}
             isPremium={isPremium}
             isGuest={isGuest}
-            onGetStarted={() => openAuth("signup")}
+            onLogin={() => openAuth("login")}
             onLogoClick={goHome}
             showNotifications={isAuthed}
             notificationCount={notificationUnread}
@@ -1042,7 +1042,7 @@ export function App() {
             onToggleTheme={toggleTheme}
             isPremium={isPremium}
             isGuest={isGuest}
-            onGetStarted={() => openAuth("signup")}
+            onLogin={() => openAuth("login")}
             onLogoClick={goHome}
             showNotifications={isAuthed}
             notificationCount={notificationUnread}
@@ -1089,7 +1089,7 @@ export function App() {
           onToggleTheme={toggleTheme}
           isPremium={isPremium}
           isGuest={isGuest}
-          onGetStarted={() => openAuth("signup")}
+          onLogin={() => openAuth("login")}
           onLogoClick={goHome}
           showNotifications={isAuthed && !showOnboarding}
           notificationCount={notificationUnread}

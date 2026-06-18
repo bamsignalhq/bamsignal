@@ -10,7 +10,7 @@ type TopNavProps = {
   onToggleTheme: () => void;
   isPremium?: boolean;
   isGuest?: boolean;
-  onGetStarted?: () => void;
+  onLogin?: () => void;
   onLogoClick?: () => void;
   showNotifications?: boolean;
   notificationCount?: number;
@@ -30,7 +30,7 @@ export function TopNav({
   onToggleTheme,
   isPremium,
   isGuest,
-  onGetStarted,
+  onLogin,
   onLogoClick,
   showNotifications,
   notificationCount = 0,
@@ -64,9 +64,9 @@ export function TopNav({
       <div className="top-nav-actions">
         {isGuest ? (
           <>
-            {onGetStarted && (
-              <button type="button" className="top-nav-get-started" onClick={onGetStarted}>
-                Get Started
+            {onLogin && (
+              <button type="button" className="top-nav-get-started" onClick={onLogin}>
+                Login
               </button>
             )}
             <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme">

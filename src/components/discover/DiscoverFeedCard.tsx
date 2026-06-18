@@ -87,7 +87,7 @@ export function DiscoverFeedCard({
           onSignal();
         }}
       >
-        <Send size={isDashboard ? 14 : 12} aria-hidden />
+        <Send size={isDashboard ? 12 : 12} aria-hidden />
         Signal
       </button>
     </article>

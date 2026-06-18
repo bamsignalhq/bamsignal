@@ -3,6 +3,7 @@ FROM node:20-slim AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+COPY scripts/install-githooks.mjs ./scripts/install-githooks.mjs
 # Coolify may inject NODE_ENV=production at build time; devDependencies are required for tsc/vite.
 ENV NODE_ENV=development
 RUN npm ci --include=dev
@@ -40,7 +41,8 @@ ENV HOST=0.0.0.0
 ENV PORT=3000
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+COPY scripts/install-githooks.mjs ./scripts/install-githooks.mjs
+RUN npm ci --omit=dev --ignore-scripts
 
 COPY --from=builder /app/dist ./dist
 COPY server ./server

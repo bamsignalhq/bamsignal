@@ -1,5 +1,5 @@
 import { ChevronDown, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatMultiSelectSummary } from "../utils/selectSummary";
 
@@ -11,6 +11,35 @@ function optionValue<T extends string>(opt: TapSelectOption<T>): T {
 
 function optionLabel<T extends string>(opt: TapSelectOption<T>): string {
   return typeof opt === "string" ? opt : opt.label;
+}
+
+function uniqueOptions<T extends string>(options: readonly TapSelectOption<T>[]): TapSelectOption<T>[] {
+  const seen = new Set<T>();
+  const out: TapSelectOption<T>[] = [];
+  for (const opt of options) {
+    const value = optionValue(opt);
+    if (seen.has(value)) continue;
+    seen.add(value);
+    out.push(opt);
+  }
+  return out;
+}
+
+function normalizeMultiValue<T extends string>(value: T[] | undefined, maxSelections?: number): T[] {
+  const seen = new Set<T>();
+  const out: T[] = [];
+  for (const item of value ?? []) {
+    if (seen.has(item)) continue;
+    seen.add(item);
+    out.push(item);
+    if (maxSelections != null && out.length >= maxSelections) break;
+  }
+  return out;
+}
+
+function multiValueChanged<T extends string>(left: T[], right: T[]): boolean {
+  if (left.length !== right.length) return true;
+  return left.some((item, index) => item !== right[index]);
 }
 
 type TapSelectFieldProps<T extends string> = {
@@ -42,14 +71,22 @@ export function TapSelectField<T extends string>({
 }: TapSelectFieldProps<T>) {
   const [open, setOpen] = useState(false);
   const [selectionLimitMessage, setSelectionLimitMessage] = useState("");
+  const optionList = useMemo(() => uniqueOptions(options), [options]);
   const selected: T[] = multiple
-    ? Array.isArray(value)
-      ? value
-      : []
+    ? normalizeMultiValue(Array.isArray(value) ? value : [], maxSelections)
     : value
       ? [value as T]
       : [];
   const format = formatValue ?? ((v: T) => v);
+  const showSelectedChips = multiple && selected.length > 0 && maxSelections == null;
+
+  useEffect(() => {
+    if (!multiple || !Array.isArray(value)) return;
+    const normalized = normalizeMultiValue(value, maxSelections);
+    if (multiValueChanged(value, normalized)) {
+      onChange(normalized);
+    }
+  }, [value, multiple, maxSelections]);
 
   useEffect(() => {
     if (!open) {
@@ -125,7 +162,7 @@ export function TapSelectField<T extends string>({
                 </button>
               </header>
 
-              {multiple && selected.length > 0 ? (
+              {showSelectedChips ? (
                 <div className="tap-select-sheet__selected">
                   <div className="tap-select-sheet__chips">
                     {selected.map((item) => (
@@ -151,7 +188,7 @@ export function TapSelectField<T extends string>({
               ) : null}
 
               <div className="tap-select-sheet__options intent-tags selectable">
-                {options.map((opt) => {
+                {optionList.map((opt) => {
                   const v = optionValue(opt);
                   const isSelected = selected.includes(v);
                   const blocked =

@@ -41,16 +41,16 @@ type MatchPreferenceFieldsProps = {
   /** Profile faith — single */
   faith?: Religion;
   onFaithChange?: (value: Religion | undefined) => void;
-  /** Profile lifestyles — multi */
+  /** Profile lifestyles — multi (max 3) */
   lifestyles?: SocialLifestyle[];
   onLifestylesChange?: (value: SocialLifestyle[]) => void;
-  /** Match preference arrays */
+  /** Match preference lifestyles — multi (max 3); use one handler, not both */
+  prefLifestyles?: SocialLifestyle[];
+  onPrefLifestylesChange?: (value: SocialLifestyle[]) => void;
   religions?: Religion[];
   onReligionsChange?: (value: Religion[]) => void;
   ethnicities?: EthnicBackground[];
   onEthnicitiesChange?: (value: EthnicBackground[]) => void;
-  prefLifestyles?: SocialLifestyle[];
-  onPrefLifestylesChange?: (value: SocialLifestyle[]) => void;
   searchState?: string;
   onSearchStateChange?: (value: string | undefined) => void;
   searchCities?: string[];
@@ -125,6 +125,9 @@ export function MatchPreferenceFields({
   className = ""
 }: MatchPreferenceFieldsProps) {
   const cityOptions = searchState ? citiesForState(searchState) : [];
+  const lifestyleValue = normalizeLifestyleTraits(lifestyles ?? prefLifestyles ?? []);
+  const onLifestyleChange = onLifestylesChange ?? onPrefLifestylesChange;
+  const showLifestyle = Boolean(onLifestyleChange);
 
   return (
     <div className={`match-pref-fields ${className}`.trim()}>
@@ -147,7 +150,7 @@ export function MatchPreferenceFields({
         />
       ) : null}
 
-      {onLifestylesChange ? (
+      {showLifestyle ? (
         <TapSelectField
           label="Lifestyle"
           optional
@@ -155,10 +158,11 @@ export function MatchPreferenceFields({
           maxSelections={MAX_LIFESTYLE_TRAITS}
           limitMessage={LIFESTYLE_TRAITS_LIMIT_MESSAGE}
           options={FILTER_LIFESTYLES}
-          value={lifestyles ?? []}
-          onChange={(next) =>
-            onLifestylesChange(normalizeLifestyleTraits((next as SocialLifestyle[]) ?? []))
-          }
+          value={lifestyleValue}
+          onChange={(next) => {
+            const normalized = normalizeLifestyleTraits((next as SocialLifestyle[]) ?? []);
+            onLifestyleChange?.(normalized);
+          }}
         />
       ) : null}
 
@@ -191,21 +195,6 @@ export function MatchPreferenceFields({
           options={FILTER_ETHNICITIES}
           value={tribe}
           onChange={(next) => onTribeChange(next as EthnicBackground | undefined)}
-        />
-      ) : null}
-
-      {onPrefLifestylesChange ? (
-        <TapSelectField
-          label="Lifestyle"
-          optional
-          multiple
-          maxSelections={MAX_LIFESTYLE_TRAITS}
-          limitMessage={LIFESTYLE_TRAITS_LIMIT_MESSAGE}
-          options={FILTER_LIFESTYLES}
-          value={prefLifestyles ?? []}
-          onChange={(next) =>
-            onPrefLifestylesChange(normalizeLifestyleTraits((next as SocialLifestyle[]) ?? []))
-          }
         />
       ) : null}
 

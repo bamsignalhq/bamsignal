@@ -8,6 +8,7 @@ import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import { TapSelectField } from "../components/TapSelectField";
 import { searchStateFromPrefs, withSearchStateChange } from "../utils/searchLocationPrefs";
+import { normalizeLifestyleTraits } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
 import { ProfileIdentityStrip } from "../components/ProfileIdentityStrip";
 import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
@@ -710,7 +711,9 @@ export function ProfilePage({
                 ethnicities={prefs.ethnicities}
                 onEthnicitiesChange={(ethnicities) => setPrefs({ ...prefs, ethnicities })}
                 prefLifestyles={prefs.lifestyles}
-                onPrefLifestylesChange={(lifestyles) => setPrefs({ ...prefs, lifestyles })}
+                onPrefLifestylesChange={(lifestyles) =>
+                  setPrefs({ ...prefs, lifestyles: normalizeLifestyleTraits(lifestyles) })
+                }
                 searchState={searchStateFromPrefs(prefs)}
                 onSearchStateChange={(searchState) =>
                   setPrefs(withSearchStateChange(prefs, searchState))

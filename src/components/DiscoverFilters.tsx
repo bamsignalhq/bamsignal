@@ -4,6 +4,7 @@ import { MONETIZATION_COPY } from "../constants/copy";
 import { StateCitySelect } from "./StateCitySelect";
 import { INTENT_OPTIONS } from "../constants/intents";
 import { searchStateFromPrefs, withSearchStateChange } from "../utils/searchLocationPrefs";
+import { normalizeLifestyleTraits } from "../constants/profileOptions";
 import { MatchPreferenceFields } from "./preferences/MatchPreferenceFields";
 import { MAX_DISCOVER_RADIUS_MILES, kmToMiles, milesToKm } from "../utils/discoverLocation";
 import type { MatchPreferences, PreferenceMode } from "../types";
@@ -177,7 +178,9 @@ export function DiscoverFilters({
             ethnicities={prefs.ethnicities}
             onEthnicitiesChange={(ethnicities) => onChange({ ...prefs, ethnicities })}
             prefLifestyles={prefs.lifestyles}
-            onPrefLifestylesChange={(lifestyles) => onChange({ ...prefs, lifestyles })}
+            onPrefLifestylesChange={(lifestyles) =>
+              onChange({ ...prefs, lifestyles: normalizeLifestyleTraits(lifestyles) })
+            }
             searchState={searchStateFromPrefs(prefs)}
             onSearchStateChange={(searchState) =>
               onChange(withSearchStateChange(prefs, searchState))

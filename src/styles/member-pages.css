@@ -2131,27 +2131,43 @@
   color: var(--text);
 }
 
-.app.light .profile-read-chip--intent,
-[data-theme="light"] .profile-read-chip--intent {
-  color: #831843;
-}
-
 .profile-read-chip--picked {
   background: var(--brand-gradient);
   border-color: transparent;
   color: #fff;
 }
 
-.app.light .profile-read-chip,
-[data-theme="light"] .profile-read-chip {
+.app.light .profile-read-chip:not(.profile-read-chip--picked),
+[data-theme="light"] .profile-read-chip:not(.profile-read-chip--picked) {
   background: color-mix(in srgb, var(--input-bg) 96%, transparent);
   border-color: color-mix(in srgb, var(--border) 80%, transparent);
   color: var(--text);
 }
 
+.app.light .profile-read-chip--intent,
+[data-theme="light"] .profile-read-chip--intent {
+  color: #831843;
+  background: color-mix(in srgb, var(--brand-pink) 14%, var(--input-bg));
+  border-color: color-mix(in srgb, var(--brand-pink) 28%, transparent);
+}
+
 .app.light .profile-read-chip--picked,
 [data-theme="light"] .profile-read-chip--picked {
+  background: var(--brand-gradient);
+  border-color: transparent;
   color: #fff;
+}
+
+.app.light .profile-overview-sections--clean .profile-overview__label,
+[data-theme="light"] .profile-overview-sections--clean .profile-overview__label,
+.app.light .profile-overview-block h3,
+[data-theme="light"] .profile-overview-block h3 {
+  color: #524763;
+}
+
+.app.light .profile-overview-sections--clean .profile-overview-bio,
+[data-theme="light"] .profile-overview-sections--clean .profile-overview-bio {
+  color: #1a0a2e;
 }
 
 .profile-detail-sheet__card.profile-read-section .profile-read__heading {

@@ -1776,6 +1776,16 @@
   overflow-wrap: anywhere;
 }
 
+.app.light .profile-details-row__label,
+[data-theme="light"] .profile-details-row__label {
+  color: #524763;
+}
+
+.app.light .profile-details-row__value,
+[data-theme="light"] .profile-details-row__value {
+  color: #1a0a2e;
+}
+
 .profile-details-chip {
   display: flex;
   flex-direction: column;

@@ -1087,6 +1087,8 @@ export function App() {
       <div
         className={`platform-shell${
           isAuthed && !showOnboarding && tab === "discover" ? " platform-shell--discover-premium" : ""
+        }${
+          isAuthed && !showOnboarding && tab === "likes" ? " platform-shell--signals-premium" : ""
         }`}
       >
         <TopNav
@@ -1216,6 +1218,7 @@ export function App() {
               onUpgrade={openPricing}
               onCompleteProfile={() => setTab("me")}
               onDiscover={() => setTab("discover")}
+              onOpenSafety={() => setMemberOverlay("safety")}
             />
           )}
           {tab === "chats" && isGuest && (

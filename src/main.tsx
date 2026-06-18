@@ -6,6 +6,7 @@ import { PlansProvider } from "./context/PlansContext";
 import "./styles.css";
 import "./styles/experience.css";
 import "./styles/signals.css";
+import "./styles/signals-premium.css";
 import "./styles/visual-home.css";
 import "./styles/home-landing.css";
 import "./styles/auth.css";

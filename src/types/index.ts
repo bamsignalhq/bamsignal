@@ -383,6 +383,12 @@ export type LikeEntry = {
   city: string;
   at: string;
   superLike?: boolean;
+  /** Optional UI enrichment — demo/local only */
+  age?: number;
+  message?: string;
+  distanceKm?: number;
+  state?: string;
+  verified?: boolean;
 };
 
 export type AuthMode = "login" | "signup" | "verify" | "reset";

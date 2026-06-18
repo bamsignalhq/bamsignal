@@ -1066,6 +1066,18 @@
   object-position: center;
 }
 
+.cover-photo-upload__empty {
+  width: 100%;
+  aspect-ratio: 2.5 / 1;
+  min-height: 140px;
+  max-height: 220px;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--input-bg) 90%, var(--bg)) 0%,
+    color-mix(in srgb, var(--border) 35%, var(--bg)) 100%
+  );
+}
+
 .cover-photo-upload__actions {
   position: absolute;
   left: 0;

@@ -138,7 +138,11 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
 
   if (bundle.datingProfile && typeof bundle.datingProfile === "object") {
     const local = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
-    const remote = bundle.datingProfile as Record<string, unknown>;
+    const remote = { ...(bundle.datingProfile as Record<string, unknown>) };
+    if (typeof remote.coverPhoto === "string" && remote.coverPhoto.startsWith("/showcase/")) {
+      remote.coverPhoto = undefined;
+      remote.coverPhotoExplicit = false;
+    }
     const remotePhotos = safePhotos(remote.photos);
     const localPhotos = safePhotos(local.photos);
     const mergedPhotos = remotePhotos.length >= localPhotos.length ? remotePhotos : localPhotos;

@@ -1,6 +1,5 @@
 import { ImagePlus, Loader2, MapPin, UserRound } from "lucide-react";
 import { useState } from "react";
-import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { useCoverPhotoFlow } from "../hooks/useCoverPhotoFlow";
 import { ShowcaseImage } from "./ShowcaseImage";
 import { VerificationBadge } from "./VerificationBadge";
@@ -9,7 +8,7 @@ import { CoverPhotoCropModal } from "./CoverPhotoCropModal";
 import { ProfilePhotoViewerSheet } from "./profile/ProfilePhotoViewerSheet";
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
-import { hasExplicitCover, resolveCoverPhoto, safePhotos } from "../utils/safeProfile";
+import { hasExplicitCover, safePhotos } from "../utils/safeProfile";
 
 type ProfileCoverHeaderProps = {
   user: UserProfile;
@@ -60,7 +59,6 @@ export function ProfileCoverHeader({
   const resolvedCoverPhoto = coverPhoto ?? profile.coverPhoto;
   const coverProfile = { ...profile, coverPhoto: resolvedCoverPhoto };
   const customCover = hasExplicitCover(coverProfile);
-  const stockCover = resolveCoverPhoto(profile);
 
   const flow = useCoverPhotoFlow({
     coverPhoto: resolvedCoverPhoto,
@@ -71,8 +69,8 @@ export function ProfileCoverHeader({
     onModerationMessage: onCoverModerationMessage
   });
 
-  const coverPreview = editableCover ? flow.displayCover || "" : flow.displayCover || stockCover;
-  const showCoverMedia = editableCover ? Boolean(flow.displayCover) : Boolean(coverPreview);
+  const coverPreview = flow.displayCover || "";
+  const showCoverMedia = Boolean(flow.displayCover);
 
   const premium = variant === "premium";
   const ageText = profile.age != null && profile.age > 0 ? String(profile.age) : null;
@@ -92,18 +90,17 @@ export function ProfileCoverHeader({
   return (
     <>
       <header className={`profile-hero profile-hero--me${premium ? " profile-hero--premium" : ""}`}>
-        <div className="profile-hero__cover" aria-hidden={editableCover ? !showCoverMedia : !avatar && !customCover}>
+        <div className="profile-hero__cover" aria-hidden={!showCoverMedia && !avatar}>
           {showCoverMedia ? (
             <ShowcaseImage
               src={coverPreview}
               alt=""
-              fallbackSrc={editableCover ? undefined : DEFAULT_PROFILE_COVER}
-              className={`profile-hero__cover-media${
-                editableCover || customCover || flow.localPreview ? "" : " profile-hero__cover-media--default"
-              }`}
+              className="profile-hero__cover-media"
             />
-          ) : null}
-          {!editableCover ? <div className="profile-hero__cover-shade" /> : null}
+          ) : (
+            <div className="profile-hero__cover-empty" aria-hidden />
+          )}
+          {!editableCover && customCover ? <div className="profile-hero__cover-shade" /> : null}
           {editableCover && onCoverChange ? (
             <button
               type="button"

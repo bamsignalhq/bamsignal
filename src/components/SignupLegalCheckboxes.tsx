@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ShieldCheck } from "lucide-react";
 
 type SignupLegalCheckboxesProps = {
   termsAccepted: boolean;
@@ -19,7 +19,7 @@ function LegalLink({ href, label }: { href: string; label: string }) {
       onClick={(event) => event.stopPropagation()}
     >
       {label}
-      <ExternalLink size={13} aria-hidden />
+      <ExternalLink size={12} aria-hidden />
     </a>
   );
 }
@@ -33,42 +33,52 @@ export function SignupLegalCheckboxes({
   onAgeChange
 }: SignupLegalCheckboxesProps) {
   return (
-    <div className="signup-legal" role="group" aria-label="Legal agreements">
-      <p className="signup-legal__intro">
-        By continuing, you agree to BamSignal&apos;s legal terms and confirm you are at least 18.
-      </p>
-
-      <label className="signup-legal__row">
-        <input
-          type="checkbox"
-          checked={termsAccepted}
-          onChange={(event) => onTermsChange(event.target.checked)}
-        />
-        <span>
-          I agree to BamSignal&apos;s <LegalLink href="/terms" label="Terms of Service" />
+    <section className="signup-legal" aria-label="Legal agreements">
+      <header className="signup-legal__head">
+        <span className="signup-legal__icon" aria-hidden>
+          <ShieldCheck size={16} strokeWidth={2} />
         </span>
-      </label>
+        <div>
+          <p className="signup-legal__title">Before you continue</p>
+          <p className="signup-legal__intro">
+            Confirm the items below to create your account. You must be 18 or older.
+          </p>
+        </div>
+      </header>
 
-      <label className="signup-legal__row">
-        <input
-          type="checkbox"
-          checked={privacyAccepted}
-          onChange={(event) => onPrivacyChange(event.target.checked)}
-        />
-        <span>
-          I agree to BamSignal&apos;s <LegalLink href="/privacy" label="Privacy Policy" />
-        </span>
-      </label>
+      <div className="signup-legal__list">
+        <label className={`signup-legal__row${termsAccepted ? " signup-legal__row--checked" : ""}`}>
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={(event) => onTermsChange(event.target.checked)}
+          />
+          <span className="signup-legal__copy">
+            I agree to the <LegalLink href="/terms" label="Terms of Service" />
+          </span>
+        </label>
 
-      <label className="signup-legal__row">
-        <input
-          type="checkbox"
-          checked={ageConfirmed}
-          onChange={(event) => onAgeChange(event.target.checked)}
-        />
-        <span>I confirm I am at least 18 years old</span>
-      </label>
-    </div>
+        <label className={`signup-legal__row${privacyAccepted ? " signup-legal__row--checked" : ""}`}>
+          <input
+            type="checkbox"
+            checked={privacyAccepted}
+            onChange={(event) => onPrivacyChange(event.target.checked)}
+          />
+          <span className="signup-legal__copy">
+            I agree to the <LegalLink href="/privacy" label="Privacy Policy" />
+          </span>
+        </label>
+
+        <label className={`signup-legal__row${ageConfirmed ? " signup-legal__row--checked" : ""}`}>
+          <input
+            type="checkbox"
+            checked={ageConfirmed}
+            onChange={(event) => onAgeChange(event.target.checked)}
+          />
+          <span className="signup-legal__copy">I confirm I am at least 18 years old</span>
+        </label>
+      </div>
+    </section>
   );
 }
 

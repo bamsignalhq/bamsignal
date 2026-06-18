@@ -1223,6 +1223,16 @@
   background: color-mix(in srgb, var(--input-bg) 80%, #0f172a);
 }
 
+.profile-hero__cover-empty {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--input-bg) 88%, var(--bg)) 0%,
+    color-mix(in srgb, var(--border) 40%, var(--bg)) 100%
+  );
+}
+
 .profile-hero__cover-media {
   position: absolute;
   inset: 0;

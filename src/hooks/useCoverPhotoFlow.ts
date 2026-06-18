@@ -43,8 +43,8 @@ export function useCoverPhotoFlow({
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const cropSrcRef = useRef<string | null>(null);
 
-  const persistedCover = safeUserCoverPhoto(coverPhoto);
-  const hasPersistedCover = coverPhotoExplicit !== false && Boolean(persistedCover);
+  const persistedCover =
+    coverPhotoExplicit === false ? undefined : safeUserCoverPhoto(coverPhoto);
 
   useEffect(() => {
     if (!pendingCover || !persistedCover) return;
@@ -53,11 +53,7 @@ export function useCoverPhotoFlow({
     }
   }, [pendingCover, persistedCover]);
 
-  const displayCover =
-    localPreview ||
-    pendingCover ||
-    (hasPersistedCover ? persistedCover : null);
-
+  const displayCover = localPreview || pendingCover || persistedCover || null;
   const hasCustomCover = Boolean(displayCover);
 
   const setCropPreview = useCallback((next: string | null) => {
@@ -82,7 +78,7 @@ export function useCoverPhotoFlow({
       });
 
       setUploading(true);
-      const previousCover = hasPersistedCover ? persistedCover : undefined;
+      const previousCover = persistedCover;
       const priorMeta = photoMeta;
       let previewUrl: string | null = null;
 
@@ -164,7 +160,7 @@ export function useCoverPhotoFlow({
         setUploading(false);
       }
     },
-    [hasPersistedCover, onChange, persistedCover, photoMeta, profilePhotos, onModerationMessage]
+    [onChange, persistedCover, photoMeta, profilePhotos, onModerationMessage]
   );
 
   const handleFileChange = useCallback(

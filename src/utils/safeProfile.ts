@@ -92,19 +92,21 @@ export function mergeMemberCover(
 }
 
 export function resolveCoverPhoto(
-  profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit" | "onboardingComplete">
-): string {
-  if (!profile.onboardingComplete) return DEFAULT_PROFILE_COVER;
-  const cover = safeCoverPhoto(profile.coverPhoto);
-  if (!cover) return DEFAULT_PROFILE_COVER;
-  if (profile.coverPhotoExplicit === false) return DEFAULT_PROFILE_COVER;
+  profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit" | "onboardingComplete">,
+  options?: { fallback?: string | null }
+): string | null {
+  const fallback =
+    options?.fallback === undefined ? DEFAULT_PROFILE_COVER : options.fallback;
+  const cover = safeUserCoverPhoto(profile.coverPhoto);
+  if (!cover || profile.coverPhotoExplicit === false) {
+    return fallback;
+  }
   return cover;
 }
 
 export function hasExplicitCover(
-  profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit" | "onboardingComplete">
+  profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit">
 ): boolean {
-  if (!profile.onboardingComplete) return false;
   if (!safeUserCoverPhoto(profile.coverPhoto)) return false;
   return profile.coverPhotoExplicit !== false;
 }
@@ -114,7 +116,7 @@ export function safeProfile(raw: Partial<DatingProfile> | null | undefined): Par
   return {
     ...raw,
     photos: safePhotos(raw.photos),
-    coverPhoto: safeCoverPhoto(raw.coverPhoto),
+    coverPhoto: safeUserCoverPhoto(raw.coverPhoto),
     bio: safeString(raw.bio),
     city: safeString(raw.city),
     state: safeString(raw.state),

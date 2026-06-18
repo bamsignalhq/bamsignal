@@ -2,6 +2,32 @@ import type { Area } from "react-easy-crop";
 
 export const COVER_ASPECT_RATIO = 2.5;
 
+/** Centered crop for the cover aspect — used before the user drags the cropper. */
+export function initialCoverCropPixels(
+  mediaWidth: number,
+  mediaHeight: number
+): Area {
+  const mediaAspect = mediaWidth / mediaHeight;
+  if (mediaAspect > COVER_ASPECT_RATIO) {
+    const height = mediaHeight;
+    const width = height * COVER_ASPECT_RATIO;
+    return {
+      x: (mediaWidth - width) / 2,
+      y: 0,
+      width,
+      height
+    };
+  }
+  const width = mediaWidth;
+  const height = width / COVER_ASPECT_RATIO;
+  return {
+    x: 0,
+    y: (mediaHeight - height) / 2,
+    width,
+    height
+  };
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();

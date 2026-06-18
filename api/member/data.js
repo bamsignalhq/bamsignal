@@ -359,7 +359,11 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: "City is required for profile sync." });
       }
 
-      const profile = body.profile || {};
+      const profile = { ...(body.profile || {}) };
+      if (typeof profile.coverPhoto === "string" && profile.coverPhoto.startsWith("/showcase/")) {
+        profile.coverPhoto = undefined;
+        profile.coverPhotoExplicit = false;
+      }
       const { assertProfileSafeForContactLeak } = await import("../../server/services/contactLeak.js");
       const leakCheck = await assertProfileSafeForContactLeak({
         email: identity.email,

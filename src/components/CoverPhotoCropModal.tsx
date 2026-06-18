@@ -1,7 +1,7 @@
-import { useState, type ComponentType } from "react";
+import { useCallback, useState, type ComponentType } from "react";
 import { createPortal } from "react-dom";
 import CropperImport, { type Area } from "react-easy-crop";
-import { COVER_ASPECT_RATIO, getCroppedCoverBlob } from "../utils/coverCrop";
+import { COVER_ASPECT_RATIO, getCroppedCoverBlob, initialCoverCropPixels } from "../utils/coverCrop";
 
 const Cropper = CropperImport as unknown as ComponentType<{
   image: string;
@@ -11,6 +11,7 @@ const Cropper = CropperImport as unknown as ComponentType<{
   onCropChange: (location: { x: number; y: number }) => void;
   onZoomChange: (zoom: number) => void;
   onCropComplete: (croppedArea: Area, croppedAreaPixels: Area) => void;
+  onMediaLoaded: (mediaSize: { width: number; height: number }) => void;
 }>;
 
 type CoverPhotoCropModalProps = {
@@ -24,6 +25,10 @@ export function CoverPhotoCropModal({ imageSrc, onClose, onConfirm }: CoverPhoto
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const onMediaLoaded = useCallback((mediaSize: { width: number; height: number }) => {
+    setCroppedAreaPixels(initialCoverCropPixels(mediaSize.width, mediaSize.height));
+  }, []);
 
   const handleUsePhoto = async () => {
     if (!croppedAreaPixels || saving) return;
@@ -58,6 +63,7 @@ export function CoverPhotoCropModal({ imageSrc, onClose, onConfirm }: CoverPhoto
             onCropChange={setCrop}
             onZoomChange={setZoom}
             onCropComplete={(_croppedArea: Area, pixels: Area) => setCroppedAreaPixels(pixels)}
+            onMediaLoaded={onMediaLoaded}
           />
         </div>
         <label className="cover-crop-modal__zoom">

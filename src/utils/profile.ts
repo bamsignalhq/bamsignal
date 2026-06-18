@@ -108,11 +108,9 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
 
   let coverPhoto: string | undefined;
   let coverPhotoExplicit = false;
-  if (onboardingComplete && persistableCover && cleaned.coverPhotoExplicit !== false) {
-    if (!rawPhotosList.some((photo) => samePhotoRef(photo, persistableCover))) {
-      coverPhoto = persistableCover;
-      coverPhotoExplicit = cleaned.coverPhotoExplicit ?? true;
-    }
+  if (persistableCover && cleaned.coverPhotoExplicit !== false) {
+    coverPhoto = persistableCover;
+    coverPhotoExplicit = cleaned.coverPhotoExplicit ?? true;
   }
 
   const photosList = sanitizeProfilePhotos(rawPhotosList, coverPhoto);
@@ -145,7 +143,7 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     interests,
     interestsTouched: onboardingComplete ? interests.length > 0 || interestsTouched : interestsTouched,
     coverPhoto,
-    coverPhotoExplicit: onboardingComplete ? coverPhotoExplicit : false,
+    coverPhotoExplicit,
     photos: photosList,
     photoMeta,
     verificationSelfie: isPersistablePhotoUrl(cleaned.verificationSelfie)

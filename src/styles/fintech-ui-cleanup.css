@@ -48,8 +48,8 @@
 }
 
 .platform-root--member .profile-hero--premium {
-  margin-left: -24px;
-  margin-right: -24px;
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 /* Bottom navbar — fintech glass */
@@ -179,48 +179,6 @@
 [data-theme="dark"].platform-root--member .profile-premium-card__text,
 [data-theme="dark"].platform-root--member .profile-premium-card__text--about-me {
   color: #fff;
-}
-
-/* Profile header blur overlay — keeps name readable over cover */
-.profile-hero--premium .profile-hero__body {
-  position: relative;
-}
-
-.profile-hero--premium .profile-hero__body::before {
-  content: "";
-  position: absolute;
-  left: -16px;
-  right: -16px;
-  top: -24px;
-  height: 110px;
-  border-radius: 0 0 20px 20px;
-  background: linear-gradient(
-    to bottom,
-    rgba(9, 0, 19, 0.06) 0%,
-    rgba(9, 0, 19, 0.32) 55%,
-    rgba(9, 0, 19, 0.55) 100%
-  );
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.app.light.platform-root--member .profile-hero--premium .profile-hero__body::before,
-[data-theme="light"].platform-root--member .profile-hero--premium .profile-hero__body::before {
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 244, 250, 0.1) 0%,
-    rgba(255, 244, 250, 0.78) 55%,
-    rgba(255, 244, 250, 0.96) 100%
-  );
-}
-
-.profile-hero--premium .profile-hero__avatar-block,
-.profile-hero--premium .profile-hero__meta,
-.profile-hero--premium .profile-hero__photo-strip {
-  position: relative;
-  z-index: 1;
 }
 
 /* Discover filter row — tighter pills in dark */

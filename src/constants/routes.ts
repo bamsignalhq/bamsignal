@@ -3,6 +3,7 @@ import { getLegalPath } from "./footer";
 
 export const AUTH_LOGIN_PATH = "/love/login";
 export const AUTH_SIGNUP_PATH = "/love/sign";
+export const AUTH_SIGNUP_ALIASES = ["/signup", "/join", "/register"] as const;
 export const HARD_AUTH_PATH = "/hard/auth";
 export const HARD_HUB_PATH = "/hard/command";
 export const BLOG_INDEX_PATH = "/blog";
@@ -31,7 +32,19 @@ export function normalizePath(pathname = window.location.pathname): string {
 
 export function getAuthPath(pathname = window.location.pathname): AuthPath | null {
   const path = normalizePath(pathname);
-  return AUTH_PATHS.includes(path as AuthPath) ? (path as AuthPath) : null;
+  if (AUTH_PATHS.includes(path as AuthPath)) return path as AuthPath;
+  if (AUTH_SIGNUP_ALIASES.includes(path as (typeof AUTH_SIGNUP_ALIASES)[number])) {
+    return AUTH_SIGNUP_PATH;
+  }
+  return null;
+}
+
+/** Canonical signup URL for legacy /signup, /join, /register entry points. */
+export function redirectAuthSignupAliases(pathname = window.location.pathname): boolean {
+  const path = normalizePath(pathname);
+  if (!AUTH_SIGNUP_ALIASES.includes(path as (typeof AUTH_SIGNUP_ALIASES)[number])) return false;
+  navigateToPath(AUTH_SIGNUP_PATH, true);
+  return true;
 }
 
 export function isHardRoute(pathname = window.location.pathname): boolean {
@@ -74,6 +87,7 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   const path = normalizePath(pathname);
   if (isHardRoute(path)) return false;
   if (getAuthPath(path)) return true;
+  if (AUTH_SIGNUP_ALIASES.includes(path as (typeof AUTH_SIGNUP_ALIASES)[number])) return true;
   if (path === "/love") return true;
   if (getLegalPath(path)) return true;
   if (isBlogIndex(path) || getBlogSlug(path)) return true;

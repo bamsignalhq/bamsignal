@@ -3,11 +3,7 @@ import { STORAGE_KEYS } from "../constants/limits";
 const DRAFT_KEY = "bamsignal-signup-draft";
 const DRAFT_TTL_MS = 60 * 60 * 1000;
 
-export type SignupDraftStep = 1 | 2 | 3;
-
 export type SignupDraftForm = {
-  name: string;
-  username: string;
   phone: string;
   email: string;
   pin: string;
@@ -15,7 +11,6 @@ export type SignupDraftForm = {
 };
 
 export type SignupDraft = {
-  step: SignupDraftStep;
   form: SignupDraftForm;
   legalAccepted: boolean;
   savedAt: number;
@@ -30,8 +25,8 @@ export function loadSignupDraft(): SignupDraft | null {
       localStorage.getItem("bamsignal_signup_draft") ||
       localStorage.getItem("bamsignal-signup-draft");
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as SignupDraft;
-    if (!parsed?.form || !parsed.step) return null;
+    const parsed = JSON.parse(raw) as SignupDraft & { form?: SignupDraftForm & { name?: string; username?: string } };
+    if (!parsed?.form) return null;
     if (Date.now() - (parsed.savedAt || 0) > DRAFT_TTL_MS) {
       clearSignupDraft();
       return null;
@@ -39,7 +34,16 @@ export function loadSignupDraft(): SignupDraft | null {
     if (localStorage.getItem(STORAGE_KEYS.pendingSignup)) {
       return null;
     }
-    return parsed;
+    return {
+      form: {
+        phone: parsed.form.phone || "",
+        email: parsed.form.email || "",
+        pin: parsed.form.pin || "",
+        confirmPin: parsed.form.confirmPin || ""
+      },
+      legalAccepted: Boolean(parsed.legalAccepted),
+      savedAt: parsed.savedAt
+    };
   } catch {
     clearSignupDraft();
     return null;

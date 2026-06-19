@@ -15,6 +15,7 @@ import {
   checkSignupField,
   requestSignupMathChallenge,
   resendSignupEmailCode,
+  resolveSignupUsername,
   sendSignupEmailCode,
   verifySignupEmailCode,
   AuthEmailError
@@ -25,11 +26,11 @@ import { trackEvent } from "../utils/analytics";
 import {
   emailForUsername,
   formatUsernameInput,
+  isLikelyEmail,
   isStrongPin,
   isValidLoginUsername,
   isValidNigerianPhone,
   isValidPin,
-  isValidSignupUsername,
   normalizeNigerianPhone,
   normalizeUsername,
   rememberUsernameEmail,
@@ -43,7 +44,7 @@ import {
   touchPendingCodeSent,
   touchPendingVerifyCode
 } from "../utils/signupPersistence";
-import { clearSignupDraft, loadSignupDraft, saveSignupDraft, type SignupDraftStep } from "../utils/signupDraft";
+import { clearSignupDraft, loadSignupDraft, saveSignupDraft } from "../utils/signupDraft";
 import { signupLog } from "../utils/signupLog";
 import { mergeLocalCompliance, saveComplianceAcknowledgements } from "../services/compliance";
 import { signupLegalAckTypes } from "../utils/compliance";
@@ -67,8 +68,6 @@ type AuthPageProps = {
 };
 
 const emptySignup = {
-  name: "",
-  username: "",
   phone: "",
   email: "",
   pin: "",
@@ -79,15 +78,9 @@ const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SEC = 60;
 const FIELD_CHECK_DELAY_MS = 450;
 
-type SignupField = "email" | "phone" | "username";
+type SignupField = "email" | "phone";
 type SignupFieldErrors = Partial<Record<SignupField, string>>;
 type SignupFieldChecking = Partial<Record<SignupField, boolean>>;
-
-function isLikelyEmail(value: string): boolean {
-  const email = value.trim().toLowerCase();
-  const [local, domain] = email.split("@");
-  return Boolean(local && domain && domain.includes("."));
-}
 
 function restoredSignupState() {
   const pending = loadPendingSignup();
@@ -96,7 +89,6 @@ function restoredSignupState() {
     return {
       pendingSignup: null as UserProfile | null,
       signupForm: draft?.form ?? emptySignup,
-      signupStep: (draft?.step ?? 1) as SignupDraftStep,
       legalAccepted: Boolean(draft?.legalAccepted),
       verifyCode: "",
       resendIn: 0
@@ -108,14 +100,11 @@ function restoredSignupState() {
     pendingSignup: profile,
     signupForm: {
       ...emptySignup,
-      name: profile.name || "",
-      username: profile.username || "",
       phone: profile.phone || "",
       email: profile.email || "",
       pin,
       confirmPin: pin
     },
-    signupStep: 1 as SignupDraftStep,
     legalAccepted: false,
     verifyCode,
     resendIn: resendCooldownRemaining(codeSentAt, RESEND_COOLDOWN_SEC)
@@ -145,7 +134,6 @@ export function AuthPage({
   const [busy, setBusy] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ username: "", pin: "" });
   const [signupForm, setSignupForm] = useState(restored.current.signupForm);
-  const [signupStep, setSignupStep] = useState<SignupDraftStep>(restored.current.signupStep);
   const [signupFieldErrors, setSignupFieldErrors] = useState<SignupFieldErrors>({});
   const [signupFieldChecking, setSignupFieldChecking] = useState<SignupFieldChecking>({});
   const [verifyCode, setVerifyCode] = useState(restored.current.verifyCode);
@@ -224,8 +212,8 @@ export function AuthPage({
 
   useEffect(() => {
     if (mode !== "signup") return;
-    saveSignupDraft({ step: signupStep, form: signupForm, legalAccepted });
-  }, [mode, signupStep, signupForm, legalAccepted]);
+    saveSignupDraft({ form: signupForm, legalAccepted });
+  }, [mode, signupForm, legalAccepted]);
 
   useEffect(() => {
     if (mode !== "signup") return;
@@ -250,45 +238,10 @@ export function AuthPage({
   }, [onMessage]);
 
   useEffect(() => {
-    if (mode !== "signup" || signupStep !== 3) return;
+    if (mode !== "signup") return;
     if (mathChallenge) return;
     void loadMathChallenge();
-  }, [mode, signupStep, mathChallenge, loadMathChallenge]);
-
-  useEffect(() => {
-    const username = normalizeUsername(signupForm.username);
-    if (!isValidSignupUsername(username)) {
-      clearSignupFieldError("username");
-      setSignupFieldChecking((current) => ({ ...current, username: false }));
-      return;
-    }
-
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      setSignupFieldChecking((current) => ({ ...current, username: true }));
-      void checkSignupField("username", username)
-        .then(() => {
-          if (cancelled) return;
-          clearSignupFieldError("username");
-        })
-        .catch((error) => {
-          if (cancelled) return;
-          if (error instanceof AuthEmailError) {
-            setSignupFieldError("username", error.message);
-          }
-        })
-        .finally(() => {
-          if (!cancelled) {
-            setSignupFieldChecking((current) => ({ ...current, username: false }));
-          }
-        });
-    }, FIELD_CHECK_DELAY_MS);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [signupForm.username]);
+  }, [mode, mathChallenge, loadMathChallenge]);
 
   useEffect(() => {
     const phone = phoneDigits(signupForm.phone);
@@ -405,11 +358,8 @@ export function AuthPage({
   };
 
   const signIn = async () => {
+    const identity = loginForm.username.trim().toLowerCase();
     const username = normalizeUsername(loginForm.username);
-    if (!isValidLoginUsername(username)) {
-      onMessage("Enter a valid username.");
-      return;
-    }
     if (!isValidPin(loginForm.pin)) {
       onMessage("Enter your PIN.");
       return;
@@ -418,23 +368,33 @@ export function AuthPage({
     setBusy("login");
     onMessage("");
     try {
-      if (matchDemoUser(username, loginForm.pin)) {
+      if (!isLikelyEmail(identity) && isValidLoginUsername(username) && matchDemoUser(username, loginForm.pin)) {
         rememberUsernameEmail(DEMO_USER.username, DEMO_USER.profile.email);
         seedDemoMemberProfile();
         await completeAuthenticated(DEMO_USER.profile, { isNewSignup: false });
         return;
       }
 
-      const email =
-        emailForUsername(username) ?? (await resolveLoginEmail(username));
+      let email: string | null = null;
+      if (isLikelyEmail(identity)) {
+        email = identity;
+      } else if (!isValidLoginUsername(username)) {
+        onMessage("Enter a valid username or email.");
+        return;
+      } else {
+        email = emailForUsername(username) ?? (await resolveLoginEmail(username));
+      }
+
       if (supabase && email) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password: loginForm.pin
         });
         if (error) throw error;
-        rememberUsernameEmail(username, email);
         const profile = profileFromSessionUser(data.user!);
+        if (!isLikelyEmail(identity) && username) {
+          rememberUsernameEmail(username, email);
+        }
         await finishLoginAfterPassword(profile, { isNewSignup: false });
         return;
       }
@@ -447,82 +407,50 @@ export function AuthPage({
     }
   };
 
-  const validateSignupStep1 = (): boolean => {
-    const name = signupForm.name.trim();
-    const username = normalizeUsername(signupForm.username);
-    onMessage("");
-    if (name.length < 2) {
-      onMessage("Enter your full name.");
-      signupLog("signup-validation", { step: 1, reason: "name" });
-      return false;
-    }
-    if (!isValidSignupUsername(username)) {
-      onMessage("Username must be at least 4 characters (letters, numbers, underscore).");
-      signupLog("signup-validation", { step: 1, reason: "username_format" });
-      return false;
-    }
-    if (signupFieldErrors.username) {
-      onMessage(signupFieldErrors.username);
-      signupLog("signup-validation", { step: 1, reason: "username_taken" });
-      return false;
-    }
-    if (signupFieldChecking.username) {
-      onMessage("Still checking your username — wait a moment.");
-      return false;
-    }
-    return true;
-  };
-
-  const validateSignupStep2 = (): boolean => {
+  const validateSignup = (): boolean => {
     const email = signupForm.email.trim().toLowerCase();
     const phone = phoneDigits(signupForm.phone);
     onMessage("");
-    signupLog("signup-step-2", { step: 2 });
 
     if (!isValidNigerianPhone(phone)) {
       onMessage("Put your correct WhatsApp number.");
-      signupLog("signup-validation", { step: 2, reason: "phone_format" });
+      signupLog("signup-validation", { reason: "phone_format" });
       return false;
     }
     if (!isLikelyEmail(email)) {
       onMessage("Enter a valid email.");
-      signupLog("signup-validation", { step: 2, reason: "email_format" });
+      signupLog("signup-validation", { reason: "email_format" });
       return false;
     }
     if (isDisposableEmail(email)) {
       setSignupFieldError("email", DISPOSABLE_EMAIL_MESSAGE);
       onMessage(DISPOSABLE_EMAIL_MESSAGE);
-      signupLog("signup-validation", { step: 2, reason: "disposable_email" });
+      signupLog("signup-validation", { reason: "disposable_email" });
       return false;
     }
     if (signupFieldErrors.phone || signupFieldErrors.email) {
       onMessage(signupFieldErrors.phone || signupFieldErrors.email || "Fix the highlighted fields.");
-      signupLog("signup-validation", { step: 2, reason: "field_error" });
+      signupLog("signup-validation", { reason: "field_error" });
       return false;
     }
     if (signupFieldChecking.phone || signupFieldChecking.email) {
       onMessage("Still checking your details — wait a moment.");
-      signupLog("signup-validation", { step: 2, reason: "field_checking" });
+      signupLog("signup-validation", { reason: "field_checking" });
       return false;
     }
-    return true;
-  };
-
-  const validateSignupStep3 = (): boolean => {
-    onMessage("");
     if (!isStrongPin(signupForm.pin)) {
       onMessage("Choose a 6-digit PIN without repeats or sequences like 123456.");
-      signupLog("signup-validation", { step: 3, reason: "pin_weak" });
+      signupLog("signup-validation", { reason: "pin_weak" });
       return false;
     }
     if (signupForm.pin !== signupForm.confirmPin) {
       onMessage("PINs do not match.");
-      signupLog("signup-validation", { step: 3, reason: "pin_mismatch" });
+      signupLog("signup-validation", { reason: "pin_mismatch" });
       return false;
     }
     if (!isSignupLegalComplete(legalAccepted)) {
       onMessage("Please accept the terms to continue.");
-      signupLog("signup-validation", { step: 3, reason: "legal" });
+      signupLog("signup-validation", { reason: "legal" });
       return false;
     }
     if (!mathChallenge) {
@@ -534,36 +462,16 @@ export function AuthPage({
     if (!Number.isFinite(parsed) || parsed !== mathChallenge.a + mathChallenge.b) {
       setMathError("Please answer the quick check correctly.");
       onMessage("Please answer the quick check correctly.");
-      signupLog("signup-validation", { step: 3, reason: "math" });
+      signupLog("signup-validation", { reason: "math" });
       return false;
     }
     setMathError("");
     return true;
   };
 
-  const advanceSignup = () => {
-    if (signupStep === 1) {
-      if (!validateSignupStep1()) return;
-      setSignupStep(2);
-      signupLog("signup-step-2");
-      return;
-    }
-    if (signupStep === 2) {
-      if (!validateSignupStep2()) return;
-      setSignupStep(3);
-      return;
-    }
-    void signUp();
-  };
-
   const signUp = async () => {
-    if (!validateSignupStep1() || !validateSignupStep2() || !validateSignupStep3()) {
-      if (signupStep !== 3) setSignupStep(3);
-      return;
-    }
+    if (!validateSignup()) return;
 
-    const name = signupForm.name.trim();
-    const username = normalizeUsername(signupForm.username);
     const email = signupForm.email.trim().toLowerCase();
     const phone = phoneDigits(signupForm.phone);
 
@@ -571,8 +479,6 @@ export function AuthPage({
     onMessage("");
     trackEvent("signup_started");
     signupLog("signup-submit");
-
-    const profile: UserProfile = { name, username, email, phone };
 
     try {
       if (!supabase) {
@@ -583,10 +489,13 @@ export function AuthPage({
         throw new Error("Please answer the quick check correctly.");
       }
 
+      const username = await resolveSignupUsername(email);
+      const profile: UserProfile = { name: "", username, email, phone };
+
       await checkSignupAvailability({ email, phone, username });
       signupLog("otp-send");
       flowLog("otp_send_start");
-      await sendSignupEmailCode(email, name, { phone, username }, {
+      await sendSignupEmailCode(email, "", { phone, username }, {
         legalAccepted: true,
         mathToken: mathChallenge.token,
         mathAnswer: mathAnswer.trim()
@@ -604,13 +513,8 @@ export function AuthPage({
       return;
     } catch (error) {
       if (error instanceof AuthEmailError) {
-        if (error.field) {
+        if (error.field === "email" || error.field === "phone") {
           setSignupFieldError(error.field, error.message);
-          if (error.field === "email" || error.field === "phone") {
-            setSignupStep(2);
-          } else if (error.field === "username") {
-            setSignupStep(1);
-          }
         }
         if (error.kind === "exists") {
           clearPendingSignup();
@@ -787,7 +691,7 @@ export function AuthPage({
               <p className="auth-sub">Good to have you back ❤️</p>
               <div className="auth-fields">
                 <AuthField
-                  label="Username"
+                  label="Username or email"
                   value={loginForm.username}
                   onChange={(username) =>
                     setLoginForm({ ...loginForm, username: formatUsernameInput(username) })
@@ -824,138 +728,85 @@ export function AuthPage({
 
           {mode === "signup" && (
             <>
-              <p className="auth-signup-step">Step {signupStep} of 3</p>
               <h1 className="auth-title">Create your account</h1>
+              <p className="auth-sub">Verify your email, then finish your profile.</p>
               <div className="auth-fields">
-                {signupStep === 1 ? (
-                  <>
-                    <AuthField
-                      label="Name"
-                      value={signupForm.name}
-                      onChange={(name) => setSignupForm({ ...signupForm, name })}
-                      autoComplete="name"
-                    />
-                    <AuthField
-                      label="Username"
-                      value={signupForm.username}
-                      onChange={(username) => {
-                        clearSignupFieldError("username");
-                        setSignupForm({ ...signupForm, username: formatUsernameInput(username) });
-                      }}
-                      autoComplete="username"
-                      autoCapitalize="none"
-                      spellCheck={false}
-                      maxLength={24}
-                      error={signupFieldErrors.username}
-                      checking={signupFieldChecking.username}
-                    />
-                  </>
-                ) : null}
-
-                {signupStep === 2 ? (
-                  <>
-                    <AuthField
-                      label="Phone"
-                      value={signupForm.phone}
-                      onChange={(phone) => {
-                        clearSignupFieldError("phone");
-                        setSignupForm({ ...signupForm, phone: phoneDigits(phone).slice(0, 11) });
-                      }}
-                      type="tel"
-                      inputMode="numeric"
-                      autoComplete="tel"
-                      maxLength={11}
-                      error={signupFieldErrors.phone}
-                      checking={signupFieldChecking.phone}
-                    />
-                    <AuthField
-                      label="Email"
-                      value={signupForm.email}
-                      onChange={(email) => {
-                        clearSignupFieldError("email");
-                        setSignupForm({ ...signupForm, email });
-                      }}
-                      type="email"
-                      autoComplete="email"
-                      error={signupFieldErrors.email}
-                      checking={signupFieldChecking.email}
-                    />
-                  </>
-                ) : null}
-
-                {signupStep === 3 ? (
-                  <>
-                    <AuthField
-                      label="PIN"
-                      value={signupForm.pin}
-                      onChange={(pin) => setSignupForm({ ...signupForm, pin: pinDigits(pin) })}
-                      pin
-                      maxLength={6}
-                      autoComplete="new-password"
-                    />
-                    <AuthField
-                      label="Confirm PIN"
-                      value={signupForm.confirmPin}
-                      onChange={(confirmPin) =>
-                        setSignupForm({ ...signupForm, confirmPin: pinDigits(confirmPin) })
-                      }
-                      pin
-                      maxLength={6}
-                      autoComplete="new-password"
-                    />
-                    <SignupLegalCheckboxes accepted={legalAccepted} onChange={setLegalAccepted} />
-                    {mathChallenge ? (
-                      <SignupMathGate
-                        a={mathChallenge.a}
-                        b={mathChallenge.b}
-                        answer={mathAnswer}
-                        onAnswerChange={(value) => {
-                          setMathAnswer(value);
-                          setMathError("");
-                        }}
-                        error={mathError}
-                        disabled={mathLoading || busy === "signup"}
-                      />
-                    ) : mathLoading ? (
-                      <p className="auth-message auth-message--inline">Loading quick check…</p>
-                    ) : null}
-                  </>
-                ) : null}
-              </div>
-
-              <div className="auth-signup-actions">
-                {signupStep > 1 ? (
-                  <button
-                    type="button"
-                    className="btn-secondary btn-auth auth-signup-back"
-                    onClick={() => {
-                      onMessage("");
-                      setSignupStep((step) => (step > 1 ? ((step - 1) as SignupDraftStep) : step));
-                    }}
-                    disabled={busy === "signup"}
-                  >
-                    Back
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="btn-primary btn-full btn-auth"
-                  onClick={advanceSignup}
-                  disabled={
-                    busy === "signup" ||
-                    (signupStep === 3 && !isSignupLegalComplete(legalAccepted)) ||
-                    (signupStep === 3 && mathLoading)
+                <AuthField
+                  label="Phone"
+                  value={signupForm.phone}
+                  onChange={(phone) => {
+                    clearSignupFieldError("phone");
+                    setSignupForm({ ...signupForm, phone: phoneDigits(phone).slice(0, 11) });
+                  }}
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  maxLength={11}
+                  error={signupFieldErrors.phone}
+                  checking={signupFieldChecking.phone}
+                />
+                <AuthField
+                  label="Email"
+                  value={signupForm.email}
+                  onChange={(email) => {
+                    clearSignupFieldError("email");
+                    setSignupForm({ ...signupForm, email });
+                  }}
+                  type="email"
+                  autoComplete="email"
+                  error={signupFieldErrors.email}
+                  checking={signupFieldChecking.email}
+                />
+                <AuthField
+                  label="PIN"
+                  value={signupForm.pin}
+                  onChange={(pin) => setSignupForm({ ...signupForm, pin: pinDigits(pin) })}
+                  pin
+                  maxLength={6}
+                  autoComplete="new-password"
+                />
+                <AuthField
+                  label="Confirm PIN"
+                  value={signupForm.confirmPin}
+                  onChange={(confirmPin) =>
+                    setSignupForm({ ...signupForm, confirmPin: pinDigits(confirmPin) })
                   }
-                >
-                  {busy === "signup" ? (
-                    <Loader2 className="spin" size={20} />
-                  ) : signupStep === 3 ? (
-                    "Create account"
-                  ) : (
-                    "Continue"
-                  )}
-                </button>
+                  pin
+                  maxLength={6}
+                  autoComplete="new-password"
+                />
               </div>
+
+              <SignupLegalCheckboxes accepted={legalAccepted} onChange={setLegalAccepted} />
+
+              {mathChallenge ? (
+                <SignupMathGate
+                  a={mathChallenge.a}
+                  b={mathChallenge.b}
+                  answer={mathAnswer}
+                  onAnswerChange={(value) => {
+                    setMathAnswer(value);
+                    setMathError("");
+                  }}
+                  error={mathError}
+                  disabled={mathLoading || busy === "signup"}
+                />
+              ) : mathLoading ? (
+                <p className="auth-message auth-message--inline">Loading quick check…</p>
+              ) : null}
+
+              <button
+                type="button"
+                className="btn-primary btn-full btn-auth"
+                onClick={() => void signUp()}
+                disabled={
+                  busy === "signup" ||
+                  !isSignupLegalComplete(legalAccepted) ||
+                  mathLoading
+                }
+              >
+                {busy === "signup" ? <Loader2 className="spin" size={20} /> : "Continue"}
+              </button>
               <button
                 type="button"
                 className="auth-switch"

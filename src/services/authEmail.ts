@@ -1,7 +1,7 @@
 import { readResponseJson } from "../utils/httpJson";
 import { apiUrl } from "./supabase";
 import { USER_MESSAGES } from "../constants/userMessages";
-import { normalizeUsername } from "../utils/authIdentity";
+import { normalizeUsername, isValidSignupUsername } from "../utils/authIdentity";
 
 type SendCodeResponse = { ok: boolean; email?: string; error?: string };
 type VerifyCodeResponse = {
@@ -147,6 +147,31 @@ export async function checkSignupField(
     response,
     "We couldn't verify your details. Try again shortly."
   );
+}
+
+/** Pick an available username from email when signup collects name in onboarding. */
+export async function resolveSignupUsername(email: string): Promise<string> {
+  const local = email.trim().toLowerCase().split("@")[0] || "user";
+  let base = normalizeUsername(local);
+  if (!isValidSignupUsername(base)) {
+    base = normalizeUsername(`user${Date.now().toString().slice(-6)}`);
+  }
+  const candidates = [
+    base,
+    ...Array.from({ length: 4 }, () =>
+      normalizeUsername(`${base.slice(0, 12)}_${Math.floor(Math.random() * 9000 + 1000)}`)
+    )
+  ];
+  for (const candidate of candidates) {
+    if (!isValidSignupUsername(candidate)) continue;
+    try {
+      await checkSignupField("username", candidate);
+      return candidate;
+    } catch {
+      /* try next */
+    }
+  }
+  return normalizeUsername(`bs${Date.now().toString().slice(-8)}`);
 }
 
 export async function requestSignupMathChallenge(): Promise<{ token: string; a: number; b: number }> {

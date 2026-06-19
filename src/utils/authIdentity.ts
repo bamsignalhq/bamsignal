@@ -111,6 +111,12 @@ export function isValidNigerianPhone(value: string): boolean {
   return /^0[789]\d{9}$/.test(phone);
 }
 
+export function isLikelyEmail(value: string): boolean {
+  const email = value.trim().toLowerCase();
+  const [local, domain] = email.split("@");
+  return Boolean(local && domain && domain.includes("."));
+}
+
 export function rememberUsernameEmail(username: string, email: string): void {
   const key = normalizeUsername(username);
   if (!key || !email.trim()) return;

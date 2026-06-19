@@ -99,6 +99,7 @@ import {
   normalizePath,
   redirectLegacyConsolePaths,
   redirectLegacyAdmin,
+  redirectAuthSignupAliases,
   requiresMemberRestoreBlocking,
   HARD_AUTH_PATH,
   type AuthPath
@@ -225,6 +226,7 @@ export function App() {
   useEffect(() => {
     const syncRoute = () => {
       redirectLegacyConsolePaths();
+      redirectAuthSignupAliases();
       setLegalPath(getLegalPath());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());

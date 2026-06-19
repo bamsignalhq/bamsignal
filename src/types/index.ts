@@ -189,7 +189,10 @@ export type DatingProfile = {
   state?: string;
   city: string;
   bio: string;
-  lookingFor: LookingFor;
+  /** Who the member wants to meet — canonical “interested in” field (saved as lookingFor). */
+  lookingFor?: LookingFor;
+  /** Set when member picks interested-in during onboarding; prevents gender-based auto overrides. */
+  interestedInManuallyChanged?: boolean;
   intents: IntentTag[];
   interests: string[];
   /** True once member picks interests in the picker (prevents stale auto-filled chips during onboarding). */

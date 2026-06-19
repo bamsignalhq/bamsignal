@@ -18,7 +18,7 @@
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "test:photo-verification": "node scripts/test-photo-verification.mjs",
     "test:photo-safety": "node scripts/test-photo-safety.mjs",
-    "test:photo-moderation": "node scripts/test-photo-moderation-provider.mjs",
+    "test:interested-in-defaults": "node scripts/test-interested-in-defaults.mjs",
     "test:photo-upload-payload": "node scripts/test-photo-upload-payload.mjs",
     "test:server-import": "node scripts/smoke-server-import.mjs",
     "prepare": "node scripts/install-githooks.mjs",

@@ -33,6 +33,11 @@ import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { isSignupPhotoCountable } from "../utils/photoMeta";
 import { flowLog } from "../utils/flowLog";
 import { normalizeSearchCities } from "../utils/searchLocationPrefs";
+import {
+  resolveLookingFor,
+  applyGenderInterestedInDefault,
+  applyInterestedInManualChange
+} from "../utils/interestedInDefaults";
 
 function countSignupPhotos(profile: Pick<DatingProfile, "photos" | "photoMeta">): number {
   return profile.photos.filter(
@@ -98,15 +103,28 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         interestsTouched: false,
         age: 0,
         gender: "" as Gender,
+        lookingFor: undefined,
+        interestedInManuallyChanged: false,
         dateOfBirth: undefined,
         state: "",
         city: ""
       };
     }
+    const synced = !normalized.interestedInManuallyChanged
+      ? {
+          ...normalized,
+          lookingFor: resolveLookingFor({
+            raw: normalized.lookingFor,
+            gender: normalized.gender,
+            interestedInManuallyChanged: false,
+            onboardingComplete: false
+          })
+        }
+      : normalized;
     if (stored.dateOfBirth && !stored.age) {
-      return { ...normalized, dateOfBirth: undefined };
+      return { ...synced, dateOfBirth: undefined };
     }
-    return normalized;
+    return synced;
   });
   const [prefSearchState, setPrefSearchState] = useState("");
   const [prefCities, setPrefCities] = useState<string[]>([]);
@@ -243,6 +261,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       );
     }
     if (step === 2) return countSignupPhotos(profile) >= MIN_PROFILE_PHOTOS;
+    if (step === STEPS.length - 1) return Boolean(profile.lookingFor);
     return true;
   };
 
@@ -365,10 +384,9 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
                 <select
                   value={profile.gender || ""}
                   onChange={(e) =>
-                    setProfile((p) => ({
-                      ...p,
-                      gender: e.target.value as Gender
-                    }))
+                    setProfile((p) =>
+                      applyGenderInterestedInDefault(p, e.target.value as Gender)
+                    )
                   }
                 >
                   <option value="">Select Gender</option>
@@ -476,7 +494,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
             className="onboarding-pref-block"
             lookingFor={profile.lookingFor}
             onLookingForChange={(lookingFor) =>
-              lookingFor && setProfile({ ...profile, lookingFor })
+              setProfile((p) => applyInterestedInManualChange(p, lookingFor))
             }
             faith={profile.religion}
             onFaithChange={(religion) => setProfile({ ...profile, religion })}

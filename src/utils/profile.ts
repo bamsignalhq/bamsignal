@@ -7,6 +7,9 @@ import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { normalizeCoverFields } from "./coverPhoto";
 import { normalizeCompliance } from "./compliance";
+import {
+  resolveLookingFor
+} from "./interestedInDefaults";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
 import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString, safeUserCoverPhoto } from "./safeProfile";
@@ -108,10 +111,6 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     cleaned.gender && (cleaned.gender as string) !== "Prefer not to say"
       ? (cleaned.gender as DatingProfile["gender"])
       : base.gender;
-  const lookingFor =
-    cleaned.lookingFor && (cleaned.lookingFor as string) !== "Everyone"
-      ? (cleaned.lookingFor as DatingProfile["lookingFor"])
-      : base.lookingFor;
   const onboardingComplete = Boolean(
     cleaned.onboardingComplete ||
       cleaned.setupCompleted ||
@@ -119,6 +118,14 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
       cleaned.onboardingCompletedAt ||
       cleaned.completedAt
   );
+  const interestedInManuallyChanged = Boolean(cleaned.interestedInManuallyChanged);
+  const lookingFor = resolveLookingFor({
+    raw: cleaned.lookingFor,
+    gender: gender as DatingProfile["gender"],
+    interestedInManuallyChanged,
+    onboardingComplete,
+    fallback: base.lookingFor
+  });
   const interestsTouched = Boolean(cleaned.interestsTouched);
   const rawInterests = safeArray<string>(cleaned.interests).map((item) => safeString(item)).filter(Boolean);
   const interests = onboardingComplete || interestsTouched ? rawInterests : [];
@@ -167,7 +174,8 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     dateOfBirth,
     age,
     gender: gender as DatingProfile["gender"],
-    lookingFor: lookingFor as DatingProfile["lookingFor"],
+    lookingFor,
+    interestedInManuallyChanged,
     bio: safeString(cleaned.bio),
     intents: normalizeIntents(safeArray<string>(cleaned.intents) as string[] | undefined),
     interests,

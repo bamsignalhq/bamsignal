@@ -31,6 +31,7 @@ import type {
 import { STORAGE_KEYS } from "../constants/limits";
 import { BUTTON_COPY, PREMIUM_COPY } from "../constants/copy";
 import { APP_BUILD_LABEL, APP_BUILD_TIME } from "../constants/appRelease";
+import { BUILD_CODE, BUILD_TIME, BUILD_VERSION } from "../buildInfo";
 import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { getVerificationTier } from "../utils/verification";
@@ -68,7 +69,7 @@ import { getMemberCity } from "../utils/memberCity";
 import { canShowProfileBoostEntry } from "../utils/profileBoostEntry";
 
 type ProfileView = "overview" | "edit" | "settings";
-type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help";
+type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help" | "about";
 type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "details" | "prompts" | "voice";
 
 const PROFILE_STATE_OPTIONS = NIGERIAN_STATES.map((s) => ({ value: s, label: stateDisplayLabel(s) }));
@@ -815,7 +816,9 @@ export function ProfilePage({
                           ? "Subscription"
                           : settingsPanel === "help"
                             ? "Help"
-                            : "Settings"}
+                            : settingsPanel === "about"
+                              ? "About"
+                              : "Settings"}
           </h2>
 
           {settingsPanel === "hub" && (
@@ -836,6 +839,7 @@ export function ProfilePage({
                   label={PREMIUM_COPY.helpSupport}
                   onClick={() => setSettingsPanel("help")}
                 />
+                <SettingsRow label="About" onClick={() => setSettingsPanel("about")} />
               </section>
               <section className="card settings-card settings-card--logout">
                 <button type="button" className="settings-row settings-row--logout" onClick={handleLogout}>
@@ -1003,10 +1007,6 @@ export function ProfilePage({
                   : `Reach us by email. ${getCms().supportResponseTime}.`}
               </p>
               <p className="settings-help-hours">{getCms().supportHours}</p>
-              <p className="settings-help-build" aria-hidden="true">
-                {APP_BUILD_LABEL}
-                {APP_BUILD_TIME ? ` · ${APP_BUILD_TIME.slice(0, 19).replace("T", " ")} UTC` : null}
-              </p>
               <ContactForm
                 className="contact-form--embedded"
                 initialName={user.name}
@@ -1015,6 +1015,20 @@ export function ProfilePage({
                 onSuccess={handleHelpComplete}
                 successActionLabel="Back to dashboard"
               />
+            </section>
+          )}
+
+          {settingsPanel === "about" && (
+            <section className="card settings-card settings-card--quiet settings-about-card">
+              <p className="settings-about__app">BamSignal</p>
+              <p className="settings-about__version">
+                Version {BUILD_VERSION} <span className="settings-about__code">({BUILD_CODE})</span>
+              </p>
+              <p className="settings-about__time">
+                Built{" "}
+                {(APP_BUILD_TIME || BUILD_TIME).slice(0, 19).replace("T", " ")} UTC
+              </p>
+              <p className="settings-about__label">{APP_BUILD_LABEL}</p>
             </section>
           )}
 

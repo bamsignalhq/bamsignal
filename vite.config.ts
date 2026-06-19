@@ -1,14 +1,38 @@
 import dotenv from "dotenv";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
 dotenv.config();
 
+const rootDir = dirname(fileURLToPath(import.meta.url));
+
+function readBuildInfoDefaults(): { id: string; time: string } | null {
+  try {
+    const raw = readFileSync(join(rootDir, "src", "buildInfo.ts"), "utf8");
+    const version = raw.match(/BUILD_VERSION = "([^"]+)"/)?.[1];
+    const code = raw.match(/BUILD_CODE = "([^"]+)"/)?.[1];
+    const cache = raw.match(/CACHE_VERSION = "([^"]+)"/)?.[1];
+    const time = raw.match(/BUILD_TIME = "([^"]+)"/)?.[1];
+    if (version && code) {
+      return { id: cache || `bamsignal-v${version}-${code}`, time: time || new Date().toISOString() };
+    }
+  } catch {
+    /* buildInfo not present yet */
+  }
+  return null;
+}
+
+const buildInfoDefaults = readBuildInfoDefaults();
 const appBuildId =
   process.env.VITE_APP_BUILD_ID ||
+  buildInfoDefaults?.id ||
   process.env.GITHUB_SHA?.slice(0, 8) ||
-  "1.0.12-15";
-const appBuildTime = process.env.VITE_APP_BUILD_TIME || new Date().toISOString();
+  "dev";
+const appBuildTime =
+  process.env.VITE_APP_BUILD_TIME || buildInfoDefaults?.time || new Date().toISOString();
 
 function contactApiDevPlugin(): Plugin {
   return {

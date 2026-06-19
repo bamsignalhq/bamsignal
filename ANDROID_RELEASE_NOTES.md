@@ -49,17 +49,44 @@ The following must never be committed:
 - `*.keystore`
 - `android/key.properties`
 
-## Release build commands
+## Release build (one command)
+
+Auto-bumps `versionCode` / `versionName`, cleans old artifacts, builds web + Capacitor, and outputs signed APK + AAB:
+
+```bash
+npm run android:release
+```
+
+The script updates `android/app/build.gradle`, `src/buildInfo.ts`, `public/sw.js` (service worker cache), then prints the exact AAB path to upload to Play Console.
+
+Requires `.env` with `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`, and `android/key.properties` for signing.
 
 Use Java 17 or 21 (Android Studio JBR). System Java 25 is not compatible with Gradle 8.13.
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+npm run android:release
+```
+
+### Manual steps (if needed)
 
 ```bash
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 npm run build
 npx cap sync android
 cd android
-./gradlew assembleRelease bundleRelease
+./gradlew clean bundleRelease assembleRelease
 ```
+
+## Future: thin WebView shell (optional)
+
+If we want UI changes to appear without uploading a new AAB every time, the Android app could become a thin WebView shell that loads `https://bamsignal.com`. Trade-offs:
+
+- Google Play may still require store updates for native/SDK changes
+- Offline support is reduced
+- Store review expectations for hybrid apps can differ
+
+For now, use the packaged Capacitor release (`npm run android:release`).
 
 ## Outputs
 

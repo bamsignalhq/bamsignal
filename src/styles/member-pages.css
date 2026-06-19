@@ -1954,6 +1954,44 @@
   opacity: 0.72;
 }
 
+.settings-about-card {
+  text-align: center;
+  padding: 20px 16px 18px;
+}
+
+.settings-about__app {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.settings-about__version {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.settings-about__code {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.settings-about__time,
+.settings-about__label {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0.82;
+}
+
+.settings-about__label {
+  margin-top: 12px;
+  font-size: 0.72rem;
+  opacity: 0.65;
+}
+
 .contact-form--embedded {
   margin-top: 4px;
 }

@@ -66,6 +66,42 @@
   gap: 0.5rem;
 }
 
+.seo-header__theme {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--seo-border);
+  background: var(--seo-surface);
+  color: var(--seo-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.seo-header__theme:hover {
+  border-color: var(--seo-accent);
+  color: var(--seo-accent);
+}
+
+[data-theme="dark"] .seo-shell .seo-header__theme,
+.app.dark .seo-shell .seo-header__theme {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .seo-shell .seo-header__theme:hover,
+.app.dark .seo-shell .seo-header__theme:hover {
+  border-color: var(--seo-accent);
+  color: var(--seo-accent);
+}
+
 .seo-header__login,
 .seo-header__join {
   border-radius: 999px;

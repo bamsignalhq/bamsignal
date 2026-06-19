@@ -753,13 +753,15 @@ export function AuthPage({
                 <AuthField
                   label="Username or email"
                   value={loginForm.username}
-                  onChange={(username) =>
-                    setLoginForm({ ...loginForm, username: formatUsernameInput(username) })
-                  }
+                  onChange={(value) => {
+                    const trimmed = value.trim();
+                    const next = trimmed.includes("@") ? trimmed.toLowerCase() : formatUsernameInput(trimmed);
+                    setLoginForm({ ...loginForm, username: next });
+                  }}
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  maxLength={24}
+                  maxLength={120}
                   className="auth-field--centered"
                 />
                 <AuthField

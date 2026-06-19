@@ -1,4 +1,5 @@
 import { hardPathForTab, parseHardTabFromPath } from "./hardRoutes";
+import { getLegalPath } from "./footer";
 
 export const AUTH_LOGIN_PATH = "/love/login";
 export const AUTH_SIGNUP_PATH = "/love/sign";
@@ -66,6 +67,39 @@ export function getBlogSlug(pathname = window.location.pathname): string | null 
 
 export function isBlogIndex(pathname = window.location.pathname): boolean {
   return normalizePath(pathname) === BLOG_INDEX_PATH;
+}
+
+/** Marketing / legal / auth pages that must not block on member session restore (web). */
+export function isPublicWebRoute(pathname = window.location.pathname): boolean {
+  const path = normalizePath(pathname);
+  if (isHardRoute(path)) return false;
+  if (getAuthPath(path)) return true;
+  if (path === "/love") return true;
+  if (getLegalPath(path)) return true;
+  if (isBlogIndex(path) || getBlogSlug(path)) return true;
+  if (getMomentSlug(path)) return true;
+  if (path === "/") return true;
+  return false;
+}
+
+const MEMBER_APP_PATHS = [
+  "/home",
+  "/discover",
+  "/chats",
+  "/signals",
+  "/profile",
+  "/settings",
+  "/subscription"
+] as const;
+
+/** True when boot should block UI with member session restore (native app or explicit member URL). */
+export function requiresMemberRestoreBlocking(
+  pathname = window.location.pathname,
+  isNative = false
+): boolean {
+  if (isNative) return true;
+  const path = normalizePath(pathname);
+  return MEMBER_APP_PATHS.some((memberPath) => path === memberPath || path.startsWith(`${memberPath}/`));
 }
 
 export function navigateToPath(path: string, replace = false) {

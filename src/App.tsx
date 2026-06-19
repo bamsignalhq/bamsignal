@@ -94,10 +94,12 @@ import {
   isAdminAuthRoute,
   isAdminHubRoute,
   isAdminRoute,
+  isPublicWebRoute,
   navigateToPath,
   normalizePath,
   redirectLegacyConsolePaths,
   redirectLegacyAdmin,
+  requiresMemberRestoreBlocking,
   HARD_AUTH_PATH,
   type AuthPath
 } from "./constants/routes";
@@ -126,10 +128,14 @@ import { checkoutWasOpened } from "./utils/paymentState";
 
 export function App() {
   const isNative = Capacitor.getPlatform() !== "web";
+  const publicWebRoute = typeof window !== "undefined" && isPublicWebRoute(window.location.pathname);
+  const blockMemberRestoreOnBoot =
+    typeof window !== "undefined" && requiresMemberRestoreBlocking(window.location.pathname, isNative);
   const { plans } = usePlans();
-  const [booting, setBooting] = useState(true);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [booting, setBooting] = useState(() => !publicWebRoute || isNative);
+  const [authLoading, setAuthLoading] = useState(() => blockMemberRestoreOnBoot);
   const [memberHydrating, setMemberHydrating] = useState(false);
+  const [memberAppEntered, setMemberAppEntered] = useState(() => isNative);
   const [bootExit, setBootExit] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => getSavedTheme());
   const [tab, setTab] = useState<NavTab>("home");
@@ -164,13 +170,17 @@ export function App() {
   const logoutInProgressRef = useRef(false);
 
   const isGuest = !isAuthed;
+  const isPublicHome = !isNative && normalizePath(window.location.pathname) === "/";
+  const showMarketingHome = isPublicHome && (!isAuthed || !memberAppEntered);
+  const showGuestChrome = isGuest || showMarketingHome;
   void complianceTick;
   const showComplianceGate =
     isAuthed &&
+    memberAppEntered &&
     !showOnboarding &&
     shouldBlockForCompliance(getDatingProfile().compliance);
   const complianceSyncPending = hasComplianceSyncPending();
-  const memberAccessReady = isAuthed && !showOnboarding && !showComplianceGate;
+  const memberAccessReady = isAuthed && memberAppEntered && !showOnboarding && !showComplianceGate;
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -223,6 +233,9 @@ export function App() {
       setShowAdminAuth(isAdminAuthRoute());
       const hub = isAdminHubRoute() && !isAdminAuthRoute();
       setShowAdminHub(hub);
+      if (requiresMemberRestoreBlocking(window.location.pathname, isNative)) {
+        setMemberAppEntered(true);
+      }
       if (hub) {
         const resolved = resolveHardHubPath();
         if (normalizePath(window.location.pathname) !== resolved) {
@@ -233,9 +246,13 @@ export function App() {
     window.addEventListener("popstate", syncRoute);
     syncRoute();
     return () => window.removeEventListener("popstate", syncRoute);
-  }, []);
+  }, [isNative]);
 
   useEffect(() => {
+    if (!isNative && isPublicWebRoute()) {
+      setBooting(false);
+      return;
+    }
     let cancelled = false;
     const minMs = isNative ? 1200 : 800;
     const start = Date.now();
@@ -286,9 +303,12 @@ export function App() {
     writeJson(STORAGE_KEYS.userProfile, safeUserProfile(user));
   }, [user]);
 
-  const applyRestoredSession = useCallback(async (profile: UserProfile) => {
-    flowLog("session_restore_start");
-    setMemberHydrating(true);
+  const applyRestoredSession = useCallback(async (profile: UserProfile, options?: { blocking?: boolean }) => {
+    const blocking = options?.blocking ?? true;
+    flowLog("session_restore_start", { blocking });
+    if (blocking) {
+      setMemberHydrating(true);
+    }
     repairMemberCaches();
     const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const merged: UserProfile = {
@@ -304,11 +324,14 @@ export function App() {
     flowLog("profile_hydrate", { ok: session.hydrated, repair: session.repair?.repaired });
     const datingProfile = getDatingProfile();
     const needsOnboarding = session.nextRoute === "onboarding";
-    setShowOnboarding(needsOnboarding);
+    if (blocking || memberAppEntered || !isPublicWebRoute()) {
+      setShowOnboarding(needsOnboarding);
+    }
     logRouteDecision(merged, datingProfile, needsOnboarding ? "onboarding" : "home", {
       source: "session_restore",
       hydrated: session.hydrated,
-      repaired: session.repair?.repaired
+      repaired: session.repair?.repaired,
+      blocking
     });
     if (!needsOnboarding) {
       clearOnboardingDrafts();
@@ -323,8 +346,10 @@ export function App() {
         : premium.isPremium || isPremiumTrialActive()
     );
     flowLog("session_restore_done");
-    setMemberHydrating(false);
-  }, []);
+    if (blocking) {
+      setMemberHydrating(false);
+    }
+  }, [memberAppEntered]);
 
   useEffect(() => {
     if (memberAccessReady) recordDailyActive();
@@ -476,12 +501,21 @@ export function App() {
         }));
         setIsAuthed(true);
         setAuthLoading(false);
-        void hydrateMemberData(profile);
+        const blocking = requiresMemberRestoreBlocking(window.location.pathname, isNative);
+        if (blocking || memberAppEntered) {
+          void hydrateMemberData(profile);
+        }
         const premium = await refreshPremiumStatus(profile);
         setIsPremium(premium.isPremium || isPremiumTrialActive());
         return;
       }
-      if (isAuthedRef.current && readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }).email) {
+      if (
+        isAuthedRef.current &&
+        readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }).email
+      ) {
+        if (isPublicWebRoute()) {
+          return;
+        }
         setIsAuthed(true);
       }
     };
@@ -502,7 +536,7 @@ export function App() {
       document.removeEventListener("visibilitychange", onReturnToApp);
       window.removeEventListener("pageshow", onReturnToApp);
     };
-  }, [isAuthed]);
+  }, [isAuthed, isNative, memberAppEntered]);
 
   useEffect(() => {
     if (!isNative) return;
@@ -573,8 +607,17 @@ export function App() {
     }
   }, []);
 
+  const enterMemberApp = useCallback(() => {
+    setMemberAppEntered(true);
+    const needsOnboarding = shouldRouteToOnboarding(user, getDatingProfile());
+    if (needsOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, [user]);
+
   const handleAuthenticated = useCallback(
     async (profile: UserProfile, meta?: AuthMeta) => {
+      setMemberAppEntered(true);
       setMemberHydrating(true);
       const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
       const withPhone = {
@@ -678,6 +721,7 @@ export function App() {
     let cancelled = false;
     let bootstrapDone = false;
     let sessionRestored = false;
+    const shouldBlockBoot = requiresMemberRestoreBlocking(window.location.pathname, isNative);
 
     const finishBootstrap = () => {
       if (!cancelled && !bootstrapDone) {
@@ -686,17 +730,28 @@ export function App() {
       }
     };
 
-    const restoreFromSession = async (session: { user: { email?: string | null; user_metadata?: Record<string, unknown> } } | null) => {
+    const restoreFromSession = async (
+      session: { user: { email?: string | null; user_metadata?: Record<string, unknown> } } | null,
+      options?: { blocking?: boolean }
+    ) => {
       if (!session?.user || sessionRestored) return;
       sessionRestored = true;
-      await applyRestoredSession(profileFromSessionUser(session.user));
+      const blocking = options?.blocking ?? shouldBlockBoot;
+      await applyRestoredSession(profileFromSessionUser(session.user), { blocking });
     };
 
     void supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
         if (cancelled) return;
-        void restoreFromSession(session).finally(finishBootstrap);
+        if (!shouldBlockBoot) {
+          finishBootstrap();
+          if (session?.user) {
+            void restoreFromSession(session, { blocking: false });
+          }
+          return;
+        }
+        void restoreFromSession(session, { blocking: true }).finally(finishBootstrap);
       })
       .catch(() => {
         if (!cancelled) finishBootstrap();
@@ -708,7 +763,14 @@ export function App() {
       if (cancelled) return;
 
       if (event === "INITIAL_SESSION") {
-        await restoreFromSession(session);
+        if (!shouldBlockBoot) {
+          finishBootstrap();
+          if (session?.user) {
+            await restoreFromSession(session, { blocking: false });
+          }
+          return;
+        }
+        await restoreFromSession(session, { blocking: true });
         finishBootstrap();
         return;
       }
@@ -716,7 +778,8 @@ export function App() {
       if (event === "SIGNED_IN" && session?.user) {
         // AuthPage calls onAuthenticated after password login / signup verify.
         if (getAuthPath()) return;
-        await restoreFromSession(session);
+        const blocking = requiresMemberRestoreBlocking(window.location.pathname, isNative);
+        await restoreFromSession(session, { blocking });
         return;
       }
 
@@ -739,17 +802,29 @@ export function App() {
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
-            await restoreFromSession(session);
+            const blocking = requiresMemberRestoreBlocking(window.location.pathname, isNative);
+            await restoreFromSession(session, { blocking });
             return;
           }
           const refreshed = await supabase.auth.refreshSession();
           if (refreshed.data.session?.user) {
-            await restoreFromSession(refreshed.data.session);
+            const blocking = requiresMemberRestoreBlocking(window.location.pathname, isNative);
+            await restoreFromSession(refreshed.data.session, { blocking });
             return;
           }
         }
         const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
         if (stored.email || stored.phone) {
+          if (isPublicWebRoute()) {
+            clearMemberSessionCaches();
+            setIsAuthed(false);
+            setMemberAppEntered(isNative);
+            setShowOnboarding(false);
+            setIsPremium(false);
+            setUser({ name: "", email: "", phone: "" });
+            setTab("home");
+            return;
+          }
           setIsAuthed(true);
           setUser((prev) => ({
             ...stored,
@@ -774,7 +849,7 @@ export function App() {
       subscription.unsubscribe();
       window.clearTimeout(fallback);
     };
-  }, [applyRestoredSession]);
+  }, [applyRestoredSession, isNative]);
 
   useEffect(() => {
     if (authLoading || memberHydrating || !isAuthed || !authPath) return;
@@ -793,6 +868,7 @@ export function App() {
   }, []);
 
   const finishOnboarding = useCallback(() => {
+    setMemberAppEntered(true);
     setShowOnboarding(false);
     clearOnboardingDrafts();
     setTab("home");
@@ -808,6 +884,7 @@ export function App() {
   const resetLoggedOutState = useCallback(() => {
     clearMemberSessionCaches();
     setIsAuthed(false);
+    setMemberAppEntered(isNative);
     setShowOnboarding(false);
     setIsPremium(false);
     setPaymentLoading(false);
@@ -819,7 +896,7 @@ export function App() {
     navigateToPath("/");
     setAuthPath(null);
     setLegalPath(null);
-  }, []);
+  }, [isNative]);
 
   const handleLogout = useCallback(() => {
     logoutInProgressRef.current = true;
@@ -831,10 +908,16 @@ export function App() {
     });
   }, [resetLoggedOutState]);
 
-  const navigateTab = useCallback((next: NavTab) => {
-    setMemberOverlay(null);
-    setTab(next);
-  }, []);
+  const navigateTab = useCallback(
+    (next: NavTab) => {
+      if (isAuthed && !memberAppEntered && (next !== "home" || !showMarketingHome)) {
+        enterMemberApp();
+      }
+      setMemberOverlay(null);
+      setTab(next);
+    },
+    [enterMemberApp, isAuthed, memberAppEntered, showMarketingHome]
+  );
 
   const handleNotificationOpen = useCallback(
     (notification: AppNotification) => {
@@ -1045,7 +1128,10 @@ export function App() {
     );
   }
 
-  if (authLoading || memberHydrating) {
+  const shouldBlockForAuthRestore =
+    requiresMemberRestoreBlocking(window.location.pathname, isNative) && (authLoading || memberHydrating);
+
+  if (shouldBlockForAuthRestore) {
     return (
       <div className={`app ${theme}`}>
         <Preloader
@@ -1205,22 +1291,31 @@ export function App() {
             theme={theme}
             onToggleTheme={toggleTheme}
             isPremium={isPremium}
-            isGuest={isGuest}
+            isGuest={showGuestChrome}
             onLogin={() => openAuth("login")}
             onLogoClick={goHome}
-            showNotifications={isAuthed}
+            showNotifications={isAuthed && memberAppEntered}
             notificationCount={notificationUnread}
             onNotificationsClick={() => setNotificationsOpen(true)}
             showEarlyAccess={false}
-            showMemberNav={isAuthed}
+            showMemberNav={isAuthed && memberAppEntered}
             memberTab={tab}
             onMemberNavigate={navigateTab}
             likeCount={incomingSignals}
             messageCount={messageCount}
-            showBrandText={!isAuthed}
+            showBrandText={showGuestChrome}
             showGreeting={false}
           />
         )}
+
+        {isAuthed && !memberAppEntered && isPublicHome ? (
+          <div className="member-app-banner" role="region" aria-label="Return to app">
+            <p>You&apos;re signed in.</p>
+            <button type="button" className="btn btn-primary btn-sm" onClick={enterMemberApp}>
+              Go to app
+            </button>
+          </div>
+        ) : null}
 
         {complianceSyncPending && memberAccessReady ? (
           <p className="compliance-sync-banner" role="status">
@@ -1312,7 +1407,7 @@ export function App() {
               onOpenPremium={startPremiumCheckout}
             />
           )}
-          {tab === "home" && isGuest && (
+          {showMarketingHome && tab === "home" && (
             <LandingPage
               onSignup={() => openAuth("signup")}
               onGuestAction={() => openAuth("signup", "discover")}
@@ -1390,9 +1485,9 @@ export function App() {
         <BottomNav
           active={tab}
           onNavigate={navigateTab}
-          isGuest={isGuest}
+          isGuest={showGuestChrome}
           onJoin={() => openAuth("signup")}
-          likeCount={isAuthed ? incomingSignals : 0}
+          likeCount={isAuthed && memberAppEntered ? incomingSignals : 0}
         />
       )}
 

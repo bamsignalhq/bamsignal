@@ -173,3 +173,21 @@
   background: color-mix(in srgb, var(--accent, #7b1fa2) 8%, var(--bg));
   border-bottom: 1px solid var(--border);
 }
+
+.member-app-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0.55rem 1rem;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--accent, #7b1fa2) 8%, var(--bg));
+  border-bottom: 1px solid var(--border);
+}
+
+.member-app-banner p {
+  margin: 0;
+}

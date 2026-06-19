@@ -1520,10 +1520,10 @@
   transform: translate(-50%, -1.15rem);
 }
 
-/* Login username + PIN share identical inset — no toggle on login PIN */
+/* Login PIN — centered digits with room for show/hide toggle */
 .auth-field--centered.auth-field--login.auth-field--pin input.auth-pin-input {
   padding-left: 18px;
-  padding-right: 18px;
+  padding-right: 48px;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }

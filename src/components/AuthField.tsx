@@ -15,7 +15,7 @@ type AuthFieldProps = {
   className?: string;
   error?: string;
   checking?: boolean;
-  /** Show/hide toggle for PIN or password fields. Off on login PIN so text stays centered. */
+  /** Show/hide toggle for PIN or password fields. */
   showToggle?: boolean;
 };
 

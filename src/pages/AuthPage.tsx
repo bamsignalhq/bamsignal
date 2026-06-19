@@ -774,7 +774,6 @@ export function AuthPage({
                   pin
                   maxLength={6}
                   autoComplete="current-password"
-                  showToggle={false}
                   className="auth-field--centered auth-field--login"
                 />
               </div>

@@ -150,6 +150,21 @@ export async function resolveLoginAccount(rawUsername = "") {
     sourceTable = sourceTable || "auth.users";
   }
 
+  const profileJson = member?.profile;
+  if (profileJson && typeof profileJson === "object") {
+    const profileEmail = String(profileJson.email || "").trim().toLowerCase();
+    if (profileEmail.includes("@")) {
+      emails.push(profileEmail);
+      sourceTable = sourceTable || "app_member_profiles.profile";
+    }
+  }
+
+  const metaEmail = String(authUser?.raw_user_meta_data?.email || "").trim().toLowerCase();
+  if (metaEmail.includes("@")) {
+    emails.push(metaEmail);
+    sourceTable = sourceTable || "auth.users.metadata";
+  }
+
   const resolvedEmails = uniqueEmails(emails);
   let email = resolvedEmails[0] || null;
 

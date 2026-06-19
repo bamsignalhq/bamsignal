@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import { findMemberProfileByUserKey } from "../cityHome.js";
 import { isDatabaseReady, query } from "../db.js";
 import { normalizeSignupPhone, normalizeSignupUsername } from "./signupIdentity.js";
 import { normalizeLoginUsername, resolveLoginAccount } from "./loginResolve.js";
@@ -344,6 +343,10 @@ export async function verifyLoginPassword(email, password) {
     const ok = response.ok && Boolean(payload?.access_token);
     pinLoginLog("pin compare", ok);
     if (!ok) {
+      const grantError = String(payload?.error_description || payload?.error || payload?.msg || "").trim();
+      if (grantError) {
+        pinLoginLog("token grant rejected", grantError.slice(0, 160));
+      }
       return {
         ok: false,
         session: null,
@@ -387,6 +390,142 @@ async function verifyLoginPasswordWithRetry(email, password, attempts = 3) {
 /** @deprecated Use verifyLoginPassword */
 export async function verifyLoginPin(email, pin) {
   return verifyLoginPassword(email, pin);
+}
+
+async function verifyLoginPasswordViaSql({ email, username, authUserId, password }) {
+  if (!isDatabaseReady()) return { ok: false, userId: null, email: null };
+  const secret = String(password || "");
+  if (!secret) return { ok: false, userId: null, email: null };
+
+  const rowFromResult = (result) => {
+    const row = result.rows[0];
+    if (!row?.id) return { ok: false, userId: null, email: null };
+    return {
+      ok: true,
+      userId: String(row.id),
+      email: String(row.email || "").trim().toLowerCase()
+    };
+  };
+
+  if (authUserId) {
+    const byId = await query(
+      `select id, email
+       from auth.users
+       where id = $1::uuid
+         and encrypted_password is not null
+         and encrypted_password = crypt($2::text, encrypted_password)
+       limit 1`,
+      [authUserId, secret]
+    );
+    const match = rowFromResult(byId);
+    if (match.ok) return match;
+  }
+
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (normalizedEmail.includes("@")) {
+    const byEmail = await query(
+      `select id, email
+       from auth.users
+       where lower(email) = lower($1)
+         and encrypted_password is not null
+         and encrypted_password = crypt($2::text, encrypted_password)
+       limit 1`,
+      [normalizedEmail, secret]
+    );
+    const match = rowFromResult(byEmail);
+    if (match.ok) return match;
+  }
+
+  const normalizedUsername = normalizeLoginUsername(username || "");
+  if (normalizedUsername) {
+    const byUsername = await query(
+      `select id, email
+       from auth.users
+       where coalesce(nullif(raw_user_meta_data->>'username', ''), '') <> ''
+         and lower(raw_user_meta_data->>'username') = lower($1)
+         and encrypted_password is not null
+         and encrypted_password = crypt($2::text, encrypted_password)
+       limit 1`,
+      [normalizedUsername, secret]
+    );
+    const match = rowFromResult(byUsername);
+    if (match.ok) return match;
+  }
+
+  return { ok: false, userId: null, email: null };
+}
+
+async function repairAuthUserLoginState(authUserId, password) {
+  if (!isDatabaseReady() || !authUserId) return false;
+  await query(
+    `update auth.users
+     set encrypted_password = crypt($2::text, gen_salt('bf')),
+         email_confirmed_at = coalesce(email_confirmed_at, now()),
+         banned_until = null,
+         updated_at = now()
+     where id = $1::uuid`,
+    [authUserId, String(password)]
+  );
+  return true;
+}
+
+async function loginViaSqlAuthFallback(account, password) {
+  const secret = String(password || "");
+  if (!secret || !isDatabaseReady()) return null;
+
+  const attempts = [];
+  const seen = new Set();
+  const pushAttempt = (via, params) => {
+    const key = JSON.stringify(params);
+    if (seen.has(key)) return;
+    seen.add(key);
+    attempts.push({ via, params });
+  };
+
+  for (const email of account.emails || []) {
+    pushAttempt("email", { email, password: secret });
+  }
+  if (account.authUser?.id) {
+    pushAttempt("authUserId", {
+      authUserId: account.authUser.id,
+      email: account.authUser.email,
+      password: secret
+    });
+  }
+  pushAttempt("username", { username: account.username, password: secret });
+
+  for (const { via, params } of attempts) {
+    const sql = await verifyLoginPasswordViaSql(params);
+    if (!sql.ok || !sql.email) continue;
+
+    pinLoginLog("pin compare via sql", { ok: true, via });
+
+    let verified = await verifyLoginPassword(sql.email, secret);
+    if (!verified.ok && sql.userId) {
+      pinLoginLog("repair needed", {
+        reason: "sql_ok_token_failed",
+        authUserId: sql.userId,
+        via
+      });
+      await repairAuthUserLoginState(sql.userId, secret);
+      await ensureSupabaseAuthPassword({
+        email: sql.email,
+        password: secret,
+        name: account.member?.name || account.authUser?.raw_user_meta_data?.name || "",
+        username: account.username,
+        phone: account.member?.phone || account.authUser?.raw_user_meta_data?.phone || "",
+        authUserId: sql.userId
+      });
+      verified = await verifyLoginPasswordWithRetry(sql.email, secret);
+    }
+
+    if (verified.ok) {
+      return loginSuccess(account, sql.email, verified.session);
+    }
+  }
+
+  pinLoginLog("pin compare via sql", false);
+  return null;
 }
 
 async function verifyWithLegacyFallback(account, password) {
@@ -481,6 +620,11 @@ export async function loginWithUsernameAndPassword(rawUsername, password) {
     if (verified.ok) {
       return loginSuccess(account, legacy.email, verified.session);
     }
+  }
+
+  const sqlLogin = await loginViaSqlAuthFallback(account, password);
+  if (sqlLogin) {
+    return sqlLogin;
   }
 
   if (account.usernameFound && !legacy.hashExists && emails.length) {

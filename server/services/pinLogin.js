@@ -1,15 +1,15 @@
 import crypto from "node:crypto";
 import { findMemberProfileByUserKey } from "../cityHome.js";
 import { isDatabaseReady, query } from "../db.js";
-import { normalizeSignupPhone } from "./signupIdentity.js";
-import { resolveLoginAccount } from "./loginResolve.js";
+import { normalizeSignupPhone, normalizeSignupUsername } from "./signupIdentity.js";
+import { normalizeLoginUsername, resolveLoginAccount } from "./loginResolve.js";
 import { resolveSupabaseUrl } from "../supabaseEnv.js";
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
 
 export const INVALID_LOGIN_MESSAGE = "Invalid username or PIN.";
 
-function loginDebug(key, value) {
-  console.info(`[login-debug] ${key}`, value);
+function pinLoginLog(label, value) {
+  console.info(`[pin-login] ${label}`, value);
 }
 
 function resolveAnonKey() {
@@ -37,14 +37,49 @@ function pickString(...values) {
 
 function extractLegacyAuthFields(profileJson = {}) {
   const profile = profileJson && typeof profileJson === "object" ? profileJson : {};
-  return {
-    passwordHash: pickString(profile.passwordHash, profile.password_hash),
-    pinHash: pickString(profile.pinHash, profile.pin_hash),
-    legacyPinHash: pickString(profile.legacyPinHash, profile.legacy_pin_hash),
-    authPinHash: pickString(profile.authPinHash, profile.auth_pin_hash),
-    plaintextPin: pickString(profile.pin, profile.authPin, profile.auth_pin, profile.legacyPin, profile.legacy_pin),
-    plaintextPassword: pickString(profile.password, profile.plaintextPassword, profile.plaintext_password)
+  const nestedSources = [profile];
+  for (const key of ["auth", "security", "credentials"]) {
+    const nested = profile[key];
+    if (nested && typeof nested === "object") nestedSources.push(nested);
+  }
+
+  const pickFromSources = (...keys) => {
+    for (const source of nestedSources) {
+      for (const key of keys) {
+        const text = String(source?.[key] ?? "").trim();
+        if (text) return text;
+      }
+    }
+    return "";
   };
+
+  return {
+    passwordHash: pickFromSources("passwordHash", "password_hash"),
+    pinHash: pickFromSources("pinHash", "pin_hash"),
+    legacyPinHash: pickFromSources("legacyPinHash", "legacy_pin_hash"),
+    authPinHash: pickFromSources("authPinHash", "auth_pin_hash"),
+    plaintextPin: pickFromSources(
+      "pin",
+      "authPin",
+      "auth_pin",
+      "legacyPin",
+      "legacy_pin",
+      "loginPin",
+      "login_pin"
+    ),
+    plaintextPassword: pickFromSources("password", "plaintextPassword", "plaintext_password")
+  };
+}
+
+function legacyPinHashExists(fields) {
+  return Boolean(
+    fields.pinHash ||
+      fields.legacyPinHash ||
+      fields.authPinHash ||
+      fields.passwordHash ||
+      fields.plaintextPin ||
+      fields.plaintextPassword
+  );
 }
 
 function hashPinSecret(secret) {
@@ -79,12 +114,14 @@ async function clearLegacyPinFields(member) {
   const profile =
     member.profile && typeof member.profile === "object" ? { ...member.profile } : {};
   let changed = false;
-  for (const key of [
+  const keys = [
     "pin",
     "authPin",
     "auth_pin",
     "legacyPin",
     "legacy_pin",
+    "loginPin",
+    "login_pin",
     "password",
     "plaintextPassword",
     "plaintext_password",
@@ -96,9 +133,26 @@ async function clearLegacyPinFields(member) {
     "legacy_pin_hash",
     "authPinHash",
     "auth_pin_hash"
-  ]) {
+  ];
+  for (const key of keys) {
     if (profile[key] != null) {
       delete profile[key];
+      changed = true;
+    }
+  }
+  for (const nestedKey of ["auth", "security", "credentials"]) {
+    const nested = profile[nestedKey];
+    if (!nested || typeof nested !== "object") continue;
+    const next = { ...nested };
+    let nestedChanged = false;
+    for (const key of keys) {
+      if (next[key] != null) {
+        delete next[key];
+        nestedChanged = true;
+      }
+    }
+    if (nestedChanged) {
+      profile[nestedKey] = next;
       changed = true;
     }
   }
@@ -109,80 +163,145 @@ async function clearLegacyPinFields(member) {
   ]);
 }
 
-async function ensureSupabaseAuthPassword({ email, password, name, username, phone, authUserId }) {
-  const config = supabaseServiceHeaders();
-  if (!config) return null;
+async function syncSupabaseAuthPasswordViaSql({ email, password, name, username, phone, authUserId }) {
+  if (!isDatabaseReady()) return null;
 
-  const headers = buildSupabaseAdminHeaders(config.serviceKey);
   const normalizedEmail = String(email || "").trim().toLowerCase();
-  const metadata = {
+  const metadata = JSON.stringify({
     name: String(name || "").trim(),
-    username: String(username || "").trim().toLowerCase(),
+    username: normalizeSignupUsername(username),
     phone: normalizeSignupPhone(phone || "")
-  };
-
-  if (authUserId) {
-    const response = await fetch(`${config.url}/auth/v1/admin/users/${authUserId}`, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({
-        email: normalizedEmail,
-        password: String(password),
-        email_confirm: true,
-        user_metadata: metadata
-      })
-    });
-    if (!response.ok) return null;
-    const user = await response.json().catch(() => null);
-    return user?.id ? String(user.id) : authUserId;
-  }
-
-  const response = await fetch(`${config.url}/auth/v1/admin/users`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      email: normalizedEmail,
-      password: String(password),
-      email_confirm: true,
-      user_metadata: metadata
-    })
   });
 
-  if (response.ok) {
-    const user = await response.json().catch(() => null);
-    return user?.id ? String(user.id) : null;
-  }
-
-  const detail = await response.text();
-  if (/already registered|already exists|duplicate/i.test(detail)) {
-    const list = await fetch(
-      `${config.url}/auth/v1/admin/users?${new URLSearchParams({
-        page: "1",
-        per_page: "1",
-        email: normalizedEmail
-      })}`,
-      { headers }
+  let userId = authUserId || null;
+  if (!userId) {
+    const existing = await query(
+      "select id from auth.users where lower(email) = lower($1) limit 1",
+      [normalizedEmail]
     );
-    if (!list.ok) return null;
-    const payload = await list.json().catch(() => null);
-    const existingId = payload?.users?.[0]?.id;
-    if (!existingId) return null;
-    return ensureSupabaseAuthPassword({
-      email: normalizedEmail,
-      password,
-      name,
-      username,
-      phone,
-      authUserId: existingId
-    });
+    userId = existing.rows[0]?.id || null;
   }
 
+  if (!userId) return null;
+
+  await query(
+    `update auth.users
+     set encrypted_password = crypt($2::text, gen_salt('bf')),
+         email_confirmed_at = coalesce(email_confirmed_at, now()),
+         raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || $3::jsonb,
+         updated_at = now()
+     where id = $1::uuid`,
+    [userId, String(password), metadata]
+  );
+
+  return String(userId);
+}
+
+async function ensureSupabaseAuthPassword({ email, password, name, username, phone, authUserId }) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const config = supabaseServiceHeaders();
+
+  if (config) {
+    const headers = buildSupabaseAdminHeaders(config.serviceKey);
+    const metadata = {
+      name: String(name || "").trim(),
+      username: normalizeSignupUsername(username),
+      phone: normalizeSignupPhone(phone || "")
+    };
+
+    if (authUserId) {
+      const response = await fetch(`${config.url}/auth/v1/admin/users/${authUserId}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password: String(password),
+          email_confirm: true,
+          user_metadata: metadata
+        })
+      });
+      if (response.ok) {
+        const user = await response.json().catch(() => null);
+        return user?.id ? String(user.id) : authUserId;
+      }
+    } else {
+      const response = await fetch(`${config.url}/auth/v1/admin/users`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password: String(password),
+          email_confirm: true,
+          user_metadata: metadata
+        })
+      });
+
+      if (response.ok) {
+        const user = await response.json().catch(() => null);
+        if (user?.id) return String(user.id);
+      } else {
+        const detail = await response.text();
+        if (/already registered|already exists|duplicate/i.test(detail)) {
+          const list = await fetch(
+            `${config.url}/auth/v1/admin/users?${new URLSearchParams({
+              page: "1",
+              per_page: "1",
+              email: normalizedEmail
+            })}`,
+            { headers }
+          );
+          if (list.ok) {
+            const payload = await list.json().catch(() => null);
+            const existingId = payload?.users?.[0]?.id;
+            if (existingId) {
+              return ensureSupabaseAuthPassword({
+                email: normalizedEmail,
+                password,
+                name,
+                username,
+                phone,
+                authUserId: existingId
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return syncSupabaseAuthPasswordViaSql({
+    email: normalizedEmail,
+    password,
+    name,
+    username,
+    phone,
+    authUserId
+  });
+}
+
+function resolveAccountEmail(account) {
+  const candidates = [
+    account.email,
+    ...(account.emails || []),
+    String(account.member?.email || "").trim().toLowerCase(),
+    String(account.authUser?.email || "").trim().toLowerCase()
+  ];
+  for (const value of candidates) {
+    const email = String(value || "").trim().toLowerCase();
+    if (email.includes("@") && !email.includes("@phone.bamsignal.local")) {
+      return email;
+    }
+  }
   return null;
 }
 
 /** Resolve username to the Supabase auth email used for PIN login. */
 export async function resolveLoginUsername(rawUsername = "") {
+  pinLoginLog("raw username received", String(rawUsername || "").trim());
   const account = await resolveLoginAccount(rawUsername);
+  pinLoginLog("normalized username", account.username || "(empty)");
+  pinLoginLog("user found", account.usernameFound);
+  pinLoginLog("profile found", account.profileExists);
   return {
     email: account.email,
     username: account.username,
@@ -201,14 +320,14 @@ export async function verifyLoginPassword(email, password) {
   const normalizedEmail = String(email || "").trim().toLowerCase();
   const secret = String(password || "");
   if (!normalizedEmail || !secret) {
-    loginDebug("pinCompareResult", false);
+    pinLoginLog("pin compare", false);
     return { ok: false, session: null, error: INVALID_LOGIN_MESSAGE };
   }
 
   const supabaseUrl = resolveSupabaseUrl();
   const anonKey = resolveAnonKey();
   if (!supabaseUrl || !anonKey) {
-    loginDebug("pinCompareResult", false);
+    pinLoginLog("pin compare", false);
     return { ok: false, session: null, error: "Auth is not configured." };
   }
 
@@ -223,7 +342,7 @@ export async function verifyLoginPassword(email, password) {
     });
     const payload = await response.json().catch(() => ({}));
     const ok = response.ok && Boolean(payload?.access_token);
-    loginDebug("pinCompareResult", ok);
+    pinLoginLog("pin compare", ok);
     if (!ok) {
       return {
         ok: false,
@@ -231,7 +350,7 @@ export async function verifyLoginPassword(email, password) {
         error: INVALID_LOGIN_MESSAGE
       };
     }
-    loginDebug("sessionCreated", true);
+    pinLoginLog("session created", true);
     return {
       ok: true,
       session: {
@@ -245,13 +364,24 @@ export async function verifyLoginPassword(email, password) {
       error: null
     };
   } catch (error) {
-    loginDebug("pinCompareResult", false);
+    pinLoginLog("pin compare", false);
     return {
       ok: false,
       session: null,
       error: error instanceof Error ? error.message : "Login failed."
     };
   }
+}
+
+async function verifyLoginPasswordWithRetry(email, password, attempts = 3) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const verified = await verifyLoginPassword(email, password);
+    if (verified.ok) return verified;
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
+    }
+  }
+  return { ok: false, session: null, error: INVALID_LOGIN_MESSAGE };
 }
 
 /** @deprecated Use verifyLoginPassword */
@@ -262,23 +392,25 @@ export async function verifyLoginPin(email, pin) {
 async function verifyWithLegacyFallback(account, password) {
   const member = account.member;
   if (!member?.id) {
-    loginDebug("hasPasswordHash", false);
-    loginDebug("hasPinHash", false);
-    return { ok: false, migrated: false };
+    pinLoginLog("pin hash exists", false);
+    return { ok: false, migrated: false, email: null };
   }
 
   const fields = extractLegacyAuthFields(member.profile);
-  loginDebug("hasPasswordHash", Boolean(fields.passwordHash));
-  loginDebug("hasPinHash", Boolean(fields.pinHash || fields.legacyPinHash || fields.authPinHash));
+  const hashExists = legacyPinHashExists(fields);
+  pinLoginLog("pin hash exists", hashExists);
 
   if (!verifyLegacyPin(password, fields)) {
-    loginDebug("pinCompareResult", false);
-    return { ok: false, migrated: false };
+    pinLoginLog("pin compare", false);
+    return { ok: false, migrated: false, email: resolveAccountEmail(account), hashExists };
   }
 
-  loginDebug("pinCompareResult", true);
-  const email = account.email || account.emails[0];
-  if (!email) return { ok: false, migrated: false };
+  pinLoginLog("pin compare", true);
+  const email = resolveAccountEmail(account);
+  if (!email) {
+    pinLoginLog("repair needed", { reason: "missing_email", username: account.username });
+    return { ok: false, migrated: false, email: null, hashExists: true };
+  }
 
   const authUserId = await ensureSupabaseAuthPassword({
     email,
@@ -288,55 +420,78 @@ async function verifyWithLegacyFallback(account, password) {
     phone: member.phone,
     authUserId: account.authUser?.id || null
   });
-  if (!authUserId) return { ok: false, migrated: false };
+  if (!authUserId) {
+    pinLoginLog("repair needed", { reason: "auth_password_sync_failed", username: account.username, email });
+    return { ok: false, migrated: false, email, hashExists: true };
+  }
 
   await clearLegacyPinFields(member);
-  return { ok: true, migrated: true, email };
+  return { ok: true, migrated: true, email, hashExists: true };
 }
 
-export async function loginWithUsernameAndPassword(username, password) {
-  const account = await resolveLoginAccount(username);
-  if (!account.usernameFound || !account.emails.length) {
-    loginDebug("sessionCreated", false);
+function loginSuccess(account, email, session) {
+  pinLoginLog("session created", true);
+  pinLoginLog("profile found", Boolean(account.profileExists || account.member?.id));
+  return {
+    ok: true,
+    email,
+    session,
+    error: null,
+    resolved: {
+      ...account,
+      email,
+      matched: true,
+      profileExists: Boolean(account.profileExists || account.member?.id)
+    }
+  };
+}
+
+export async function loginWithUsernameAndPassword(rawUsername, password) {
+  const raw = String(rawUsername || "");
+  pinLoginLog("raw username received", raw.trim());
+  const account = await resolveLoginAccount(raw);
+  pinLoginLog("normalized username", account.username || "(empty)");
+  pinLoginLog("user found", account.usernameFound);
+  pinLoginLog("profile found", account.profileExists);
+
+  if (!account.usernameFound) {
+    pinLoginLog("session created", false);
+    pinLoginLog("pin compare", false);
     return { ok: false, error: INVALID_LOGIN_MESSAGE, resolved: account };
   }
 
-  for (const email of account.emails) {
-    const verified = await verifyLoginPassword(email, password);
-    if (verified.ok) {
-      return {
-        ok: true,
-        email,
-        session: verified.session,
-        error: null,
-        resolved: { ...account, email, matched: true, profileExists: account.profileExists }
-      };
+  const emails = [...(account.emails || [])];
+  const primaryEmail = resolveAccountEmail(account);
+  if (primaryEmail && !emails.includes(primaryEmail)) {
+    emails.unshift(primaryEmail);
+  }
+
+  if (emails.length) {
+    for (const email of emails) {
+      const verified = await verifyLoginPassword(email, password);
+      if (verified.ok) {
+        return loginSuccess(account, email, verified.session);
+      }
     }
   }
 
   const legacy = await verifyWithLegacyFallback(account, password);
   if (legacy.ok && legacy.email) {
-    const verified = await verifyLoginPassword(legacy.email, password);
+    const verified = await verifyLoginPasswordWithRetry(legacy.email, password);
     if (verified.ok) {
-      const member = account.member
-        ? await findMemberProfileByUserKey(legacy.email, account.member.phone)
-        : null;
-      return {
-        ok: true,
-        email: legacy.email,
-        session: verified.session,
-        error: null,
-        resolved: {
-          ...account,
-          email: legacy.email,
-          matched: true,
-          profileExists: Boolean(member?.id || account.profileExists)
-        }
-      };
+      return loginSuccess(account, legacy.email, verified.session);
     }
   }
 
-  loginDebug("sessionCreated", false);
+  if (account.usernameFound && !legacy.hashExists && emails.length) {
+    pinLoginLog("repair needed", {
+      reason: "no_legacy_pin_and_supabase_rejected",
+      username: account.username,
+      emailCount: emails.length
+    });
+  }
+
+  pinLoginLog("session created", false);
   return {
     ok: false,
     error: INVALID_LOGIN_MESSAGE,
@@ -346,6 +501,48 @@ export async function loginWithUsernameAndPassword(username, password) {
       profileExists: account.profileExists
     }
   };
+}
+
+/** Admin/support utility — reset a member PIN in Supabase auth (never log the PIN). */
+export async function repairUserPin({ username, newPin }) {
+  const normalizedUsername = normalizeLoginUsername(username);
+  if (!normalizedUsername) {
+    throw new Error("Username is required.");
+  }
+  const pin = String(newPin || "");
+  if (!/^\d{6}$/.test(pin)) {
+    throw new Error("PIN must be exactly 6 digits.");
+  }
+
+  const account = await resolveLoginAccount(normalizedUsername);
+  if (!account.usernameFound) {
+    throw new Error("User not found.");
+  }
+
+  const email = resolveAccountEmail(account);
+  if (!email) {
+    throw new Error("No login email is linked to this username.");
+  }
+
+  const authUserId = await ensureSupabaseAuthPassword({
+    email,
+    password: pin,
+    name: account.member?.name || account.authUser?.raw_user_meta_data?.name || "",
+    username: account.username,
+    phone: account.member?.phone || account.authUser?.raw_user_meta_data?.phone || "",
+    authUserId: account.authUser?.id || null
+  });
+
+  if (!authUserId) {
+    throw new Error("Could not sync the new PIN to auth.");
+  }
+
+  if (account.member?.id) {
+    await clearLegacyPinFields(account.member);
+  }
+
+  pinLoginLog("pin repair completed", { username: account.username, email, authUserId });
+  return { ok: true, username: account.username, email, authUserId };
 }
 
 /** @deprecated Use loginWithUsernameAndPassword */

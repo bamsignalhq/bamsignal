@@ -437,7 +437,7 @@ export function AuthPage({
           { ...profile, username: profile.username || username },
           { loginEmail: loginResult.email }
         );
-        await finishLoginAfterPassword(loginProfile, { isNewSignup: false });
+        await proceedAfterSecurityChecks(loginProfile, { isNewSignup: false });
         return;
       }
 

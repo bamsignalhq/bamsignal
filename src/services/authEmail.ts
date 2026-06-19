@@ -277,11 +277,12 @@ export async function loginWithPassword(
   username: string,
   password: string
 ): Promise<LoginResponse> {
+  const normalizedUsername = normalizeUsername(username);
   try {
     const response = await fetch(apiUrl("/api/auth/pin-login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: username.trim(), password })
+      body: JSON.stringify({ username: normalizedUsername, password })
     });
     const payload = await readResponseJson<LoginResponse>(response);
     if (!response.ok || !payload?.ok) {

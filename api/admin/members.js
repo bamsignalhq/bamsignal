@@ -109,9 +109,24 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
+    if (action === "reset-pin") {
+      if (!(await requireAdminConsent(req, res))) return;
+      const username = String(body.username || "").trim();
+      const newPin = body.newPin != null ? String(body.newPin) : body.pin != null ? String(body.pin) : "";
+      if (!username) {
+        return res.status(400).json({ ok: false, error: "username is required." });
+      }
+      if (!/^\d{6}$/.test(newPin)) {
+        return res.status(400).json({ ok: false, error: "newPin must be a 6-digit PIN." });
+      }
+      const { repairUserPin } = await import("../../server/services/pinLogin.js");
+      const result = await repairUserPin({ username, newPin });
+      return res.status(200).json(result);
+    }
+
     return res.status(400).json({
       ok: false,
-      error: "Unknown action. Use search, purge, compliance, audit-trail, or repair-onboarding."
+      error: "Unknown action. Use search, purge, compliance, audit-trail, repair-onboarding, or reset-pin."
     });
   } catch (error) {
     console.error("[bamsignal] admin members error:", error);

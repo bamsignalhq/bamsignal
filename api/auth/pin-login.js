@@ -1,4 +1,5 @@
 import { INVALID_LOGIN_MESSAGE, loginWithUsernameAndPassword, resolveLoginUsername } from "../../server/services/pinLogin.js";
+import { normalizeLoginUsername } from "../../server/services/loginResolve.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -19,20 +20,21 @@ export default async function handler(req, res) {
   }
 
   const body = parseBody(req);
-  const username = String(body.username || body.identifier || "").trim();
+  const rawUsername = String(body.username || body.identifier || "");
+  const username = normalizeLoginUsername(rawUsername);
   const password =
     body.password != null ? String(body.password) : body.pin != null ? String(body.pin) : "";
 
   try {
     if (!password) {
-      const resolved = await resolveLoginUsername(username);
+      const resolved = await resolveLoginUsername(rawUsername);
       if (!resolved.email) {
         return res.status(401).json({ ok: false, error: INVALID_LOGIN_MESSAGE });
       }
       return res.status(200).json({ ok: true, email: resolved.email });
     }
 
-    const result = await loginWithUsernameAndPassword(username, password);
+    const result = await loginWithUsernameAndPassword(rawUsername, password);
     if (!result.ok) {
       return res.status(401).json({
         ok: false,

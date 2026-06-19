@@ -6,8 +6,8 @@ export function normalizeLoginUsername(raw = "") {
   return normalizeSignupUsername(String(raw || "").trim().replace(/^@+/, ""));
 }
 
-function loginDebug(key, value) {
-  console.info(`[login-debug] ${key}`, value);
+function pinLoginLog(label, value) {
+  console.info(`[pin-login] ${label}`, value);
 }
 
 function emailFromUserKey(userKey = "") {
@@ -22,7 +22,7 @@ function uniqueEmails(values = []) {
   const out = [];
   for (const value of values) {
     const email = String(value || "").trim().toLowerCase();
-    if (!email.includes("@") || seen.has(email)) continue;
+    if (!email.includes("@") || email.includes("@phone.bamsignal.local") || seen.has(email)) continue;
     seen.add(email);
     out.push(email);
   }
@@ -35,7 +35,7 @@ async function findMemberByUsername(username) {
   const result = await query(
     `select id, user_key, email, phone, name, username, profile, onboarding_complete
      from app_member_profiles
-     where lower(username) = lower($1)
+     where lower(coalesce(nullif(username, ''), profile->>'username', '')) = lower($1)
      limit 1`,
     [username]
   );
@@ -101,7 +101,7 @@ async function repairAppUserLinkage({ email, phone, name }) {
 /** Same username source of truth as signup availability checks. */
 export async function resolveLoginAccount(rawUsername = "") {
   const username = normalizeLoginUsername(rawUsername);
-  loginDebug("normalizedUsername", username || "(empty)");
+  pinLoginLog("normalized username", username || "(empty)");
 
   if (!username) {
     return {
@@ -166,9 +166,9 @@ export async function resolveLoginAccount(rawUsername = "") {
   }
 
   const usernameFound = Boolean(member || authUser);
-  loginDebug("usernameFound", usernameFound);
-  loginDebug("sourceTable", sourceTable);
-  loginDebug("profileExists", Boolean(member?.id));
+  pinLoginLog("user found", usernameFound);
+  pinLoginLog("sourceTable", sourceTable);
+  pinLoginLog("profile found", Boolean(member?.id));
 
   return {
     username,

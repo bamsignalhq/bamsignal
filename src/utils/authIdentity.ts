@@ -13,7 +13,7 @@ export function formatUsernameInput(value: string): string {
 }
 
 export function normalizeUsername(value: string): string {
-  return formatUsernameInput(value);
+  return formatUsernameInput(String(value || "").trim().replace(/^@+/, ""));
 }
 
 export function isValidSignupUsername(value: string): boolean {

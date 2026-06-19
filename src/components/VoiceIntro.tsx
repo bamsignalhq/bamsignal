@@ -9,6 +9,8 @@ type VoiceIntroProps = {
   url?: string;
   label?: string;
   showBadge?: boolean;
+  /** Compact pill play control for profile overview */
+  compact?: boolean;
 };
 
 function formatDuration(seconds: number): string {
@@ -18,7 +20,7 @@ function formatDuration(seconds: number): string {
   return mins > 0 ? `${mins}:${rem.toString().padStart(2, "0")}` : `0:${rem.toString().padStart(2, "0")}`;
 }
 
-export function VoiceIntro({ url, label = "Voice Intro", showBadge = false }: VoiceIntroProps) {
+export function VoiceIntro({ url, label = "Voice Intro", showBadge = false, compact = false }: VoiceIntroProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -53,6 +55,24 @@ export function VoiceIntro({ url, label = "Voice Intro", showBadge = false }: Vo
       setPlaying(true);
     }
   };
+
+  if (compact) {
+    return (
+      <div className="voice-intro voice-intro--compact">
+        <button type="button" className="voice-intro__pill" onClick={toggle} aria-label={label}>
+          {playing ? <Pause size={14} /> : <Play size={14} fill="currentColor" />}
+          <span>{label}</span>
+        </button>
+        <audio
+          ref={audioRef}
+          src={url}
+          preload="metadata"
+          onEnded={() => setPlaying(false)}
+          onPause={() => setPlaying(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="voice-intro">

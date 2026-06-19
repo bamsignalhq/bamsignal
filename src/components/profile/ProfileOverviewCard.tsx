@@ -27,7 +27,7 @@ export function ProfileOverviewCard({
             onClick={onEdit}
             aria-label={editLabel ?? `Edit ${title}`}
           >
-            <Pencil size={16} strokeWidth={1.75} aria-hidden />
+            <Pencil size={18} strokeWidth={1.75} aria-hidden />
           </button>
         ) : null}
       </header>

@@ -59,9 +59,7 @@ import { ProfileBoostSheet } from "../components/profile/ProfileBoostSheet";
 import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
 import { ProfileOverviewCard } from "../components/profile/ProfileOverviewCard";
 import {
-  getAboutMeText,
-  getAboutSnippet,
-  shouldShowAboutCard
+  getProfileAboutDisplay
 } from "../utils/ownProfileOverview";
 import type { BoostProduct } from "../constants/boosts";
 import { boostNeedsMemberCity } from "../constants/boosts";
@@ -419,11 +417,18 @@ export function ProfilePage({
           />
 
           <div className="profile-premium-sections">
-            {shouldShowAboutCard(profile) ? (
-              <ProfileOverviewCard title="About" onEdit={() => openEdit("prompts")}>
-                <p className="profile-premium-card__text">{getAboutSnippet(profile)}</p>
-              </ProfileOverviewCard>
-            ) : null}
+            {(() => {
+              const about = getProfileAboutDisplay(profile);
+              if (!about) return null;
+              return (
+                <ProfileOverviewCard
+                  title="About"
+                  onEdit={() => openEdit(about.editSection === "bio" ? "bio" : "prompts")}
+                >
+                  <p className="profile-premium-card__text">{about.text}</p>
+                </ProfileOverviewCard>
+              );
+            })()}
 
             {profile.interests?.length > 0 ? (
               <ProfileOverviewCard title="Interests" onEdit={() => openEdit("interests")}>
@@ -433,7 +438,7 @@ export function ProfilePage({
 
             {profile.intents.length > 0 ? (
               <ProfileOverviewCard title="Looking for" onEdit={() => openEdit("intent")}>
-                <div className="profile-premium-pills">
+                <div className="profile-premium-pills profile-premium-pills--intent">
                   {profile.intents.slice(0, MAX_INTENT_SELECTIONS).map((intent) => (
                     <span key={intent} className="profile-premium-pill profile-premium-pill--outline">
                       {profileIntentLabel(intent)}
@@ -443,44 +448,32 @@ export function ProfilePage({
               </ProfileOverviewCard>
             ) : null}
 
-            {getAboutMeText(profile) ? (
-              <ProfileOverviewCard title="About me" onEdit={() => openEdit("bio")}>
-                <p className="profile-premium-card__text profile-premium-card__text--about-me">
-                  {getAboutMeText(profile)}
-                </p>
-              </ProfileOverviewCard>
-            ) : null}
-
             <ProfileOverviewCard title="Voice intro" onEdit={() => openEdit("voice")}>
-              {profile.voiceIntroUrl ? (
-                <div className="profile-premium-voice">
-                  <span className="profile-premium-voice__icon" aria-hidden>
-                    <Mic size={22} strokeWidth={1.75} />
-                  </span>
-                  <VoiceIntro url={profile.voiceIntroUrl} label="Play voice intro" />
-                </div>
-              ) : (
-                <div className="profile-premium-voice">
-                  <span className="profile-premium-voice__icon" aria-hidden>
-                    <Mic size={22} strokeWidth={1.75} />
-                  </span>
+              <div className="profile-premium-voice profile-premium-voice--compact">
+                <span className="profile-premium-voice__icon" aria-hidden>
+                  <Mic size={18} strokeWidth={1.75} />
+                </span>
+                <span className="profile-premium-voice__label">Voice intro</span>
+                {profile.voiceIntroUrl ? (
+                  <VoiceIntro url={profile.voiceIntroUrl} label="Play" compact />
+                ) : (
                   <button
                     type="button"
-                    className="profile-premium-voice__cta"
+                    className="profile-premium-voice__play-pill"
                     onClick={() => openEdit("voice")}
                   >
-                    Play voice intro
+                    Add
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </ProfileOverviewCard>
           </div>
 
-          <div className="profile-edit-cta profile-edit-cta--split">
-            <button type="button" className="btn-primary btn-full" onClick={() => setView("edit")}>
+          <div className="profile-action-card">
+            <button type="button" className="btn-primary btn-full profile-action-card__primary" onClick={() => setView("edit")}>
               Edit profile
             </button>
-            <div className="profile-edit-cta__actions">
+            <div className="profile-action-card__secondary">
               <button type="button" className="btn-secondary btn-full" onClick={() => openSettings()}>
                 <Settings size={16} aria-hidden />
                 Settings
@@ -490,15 +483,16 @@ export function ProfilePage({
                 Log out
               </button>
             </div>
-          </div>
-
-          {showBoostEntry ? (
-            <div className="profile-boost-entry-wrap">
-              <button type="button" className="profile-boost-entry" onClick={() => setBoostSheetOpen(true)}>
-                Boost my profile
+            {showBoostEntry ? (
+              <button
+                type="button"
+                className="profile-boost-entry profile-boost-entry--subtle"
+                onClick={() => setBoostSheetOpen(true)}
+              >
+                Boost visibility →
               </button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </>
       )}
 

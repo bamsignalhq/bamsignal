@@ -39,7 +39,9 @@ export function ProfileInterestsPreview({
             +{hiddenCount} more
           </button>
         ) : (
-          <span className="profile-read-chip profile-read-chip--more">+{hiddenCount} more</span>
+          <span className={premium ? "profile-premium-pill profile-premium-pill--more" : "profile-read-chip profile-read-chip--more"}>
+            +{hiddenCount} more
+          </span>
         )
       ) : null}
     </div>

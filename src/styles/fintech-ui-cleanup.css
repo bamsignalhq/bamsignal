@@ -14,14 +14,19 @@
 
 /* Consistent page containers */
 .platform-root--member .discover-page--premium,
-.platform-root--member .messages-page--premium,
-.platform-root--member .profile-page--premium {
+.platform-root--member .messages-page--premium {
   width: 100%;
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
   padding-left: 24px;
   padding-right: 24px;
+}
+
+.platform-root--member .profile-page--premium {
+  max-width: 520px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .platform-root--member .signals-premium-page {
@@ -184,16 +189,16 @@
 .profile-hero--premium .profile-hero__body::before {
   content: "";
   position: absolute;
-  left: -20px;
-  right: -20px;
-  top: -28px;
-  height: 140px;
-  border-radius: 0 0 24px 24px;
+  left: -16px;
+  right: -16px;
+  top: -24px;
+  height: 110px;
+  border-radius: 0 0 20px 20px;
   background: linear-gradient(
     to bottom,
-    rgba(9, 0, 19, 0.08) 0%,
-    rgba(9, 0, 19, 0.42) 55%,
-    rgba(9, 0, 19, 0.72) 100%
+    rgba(9, 0, 19, 0.06) 0%,
+    rgba(9, 0, 19, 0.32) 55%,
+    rgba(9, 0, 19, 0.55) 100%
   );
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -205,9 +210,9 @@
 [data-theme="light"].platform-root--member .profile-hero--premium .profile-hero__body::before {
   background: linear-gradient(
     to bottom,
-    rgba(250, 243, 250, 0.1) 0%,
-    rgba(250, 243, 250, 0.72) 55%,
-    rgba(250, 243, 250, 0.95) 100%
+    rgba(255, 244, 250, 0.1) 0%,
+    rgba(255, 244, 250, 0.78) 55%,
+    rgba(255, 244, 250, 0.96) 100%
   );
 }
 
@@ -216,25 +221,6 @@
 .profile-hero--premium .profile-hero__photo-strip {
   position: relative;
   z-index: 1;
-}
-
-/* Profile spacing & chips */
-.profile-hero--premium .profile-hero__avatar-block {
-  margin-top: 24px;
-}
-
-.profile-hero--premium .profile-hero__meta {
-  margin-top: 20px;
-}
-
-.profile-hero--premium .profile-hero__photo-strip {
-  gap: 14px;
-}
-
-.profile-premium-pill {
-  min-height: 48px;
-  padding: 0 20px;
-  box-shadow: 0 4px 14px rgba(255, 77, 184, 0.18);
 }
 
 /* Discover filter row — tighter pills in dark */

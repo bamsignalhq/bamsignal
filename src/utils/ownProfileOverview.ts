@@ -21,12 +21,21 @@ export function getAboutMeText(profile: DatingProfile): string | null {
   return bio;
 }
 
+/** Single About block for profile overview — bio preferred over prompt snippet. */
+export function getProfileAboutDisplay(
+  profile: DatingProfile
+): { text: string; editSection: "bio" | "prompts" } | null {
+  const bio = profile.bio?.trim();
+  if (bio) return { text: bio, editSection: "bio" };
+
+  const promptAnswer = profile.profilePrompts?.find((entry) => entry.answer.trim())?.answer?.trim();
+  if (promptAnswer) return { text: promptAnswer, editSection: "prompts" };
+
+  return null;
+}
+
 export function shouldShowAboutCard(profile: DatingProfile): boolean {
-  const snippet = getAboutSnippet(profile);
-  const aboutMe = getAboutMeText(profile);
-  if (!snippet) return false;
-  if (!aboutMe) return true;
-  return snippet !== aboutMe;
+  return getProfileAboutDisplay(profile) !== null;
 }
 
 export function getOwnWhyReasons(profile: DatingProfile): string[] {

@@ -238,21 +238,56 @@ export async function verifySignupEmailCode(input: {
   );
 }
 
-/** Resolve username → email for login on fresh installs (Play review, new devices). */
-export async function resolveLoginEmail(username: string): Promise<string | null> {
-  const normalized = normalizeUsername(username);
-  if (!normalized) return null;
+/** Resolve username, email, or phone → email for login on fresh installs. */
+export async function resolveLoginEmail(identifier: string): Promise<string | null> {
+  const raw = String(identifier || "").trim();
+  if (!raw) return null;
 
   try {
-    const response = await fetch(apiUrl("/api/member/data?action=resolve-username"), {
+    const response = await fetch(apiUrl("/api/member/data?action=resolve-login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: normalized })
+      body: JSON.stringify({ identifier: raw })
     });
     const payload = await readResponseJson<{ ok?: boolean; email?: string }>(response);
     if (!response.ok || !payload?.ok || !payload.email) return null;
     return payload.email.trim().toLowerCase();
   } catch {
     return null;
+  }
+}
+
+type PinLoginResponse = {
+  ok?: boolean;
+  email?: string;
+  error?: string;
+  session?: {
+    access_token: string;
+    refresh_token: string;
+    expires_in?: number;
+    expires_at?: number;
+    token_type?: string;
+    user?: unknown;
+  };
+};
+
+/** Server-side identifier resolve + PIN verify (source of truth for login). */
+export async function loginWithPin(
+  identifier: string,
+  pin: string
+): Promise<PinLoginResponse> {
+  try {
+    const response = await fetch(apiUrl("/api/auth/pin-login"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier: identifier.trim(), pin })
+    });
+    const payload = await readResponseJson<PinLoginResponse>(response);
+    if (!response.ok || !payload?.ok) {
+      return { ok: false, error: payload?.error || "Login failed." };
+    }
+    return payload;
+  } catch {
+    return { ok: false, error: "Unable to connect. Check your internet and try again." };
   }
 }

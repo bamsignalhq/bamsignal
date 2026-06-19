@@ -2,4 +2,4 @@
 export const BUILD_VERSION = "1.0.17";
 export const BUILD_CODE = "20";
 export const BUILD_TIME = "2026-06-19T17:00:00.000Z";
-export const CACHE_VERSION = "bamsignal-v1.0.17-20";
+export const CACHE_VERSION = "bamsignal-v1.0.17-21";

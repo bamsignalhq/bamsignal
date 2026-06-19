@@ -26,7 +26,7 @@ import { markFirstDayStep } from "../utils/firstDayJourney";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { completeOnboardingRemote } from "../services/memberData";
 import { defaultDatingProfile, normalizeDatingProfile, isOnboardingComplete } from "../utils/profile";
-import { clearOnboardingDrafts, isProfileOnboardingMarkedComplete, shouldRouteToOnboarding } from "../utils/onboardingStatus";
+import { clearOnboardingDrafts, isProfileOnboardingMarkedComplete, looksLikeSavedOnboardingProgress, shouldRouteToOnboarding } from "../utils/onboardingStatus";
 import { writeJson, readJson } from "../utils/storage";
 import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
@@ -88,14 +88,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       return normalizeDatingProfile(stored);
     }
     const normalized = normalizeDatingProfile(stored);
-    const resuming = Boolean(
-      stored.state ||
-        stored.city ||
-        stored.bio?.trim() ||
-        stored.photos?.length ||
-        stored.interestsTouched ||
-        (stored.age !== undefined && stored.age >= MIN_ONBOARDING_AGE && !stored.dateOfBirth)
-    );
+    const resuming = looksLikeSavedOnboardingProgress(stored);
     if (!resuming) {
       return {
         ...normalized,

@@ -11,6 +11,7 @@ import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "../constants/blocke
 import { friendlyAuthError, supabase } from "../services/supabase";
 import {
   resolveLoginEmail,
+  loginWithPin,
   checkSignupAvailability,
   checkSignupField,
   requestSignupMathChallenge,
@@ -397,8 +398,9 @@ export function AuthPage({
   };
 
   const signIn = async () => {
-    const identity = loginForm.username.trim().toLowerCase();
-    const username = normalizeUsername(loginForm.username);
+    const identity = loginForm.username.trim();
+    const identityLower = identity.toLowerCase();
+    const username = normalizeUsername(identity);
     if (!isValidPin(loginForm.pin)) {
       onMessage("Enter your PIN.");
       return;
@@ -407,19 +409,40 @@ export function AuthPage({
     setBusy("login");
     onMessage("");
     try {
-      if (!isLikelyEmail(identity) && isValidLoginUsername(username) && matchDemoUser(username, loginForm.pin)) {
+      if (!isLikelyEmail(identityLower) && isValidLoginUsername(username) && matchDemoUser(username, loginForm.pin)) {
         rememberUsernameEmail(DEMO_USER.username, DEMO_USER.profile.email);
         seedDemoMemberProfile();
         await completeAuthenticated(DEMO_USER.profile, { isNewSignup: false });
         return;
       }
 
-      let email: string | null = null;
-      if (isLikelyEmail(identity)) {
-        email = identity;
-      } else if (!isValidLoginUsername(username)) {
-        onMessage("Enter a valid username or email.");
+      const hasPhoneLogin = isValidNigerianPhone(phoneDigits(identity));
+      if (!isLikelyEmail(identityLower) && !hasPhoneLogin && !isValidLoginUsername(username)) {
+        onMessage("Enter a valid username, email, or phone.");
         return;
+      }
+
+      const pinResult = await loginWithPin(identity, loginForm.pin);
+      if (pinResult.ok && pinResult.session && supabase) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: pinResult.session.access_token,
+          refresh_token: pinResult.session.refresh_token
+        });
+        if (error) throw error;
+        const profile = profileFromSessionUser(data.user!);
+        const resolvedEmail = pinResult.email || profile.email;
+        if (!isLikelyEmail(identityLower) && isValidLoginUsername(username) && resolvedEmail) {
+          rememberUsernameEmail(username, resolvedEmail);
+        }
+        await finishLoginAfterPassword(profile, { isNewSignup: false });
+        return;
+      }
+
+      let email: string | null = null;
+      if (isLikelyEmail(identityLower)) {
+        email = identityLower;
+      } else if (hasPhoneLogin) {
+        email = await resolveLoginEmail(identity);
       } else {
         email = emailForUsername(username) ?? (await resolveLoginEmail(username));
       }
@@ -431,14 +454,18 @@ export function AuthPage({
         });
         if (error) throw error;
         const profile = profileFromSessionUser(data.user!);
-        if (!isLikelyEmail(identity) && username) {
+        if (!isLikelyEmail(identityLower) && username) {
           rememberUsernameEmail(username, email);
         }
         await finishLoginAfterPassword(profile, { isNewSignup: false });
         return;
       }
 
-      onMessage("Account not found. Check your username and PIN.");
+      onMessage(
+        pinResult.error?.includes("not found")
+          ? "Account not found. Check your username and PIN."
+          : pinResult.error || "Account not found. Check your username and PIN."
+      );
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {

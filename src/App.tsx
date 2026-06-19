@@ -172,7 +172,8 @@ export function App() {
 
   const isGuest = !isAuthed;
   const isPublicHome = !isNative && normalizePath(window.location.pathname) === "/";
-  const showMarketingHome = isPublicHome && (!isAuthed || !memberAppEntered);
+  const showMarketingHome =
+    isPublicHome && (!isAuthed || !memberAppEntered) && !showOnboarding;
   const showGuestChrome = isGuest || showMarketingHome;
   void complianceTick;
   const showComplianceGate =
@@ -676,8 +677,8 @@ export function App() {
       setIsPremium(
         needsOnboarding ? Boolean(premium.isPremium) : premium.isPremium || isPremiumTrialActive()
       );
-      if (getAuthPath()) {
-        navigateToPath("/");
+      if (getAuthPath() || isPublicWebRoute()) {
+        navigateToPath("/home");
         setAuthPath(null);
       }
       if (needsOnboarding) {
@@ -789,8 +790,13 @@ export function App() {
         const profile = profileFromSessionUser(session.user);
         setUser(profile);
         setIsAuthed(true);
+        const onMemberSurface =
+          requiresMemberRestoreBlocking(window.location.pathname, isNative) ||
+          !isPublicWebRoute();
         void bootstrapMemberSession(profile).then((sessionResult) => {
-          setShowOnboarding(sessionResult.nextRoute === "onboarding");
+          if (onMemberSurface) {
+            setShowOnboarding(sessionResult.nextRoute === "onboarding");
+          }
           if (sessionResult.nextRoute === "home") clearOnboardingDrafts();
         });
         const premium = await refreshPremiumStatus(profile);
@@ -1357,7 +1363,7 @@ export function App() {
                 : "app-main--experience"
           }`}
         >
-          {isAuthed && showOnboarding && (
+          {isAuthed && showOnboarding && memberAppEntered && (
             <OnboardingPage user={user} onUserChange={setUser} onComplete={finishOnboarding} />
           )}
           {isAuthed && memberAccessReady && memberOverlay === "premium" && (
@@ -1404,7 +1410,7 @@ export function App() {
               onOpenPremium={startPremiumCheckout}
             />
           )}
-          {showMarketingHome && tab === "home" && (
+          {showMarketingHome && tab === "home" && !showOnboarding && (
             <LandingPage
               onSignup={() => openAuth("signup")}
               onGuestAction={() => openAuth("signup", "discover")}

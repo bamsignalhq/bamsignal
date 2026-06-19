@@ -1,5 +1,5 @@
 import { STORAGE_KEYS } from "../constants/limits";
-import type { ChatMessage, ChatThread, LikeEntry, Match, ReportRecord, UserProfile } from "../types";
+import type { ChatMessage, ChatThread, LikeEntry, Match, ReportRecord, UserProfile, DatingProfile } from "../types";
 import { readJson, writeJson } from "../utils/storage";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
 import { cacheDiscoverProfiles } from "./discoverProfiles";
@@ -117,7 +117,7 @@ export async function bootstrapMemberSession(
     return { hydrated, repair, nextRoute: "home" };
   }
 
-  const profile = getDatingProfile();
+  const profile = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
   if (!repair && isOnboardingFullyComplete(profile, user)) {
     clearOnboardingDrafts();
     return { hydrated, repair, nextRoute: "home" };

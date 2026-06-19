@@ -148,7 +148,8 @@ export async function findEmailByUsername(username) {
   const key = String(username || "")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z]/g, "");
+    .replace(/^@+/, "")
+    .replace(/[^a-z0-9_]/g, "");
   if (!key) return null;
   await ensureMemberProfilesTable();
 
@@ -162,6 +163,42 @@ export async function findEmailByUsername(username) {
   );
   const email = result.rows[0]?.email;
   return email ? String(email).trim().toLowerCase() : null;
+}
+
+export async function findEmailByPhone(phone) {
+  if (!isDatabaseReady()) return null;
+  const { phoneDigitKeys } = await import("./services/signupIdentity.js");
+  const keys = phoneDigitKeys(phone);
+  if (!keys.length) return null;
+  await ensureMemberProfilesTable();
+
+  for (const key of keys) {
+    const member = await query(
+      `select email
+       from app_member_profiles
+       where phone = $1
+         and email is not null
+       limit 1`,
+      [key]
+    );
+    const email = member.rows[0]?.email;
+    if (email) return String(email).trim().toLowerCase();
+  }
+
+  for (const key of keys) {
+    const user = await query(
+      `select email
+       from app_users
+       where phone = $1
+         and email is not null
+       limit 1`,
+      [key]
+    );
+    const email = user.rows[0]?.email;
+    if (email) return String(email).trim().toLowerCase();
+  }
+
+  return null;
 }
 
 export async function upsertMemberProfile({

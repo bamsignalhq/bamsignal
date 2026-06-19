@@ -10,6 +10,16 @@ function pickString(...values) {
   return "";
 }
 
+function isPlaceholderName(name = "") {
+  const value = String(name).trim().toLowerCase();
+  return !value || value === "member";
+}
+
+function isPlaceholderCity(city = "") {
+  const value = String(city).trim().toLowerCase();
+  return !value || value === "select city";
+}
+
 function isPersistablePhoto(url) {
   if (!url || typeof url !== "string") return false;
   const trimmed = url.trim();
@@ -61,8 +71,18 @@ export function profileHasMinimumOnboardingData(member, appUser, profileJson = {
   const mainPhotoUrl = pickString(profileJson.mainPhotoUrl);
   const hasPhotos = photos.length >= 2 || Boolean(mainPhotoUrl && isPersistablePhoto(mainPhotoUrl));
   const hasGender = Boolean(gender && gender !== "Prefer not to say");
+  const hasRealName = Boolean(name) && !isPlaceholderName(name);
+  const hasRealCity = Boolean(city) && !isPlaceholderCity(city);
 
-  return Boolean(name && Number.isFinite(age) && age >= 17 && hasGender && state && city && hasPhotos);
+  return Boolean(
+    hasRealName &&
+      Number.isFinite(age) &&
+      age >= 17 &&
+      hasGender &&
+      state &&
+      hasRealCity &&
+      hasPhotos
+  );
 }
 
 function buildDiagnostics({ appUser, member, profileJson, status }) {

@@ -56,22 +56,60 @@ export function normalizeOnboardingStatus(
   };
 }
 
+export const PROFILE_TEMPLATE_DEFAULT_AGE = 25;
+export const PROFILE_TEMPLATE_DEFAULT_STATE = "abia";
+export const PROFILE_TEMPLATE_DEFAULT_GENDER = "man";
+
+export function isPlaceholderName(name?: string): boolean {
+  const value = safeString(name).trim().toLowerCase();
+  return !value || value === "member";
+}
+
+export function isPlaceholderCity(city?: string): boolean {
+  const value = safeString(city).trim().toLowerCase();
+  return !value || value === "select city";
+}
+
+export function isTemplateProfileValue(
+  field: "age" | "gender" | "state",
+  value: unknown
+): boolean {
+  if (field === "age") return Number(value) === PROFILE_TEMPLATE_DEFAULT_AGE;
+  if (field === "gender") return safeString(value).trim().toLowerCase() === PROFILE_TEMPLATE_DEFAULT_GENDER;
+  if (field === "state") return safeString(value).trim().toLowerCase() === PROFILE_TEMPLATE_DEFAULT_STATE;
+  return false;
+}
+
+export function looksLikeSavedOnboardingProgress(stored: Partial<DatingProfile>): boolean {
+  if (isProfileOnboardingMarkedComplete(stored)) return true;
+  if (safeString(stored.city) && !isPlaceholderCity(stored.city)) return true;
+  if (safePhotos(stored.photos).filter(isPersistablePhotoUrl).length > 0) return true;
+  if (safeString(stored.bio)) return true;
+  if (stored.interestsTouched) return true;
+  if (stored.age !== undefined && !isTemplateProfileValue("age", stored.age)) return true;
+  if (stored.state && !isTemplateProfileValue("state", stored.state)) return true;
+  if (stored.gender && !isTemplateProfileValue("gender", stored.gender)) return true;
+  return false;
+}
+
 export function hasMinimumProfileData(
   profile: Partial<DatingProfile>,
   user?: Pick<UserProfile, "name">
 ): boolean {
-  const normalized = normalizeDatingProfile(profile);
-  const photos = safePhotos(normalized.photos).filter(isPersistablePhotoUrl);
-  const mainPhotoUrl = safeString(normalized.mainPhotoUrl);
+  const raw = profile ?? {};
+  const photos = safePhotos(raw.photos).filter(isPersistablePhotoUrl);
+  const mainPhotoUrl = safeString(raw.mainPhotoUrl);
   const hasPhotos =
     photos.length >= MIN_PROFILE_PHOTOS ||
     Boolean(mainPhotoUrl && isPersistablePhotoUrl(mainPhotoUrl));
-  const hasLocation = Boolean(safeString(normalized.state) && safeString(normalized.city));
-  const hasGender = Boolean(
-    normalized.gender && normalized.gender !== ("Prefer not to say" as DatingProfile["gender"])
-  );
-  const hasAge = normalized.age >= 17;
-  const hasName = user ? Boolean(safeString(user.name)?.trim()) : true;
+  const state = safeString(raw.state);
+  const city = safeString(raw.city);
+  const hasLocation = Boolean(state && city && !isPlaceholderCity(city));
+  const gender = safeString(raw.gender);
+  const hasGender = Boolean(gender && gender !== ("Prefer not to say" as DatingProfile["gender"]));
+  const age = Number(raw.age);
+  const hasAge = Number.isFinite(age) && age >= 17;
+  const hasName = user ? !isPlaceholderName(user.name) : true;
   return hasName && hasAge && hasGender && hasLocation && hasPhotos;
 }
 
@@ -174,6 +212,6 @@ export function shouldRouteToOnboarding(
   options?: { forceOnboarding?: boolean }
 ): boolean {
   if (options?.forceOnboarding) return true;
-  const resolved = normalizeDatingProfile(profile ?? readJson(STORAGE_KEYS.datingProfile, {}));
+  const resolved = profile ?? readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
   return !isOnboardingFullyComplete(resolved, user);
 }

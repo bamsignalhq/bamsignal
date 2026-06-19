@@ -1,52 +1,45 @@
-import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "../components/Link";
 import { ShowcaseImage } from "../components/ShowcaseImage";
 import type { BlogPost } from "../data/blogPosts";
-import { absoluteUrl, SITE_NAME } from "../constants/seo";
+import { absoluteUrl } from "../constants/seo";
 import { AUTH_SIGNUP_PATH, BLOG_INDEX_PATH } from "../constants/routes";
+import { SeoHead } from "./seo/SeoHead";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../utils/seoHead";
 
 type BlogPostPageProps = {
   post: BlogPost;
   onSignup: () => void;
 };
 
-function injectArticleMeta(post: BlogPost) {
-  document.title = `${post.title} | ${SITE_NAME}`;
-  const setMeta = (name: string, content: string, property = false) => {
-    const attr = property ? "property" : "name";
-    let el = document.querySelector(`meta[${attr}="${name}"]`);
-    if (!el) {
-      el = document.createElement("meta");
-      el.setAttribute(attr, name);
-      document.head.appendChild(el);
-    }
-    el.setAttribute("content", content);
-  };
-  setMeta("description", post.description);
-  setMeta("keywords", post.keywords.join(", "));
-  setMeta("og:title", post.title, true);
-  setMeta("og:description", post.description, true);
-  setMeta("og:image", absoluteUrl(post.heroImage), true);
-  setMeta("og:url", absoluteUrl(`${BLOG_INDEX_PATH}/${post.slug}`), true);
-  setMeta("og:type", "article", true);
-
-  let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
-  if (!canonical) {
-    canonical = document.createElement("link");
-    canonical.rel = "canonical";
-    document.head.appendChild(canonical);
-  }
-  canonical.href = absoluteUrl(`${BLOG_INDEX_PATH}/${post.slug}`);
-}
-
 export function BlogPostPage({ post, onSignup }: BlogPostPageProps) {
-  useEffect(() => {
-    injectArticleMeta(post);
-  }, [post]);
+  const canonicalPath = `${BLOG_INDEX_PATH}/${post.slug}`;
+  const jsonLd = [
+    buildBreadcrumbJsonLd([
+      { name: "Home", path: "/" },
+      { name: "Blog", path: BLOG_INDEX_PATH },
+      { name: post.title, path: canonicalPath }
+    ]),
+    buildArticleJsonLd({
+      title: post.title,
+      description: post.description,
+      canonicalPath,
+      lastUpdated: post.updatedAt,
+      headline: post.title
+    })
+  ];
 
   return (
     <article className="blog-article">
+      <SeoHead
+        title={post.title}
+        description={post.description}
+        canonicalPath={canonicalPath}
+        keywords={post.keywords}
+        ogType="article"
+        ogImage={absoluteUrl(post.heroImage)}
+        jsonLd={jsonLd}
+      />
       <header className="blog-article__hero">
         <ShowcaseImage src={post.heroImage} alt={post.heroAlt} loading="eager" />
         <div className="blog-article__hero-shade" />

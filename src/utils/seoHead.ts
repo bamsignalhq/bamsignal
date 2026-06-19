@@ -1,4 +1,4 @@
-import { absoluteUrl, DEFAULT_OG_IMAGE, SITE_NAME } from "../constants/seo";
+import { absoluteUrl, DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from "../constants/seo";
 
 export type SeoHeadInput = {
   title: string;
@@ -50,23 +50,18 @@ export function applySeoHead(input: SeoHeadInput, jsonLdScriptId = "seo-jsonld")
   const canonical = absoluteUrl(input.canonicalPath);
   upsertLink("canonical", canonical);
 
+  const ogImage = input.ogImage ?? DEFAULT_OG_IMAGE;
   upsertMeta("og:title", input.ogTitle ?? pageTitle, true);
   upsertMeta("og:description", input.ogDescription ?? input.description, true);
   upsertMeta("og:url", canonical, true);
   upsertMeta("og:type", input.ogType ?? "website", true);
-  upsertMeta("og:image", input.ogImage ?? DEFAULT_OG_IMAGE, true);
+  upsertMeta("og:image", ogImage, true);
   upsertMeta("twitter:card", "summary_large_image");
   upsertMeta("twitter:title", input.ogTitle ?? pageTitle);
   upsertMeta("twitter:description", input.ogDescription ?? input.description);
+  upsertMeta("twitter:image", ogImage);
 
-  if (input.noindex) {
-    upsertMeta("robots", "noindex, follow");
-  } else {
-    const robots = document.querySelector('meta[name="robots"]');
-    if (robots?.getAttribute("content") === "noindex, follow") {
-      robots.remove();
-    }
-  }
+  upsertMeta("robots", input.noindex ? "noindex,follow" : "index,follow");
 
   removeJsonLdScript(jsonLdScriptId);
   if (input.jsonLd) {
@@ -100,18 +95,29 @@ export function buildArticleJsonLd(page: {
   description: string;
   canonicalPath: string;
   lastUpdated: string;
+  headline?: string;
 }): Record<string, unknown> {
+  const date = page.lastUpdated;
   return {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: page.title,
+    headline: page.headline ?? page.title,
     description: page.description,
-    dateModified: page.lastUpdated,
-    mainEntityOfPage: absoluteUrl(page.canonicalPath),
+    datePublished: date,
+    dateModified: date,
+    author: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL
+    },
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
-      url: absoluteUrl("/")
+      url: SITE_URL
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": absoluteUrl(page.canonicalPath)
     }
   };
 }

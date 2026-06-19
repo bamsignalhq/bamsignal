@@ -1,6 +1,8 @@
 import { ArrowLeft } from "lucide-react";
 import { Link } from "../../components/Link";
-import type { SeoHubConfig, SeoPage } from "../../content/seo";
+import type { SeoHubConfig, SeoHubId, SeoPage } from "../../content/seo";
+import { getSeoInternalLinks } from "../../content/seo/internalLinks";
+import { SeoInternalLinks } from "./SeoInternalLinks";
 import { SeoBreadcrumbs } from "./SeoBreadcrumbs";
 import { SeoHead } from "./SeoHead";
 import {
@@ -15,20 +17,44 @@ type SeoArticlePageProps = {
   page: SeoPage;
 };
 
-function schemaForPage(page: SeoPage) {
+function schemaForPage(page: SeoPage, hubId: SeoHubId) {
   const breadcrumb = buildBreadcrumbJsonLd([
     { name: "Home", path: "/" },
     { name: page.category, path: hubPathFromPage(page) },
     { name: page.h1, path: page.canonicalPath }
   ]);
 
-  if (page.schemaType === "FAQPage" && page.faqs.length) {
-    return [breadcrumb, buildFaqJsonLd(page.faqs)];
+  const schemas: Record<string, unknown>[] = [breadcrumb];
+
+  if (page.faqs.length > 0) {
+    schemas.push(buildFaqJsonLd(page.faqs));
   }
+
   if (page.schemaType === "Place") {
-    return [breadcrumb, buildPlaceJsonLd(page)];
+    schemas.push(buildPlaceJsonLd(page));
+  } else if (hubId === "guides" || hubId === "compare" || page.schemaType === "Article") {
+    schemas.push(
+      buildArticleJsonLd({
+        title: page.title,
+        description: page.description,
+        canonicalPath: page.canonicalPath,
+        lastUpdated: page.lastUpdated,
+        headline: page.h1
+      })
+    );
+  } else if (page.schemaType === "FAQPage" && page.sections.length === 0) {
+    schemas.push(
+      buildArticleJsonLd({
+        title: page.title,
+        description: page.description,
+        canonicalPath: page.canonicalPath,
+        lastUpdated: page.lastUpdated,
+        headline: page.h1
+      })
+    );
   }
-  return [breadcrumb, buildArticleJsonLd(page)];
+
+  return schemas;
 }
 
 function hubPathFromPage(page: SeoPage) {
@@ -37,7 +63,8 @@ function hubPathFromPage(page: SeoPage) {
 }
 
 export function SeoArticlePage({ hub, page }: SeoArticlePageProps) {
-  const jsonLd = schemaForPage(page);
+  const jsonLd = schemaForPage(page, hub.id);
+  const internalLinks = getSeoInternalLinks(hub.id, page.slug);
 
   return (
     <article className="seo-article">
@@ -91,6 +118,8 @@ export function SeoArticlePage({ hub, page }: SeoArticlePageProps) {
             </dl>
           </section>
         ) : null}
+
+        <SeoInternalLinks links={internalLinks} />
       </div>
     </article>
   );

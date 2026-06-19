@@ -1,34 +1,21 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { BookOpen, MapPin } from "lucide-react";
 import { Link } from "../components/Link";
 import { ShowcaseImage } from "../components/ShowcaseImage";
 import { BLOG_POSTS } from "../data/blogPosts";
 import { SHOWCASE } from "../constants/showcase";
 import { BLOG_INDEX_PATH } from "../constants/routes";
-import { SITE_NAME } from "../constants/seo";
+import { SeoHead } from "./seo/SeoHead";
+import { buildBreadcrumbJsonLd, buildWebPageJsonLd } from "../utils/seoHead";
 
 type BlogIndexPageProps = {
   onSignup: () => void;
 };
 
-function setBlogMeta(title: string, description: string) {
-  document.title = title;
-  let meta = document.querySelector('meta[name="description"]');
-  if (!meta) {
-    meta = document.createElement("meta");
-    meta.setAttribute("name", "description");
-    document.head.appendChild(meta);
-  }
-  meta.setAttribute("content", description);
-}
-
 export function BlogIndexPage({ onSignup }: BlogIndexPageProps) {
-  useEffect(() => {
-    setBlogMeta(
-      `Dating & Love Guides for Nigeria | ${SITE_NAME} Blog`,
-      "City-by-city guides for finding love in Nigeria — Lagos, Abuja, PH, Enugu, and 20+ cities. Verified dating tips from BamSignal."
-    );
-  }, []);
+  const title = "Dating & Love Guides for Nigeria | BamSignal Blog";
+  const description =
+    "City-by-city guides for finding love in Nigeria — Lagos, Abuja, PH, Enugu, and 20+ cities. Practical dating tips from BamSignal.";
 
   const cityPosts = BLOG_POSTS.filter((p) => p.city);
   const guides = BLOG_POSTS.filter((p) => !p.city);
@@ -39,6 +26,18 @@ export function BlogIndexPage({ onSignup }: BlogIndexPageProps) {
 
   return (
     <div className="blog-page">
+      <SeoHead
+        title={title}
+        description={description}
+        canonicalPath={BLOG_INDEX_PATH}
+        jsonLd={[
+          buildBreadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Blog", path: BLOG_INDEX_PATH }
+          ]),
+          buildWebPageJsonLd({ title, description, canonicalPath: BLOG_INDEX_PATH })
+        ]}
+      />
       <header className="blog-hero blog-hero--visual">
         <div className="blog-hero__bg" aria-hidden>
           <div className="blog-hero__bg-main">

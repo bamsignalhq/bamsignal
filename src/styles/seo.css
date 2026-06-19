@@ -386,17 +386,25 @@
   word-break: break-all;
 }
 
-.seo-not-found {
+.seo-not-found--page {
+  max-width: 480px;
+  margin: 2rem auto;
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 1rem;
 }
 
-.seo-not-found h1 {
+.seo-not-found--page h1 {
   margin: 0 0 0.5rem;
 }
 
-.seo-not-found p {
+.seo-not-found--page p {
   color: var(--seo-muted);
+}
+
+.seo-not-found--page .seo-resource-list {
+  margin-top: 1rem;
+  text-align: left;
+  display: inline-block;
 }
 
 @media (max-width: 520px) {

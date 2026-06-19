@@ -1,8 +1,8 @@
-import { buildCity } from "./nigeriaCityFactory";
+import { buildIndexableCity } from "./nigeriaCityFactory";
 import type { NigeriaCityLocation } from "./nigeriaLocationTypes";
 
 const lagos = (slug: string, name: string, intro: string, nearby: string[], highlights: string[], meetHint: string): NigeriaCityLocation =>
-  buildCity({
+  buildIndexableCity({
     slug,
     name,
     intro,
@@ -97,7 +97,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     )
   ],
   fct: [
-    buildCity({
+    buildIndexableCity({
       slug: "abuja",
       name: "Abuja",
       type: "city",
@@ -109,7 +109,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       connectNote:
         "Discovery on BamSignal respects Nigerian cities — set Abuja, browse nearby, and signal with a note tied to their profile."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "wuse",
       name: "Wuse",
       intro: "Wuse 2 is a default first-date zone for many Abuja daters — busy, familiar, and easy to leave.",
@@ -118,7 +118,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Wuse 2 public restaurant or café",
       connectNote: "Mention Wuse explicitly in chat so plans align with traffic from Gwarinpa or Kubwa."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "gwarinpa",
       name: "Gwarinpa",
       intro: "Gwarinpa's estate grids suit people who prefer calmer meetups away from central Wuse noise.",
@@ -127,7 +127,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Gwarinpa plaza eateries or a known mall spot",
       connectNote: "Share your estate zone early — Gwarinpa is big and pins matter."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "maitama",
       name: "Maitama",
       intro: "Maitama dates often skew upscale — match expectations in chat so nobody feels out of place.",
@@ -136,7 +136,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "a Maitama restaurant with public seating",
       connectNote: "Signals that reference neighbourhood taste land better than vague compliments."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "asokoro",
       name: "Asokoro",
       intro: "Asokoro and adjacent hills attract civil servants and professionals — weekday evening slots work well.",
@@ -145,7 +145,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Asokoro or adjacent central café",
       connectNote: "Be punctual — many Asokoro matches juggle strict office hours."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "kubwa",
       name: "Kubwa",
       intro: "Kubwa's growth means longer commutes to central Abuja — honest location tags prevent mismatched expectations.",
@@ -154,7 +154,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Kubwa market-adjacent restaurants or plazas",
       connectNote: "Suggest meetups near transport you both use — Kubwa to town can be heavy."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "jabi",
       name: "Jabi",
       intro: "Jabi Lake and mall area is a familiar Abuja first-date pick — daytime works well for new matches.",
@@ -163,7 +163,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Jabi Lake Mall or lakeside public areas in daylight",
       connectNote: "Lake meetups are popular — propose a specific time and entrance point."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "garki",
       name: "Garki",
       intro: "Garki balances old Abuja charm and central access — good for matches split across districts.",
@@ -172,7 +172,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Garki II restaurant or shopping complex",
       connectNote: "Area numbers help — Garki is not one single pin."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "lugbe",
       name: "Lugbe",
       intro: "Lugbe and airport road belt suit people who want mainland Abuja energy without full Wuse prices.",
@@ -183,7 +183,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   rivers: [
-    buildCity({
+    buildIndexableCity({
       slug: "port-harcourt",
       name: "Port Harcourt",
       type: "city",
@@ -194,7 +194,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "GRA or mall restaurants with public seating",
       connectNote: "Port Harcourt daters value directness — specific signals beat empty hellos."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "obio-akpor",
       name: "Obio-Akpor",
       intro: "Obio-Akpor wraps much of urban PH — Rumuola, Rumuomasi, and Rukpokwu daters often identify by neighbourhood.",
@@ -203,7 +203,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Rumuokoro or Mile 3 public spots you know",
       connectNote: "Name your Rumu axis — it helps matches gauge distance."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "bonny",
       name: "Bonny",
       intro: "Bonny Island has a distinct rhythm from mainland PH — travel plans matter for matches across the water.",
@@ -212,7 +212,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Bonny town public venues in daylight",
       connectNote: "Be upfront about ferry or boat logistics when suggesting meetups."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "eleme",
       name: "Eleme",
       intro: "Eleme industrial belt meets residential pockets — many daters work shifts; flexible timing helps.",
@@ -221,7 +221,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Eleme junction eateries or PH-bound meetup points",
       connectNote: "Shift work is common — ask about free evenings early."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "oyigbo",
       name: "Oyigbo",
       intro: "Oyigbo links PH to the east — Aba-road energy and market life shape how people socialise here.",
@@ -232,7 +232,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   enugu: [
-    buildCity({
+    buildIndexableCity({
       slug: "enugu",
       name: "Enugu",
       type: "city",
@@ -242,7 +242,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Independence Layout or New Haven cafés",
       connectNote: "Enugu rewards polite, specific signals — mention what caught your eye on their profile."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "abakpa",
       name: "Abakpa",
       intro: "Abakpa Nike and surrounding estates carry student and young pro energy — evening mall meetups are common.",
@@ -251,7 +251,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Abakpa plaza or campus-road public spots",
       connectNote: "If you are near UNEC axis, say so — it narrows discovery nicely."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "independence-layout",
       name: "Independence Layout",
       intro: "Indy Layout is a go-to for unhurried coffee dates in Enugu — central and familiar to many locals.",
@@ -260,7 +260,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Independence Layout restaurants you know",
       connectNote: "Layout matches often prefer daytime first meetups — suggest clearly."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "new-haven",
       name: "New Haven",
       intro: "New Haven market and residential streets blend busy and residential — pick a public spot off the main market rush.",
@@ -269,7 +269,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "New Haven side-street cafés or lounges",
       connectNote: "Weekend market traffic is heavy — plan meetups with buffer time."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "trans-ekulu",
       name: "Trans-Ekulu",
       intro: "Trans-Ekulu hill views attract couples who like quieter Enugu corners — share transport plans honestly.",
@@ -278,7 +278,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Trans-Ekulu public restaurants in daylight",
       connectNote: "Hill roads can be slow — confirm arrival times in chat."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "nsukka",
       name: "Nsukka",
       intro: "Nsukka's university town vibe is distinct from Enugu city — update your location when you are on campus.",
@@ -289,7 +289,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   oyo: [
-    buildCity({
+    buildIndexableCity({
       slug: "ibadan",
       name: "Ibadan",
       type: "city",
@@ -299,7 +299,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Bodija or Ring Road malls and cafés",
       connectNote: "Distance honesty matters in Ibadan — suggest meetups near both of you."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "bodija",
       name: "Bodija",
       intro: "Bodija market energy meets student housing — casual daytime meetups work well here.",
@@ -308,7 +308,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Bodija public restaurants away from market crush",
       connectNote: "Reference UI or market life in signals if it fits their profile."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "challenge",
       name: "Challenge",
       intro: "Challenge and Molete corridor suit south Ibadan daters — clear bus or ride plans help first meetings.",
@@ -317,7 +317,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Challenge junction eateries or plazas",
       connectNote: "Molete traffic peaks evenings — midday meetups can be easier."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ring-road",
       name: "Ring Road",
       intro: "Ring Road's malls anchor many Ibadan first dates — familiar, public, and easy to find.",
@@ -326,7 +326,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ring Road mall cafés or cinemas area",
       connectNote: "Mall meetups are popular — name the exact complex."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "oyo-town",
       name: "Oyo Town",
       intro: "Oyo town carries historical weight near Ibadan — matches may commute between both.",
@@ -335,7 +335,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Oyo town centre public venues",
       connectNote: "Say if you are Oyo-based vs Ibadan-commuting."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ogbomoso",
       name: "Ogbomoso",
       intro: "Ogbomoso's LAUTECH community adds student energy — academic calendars shape social life.",
@@ -346,7 +346,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   abia: [
-    buildCity({
+    buildIndexableCity({
       slug: "aba",
       name: "Aba",
       type: "city",
@@ -356,7 +356,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Aba GRA or mall public spots",
       connectNote: "Mention Ariaria or GRA if relevant — locals appreciate specificity."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "umuahia",
       name: "Umuahia",
       intro: "Umuahia's government town calm contrasts Aba's speed — many daters split time between both.",
@@ -365,7 +365,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Umuahia central restaurants",
       connectNote: "Capital matches often prefer planned weekday evenings."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "osisioma",
       name: "Obingwa / Osisoma axis",
       intro: "Osisoma industrial belt links Aba suburbs — realistic pins help matches across Abia.",
@@ -374,7 +374,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Aba or Umuahia meetup points on shared routes",
       connectNote: "Suggest halfway venues when you are on opposite sides of Abia."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ohafia",
       name: "Ohafia",
       intro: "Ohafia heritage and hills attract proud locals — cultural respect in chat goes a long way.",
@@ -383,7 +383,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ohafia town public venues in daylight",
       connectNote: "Many Ohafia matches travel to Aba to meet — discuss transport early."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "arochukwu",
       name: "Arochukwu",
       intro: "Arochukwu's history draws curious visitors — be honest if you are visiting vs based here.",
@@ -394,7 +394,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   "akwa-ibom": [
-    buildCity({
+    buildIndexableCity({
       slug: "uyo",
       name: "Uyo",
       type: "city",
@@ -404,7 +404,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ibom Plaza or supermarket road cafés",
       connectNote: "Akwa Ibom daters often appreciate warm, food-led conversation openers."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "eket",
       name: "Eket",
       intro: "Eket's oil community tempo differs from Uyo — shift workers may need flexible dating schedules.",
@@ -413,7 +413,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Eket town restaurants with public seating",
       connectNote: "Ask about offshore or shift schedules without prying — offer flexible times."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ikot-ekpene",
       name: "Ikot Ekpene",
       intro: "Ikot Ekpene market town links Akwa Ibom to Abia — cross-border matches happen often.",
@@ -422,7 +422,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ikot Ekpene main road eateries",
       connectNote: "Mention if you commute toward Uyo or Aba regularly."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "oron",
       name: "Oron",
       intro: "Oron waterfront culture is distinct — ferry and road logistics matter for PH or Calabar links.",
@@ -431,7 +431,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Oron public venues in daylight",
       connectNote: "Coastal weather can shift plans — communicate early if rain threatens."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "eastern-obolo",
       name: "Eastern Obolo",
       intro: "Eastern Obolo coastal communities are quieter — matches may prefer unhurried chat before meeting.",
@@ -442,7 +442,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   "cross-river": [
-    buildCity({
+    buildIndexableCity({
       slug: "calabar",
       name: "Calabar",
       type: "city",
@@ -452,7 +452,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Marian Road or Tinapa-area public restaurants",
       connectNote: "Carnival weeks get busy — book meetup spots or choose quieter hours."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "calabar-municipality",
       name: "Calabar Municipality",
       intro: "Municipality covers central Calabar government and business — many profiles simply say Calabar; narrow your area.",
@@ -461,7 +461,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Central Calabar cafés you trust",
       connectNote: "Clarify Municipality vs Watt Market axis when suggesting venues."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "calabar-south",
       name: "Calabar South",
       intro: "Calabar South toward the port has its own rhythm — share landmarks matches will recognise.",
@@ -470,7 +470,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Calabar South public eateries in daylight",
       connectNote: "Safety-first public venues matter — pick busy spots you know."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ikom",
       name: "Ikom",
       intro: "Ikom yam belt and border trade bring travellers — weekday vs weekend availability can differ.",
@@ -479,7 +479,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ikom town centre restaurants",
       connectNote: "Long drives to Calabar city — confirm willingness before planning."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "obudu",
       name: "Obudu",
       intro: "Obudu plateau attracts resort visitors and locals — altitude weather can surprise lowland guests.",
@@ -490,7 +490,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   anambra: [
-    buildCity({
+    buildIndexableCity({
       slug: "awka",
       name: "Awka",
       type: "city",
@@ -500,7 +500,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Awka GRA or mall-area cafés",
       connectNote: "Capital traffic spikes at closing time — plan meetups with buffer."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "onitsha",
       name: "Onitsha",
       intro: "Onitsha market intensity is legendary — daters often meet across the Niger in Asaba or quiet Awka spots.",
@@ -509,7 +509,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "GRA Onitsha or mall restaurants away from main market",
       connectNote: "Market-area meetups can overwhelm — choose calmer GRA venues."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "nnewi",
       name: "Nnewi",
       intro: "Nnewi industrial wealth shows in confident profiles — respect and directness work well in signals.",
@@ -518,7 +518,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Nnewi plaza or hotel lobby restaurants",
       connectNote: "Family name and reputation matter — keep first chats respectful."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ekwulobia",
       name: "Ekwulobia",
       intro: "Ekwulobia market town anchors south Anambra — Agulu and Ihiala links make cross-LGA dating normal.",
@@ -527,7 +527,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ekwulobia central public spots",
       connectNote: "Halfway meetups toward Awka help when you are on different LGAs."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ihiala",
       name: "Ihiala",
       intro: "Ihiala border proximity to Imo and Abia means matches may span states — say which direction you commute.",
@@ -538,7 +538,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   imo: [
-    buildCity({
+    buildIndexableCity({
       slug: "owerri",
       name: "Owerri",
       type: "city",
@@ -548,7 +548,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Douglas Road mall areas or Owerri GRA cafés",
       connectNote: "Reference Douglas, Ikenegbu, or New Owerri in chat for clarity."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "orlu",
       name: "Orlu",
       intro: "Orlu's quieter pace suits people who prefer slower dating — family introductions still matter here.",
@@ -557,7 +557,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Orlu town centre public restaurants",
       connectNote: "Signals that mention family values land better than flashy lines."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "okigwe",
       name: "Okigwe",
       intro: "Okigwe corridor links Imo to Abia — truck-stop energy and traders shape the social mix.",
@@ -566,7 +566,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Okigwe junction eateries",
       connectNote: "Umuahia matches are plausible — discuss halfway meetups."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "mbaise",
       name: "Mbaise",
       intro: "Mbaise cultural pride runs deep — respectful curiosity about heritage beats generic openers.",
@@ -577,7 +577,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   edo: [
-    buildCity({
+    buildIndexableCity({
       slug: "benin",
       name: "Benin City",
       type: "city",
@@ -587,7 +587,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Sapele Road mall areas or GRA restaurants",
       connectNote: "Cultural respect in first messages matters — avoid clichés about royalty."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "auchi",
       name: "Auchi",
       intro: "Auchi polytechnic energy keeps the town young — semester breaks change who is around.",
@@ -596,7 +596,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Auchi main campus-road cafés",
       connectNote: "Ask about school schedule if they mention Auchi Poly."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ekpoma",
       name: "Ekpoma",
       intro: "Ekpoma's Ambrose Alli University shapes rhythms — campus events can make weekends busy.",
@@ -605,7 +605,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ekpoma town public restaurants",
       connectNote: "Benin city meetups work for matches who commute for school."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "uromi",
       name: "Uromi",
       intro: "Uromi hometown politics and community are tight — many daters connect via Owerri or Benin links.",
@@ -616,7 +616,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   delta: [
-    buildCity({
+    buildIndexableCity({
       slug: "asaba",
       name: "Asaba",
       type: "city",
@@ -626,7 +626,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Asaba mall or Okpanam Road restaurants",
       connectNote: "Onitsha matches across the bridge are common — plan crossing time."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "warri",
       name: "Warri",
       intro: "Warri personality is bold and humorous — signals with warmth and wit match the city.",
@@ -635,7 +635,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Effurun or Warri GRA public spots",
       connectNote: "Effurun vs Warri city pins matter — specify which side you mean."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ughelli",
       name: "Ughelli",
       intro: "Ughelli central Delta position links Warri and Benin routes — market town openness helps new matches.",
@@ -644,7 +644,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ughelli main road eateries",
       connectNote: "Warri matches often meet halfway at Ughelli when traffic allows."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "sapele",
       name: "Sapele",
       intro: "Sapele river town history and port life create a distinct vibe from Warri — do not lump them together.",
@@ -655,7 +655,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   kano: [
-    buildCity({
+    buildIndexableCity({
       slug: "kano",
       name: "Kano",
       type: "city",
@@ -665,7 +665,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "public family-friendly restaurants in Nasarawa GRA or safe mall areas",
       connectNote: "Politeness and clarity matter — avoid pressure and dress respectfully for meetups."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "wudil",
       name: "Wudil",
       intro: "Wudil's Bayero University axis adds student flow — semester timing affects availability.",
@@ -674,7 +674,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Wudil campus-road public venues",
       connectNote: "Many students list Kano city — confirm if they are Wudil-based."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "gware",
       name: "Gware",
       intro: "Gware expanding fringe suits people seeking quieter Kano suburbs — pins help across long distances.",
@@ -683,7 +683,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Nearby Kano mall meetup points",
       connectNote: "Suggest central Kano venues if suburban spots are unfamiliar."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "nasarawa-kano",
       name: "Nasarawa (Kano)",
       intro: "Nasarawa Kano LGA is not Nasarawa State — clarify in chat to avoid confusion with matches elsewhere.",
@@ -692,7 +692,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Nasarawa GRA public restaurants",
       connectNote: "Name the LGA when discussing Nasarawa to avoid state mix-ups."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "tarauni",
       name: "Tarauni",
       intro: "Tarauni's busy markets and residential sprawl need clear landmarks for first meetups.",
@@ -703,7 +703,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   kaduna: [
-    buildCity({
+    buildIndexableCity({
       slug: "kaduna",
       name: "Kaduna",
       type: "city",
@@ -713,7 +713,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Barnawa or Malali public restaurants in daylight or early evening",
       connectNote: "Share plans with a friend and choose venues you both know — comfort first."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "zaria",
       name: "Zaria",
       intro: "Zaria's ABU and military institutions define dating rhythms — academic calendars matter.",
@@ -722,7 +722,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Samaru or Zaria city public cafés",
       connectNote: "ABU semester breaks change who is in town — ask gently."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "kafanchan",
       name: "Kafanchan",
       intro: "Kafanchan southern Kaduna gateway links plateau edges — community ties run deep.",
@@ -731,7 +731,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Kafanchan town centre public spots",
       connectNote: "Respect local sensitivities — keep first chats courteous."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "sabon-gari",
       name: "Sabon Gari (Kaduna)",
       intro: "Sabon Gari's diverse community brings varied dating styles — public venues and courtesy go far.",
@@ -742,7 +742,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   plateau: [
-    buildCity({
+    buildIndexableCity({
       slug: "jos",
       name: "Jos",
       type: "city",
@@ -752,7 +752,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Rayfield or Jos central cafés",
       connectNote: "Evenings can get cool — suggest venues with comfortable seating."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "bukuru",
       name: "Bukuru",
       intro: "Bukuru mining heritage town sits below Jos plateau — many commute uphill for work and dates.",
@@ -761,7 +761,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Jos city meetups or Bukuru public spots",
       connectNote: "Offer Jos venues if Bukuru options are limited."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "pankshin",
       name: "Pankshin",
       intro: "Pankshin rural plateau life is community-first — matches may prefer patient chat before meeting.",
@@ -772,7 +772,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   ogun: [
-    buildCity({
+    buildIndexableCity({
       slug: "abeokuta",
       name: "Abeokuta",
       type: "city",
@@ -782,7 +782,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Abeokuta mall or Panseke-area cafés",
       connectNote: "Clarify if you commute to Lagos — it shapes weekend availability."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "sagamu",
       name: "Sagamu",
       intro: "Sagamu intercepts Lagos-Ibadan traffic — convenient halfway meetups for cross-state matches.",
@@ -791,7 +791,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Sagamu toll-area restaurants or plazas",
       connectNote: "Popular halfway point for Lagos and Ibadan matches."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ota",
       name: "Ota",
       intro: "Ota and Sango border Lagos — dating often spans Lagos and Ogun profiles on the same corridor.",
@@ -800,7 +800,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Sango Ota mall public spots",
       connectNote: "List Ota accurately — many use Lagos tags while living here."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ijebu-ode",
       name: "Ijebu Ode",
       intro: "Ijebu Ode traditional institutions influence dating — courtesy and family awareness help.",
@@ -811,7 +811,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   ondo: [
-    buildCity({
+    buildIndexableCity({
       slug: "akure",
       name: "Akure",
       type: "city",
@@ -821,7 +821,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Akure mall or Oba-Ile road cafés",
       connectNote: "Capital matches appreciate specific neighbourhood mentions."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "owo",
       name: "Owo",
       intro: "Owo kingdom heritage and polytechnic life blend — respectful tone in signals matters.",
@@ -830,7 +830,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Owo town public eateries",
       connectNote: "Akure meetups help when both work in the capital."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ondo-town",
       name: "Ondo Town",
       intro: "Ondo town is distinct from Ondo State capital Akure — clarify which you mean on your profile.",
@@ -839,7 +839,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ondo town centre restaurants",
       connectNote: "Do not confuse Ondo town with Akure — pins prevent awkward mix-ups."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ore",
       name: "Ore",
       intro: "Ore junction is Nigeria's famous stopover — travellers and traders create a transient social mix.",
@@ -850,7 +850,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   osun: [
-    buildCity({
+    buildIndexableCity({
       slug: "osogbo",
       name: "Osogbo",
       type: "city",
@@ -860,7 +860,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Osogbo mall or station road cafés",
       connectNote: "Osun grove culture can be a thoughtful signal topic — keep it respectful."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ile-ife",
       name: "Ile-Ife",
       intro: "Ife's sacred city status and OAU students create unique dating etiquette — lead with respect.",
@@ -869,7 +869,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ife campus-adjacent public cafés",
       connectNote: "Campus matches follow semester rhythms — ask about exams politely."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ilesa",
       name: "Ilesa",
       intro: "Ilesa mining history and Osun east life differ from Osogbo — hometown pride shows in profiles.",
@@ -878,7 +878,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Ilesa central public spots",
       connectNote: "Osogbo meetups work for capital commuters."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "ede",
       name: "Ede",
       intro: "Ede's Islamic and traditional balance shapes social norms — modest respectful chat is appreciated.",
@@ -889,7 +889,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   kwara: [
-    buildCity({
+    buildIndexableCity({
       slug: "ilorin",
       name: "Ilorin",
       type: "city",
@@ -899,7 +899,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Tanke or GRA Ilorin public restaurants",
       connectNote: "Respect religious boundaries in chat and meetup choices."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "offa",
       name: "Offa",
       intro: "Offa market town energy is welcoming — many Ilorin professionals have Offa roots.",
@@ -908,7 +908,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Offa town centre eateries",
       connectNote: "Ilorin city meetups suit weekday workers based in the capital."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "oke-ero",
       name: "Oke-Ero",
       intro: "Oke-Ero's rural Kwara character favours patient dating — family awareness matters.",
@@ -919,7 +919,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   benue: [
-    buildCity({
+    buildIndexableCity({
       slug: "makurdi",
       name: "Makurdi",
       type: "city",
@@ -929,7 +929,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Makurdi Wurukum or High Level public spots",
       connectNote: "Middle Belt matches value straightforward honest signals."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "gboko",
       name: "Gboko",
       intro: "Gboko Tiv heartland pride is strong — cultural sensitivity beats generic pickup lines.",
@@ -938,7 +938,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Gboko town public restaurants",
       connectNote: "Many Gboko indigenes work in Makurdi — clarify weekday base."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "otukpo",
       name: "Otukpo",
       intro: "Otukpo IDOMa identity and entertainment scene create confident profiles — humour welcome, disrespect not.",
@@ -949,7 +949,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   bayelsa: [
-    buildCity({
+    buildIndexableCity({
       slug: "yenagoa",
       name: "Yenagoa",
       type: "city",
@@ -959,7 +959,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Yenagoa mall or Ekeki public restaurants",
       connectNote: "Riverine logistics affect plans — communicate if boat travel is involved."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "brass",
       name: "Brass",
       intro: "Brass island oil and fishing communities are tight — matches may prefer slow trust-building.",
@@ -968,7 +968,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Brass public venues in daylight or Yenagoa meetups",
       connectNote: "Offer Yenagoa halfway when island access is hard."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "nembe",
       name: "Nembe",
       intro: "Nembe kingdom heritage runs deep in Bayelsa east — respectful curiosity opens better chats.",
@@ -979,7 +979,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   kogi: [
-    buildCity({
+    buildIndexableCity({
       slug: "lokoja",
       name: "Lokoja",
       type: "city",
@@ -989,7 +989,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Lokoja mall or beach-road restaurants",
       connectNote: "Classic halfway city for Abuja and southern matches."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "okene",
       name: "Okene",
       intro: "Okene Ebira hills and mining culture shape confident local identity — respect goes far.",
@@ -998,7 +998,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Okene central public eateries",
       connectNote: "Lokoja meetups help when matches commute on A1."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "idah",
       name: "Idah",
       intro: "Idah Igala kingdom seat carries royal heritage — avoid flippant references in first messages.",
@@ -1009,7 +1009,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
     })
   ],
   niger: [
-    buildCity({
+    buildIndexableCity({
       slug: "minna",
       name: "Minna",
       type: "city",
@@ -1019,7 +1019,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Minna Bosso or GRA public cafés",
       connectNote: "Abuja commuters are common — clarify weekend vs weekday base."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "suleja",
       name: "Suleja",
       intro: "Suleja Abuja spillover grows fast — many list Abuja while living here.",
@@ -1028,7 +1028,7 @@ export const PRIORITY_CITIES_BY_STATE: Record<string, NigeriaCityLocation[]> = {
       meetHint: "Suleja or Abuja border mall meetups",
       connectNote: "Set location accurately — Suleja is not Abuja city proper."
     }),
-    buildCity({
+    buildIndexableCity({
       slug: "bida",
       name: "Bida",
       intro: "Bida Nupe craft heritage and polytechnic students create a proud local scene.",

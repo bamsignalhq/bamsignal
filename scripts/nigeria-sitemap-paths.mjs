@@ -1,4 +1,8 @@
-/** Indexable Nigeria SEO paths — keep in sync with src/content/seo/nigeriaPriorityCities.ts */
+/** Indexable Nigeria SEO paths — derived from curated priority cities only.
+ *  Quality rule: do not add slugs here unless the page has unique, useful copy.
+ *  Placeholder or thin pages must stay indexable:false and are excluded from sitemap.
+ *  Keep in sync with src/content/seo/nigeriaPriorityCities.ts (indexable cities only).
+ */
 export const NIGERIA_INDEXABLE_STATE_SLUGS = [
   "lagos",
   "fct",

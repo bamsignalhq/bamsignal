@@ -7,6 +7,7 @@ export type NigeriaCityLocation = {
   highlights: string[];
   meetHint: string;
   connectNote: string;
+  /** Only true when intro, highlights, meetHint, and FAQs meet quality bar. Default false. */
   indexable: boolean;
 };
 

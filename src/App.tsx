@@ -82,6 +82,7 @@ import { BlogPostPage } from "./pages/BlogPostPage";
 import { SeoLayout } from "./pages/seo/SeoLayout";
 import { SeoRouter } from "./pages/seo/SeoRouter";
 import { NigeriaLocationRouter } from "./pages/seo/NigeriaLocationRouter";
+import { PublicNotFoundPage } from "./pages/seo/PublicNotFoundPage";
 import { MomentPage } from "./pages/MomentPage";
 import { getBlogPost } from "./data/blogPosts";
 import { getMomentPage, type MomentPageId } from "./data/momentPages";
@@ -105,6 +106,7 @@ import {
   redirectLegacyAdmin,
   redirectAuthSignupAliases,
   requiresMemberRestoreBlocking,
+  shouldShowPublicNotFound,
   HARD_AUTH_PATH,
   type AuthPath
 } from "./constants/routes";
@@ -782,7 +784,6 @@ export function App() {
         repaired: appResult.status?.repaired,
         reason: appResult.status?.reason ?? null
       });
-      const premium = await refreshPremiumStatus(appResult.user);
       const needsOnboarding = appResult.route === "onboarding";
       logRouteDecision(appResult.user, getDatingProfile(), needsOnboarding ? "onboarding" : "home", {
         source: "auth_login",
@@ -791,9 +792,6 @@ export function App() {
         repaired: appResult.status?.repaired,
         reason: appResult.status?.reason ?? null
       });
-      setIsPremium(
-        needsOnboarding ? Boolean(premium.isPremium) : premium.isPremium || isPremiumTrialActive()
-      );
       if (getAuthPath() || isPublicWebRoute()) {
         navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
         setAuthPath(null);
@@ -803,8 +801,14 @@ export function App() {
         setPendingTab(null);
         flowLog("onboarding_start");
         setMemberHydrating(false);
+        void refreshPremiumStatus(appResult.user).then((premium) => {
+          setIsPremium(Boolean(premium.isPremium));
+        });
         return;
       }
+      void refreshPremiumStatus(appResult.user).then((premium) => {
+        setIsPremium(premium.isPremium || isPremiumTrialActive());
+      });
       clearOnboardingDrafts();
       if (pendingTab) {
         setTab(pendingTab);
@@ -1364,6 +1368,20 @@ export function App() {
           ) : (
             <BlogIndexPage onSignup={() => openAuth("signup", "discover")} />
           )}
+        </SeoLayout>
+      </div>
+    );
+  }
+
+  if (shouldShowPublicNotFound(window.location.pathname, isNative) && !authPath) {
+    return (
+      <div className={`app ${theme} platform-root`}>
+        <SeoLayout
+          onLogoClick={goHome}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup", "discover")}
+        >
+          <PublicNotFoundPage />
         </SeoLayout>
       </div>
     );

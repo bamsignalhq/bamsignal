@@ -133,6 +133,7 @@ Disallow: /settings
 Disallow: /hard
 Disallow: /admin
 Disallow: /onboarding
+Disallow: /api
 
 Sitemap: https://bamsignal.com/sitemap.xml
 `;

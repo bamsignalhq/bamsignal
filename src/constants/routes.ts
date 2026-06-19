@@ -100,6 +100,21 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   return false;
 }
 
+/** Unknown URL on web — show public 404 (not auth/member/admin). */
+export function shouldShowPublicNotFound(
+  pathname = window.location.pathname,
+  isNative = false
+): boolean {
+  const path = normalizePath(pathname);
+  if (path === "/") return false;
+  if (isPublicWebRoute(path)) return false;
+  if (isHardRoute(path)) return false;
+  if (getAuthPath(path)) return false;
+  if (AUTH_SIGNUP_ALIASES.includes(path as (typeof AUTH_SIGNUP_ALIASES)[number])) return false;
+  if (requiresMemberRestoreBlocking(path, isNative)) return false;
+  return true;
+}
+
 const MEMBER_APP_PATHS = [
   "/home",
   "/onboarding",

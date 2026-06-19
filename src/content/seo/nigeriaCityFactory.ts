@@ -12,7 +12,18 @@ type CitySeed = {
   indexable?: boolean;
 };
 
+function hasMinimumQuality(seed: CitySeed): boolean {
+  return (
+    seed.intro.trim().length >= 80 &&
+    seed.highlights.length >= 2 &&
+    seed.highlights.every((h) => h.trim().length >= 8) &&
+    seed.meetHint.trim().length >= 20 &&
+    seed.connectNote.trim().length >= 40
+  );
+}
+
 export function buildCity(seed: CitySeed): NigeriaCityLocation {
+  const indexable = seed.indexable === true && hasMinimumQuality(seed);
   return {
     slug: seed.slug,
     name: seed.name,
@@ -22,6 +33,11 @@ export function buildCity(seed: CitySeed): NigeriaCityLocation {
     highlights: seed.highlights,
     meetHint: seed.meetHint,
     connectNote: seed.connectNote,
-    indexable: seed.indexable ?? true
+    indexable
   };
+}
+
+/** Curated city/LGA with reviewed copy — still must pass minimum quality checks. */
+export function buildIndexableCity(seed: Omit<CitySeed, "indexable">): NigeriaCityLocation {
+  return buildCity({ ...seed, indexable: true });
 }

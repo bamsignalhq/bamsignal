@@ -7,6 +7,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "node scripts/generate-sitemap.mjs && node scripts/sync-cache-version.mjs && tsc && vite build",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
+    "generate:seo-manifest": "node scripts/generate-seo-manifest.mjs",
+    "seo:validate": "node scripts/generate-seo-manifest.mjs && node scripts/validate-seo-content.mjs && node scripts/validate-nigeria-seo.mjs",
     "generate:brand": "node scripts/generate-brand-assets.mjs",
     "generate:email-icons": "node scripts/generate-email-social-icons.mjs",
     "preview:emails": "node scripts/preview-email-templates.mjs",

@@ -19,19 +19,20 @@
 
 .discover-premium-head__titles h1 {
   margin: 0;
-  font-size: clamp(2.5rem, 10vw, 3.5rem);
-  line-height: 0.98;
+  font-size: 34px;
+  line-height: 1.05;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
   color: #170b35;
 }
 
 .discover-premium-head__titles p {
   margin: 10px 0 0;
-  font-size: clamp(1rem, 3.8vw, 1.25rem);
+  font-size: 18px;
   line-height: 1.35;
   color: #746587;
-  max-width: 18ch;
+  max-width: 220px;
+  opacity: 0.75;
 }
 
 .discover-premium-head__actions {
@@ -59,7 +60,7 @@
 
 .discover-premium-head__filters:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(27, 10, 54, 0.08);
+  box-shadow: 0 4px 12px rgba(27, 10, 54, 0.05);
 }
 
 .discover-premium-head__city {
@@ -84,7 +85,7 @@
 
 .discover-premium-chips__scroll {
   display: flex;
-  gap: 10px;
+  gap: 16px;
   overflow-x: auto;
   padding-bottom: 4px;
   scrollbar-width: none;
@@ -100,6 +101,7 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  height: 48px;
   min-height: 48px;
   padding: 0 18px;
   border-radius: 24px;
@@ -110,10 +112,12 @@
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 4px rgba(27, 10, 54, 0.04);
 }
 
 .discover-premium-chips__chip:hover {
-  transform: scale(1.04);
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(27, 10, 54, 0.06);
 }
 
 .discover-premium-chips__chip--active {
@@ -521,6 +525,12 @@
   color: #746587;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .discover-premium-head__titles h1 {
+    font-size: 44px;
+  }
 }
 
 @media (max-width: 380px) {

@@ -27,6 +27,7 @@ import "./styles/moment-pages.css";
 import "./styles/theme-contrast.css";
 import "./styles/premium-visibility.css";
 import "./styles/compliance.css";
+import "./styles/fintech-ui-cleanup.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";
 import { repairMemberCaches } from "./utils/repairMemberCaches";

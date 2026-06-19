@@ -13,27 +13,36 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 48px 20px;
   text-align: center;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .empty-state--calm h2 {
   margin: 0;
-  font-size: 1.15rem;
-  font-weight: 600;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.12;
+  max-width: 330px;
 }
 
 .empty-state--calm p {
   margin: 0;
-  max-width: 28ch;
-  font-size: 0.9rem;
+  max-width: 330px;
+  font-size: 18px;
+  line-height: 1.45;
   color: var(--text-muted);
+  opacity: 0.72;
 }
 
 .empty-state--calm .empty-state__icon {
   color: var(--text-muted);
-  opacity: 0.7;
+  opacity: 0.85;
+  margin-bottom: 20px;
 }
 
 .payment-loading-overlay {

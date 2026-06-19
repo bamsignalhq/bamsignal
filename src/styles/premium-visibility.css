@@ -150,14 +150,19 @@
 .premium-empty-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 16px;
   width: 100%;
-  max-width: 280px;
+  max-width: 320px;
   margin-top: 4px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
+.premium-empty-actions .btn-primary,
 .premium-empty-actions .btn-secondary {
   width: 100%;
+  max-width: 320px;
 }
 
 .premium-page__title-row {

@@ -149,17 +149,48 @@ export async function checkSignupField(
   );
 }
 
-export async function sendSignupEmailCode(
+export async function requestSignupMathChallenge(): Promise<{ token: string; a: number; b: number }> {
+  const response = await postEmailCode({ action: "math-challenge" });
+  const payload = await readApiResponse<{
+    ok?: boolean;
+    token: string;
+    a: number;
+    b: number;
+  }>(response, "We couldn't load the quick check. Please try again.");
+  return { token: payload.token, a: Number(payload.a), b: Number(payload.b) };
+}
+
+export async function resendSignupEmailCode(
   email: string,
   name: string,
   identity?: { phone: string; username: string }
 ): Promise<SendCodeResponse> {
   const response = await postEmailCode({
     action: "send",
+    resend: true,
     email,
     name,
     phone: identity?.phone || "",
     username: identity?.username || ""
+  });
+  return readApiResponse<SendCodeResponse>(response, USER_MESSAGES.otpSendFailed);
+}
+
+export async function sendSignupEmailCode(
+  email: string,
+  name: string,
+  identity?: { phone: string; username: string },
+  options?: { legalAccepted: boolean; mathToken: string; mathAnswer: string }
+): Promise<SendCodeResponse> {
+  const response = await postEmailCode({
+    action: "send",
+    email,
+    name,
+    phone: identity?.phone || "",
+    username: identity?.username || "",
+    legalAccepted: Boolean(options?.legalAccepted),
+    mathToken: options?.mathToken || "",
+    mathAnswer: options?.mathAnswer || ""
   });
   return readApiResponse<SendCodeResponse>(
     response,

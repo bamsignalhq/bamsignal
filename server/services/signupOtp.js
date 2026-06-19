@@ -1,12 +1,17 @@
 import {
   assertSignupIdentityAvailable,
   checkSignupIdentityField,
+  assertEmailNotDisposable,
   normalizeSignupEmail,
   normalizeSignupPhone,
   normalizeSignupUsername,
   SignupIdentityError
 } from "./signupIdentity.js";
 export { SignupIdentityError } from "./signupIdentity.js";
+import {
+  assertSignupMathChallengePassed,
+  issueSignupMathChallenge
+} from "./signupMathChallenge.js";
 import crypto from "node:crypto";
 import dotenv from "dotenv";
 import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query, upsertAppUserIdentity } from "../db.js";
@@ -148,12 +153,29 @@ async function sendResendEmail({ to, subject, html, text }) {
   }
 }
 
-export async function sendSignupOtp(email, name = "", identity = {}) {
+export async function sendSignupOtp(email, name = "", identity = {}, options = {}) {
   await ensureEmailVerificationTable();
 
   const normalized = normalizeSignupEmail(email);
   if (!normalized.includes("@")) {
     throw new SignupOtpError(400, "Enter a valid email.");
+  }
+
+  assertEmailNotDisposable(normalized);
+
+  if (!options.resend) {
+    if (!options.legalAccepted) {
+      throw new SignupOtpError(400, "Please accept the terms to continue.", "legal_required");
+    }
+
+    try {
+      assertSignupMathChallengePassed(options.mathToken, options.mathAnswer);
+    } catch (error) {
+      if (error?.name === "SignupMathError") {
+        throw new SignupOtpError(error.status || 400, error.message, error.code || "math_failed");
+      }
+      throw error;
+    }
   }
 
   await assertSignupIdentityAvailable({
@@ -575,6 +597,10 @@ async function completeSignupAfterOtp(body = {}) {
 export async function handleSignupEmailCodeRequest(body = {}) {
   const action = String(body.action || "send").toLowerCase();
 
+  if (action === "math-challenge") {
+    return issueSignupMathChallenge();
+  }
+
   if (action === "check") {
     const field = String(body.field || "").toLowerCase();
     if (field === "email" || field === "phone" || field === "username") {
@@ -589,9 +615,15 @@ export async function handleSignupEmailCodeRequest(body = {}) {
   }
 
   if (action === "send") {
+    const isResend = Boolean(body.resend);
     return sendSignupOtp(body.email, body.name, {
       phone: body.phone || "",
       username: body.username || ""
+    }, {
+      resend: isResend,
+      legalAccepted: isResend || Boolean(body.legalAccepted),
+      mathToken: body.mathToken,
+      mathAnswer: body.mathAnswer
     });
   }
 

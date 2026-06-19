@@ -1,6 +1,9 @@
 import { ensureAppUsersTable, isDatabaseReady, query } from "../db.js";
 import { ensureMemberProfilesTable } from "../cityHome.js";
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
+import { isDisposableEmail } from "../../shared/blockedEmailDomains.mjs";
+
+export const DISPOSABLE_EMAIL_MESSAGE = "Please use a real email address to continue.";
 
 export class SignupIdentityError extends Error {
   constructor(status, field, message) {
@@ -25,7 +28,6 @@ export function normalizeSignupUsername(username = "") {
   return String(username).trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
 }
 
-/** Nigerian local format: 0XXXXXXXXXX */
 export function normalizeSignupPhone(phone = "") {
   let digits = String(phone).replace(/\D/g, "");
   if (digits.startsWith("234") && digits.length === 13) digits = `0${digits.slice(3)}`;
@@ -197,11 +199,19 @@ async function throwIfTaken(field, exists) {
   }
 }
 
+export function assertEmailNotDisposable(email) {
+  const normalized = normalizeSignupEmail(email);
+  if (normalized && isDisposableEmail(normalized)) {
+    throw new SignupIdentityError(400, "email", DISPOSABLE_EMAIL_MESSAGE);
+  }
+}
+
 /** Check a single signup field as the user types. */
 export async function checkSignupIdentityField(field, value) {
   if (field === "email") {
     const normalized = normalizeSignupEmail(value);
     if (!normalized.includes("@")) return { ok: true, field };
+    assertEmailNotDisposable(normalized);
     await throwIfTaken("email", await emailExists(normalized));
     return { ok: true, field, email: normalized };
   }
@@ -230,6 +240,7 @@ export async function assertSignupIdentityAvailable({ email, phone, username }) 
   const normalizedPhone = normalizeSignupPhone(phone);
 
   if (normalizedEmail && normalizedEmail.includes("@")) {
+    assertEmailNotDisposable(normalizedEmail);
     await throwIfTaken("email", await emailExists(normalizedEmail));
   }
 

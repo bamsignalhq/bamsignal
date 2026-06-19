@@ -1,13 +1,24 @@
 import { Loader2, Mail, ShieldCheck } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppLogo } from "../components/AppLogo";
 import { AuthField } from "../components/AuthField";
 import { OtpCodeInput } from "../components/OtpCodeInput";
 import { SignupLegalCheckboxes, isSignupLegalComplete } from "../components/SignupLegalCheckboxes";
+import { SignupMathGate } from "../components/SignupMathGate";
 import type { AuthMeta, AuthMode, UserProfile } from "../types";
 import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/demoAccounts";
+import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "../constants/blockedEmailDomains";
 import { friendlyAuthError, supabase } from "../services/supabase";
-import { resolveLoginEmail, checkSignupAvailability, checkSignupField, sendSignupEmailCode, verifySignupEmailCode, AuthEmailError } from "../services/authEmail";
+import {
+  resolveLoginEmail,
+  checkSignupAvailability,
+  checkSignupField,
+  requestSignupMathChallenge,
+  resendSignupEmailCode,
+  sendSignupEmailCode,
+  verifySignupEmailCode,
+  AuthEmailError
+} from "../services/authEmail";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { flowLog } from "../utils/flowLog";
 import { trackEvent } from "../utils/analytics";
@@ -32,6 +43,8 @@ import {
   touchPendingCodeSent,
   touchPendingVerifyCode
 } from "../utils/signupPersistence";
+import { clearSignupDraft, loadSignupDraft, saveSignupDraft, type SignupDraftStep } from "../utils/signupDraft";
+import { signupLog } from "../utils/signupLog";
 import { mergeLocalCompliance, saveComplianceAcknowledgements } from "../services/compliance";
 import { signupLegalAckTypes } from "../utils/compliance";
 import { Login2faModal } from "../components/Login2faModal";
@@ -78,10 +91,13 @@ function isLikelyEmail(value: string): boolean {
 
 function restoredSignupState() {
   const pending = loadPendingSignup();
+  const draft = pending ? null : loadSignupDraft();
   if (!pending) {
     return {
       pendingSignup: null as UserProfile | null,
-      signupForm: emptySignup,
+      signupForm: draft?.form ?? emptySignup,
+      signupStep: (draft?.step ?? 1) as SignupDraftStep,
+      legalAccepted: Boolean(draft?.legalAccepted),
       verifyCode: "",
       resendIn: 0
     };
@@ -99,6 +115,8 @@ function restoredSignupState() {
       pin,
       confirmPin: pin
     },
+    signupStep: 1 as SignupDraftStep,
+    legalAccepted: false,
     verifyCode,
     resendIn: resendCooldownRemaining(codeSentAt, RESEND_COOLDOWN_SEC)
   };
@@ -127,10 +145,15 @@ export function AuthPage({
   const [busy, setBusy] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ username: "", pin: "" });
   const [signupForm, setSignupForm] = useState(restored.current.signupForm);
+  const [signupStep, setSignupStep] = useState<SignupDraftStep>(restored.current.signupStep);
   const [signupFieldErrors, setSignupFieldErrors] = useState<SignupFieldErrors>({});
   const [signupFieldChecking, setSignupFieldChecking] = useState<SignupFieldChecking>({});
   const [verifyCode, setVerifyCode] = useState(restored.current.verifyCode);
-  const [legalAccepted, setLegalAccepted] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(restored.current.legalAccepted);
+  const [mathChallenge, setMathChallenge] = useState<{ token: string; a: number; b: number } | null>(null);
+  const [mathAnswer, setMathAnswer] = useState("");
+  const [mathError, setMathError] = useState("");
+  const [mathLoading, setMathLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
   const [resendIn, setResendIn] = useState(restored.current.resendIn);
@@ -200,6 +223,39 @@ export function AuthPage({
   };
 
   useEffect(() => {
+    if (mode !== "signup") return;
+    saveSignupDraft({ step: signupStep, form: signupForm, legalAccepted });
+  }, [mode, signupStep, signupForm, legalAccepted]);
+
+  useEffect(() => {
+    if (mode !== "signup") return;
+    setMathChallenge(null);
+    setMathAnswer("");
+    setMathError("");
+  }, [mode]);
+
+  const loadMathChallenge = useCallback(async () => {
+    setMathLoading(true);
+    setMathError("");
+    try {
+      const challenge = await requestSignupMathChallenge();
+      setMathChallenge(challenge);
+      setMathAnswer("");
+      signupLog("signup-validation", { event: "math_challenge_loaded" });
+    } catch (error) {
+      onMessage(error instanceof Error ? error.message : "We couldn't load the quick check. Please try again.");
+    } finally {
+      setMathLoading(false);
+    }
+  }, [onMessage]);
+
+  useEffect(() => {
+    if (mode !== "signup" || signupStep !== 3) return;
+    if (mathChallenge) return;
+    void loadMathChallenge();
+  }, [mode, signupStep, mathChallenge, loadMathChallenge]);
+
+  useEffect(() => {
     const username = normalizeUsername(signupForm.username);
     if (!isValidSignupUsername(username)) {
       clearSignupFieldError("username");
@@ -217,7 +273,7 @@ export function AuthPage({
         })
         .catch((error) => {
           if (cancelled) return;
-          if (error instanceof AuthEmailError && error.kind === "exists") {
+          if (error instanceof AuthEmailError) {
             setSignupFieldError("username", error.message);
           }
         })
@@ -252,7 +308,7 @@ export function AuthPage({
         })
         .catch((error) => {
           if (cancelled) return;
-          if (error instanceof AuthEmailError && error.kind === "exists") {
+          if (error instanceof AuthEmailError) {
             setSignupFieldError("phone", error.message);
           }
         })
@@ -277,6 +333,13 @@ export function AuthPage({
       return;
     }
 
+    if (isDisposableEmail(email)) {
+      setSignupFieldError("email", DISPOSABLE_EMAIL_MESSAGE);
+      setSignupFieldChecking((current) => ({ ...current, email: false }));
+      signupLog("signup-validation", { event: "disposable_email_blocked" });
+      return;
+    }
+
     let cancelled = false;
     const timer = window.setTimeout(() => {
       setSignupFieldChecking((current) => ({ ...current, email: true }));
@@ -287,7 +350,7 @@ export function AuthPage({
         })
         .catch((error) => {
           if (cancelled) return;
-          if (error instanceof AuthEmailError && error.kind === "exists") {
+          if (error instanceof AuthEmailError) {
             setSignupFieldError("email", error.message);
           }
         })
@@ -384,57 +447,130 @@ export function AuthPage({
     }
   };
 
+  const validateSignupStep1 = (): boolean => {
+    const name = signupForm.name.trim();
+    const username = normalizeUsername(signupForm.username);
+    onMessage("");
+    if (name.length < 2) {
+      onMessage("Enter your full name.");
+      signupLog("signup-validation", { step: 1, reason: "name" });
+      return false;
+    }
+    if (!isValidSignupUsername(username)) {
+      onMessage("Username must be at least 4 characters (letters, numbers, underscore).");
+      signupLog("signup-validation", { step: 1, reason: "username_format" });
+      return false;
+    }
+    if (signupFieldErrors.username) {
+      onMessage(signupFieldErrors.username);
+      signupLog("signup-validation", { step: 1, reason: "username_taken" });
+      return false;
+    }
+    if (signupFieldChecking.username) {
+      onMessage("Still checking your username — wait a moment.");
+      return false;
+    }
+    return true;
+  };
+
+  const validateSignupStep2 = (): boolean => {
+    const email = signupForm.email.trim().toLowerCase();
+    const phone = phoneDigits(signupForm.phone);
+    onMessage("");
+    signupLog("signup-step-2", { step: 2 });
+
+    if (!isValidNigerianPhone(phone)) {
+      onMessage("Put your correct WhatsApp number.");
+      signupLog("signup-validation", { step: 2, reason: "phone_format" });
+      return false;
+    }
+    if (!isLikelyEmail(email)) {
+      onMessage("Enter a valid email.");
+      signupLog("signup-validation", { step: 2, reason: "email_format" });
+      return false;
+    }
+    if (isDisposableEmail(email)) {
+      setSignupFieldError("email", DISPOSABLE_EMAIL_MESSAGE);
+      onMessage(DISPOSABLE_EMAIL_MESSAGE);
+      signupLog("signup-validation", { step: 2, reason: "disposable_email" });
+      return false;
+    }
+    if (signupFieldErrors.phone || signupFieldErrors.email) {
+      onMessage(signupFieldErrors.phone || signupFieldErrors.email || "Fix the highlighted fields.");
+      signupLog("signup-validation", { step: 2, reason: "field_error" });
+      return false;
+    }
+    if (signupFieldChecking.phone || signupFieldChecking.email) {
+      onMessage("Still checking your details — wait a moment.");
+      signupLog("signup-validation", { step: 2, reason: "field_checking" });
+      return false;
+    }
+    return true;
+  };
+
+  const validateSignupStep3 = (): boolean => {
+    onMessage("");
+    if (!isStrongPin(signupForm.pin)) {
+      onMessage("Choose a 6-digit PIN without repeats or sequences like 123456.");
+      signupLog("signup-validation", { step: 3, reason: "pin_weak" });
+      return false;
+    }
+    if (signupForm.pin !== signupForm.confirmPin) {
+      onMessage("PINs do not match.");
+      signupLog("signup-validation", { step: 3, reason: "pin_mismatch" });
+      return false;
+    }
+    if (!isSignupLegalComplete(legalAccepted)) {
+      onMessage("Please accept the terms to continue.");
+      signupLog("signup-validation", { step: 3, reason: "legal" });
+      return false;
+    }
+    if (!mathChallenge) {
+      onMessage("Loading quick check — wait a moment.");
+      void loadMathChallenge();
+      return false;
+    }
+    const parsed = Number.parseInt(mathAnswer.trim(), 10);
+    if (!Number.isFinite(parsed) || parsed !== mathChallenge.a + mathChallenge.b) {
+      setMathError("Please answer the quick check correctly.");
+      onMessage("Please answer the quick check correctly.");
+      signupLog("signup-validation", { step: 3, reason: "math" });
+      return false;
+    }
+    setMathError("");
+    return true;
+  };
+
+  const advanceSignup = () => {
+    if (signupStep === 1) {
+      if (!validateSignupStep1()) return;
+      setSignupStep(2);
+      signupLog("signup-step-2");
+      return;
+    }
+    if (signupStep === 2) {
+      if (!validateSignupStep2()) return;
+      setSignupStep(3);
+      return;
+    }
+    void signUp();
+  };
+
   const signUp = async () => {
+    if (!validateSignupStep1() || !validateSignupStep2() || !validateSignupStep3()) {
+      if (signupStep !== 3) setSignupStep(3);
+      return;
+    }
+
     const name = signupForm.name.trim();
     const username = normalizeUsername(signupForm.username);
     const email = signupForm.email.trim().toLowerCase();
     const phone = phoneDigits(signupForm.phone);
 
-    if (name.length < 2) {
-      onMessage("Enter your full name.");
-      return;
-    }
-    if (!isValidSignupUsername(username)) {
-      onMessage("Username must be at least 7 letters with no numbers.");
-      return;
-    }
-    if (!isValidNigerianPhone(phone)) {
-      onMessage("Put your correct WhatsApp number.");
-      return;
-    }
-    if (!email.includes("@")) {
-      onMessage("Enter a valid email.");
-      return;
-    }
-    if (!isStrongPin(signupForm.pin)) {
-      onMessage("Choose a 6-digit PIN without repeats or sequences like 123456.");
-      return;
-    }
-    if (signupForm.pin !== signupForm.confirmPin) {
-      onMessage("PINs do not match.");
-      return;
-    }
-    if (signupFieldErrors.email || signupFieldErrors.phone || signupFieldErrors.username) {
-      onMessage(
-        signupFieldErrors.email ||
-          signupFieldErrors.phone ||
-          signupFieldErrors.username ||
-          "Fix the highlighted fields before continuing."
-      );
-      return;
-    }
-    if (signupFieldChecking.email || signupFieldChecking.phone || signupFieldChecking.username) {
-      onMessage("Still checking your details — wait a moment.");
-      return;
-    }
-    if (!isSignupLegalComplete(legalAccepted)) {
-      onMessage("Please accept the terms to continue.");
-      return;
-    }
-
     setBusy("signup");
     onMessage("");
     trackEvent("signup_started");
+    signupLog("signup-submit");
 
     const profile: UserProfile = { name, username, email, phone };
 
@@ -443,28 +579,50 @@ export function AuthPage({
         throw new Error("Authentication is not configured. Please update the app and try again.");
       }
 
+      if (!mathChallenge) {
+        throw new Error("Please answer the quick check correctly.");
+      }
+
       await checkSignupAvailability({ email, phone, username });
+      signupLog("otp-send");
       flowLog("otp_send_start");
-      await sendSignupEmailCode(email, name, { phone, username });
+      await sendSignupEmailCode(email, name, { phone, username }, {
+        legalAccepted: true,
+        mathToken: mathChallenge.token,
+        mathAnswer: mathAnswer.trim()
+      });
       flowLog("otp_send_ok");
       rememberUsernameEmail(username, email);
       setVerifyCode("");
       setResendIn(RESEND_COOLDOWN_SEC);
       setPendingSignup(profile);
+      clearSignupDraft();
       if (!savePendingSignup({ profile, pin: signupForm.pin, verifyCode: "" })) {
         onMessage(USER_MESSAGES.progressSaveFailed);
       }
       onModeChange("verify");
       return;
     } catch (error) {
-      if (error instanceof AuthEmailError && error.kind === "exists") {
+      if (error instanceof AuthEmailError) {
         if (error.field) {
           setSignupFieldError(error.field, error.message);
+          if (error.field === "email" || error.field === "phone") {
+            setSignupStep(2);
+          } else if (error.field === "username") {
+            setSignupStep(1);
+          }
         }
-        clearPendingSignup();
-        onModeChange("signup");
+        if (error.kind === "exists") {
+          clearPendingSignup();
+          onModeChange("signup");
+        }
+        if (/quick check/i.test(error.message)) {
+          setMathError(error.message);
+          void loadMathChallenge();
+        }
       }
       onMessage(friendlyAuthError(error));
+      signupLog("signup-submit", { failed: true });
     } finally {
       setBusy(null);
     }
@@ -573,7 +731,7 @@ export function AuthPage({
         throw new Error("Authentication is not configured. Please update the app and try again.");
       }
 
-      await sendSignupEmailCode(pendingSignup.email, pendingSignup.name, {
+      await resendSignupEmailCode(pendingSignup.email, pendingSignup.name, {
         phone: pendingSignup.phone || "",
         username: pendingSignup.username || ""
       });
@@ -666,83 +824,146 @@ export function AuthPage({
 
           {mode === "signup" && (
             <>
+              <p className="auth-signup-step">Step {signupStep} of 3</p>
               <h1 className="auth-title">Create your account</h1>
               <div className="auth-fields">
-                <AuthField
-                  label="Name"
-                  value={signupForm.name}
-                  onChange={(name) => setSignupForm({ ...signupForm, name })}
-                  autoComplete="name"
-                />
-                <AuthField
-                  label="Username"
-                  value={signupForm.username}
-                  onChange={(username) => {
-                    clearSignupFieldError("username");
-                    setSignupForm({ ...signupForm, username: formatUsernameInput(username) });
-                  }}
-                  autoComplete="username"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  maxLength={24}
-                  error={signupFieldErrors.username}
-                  checking={signupFieldChecking.username}
-                />
-                <AuthField
-                  label="Phone"
-                  value={signupForm.phone}
-                  onChange={(phone) => {
-                    clearSignupFieldError("phone");
-                    setSignupForm({ ...signupForm, phone: phoneDigits(phone).slice(0, 11) });
-                  }}
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  maxLength={11}
-                  error={signupFieldErrors.phone}
-                  checking={signupFieldChecking.phone}
-                />
-                <AuthField
-                  label="Email"
-                  value={signupForm.email}
-                  onChange={(email) => {
-                    clearSignupFieldError("email");
-                    setSignupForm({ ...signupForm, email });
-                  }}
-                  type="email"
-                  autoComplete="email"
-                  error={signupFieldErrors.email}
-                  checking={signupFieldChecking.email}
-                />
-                <AuthField
-                  label="PIN"
-                  value={signupForm.pin}
-                  onChange={(pin) => setSignupForm({ ...signupForm, pin: pinDigits(pin) })}
-                  pin
-                  maxLength={6}
-                  autoComplete="new-password"
-                />
-                <AuthField
-                  label="Confirm PIN"
-                  value={signupForm.confirmPin}
-                  onChange={(confirmPin) => setSignupForm({ ...signupForm, confirmPin: pinDigits(confirmPin) })}
-                  pin
-                  maxLength={6}
-                  autoComplete="new-password"
-                />
+                {signupStep === 1 ? (
+                  <>
+                    <AuthField
+                      label="Name"
+                      value={signupForm.name}
+                      onChange={(name) => setSignupForm({ ...signupForm, name })}
+                      autoComplete="name"
+                    />
+                    <AuthField
+                      label="Username"
+                      value={signupForm.username}
+                      onChange={(username) => {
+                        clearSignupFieldError("username");
+                        setSignupForm({ ...signupForm, username: formatUsernameInput(username) });
+                      }}
+                      autoComplete="username"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      maxLength={24}
+                      error={signupFieldErrors.username}
+                      checking={signupFieldChecking.username}
+                    />
+                  </>
+                ) : null}
+
+                {signupStep === 2 ? (
+                  <>
+                    <AuthField
+                      label="Phone"
+                      value={signupForm.phone}
+                      onChange={(phone) => {
+                        clearSignupFieldError("phone");
+                        setSignupForm({ ...signupForm, phone: phoneDigits(phone).slice(0, 11) });
+                      }}
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      maxLength={11}
+                      error={signupFieldErrors.phone}
+                      checking={signupFieldChecking.phone}
+                    />
+                    <AuthField
+                      label="Email"
+                      value={signupForm.email}
+                      onChange={(email) => {
+                        clearSignupFieldError("email");
+                        setSignupForm({ ...signupForm, email });
+                      }}
+                      type="email"
+                      autoComplete="email"
+                      error={signupFieldErrors.email}
+                      checking={signupFieldChecking.email}
+                    />
+                  </>
+                ) : null}
+
+                {signupStep === 3 ? (
+                  <>
+                    <AuthField
+                      label="PIN"
+                      value={signupForm.pin}
+                      onChange={(pin) => setSignupForm({ ...signupForm, pin: pinDigits(pin) })}
+                      pin
+                      maxLength={6}
+                      autoComplete="new-password"
+                    />
+                    <AuthField
+                      label="Confirm PIN"
+                      value={signupForm.confirmPin}
+                      onChange={(confirmPin) =>
+                        setSignupForm({ ...signupForm, confirmPin: pinDigits(confirmPin) })
+                      }
+                      pin
+                      maxLength={6}
+                      autoComplete="new-password"
+                    />
+                    <SignupLegalCheckboxes accepted={legalAccepted} onChange={setLegalAccepted} />
+                    {mathChallenge ? (
+                      <SignupMathGate
+                        a={mathChallenge.a}
+                        b={mathChallenge.b}
+                        answer={mathAnswer}
+                        onAnswerChange={(value) => {
+                          setMathAnswer(value);
+                          setMathError("");
+                        }}
+                        error={mathError}
+                        disabled={mathLoading || busy === "signup"}
+                      />
+                    ) : mathLoading ? (
+                      <p className="auth-message auth-message--inline">Loading quick check…</p>
+                    ) : null}
+                  </>
+                ) : null}
               </div>
 
-              <SignupLegalCheckboxes accepted={legalAccepted} onChange={setLegalAccepted} />
-
+              <div className="auth-signup-actions">
+                {signupStep > 1 ? (
+                  <button
+                    type="button"
+                    className="btn-secondary btn-auth auth-signup-back"
+                    onClick={() => {
+                      onMessage("");
+                      setSignupStep((step) => (step > 1 ? ((step - 1) as SignupDraftStep) : step));
+                    }}
+                    disabled={busy === "signup"}
+                  >
+                    Back
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn-primary btn-full btn-auth"
+                  onClick={advanceSignup}
+                  disabled={
+                    busy === "signup" ||
+                    (signupStep === 3 && !isSignupLegalComplete(legalAccepted)) ||
+                    (signupStep === 3 && mathLoading)
+                  }
+                >
+                  {busy === "signup" ? (
+                    <Loader2 className="spin" size={20} />
+                  ) : signupStep === 3 ? (
+                    "Create account"
+                  ) : (
+                    "Continue"
+                  )}
+                </button>
+              </div>
               <button
                 type="button"
-                className="btn-primary btn-full btn-auth"
-                onClick={signUp}
-                disabled={busy === "signup" || !isSignupLegalComplete(legalAccepted)}
+                className="auth-switch"
+                onClick={() => {
+                  clearSignupDraft();
+                  onModeChange("login");
+                }}
               >
-                {busy === "signup" ? <Loader2 className="spin" size={20} /> : "Continue"}
-              </button>
-              <button type="button" className="auth-switch" onClick={() => onModeChange("login")}>
                 <span className="auth-switch__lead">Already have an account?</span>
                 <span className="auth-switch__action">Log in</span>
               </button>

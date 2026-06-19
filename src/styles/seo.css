@@ -315,6 +315,40 @@
   line-height: 1.55;
 }
 
+.seo-inline-cta {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-radius: 14px;
+  background: var(--seo-surface);
+  border: 1px solid var(--seo-border);
+  text-align: center;
+}
+
+.seo-inline-cta h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.seo-inline-cta p {
+  margin: 0 0 0.85rem;
+  font-size: 0.875rem;
+  color: var(--seo-muted);
+  line-height: 1.55;
+}
+
+.seo-inline-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+  background: var(--seo-accent);
+  color: #fff;
+  text-decoration: none;
+}
+
 .seo-cta-strip {
   border-top: 1px solid var(--seo-border);
   background: var(--seo-surface);

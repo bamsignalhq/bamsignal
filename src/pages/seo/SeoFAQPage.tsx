@@ -10,7 +10,8 @@ type SeoFAQPageProps = {
 };
 
 export function SeoFAQPage({ hub, pages }: SeoFAQPageProps) {
-  const allFaqs = pages.flatMap((page) => page.faqs);
+  const sortedPages = [...pages].sort((a, b) => a.h1.localeCompare(b.h1));
+  const allFaqs = sortedPages.flatMap((page) => page.faqs);
   const jsonLd = [
     buildBreadcrumbJsonLd([
       { name: "Home", path: "/" },
@@ -42,7 +43,7 @@ export function SeoFAQPage({ hub, pages }: SeoFAQPageProps) {
         <p className="seo-index__intro">{hub.intro}</p>
       </header>
 
-      {pages.map((page) => (
+      {sortedPages.map((page) => (
         <section key={page.slug} className="seo-faq-section">
           <div className="seo-faq-section__head">
             <h2>{page.h1}</h2>

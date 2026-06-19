@@ -10,6 +10,7 @@ type SeoIndexPageProps = {
 };
 
 export function SeoIndexPage({ hub, pages }: SeoIndexPageProps) {
+  const sortedPages = [...pages].sort((a, b) => a.h1.localeCompare(b.h1));
   const jsonLd = [
     buildBreadcrumbJsonLd([
       { name: "Home", path: "/" },
@@ -43,10 +44,10 @@ export function SeoIndexPage({ hub, pages }: SeoIndexPageProps) {
       <section className="seo-index__grid-section">
         <div className="seo-index__grid-head">
           <h2>Articles</h2>
-          <span>{pages.length} guide{pages.length === 1 ? "" : "s"}</span>
+          <span>{sortedPages.length} guide{sortedPages.length === 1 ? "" : "s"}</span>
         </div>
         <div className="seo-card-grid">
-          {pages.map((page) => (
+          {sortedPages.map((page) => (
             <article key={page.slug} className="seo-card">
               <Link href={page.canonicalPath} className="seo-card__link">
                 <h3>{page.h1}</h3>

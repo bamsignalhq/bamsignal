@@ -77,8 +77,8 @@ export function friendlyAuthError(error: unknown): string {
     return USER_MESSAGES.signupCompleteFailed;
   }
 
-  if (/invalid login|invalid credentials|invalid email or password|invalid username or password/i.test(lower)) {
-    return "Invalid username or password.";
+  if (/invalid login|invalid credentials|invalid email or password|invalid username or password|invalid username or pin/i.test(lower)) {
+    return "Invalid username or PIN.";
   }
 
   return ERROR_COPY.tryAgainSoon;

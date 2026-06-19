@@ -401,7 +401,7 @@ export function AuthPage({
       return;
     }
     if (!loginForm.password) {
-      onMessage("Enter your password.");
+      onMessage("Enter your PIN.");
       return;
     }
 
@@ -431,7 +431,7 @@ export function AuthPage({
         return;
       }
 
-      onMessage(loginResult.error || "Invalid username or password.");
+      onMessage(loginResult.error || "Invalid username or PIN.");
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {

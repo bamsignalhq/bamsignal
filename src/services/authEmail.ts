@@ -284,7 +284,7 @@ export async function loginWithPassword(
     });
     const payload = await readResponseJson<LoginResponse>(response);
     if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "Invalid username or password." };
+      return { ok: false, error: payload?.error || "Invalid username or PIN." };
     }
     return payload;
   } catch {

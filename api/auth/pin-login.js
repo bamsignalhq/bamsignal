@@ -1,4 +1,4 @@
-import { loginWithUsernameAndPassword, resolveLoginUsername } from "../../server/services/pinLogin.js";
+import { INVALID_LOGIN_MESSAGE, loginWithUsernameAndPassword, resolveLoginUsername } from "../../server/services/pinLogin.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     if (!password) {
       const resolved = await resolveLoginUsername(username);
       if (!resolved.email) {
-        return res.status(401).json({ ok: false, error: "Invalid username or password." });
+        return res.status(401).json({ ok: false, error: INVALID_LOGIN_MESSAGE });
       }
       return res.status(200).json({ ok: true, email: resolved.email });
     }
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     if (!result.ok) {
       return res.status(401).json({
         ok: false,
-        error: result.error || "Invalid username or password."
+        error: result.error || INVALID_LOGIN_MESSAGE
       });
     }
     return res.status(200).json({

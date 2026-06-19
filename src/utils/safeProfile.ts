@@ -1,5 +1,12 @@
 import { normalizeLifestyleTraits } from "../constants/profileOptions";
 import { DEFAULT_PROFILE_COVER } from "../constants/photos";
+import {
+  coverPhotoDisplayUrl,
+  hasExplicitCoverPhoto,
+  mergeMemberCover,
+  normalizeCoverFields,
+  readCoverPhotoUrl
+} from "./coverPhoto";
 import { normalizeIntents } from "../constants/intents";
 import type { DatingProfile, DiscoverProfile, IntentTag, UserProfile } from "../types";
 import { isBlobPreviewUrl, isDataUrl, isStoragePhotoUrl } from "./photoRefs";
@@ -54,62 +61,25 @@ export function safeUserCoverPhoto(coverPhoto: unknown): string | undefined {
 }
 
 /** Prefer a member-uploaded backdrop when merging local + server profile snapshots. */
-export function mergeMemberCover(
-  local: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit">,
-  remote: Record<string, unknown>
-): Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit"> {
-  const localCover = safeUserCoverPhoto(local.coverPhoto);
-  const remoteCover = safeUserCoverPhoto(remote.coverPhoto);
-  const localExplicit = local.coverPhotoExplicit === true;
-  const remoteExplicit = remote.coverPhotoExplicit === true;
-
-  if (localExplicit && localCover) {
-    return { coverPhoto: localCover, coverPhotoExplicit: true };
-  }
-  if (
-    localCover &&
-    remoteCover &&
-    localCover !== remoteCover &&
-    isStoragePhotoUrl(localCover)
-  ) {
-    return { coverPhoto: localCover, coverPhotoExplicit: true };
-  }
-  if (remoteExplicit && remoteCover) {
-    return { coverPhoto: remoteCover, coverPhotoExplicit: true };
-  }
-  if (localCover && isStoragePhotoUrl(localCover)) {
-    return { coverPhoto: localCover, coverPhotoExplicit: localExplicit || remoteExplicit || true };
-  }
-  if (remoteCover && isStoragePhotoUrl(remoteCover)) {
-    return { coverPhoto: remoteCover, coverPhotoExplicit: remoteExplicit || localExplicit || true };
-  }
-  if (localCover) {
-    return { coverPhoto: localCover, coverPhotoExplicit: localExplicit };
-  }
-  if (remoteCover) {
-    return { coverPhoto: remoteCover, coverPhotoExplicit: remoteExplicit };
-  }
-  return { coverPhoto: undefined, coverPhotoExplicit: false };
-}
+export { mergeMemberCover } from "./coverPhoto";
 
 export function resolveCoverPhoto(
-  profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit" | "onboardingComplete">,
+  profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoUrl" | "coverPhotoExplicit" | "coverPhotoUpdatedAt" | "onboardingComplete">,
   options?: { fallback?: string | null }
 ): string | null {
   const fallback =
     options?.fallback === undefined ? DEFAULT_PROFILE_COVER : options.fallback;
-  const cover = safeUserCoverPhoto(profile.coverPhoto);
-  if (!cover || profile.coverPhotoExplicit === false) {
+  const display = coverPhotoDisplayUrl(normalizeCoverFields(profile));
+  if (!display) {
     return fallback;
   }
-  return cover;
+  return display;
 }
 
 export function hasExplicitCover(
-  profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoExplicit">
+  profile: Pick<DatingProfile, "coverPhoto" | "coverPhotoUrl" | "coverPhotoExplicit" | "coverPhotoUpdatedAt">
 ): boolean {
-  if (!safeUserCoverPhoto(profile.coverPhoto)) return false;
-  return profile.coverPhotoExplicit !== false;
+  return hasExplicitCoverPhoto(profile);
 }
 
 export function safeProfile(raw: Partial<DatingProfile> | null | undefined): Partial<DatingProfile> {
@@ -117,7 +87,7 @@ export function safeProfile(raw: Partial<DatingProfile> | null | undefined): Par
   return {
     ...raw,
     photos: safePhotos(raw.photos),
-    coverPhoto: safeUserCoverPhoto(raw.coverPhoto),
+    coverPhoto: readCoverPhotoUrl(raw) ?? safeUserCoverPhoto(raw.coverPhoto),
     bio: safeString(raw.bio),
     city: safeString(raw.city),
     state: safeString(raw.state),

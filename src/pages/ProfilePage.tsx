@@ -50,7 +50,7 @@ import {
 } from "../utils/verificationQueue";
 import { notifyVerificationApproved } from "../utils/notifyHelpers";
 import { MAX_PROFILE_PHOTOS } from "../constants/photos";
-import { safeUserCoverPhoto } from "../utils/safeProfile";
+import { persistCoverPhotoChange } from "../utils/persistCoverPhoto";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { TwoFactorSettingsCard } from "../components/TwoFactorSettingsCard";
@@ -387,20 +387,13 @@ export function ProfilePage({
             editableCover
             coverPhoto={profile.coverPhoto}
             photoMeta={profile.photoMeta}
-            onCoverChange={(nextCover, nextPhotoMeta) => {
+            onCoverChange={(nextCover, nextPhotoMeta, coverPhotoPath) => {
               setProfile((p) => {
-                const persistable = safeUserCoverPhoto(nextCover);
-                const next = normalizeDatingProfile({
-                  ...p,
-                  coverPhoto: persistable,
-                  coverPhotoExplicit: Boolean(persistable),
-                  photoMeta: nextPhotoMeta ?? p.photoMeta
+                const next = persistCoverPhotoChange(user, p, {
+                  url: nextCover,
+                  path: coverPhotoPath,
+                  photoMeta: nextPhotoMeta
                 });
-                if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
-                  showModMessage(USER_MESSAGES.profileSaveFailed);
-                  return next;
-                }
-                syncMemberProfileRemote(user, next);
                 return next;
               });
             }}
@@ -592,25 +585,19 @@ export function ProfilePage({
             <h4 className="profile-form-row__label">Backdrop photo</h4>
             <CoverPhotoUpload
               coverPhoto={profile.coverPhoto}
+              coverPhotoUrl={profile.coverPhotoUrl}
               coverPhotoExplicit={profile.coverPhotoExplicit}
+              coverPhotoUpdatedAt={profile.coverPhotoUpdatedAt}
               photoMeta={profile.photoMeta}
               profilePhotos={profile.photos}
-              onChange={(coverPhoto, nextPhotoMeta) => {
-                setProfile((p) => {
-                  const persistable = safeUserCoverPhoto(coverPhoto);
-                  const next = normalizeDatingProfile({
-                    ...p,
-                    coverPhoto: persistable,
-                    coverPhotoExplicit: Boolean(persistable),
-                    photoMeta: nextPhotoMeta ?? p.photoMeta
-                  });
-                  if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
-                    showModMessage(USER_MESSAGES.profileSaveFailed);
-                    return next;
-                  }
-                  syncMemberProfileRemote(user, next);
-                  return next;
-                });
+              onChange={(coverPhoto, nextPhotoMeta, coverPhotoPath) => {
+                setProfile((p) =>
+                  persistCoverPhotoChange(user, p, {
+                    url: coverPhoto,
+                    path: coverPhotoPath,
+                    photoMeta: nextPhotoMeta
+                  })
+                );
               }}
               onModerationMessage={showModMessage}
             />

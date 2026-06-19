@@ -42,7 +42,7 @@ async function uploadCompressedBlob(
   blob: Blob,
   photoId?: string,
   mime?: string
-): Promise<{ url: string; photoId?: string }> {
+): Promise<{ url: string; photoId?: string; path?: string }> {
   const imageBase64 = await blobToDataUrl(blob, mime);
   const body: Record<string, string> = { kind, imageBase64 };
   if (photoId) body.photoId = photoId;
@@ -55,7 +55,14 @@ async function uploadCompressedBlob(
       headers: await authHeaders(),
       body: JSON.stringify(body)
     });
-    const payload = await readResponseJson<{ ok?: boolean; url?: string; error?: string; storageUnavailable?: boolean; photoId?: string }>(response);
+    const payload = await readResponseJson<{
+      ok?: boolean;
+      url?: string;
+      path?: string;
+      error?: string;
+      storageUnavailable?: boolean;
+      photoId?: string;
+    }>(response);
 
     if (response.status === 401 && attempt === 0 && supabase) {
       logPhotoUpload("upload_auth_retry", { kind });
@@ -85,7 +92,11 @@ async function uploadCompressedBlob(
     }
 
     logPhotoPipeline("uploaded", { kind, url: String(payload.url) });
-    return { url: String(payload.url), photoId: payload.photoId ? String(payload.photoId) : photoId };
+    return {
+      url: String(payload.url),
+      photoId: payload.photoId ? String(payload.photoId) : photoId,
+      path: payload.path ? String(payload.path) : undefined
+    };
   }
 
   throw new PhotoUploadError(PHOTO_UPLOAD_FAIL, { code: "UPLOAD_FAILED" });
@@ -168,10 +179,10 @@ export async function uploadCompressedCoverBlob(
   blob: Blob,
   fallbackFile?: File,
   mime?: string
-): Promise<string> {
+): Promise<{ url: string; path?: string }> {
   try {
     const result = await uploadCompressedBlob("cover", blob, undefined, mime);
-    return result.url;
+    return { url: result.url, path: result.path };
   } catch (error) {
     if (
       !import.meta.env.PROD &&
@@ -179,7 +190,7 @@ export async function uploadCompressedCoverBlob(
       error.fallbackAllowed &&
       fallbackFile
     ) {
-      return fileToCompressedDataUrl(fallbackFile, { maxEdge: 1280, quality: 0.82 });
+      return { url: await fileToCompressedDataUrl(fallbackFile, { maxEdge: 1280, quality: 0.82 }) };
     }
     throw error;
   }

@@ -8,7 +8,8 @@ import { CoverPhotoCropModal } from "./CoverPhotoCropModal";
 import { ProfilePhotoViewerSheet } from "./profile/ProfilePhotoViewerSheet";
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
-import { hasExplicitCover, safePhotos } from "../utils/safeProfile";
+import { coverPhotoDisplayUrl, hasExplicitCoverPhoto, readCoverPhotoUrl } from "../utils/coverPhoto";
+import { safePhotos } from "../utils/safeProfile";
 import { resolveProfileMainPhoto, isMainPhoto } from "../utils/mainPhoto";
 
 type ProfileCoverHeaderProps = {
@@ -19,7 +20,11 @@ type ProfileCoverHeaderProps = {
   editableCover?: boolean;
   coverPhoto?: string;
   photoMeta?: Record<string, PhotoReviewMeta>;
-  onCoverChange?: (coverPhoto: string | undefined, photoMeta?: Record<string, PhotoReviewMeta>) => void;
+  onCoverChange?: (
+    coverPhoto: string | undefined,
+    photoMeta?: Record<string, PhotoReviewMeta>,
+    coverPhotoPath?: string
+  ) => void;
   onCoverModerationMessage?: (message: string) => void;
   editablePhotos?: boolean;
   onPhotosChange?: (
@@ -61,21 +66,27 @@ export function ProfileCoverHeader({
   const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
   const photos = safePhotos(profile.photos);
   const avatar = resolveProfileMainPhoto(profile) || null;
-  const resolvedCoverPhoto = coverPhoto ?? profile.coverPhoto;
-  const coverProfile = { ...profile, coverPhoto: resolvedCoverPhoto };
-  const customCover = hasExplicitCover(coverProfile);
+  const resolvedCoverPhoto = readCoverPhotoUrl({ ...profile, coverPhoto: coverPhoto ?? profile.coverPhoto });
+  const coverProfile = { ...profile, coverPhoto: resolvedCoverPhoto, coverPhotoUrl: resolvedCoverPhoto };
+  const customCover = hasExplicitCoverPhoto(coverProfile);
 
   const flow = useCoverPhotoFlow({
     coverPhoto: resolvedCoverPhoto,
     coverPhotoExplicit: profile.coverPhotoExplicit,
+    coverPhotoUpdatedAt: profile.coverPhotoUpdatedAt,
     photoMeta,
     profilePhotos: photos,
     onChange: onCoverChange ?? (() => undefined),
     onModerationMessage: onCoverModerationMessage
   });
 
-  const coverPreview = flow.displayCover || "";
-  const showCoverMedia = Boolean(flow.displayCover);
+  const persistedDisplay = coverPhotoDisplayUrl({
+    coverPhotoUrl: resolvedCoverPhoto,
+    coverPhotoUpdatedAt: profile.coverPhotoUpdatedAt,
+    coverPhotoExplicit: profile.coverPhotoExplicit
+  });
+  const coverPreview = flow.localPreview || flow.pendingCover || persistedDisplay || flow.displayCover || "";
+  const showCoverMedia = Boolean(coverPreview);
 
   const premium = variant === "premium";
   const ageText = profile.age != null && profile.age > 0 ? String(profile.age) : null;

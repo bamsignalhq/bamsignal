@@ -137,8 +137,11 @@ function removePhotoFromProfile(profileJson, photoUrl) {
   const profile = profileJson && typeof profileJson === "object" ? { ...profileJson } : {};
   const photos = Array.isArray(profile.photos) ? profile.photos.filter((url) => url !== photoUrl) : [];
   profile.photos = photos;
-  if (profile.coverPhoto === photoUrl) {
+  if (profile.coverPhoto === photoUrl || profile.coverPhotoUrl === photoUrl) {
     profile.coverPhoto = undefined;
+    profile.coverPhotoUrl = undefined;
+    profile.coverPhotoPath = undefined;
+    profile.coverPhotoUpdatedAt = undefined;
     profile.coverPhotoExplicit = false;
   }
   const photoMeta = normalizePhotoMetaMap(profile.photoMeta);

@@ -147,7 +147,18 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
   if (bundle.datingProfile && typeof bundle.datingProfile === "object") {
     const local = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
     const remote = { ...(bundle.datingProfile as Record<string, unknown>) };
-    if (typeof remote.coverPhoto === "string" && remote.coverPhoto.startsWith("/showcase/")) {
+    const remoteCoverUrl =
+      typeof remote.coverPhotoUrl === "string"
+        ? remote.coverPhotoUrl
+        : typeof remote.coverPhoto === "string"
+          ? remote.coverPhoto
+          : undefined;
+    if (remoteCoverUrl?.startsWith("/showcase/")) {
+      remote.coverPhotoUrl = undefined;
+      remote.coverPhoto = undefined;
+      remote.coverPhotoExplicit = false;
+      remote.coverPhotoPath = undefined;
+    } else if (typeof remote.coverPhoto === "string" && remote.coverPhoto.startsWith("/showcase/")) {
       remote.coverPhoto = undefined;
       remote.coverPhotoExplicit = false;
     }
@@ -167,7 +178,8 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
         : localPhotos.length >= remotePhotos.length
           ? localPhotos
           : remotePhotos;
-    const { coverPhoto, coverPhotoExplicit } = mergeMemberCover(local, remote);
+    const mergedCover = mergeMemberCover(local, remote);
+    const { coverPhoto, coverPhotoExplicit } = mergedCover;
     const onboardingIncomplete = !remoteComplete;
     const interestsTouched = Boolean(
       onboardingIncomplete ? local.interestsTouched : local.interestsTouched || remote.interestsTouched
@@ -190,6 +202,9 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
         safeString(local.mainPhotoUrl) ||
         undefined,
       coverPhoto,
+      coverPhotoUrl: mergedCover.coverPhotoUrl ?? coverPhoto,
+      coverPhotoPath: mergedCover.coverPhotoPath,
+      coverPhotoUpdatedAt: mergedCover.coverPhotoUpdatedAt,
       coverPhotoExplicit,
       onboardingComplete: remoteComplete,
       setupCompleted: remoteComplete || Boolean(local.setupCompleted || remote.setupCompleted),

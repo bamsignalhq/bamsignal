@@ -5,6 +5,7 @@ import { normalizeIntents } from "../constants/intents";
 import { stateForCity, citiesForState, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
 import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
+import { normalizeCoverFields } from "./coverPhoto";
 import { normalizeCompliance } from "./compliance";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
@@ -122,12 +123,19 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
   const rawInterests = safeArray<string>(cleaned.interests).map((item) => safeString(item)).filter(Boolean);
   const interests = onboardingComplete || interestsTouched ? rawInterests : [];
   const rawPhotosList = safePhotos(cleaned.photos ?? base.photos);
-  const persistableCover = safeUserCoverPhoto(cleaned.coverPhoto);
+  const coverFields = normalizeCoverFields(cleaned);
+  const persistableCover = coverFields.coverPhotoUrl;
 
   let coverPhoto: string | undefined;
+  let coverPhotoUrl: string | undefined;
+  let coverPhotoPath: string | undefined;
+  let coverPhotoUpdatedAt: string | undefined;
   let coverPhotoExplicit = false;
   if (persistableCover && cleaned.coverPhotoExplicit !== false) {
     coverPhoto = persistableCover;
+    coverPhotoUrl = persistableCover;
+    coverPhotoPath = coverFields.coverPhotoPath;
+    coverPhotoUpdatedAt = coverFields.coverPhotoUpdatedAt;
     coverPhotoExplicit = cleaned.coverPhotoExplicit ?? true;
   }
 
@@ -165,6 +173,9 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     interests,
     interestsTouched: onboardingComplete ? interests.length > 0 || interestsTouched : interestsTouched,
     coverPhoto,
+    coverPhotoUrl,
+    coverPhotoPath,
+    coverPhotoUpdatedAt,
     coverPhotoExplicit,
     photos: orderedPhotos,
     mainPhotoUrl,

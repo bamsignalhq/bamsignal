@@ -63,7 +63,7 @@ export default async function handler(req, res) {
 
       if (kind === "cover") {
         const result = await uploadCoverPhotoObject({ userId, bytes: buffer, contentType });
-        return res.status(200).json({ ok: true, url: result.url, kind });
+        return res.status(200).json({ ok: true, url: result.url, path: result.path, kind });
       }
 
       const result = await uploadProfilePhotoObject({

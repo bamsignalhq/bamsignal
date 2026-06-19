@@ -162,6 +162,7 @@ async function deleteProfilePhotoUrls(profileJson, authUserId) {
   const profile = profileJson || {};
   const urls = new Set();
   if (profile.coverPhoto) urls.add(profile.coverPhoto);
+  if (profile.coverPhotoUrl) urls.add(profile.coverPhotoUrl);
   if (Array.isArray(profile.photos)) {
     for (const url of profile.photos) {
       if (url) urls.add(url);

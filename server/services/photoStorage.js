@@ -115,9 +115,12 @@ export async function uploadProfilePhotoObject({ userId, photoId, bytes, content
 
 export async function uploadCoverPhotoObject({ userId, bytes, contentType }) {
   const ext = extensionForContentType(contentType);
-  const objectPath = `${userId}/cover.${ext}`;
+  const objectPath = `${userId}/cover-${Date.now()}.${ext}`;
   await uploadObject(COVER_PHOTOS_BUCKET, objectPath, bytes, contentType);
-  return { url: photoStoragePublicUrl(COVER_PHOTOS_BUCKET, objectPath) };
+  return {
+    url: photoStoragePublicUrl(COVER_PHOTOS_BUCKET, objectPath),
+    path: objectPath
+  };
 }
 
 async function uploadObject(bucket, objectPath, bytes, contentType) {

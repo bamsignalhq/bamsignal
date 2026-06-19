@@ -382,11 +382,28 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: "City is required for profile sync." });
       }
 
-      const profile = { ...(body.profile || {}) };
-      if (typeof profile.coverPhoto === "string" && profile.coverPhoto.startsWith("/showcase/")) {
-        profile.coverPhoto = undefined;
-        profile.coverPhotoExplicit = false;
+      const incomingProfile = { ...(body.profile || {}) };
+      if (
+        typeof incomingProfile.coverPhotoUrl === "string" &&
+        incomingProfile.coverPhotoUrl.startsWith("/showcase/")
+      ) {
+        incomingProfile.coverPhotoUrl = undefined;
+        incomingProfile.coverPhoto = undefined;
+        incomingProfile.coverPhotoExplicit = false;
       }
+      if (typeof incomingProfile.coverPhoto === "string" && incomingProfile.coverPhoto.startsWith("/showcase/")) {
+        incomingProfile.coverPhoto = undefined;
+        incomingProfile.coverPhotoExplicit = false;
+      }
+
+      const { findMemberProfileByUserKey } = await import("../../server/cityHome.js");
+      const { mergeMemberProfilePayload } = await import("../../server/utils/profileMerge.js");
+      const existingMember = await findMemberProfileByUserKey(identity.email, identity.phone);
+      const existingProfile =
+        existingMember?.profile && typeof existingMember.profile === "object"
+          ? existingMember.profile
+          : {};
+      const profile = mergeMemberProfilePayload(existingProfile, incomingProfile);
       const { assertProfileSafeForContactLeak } = await import("../../server/services/contactLeak.js");
       const leakCheck = await assertProfileSafeForContactLeak({
         email: identity.email,

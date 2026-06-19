@@ -5,24 +5,33 @@ import type { PhotoReviewMeta } from "../types";
 
 type CoverPhotoUploadProps = {
   coverPhoto?: string;
+  coverPhotoUrl?: string;
   coverPhotoExplicit?: boolean;
+  coverPhotoUpdatedAt?: string;
   photoMeta?: Record<string, PhotoReviewMeta>;
   profilePhotos: string[];
-  onChange: (coverPhoto: string | undefined, photoMeta?: Record<string, PhotoReviewMeta>) => void;
+  onChange: (
+    coverPhoto: string | undefined,
+    photoMeta?: Record<string, PhotoReviewMeta>,
+    coverPhotoPath?: string
+  ) => void;
   onModerationMessage?: (message: string) => void;
 };
 
 export function CoverPhotoUpload({
   coverPhoto,
+  coverPhotoUrl,
   coverPhotoExplicit,
+  coverPhotoUpdatedAt,
   photoMeta,
   profilePhotos,
   onChange,
   onModerationMessage
 }: CoverPhotoUploadProps) {
   const flow = useCoverPhotoFlow({
-    coverPhoto,
+    coverPhoto: coverPhotoUrl ?? coverPhoto,
     coverPhotoExplicit,
+    coverPhotoUpdatedAt,
     photoMeta,
     profilePhotos,
     onChange,

@@ -723,11 +723,19 @@ export async function fetchMemberSocialBundle({ email, phone }) {
       profileJson.onboardingCompletedAt ||
       profileJson.completedAt
   );
+  const rawCoverUrl =
+    typeof profileJson.coverPhotoUrl === "string"
+      ? profileJson.coverPhotoUrl
+      : typeof profileJson.coverPhoto === "string"
+        ? profileJson.coverPhoto
+        : undefined;
   const rawCover =
-    typeof profileJson.coverPhoto === "string" && !profileJson.coverPhoto.startsWith("/showcase/")
-      ? profileJson.coverPhoto
-      : undefined;
+    rawCoverUrl && !rawCoverUrl.startsWith("/showcase/") ? rawCoverUrl : undefined;
   const coverPhotoExplicit = rawCover ? Boolean(profileJson.coverPhotoExplicit) : false;
+  const coverPhotoPath =
+    typeof profileJson.coverPhotoPath === "string" ? profileJson.coverPhotoPath : undefined;
+  const coverPhotoUpdatedAt =
+    typeof profileJson.coverPhotoUpdatedAt === "string" ? profileJson.coverPhotoUpdatedAt : undefined;
 
   return {
     incomingSignals,
@@ -739,6 +747,9 @@ export async function fetchMemberSocialBundle({ email, phone }) {
       ? {
           photos,
           coverPhoto: rawCover,
+          coverPhotoUrl: rawCover,
+          coverPhotoPath,
+          coverPhotoUpdatedAt,
           coverPhotoExplicit,
           photoMeta: profileJson.photoMeta,
           age: profileJson.age || 25,

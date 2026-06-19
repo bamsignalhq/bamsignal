@@ -173,6 +173,12 @@ export type DatingProfile = {
   /** Per-photo moderation metadata keyed by storage URL */
   photoMeta?: Record<string, PhotoReviewMeta>;
   /** Wide hero backdrop — separate from profile gallery photos */
+  coverPhotoUrl?: string;
+  /** Supabase storage path for cover replace/delete */
+  coverPhotoPath?: string;
+  /** ISO timestamp — cache bust + merge tie-breaker */
+  coverPhotoUpdatedAt?: string;
+  /** @deprecated use coverPhotoUrl — kept for legacy reads/writes */
   coverPhoto?: string;
   /** Set only when member explicitly adds cover in Profile (not signup). */
   coverPhotoExplicit?: boolean;

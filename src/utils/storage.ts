@@ -1,12 +1,12 @@
 import type { Theme } from "../types";
+import { safeGetJSON, safeGetString, safeRemove, safeSetJSON } from "./safeStorage";
+
+export { safeGetJSON, safeSetJSON, safeRemove, safeGetString } from "./safeStorage";
+export { recordApiError, getLastApiError } from "./safeStorage";
 
 export function getSavedTheme(): Theme {
-  try {
-    const saved = localStorage.getItem("bamsignal-theme");
-    if (saved === "light" || saved === "dark") return saved;
-  } catch {
-    /* ignore */
-  }
+  const saved = safeGetString("bamsignal-theme");
+  if (saved === "light" || saved === "dark") return saved;
   return "dark";
 }
 
@@ -15,25 +15,15 @@ export function getDailyKey(): string {
 }
 
 export function readJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
+  return safeGetJSON(key, fallback);
 }
 
 export function writeJson(key: string, value: unknown): boolean {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch (error) {
-    if (import.meta.env.DEV) {
-      console.error("[bamsignal] localStorage write failed", key, error);
-    }
-    return false;
-  }
+  return safeSetJSON(key, value);
+}
+
+export function removeJson(key: string): void {
+  safeRemove(key);
 }
 
 export function readDailyCount(key: string): number {

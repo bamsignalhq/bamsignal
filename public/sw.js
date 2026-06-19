@@ -1,4 +1,4 @@
-const CACHE_NAME = "bamsignal-v1.0.17-21";
+const CACHE_NAME = "bamsignal-v1.0.17-22";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -38,7 +38,7 @@ self.addEventListener("message", (event) => {
 function networkFirst(request) {
   return fetch(request)
     .then((response) => {
-      if (response.ok) {
+      if (response.ok && request.method === "GET") {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
       }
@@ -61,13 +61,12 @@ self.addEventListener("fetch", (event) => {
 
   if (url.origin !== self.location.origin) return;
 
-  // Hashed bundles must never be served from a stale cache — mismatched chunks blank the app.
-  if (url.pathname.startsWith("/assets/")) {
-    event.respondWith(fetch(request));
+  if (url.pathname.startsWith("/assets/") || request.destination === "script" || request.destination === "style") {
+    event.respondWith(networkFirst(request));
     return;
   }
 
-  const cacheableDestinations = new Set(["script", "style", "image", "font"]);
+  const cacheableDestinations = new Set(["image", "font"]);
   const isShellAsset = APP_SHELL.includes(url.pathname);
   if (!isShellAsset && !cacheableDestinations.has(request.destination)) return;
 

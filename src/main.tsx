@@ -32,10 +32,14 @@ import "./styles/member-fintech.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";
 import { repairMemberCaches } from "./utils/repairMemberCaches";
+import { rememberSuccessfulRoute } from "./utils/crashRecovery";
 
 repairMemberCaches();
 checkBuildVersion();
 registerServiceWorker();
+
+window.addEventListener("popstate", () => rememberSuccessfulRoute());
+rememberSuccessfulRoute();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

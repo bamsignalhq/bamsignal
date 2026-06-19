@@ -31,40 +31,64 @@ export const emptyHomeAdvancedFilters = (): HomeAdvancedFilters => ({
   verificationPreferences: []
 });
 
+export function normalizeHomeAdvancedFilters(
+  raw: Partial<HomeAdvancedFilters> | null | undefined
+): HomeAdvancedFilters {
+  const base = emptyHomeAdvancedFilters();
+  if (!raw || typeof raw !== "object") return base;
+  return {
+    tribes: Array.isArray(raw.tribes) ? raw.tribes : [],
+    religions: Array.isArray(raw.religions) ? raw.religions : [],
+    occupations: Array.isArray(raw.occupations) ? raw.occupations : [],
+    statesOfOrigin: Array.isArray(raw.statesOfOrigin) ? raw.statesOfOrigin : [],
+    relationshipIntentions: Array.isArray(raw.relationshipIntentions) ? raw.relationshipIntentions : [],
+    genotypes: Array.isArray(raw.genotypes) ? raw.genotypes : [],
+    hasKids: Array.isArray(raw.hasKids) ? raw.hasKids : [],
+    wantsKids: Array.isArray(raw.wantsKids) ? raw.wantsKids : [],
+    bodyTypes: Array.isArray(raw.bodyTypes) ? raw.bodyTypes : [],
+    verificationPreferences: Array.isArray(raw.verificationPreferences)
+      ? raw.verificationPreferences
+      : [],
+    verifiedOnly: Boolean(raw.verifiedOnly)
+  };
+}
+
 export function homeAdvancedFilterCount(filters: HomeAdvancedFilters): number {
+  const normalized = normalizeHomeAdvancedFilters(filters);
   return (
-    filters.tribes.length +
-    filters.religions.length +
-    filters.occupations.length +
-    filters.statesOfOrigin.length +
-    filters.relationshipIntentions.length +
-    filters.genotypes.length +
-    filters.hasKids.length +
-    filters.wantsKids.length +
-    filters.bodyTypes.length +
-    filters.verificationPreferences.filter((v) => v !== "Anyone" && v !== "No preference").length +
-    (filters.verifiedOnly ? 1 : 0)
+    normalized.tribes.length +
+    normalized.religions.length +
+    normalized.occupations.length +
+    normalized.statesOfOrigin.length +
+    normalized.relationshipIntentions.length +
+    normalized.genotypes.length +
+    normalized.hasKids.length +
+    normalized.wantsKids.length +
+    normalized.bodyTypes.length +
+    normalized.verificationPreferences.filter((v) => v !== "Anyone" && v !== "No preference").length +
+    (normalized.verifiedOnly ? 1 : 0)
   );
 }
 
 export function homeAdvancedToSearchFilters(filters: HomeAdvancedFilters) {
-  const kidsPreferences = [...new Set([...filters.hasKids, ...filters.wantsKids])] as KidsPreference[];
+  const normalized = normalizeHomeAdvancedFilters(filters);
+  const kidsPreferences = [...new Set([...normalized.hasKids, ...normalized.wantsKids])] as KidsPreference[];
   const relationshipIntentions = relationshipIntentionsToSearchIntents(
-    filters.relationshipIntentions
+    normalized.relationshipIntentions
   ) as IntentTag[];
-  const verificationPreferences = filters.verificationPreferences.filter(
+  const verificationPreferences = normalized.verificationPreferences.filter(
     (v) => v !== "Anyone" && v !== "No preference"
   );
 
   return {
-    tribes: filters.tribes,
-    religions: filters.religions,
-    occupations: filters.occupations,
-    statesOfOrigin: filters.statesOfOrigin,
+    tribes: normalized.tribes,
+    religions: normalized.religions,
+    occupations: normalized.occupations,
+    statesOfOrigin: normalized.statesOfOrigin,
     relationshipIntentions,
-    genotypes: filters.genotypes,
+    genotypes: normalized.genotypes,
     kidsPreferences,
-    bodyTypes: filters.bodyTypes,
+    bodyTypes: normalized.bodyTypes,
     verificationPreferences
   };
 }
@@ -105,7 +129,8 @@ export function buildHomeFilterChips(options: {
   advanced: HomeAdvancedFilters;
 }): HomeFilterChip[] {
   const chips: HomeFilterChip[] = [];
-  const { ageMin, ageMax, city, state, advanced } = options;
+  const { ageMin, ageMax, city, state } = options;
+  const advanced = normalizeHomeAdvancedFilters(options.advanced);
 
   if (ageMin || ageMax) {
     chips.push({ id: "age", label: `${ageMin}–${ageMax}`, kind: "age", value: `${ageMin}-${ageMax}` });

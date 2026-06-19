@@ -119,6 +119,15 @@ import { flowLog } from "./utils/flowLog";
 import { clearOnboardingDrafts, logRouteDecision, shouldRouteToOnboarding } from "./utils/onboardingStatus";
 import { repairMemberCaches } from "./utils/repairMemberCaches";
 import { memberFirstName } from "./utils/safeProfile";
+import { MemberRouteBoundary, PublicRouteBoundary } from "./components/RouteErrorBoundary";
+import {
+  applySafeModeBoot,
+  clearSafeMode,
+  dismissRecoveryBanner,
+  isSafeMode,
+  rememberSuccessfulRoute,
+  shouldShowRecoveryBanner
+} from "./utils/crashRecovery";
 import { usePlans } from "./context/PlansContext";
 import {
   PremiumCheckoutProvider,
@@ -162,6 +171,8 @@ export function App() {
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
   const [paymentFlowTick, setPaymentFlowTick] = useState(0);
   const [bootStalled, setBootStalled] = useState(false);
+  const [safeModeActive] = useState(() => isSafeMode());
+  const [recoveryBanner, setRecoveryBanner] = useState(() => shouldShowRecoveryBanner());
   const paymentVerifyInFlight = useRef(false);
   const [user, setUser] = useState<UserProfile>(() =>
     safeUserProfile(readJson(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" }))
@@ -221,6 +232,25 @@ export function App() {
 
 
   useEffect(() => {
+    rememberSuccessfulRoute();
+  }, []);
+
+  useEffect(() => {
+    if (!safeModeActive) return;
+    const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+    const authed = Boolean(stored.email || stored.phone);
+    const nextPath = applySafeModeBoot(authed);
+    if (authed) {
+      setMemberAppEntered(true);
+      setIsAuthed(true);
+      setUser(safeUserProfile(stored));
+    }
+    if (normalizePath(window.location.pathname) !== normalizePath(nextPath)) {
+      navigateToPath(nextPath, true);
+    }
+  }, [safeModeActive]);
+
+  useEffect(() => {
     void fetchSubscriptionCatalog().then(cacheSubscriptionCatalogPricing);
   }, []);
 
@@ -239,6 +269,7 @@ export function App() {
       if (requiresMemberRestoreBlocking(window.location.pathname, isNative)) {
         setMemberAppEntered(true);
       }
+      rememberSuccessfulRoute();
       if (hub) {
         const resolved = resolveHardHubPath();
         if (normalizePath(window.location.pathname) !== resolved) {
@@ -1091,6 +1122,7 @@ export function App() {
 
   const showPaymentRecovery =
     isAuthed &&
+    !safeModeActive &&
     !paymentSuccess &&
     !paymentLoading &&
     !isActivePaymentFlow() &&
@@ -1318,6 +1350,20 @@ export function App() {
           />
         )}
 
+        {recoveryBanner ? (
+          <p
+            className="compliance-sync-banner"
+            role="status"
+            onClick={() => {
+              dismissRecoveryBanner();
+              clearSafeMode();
+              setRecoveryBanner(false);
+            }}
+          >
+            Recovered your session.
+          </p>
+        ) : null}
+
         {complianceSyncPending && memberAccessReady ? (
           <p className="compliance-sync-banner" role="status">
             Finishing account setup…
@@ -1364,7 +1410,9 @@ export function App() {
           }`}
         >
           {isAuthed && showOnboarding && memberAppEntered && (
-            <OnboardingPage user={user} onUserChange={setUser} onComplete={finishOnboarding} />
+            <MemberRouteBoundary name="onboarding">
+              <OnboardingPage user={user} onUserChange={setUser} onComplete={finishOnboarding} />
+            </MemberRouteBoundary>
           )}
           {isAuthed && memberAccessReady && memberOverlay === "premium" && (
             <PremiumPage
@@ -1402,76 +1450,88 @@ export function App() {
             />
           )}
           {memberAccessReady && !memberOverlay && tab === "home" && (
-            <HomePage
-              user={user}
-              userName={user.name}
-              isPremium={isPremium}
-              onDiscover={() => setTab("discover")}
-              onOpenPremium={startPremiumCheckout}
-            />
+            <MemberRouteBoundary name="home">
+              <HomePage
+                user={user}
+                userName={user.name}
+                isPremium={isPremium}
+                onDiscover={() => setTab("discover")}
+                onOpenPremium={startPremiumCheckout}
+              />
+            </MemberRouteBoundary>
           )}
           {showMarketingHome && tab === "home" && !showOnboarding && (
-            <LandingPage
-              onSignup={() => openAuth("signup")}
-              onGuestAction={() => openAuth("signup", "discover")}
-              showEarlyAccess={false}
-              onLogoClick={goHome}
-            />
+            <PublicRouteBoundary name="landing">
+              <LandingPage
+                onSignup={() => openAuth("signup")}
+                onGuestAction={() => openAuth("signup", "discover")}
+                showEarlyAccess={false}
+                onLogoClick={goHome}
+              />
+            </PublicRouteBoundary>
           )}
           {memberAccessReady && tab === "discover" && (
-            <DiscoverPage
-              isPremium={isPremium}
-              plans={plans}
-              onMatch={() => undefined}
-              onUpgrade={handleUpgrade}
-              onStartPremiumCheckout={startPremiumCheckout}
-              paymentLoading={paymentLoading}
-              onOpenSafety={() => setMemberOverlay("safety")}
-            />
+            <MemberRouteBoundary name="discover">
+              <DiscoverPage
+                isPremium={isPremium}
+                plans={plans}
+                onMatch={() => undefined}
+                onUpgrade={handleUpgrade}
+                onStartPremiumCheckout={startPremiumCheckout}
+                paymentLoading={paymentLoading}
+                onOpenSafety={() => setMemberOverlay("safety")}
+              />
+            </MemberRouteBoundary>
           )}
           {tab === "discover" && isGuest && <GuestDiscoverPage onJoin={() => openAuth("signup", "discover")} />}
           {tab === "likes" && isGuest && (
             <GuestGate tab="likes" onJoin={() => openAuth("signup", "likes")} onLogin={() => openAuth("login", "likes")} />
           )}
           {memberAccessReady && tab === "likes" && (
-            <LikesPage
-              isPremium={isPremium}
-              onUpgrade={startPremiumCheckout}
-              paymentLoading={paymentLoading}
-              onCompleteProfile={() => setTab("me")}
-              onDiscover={() => setTab("discover")}
-              onOpenSafety={() => setMemberOverlay("safety")}
-            />
+            <MemberRouteBoundary name="likes">
+              <LikesPage
+                isPremium={isPremium}
+                onUpgrade={startPremiumCheckout}
+                paymentLoading={paymentLoading}
+                onCompleteProfile={() => setTab("me")}
+                onDiscover={() => setTab("discover")}
+                onOpenSafety={() => setMemberOverlay("safety")}
+              />
+            </MemberRouteBoundary>
           )}
           {tab === "chats" && isGuest && (
             <GuestGate tab="chats" onJoin={() => openAuth("signup", "chats")} onLogin={() => openAuth("login", "chats")} />
           )}
           {memberAccessReady && tab === "chats" && (
-            <ChatsPage
-              isPremium={isPremium}
-              plans={plans}
-              onUpgrade={handleUpgrade}
-              paymentLoading={paymentLoading}
-              onDiscover={() => setTab("discover")}
-            />
+            <MemberRouteBoundary name="chats">
+              <ChatsPage
+                isPremium={isPremium}
+                plans={plans}
+                onUpgrade={handleUpgrade}
+                paymentLoading={paymentLoading}
+                onDiscover={() => setTab("discover")}
+              />
+            </MemberRouteBoundary>
           )}
           {tab === "me" && isGuest && (
             <GuestGate tab="me" onJoin={() => openAuth("signup", "me")} onLogin={() => openAuth("login", "me")} />
           )}
           {memberAccessReady && tab === "me" && (
-            <ProfilePage
-              user={user}
-              isPremium={isPremium}
-              theme={theme}
-              onToggleTheme={toggleTheme}
-              onUserChange={setUser}
-              onLogout={handleLogout}
-              onUpgrade={startPremiumCheckout}
-              onReturnToDashboard={() => setTab("home")}
-              onOpenSafetyCenter={() => setMemberOverlay("safety")}
-              onPurchaseBoost={(product) => void handlePurchaseBoost(product)}
-              boostCheckoutLoading={paymentLoading}
-            />
+            <MemberRouteBoundary name="profile">
+              <ProfilePage
+                user={user}
+                isPremium={isPremium}
+                theme={theme}
+                onToggleTheme={toggleTheme}
+                onUserChange={setUser}
+                onLogout={handleLogout}
+                onUpgrade={startPremiumCheckout}
+                onReturnToDashboard={() => setTab("home")}
+                onOpenSafetyCenter={() => setMemberOverlay("safety")}
+                onPurchaseBoost={(product) => void handlePurchaseBoost(product)}
+                boostCheckoutLoading={paymentLoading}
+              />
+            </MemberRouteBoundary>
           )}
         </main>
 

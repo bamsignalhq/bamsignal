@@ -19,6 +19,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.webp" />
     <link rel="canonical" href="https://bamsignal.com/" />
+    <meta name="bamsignal-build" content="__BAMSIGNAL_BUILD__" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
     <link rel="preload" as="image" href="/showcase/hero-lagos-young-professionals-01.webp" type="image/webp" />
     <title>BamSignal | Your signal starts here</title>
@@ -36,7 +37,15 @@
         var root = document.getElementById("root");
         if (root && !root.children.length) {
           root.innerHTML =
-            '<main class="app-fallback" role="alert"><div class="app-fallback__card card"><h1>Something went wrong</h1><p>Tap below to reload BamSignal.</p><button type="button" class="btn-primary btn-full" onclick="location.reload()">Reload</button></div></main>';
+            '<main class="app-fallback" role="alert"><div class="app-fallback__card card"><h1>Updating BamSignal…</h1><p>Refreshing so you can continue.</p><button type="button" class="btn-primary btn-full" id="bamsignal-boot-reload">Reload</button></div></main>';
+          var btn = document.getElementById("bamsignal-boot-reload");
+          if (btn) {
+            btn.addEventListener("click", function () {
+              var url = new URL(window.location.href);
+              url.searchParams.set("recover", String(Date.now()));
+              window.location.replace(url.toString());
+            });
+          }
         }
       }, 15000);
     </script>

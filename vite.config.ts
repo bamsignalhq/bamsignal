@@ -154,7 +154,16 @@ function contactApiDevPlugin(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), contactApiDevPlugin()],
+  plugins: [
+    react(),
+    contactApiDevPlugin(),
+    {
+      name: "bamsignal-build-meta",
+      transformIndexHtml(html) {
+        return html.replace(/__BAMSIGNAL_BUILD__/g, appBuildId);
+      }
+    }
+  ],
   define: {
     __APP_BUILD_ID__: JSON.stringify(appBuildId),
     __APP_BUILD_TIME__: JSON.stringify(appBuildTime)

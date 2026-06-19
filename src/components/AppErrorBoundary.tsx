@@ -1,7 +1,11 @@
 import React from "react";
-import { APP_BUILD_ID } from "../constants/build";
-import { STORAGE_KEYS } from "../constants/limits";
-import { readJson } from "../utils/storage";
+import {
+  isSafeMode,
+  performAppRecovery,
+  recordCrashTimestamp,
+  enableSafeMode
+} from "../utils/crashRecovery";
+import { logAppCrash } from "../utils/crashLog";
 
 type AppErrorBoundaryProps = {
   children: React.ReactNode;
@@ -9,50 +13,46 @@ type AppErrorBoundaryProps = {
 
 type AppErrorBoundaryState = {
   error: Error | null;
+  recovering: boolean;
 };
 
-function crashUserHint(): string {
-  try {
-    const user = readJson<{ email?: string; phone?: string }>(STORAGE_KEYS.userProfile, {});
-    return user.email || user.phone || "";
-  } catch {
-    return "";
-  }
-}
-
 export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, AppErrorBoundaryState> {
-  state: AppErrorBoundaryState = { error: null };
+  state: AppErrorBoundaryState = { error: null, recovering: false };
 
-  static getDerivedStateFromError(error: Error): AppErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<AppErrorBoundaryState> {
+    if (isSafeMode()) {
+      return { error: null, recovering: true };
+    }
     return { error };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    const payload = {
-      build: APP_BUILD_ID,
-      route: `${window.location.pathname}${window.location.search}`,
-      user: crashUserHint(),
-      name: error.name,
-      message: error.message,
-      stack: info.componentStack
-    };
+    logAppCrash(error, info.componentStack);
 
-    if (import.meta.env.DEV) {
-      console.error("[bamsignal] app crash", payload);
-    }
-
-    try {
-      sessionStorage.setItem("bamsignal:last-crash", JSON.stringify(payload));
-    } catch {
-      /* ignore */
+    const shouldSafeMode = recordCrashTimestamp();
+    if (shouldSafeMode) {
+      enableSafeMode();
+      this.setState({ recovering: true, error: null });
+      void performAppRecovery({ enableSafeMode: true });
     }
   }
 
   private reload = () => {
-    window.location.reload();
+    void performAppRecovery();
   };
 
   render() {
+    if (this.state.recovering) {
+      return (
+        <main className="app-fallback" role="status">
+          <div className="app-fallback__card card">
+            <h1>Recovering your session…</h1>
+            <p>Updating BamSignal so you can continue.</p>
+          </div>
+        </main>
+      );
+    }
+
     if (!this.state.error) return this.props.children;
 
     return (

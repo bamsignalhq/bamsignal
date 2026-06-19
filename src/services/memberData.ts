@@ -1,6 +1,6 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import type { ChatMessage, ChatThread, LikeEntry, Match, ReportRecord, UserProfile, DatingProfile } from "../types";
-import { readJson, writeJson } from "../utils/storage";
+import { readJson, writeJson, recordApiError } from "../utils/storage";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
 import { cacheDiscoverProfiles } from "./discoverProfiles";
 import { setPremiumSnapshot } from "./premiumStatus";
@@ -70,9 +70,13 @@ async function postMemberAction(
       body: JSON.stringify({ ...identity, ...body })
     });
     const payload = await readResponseJson<MemberActionPayload>(response);
-    if (!response.ok || !payload?.ok) return null;
+    if (!response.ok || !payload?.ok) {
+      recordApiError(action, payload?.error || `HTTP ${response.status}`);
+      return null;
+    }
     return payload;
-  } catch {
+  } catch (error) {
+    recordApiError(action, error instanceof Error ? error.message : "network");
     return null;
   }
 }

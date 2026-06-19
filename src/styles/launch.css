@@ -982,6 +982,37 @@
   line-height: 1.5;
 }
 
+.app-updating-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 8, 20, 0.92);
+  color: #f8fafc;
+  font-size: 1rem;
+}
+
+.route-error-fallback {
+  padding: 1rem;
+}
+
+.route-error-fallback__card {
+  max-width: 28rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.route-error-fallback__card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.route-error-fallback__card p {
+  margin: 0 0 1rem;
+  color: var(--text-muted, #b7c3d9);
+}
+
 .preloader__reload {
   margin-top: 1rem;
 }

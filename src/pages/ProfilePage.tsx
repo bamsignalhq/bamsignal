@@ -823,7 +823,7 @@ export function ProfilePage({
               <section className="card settings-hub-card">
                 <SettingsRow
                   label={isPremium ? "Manage Signal Pass" : "Signal Pass"}
-                  hint={isPremium ? PREMIUM_COPY.subscriptionManage : undefined}
+                  hint={isPremium ? PREMIUM_COPY.subscriptionManage : PREMIUM_COPY.settingsSignalPassHint}
                   onClick={() => setSettingsPanel("subscription")}
                 />
                 <SettingsRow label="Privacy & Safety" onClick={() => setSettingsPanel("privacy")} />
@@ -987,6 +987,7 @@ export function ProfilePage({
                 <button type="button" className="settings-hub-row settings-hub-row--cta" onClick={onUpgrade}>
                   <span>
                     <strong>Signal Pass</strong>
+                    <small>{PREMIUM_COPY.settingsSignalPassHint}</small>
                   </span>
                   <ChevronRight size={18} aria-hidden="true" />
                 </button>

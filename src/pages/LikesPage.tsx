@@ -293,20 +293,20 @@ export function LikesPage({
       {!hasSignals ? (
         <div className="signals-premium-empty">
           <h2>{PREMIUM_COPY.signalsEmptyTitle}</h2>
-          <p>{PREMIUM_COPY.signalsEmptyBody}</p>
           <div className="premium-empty-actions">
-            {!isPremium ? (
-              <button type="button" className="btn-primary" onClick={onUpgrade} disabled={paymentLoading}>
-                {paymentLoading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.upgradeToday}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className={!isPremium ? "btn-secondary" : "btn-primary"}
-              onClick={onDiscover ?? onUpgrade}
-            >
+            <button type="button" className="btn-primary" onClick={onDiscover ?? onUpgrade}>
               {PREMIUM_COPY.explorePeople}
             </button>
+            {!isPremium ? (
+              <button
+                type="button"
+                className="signals-premium-empty__pass-link"
+                onClick={onUpgrade}
+                disabled={paymentLoading}
+              >
+                {paymentLoading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.getSignalPass}
+              </button>
+            ) : null}
           </div>
         </div>
       ) : (

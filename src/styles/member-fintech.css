@@ -1,0 +1,522 @@
+/* BamSignal member app — compact fintech design tokens & polish (scoped) */
+
+.platform-root--member {
+  --bs-bg: #fff4fa;
+  --bs-surface: #ffffff;
+  --bs-text: #1b0b2e;
+  --bs-muted: rgba(27, 11, 46, 0.62);
+  --bs-border: rgba(27, 11, 46, 0.1);
+  --bs-pink: #e91e8f;
+  --bs-purple: #7a4df3;
+  --bs-gradient: linear-gradient(135deg, #e91e8f, #7a4df3);
+  --bs-radius-card: 20px;
+  --bs-radius-pill: 999px;
+  --bs-shadow-soft: 0 8px 24px rgba(27, 11, 46, 0.06);
+  --bs-gap-section: 16px;
+  --bs-page-max: 520px;
+  --bs-page-pad-x: 20px;
+  --bs-page-pad-y: 18px;
+  --bs-page-pad-bottom: 96px;
+
+  --bg: var(--bs-bg);
+  --surface: var(--bs-surface);
+  --card: var(--bs-surface);
+  --text: var(--bs-text);
+  --text-muted: var(--bs-muted);
+  --border: var(--bs-border);
+  --brand-pink: var(--bs-pink);
+  --brand-purple: var(--bs-purple);
+  --brand-gradient: var(--bs-gradient);
+  --shadow-soft: var(--bs-shadow-soft);
+  --shadow-card: var(--bs-shadow-soft);
+  --radius-md: 16px;
+  --radius-lg: var(--bs-radius-card);
+  --shell-max: var(--bs-page-max);
+}
+
+.app.light.platform-root--member,
+[data-theme="light"].platform-root--member {
+  background: var(--bs-bg);
+}
+
+.app.light.platform-root--member .app-main--member,
+[data-theme="light"].platform-root--member .app-main--member {
+  background: transparent;
+}
+
+/* Member page shell */
+.platform-root--member .app-main--member {
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: calc(var(--bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px));
+}
+
+.platform-root--member .member-content-pad,
+.platform-root--member .home-page,
+.platform-root--member .discover-page--premium,
+.platform-root--member .messages-page--premium,
+.platform-root--member .signals-premium-page,
+.platform-root--member .profile-page--premium,
+.platform-root--member .premium-page--fintech {
+  width: 100%;
+  max-width: var(--bs-page-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding: var(--bs-page-pad-y) var(--bs-page-pad-x) var(--bs-page-pad-bottom);
+  box-sizing: border-box;
+}
+
+.platform-root--member .home-page.home-page--compact {
+  gap: var(--bs-gap-section);
+}
+
+.platform-root--member .discover-page--premium {
+  gap: var(--bs-gap-section);
+}
+
+/* Section eyebrow titles */
+.platform-root--member .profile-premium-card__title,
+.platform-root--member .signals-premium-head__eyebrow,
+.platform-root--member .member-page-head__eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bs-muted);
+}
+
+/* Cards */
+.platform-root--member .card:not(.settings-hub-card):not(.messages-list--premium) {
+  background: var(--bs-surface);
+  border: 1px solid var(--bs-border);
+  border-radius: var(--bs-radius-card);
+  padding: 16px;
+  box-shadow: var(--bs-shadow-soft);
+  margin-bottom: var(--bs-gap-section);
+}
+
+.platform-root--member .settings-hub-card.card {
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: var(--bs-gap-section);
+}
+
+/* Buttons */
+.platform-root--member .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 16px;
+  background: var(--bs-gradient);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: var(--bs-shadow-soft);
+}
+
+.platform-root--member .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 1px solid var(--bs-border);
+  background: var(--bs-surface);
+  color: var(--bs-text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.platform-root--member .btn-ghost,
+.platform-root--member .home-signal-pill,
+.platform-root--member .discover-premium-head__filters,
+.platform-root--member .discover-premium-head__city,
+.platform-root--member .discover-premium-chips__chip,
+.platform-root--member .intent-tag {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.platform-root--member .home-signal-pill {
+  border-radius: var(--bs-radius-pill);
+}
+
+/* Body copy */
+.platform-root--member .page,
+.platform-root--member .member-page {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--bs-text);
+}
+
+.platform-root--member .lead,
+.platform-root--member .profile-premium-card__text,
+.platform-root--member .profile-overview-empty {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--bs-muted);
+}
+
+/* Forms / selectors */
+.platform-root--member .tap-select-field__trigger,
+.platform-root--member .age-range-select__control,
+.platform-root--member input[type="text"],
+.platform-root--member input[type="email"],
+.platform-root--member input[type="tel"],
+.platform-root--member input[type="number"],
+.platform-root--member textarea,
+.platform-root--member select {
+  min-height: 48px;
+  border-radius: 16px;
+}
+
+.platform-root--member .member-search {
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 16px;
+  margin-bottom: var(--bs-gap-section);
+}
+
+.platform-root--member .member-search input {
+  font-size: 15px;
+}
+
+/* Home */
+.platform-root--member .home-top--row {
+  max-height: 72px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.platform-root--member .home-top__greeting {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.platform-root--member .home-discovery--compact {
+  margin-bottom: 2px;
+}
+
+.platform-root--member .signal-pass-inline {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.platform-root--member .signal-pass-inline__lead {
+  font-size: 13px;
+}
+
+.platform-root--member .signal-pass-inline__cta {
+  font-size: 13px;
+}
+
+/* Discover */
+.platform-root--member .discover-premium-head__titles h1 {
+  font-size: clamp(32px, 8vw, 34px);
+  line-height: 1.08;
+  color: var(--bs-text);
+}
+
+.platform-root--member .discover-premium-head__titles p {
+  font-size: 15px;
+  color: var(--bs-muted);
+  opacity: 1;
+}
+
+.platform-root--member .discover-premium-chips {
+  margin: 0 calc(var(--bs-page-pad-x) * -1);
+  padding: 0 var(--bs-page-pad-x);
+}
+
+/* Chats */
+.platform-root--member .messages-row--premium,
+.platform-root--member .messages-list--premium .messages-row {
+  padding: 12px 14px;
+  gap: 12px;
+}
+
+.platform-root--member .messages-row__avatar {
+  width: 48px;
+  height: 48px;
+}
+
+.platform-root--member .messages-empty--compact {
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.platform-root--member .premium-empty-actions {
+  gap: 12px;
+  max-width: 320px;
+}
+
+/* Signals */
+.platform-root--member .signals-premium-page {
+  max-width: var(--bs-page-max);
+}
+
+.platform-root--member .signals-premium-head h1 {
+  font-size: clamp(1.35rem, 5vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.platform-root--member .signals-premium-empty {
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  padding-top: 24px;
+}
+
+.platform-root--member .signals-premium-empty h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--bs-text);
+}
+
+.platform-root--member .signals-premium-empty__pass-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border: none;
+  border-radius: var(--bs-radius-pill);
+  background: transparent;
+  color: var(--bs-pink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.platform-root--member .signals-premium-empty__pass-link:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.platform-root--member .signals-premium-safety {
+  margin-top: var(--bs-gap-section);
+  border-radius: var(--bs-radius-card);
+  box-shadow: var(--bs-shadow-soft);
+}
+
+.platform-root--member .signals-premium-safety__copy strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+/* Settings — fintech account menu */
+.platform-root--member .settings-hub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--bs-border);
+}
+
+.platform-root--member .settings-hub-row strong {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.platform-root--member .settings-hub-row small {
+  font-size: 13px;
+  color: var(--bs-muted);
+  margin-top: 2px;
+}
+
+.platform-root--member .settings-hub-row--cta {
+  background: transparent;
+}
+
+.platform-root--member .profile-screen-title {
+  font-size: clamp(1.35rem, 5vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--bs-gap-section);
+}
+
+/* Premium / checkout — calm */
+.platform-root--member .premium-page--fintech {
+  max-width: var(--bs-page-max);
+}
+
+.platform-root--member .premium-page__title {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.platform-root--member .premium-page__subtitle {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--bs-muted);
+}
+
+.platform-root--member .premium-plan-button {
+  min-height: 48px;
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--bs-border);
+  background: var(--bs-surface);
+  box-shadow: var(--bs-shadow-soft);
+}
+
+.platform-root--member .premium-plan-strip__card {
+  min-height: 48px;
+  border-radius: 16px;
+}
+
+.platform-root--member .signal-pass-promo {
+  border-radius: var(--bs-radius-card);
+  box-shadow: var(--bs-shadow-soft);
+}
+
+/* Onboarding — spacing only */
+.app-main--onboarding .onboarding-page {
+  max-width: var(--bs-page-max, 520px);
+  margin: 0 auto;
+  padding: 18px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+}
+
+.app-main--onboarding .onboarding-step {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.app-main--onboarding .onboarding-header {
+  max-height: 72px;
+}
+
+.app-main--onboarding .onboarding-footer .btn-primary {
+  min-height: 48px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.app-main--onboarding .onboarding-location-fields,
+.app-main--onboarding .onboarding-pref-block,
+.app-main--onboarding .match-pref-fields {
+  gap: 14px;
+}
+
+.app-main--onboarding .tap-select-field__trigger {
+  min-height: 48px;
+  border-radius: 16px;
+}
+
+/* Dark mode — readable text */
+.app.dark.platform-root--member,
+[data-theme="dark"].platform-root--member {
+  --bs-bg: #12001d;
+  --bs-surface: #221533;
+  --bs-text: rgba(255, 255, 255, 0.92);
+  --bs-muted: rgba(255, 255, 255, 0.72);
+  --bs-border: rgba(255, 255, 255, 0.1);
+  --bg: var(--bs-bg);
+  --card: var(--bs-surface);
+  --surface: var(--bs-surface);
+  --text: var(--bs-text);
+  --text-muted: var(--bs-muted);
+  --border: var(--bs-border);
+  --input-bg: #2a1a3d;
+}
+
+.app.dark.platform-root--member .btn-secondary,
+[data-theme="dark"].platform-root--member .btn-secondary {
+  background: var(--bs-surface);
+  color: var(--bs-text);
+  border-color: var(--bs-border);
+}
+
+.app.dark.platform-root--member .card,
+[data-theme="dark"].platform-root--member .card {
+  background: var(--bs-surface);
+  border-color: var(--bs-border);
+}
+
+.app.dark.platform-root--member .discover-page--premium,
+.app.dark.platform-root--member .discover-premium-head__titles h1,
+.app.dark.platform-root--member .discover-premium-head__titles p,
+[data-theme="dark"].platform-root--member .discover-page--premium,
+[data-theme="dark"].platform-root--member .discover-premium-head__titles h1,
+[data-theme="dark"].platform-root--member .discover-premium-head__titles p {
+  color: var(--bs-text);
+}
+
+.app.dark.platform-root--member .discover-premium-head__titles p,
+[data-theme="dark"].platform-root--member .discover-premium-head__titles p {
+  color: var(--bs-muted);
+}
+
+.app.dark.platform-root--member .messages-list--premium,
+.app.dark.platform-root--member .messages-row,
+[data-theme="dark"].platform-root--member .messages-list--premium,
+[data-theme="dark"].platform-root--member .messages-row {
+  background: var(--bs-surface);
+  color: var(--bs-text);
+}
+
+.app.dark.platform-root--member .messages-row__preview,
+.app.dark.platform-root--member .messages-row__top time,
+[data-theme="dark"].platform-root--member .messages-row__preview,
+[data-theme="dark"].platform-root--member .messages-row__top time {
+  color: var(--bs-muted);
+}
+
+.app.dark.platform-root--member .signals-premium-empty h2,
+.app.dark.platform-root--member .signals-premium-empty p,
+.app.dark.platform-root--member .signals-premium-safety__copy span,
+[data-theme="dark"].platform-root--member .signals-premium-empty h2,
+[data-theme="dark"].platform-root--member .signals-premium-empty p,
+[data-theme="dark"].platform-root--member .signals-premium-safety__copy span {
+  color: var(--bs-muted);
+}
+
+.app.dark.platform-root--member .signals-premium-empty h2,
+[data-theme="dark"].platform-root--member .signals-premium-empty h2 {
+  color: var(--bs-text);
+}
+
+.app.dark.platform-root--member .profile-hero--premium .profile-hero__name,
+.app.dark.platform-root--member .profile-premium-card__text,
+[data-theme="dark"].platform-root--member .profile-hero--premium .profile-hero__name,
+[data-theme="dark"].platform-root--member .profile-premium-card__text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@media (min-width: 900px) {
+  .platform-root--member .discover-premium-head__titles h1 {
+    font-size: 34px;
+  }
+}
+
+@media (max-width: 380px) {
+  .platform-root--member .member-content-pad,
+  .platform-root--member .home-page,
+  .platform-root--member .discover-page--premium,
+  .platform-root--member .messages-page--premium,
+  .platform-root--member .signals-premium-page,
+  .platform-root--member .profile-page--premium {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

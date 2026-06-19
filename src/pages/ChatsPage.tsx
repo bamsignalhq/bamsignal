@@ -22,7 +22,7 @@ import { readReceiptsAllowed } from "../utils/activityPrivacy";
 import { isDemoTypingMatch, seedReviewerDemoChatsIfNeeded } from "../utils/reviewerDemoChats";
 import { matchAnniversaryBanner } from "../utils/connectionAnniversary";
 import { getDatingProfile } from "../utils/profile";
-import { checkOutgoingChatMessage, CONTACT_LEAK_BLOCK_MESSAGE } from "../utils/contactGuard";
+import { checkOutgoingChatMessage, CONTACT_LEAK_BLOCK_MESSAGE, VULGAR_CONTENT_BLOCK_MESSAGE } from "../utils/contactGuard";
 import { blockAndReportUser, blockUser, canUseInbox, filterBlockedByProfileId, isUserBlocked, unmatchUser } from "../utils/safety";
 import { hasOfflineSafetyAck } from "../utils/compliance";
 import { trackEvent } from "../utils/analytics";
@@ -457,7 +457,9 @@ function ChatDetail({
     });
 
     if (contactCheck.blocked) {
-      showBlockWarning(CONTACT_LEAK_BLOCK_MESSAGE);
+      showBlockWarning(
+        contactCheck.kind === "profanity" ? VULGAR_CONTENT_BLOCK_MESSAGE : CONTACT_LEAK_BLOCK_MESSAGE
+      );
       return;
     }
 

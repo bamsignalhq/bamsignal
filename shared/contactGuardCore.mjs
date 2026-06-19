@@ -1,5 +1,8 @@
 /** Shared contact-leak detection for browser + Node. */
 
+import { scanTextForProfanity } from "./profanityFilter.mjs";
+
+export { VULGAR_CONTENT_BLOCK_MESSAGE, scanTextForProfanity, containsProfanity } from "./profanityFilter.mjs";
 export const CONTACT_LEAK_BLOCK_MESSAGE =
   "We couldn't save that information. Please try something different.";
 
@@ -157,6 +160,9 @@ export function checkOutgoingChatMessage(message, opts = {}) {
 
   const allow = Boolean(opts.connectionAccepted);
   const blocked = scanTextForContactLeak(text, { allowContactExchange: allow }).blocked;
+  if (!blocked && scanTextForProfanity(text).blocked) {
+    return { blocked: true, kind: "profanity" };
+  }
   if (!blocked) return { blocked: false, kind: "none" };
 
   return { blocked: true, kind: "contact", needsConsent: !allow };
@@ -192,8 +198,12 @@ export function scanProfilePayloadForContactLeak(input = {}) {
   }
 
   for (const [field, value] of checks) {
-    if (scanTextForContactLeak(String(value || "")).blocked) {
-      return { blocked: true, field };
+    const textValue = String(value || "");
+    if (scanTextForContactLeak(textValue).blocked) {
+      return { blocked: true, field, reason: "contact" };
+    }
+    if (scanTextForProfanity(textValue).blocked) {
+      return { blocked: true, field, reason: "profanity" };
     }
   }
 

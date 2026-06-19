@@ -3,6 +3,7 @@ import {
   CONTACT_LEAK_BLOCK_MESSAGE,
   scanTextForContactLeak
 } from "../shared/contactGuardCore.mjs";
+import { scanTextForProfanity, VULGAR_CONTENT_BLOCK_MESSAGE } from "../shared/profanityFilter.mjs";
 
 function mustBlock(text) {
   assert.equal(
@@ -20,9 +21,29 @@ function mustPass(text) {
   );
 }
 
+function mustBlockProfanity(text) {
+  assert.equal(
+    scanTextForProfanity(text).blocked,
+    true,
+    `expected profanity block: ${JSON.stringify(text)}`
+  );
+}
+
+function mustPassProfanity(text) {
+  assert.equal(
+    scanTextForProfanity(text).blocked,
+    false,
+    `expected profanity pass: ${JSON.stringify(text)}`
+  );
+}
+
 assert.equal(
   CONTACT_LEAK_BLOCK_MESSAGE,
   "We couldn't save that information. Please try something different."
+);
+assert.equal(
+  VULGAR_CONTENT_BLOCK_MESSAGE,
+  "Please keep your profile friendly — avoid explicit or vulgar language."
 );
 
 mustBlock("07066621779");
@@ -42,5 +63,16 @@ mustPass("I love travelling");
 mustPass("Tech entrepreneur");
 mustPass("Family-oriented");
 mustPass("Church community");
+
+mustBlockProfanity("Hello whos here for the fuck?");
+mustBlockProfanity("here for sex");
+mustBlockProfanity("looking for knack");
+mustBlockProfanity("send nudes");
+mustBlockProfanity("so fucking bored");
+mustBlockProfanity("pussy cat"); // blocked by exact term - acceptable false positive for dating bio
+
+mustPassProfanity("I love brunch and beach days");
+mustPassProfanity("Looking for something serious");
+mustPassProfanity("Good conversation and laughter");
 
 console.log("contact guard tests passed");

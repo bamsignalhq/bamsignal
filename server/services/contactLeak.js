@@ -4,11 +4,13 @@ import { isDatabaseReady, normalizeUserKey, query } from "../db.js";
 import {
   CONTACT_LEAK_BLOCK_MESSAGE,
   scanProfilePayloadForContactLeak,
-  scanTextForContactLeak
+  scanTextForContactLeak,
+  scanTextForProfanity,
+  VULGAR_CONTENT_BLOCK_MESSAGE
 } from "../../shared/contactGuardCore.mjs";
 import { createModerationFlag } from "../memberTrust.js";
 
-export { CONTACT_LEAK_BLOCK_MESSAGE };
+export { CONTACT_LEAK_BLOCK_MESSAGE, VULGAR_CONTENT_BLOCK_MESSAGE };
 
 export function hashContactLeakText(text = "") {
   return createHash("sha256").update(String(text).trim().toLowerCase()).digest("hex").slice(0, 16);
@@ -96,10 +98,17 @@ export async function assertTextSafeForContactLeak({
   if (!value) return { ok: true };
 
   const scan = scanTextForContactLeak(value, { allowContactExchange });
-  if (!scan.blocked) return { ok: true };
+  if (scan.blocked) {
+    await logContactLeakAttempt({ email, phone, field, text: value });
+    return { ok: false, error: CONTACT_LEAK_BLOCK_MESSAGE };
+  }
 
-  await logContactLeakAttempt({ email, phone, field, text: value });
-  return { ok: false, error: CONTACT_LEAK_BLOCK_MESSAGE };
+  if (scanTextForProfanity(value).blocked) {
+    await logContactLeakAttempt({ email, phone, field, text: value });
+    return { ok: false, error: VULGAR_CONTENT_BLOCK_MESSAGE };
+  }
+
+  return { ok: true };
 }
 
 export async function assertProfileSafeForContactLeak({ email, phone, name, username, profile = {} }) {
@@ -127,5 +136,7 @@ export async function assertProfileSafeForContactLeak({ email, phone, name, user
           : "";
 
   await logContactLeakAttempt({ email, phone, field, text: String(sample || profile.bio || "") });
-  return { ok: false, error: CONTACT_LEAK_BLOCK_MESSAGE, field };
+  const error =
+    scan.reason === "profanity" ? VULGAR_CONTENT_BLOCK_MESSAGE : CONTACT_LEAK_BLOCK_MESSAGE;
+  return { ok: false, error, field };
 }

@@ -1,5 +1,8 @@
 import type { DatingProfile, UserProfile } from "../types";
 import { reportModerationFlagRemote } from "../services/memberTrust";
+import { scanTextForProfanity, VULGAR_CONTENT_BLOCK_MESSAGE } from "../../shared/profanityFilter.mjs";
+
+export { VULGAR_CONTENT_BLOCK_MESSAGE };
 
 export const CONTACT_LEAK_BLOCK_MESSAGE =
   "We couldn't save that information. Please try something different.";
@@ -175,7 +178,11 @@ export function scanProfilePayloadForContactLeak(input: Record<string, unknown> 
   }
 
   for (const [field, value] of checks) {
-    if (scanTextForContactLeak(value).blocked) {
+    const textValue = String(value || "");
+    if (scanTextForContactLeak(textValue).blocked) {
+      return { blocked: true as const, field };
+    }
+    if (scanTextForProfanity(textValue).blocked) {
       return { blocked: true as const, field };
     }
   }
@@ -202,7 +209,7 @@ export type ContactLeakField =
   | "success_story"
   | "other";
 
-export type ContactBlockKind = "contact" | "none";
+export type ContactBlockKind = "contact" | "profanity" | "none";
 
 export type ContactCheckResult = {
   blocked: boolean;
@@ -221,10 +228,14 @@ export function checkOutgoingChatMessage(
   if (!text) return { blocked: false, kind: "none" };
 
   const connectionAccepted = Boolean(opts.connectionAccepted ?? opts.offPlatformApproved);
-  const blocked = scanTextForContactLeak(text, { allowContactExchange: connectionAccepted }).blocked;
-  if (!blocked) return { blocked: false, kind: "none" };
-
-  return { blocked: true, kind: "contact", needsConsent: !connectionAccepted };
+  const contactBlocked = scanTextForContactLeak(text, { allowContactExchange: connectionAccepted }).blocked;
+  if (contactBlocked) {
+    return { blocked: true, kind: "contact", needsConsent: !connectionAccepted };
+  }
+  if (scanTextForProfanity(text).blocked) {
+    return { blocked: true, kind: "profanity" };
+  }
+  return { blocked: false, kind: "none" };
 }
 
 /** @deprecated Use checkOutgoingChatMessage */
@@ -256,6 +267,9 @@ export function validateUserText(
 ): string | null {
   if (scanTextForContactLeak(text, opts).blocked) {
     return CONTACT_LEAK_BLOCK_MESSAGE;
+  }
+  if (scanTextForProfanity(text).blocked) {
+    return VULGAR_CONTENT_BLOCK_MESSAGE;
   }
   return null;
 }

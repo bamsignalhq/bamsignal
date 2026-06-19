@@ -16,10 +16,10 @@
 }
 
 .signup-legal__row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.6rem;
-  align-items: start;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
   padding: 0.58rem 0.65rem;
   border-radius: 10px;
   border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
@@ -41,13 +41,16 @@
 }
 
 .signup-legal__row input {
+  flex: 0 0 auto;
   width: 1rem;
   height: 1rem;
-  margin-top: 0.12rem;
+  margin: 0.15rem 0 0;
   accent-color: var(--accent, #7b1fa2);
 }
 
 .signup-legal__copy {
+  flex: 1;
+  min-width: 0;
   color: var(--text);
 }
 

@@ -17,8 +17,8 @@ export function SignupMathGate({
 }: SignupMathGateProps) {
   return (
     <div className="signup-math-gate">
-      <label className="signup-math-gate__row" htmlFor="signup-math-answer">
-        <span className="signup-math-gate__prompt" aria-hidden>
+      <div className="signup-math-gate__row">
+        <span className="signup-math-gate__prompt" id="signup-math-prompt">
           {a} + {b} =
         </span>
         <input
@@ -27,13 +27,14 @@ export function SignupMathGate({
           type="text"
           inputMode="numeric"
           autoComplete="off"
+          aria-labelledby="signup-math-prompt"
           placeholder="Answer"
           value={answer}
           disabled={disabled}
           maxLength={2}
           onChange={(event) => onAnswerChange(event.target.value.replace(/\D/g, "").slice(0, 2))}
         />
-      </label>
+      </div>
       {error ? (
         <p className="signup-math-gate__error" role="alert">
           {error}

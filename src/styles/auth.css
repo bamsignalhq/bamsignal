@@ -77,6 +77,7 @@
 .auth-card--fintech > .auth-links,
 .auth-card--fintech > .auth-switch,
 .auth-card--fintech > .signup-legal,
+.auth-card--fintech > .signup-math-gate,
 .auth-card--fintech > .btn-auth,
 .auth-card--fintech > .auth-verify,
 .auth-card--fintech > .auth-message {
@@ -250,11 +251,14 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin: 0.25rem 0 0.75rem;
 }
 
 .signup-math-gate__row {
   display: flex;
+  flex-direction: row;
   align-items: center;
+  flex-wrap: nowrap;
   gap: 10px;
   margin: 0;
 }
@@ -264,12 +268,14 @@
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .signup-math-gate__input {
-  flex: 1;
-  min-width: 0;
-  max-width: 120px;
+  flex: 0 0 100px;
+  width: 100px;
+  min-width: 90px;
+  max-width: 110px;
   min-height: 40px;
   padding: 8px 12px;
   border-radius: 12px;
@@ -278,6 +284,12 @@
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 600;
+}
+
+@media (max-width: 280px) {
+  .signup-math-gate__row {
+    flex-wrap: wrap;
+  }
 }
 
 .signup-math-gate__input--error {

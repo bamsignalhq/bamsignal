@@ -1284,7 +1284,7 @@ export function App() {
 
   return (
     <PremiumCheckoutProvider value={premiumCheckoutValue}>
-    <div className={`app ${theme} platform-root ${isAuthed ? "platform-root--member" : ""}`}>
+    <div className={`app ${theme} platform-root ${memberAppEntered ? "platform-root--member" : ""}`}>
       <div
         className="platform-shell"
       >
@@ -1293,9 +1293,11 @@ export function App() {
             theme={theme}
             onToggleTheme={toggleTheme}
             isPremium={isPremium}
-            isGuest={showGuestChrome}
+            isGuest={!isAuthed}
             onLogin={() => openAuth("login")}
             onLogoClick={goHome}
+            showOpenApp={isAuthed && !memberAppEntered && isPublicHome}
+            onOpenApp={enterMemberApp}
             showNotifications={isAuthed && memberAppEntered}
             notificationCount={notificationUnread}
             onNotificationsClick={() => setNotificationsOpen(true)}
@@ -1309,15 +1311,6 @@ export function App() {
             showGreeting={false}
           />
         )}
-
-        {isAuthed && !memberAppEntered && isPublicHome ? (
-          <div className="member-app-banner" role="region" aria-label="Return to app">
-            <p>You&apos;re signed in.</p>
-            <button type="button" className="btn btn-primary btn-sm" onClick={enterMemberApp}>
-              Go to app
-            </button>
-          </div>
-        ) : null}
 
         {complianceSyncPending && memberAccessReady ? (
           <p className="compliance-sync-banner" role="status">
@@ -1353,13 +1346,15 @@ export function App() {
 
         <main
           className={`app-main ${
-            isAuthed
-              ? showOnboarding
-                ? "app-main--onboarding"
-                : showComplianceGate
-                  ? "app-main--compliance"
-                : "app-main--member"
-              : "app-main--experience"
+            showMarketingHome
+              ? "app-main--experience"
+              : isAuthed
+                ? showOnboarding
+                  ? "app-main--onboarding"
+                  : showComplianceGate
+                    ? "app-main--compliance"
+                    : "app-main--member"
+                : "app-main--experience"
           }`}
         >
           {isAuthed && showOnboarding && (

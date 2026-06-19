@@ -737,3 +737,95 @@
 .visual-hero--minimal .visual-hero__dots {
   bottom: 12px;
 }
+
+/* Desktop public homepage — two-column hero */
+.visual-hero--split .visual-hero__inner {
+  display: none;
+}
+
+.visual-hero--split .visual-hero__mobile-shell {
+  display: block;
+}
+
+@media (min-width: 900px) {
+  .visual-hero--split {
+    min-height: calc(100dvh - 56px);
+    overflow: visible;
+    background: #06030c;
+  }
+
+  .visual-hero--split .visual-hero__inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+    max-width: 1180px;
+    margin: 0 auto;
+    min-height: calc(100dvh - 56px);
+    padding: 48px clamp(24px, 4vw, 48px);
+  }
+
+  .visual-hero--split .visual-hero__mobile-shell {
+    display: none;
+  }
+
+  .visual-hero--split .visual-hero__desktop-copy {
+    max-width: 540px;
+  }
+
+  .visual-hero--split .visual-hero__copy--split {
+    padding: 0;
+    max-width: none;
+  }
+
+  .visual-hero--split .visual-hero__copy--split h1 {
+    margin: 0 0 16px;
+    font-size: clamp(2.25rem, 4vw, 3.25rem);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    text-shadow: none;
+  }
+
+  .visual-hero--split .visual-hero__sub {
+    margin: 0 0 24px;
+    font-size: clamp(1rem, 1.6vw, 1.12rem);
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.72);
+    max-width: 42ch;
+  }
+
+  .visual-hero--split .visual-hero__actions {
+    margin: 0;
+  }
+
+  .visual-hero--split .visual-hero__desktop-image {
+    width: 100%;
+    max-height: 560px;
+    height: min(560px, calc(100dvh - 120px));
+    border-radius: 28px;
+    overflow: hidden;
+    background: #0f0718;
+  }
+
+  .visual-hero--split .visual-hero__desktop-image img,
+  .visual-hero--split .visual-hero__desktop-image .showcase-fallback {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 22%;
+    display: block;
+  }
+}
+
+@media (max-width: 899px) {
+  .platform-root:not(.platform-root--member) .visual-hero--split {
+    min-height: 100dvh;
+  }
+
+  .platform-root:not(.platform-root--member) .visual-hero--split .visual-hero__layout--minimal {
+    justify-content: flex-end;
+    min-height: 100dvh;
+    padding-bottom: calc(var(--bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px) + 28px);
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}

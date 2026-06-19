@@ -25,6 +25,8 @@ type TopNavProps = {
   memberFirstName?: string;
   showBrandText?: boolean;
   showGreeting?: boolean;
+  showOpenApp?: boolean;
+  onOpenApp?: () => void;
 };
 
 export function TopNav({
@@ -46,7 +48,9 @@ export function TopNav({
   showMemberNav = false,
   memberFirstName,
   showBrandText = true,
-  showGreeting = false
+  showGreeting = false,
+  showOpenApp = false,
+  onOpenApp
 }: TopNavProps) {
   return (
     <header className="top-nav">
@@ -66,13 +70,22 @@ export function TopNav({
         />
       )}
       <div className="top-nav-actions">
-        {isGuest ? (
+        {showOpenApp && onOpenApp ? (
           <>
-            {onLogin && (
+            <button type="button" className="top-nav-get-started" onClick={onOpenApp}>
+              Open App
+            </button>
+            <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme">
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </>
+        ) : isGuest ? (
+          <>
+            {onLogin ? (
               <button type="button" className="top-nav-get-started" onClick={onLogin}>
                 Login
               </button>
-            )}
+            ) : null}
             <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme">
               {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
             </button>

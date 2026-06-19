@@ -1,5 +1,6 @@
 import { APP_BUILD_ID } from "../constants/build";
 import {
+  clearBamSignalVolatileCache,
   htmlBuildMatchesApp,
   isChunkLoadError,
   performAppRecovery,
@@ -31,7 +32,7 @@ export function checkBuildVersion(): void {
       if (!sessionStorage.getItem(BUILD_RELOAD_KEY)) {
         sessionStorage.setItem(BUILD_RELOAD_KEY, "1");
         showUpdatingOverlay();
-        void unregisterStaleServiceWorkers().finally(() => {
+        void clearBamSignalVolatileCache().finally(() => {
           const url = new URL(window.location.href);
           url.searchParams.set("recover", String(Date.now()));
           window.location.replace(url.toString());
@@ -54,7 +55,7 @@ export function handleChunkLoadFailure(): void {
   }
   sessionStorage.setItem(CHUNK_RELOAD_KEY, "1");
   showUpdatingOverlay();
-  void unregisterStaleServiceWorkers().finally(() => {
+  void clearBamSignalVolatileCache().finally(() => {
     const url = new URL(window.location.href);
     url.searchParams.set("recover", String(Date.now()));
     window.location.replace(url.toString());

@@ -1,6 +1,5 @@
-const CACHE_NAME = "bamsignal-v1.0.17-22";
+const CACHE_NAME = "bamsignal-v1.0.17-20-mql4a3ft";
 const APP_SHELL = [
-  "/",
   "/manifest.webmanifest",
   "/favicon.webp",
   "/apple-touch-icon.webp",
@@ -33,10 +32,19 @@ self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+  if (event.data?.type === "CLEAR_CACHES") {
+    event.waitUntil(
+      caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+    );
+  }
 });
 
+function networkOnly(request) {
+  return fetch(request, { cache: "no-store" });
+}
+
 function networkFirst(request) {
-  return fetch(request)
+  return fetch(request, { cache: "no-store" })
     .then((response) => {
       if (response.ok && request.method === "GET") {
         const copy = response.clone();
@@ -54,8 +62,13 @@ self.addEventListener("fetch", (event) => {
 
   if (url.pathname.startsWith("/api/")) return;
 
-  if (request.mode === "navigate") {
-    event.respondWith(networkFirst(request).catch(() => caches.match("/")));
+  if (
+    request.mode === "navigate" ||
+    url.pathname === "/" ||
+    url.pathname.endsWith(".html") ||
+    url.pathname === "/index.html"
+  ) {
+    event.respondWith(networkOnly(request));
     return;
   }
 

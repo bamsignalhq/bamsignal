@@ -261,43 +261,83 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
       : remoteInterests.length >= localInterests.length
         ? remoteInterests
         : localInterests;
-    const mergedBase = normalizeDatingProfile({
-      ...local,
-      ...remote,
-      photos: mergedPhotos.length ? mergedPhotos : localPhotos,
-      mainPhotoUrl:
-        safeString(remote.mainPhotoUrl) ||
-        safeString(local.mainPhotoUrl) ||
-        undefined,
-      coverPhoto,
-      coverPhotoUrl: mergedCover.coverPhotoUrl ?? coverPhoto,
-      coverPhotoPath: mergedCover.coverPhotoPath,
-      coverPhotoUpdatedAt: mergedCover.coverPhotoUpdatedAt,
-      coverPhotoExplicit,
-      onboardingComplete: remoteComplete || remoteStatus.onboardingComplete,
-      setupCompleted: remoteComplete || remoteStatus.setupCompleted || Boolean(local.setupCompleted || remote.setupCompleted),
-      onboardingCompletedAt:
-        safeString(remote.onboardingCompletedAt) ||
-        safeString(remote.onboarding_completed_at) ||
-        safeString(local.onboardingCompletedAt) ||
-        remoteStatus.onboardingCompletedAt ||
-        undefined,
-      profileCompletedAt:
-        safeString(remote.profileCompletedAt) ||
-        safeString(remote.profile_completed_at) ||
-        safeString(local.profileCompletedAt) ||
-        remoteStatus.profileCompletedAt ||
-        undefined,
-      completedAt:
-        safeString(remote.completedAt) ||
-        safeString(remote.completed_at) ||
-        safeString(local.completedAt) ||
-        remoteStatus.completedAt ||
-        undefined,
-      interests,
-      interestsTouched,
-      compliance: mergeHydratedCompliance(local.compliance, remote.compliance)
-    });
+    const mergedBase = normalizeDatingProfile(
+      remoteComplete
+        ? {
+            ...remote,
+            photos: mergedPhotos.length ? mergedPhotos : localPhotos,
+            mainPhotoUrl:
+              safeString(remote.mainPhotoUrl) ||
+              safeString(local.mainPhotoUrl) ||
+              undefined,
+            coverPhoto,
+            coverPhotoUrl: mergedCover.coverPhotoUrl ?? coverPhoto,
+            coverPhotoPath: mergedCover.coverPhotoPath,
+            coverPhotoUpdatedAt: mergedCover.coverPhotoUpdatedAt,
+            coverPhotoExplicit,
+            onboardingComplete: true,
+            setupCompleted: true,
+            onboardingCompletedAt:
+              safeString(remote.onboardingCompletedAt) ||
+              safeString(remote.onboarding_completed_at) ||
+              safeString(local.onboardingCompletedAt) ||
+              remoteStatus.onboardingCompletedAt ||
+              undefined,
+            profileCompletedAt:
+              safeString(remote.profileCompletedAt) ||
+              safeString(remote.profile_completed_at) ||
+              safeString(local.profileCompletedAt) ||
+              remoteStatus.profileCompletedAt ||
+              undefined,
+            completedAt:
+              safeString(remote.completedAt) ||
+              safeString(remote.completed_at) ||
+              safeString(local.completedAt) ||
+              remoteStatus.completedAt ||
+              undefined,
+            interests: remoteInterests.length ? remoteInterests : localInterests,
+            interestsTouched: true,
+            compliance: mergeHydratedCompliance(local.compliance, remote.compliance)
+          }
+        : {
+            ...local,
+            ...remote,
+            photos: mergedPhotos.length ? mergedPhotos : localPhotos,
+            mainPhotoUrl:
+              safeString(remote.mainPhotoUrl) ||
+              safeString(local.mainPhotoUrl) ||
+              undefined,
+            coverPhoto,
+            coverPhotoUrl: mergedCover.coverPhotoUrl ?? coverPhoto,
+            coverPhotoPath: mergedCover.coverPhotoPath,
+            coverPhotoUpdatedAt: mergedCover.coverPhotoUpdatedAt,
+            coverPhotoExplicit,
+            onboardingComplete: remoteComplete || remoteStatus.onboardingComplete,
+            setupCompleted:
+              remoteComplete || remoteStatus.setupCompleted || Boolean(local.setupCompleted || remote.setupCompleted),
+            onboardingCompletedAt:
+              safeString(remote.onboardingCompletedAt) ||
+              safeString(remote.onboarding_completed_at) ||
+              safeString(local.onboardingCompletedAt) ||
+              remoteStatus.onboardingCompletedAt ||
+              undefined,
+            profileCompletedAt:
+              safeString(remote.profileCompletedAt) ||
+              safeString(remote.profile_completed_at) ||
+              safeString(local.profileCompletedAt) ||
+              remoteStatus.profileCompletedAt ||
+              undefined,
+            completedAt:
+              safeString(remote.completedAt) ||
+              safeString(remote.completed_at) ||
+              safeString(local.completedAt) ||
+              remoteStatus.completedAt ||
+              undefined,
+            interests,
+            interestsTouched,
+            compliance: mergeHydratedCompliance(local.compliance, remote.compliance)
+          }
+    );
     const { profile: merged, repaired } = repairCompletedProfile(mergedBase, user);
     if (repaired) {
       console.info("[onboarding-repair] completed profile repaired");

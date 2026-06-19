@@ -133,9 +133,9 @@ export const PREMIUM_COPY = {
 } as const;
 
 export const LANDING = {
-  heroHeadline: "Meet someone real in your city.",
+  heroHeadline: "Meet people who match your vibe.",
   heroSubheadline:
-    "Verified profiles, safer chats, and connections that start with a signal — from Lagos rooftops to Sunday hangouts.",
+    "Good conversations often begin with a signal. Discover new people and connect at your own pace.",
   finalHeadline: "Someone nearby might signal you today.",
   finalFooter: "5 free signals daily.\n5 free messages daily."
 } as const;

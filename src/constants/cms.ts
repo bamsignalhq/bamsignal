@@ -66,17 +66,39 @@ export const DEFAULT_CMS: CmsContent = {
 const REMOVED_HERO_SUBHEADLINE =
   "Meet verified people nearby for friendship, dating, and meaningful connections.";
 
+const LEGACY_HERO_HEADLINES = [
+  "Meet someone real in your city.",
+  "Meet someone real."
+] as const;
+
+const LEGACY_HERO_SUBHEADLINES = [
+  REMOVED_HERO_SUBHEADLINE,
+  "Verified profiles, safer chats, and connections that start with a signal — from Lagos rooftops to Sunday hangouts.",
+  "Verified profiles, safer chats, and connections that start with a signal."
+] as const;
+
 const LEGACY_SUPPORT_RESPONSE_TIME = "Within 24 hours";
 const LEGACY_SUPPORT_HOURS = "Mon–Sat, 9am–6pm WAT";
 
 export function getCms(): CmsContent {
   const saved = readJson<Partial<CmsContent>>(STORAGE_KEYS.cms, {});
   const merged = { ...DEFAULT_CMS, ...saved };
+  let patch: Partial<CmsContent> | null = null;
+
+  if (LEGACY_HERO_HEADLINES.some((headline) => headline === merged.heroHeadline)) {
+    merged.heroHeadline = DEFAULT_CMS.heroHeadline;
+    patch = { ...(patch ?? {}), heroHeadline: DEFAULT_CMS.heroHeadline };
+  }
+  if (LEGACY_HERO_SUBHEADLINES.some((line) => line === merged.heroSubheadline)) {
+    merged.heroSubheadline = DEFAULT_CMS.heroSubheadline;
+    patch = { ...(patch ?? {}), heroSubheadline: DEFAULT_CMS.heroSubheadline };
+  }
   if (merged.heroSubheadline === REMOVED_HERO_SUBHEADLINE) {
-    merged.heroSubheadline = "";
-    if (saved.heroSubheadline === REMOVED_HERO_SUBHEADLINE) {
-      writeJson(STORAGE_KEYS.cms, { ...saved, heroSubheadline: "" });
-    }
+    merged.heroSubheadline = DEFAULT_CMS.heroSubheadline;
+    patch = { ...(patch ?? {}), heroSubheadline: DEFAULT_CMS.heroSubheadline };
+  }
+  if (patch) {
+    writeJson(STORAGE_KEYS.cms, { ...saved, ...patch });
   }
   if (
     merged.supportResponseTime === LEGACY_SUPPORT_RESPONSE_TIME &&

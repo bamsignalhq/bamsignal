@@ -38,6 +38,14 @@ repairMemberCaches();
 checkBuildVersion();
 registerServiceWorker();
 
+if (typeof window !== "undefined") {
+  const bootUrl = new URL(window.location.href);
+  if (bootUrl.searchParams.has("recover")) {
+    bootUrl.searchParams.delete("recover");
+    window.history.replaceState(null, "", bootUrl.toString());
+  }
+}
+
 window.addEventListener("popstate", () => rememberSuccessfulRoute());
 rememberSuccessfulRoute();
 

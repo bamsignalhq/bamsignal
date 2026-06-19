@@ -3,6 +3,7 @@ import { APP_BUILD_ID } from "../constants/build";
 import { STORAGE_KEYS } from "../constants/limits";
 import { clearOnboardingDrafts, isOnboardingFullyComplete } from "./onboardingStatus";
 import { FLOW_STATE_KEY } from "./flowWatchdog";
+import { clearLegacyPaymentFlags, sanitizeStalePaymentState } from "./paymentState";
 import { safeGetJSON, safeGetString, safeRemove, safeSetString } from "./safeStorage";
 import type { DatingProfile, UserProfile } from "../types";
 
@@ -124,24 +125,39 @@ export async function unregisterStaleServiceWorkers(): Promise<void> {
   if (!("serviceWorker" in navigator)) return;
   try {
     const registrations = await navigator.serviceWorker.getRegistrations();
-    const stale = registrations.filter((registration) => {
-      const scriptUrl = registration.active?.scriptURL || registration.installing?.scriptURL || "";
-      return scriptUrl.includes("/sw.js");
-    });
-    await Promise.all(stale.map((registration) => registration.unregister()));
+    for (const registration of registrations) {
+      try {
+        registration.active?.postMessage({ type: "CLEAR_CACHES" });
+      } catch {
+        /* ignore */
+      }
+    }
+    await Promise.all(registrations.map((registration) => registration.unregister()));
   } catch {
     /* ignore */
   }
-  if ("caches" in window) {
-    try {
-      const keys = await caches.keys();
-      await Promise.all(
-        keys.filter((key) => key.startsWith(SW_CACHE_PREFIX) && key !== CACHE_VERSION).map((key) => caches.delete(key))
-      );
-    } catch {
-      /* ignore */
-    }
+  await clearServiceWorkerCaches();
+}
+
+export async function clearServiceWorkerCaches(): Promise<void> {
+  if (!("caches" in window)) return;
+  try {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys.filter((key) => key.startsWith(SW_CACHE_PREFIX)).map((key) => caches.delete(key))
+    );
+  } catch {
+    /* ignore */
   }
+}
+
+function clearPaymentTransientState(): void {
+  clearLegacyPaymentFlags();
+  sanitizeStalePaymentState();
+  safeRemove(STORAGE_KEYS.paymentFlowState);
+  safeRemove(STORAGE_KEYS.paymentPending);
+  safeRemove(STORAGE_KEYS.paymentCheckoutOpened);
+  safeRemove(STORAGE_KEYS.paymentStartedAt);
 }
 
 function clearVolatileUiState(): void {
@@ -151,9 +167,11 @@ function clearVolatileUiState(): void {
     sessionStorage.removeItem("bamsignal:build-reload");
     sessionStorage.removeItem("bamsignal:chunk-reload");
     sessionStorage.removeItem(CRASH_TIMES_KEY);
+    sessionStorage.removeItem(LAST_ROUTE_KEY);
   } catch {
     /* ignore */
   }
+  safeRemove(STORAGE_KEYS.onboardingStep);
 
   const profile = safeGetJSON<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
   const user = safeGetJSON<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
@@ -162,12 +180,19 @@ function clearVolatileUiState(): void {
   }
 }
 
+/** Clear volatile caches only — preserves auth, profile, photos, and preferences. */
+export async function clearBamSignalVolatileCache(): Promise<void> {
+  clearVolatileUiState();
+  clearPaymentTransientState();
+  await clearServiceWorkerCaches();
+  await unregisterStaleServiceWorkers();
+}
+
 export async function performAppRecovery(options?: { enableSafeMode?: boolean }): Promise<void> {
   if (options?.enableSafeMode) {
     enableSafeMode();
   }
-  clearVolatileUiState();
-  await unregisterStaleServiceWorkers();
+  await clearBamSignalVolatileCache();
 
   const url = new URL(window.location.href);
   url.searchParams.set("recover", String(Date.now()));

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "node scripts/generate-sitemap.mjs && tsc && vite build",
+    "build": "node scripts/generate-sitemap.mjs && node scripts/sync-cache-version.mjs && tsc && vite build",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
     "generate:brand": "node scripts/generate-brand-assets.mjs",
     "generate:email-icons": "node scripts/generate-email-social-icons.mjs",

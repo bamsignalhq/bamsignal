@@ -42,7 +42,7 @@ export function VisualHero({ onGetStarted }: VisualHeroProps) {
   }, [isDesktop]);
 
   const headline = cms.heroHeadline || HOME_HERO.headline;
-  const subheadline = cms.heroSubheadline || LANDING.heroSubheadline;
+  const subheadline = cms.heroSubheadline || HOME_HERO.subheadline || LANDING.heroSubheadline;
   const primarySlide = HERO_SLIDES[slideIndex] ?? HERO_SLIDES[0];
 
   const copyBlock = (

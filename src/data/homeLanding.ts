@@ -2,13 +2,14 @@ import { TRUST_ITEMS } from "./landingProfiles";
 
 export const HOME_HERO = {
   badge: "",
-  headline: "Meet someone real in your city.",
-  subheadline: "",
+  headline: "Meet people who match your vibe.",
+  subheadline:
+    "Good conversations often begin with a signal. Discover new people and connect at your own pace.",
   primaryCta: "Join BamSignal",
   secondaryCta: ""
 } as const;
 
-export const HOME_HERO_TRUST = ["Verified Profiles", "Safer Conversations"] as const;
+export const HOME_HERO_TRUST = [] as const;
 
 export const HOME_SECTIONS = {
   cities: {

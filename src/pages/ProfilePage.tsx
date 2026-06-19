@@ -32,7 +32,8 @@ import type {
 import { STORAGE_KEYS } from "../constants/limits";
 import { BUTTON_COPY, PREMIUM_COPY } from "../constants/copy";
 import { APP_BUILD_LABEL, APP_BUILD_TIME } from "../constants/appRelease";
-import { BUILD_CODE, BUILD_TIME, BUILD_VERSION } from "../buildInfo";
+import { APP_BUILD_ID } from "../constants/build";
+import { BUILD_CODE, BUILD_TIME, BUILD_VERSION, CACHE_VERSION } from "../buildInfo";
 import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { getVerificationTier } from "../utils/verification";
@@ -1038,6 +1039,8 @@ export function ProfilePage({
                 {(APP_BUILD_TIME || BUILD_TIME).slice(0, 19).replace("T", " ")} UTC
               </p>
               <p className="settings-about__label">{APP_BUILD_LABEL}</p>
+              <p className="settings-about__meta">Bundle {APP_BUILD_ID}</p>
+              <p className="settings-about__meta">Cache {CACHE_VERSION}</p>
             </section>
           )}
 

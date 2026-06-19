@@ -15,7 +15,6 @@ import {
   checkSignupField,
   requestSignupMathChallenge,
   resendSignupEmailCode,
-  resolveSignupUsername,
   sendSignupEmailCode,
   verifySignupEmailCode,
   AuthEmailError
@@ -31,6 +30,7 @@ import {
   isValidLoginUsername,
   isValidNigerianPhone,
   isValidPin,
+  isValidSignupUsername,
   normalizeNigerianPhone,
   normalizeUsername,
   rememberUsernameEmail,
@@ -68,6 +68,8 @@ type AuthPageProps = {
 };
 
 const emptySignup = {
+  name: "",
+  username: "",
   phone: "",
   email: "",
   pin: "",
@@ -78,7 +80,7 @@ const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SEC = 60;
 const FIELD_CHECK_DELAY_MS = 450;
 
-type SignupField = "email" | "phone";
+type SignupField = "email" | "phone" | "username";
 type SignupFieldErrors = Partial<Record<SignupField, string>>;
 type SignupFieldChecking = Partial<Record<SignupField, boolean>>;
 
@@ -100,6 +102,8 @@ function restoredSignupState() {
     pendingSignup: profile,
     signupForm: {
       ...emptySignup,
+      name: profile.name || "",
+      username: profile.username || "",
       phone: profile.phone || "",
       email: profile.email || "",
       pin,
@@ -242,6 +246,41 @@ export function AuthPage({
     if (mathChallenge) return;
     void loadMathChallenge();
   }, [mode, mathChallenge, loadMathChallenge]);
+
+  useEffect(() => {
+    const username = normalizeUsername(signupForm.username);
+    if (!isValidSignupUsername(username)) {
+      clearSignupFieldError("username");
+      setSignupFieldChecking((current) => ({ ...current, username: false }));
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setSignupFieldChecking((current) => ({ ...current, username: true }));
+      void checkSignupField("username", username)
+        .then(() => {
+          if (cancelled) return;
+          clearSignupFieldError("username");
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          if (error instanceof AuthEmailError) {
+            setSignupFieldError("username", error.message);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setSignupFieldChecking((current) => ({ ...current, username: false }));
+          }
+        });
+    }, FIELD_CHECK_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [signupForm.username]);
 
   useEffect(() => {
     const phone = phoneDigits(signupForm.phone);
@@ -408,10 +447,31 @@ export function AuthPage({
   };
 
   const validateSignup = (): boolean => {
+    const name = signupForm.name.trim();
+    const username = normalizeUsername(signupForm.username);
     const email = signupForm.email.trim().toLowerCase();
     const phone = phoneDigits(signupForm.phone);
     onMessage("");
 
+    if (name.length < 2) {
+      onMessage("Enter your full name.");
+      signupLog("signup-validation", { reason: "name" });
+      return false;
+    }
+    if (!isValidSignupUsername(username)) {
+      onMessage("Username must be at least 4 characters (letters, numbers, underscore).");
+      signupLog("signup-validation", { reason: "username_format" });
+      return false;
+    }
+    if (signupFieldErrors.username) {
+      onMessage(signupFieldErrors.username);
+      signupLog("signup-validation", { reason: "username_taken" });
+      return false;
+    }
+    if (signupFieldChecking.username) {
+      onMessage("Still checking your username — wait a moment.");
+      return false;
+    }
     if (!isValidNigerianPhone(phone)) {
       onMessage("Put your correct WhatsApp number.");
       signupLog("signup-validation", { reason: "phone_format" });
@@ -454,14 +514,13 @@ export function AuthPage({
       return false;
     }
     if (!mathChallenge) {
-      onMessage("Loading quick check — wait a moment.");
+      onMessage("One moment…");
       void loadMathChallenge();
       return false;
     }
     const parsed = Number.parseInt(mathAnswer.trim(), 10);
     if (!Number.isFinite(parsed) || parsed !== mathChallenge.a + mathChallenge.b) {
-      setMathError("Please answer the quick check correctly.");
-      onMessage("Please answer the quick check correctly.");
+      setMathError("Please answer correctly.");
       signupLog("signup-validation", { reason: "math" });
       return false;
     }
@@ -472,6 +531,8 @@ export function AuthPage({
   const signUp = async () => {
     if (!validateSignup()) return;
 
+    const name = signupForm.name.trim();
+    const username = normalizeUsername(signupForm.username);
     const email = signupForm.email.trim().toLowerCase();
     const phone = phoneDigits(signupForm.phone);
 
@@ -480,22 +541,21 @@ export function AuthPage({
     trackEvent("signup_started");
     signupLog("signup-submit");
 
+    const profile: UserProfile = { name, username, email, phone };
+
     try {
       if (!supabase) {
         throw new Error("Authentication is not configured. Please update the app and try again.");
       }
 
       if (!mathChallenge) {
-        throw new Error("Please answer the quick check correctly.");
+        throw new Error("Please answer correctly.");
       }
-
-      const username = await resolveSignupUsername(email);
-      const profile: UserProfile = { name: "", username, email, phone };
 
       await checkSignupAvailability({ email, phone, username });
       signupLog("otp-send");
       flowLog("otp_send_start");
-      await sendSignupEmailCode(email, "", { phone, username }, {
+      await sendSignupEmailCode(email, name, { phone, username }, {
         legalAccepted: true,
         mathToken: mathChallenge.token,
         mathAnswer: mathAnswer.trim()
@@ -513,15 +573,15 @@ export function AuthPage({
       return;
     } catch (error) {
       if (error instanceof AuthEmailError) {
-        if (error.field === "email" || error.field === "phone") {
+        if (error.field === "email" || error.field === "phone" || error.field === "username") {
           setSignupFieldError(error.field, error.message);
         }
         if (error.kind === "exists") {
           clearPendingSignup();
           onModeChange("signup");
         }
-        if (/quick check/i.test(error.message)) {
-          setMathError(error.message);
+        if (/quick check|answer correctly/i.test(error.message)) {
+          setMathError("Please answer correctly.");
           void loadMathChallenge();
         }
       }
@@ -729,8 +789,27 @@ export function AuthPage({
           {mode === "signup" && (
             <>
               <h1 className="auth-title">Create your account</h1>
-              <p className="auth-sub">Verify your email, then finish your profile.</p>
               <div className="auth-fields">
+                <AuthField
+                  label="Full name"
+                  value={signupForm.name}
+                  onChange={(name) => setSignupForm({ ...signupForm, name })}
+                  autoComplete="name"
+                />
+                <AuthField
+                  label="Username"
+                  value={signupForm.username}
+                  onChange={(username) => {
+                    clearSignupFieldError("username");
+                    setSignupForm({ ...signupForm, username: formatUsernameInput(username) });
+                  }}
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  maxLength={24}
+                  error={signupFieldErrors.username}
+                  checking={signupFieldChecking.username}
+                />
                 <AuthField
                   label="Phone"
                   value={signupForm.phone}
@@ -792,7 +871,7 @@ export function AuthPage({
                   disabled={mathLoading || busy === "signup"}
                 />
               ) : mathLoading ? (
-                <p className="auth-message auth-message--inline">Loading quick check…</p>
+                <p className="auth-message auth-message--inline">One moment…</p>
               ) : null}
 
               <button

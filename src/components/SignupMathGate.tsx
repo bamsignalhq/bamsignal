@@ -17,21 +17,23 @@ export function SignupMathGate({
 }: SignupMathGateProps) {
   return (
     <div className="signup-math-gate">
-      <label className="signup-math-gate__label" htmlFor="signup-math-answer">
-        Quick check: {a} + {b} = ?
+      <label className="signup-math-gate__row" htmlFor="signup-math-answer">
+        <span className="signup-math-gate__prompt" aria-hidden>
+          {a} + {b} =
+        </span>
+        <input
+          id="signup-math-answer"
+          className={`signup-math-gate__input${error ? " signup-math-gate__input--error" : ""}`}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="Answer"
+          value={answer}
+          disabled={disabled}
+          maxLength={2}
+          onChange={(event) => onAnswerChange(event.target.value.replace(/\D/g, "").slice(0, 2))}
+        />
       </label>
-      <input
-        id="signup-math-answer"
-        className={`signup-math-gate__input${error ? " signup-math-gate__input--error" : ""}`}
-        type="text"
-        inputMode="numeric"
-        autoComplete="off"
-        placeholder="Answer"
-        value={answer}
-        disabled={disabled}
-        maxLength={2}
-        onChange={(event) => onAnswerChange(event.target.value.replace(/\D/g, "").slice(0, 2))}
-      />
       {error ? (
         <p className="signup-math-gate__error" role="alert">
           {error}

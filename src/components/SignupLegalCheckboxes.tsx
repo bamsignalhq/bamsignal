@@ -23,10 +23,6 @@ function LegalLink({ href, label }: { href: string; label: string }) {
 export function SignupLegalCheckboxes({ accepted, onChange }: SignupLegalCheckboxesProps) {
   return (
     <section className="signup-legal" aria-label="Legal agreement">
-      <p className="signup-legal__intro">
-        By continuing, you agree to BamSignal&apos;s terms and confirm you are at least 18.
-      </p>
-
       <label className={`signup-legal__row${accepted ? " signup-legal__row--checked" : ""}`}>
         <input
           type="checkbox"

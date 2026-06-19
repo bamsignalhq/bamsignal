@@ -249,24 +249,29 @@
 .signup-math-gate {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--input-bg, var(--card)) 92%, transparent);
+  gap: 6px;
 }
 
-.signup-math-gate__label {
+.signup-math-gate__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
-  font-size: 0.88rem;
+}
+
+.signup-math-gate__prompt {
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text);
+  white-space: nowrap;
 }
 
 .signup-math-gate__input {
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 14px;
+  flex: 1;
+  min-width: 0;
+  max-width: 120px;
+  min-height: 40px;
+  padding: 8px 12px;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface, var(--card));

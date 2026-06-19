@@ -18,6 +18,7 @@ import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query, upsertAp
 import { findMemberProfileByUserKey, upsertMemberProfile } from "../cityHome.js";
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
 import { loadEmailBranding, buildSignupVerificationEmailBody, wrapEmailLayoutAsync } from "./emailBranding.js";
+import { verifyLoginPassword } from "./pinLogin.js";
 
 dotenv.config();
 
@@ -527,6 +528,23 @@ async function ensureMemberProfileStub({ email, phone, name, username, existingM
   return row;
 }
 
+async function mintSignupSession(email, password) {
+  const normalizedEmail = normalizeSignupEmail(email);
+  const secret = String(password || "");
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const login = await verifyLoginPassword(normalizedEmail, secret);
+    if (login.ok && login.session) {
+      signupFlowLog("session_create_success", { attempt: attempt + 1 });
+      return login.session;
+    }
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
+    }
+  }
+  signupFlowLog("session_create_failed", { reason: "token_grant_failed" });
+  throw new SignupOtpError(502, SIGNUP_USER_MESSAGE, "session_failed");
+}
+
 async function completeSignupAfterOtp(body = {}) {
   signupFlowLog("otp_verify_start");
   await verifySignupOtp(body.email, body.code);
@@ -571,26 +589,32 @@ async function completeSignupAfterOtp(body = {}) {
   signupFlowLog("user_create_success", { userId: authUser.id, created: authUser.created, mode });
 
   signupFlowLog("profile_create_start");
-  await ensureAppUserRecord({
-    email: body.email,
-    phone: body.phone,
-    name: body.name
-  });
-  const profileRow = await ensureMemberProfileStub({
-    email: body.email,
-    phone: body.phone,
-    name: body.name,
-    username: body.username,
-    existingMember: member
-  });
+  const [, profileRow] = await Promise.all([
+    ensureAppUserRecord({
+      email: body.email,
+      phone: body.phone,
+      name: body.name
+    }),
+    ensureMemberProfileStub({
+      email: body.email,
+      phone: body.phone,
+      name: body.name,
+      username: body.username,
+      existingMember: member
+    })
+  ]);
   signupFlowLog("profile_create_success", { profileId: profileRow.id, onboardingComplete: profileRow.onboarding_complete });
+
+  signupFlowLog("session_create_start");
+  const session = await mintSignupSession(body.email, body.password);
 
   return {
     ok: true,
     email: normalizeSignupEmail(body.email),
     memberProfileId: profileRow.id,
     onboardingComplete: Boolean(profileRow.onboarding_complete),
-    recovered: mode !== "fresh"
+    recovered: mode !== "fresh",
+    session
   };
 }
 

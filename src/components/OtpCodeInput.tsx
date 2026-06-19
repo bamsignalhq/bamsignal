@@ -55,7 +55,6 @@ export const OtpCodeInput = forwardRef<HTMLInputElement, OtpCodeInputProps>(func
       aria-label={ariaLabel}
       aria-busy={verifying}
       onChange={(event) => applyValue(event.target.value)}
-      onInput={(event) => applyValue(event.currentTarget.value)}
       onPaste={handlePaste}
     />
   );

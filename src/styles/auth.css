@@ -32,6 +32,9 @@
   height: 240px;
   background: radial-gradient(ellipse at 50% 0%, rgba(233, 30, 140, 0.35), transparent 68%);
   pointer-events: none;
+}
+
+.auth-page:not(.auth-page--verify) .auth-shell__glow {
   animation: authGlow 6s ease-in-out infinite alternate;
 }
 
@@ -54,13 +57,16 @@
   padding: 0 0 28px;
   border-radius: 24px;
   border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  background: color-mix(in srgb, var(--card) 94%, transparent);
-  backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--card) 96%, transparent);
   box-shadow:
     0 24px 48px rgba(0, 0, 0, 0.18),
     0 1px 0 rgba(255, 255, 255, 0.04) inset;
-  animation: authSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   overflow: hidden;
+}
+
+.auth-page:not(.auth-page--verify) .auth-card--fintech {
+  backdrop-filter: blur(12px);
+  animation: authSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .auth-card--fintech::before {
@@ -217,6 +223,14 @@
   letter-spacing: 0.35em;
   font-size: 1.25rem;
   font-weight: 700;
+}
+
+/* Login PIN — centered bullets, matched to username field */
+.auth-pin-input {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: normal;
 }
 
 .btn-auth {
@@ -420,11 +434,14 @@
   padding: 0;
 }
 
-/* Verify email — premium OTP step */
+/* Verify email — OTP step (static visuals for input responsiveness) */
 .auth-verify {
   display: grid;
   gap: 22px;
-  animation: authSlideUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-page--verify .auth-verify {
+  animation: authSlideUp 0.2s ease both;
 }
 
 .auth-verify__hero {
@@ -452,8 +469,7 @@
   background: var(--brand-gradient);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
-  opacity: 0.55;
-  animation: authVerifyRing 3s ease-in-out infinite;
+  opacity: 0.5;
   pointer-events: none;
 }
 
@@ -551,21 +567,14 @@
   pointer-events: auto;
   position: relative;
   z-index: 1;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.15s ease,
-    background 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .otp-code-input:focus,
 .auth-verify__code-input:focus {
   outline: none;
   border-color: rgba(233, 30, 140, 0.55);
-  box-shadow:
-    0 0 0 3px rgba(233, 30, 140, 0.14),
-    0 8px 20px rgba(123, 31, 162, 0.12);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.14);
 }
 
 .otp-code-input[aria-busy="true"],
@@ -1482,28 +1491,41 @@
 }
 
 .auth-field--centered input,
-.auth-field--centered.auth-code-input {
+.auth-field--centered .auth-code-input,
+.auth-field--centered .auth-pin-input {
   text-align: center;
 }
 
+.auth-field--centered.auth-field--float input {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
 .auth-field--centered input::placeholder,
-.auth-field--centered.auth-code-input::placeholder {
+.auth-field--centered .auth-code-input::placeholder,
+.auth-field--centered .auth-pin-input::placeholder {
   text-align: center;
 }
 
 .auth-field--centered.auth-field--float > span {
   left: 50%;
+  right: auto;
   transform: translate(-50%, -50%);
 }
 
 .auth-field--centered.auth-field--float input:focus + span,
 .auth-field--centered.auth-field--float input:not(:placeholder-shown) + span {
   left: 50%;
+  right: auto;
   transform: translate(-50%, -1.15rem);
 }
 
-.auth-field--centered.auth-field--pin input {
-  padding-right: 48px;
+/* Login username + PIN share identical inset — no toggle on login PIN */
+.auth-field--centered.auth-field--login.auth-field--pin input.auth-pin-input {
+  padding-left: 18px;
+  padding-right: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .auth-field--float > span {
@@ -1524,7 +1546,7 @@
   color: var(--brand-pink);
 }
 
-.auth-field--pin input {
+.auth-field--pin input:not(.auth-pin-input) {
   padding-right: 48px;
 }
 

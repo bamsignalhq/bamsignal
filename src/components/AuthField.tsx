@@ -15,6 +15,8 @@ type AuthFieldProps = {
   className?: string;
   error?: string;
   checking?: boolean;
+  /** Show/hide toggle for PIN or password fields. Off on login PIN so text stays centered. */
+  showToggle?: boolean;
 };
 
 export function AuthField({
@@ -30,7 +32,8 @@ export function AuthField({
   spellCheck,
   className = "",
   error = "",
-  checking = false
+  checking = false,
+  showToggle = true
 }: AuthFieldProps) {
   const [visible, setVisible] = useState(false);
   const isPassword = type === "password" || pin;
@@ -51,10 +54,12 @@ export function AuthField({
           placeholder=" "
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${label}-error` : undefined}
-          className={pin ? "auth-code-input" : undefined}
+          className={
+            pin ? (className.includes("auth-field--centered") ? "auth-pin-input" : "auth-code-input") : undefined
+          }
         />
         <span>{label}</span>
-        {isPassword && (
+        {isPassword && showToggle && (
           <button
             type="button"
             className="auth-field__toggle"

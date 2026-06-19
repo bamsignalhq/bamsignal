@@ -1,0 +1,27 @@
+---
+description: Member login uses username + PIN — never email/password in UI copy
+globs: src/pages/AuthPage.tsx,src/components/AuthField.tsx,src/styles/auth.css,src/services/authEmail.ts
+alwaysApply: false
+---
+
+# Member auth terminology
+
+BamSignal **member login** is **username + 6-digit PIN**, not email/password.
+
+## UI copy (member AuthPage)
+
+- Login fields: **Username**, **PIN**
+- Link: **Forgot PIN?** — not "Forgot password?"
+- Errors/messages: "Invalid username or PIN", "Enter your PIN" — not password wording
+- Signup still collects email for verification; login screen does not present email/password auth
+
+## Do not break
+
+- Login PIN on `AuthPage` uses `showToggle={false}` so centered text aligns with username (no eye icon offset)
+- Internal state/API may still use `password` for Supabase — that is backend only; user-facing text stays PIN/username
+- Admin auth (`AdminAuthPage`) is separate — email/password is correct there
+
+## Login field layout
+
+- Both login fields use `auth-field--centered auth-field--login`
+- PIN uses `auth-pin-input` with same horizontal padding as username (18px), `text-align: center`

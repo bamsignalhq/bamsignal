@@ -48,6 +48,7 @@ import { signupLog } from "../utils/signupLog";
 import { mergeLocalCompliance, saveComplianceAcknowledgements } from "../services/compliance";
 import { signupLegalAckTypes } from "../utils/compliance";
 import { Login2faModal } from "../components/Login2faModal";
+import { ResendCooldown } from "../components/ResendCooldown";
 import { AccountRestoreModal } from "../components/AccountRestoreModal";
 import {
   checkLogin2faRemote,
@@ -92,7 +93,7 @@ function restoredSignupState() {
       signupForm: draft?.form ?? emptySignup,
       legalAccepted: Boolean(draft?.legalAccepted),
       verifyCode: "",
-      resendIn: 0
+      codeSentAt: Date.now()
     };
   }
 
@@ -110,7 +111,7 @@ function restoredSignupState() {
     },
     legalAccepted: false,
     verifyCode,
-    resendIn: resendCooldownRemaining(codeSentAt, RESEND_COOLDOWN_SEC)
+    codeSentAt: codeSentAt ?? Date.now()
   };
 }
 
@@ -147,7 +148,7 @@ export function AuthPage({
   const [mathLoading, setMathLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
-  const [resendIn, setResendIn] = useState(restored.current.resendIn);
+  const [codeSentAt, setCodeSentAt] = useState(restored.current.codeSentAt);
   const [pendingAuthProfile, setPendingAuthProfile] = useState<UserProfile | null>(null);
   const [login2faOpen, setLogin2faOpen] = useState(false);
   const [login2faMethod, setLogin2faMethod] = useState<"email" | "whatsapp">("email");
@@ -158,6 +159,7 @@ export function AuthPage({
   const [restoreScheduledFor, setRestoreScheduledFor] = useState<string | null>(null);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const verifyInFlight = useRef(false);
+  const verifyPersistTimer = useRef<number | null>(null);
 
   const phoneDigits = (value: string) => normalizeNigerianPhone(value);
   const pinDigits = (value: string) => value.replace(/\D/g, "").slice(0, 6);
@@ -189,16 +191,19 @@ export function AuthPage({
   }, [mode]);
 
   useEffect(() => {
-    if (resendIn <= 0) return;
-    const timer = window.setTimeout(() => setResendIn((value) => value - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [resendIn]);
-
-  useEffect(() => {
     if (mode !== "verify" || pendingSignup?.email || restored.current.pendingSignup?.email) return;
     onMessage("Your verification session expired. Please sign up again.");
     onModeChange("signup");
   }, [mode, pendingSignup?.email, onModeChange, onMessage]);
+
+  useEffect(
+    () => () => {
+      if (verifyPersistTimer.current !== null) {
+        window.clearTimeout(verifyPersistTimer.current);
+      }
+    },
+    []
+  );
 
   const setSignupFieldError = (field: SignupField, message: string) => {
     setSignupFieldErrors((current) => ({ ...current, [field]: message }));
@@ -561,7 +566,7 @@ export function AuthPage({
       flowLog("otp_send_ok");
       rememberUsernameEmail(username, email);
       setVerifyCode("");
-      setResendIn(RESEND_COOLDOWN_SEC);
+      setCodeSentAt(Date.now());
       setPendingSignup(profile);
       clearSignupDraft();
       if (!savePendingSignup({ profile, pin: signupForm.pin, verifyCode: "" })) {
@@ -616,31 +621,27 @@ export function AuthPage({
 
       flowLog("session_create_start");
       let sessionUser = null;
-      let lastError: unknown = null;
-      for (let attempt = 0; attempt < 4; attempt += 1) {
+      if (verifyResult.session && supabase) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: verifyResult.session.access_token,
+          refresh_token: verifyResult.session.refresh_token
+        });
+        if (error) throw error;
+        sessionUser = data.user;
+        flowLog("session_create_success");
+      } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: pendingSignup.email,
           password: signupForm.pin
         });
-        if (!error && data.user) {
-          sessionUser = data.user;
-          break;
-        }
-        lastError = error;
-        flowLog("session_create_retry", { attempt: attempt + 1, reason: error?.message || "unknown" });
-        if (attempt < 3) {
-          await new Promise((resolve) => window.setTimeout(resolve, 400));
-        }
+        if (error || !data.user) throw error || new Error(USER_MESSAGES.signupCompleteFailed);
+        sessionUser = data.user;
+        flowLog("session_create_success");
       }
 
       if (!sessionUser) {
-        flowLog("session_create_failed", {
-          reason: lastError instanceof Error ? lastError.message : "sign_in_failed"
-        });
-        throw lastError || new Error(USER_MESSAGES.signupCompleteFailed);
+        throw new Error(USER_MESSAGES.signupCompleteFailed);
       }
-
-      flowLog("session_create_success");
       clearPendingSignup();
       const profile = profileFromSessionUser(sessionUser);
       mergeLocalCompliance(signupLegalAckTypes());
@@ -678,14 +679,20 @@ export function AuthPage({
 
   const handleOtpChange = (cleaned: string) => {
     setVerifyCode(cleaned);
-    touchPendingVerifyCode(cleaned);
+    if (verifyPersistTimer.current !== null) {
+      window.clearTimeout(verifyPersistTimer.current);
+    }
+    verifyPersistTimer.current = window.setTimeout(() => {
+      touchPendingVerifyCode(cleaned);
+      verifyPersistTimer.current = null;
+    }, cleaned.length === OTP_LENGTH ? 0 : 280);
     if (cleaned.length === OTP_LENGTH) {
       void verifySignup(cleaned);
     }
   };
 
   const resendVerification = async () => {
-    if (!pendingSignup?.email || resendIn > 0) return;
+    if (!pendingSignup?.email || resendCooldownRemaining(codeSentAt, RESEND_COOLDOWN_SEC) > 0) return;
     setBusy("resend");
     onMessage("");
     try {
@@ -698,7 +705,7 @@ export function AuthPage({
         username: pendingSignup.username || ""
       });
       onMessage("Fresh code sent — check your inbox.");
-      setResendIn(RESEND_COOLDOWN_SEC);
+      setCodeSentAt(Date.now());
       setVerifyCode("");
       touchPendingCodeSent();
       focusOtpInput();
@@ -729,7 +736,7 @@ export function AuthPage({
   };
 
   return (
-    <main className={`auth-page ${embedded ? "auth-page--embedded" : ""}`}>
+    <main className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""}`.trim()}>
       <div className="auth-shell">
         <div className="auth-shell__glow" aria-hidden />
         <div className="auth-card auth-card--fintech">
@@ -767,6 +774,7 @@ export function AuthPage({
                   pin
                   maxLength={6}
                   autoComplete="current-password"
+                  showToggle={false}
                   className="auth-field--centered auth-field--login"
                 />
               </div>
@@ -775,7 +783,7 @@ export function AuthPage({
               </button>
               <div className="auth-links auth-links--stack">
                 <button type="button" className="auth-link-secondary" onClick={() => onModeChange("reset")}>
-                  Forgot password?
+                  Forgot PIN?
                 </button>
                 <button type="button" className="auth-switch auth-switch--inline" onClick={() => onModeChange("signup")}>
                   <span className="auth-switch__lead">New here?</span>
@@ -956,18 +964,12 @@ export function AuthPage({
                   If you don&apos;t see it within a minute, check your spam folder.
                 </p>
                 <p className="auth-verify__resend">
-                  {resendIn > 0 ? (
-                    <span className="auth-verify__timer">Resend available in {resendIn}s</span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="link-btn link-btn--accent"
-                      onClick={() => void resendVerification()}
-                      disabled={busy === "resend"}
-                    >
-                      {busy === "resend" ? "Sending…" : "Resend code"}
-                    </button>
-                  )}
+                  <ResendCooldown
+                    codeSentAt={codeSentAt}
+                    cooldownSec={RESEND_COOLDOWN_SEC}
+                    busy={busy === "resend"}
+                    onResend={() => void resendVerification()}
+                  />
                 </p>
                 <button
                   type="button"

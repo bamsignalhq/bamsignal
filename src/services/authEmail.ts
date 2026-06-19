@@ -12,6 +12,7 @@ type VerifyCodeResponse = {
   onboardingComplete?: boolean;
   recovered?: boolean;
   memberProfileId?: string;
+  session?: LoginResponse["session"];
 };
 
 export class AuthEmailError extends Error {

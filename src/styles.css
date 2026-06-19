@@ -108,8 +108,11 @@ body {
 }
 
 .app-main--onboarding {
-  padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  padding: 0;
   overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  --onboarding-footer-space: 96px;
 }
 
 .page {
@@ -2373,11 +2376,14 @@ body {
 
 /* Onboarding */
 .onboarding-page {
-  padding-bottom: 100px;
+  padding-bottom: calc(var(--onboarding-footer-space, 96px) + env(safe-area-inset-bottom, 0px) + 12px);
 }
 
 .onboarding-header {
-  padding: 8px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
 }
 
 .onboarding-back {
@@ -2386,7 +2392,6 @@ body {
   justify-content: center;
   width: 40px;
   height: 40px;
-  margin-bottom: 12px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
@@ -2408,25 +2413,48 @@ body {
   transition: width 0.35s ease;
 }
 
-.onboarding-step-label {
-  margin: 10px 0 0;
-  font-size: 0.78rem;
-  font-weight: 600;
+.onboarding-step-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.onboarding-step-eyebrow {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.4;
   color: var(--text-muted);
 }
 
-.onboarding-step {
-  padding: 0 20px;
-}
-
-.onboarding-step h2 {
-  margin: 0 0 8px;
+.onboarding-step-title {
+  margin: 0;
+  padding: 0;
   font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
   letter-spacing: -0.02em;
 }
 
+.onboarding-step-lede {
+  margin: 0;
+  padding: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+  font-size: 0.92rem;
+}
+
+.onboarding-step {
+  padding: 0;
+}
+
 .onboarding-sub {
-  margin: 0 0 20px;
+  margin: 0;
   color: var(--text-muted);
   line-height: 1.5;
   font-size: 0.92rem;
@@ -2566,10 +2594,20 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
-  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  z-index: 30;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--bg) 82%, color-mix(in srgb, var(--bg) 55%, transparent));
   max-width: 560px;
   margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.app-main--onboarding .onboarding-step--prefs .match-pref-fields {
+  padding-bottom: 4px;
+}
+
+.app-main--onboarding .age-range-select {
+  scroll-margin-bottom: calc(var(--onboarding-footer-space, 96px) + 20px);
 }
 
 .label-optional {

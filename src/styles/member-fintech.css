@@ -193,7 +193,6 @@
 
 /* Home */
 .platform-root--member .home-top--row {
-  max-height: 72px;
   align-items: center;
   margin-bottom: 2px;
 }
@@ -390,19 +389,62 @@
 
 /* Onboarding — spacing only */
 .app-main--onboarding .onboarding-page {
+  display: flex;
+  flex-direction: column;
   max-width: var(--bs-page-max, 520px);
   margin: 0 auto;
-  padding: 18px 20px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  padding: 18px 20px calc(var(--onboarding-footer-space, 96px) + env(safe-area-inset-bottom, 0px) + 16px);
+  box-sizing: border-box;
+}
+
+.app-main--onboarding .onboarding-header {
+  flex-shrink: 0;
+  margin-bottom: 16px;
 }
 
 .app-main--onboarding .onboarding-step {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  flex: 1;
+  min-height: 0;
 }
 
-.app-main--onboarding .onboarding-header {
-  max-height: 72px;
+.app-main--onboarding .onboarding-step-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.app-main--onboarding .onboarding-step-eyebrow {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--bs-muted, var(--text-muted));
+}
+
+.app-main--onboarding .onboarding-step-title {
+  margin: 0;
+  padding: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bs-text, var(--text));
+}
+
+.app-main--onboarding .onboarding-step-lede {
+  margin: 0;
+  padding: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+  font-size: 0.92rem;
 }
 
 .app-main--onboarding .onboarding-footer .btn-primary {

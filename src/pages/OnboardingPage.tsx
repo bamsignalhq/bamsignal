@@ -29,10 +29,8 @@ import { syncMemberProfileRemote } from "../services/cityHome";
 import { completeOnboardingRemote } from "../services/memberData";
 import {
   applyOnboardingRepairLocal,
-  fetchOnboardingStatus,
-  forceCompleteOnboardingRemote
+  fetchOnboardingStatus
 } from "../services/onboardingRepair";
-import { supabase } from "../services/supabase";
 import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { clearOnboardingDrafts, looksLikeSavedOnboardingProgress } from "../utils/onboardingStatus";
 import { resolveMemberIdentity } from "../utils/authIdentity";
@@ -64,6 +62,31 @@ const ONBOARDING_AGES = Array.from(
   (_, i) => MIN_ONBOARDING_AGE + i
 );
 
+const STEP_TITLES = [
+  "Welcome to BamSignal",
+  "About you",
+  SUCCESS_COPY.photoHeader,
+  "Your preferences"
+] as const;
+
+function OnboardingStepHead({
+  stepIndex,
+  subtitle
+}: {
+  stepIndex: number;
+  subtitle?: string;
+}) {
+  return (
+    <header className="onboarding-step-head">
+      <p className="onboarding-step-eyebrow">
+        Step {stepIndex + 1} of {STEPS.length}
+      </p>
+      <h2 className="onboarding-step-title">{STEP_TITLES[stepIndex]}</h2>
+      {subtitle ? <p className="onboarding-step-lede">{subtitle}</p> : null}
+    </header>
+  );
+}
+
 type OnboardingPageProps = {
   user: UserProfile;
   onUserChange: (user: UserProfile) => void;
@@ -72,7 +95,6 @@ type OnboardingPageProps = {
 
 export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPageProps) {
   const [gateReady, setGateReady] = useState(false);
-  const [escapeBusy, setEscapeBusy] = useState(false);
   const [step, setStep] = useState(() => {
     const saved = readJson<number>(STORAGE_KEYS.onboardingStep, 0);
     return Number.isFinite(saved) ? Math.min(Math.max(0, saved), STEPS.length - 1) : 0;
@@ -157,33 +179,6 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       cancelled = true;
     };
   }, [onComplete, user]);
-
-  const escapeToDashboard = async () => {
-    setEscapeBusy(true);
-    try {
-      const identity = resolveMemberIdentity(user);
-      const token = (await supabase?.auth.getSession())?.data.session?.access_token;
-      const result = await forceCompleteOnboardingRemote(identity, token);
-      if (result?.completed) {
-        if (result.datingProfile) {
-          applyOnboardingRepairLocal({
-            ok: true,
-            completed: true,
-            repaired: false,
-            nextRoute: "/home",
-            datingProfile: result.datingProfile
-          });
-        }
-        clearOnboardingDrafts();
-        onComplete();
-        navigateToPath("/home", true);
-        return;
-      }
-      showModMessage("We couldn't restore your dashboard. Please try again.");
-    } finally {
-      setEscapeBusy(false);
-    }
-  };
 
   useEffect(() => {
     setProfile((prev) => {
@@ -386,15 +381,11 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         <div className="onboarding-progress">
           <div className="onboarding-progress__bar" style={{ width: `${progress}%` }} />
         </div>
-        <p className="onboarding-step-label">
-          Step {step + 1} of {STEPS.length} · {STEPS[step]}
-        </p>
       </header>
 
       {step === 0 && (
         <section className="onboarding-step onboarding-step--location">
-          <h2>Welcome to BamSignal</h2>
-          <p className="onboarding-sub">Meet people who match your vibe.</p>
+          <OnboardingStepHead stepIndex={0} subtitle="Meet people who match your vibe." />
           <div className="onboarding-location-fields">
             <label>
               Full name
@@ -460,8 +451,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
 
       {step === 1 && (
         <section className="onboarding-step">
-          <h2>About you</h2>
-          <p className="onboarding-sub">A clear bio helps the right people find you.</p>
+          <OnboardingStepHead stepIndex={1} subtitle="A clear bio helps the right people find you." />
           <label>
             Bio
             <textarea
@@ -507,7 +497,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
 
       {step === 2 && (
         <section className="onboarding-step">
-          <h2>{SUCCESS_COPY.photoHeader}</h2>
+          <OnboardingStepHead stepIndex={2} />
           <PhotoUploadGrid
             photos={profile.photos}
             mainPhotoUrl={profile.mainPhotoUrl}
@@ -535,7 +525,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
 
       {step === 3 && (
         <section className="onboarding-step onboarding-step--prefs">
-          <h2>Your preferences</h2>
+          <OnboardingStepHead stepIndex={3} />
           <MatchPreferenceFields
             className="onboarding-pref-block"
             lookingFor={profile.lookingFor}
@@ -579,14 +569,6 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         <button type="button" className="btn-primary btn-full btn-auth" onClick={next} disabled={!canContinue()}>
           {step === STEPS.length - 1 ? "Finish" : "Continue"}
           {step < STEPS.length - 1 && <ChevronRight size={18} />}
-        </button>
-        <button
-          type="button"
-          className="auth-link-secondary onboarding-escape"
-          onClick={() => void escapeToDashboard()}
-          disabled={escapeBusy}
-        >
-          {escapeBusy ? "Restoring…" : "Having trouble? Continue to dashboard"}
         </button>
       </footer>
     </div>

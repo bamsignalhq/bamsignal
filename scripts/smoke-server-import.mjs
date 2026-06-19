@@ -11,7 +11,7 @@ process.env.PORT = String(port);
 
 const productionPath = join(dirname(fileURLToPath(import.meta.url)), "..", "server", "production.js");
 const productionSource = readFileSync(productionPath, "utf8");
-const requiredRoutes = ["/api/auth/pin-login", "/api/auth/email-code", "/api/member/data"];
+const requiredRoutes = ["/api/auth/pin-login", "/api/auth/pin-reset", "/api/auth/email-code", "/api/member/data"];
 for (const route of requiredRoutes) {
   if (!productionSource.includes(route)) {
     console.error(`server smoke failed: missing route mount for ${route}`);

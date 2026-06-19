@@ -301,3 +301,46 @@ export async function loginWithPin(
 ): Promise<LoginResponse> {
   return loginWithPassword(username, password);
 }
+
+type PinResetSendResponse = { ok?: boolean; sent?: boolean; email?: string; error?: string };
+type PinResetCompleteResponse = { ok?: boolean; username?: string; email?: string; error?: string };
+
+export async function sendPinResetCode(email: string): Promise<PinResetSendResponse> {
+  const normalized = email.trim().toLowerCase();
+  try {
+    const response = await fetch(apiUrl("/api/auth/pin-reset?action=send"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: normalized })
+    });
+    return readApiResponse<PinResetSendResponse>(
+      response,
+      "We couldn't send the reset code right now. Please try again shortly."
+    );
+  } catch (error) {
+    if (error instanceof AuthEmailError) throw error;
+    throw new AuthEmailError("Unable to connect. Check your internet and try again.", "network");
+  }
+}
+
+export async function completePinReset(
+  email: string,
+  code: string,
+  newPin: string
+): Promise<PinResetCompleteResponse> {
+  const normalized = email.trim().toLowerCase();
+  try {
+    const response = await fetch(apiUrl("/api/auth/pin-reset?action=complete"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: normalized, code, newPin })
+    });
+    return readApiResponse<PinResetCompleteResponse>(
+      response,
+      "We couldn't reset your PIN right now. Please try again shortly."
+    );
+  } catch (error) {
+    if (error instanceof AuthEmailError) throw error;
+    throw new AuthEmailError("Unable to connect. Check your internet and try again.", "network");
+  }
+}

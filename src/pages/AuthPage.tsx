@@ -13,8 +13,10 @@ import {
   loginWithPassword,
   checkSignupAvailability,
   checkSignupField,
+  completePinReset,
   requestSignupMathChallenge,
   resendSignupEmailCode,
+  sendPinResetCode,
   sendSignupEmailCode,
   verifySignupEmailCode,
   AuthEmailError
@@ -147,6 +149,12 @@ export function AuthPage({
   const [mathError, setMathError] = useState("");
   const [mathLoading, setMathLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [resetStep, setResetStep] = useState<"email" | "code">("email");
+  const [resetCode, setResetCode] = useState("");
+  const [resetNewPin, setResetNewPin] = useState("");
+  const [resetConfirmPin, setResetConfirmPin] = useState("");
+  const [resetCodeSentAt, setResetCodeSentAt] = useState(0);
+  const resetOtpRef = useRef<HTMLInputElement | null>(null);
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
   const [codeSentAt, setCodeSentAt] = useState(restored.current.codeSentAt);
   const [pendingAuthProfile, setPendingAuthProfile] = useState<UserProfile | null>(null);
@@ -174,6 +182,23 @@ export function AuthPage({
     if (mode !== "verify" || !pendingSignup?.email) return;
     focusOtpInput();
   }, [mode, pendingSignup?.email]);
+
+  useEffect(() => {
+    if (mode !== "reset" || resetStep !== "code") return;
+    window.requestAnimationFrame(() => {
+      resetOtpRef.current?.focus({ preventScroll: true });
+    });
+  }, [mode, resetStep]);
+
+  useEffect(() => {
+    if (mode !== "reset") {
+      setResetStep("email");
+      setResetCode("");
+      setResetNewPin("");
+      setResetConfirmPin("");
+      setResetCodeSentAt(0);
+    }
+  }, [mode]);
 
   useEffect(() => {
     if (mode !== "verify") return;
@@ -717,17 +742,76 @@ export function AuthPage({
   };
 
   const sendReset = async () => {
+    const email = resetEmail.trim().toLowerCase();
+    if (!isLikelyEmail(email)) {
+      onMessage("Enter a valid email.");
+      return;
+    }
+
     setBusy("reset");
+    onMessage("");
     try {
-      if (supabase && resetEmail) {
-        const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-          redirectTo: `${window.location.origin}/love/login`
-        });
-        if (error) throw error;
-        onMessage("Reset link sent.");
-      } else {
-        onMessage("Enter your email.");
+      await sendPinResetCode(email);
+      setResetEmail(email);
+      setResetStep("code");
+      setResetCode("");
+      setResetCodeSentAt(Date.now());
+      onMessage("If an account exists for this email, we sent a reset code.");
+    } catch (error) {
+      onMessage(friendlyAuthError(error));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const resendResetCode = async () => {
+    if (!resetEmail || resendCooldownRemaining(resetCodeSentAt, RESEND_COOLDOWN_SEC) > 0) return;
+    setBusy("reset-resend");
+    onMessage("");
+    try {
+      await sendPinResetCode(resetEmail);
+      setResetCodeSentAt(Date.now());
+      setResetCode("");
+      onMessage("Fresh code sent — check your inbox.");
+    } catch (error) {
+      onMessage(friendlyAuthError(error));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitPinReset = async () => {
+    const email = resetEmail.trim().toLowerCase();
+    if (!isLikelyEmail(email)) {
+      onMessage("Enter a valid email.");
+      return;
+    }
+    if (resetCode.length !== OTP_LENGTH) {
+      onMessage("Enter the 6-digit code from your email.");
+      return;
+    }
+    if (!isStrongPin(resetNewPin)) {
+      onMessage("Choose a stronger 6-digit PIN (no repeats like 111111 or runs like 123456).");
+      return;
+    }
+    if (resetNewPin !== resetConfirmPin) {
+      onMessage("PINs don't match.");
+      return;
+    }
+
+    setBusy("reset-complete");
+    onMessage("");
+    try {
+      const result = await completePinReset(email, resetCode, resetNewPin);
+      if (result.username) {
+        rememberUsernameEmail(result.username, email);
       }
+      onMessage("PIN updated. Log in with your username and new PIN.");
+      setResetStep("email");
+      setResetCode("");
+      setResetNewPin("");
+      setResetConfirmPin("");
+      onModeChange("login");
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {
@@ -986,26 +1070,144 @@ export function AuthPage({
             </div>
           )}
 
-          {mode === "reset" && (
+          {mode === "reset" && resetStep === "email" && (
             <>
-              <h1 className="auth-title">Reset password</h1>
+              <h1 className="auth-title">Reset PIN</h1>
+              <p className="auth-sub">We&apos;ll email a code to the address on your account.</p>
               <AuthField
                 label="Email"
                 value={resetEmail}
                 onChange={setResetEmail}
                 type="email"
+                autoComplete="email"
               />
               <button type="button" className="btn-primary btn-full btn-auth" onClick={sendReset} disabled={busy === "reset"}>
-                {busy === "reset" ? <Loader2 className="spin" size={20} /> : "Send link"}
+                {busy === "reset" ? <Loader2 className="spin" size={20} /> : "Send code"}
               </button>
               <button type="button" className="auth-switch" onClick={() => onModeChange("login")}>
-                <span className="auth-switch__lead">Remember your password?</span>
+                <span className="auth-switch__lead">Remember your PIN?</span>
                 <span className="auth-switch__action">Back to login</span>
               </button>
             </>
           )}
 
-          {message && mode !== "verify" ? (
+          {mode === "reset" && resetStep === "code" && (
+            <div className="auth-verify">
+              <div className="auth-verify__hero">
+                <div className="auth-verify__icon-ring" aria-hidden>
+                  <div className="auth-verify__icon">
+                    <Mail size={26} strokeWidth={2.2} />
+                  </div>
+                </div>
+                <p className="auth-verify__step">Reset your PIN</p>
+                <h1 className="auth-title auth-verify__title">Check your email</h1>
+                <p className="auth-verify__lede">
+                  Sent to <strong>{maskEmail(resetEmail)}</strong>
+                </p>
+              </div>
+
+              <label
+                className="auth-verify__otp-field"
+                onClick={(event) => {
+                  if (event.target === event.currentTarget) {
+                    resetOtpRef.current?.focus({ preventScroll: true });
+                  }
+                }}
+              >
+                <span className="auth-verify__otp-label">Reset code</span>
+                <OtpCodeInput
+                  ref={resetOtpRef}
+                  className="auth-verify__code-input"
+                  value={resetCode}
+                  verifying={busy === "reset-complete"}
+                  onChange={setResetCode}
+                  aria-label="PIN reset code"
+                />
+              </label>
+
+              {message ? (
+                <p
+                  className={`auth-message auth-verify__message ${
+                    message.toLowerCase().includes("sent") || message.toLowerCase().includes("updated")
+                      ? "auth-message--success"
+                      : ""
+                  }`}
+                  role="status"
+                >
+                  {message}
+                </p>
+              ) : null}
+
+              <div className="auth-fields">
+                <AuthField
+                  label="New PIN"
+                  value={resetNewPin}
+                  onChange={(pin) => setResetNewPin(pinDigits(pin))}
+                  pin
+                  maxLength={6}
+                  autoComplete="new-password"
+                />
+                <AuthField
+                  label="Confirm PIN"
+                  value={resetConfirmPin}
+                  onChange={(pin) => setResetConfirmPin(pinDigits(pin))}
+                  pin
+                  maxLength={6}
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <button
+                type="button"
+                className="btn-primary btn-full btn-auth auth-verify__submit"
+                onClick={submitPinReset}
+                disabled={
+                  busy === "reset-complete" ||
+                  resetCode.length !== OTP_LENGTH ||
+                  resetNewPin.length !== OTP_LENGTH ||
+                  resetConfirmPin.length !== OTP_LENGTH
+                }
+              >
+                {busy === "reset-complete" ? <Loader2 className="spin" size={20} /> : "Save new PIN"}
+              </button>
+
+              <div className="auth-verify__meta">
+                <p className="auth-verify__hint">
+                  <ShieldCheck size={15} aria-hidden />
+                  If you don&apos;t see it within a minute, check your spam folder.
+                </p>
+                <p className="auth-verify__resend">
+                  <ResendCooldown
+                    codeSentAt={resetCodeSentAt}
+                    cooldownSec={RESEND_COOLDOWN_SEC}
+                    busy={busy === "reset-resend"}
+                    onResend={() => void resendResetCode()}
+                  />
+                </p>
+                <button
+                  type="button"
+                  className="link-btn auth-verify__back"
+                  onClick={() => {
+                    setResetStep("email");
+                    setResetCode("");
+                    setResetNewPin("");
+                    setResetConfirmPin("");
+                    onMessage("");
+                  }}
+                >
+                  Use a different email
+                </button>
+              </div>
+            </div>
+          )}
+
+          {message && mode === "reset" && resetStep === "email" ? (
+            <p className={`auth-message ${message.toLowerCase().includes("sent") ? "auth-message--success" : ""}`}>
+              {message}
+            </p>
+          ) : null}
+
+          {message && mode !== "verify" && mode !== "reset" ? (
             <p className={`auth-message ${message.toLowerCase().includes("sent") ? "auth-message--success" : ""}`}>
               {message}
             </p>

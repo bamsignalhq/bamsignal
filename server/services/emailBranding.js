@@ -310,6 +310,17 @@ export function buildLoginVerificationEmailBody({ name, code }) {
   `);
 }
 
+export function buildPinResetEmailBody({ name, code }) {
+  const displayName = String(name || "there").trim() || "there";
+  return emailCenterBlock(`
+    ${emailKicker("Reset your PIN", { center: true })}
+    ${emailHeading("Your reset code", { center: true })}
+    ${emailLead(`Hi ${displayName}, enter this code in the app to choose a new 6-digit PIN. It expires in 10 minutes.`, { center: true })}
+    ${emailOtpCode(code)}
+    ${emailMuted("If you didn't request a PIN reset, you can ignore this email.", { center: true, marginTop: 16 })}
+  `);
+}
+
 export function emailFieldCard(label, value, { prewrap = false } = {}) {
   const valueStyle = prewrap
     ? `margin:0;white-space:pre-wrap;line-height:1.65;color:${EMAIL_THEME.text};font-size:15px`

@@ -65,7 +65,11 @@ export function friendlyAuthError(error: unknown): string {
     return "Email verification is temporarily unavailable. Please try again shortly.";
   }
 
-  if (/wait \d+s|doesn't match|spam folder|couldn't send the code/i.test(message)) {
+  if (/wait \d+s|doesn't match|spam folder|couldn't send the code|request a new code|too many attempts|expired/i.test(message)) {
+    return message;
+  }
+
+  if (/pin reset|reset code|reset your pin/i.test(message)) {
     return message;
   }
 

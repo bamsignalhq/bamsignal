@@ -385,6 +385,60 @@ export function buildContactAcknowledgementPlainText({ name, topic }) {
   ].join("\n");
 }
 
+export function buildPurchaseConfirmationEmailBody({
+  firstName,
+  productName,
+  amountLabel,
+  reference,
+  purchasedAt,
+  nextSteps,
+  supportEmail = "support@bamsignal.com"
+}) {
+  return `
+    ${emailKicker("Purchase confirmed")}
+    ${emailHeading(`Thanks, ${firstName}.`)}
+    ${emailLead(`Your ${productName} purchase was successful.`)}
+    ${emailFieldCards([
+      { label: "Amount", value: amountLabel },
+      { label: "Reference", value: reference },
+      { label: "Date", value: purchasedAt },
+      { label: "Status", value: "Successful" }
+    ])}
+    ${emailLead(nextSteps)}
+    ${emailMuted(`If you need help, contact ${supportEmail}.`)}
+    ${emailButton("Open BamSignal", BAMSIGNAL_SITE)}
+  `;
+}
+
+export function buildPurchaseConfirmationPlainText({
+  firstName,
+  productName,
+  amountLabel,
+  reference,
+  purchasedAt,
+  nextSteps,
+  supportEmail = "support@bamsignal.com"
+}) {
+  return [
+    `Hi ${firstName},`,
+    "",
+    `Your ${productName} purchase was successful.`,
+    "",
+    `Amount: ${amountLabel}`,
+    `Reference: ${reference}`,
+    `Date: ${purchasedAt}`,
+    "Status: Successful",
+    "",
+    nextSteps,
+    "",
+    `If you need help, contact ${supportEmail}.`,
+    "",
+    "Thank you,",
+    "BamSignal Team",
+    buildPlainEmailFooter()
+  ].join("\n");
+}
+
 export function wrapEmailLayout({ bodyHtml, branding, preheader = "", headerHtml }) {
   const header = headerHtml || buildEmailHeader(branding);
   const footer = buildEmailFooter();

@@ -89,6 +89,39 @@
   font-weight: 500;
 }
 
+.payment-return-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+}
+
+.payment-return-screen__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(360px, 100%);
+  padding: 28px 24px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.payment-return-screen__card h1 {
+  margin: 0;
+  font-size: 20px;
+  color: var(--text);
+}
+
+.payment-return-screen__card p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
 .empty-state__art {
   width: 88px;
   height: 88px;

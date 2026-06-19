@@ -11,6 +11,7 @@ import {
   paystackErrorResponse,
   verifyPaystackTransaction
 } from "../../server/services/paystackClient.js";
+import { sendPurchaseConfirmationEmail, logPaymentInitialized } from "../../server/services/purchaseEmail.js";
 import {
   activePlanPrice,
   getProductFromCatalog,
@@ -86,6 +87,34 @@ function logPaystackFailure(scope, error, extra = {}) {
   });
 }
 
+async function notifyPurchaseEmail({
+  reference,
+  email,
+  name,
+  productType,
+  productId,
+  amountKobo,
+  metadata = {}
+}) {
+  const firstName = String(name || metadata.name || "").trim().split(/\s+/)[0] || "there";
+  try {
+    await sendPurchaseConfirmationEmail({
+      reference,
+      email,
+      firstName,
+      productType,
+      productId,
+      amountKobo: Number(amountKobo || 0),
+      userId: metadata.user_id || metadata.userId || null
+    });
+  } catch (error) {
+    console.error("[paystack] purchase email failed", {
+      reference,
+      message: error?.message || String(error)
+    });
+  }
+}
+
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
@@ -152,6 +181,13 @@ export default async function handler(req, res) {
           ms: Date.now() - startedAt
         });
 
+        await logPaymentInitialized({
+          reference: data?.reference || reference,
+          userEmail: email,
+          productType: "premium",
+          productId: planMeta
+        });
+
         return res.status(200).json({
           ok: true,
           reference: data?.reference || reference,
@@ -200,6 +236,13 @@ export default async function handler(req, res) {
             duration_hours: durationHours,
             product_type: "boost"
           }
+        });
+
+        await logPaymentInitialized({
+          reference: data?.reference || reference,
+          userEmail: email,
+          productType: "boost",
+          productId: boostId
         });
 
         return res.status(200).json({
@@ -252,6 +295,13 @@ export default async function handler(req, res) {
             product_type: "quickie",
             quickie_days: passDays
           }
+        });
+
+        await logPaymentInitialized({
+          reference: data?.reference || reference,
+          userEmail: email,
+          productType: "quickie",
+          productId: "fast-connection-pass"
         });
 
         return res.status(200).json({
@@ -313,6 +363,15 @@ export default async function handler(req, res) {
         passUntil,
         paystackReference: reference
       });
+      await notifyPurchaseEmail({
+        reference,
+        email: email || transactionEmail,
+        name,
+        productType: "quickie",
+        productId: "fast-connection-pass",
+        amountKobo: transaction?.amount,
+        metadata: transaction?.metadata || {}
+      });
       return res.status(200).json({
         ok: true,
         productType: "quickie",
@@ -354,6 +413,15 @@ export default async function handler(req, res) {
             error: "Complete onboarding in your city before buying City Spotlight."
           });
         }
+        await notifyPurchaseEmail({
+          reference,
+          email: email || transactionEmail,
+          name,
+          productType: "boost",
+          productId: boostId,
+          amountKobo: transaction?.amount,
+          metadata: transaction?.metadata || {}
+        });
         return res.status(200).json({
           ok: true,
           productType: "boost",
@@ -377,6 +445,15 @@ export default async function handler(req, res) {
             error: "Complete onboarding in your city before buying a City Boost."
           });
         }
+        await notifyPurchaseEmail({
+          reference,
+          email: email || transactionEmail,
+          name,
+          productType: "boost",
+          productId: boostId,
+          amountKobo: transaction?.amount,
+          metadata: transaction?.metadata || {}
+        });
         return res.status(200).json({
           ok: true,
           productType: "boost",
@@ -386,6 +463,15 @@ export default async function handler(req, res) {
         });
       }
 
+      await notifyPurchaseEmail({
+        reference,
+        email: email || transactionEmail,
+        name,
+        productType: "boost",
+        productId: boostId,
+        amountKobo: transaction?.amount,
+        metadata: transaction?.metadata || {}
+      });
       return res.status(200).json({
         ok: true,
         productType: "boost",
@@ -408,6 +494,17 @@ export default async function handler(req, res) {
       premiumUntil,
       paystackReference: reference,
       inviteLink
+    });
+
+    const planMeta = String(transaction?.metadata?.plan || transaction?.metadata?.plan_days || days);
+    await notifyPurchaseEmail({
+      reference,
+      email: email || transactionEmail,
+      name,
+      productType: "premium",
+      productId: planMeta,
+      amountKobo: transaction?.amount,
+      metadata: transaction?.metadata || {}
     });
 
     return res.status(200).json({

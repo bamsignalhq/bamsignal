@@ -163,6 +163,10 @@ export function clearPaymentSession(): void {
   localStorage.removeItem(STORAGE_KEYS.paymentPending);
   localStorage.removeItem(STORAGE_KEYS.paymentCheckoutOpened);
   localStorage.removeItem(STORAGE_KEYS.paymentStartedAt);
+  localStorage.removeItem(STORAGE_KEYS.paymentReturnPath);
+  localStorage.removeItem(STORAGE_KEYS.paymentProductType);
+  localStorage.removeItem(STORAGE_KEYS.paymentProductId);
+  localStorage.removeItem(STORAGE_KEYS.paymentSourcePage);
   writeJson(STORAGE_KEYS.paymentFlowState, "idle");
   notifyPaymentStateChange("idle");
 }

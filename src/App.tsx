@@ -20,6 +20,7 @@ import { AdminConsentProvider } from "./components/admin/AdminConsentProvider";
 import { AdminHubPage } from "./pages/AdminHubPage";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
 import { PaymentLoadingOverlay } from "./components/PaymentLoadingOverlay";
+import { PaymentReturnScreen } from "./components/PaymentReturnScreen";
 import { NotificationCenter } from "./components/NotificationCenter";
 import type { PremiumPlan } from "./constants/plans";
 import type { BoostProduct } from "./constants/boosts";
@@ -102,6 +103,7 @@ import {
   isPublicWebRoute,
   navigateToPath,
   normalizePath,
+  isPaymentReturnPath,
   redirectLegacyConsolePaths,
   redirectLegacyAdmin,
   redirectAuthSignupAliases,
@@ -150,6 +152,13 @@ import {
 } from "./context/PremiumCheckoutContext";
 import { defaultPremiumPlan } from "./utils/premiumPlan";
 import { checkoutWasOpened } from "./utils/paymentState";
+import {
+  clearPaystackCallbackParams,
+  getPaymentReturnMeta,
+  getPaymentReturnPath,
+  hasPaystackCallbackInUrl,
+  resolvePaymentReturnPath
+} from "./utils/paymentReturn";
 
 export function App() {
   const isNative = Capacitor.getPlatform() !== "web";
@@ -193,6 +202,11 @@ export function App() {
   const [memberOverlay, setMemberOverlay] = useState<"visitors" | "premium" | "safety" | null>(null);
   const [notifVersion, setNotifVersion] = useState(0);
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
+  const [paymentReturnPhase, setPaymentReturnPhase] = useState<"idle" | "verifying" | "success" | "failed">("idle");
+  const [openAppLoading, setOpenAppLoading] = useState(false);
+  const [paystackCallbackActive, setPaystackCallbackActive] = useState(
+    () => isPaymentReturnPath() || hasPaystackCallbackInUrl()
+  );
   const [paymentFlowTick, setPaymentFlowTick] = useState(0);
   const [bootStalled, setBootStalled] = useState(false);
   const [safeModeActive] = useState(() => isSafeMode());
@@ -206,10 +220,11 @@ export function App() {
   const logoutInProgressRef = useRef(false);
 
   const isGuest = !isAuthed;
-  const isPublicHome = !isNative && normalizePath(window.location.pathname) === "/";
+  const isPublicHome =
+    !isNative && normalizePath(window.location.pathname) === "/" && !paystackCallbackActive;
   const isOnboardingRoute = isOnboardingPath(memberPathname);
   const showMarketingHome =
-    isPublicHome && (!isAuthed || !memberAppEntered) && !isOnboardingRoute;
+    isPublicHome && (!isAuthed || !memberAppEntered) && !isOnboardingRoute && !paystackCallbackActive;
   const showGuestChrome = isGuest || showMarketingHome;
   void complianceTick;
   const showComplianceGate =
@@ -285,6 +300,7 @@ export function App() {
     const syncRoute = () => {
       const path = normalizePath(window.location.pathname);
       setMemberPathname(path);
+      setPaystackCallbackActive(isPaymentReturnPath(path) || hasPaystackCallbackInUrl());
       const fromMemberTab = memberTabFromPath(path);
       if (fromMemberTab) setTab(fromMemberTab);
       redirectLegacyConsolePaths();
@@ -449,8 +465,36 @@ export function App() {
     if (memberAccessReady) recordDailyActive();
   }, [isAuthed, memberAccessReady]);
 
+  const finishPaymentReturnRedirect = useCallback(
+    (
+      kind: "premium" | "boost" | "quickie",
+      returnPath = getPaymentReturnPath(),
+      meta = getPaymentReturnMeta()
+    ) => {
+      logPaymentEvent("payment_return_redirect", {
+        returnPath,
+        kind,
+        productType: meta.productType,
+        productId: meta.productId,
+        sourcePage: meta.sourcePage
+      });
+      setMemberAppEntered(true);
+      const memberTab = memberTabFromPath(returnPath);
+      if (memberTab) setTab(memberTab);
+      setPaymentReturnPhase("success");
+      window.setTimeout(() => {
+        navigateToPath(returnPath, true);
+        clearPaystackCallbackParams(returnPath);
+        setPaymentReturnPhase("idle");
+      }, 900);
+    },
+    []
+  );
+
   const applyPaymentSuccess = useCallback(
     (kind: "premium" | "boost" | "quickie") => {
+      const returnPath = getPaymentReturnPath();
+      const meta = getPaymentReturnMeta();
       const boostId = localStorage.getItem(STORAGE_KEYS.paymentBoostId) || "city-boost";
       clearPaymentSession();
       setPaymentFlowState("success");
@@ -482,8 +526,9 @@ export function App() {
         notifyPremiumActivated();
       }
       setNotifVersion((v) => v + 1);
+      finishPaymentReturnRedirect(kind, returnPath, meta);
     },
-    [user]
+    [finishPaymentReturnRedirect, user]
   );
 
   const processPaymentReturn = useCallback(async () => {
@@ -492,18 +537,19 @@ export function App() {
     const params = new URLSearchParams(window.location.search);
     const urlRef = params.get("trxref") || params.get("reference");
     const state = getPaymentFlowState();
+    const callbackActive = isPaymentReturnPath() || Boolean(urlRef?.trim());
 
     if (!urlRef && (state === "initializing" || state === "checkout_open")) return;
     if (!urlRef && state !== "verifying") return;
 
     paymentVerifyInFlight.current = true;
+    if (callbackActive) {
+      setPaymentReturnPhase("verifying");
+      setMemberAppEntered(true);
+    }
     try {
-      if (urlRef && window.location.pathname === "/payment/success") {
-        navigateToPath("/");
-      }
-
       logPaymentEvent("verification started", { reference: urlRef || localStorage.getItem(STORAGE_KEYS.paymentReference) });
-      const result = await completePendingPayment(user);
+      const result = await completePendingPayment(userRef.current);
       setPaymentFlowTick((v) => v + 1);
 
       if (result.ok) {
@@ -520,6 +566,12 @@ export function App() {
       if (result.cancelled) {
         setPaymentFlowState("cancelled");
         setAuthMessage(USER_MESSAGES.paymentNotCompleted);
+        if (callbackActive) {
+          const returnPath = getPaymentReturnPath();
+          setPaymentReturnPhase("idle");
+          navigateToPath(returnPath, true);
+          clearPaystackCallbackParams(returnPath);
+        }
         return;
       }
 
@@ -528,6 +580,7 @@ export function App() {
       }
       logPaymentEvent("verification result", { ok: false, kind: result.kind, error: result.error });
       if (result.error) setAuthMessage(result.error);
+      if (callbackActive) setPaymentReturnPhase("failed");
     } finally {
       paymentVerifyInFlight.current = false;
       setPaymentLoading(false);
@@ -575,9 +628,9 @@ export function App() {
   }, [isNative]);
 
   useEffect(() => {
-    if (!isAuthed) return;
+    if (!isAuthed || paystackCallbackActive) return;
     void processPaymentReturn();
-  }, [isAuthed, processPaymentReturn, paymentFlowTick]);
+  }, [isAuthed, paystackCallbackActive, processPaymentReturn, paymentFlowTick]);
 
   /** Re-check Supabase session when returning from Paystack / back button — never logout on payment failure. */
   useEffect(() => {
@@ -702,6 +755,8 @@ export function App() {
   }, []);
 
   const enterMemberApp = useCallback(async () => {
+    if (openAppLoading) return;
+    setOpenAppLoading(true);
     setMemberHydrating(true);
     try {
       const result = await goToApp();
@@ -730,8 +785,45 @@ export function App() {
       flowLog("onboarding_start", { source: "open_app" });
     } finally {
       setMemberHydrating(false);
+      setOpenAppLoading(false);
     }
-  }, [openAuth]);
+  }, [openAppLoading, openAuth]);
+
+  useEffect(() => {
+    if (!paystackCallbackActive || authLoading) return;
+
+    let cancelled = false;
+    const bootAndVerify = async () => {
+      if (supabase && !isAuthedRef.current) {
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+        if (session?.user) {
+          await applyRestoredSession(profileFromSessionUser(session.user), { blocking: false });
+        }
+      }
+      if (cancelled) return;
+      if (!isAuthedRef.current) {
+        const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+        if (stored.email || stored.phone) {
+          setUser(safeUserProfile(stored));
+          setIsAuthed(true);
+        }
+      }
+      if (cancelled) return;
+      if (!userRef.current.email && !userRef.current.phone) {
+        setPaymentReturnPhase("failed");
+        openAuth("login");
+        return;
+      }
+      await processPaymentReturn();
+    };
+
+    void bootAndVerify();
+    return () => {
+      cancelled = true;
+    };
+  }, [paystackCallbackActive, authLoading, applyRestoredSession, openAuth, processPaymentReturn]);
 
   const handleAuthenticated = useCallback(
     async (profile: UserProfile, meta?: AuthMeta) => {
@@ -1089,9 +1181,19 @@ export function App() {
       setAuthMessage("");
       trackEvent("payment_started", { plan: plan.id });
       try {
-        const result = await startPlanPayment(plan, user, {
-          onPhase: (phase) => setPaymentPhase(phase)
-        });
+        const result = await startPlanPayment(
+          plan,
+          user,
+          {
+            onPhase: (phase) => setPaymentPhase(phase)
+          },
+          {
+            returnPath: resolvePaymentReturnPath({ tab, pathname: memberPathname }),
+            sourcePage: memberPathname || memberPathForTab(tab),
+            productType: "premium",
+            productId: plan.id
+          }
+        );
         setPaymentFlowTick((v) => v + 1);
 
         if (!result.ok) {
@@ -1115,7 +1217,7 @@ export function App() {
         setPaymentPhase("idle");
       }
     },
-    [isAuthed, openAuth, paymentLoading, processPaymentReturn, tab, user]
+    [isAuthed, memberPathname, openAuth, paymentLoading, processPaymentReturn, tab, user]
   );
 
   const startPremiumCheckout = useCallback(
@@ -1156,7 +1258,13 @@ export function App() {
           user,
           memberCity || datingProfile.city || "",
           durationHours,
-          { onPhase: (phase) => setPaymentPhase(phase) }
+          { onPhase: (phase) => setPaymentPhase(phase) },
+          {
+            returnPath: "/profile",
+            sourcePage: "/profile",
+            productType: "boost",
+            productId: product.id
+          }
         );
         setPaymentFlowTick((v) => v + 1);
         if (!result.ok) {
@@ -1241,6 +1349,14 @@ export function App() {
     (import.meta.env.VITE_STORE_SCREENSHOTS === "true" || import.meta.env.DEV)
   ) {
     return <StoreScreenshotsPage />;
+  }
+
+  if (paystackCallbackActive) {
+    return (
+      <div className={`app ${theme}`}>
+        <PaymentReturnScreen phase={paymentReturnPhase === "idle" ? "verifying" : paymentReturnPhase} />
+      </div>
+    );
   }
 
   if (showAdminAuth || showAdminHub) {
@@ -1351,6 +1467,8 @@ export function App() {
     return (
       <div className={`app ${theme} platform-root`}>
         <SeoLayout
+          theme={theme}
+          onToggleTheme={toggleTheme}
           onLogoClick={goHome}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup", "discover")}
@@ -1377,6 +1495,8 @@ export function App() {
     return (
       <div className={`app ${theme} platform-root`}>
         <SeoLayout
+          theme={theme}
+          onToggleTheme={toggleTheme}
           onLogoClick={goHome}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup", "discover")}
@@ -1391,6 +1511,8 @@ export function App() {
     return (
       <div className={`app ${theme} platform-root`}>
         <SeoLayout
+          theme={theme}
+          onToggleTheme={toggleTheme}
           onLogoClick={goHome}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup", "discover")}
@@ -1405,6 +1527,8 @@ export function App() {
     return (
       <div className={`app ${theme} platform-root`}>
         <SeoLayout
+          theme={theme}
+          onToggleTheme={toggleTheme}
           onLogoClick={goHome}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup", "discover")}
@@ -1479,6 +1603,7 @@ export function App() {
             onLogoClick={goHome}
             showOpenApp={isAuthed && !memberAppEntered && isPublicHome}
             onOpenApp={enterMemberApp}
+            openAppLoading={openAppLoading}
             showNotifications={isAuthed && memberAppEntered}
             notificationCount={notificationUnread}
             onNotificationsClick={() => setNotificationsOpen(true)}

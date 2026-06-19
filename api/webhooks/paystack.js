@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { activateAppUserPremium, query, withDbRetry } from "../../server/db.js";
 import { createVipInviteLink } from "../../server/telegram.js";
+import { sendPurchaseConfirmationEmail } from "../../server/services/purchaseEmail.js";
 
 async function readRawBody(req) {
   const chunks = [];
@@ -67,6 +68,21 @@ export default async function handler(req, res) {
         [event.event, email || null, metadata.user_id || metadata.userId || null, event]
       );
     });
+
+    const productType = String(metadata.product_type || "premium").trim();
+    if (reference && email && (productType === "premium" || !metadata.product_type)) {
+      await sendPurchaseConfirmationEmail({
+        reference,
+        email,
+        firstName: name.split(/\s+/)[0] || "there",
+        productType: "premium",
+        productId: String(metadata.plan || metadata.plan_days || "monthly"),
+        amountKobo: Number(data.amount || 0),
+        userId: metadata.user_id || metadata.userId || null
+      }).catch((error) => {
+        console.error("[paystack webhook] purchase email failed", error?.message || error);
+      });
+    }
 
     return res.status(200).json({ ok: true, event: event.event, premium_until: premiumUntil });
   } catch (error) {

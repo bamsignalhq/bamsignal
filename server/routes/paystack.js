@@ -4,6 +4,7 @@ import { config } from "../config.js";
 import { activateAppUserPremium } from "../db.js";
 import { createVipInviteLink } from "../telegram.js";
 import { planDaysFromAmount, normalizePlans } from "../pricing.js";
+import { sendPurchaseConfirmationEmail } from "../services/purchaseEmail.js";
 
 export const paystackRouter = express.Router();
 
@@ -55,6 +56,20 @@ async function activatePremium(event) {
     paystackReference: reference,
     inviteLink
   });
+
+  if (reference && email) {
+    await sendPurchaseConfirmationEmail({
+      reference,
+      email,
+      firstName: name.split(/\s+/)[0] || "there",
+      productType: "premium",
+      productId: String(metadata.plan || metadata.plan_days || "monthly"),
+      amountKobo: Number(data.amount || 0),
+      userId: metadata.user_id || metadata.userId || null
+    }).catch((error) => {
+      console.error("[paystack webhook] purchase email failed", error?.message || error);
+    });
+  }
 
   return { ok: true, email, premium_until: premiumUntil, invite_link: inviteLink, user };
 }

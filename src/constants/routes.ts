@@ -84,9 +84,16 @@ export function isBlogIndex(pathname = window.location.pathname): boolean {
   return normalizePath(pathname) === BLOG_INDEX_PATH;
 }
 
+export const PAYMENT_SUCCESS_PATH = "/payment/success";
+
+export function isPaymentReturnPath(pathname = window.location.pathname): boolean {
+  return normalizePath(pathname) === PAYMENT_SUCCESS_PATH;
+}
+
 /** Marketing / legal / auth pages that must not block on member session restore (web). */
 export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   const path = normalizePath(pathname);
+  if (isPaymentReturnPath(path)) return false;
   if (isHardRoute(path)) return false;
   if (getAuthPath(path)) return true;
   if (AUTH_SIGNUP_ALIASES.includes(path as (typeof AUTH_SIGNUP_ALIASES)[number])) return true;
@@ -123,7 +130,8 @@ const MEMBER_APP_PATHS = [
   "/signals",
   "/profile",
   "/settings",
-  "/subscription"
+  "/subscription",
+  PAYMENT_SUCCESS_PATH
 ] as const;
 
 /** True when boot should block UI with member session restore (native app or explicit member URL). */

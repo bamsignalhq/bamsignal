@@ -27,6 +27,7 @@ type TopNavProps = {
   showGreeting?: boolean;
   showOpenApp?: boolean;
   onOpenApp?: () => void;
+  openAppLoading?: boolean;
 };
 
 export function TopNav({
@@ -50,7 +51,8 @@ export function TopNav({
   showBrandText = true,
   showGreeting = false,
   showOpenApp = false,
-  onOpenApp
+  onOpenApp,
+  openAppLoading = false
 }: TopNavProps) {
   return (
     <header className="top-nav">
@@ -72,8 +74,14 @@ export function TopNav({
       <div className="top-nav-actions">
         {showOpenApp && onOpenApp ? (
           <>
-            <button type="button" className="top-nav-get-started" onClick={onOpenApp}>
-              Open App
+            <button
+              type="button"
+              className="top-nav-get-started"
+              onClick={onOpenApp}
+              disabled={openAppLoading}
+              aria-busy={openAppLoading}
+            >
+              {openAppLoading ? "Opening…" : "Open App"}
             </button>
             <button type="button" className="icon-btn" onClick={onToggleTheme} aria-label="Toggle theme">
               {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}

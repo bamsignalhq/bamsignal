@@ -13,6 +13,11 @@ import {
   setPaymentFlowState
 } from "../utils/paymentState";
 import { PAYMENT_START_ERROR } from "../config/paystack";
+import {
+  resolvePaymentReturnPath,
+  savePaymentReturnContext,
+  type PaymentReturnContext
+} from "../utils/paymentReturn";
 import { openPaystackCheckout } from "./paymentCheckout";
 import { apiUrl } from "./supabase";
 import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
@@ -74,13 +79,22 @@ async function postInitialize(url: string, body: Record<string, unknown>): Promi
 
 async function launchCheckout(
   init: InitPayload,
-  kind: string,
-  extraKeys?: Record<string, string>
+  kind: "premium" | "boost" | "quickie",
+  extraKeys?: Record<string, string>,
+  returnContext?: Partial<PaymentReturnContext>
 ): Promise<StartPaymentResult> {
   if (!init.reference) {
     setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };
   }
+
+  savePaymentReturnContext({
+    returnPath: returnContext?.returnPath || resolvePaymentReturnPath(),
+    productType: returnContext?.productType || kind,
+    productId: returnContext?.productId || (kind === "boost" ? extraKeys?.[STORAGE_KEYS.paymentBoostId] || "city-boost" : kind === "quickie" ? "fast-connection-pass" : "monthly"),
+    sourcePage: returnContext?.sourcePage || resolvePaymentReturnPath(),
+    reference: init.reference
+  });
 
   localStorage.setItem(STORAGE_KEYS.paymentKind, kind);
   if (extraKeys) {
@@ -122,7 +136,8 @@ async function launchCheckout(
 export async function startPlanPayment(
   plan: PremiumPlan,
   user: UserProfile,
-  callbacks: CheckoutCallbacks = {}
+  callbacks: CheckoutCallbacks = {},
+  returnContext?: Partial<PaymentReturnContext>
 ): Promise<StartPaymentResult> {
   if (!user.email) {
     return { ok: false, error: "Add a verified email before upgrading." };
@@ -149,7 +164,11 @@ export async function startPlanPayment(
     }
 
     callbacks.onPhase?.("opening");
-    return await launchCheckout(init, "premium");
+    return await launchCheckout(init, "premium", undefined, {
+      ...returnContext,
+      productType: "premium",
+      productId: returnContext?.productId || plan.id
+    });
   } catch {
     setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };
@@ -223,7 +242,8 @@ export async function verifyPayment(user: UserProfile): Promise<{
 
 export async function startQuickiePassPayment(
   user: UserProfile,
-  callbacks: CheckoutCallbacks = {}
+  callbacks: CheckoutCallbacks = {},
+  returnContext?: Partial<PaymentReturnContext>
 ): Promise<StartPaymentResult> {
   if (!user.email) {
     return { ok: false, error: "Add a verified email before purchasing a Fast Connection Pass." };
@@ -253,7 +273,11 @@ export async function startQuickiePassPayment(
     }
 
     callbacks.onPhase?.("opening");
-    return await launchCheckout(init, "quickie");
+    return await launchCheckout(init, "quickie", undefined, {
+      ...returnContext,
+      productType: "quickie",
+      productId: returnContext?.productId || "fast-connection-pass"
+    });
   } catch {
     setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };
@@ -310,7 +334,8 @@ export async function startBoostPayment(
   user: UserProfile,
   city: string,
   durationHours = 48,
-  callbacks: CheckoutCallbacks = {}
+  callbacks: CheckoutCallbacks = {},
+  returnContext?: Partial<PaymentReturnContext>
 ): Promise<StartPaymentResult> {
   if (!user.email) {
     return { ok: false, error: "Add a verified email before purchasing a boost." };
@@ -338,9 +363,19 @@ export async function startBoostPayment(
     }
 
     callbacks.onPhase?.("opening");
-    return await launchCheckout(init, "boost", {
-      [STORAGE_KEYS.paymentBoostId]: boostId
-    });
+    return await launchCheckout(
+      init,
+      "boost",
+      {
+        [STORAGE_KEYS.paymentBoostId]: boostId
+      },
+      {
+        ...returnContext,
+        productType: "boost",
+        productId: returnContext?.productId || boostId,
+        returnPath: returnContext?.returnPath || "/profile"
+      }
+    );
   } catch {
     setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };

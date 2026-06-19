@@ -708,6 +708,12 @@ export async function fetchMemberSocialBundle({ email, phone }) {
     ]);
 
   const profileJson = ownProfile?.profile || {};
+  const { resolveMemberCompliance } = await import("./services/compliance.js");
+  const compliance = ownProfile?.id
+    ? await resolveMemberCompliance(ownProfile.id, profileJson.compliance)
+    : profileJson.compliance && typeof profileJson.compliance === "object"
+      ? profileJson.compliance
+      : {};
   const photos = Array.isArray(profileJson.photos) ? profileJson.photos : [];
   const markedComplete = Boolean(
     ownProfile?.onboarding_complete ||
@@ -761,7 +767,8 @@ export async function fetchMemberSocialBundle({ email, phone }) {
           profileCompletedAt: profileJson.profileCompletedAt || profileJson.completedAt,
           completedAt: profileJson.completedAt || profileJson.profileCompletedAt,
           mainPhotoUrl: profileJson.mainPhotoUrl,
-          createdAt: profileJson.createdAt || ownProfile.created_at
+          createdAt: profileJson.createdAt || ownProfile.created_at,
+          compliance
         }
       : null,
     incomingLikes,

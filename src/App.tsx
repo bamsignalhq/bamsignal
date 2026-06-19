@@ -29,7 +29,13 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 import type { AuthMeta, AuthMode, Match, NavTab, Theme, UserProfile } from "./types";
 import { getSavedTheme, readJson, writeJson } from "./utils/storage";
 import { getDatingProfile, normalizeDatingProfile } from "./utils/profile";
-import { isComplianceComplete } from "./utils/compliance";
+import {
+  complianceGatePhase,
+  hasComplianceSyncPending,
+  logComplianceRoute,
+  shouldBlockForCompliance
+} from "./utils/compliance";
+import { retryPendingComplianceSync } from "./services/compliance";
 import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
@@ -162,13 +168,45 @@ export function App() {
   const showComplianceGate =
     isAuthed &&
     !showOnboarding &&
-    !isComplianceComplete(getDatingProfile().compliance);
+    shouldBlockForCompliance(getDatingProfile().compliance);
+  const complianceSyncPending = hasComplianceSyncPending();
   const memberAccessReady = isAuthed && !showOnboarding && !showComplianceGate;
 
   useEffect(() => {
-    if (!isNative) return;
-    document.documentElement.classList.add("capacitor-native");
-  }, [isNative]);
+    if (!isAuthed) return;
+    logComplianceRoute({
+      route: showOnboarding ? "onboarding" : showComplianceGate ? "compliance" : "home",
+      phase: complianceGatePhase(getDatingProfile().compliance),
+      syncPending: complianceSyncPending
+    });
+  }, [complianceSyncPending, isAuthed, showComplianceGate, showOnboarding, complianceTick]);
+
+  useEffect(() => {
+    if (!isAuthed || !complianceSyncPending) return;
+    let cancelled = false;
+    const retry = () => {
+      void retryPendingComplianceSync(user).then((ok) => {
+        if (cancelled || !ok) return;
+        setComplianceTick((tick) => tick + 1);
+      });
+    };
+    retry();
+    const interval = window.setInterval(retry, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [complianceSyncPending, isAuthed, user]);
+
+  useEffect(() => {
+    if (!memberHydrating) {
+      setBootStalled(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setBootStalled(true), 20_000);
+    return () => window.clearTimeout(timer);
+  }, [memberHydrating]);
+
 
   useEffect(() => {
     void fetchSubscriptionCatalog().then(cacheSubscriptionCatalogPricing);
@@ -1193,6 +1231,12 @@ export function App() {
             showGreeting={false}
           />
         )}
+
+        {complianceSyncPending && memberAccessReady ? (
+          <p className="compliance-sync-banner" role="status">
+            Finishing account setup…
+          </p>
+        ) : null}
 
         {paymentLoading && memberAccessReady && (
           <PaymentLoadingOverlay message={paymentOverlayMessage} />

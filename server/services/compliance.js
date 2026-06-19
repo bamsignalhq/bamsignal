@@ -49,6 +49,84 @@ function normalizeAckTypes(acks = []) {
   return unique;
 }
 
+function applyAckRowToCompliance(compliance, ackType, version, acceptedAt) {
+  const at =
+    acceptedAt instanceof Date
+      ? acceptedAt.toISOString()
+      : typeof acceptedAt === "string"
+        ? acceptedAt
+        : new Date().toISOString();
+
+  if (ackType === "terms") {
+    compliance.tosAccepted = true;
+    compliance.tosAcceptedAt = at;
+    compliance.tosVersion = version;
+  }
+  if (ackType === "privacy") {
+    compliance.privacyAccepted = true;
+    compliance.privacyAcceptedAt = at;
+    compliance.privacyVersion = version;
+  }
+  if (ackType === "age_18") {
+    compliance.ageConfirmed18 = true;
+    compliance.ageConfirmedAt = at;
+  }
+  if (ackType === "safety_pledge") {
+    compliance.safetyPledgeAccepted = true;
+    compliance.safetyPledgeAcceptedAt = at;
+    compliance.safetyPledgeVersion = version;
+  }
+  if (ackType === "adult_risk") {
+    compliance.adultRiskAcknowledged = true;
+    compliance.adultRiskAcknowledgedAt = at;
+    compliance.adultRiskVersion = version;
+  }
+  if (ackType === "offline_safety") {
+    compliance.offlineSafetyAcknowledged = true;
+    compliance.offlineSafetyAcknowledgedAt = at;
+    compliance.offlineSafetyVersion = version;
+  }
+}
+
+export function isServerComplianceComplete(compliance = {}) {
+  return Boolean(
+    compliance.tosAccepted &&
+      compliance.tosVersion === TERMS_VERSION &&
+      compliance.privacyAccepted &&
+      compliance.privacyVersion === PRIVACY_VERSION &&
+      compliance.ageConfirmed18 &&
+      compliance.ageConfirmedAt &&
+      compliance.safetyPledgeAccepted &&
+      compliance.safetyPledgeVersion === SAFETY_PLEDGE_VERSION &&
+      compliance.safetyPledgeAcceptedAt &&
+      compliance.adultRiskAcknowledged &&
+      compliance.adultRiskVersion === ADULT_RISK_VERSION &&
+      compliance.adultRiskAcknowledgedAt
+  );
+}
+
+export async function resolveMemberCompliance(profileId, profileCompliance = {}) {
+  const base =
+    profileCompliance && typeof profileCompliance === "object" ? { ...profileCompliance } : {};
+
+  if (!profileId || !isDatabaseReady()) return base;
+
+  await ensureComplianceSchema();
+  const acks = await query(
+    `select distinct on (ack_type) ack_type, version, accepted_at
+     from user_compliance_acknowledgements
+     where profile_id = $1::uuid
+     order by ack_type, accepted_at desc`,
+    [profileId]
+  );
+
+  for (const row of acks.rows) {
+    applyAckRowToCompliance(base, row.ack_type, row.version, row.accepted_at);
+  }
+
+  return base;
+}
+
 function buildComplianceSummary(existing = {}, ackTypes, { ip, userAgent } = {}) {
   const now = new Date().toISOString();
   const next = { ...existing };

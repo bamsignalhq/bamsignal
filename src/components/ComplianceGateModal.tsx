@@ -1,19 +1,28 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { SignupLegalCheckboxes, isSignupLegalComplete } from "./SignupLegalCheckboxes";
 import {
   ADULT_RISK_COPY,
   COMPLIANCE_SAVE_FAIL,
-  SAFETY_PLEDGE_RULES
+  SAFETY_PLEDGE_RULES,
+  type ComplianceAckType
 } from "../constants/compliance";
-import { saveComplianceAcknowledgements } from "../services/compliance";
+import {
+  clearComplianceFlowState,
+  saveComplianceAcknowledgements
+} from "../services/compliance";
+import { continueComplianceSafely, repairMemberFlow } from "../services/flowRepair";
 import type { UserProfile } from "../types";
 import {
   complianceGatePhase,
   hasAdultRiskAck,
   hasLegalCompliance,
-  hasSafetyPledge
+  isComplianceComplete,
+  logComplianceSave
 } from "../utils/compliance";
 import { getDatingProfile } from "../utils/profile";
+import { useFlowWatchdog } from "../hooks/useFlowWatchdog";
+import { clearFlowState } from "../utils/flowWatchdog";
+import { FlowWatchdogRecovery } from "./FlowWatchdogRecovery";
 import { Loader2 } from "lucide-react";
 
 type ComplianceGateModalProps = {
@@ -23,10 +32,16 @@ type ComplianceGateModalProps = {
 
 type GatePhase = "legal" | "pledge" | "adult_risk";
 
+function currentAckTypes(phase: GatePhase): ComplianceAckType[] {
+  if (phase === "legal") return ["terms", "privacy", "age_18"];
+  if (phase === "pledge") return ["safety_pledge"];
+  return ["adult_risk"];
+}
+
 export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalProps) {
   const initialPhase = useMemo((): GatePhase => {
-    const phase = complianceGatePhase(getDatingProfile().compliance);
-    if (phase === "pledge" || phase === "adult_risk") return phase;
+    const gate = complianceGatePhase(getDatingProfile().compliance);
+    if (gate === "pledge" || gate === "adult_risk") return gate;
     return "legal";
   }, []);
   const [phase, setPhase] = useState<GatePhase>(initialPhase);
@@ -36,58 +51,112 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const legalReady = isSignupLegalComplete(legalAccepted);
+  const userId = user.email || user.phone || undefined;
+  const flowName =
+    phase === "pledge" ? "compliance_pledge" : phase === "adult_risk" ? "adult_risk_modal" : "compliance_pledge";
+  const { stuck, reset: resetWatchdog } = useFlowWatchdog(
+    flowName,
+    true,
+    window.location.pathname,
+    userId
+  );
 
-  const saveLegal = async () => {
-    if (!legalReady || busy) return;
-    setBusy(true);
-    setError("");
-    const result = await saveComplianceAcknowledgements(user, ["terms", "privacy", "age_18"]);
-    setBusy(false);
-    if (!result.ok) {
-      setError(result.error || COMPLIANCE_SAVE_FAIL);
-      return;
-    }
-    if (hasSafetyPledge(result.compliance)) {
-      if (hasAdultRiskAck(result.compliance)) {
-        onComplete();
+  const finishGate = useCallback(() => {
+    clearComplianceFlowState();
+    clearFlowState();
+    onComplete();
+  }, [onComplete]);
+
+  const advanceAfterSave = useCallback(
+    (compliance = getDatingProfile().compliance) => {
+      if (isComplianceComplete(compliance)) {
+        finishGate();
         return;
       }
-      setPhase("adult_risk");
-      return;
-    }
-    setPhase("pledge");
+      const next = complianceGatePhase(compliance);
+      if (next === "adult_risk" || next === "pledge" || next === "legal") {
+        setPhase(next);
+        return;
+      }
+      finishGate();
+    },
+    [finishGate]
+  );
+
+  const runSave = useCallback(
+    async (ackTypes: ComplianceAckType[]) => {
+      if (busy) return;
+      setBusy(true);
+      setError("");
+      resetWatchdog();
+      try {
+        const result = await saveComplianceAcknowledgements(user, ackTypes);
+        const compliance = result.compliance ?? getDatingProfile().compliance;
+        logComplianceSave({
+          ackTypes,
+          ok: result.ok,
+          phase,
+          next: complianceGatePhase(compliance)
+        });
+        if (!result.ok) {
+          setError(result.error || COMPLIANCE_SAVE_FAIL);
+          return;
+        }
+        advanceAfterSave(compliance);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [advanceAfterSave, busy, phase, resetWatchdog, user]
+  );
+
+  const saveLegal = () => void runSave(["terms", "privacy", "age_18"]);
+  const savePledge = () => void runSave(["safety_pledge"]);
+  const saveAdultRisk = () => void runSave(["adult_risk"]);
+
+  const handleTryAgain = () => {
+    resetWatchdog();
+    setError("");
+    if (phase === "legal") saveLegal();
+    else if (phase === "pledge") savePledge();
+    else saveAdultRisk();
   };
 
-  const savePledge = async () => {
-    if (busy) return;
+  const handleContinueSafely = async () => {
+    if (phase === "legal") return;
     setBusy(true);
     setError("");
-    const result = await saveComplianceAcknowledgements(user, ["safety_pledge"]);
-    setBusy(false);
-    if (!result.ok) {
-      setError(result.error || COMPLIANCE_SAVE_FAIL);
-      return;
+    try {
+      const ackTypes = currentAckTypes(phase);
+      await continueComplianceSafely(user, ackTypes);
+      const compliance = getDatingProfile().compliance;
+      if (phase === "pledge" && !hasAdultRiskAck(compliance)) {
+        setPhase("adult_risk");
+        return;
+      }
+      finishGate();
+    } finally {
+      setBusy(false);
     }
-    if (hasAdultRiskAck(result.compliance)) {
-      onComplete();
-      return;
-    }
-    setPhase("adult_risk");
   };
 
-  const saveAdultRisk = async () => {
-    if (busy) return;
-    setBusy(true);
-    setError("");
-    const result = await saveComplianceAcknowledgements(user, ["adult_risk"]);
-    setBusy(false);
-    if (!result.ok) {
-      setError(result.error || COMPLIANCE_SAVE_FAIL);
-      return;
-    }
-    onComplete();
-  };
+  useEffect(() => {
+    if (!stuck) return;
+    logComplianceSave({ phase, stuck: true, action: "watchdog_triggered" });
+    void repairMemberFlow(user, {
+      flowName,
+      currentRoute: window.location.pathname,
+      clientState: {
+        compliancePhase: phase,
+        pendingAcks: currentAckTypes(phase)
+      }
+    }).then((result) => {
+      if (result.compliance) advanceAfterSave(result.compliance);
+    });
+  }, [advanceAfterSave, flowName, phase, stuck, user]);
+
+  const legalReady = isSignupLegalComplete(legalAccepted);
+  const showContinueSafely = phase !== "legal" && (stuck || Boolean(error));
 
   return (
     <div className="compliance-gate" role="dialog" aria-modal="true" aria-labelledby="compliance-gate-title">
@@ -108,7 +177,7 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
             <button
               type="button"
               className="btn-primary btn-full compliance-gate__cta"
-              onClick={() => void saveLegal()}
+              onClick={saveLegal}
               disabled={!legalReady || busy}
             >
               {busy ? <Loader2 className="spin" size={20} /> : "Continue"}
@@ -131,7 +200,7 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
             <button
               type="button"
               className="btn-primary btn-full compliance-gate__cta"
-              onClick={() => void savePledge()}
+              onClick={savePledge}
               disabled={busy}
             >
               {busy ? <Loader2 className="spin" size={20} /> : "I Pledge To Play Safe"}
@@ -148,7 +217,7 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
             <button
               type="button"
               className="btn-primary btn-full compliance-gate__cta"
-              onClick={() => void saveAdultRisk()}
+              onClick={saveAdultRisk}
               disabled={busy}
             >
               {busy ? <Loader2 className="spin" size={20} /> : ADULT_RISK_COPY.cta}
@@ -160,6 +229,14 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
           <p className="compliance-gate__error" role="alert">
             {error}
           </p>
+        ) : null}
+
+        {stuck || error ? (
+          <FlowWatchdogRecovery
+            onTryAgain={handleTryAgain}
+            onContinueSafely={handleContinueSafely}
+            showContinueSafely={showContinueSafely}
+          />
         ) : null}
       </div>
     </div>

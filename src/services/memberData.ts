@@ -5,8 +5,8 @@ import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan"
 import { cacheDiscoverProfiles } from "./discoverProfiles";
 import { setPremiumSnapshot } from "./premiumStatus";
 import { apiUrl } from "./supabase";
+import { mergeHydratedCompliance } from "./compliance";
 import { normalizeDatingProfile } from "../utils/profile";
-import { isComplianceComplete, normalizeCompliance } from "../utils/compliance";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import { readResponseJson } from "../utils/httpJson";
 import { mergeMemberCover, safeArray, safePhotos, safeString, isPersistablePhotoUrl } from "../utils/safeProfile";
@@ -207,14 +207,7 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
         undefined,
       interests,
       interestsTouched,
-      compliance: isComplianceComplete(normalizeCompliance(remote.compliance))
-        ? normalizeCompliance(remote.compliance)
-        : isComplianceComplete(local.compliance)
-          ? local.compliance
-          : normalizeCompliance({
-              ...(local.compliance || {}),
-              ...(typeof remote.compliance === "object" && remote.compliance ? remote.compliance : {})
-            })
+      compliance: mergeHydratedCompliance(local.compliance, remote.compliance)
     });
     const { profile: merged, repaired } = repairCompletedProfile(mergedBase, user);
     if (repaired) {

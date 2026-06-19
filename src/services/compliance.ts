@@ -1,7 +1,17 @@
 import type { ComplianceAckType } from "../constants/compliance";
 import type { MemberCompliance, UserProfile } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
-import { buildCompliancePatch, normalizeCompliance } from "../utils/compliance";
+import {
+  buildCompliancePatch,
+  clearComplianceSyncPending,
+  isComplianceComplete,
+  logComplianceSave,
+  mergeMemberCompliance,
+  normalizeCompliance,
+  readPendingComplianceAcks,
+  setComplianceSyncPending
+} from "../utils/compliance";
+import { clearFlowCompletionKeys, clearFlowState } from "../utils/flowWatchdog";
 import { getDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { readJson, writeJson } from "../utils/storage";
 import { apiUrl } from "./supabase";
@@ -22,18 +32,35 @@ export function persistLocalCompliance(compliance: MemberCompliance): boolean {
   });
 }
 
-export function mergeLocalCompliance(ackTypes: ComplianceAckType[], serverMeta?: MemberCompliance): boolean {
+export function mergeLocalCompliance(
+  ackTypes: ComplianceAckType[],
+  serverMeta?: MemberCompliance
+): MemberCompliance {
   const profile = getDatingProfile();
   const next = buildCompliancePatch(profile.compliance, ackTypes, serverMeta);
-  return persistLocalCompliance(next);
+  persistLocalCompliance(next);
+  return next;
+}
+
+export function clearComplianceFlowState(): void {
+  clearComplianceSyncPending();
+  clearFlowState();
+  clearFlowCompletionKeys();
 }
 
 export async function saveComplianceAcknowledgements(
   user: Pick<UserProfile, "email" | "phone">,
-  ackTypes: ComplianceAckType[]
+  ackTypes: ComplianceAckType[],
+  options?: { skipOptimistic?: boolean }
 ): Promise<{ ok: boolean; compliance?: MemberCompliance; error?: string }> {
   if (!ackTypes.length) {
     return { ok: false, error: "No acknowledgements provided." };
+  }
+
+  let optimistic: MemberCompliance | undefined;
+  if (!options?.skipOptimistic) {
+    optimistic = mergeLocalCompliance(ackTypes);
+    logComplianceSave({ ackTypes, stage: "optimistic", phase: "local" });
   }
 
   try {
@@ -48,13 +75,71 @@ export async function saveComplianceAcknowledgements(
     });
     const payload = await readResponseJson<ComplianceResponse>(response);
     if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "Compliance save failed." };
+      setComplianceSyncPending(ackTypes);
+      logComplianceSave({
+        ackTypes,
+        stage: "error",
+        status: response.status,
+        error: payload?.error || "Compliance save failed."
+      });
+      return {
+        ok: false,
+        error: payload?.error || "Compliance save failed.",
+        compliance: optimistic ?? getDatingProfile().compliance
+      };
     }
 
-    const compliance = normalizeCompliance(payload.compliance);
-    mergeLocalCompliance(ackTypes, compliance);
+    const compliance = mergeLocalCompliance(
+      ackTypes,
+      normalizeCompliance(payload.compliance)
+    );
+    if (isComplianceComplete(compliance)) {
+      clearComplianceFlowState();
+    }
+    logComplianceSave({ ackTypes, stage: "success", complete: isComplianceComplete(compliance) });
     return { ok: true, compliance };
-  } catch {
-    return { ok: false, error: "Compliance save failed." };
+  } catch (error) {
+    setComplianceSyncPending(ackTypes);
+    logComplianceSave({
+      ackTypes,
+      stage: "exception",
+      error: error instanceof Error ? error.message : "Compliance save failed."
+    });
+    return {
+      ok: false,
+      error: "Compliance save failed.",
+      compliance: optimistic ?? getDatingProfile().compliance
+    };
   }
+}
+
+export async function retryPendingComplianceSync(
+  user: Pick<UserProfile, "email" | "phone">
+): Promise<boolean> {
+  const pending = readPendingComplianceAcks();
+  if (!pending.length) {
+    clearComplianceSyncPending();
+    return false;
+  }
+  const result = await saveComplianceAcknowledgements(user, pending, { skipOptimistic: true });
+  if (result.ok && result.compliance && isComplianceComplete(result.compliance)) {
+    clearComplianceFlowState();
+    return true;
+  }
+  return result.ok;
+}
+
+export function applyLocalComplianceFallback(
+  ackTypes: ComplianceAckType[]
+): MemberCompliance {
+  const compliance = mergeLocalCompliance(ackTypes);
+  setComplianceSyncPending(ackTypes);
+  return compliance;
+}
+
+export function mergeHydratedCompliance(
+  localCompliance: unknown,
+  remoteCompliance: unknown
+): MemberCompliance {
+  return mergeMemberCompliance(localCompliance, remoteCompliance);
 }

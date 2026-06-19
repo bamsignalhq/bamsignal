@@ -311,6 +311,22 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
+    if (req.query.action === "repair-flow") {
+      if (!requireDatabase(res)) return;
+      const { repairMemberFlow } = await import("../../server/services/flowRepair.js");
+      const result = await repairMemberFlow({
+        email: identity.email,
+        phone: identity.phone,
+        currentRoute: String(body.currentRoute || "/").trim(),
+        flowName: String(body.flowName || "").trim(),
+        clientState: body.clientState && typeof body.clientState === "object" ? body.clientState : {}
+      });
+      if (!result.ok) {
+        return res.status(result.error === "Member profile not found." ? 404 : 400).json(result);
+      }
+      return res.status(200).json(result);
+    }
+
     if (req.query.action === "match") {
       if (!requireDatabase(res)) return;
       const { persistMatch } = await import("../../server/db.js");

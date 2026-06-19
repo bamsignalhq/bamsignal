@@ -2,6 +2,7 @@ import { STORAGE_KEYS } from "../constants/limits";
 import { MIN_PROFILE_PHOTOS } from "../constants/photos";
 import type { DatingProfile, UserProfile } from "../types";
 import { clearPendingSignup } from "./signupPersistence";
+import { clearFlowCompletionKeys } from "./flowWatchdog";
 import { isPersistablePhotoUrl, safePhotos, safeString } from "./safeProfile";
 import { readJson } from "./storage";
 import { normalizeDatingProfile } from "./profile";
@@ -108,6 +109,7 @@ export function clearOnboardingDrafts(): void {
     }
   }
   clearPendingSignup();
+  clearFlowCompletionKeys();
 }
 
 export function logRouteDecision(

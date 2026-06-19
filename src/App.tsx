@@ -49,7 +49,7 @@ import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive }
 import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
-import { hydrateMemberData, registerMember } from "./services/memberData";
+import { bootstrapMemberSession, hydrateMemberData } from "./services/memberData";
 import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
@@ -288,6 +288,7 @@ export function App() {
 
   const applyRestoredSession = useCallback(async (profile: UserProfile) => {
     flowLog("session_restore_start");
+    setMemberHydrating(true);
     repairMemberCaches();
     const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const merged: UserProfile = {
@@ -299,19 +300,15 @@ export function App() {
     setIsAuthed(true);
     recordStreakActivity();
     checkPremiumTrialExpiry();
-    let hydrated = await hydrateMemberData(merged);
-    if (!hydrated) {
-      flowLog("profile_repair_register");
-      await registerMember(merged);
-      hydrated = await hydrateMemberData(merged);
-    }
-    flowLog("profile_hydrate", { ok: hydrated });
+    const session = await bootstrapMemberSession(merged);
+    flowLog("profile_hydrate", { ok: session.hydrated, repair: session.repair?.repaired });
     const datingProfile = getDatingProfile();
-    const needsOnboarding = shouldRouteToOnboarding(merged, datingProfile);
+    const needsOnboarding = session.nextRoute === "onboarding";
     setShowOnboarding(needsOnboarding);
     logRouteDecision(merged, datingProfile, needsOnboarding ? "onboarding" : "home", {
       source: "session_restore",
-      hydrated
+      hydrated: session.hydrated,
+      repaired: session.repair?.repaired
     });
     if (!needsOnboarding) {
       clearOnboardingDrafts();
@@ -326,6 +323,7 @@ export function App() {
         : premium.isPremium || isPremiumTrialActive()
     );
     flowLog("session_restore_done");
+    setMemberHydrating(false);
   }, []);
 
   useEffect(() => {
@@ -594,20 +592,6 @@ export function App() {
         recovered: Boolean(meta?.recovered)
       });
       const ref = new URLSearchParams(window.location.search).get("ref");
-      const registered = await registerMember(withPhone, ref);
-      flowLog(registered ? "profile_register_ok" : "profile_register_failed");
-      const hydrated = await hydrateMemberData(withPhone);
-      if (!hydrated) {
-        flowLog("profile_hydrate_failed");
-        const repaired = await registerMember(withPhone, ref);
-        if (repaired) {
-          await hydrateMemberData(withPhone);
-          flowLog("profile_repair_ok");
-        }
-      } else {
-        flowLog("profile_hydrate_ok");
-      }
-      const premium = await refreshPremiumStatus(withPhone);
       const forceOnboarding = Boolean(meta?.isNewSignup);
       if (meta?.isNewSignup) {
         trackEvent("signup_completed");
@@ -629,13 +613,20 @@ export function App() {
       } else if (meta?.recovered) {
         flowLog("signup_recovered_existing");
       }
-      const needsOnboarding = shouldRouteToOnboarding(withPhone, getDatingProfile(), {
-        forceOnboarding
+      const session = await bootstrapMemberSession(withPhone, {
+        forceOnboarding,
+        referralCode: ref
       });
+      flowLog(session.hydrated ? "profile_hydrate_ok" : "profile_hydrate_failed", {
+        repaired: session.repair?.repaired
+      });
+      const premium = await refreshPremiumStatus(withPhone);
+      const needsOnboarding = session.nextRoute === "onboarding";
       logRouteDecision(withPhone, getDatingProfile(), needsOnboarding ? "onboarding" : "home", {
         source: "auth_login",
         isNewSignup: forceOnboarding,
-        hydrated
+        hydrated: session.hydrated,
+        repaired: session.repair?.repaired
       });
       setIsPremium(
         needsOnboarding ? Boolean(premium.isPremium) : premium.isPremium || isPremiumTrialActive()
@@ -733,10 +724,9 @@ export function App() {
         const profile = profileFromSessionUser(session.user);
         setUser(profile);
         setIsAuthed(true);
-        void hydrateMemberData(profile).then(() => {
-          const needsOnboarding = shouldRouteToOnboarding(profile);
-          setShowOnboarding(needsOnboarding);
-          if (!needsOnboarding) clearOnboardingDrafts();
+        void bootstrapMemberSession(profile).then((sessionResult) => {
+          setShowOnboarding(sessionResult.nextRoute === "onboarding");
+          if (sessionResult.nextRoute === "home") clearOnboardingDrafts();
         });
         const premium = await refreshPremiumStatus(profile);
         setIsPremium(premium.isPremium || isPremiumTrialActive());
@@ -1060,7 +1050,7 @@ export function App() {
       <div className={`app ${theme}`}>
         <Preloader
           exiting={false}
-          subtitle="Restoring your session…"
+          subtitle={memberHydrating ? "Restoring your account…" : "Restoring your session…"}
           showReload={bootStalled}
           onReload={reloadApp}
         />

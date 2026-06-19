@@ -6,18 +6,25 @@ import { cacheDiscoverProfiles } from "./discoverProfiles";
 import { setPremiumSnapshot } from "./premiumStatus";
 import { apiUrl } from "./supabase";
 import { mergeHydratedCompliance } from "./compliance";
-import { normalizeDatingProfile } from "../utils/profile";
+import { getDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import { readResponseJson } from "../utils/httpJson";
 import { mergeMemberCover, safeArray, safePhotos, safeString, isPersistablePhotoUrl } from "../utils/safeProfile";
 import { syncMemberProfileRemote } from "./cityHome";
 import {
   clearOnboardingDrafts,
+  isOnboardingFullyComplete,
   logRouteDecision,
   mergeOnboardingCompleteFlag,
+  normalizeOnboardingStatus,
   repairCompletedProfile,
   shouldRouteToOnboarding
 } from "../utils/onboardingStatus";
+import {
+  applyOnboardingRepairLocal,
+  logLoginProfileState,
+  repairOnboardingRemote
+} from "./onboardingRepair";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
 
@@ -78,10 +85,66 @@ export async function registerMember(
   return Boolean(payload?.ok);
 }
 
+export type MemberSessionBootstrapResult = {
+  hydrated: boolean;
+  repair: Awaited<ReturnType<typeof repairOnboardingRemote>>;
+  nextRoute: "home" | "onboarding";
+};
+
+/** Hydrate remote profile, run server repair, and return authoritative next route. */
+export async function bootstrapMemberSession(
+  user: MemberIdentity,
+  options?: { forceOnboarding?: boolean; referralCode?: string | null }
+): Promise<MemberSessionBootstrapResult> {
+  if (options?.forceOnboarding) {
+    return { hydrated: false, repair: null, nextRoute: "onboarding" };
+  }
+
+  const ref = options?.referralCode;
+  await registerMember(user, ref);
+  let hydrated = await hydrateMemberData(user);
+  if (!hydrated) {
+    await registerMember(user, ref);
+    hydrated = await hydrateMemberData(user);
+  }
+
+  const repair = await repairOnboardingRemote(user);
+  logLoginProfileState(user, repair);
+
+  if (repair?.completed) {
+    applyOnboardingRepairLocal(repair);
+    clearOnboardingDrafts();
+    return { hydrated, repair, nextRoute: "home" };
+  }
+
+  const profile = getDatingProfile();
+  if (!repair && isOnboardingFullyComplete(profile, user)) {
+    clearOnboardingDrafts();
+    return { hydrated, repair, nextRoute: "home" };
+  }
+
+  return {
+    hydrated,
+    repair,
+    nextRoute: "onboarding"
+  };
+}
+
 export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> {
   const payload = await postMemberAction("pull", user);
   const bundle = payload?.bundle;
   if (!bundle) return false;
+  logLoginProfileState(
+    user,
+    null,
+    {
+      memberProfileId: bundle.memberProfileId ?? null,
+      datingProfile:
+        bundle.datingProfile && typeof bundle.datingProfile === "object"
+          ? (bundle.datingProfile as Record<string, unknown>)
+          : null
+    }
+  );
 
   if (Array.isArray(bundle.matches)) {
     writeJson(STORAGE_KEYS.matches, bundle.matches as Match[]);
@@ -167,6 +230,7 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
     const remotePersistable = remotePhotos.filter(isPersistablePhotoUrl);
     const localPersistable = localPhotos.filter(isPersistablePhotoUrl);
     const remoteComplete = mergeOnboardingCompleteFlag(local, remote as Partial<import("../types").DatingProfile>);
+    const remoteStatus = normalizeOnboardingStatus(remote as Record<string, unknown>);
     if (remoteComplete) {
       clearOnboardingDrafts();
     }
@@ -206,19 +270,25 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
       coverPhotoPath: mergedCover.coverPhotoPath,
       coverPhotoUpdatedAt: mergedCover.coverPhotoUpdatedAt,
       coverPhotoExplicit,
-      onboardingComplete: remoteComplete,
-      setupCompleted: remoteComplete || Boolean(local.setupCompleted || remote.setupCompleted),
+      onboardingComplete: remoteComplete || remoteStatus.onboardingComplete,
+      setupCompleted: remoteComplete || remoteStatus.setupCompleted || Boolean(local.setupCompleted || remote.setupCompleted),
       onboardingCompletedAt:
         safeString(remote.onboardingCompletedAt) ||
+        safeString(remote.onboarding_completed_at) ||
         safeString(local.onboardingCompletedAt) ||
+        remoteStatus.onboardingCompletedAt ||
         undefined,
       profileCompletedAt:
         safeString(remote.profileCompletedAt) ||
+        safeString(remote.profile_completed_at) ||
         safeString(local.profileCompletedAt) ||
+        remoteStatus.profileCompletedAt ||
         undefined,
       completedAt:
         safeString(remote.completedAt) ||
+        safeString(remote.completed_at) ||
         safeString(local.completedAt) ||
+        remoteStatus.completedAt ||
         undefined,
       interests,
       interestsTouched,

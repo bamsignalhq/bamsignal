@@ -88,6 +88,16 @@ export async function fetchAdminMemberAuditTrail(profileId: string, limit = 100)
   );
 }
 
+export async function repairAdminMemberOnboarding(profileId: string) {
+  return adminPostJson<{
+    ok?: boolean;
+    completed?: boolean;
+    repaired?: boolean;
+    nextRoute?: string;
+    error?: string;
+  }>("/api/admin/members?action=repair-onboarding", { profileId });
+}
+
 export async function purgeAdminMember(profileId: string, confirm: string) {
   return adminPostJson<AdminPurgeResult>("/api/admin/members?action=purge", { profileId, confirm });
 }

@@ -16,8 +16,45 @@ const STALE_ONBOARDING_KEYS = [
   "bamsignal_onboarding_draft",
   "bamsignal_signup_draft",
   "bamsignal_setup_step",
-  "bamsignal_onboarding_step"
+  "bamsignal_onboarding_step",
+  "bamsignal_current_step",
+  "bamsignal_profile_draft"
 ] as const;
+
+export type OnboardingStatusSnapshot = {
+  markedComplete: boolean;
+  onboardingComplete: boolean;
+  setupCompleted: boolean;
+  profileCompletedAt?: string;
+  onboardingCompletedAt?: string;
+  completedAt?: string;
+};
+
+/** Normalize completion flags across camelCase and snake_case variants. */
+export function normalizeOnboardingStatus(
+  raw: Partial<DatingProfile> | Record<string, unknown> | null | undefined
+): OnboardingStatusSnapshot {
+  const profile = (raw ?? {}) as Record<string, unknown>;
+  const onboardingComplete = Boolean(profile.onboardingComplete ?? profile.onboarding_completed);
+  const setupCompleted = Boolean(profile.setupCompleted ?? profile.setup_completed);
+  const profileCompletedAt =
+    safeString(profile.profileCompletedAt ?? profile.profile_completed_at) || undefined;
+  const onboardingCompletedAt =
+    safeString(profile.onboardingCompletedAt ?? profile.onboarding_completed_at) || undefined;
+  const completedAt = safeString(profile.completedAt ?? profile.completed_at) || undefined;
+  const markedComplete = Boolean(
+    onboardingComplete || setupCompleted || profileCompletedAt || onboardingCompletedAt || completedAt
+  );
+
+  return {
+    markedComplete,
+    onboardingComplete: markedComplete || onboardingComplete,
+    setupCompleted: markedComplete || setupCompleted,
+    profileCompletedAt,
+    onboardingCompletedAt,
+    completedAt
+  };
+}
 
 export function hasMinimumProfileData(
   profile: Partial<DatingProfile>,
@@ -25,23 +62,21 @@ export function hasMinimumProfileData(
 ): boolean {
   const normalized = normalizeDatingProfile(profile);
   const photos = safePhotos(normalized.photos).filter(isPersistablePhotoUrl);
+  const mainPhotoUrl = safeString(normalized.mainPhotoUrl);
+  const hasPhotos =
+    photos.length >= MIN_PROFILE_PHOTOS ||
+    Boolean(mainPhotoUrl && isPersistablePhotoUrl(mainPhotoUrl));
   const hasLocation = Boolean(safeString(normalized.state) && safeString(normalized.city));
   const hasGender = Boolean(
     normalized.gender && normalized.gender !== ("Prefer not to say" as DatingProfile["gender"])
   );
   const hasAge = normalized.age >= 17;
   const hasName = user ? Boolean(safeString(user.name)?.trim()) : true;
-  return hasName && hasAge && hasGender && hasLocation && photos.length >= MIN_PROFILE_PHOTOS;
+  return hasName && hasAge && hasGender && hasLocation && hasPhotos;
 }
 
 export function isProfileOnboardingMarkedComplete(profile: Partial<DatingProfile>): boolean {
-  return Boolean(
-    profile.onboardingComplete ||
-      profile.setupCompleted ||
-      profile.profileCompletedAt ||
-      profile.onboardingCompletedAt ||
-      profile.completedAt
-  );
+  return normalizeOnboardingStatus(profile).markedComplete;
 }
 
 export function isOnboardingFullyComplete(
@@ -74,14 +109,15 @@ export function repairCompletedProfile(
 
   clearOnboardingDrafts();
   const now = new Date().toISOString();
+  const status = normalizeOnboardingStatus(normalized);
   return {
     profile: normalizeDatingProfile({
       ...normalized,
       onboardingComplete: true,
       setupCompleted: true,
-      onboardingCompletedAt: normalized.onboardingCompletedAt || now,
-      profileCompletedAt: normalized.profileCompletedAt || now,
-      completedAt: normalized.completedAt || now
+      onboardingCompletedAt: status.onboardingCompletedAt || now,
+      profileCompletedAt: status.profileCompletedAt || now,
+      completedAt: status.completedAt || now
     }),
     repaired: true
   };
@@ -91,11 +127,8 @@ export function mergeOnboardingCompleteFlag(
   local: Partial<DatingProfile>,
   remote: Partial<DatingProfile>
 ): boolean {
-  return Boolean(
-    remote.onboardingComplete ||
-      local.onboardingComplete ||
-      isProfileOnboardingMarkedComplete(remote) ||
-      isProfileOnboardingMarkedComplete(local)
+  return (
+    normalizeOnboardingStatus(remote).markedComplete || normalizeOnboardingStatus(local).markedComplete
   );
 }
 
@@ -120,13 +153,14 @@ export function logRouteDecision(
 ): void {
   if (!import.meta.env.DEV) return;
   const normalized = normalizeDatingProfile(profile);
+  const status = normalizeOnboardingStatus(normalized);
   const userId = user.email || user.phone || "unknown";
   const photos = safePhotos(normalized.photos).filter(isPersistablePhotoUrl);
   console.info("[route-decision] userId", userId);
   console.info("[route-decision] profile exists", Boolean(profile && Object.keys(profile).length));
-  console.info("[route-decision] onboardingCompleted", Boolean(normalized.onboardingComplete));
-  console.info("[route-decision] setupCompleted", Boolean(normalized.setupCompleted));
-  console.info("[route-decision] profileCompletedAt", normalized.profileCompletedAt ?? null);
+  console.info("[route-decision] onboardingCompleted", status.onboardingComplete);
+  console.info("[route-decision] setupCompleted", status.setupCompleted);
+  console.info("[route-decision] profileCompletedAt", status.profileCompletedAt ?? null);
   console.info("[route-decision] photos count", photos.length);
   console.info("[route-decision] final route", route);
   if (extra && Object.keys(extra).length) {

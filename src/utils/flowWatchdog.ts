@@ -107,6 +107,9 @@ export function clearFlowCompletionKeys(): void {
     "bamsignal-onboarding-draft",
     "bamsignal_signup_draft",
     "bamsignal-signup-draft",
+    "bamsignal_setup_step",
+    "bamsignal_current_step",
+    "bamsignal_profile_draft",
     "bamsignal_compliance_pending_old",
     FLOW_STATE_KEY
   ];

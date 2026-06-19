@@ -94,7 +94,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, rows });
     }
 
-    return res.status(400).json({ ok: false, error: "Unknown action. Use search, purge, compliance, or audit-trail." });
+    if (action === "repair-onboarding") {
+      const profileId = String(body.profileId || "").trim();
+      if (!profileId) {
+        return res.status(400).json({ ok: false, error: "profileId is required." });
+      }
+      const { repairMemberOnboardingByProfileId } = await import(
+        "../../server/services/onboardingRepair.js"
+      );
+      const result = await repairMemberOnboardingByProfileId(profileId);
+      if (!result.ok) {
+        return res.status(result.error === "Member not found." ? 404 : 400).json(result);
+      }
+      return res.status(200).json(result);
+    }
+
+    return res.status(400).json({
+      ok: false,
+      error: "Unknown action. Use search, purge, compliance, audit-trail, or repair-onboarding."
+    });
   } catch (error) {
     console.error("[bamsignal] admin members error:", error);
     return res.status(500).json({ ok: false, error: error.message || "Admin member request failed." });

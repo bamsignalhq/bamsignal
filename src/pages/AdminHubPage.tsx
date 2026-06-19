@@ -78,6 +78,7 @@ import {
   fetchAdminMemberAuditTrail,
   fetchAdminMemberCompliance,
   purgeAdminMember,
+  repairAdminMemberOnboarding,
   searchAdminMembers,
   type AdminAuditLogRow,
   type AdminMemberCompliance,
@@ -151,6 +152,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [memberAuditRows, setMemberAuditRows] = useState<AdminAuditLogRow[]>([]);
   const [memberAuditOpen, setMemberAuditOpen] = useState(false);
   const [memberComplianceBusy, setMemberComplianceBusy] = useState(false);
+  const [memberRepairBusy, setMemberRepairBusy] = useState(false);
   const [contactLeaks, setContactLeaks] = useState<ContactLeakAttempt[]>([]);
   const [contactLeaksLoading, setContactLeaksLoading] = useState(false);
   const [photoReviews, setPhotoReviews] = useState<PhotoReviewItem[]>([]);
@@ -1009,6 +1011,10 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                         </dd>
                       </div>
                       <div>
+                        <dt>Onboarding</dt>
+                        <dd>{memberDetail.onboardingComplete ? "Complete" : "Incomplete"}</dd>
+                      </div>
+                      <div>
                         <dt>2FA</dt>
                         <dd>
                           {memberCompliance.twoFactorEnabled
@@ -1017,10 +1023,40 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                         </dd>
                       </div>
                     </dl>
-                    <button
-                      type="button"
-                      className="btn-secondary btn-sm"
-                      onClick={() => {
+                    <div className="admin-member-compliance__actions">
+                      <button
+                        type="button"
+                        className="btn-secondary btn-sm"
+                        disabled={memberRepairBusy}
+                        onClick={() => {
+                          void (async () => {
+                            setMemberRepairBusy(true);
+                            try {
+                              const result = await repairAdminMemberOnboarding(memberDetail.id);
+                              if (!result.ok) {
+                                pushToast(result.error || "Could not repair onboarding status.");
+                                return;
+                              }
+                              const payload = result.data;
+                              if (payload.repaired) {
+                                pushToast("Onboarding status repaired on server.");
+                              } else if (payload.completed) {
+                                pushToast("Member onboarding already complete.");
+                              } else {
+                                pushToast("Profile still missing required onboarding data.");
+                              }
+                            } finally {
+                              setMemberRepairBusy(false);
+                            }
+                          })();
+                        }}
+                      >
+                        {memberRepairBusy ? "Repairing…" : "Repair onboarding status"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary btn-sm"
+                        onClick={() => {
                         void (async () => {
                           if (memberAuditOpen) {
                             setMemberAuditOpen(false);
@@ -1038,6 +1074,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                     >
                       {memberAuditOpen ? "Hide Audit Trail" : "View Audit Trail"}
                     </button>
+                    </div>
                     {memberAuditOpen ? (
                       <div className="admin-audit-trail">
                         {memberAuditRows.length ? (

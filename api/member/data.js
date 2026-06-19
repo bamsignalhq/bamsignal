@@ -288,6 +288,16 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, result, referral });
     }
 
+    if (req.query.action === "repair-onboarding") {
+      if (!requireDatabase(res)) return;
+      const { repairMemberOnboarding } = await import("../../server/services/onboardingRepair.js");
+      const result = await repairMemberOnboarding(identity);
+      if (!result.ok) {
+        return res.status(400).json(result);
+      }
+      return res.status(200).json(result);
+    }
+
     if (req.query.action === "compliance-ack") {
       const { recordComplianceAcknowledgements } = await import(
         "../../server/services/compliance.js"

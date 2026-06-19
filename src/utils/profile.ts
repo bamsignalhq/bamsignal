@@ -16,7 +16,8 @@ import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhoto
 import { prunePhotoMeta, safePhotoMeta } from "./photoMeta";
 import { normalizeMainPhoto } from "./mainPhoto";
 import {
-  isOnboardingFullyComplete
+  isOnboardingFullyComplete,
+  normalizeOnboardingStatus
 } from "./onboardingStatus";
 
 export const defaultDatingProfile = (): DatingProfile => ({
@@ -111,13 +112,8 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     cleaned.gender && (cleaned.gender as string) !== "Prefer not to say"
       ? (cleaned.gender as DatingProfile["gender"])
       : base.gender;
-  const onboardingComplete = Boolean(
-    cleaned.onboardingComplete ||
-      cleaned.setupCompleted ||
-      cleaned.profileCompletedAt ||
-      cleaned.onboardingCompletedAt ||
-      cleaned.completedAt
-  );
+  const onboardingStatus = normalizeOnboardingStatus(cleaned as Record<string, unknown>);
+  const onboardingComplete = onboardingStatus.markedComplete;
   const interestedInManuallyChanged = Boolean(cleaned.interestedInManuallyChanged);
   const lookingFor = resolveLookingFor({
     raw: cleaned.lookingFor,
@@ -212,12 +208,20 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     religion,
     ethnicities,
     ethnicity: ethnicities[0],
+    onboardingComplete: onboardingStatus.onboardingComplete,
+    setupCompleted: onboardingStatus.setupCompleted || Boolean(cleaned.setupCompleted),
+    onboardingCompletedAt:
+      onboardingStatus.onboardingCompletedAt ||
+      safeString(cleaned.onboardingCompletedAt) ||
+      undefined,
+    profileCompletedAt:
+      onboardingStatus.profileCompletedAt ||
+      safeString(cleaned.profileCompletedAt) ||
+      undefined,
+    completedAt:
+      onboardingStatus.completedAt || safeString(cleaned.completedAt) || undefined,
     createdAt: cleaned.createdAt ?? base.createdAt ?? new Date().toISOString(),
-    compliance: normalizeCompliance(cleaned.compliance),
-    setupCompleted: Boolean(cleaned.setupCompleted),
-    onboardingCompletedAt: safeString(cleaned.onboardingCompletedAt) || undefined,
-    profileCompletedAt: safeString(cleaned.profileCompletedAt) || undefined,
-    completedAt: safeString(cleaned.completedAt) || undefined
+    compliance: normalizeCompliance(cleaned.compliance)
   };
 }
 

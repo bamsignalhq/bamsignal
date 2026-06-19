@@ -13,6 +13,7 @@ import { handleContactNodeRequest } from "./services/contactMail.js";
 import { registerBotCommands, bot } from "./telegram.js";
 import { mountHandler } from "./mountHandler.js";
 import identityHandler from "../api/auth/identity.js";
+import pinLoginHandler from "../api/auth/pin-login.js";
 import emailCodeHandler from "../api/auth/email-code.js";
 import loginSecurityHandler from "../api/auth/login-security.js";
 import playReviewerFinishHandler from "../api/auth/play-reviewer-finish.js";
@@ -121,6 +122,7 @@ app.head("/health", (_req, res) => {
 
 app.post("/api/contact", handleContactNodeRequest);
 mountHandler(app, "post", "/api/auth/email-code", emailCodeHandler);
+mountHandler(app, "post", "/api/auth/pin-login", pinLoginHandler);
 mountHandler(app, "post", "/api/auth/login-security", loginSecurityHandler);
 mountHandler(app, "post", "/api/auth/play-reviewer-finish", playReviewerFinishHandler);
 mountHandler(app, "post", "/api/auth/identity", identityHandler);

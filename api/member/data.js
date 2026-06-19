@@ -45,8 +45,25 @@ function normalizeIdentity(body = {}) {
   return {
     email: String(body.email || "").trim().toLowerCase(),
     phone: normalizePhone(body.phone),
-    name: String(body.name || "").trim()
+    name: String(body.name || "").trim(),
+    username: String(body.username || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^@+/, "")
   };
+}
+
+async function resolveRequestIdentity(body = {}) {
+  const identity = normalizeIdentity(body);
+  if (identity.email || identity.phone) return identity;
+  if (!identity.username) return identity;
+
+  const { resolveLoginUsername } = await import("../../server/services/pinLogin.js");
+  const resolved = await resolveLoginUsername(identity.username);
+  if (resolved.email) {
+    identity.email = String(resolved.email).trim().toLowerCase();
+  }
+  return identity;
 }
 
 function requireDatabase(res) {
@@ -100,10 +117,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, email: resolved.email });
     }
 
-    const identity = normalizeIdentity(body);
+    const identity = await resolveRequestIdentity(body);
 
     if (!identity.email && !identity.phone) {
-      return res.status(400).json({ ok: false, error: "Email or phone is required." });
+      return res.status(400).json({ ok: false, error: "Email, phone, or username is required." });
     }
 
     if (req.query.action === "pull") {
@@ -284,6 +301,30 @@ export default async function handler(req, res) {
       const result = await completeOnboardingReferral(identity);
       const referral = await fetchReferralStats(identity);
       return res.status(200).json({ ok: true, result, referral });
+    }
+
+    if (req.query.action === "onboarding-status") {
+      if (!requireDatabase(res)) return;
+      const { getMemberOnboardingStatus } = await import("../../server/services/onboardingRepair.js");
+      const result = await getMemberOnboardingStatus(identity);
+      return res.status(200).json(result);
+    }
+
+    if (req.query.action === "force-complete-onboarding") {
+      if (!requireDatabase(res)) return;
+      const { verifySupabaseBearerUserId } = await import("../../server/supabaseEnv.js");
+      const authHeader = String(req.headers.authorization || "");
+      const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+      const userId = await verifySupabaseBearerUserId(bearer);
+      if (!userId) {
+        return res.status(401).json({ ok: false, error: "Unauthorized." });
+      }
+      const { forceCompleteMemberOnboarding } = await import("../../server/services/onboardingRepair.js");
+      const result = await forceCompleteMemberOnboarding(identity);
+      if (!result.ok) {
+        return res.status(result.error === "Member profile not found." ? 404 : 400).json(result);
+      }
+      return res.status(200).json(result);
     }
 
     if (req.query.action === "repair-onboarding") {

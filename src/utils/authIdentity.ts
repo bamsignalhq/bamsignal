@@ -141,12 +141,58 @@ export function profileFromSessionUser(user: {
   user_metadata?: Record<string, unknown>;
 }): import("../types").UserProfile {
   const meta = user.user_metadata ?? {};
+  const sessionEmail =
+    user.email && !user.email.includes("@phone.bamsignal.local") ? user.email.trim().toLowerCase() : "";
+  const metaEmail = String(meta.email || "").trim().toLowerCase();
+  const email = sessionEmail || (isLikelyEmail(metaEmail) ? metaEmail : "");
   return {
     name: String(meta.name || "Member"),
     username: meta.username ? String(meta.username) : undefined,
-    email: user.email?.includes("@phone.bamsignal.local") ? "" : user.email || "",
+    email,
     phone: String(meta.phone || ""),
     phoneVerified: Boolean(meta.phoneVerified)
+  };
+}
+
+function usableEmail(value?: string | null): string {
+  const email = String(value || "").trim().toLowerCase();
+  if (!email.includes("@") || email.includes("@phone.bamsignal.local")) return "";
+  return email;
+}
+
+/** Merge session, storage, and username-index email so member API calls always resolve. */
+export function resolveMemberIdentity(
+  profile: Partial<import("../types").UserProfile>,
+  options?: { loginEmail?: string }
+): import("../types").UserProfile {
+  const stored = readJson<import("../types").UserProfile>(STORAGE_KEYS.userProfile, {
+    name: "",
+    email: "",
+    phone: ""
+  });
+  const username = profile.username
+    ? normalizeUsername(profile.username)
+    : stored.username
+      ? normalizeUsername(stored.username)
+      : undefined;
+  const fromUsername = username ? lookupUsernameEmail(username) : null;
+  const email =
+    usableEmail(options?.loginEmail) ||
+    usableEmail(profile.email) ||
+    usableEmail(stored.email) ||
+    usableEmail(fromUsername) ||
+    "";
+  const phone = String(profile.phone || stored.phone || "").trim();
+  const name = String(profile.name || stored.name || "Member").trim() || "Member";
+
+  return {
+    ...stored,
+    ...profile,
+    name,
+    email,
+    phone,
+    username: username || profile.username || stored.username,
+    phoneVerified: Boolean(profile.phoneVerified ?? stored.phoneVerified)
   };
 }
 

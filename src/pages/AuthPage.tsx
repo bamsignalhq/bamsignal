@@ -32,7 +32,8 @@ import {
   normalizeNigerianPhone,
   normalizeUsername,
   rememberUsernameEmail,
-  profileFromSessionUser
+  profileFromSessionUser,
+  resolveMemberIdentity
 } from "../utils/authIdentity";
 import {
   clearPendingSignup,
@@ -427,7 +428,11 @@ export function AuthPage({
         if (resolvedEmail) {
           rememberUsernameEmail(username, resolvedEmail);
         }
-        await finishLoginAfterPassword(profile, { isNewSignup: false });
+        const loginProfile = resolveMemberIdentity(
+          { ...profile, username: profile.username || username },
+          { loginEmail: loginResult.email }
+        );
+        await finishLoginAfterPassword(loginProfile, { isNewSignup: false });
         return;
       }
 

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
+import { Preloader } from "../components/Preloader";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
 import { INTENT_OPTIONS } from "../constants/intents";
 import { durationLabel } from "../constants/plans";
@@ -18,6 +19,7 @@ import type {
 } from "../types";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { SUCCESS_COPY } from "../constants/copy";
+import { navigateToPath } from "../constants/routes";
 import { trackEvent } from "../utils/analytics";
 import { defaultSafetySettings } from "../constants/safety";
 import { applyFemaleFirstDefaults } from "../utils/safety";
@@ -25,8 +27,15 @@ import { markJoinedAt, persistCitySelection } from "../utils/launchSeed";
 import { markFirstDayStep } from "../utils/firstDayJourney";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { completeOnboardingRemote } from "../services/memberData";
-import { defaultDatingProfile, normalizeDatingProfile, isOnboardingComplete } from "../utils/profile";
-import { clearOnboardingDrafts, isProfileOnboardingMarkedComplete, looksLikeSavedOnboardingProgress, shouldRouteToOnboarding } from "../utils/onboardingStatus";
+import {
+  applyOnboardingRepairLocal,
+  fetchOnboardingStatus,
+  forceCompleteOnboardingRemote
+} from "../services/onboardingRepair";
+import { supabase } from "../services/supabase";
+import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
+import { clearOnboardingDrafts, looksLikeSavedOnboardingProgress } from "../utils/onboardingStatus";
+import { resolveMemberIdentity } from "../utils/authIdentity";
 import { writeJson, readJson } from "../utils/storage";
 import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
@@ -62,11 +71,9 @@ type OnboardingPageProps = {
 };
 
 export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPageProps) {
+  const [gateReady, setGateReady] = useState(false);
+  const [escapeBusy, setEscapeBusy] = useState(false);
   const [step, setStep] = useState(() => {
-    const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
-    if (isOnboardingComplete(user) || isProfileOnboardingMarkedComplete(stored)) {
-      return STEPS.length - 1;
-    }
     const saved = readJson<number>(STORAGE_KEYS.onboardingStep, 0);
     return Number.isFinite(saved) ? Math.min(Math.max(0, saved), STEPS.length - 1) : 0;
   });
@@ -84,9 +91,6 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   };
   const [profile, setProfile] = useState<DatingProfile>(() => {
     const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
-    if (isOnboardingComplete(user) || isProfileOnboardingMarkedComplete(stored)) {
-      return normalizeDatingProfile(stored);
-    }
     const normalized = normalizeDatingProfile(stored);
     const resuming = looksLikeSavedOnboardingProgress(stored);
     if (!resuming) {
@@ -127,18 +131,59 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   const progress = ((step + 1) / STEPS.length) * 100;
 
   useEffect(() => {
-    const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
-    if (isOnboardingComplete(user) || isProfileOnboardingMarkedComplete(stored)) {
-      clearOnboardingDrafts();
-      onComplete();
-    }
+    let cancelled = false;
+    const identity = resolveMemberIdentity(user);
+    void (async () => {
+      const status = await fetchOnboardingStatus(identity);
+      if (cancelled) return;
+      if (status?.completed) {
+        if (status.datingProfile) {
+          applyOnboardingRepairLocal({
+            ok: true,
+            completed: true,
+            repaired: Boolean(status.repaired),
+            nextRoute: "/home",
+            datingProfile: status.datingProfile
+          });
+        }
+        clearOnboardingDrafts();
+        onComplete();
+        navigateToPath("/home", true);
+        return;
+      }
+      setGateReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [onComplete, user]);
 
-  useEffect(() => {
-    if (shouldRouteToOnboarding(user, profile)) return;
-    clearOnboardingDrafts();
-    onComplete();
-  }, [onComplete, profile, user]);
+  const escapeToDashboard = async () => {
+    setEscapeBusy(true);
+    try {
+      const identity = resolveMemberIdentity(user);
+      const token = (await supabase?.auth.getSession())?.data.session?.access_token;
+      const result = await forceCompleteOnboardingRemote(identity, token);
+      if (result?.completed) {
+        if (result.datingProfile) {
+          applyOnboardingRepairLocal({
+            ok: true,
+            completed: true,
+            repaired: false,
+            nextRoute: "/home",
+            datingProfile: result.datingProfile
+          });
+        }
+        clearOnboardingDrafts();
+        onComplete();
+        navigateToPath("/home", true);
+        return;
+      }
+      showModMessage("We couldn't restore your dashboard. Please try again.");
+    } finally {
+      setEscapeBusy(false);
+    }
+  };
 
   useEffect(() => {
     setProfile((prev) => {
@@ -155,7 +200,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   }, [step]);
 
   useEffect(() => {
-    if (profile.onboardingComplete || isOnboardingComplete(user)) return;
+    if (profile.onboardingComplete) return;
     if (!writeJson(STORAGE_KEYS.datingProfile, { ...profile, onboardingComplete: false })) {
       showModMessage(USER_MESSAGES.progressSaveFailed);
     }
@@ -313,6 +358,14 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
             Go to my home
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (!gateReady) {
+    return (
+      <div className="page onboarding-page onboarding-page--gate">
+        <Preloader exiting={false} subtitle="Restoring your account…" />
       </div>
     );
   }
@@ -526,6 +579,14 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         <button type="button" className="btn-primary btn-full btn-auth" onClick={next} disabled={!canContinue()}>
           {step === STEPS.length - 1 ? "Finish" : "Continue"}
           {step < STEPS.length - 1 && <ChevronRight size={18} />}
+        </button>
+        <button
+          type="button"
+          className="auth-link-secondary onboarding-escape"
+          onClick={() => void escapeToDashboard()}
+          disabled={escapeBusy}
+        >
+          {escapeBusy ? "Restoring…" : "Having trouble? Continue to dashboard"}
         </button>
       </footer>
     </div>

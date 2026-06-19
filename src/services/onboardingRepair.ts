@@ -10,7 +10,7 @@ import { readJson, writeJson } from "../utils/storage";
 import { apiUrl } from "./supabase";
 import { readResponseJson } from "../utils/httpJson";
 
-type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
+type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name" | "username">;
 
 export type OnboardingRepairDiagnostics = {
   userId?: string | null;
@@ -44,7 +44,7 @@ export type RepairOnboardingResult = {
 
 export function logLoginProfileState(
   user: MemberIdentity,
-  repair: RepairOnboardingResult | null,
+  repair: RepairOnboardingResult | OnboardingStatusResult | null,
   bundle?: { memberProfileId?: string | null; datingProfile?: Record<string, unknown> | null }
 ): void {
   if (!import.meta.env.DEV) return;
@@ -69,8 +69,65 @@ export function logLoginProfileState(
     completedAt: status.completedAt ?? null,
     repairCompleted: repair?.completed ?? null,
     repairRepaired: repair?.repaired ?? null,
+    reason: "reason" in (repair ?? {}) ? (repair as OnboardingStatusResult).reason : null,
     nextRoute: repair?.nextRoute ?? null
   });
+}
+
+export type OnboardingStatusResult = {
+  ok: boolean;
+  completed: boolean;
+  nextRoute: "/home" | "/onboarding";
+  reason: string;
+  repaired?: boolean;
+  diagnostics?: OnboardingRepairDiagnostics;
+  datingProfile?: Partial<DatingProfile>;
+  error?: string;
+};
+
+export async function fetchOnboardingStatus(user: MemberIdentity): Promise<OnboardingStatusResult | null> {
+  try {
+    const response = await fetch(apiUrl("/api/member/data?action=onboarding-status"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        username: user.username
+      })
+    });
+    const payload = await readResponseJson<OnboardingStatusResult>(response);
+    if (!response.ok || !payload?.ok) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+export async function forceCompleteOnboardingRemote(
+  user: MemberIdentity,
+  accessToken?: string
+): Promise<OnboardingStatusResult | null> {
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+    const response = await fetch(apiUrl("/api/member/data?action=force-complete-onboarding"), {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        username: user.username
+      })
+    });
+    const payload = await readResponseJson<OnboardingStatusResult>(response);
+    if (!response.ok || !payload?.ok) return null;
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 export async function repairOnboardingRemote(user: MemberIdentity): Promise<RepairOnboardingResult | null> {
@@ -81,7 +138,8 @@ export async function repairOnboardingRemote(user: MemberIdentity): Promise<Repa
       body: JSON.stringify({
         email: user.email,
         phone: user.phone,
-        name: user.name
+        name: user.name,
+        username: user.username
       })
     });
     const payload = await readResponseJson<RepairOnboardingResult>(response);

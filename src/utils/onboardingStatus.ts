@@ -105,11 +105,14 @@ export function hasMinimumProfileData(
     Boolean(mainPhotoUrl && isPersistablePhotoUrl(mainPhotoUrl));
   const state = safeString(raw.state);
   const city = safeString(raw.city);
-  const hasLocation = Boolean(state && city && !isPlaceholderCity(city));
+  const hasState = Boolean(state && !isTemplateProfileValue("state", state));
+  const hasLocation = hasState && Boolean(city && !isPlaceholderCity(city));
   const gender = safeString(raw.gender);
-  const hasGender = Boolean(gender && gender !== ("Prefer not to say" as DatingProfile["gender"]));
+  const hasGender =
+    Boolean(gender && gender !== ("Prefer not to say" as DatingProfile["gender"])) &&
+    !isTemplateProfileValue("gender", gender);
   const age = Number(raw.age);
-  const hasAge = Number.isFinite(age) && age >= 17;
+  const hasAge = Number.isFinite(age) && age >= 17 && !isTemplateProfileValue("age", age);
   const hasName = user ? !isPlaceholderName(user.name) : true;
   return hasName && hasAge && hasGender && hasLocation && hasPhotos;
 }
@@ -214,5 +217,6 @@ export function shouldRouteToOnboarding(
 ): boolean {
   if (options?.forceOnboarding) return true;
   const resolved = profile ?? readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
-  return !isOnboardingFullyComplete(resolved, user);
+  // Server-synced completion flags only — never infer from template UI defaults (Member/25/Man/Abia).
+  return !isProfileOnboardingMarkedComplete(resolved);
 }

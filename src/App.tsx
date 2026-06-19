@@ -49,7 +49,7 @@ import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive }
 import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
-import { bootstrapMemberSession, hydrateMemberData } from "./services/memberData";
+import { hydrateMemberData } from "./services/memberData";
 import { goToApp } from "./services/goToApp";
 import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
@@ -112,7 +112,7 @@ import { getLegalPath, type LegalPath } from "./constants/footer";
 import { getSeoRoute, type SeoRoute } from "./constants/seoRoutes";
 import { getNigeriaRoute, type NigeriaRoute } from "./constants/nigeriaRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
-import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdentity";
+import { profileFromSessionUser, rememberUsernameEmail, resolveMemberIdentity } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
 import { safeUserProfile } from "./utils/safeProfile";
 import { boostNeedsMemberCity } from "./constants/boosts";
@@ -394,29 +394,35 @@ export function App() {
     }
     repairMemberCaches();
     const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
-    const merged: UserProfile = {
+    const merged = resolveMemberIdentity({
       ...profile,
       phone: stored.phone || profile.phone,
       phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
-    };
+    });
     setUser(merged);
     setIsAuthed(true);
     recordStreakActivity();
     checkPremiumTrialExpiry();
-    const session = await bootstrapMemberSession(merged);
-    flowLog("profile_hydrate", { ok: session.hydrated, repair: session.repair?.repaired });
+    const session = await goToApp({ forceOnboarding: false });
+    if (!session.ok) {
+      if (blocking) setMemberHydrating(false);
+      return;
+    }
+    setUser(session.user);
+    flowLog("profile_hydrate", { ok: true, route: session.route, reason: session.status?.reason });
     const datingProfile = getDatingProfile();
-    const needsOnboarding = session.nextRoute === "onboarding";
+    const needsOnboarding = session.route === "onboarding";
     setProfileComplete(!needsOnboarding);
     if (blocking || memberAppEntered || !isPublicWebRoute()) {
       if (isMemberAppPath() || requiresMemberRestoreBlocking(window.location.pathname, isNative)) {
         navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
       }
     }
-    logRouteDecision(merged, datingProfile, needsOnboarding ? "onboarding" : "home", {
+    logRouteDecision(session.user, datingProfile, needsOnboarding ? "onboarding" : "home", {
       source: "session_restore",
       hydrated: session.hydrated,
-      repaired: session.repair?.repaired,
+      repaired: session.status?.repaired,
+      reason: session.status?.reason ?? null,
       blocking
     });
     if (!needsOnboarding) {
@@ -425,7 +431,7 @@ export function App() {
     } else {
       flowLog("session_restore_onboarding");
     }
-    const premium = await refreshPremiumStatus(merged);
+    const premium = await refreshPremiumStatus(session.user);
     setIsPremium(
       needsOnboarding
         ? Boolean(premium.isPremium)
@@ -730,11 +736,11 @@ export function App() {
       setMemberAppEntered(true);
       setMemberHydrating(true);
       const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
-      const withPhone = {
+      const withPhone = resolveMemberIdentity({
         ...profile,
         phone: stored.phone || profile.phone,
         phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
-      };
+      });
       setUser(withPhone);
       setIsAuthed(true);
       setAuthMessage("");
@@ -766,20 +772,24 @@ export function App() {
       } else if (meta?.recovered) {
         flowLog("signup_recovered_existing");
       }
-      const session = await bootstrapMemberSession(withPhone, {
-        forceOnboarding,
-        referralCode: ref
+      const appResult = await goToApp({ forceOnboarding, referralCode: ref });
+      if (!appResult.ok) {
+        setMemberHydrating(false);
+        return;
+      }
+      setUser(appResult.user);
+      flowLog(appResult.hydrated ? "profile_hydrate_ok" : "profile_hydrate_failed", {
+        repaired: appResult.status?.repaired,
+        reason: appResult.status?.reason ?? null
       });
-      flowLog(session.hydrated ? "profile_hydrate_ok" : "profile_hydrate_failed", {
-        repaired: session.repair?.repaired
-      });
-      const premium = await refreshPremiumStatus(withPhone);
-      const needsOnboarding = session.nextRoute === "onboarding";
-      logRouteDecision(withPhone, getDatingProfile(), needsOnboarding ? "onboarding" : "home", {
+      const premium = await refreshPremiumStatus(appResult.user);
+      const needsOnboarding = appResult.route === "onboarding";
+      logRouteDecision(appResult.user, getDatingProfile(), needsOnboarding ? "onboarding" : "home", {
         source: "auth_login",
         isNewSignup: forceOnboarding,
-        hydrated: session.hydrated,
-        repaired: session.repair?.repaired
+        hydrated: appResult.hydrated,
+        repaired: appResult.status?.repaired,
+        reason: appResult.status?.reason ?? null
       });
       setIsPremium(
         needsOnboarding ? Boolean(premium.isPremium) : premium.isPremium || isPremiumTrialActive()
@@ -896,22 +906,23 @@ export function App() {
       }
 
       if ((event === "TOKEN_REFRESHED" || event === "USER_UPDATED") && session?.user) {
-        const profile = profileFromSessionUser(session.user);
+        const profile = resolveMemberIdentity(profileFromSessionUser(session.user));
         setUser(profile);
         setIsAuthed(true);
         const onMemberSurface =
           requiresMemberRestoreBlocking(window.location.pathname, isNative) ||
           !isPublicWebRoute();
-        void bootstrapMemberSession(profile).then((sessionResult) => {
+        void goToApp().then((sessionResult) => {
+          if (!sessionResult.ok) return;
           if (onMemberSurface) {
-            setProfileComplete(sessionResult.nextRoute === "home");
-            if (sessionResult.nextRoute === "onboarding" && !isOnboardingPath()) {
+            setProfileComplete(sessionResult.route === "home");
+            if (sessionResult.route === "onboarding" && !isOnboardingPath()) {
               navigateToPath("/onboarding", true);
-            } else if (sessionResult.nextRoute === "home" && isOnboardingPath()) {
+            } else if (sessionResult.route === "home" && isOnboardingPath()) {
               navigateToPath("/home", true);
             }
           }
-          if (sessionResult.nextRoute === "home") clearOnboardingDrafts();
+          if (sessionResult.route === "home") clearOnboardingDrafts();
         });
         const premium = await refreshPremiumStatus(profile);
         setIsPremium(premium.isPremium || isPremiumTrialActive());

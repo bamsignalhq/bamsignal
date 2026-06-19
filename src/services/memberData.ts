@@ -7,6 +7,7 @@ import { setPremiumSnapshot } from "./premiumStatus";
 import { apiUrl } from "./supabase";
 import { mergeHydratedCompliance } from "./compliance";
 import { getDatingProfile, normalizeDatingProfile } from "../utils/profile";
+import { resolveMemberIdentity } from "../utils/authIdentity";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import { readResponseJson } from "../utils/httpJson";
 import { mergeMemberCover, safeArray, safePhotos, safeString, isPersistablePhotoUrl } from "../utils/safeProfile";
@@ -21,11 +22,12 @@ import {
 } from "../utils/onboardingStatus";
 import {
   applyOnboardingRepairLocal,
+  fetchOnboardingStatus,
   logLoginProfileState,
-  repairOnboardingRemote
+  type OnboardingStatusResult
 } from "./onboardingRepair";
 
-type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name">;
+type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name" | "username">;
 
 type MemberBundle = {
   matches?: Match[];
@@ -66,7 +68,13 @@ async function postMemberAction(
     const response = await fetch(apiUrl(`/api/member/data?action=${action}`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...identity, ...body })
+      body: JSON.stringify({
+        email: identity.email,
+        phone: identity.phone,
+        name: identity.name,
+        username: identity.username,
+        ...body
+      })
     });
     const payload = await readResponseJson<MemberActionPayload>(response);
     if (!response.ok || !payload?.ok) {
@@ -90,63 +98,59 @@ export async function registerMember(
 
 export type MemberSessionBootstrapResult = {
   hydrated: boolean;
-  repair: Awaited<ReturnType<typeof repairOnboardingRemote>>;
+  status: OnboardingStatusResult | null;
   nextRoute: "home" | "onboarding";
 };
 
-/** Hydrate remote profile, run server repair, and return authoritative next route. */
+/** Hydrate remote profile, run server onboarding-status, and return authoritative next route. */
 export async function bootstrapMemberSession(
   user: MemberIdentity,
-  options?: { forceOnboarding?: boolean; referralCode?: string | null }
+  options?: { forceOnboarding?: boolean; referralCode?: string | null; loginEmail?: string }
 ): Promise<MemberSessionBootstrapResult> {
   if (options?.forceOnboarding) {
-    return { hydrated: false, repair: null, nextRoute: "onboarding" };
+    return { hydrated: false, status: null, nextRoute: "onboarding" };
   }
 
+  const identity = resolveMemberIdentity(user, { loginEmail: options?.loginEmail });
   const ref = options?.referralCode;
-  await registerMember(user, ref);
-  let hydrated = await hydrateMemberData(user);
+  await registerMember(identity, ref);
+  let hydrated = await hydrateMemberData(identity);
   if (!hydrated) {
-    await registerMember(user, ref);
-    hydrated = await hydrateMemberData(user);
+    await registerMember(identity, ref);
+    hydrated = await hydrateMemberData(identity);
   }
 
-  const repair = await repairOnboardingRemote(user);
-  logLoginProfileState(user, repair);
+  const status = await fetchOnboardingStatus(identity);
+  logLoginProfileState(identity, status);
 
-  if (repair?.completed || repair?.nextRoute === "/home") {
-    if (repair) applyOnboardingRepairLocal(repair);
+  if (status?.completed || status?.nextRoute === "/home") {
+    if (status.datingProfile) {
+      applyOnboardingRepairLocal({
+        ok: true,
+        completed: true,
+        repaired: Boolean(status.repaired),
+        nextRoute: "/home",
+        datingProfile: status.datingProfile
+      });
+    }
     clearOnboardingDrafts();
-    return { hydrated, repair, nextRoute: "home" };
-  }
-
-  if (repair && !repair.completed) {
-    return { hydrated, repair, nextRoute: "onboarding" };
+    return { hydrated, status, nextRoute: "home" };
   }
 
   const profile = getDatingProfile();
-  const remoteComplete = normalizeOnboardingStatus(profile).markedComplete;
-  if (remoteComplete) {
+  if (normalizeOnboardingStatus(profile).markedComplete) {
     clearOnboardingDrafts();
-    return { hydrated, repair, nextRoute: "home" };
+    return { hydrated, status, nextRoute: "home" };
   }
 
-  const { profile: repairedProfile, repaired } = repairCompletedProfile(profile, user);
+  const { profile: repairedProfile, repaired } = repairCompletedProfile(profile, identity);
   if (repaired) {
     writeJson(STORAGE_KEYS.datingProfile, repairedProfile);
     clearOnboardingDrafts();
-    return { hydrated, repair, nextRoute: "home" };
+    return { hydrated, status, nextRoute: "home" };
   }
 
-  if (!hydrated) {
-    return { hydrated, repair, nextRoute: "onboarding" };
-  }
-
-  return {
-    hydrated,
-    repair,
-    nextRoute: shouldRouteToOnboarding(user, repairedProfile) ? "onboarding" : "home"
-  };
+  return { hydrated, status, nextRoute: "onboarding" };
 }
 
 export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> {

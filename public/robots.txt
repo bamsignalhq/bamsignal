@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
 
+Disallow: /home
+Disallow: /discover
+Disallow: /chats
+Disallow: /signals
+Disallow: /profile
+Disallow: /settings
+Disallow: /hard
+Disallow: /admin
+Disallow: /onboarding
+
 Sitemap: https://bamsignal.com/sitemap.xml

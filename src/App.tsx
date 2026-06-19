@@ -79,6 +79,8 @@ import { StoreScreenshotsPage } from "./pages/StoreScreenshotsPage";
 import { AdminAuthPage } from "./pages/AdminAuthPage";
 import { BlogIndexPage } from "./pages/BlogIndexPage";
 import { BlogPostPage } from "./pages/BlogPostPage";
+import { SeoLayout } from "./pages/seo/SeoLayout";
+import { SeoRouter } from "./pages/seo/SeoRouter";
 import { MomentPage } from "./pages/MomentPage";
 import { getBlogPost } from "./data/blogPosts";
 import { getMomentPage, type MomentPageId } from "./data/momentPages";
@@ -106,6 +108,7 @@ import {
   type AuthPath
 } from "./constants/routes";
 import { getLegalPath, type LegalPath } from "./constants/footer";
+import { getSeoRoute, type SeoRoute } from "./constants/seoRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
@@ -158,6 +161,7 @@ export function App() {
   const [theme, setTheme] = useState<Theme>(() => getSavedTheme());
   const [tab, setTab] = useState<NavTab>("home");
   const [legalPath, setLegalPath] = useState<LegalPath | null>(() => getLegalPath());
+  const [seoRoute, setSeoRoute] = useState<SeoRoute | null>(() => getSeoRoute());
   const [authPath, setAuthPath] = useState<AuthPath | null>(() => getAuthPath());
   const [blogSlug, setBlogSlug] = useState<string | null>(() => getBlogSlug());
   const [momentSlug, setMomentSlug] = useState<string | null>(() => getMomentSlug());
@@ -281,6 +285,7 @@ export function App() {
       redirectLegacyConsolePaths();
       redirectAuthSignupAliases();
       setLegalPath(getLegalPath());
+      setSeoRoute(getSeoRoute());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());
       setMomentSlug(getMomentSlug());
@@ -1326,38 +1331,39 @@ export function App() {
     const post = blogSlug ? getBlogPost(blogSlug) : null;
     return (
       <div className={`app ${theme} platform-root`}>
-        <div className="platform-shell platform-shell--legal">
-          <TopNav
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            isPremium={isPremium}
-            isGuest={isGuest}
-            onLogin={() => openAuth("login")}
-            onLogoClick={goHome}
-            showNotifications={isAuthed}
-            notificationCount={notificationUnread}
-            onNotificationsClick={() => setNotificationsOpen(true)}
-            showFoundingMember={false}
-            memberFirstName={
-              isAuthed ? memberFirstName(user) : undefined
-            }
-          />
-          <main className="app-main app-main--legal">
-            {post ? (
-              <BlogPostPage post={post} onSignup={() => openAuth("signup", "discover")} />
-            ) : blogSlug ? (
-              <div className="page empty-state">
-                <h2>Guide not found</h2>
-                <button type="button" className="btn-secondary" onClick={() => navigateToPath("/blog")}>
-                  Back to blog
-                </button>
-              </div>
-            ) : (
-              <BlogIndexPage onSignup={() => openAuth("signup", "discover")} />
-            )}
-          </main>
-          <SiteFooter onLogoClick={goHome} />
-        </div>
+        <SeoLayout
+          onLogoClick={goHome}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup", "discover")}
+        >
+          {post ? (
+            <BlogPostPage post={post} onSignup={() => openAuth("signup", "discover")} />
+          ) : blogSlug ? (
+            <div className="seo-not-found">
+              <h1>Guide not found</h1>
+              <p>This article is not available.</p>
+              <button type="button" className="seo-header__join" onClick={() => navigateToPath("/blog")}>
+                Back to blog
+              </button>
+            </div>
+          ) : (
+            <BlogIndexPage onSignup={() => openAuth("signup", "discover")} />
+          )}
+        </SeoLayout>
+      </div>
+    );
+  }
+
+  if (seoRoute) {
+    return (
+      <div className={`app ${theme} platform-root`}>
+        <SeoLayout
+          onLogoClick={goHome}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup", "discover")}
+        >
+          <SeoRouter route={seoRoute} />
+        </SeoLayout>
       </div>
     );
   }

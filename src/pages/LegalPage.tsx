@@ -25,7 +25,7 @@ type LegalPageProps = {
 
 const PAGE_ICONS: Record<LegalPath, typeof Heart> = {
   "/about": Heart,
-  "/safety": Shield,
+  "/safety-policy": Shield,
   "/privacy": ShieldCheck,
   "/terms": Scale,
   "/contact": Mail,
@@ -87,7 +87,7 @@ export function LegalPage({ path }: LegalPageProps) {
 
       {isAbout ? (
         <GrowthStatsStrip variant="info" eyebrow="" />
-      ) : path === "/safety" ? (
+      ) : path === "/safety-policy" ? (
         <div className="safety-pillars">
           {page.highlights.map((item) => (
             <article key={item.label} className="safety-pillar">

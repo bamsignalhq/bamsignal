@@ -67,7 +67,7 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
       }
     ]
   },
-  "/safety": {
+  "/safety-policy": {
     eyebrow: "Safety centre",
     title: "Your comfort comes first",
     lede: "Report, block, and control who can signal or message you — with verification and chat protections built in.",

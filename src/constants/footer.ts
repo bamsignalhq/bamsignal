@@ -18,7 +18,7 @@ export const FOOTER_LINKS = FOOTER_QUICK_LINKS;
 
 export const LEGAL_PATHS = [
   "/about",
-  "/safety",
+  "/safety-policy",
   "/privacy",
   "/terms",
   "/contact",

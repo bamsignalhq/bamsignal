@@ -39,6 +39,7 @@ import whatsappVerifyWebhookHandler from "../api/verify/whatsapp/webhook.js";
 import verificationSubmissionsHandler from "../api/verify/submissions.js";
 import { getSendchampHealthTrace, isSendchampConfigured } from "./services/sendchamp.js";
 import { getFirebaseHealth } from "./firebase.js";
+import { buildSitemapXml, getRobotsTxt } from "./seoSitemap.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "..", "dist");
@@ -148,6 +149,14 @@ mountHandler(app, "get", "/api/city/home", cityHomeHandler);
 mountHandler(app, "get", "/api/city/spotlight", citySpotlightHandler);
 mountHandler(app, "post", "/api/city/spotlight-event", citySpotlightEventHandler);
 app.use(paystackRouter);
+
+app.get("/sitemap.xml", (_req, res) => {
+  res.type("application/xml").send(buildSitemapXml());
+});
+
+app.get("/robots.txt", (_req, res) => {
+  res.type("text/plain").send(getRobotsTxt());
+});
 
 app.use(
   express.static(distDir, {

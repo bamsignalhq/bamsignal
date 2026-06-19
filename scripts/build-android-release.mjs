@@ -5,7 +5,7 @@
  * Requires .env (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) and android/key.properties.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
@@ -193,5 +193,14 @@ console.log(`versionName: ${nextVersionName}`);
 console.log(`versionCode: ${nextVersionCode}`);
 console.log(`AAB: ${aab}`);
 console.log(`APK: ${apk}`);
+
+const playStoreDir = join(root, "play-store", "releases");
+mkdirSync(playStoreDir, { recursive: true });
+const playAab = join(playStoreDir, `bamsignal-v${nextVersionName}-${nextVersionCode}.aab`);
+const playApk = join(playStoreDir, `bamsignal-v${nextVersionName}-${nextVersionCode}.apk`);
+copyFileSync(aab, playAab);
+copyFileSync(apk, playApk);
+console.log(`Play store copy: ${playAab}`);
+
 console.log("\nUpload the AAB to Google Play Console.");
 console.log(`Install on device: adb install -r "${apk}"\n`);

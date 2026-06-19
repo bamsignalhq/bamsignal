@@ -1,97 +1,57 @@
-import { findAppUserIdentity } from "../db.js";
-import { findEmailByPhone, findEmailByUsername, findMemberProfileByUserKey } from "../cityHome.js";
-import {
-  normalizeSignupEmail,
-  normalizeSignupPhone,
-  normalizeSignupUsername
-} from "./signupIdentity.js";
+import { findEmailByUsername, findMemberProfileByUserKey } from "../cityHome.js";
+import { normalizeSignupUsername } from "./signupIdentity.js";
 import { resolveSupabaseUrl } from "../supabaseEnv.js";
 
-function pinLoginLog(...args) {
+function loginLog(...args) {
   if (process.env.NODE_ENV === "production") return;
-  console.info("[pin-login]", ...args);
+  console.info("[login]", ...args);
 }
 
 function resolveAnonKey() {
   return String(process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || "").trim();
 }
 
-function isLikelyEmail(value = "") {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
-}
+/** Resolve username to the Supabase auth email used for password login. */
+export async function resolveLoginUsername(rawUsername = "") {
+  const username = normalizeSignupUsername(String(rawUsername || "").trim().replace(/^@+/, ""));
+  loginLog("username received", username || "(empty)");
 
-function isLikelyPhone(value = "") {
-  const digits = String(value).replace(/\D/g, "");
-  return digits.length >= 10;
-}
-
-/** Resolve username, email, or phone to the Supabase auth email used for PIN login. */
-export async function resolveLoginIdentifier(rawIdentifier = "") {
-  const received = String(rawIdentifier || "").trim();
-  pinLoginLog("identifier received", received || "(empty)");
-
-  if (!received) {
-    pinLoginLog("normalized identifier", "(empty)");
-    pinLoginLog("matched user?", false);
-    pinLoginLog("profile exists", false);
-    return { email: null, kind: null, normalized: "" };
+  if (!username) {
+    loginLog("matched user?", false);
+    loginLog("profile exists", false);
+    return { email: null, username: "", matched: false, profileExists: false };
   }
 
-  if (isLikelyEmail(received)) {
-    const email = normalizeSignupEmail(received);
-    pinLoginLog("normalized identifier", email);
-    const appUser = await findAppUserIdentity({ email, phone: null });
-    const member = await findMemberProfileByUserKey(email, null);
-    const matched = Boolean(appUser?.email || member?.email);
-    pinLoginLog("matched user?", matched);
-    pinLoginLog("profile exists", Boolean(member?.id));
-    return { email, kind: "email", normalized: email, matched, profileExists: Boolean(member?.id) };
-  }
-
-  if (isLikelyPhone(received)) {
-    const phone = normalizeSignupPhone(received);
-    pinLoginLog("normalized identifier", phone);
-    const email = await findEmailByPhone(phone);
-    const member = email ? await findMemberProfileByUserKey(email, phone) : null;
-    pinLoginLog("matched user?", Boolean(email));
-    pinLoginLog("profile exists", Boolean(member?.id));
-    return {
-      email,
-      kind: "phone",
-      normalized: phone,
-      matched: Boolean(email),
-      profileExists: Boolean(member?.id)
-    };
-  }
-
-  const username = normalizeSignupUsername(received.replace(/^@+/, ""));
-  pinLoginLog("normalized identifier", username);
   const email = await findEmailByUsername(username);
   const member = email ? await findMemberProfileByUserKey(email, null) : null;
-  pinLoginLog("matched user?", Boolean(email));
-  pinLoginLog("profile exists", Boolean(member?.id));
+  loginLog("matched user?", Boolean(email));
+  loginLog("profile exists", Boolean(member?.id));
   return {
     email,
-    kind: "username",
-    normalized: username,
+    username,
     matched: Boolean(email),
     profileExists: Boolean(member?.id)
   };
 }
 
-/** Verify PIN via Supabase password grant (never logs the PIN). */
-export async function verifyLoginPin(email, pin) {
-  const normalizedEmail = normalizeSignupEmail(email);
-  const password = String(pin || "");
-  if (!normalizedEmail || !password) {
-    pinLoginLog("pin compare result", false);
-    return { ok: false, session: null, error: "Missing credentials." };
+/** @deprecated Use resolveLoginUsername — username-only login. */
+export async function resolveLoginIdentifier(rawIdentifier = "") {
+  return resolveLoginUsername(rawIdentifier);
+}
+
+/** Verify password via Supabase password grant (never logs the password). */
+export async function verifyLoginPassword(email, password) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const secret = String(password || "");
+  if (!normalizedEmail || !secret) {
+    loginLog("password compare result", false);
+    return { ok: false, session: null, error: "Invalid username or password." };
   }
 
   const supabaseUrl = resolveSupabaseUrl();
   const anonKey = resolveAnonKey();
   if (!supabaseUrl || !anonKey) {
-    pinLoginLog("pin compare result", false);
+    loginLog("password compare result", false);
     return { ok: false, session: null, error: "Auth is not configured." };
   }
 
@@ -102,16 +62,16 @@ export async function verifyLoginPin(email, pin) {
         apikey: anonKey,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ email: normalizedEmail, password })
+      body: JSON.stringify({ email: normalizedEmail, password: secret })
     });
     const payload = await response.json().catch(() => ({}));
     const ok = response.ok && Boolean(payload?.access_token);
-    pinLoginLog("pin compare result", ok);
+    loginLog("password compare result", ok);
     if (!ok) {
       return {
         ok: false,
         session: null,
-        error: payload?.error_description || payload?.msg || "Invalid credentials."
+        error: "Invalid username or password."
       };
     }
     return {
@@ -127,7 +87,7 @@ export async function verifyLoginPin(email, pin) {
       error: null
     };
   } catch (error) {
-    pinLoginLog("pin compare result", false);
+    loginLog("password compare result", false);
     return {
       ok: false,
       session: null,
@@ -136,17 +96,27 @@ export async function verifyLoginPin(email, pin) {
   }
 }
 
-export async function loginWithIdentifierAndPin(identifier, pin) {
-  const resolved = await resolveLoginIdentifier(identifier);
+/** @deprecated Use verifyLoginPassword */
+export async function verifyLoginPin(email, pin) {
+  return verifyLoginPassword(email, pin);
+}
+
+export async function loginWithUsernameAndPassword(username, password) {
+  const resolved = await resolveLoginUsername(username);
   if (!resolved.email) {
-    return { ok: false, error: "Account not found.", resolved };
+    return { ok: false, error: "Invalid username or password.", resolved };
   }
-  const verified = await verifyLoginPin(resolved.email, pin);
+  const verified = await verifyLoginPassword(resolved.email, password);
   return {
     ok: verified.ok,
     email: resolved.email,
     session: verified.session,
-    error: verified.error,
+    error: verified.ok ? null : verified.error || "Invalid username or password.",
     resolved
   };
+}
+
+/** @deprecated Use loginWithUsernameAndPassword */
+export async function loginWithIdentifierAndPin(identifier, pin) {
+  return loginWithUsernameAndPassword(identifier, pin);
 }

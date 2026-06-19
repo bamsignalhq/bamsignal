@@ -10,8 +10,7 @@ import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/de
 import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "../constants/blockedEmailDomains";
 import { friendlyAuthError, supabase } from "../services/supabase";
 import {
-  resolveLoginEmail,
-  loginWithPin,
+  loginWithPassword,
   checkSignupAvailability,
   checkSignupField,
   requestSignupMathChallenge,
@@ -24,13 +23,11 @@ import { USER_MESSAGES } from "../constants/userMessages";
 import { flowLog } from "../utils/flowLog";
 import { trackEvent } from "../utils/analytics";
 import {
-  emailForUsername,
   formatUsernameInput,
   isLikelyEmail,
   isStrongPin,
   isValidLoginUsername,
   isValidNigerianPhone,
-  isValidPin,
   isValidSignupUsername,
   normalizeNigerianPhone,
   normalizeUsername,
@@ -137,7 +134,7 @@ export function AuthPage({
 }: AuthPageProps) {
   const restored = useRef(restoredSignupState());
   const [busy, setBusy] = useState<string | null>(null);
-  const [loginForm, setLoginForm] = useState({ username: "", pin: "" });
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [signupForm, setSignupForm] = useState(restored.current.signupForm);
   const [signupFieldErrors, setSignupFieldErrors] = useState<SignupFieldErrors>({});
   const [signupFieldChecking, setSignupFieldChecking] = useState<SignupFieldChecking>({});
@@ -398,74 +395,43 @@ export function AuthPage({
   };
 
   const signIn = async () => {
-    const identity = loginForm.username.trim();
-    const identityLower = identity.toLowerCase();
-    const username = normalizeUsername(identity);
-    if (!isValidPin(loginForm.pin)) {
-      onMessage("Enter your PIN.");
+    const username = normalizeUsername(loginForm.username.trim());
+    if (!isValidLoginUsername(username)) {
+      onMessage("Enter a valid username.");
+      return;
+    }
+    if (!loginForm.password) {
+      onMessage("Enter your password.");
       return;
     }
 
     setBusy("login");
     onMessage("");
     try {
-      if (!isLikelyEmail(identityLower) && isValidLoginUsername(username) && matchDemoUser(username, loginForm.pin)) {
+      if (matchDemoUser(username, loginForm.password)) {
         rememberUsernameEmail(DEMO_USER.username, DEMO_USER.profile.email);
         seedDemoMemberProfile();
         await completeAuthenticated(DEMO_USER.profile, { isNewSignup: false });
         return;
       }
 
-      const hasPhoneLogin = isValidNigerianPhone(phoneDigits(identity));
-      if (!isLikelyEmail(identityLower) && !hasPhoneLogin && !isValidLoginUsername(username)) {
-        onMessage("Enter a valid username, email, or phone.");
-        return;
-      }
-
-      const pinResult = await loginWithPin(identity, loginForm.pin);
-      if (pinResult.ok && pinResult.session && supabase) {
+      const loginResult = await loginWithPassword(username, loginForm.password);
+      if (loginResult.ok && loginResult.session && supabase) {
         const { data, error } = await supabase.auth.setSession({
-          access_token: pinResult.session.access_token,
-          refresh_token: pinResult.session.refresh_token
+          access_token: loginResult.session.access_token,
+          refresh_token: loginResult.session.refresh_token
         });
         if (error) throw error;
         const profile = profileFromSessionUser(data.user!);
-        const resolvedEmail = pinResult.email || profile.email;
-        if (!isLikelyEmail(identityLower) && isValidLoginUsername(username) && resolvedEmail) {
+        const resolvedEmail = loginResult.email || profile.email;
+        if (resolvedEmail) {
           rememberUsernameEmail(username, resolvedEmail);
         }
         await finishLoginAfterPassword(profile, { isNewSignup: false });
         return;
       }
 
-      let email: string | null = null;
-      if (isLikelyEmail(identityLower)) {
-        email = identityLower;
-      } else if (hasPhoneLogin) {
-        email = await resolveLoginEmail(identity);
-      } else {
-        email = emailForUsername(username) ?? (await resolveLoginEmail(username));
-      }
-
-      if (supabase && email) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password: loginForm.pin
-        });
-        if (error) throw error;
-        const profile = profileFromSessionUser(data.user!);
-        if (!isLikelyEmail(identityLower) && username) {
-          rememberUsernameEmail(username, email);
-        }
-        await finishLoginAfterPassword(profile, { isNewSignup: false });
-        return;
-      }
-
-      onMessage(
-        pinResult.error?.includes("not found")
-          ? "Account not found. Check your username and PIN."
-          : pinResult.error || "Account not found. Check your username and PIN."
-      );
+      onMessage(loginResult.error || "Invalid username or password.");
     } catch (error) {
       onMessage(friendlyAuthError(error));
     } finally {
@@ -778,12 +744,10 @@ export function AuthPage({
               <p className="auth-sub">Good to have you back ❤️</p>
               <div className="auth-fields">
                 <AuthField
-                  label="Username or email"
+                  label="Username"
                   value={loginForm.username}
                   onChange={(value) => {
-                    const trimmed = value.trim();
-                    const next = trimmed.includes("@") ? trimmed.toLowerCase() : formatUsernameInput(trimmed);
-                    setLoginForm({ ...loginForm, username: next });
+                    setLoginForm({ ...loginForm, username: formatUsernameInput(value.trim()) });
                   }}
                   autoComplete="username"
                   autoCapitalize="none"
@@ -792,11 +756,10 @@ export function AuthPage({
                   className="auth-field--centered"
                 />
                 <AuthField
-                  label="PIN"
-                  value={loginForm.pin}
-                  onChange={(pin) => setLoginForm({ ...loginForm, pin: pinDigits(pin) })}
-                  pin
-                  maxLength={6}
+                  label="Password"
+                  value={loginForm.password}
+                  onChange={(password) => setLoginForm({ ...loginForm, password })}
+                  type="password"
                   autoComplete="current-password"
                 />
               </div>
@@ -805,7 +768,7 @@ export function AuthPage({
               </button>
               <div className="auth-links auth-links--stack">
                 <button type="button" className="auth-link-secondary" onClick={() => onModeChange("reset")}>
-                  Forgot PIN?
+                  Forgot password?
                 </button>
                 <button type="button" className="auth-switch auth-switch--inline" onClick={() => onModeChange("signup")}>
                   <span className="auth-switch__lead">New here?</span>
@@ -1017,7 +980,7 @@ export function AuthPage({
 
           {mode === "reset" && (
             <>
-              <h1 className="auth-title">Reset PIN</h1>
+              <h1 className="auth-title">Reset password</h1>
               <AuthField
                 label="Email"
                 value={resetEmail}
@@ -1028,7 +991,7 @@ export function AuthPage({
                 {busy === "reset" ? <Loader2 className="spin" size={20} /> : "Send link"}
               </button>
               <button type="button" className="auth-switch" onClick={() => onModeChange("login")}>
-                <span className="auth-switch__lead">Remember your PIN?</span>
+                <span className="auth-switch__lead">Remember your password?</span>
                 <span className="auth-switch__action">Back to login</span>
               </button>
             </>

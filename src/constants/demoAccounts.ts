@@ -22,9 +22,9 @@ export const DEMO_ADMIN = {
   password: "ops123"
 };
 
-export function matchDemoUser(username: string, pin: string): boolean {
+export function matchDemoUser(username: string, password: string): boolean {
   if (!import.meta.env.DEV) return false;
-  return username.trim().toLowerCase() === DEMO_USER.username && pin === DEMO_USER.pin;
+  return username.trim().toLowerCase() === DEMO_USER.username && password === DEMO_USER.pin;
 }
 
 export function matchDemoAdmin(email: string, password: string): boolean {

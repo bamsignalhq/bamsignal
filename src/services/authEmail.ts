@@ -238,16 +238,16 @@ export async function verifySignupEmailCode(input: {
   );
 }
 
-/** Resolve username, email, or phone → email for login on fresh installs. */
-export async function resolveLoginEmail(identifier: string): Promise<string | null> {
-  const raw = String(identifier || "").trim();
+/** Resolve username → email for login on fresh installs. */
+export async function resolveLoginEmail(username: string): Promise<string | null> {
+  const raw = String(username || "").trim();
   if (!raw) return null;
 
   try {
     const response = await fetch(apiUrl("/api/member/data?action=resolve-login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier: raw })
+      body: JSON.stringify({ username: raw })
     });
     const payload = await readResponseJson<{ ok?: boolean; email?: string }>(response);
     if (!response.ok || !payload?.ok || !payload.email) return null;
@@ -257,7 +257,7 @@ export async function resolveLoginEmail(identifier: string): Promise<string | nu
   }
 }
 
-type PinLoginResponse = {
+type LoginResponse = {
   ok?: boolean;
   email?: string;
   error?: string;
@@ -271,23 +271,31 @@ type PinLoginResponse = {
   };
 };
 
-/** Server-side identifier resolve + PIN verify (source of truth for login). */
-export async function loginWithPin(
-  identifier: string,
-  pin: string
-): Promise<PinLoginResponse> {
+/** Server-side username resolve + password verify (source of truth for login). */
+export async function loginWithPassword(
+  username: string,
+  password: string
+): Promise<LoginResponse> {
   try {
     const response = await fetch(apiUrl("/api/auth/pin-login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier: identifier.trim(), pin })
+      body: JSON.stringify({ username: username.trim(), password })
     });
-    const payload = await readResponseJson<PinLoginResponse>(response);
+    const payload = await readResponseJson<LoginResponse>(response);
     if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "Login failed." };
+      return { ok: false, error: payload?.error || "Invalid username or password." };
     }
     return payload;
   } catch {
     return { ok: false, error: "Unable to connect. Check your internet and try again." };
   }
+}
+
+/** @deprecated Use loginWithPassword */
+export async function loginWithPin(
+  username: string,
+  password: string
+): Promise<LoginResponse> {
+  return loginWithPassword(username, password);
 }

@@ -86,28 +86,14 @@ export default async function handler(req, res) {
   const body = parseBody(req);
 
   try {
-    if (req.query.action === "resolve-username") {
+    if (req.query.action === "resolve-username" || req.query.action === "resolve-login") {
       if (!requireDatabase(res)) return;
-      const { resolveLoginIdentifier } = await import("../../server/services/pinLogin.js");
+      const { resolveLoginUsername } = await import("../../server/services/pinLogin.js");
       const username = String(body.username || body.identifier || "").trim();
       if (!username) {
         return res.status(400).json({ ok: false, error: "Username is required." });
       }
-      const resolved = await resolveLoginIdentifier(username);
-      if (!resolved.email) {
-        return res.status(404).json({ ok: false, error: "Account not found." });
-      }
-      return res.status(200).json({ ok: true, email: resolved.email });
-    }
-
-    if (req.query.action === "resolve-login") {
-      if (!requireDatabase(res)) return;
-      const { resolveLoginIdentifier } = await import("../../server/services/pinLogin.js");
-      const identifier = String(body.identifier || body.username || body.email || body.phone || "").trim();
-      if (!identifier) {
-        return res.status(400).json({ ok: false, error: "Username, email, or phone is required." });
-      }
-      const resolved = await resolveLoginIdentifier(identifier);
+      const resolved = await resolveLoginUsername(username);
       if (!resolved.email) {
         return res.status(404).json({ ok: false, error: "Account not found." });
       }

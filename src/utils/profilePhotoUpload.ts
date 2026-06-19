@@ -1,14 +1,14 @@
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
-import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
+import { PHOTO_UPLOAD_FAIL, photoModerationUserMessage, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
   mapUploadError,
   uploadCompressedProfileBlob
 } from "../services/profilePhotos";
 import type { PhotoReviewMeta } from "../types";
-import { defaultApprovedPhotoMeta } from "./photoMeta";
 import { blobToDataUrl, validatePhotoFile } from "./photoUpload";
 import { logPhotoPipeline } from "./photoUploadLog";
+import { photoMetaFromUpload } from "./photoUploadResult";
 import { samePhotoRef } from "./photoRefs";
 
 export type ProfilePhotoUploadResult =
@@ -43,11 +43,19 @@ export async function uploadSingleProfilePhotoFile(options: {
     }
 
     logPhotoPipeline("uploading", { signupMode, kind: "profile" });
-    const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file, compressed.mime);
-    logPhotoPipeline("uploaded", { signupMode, kind: "profile" });
+    const uploadResult = await uploadCompressedProfileBlob(compressed.blob, file, compressed.mime);
+    logPhotoPipeline("uploaded", {
+      signupMode,
+      kind: "profile",
+      reviewStatus: uploadResult.reviewStatus || "approved"
+    });
 
-    const meta = defaultApprovedPhotoMeta("profile");
-    return { ok: true, url: remoteUrl, meta };
+    if (uploadResult.moderationRejected) {
+      return { ok: false, message: photoModerationUserMessage(), moderation: true };
+    }
+
+    const meta = photoMetaFromUpload("profile", uploadResult);
+    return { ok: true, url: uploadResult.url, meta };
   } catch (error) {
     const mapped = mapUploadError(error);
     logPhotoPipeline("failed", { code: mapped.code, reason: mapped.message });

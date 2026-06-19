@@ -22,7 +22,7 @@ export type PhotoSafetyScanResult = {
   photoRiskFlags?: PhotoRiskFlag[];
 };
 
-/** Pre-upload scan — upload-first; never hard-blocks (admin review later). */
+/** Pre-upload: never block — technical validation happens in validatePhotoFile only. */
 export function scanPhotoSafetyFast(
   file: File,
   kind: PhotoUploadKind
@@ -32,7 +32,7 @@ export function scanPhotoSafetyFast(
   return { allowed: true, riskScore: 0, photoReviewStatus: "approved", photoRiskFlags: [] };
 }
 
-/** Post-upload assessment — upload-first; always approved for now. */
+/** Post-upload assessment stub — server provider is source of truth after storage upload. */
 export async function scanPhotoSafetyDeep(
   _file: File,
   kind: PhotoUploadKind
@@ -41,23 +41,21 @@ export async function scanPhotoSafetyDeep(
   return { allowed: true, riskScore: 0, photoReviewStatus: "approved", photoRiskFlags: [] };
 }
 
-/** Pre-upload: hard-block only high-confidence filename contact/doc leaks. */
 export async function scanPhotoSafety(
   file: File,
   kind: PhotoUploadKind,
-  _mode: PhotoModerationMode = "warn"
+  _mode: PhotoModerationMode = "upload_first"
 ): Promise<PhotoSafetyScanResult> {
   const fast = scanPhotoSafetyFast(file, kind);
   logPhotoUpload("moderation_fast", {
     kind,
     allowed: fast.allowed,
-    category: fast.category || null,
-    riskScore: fast.riskScore
+    riskScore: fast.riskScore,
+    policy: "upload_first"
   });
   return fast;
 }
 
-/** Post-upload risk assessment — upload-first; flags for admin review. */
 export function logPhotoSafetyRiskAsync(
   file: File,
   kind: PhotoUploadKind,
@@ -69,8 +67,7 @@ export function logPhotoSafetyRiskAsync(
         kind,
         riskScore: result.riskScore,
         photoReviewStatus: result.photoReviewStatus || null,
-        flags: result.photoRiskFlags || [],
-        hardBlock: Boolean(result.hardBlock)
+        flags: result.photoRiskFlags || []
       });
       onResult?.(result);
     })

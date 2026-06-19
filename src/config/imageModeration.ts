@@ -1,20 +1,27 @@
-export type PhotoModerationMode = "warn" | "block";
+export type PhotoModerationMode = "upload_first" | "review" | "strict";
 
-/** Master switch — upload-first: moderation heuristics disabled by default. */
+/** Legacy alias — upload-first is the default production policy. */
+export type LegacyPhotoModerationMode = "warn" | "block";
+
+/** Master switch for optional client-side filename hints (never blocks upload). */
 export function isImageModerationEnabled(): boolean {
   const raw = import.meta.env.VITE_ENABLE_IMAGE_MODERATION;
-  if (raw === undefined || raw === "") return false;
+  if (raw === undefined || raw === "") return true;
   if (raw === "false" || raw === "0") return false;
   return raw === "true" || raw === "1";
 }
 
 /**
- * Upload-first policy — mode is retained for logging only.
- * Weak heuristics never hard-block; only contact/doc filename leaks do.
+ * Client moderation mode — mirrors server PHOTO_MODERATION_MODE.
+ * Upload-first: never block before storage; server decides review status.
  */
 export function getPhotoModerationMode(): PhotoModerationMode {
-  const raw = String(import.meta.env.VITE_PHOTO_MODERATION_MODE || "warn")
+  const raw = String(import.meta.env.VITE_PHOTO_MODERATION_MODE || "upload_first")
     .trim()
     .toLowerCase();
-  return raw === "block" ? "block" : "warn";
+
+  if (raw === "strict") return "strict";
+  if (raw === "review" || raw === "block") return "review";
+  if (raw === "upload_first" || raw === "upload-first" || raw === "warn") return "upload_first";
+  return "upload_first";
 }

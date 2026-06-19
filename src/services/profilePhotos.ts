@@ -1,5 +1,6 @@
 import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
+import type { PhotoReviewStatus, PhotoRiskFlag } from "../types";
 import { apiUrl, supabase } from "./supabase";
 import { STORAGE_KEYS } from "../constants/limits";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
@@ -37,15 +38,26 @@ async function authHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
+export type PhotoUploadResponse = {
+  url: string;
+  photoId?: string;
+  path?: string;
+  reviewStatus?: PhotoReviewStatus;
+  photoRiskFlags?: PhotoRiskFlag[];
+  moderationRejected?: boolean;
+};
+
 async function uploadCompressedBlob(
   kind: "profile" | "cover",
   blob: Blob,
   photoId?: string,
-  mime?: string
-): Promise<{ url: string; photoId?: string; path?: string }> {
+  mime?: string,
+  sourceFilename?: string
+): Promise<PhotoUploadResponse> {
   const imageBase64 = await blobToDataUrl(blob, mime);
   const body: Record<string, string> = { kind, imageBase64 };
   if (photoId) body.photoId = photoId;
+  if (sourceFilename) body.sourceFilename = sourceFilename;
 
   logPhotoPipeline("uploading", { kind, compressedSize: blob.size, photoId: photoId || null, mime: mime || blob.type || null });
 
@@ -62,6 +74,9 @@ async function uploadCompressedBlob(
       error?: string;
       storageUnavailable?: boolean;
       photoId?: string;
+      reviewStatus?: PhotoReviewStatus;
+      photoRiskFlags?: PhotoRiskFlag[];
+      moderationRejected?: boolean;
     }>(response);
 
     if (response.status === 401 && attempt === 0 && supabase) {
@@ -91,11 +106,18 @@ async function uploadCompressedBlob(
       });
     }
 
-    logPhotoPipeline("uploaded", { kind, url: String(payload.url) });
+    logPhotoPipeline("uploaded", {
+      kind,
+      url: String(payload.url),
+      reviewStatus: payload.reviewStatus || "approved"
+    });
     return {
       url: String(payload.url),
       photoId: payload.photoId ? String(payload.photoId) : photoId,
-      path: payload.path ? String(payload.path) : undefined
+      path: payload.path ? String(payload.path) : undefined,
+      reviewStatus: payload.reviewStatus || "approved",
+      photoRiskFlags: Array.isArray(payload.photoRiskFlags) ? payload.photoRiskFlags : [],
+      moderationRejected: Boolean(payload.moderationRejected)
     };
   }
 
@@ -110,7 +132,13 @@ async function uploadWithEmergencyFallback(
   const compressed = await fileToCompressedImageBlob(file, compressOpts);
   const photoId = kind === "profile" ? crypto.randomUUID() : undefined;
   try {
-    const result = await uploadCompressedBlob(kind, compressed.blob, photoId, compressed.mime);
+    const result = await uploadCompressedBlob(
+      kind,
+      compressed.blob,
+      photoId,
+      compressed.mime,
+      file.name
+    );
     return result.url;
   } catch (error) {
     if (
@@ -158,10 +186,15 @@ export async function uploadCompressedProfileBlob(
   blob: Blob,
   fallbackFile?: File,
   mime?: string
-): Promise<string> {
+): Promise<PhotoUploadResponse> {
   try {
-    const result = await uploadCompressedBlob("profile", blob, crypto.randomUUID(), mime);
-    return result.url;
+    return await uploadCompressedBlob(
+      "profile",
+      blob,
+      crypto.randomUUID(),
+      mime,
+      fallbackFile?.name
+    );
   } catch (error) {
     if (
       !import.meta.env.PROD &&
@@ -169,7 +202,11 @@ export async function uploadCompressedProfileBlob(
       error.fallbackAllowed &&
       fallbackFile
     ) {
-      return fileToCompressedDataUrl(fallbackFile);
+      return {
+        url: await fileToCompressedDataUrl(fallbackFile),
+        reviewStatus: "approved",
+        photoRiskFlags: []
+      };
     }
     throw error;
   }
@@ -179,10 +216,9 @@ export async function uploadCompressedCoverBlob(
   blob: Blob,
   fallbackFile?: File,
   mime?: string
-): Promise<{ url: string; path?: string }> {
+): Promise<PhotoUploadResponse> {
   try {
-    const result = await uploadCompressedBlob("cover", blob, undefined, mime);
-    return { url: result.url, path: result.path };
+    return await uploadCompressedBlob("cover", blob, undefined, mime, fallbackFile?.name);
   } catch (error) {
     if (
       !import.meta.env.PROD &&
@@ -190,7 +226,11 @@ export async function uploadCompressedCoverBlob(
       error.fallbackAllowed &&
       fallbackFile
     ) {
-      return { url: await fileToCompressedDataUrl(fallbackFile, { maxEdge: 1280, quality: 0.82 }) };
+      return {
+        url: await fileToCompressedDataUrl(fallbackFile, { maxEdge: 1280, quality: 0.82 }),
+        reviewStatus: "approved",
+        photoRiskFlags: []
+      };
     }
     throw error;
   }

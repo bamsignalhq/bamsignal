@@ -241,10 +241,8 @@ export async function ensurePhotoViolationSchema() {
   );
 }
 
-export function isUnhealthyPhotoSubmission({ photoReviewStatus, photoRiskFlags = [] } = {}) {
-  const status = String(photoReviewStatus || "").trim();
-  if (status === "pending_review" || status === "rejected") return true;
-  return Array.isArray(photoRiskFlags) && photoRiskFlags.length > 0;
+export function isUnhealthyPhotoSubmission({ photoReviewStatus } = {}) {
+  return String(photoReviewStatus || "").trim() === "rejected";
 }
 
 export async function recordPhotoViolation({

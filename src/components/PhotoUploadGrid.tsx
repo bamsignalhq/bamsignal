@@ -115,7 +115,7 @@ export function PhotoUploadGrid({
       main: mainPhotoUrl
     };
 
-    let failCount = 0;
+    let uploadFailCount = 0;
 
     await runWithConcurrency(pendingEntries, UPLOAD_CONCURRENCY, async (entry) => {
       const snapshot = workingRef.current;
@@ -142,19 +142,25 @@ export function PhotoUploadGrid({
         });
         flowLog("photo_upload_ok", { signupMode });
       } else {
-        failCount += 1;
+        if (result.moderation) {
+          onModerationMessage?.(result.message);
+        } else {
+          uploadFailCount += 1;
+        }
         setPending((current) =>
           current.map((item) => (item.key === entry.key ? { ...item, status: "failed" as const } : item))
         );
-        onModerationMessage?.(result.message);
+        if (!result.moderation) {
+          onModerationMessage?.(result.message);
+        }
       }
 
       return result;
     });
 
-    if (failCount > 0) {
+    if (uploadFailCount > 0) {
       onModerationMessage?.(
-        failCount === batch.length ? PHOTO_UPLOAD_FAIL : PHOTO_BATCH_PARTIAL_FAIL
+        uploadFailCount === batch.length ? PHOTO_UPLOAD_FAIL : PHOTO_BATCH_PARTIAL_FAIL
       );
     }
 

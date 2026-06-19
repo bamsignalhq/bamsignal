@@ -6,6 +6,7 @@ import {
   MAX_PROFILE_PHOTOS,
   MIN_PROFILE_PHOTOS,
   PHOTO_UPLOAD_FAIL,
+  photoModerationUserMessage,
   photoUploadUserMessage
 } from "../../constants/photos";
 import {
@@ -15,8 +16,8 @@ import {
   uploadCompressedProfileBlob
 } from "../../services/profilePhotos";
 import type { PhotoReviewMeta } from "../../types";
-import { defaultApprovedPhotoMeta } from "../../utils/photoMeta";
 import { upsertPhotoMeta } from "../../utils/photoMeta";
+import { photoMetaFromUpload } from "../../utils/photoUploadResult";
 import { PHOTO_FILE_ACCEPT, blobToDataUrl, validatePhotoFile } from "../../utils/photoUpload";
 import { logPhotoPipeline } from "../../utils/photoUploadLog";
 import { isStoragePhotoUrl, samePhotoRef } from "../../utils/photoRefs";
@@ -139,8 +140,14 @@ export function ProfilePhotoViewerSheet({
         return;
       }
 
-      const remoteUrl = await uploadCompressedProfileBlob(compressed.blob, file, compressed.mime);
-      const meta = defaultApprovedPhotoMeta("profile");
+      const uploadResult = await uploadCompressedProfileBlob(compressed.blob, file, compressed.mime);
+      if (uploadResult.moderationRejected) {
+        onModerationMessage?.(photoModerationUserMessage());
+        return;
+      }
+
+      const remoteUrl = uploadResult.url;
+      const meta = photoMetaFromUpload("profile", uploadResult);
       const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
 
       const withRemote =

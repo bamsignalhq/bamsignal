@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
-import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
+import { PHOTO_UPLOAD_FAIL, photoModerationUserMessage, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
@@ -7,7 +7,7 @@ import {
   uploadCompressedCoverBlob
 } from "../services/profilePhotos";
 import type { PhotoReviewMeta } from "../types";
-import { defaultApprovedPhotoMeta } from "../utils/photoMeta";
+import { photoMetaFromUpload } from "../utils/photoUploadResult";
 import { PHOTO_FILE_ACCEPT, blobToDataUrl, validatePhotoFile } from "../utils/photoUpload";
 import { logPhotoPipeline } from "../utils/photoUploadLog";
 import { upsertPhotoMeta } from "../utils/photoMeta";
@@ -116,12 +116,22 @@ export function useCoverPhotoFlow({
 
         logPhotoPipeline("uploading", { kind: "cover" });
         const uploadResult = await uploadCompressedCoverBlob(compressed.blob, croppedFile, compressed.mime);
-        logPhotoPipeline("uploaded", { kind: "cover" });
+        logPhotoPipeline("uploaded", {
+          kind: "cover",
+          reviewStatus: uploadResult.reviewStatus || "approved"
+        });
+
+        if (uploadResult.moderationRejected) {
+          setLocalPreview(null);
+          setPendingCover(null);
+          onModerationMessage?.(photoModerationUserMessage());
+          return;
+        }
 
         const remoteUrl = uploadResult.url;
         const remotePath = uploadResult.path;
 
-        const meta = defaultApprovedPhotoMeta("cover");
+        const meta = photoMetaFromUpload("cover", uploadResult);
         const nextMeta = upsertPhotoMeta(priorMeta, remoteUrl, meta);
 
         setLocalPreview(null);

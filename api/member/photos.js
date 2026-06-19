@@ -8,9 +8,59 @@ import {
   uploadProfilePhotoObject,
   PhotoStorageError
 } from "../../server/services/photoStorage.js";
+import { moderatePhoto } from "../../server/services/photoModerationProvider.js";
 import { submitPhotoReview } from "../../server/services/photoReview.js";
 import { recordPhotoViolation } from "../../server/services/moderation.js";
 import { verifySupabaseBearerUserId } from "../../server/supabaseEnv.js";
+
+async function finalizeUploadedPhoto({ userId, kind, result, body }) {
+  const filename = String(body.sourceFilename || body.filename || "").trim();
+  const moderation = await moderatePhoto({
+    imageUrl: result.url,
+    userId,
+    photoType: kind,
+    hints: { filename }
+  });
+
+  const reviewStatus =
+    moderation.decision === "rejected"
+      ? "rejected"
+      : moderation.decision === "pending_review"
+        ? "pending_review"
+        : "approved";
+
+  const parsed = parsePhotoStorageUrl(result.url);
+  if (reviewStatus === "rejected" && parsed) {
+    try {
+      await deletePhotoStorageObject(parsed.bucket, parsed.path);
+    } catch (error) {
+      console.warn("[bamsignal] failed to delete rejected photo:", error);
+    }
+  }
+
+  if (reviewStatus !== "approved") {
+    try {
+      await submitPhotoReview({
+        photoUrl: result.url,
+        photoType: kind,
+        photoReviewStatus: reviewStatus,
+        photoRiskFlags: moderation.flags || [],
+        profileId: body.profileId || null,
+        memberName: body.memberName || null
+      });
+    } catch (error) {
+      console.warn("[bamsignal] photo review enqueue failed:", error);
+    }
+  }
+
+  return {
+    reviewStatus,
+    photoRiskFlags: moderation.flags || [],
+    moderationRejected: reviewStatus === "rejected",
+    moderationConfidence: moderation.confidence ?? 0,
+    moderationProvider: moderation.provider || "manual"
+  };
+}
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -63,7 +113,14 @@ export default async function handler(req, res) {
 
       if (kind === "cover") {
         const result = await uploadCoverPhotoObject({ userId, bytes: buffer, contentType });
-        return res.status(200).json({ ok: true, url: result.url, path: result.path, kind });
+        const moderation = await finalizeUploadedPhoto({ userId, kind, result, body });
+        return res.status(200).json({
+          ok: true,
+          url: result.url,
+          path: result.path,
+          kind,
+          ...moderation
+        });
       }
 
       const result = await uploadProfilePhotoObject({
@@ -72,7 +129,14 @@ export default async function handler(req, res) {
         bytes: buffer,
         contentType
       });
-      return res.status(200).json({ ok: true, url: result.url, photoId: result.photoId, kind });
+      const moderation = await finalizeUploadedPhoto({ userId, kind, result, body });
+      return res.status(200).json({
+        ok: true,
+        url: result.url,
+        photoId: result.photoId,
+        kind,
+        ...moderation
+      });
     }
 
     if (action === "delete") {

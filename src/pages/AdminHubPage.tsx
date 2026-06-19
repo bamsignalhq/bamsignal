@@ -477,9 +477,9 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
           <section className="card admin-command-panel">
             <h3>Photo review</h3>
             <p className="match-prefs-note">
-              Unhealthy uploads are reported here automatically. Delete instantly to remove storage and
-              profile copies. After 3 unhealthy uploads, the member is shadow banned — they can browse
-              and send, but signals and messages do not reach others.
+              Suspicious uploads are queued here automatically. Approve to keep a photo public, or
+              delete to remove it from storage and the member profile. Only rejected uploads count
+              toward the unhealthy-upload limit.
             </p>
             {photoReviewsLoading && <AdminTerminalEmpty>Loading photo review queue…</AdminTerminalEmpty>}
             {!photoReviewsLoading && photoReviews.length === 0 && (

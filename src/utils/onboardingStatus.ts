@@ -18,7 +18,8 @@ const STALE_ONBOARDING_KEYS = [
   "bamsignal_setup_step",
   "bamsignal_onboarding_step",
   "bamsignal_current_step",
-  "bamsignal_profile_draft"
+  "bamsignal_profile_draft",
+  "bamsignal_flow_state"
 ] as const;
 
 export type OnboardingStatusSnapshot = {

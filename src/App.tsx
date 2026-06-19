@@ -50,6 +50,7 @@ import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelp
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
 import { bootstrapMemberSession, hydrateMemberData } from "./services/memberData";
+import { goToApp } from "./services/goToApp";
 import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
@@ -641,13 +642,37 @@ export function App() {
     }
   }, []);
 
-  const enterMemberApp = useCallback(() => {
-    setMemberAppEntered(true);
-    const needsOnboarding = shouldRouteToOnboarding(user, getDatingProfile());
-    if (needsOnboarding) {
+  const enterMemberApp = useCallback(async () => {
+    setMemberHydrating(true);
+    try {
+      const result = await goToApp();
+      if (!result.ok) {
+        openAuth("login");
+        return;
+      }
+
+      setUser(result.user);
+      setIsAuthed(true);
+      setMemberAppEntered(true);
+      setAuthMessage("");
+
+      if (result.route === "home") {
+        clearOnboardingDrafts();
+        setShowOnboarding(false);
+        setTab("home");
+        navigateToPath("/home");
+        flowLog("home_enter", { source: "open_app" });
+        return;
+      }
+
       setShowOnboarding(true);
+      setTab("home");
+      navigateToPath("/home");
+      flowLog("onboarding_start", { source: "open_app" });
+    } finally {
+      setMemberHydrating(false);
     }
-  }, [user]);
+  }, [openAuth]);
 
   const handleAuthenticated = useCallback(
     async (profile: UserProfile, meta?: AuthMeta) => {

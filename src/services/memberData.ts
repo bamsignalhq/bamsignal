@@ -13,7 +13,6 @@ import { mergeMemberCover, safeArray, safePhotos, safeString, isPersistablePhoto
 import { syncMemberProfileRemote } from "./cityHome";
 import {
   clearOnboardingDrafts,
-  isOnboardingFullyComplete,
   logRouteDecision,
   mergeOnboardingCompleteFlag,
   normalizeOnboardingStatus,
@@ -115,14 +114,19 @@ export async function bootstrapMemberSession(
   const repair = await repairOnboardingRemote(user);
   logLoginProfileState(user, repair);
 
-  if (repair?.completed) {
-    applyOnboardingRepairLocal(repair);
+  if (repair?.completed || repair?.nextRoute === "/home") {
+    if (repair) applyOnboardingRepairLocal(repair);
     clearOnboardingDrafts();
     return { hydrated, repair, nextRoute: "home" };
   }
 
+  if (repair) {
+    return { hydrated, repair, nextRoute: "onboarding" };
+  }
+
   const profile = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
-  if (!repair && isOnboardingFullyComplete(profile, user)) {
+  const remoteComplete = normalizeOnboardingStatus(profile).markedComplete;
+  if (remoteComplete) {
     clearOnboardingDrafts();
     return { hydrated, repair, nextRoute: "home" };
   }

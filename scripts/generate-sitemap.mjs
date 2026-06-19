@@ -7,6 +7,7 @@ import {
   SEO_DETAIL_PATHS,
   SEO_HUB_PATHS
 } from "./seo-sitemap-data.mjs";
+import { getNigeriaIndexablePaths } from "./nigeria-sitemap-paths.mjs";
 
 const SITE = "https://bamsignal.com";
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -26,7 +27,16 @@ const pillarSlugs = [
 const citySlugs = cities.map((c) => `/blog/find-love-in-${c}-nigeria`);
 const blogSlugs = [...citySlugs, ...pillarSlugs.map((s) => `/blog/${s}`)];
 
-const staticPaths = ["", "/blog", ...LEGAL_STATIC_PATHS, ...SEO_HUB_PATHS, ...SEO_DETAIL_PATHS];
+const nigeriaPaths = getNigeriaIndexablePaths();
+
+const staticPaths = [
+  "",
+  "/blog",
+  ...LEGAL_STATIC_PATHS,
+  ...SEO_HUB_PATHS,
+  ...SEO_DETAIL_PATHS,
+  ...nigeriaPaths
+];
 
 const lastmod = "2026-06-19";
 
@@ -37,6 +47,9 @@ function priorityFor(path) {
   if (path === "/blog") return "0.9";
   if (SEO_HUB_PATHS.includes(path)) return "0.85";
   if (SEO_DETAIL_PATHS.includes(path)) return "0.8";
+  if (path.startsWith("/nigeria/") && path.split("/").length === 4) return "0.75";
+  if (path.startsWith("/nigeria/") && path.split("/").length === 3) return "0.8";
+  if (path === "/nigeria") return "0.85";
   if (path.startsWith("/blog/find-love")) return "0.85";
   return "0.7";
 }
@@ -65,5 +78,5 @@ ${urls
 writeFileSync(join(root, "public/sitemap.xml"), xml);
 writeFileSync(join(root, "public/robots.txt"), ROBOTS_TXT);
 console.log(
-  `Sitemap written: ${urls.length} URLs (${blogSlugs.length} blog posts, ${SEO_HUB_PATHS.length} SEO hubs, ${SEO_DETAIL_PATHS.length} SEO articles)`
+  `Sitemap written: ${urls.length} URLs (${blogSlugs.length} blog, ${SEO_DETAIL_PATHS.length} SEO articles, ${nigeriaPaths.length} Nigeria locations)`
 );

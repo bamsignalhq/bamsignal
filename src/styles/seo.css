@@ -408,3 +408,72 @@
     padding: 0.5rem 0.75rem;
   }
 }
+
+.seo-tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.seo-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--seo-border);
+  background: var(--seo-surface);
+  font-size: 0.8125rem;
+  color: var(--seo-text);
+  text-decoration: none;
+}
+
+.seo-tag:hover {
+  border-color: var(--seo-accent);
+  color: var(--seo-accent);
+}
+
+.seo-tag--muted {
+  color: var(--seo-muted);
+}
+
+.seo-card-grid--compact {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.seo-bullet-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #334155;
+  line-height: 1.65;
+}
+
+.seo-bullet-list li + li {
+  margin-top: 0.35rem;
+}
+
+.seo-resource-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.seo-resource-list li + li {
+  margin-top: 0.5rem;
+}
+
+.seo-resource-list a,
+.seo-resource-link {
+  color: var(--seo-accent);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.seo-resource-list a:hover,
+.seo-resource-link:hover {
+  text-decoration: underline;
+}
+
+.seo-nigeria .seo-index__hero h1,
+.seo-nigeria .seo-article__header h1 {
+  max-width: 18ch;
+}

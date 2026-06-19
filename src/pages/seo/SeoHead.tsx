@@ -13,7 +13,8 @@ export function SeoHead({
   ogDescription,
   ogType,
   ogImage,
-  jsonLd
+  jsonLd,
+  noindex
 }: SeoHeadProps) {
   useEffect(() => {
     applySeoHead({
@@ -25,7 +26,8 @@ export function SeoHead({
       ogDescription,
       ogType,
       ogImage,
-      jsonLd
+      jsonLd,
+      noindex
     });
   }, [
     title,
@@ -36,7 +38,8 @@ export function SeoHead({
     ogDescription,
     ogType,
     ogImage,
-    jsonLd
+    jsonLd,
+    noindex
   ]);
 
   return null;

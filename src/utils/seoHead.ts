@@ -10,6 +10,7 @@ export type SeoHeadInput = {
   ogType?: string;
   ogImage?: string;
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  noindex?: boolean;
 };
 
 function upsertMeta(name: string, content: string, property = false) {
@@ -57,6 +58,15 @@ export function applySeoHead(input: SeoHeadInput, jsonLdScriptId = "seo-jsonld")
   upsertMeta("twitter:card", "summary_large_image");
   upsertMeta("twitter:title", input.ogTitle ?? pageTitle);
   upsertMeta("twitter:description", input.ogDescription ?? input.description);
+
+  if (input.noindex) {
+    upsertMeta("robots", "noindex, follow");
+  } else {
+    const robots = document.querySelector('meta[name="robots"]');
+    if (robots?.getAttribute("content") === "noindex, follow") {
+      robots.remove();
+    }
+  }
 
   removeJsonLdScript(jsonLdScriptId);
   if (input.jsonLd) {

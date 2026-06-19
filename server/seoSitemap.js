@@ -4,6 +4,7 @@ import {
   SEO_DETAIL_PATHS,
   SEO_HUB_PATHS
 } from "../scripts/seo-sitemap-data.mjs";
+import { getNigeriaIndexablePaths } from "../scripts/nigeria-sitemap-paths.mjs";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,6 +38,9 @@ function priorityFor(path) {
   if (path === "/blog") return "0.9";
   if (SEO_HUB_PATHS.includes(path)) return "0.85";
   if (SEO_DETAIL_PATHS.includes(path)) return "0.8";
+  if (path.startsWith("/nigeria/") && path.split("/").length === 4) return "0.75";
+  if (path.startsWith("/nigeria/") && path.split("/").length === 3) return "0.8";
+  if (path === "/nigeria") return "0.85";
   if (path.startsWith("/blog/find-love")) return "0.85";
   return "0.7";
 }
@@ -48,7 +52,15 @@ function changefreqFor(path) {
 
 export function buildSitemapXml() {
   const blogSlugs = loadBlogPaths();
-  const staticPaths = ["", "/blog", ...LEGAL_STATIC_PATHS, ...SEO_HUB_PATHS, ...SEO_DETAIL_PATHS];
+  const nigeriaPaths = getNigeriaIndexablePaths();
+  const staticPaths = [
+    "",
+    "/blog",
+    ...LEGAL_STATIC_PATHS,
+    ...SEO_HUB_PATHS,
+    ...SEO_DETAIL_PATHS,
+    ...nigeriaPaths
+  ];
   const urls = [...staticPaths, ...blogSlugs];
 
   return `<?xml version="1.0" encoding="UTF-8"?>

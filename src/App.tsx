@@ -81,6 +81,7 @@ import { BlogIndexPage } from "./pages/BlogIndexPage";
 import { BlogPostPage } from "./pages/BlogPostPage";
 import { SeoLayout } from "./pages/seo/SeoLayout";
 import { SeoRouter } from "./pages/seo/SeoRouter";
+import { NigeriaLocationRouter } from "./pages/seo/NigeriaLocationRouter";
 import { MomentPage } from "./pages/MomentPage";
 import { getBlogPost } from "./data/blogPosts";
 import { getMomentPage, type MomentPageId } from "./data/momentPages";
@@ -109,6 +110,7 @@ import {
 } from "./constants/routes";
 import { getLegalPath, type LegalPath } from "./constants/footer";
 import { getSeoRoute, type SeoRoute } from "./constants/seoRoutes";
+import { getNigeriaRoute, type NigeriaRoute } from "./constants/nigeriaRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
@@ -162,6 +164,7 @@ export function App() {
   const [tab, setTab] = useState<NavTab>("home");
   const [legalPath, setLegalPath] = useState<LegalPath | null>(() => getLegalPath());
   const [seoRoute, setSeoRoute] = useState<SeoRoute | null>(() => getSeoRoute());
+  const [nigeriaRoute, setNigeriaRoute] = useState<NigeriaRoute | null>(() => getNigeriaRoute());
   const [authPath, setAuthPath] = useState<AuthPath | null>(() => getAuthPath());
   const [blogSlug, setBlogSlug] = useState<string | null>(() => getBlogSlug());
   const [momentSlug, setMomentSlug] = useState<string | null>(() => getMomentSlug());
@@ -286,6 +289,7 @@ export function App() {
       redirectAuthSignupAliases();
       setLegalPath(getLegalPath());
       setSeoRoute(getSeoRoute());
+      setNigeriaRoute(getNigeriaRoute());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());
       setMomentSlug(getMomentSlug());
@@ -1349,6 +1353,20 @@ export function App() {
           ) : (
             <BlogIndexPage onSignup={() => openAuth("signup", "discover")} />
           )}
+        </SeoLayout>
+      </div>
+    );
+  }
+
+  if (nigeriaRoute) {
+    return (
+      <div className={`app ${theme} platform-root`}>
+        <SeoLayout
+          onLogoClick={goHome}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup", "discover")}
+        >
+          <NigeriaLocationRouter route={nigeriaRoute} />
         </SeoLayout>
       </div>
     );

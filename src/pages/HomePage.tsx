@@ -21,6 +21,7 @@ import {
   advancedFromMatchPreferences,
   homeHasCustomFilters
 } from "../utils/homeFilters";
+import { normalizePath } from "../constants/routes";
 import { getDatingProfile, normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
 import { readJson } from "../utils/storage";
 import { useAndroidBack } from "../hooks/useAndroidBack";
@@ -34,6 +35,16 @@ type HomePageProps = {
 };
 
 export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium }: HomePageProps) {
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (normalizePath(window.location.pathname) !== "/home") {
+      console.warn("[route-bug] HomePage mounted outside /home", window.location.pathname);
+    }
+    if (document.querySelector(".app-main--onboarding")) {
+      console.warn("[route-bug] Onboarding attempted inside /home");
+    }
+  }, []);
+
   const firstName = firstNameFromDisplayName(userName || user.name);
   const viewer = normalizeDatingProfile(getDatingProfile());
   const prefs = normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));

@@ -98,6 +98,7 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
 
 const MEMBER_APP_PATHS = [
   "/home",
+  "/onboarding",
   "/discover",
   "/chats",
   "/signals",

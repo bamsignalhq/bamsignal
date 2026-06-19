@@ -121,6 +121,13 @@ import { clearOnboardingDrafts, logRouteDecision, shouldRouteToOnboarding } from
 import { repairMemberCaches } from "./utils/repairMemberCaches";
 import { memberFirstName } from "./utils/safeProfile";
 import { MemberRouteBoundary, PublicRouteBoundary } from "./components/RouteErrorBoundary";
+import { evaluateMemberRouteGuard } from "./components/MemberRouteGuard";
+import {
+  isMemberAppPath,
+  isOnboardingPath,
+  memberPathForTab,
+  memberTabFromPath
+} from "./constants/memberRoutes";
 import {
   applySafeModeBoot,
   clearSafeMode,
@@ -157,7 +164,14 @@ export function App() {
   const [showBlogIndex, setShowBlogIndex] = useState(() => isBlogIndex());
   const [showAdminAuth, setShowAdminAuth] = useState(() => isAdminAuthRoute());
   const [showAdminHub, setShowAdminHub] = useState(() => isAdminHubRoute() && !isAdminAuthRoute());
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(() =>
+    typeof window !== "undefined" && requiresMemberRestoreBlocking(window.location.pathname, isNative)
+      ? null
+      : false
+  );
+  const [memberPathname, setMemberPathname] = useState(() =>
+    typeof window !== "undefined" ? normalizePath(window.location.pathname) : "/"
+  );
   const [complianceTick, setComplianceTick] = useState(0);
   const [pendingTab, setPendingTab] = useState<NavTab | null>(null);
   const [isAuthed, setIsAuthed] = useState(false);
@@ -184,26 +198,29 @@ export function App() {
 
   const isGuest = !isAuthed;
   const isPublicHome = !isNative && normalizePath(window.location.pathname) === "/";
+  const isOnboardingRoute = isOnboardingPath(memberPathname);
   const showMarketingHome =
-    isPublicHome && (!isAuthed || !memberAppEntered) && !showOnboarding;
+    isPublicHome && (!isAuthed || !memberAppEntered) && !isOnboardingRoute;
   const showGuestChrome = isGuest || showMarketingHome;
   void complianceTick;
   const showComplianceGate =
     isAuthed &&
     memberAppEntered &&
-    !showOnboarding &&
+    !isOnboardingRoute &&
+    profileComplete === true &&
     shouldBlockForCompliance(getDatingProfile().compliance);
   const complianceSyncPending = hasComplianceSyncPending();
-  const memberAccessReady = isAuthed && memberAppEntered && !showOnboarding && !showComplianceGate;
+  const memberAccessReady =
+    isAuthed && memberAppEntered && profileComplete === true && !showComplianceGate;
 
   useEffect(() => {
     if (!isAuthed) return;
     logComplianceRoute({
-      route: showOnboarding ? "onboarding" : showComplianceGate ? "compliance" : "home",
+      route: isOnboardingRoute ? "onboarding" : showComplianceGate ? "compliance" : "home",
       phase: complianceGatePhase(getDatingProfile().compliance),
       syncPending: complianceSyncPending
     });
-  }, [complianceSyncPending, isAuthed, showComplianceGate, showOnboarding, complianceTick]);
+  }, [complianceSyncPending, isAuthed, showComplianceGate, isOnboardingRoute, complianceTick]);
 
   useEffect(() => {
     if (!isAuthed || !complianceSyncPending) return;
@@ -257,6 +274,10 @@ export function App() {
 
   useEffect(() => {
     const syncRoute = () => {
+      const path = normalizePath(window.location.pathname);
+      setMemberPathname(path);
+      const fromMemberTab = memberTabFromPath(path);
+      if (fromMemberTab) setTab(fromMemberTab);
       redirectLegacyConsolePaths();
       redirectAuthSignupAliases();
       setLegalPath(getLegalPath());
@@ -282,6 +303,24 @@ export function App() {
     syncRoute();
     return () => window.removeEventListener("popstate", syncRoute);
   }, [isNative]);
+
+  useEffect(() => {
+    if (!isMemberAppPath(memberPathname)) return;
+    const guard = evaluateMemberRouteGuard({
+      authLoading,
+      memberHydrating,
+      isAuthed,
+      profileComplete,
+      pathname: memberPathname
+    });
+    if (
+      (guard.phase === "redirect" || guard.phase === "unauthenticated") &&
+      guard.redirectTo &&
+      normalizePath(memberPathname) !== normalizePath(guard.redirectTo)
+    ) {
+      navigateToPath(guard.redirectTo, true);
+    }
+  }, [authLoading, memberHydrating, isAuthed, profileComplete, memberPathname]);
 
   useEffect(() => {
     if (!isNative && isPublicWebRoute()) {
@@ -359,8 +398,11 @@ export function App() {
     flowLog("profile_hydrate", { ok: session.hydrated, repair: session.repair?.repaired });
     const datingProfile = getDatingProfile();
     const needsOnboarding = session.nextRoute === "onboarding";
+    setProfileComplete(!needsOnboarding);
     if (blocking || memberAppEntered || !isPublicWebRoute()) {
-      setShowOnboarding(needsOnboarding);
+      if (isMemberAppPath() || requiresMemberRestoreBlocking(window.location.pathname, isNative)) {
+        navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
+      }
     }
     logRouteDecision(merged, datingProfile, needsOnboarding ? "onboarding" : "home", {
       source: "session_restore",
@@ -587,7 +629,7 @@ export function App() {
       window.dispatchEvent(backEvent);
       if (backEvent.defaultPrevented) return;
 
-      if (showOnboarding) return;
+      if (isOnboardingRoute) return;
       if (pricingOpen) {
         setPricingOpen(false);
         return;
@@ -620,7 +662,7 @@ export function App() {
     return () => {
       void listener.then((handle) => handle.remove());
     };
-  }, [isNative, showOnboarding, pricingOpen, notificationsOpen, memberOverlay, legalPath, authPath, tab]);
+  }, [isNative, isOnboardingRoute, pricingOpen, notificationsOpen, memberOverlay, legalPath, authPath, tab]);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
@@ -658,16 +700,16 @@ export function App() {
 
       if (result.route === "home") {
         clearOnboardingDrafts();
-        setShowOnboarding(false);
+        setProfileComplete(true);
         setTab("home");
         navigateToPath("/home");
         flowLog("home_enter", { source: "open_app" });
         return;
       }
 
-      setShowOnboarding(true);
+      setProfileComplete(false);
       setTab("home");
-      navigateToPath("/home");
+      navigateToPath("/onboarding");
       flowLog("onboarding_start", { source: "open_app" });
     } finally {
       setMemberHydrating(false);
@@ -734,21 +776,23 @@ export function App() {
         needsOnboarding ? Boolean(premium.isPremium) : premium.isPremium || isPremiumTrialActive()
       );
       if (getAuthPath() || isPublicWebRoute()) {
-        navigateToPath("/home");
+        navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
         setAuthPath(null);
       }
+      setProfileComplete(!needsOnboarding);
       if (needsOnboarding) {
-        setShowOnboarding(true);
         setPendingTab(null);
         flowLog("onboarding_start");
         setMemberHydrating(false);
         return;
       }
       clearOnboardingDrafts();
-      setShowOnboarding(false);
       if (pendingTab) {
         setTab(pendingTab);
         setPendingTab(null);
+        if (memberAppEntered) {
+          navigateToPath(memberPathForTab(pendingTab), true);
+        }
       } else {
         setTab("home");
       }
@@ -851,7 +895,12 @@ export function App() {
           !isPublicWebRoute();
         void bootstrapMemberSession(profile).then((sessionResult) => {
           if (onMemberSurface) {
-            setShowOnboarding(sessionResult.nextRoute === "onboarding");
+            setProfileComplete(sessionResult.nextRoute === "home");
+            if (sessionResult.nextRoute === "onboarding" && !isOnboardingPath()) {
+              navigateToPath("/onboarding", true);
+            } else if (sessionResult.nextRoute === "home" && isOnboardingPath()) {
+              navigateToPath("/home", true);
+            }
           }
           if (sessionResult.nextRoute === "home") clearOnboardingDrafts();
         });
@@ -883,7 +932,7 @@ export function App() {
             clearMemberSessionCaches();
             setIsAuthed(false);
             setMemberAppEntered(isNative);
-            setShowOnboarding(false);
+            setProfileComplete(false);
             setIsPremium(false);
             setUser({ name: "", email: "", phone: "" });
             setTab("home");
@@ -899,7 +948,7 @@ export function App() {
         }
         clearMemberSessionCaches();
         setIsAuthed(false);
-        setShowOnboarding(false);
+        setProfileComplete(false);
         setIsPremium(false);
         setUser({ name: "", email: "", phone: "" });
         setTab("home");
@@ -920,10 +969,10 @@ export function App() {
     const profile = getDatingProfile();
     const needsOnboarding = shouldRouteToOnboarding(user, profile);
     logRouteDecision(user, profile, needsOnboarding ? "onboarding" : "home", { source: "auth_path_guard" });
-    navigateToPath("/");
+    navigateToPath(needsOnboarding ? "/onboarding" : "/");
     setAuthPath(null);
     if (needsOnboarding) {
-      setShowOnboarding(true);
+      setProfileComplete(false);
     }
   }, [authLoading, memberHydrating, isAuthed, authPath, user]);
 
@@ -933,9 +982,10 @@ export function App() {
 
   const finishOnboarding = useCallback(() => {
     setMemberAppEntered(true);
-    setShowOnboarding(false);
+    setProfileComplete(true);
     clearOnboardingDrafts();
     setTab("home");
+    navigateToPath("/home", true);
     void refreshPremiumStatus(user).then((premium) => {
       const trialActive = isPremiumTrialActive();
       setIsPremium(premium.isPremium || trialActive);
@@ -949,7 +999,7 @@ export function App() {
     clearMemberSessionCaches();
     setIsAuthed(false);
     setMemberAppEntered(isNative);
-    setShowOnboarding(false);
+    setProfileComplete(false);
     setIsPremium(false);
     setPaymentLoading(false);
     setPricingOpen(false);
@@ -979,8 +1029,11 @@ export function App() {
       }
       setMemberOverlay(null);
       setTab(next);
+      if (isAuthed && memberAppEntered && profileComplete === true) {
+        navigateToPath(memberPathForTab(next));
+      }
     },
-    [enterMemberApp, isAuthed, memberAppEntered, showMarketingHome]
+    [enterMemberApp, isAuthed, memberAppEntered, showMarketingHome, profileComplete]
   );
 
   const handleNotificationOpen = useCallback(
@@ -1193,8 +1246,20 @@ export function App() {
     );
   }
 
+  const memberRouteGuard = isMemberAppPath(memberPathname)
+    ? evaluateMemberRouteGuard({
+        authLoading,
+        memberHydrating,
+        isAuthed,
+        profileComplete,
+        pathname: memberPathname
+      })
+    : null;
+
   const shouldBlockForAuthRestore =
-    requiresMemberRestoreBlocking(window.location.pathname, isNative) && (authLoading || memberHydrating);
+    memberRouteGuard?.phase === "loading" ||
+    (requiresMemberRestoreBlocking(window.location.pathname, isNative) &&
+      (authLoading || memberHydrating));
 
   if (shouldBlockForAuthRestore) {
     return (
@@ -1351,7 +1416,7 @@ export function App() {
       <div
         className="platform-shell"
       >
-        {!showOnboarding && !showComplianceGate && (
+        {!isOnboardingRoute && !showComplianceGate && (
           <TopNav
             theme={theme}
             onToggleTheme={toggleTheme}
@@ -1426,7 +1491,7 @@ export function App() {
             showMarketingHome
               ? "app-main--experience"
               : isAuthed
-                ? showOnboarding
+                ? isOnboardingRoute
                   ? "app-main--onboarding"
                   : showComplianceGate
                     ? "app-main--compliance"
@@ -1434,7 +1499,7 @@ export function App() {
                 : "app-main--experience"
           }`}
         >
-          {isAuthed && showOnboarding && memberAppEntered && (
+          {isAuthed && memberAppEntered && isOnboardingRoute && profileComplete === false && (
             <MemberRouteBoundary name="onboarding">
               <OnboardingPage user={user} onUserChange={setUser} onComplete={finishOnboarding} />
             </MemberRouteBoundary>
@@ -1474,7 +1539,7 @@ export function App() {
               }}
             />
           )}
-          {memberAccessReady && !memberOverlay && tab === "home" && (
+          {memberAccessReady && !memberOverlay && tab === "home" && memberPathname === "/home" && (
             <MemberRouteBoundary name="home">
               <HomePage
                 user={user}
@@ -1485,7 +1550,7 @@ export function App() {
               />
             </MemberRouteBoundary>
           )}
-          {showMarketingHome && tab === "home" && !showOnboarding && (
+          {showMarketingHome && tab === "home" && !isOnboardingRoute && (
             <PublicRouteBoundary name="landing">
               <LandingPage
                 onSignup={() => openAuth("signup")}
@@ -1551,7 +1616,10 @@ export function App() {
                 onUserChange={setUser}
                 onLogout={handleLogout}
                 onUpgrade={startPremiumCheckout}
-                onReturnToDashboard={() => setTab("home")}
+                onReturnToDashboard={() => {
+                  setTab("home");
+                  navigateToPath("/home");
+                }}
                 onOpenSafetyCenter={() => setMemberOverlay("safety")}
                 onPurchaseBoost={(product) => void handlePurchaseBoost(product)}
                 boostCheckoutLoading={paymentLoading}
@@ -1560,7 +1628,7 @@ export function App() {
           )}
         </main>
 
-        {!isNative && isGuest && !showOnboarding && tab !== "home" && (
+        {!isNative && isGuest && !isOnboardingRoute && tab !== "home" && (
           <SiteFooter className="site-footer--compact" onLogoClick={goHome} />
         )}
       </div>
@@ -1569,7 +1637,7 @@ export function App() {
         <ComplianceGateModal user={user} onComplete={() => setComplianceTick((tick) => tick + 1)} />
       )}
 
-      {!showOnboarding && !showComplianceGate && (
+      {!isOnboardingRoute && !showComplianceGate && (
         <BottomNav
           active={tab}
           onNavigate={navigateTab}

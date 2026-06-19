@@ -120,21 +120,32 @@ export async function bootstrapMemberSession(
     return { hydrated, repair, nextRoute: "home" };
   }
 
-  if (repair) {
+  if (repair && !repair.completed) {
     return { hydrated, repair, nextRoute: "onboarding" };
   }
 
-  const profile = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
+  const profile = getDatingProfile();
   const remoteComplete = normalizeOnboardingStatus(profile).markedComplete;
   if (remoteComplete) {
     clearOnboardingDrafts();
     return { hydrated, repair, nextRoute: "home" };
   }
 
+  const { profile: repairedProfile, repaired } = repairCompletedProfile(profile, user);
+  if (repaired) {
+    writeJson(STORAGE_KEYS.datingProfile, repairedProfile);
+    clearOnboardingDrafts();
+    return { hydrated, repair, nextRoute: "home" };
+  }
+
+  if (!hydrated) {
+    return { hydrated, repair, nextRoute: "onboarding" };
+  }
+
   return {
     hydrated,
     repair,
-    nextRoute: "onboarding"
+    nextRoute: shouldRouteToOnboarding(user, repairedProfile) ? "onboarding" : "home"
   };
 }
 

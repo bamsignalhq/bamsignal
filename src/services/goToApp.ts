@@ -11,7 +11,7 @@ export type GoToAppResult =
   | { ok: false; route: "login" };
 
 /** Authoritative entry from public homepage — session + server hydrate/repair, never local drafts. */
-export async function goToApp(): Promise<GoToAppResult> {
+export async function goToApp(options?: { forceOnboarding?: boolean }): Promise<GoToAppResult> {
   if (!supabase) {
     return { ok: false, route: "login" };
   }
@@ -30,7 +30,9 @@ export async function goToApp(): Promise<GoToAppResult> {
     phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
   };
 
-  const sessionResult = await bootstrapMemberSession(user);
+  const sessionResult = await bootstrapMemberSession(user, {
+    forceOnboarding: options?.forceOnboarding
+  });
   const rawProfile = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
 
   logRouteDecision(user, rawProfile, sessionResult.nextRoute, {

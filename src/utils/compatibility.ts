@@ -270,8 +270,14 @@ export function matchesPreferences(candidate: DiscoverProfile, prefs: MatchPrefe
   const candidateIntents = safeArray<IntentTag>(candidate.intents);
   if (prefs.intents.length && !candidateIntents.some((i) => prefs.intents.includes(i))) return false;
   if (prefs.religions.length && candidate.religion && !prefs.religions.includes(candidate.religion)) return false;
-  if (prefs.ethnicities.length && candidate.ethnicity && !prefs.ethnicities.includes(candidate.ethnicity))
-    return false;
+  if (prefs.ethnicities.length) {
+    const candidateTribes = candidate.ethnicities?.length
+      ? candidate.ethnicities
+      : candidate.ethnicity
+        ? [candidate.ethnicity]
+        : [];
+    if (candidateTribes.length && !candidateTribes.some((tribe) => prefs.ethnicities.includes(tribe))) return false;
+  }
   if (prefs.lifestyles.length) {
     const candidateTraits = profileLifestyleTraits(candidate);
     if (

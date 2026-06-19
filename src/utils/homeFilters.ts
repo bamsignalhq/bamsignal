@@ -1,5 +1,5 @@
 import { intentDisplay } from "../constants/intents";
-import { relationshipIntentionsToSearchIntents } from "../constants/profileOptions";
+import { relationshipIntentionsToSearchIntents, normalizeEthnicities, normalizeFaithList } from "../constants/profileOptions";
 import type {
   DiscoverProfile,
   EthnicBackground,
@@ -72,8 +72,8 @@ export function homeAdvancedToSearchFilters(filters: HomeAdvancedFilters) {
 export function advancedFromMatchPreferences(prefs: MatchPreferences): HomeAdvancedFilters {
   const kids: KidsPreference[] = prefs.kidsPreferences ?? [];
   return {
-    tribes: prefs.ethnicities ?? [],
-    religions: prefs.religions ?? [],
+    tribes: normalizeEthnicities(prefs.ethnicities ?? []),
+    religions: normalizeFaithList(prefs.religions ?? []),
     occupations: prefs.occupations ?? [],
     statesOfOrigin: prefs.statesOfOrigin ?? [],
     relationshipIntentions: prefs.relationshipIntentions ?? [],

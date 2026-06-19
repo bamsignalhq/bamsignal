@@ -1043,7 +1043,7 @@
 .tap-select-sheet__panel {
   position: relative;
   width: min(100%, 520px);
-  max-height: min(78vh, 640px);
+  max-height: 75vh;
   border-radius: 20px 20px 0 0;
   background: var(--card);
   box-shadow: var(--shadow-soft);
@@ -1058,6 +1058,13 @@
   justify-content: space-between;
   padding: 16px 18px;
   border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--card);
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .tap-select-sheet__head h3 {
@@ -1083,14 +1090,51 @@
   border: none;
   background: transparent;
   color: var(--brand-pink);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.92rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tap-select-sheet__group {
+  margin-bottom: 14px;
+}
+
+.tap-select-sheet__group:last-child {
+  margin-bottom: 0;
+}
+
+.tap-select-sheet__group-title {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.tap-select-sheet__group-options {
+  margin-bottom: 0;
+}
+
+.tap-select-sheet__options .intent-tag {
+  min-height: 34px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .tap-select-sheet__options {
   padding: 14px 16px 24px;
   overflow-y: auto;
   margin-bottom: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .onboarding-age-gender-row {

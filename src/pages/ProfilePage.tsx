@@ -11,6 +11,7 @@ import {
   citiesForState,
   cityBelongsToState,
   NIGERIAN_STATES,
+  normalizeEthnicities,
   normalizeLifestyleTraits,
   stateDisplayLabel
 } from "../constants/profileOptions";
@@ -109,8 +110,9 @@ function voiceHint(url?: string): string {
 }
 
 function detailsHint(profile: DatingProfile): string {
+  const tribes = normalizeEthnicities(profile.ethnicities, profile.ethnicity);
   const count = [
-    profile.ethnicity,
+    tribes[0],
     profile.religion,
     profile.occupation,
     profile.stateOfOrigin,
@@ -694,8 +696,15 @@ export function ProfilePage({
           >
             <p className="profile-form-row__hint">Optional — helps the right people find you.</p>
             <MatchPreferenceFields
-              tribe={profile.ethnicity}
-              onTribeChange={(ethnicity) => setProfile({ ...profile, ethnicity })}
+              tribes={normalizeEthnicities(profile.ethnicities, profile.ethnicity)}
+              onTribesChange={(ethnicities) => {
+                const normalized = normalizeEthnicities(ethnicities);
+                setProfile({
+                  ...profile,
+                  ethnicities: normalized,
+                  ethnicity: normalized[0]
+                });
+              }}
               faith={profile.religion}
               onFaithChange={(religion) => setProfile({ ...profile, religion })}
               lifestyles={

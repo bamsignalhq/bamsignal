@@ -169,12 +169,108 @@ export type HasKidsOption = (typeof HAS_KIDS_OPTIONS)[number];
 export type WantsKidsOption = (typeof WANTS_KIDS_OPTIONS)[number];
 
 /** Optional filter picklists — same values, excluding "Prefer not to say" for filters */
-export const FILTER_RELIGIONS = RELIGIONS.filter((r) => r !== "Prefer not to say");
+export const FAITH_OPTIONS = ["Christian", "Muslim", "Traditional", "Other"] as const satisfies readonly Religion[];
+
+export const FILTER_RELIGIONS = FAITH_OPTIONS;
 export const FILTER_ETHNICITIES = ETHNIC_BACKGROUNDS.filter((e) => e !== "Prefer not to say");
 export const FILTER_LIFESTYLES = SOCIAL_LIFESTYLES.filter((l) => l !== "Prefer not to say");
 
 export const MAX_LIFESTYLE_TRAITS = 3;
 export const LIFESTYLE_TRAITS_LIMIT_MESSAGE = "Choose up to 3 lifestyle traits.";
+
+export const MAX_TRIBE_SELECTIONS = 3;
+export const TRIBE_SELECTION_LIMIT_MESSAGE = "Choose up to 3 tribes.";
+
+export type TapSelectGroup<T extends string = EthnicBackground> = {
+  title: string;
+  options: readonly T[];
+};
+
+export const TRIBE_GROUP_SECTIONS: TapSelectGroup[] = [
+  {
+    title: "Major groups",
+    options: ["Igbo", "Yoruba", "Hausa", "Fulani", "Hausa-Fulani", "Ijaw", "Edo"]
+  },
+  {
+    title: "South South",
+    options: ["Ibibio", "Efik", "Urhobo", "Isoko", "Itsekiri", "Ogoni", "Kalabari"]
+  },
+  {
+    title: "Middle Belt",
+    options: [
+      "Tiv",
+      "Idoma",
+      "Ebira",
+      "Nupe",
+      "Gwari",
+      "Berom",
+      "Jukun",
+      "Tarok",
+      "Bachama",
+      "Kataf",
+      "Koro",
+      "Kuteb"
+    ]
+  },
+  {
+    title: "North",
+    options: ["Kanuri", "Angas", "Gbagyi", "Mumuye", "Ron", "Bura", "Kambari", "Margi"]
+  },
+  {
+    title: "Others",
+    options: [
+      "Igala",
+      "Egun",
+      "Ekoi",
+      "Igede",
+      "Ikwerre",
+      "Chokwe",
+      "Mada",
+      "Ndola",
+      "Ogori",
+      "Okun",
+      "Ukwuani",
+      "Other"
+    ]
+  }
+];
+
+export const FILTER_TRIBE_OPTIONS = TRIBE_GROUP_SECTIONS.flatMap((group) => group.options);
+
+const FAITH_OPTION_SET = new Set<Religion>(FAITH_OPTIONS);
+const TRIBE_OPTION_SET = new Set<EthnicBackground>(FILTER_ETHNICITIES);
+
+/** Profile / filter faith — single value; legacy arrays use first entry only. */
+export function normalizeFaith(value: unknown): Religion | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== "string" || raw === "Prefer not to say") return undefined;
+  return FAITH_OPTION_SET.has(raw as Religion) ? (raw as Religion) : undefined;
+}
+
+/** Match / search faith filters — at most one religion. */
+export function normalizeFaithList(values: unknown): Religion[] {
+  const faith = normalizeFaith(values);
+  return faith ? [faith] : [];
+}
+
+/** Profile / filter tribes — dedupe and cap at MAX_TRIBE_SELECTIONS. */
+export function normalizeEthnicities(values: unknown, legacySingle?: unknown): EthnicBackground[] {
+  const seen = new Set<EthnicBackground>();
+  const out: EthnicBackground[] = [];
+  const list = Array.isArray(values) ? values : values != null ? [values] : [];
+  const sources =
+    list.length > 0 ? list : legacySingle != null && legacySingle !== "" ? [legacySingle] : [];
+
+  for (const raw of sources) {
+    if (typeof raw !== "string" || raw === "Prefer not to say") continue;
+    const value = raw as EthnicBackground;
+    if (!TRIBE_OPTION_SET.has(value) || seen.has(value)) continue;
+    seen.add(value);
+    out.push(value);
+    if (out.length >= MAX_TRIBE_SELECTIONS) break;
+  }
+  return out;
+}
 
 /** Dedupe lifestyle traits and cap at MAX_LIFESTYLE_TRAITS. */
 export function normalizeLifestyleTraits(values: unknown): SocialLifestyle[] {

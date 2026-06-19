@@ -1,4 +1,4 @@
-import { normalizeLifestyleTraits } from "../constants/profileOptions";
+import { normalizeEthnicities, normalizeLifestyleTraits } from "../constants/profileOptions";
 import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import {
   coverPhotoDisplayUrl,
@@ -145,6 +145,7 @@ export function safeDiscoverProfile(raw: Partial<DiscoverProfile>): DiscoverProf
     interests: safeArray<string>(raw.interests).map((item) => safeString(item)).filter(Boolean),
     religion: raw.religion,
     ethnicity: raw.ethnicity,
+    ethnicities: normalizeEthnicities(raw.ethnicities, raw.ethnicity),
     stateOfOrigin: raw.stateOfOrigin,
     statesOfOrigin: safeArray(raw.statesOfOrigin),
     occupation: raw.occupation,

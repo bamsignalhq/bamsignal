@@ -198,8 +198,10 @@ export type DatingProfile = {
   /** True once member picks interests in the picker (prevents stale auto-filled chips during onboarding). */
   interestsTouched?: boolean;
   religion?: Religion;
-  /** Tribe / ethnic background */
+  /** Tribe / ethnic background — primary value for matching and legacy clients */
   ethnicity?: EthnicBackground;
+  /** Up to 3 tribes; first entry mirrors ethnicity when saved */
+  ethnicities?: EthnicBackground[];
   stateOfOrigin?: string;
   statesOfOrigin?: string[];
   occupation?: Occupation;
@@ -329,8 +331,10 @@ export type DiscoverProfile = {
   intents: IntentTag[];
   interests?: string[];
   religion?: Religion;
-  /** Tribe / ethnic background */
+  /** Tribe / ethnic background — primary value for matching and legacy clients */
   ethnicity?: EthnicBackground;
+  /** Up to 3 tribes; first entry mirrors ethnicity when saved */
+  ethnicities?: EthnicBackground[];
   stateOfOrigin?: string;
   statesOfOrigin?: string[];
   occupation?: Occupation;

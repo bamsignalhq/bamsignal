@@ -6,20 +6,24 @@ import {
 import { AgeRangeTapSelect } from "../AgeRangeTapSelect";
 import { TapSelectField } from "../TapSelectField";
 import {
+  FAITH_OPTIONS,
   FILTER_BODY_TYPES,
-  FILTER_ETHNICITIES,
   FILTER_GENOTYPES,
   FILTER_LIFESTYLES,
-  LIFESTYLE_TRAITS_LIMIT_MESSAGE,
-  MAX_LIFESTYLE_TRAITS,
-  normalizeLifestyleTraits,
   FILTER_OCCUPATIONS,
-  FILTER_RELIGIONS,
+  FILTER_TRIBE_OPTIONS,
   FILTER_VERIFICATION_PREFERENCES,
   HAS_KIDS_OPTIONS,
+  LIFESTYLE_TRAITS_LIMIT_MESSAGE,
+  MAX_LIFESTYLE_TRAITS,
+  MAX_TRIBE_SELECTIONS,
   NIGERIAN_STATES,
+  normalizeEthnicities,
+  normalizeFaithList,
+  normalizeLifestyleTraits,
   RELATIONSHIP_INTENTIONS,
-  RELIGIONS,
+  TRIBE_GROUP_SECTIONS,
+  TRIBE_SELECTION_LIMIT_MESSAGE,
   WANTS_KIDS_OPTIONS,
   citiesForState,
   stateDisplayLabel
@@ -97,9 +101,9 @@ type MatchPreferenceFieldsProps = {
   onBodyTypesChange?: (value: import("../../types").BodyType[]) => void;
   verificationPreferences?: VerificationPreference[];
   onVerificationPreferencesChange?: (value: VerificationPreference[]) => void;
-  /** Profile details — single tribe */
-  tribe?: EthnicBackground;
-  onTribeChange?: (value: EthnicBackground | undefined) => void;
+  /** Profile tribes — multi (max 3) */
+  tribes?: EthnicBackground[];
+  onTribesChange?: (value: EthnicBackground[]) => void;
   ageLabel?: string;
   className?: string;
 };
@@ -154,8 +158,8 @@ export function MatchPreferenceFields({
   onBodyTypesChange,
   verificationPreferences,
   onVerificationPreferencesChange,
-  tribe,
-  onTribeChange,
+  tribes,
+  onTribesChange,
   ageLabel = "Preferred age range",
   className = ""
 }: MatchPreferenceFieldsProps) {
@@ -179,7 +183,7 @@ export function MatchPreferenceFields({
         <TapSelectField
           label="Faith"
           optional
-          options={RELIGIONS}
+          options={FAITH_OPTIONS}
           value={faith}
           onChange={(next) => onFaithChange(next as Religion | undefined)}
         />
@@ -205,10 +209,9 @@ export function MatchPreferenceFields({
         <TapSelectField
           label="Faith"
           optional
-          multiple
-          options={FILTER_RELIGIONS}
-          value={religions ?? []}
-          onChange={(next) => onReligionsChange((next as Religion[]) ?? [])}
+          options={FAITH_OPTIONS}
+          value={normalizeFaithList(religions ?? [])[0]}
+          onChange={(next) => onReligionsChange(normalizeFaithList(next))}
         />
       ) : null}
 
@@ -217,19 +220,30 @@ export function MatchPreferenceFields({
           label="Tribe"
           optional
           multiple
-          options={FILTER_ETHNICITIES}
-          value={ethnicities ?? []}
-          onChange={(next) => onEthnicitiesChange((next as EthnicBackground[]) ?? [])}
+          maxSelections={MAX_TRIBE_SELECTIONS}
+          limitMessage={TRIBE_SELECTION_LIMIT_MESSAGE}
+          options={FILTER_TRIBE_OPTIONS}
+          groupedOptions={TRIBE_GROUP_SECTIONS}
+          value={normalizeEthnicities(ethnicities ?? [])}
+          onChange={(next) =>
+            onEthnicitiesChange(normalizeEthnicities((next as EthnicBackground[]) ?? []))
+          }
         />
       ) : null}
 
-      {onTribeChange ? (
+      {onTribesChange ? (
         <TapSelectField
           label="Tribe"
           optional
-          options={FILTER_ETHNICITIES}
-          value={tribe}
-          onChange={(next) => onTribeChange(next as EthnicBackground | undefined)}
+          multiple
+          maxSelections={MAX_TRIBE_SELECTIONS}
+          limitMessage={TRIBE_SELECTION_LIMIT_MESSAGE}
+          options={FILTER_TRIBE_OPTIONS}
+          groupedOptions={TRIBE_GROUP_SECTIONS}
+          value={normalizeEthnicities(tribes ?? [])}
+          onChange={(next) =>
+            onTribesChange(normalizeEthnicities((next as EthnicBackground[]) ?? []))
+          }
         />
       ) : null}
 

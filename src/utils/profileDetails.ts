@@ -1,11 +1,12 @@
 import type { DatingProfile, DiscoverProfile } from "../types";
 import { isPreferNot } from "./profile";
-import { normalizeLifestyleTraits } from "../constants/profileOptions";
+import { normalizeEthnicities, normalizeLifestyleTraits } from "../constants/profileOptions";
 
 export type ProfileDetailRow = { label: string; value: string };
 
 type DetailSource = {
   ethnicity?: string;
+  ethnicities?: string[];
   religion?: string;
   occupation?: string;
   occupations?: string[];
@@ -38,7 +39,8 @@ export function getFilledProfileDetails(
 ): ProfileDetailRow[] {
   const rows: ProfileDetailRow[] = [];
 
-  pushIfFilled(rows, "Tribe", profile.ethnicity);
+  const tribes = normalizeEthnicities(profile.ethnicities, profile.ethnicity);
+  pushList(rows, "Tribe", tribes);
   pushIfFilled(rows, "Religion", profile.religion);
   pushList(rows, "Occupation", profile.occupations ?? (profile.occupation ? [profile.occupation] : []));
   pushList(

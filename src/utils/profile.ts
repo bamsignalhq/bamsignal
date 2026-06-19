@@ -2,7 +2,7 @@ import { ageFromDateOfBirth, defaultAdultDob } from "./ageFromDob";
 import { STORAGE_KEYS } from "../constants/limits";
 import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
-import { stateForCity, citiesForState, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
+import { stateForCity, citiesForState, normalizeEthnicities, normalizeFaith, normalizeFaithList, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
 import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { normalizeCoverFields } from "./coverPhoto";
@@ -165,6 +165,8 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
   const genotype = safeString(cleaned.genotype) || genotypes[0] || undefined;
   const occupations = safeArray<import("../types").Occupation>(cleaned.occupations).slice(0, 1);
   const occupation = safeString(cleaned.occupation) || occupations[0] || undefined;
+  const ethnicities = normalizeEthnicities(cleaned.ethnicities, cleaned.ethnicity);
+  const religion = normalizeFaith(cleaned.religion ?? (cleaned as { religions?: unknown }).religions);
 
   return {
     ...base,
@@ -207,6 +209,9 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     hasKidsOptions,
     wantsKidsOptions,
     bodyTypes,
+    religion,
+    ethnicities,
+    ethnicity: ethnicities[0],
     createdAt: cleaned.createdAt ?? base.createdAt ?? new Date().toISOString(),
     compliance: normalizeCompliance(cleaned.compliance),
     setupCompleted: Boolean(cleaned.setupCompleted),
@@ -244,8 +249,8 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
   return {
     ...base,
     ...raw,
-    religions: safeArray(raw.religions),
-    ethnicities: safeArray(raw.ethnicities),
+    religions: normalizeFaithList(raw.religions),
+    ethnicities: normalizeEthnicities(raw.ethnicities),
     lifestyles: normalizeLifestyleTraits(raw.lifestyles),
     cities: normalizeSearchCities(raw.cities, normalizedState),
     states: normalizedState ? [normalizedState] : [],

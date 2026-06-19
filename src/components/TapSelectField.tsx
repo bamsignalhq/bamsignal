@@ -5,6 +5,11 @@ import { formatMultiSelectSummary } from "../utils/selectSummary";
 
 export type TapSelectOption<T extends string> = T | { value: T; label: string };
 
+export type TapSelectGroup<T extends string> = {
+  title: string;
+  options: readonly TapSelectOption<T>[];
+};
+
 function optionValue<T extends string>(opt: TapSelectOption<T>): T {
   return typeof opt === "string" ? opt : opt.value;
 }
@@ -47,6 +52,7 @@ type TapSelectFieldProps<T extends string> = {
   optional?: boolean;
   placeholder?: string;
   options: readonly TapSelectOption<T>[];
+  groupedOptions?: readonly TapSelectGroup<T>[];
   value: T | T[] | undefined;
   multiple?: boolean;
   disabled?: boolean;
@@ -61,6 +67,7 @@ export function TapSelectField<T extends string>({
   optional = false,
   placeholder = "Select",
   options,
+  groupedOptions,
   value,
   multiple = false,
   disabled = false,
@@ -86,7 +93,7 @@ export function TapSelectField<T extends string>({
     if (multiValueChanged(value, normalized)) {
       onChange(normalized);
     }
-  }, [value, multiple, maxSelections]);
+  }, [value, multiple, maxSelections, onChange]);
 
   useEffect(() => {
     if (!open) {
@@ -134,12 +141,41 @@ export function TapSelectField<T extends string>({
     onChange(undefined);
   };
 
+  const renderOption = (opt: TapSelectOption<T>) => {
+    const v = optionValue(opt);
+    const isSelected = selected.includes(v);
+    const blocked =
+      multiple && !isSelected && maxSelections != null && selected.length >= maxSelections;
+    return (
+      <button
+        key={v}
+        type="button"
+        className={`intent-tag ${isSelected ? "selected" : ""}${blocked ? " intent-tag--disabled" : ""}`}
+        onClick={() => toggle(v)}
+        disabled={blocked}
+        aria-pressed={isSelected}
+      >
+        {optionLabel(opt)}
+      </button>
+    );
+  };
+
   const triggerLabel = multiple
     ? formatMultiSelectSummary(selected, format, placeholder)
     : selected.length === 0
       ? placeholder
       : format(selected[0]);
   const hasSelection = selected.length > 0;
+
+  const sheetSubtitle = multiple
+    ? maxSelections != null
+      ? `${selected.length}/${maxSelections} selected`
+      : selected.length > 0
+        ? `${selected.length} selected`
+        : null
+    : selected.length > 0
+      ? `Selected: ${format(selected[0])}`
+      : null;
 
   const sheet =
     open && typeof document !== "undefined"
@@ -155,12 +191,8 @@ export function TapSelectField<T extends string>({
               <header className="tap-select-sheet__head">
                 <div>
                   <h3>{label}</h3>
-                  {multiple && selected.length > 0 ? (
-                    <p className="tap-select-sheet__count">
-                      {maxSelections != null
-                        ? `${selected.length} of ${maxSelections} selected`
-                        : `${selected.length} selected`}
-                    </p>
+                  {sheetSubtitle ? (
+                    <p className="tap-select-sheet__count">{sheetSubtitle}</p>
                   ) : null}
                 </div>
                 <button type="button" className="tap-select-sheet__done" onClick={() => setOpen(false)}>
@@ -194,27 +226,16 @@ export function TapSelectField<T extends string>({
               ) : null}
 
               <div className="tap-select-sheet__options intent-tags selectable">
-                {optionList.map((opt) => {
-                  const v = optionValue(opt);
-                  const isSelected = selected.includes(v);
-                  const blocked =
-                    multiple &&
-                    !isSelected &&
-                    maxSelections != null &&
-                    selected.length >= maxSelections;
-                  return (
-                    <button
-                      key={v}
-                      type="button"
-                      className={`intent-tag ${isSelected ? "selected" : ""}${blocked ? " intent-tag--disabled" : ""}`}
-                      onClick={() => toggle(v)}
-                      disabled={blocked}
-                      aria-pressed={isSelected}
-                    >
-                      {optionLabel(opt)}
-                    </button>
-                  );
-                })}
+                {groupedOptions?.length
+                  ? groupedOptions.map((group) => (
+                      <section key={group.title} className="tap-select-sheet__group">
+                        <h4 className="tap-select-sheet__group-title">{group.title}</h4>
+                        <div className="tap-select-sheet__group-options intent-tags selectable">
+                          {uniqueOptions(group.options).map((opt) => renderOption(opt))}
+                        </div>
+                      </section>
+                    ))
+                  : optionList.map((opt) => renderOption(opt))}
               </div>
             </div>
           </div>,

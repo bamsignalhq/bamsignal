@@ -1,4 +1,5 @@
 import type { DatingProfile } from "../types";
+import { normalizeEthnicities } from "../constants/profileOptions";
 import { safeString } from "./safeProfile";
 import { isPreferNot } from "./profile";
 
@@ -92,7 +93,9 @@ export function getProfileStrengthBreakdown(profile: DatingProfile): ProfileStre
     intent: (profile.intents?.length ?? 0) >= 1,
     lifestyle: Boolean(profile.lifestyle && !isPreferNot(profile.lifestyle)),
     religion: Boolean(profile.religion && !isPreferNot(profile.religion)),
-    ethnicity: Boolean(profile.ethnicity && !isPreferNot(profile.ethnicity)),
+    ethnicity: Boolean(
+      normalizeEthnicities(profile.ethnicities, profile.ethnicity).length > 0
+    ),
     verification: profile.verified
   };
 }

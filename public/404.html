@@ -14,8 +14,8 @@
       body {
         font-family: system-ui, -apple-system, sans-serif;
         margin: 0;
-        background: #f8faf9;
-        color: #0f172a;
+        background: #fff4fa;
+        color: #1b0b2e;
         min-height: 100vh;
         display: grid;
         place-items: center;
@@ -30,7 +30,7 @@
         margin: 0 0 0.5rem;
       }
       p {
-        color: #64748b;
+        color: rgba(27, 11, 46, 0.62);
         line-height: 1.6;
       }
       ul {
@@ -42,9 +42,27 @@
         gap: 0.5rem;
       }
       a {
-        color: #0d9488;
+        color: #e91e8f;
         text-decoration: none;
         font-weight: 600;
+      }
+      a:hover {
+        color: #7a4df3;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #090013;
+          color: #ffffff;
+        }
+        p {
+          color: rgba(255, 255, 255, 0.7);
+        }
+        a {
+          color: #e91e8f;
+        }
+        a:hover {
+          color: #ffffff;
+        }
       }
     </style>
   </head>

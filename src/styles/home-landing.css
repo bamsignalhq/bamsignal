@@ -292,8 +292,8 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #22c55e;
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.65);
+  background: #e91e8f;
+  box-shadow: 0 0 12px rgba(233, 30, 143, 0.55);
   animation: homePulseDot 1.8s ease-in-out infinite;
 }
 

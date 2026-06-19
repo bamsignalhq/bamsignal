@@ -13,7 +13,7 @@
   font-size: 0.8rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--brand-pink, #e91e8f);
   margin-bottom: 0.75rem;
 }
 
@@ -255,7 +255,7 @@
 }
 
 .blog-cta__url a {
-  color: var(--accent);
+  color: var(--brand-pink, #e91e8f);
 }
 
 .auth-dev-hint {

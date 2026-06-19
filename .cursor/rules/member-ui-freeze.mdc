@@ -1,0 +1,37 @@
+---
+description: Member app UI freeze — preserve compact fintech design; no unsolicited visual changes
+alwaysApply: true
+---
+
+# Member experience UI freeze
+
+The logged-in member experience has reached production quality. **Do not redesign it.**
+
+## Do not change (unless explicitly requested)
+
+- Home, Discover, Chats, Signals, Profile, Settings
+- Bottom navigation, header, card spacing, radius, typography, shadows
+- Overall compact fintech feel (Moniepoint / Kuda / PalmPay / PiggyVest — not loud or amateur)
+
+## Do not introduce
+
+- Larger cards, buttons, or typography
+- Loud banners, giant blocks, or unnecessary sections
+- New spacing systems that diverge from existing tokens
+
+## Allowed work (without visual redesign)
+
+- Bug fixes
+- Performance, security, stability
+- Accessibility and responsive layout fixes (same visual language)
+- Backend improvements
+
+## New features
+
+- Must inherit existing design tokens and spacing from `src/styles/member-fintech.css` and current member components
+- No visual changes unless the user explicitly requests them
+- Prefer surgical fixes over layout refactors
+
+## Reference
+
+Design tokens live in `.platform-root--member` (`--bs-*` variables). Reuse `member-fintech.css`, existing card patterns, and compact tap-select / form rows — do not invent parallel styles.

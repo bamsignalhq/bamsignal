@@ -753,14 +753,16 @@ export function AuthPage({
                   autoCapitalize="none"
                   spellCheck={false}
                   maxLength={120}
-                  className="auth-field--centered"
+                  className="auth-field--centered auth-field--login"
                 />
                 <AuthField
-                  label="Password"
+                  label="PIN"
                   value={loginForm.password}
-                  onChange={(password) => setLoginForm({ ...loginForm, password })}
-                  type="password"
+                  onChange={(password) => setLoginForm({ ...loginForm, password: pinDigits(password) })}
+                  pin
+                  maxLength={6}
                   autoComplete="current-password"
+                  className="auth-field--centered auth-field--login"
                 />
               </div>
               <button type="button" className="btn-primary btn-full btn-auth" onClick={signIn} disabled={busy === "login"}>

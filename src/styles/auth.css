@@ -194,11 +194,14 @@
 .auth-field input,
 .auth-code-input {
   width: 100%;
+  min-height: 52px;
+  height: 52px;
   padding: 15px 16px;
-  border-radius: 14px;
+  border-radius: 16px;
   border: 1.5px solid color-mix(in srgb, var(--border) 90%, transparent);
   background: color-mix(in srgb, var(--input-bg) 92%, var(--bg));
   font-size: 1rem;
+  line-height: 1.2;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -268,15 +271,18 @@
   font-weight: 600;
   color: var(--text);
   white-space: nowrap;
-  line-height: 1.2;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .signup-math-gate__input {
   flex: 0 0 100px;
   width: 100px;
-  min-width: 90px;
-  max-width: 110px;
+  min-width: 100px;
+  max-width: 100px;
   min-height: 40px;
+  height: 40px;
   padding: 8px 12px;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -284,12 +290,11 @@
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 600;
+  text-align: center;
 }
 
-@media (max-width: 280px) {
-  .signup-math-gate__row {
-    flex-wrap: wrap;
-  }
+.signup-math-gate__input::placeholder {
+  text-align: center;
 }
 
 .signup-math-gate__input--error {
@@ -1469,6 +1474,38 @@
   padding: 22px 18px 10px;
 }
 
+.auth-field--login input {
+  min-height: 52px;
+  height: 52px;
+  border-radius: 16px;
+  font-size: 1rem;
+}
+
+.auth-field--centered input,
+.auth-field--centered.auth-code-input {
+  text-align: center;
+}
+
+.auth-field--centered input::placeholder,
+.auth-field--centered.auth-code-input::placeholder {
+  text-align: center;
+}
+
+.auth-field--centered.auth-field--float > span {
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.auth-field--centered.auth-field--float input:focus + span,
+.auth-field--centered.auth-field--float input:not(:placeholder-shown) + span {
+  left: 50%;
+  transform: translate(-50%, -1.15rem);
+}
+
+.auth-field--centered.auth-field--pin input {
+  padding-right: 48px;
+}
+
 .auth-field--float > span {
   position: absolute;
   left: 18px;
@@ -1489,10 +1526,6 @@
 
 .auth-field--pin input {
   padding-right: 48px;
-}
-
-.auth-field--centered input {
-  text-align: center;
 }
 
 .auth-field__toggle {

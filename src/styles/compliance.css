@@ -1,6 +1,5 @@
 .signup-legal {
-  display: grid;
-  gap: 0.65rem;
+  display: block;
   margin: 0.5rem 0 1rem;
   padding: 0.85rem 0.95rem;
   border-radius: 12px;

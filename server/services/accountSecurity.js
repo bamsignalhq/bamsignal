@@ -38,6 +38,9 @@ export async function ensureAccountSecuritySchema() {
     "alter table app_member_profiles add column if not exists trusted_devices jsonb not null default '[]'::jsonb"
   );
   await query("alter table app_member_profiles add column if not exists last_2fa_at timestamptz");
+  await query(
+    "alter table app_member_profiles add column if not exists two_factor_updated_at timestamptz"
+  );
 
   await query(`
     create table if not exists login_2fa_codes (
@@ -184,7 +187,8 @@ export async function getAccountSecuritySettings({ email, phone }) {
     twoFactorMethod: member.two_factor_method === "whatsapp" ? "whatsapp" : "email",
     whatsappAvailable,
     trustedDeviceCount: devices.length,
-    last2faAt: member.last_2fa_at || null
+    last2faAt: member.last_2fa_at || null,
+    twoFactorUpdatedAt: member.two_factor_updated_at || null
   };
 }
 
@@ -216,13 +220,15 @@ export async function setTwoFactorEnabled({
     `update app_member_profiles
      set two_factor_enabled = $2,
          two_factor_method = $3,
+         two_factor_updated_at = now(),
          updated_at = now()
      where id = $1
      returning *`,
     [member.id, nextEnabled, nextEnabled ? nextMethod : null]
   );
 
-  if (result.rows[0]) {
+  const row = result.rows[0];
+  if (row) {
     await writeAuditLog({
       userId: member.id,
       action: nextEnabled ? "two_factor_enabled" : "two_factor_disabled",
@@ -233,9 +239,10 @@ export async function setTwoFactorEnabled({
   }
 
   return {
-    ok: Boolean(result.rows[0]),
+    ok: Boolean(row),
     twoFactorEnabled: nextEnabled,
-    twoFactorMethod: nextEnabled ? nextMethod : null
+    twoFactorMethod: nextEnabled ? nextMethod : null,
+    twoFactorUpdatedAt: row?.two_factor_updated_at || null
   };
 }
 

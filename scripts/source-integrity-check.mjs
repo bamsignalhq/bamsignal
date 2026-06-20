@@ -74,6 +74,8 @@ const profilePageSource = readSrc("src/pages/ProfilePage.tsx");
 const onboardingPageSource = readSrc("src/pages/OnboardingPage.tsx");
 const fastConnectionIntentSource = readSrc("src/utils/fastConnectionIntent.ts");
 const fastConnectionSheetSource = readSrc("src/components/profile/FastConnectionSheet.tsx");
+const accountSecuritySource = readSrc("src/services/accountSecurity.ts");
+const twoFactorCardSource = readSrc("src/components/TwoFactorSettingsCard.tsx");
 const serviceWorkerSource = readSrc("src/utils/serviceWorker.ts");
 const mainSource = readSrc("src/main.tsx");
 const sourceIntegrityScriptSource = readSrc("scripts/source-integrity-check.mjs");
@@ -418,6 +420,21 @@ assertCheck(
     fastConnectionSheetSource.includes("Continue to payment") &&
     profilePageSource.includes("fastConnectionActiveLabel"),
   "Fast Connection intent must require payment before activation"
+);
+assertCheck(
+  accountSecuritySource.includes("memberApiHeaders") &&
+    accountSecuritySource.includes('action=${action}') &&
+    accountSecuritySource.includes('"security-settings"') &&
+    accountSecuritySource.includes('"two-factor-enable"') &&
+    accountSecuritySource.includes("resolveMemberIdentity") &&
+    twoFactorCardSource.includes("fetchSecuritySettingsRemote") &&
+    twoFactorCardSource.includes("resolveMemberIdentity") &&
+    twoFactorCardSource.includes("Two-factor authentication enabled.") &&
+    twoFactorCardSource.includes("Retry") &&
+    memberDataApiSource.includes('action === "security-settings"') &&
+    memberDataApiSource.includes('action === "two-factor-enable"') &&
+    memberDataApiSource.includes("requireMemberAuth"),
+  "two-factor settings must load and save through authenticated member API"
 );
 assertCheck(
   sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&

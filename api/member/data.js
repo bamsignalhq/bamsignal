@@ -491,6 +491,35 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, account: state });
     }
 
+    if (action === "security-settings") {
+      if (!requireDatabase(res)) return;
+      const { getAccountSecuritySettings } = await import("../../server/services/accountSecurity.js");
+      const settings = await getAccountSecuritySettings({
+        email: identity.email,
+        phone: identity.phone
+      });
+      return res.status(200).json({ ok: true, settings });
+    }
+
+    if (action === "two-factor-enable") {
+      if (!requireDatabase(res)) return;
+      const { setTwoFactorEnabled } = await import("../../server/services/accountSecurity.js");
+      const ip =
+        typeof req.headers["x-forwarded-for"] === "string"
+          ? req.headers["x-forwarded-for"].split(",")[0].trim()
+          : req.socket?.remoteAddress || null;
+      const userAgent = String(req.headers["user-agent"] || "").slice(0, 512) || null;
+      const result = await setTwoFactorEnabled({
+        email: identity.email,
+        phone: identity.phone,
+        enabled: Boolean(body.enabled),
+        method: body.method,
+        ip,
+        userAgent
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
+    }
+
     if (action === "change-username") {
       if (!requireDatabase(res)) return;
       const { changeMemberUsername } = await import("../../server/memberTrust.js");

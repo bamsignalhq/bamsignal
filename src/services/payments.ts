@@ -25,7 +25,7 @@ import { openPaystackCheckout } from "./paymentCheckout";
 import { apiUrl } from "./supabase";
 import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
 import { readResponseJson } from "../utils/httpJson";
-import { fastConnectionWeeklyAmount, quickiePassDays } from "../utils/quickie";
+import { activateQuickiePass, fastConnectionWeeklyAmount, quickiePassDays } from "../utils/quickie";
 import { fetchSubscriptionCatalog } from "./subscriptionCatalog";
 
 export { isPremiumActive, refreshPremiumStatus };
@@ -565,7 +565,6 @@ export async function completePendingPayment(user: UserProfile): Promise<{
     if (result.ok) {
       const kind = normalizePaymentKind(result.productType || "boost");
       if (kind === "quickie" && result.quickiePassUntil) {
-        const { activateQuickiePass } = await import("../utils/quickie");
         activateQuickiePass(result.quickiePassUntil);
       }
       logPaymentEvent("verification result", { reference, ok: true, kind });
@@ -595,7 +594,6 @@ export async function completePendingPayment(user: UserProfile): Promise<{
     const result = await verifyQuickiePayment(user);
     if (result.ok) {
       if (result.quickiePassUntil) {
-        const { activateQuickiePass } = await import("../utils/quickie");
         activateQuickiePass(result.quickiePassUntil);
       }
       const kind = normalizePaymentKind(result.productType || "quickie");
@@ -626,7 +624,6 @@ export async function completePendingPayment(user: UserProfile): Promise<{
   if (result.ok) {
     const kind = normalizePaymentKind(result.productType || "premium");
     if (kind === "quickie" && result.quickiePassUntil) {
-      const { activateQuickiePass } = await import("../utils/quickie");
       activateQuickiePass(result.quickiePassUntil);
     }
     logPaymentEvent("verification result", { reference, ok: true, kind });

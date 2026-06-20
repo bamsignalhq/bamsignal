@@ -277,14 +277,6 @@
 .profile-card-overflow__menu-item--alert {
   color: #c0265a;
 }
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: 0.82rem;
-  background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  color: var(--text, #fff);
-}
 
 .like-card-actions {
   display: flex;

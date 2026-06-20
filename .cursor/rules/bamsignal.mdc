@@ -1,36 +1,241 @@
+---
+description: BamSignal production engineering rules
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# BamSignal Production Rules
+
 You are working on BamSignal production code.
 
-ABSOLUTE RULES:
+BamSignal is a Nigerian-first social discovery platform.
+The product is already in launch-stabilization mode.
+
+Your job is to behave like a careful production engineer.
+
+====================================================
+ABSOLUTE RULES
+====================================================
+
 - Do not redesign locked member UI unless explicitly asked.
 - Do not touch unrelated files.
 - Do not “improve” things outside the task.
 - Do not create duplicate auth, signup, onboarding, payment, or route systems.
-- Do not guess. Inspect first, then patch.
-- Every fix must include evidence: files changed, root cause, commands run.
+- Do not guess.
+- Inspect first, then patch.
+- Every fix must include evidence:
+  - root cause
+  - files changed
+  - why each file changed
+  - commands run
+  - test results
 - Never stage unrelated dirty files.
 - Never commit generated APK/AAB/dist files unless explicitly requested.
-- Always run:
-  npm run build
-  npm run test:server-import
+- Never hide build warnings.
+- Never claim success if tests were not run.
+- If a test cannot be run, say why.
+- If unsure, stop and ask.
 
-PROJECT LOCKS:
+====================================================
+PROJECT LOCKS
+====================================================
+
+The following rules are locked unless the user explicitly overrides them:
+
 - Member UI is frozen except bug fixes.
+- Compact fintech design system must be preserved.
 - Auth is username + PIN only.
+- Login must never mention email or password.
+- Signup may collect email/phone for verification, but login is username + PIN.
 - Public pages must never trigger member restore.
 - Home must never render onboarding.
 - Onboarding must only render at /onboarding.
+- Completed users must go to /home.
+- Incomplete users must go to /onboarding.
 - Payments must return users to their original app page.
-- Android release must verify fresh web assets.
+- Paystack callbacks must never dump users on the public homepage.
+- BamSignal must send purchase confirmation emails after successful payments.
+- Android release must verify fresh web assets before AAB/APK build.
 - SEO/public pages must not affect member app routes.
+- Photo upload must be upload-first unless a true technical upload failure occurs.
+- Admin routes must remain separate from member routes.
+- Generated files must not be committed unless explicitly requested.
 
-WORKFLOW:
+====================================================
+ROUTING RULES
+====================================================
+
+Public routes:
+- /
+- /blog
+- /cities
+- /nigeria
+- /help
+- /safety
+- /features
+- /premium
+- /faq
+- /guides
+- /compare
+- legal/public pages
+
+Public routes must not show:
+- Restoring your account
+- onboarding
+- member dashboard
+- member shell
+
+Member routes:
+- /home
+- /discover
+- /chats
+- /signals
+- /profile
+- /settings
+- /subscription
+
+Member routes must not render:
+- public homepage
+- SEO layout
+- onboarding inside /home
+
+Onboarding route:
+- /onboarding
+
+Only /onboarding renders onboarding.
+
+====================================================
+AUTH RULES
+====================================================
+
+Login UI:
+- Username
+- PIN
+- Login
+
+Do not show:
+- Username or email
+- Email login
+- Phone login
+- Password
+- Reset password
+
+Use:
+- Forgot PIN
+- Reset PIN
+- Invalid username or PIN
+
+Backend may keep compatibility field names if needed, but user-facing copy must say PIN.
+
+====================================================
+PAYMENT RULES
+====================================================
+
+Before redirecting to Paystack, preserve:
+- paymentReturnPath
+- paymentProductType
+- paymentProductId
+- paymentReference
+- paymentStartedAt
+
+After successful verification:
+- activate product
+- send BamSignal purchase email once
+- redirect to preserved return path
+- never public homepage unless no better fallback exists
+
+====================================================
+ANDROID RELEASE RULES
+====================================================
+
+Before building AAB/APK:
+- build web
+- sync Capacitor
+- verify Android assets match dist
+- verify build marker
+- verify service worker cache version
+- fail loudly if stale
+
+Never upload or reuse stale AAB.
+
+====================================================
+WORKFLOW FOR EVERY TASK
+====================================================
+
 1. Inspect first.
-2. Report root cause.
+2. Identify root cause.
 3. Patch the smallest safe fix.
-4. Run tests.
-5. Commit only relevant files.
-6. Report changed files and test results.
-7. Stop after the requested task.
+4. Do not touch unrelated files.
+5. Run required tests.
+6. Check git status.
+7. Stage only related files.
+8. Commit with clear message.
+9. Push only after tests pass.
+10. Report changed files and test results.
+11. Stop after the requested task.
 
-IF UNSURE:
-Stop and ask before changing code.
+====================================================
+REQUIRED COMMANDS
+====================================================
+
+For normal code changes, run:
+
+npm run build
+npm run test:server-import
+
+If Android assets are touched, also run:
+
+npx cap sync android
+npm run android:verify-assets
+
+If SEO content is touched, also run:
+
+npm run seo:validate
+
+====================================================
+GIT SAFETY
+====================================================
+
+Before every commit, run:
+
+git status --short
+
+Only stage files directly related to the task.
+
+If unrelated dirty files exist:
+- leave them unstaged
+- mention them in the report
+
+Do not stage:
+- dist/
+- APK files
+- AAB files
+- android/app/build/
+- .gradle/
+- random screenshots
+- generated cache files
+- unrelated SEO/photo/store leftovers
+
+====================================================
+REPORT FORMAT
+====================================================
+
+After every task, report:
+
+- Root cause
+- Files changed
+- Why each file changed
+- Commands run
+- Test results
+- Git status summary
+- Commit hash
+- Anything left unstaged and why
+
+====================================================
+STOP RULE
+====================================================
+
+Stop after the requested task.
+
+Do not continue to the next fix unless the user says done or gives the next task.

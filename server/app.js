@@ -8,6 +8,7 @@ import { config } from "./config.js";
 import { isSignupEmailConfigured, getSignupEmailHealthTrace } from "./supabaseEnv.js";
 import { corsMiddleware } from "./cors.js";
 import { getDatabaseStatus, pingDatabase } from "./db.js";
+import { PAYSTACK_WEBHOOK_MOUNT_PATHS } from "./services/paystackWebhookHandler.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
 import { mountHandler } from "./mountHandler.js";
@@ -86,11 +87,7 @@ export function createApp(options = {}) {
   app.use(corsMiddleware);
 
   app.use((req, res, next) => {
-    if (
-      req.path === "/webhooks/paystack" ||
-      req.path === "/api/webhooks/paystack" ||
-      req.path === "/api/paystack/webhook"
-    ) {
+    if (PAYSTACK_WEBHOOK_MOUNT_PATHS.includes(req.path)) {
       express.raw({ type: "application/json" })(req, res, () => {
         req.rawBody = req.body;
         next();

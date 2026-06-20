@@ -100,6 +100,14 @@ try {
     {
       path: "/api/paystack/webhook",
       body: {}
+    },
+    {
+      path: "/api/webhooks/paystack",
+      body: {}
+    },
+    {
+      path: "/webhooks/paystack",
+      body: {}
     }
   ];
 

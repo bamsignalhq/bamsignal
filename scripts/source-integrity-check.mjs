@@ -49,7 +49,12 @@ const diagnosticsAccessSource = readSrc("server/services/diagnosticsAccess.js");
 const viewSecurityApiSource = readSrc("api/diagnostics/view-security.js");
 const functionSecurityApiSource = readSrc("api/diagnostics/function-security.js");
 const paystackVerifySource = readFileSync(join(rootPath, "api/paystack/verify.js"), "utf8");
+const paystackWebhookHandlerSource = readFileSync(
+  join(rootPath, "server/services/paystackWebhookHandler.js"),
+  "utf8"
+);
 const paystackWebhookSource = readFileSync(join(rootPath, "api/webhooks/paystack.js"), "utf8");
+const paystackRouterSource = readFileSync(join(rootPath, "server/routes/paystack.js"), "utf8");
 const paymentCatalogSource = readFileSync(join(rootPath, "server/services/paymentCatalog.js"), "utf8");
 const paymentFortressSource = readFileSync(join(rootPath, "server/services/paymentFortress.js"), "utf8");
 const paymentDbSource = readFileSync(join(rootPath, "server/services/paymentDb.js"), "utf8");
@@ -573,14 +578,15 @@ assertCheck(
     paymentFortressSource.includes("recordPurchaseIntent") &&
     paymentFortressSource.includes("assertVerifiedPurchaseAmount") &&
     paymentFortressSource.includes("completePaymentFulfillment") &&
+    paystackWebhookHandlerSource.includes("completePaymentFulfillment") &&
     paystackVerifySource.includes("resolveInitializeIntent") &&
     paystackVerifySource.includes("completePaymentFulfillment") &&
     !paystackVerifySource.includes("body.amount") &&
     !paystackVerifySource.includes("body.durationHours") &&
     !paystackVerifySource.includes("metadata.quickie_days") &&
     !paystackVerifySource.includes("metadata.duration_hours || body.durationHours") &&
-    paystackWebhookSource.includes("completePaymentFulfillment") &&
-    !paystackWebhookSource.includes("metadata.quickie_days") &&
+    paystackWebhookSource.includes("handlePaystackWebhookRequest") &&
+    !paystackWebhookSource.includes("completePaymentFulfillment") &&
     paymentsSource.includes("?action=initialize") &&
     paymentsSource.includes("productId: plan.id") &&
     paymentsSource.includes('productId: "fast-connection-pass"') &&
@@ -599,14 +605,26 @@ assertCheck(
     paystackVerifySource.includes("completePaymentFulfillment") &&
     paystackVerifySource.includes("PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE") &&
     paystackVerifySource.includes("status(503)") &&
-    paystackWebhookSource.includes("completePaymentFulfillment") &&
-    paystackWebhookSource.includes("status(503)") &&
+    paystackWebhookHandlerSource.includes("status: 503") &&
+    paystackWebhookSource.includes("handlePaystackWebhookRequest") &&
+    !paystackWebhookSource.includes("completePaymentFulfillment") &&
     paymentsSource.includes("PAYMENT_CONFIRM_UNAVAILABLE") &&
     paymentsSource.includes("response.status === 503") &&
     paymentsSource.includes("retryable: true") &&
     !paystackVerifySource.includes("await notifyPurchaseEmail") &&
     paymentFortressSource.includes("sendPurchaseConfirmationEmail"),
   "payment fulfillment must fail closed when persistence is unavailable"
+);
+assertCheck(
+  paystackWebhookHandlerSource.includes("/api/paystack/webhook") &&
+    paystackRouterSource.includes("PAYSTACK_WEBHOOK_MOUNT_PATHS") &&
+    paystackRouterSource.includes("handlePaystackWebhookExpress") &&
+    paystackWebhookSource.includes("handlePaystackWebhookRequest") &&
+    !paystackWebhookSource.includes("fulfillVerifiedPurchase") &&
+    !paystackRouterSource.includes("fulfillVerifiedPurchase") &&
+    paystackWebhookHandlerSource.includes("verifyPaystackWebhookSignature") &&
+    serverAppSource.includes("PAYSTACK_WEBHOOK_MOUNT_PATHS"),
+  "Paystack webhook routes must use one shared handler"
 );
 
 console.log("source integrity ok");

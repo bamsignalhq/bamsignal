@@ -28,7 +28,7 @@ export const config = {
     process.env.PAYSTACK_ANDROID_CALLBACK_URL || "com.bamsignal.com://payment-success",
   paystackWebhookUrl:
     process.env.PAYSTACK_WEBHOOK_URL ||
-    `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/api/paystack/webhook`,
+    `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/api/paystack/webhook`, // Paystack dashboard URL
   timezone: process.env.APP_TIMEZONE || "Africa/Lagos",
   cronSecret: process.env.CRON_SECRET,
   telegram: {

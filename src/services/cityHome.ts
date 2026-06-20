@@ -138,6 +138,8 @@ export async function setAdminCityHomeHidden(profileId: string, hidden: boolean)
   }
 }
 
+export type ProfilePatchScope = "full" | "profile" | "photos" | "voice";
+
 export type MemberProfileSyncResult = {
   ok: boolean;
   profile?: DatingProfile;
@@ -145,7 +147,8 @@ export type MemberProfileSyncResult = {
 
 export async function syncMemberProfileWithResult(
   user: Pick<UserProfile, "email" | "phone" | "name" | "username">,
-  profile: DatingProfile
+  profile: DatingProfile,
+  options?: { patchScope?: ProfilePatchScope }
 ): Promise<MemberProfileSyncResult> {
   try {
     const paused = Boolean(profile.profilePausedAt);
@@ -160,6 +163,7 @@ export async function syncMemberProfileWithResult(
         city: profile.city,
         state: profile.state,
         profile: normalizeDatingProfile(profile),
+        profilePatchScope: options?.patchScope ?? "full",
         onboardingComplete: profile.onboardingComplete,
         discoverable: !shouldHideFromDiscovery(profile) && !paused
       })
@@ -181,7 +185,8 @@ export async function syncMemberProfileWithResult(
 
 export async function syncMemberProfileRemote(
   user: Pick<UserProfile, "email" | "phone" | "name" | "username">,
-  profile: DatingProfile
+  profile: DatingProfile,
+  options?: { patchScope?: ProfilePatchScope }
 ): Promise<boolean> {
-  return (await syncMemberProfileWithResult(user, profile)).ok;
+  return (await syncMemberProfileWithResult(user, profile, options)).ok;
 }

@@ -37,6 +37,7 @@ const memberProfileSyncSource = readSrc("src/services/memberProfileSync.ts");
 const memberProfileListenerSource = readSrc("src/hooks/useMemberProfileListener.ts");
 const memberDataApiSource = readSrc("api/member/data.js");
 const memberDataClientSource = readSrc("src/services/memberData.ts");
+const memberCityHomeClientSource = readSrc("src/services/cityHome.ts");
 const memberAuthSource = readSrc("server/services/memberAuth.js");
 const memberApiAuthSource = readSrc("src/utils/memberApiAuth.ts");
 const pinLoginApiSource = readSrc("api/auth/pin-login.js");
@@ -64,6 +65,7 @@ const memberPhotosApiSource = readSrc("api/member/photos.js");
 const photoUploadAttributionSource = readSrc("server/services/photoUploadAttribution.js");
 const photoReviewServiceSource = readSrc("server/services/photoReview.js");
 const profileMergeSource = readSrc("server/utils/profileMerge.js");
+const profilePatchSharedSource = readSrc("shared/profilePatch.mjs");
 const androidReleaseSource = readSrc("scripts/build-android-release.mjs");
 const androidVerifySource = readSrc("scripts/verify-android-assets.mjs");
 const goToAppSource = readSrc("src/services/goToApp.ts");
@@ -317,6 +319,13 @@ assertCheck(
     photoReviewSharedSource.includes("sanitizeMemberPhotoMeta") &&
     !memberPhotosApiSource.includes("body.photoReviewStatus"),
   "member profile save and photo APIs must not trust client moderation status"
+);
+assertCheck(
+  profilePatchSharedSource.includes("PROFILE_PATCH_SCOPES") &&
+    profileMergeSource.includes("patchScope") &&
+    memberDataApiSource.includes("profilePatchScope") &&
+    memberCityHomeClientSource.includes("profilePatchScope"),
+  "profile saves must use scoped patches to avoid media race conditions"
 );
 assertCheck(
   androidReleaseSource.includes("cleanWebAssets") &&

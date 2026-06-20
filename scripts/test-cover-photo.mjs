@@ -31,8 +31,26 @@ const newer = mergeMemberProfilePayload(
     coverPhotoUrl: "https://example.com/new.webp",
     coverPhotoUpdatedAt: "2026-06-18T12:00:00.000Z",
     coverPhotoExplicit: true
-  }
+  },
+  { patchScope: "photos" }
 );
 assert(newer.coverPhotoUrl === "https://example.com/new.webp", "merge prefers newer cover");
+
+const profileOnly = mergeMemberProfilePayload(
+  {
+    coverPhotoUrl: "https://example.com/keep.webp",
+    bio: "Keep bio",
+    photos: ["https://example.com/p1.webp"]
+  },
+  {
+    bio: "Updated bio",
+    coverPhotoUrl: "https://example.com/stale.webp",
+    photos: []
+  },
+  { patchScope: "profile" }
+);
+assert(profileOnly.bio === "Updated bio", "profile patch updates bio");
+assert(profileOnly.coverPhotoUrl === "https://example.com/keep.webp", "profile patch keeps cover");
+assert(profileOnly.photos.length === 1, "profile patch keeps photos");
 
 console.log("cover photo persistence tests ok");

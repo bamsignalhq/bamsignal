@@ -110,7 +110,9 @@ export function ProfileAccountPanel({
     const nextProfile = { ...profile, profilePausedAt: nextPaused };
     onProfileChange(nextProfile);
     writeJson(STORAGE_KEYS.datingProfile, { ...nextProfile, premium: isPremium });
-    void syncMemberProfileRemote({ ...user, username: user.username }, nextProfile);
+    void syncMemberProfileRemote({ ...user, username: user.username }, nextProfile, {
+      patchScope: "profile"
+    });
     onMessage(
       pausedAt ? "Welcome back — you're visible again." : "Taking a break — hidden from Home and Discover.",
       true

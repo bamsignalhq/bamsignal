@@ -319,7 +319,7 @@ export function ProfilePage({
   const commitProfileMediaUpdate = (next: DatingProfile) => {
     const normalized = normalizeDatingProfile({ ...next, premium: isPremium });
     setProfile(normalized);
-    void syncMemberProfileWithResult(user, normalized).then(async (synced) => {
+    void syncMemberProfileWithResult(user, normalized, { patchScope: "photos" }).then(async (synced) => {
       if (!synced.ok) return;
       const canonical = await revalidateMemberProfileAfterUpdate(user, {
         profile: synced.profile ?? normalized
@@ -351,7 +351,7 @@ export function ProfilePage({
     try {
       const normalized = normalizeDatingProfile({ ...profile, premium: isPremium });
       const normalizedPrefs = normalizeMatchPreferences(prefs);
-      const synced = await syncMemberProfileWithResult(user, normalized);
+      const synced = await syncMemberProfileWithResult(user, normalized, { patchScope: "profile" });
       onUserChange({ ...user, name: user.name });
       if (!synced.ok) {
         showSaveFeedback(USER_MESSAGES.profileSaveFailed, false, source);
@@ -418,7 +418,7 @@ export function ProfilePage({
         verificationStatus: "pending" as const
       };
       writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
-      syncMemberProfileRemote(user, next);
+      syncMemberProfileRemote(user, next, { patchScope: "profile" });
       return next;
     });
     setVerifySubmitted(true);
@@ -903,7 +903,7 @@ export function ProfilePage({
               onRecorded={async (voiceIntroUrl) => {
                 const next = normalizeDatingProfile({ ...profile, voiceIntroUrl, premium: isPremium });
                 setProfile(next);
-                const synced = await syncMemberProfileWithResult(user, next);
+                const synced = await syncMemberProfileWithResult(user, next, { patchScope: "voice" });
                 if (!synced.ok) {
                   showModMessage(USER_MESSAGES.voiceIntroSaveFailed);
                   return;
@@ -920,7 +920,7 @@ export function ProfilePage({
                   premium: isPremium
                 });
                 setProfile(next);
-                void syncMemberProfileWithResult(user, next).then(async (synced) => {
+                void syncMemberProfileWithResult(user, next, { patchScope: "voice" }).then(async (synced) => {
                   if (!synced.ok) return;
                   const canonical = await revalidateMemberProfileAfterUpdate(user, {
                     profile: synced.profile ?? next

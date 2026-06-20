@@ -1,6 +1,6 @@
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../types";
-import { applyCanonicalMemberSnapshot } from "../services/memberProfileSync";
-import { syncMemberProfileRemote } from "../services/cityHome";
+import { applyCanonicalMemberSnapshot, revalidateMemberProfileAfterUpdate } from "../services/memberProfileSync";
+import { syncMemberProfileWithResult } from "../services/cityHome";
 import { applyCoverPhotoUpdate } from "../utils/coverPhoto";
 import { normalizeDatingProfile } from "../utils/profile";
 
@@ -15,6 +15,9 @@ export function persistCoverPhotoChange(
   );
   const next = normalizeDatingProfile(withCover);
   applyCanonicalMemberSnapshot(next);
-  void syncMemberProfileRemote(user, next);
+  void syncMemberProfileWithResult(user, next, { patchScope: "photos" }).then(async (synced) => {
+    if (!synced.ok) return;
+    await revalidateMemberProfileAfterUpdate(user, { profile: synced.profile ?? next });
+  });
   return next;
 }

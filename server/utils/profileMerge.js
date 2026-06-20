@@ -1,5 +1,11 @@
-/** Safe merge for app_member_profiles.profile JSON — never drop cover or gallery fields. */
+/** Safe merge for app_member_profiles.profile JSON — scoped patches avoid last-write-wins races. */
 
+import {
+  normalizeProfilePatchScope,
+  pickProfilePatchFields,
+  PROFILE_EDITOR_KEYS,
+  PROFILE_VOICE_KEYS
+} from "../../shared/profilePatch.mjs";
 import { sanitizeMemberPhotoMeta } from "../../shared/photoReview.mjs";
 
 function pickCover(raw = {}) {
@@ -13,9 +19,7 @@ function coverTimestamp(raw = {}) {
   return Number.isFinite(ts) ? ts : 0;
 }
 
-export function mergeMemberProfilePayload(existing = {}, incoming = {}) {
-  const next = { ...existing, ...incoming };
-
+function mergePhotoFields(existing = {}, incoming = {}, target = {}) {
   const existingCover = pickCover(existing);
   const incomingCover = pickCover(incoming);
   const existingTs = coverTimestamp(existing);
@@ -25,42 +29,64 @@ export function mergeMemberProfilePayload(existing = {}, incoming = {}) {
     const useIncoming =
       !existingCover || incomingTs >= existingTs || incoming.coverPhotoExplicit === true;
     if (useIncoming) {
-      next.coverPhotoUrl = incomingCover;
-      next.coverPhoto = incomingCover;
-      next.coverPhotoPath = incoming.coverPhotoPath ?? existing.coverPhotoPath ?? null;
-      next.coverPhotoExplicit = incoming.coverPhotoExplicit ?? true;
-      next.coverPhotoUpdatedAt =
+      target.coverPhotoUrl = incomingCover;
+      target.coverPhoto = incomingCover;
+      target.coverPhotoPath = incoming.coverPhotoPath ?? existing.coverPhotoPath ?? null;
+      target.coverPhotoExplicit = incoming.coverPhotoExplicit ?? true;
+      target.coverPhotoUpdatedAt =
         incoming.coverPhotoUpdatedAt ?? existing.coverPhotoUpdatedAt ?? new Date().toISOString();
     } else {
-      next.coverPhotoUrl = existingCover;
-      next.coverPhoto = existingCover;
-      next.coverPhotoPath = existing.coverPhotoPath ?? incoming.coverPhotoPath ?? null;
-      next.coverPhotoExplicit = existing.coverPhotoExplicit ?? incoming.coverPhotoExplicit ?? true;
-      next.coverPhotoUpdatedAt = existing.coverPhotoUpdatedAt ?? incoming.coverPhotoUpdatedAt ?? null;
+      target.coverPhotoUrl = existingCover;
+      target.coverPhoto = existingCover;
+      target.coverPhotoPath = existing.coverPhotoPath ?? incoming.coverPhotoPath ?? null;
+      target.coverPhotoExplicit = existing.coverPhotoExplicit ?? incoming.coverPhotoExplicit ?? true;
+      target.coverPhotoUpdatedAt = existing.coverPhotoUpdatedAt ?? incoming.coverPhotoUpdatedAt ?? null;
     }
   } else if (existingCover) {
-    next.coverPhotoUrl = existingCover;
-    next.coverPhoto = existingCover;
-    next.coverPhotoPath = existing.coverPhotoPath ?? null;
-    next.coverPhotoExplicit = existing.coverPhotoExplicit ?? false;
-    next.coverPhotoUpdatedAt = existing.coverPhotoUpdatedAt ?? null;
+    target.coverPhotoUrl = existingCover;
+    target.coverPhoto = existingCover;
+    target.coverPhotoPath = existing.coverPhotoPath ?? null;
+    target.coverPhotoExplicit = existing.coverPhotoExplicit ?? false;
+    target.coverPhotoUpdatedAt = existing.coverPhotoUpdatedAt ?? null;
   }
 
   if (!Array.isArray(incoming.photos) || incoming.photos.length === 0) {
-    next.photos = Array.isArray(existing.photos) ? existing.photos : incoming.photos ?? [];
+    target.photos = Array.isArray(existing.photos) ? existing.photos : incoming.photos ?? [];
   } else {
-    next.photos = incoming.photos.filter(Boolean);
+    target.photos = incoming.photos.filter(Boolean);
   }
 
   if (!incoming.mainPhotoUrl && existing.mainPhotoUrl) {
-    next.mainPhotoUrl = existing.mainPhotoUrl;
+    target.mainPhotoUrl = existing.mainPhotoUrl;
+  } else if (incoming.mainPhotoUrl) {
+    target.mainPhotoUrl = incoming.mainPhotoUrl;
   }
 
-  const photos = Array.isArray(next.photos) ? next.photos.filter(Boolean) : [];
-  next.photos = photos;
-  const cover = pickCover(next);
+  const photos = Array.isArray(target.photos) ? target.photos.filter(Boolean) : [];
+  target.photos = photos;
+  const cover = pickCover(target);
   const allowedPhotoUrls = cover ? [...photos, cover] : photos;
-  next.photoMeta = sanitizeMemberPhotoMeta(existing.photoMeta, incoming.photoMeta, allowedPhotoUrls);
+  target.photoMeta = sanitizeMemberPhotoMeta(existing.photoMeta, incoming.photoMeta, allowedPhotoUrls);
 
-  return next;
+  return target;
+}
+
+export function mergeMemberProfilePayload(existing = {}, incoming = {}, options = {}) {
+  const patchScope = normalizeProfilePatchScope(options.patchScope);
+  const base = { ...existing };
+
+  if (patchScope === "profile") {
+    return { ...base, ...pickProfilePatchFields(incoming, PROFILE_EDITOR_KEYS) };
+  }
+
+  if (patchScope === "voice") {
+    return { ...base, ...pickProfilePatchFields(incoming, PROFILE_VOICE_KEYS) };
+  }
+
+  if (patchScope === "photos") {
+    return mergePhotoFields(existing, incoming, { ...base });
+  }
+
+  const next = { ...base, ...incoming };
+  return mergePhotoFields(existing, incoming, next);
 }

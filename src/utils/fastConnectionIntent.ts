@@ -42,7 +42,7 @@ export function applyQuickieIntentAfterPayment(
       fastConnectionInterested: true
     });
     writeJson(STORAGE_KEYS.datingProfile, interestedOnly);
-    void syncMemberProfileRemote(user, interestedOnly);
+    void syncMemberProfileRemote(user, interestedOnly, { patchScope: "profile" });
     return;
   }
 
@@ -61,7 +61,7 @@ export function applyQuickieIntentAfterPayment(
     intents: sanitizeIntentsForActivePass(intents)
   });
   writeJson(STORAGE_KEYS.datingProfile, next);
-  void syncMemberProfileRemote(user, next);
+  void syncMemberProfileRemote(user, next, { patchScope: "profile" });
 }
 
 export function applyPendingQuickieIntentIfNeeded(

@@ -506,7 +506,10 @@ export default async function handler(req, res) {
         existingMember?.profile && typeof existingMember.profile === "object"
           ? existingMember.profile
           : {};
-      const profile = mergeMemberProfilePayload(existingProfile, incomingProfile);
+      const profilePatchScope = String(body.profilePatchScope || "full").trim();
+      const profile = mergeMemberProfilePayload(existingProfile, incomingProfile, {
+        patchScope: profilePatchScope
+      });
       const { normalizeProfileIntents } = await import("../../shared/memberIntents.mjs");
       const { normalizeProfileOptionalPreferences } = await import(
         "../../shared/memberOptionalPreferences.mjs"
@@ -515,7 +518,11 @@ export default async function handler(req, res) {
         profile.intents = normalizeProfileIntents(profile.intents);
       }
       Object.assign(profile, normalizeProfileOptionalPreferences(profile));
-      if (profile.voiceIntroUrl) {
+      const voicePatchActive =
+        profilePatchScope === "voice" ||
+        profilePatchScope === "full" ||
+        Object.prototype.hasOwnProperty.call(incomingProfile, "voiceIntroUrl");
+      if (voicePatchActive && profile.voiceIntroUrl) {
         const voiceUrl = String(profile.voiceIntroUrl).trim();
         profile.voiceIntroUrl =
           voiceUrl &&

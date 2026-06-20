@@ -12,7 +12,7 @@ import {
   markPaymentSessionStarted,
   setPaymentFlowState
 } from "../utils/paymentState";
-import { PAYMENT_START_ERROR } from "../config/paystack";
+import { PAYMENT_CONFIRM_UNAVAILABLE, PAYMENT_START_ERROR } from "../config/paystack";
 import {
   getPaymentReturnMeta,
   getPaymentReturnPath,
@@ -81,6 +81,7 @@ type VerifyResult = {
   ok: boolean;
   error?: string;
   pending?: boolean;
+  retryable?: boolean;
   productType?: PaymentKind;
   productId?: string;
   returnPath?: string;
@@ -94,6 +95,27 @@ type VerifyResult = {
 function normalizePaymentKind(kind?: string | null): PaymentKind {
   if (kind === "fast_connection") return "quickie";
   return kind === "boost" || kind === "quickie" || kind === "premium" ? kind : "premium";
+}
+
+function parseVerifyHttpResult(
+  response: Response,
+  payload: VerifyPaymentPayload | null | undefined,
+  fallbackError: string
+): { ok: true; payload: VerifyPaymentPayload } | { ok: false; error: string; pending?: boolean; retryable?: boolean } {
+  if (response.status === 402) {
+    return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
+  }
+  if (response.status === 503) {
+    return {
+      ok: false,
+      retryable: true,
+      error: payload?.error || PAYMENT_CONFIRM_UNAVAILABLE
+    };
+  }
+  if (!response.ok || !payload?.ok) {
+    return { ok: false, error: payload?.error || fallbackError };
+  }
+  return { ok: true, payload };
 }
 
 function currentPaymentReturnBody(): Pick<PaymentReturnContext, "returnPath" | "productType" | "productId" | "sourcePage"> {
@@ -288,26 +310,25 @@ export async function verifyPayment(user: UserProfile): Promise<{
       })
     });
     const payload = await readResponseJson<VerifyPaymentPayload>(response);
-    if (response.status === 402) {
-      return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
+    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.");
+    if (!parsed.ok) {
+      return parsed;
     }
-    if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "Payment not verified yet." };
-    }
-    const kind = normalizePaymentKind(payload.productType);
-    if (kind === "premium" && payload.premium_until) {
-      setPremiumSnapshot({ isPremium: true, premiumUntil: payload.premium_until });
+    const verified = parsed.payload;
+    const kind = normalizePaymentKind(verified.productType);
+    if (kind === "premium" && verified.premium_until) {
+      setPremiumSnapshot({ isPremium: true, premiumUntil: verified.premium_until });
     }
     return {
       ok: true,
-      premiumUntil: payload.premium_until,
-      productType: normalizePaymentKind(payload.productType),
-      productId: payload.productId,
-      returnPath: payload.returnPath,
-      sourcePage: payload.sourcePage,
-      quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil,
-      boostId: payload.boostId,
-      expiresAt: payload.expiresAt
+      premiumUntil: verified.premium_until,
+      productType: normalizePaymentKind(verified.productType),
+      productId: verified.productId,
+      returnPath: verified.returnPath,
+      sourcePage: verified.sourcePage,
+      quickiePassUntil: verified.quickiePassUntil || verified.fastConnectionPassUntil,
+      boostId: verified.boostId,
+      expiresAt: verified.expiresAt
     };
   } catch {
     return { ok: false, error: "Verification failed." };
@@ -405,22 +426,21 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
       })
     });
     const payload = await readResponseJson<VerifyPaymentPayload>(response);
-    if (response.status === 402) {
-      return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
+    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.");
+    if (!parsed.ok) {
+      return parsed;
     }
-    if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "Payment not verified yet." };
-    }
+    const verified = parsed.payload;
     return {
       ok: true,
-      quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil,
-      productType: normalizePaymentKind(payload.productType),
-      productId: payload.productId,
-      returnPath: payload.returnPath,
-      sourcePage: payload.sourcePage,
-      premiumUntil: payload.premium_until,
-      boostId: payload.boostId,
-      expiresAt: payload.expiresAt
+      quickiePassUntil: verified.quickiePassUntil || verified.fastConnectionPassUntil,
+      productType: normalizePaymentKind(verified.productType),
+      productId: verified.productId,
+      returnPath: verified.returnPath,
+      sourcePage: verified.sourcePage,
+      premiumUntil: verified.premium_until,
+      boostId: verified.boostId,
+      expiresAt: verified.expiresAt
     };
   } catch {
     return { ok: false, error: "Verification failed." };
@@ -503,22 +523,21 @@ export async function verifyBoostPayment(
       })
     });
     const payload = await readResponseJson<VerifyPaymentPayload>(response);
-    if (response.status === 402) {
-      return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
+    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.");
+    if (!parsed.ok) {
+      return parsed;
     }
-    if (!response.ok || !payload?.ok) {
-      return { ok: false, error: payload?.error || "Payment not verified yet." };
-    }
+    const verified = parsed.payload;
     return {
       ok: true,
-      expiresAt: payload.expiresAt,
-      productType: normalizePaymentKind(payload.productType),
-      productId: payload.productId,
-      returnPath: payload.returnPath,
-      sourcePage: payload.sourcePage,
-      boostId: payload.boostId || boostId,
-      premiumUntil: payload.premium_until,
-      quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil
+      expiresAt: verified.expiresAt,
+      productType: normalizePaymentKind(verified.productType),
+      productId: verified.productId,
+      returnPath: verified.returnPath,
+      sourcePage: verified.sourcePage,
+      boostId: verified.boostId || boostId,
+      premiumUntil: verified.premium_until,
+      quickiePassUntil: verified.quickiePassUntil || verified.fastConnectionPassUntil
     };
   } catch {
     return { ok: false, error: "Verification failed." };
@@ -593,7 +612,9 @@ export async function completePendingPayment(user: UserProfile): Promise<{
         expiresAt: result.expiresAt
       };
     }
-    if (result.pending) return { ok: false, kind: "boost", pending: true };
+    if (result.pending || result.retryable) {
+      return { ok: false, kind: "boost", pending: true, error: result.error };
+    }
     logPaymentEvent("verification result", { reference, ok: false, kind: "boost", error: result.error });
     if (checkoutWasOpened()) {
       setPaymentFlowState("failed");
@@ -621,7 +642,9 @@ export async function completePendingPayment(user: UserProfile): Promise<{
         expiresAt: result.expiresAt
       };
     }
-    if (result.pending) return { ok: false, kind: "quickie", pending: true };
+    if (result.pending || result.retryable) {
+      return { ok: false, kind: "quickie", pending: true, error: result.error };
+    }
     logPaymentEvent("verification result", { reference, ok: false, kind: "quickie", error: result.error });
     if (checkoutWasOpened()) {
       setPaymentFlowState("failed");
@@ -650,7 +673,9 @@ export async function completePendingPayment(user: UserProfile): Promise<{
       expiresAt: result.expiresAt
     };
   }
-  if (result.pending) return { ok: false, kind: "premium", pending: true };
+  if (result.pending || result.retryable) {
+    return { ok: false, kind: "premium", pending: true, error: result.error };
+  }
   logPaymentEvent("verification result", { reference, ok: false, kind: "premium", error: result.error });
   if (checkoutWasOpened()) {
     setPaymentFlowState("failed");

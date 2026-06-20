@@ -14,5 +14,7 @@ export function isValidPaystackPublicKey(key: string): boolean {
 }
 
 export const PAYMENT_START_ERROR = "Payment could not start. Please try again.";
+export const PAYMENT_CONFIRM_UNAVAILABLE =
+  "We couldn't confirm your payment yet. Please try again in a moment.";
 export const PAYMENT_PUBLIC_KEY_ERROR =
   "Payment setup error: public key is missing or invalid. Please contact support.";

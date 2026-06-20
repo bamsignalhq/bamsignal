@@ -3,6 +3,7 @@ import {
   recordPaymentVerified
 } from "./paymentEvents.js";
 import { claimFulfillmentEmailSend, fulfillmentEmailAlreadySent } from "./paymentFulfillments.js";
+import { requireDatabaseReadyForPayments } from "./paymentDb.js";
 import {
   buildPurchaseConfirmationEmailBody,
   buildPurchaseConfirmationPlainText,
@@ -126,6 +127,8 @@ export async function sendPurchaseConfirmationEmail({
   if (!reference || !normalizedEmail.includes("@")) {
     return { ok: false, skipped: true, reason: "missing_recipient" };
   }
+
+  requireDatabaseReadyForPayments();
 
   await recordPaymentVerified({
     reference,

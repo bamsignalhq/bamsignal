@@ -52,6 +52,8 @@ const paystackVerifySource = readFileSync(join(rootPath, "api/paystack/verify.js
 const paystackWebhookSource = readFileSync(join(rootPath, "api/webhooks/paystack.js"), "utf8");
 const paymentCatalogSource = readFileSync(join(rootPath, "server/services/paymentCatalog.js"), "utf8");
 const paymentFortressSource = readFileSync(join(rootPath, "server/services/paymentFortress.js"), "utf8");
+const paymentDbSource = readFileSync(join(rootPath, "server/services/paymentDb.js"), "utf8");
+const paymentFulfillmentsSource = readFileSync(join(rootPath, "server/services/paymentFulfillments.js"), "utf8");
 const paystackDiagnosticsApiSource = readSrc("api/diagnostics/paystack-connectivity.js");
 const memberPhotosApiSource = readSrc("api/member/photos.js");
 const photoUploadAttributionSource = readSrc("server/services/photoUploadAttribution.js");
@@ -570,14 +572,14 @@ assertCheck(
     paymentCatalogSource.includes("verifyExpectedAmount") &&
     paymentFortressSource.includes("recordPurchaseIntent") &&
     paymentFortressSource.includes("assertVerifiedPurchaseAmount") &&
+    paymentFortressSource.includes("completePaymentFulfillment") &&
     paystackVerifySource.includes("resolveInitializeIntent") &&
-    paystackVerifySource.includes("assertVerifiedPurchaseAmount") &&
-    paystackVerifySource.includes("fulfillVerifiedPurchase") &&
+    paystackVerifySource.includes("completePaymentFulfillment") &&
     !paystackVerifySource.includes("body.amount") &&
     !paystackVerifySource.includes("body.durationHours") &&
     !paystackVerifySource.includes("metadata.quickie_days") &&
     !paystackVerifySource.includes("metadata.duration_hours || body.durationHours") &&
-    paystackWebhookSource.includes("assertVerifiedPurchaseAmount") &&
+    paystackWebhookSource.includes("completePaymentFulfillment") &&
     !paystackWebhookSource.includes("metadata.quickie_days") &&
     paymentsSource.includes("?action=initialize") &&
     paymentsSource.includes("productId: plan.id") &&
@@ -587,6 +589,24 @@ assertCheck(
     !paymentsSource.includes("amount: plan.price") &&
     !paymentsSource.includes("dailyFastSignals"),
   "payment pricing and entitlements must be server authoritative"
+);
+assertCheck(
+  paymentDbSource.includes("requireDatabaseReadyForPayments") &&
+    paymentDbSource.includes("paymentQuery") &&
+    paymentFulfillmentsSource.includes("requireDatabaseReadyForPayments") &&
+    paymentFulfillmentsSource.includes("assertPaymentPersistenceRow") &&
+    paymentFortressSource.includes("completePaymentFulfillment") &&
+    paystackVerifySource.includes("completePaymentFulfillment") &&
+    paystackVerifySource.includes("PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE") &&
+    paystackVerifySource.includes("status(503)") &&
+    paystackWebhookSource.includes("completePaymentFulfillment") &&
+    paystackWebhookSource.includes("status(503)") &&
+    paymentsSource.includes("PAYMENT_CONFIRM_UNAVAILABLE") &&
+    paymentsSource.includes("response.status === 503") &&
+    paymentsSource.includes("retryable: true") &&
+    !paystackVerifySource.includes("await notifyPurchaseEmail") &&
+    paymentFortressSource.includes("sendPurchaseConfirmationEmail"),
+  "payment fulfillment must fail closed when persistence is unavailable"
 );
 
 console.log("source integrity ok");

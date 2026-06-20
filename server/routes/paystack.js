@@ -1,16 +1,13 @@
 import crypto from "node:crypto";
 import express from "express";
 import { config } from "../config.js";
-import { sendPurchaseConfirmationEmail } from "../services/purchaseEmail.js";
+import { query } from "../db.js";
+import { completePaymentFulfillment } from "../services/paymentFortress.js";
 import {
-  claimPaymentFulfillment,
-  getPaymentFulfillment,
-  markPaymentFulfillmentStatus
-} from "../services/paymentFulfillments.js";
-import {
-  assertVerifiedPurchaseAmount,
-  fulfillVerifiedPurchase
-} from "../services/paymentFortress.js";
+  PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE,
+  isPaymentDatabaseError,
+  paymentHttpStatusForError
+} from "../services/paymentDb.js";
 
 export const paystackRouter = express.Router();
 
@@ -44,69 +41,37 @@ async function activatePurchase(event) {
   const phone = normalizePhone(metadata.phone || metadata.phone_number || "");
   const name = String(metadata.name || customer.first_name || "").trim();
   const reference = String(data.reference || metadata.reference || "");
-  const productType = String(metadata.product_type || "premium").trim();
-  const productId = String(metadata.product_id || metadata.plan || "monthly").trim();
   const returnPath = normalizeReturnPath(metadata.return_path || metadata.returnPath);
 
   if (!email && !phone) {
-    return { ok: false, reason: "No user identifier in Paystack metadata/customer" };
+    return { ok: false, status: 422, error: "No user identifier in Paystack metadata/customer" };
+  }
+  if (!reference) {
+    return { ok: false, status: 422, error: "Payment reference is required." };
   }
 
-  if (reference) {
-    const claim = await claimPaymentFulfillment({
-      reference,
-      userId: metadata.user_id || metadata.userId || null,
-      productType,
-      productId,
-      amountKobo: Number(data.amount || 0),
-      currency: String(data.currency || "").trim() || null,
-      rawPayload: { source: "webhook_route", event: event.event, data }
-    });
-    const existing = claim || (await getPaymentFulfillment(reference));
-    if (existing?.status === "fulfilled") {
-      return { ok: true, idempotent: true, reference, productType, productId };
-    }
-  }
-
-  const amountCheck = await assertVerifiedPurchaseAmount(reference, data, metadata);
-  if (!amountCheck.ok) {
-    return { ok: false, reference, reason: amountCheck.amountCheck?.reason || "amount_mismatch" };
-  }
-
-  const intent = amountCheck.intent;
-  const activation = await fulfillVerifiedPurchase({
-    intent,
-    email: email || null,
-    phone: phone || null,
-    name,
+  const result = await completePaymentFulfillment({
     reference,
+    transaction: data,
+    metadata,
+    email,
+    phone,
+    name,
     city: metadata.city || "",
-    transaction: data
+    returnPath,
+    sourcePage: returnPath,
+    ledgerSource: "webhook_route"
   });
 
-  if (reference && email) {
-    await markPaymentFulfillmentStatus(reference, "fulfilled", {
-      productType: intent.productType,
-      productId: intent.productId,
-      amountKobo: Number(data.amount || 0),
-      currency: String(data.currency || "").trim() || null,
-      rawPayload: { purchaseIntent: intent, activation }
-    });
-    await sendPurchaseConfirmationEmail({
-      reference,
-      email,
-      firstName: name.split(/\s+/)[0] || "there",
-      productType: intent.productType,
-      productId: intent.productId,
-      amountKobo: Number(data.amount || 0),
-      userId: metadata.user_id || metadata.userId || null,
-      returnPath
-    }).catch((error) => {
-      console.error("[paystack webhook] purchase email failed", error?.message || error);
-    });
+  if (result.ok) {
+    await query(
+      `insert into subscription_events (provider, event_type, user_email, user_id, payload)
+       values ('paystack', $1, $2, $3, $4)`,
+      [event.event, email || null, metadata.user_id || metadata.userId || null, event]
+    );
   }
 
-  return { ok: true, email, productType: intent.productType, productId: intent.productId, activation };
+  return result;
 }
 
 async function handlePaystackWebhook(req, res, next) {
@@ -122,8 +87,26 @@ async function handlePaystackWebhook(req, res, next) {
     }
 
     const result = await activatePurchase(event);
-    return res.json({ ok: true, event: event.event, purchase: result });
+    if (!result.ok) {
+      if (result.status === 422 && /amount/i.test(String(result.error || ""))) {
+        return res.json({ ok: true, ignored: true, reason: "amount_mismatch" });
+      }
+      return res.status(result.status || 422).json({ ok: false, error: result.error || "Unable to fulfill purchase." });
+    }
+
+    return res.json({
+      ok: true,
+      idempotent: Boolean(result.idempotent),
+      event: event.event,
+      productType: result.productType,
+      productId: result.productId,
+      activation: result.activation || null
+    });
   } catch (error) {
+    if (isPaymentDatabaseError(error)) {
+      console.error("[paystack webhook route] persistence unavailable", error?.message || error);
+      return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
+    }
     return next(error);
   }
 }

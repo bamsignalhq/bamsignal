@@ -6,21 +6,20 @@ import {
   paystackErrorResponse,
   verifyPaystackTransaction
 } from "../../server/services/paystackClient.js";
-import { sendPurchaseConfirmationEmail, logPaymentInitialized } from "../../server/services/purchaseEmail.js";
+import { logPaymentInitialized } from "../../server/services/purchaseEmail.js";
 import { appendPaymentAudit } from "../../server/services/paymentEvents.js";
 import {
-  claimPaymentFulfillment,
-  getPaymentFulfillment,
-  markPaymentFulfillmentStatus
-} from "../../server/services/paymentFulfillments.js";
-import {
-  assertVerifiedPurchaseAmount,
   buildPaystackPurchaseMetadata,
-  fulfillVerifiedPurchase,
+  completePaymentFulfillment,
   recordPurchaseIntent,
   resolveInitializeIntent
 } from "../../server/services/paymentFortress.js";
 import { isFastConnectionProductType } from "../../server/services/paymentCatalog.js";
+import {
+  PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE,
+  isPaymentDatabaseError,
+  paymentHttpStatusForError
+} from "../../server/services/paymentDb.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -85,36 +84,6 @@ function logPaystackFailure(scope, error, extra = {}) {
   });
 }
 
-async function notifyPurchaseEmail({
-  reference,
-  email,
-  name,
-  productType,
-  productId,
-  amountKobo,
-  metadata = {},
-  returnPath
-}) {
-  const firstName = String(name || metadata.name || "").trim().split(/\s+/)[0] || "there";
-  try {
-    await sendPurchaseConfirmationEmail({
-      reference,
-      email,
-      firstName,
-      productType,
-      productId,
-      amountKobo: Number(amountKobo || 0),
-      userId: metadata.user_id || metadata.userId || null,
-      returnPath
-    });
-  } catch (error) {
-    console.error("[paystack] purchase email failed", {
-      reference,
-      message: error?.message || String(error)
-    });
-  }
-}
-
 async function logPaymentReturnRedirect({ reference, returnPath, productType, productId, sourcePage }) {
   try {
     await appendPaymentAudit(reference, "payment_return_redirect", {
@@ -130,6 +99,57 @@ async function logPaymentReturnRedirect({ reference, returnPath, productType, pr
       message: error?.message || String(error)
     });
   }
+}
+
+function buildVerifySuccessResponse(result) {
+  const { intent, activation, returnPath, sourcePage, productType, productId } = result;
+
+  if (result.idempotent) {
+    return {
+      ok: true,
+      productType,
+      productId,
+      returnPath,
+      sourcePage
+    };
+  }
+
+  if (isFastConnectionProductType(intent.productType)) {
+    return {
+      ok: true,
+      productType: intent.productType,
+      productId: intent.productId,
+      returnPath,
+      sourcePage,
+      quickiePassUntil: activation.passUntil,
+      fastConnectionPassUntil: activation.passUntil
+    };
+  }
+
+  if (intent.productType === "boost") {
+    return {
+      ok: true,
+      productType: "boost",
+      productId: intent.productId,
+      returnPath,
+      sourcePage,
+      boostId: activation.boostId,
+      city: activation.placement?.city,
+      expiresAt: activation.expiresAt
+    };
+  }
+
+  return {
+    ok: true,
+    productType: "premium",
+    productId: intent.productId,
+    returnPath,
+    sourcePage,
+    premium_until: activation.premiumUntil,
+    days: intent.days,
+    invite_link: activation.inviteLink,
+    user: activation.activation
+  };
 }
 
 async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fallbackReturnPath) {
@@ -208,6 +228,10 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
       boostId: intent.boostId || undefined
     });
   } catch (error) {
+    if (isPaymentDatabaseError(error)) {
+      logPaystackFailure(action, error, { email, productType: intent.productType, productId: intent.productId });
+      return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
+    }
     logPaystackFailure(action, error, {
       email,
       productType: intent.productType,
@@ -285,127 +309,50 @@ export default async function handler(req, res) {
     const metadata = transaction?.metadata || {};
     const { returnPath, sourcePage } = paymentReturnFrom(metadata, {}, "/home");
 
-    await claimPaymentFulfillment({
-      reference,
-      userId: metadata.user_id || metadata.userId || null,
-      productType: metadata.product_type || "premium",
-      productId: metadata.product_id || null,
-      amountKobo: Number(transaction?.amount || 0),
-      currency: String(transaction?.currency || "").trim() || null,
-      rawPayload: {
-        source: "verify",
-        transaction
-      }
-    });
-
-    const existingFulfillment = await getPaymentFulfillment(reference);
-    if (existingFulfillment?.status === "fulfilled") {
-      return res.status(200).json({
-        ok: true,
-        productType: existingFulfillment.product_type,
-        productId: existingFulfillment.product_id,
+    try {
+      const result = await completePaymentFulfillment({
+        reference,
+        transaction,
+        metadata,
+        email: email || transactionEmail,
+        phone,
+        name,
+        city: metadata.city || "",
         returnPath,
-        sourcePage
+        sourcePage,
+        ledgerSource: "verify"
       });
-    }
 
-    const amountCheck = await assertVerifiedPurchaseAmount(reference, transaction, metadata);
-    if (!amountCheck.ok) {
-      return res.status(422).json({ ok: false, error: amountCheck.error || "Payment amount does not match this purchase." });
-    }
+      if (!result.ok) {
+        return res.status(result.status || 422).json({ ok: false, error: result.error });
+      }
 
-    const intent = amountCheck.intent;
-    const activation = await fulfillVerifiedPurchase({
-      intent,
-      email: email || transactionEmail,
-      phone,
-      name,
-      reference,
-      city: metadata.city || "",
-      transaction
-    });
-
-    if (!activation.ok) {
-      if (activation.requiresCity) {
-        return res.status(422).json({
-          ok: false,
-          error:
-            activation.boostId === "city-spotlight"
-              ? "Complete onboarding in your city before buying City Spotlight."
-              : "Complete onboarding in your city before buying a City Boost."
+      if (!result.idempotent) {
+        await logPaymentReturnRedirect({
+          reference,
+          returnPath,
+          sourcePage,
+          productType: result.productType,
+          productId: result.productId
         });
       }
-      return res.status(422).json({ ok: false, error: "Unable to activate this purchase." });
-    }
 
-    await markPaymentFulfillmentStatus(reference, "fulfilled", {
-      productType: intent.productType,
-      productId: intent.productId,
-      amountKobo: Number(transaction?.amount || 0),
-      currency: String(transaction?.currency || "").trim() || null,
-      rawPayload: {
-        purchaseIntent: intent,
-        activation
+      return res.status(200).json(buildVerifySuccessResponse(result));
+    } catch (error) {
+      if (isPaymentDatabaseError(error)) {
+        logPaystackFailure("verify persistence", error, { reference });
+        return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
       }
-    });
-
-    await notifyPurchaseEmail({
-      reference,
-      email: email || transactionEmail,
-      name,
-      productType: intent.productType,
-      productId: intent.productId,
-      amountKobo: transaction?.amount,
-      metadata,
-      returnPath
-    });
-
-    await logPaymentReturnRedirect({
-      reference,
-      returnPath,
-      sourcePage,
-      productType: intent.productType,
-      productId: intent.productId
-    });
-
-    if (isFastConnectionProductType(intent.productType)) {
-      return res.status(200).json({
-        ok: true,
-        productType: intent.productType,
-        productId: intent.productId,
-        returnPath,
-        sourcePage,
-        quickiePassUntil: activation.passUntil,
-        fastConnectionPassUntil: activation.passUntil
-      });
+      throw error;
     }
-
-    if (intent.productType === "boost") {
-      return res.status(200).json({
-        ok: true,
-        productType: "boost",
-        productId: intent.productId,
-        returnPath,
-        sourcePage,
-        boostId: activation.boostId,
-        city: activation.placement?.city,
-        expiresAt: activation.expiresAt
-      });
-    }
-
-    return res.status(200).json({
-      ok: true,
-      productType: "premium",
-      productId: intent.productId,
-      returnPath,
-      sourcePage,
-      premium_until: activation.premiumUntil,
-      days: intent.days,
-      invite_link: activation.inviteLink,
-      user: activation.activation
-    });
   } catch (error) {
     logPaystackFailure("handler", error);
-    return res.status(500).json({ ok: false, error: error.message || "Payment request failed." });
+    const status = paymentHttpStatusForError(error);
+    return res.status(status).json({
+      ok: false,
+      error: isPaymentDatabaseError(error)
+        ? PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE
+        : error.message || "Payment request failed."
+    });
   }
 }

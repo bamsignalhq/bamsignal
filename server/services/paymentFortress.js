@@ -14,10 +14,15 @@ import {
   verifyExpectedAmount
 } from "./paymentCatalog.js";
 import {
+  PaymentDatabaseError,
+  requireDatabaseReadyForPayments
+} from "./paymentDb.js";
+import {
   claimPaymentFulfillment,
   getPaymentFulfillment,
   markPaymentFulfillmentStatus
 } from "./paymentFulfillments.js";
+import { sendPurchaseConfirmationEmail } from "./purchaseEmail.js";
 
 export async function recordPurchaseIntent({
   reference,
@@ -25,7 +30,10 @@ export async function recordPurchaseIntent({
   intent,
   source = "initialize"
 }) {
-  if (!reference || !intent?.productType || !intent?.productId) return null;
+  if (!reference || !intent?.productType || !intent?.productId) {
+    throw new PaymentDatabaseError("Unable to store purchase intent.", "payment_persistence_failed");
+  }
+  requireDatabaseReadyForPayments();
   return claimPaymentFulfillment({
     reference,
     userId,
@@ -131,6 +139,8 @@ export async function fulfillVerifiedPurchase({
     return { ok: false, reason: "missing_intent" };
   }
 
+  requireDatabaseReadyForPayments();
+
   if (isFastConnectionProductType(intent.productType)) {
     const passUntil = fastConnectionUntilFromIntent(intent);
     const activation = await activateAppUserFastConnectionPass({
@@ -140,6 +150,9 @@ export async function fulfillVerifiedPurchase({
       passUntil,
       paystackReference: reference
     });
+    if (!activation) {
+      throw new PaymentDatabaseError();
+    }
     await resetFastConnectionDailySignals({ email, phone }).catch(() => null);
     return {
       ok: true,
@@ -216,6 +229,9 @@ export async function fulfillVerifiedPurchase({
     paystackReference: reference,
     inviteLink
   });
+  if (!activation) {
+    throw new PaymentDatabaseError();
+  }
 
   return {
     ok: true,
@@ -249,4 +265,112 @@ export async function resolveInitializeIntent(action, body = {}) {
   }
 
   return null;
+}
+
+function cityBoostError(boostId) {
+  return boostId === "city-spotlight"
+    ? "Complete onboarding in your city before buying City Spotlight."
+    : "Complete onboarding in your city before buying a City Boost.";
+}
+
+export async function completePaymentFulfillment({
+  reference,
+  transaction,
+  metadata = {},
+  email,
+  phone = "",
+  name = "",
+  city = "",
+  returnPath = "/home",
+  sourcePage = "/home",
+  ledgerSource = "verify"
+}) {
+  requireDatabaseReadyForPayments();
+
+  await claimPaymentFulfillment({
+    reference,
+    userId: metadata.user_id || metadata.userId || null,
+    productType: metadata.product_type || "premium",
+    productId: metadata.product_id || null,
+    amountKobo: Number(transaction?.amount || 0),
+    currency: String(transaction?.currency || "").trim() || null,
+    rawPayload: {
+      source: ledgerSource,
+      transaction
+    }
+  });
+
+  const existingFulfillment = await getPaymentFulfillment(reference);
+  if (existingFulfillment?.status === "fulfilled") {
+    return {
+      ok: true,
+      idempotent: true,
+      productType: existingFulfillment.product_type,
+      productId: existingFulfillment.product_id,
+      returnPath,
+      sourcePage
+    };
+  }
+
+  const amountCheck = await assertVerifiedPurchaseAmount(reference, transaction, metadata);
+  if (!amountCheck.ok) {
+    return {
+      ok: false,
+      status: 422,
+      error: amountCheck.error || "Payment amount does not match this purchase."
+    };
+  }
+
+  const intent = amountCheck.intent;
+  const activation = await fulfillVerifiedPurchase({
+    intent,
+    email,
+    phone,
+    name,
+    reference,
+    city,
+    transaction
+  });
+
+  if (!activation.ok) {
+    if (activation.requiresCity) {
+      return { ok: false, status: 422, error: cityBoostError(activation.boostId) };
+    }
+    return { ok: false, status: 422, error: "Unable to activate this purchase." };
+  }
+
+  await markPaymentFulfillmentStatus(reference, "fulfilled", {
+    productType: intent.productType,
+    productId: intent.productId,
+    amountKobo: Number(transaction?.amount || 0),
+    currency: String(transaction?.currency || "").trim() || null,
+    rawPayload: {
+      purchaseIntent: intent,
+      activation
+    }
+  });
+
+  if (email) {
+    await sendPurchaseConfirmationEmail({
+      reference,
+      email,
+      firstName: String(name || metadata.name || "").trim().split(/\s+/)[0] || "there",
+      productType: intent.productType,
+      productId: intent.productId,
+      amountKobo: Number(transaction?.amount || 0),
+      userId: metadata.user_id || metadata.userId || null,
+      returnPath
+    });
+  }
+
+  return {
+    ok: true,
+    idempotent: false,
+    intent,
+    activation,
+    productType: intent.productType,
+    productId: intent.productId,
+    returnPath,
+    sourcePage
+  };
 }

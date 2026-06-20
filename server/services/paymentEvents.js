@@ -1,4 +1,5 @@
 import { query, isDatabaseReady } from "../db.js";
+import { paymentQuery, requireDatabaseReadyForPayments } from "./paymentDb.js";
 
 export async function ensurePaymentEventsTable() {
   if (!isDatabaseReady()) return;
@@ -54,9 +55,12 @@ export async function recordPaymentVerified({
   amountKobo,
   returnPath
 }) {
-  if (!reference) return null;
+  if (!reference) {
+    requireDatabaseReadyForPayments();
+    throw new Error("Payment reference is required.");
+  }
   await ensurePaymentEventsTable();
-  if (!isDatabaseReady()) return null;
+  requireDatabaseReadyForPayments();
 
   await appendPaymentAudit(reference, "payment_verified", {
     userId: userId || null,
@@ -66,7 +70,7 @@ export async function recordPaymentVerified({
     returnPath: returnPath || null
   });
 
-  const result = await query(
+  const result = await paymentQuery(
     `insert into payment_events (
        paystack_reference, user_id, user_email, product_type, product_id, amount_kobo, return_path, verified_at
      ) values ($1, $2, $3, $4, $5, $6, $7, now())

@@ -1,15 +1,13 @@
 import crypto from "node:crypto";
 import { query, withDbRetry } from "../../server/db.js";
-import { sendPurchaseConfirmationEmail } from "../../server/services/purchaseEmail.js";
 import {
-  claimPaymentFulfillment,
-  getPaymentFulfillment,
-  markPaymentFulfillmentStatus
-} from "../../server/services/paymentFulfillments.js";
-import {
-  assertVerifiedPurchaseAmount,
-  fulfillVerifiedPurchase
+  completePaymentFulfillment
 } from "../../server/services/paymentFortress.js";
+import {
+  PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE,
+  isPaymentDatabaseError,
+  paymentHttpStatusForError
+} from "../../server/services/paymentDb.js";
 
 async function readRawBody(req) {
   const chunks = [];
@@ -62,85 +60,63 @@ export default async function handler(req, res) {
     const phone = normalizePhone(metadata.phone || metadata.phone_number || "");
     const name = String(metadata.name || data.customer?.first_name || "").trim();
     const reference = String(data.reference || metadata.reference || "");
-    const productType = String(metadata.product_type || "premium").trim();
-    const productId = String(metadata.product_id || metadata.plan || "monthly").trim();
     const returnPath = normalizeReturnPath(metadata.return_path || metadata.returnPath);
-    let activationResult = null;
 
-    const claim = reference
-      ? await claimPaymentFulfillment({
-          reference,
-          userId: metadata.user_id || metadata.userId || null,
-          productType,
-          productId,
-          amountKobo: Number(data.amount || 0),
-          currency: String(data.currency || "").trim() || null,
-          rawPayload: { source: "webhook", event: event.event, data }
-        })
-      : null;
-    const existing = reference ? claim || (await getPaymentFulfillment(reference)) : null;
-    if (existing?.status === "fulfilled") {
-      return res.status(200).json({ ok: true, idempotent: true, reference, productType, productId });
+    if (!email && !phone) {
+      return res.status(422).json({ ok: false, error: "No user identifier in Paystack metadata/customer" });
+    }
+    if (!reference) {
+      return res.status(422).json({ ok: false, error: "Payment reference is required." });
     }
 
-    const amountCheck = await assertVerifiedPurchaseAmount(reference, data, metadata);
-    if (!amountCheck.ok) {
-      return res.status(200).json({ ok: true, ignored: true, reason: amountCheck.amountCheck?.reason || "amount_mismatch" });
-    }
-
-    const intent = amountCheck.intent;
-
+    let result;
     await withDbRetry(async () => {
-      activationResult = await fulfillVerifiedPurchase({
-        intent,
+      result = await completePaymentFulfillment({
+        reference,
+        transaction: data,
+        metadata,
         email,
         phone,
         name,
-        reference,
         city: metadata.city || "",
-        transaction: data
+        returnPath,
+        sourcePage: returnPath,
+        ledgerSource: "webhook"
       });
-      await query(
-        `insert into subscription_events (provider, event_type, user_email, user_id, payload)
-         values ('paystack', $1, $2, $3, $4)`,
-        [event.event, email || null, metadata.user_id || metadata.userId || null, event]
-      );
+
+      if (result.ok) {
+        await query(
+          `insert into subscription_events (provider, event_type, user_email, user_id, payload)
+           values ('paystack', $1, $2, $3, $4)`,
+          [event.event, email || null, metadata.user_id || metadata.userId || null, event]
+        );
+      }
     });
 
-    if (reference) {
-      await markPaymentFulfillmentStatus(reference, "fulfilled", {
-        productType: intent.productType,
-        productId: intent.productId,
-        amountKobo: Number(data.amount || 0),
-        currency: String(data.currency || "").trim() || null,
-        rawPayload: { purchaseIntent: intent, activation: activationResult }
-      });
-    }
-
-    if (reference && email) {
-      await sendPurchaseConfirmationEmail({
-        reference,
-        email,
-        firstName: name.split(/\s+/)[0] || "there",
-        productType: intent.productType,
-        productId: intent.productId,
-        amountKobo: Number(data.amount || 0),
-        userId: metadata.user_id || metadata.userId || null,
-        returnPath
-      }).catch((error) => {
-        console.error("[paystack webhook] purchase email failed", error?.message || error);
-      });
+    if (!result?.ok) {
+      if (result?.status === 422 && /amount/i.test(String(result.error || ""))) {
+        return res.status(200).json({ ok: true, ignored: true, reason: "amount_mismatch" });
+      }
+      return res.status(result?.status || 422).json({ ok: false, error: result?.error || "Unable to fulfill purchase." });
     }
 
     return res.status(200).json({
       ok: true,
+      idempotent: Boolean(result.idempotent),
       event: event.event,
-      productType: intent.productType,
-      productId: intent.productId,
-      activation: activationResult
+      productType: result.productType,
+      productId: result.productId,
+      activation: result.activation || null
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "Paystack webhook failed" });
+    if (isPaymentDatabaseError(error)) {
+      console.error("[paystack webhook] persistence unavailable", error?.message || error);
+      return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
+    }
+    return res.status(paymentHttpStatusForError(error)).json({
+      ok: false,
+      error: error.message || "Paystack webhook failed"
+    });
   }
 }
 

@@ -24,9 +24,14 @@ export type ComplianceAckType =
   | "offline_safety";
 
 export const ADULT_RISK_COPY = {
-  title: "BamSignal is for adults 18+.",
+  title: "Never send money",
   body:
-    "By continuing, you understand that online interactions involve risks and that you are responsible for using good judgment when communicating with or meeting other users.",
+    "Romance scams are real. Never send money, airtime, gift cards, or bank details to someone you met on BamSignal — even if their story sounds urgent.",
+  bullets: [
+    "BamSignal will never ask you to pay outside the app",
+    "Report anyone who asks for money or investments",
+    "You are responsible for your own safety and judgment"
+  ],
   cta: "I Understand"
 } as const;
 

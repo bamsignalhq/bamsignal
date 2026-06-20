@@ -18,6 +18,7 @@ const ALL_GATE_ACK_TYPES: ComplianceAckType[] = [
   "privacy",
   "age_18",
   "safety_pledge",
+  "offline_safety",
   "adult_risk"
 ];
 
@@ -150,8 +151,15 @@ export function hasAdultRiskAck(
   );
 }
 
-export function hasOfflineSafetyAck(compliance?: MemberCompliance): boolean {
+export function hasOfflineSafetyAck(
+  compliance?: MemberCompliance,
+  options?: ComplianceCheckOptions
+): boolean {
   if (!compliance) return false;
+  const relaxed = options?.relaxed;
+  if (relaxed) {
+    return Boolean(compliance.offlineSafetyAcknowledged && compliance.offlineSafetyAcknowledgedAt);
+  }
   return Boolean(
     compliance.offlineSafetyAcknowledged &&
       compliance.offlineSafetyVersion === OFFLINE_SAFETY_VERSION &&
@@ -159,7 +167,12 @@ export function hasOfflineSafetyAck(compliance?: MemberCompliance): boolean {
   );
 }
 
-export type ComplianceGatePhase = "none" | "legal" | "pledge" | "adult_risk";
+export type ComplianceGatePhase =
+  | "none"
+  | "legal"
+  | "pledge"
+  | "offline_safety"
+  | "adult_risk";
 
 export function complianceGatePhase(
   compliance?: MemberCompliance,
@@ -167,6 +180,7 @@ export function complianceGatePhase(
 ): ComplianceGatePhase {
   if (!hasLegalCompliance(compliance, options)) return "legal";
   if (!hasSafetyPledge(compliance, options)) return "pledge";
+  if (!hasOfflineSafetyAck(compliance, options)) return "offline_safety";
   if (!hasAdultRiskAck(compliance, options)) return "adult_risk";
   return "none";
 }
@@ -177,7 +191,13 @@ export function isComplianceComplete(compliance?: MemberCompliance): boolean {
 }
 
 export function complianceVersionBundle(): string {
-  return [TERMS_VERSION, PRIVACY_VERSION, SAFETY_PLEDGE_VERSION, ADULT_RISK_VERSION].join("|");
+  return [
+    TERMS_VERSION,
+    PRIVACY_VERSION,
+    SAFETY_PLEDGE_VERSION,
+    OFFLINE_SAFETY_VERSION,
+    ADULT_RISK_VERSION
+  ].join("|");
 }
 
 export function resolveComplianceUserKeys(
@@ -251,7 +271,10 @@ export function isComplianceCompleteForUser(
   user?: Pick<UserProfile, "email" | "phone" | "username">
 ): boolean {
   if (isComplianceComplete(compliance)) return true;
-  return hasComplianceDoneMarkerForUser(user);
+  if (hasComplianceDoneMarkerForUser(user) && isLocalComplianceSufficient(compliance)) {
+    return true;
+  }
+  return false;
 }
 
 export function allGateAckTypes(): ComplianceAckType[] {
@@ -304,10 +327,8 @@ export function isLocalComplianceSufficient(compliance?: MemberCompliance): bool
 
 export function shouldBlockForCompliance(
   compliance?: MemberCompliance,
-  user?: Pick<UserProfile, "email" | "phone" | "username">,
-  options?: { onboardingComplete?: boolean }
+  user?: Pick<UserProfile, "email" | "phone" | "username">
 ): boolean {
-  if (options?.onboardingComplete) return false;
   if (isComplianceCompleteForUser(compliance, user)) return false;
   if (hasComplianceSyncPending() && isLocalComplianceSufficient(compliance)) return false;
   return true;

@@ -99,6 +99,9 @@ export function isServerComplianceComplete(compliance = {}) {
       compliance.safetyPledgeAccepted &&
       compliance.safetyPledgeVersion === SAFETY_PLEDGE_VERSION &&
       compliance.safetyPledgeAcceptedAt &&
+      compliance.offlineSafetyAcknowledged &&
+      compliance.offlineSafetyVersion === OFFLINE_SAFETY_VERSION &&
+      compliance.offlineSafetyAcknowledgedAt &&
       compliance.adultRiskAcknowledged &&
       compliance.adultRiskVersion === ADULT_RISK_VERSION &&
       compliance.adultRiskAcknowledgedAt

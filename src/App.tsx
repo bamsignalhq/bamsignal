@@ -258,8 +258,6 @@ export function App() {
   const showGuestChrome = isGuest || showMarketingHome;
   void complianceTick;
   const datingProfileForCompliance = getDatingProfile();
-  const onboardingCompleteForCompliance =
-    normalizeOnboardingStatus(datingProfileForCompliance).markedComplete;
   const showComplianceGate =
     isAuthed &&
     memberAppEntered &&
@@ -267,9 +265,7 @@ export function App() {
     !memberHydrating &&
     !isOnboardingRoute &&
     profileComplete === true &&
-    shouldBlockForCompliance(datingProfileForCompliance.compliance, user, {
-      onboardingComplete: onboardingCompleteForCompliance
-    });
+    shouldBlockForCompliance(datingProfileForCompliance.compliance, user);
   const complianceSyncPending = hasComplianceSyncPending();
   const memberAccessReady =
     isAuthed && memberAppEntered && !isPublicSurface && profileComplete === true && !showComplianceGate;
@@ -1308,6 +1304,7 @@ export function App() {
     clearOnboardingDrafts();
     setTab("home");
     navigateToPath("/home", true);
+    setComplianceTick((tick) => tick + 1);
     void refreshPremiumStatus(user).then(() => {
       syncPremiumState();
       if (isPremiumTrialActive()) {

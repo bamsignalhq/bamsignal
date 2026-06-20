@@ -2,23 +2,17 @@ import {
   fixFunctionSecurity,
   functionSecurityStatus
 } from "../../server/fixFunctionSecurity.js";
-import { config } from "../../server/config.js";
-
-function isAuthorized(req) {
-  const allowed = [config.cronSecret, process.env.DIAGNOSTICS_SECRET]
-    .filter(Boolean)
-    .map((value) => String(value).trim());
-  if (!allowed.length) return false;
-
-  const provided =
-    req.headers["x-bamsignal-secret"] ||
-    req.query.secret ||
-    req.headers.authorization?.replace(/^Bearer\s+/i, "");
-
-  return Boolean(provided && allowed.includes(String(provided).trim()));
-}
+import {
+  requireDiagnosticsAccess,
+  sendDiagnosticsAccessDenied
+} from "../../server/services/diagnosticsAccess.js";
 
 export default async function handler(req, res) {
+  const access = await requireDiagnosticsAccess(req);
+  if (!access.ok) {
+    return sendDiagnosticsAccessDenied(res, access);
+  }
+
   if (req.method === "GET") {
     try {
       const functions = await functionSecurityStatus();
@@ -29,10 +23,6 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "POST") {
-    if (!isAuthorized(req)) {
-      return res.status(401).json({ ok: false, error: "Diagnostics secret required." });
-    }
-
     try {
       const result = await fixFunctionSecurity();
       const functions = await functionSecurityStatus();

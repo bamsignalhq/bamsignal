@@ -25,6 +25,7 @@
     "test:photo-upload-payload": "node scripts/test-photo-upload-payload.mjs",
     "test:server-import": "node scripts/smoke-server-import.mjs",
     "test:member-data-auth": "node scripts/test-member-data-auth.mjs",
+    "test:diagnostics-access": "node scripts/test-diagnostics-access.mjs",
     "test:source-integrity": "node scripts/source-integrity-check.mjs",
     "prepare": "node scripts/install-githooks.mjs",
     "preview": "vite preview --host 0.0.0.0",

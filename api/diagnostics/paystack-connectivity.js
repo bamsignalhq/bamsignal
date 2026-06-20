@@ -1,19 +1,8 @@
-import { config } from "../../server/config.js";
 import { probePaystackConnectivity } from "../../server/services/paystackClient.js";
-
-function isAuthorized(req) {
-  const allowed = [config.cronSecret, process.env.DIAGNOSTICS_SECRET]
-    .filter(Boolean)
-    .map((value) => String(value).trim());
-  if (!allowed.length) return false;
-
-  const provided =
-    req.headers["x-bamsignal-secret"] ||
-    req.query.secret ||
-    req.headers.authorization?.replace(/^Bearer\s+/i, "");
-
-  return Boolean(provided && allowed.includes(String(provided).trim()));
-}
+import {
+  requireDiagnosticsAccess,
+  sendDiagnosticsAccessDenied
+} from "../../server/services/diagnosticsAccess.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -21,8 +10,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  if (!isAuthorized(req)) {
-    return res.status(401).json({ ok: false, error: "Diagnostics secret required." });
+  const access = await requireDiagnosticsAccess(req);
+  if (!access.ok) {
+    return sendDiagnosticsAccessDenied(res, access);
   }
 
   try {

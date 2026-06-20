@@ -42,6 +42,10 @@ const pinAuthThrottleSource = readSrc("server/services/pinAuthThrottle.js");
 const photoReviewSharedSource = readSrc("shared/photoReview.mjs");
 const cityHomeSource = readSrc("server/cityHome.js");
 const memberSocialSource = readSrc("server/memberSocial.js");
+const diagnosticsAccessSource = readSrc("server/services/diagnosticsAccess.js");
+const viewSecurityApiSource = readSrc("api/diagnostics/view-security.js");
+const functionSecurityApiSource = readSrc("api/diagnostics/function-security.js");
+const paystackDiagnosticsApiSource = readSrc("api/diagnostics/paystack-connectivity.js");
 
 assertCheck(
   paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
@@ -203,5 +207,24 @@ assertCheck(
     !memberSocialSource.includes("discoverPhotoFromProfile"),
   "member social discovery must use approved main photo helper"
 );
+assertCheck(
+  diagnosticsAccessSource.includes("requireDiagnosticsAccess") &&
+    diagnosticsAccessSource.includes('headers?.["x-diagnostics-secret"]') &&
+    diagnosticsAccessSource.includes("verifySupabaseAdmin"),
+  "diagnostics access helper must require secret header or admin session"
+);
+for (const [label, source] of [
+  ["view-security", viewSecurityApiSource],
+  ["function-security", functionSecurityApiSource],
+  ["paystack-connectivity", paystackDiagnosticsApiSource]
+]) {
+  assertCheck(
+    source.includes("requireDiagnosticsAccess(req)") &&
+      source.includes("sendDiagnosticsAccessDenied") &&
+      !source.includes("x-bamsignal-secret") &&
+      !source.includes("Diagnostics secret required"),
+    `${label} diagnostics endpoint must use shared auth and hide purpose on failure`
+  );
+}
 
 console.log("source integrity ok");

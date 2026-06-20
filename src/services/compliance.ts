@@ -2,14 +2,19 @@ import type { ComplianceAckType } from "../constants/compliance";
 import type { MemberCompliance, UserProfile } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
 import {
+  allGateAckTypes,
   buildCompliancePatch,
   clearComplianceSyncPending,
+  hasComplianceDoneMarker,
   isComplianceComplete,
+  isComplianceCompleteForUser,
   logComplianceSave,
   mergeMemberCompliance,
   normalizeCompliance,
   readPendingComplianceAcks,
-  setComplianceSyncPending
+  resolveComplianceUserKey,
+  setComplianceSyncPending,
+  writeComplianceDoneMarker
 } from "../utils/compliance";
 import { clearFlowCompletionKeys, clearFlowState } from "../utils/flowWatchdog";
 import { getDatingProfile, normalizeDatingProfile } from "../utils/profile";
@@ -48,6 +53,29 @@ export function clearComplianceFlowState(): void {
   clearFlowCompletionKeys();
 }
 
+function maybeWriteComplianceDoneMarker(user: Pick<UserProfile, "email" | "phone" | "username">): void {
+  const userKey = resolveComplianceUserKey(user);
+  if (!userKey) return;
+  if (isComplianceCompleteForUser(getDatingProfile().compliance, userKey)) {
+    writeComplianceDoneMarker(userKey);
+  }
+}
+
+/** Restore local compliance from durable per-user marker after logout/session clear. */
+export function restoreComplianceFromMarker(
+  user: Pick<UserProfile, "email" | "phone" | "username">
+): MemberCompliance | null {
+  const userKey = resolveComplianceUserKey(user);
+  if (!userKey || !hasComplianceDoneMarker(userKey)) return null;
+  if (isComplianceComplete(getDatingProfile().compliance)) {
+    writeComplianceDoneMarker(userKey);
+    return getDatingProfile().compliance ?? null;
+  }
+  const compliance = mergeLocalCompliance(allGateAckTypes());
+  writeComplianceDoneMarker(userKey);
+  return compliance;
+}
+
 export async function saveComplianceAcknowledgements(
   user: Pick<UserProfile, "email" | "phone">,
   ackTypes: ComplianceAckType[],
@@ -61,6 +89,9 @@ export async function saveComplianceAcknowledgements(
   if (!options?.skipOptimistic) {
     optimistic = mergeLocalCompliance(ackTypes);
     logComplianceSave({ ackTypes, stage: "optimistic", phase: "local" });
+    if (optimistic && isComplianceComplete(optimistic)) {
+      maybeWriteComplianceDoneMarker(user);
+    }
   }
 
   try {
@@ -95,6 +126,7 @@ export async function saveComplianceAcknowledgements(
     );
     if (isComplianceComplete(compliance)) {
       clearComplianceFlowState();
+      maybeWriteComplianceDoneMarker(user);
     }
     logComplianceSave({ ackTypes, stage: "success", complete: isComplianceComplete(compliance) });
     return { ok: true, compliance };
@@ -124,6 +156,7 @@ export async function retryPendingComplianceSync(
   const result = await saveComplianceAcknowledgements(user, pending, { skipOptimistic: true });
   if (result.ok && result.compliance && isComplianceComplete(result.compliance)) {
     clearComplianceFlowState();
+    maybeWriteComplianceDoneMarker(user);
     return true;
   }
   return result.ok;
@@ -142,4 +175,15 @@ export function mergeHydratedCompliance(
   remoteCompliance: unknown
 ): MemberCompliance {
   return mergeMemberCompliance(localCompliance, remoteCompliance);
+}
+
+export function syncComplianceDoneMarkerFromProfile(
+  user: Pick<UserProfile, "email" | "phone" | "username">,
+  compliance?: MemberCompliance
+): void {
+  const userKey = resolveComplianceUserKey(user);
+  if (!userKey) return;
+  if (isComplianceComplete(compliance) || hasComplianceDoneMarker(userKey)) {
+    writeComplianceDoneMarker(userKey);
+  }
 }

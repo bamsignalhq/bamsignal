@@ -34,9 +34,14 @@ import {
   complianceGatePhase,
   hasComplianceSyncPending,
   logComplianceRoute,
+  resolveComplianceUserKey,
   shouldBlockForCompliance
 } from "./utils/compliance";
-import { retryPendingComplianceSync } from "./services/compliance";
+import {
+  restoreComplianceFromMarker,
+  retryPendingComplianceSync,
+  syncComplianceDoneMarkerFromProfile
+} from "./services/compliance";
 import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
@@ -227,12 +232,14 @@ export function App() {
     isPublicHome && (!isAuthed || !memberAppEntered) && !isOnboardingRoute && !paystackCallbackActive;
   const showGuestChrome = isGuest || showMarketingHome;
   void complianceTick;
+  const complianceUserKey = resolveComplianceUserKey(user);
   const showComplianceGate =
     isAuthed &&
     memberAppEntered &&
+    !memberHydrating &&
     !isOnboardingRoute &&
     profileComplete === true &&
-    shouldBlockForCompliance(getDatingProfile().compliance);
+    shouldBlockForCompliance(getDatingProfile().compliance, complianceUserKey);
   const complianceSyncPending = hasComplianceSyncPending();
   const memberAccessReady =
     isAuthed && memberAppEntered && profileComplete === true && !showComplianceGate;
@@ -427,6 +434,9 @@ export function App() {
       return;
     }
     setUser(session.user);
+    restoreComplianceFromMarker(session.user);
+    syncComplianceDoneMarkerFromProfile(session.user, getDatingProfile().compliance);
+    void retryPendingComplianceSync(session.user);
     flowLog("profile_hydrate", { ok: true, route: session.route, reason: session.status?.reason });
     const datingProfile = getDatingProfile();
     const needsOnboarding = session.route === "onboarding";
@@ -872,6 +882,9 @@ export function App() {
         return;
       }
       setUser(appResult.user);
+      restoreComplianceFromMarker(appResult.user);
+      syncComplianceDoneMarkerFromProfile(appResult.user, getDatingProfile().compliance);
+      void retryPendingComplianceSync(appResult.user);
       flowLog(appResult.hydrated ? "profile_hydrate_ok" : "profile_hydrate_failed", {
         repaired: appResult.status?.repaired,
         reason: appResult.status?.reason ?? null

@@ -5,7 +5,7 @@ import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan"
 import { cacheDiscoverProfiles } from "./discoverProfiles";
 import { setPremiumSnapshot } from "./premiumStatus";
 import { apiUrl } from "./supabase";
-import { mergeHydratedCompliance } from "./compliance";
+import { mergeHydratedCompliance, syncComplianceDoneMarkerFromProfile } from "./compliance";
 import { getDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { resolveMemberIdentity } from "../utils/authIdentity";
 import { mergeIncomingSocial } from "../utils/profileSocial";
@@ -366,6 +366,7 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
       clearOnboardingDrafts();
     }
     writeJson(STORAGE_KEYS.datingProfile, merged);
+    syncComplianceDoneMarkerFromProfile(user, merged.compliance);
     logRouteDecision(user, merged, shouldRouteToOnboarding(user, merged) ? "onboarding" : "home", {
       hydrated: true,
       repaired,

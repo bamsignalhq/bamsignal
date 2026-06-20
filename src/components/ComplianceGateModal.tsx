@@ -17,7 +17,9 @@ import {
   hasAdultRiskAck,
   hasLegalCompliance,
   isComplianceComplete,
-  logComplianceSave
+  logComplianceSave,
+  resolveComplianceUserKey,
+  writeComplianceDoneMarker
 } from "../utils/compliance";
 import { getDatingProfile } from "../utils/profile";
 import { useFlowWatchdog } from "../hooks/useFlowWatchdog";
@@ -62,10 +64,14 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
   );
 
   const finishGate = useCallback(() => {
+    const userKey = resolveComplianceUserKey(user);
+    if (userKey && isComplianceComplete(getDatingProfile().compliance)) {
+      writeComplianceDoneMarker(userKey);
+    }
     clearComplianceFlowState();
     clearFlowState();
     onComplete();
-  }, [onComplete]);
+  }, [onComplete, user]);
 
   const advanceAfterSave = useCallback(
     (compliance = getDatingProfile().compliance) => {

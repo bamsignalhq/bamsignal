@@ -6,10 +6,20 @@ import {
   TERMS_VERSION,
   type ComplianceAckType
 } from "../constants/compliance";
-import type { MemberCompliance } from "../types";
+import type { MemberCompliance, UserProfile } from "../types";
+import { normalizeUsername } from "./authIdentity";
 
 export const COMPLIANCE_SYNC_PENDING_KEY = "bamsignal_compliance_sync_pending";
 export const COMPLIANCE_PENDING_ACKS_KEY = "bamsignal_compliance_pending_acks";
+export const COMPLIANCE_DONE_MARKER_PREFIX = "bamsignal_compliance_done:";
+
+const ALL_GATE_ACK_TYPES: ComplianceAckType[] = [
+  "terms",
+  "privacy",
+  "age_18",
+  "safety_pledge",
+  "adult_risk"
+];
 
 type ComplianceCheckOptions = { relaxed?: boolean };
 
@@ -166,6 +176,60 @@ export function isComplianceComplete(compliance?: MemberCompliance): boolean {
   return complianceGatePhase(compliance) === "none";
 }
 
+export function complianceVersionBundle(): string {
+  return [TERMS_VERSION, PRIVACY_VERSION, SAFETY_PLEDGE_VERSION, ADULT_RISK_VERSION].join("|");
+}
+
+export function resolveComplianceUserKey(
+  user?: Pick<UserProfile, "email" | "phone" | "username">
+): string {
+  const email = String(user?.email || "")
+    .trim()
+    .toLowerCase();
+  if (email.includes("@") && !email.includes("@phone.bamsignal.local")) {
+    return `email:${email}`;
+  }
+  const phone = String(user?.phone || "").replace(/\D/g, "");
+  if (phone) return `phone:${phone}`;
+  const username = normalizeUsername(user?.username || "");
+  if (username) return `username:${username}`;
+  return "";
+}
+
+export function readComplianceDoneMarker(userKey = ""): string | null {
+  if (!userKey) return null;
+  try {
+    return localStorage.getItem(`${COMPLIANCE_DONE_MARKER_PREFIX}${userKey}`);
+  } catch {
+    return null;
+  }
+}
+
+export function writeComplianceDoneMarker(userKey = ""): void {
+  if (!userKey) return;
+  try {
+    localStorage.setItem(`${COMPLIANCE_DONE_MARKER_PREFIX}${userKey}`, complianceVersionBundle());
+  } catch {
+    /* ignore */
+  }
+}
+
+export function hasComplianceDoneMarker(userKey = ""): boolean {
+  return readComplianceDoneMarker(userKey) === complianceVersionBundle();
+}
+
+export function isComplianceCompleteForUser(
+  compliance?: MemberCompliance,
+  userKey = ""
+): boolean {
+  if (isComplianceComplete(compliance)) return true;
+  return Boolean(userKey && hasComplianceDoneMarker(userKey));
+}
+
+export function allGateAckTypes(): ComplianceAckType[] {
+  return [...ALL_GATE_ACK_TYPES];
+}
+
 export function hasComplianceSyncPending(): boolean {
   try {
     return localStorage.getItem(COMPLIANCE_SYNC_PENDING_KEY) === "1";
@@ -210,8 +274,11 @@ export function isLocalComplianceSufficient(compliance?: MemberCompliance): bool
   return complianceGatePhase(compliance, { relaxed: true }) === "none";
 }
 
-export function shouldBlockForCompliance(compliance?: MemberCompliance): boolean {
-  if (isComplianceComplete(compliance)) return false;
+export function shouldBlockForCompliance(
+  compliance?: MemberCompliance,
+  userKey = ""
+): boolean {
+  if (isComplianceCompleteForUser(compliance, userKey)) return false;
   if (hasComplianceSyncPending() && isLocalComplianceSufficient(compliance)) return false;
   return true;
 }

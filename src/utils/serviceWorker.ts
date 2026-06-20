@@ -3,22 +3,40 @@ import {
   clearBamSignalVolatileCache,
   htmlBuildMatchesApp,
   isChunkLoadError,
-  performAppRecovery,
   unregisterStaleServiceWorkers
 } from "./crashRecovery";
+import { clearAppUpdatePending, markAppUpdatePending } from "./bootFlags";
 
 const BUILD_KEY = "bamsignal:build-id";
 const BUILD_RELOAD_KEY = "bamsignal:build-reload";
 const CHUNK_RELOAD_KEY = "bamsignal:chunk-reload";
 
-function showUpdatingOverlay(message = "Updating BamSignal…"): void {
-  if (document.getElementById("bamsignal-updating-overlay")) return;
-  const overlay = document.createElement("div");
-  overlay.id = "bamsignal-updating-overlay";
-  overlay.className = "app-updating-overlay";
-  overlay.setAttribute("role", "status");
-  overlay.textContent = message;
-  document.body.appendChild(overlay);
+export function notifyConnectionRefreshed(): void {
+  try {
+    window.dispatchEvent(new CustomEvent("bamsignal:connection-refreshed"));
+  } catch {
+    /* ignore */
+  }
+  if (typeof document === "undefined") return;
+  if (document.querySelector("[data-bamsignal-connection-toast]")) return;
+  const toast = document.createElement("p");
+  toast.dataset.bamsignalConnectionToast = "1";
+  toast.className = "compliance-sync-banner";
+  toast.setAttribute("role", "status");
+  toast.textContent = "Connection refreshed.";
+  toast.style.cssText =
+    "position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10000;max-width:min(92vw,420px);margin:0;cursor:default;";
+  document.body.appendChild(toast);
+  window.setTimeout(() => toast.remove(), 4000);
+}
+
+function silentRecoveryReload(): void {
+  markAppUpdatePending();
+  void clearBamSignalVolatileCache().finally(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("recover", String(Date.now()));
+    window.location.replace(url.toString());
+  });
 }
 
 /** Reload once when a new production bundle is detected. */
@@ -31,15 +49,12 @@ export function checkBuildVersion(): void {
       localStorage.setItem(BUILD_KEY, APP_BUILD_ID);
       if (!sessionStorage.getItem(BUILD_RELOAD_KEY)) {
         sessionStorage.setItem(BUILD_RELOAD_KEY, "1");
-        showUpdatingOverlay();
-        void clearBamSignalVolatileCache().finally(() => {
-          const url = new URL(window.location.href);
-          url.searchParams.set("recover", String(Date.now()));
-          window.location.replace(url.toString());
-        });
+        silentRecoveryReload();
         return;
       }
       sessionStorage.removeItem(BUILD_RELOAD_KEY);
+      clearAppUpdatePending();
+      notifyConnectionRefreshed();
     } else {
       localStorage.setItem(BUILD_KEY, APP_BUILD_ID);
     }
@@ -50,16 +65,13 @@ export function checkBuildVersion(): void {
 
 export function handleChunkLoadFailure(): void {
   if (sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
-    void performAppRecovery({ enableSafeMode: true });
+    sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+    clearAppUpdatePending();
+    notifyConnectionRefreshed();
     return;
   }
   sessionStorage.setItem(CHUNK_RELOAD_KEY, "1");
-  showUpdatingOverlay();
-  void clearBamSignalVolatileCache().finally(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("recover", String(Date.now()));
-    window.location.replace(url.toString());
-  });
+  silentRecoveryReload();
 }
 
 export function installChunkLoadHandlers(): void {
@@ -109,10 +121,7 @@ export function registerServiceWorker(): void {
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (sessionStorage.getItem(BUILD_RELOAD_KEY)) return;
       sessionStorage.setItem(BUILD_RELOAD_KEY, "1");
-      showUpdatingOverlay();
-      const url = new URL(window.location.href);
-      url.searchParams.set("recover", String(Date.now()));
-      window.location.replace(url.toString());
+      silentRecoveryReload();
     });
   });
 }

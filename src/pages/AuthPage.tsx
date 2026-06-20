@@ -58,6 +58,7 @@ import {
   verifyLogin2faRemote
 } from "../services/accountSecurity";
 import { fetchAccountStateRemote, restoreAccountRemote } from "../services/memberTrust";
+import { clearOtpVerifyPending, markOtpVerifyPending } from "../utils/bootFlags";
 
 type AuthPageProps = {
   mode: AuthMode;
@@ -79,6 +80,7 @@ const emptySignup = {
 };
 
 const OTP_LENGTH = 6;
+const OTP_VERIFY_TIMEOUT_MS = 15_000;
 const RESEND_COOLDOWN_SEC = 60;
 const FIELD_CHECK_DELAY_MS = 450;
 
@@ -632,6 +634,17 @@ export function AuthPage({
     verifyInFlight.current = true;
     setBusy("verify");
     onMessage("");
+    markOtpVerifyPending();
+    let timedOut = false;
+    const timeoutTimer = window.setTimeout(() => {
+      timedOut = true;
+      verifyInFlight.current = false;
+      setBusy(null);
+      clearOtpVerifyPending();
+      onMessage(USER_MESSAGES.otpVerifySlow);
+      focusOtpInput();
+      otpInputRef.current?.select();
+    }, OTP_VERIFY_TIMEOUT_MS);
     try {
       if (!supabase) {
         throw new Error("Authentication is not configured. Please update the app and try again.");
@@ -646,6 +659,7 @@ export function AuthPage({
         username: pendingSignup.username || "",
         phone: pendingSignup.phone || ""
       });
+      if (timedOut) return;
       flowLog("otp_verified", {
         recovered: Boolean(verifyResult.recovered),
         onboardingComplete: Boolean(verifyResult.onboardingComplete)
@@ -658,6 +672,7 @@ export function AuthPage({
           access_token: verifyResult.session.access_token,
           refresh_token: verifyResult.session.refresh_token
         });
+        if (timedOut) return;
         if (error) throw error;
         sessionUser = data.user;
         flowLog("session_create_success");
@@ -666,11 +681,13 @@ export function AuthPage({
           email: pendingSignup.email,
           password: signupForm.pin
         });
+        if (timedOut) return;
         if (error || !data.user) throw error || new Error(USER_MESSAGES.signupCompleteFailed);
         sessionUser = data.user;
         flowLog("session_create_success");
       }
 
+      if (timedOut) return;
       if (!sessionUser) {
         throw new Error(USER_MESSAGES.signupCompleteFailed);
       }
@@ -688,6 +705,7 @@ export function AuthPage({
         flowLog("redirect_home");
       }
     } catch (error) {
+      if (timedOut) return;
       if (error instanceof AuthEmailError && error.kind === "exists") {
         clearPendingSignup();
         setPendingSignup(null);
@@ -704,8 +722,11 @@ export function AuthPage({
       focusOtpInput();
       otpInputRef.current?.select();
     } finally {
+      window.clearTimeout(timeoutTimer);
+      if (timedOut) return;
       verifyInFlight.current = false;
       setBusy(null);
+      clearOtpVerifyPending();
     }
   };
 

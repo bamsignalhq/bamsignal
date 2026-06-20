@@ -33,11 +33,21 @@
   <body>
     <div id="root"></div>
     <script>
-      window.setTimeout(function () {
-        var root = document.getElementById("root");
-        if (root && !root.children.length) {
+      (function () {
+        var BOOT_RELOAD_KEY = "bamsignal-boot-reload";
+        window.setTimeout(function () {
+          var root = document.getElementById("root");
+          if (!root || root.children.length) return;
+          if (!sessionStorage.getItem(BOOT_RELOAD_KEY)) {
+            sessionStorage.setItem(BOOT_RELOAD_KEY, "1");
+            var url = new URL(window.location.href);
+            url.searchParams.set("recover", String(Date.now()));
+            window.location.replace(url.toString());
+            return;
+          }
+          sessionStorage.removeItem(BOOT_RELOAD_KEY);
           root.innerHTML =
-            '<main class="app-fallback" role="alert"><div class="app-fallback__card card"><h1>Updating BamSignal…</h1><p>Refreshing so you can continue.</p><button type="button" class="btn-primary btn-full" id="bamsignal-boot-reload">Reload</button></div></main>';
+            '<main class="app-fallback" role="alert"><div class="app-fallback__card card"><h1>Having trouble loading</h1><p>Tap reload to try again.</p><button type="button" class="btn-primary btn-full" id="bamsignal-boot-reload">Reload</button></div></main>';
           var btn = document.getElementById("bamsignal-boot-reload");
           if (btn) {
             btn.addEventListener("click", function () {
@@ -46,8 +56,8 @@
               window.location.replace(url.toString());
             });
           }
-        }
-      }, 15000);
+        }, 12000);
+      })();
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

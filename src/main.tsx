@@ -34,7 +34,9 @@ import "./styles/seo.css";
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";
 import { repairMemberCaches } from "./utils/repairMemberCaches";
 import { rememberSuccessfulRoute } from "./utils/crashRecovery";
+import { clearStaleBootFlags } from "./utils/bootFlags";
 
+clearStaleBootFlags();
 repairMemberCaches();
 checkBuildVersion();
 registerServiceWorker();

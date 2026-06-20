@@ -61,8 +61,7 @@ export function expireStaleOpenAppState(): boolean {
   return true;
 }
 
-/** Server-validated Supabase session — not localStorage profile alone. */
-export async function validateServerSession(): Promise<
+async function readValidatedSession(): Promise<
   { ok: true; user: UserProfile; authUserId: string } | { ok: false }
 > {
   if (!supabase) return { ok: false };
@@ -86,6 +85,29 @@ export async function validateServerSession(): Promise<
     loginEmail: stored.email || undefined
   });
   return { ok: true, user: profile, authUserId: user.id };
+}
+
+/** Server-validated Supabase session — not localStorage profile alone. */
+export async function validateServerSession(): Promise<
+  { ok: true; user: UserProfile; authUserId: string } | { ok: false }
+> {
+  return readValidatedSession();
+}
+
+export async function validateServerSessionWithTimeout(
+  timeoutMs = OPEN_APP_STATUS_TIMEOUT_MS
+): Promise<{ ok: true; user: UserProfile; authUserId: string } | { ok: false }> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      readValidatedSession(),
+      new Promise<{ ok: false }>((resolve) => {
+        timer = setTimeout(() => resolve({ ok: false }), timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 export function navigateOpenAppFallback(hasSession: boolean, authUserId = ""): void {
@@ -121,7 +143,7 @@ async function runGoToApp(options?: {
     return { ok: false, route: "login" };
   }
 
-  const validated = await validateServerSession();
+  const validated = await validateServerSessionWithTimeout(OPEN_APP_STATUS_TIMEOUT_MS);
   if (!validated.ok) {
     return { ok: false, route: "login" };
   }

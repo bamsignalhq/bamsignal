@@ -58,6 +58,9 @@ const adminConsentServerSource = readSrc("server/adminConsent.js");
 const adminConsentApiSource = readSrc("api/admin/consent.js");
 const dockerfileSource = readSrc("Dockerfile");
 const smokeServerImportSource = readSrc("scripts/smoke-server-import.mjs");
+const bootFlagsSource = readSrc("src/utils/bootFlags.ts");
+const serviceWorkerSource = readSrc("src/utils/serviceWorker.ts");
+const mainSource = readSrc("src/main.tsx");
 const sourceIntegrityScriptSource = readSrc("scripts/source-integrity-check.mjs");
 
 assertCheck(
@@ -310,6 +313,36 @@ assertCheck(
     !smokeServerImportSource.includes("readSrc(") &&
     smokeServerImportSource.includes("server/production.js"),
   "runtime smoke must not depend on src/"
+);
+assertCheck(
+  appSource.includes("onPublicWebRoute") &&
+    appSource.includes("!onPublicWebRoute") &&
+    appSource.includes("shouldBlockForAuthRestore"),
+  "public routes must never block on member session restore"
+);
+assertCheck(
+  bootFlagsSource.includes("clearStaleBootFlags") &&
+    bootFlagsSource.includes("bamsignal-otp-verify-pending") &&
+    bootFlagsSource.includes("bamsignal-app-update-pending") &&
+    mainSource.includes("clearStaleBootFlags()"),
+  "boot must clear stale opening, restore, OTP, and app-update flags"
+);
+assertCheck(
+  goToAppSource.includes("validateServerSessionWithTimeout") &&
+    goToAppSource.includes("OPEN_APP_STATUS_TIMEOUT_MS"),
+  "Open App session validation must time out quickly"
+);
+assertCheck(
+  authPageSource.includes("OTP_VERIFY_TIMEOUT_MS = 15_000") &&
+    authPageSource.includes("USER_MESSAGES.otpVerifySlow") &&
+    authPageSource.includes("markOtpVerifyPending"),
+  "OTP verify must fail safe after 15 seconds"
+);
+assertCheck(
+  serviceWorkerSource.includes("notifyConnectionRefreshed") &&
+    !serviceWorkerSource.includes("showUpdatingOverlay") &&
+    serviceWorkerSource.includes("silentRecoveryReload"),
+  "app update recovery must reload silently without the updating overlay"
 );
 assertCheck(
   sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&

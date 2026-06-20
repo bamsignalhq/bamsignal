@@ -43,14 +43,7 @@ export class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, App
 
   render() {
     if (this.state.recovering) {
-      return (
-        <main className="app-fallback" role="status">
-          <div className="app-fallback__card card">
-            <h1>Recovering your session…</h1>
-            <p>Updating BamSignal so you can continue.</p>
-          </div>
-        </main>
-      );
+      return null;
     }
 
     if (!this.state.error) return this.props.children;

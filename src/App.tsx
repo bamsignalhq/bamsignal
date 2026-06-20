@@ -43,6 +43,7 @@ import {
 } from "./services/compliance";
 import { normalizeOnboardingStatus } from "./utils/onboardingStatus";
 import { readOpenAppOnboardingCache } from "./utils/openAppOnboardingCache";
+import { clearStaleBootFlags } from "./utils/bootFlags";
 import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
@@ -64,7 +65,7 @@ import {
   hydrateMemberAppInBackground,
   markOpenAppPending,
   OPEN_APP_FAILSAFE_MS,
-  validateServerSession
+  validateServerSessionWithTimeout
 } from "./services/goToApp";
 import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
@@ -435,6 +436,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    clearStaleBootFlags();
     if (expireStaleOpenAppState()) {
       setOpenAppLoading(false);
     }
@@ -908,7 +910,7 @@ export function App() {
         releaseOpenApp();
         return;
       }
-      void validateServerSession().then((validated) => {
+      void validateServerSessionWithTimeout(500).then((validated) => {
         if (!validated.ok) {
           applyOpenAppResult({ ok: false, route: "login" });
           releaseOpenApp();
@@ -1129,19 +1131,30 @@ export function App() {
     ) => {
       if (!session?.user || sessionRestored) return;
 
-      if (!shouldBlockBoot) {
-        const validated = await validateServerSession();
+      sessionRestored = true;
+      const blocking = options?.blocking ?? shouldBlockBoot;
+
+      if (blocking || shouldBlockBoot) {
+        const validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
         if (!validated.ok) {
-          sessionRestored = true;
           setIsAuthed(false);
           setProfileComplete(false);
           return;
         }
       }
 
-      sessionRestored = true;
-      const blocking = options?.blocking ?? shouldBlockBoot;
       await applyRestoredSession(profileFromSessionUser(session.user), { blocking });
+    };
+
+    const finishPublicBootstrap = (
+      session: { user: { email?: string | null; user_metadata?: Record<string, unknown> } } | null
+    ) => {
+      finishBootstrap();
+      if (!session?.user) return;
+      const quickProfile = resolveMemberIdentity(profileFromSessionUser(session.user));
+      setUser(quickProfile);
+      setIsAuthed(true);
+      void restoreFromSession(session, { blocking: false });
     };
 
     void supabase.auth
@@ -1149,10 +1162,7 @@ export function App() {
       .then(({ data: { session } }) => {
         if (cancelled) return;
         if (!shouldBlockBoot) {
-          finishBootstrap();
-          if (session?.user) {
-            void restoreFromSession(session, { blocking: false });
-          }
+          finishPublicBootstrap(session);
           return;
         }
         void restoreFromSession(session, { blocking: true }).finally(finishBootstrap);
@@ -1168,10 +1178,7 @@ export function App() {
 
       if (event === "INITIAL_SESSION") {
         if (!shouldBlockBoot) {
-          finishBootstrap();
-          if (session?.user) {
-            await restoreFromSession(session, { blocking: false });
-          }
+          finishPublicBootstrap(session);
           return;
         }
         await restoreFromSession(session, { blocking: true });
@@ -1591,10 +1598,14 @@ export function App() {
       })
     : null;
 
+  const onPublicWebRoute =
+    !isNative && isPublicWebRoute(currentPathname) && !paystackCallbackActive;
+
   const shouldBlockForAuthRestore =
-    memberRouteGuard?.phase === "loading" ||
-    (requiresMemberRestoreBlocking(window.location.pathname, isNative) &&
-      (authLoading || memberHydrating));
+    !onPublicWebRoute &&
+    (memberRouteGuard?.phase === "loading" ||
+      (requiresMemberRestoreBlocking(window.location.pathname, isNative) &&
+        (authLoading || memberHydrating)));
 
   if (shouldBlockForAuthRestore) {
     return (

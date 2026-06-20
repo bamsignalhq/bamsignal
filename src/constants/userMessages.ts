@@ -4,6 +4,7 @@ export const USER_MESSAGES = {
   tryAgainSoon: "Something went wrong. Please try again shortly.",
   otpSendFailed: "Something went wrong. Please try again shortly.",
   otpVerifyFailed: "We couldn't verify that code. Please try again.",
+  otpVerifySlow: "We're still checking your code. Please try again.",
   signupCompleteFailed: "We couldn't finish setting up your account. Please try again.",
   progressSaveFailed: "We couldn't save your progress. Please try again.",
   photoUploadFailed: "Couldn't upload photo. Please try again.",

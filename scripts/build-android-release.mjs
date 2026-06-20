@@ -167,6 +167,7 @@ run("npm", ["run", "build"], {
   VITE_APP_BUILD_TIME: buildTime
 });
 run("npx", ["cap", "sync", "android"]);
+run("npm", ["run", "android:verify-assets"]);
 
 const androidDir = join(root, "android");
 const gradlew = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
@@ -191,8 +192,8 @@ if (!existsSync(apk) || !existsSync(aab)) {
 console.log("\nDONE");
 console.log(`versionName: ${nextVersionName}`);
 console.log(`versionCode: ${nextVersionCode}`);
-console.log(`AAB: ${aab}`);
-console.log(`APK: ${apk}`);
+console.log(`AAB path: ${aab}`);
+console.log(`APK path: ${apk}`);
 
 const playStoreDir = join(root, "play-store", "releases");
 mkdirSync(playStoreDir, { recursive: true });

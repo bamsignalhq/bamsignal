@@ -14,6 +14,7 @@
     "preview:emails": "node scripts/preview-email-templates.mjs",
     "generate:android-icons": "node scripts/generate-android-icons.mjs",
     "android:release": "node scripts/build-android-release.mjs",
+    "android:verify-assets": "node scripts/verify-android-assets.mjs",
     "generate:store-assets": "node scripts/generate-store-assets.mjs",
     "convert:showcase": "node scripts/convert-showcase-images.mjs",
     "verify:database": "node scripts/verify-database.mjs",

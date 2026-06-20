@@ -11,6 +11,7 @@ import {
   getPaymentFulfillment,
   markPaymentFulfillmentStatus
 } from "../services/paymentFulfillments.js";
+import { resetFastConnectionDailySignals } from "../services/fastConnection.js";
 
 export const paystackRouter = express.Router();
 
@@ -125,6 +126,7 @@ async function activatePurchase(event) {
       passUntil,
       paystackReference: reference
     });
+    await resetFastConnectionDailySignals({ email, phone }).catch(() => null);
   } else if (productType === "boost") {
     const city = String(metadata.city || "").trim();
     const durationHours = Math.max(1, Math.round(Number(metadata.duration_hours || 48)));

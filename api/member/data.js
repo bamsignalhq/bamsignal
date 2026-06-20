@@ -28,7 +28,10 @@ import {
   likeMemberProfile,
   followMemberProfile,
   registerWithReferral,
-  sendSignalToProfile
+  sendSignalToProfile,
+  listFastConnectionPool,
+  fetchFastConnectionSignalStatus,
+  sendFastConnectionSignal
 } from "../../server/memberSocial.js";
 
 function parseBody(req) {
@@ -173,6 +176,49 @@ export default async function handler(req, res) {
         limit: Number(body.limit) || 48
       });
       return res.status(200).json({ ok: true, profiles });
+    }
+
+    if (action === "fast-connection-pool") {
+      if (!requireDatabase(res)) return;
+      if (!(await enforceRate(req, res, identity, "discover"))) return;
+      const result = await listFastConnectionPool({
+        email: identity.email,
+        phone: identity.phone,
+        excludeProfileIds: Array.isArray(body.excludeProfileIds) ? body.excludeProfileIds : [],
+        limit: Number(body.limit) || 48
+      });
+      if (!result.ok && !result.passActive) {
+        return res.status(403).json(result);
+      }
+      return res.status(result.ok ? 200 : 503).json(result);
+    }
+
+    if (action === "fast-connection-status") {
+      if (!requireDatabase(res)) return;
+      const status = await fetchFastConnectionSignalStatus({
+        email: identity.email,
+        phone: identity.phone
+      });
+      return res.status(status.ok ? 200 : 503).json(status);
+    }
+
+    if (action === "fast-connection-signal") {
+      if (!requireDatabase(res)) return;
+      const result = await sendFastConnectionSignal({
+        email: identity.email,
+        phone: identity.phone,
+        targetProfileId: String(body.targetProfileId || "").trim()
+      });
+      if (result?.cooldown) {
+        return res.status(429).json({ ok: false, error: result.error, cooldown: true });
+      }
+      if (result?.limitReached) {
+        return res.status(429).json(result);
+      }
+      if (result?.ok === false) {
+        return res.status(result.passActive === false ? 403 : 400).json(result);
+      }
+      return res.status(200).json(result);
     }
 
     if (action === "search") {

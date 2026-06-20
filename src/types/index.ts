@@ -354,6 +354,8 @@ export type DiscoverProfile = {
   verified: boolean;
   safetySettings?: SafetySettings;
   premium?: boolean;
+  fastConnectionActive?: boolean;
+  fastConnectionInterested?: boolean;
   createdAt?: string;
   lastActiveAt?: string;
   isFoundingMember?: boolean;

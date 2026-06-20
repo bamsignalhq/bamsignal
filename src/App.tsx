@@ -1977,11 +1977,10 @@ export function App() {
           {memberAccessReady && !memberOverlay && currentPathname === "/fast-connection" && (
             <MemberRouteBoundary name="fast-connection">
               <FastConnectionPage
-                onDiscover={() => {
-                  setTab("discover");
-                  navigateToPath("/discover");
-                }}
+                user={user}
+                isPremium={isPremium}
                 onHome={() => navigateToPath("/home")}
+                onOpenPremium={startPremiumCheckout}
               />
             </MemberRouteBoundary>
           )}

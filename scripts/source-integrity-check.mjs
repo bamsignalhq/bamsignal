@@ -80,6 +80,9 @@ const fastConnectionIntentSource = readSrc("src/utils/fastConnectionIntent.ts");
 const fastConnectionActivationSheetSource = readSrc("src/components/profile/FastConnectionActivationSheet.tsx");
 const fastConnectionActivationHookSource = readSrc("src/hooks/useFastConnectionActivationPrompt.ts");
 const fastConnectionStateSource = readSrc("src/utils/fastConnectionState.ts");
+const fastConnectionPageSource = readSrc("src/pages/FastConnectionPage.tsx");
+const fastConnectionPoolServiceSource = readSrc("src/services/fastConnectionPool.ts");
+const fastConnectionServerSource = readFileSync(join(rootPath, "server/services/fastConnection.js"), "utf8");
 const accountSecuritySource = readSrc("src/services/accountSecurity.ts");
 const twoFactorCardSource = readSrc("src/components/TwoFactorSettingsCard.tsx");
 const intentsSource = readSrc("src/constants/intents.ts");
@@ -445,6 +448,21 @@ assertCheck(
     paymentsSource.includes("startFastConnectionActivationPayment") &&
     profilePageSource.includes("fastConnectionActiveLabel"),
   "Fast Connection must defer payment from onboarding and prompt activation on Home"
+);
+assertCheck(
+  fastConnectionServerSource.includes("listFastConnectionPool") &&
+    fastConnectionServerSource.includes("fastConnectionInterested") &&
+    fastConnectionServerSource.includes("fetchFastConnectionSignalStatus") &&
+    fastConnectionServerSource.includes("sendFastConnectionSignal") &&
+    fastConnectionServerSource.includes("app_fast_connection_daily") &&
+    memberDataApiSource.includes('action === "fast-connection-pool"') &&
+    memberDataApiSource.includes('action === "fast-connection-signal"') &&
+    fastConnectionPoolServiceSource.includes("fetchFastConnectionPool") &&
+    fastConnectionPageSource.includes("No Fast Connection matches nearby yet") &&
+    fastConnectionPageSource.includes("fastSignalsLeftLabel") &&
+    !fastConnectionPageSource.includes('navigateToPath("/discover")') &&
+    !fastConnectionPageSource.includes("Open Discover"),
+  "Fast Connection must use a dedicated local pool with server-enforced signals"
 );
 assertCheck(
   accountSecuritySource.includes("memberApiHeaders") &&

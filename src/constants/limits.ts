@@ -55,6 +55,7 @@ export const STORAGE_KEYS = {
   fastSignalsUsedToday: "bamsignal-fast-signals-used-today",
   fastSignalsDailyLimit: "bamsignal-fast-signals-daily-limit",
   fastSignalsResetAt: "bamsignal-fast-signals-reset-at",
+  fastConnectionPassed: "bamsignal-fast-connection-passed",
   profileSocial: "bamsignal-profile-social",
   memberProfileId: "bamsignal-member-profile-id",
   authUsernameIndex: "bamsignal-auth-usernames",

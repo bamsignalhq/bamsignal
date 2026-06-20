@@ -402,6 +402,52 @@
   line-height: 1.45;
 }
 
+.fast-connection-page__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.fast-connection-page__title-block h1 {
+  margin: 0 0 0.35rem;
+}
+
+.fast-connection-page__signals-left {
+  margin: 0 0 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fast-connection-page__location-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, var(--muted));
+}
+
+.profile-card-v2__plan-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.45rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+.profile-card-v2__plan-badge--premium {
+  background: color-mix(in srgb, var(--brand-pink) 14%, var(--surface));
+  color: var(--brand-pink);
+}
+
+.profile-card-v2__plan-badge--fast {
+  background: color-mix(in srgb, #f59e0b 14%, var(--surface));
+  color: #b45309;
+}
+
 .account-settings-retry {
   display: grid;
   gap: 0.65rem;

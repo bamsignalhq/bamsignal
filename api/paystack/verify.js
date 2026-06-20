@@ -1,4 +1,5 @@
 import { activateAppUserPremium, activateAppUserFastConnectionPass } from "../../server/db.js";
+import { resetFastConnectionDailySignals } from "../../server/services/fastConnection.js";
 import { getPlatformSetting } from "../../server/db.js";
 import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../../server/cityHome.js";
 import { createVipInviteLink } from "../../server/telegram.js";
@@ -481,6 +482,7 @@ export default async function handler(req, res) {
         passUntil,
         paystackReference: reference
       });
+      await resetFastConnectionDailySignals({ email: email || transactionEmail, phone }).catch(() => null);
       await markPaymentFulfillmentStatus(reference, "fulfilled", {
         productType,
         productId,

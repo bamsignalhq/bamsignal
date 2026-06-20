@@ -8,6 +8,7 @@ import {
   getPaymentFulfillment,
   markPaymentFulfillmentStatus
 } from "../../server/services/paymentFulfillments.js";
+import { resetFastConnectionDailySignals } from "../../server/services/fastConnection.js";
 
 async function readRawBody(req) {
   const chunks = [];
@@ -69,13 +70,15 @@ async function fulfillWebhookPurchase({ productType, boostId, email, phone, name
   if (isFastConnectionProductType(productType)) {
     const passDays = Math.max(1, Math.round(Number(metadata.quickie_days || 7)));
     const passUntil = new Date(Date.now() + passDays * 86400000).toISOString();
-    return activateAppUserFastConnectionPass({
+    const activation = await activateAppUserFastConnectionPass({
       email,
       phone,
       name,
       passUntil,
       paystackReference: reference
     });
+    await resetFastConnectionDailySignals({ email, phone }).catch(() => null);
+    return activation;
   }
 
   if (productType === "boost") {

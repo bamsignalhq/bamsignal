@@ -22,6 +22,7 @@ type ProfileCardProps = {
   showActions?: boolean;
   blurred?: boolean;
   isPremium?: boolean;
+  memberBadge?: "Premium" | "Fast" | null;
   signalSent?: boolean;
   entering?: boolean;
 };
@@ -39,6 +40,7 @@ export function ProfileCard({
   showActions = true,
   blurred = false,
   isPremium = false,
+  memberBadge = null,
   signalSent = false,
   entering = true
 }: ProfileCardProps) {
@@ -80,6 +82,11 @@ export function ProfileCard({
               <h3>
                 {profile.name}
                 <span className="profile-card-v2__age">, {profile.age}</span>
+                {memberBadge ? (
+                  <span className={`profile-card-v2__plan-badge profile-card-v2__plan-badge--${memberBadge.toLowerCase()}`}>
+                    {memberBadge}
+                  </span>
+                ) : null}
               </h3>
             </div>
             <p className="profile-card-v2__city">{profile.city}</p>

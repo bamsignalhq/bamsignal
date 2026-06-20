@@ -924,3 +924,10 @@ export async function fetchProfileVisitors({ email, phone }) {
     at: signal.at
   }));
 }
+
+export {
+  listFastConnectionPool,
+  fetchFastConnectionSignalStatus,
+  sendFastConnectionSignal,
+  resetFastConnectionDailySignals
+} from "./services/fastConnection.js";

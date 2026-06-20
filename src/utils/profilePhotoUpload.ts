@@ -6,14 +6,50 @@ import {
   uploadCompressedProfileBlob
 } from "../services/profilePhotos";
 import type { PhotoReviewMeta } from "../types";
+import { addProfilePhotos } from "./mainPhoto";
 import { blobToDataUrl, validatePhotoFile } from "./photoUpload";
 import { logPhotoPipeline } from "./photoUploadLog";
+import { upsertPhotoMeta } from "./photoMeta";
 import { photoMetaFromUpload } from "./photoUploadResult";
 import { samePhotoRef } from "./photoRefs";
 
 export type ProfilePhotoUploadResult =
   | { ok: true; url: string; meta: PhotoReviewMeta }
   | { ok: false; message: string; code?: PhotoUploadErrorCode };
+
+export type ProfilePhotoWorkingState = {
+  photos: string[];
+  meta?: Record<string, PhotoReviewMeta>;
+  main?: string;
+};
+
+/** Serialize state commits so concurrent uploads append instead of overwriting. */
+export function createSerializedQueue() {
+  let tail: Promise<unknown> = Promise.resolve();
+  return {
+    run<T>(task: () => Promise<T> | T): Promise<T> {
+      const next = tail.then(() => task());
+      tail = next.then(
+        () => undefined,
+        () => undefined
+      );
+      return next;
+    }
+  };
+}
+
+export function mergeUploadedProfilePhoto(
+  state: ProfilePhotoWorkingState,
+  upload: { url: string; meta: PhotoReviewMeta }
+): ProfilePhotoWorkingState {
+  const nextMeta = upsertPhotoMeta(state.meta, upload.url, upload.meta);
+  const added = addProfilePhotos(state.photos, state.main, [upload.url]);
+  return {
+    photos: added.photos,
+    meta: nextMeta,
+    main: added.mainPhotoUrl
+  };
+}
 
 export async function uploadSingleProfilePhotoFile(options: {
   file: File;

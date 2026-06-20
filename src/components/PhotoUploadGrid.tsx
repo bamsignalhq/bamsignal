@@ -11,14 +11,18 @@ import type { PhotoReviewMeta } from "../types";
 import { deleteStoredPhoto } from "../services/profilePhotos";
 import { flowLog } from "../utils/flowLog";
 import {
-  addProfilePhotos,
   isMainPhoto,
   mainPhotoAfterDelete,
   resolveMainPhotoUrl,
   setMainPhoto
 } from "../utils/mainPhoto";
-import { upsertPhotoMeta } from "../utils/photoMeta";
-import { runWithConcurrency, uploadSingleProfilePhotoFile } from "../utils/profilePhotoUpload";
+import {
+  createSerializedQueue,
+  mergeUploadedProfilePhoto,
+  runWithConcurrency,
+  uploadSingleProfilePhotoFile,
+  type ProfilePhotoWorkingState
+} from "../utils/profilePhotoUpload";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { PHOTO_FILE_ACCEPT } from "../utils/photoUpload";
 import { safePhotos } from "../utils/safeProfile";
@@ -43,9 +47,10 @@ type PendingTile = {
   previewUrl: string;
   file: File;
   status: "uploading" | "failed";
+  batchIndex: number;
 };
 
-const UPLOAD_CONCURRENCY = 2;
+const UPLOAD_CONCURRENCY = 3;
 
 export function PhotoUploadGrid({
   photos,
@@ -58,27 +63,51 @@ export function PhotoUploadGrid({
   className = ""
 }: PhotoUploadGridProps) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const workingRef = useRef({
-    photos: [] as string[],
-    meta: undefined as Record<string, PhotoReviewMeta> | undefined,
-    main: undefined as string | undefined
+  const workingRef = useRef<ProfilePhotoWorkingState>({
+    photos: [],
+    meta: undefined,
+    main: undefined
   });
+  const commitQueueRef = useRef(createSerializedQueue());
   const [pending, setPending] = useState<PendingTile[]>([]);
   const [busy, setBusy] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ completed: number; total: number } | null>(
+    null
+  );
 
   const persistedPhotos = safePhotos(photos);
   const profileForMain = { photos: persistedPhotos, mainPhotoUrl };
   const canAdd = persistedPhotos.length + pending.length < MAX_PROFILE_PHOTOS;
 
-  const emitChange = (
-    nextPhotos: string[],
-    nextMeta: Record<string, PhotoReviewMeta> | undefined,
-    nextMain?: string
-  ) => {
-    const normalized = nextMain
-      ? setMainPhoto(nextPhotos, nextMain)
-      : setMainPhoto(nextPhotos, resolveMainPhotoUrl(nextPhotos, mainPhotoUrl));
-    onChange(normalized.photos, nextMeta, normalized.mainPhotoUrl);
+  const syncWorkingFromProps = () => {
+    workingRef.current = {
+      photos: [...persistedPhotos],
+      meta: { ...photoMeta },
+      main: mainPhotoUrl
+    };
+  };
+
+  const emitWorkingState = (state: ProfilePhotoWorkingState) => {
+    const normalized = state.main
+      ? setMainPhoto(state.photos, state.main)
+      : setMainPhoto(state.photos, resolveMainPhotoUrl(state.photos, mainPhotoUrl));
+    onChange(normalized.photos, state.meta, normalized.mainPhotoUrl);
+  };
+
+  const commitUploadedPhoto = async (upload: { url: string; meta: PhotoReviewMeta }) => {
+    await commitQueueRef.current.run(async () => {
+      const next = mergeUploadedProfilePhoto(workingRef.current, upload);
+      workingRef.current = next;
+      emitWorkingState(next);
+    });
+  };
+
+  const markBatchItemDone = () => {
+    setBatchProgress((current) => {
+      if (!current) return null;
+      const completed = current.completed + 1;
+      return completed >= current.total ? null : { ...current, completed };
+    });
   };
 
   const openPicker = () => {
@@ -99,57 +128,53 @@ export function PhotoUploadGrid({
     }
 
     setBusy(true);
+    setBatchProgress({ completed: 0, total: batch.length });
     flowLog("photo_upload_start", { signupMode, count: batch.length });
 
-    const pendingEntries: PendingTile[] = batch.map((file) => ({
+    const pendingEntries: PendingTile[] = batch.map((file, batchIndex) => ({
       key: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
       previewUrl: URL.createObjectURL(file),
       file,
-      status: "uploading" as const
+      status: "uploading" as const,
+      batchIndex
     }));
     setPending((current) => [...current, ...pendingEntries]);
-
-    workingRef.current = {
-      photos: [...persistedPhotos],
-      meta: { ...photoMeta },
-      main: mainPhotoUrl
-    };
+    syncWorkingFromProps();
 
     let uploadFailCount = 0;
 
     await runWithConcurrency(pendingEntries, UPLOAD_CONCURRENCY, async (entry) => {
-      const snapshot = workingRef.current;
-      const result = await uploadSingleProfilePhotoFile({
-        file: entry.file,
-        signupMode,
-        coverPhoto,
-        existingPhotos: snapshot.photos
-      });
-
-      if (result.ok) {
-        const nextMeta = upsertPhotoMeta(snapshot.meta, result.url, result.meta);
-        const added = addProfilePhotos(snapshot.photos, snapshot.main, [result.url]);
-        workingRef.current = {
-          photos: added.photos,
-          meta: nextMeta,
-          main: added.mainPhotoUrl
-        };
-        emitChange(added.photos, nextMeta, added.mainPhotoUrl);
-        setPending((current) => {
-          const tile = current.find((item) => item.key === entry.key);
-          if (tile) URL.revokeObjectURL(tile.previewUrl);
-          return current.filter((item) => item.key !== entry.key);
+      try {
+        const existingPhotos = workingRef.current.photos;
+        const result = await uploadSingleProfilePhotoFile({
+          file: entry.file,
+          signupMode,
+          coverPhoto,
+          existingPhotos
         });
-        flowLog("photo_upload_ok", { signupMode });
-      } else {
-        uploadFailCount += 1;
-        setPending((current) =>
-          current.map((item) => (item.key === entry.key ? { ...item, status: "failed" as const } : item))
-        );
-        onModerationMessage?.(result.message);
-      }
 
-      return result;
+        if (result.ok) {
+          await commitUploadedPhoto({ url: result.url, meta: result.meta });
+          setPending((current) => {
+            const tile = current.find((item) => item.key === entry.key);
+            if (tile) URL.revokeObjectURL(tile.previewUrl);
+            return current.filter((item) => item.key !== entry.key);
+          });
+          flowLog("photo_upload_ok", { signupMode, index: entry.batchIndex + 1, total: batch.length });
+        } else {
+          uploadFailCount += 1;
+          setPending((current) =>
+            current.map((item) =>
+              item.key === entry.key ? { ...item, status: "failed" as const } : item
+            )
+          );
+          onModerationMessage?.(result.message);
+        }
+
+        return result;
+      } finally {
+        markBatchItemDone();
+      }
     });
 
     if (uploadFailCount > 0) {
@@ -159,6 +184,7 @@ export function PhotoUploadGrid({
     }
 
     setBusy(false);
+    setBatchProgress(null);
   };
 
   const uploadPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,16 +198,15 @@ export function PhotoUploadGrid({
       current.map((item) => (item.key === entry.key ? { ...item, status: "uploading" as const } : item))
     );
     setBusy(true);
+    syncWorkingFromProps();
     const result = await uploadSingleProfilePhotoFile({
       file: entry.file,
       signupMode,
       coverPhoto,
-      existingPhotos: persistedPhotos
+      existingPhotos: workingRef.current.photos
     });
     if (result.ok) {
-      const nextMeta = upsertPhotoMeta(photoMeta, result.url, result.meta);
-      const added = addProfilePhotos(persistedPhotos, mainPhotoUrl, [result.url]);
-      emitChange(added.photos, nextMeta, added.mainPhotoUrl);
+      await commitUploadedPhoto({ url: result.url, meta: result.meta });
       URL.revokeObjectURL(entry.previewUrl);
       setPending((current) => current.filter((item) => item.key !== entry.key));
     } else {
@@ -198,6 +223,11 @@ export function PhotoUploadGrid({
     const nextMeta = { ...photoMeta };
     if (nextMeta[url]) delete nextMeta[url];
     onChange(next.photos, nextMeta, next.mainPhotoUrl);
+    workingRef.current = {
+      photos: [...next.photos],
+      meta: { ...nextMeta },
+      main: next.mainPhotoUrl
+    };
     if (isStoragePhotoUrl(url)) void deleteStoredPhoto(url);
   };
 
@@ -209,12 +239,27 @@ export function PhotoUploadGrid({
   const makeMain = (url: string) => {
     const next = setMainPhoto(persistedPhotos, url);
     onChange(next.photos, photoMeta, next.mainPhotoUrl);
+    workingRef.current = {
+      photos: [...next.photos],
+      meta: { ...photoMeta },
+      main: next.mainPhotoUrl
+    };
   };
 
   const photoCount = persistedPhotos.length;
+  const progressLabel =
+    batchProgress && busy
+      ? `Uploading ${Math.min(batchProgress.completed + 1, batchProgress.total)}/${batchProgress.total}…`
+      : null;
 
   return (
     <div className={`photo-upload-grid ${className}`.trim()}>
+      {progressLabel ? (
+        <p className="photo-upload-grid__hint" role="status" aria-live="polite">
+          {progressLabel}
+        </p>
+      ) : null}
+
       <div className="photo-upload-grid__tiles">
         {persistedPhotos.map((src) => {
           const isMain = isMainPhoto(src, profileForMain);

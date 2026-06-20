@@ -66,6 +66,8 @@ const bootFlagsSource = readSrc("src/utils/bootFlags.ts");
 const blockedEmailSource = readSrc("shared/blockedEmailDomains.mjs");
 const signupOtpSource = readSrc("server/services/signupOtp.js");
 const signupIdentitySource = readSrc("server/services/signupIdentity.js");
+const photoUploadGridSource = readSrc("src/components/PhotoUploadGrid.tsx");
+const profilePhotoUploadSource = readSrc("src/utils/profilePhotoUpload.ts");
 const serviceWorkerSource = readSrc("src/utils/serviceWorker.ts");
 const mainSource = readSrc("src/main.tsx");
 const sourceIntegrityScriptSource = readSrc("scripts/source-integrity-check.mjs");
@@ -369,6 +371,15 @@ assertCheck(
     !isDisposableEmail("user@yahoo.com") &&
     !isDisposableEmail("user@outlook.com"),
   "disposable email blocklist must reject blondmail and allow real providers"
+);
+assertCheck(
+  photoUploadGridSource.includes("createSerializedQueue") &&
+    photoUploadGridSource.includes("commitUploadedPhoto") &&
+    photoUploadGridSource.includes("mergeUploadedProfilePhoto") &&
+    photoUploadGridSource.includes("UPLOAD_CONCURRENCY = 3") &&
+    profilePhotoUploadSource.includes("runWithConcurrency") &&
+    !photoUploadGridSource.includes("const snapshot = workingRef.current"),
+  "multi-photo upload must serialize commits and upload with bounded concurrency"
 );
 assertCheck(
   signupOtpSource.includes("assertEmailNotDisposable(normalized)") &&

@@ -24,6 +24,7 @@
     "test:interested-in-defaults": "node scripts/test-interested-in-defaults.mjs",
     "test:photo-upload-payload": "node scripts/test-photo-upload-payload.mjs",
     "test:server-import": "node scripts/smoke-server-import.mjs",
+    "test:source-integrity": "node scripts/source-integrity-check.mjs",
     "prepare": "node scripts/install-githooks.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "start": "node server/production.js",

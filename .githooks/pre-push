@@ -3,3 +3,6 @@ set -e
 
 echo "Running server import smoke test..."
 npm run test:server-import
+
+echo "Running source integrity check..."
+npm run test:source-integrity

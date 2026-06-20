@@ -701,7 +701,7 @@ async function loginSuccess(account, email, session) {
   };
 }
 
-export async function loginWithUsernameAndPassword(rawUsername, password) {
+export async function loginWithUsernameAndPin(rawUsername, pin) {
   const raw = String(rawUsername || "");
   pinLoginLog("raw username received", raw.trim());
   const account = await resolveLoginAccount(raw);
@@ -723,22 +723,22 @@ export async function loginWithUsernameAndPassword(rawUsername, password) {
 
   if (emails.length) {
     for (const email of emails) {
-      const verified = await verifyLoginPassword(email, password);
+      const verified = await verifyLoginPassword(email, pin);
       if (verified.ok) {
         return loginSuccess(account, email, verified.session);
       }
     }
   }
 
-  const legacy = await verifyWithLegacyFallback(account, password);
+  const legacy = await verifyWithLegacyFallback(account, pin);
   if (legacy.ok && legacy.email) {
-    const verified = await verifyLoginPasswordWithRetry(legacy.email, password);
+    const verified = await verifyLoginPasswordWithRetry(legacy.email, pin);
     if (verified.ok) {
       return loginSuccess(account, legacy.email, verified.session);
     }
   }
 
-  const sqlLogin = await loginViaSqlAuthFallback(account, password);
+  const sqlLogin = await loginViaSqlAuthFallback(account, pin);
   if (sqlLogin) {
     return sqlLogin;
   }
@@ -761,6 +761,11 @@ export async function loginWithUsernameAndPassword(rawUsername, password) {
       profileExists: account.profileExists
     }
   };
+}
+
+/** @deprecated Use loginWithUsernameAndPin */
+export async function loginWithUsernameAndPassword(rawUsername, password) {
+  return loginWithUsernameAndPin(rawUsername, password);
 }
 
 /** Admin/support utility — reset a member PIN in Supabase auth (never log the PIN). */

@@ -11,10 +11,19 @@ process.env.PORT = String(port);
 
 const productionPath = join(dirname(fileURLToPath(import.meta.url)), "..", "server", "production.js");
 const productionSource = readFileSync(productionPath, "utf8");
-const requiredRoutes = ["/api/auth/pin-login", "/api/auth/pin-reset", "/api/auth/email-code", "/api/member/data"];
-for (const route of requiredRoutes) {
-  if (!productionSource.includes(route)) {
-    console.error(`server smoke failed: missing route mount for ${route}`);
+const requiredRouteMounts = [
+  { method: "post", route: "/api/auth/pin-login" },
+  { method: "post", route: "/api/auth/pin-reset" },
+  { method: "post", route: "/api/auth/email-code" },
+  { method: "post", route: "/api/member/data" }
+];
+for (const { method, route } of requiredRouteMounts) {
+  const mountPattern = new RegExp(
+    `mountHandler\\(\\s*app\\s*,\\s*["']${method}["']\\s*,\\s*["']${route.replace(/\//g, "\\/")}["']`
+  );
+  const expressPattern = new RegExp(`app\\.${method}\\(\\s*["']${route.replace(/\//g, "\\/")}["']`);
+  if (!mountPattern.test(productionSource) && !expressPattern.test(productionSource)) {
+    console.error(`server smoke failed: missing ${method.toUpperCase()} route mount for ${route}`);
     process.exit(1);
   }
 }
@@ -40,7 +49,7 @@ try {
   const routeChecks = [
     {
       path: "/api/auth/pin-login",
-      body: { username: "__smoke__", password: "000000" }
+      body: { username: "__smoke__", pin: "000000" }
     },
     {
       path: "/api/auth/pin-reset?action=__smoke__",

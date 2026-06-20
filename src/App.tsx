@@ -1467,6 +1467,28 @@ export function App() {
     );
   }
 
+  if (
+    memberRouteGuard &&
+    (memberRouteGuard.phase === "redirect" || memberRouteGuard.phase === "unauthenticated")
+  ) {
+    if (
+      memberRouteGuard.redirectTo &&
+      normalizePath(memberPathname) !== normalizePath(memberRouteGuard.redirectTo)
+    ) {
+      navigateToPath(memberRouteGuard.redirectTo, true);
+    }
+    return (
+      <div className={`app ${theme}`}>
+        <Preloader
+          exiting={false}
+          subtitle="Redirecting…"
+          showReload={bootStalled}
+          onReload={reloadApp}
+        />
+      </div>
+    );
+  }
+
   if (booting) {
     return (
       <div className={`app ${theme}`}>

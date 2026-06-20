@@ -10,7 +10,7 @@ import { DEMO_USER, matchDemoUser, seedDemoMemberProfile } from "../constants/de
 import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from "../constants/blockedEmailDomains";
 import { friendlyAuthError, supabase } from "../services/supabase";
 import {
-  loginWithPassword,
+  loginWithPin,
   checkSignupAvailability,
   checkSignupField,
   completePinReset,
@@ -446,7 +446,7 @@ export function AuthPage({
         return;
       }
 
-      const loginResult = await loginWithPassword(username, loginForm.password);
+      const loginResult = await loginWithPin(username, loginForm.password);
       if (loginResult.ok && loginResult.session && supabase) {
         const { data, error } = await supabase.auth.setSession({
           access_token: loginResult.session.access_token,

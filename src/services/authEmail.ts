@@ -272,17 +272,17 @@ type LoginResponse = {
   };
 };
 
-/** Server-side username resolve + password verify (source of truth for login). */
-export async function loginWithPassword(
+/** Server-side username + PIN verify (source of truth for login). */
+export async function loginWithPin(
   username: string,
-  password: string
+  pin: string
 ): Promise<LoginResponse> {
   const normalizedUsername = normalizeUsername(username);
   try {
     const response = await fetch(apiUrl("/api/auth/pin-login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: normalizedUsername, password })
+      body: JSON.stringify({ username: normalizedUsername, pin })
     });
     const payload = await readResponseJson<LoginResponse>(response);
     if (!response.ok || !payload?.ok) {
@@ -294,12 +294,12 @@ export async function loginWithPassword(
   }
 }
 
-/** @deprecated Use loginWithPassword */
-export async function loginWithPin(
+/** @deprecated Use loginWithPin */
+export async function loginWithPassword(
   username: string,
   password: string
 ): Promise<LoginResponse> {
-  return loginWithPassword(username, password);
+  return loginWithPin(username, password);
 }
 
 type PinResetSendResponse = { ok?: boolean; sent?: boolean; email?: string; error?: string };

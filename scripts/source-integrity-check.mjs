@@ -56,6 +56,9 @@ const openAppCacheSource = readSrc("src/utils/openAppOnboardingCache.ts");
 const adminActionPinThrottleSource = readSrc("server/services/adminActionPinThrottle.js");
 const adminConsentServerSource = readSrc("server/adminConsent.js");
 const adminConsentApiSource = readSrc("api/admin/consent.js");
+const dockerfileSource = readSrc("Dockerfile");
+const smokeServerImportSource = readSrc("scripts/smoke-server-import.mjs");
+const sourceIntegrityScriptSource = readSrc("scripts/source-integrity-check.mjs");
 
 assertCheck(
   paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
@@ -292,6 +295,26 @@ assertCheck(
   adminConsentApiSource.includes("createConsentFromPin(req, body.pin)") &&
     adminConsentApiSource.includes("rotateAdminActionPin(req,"),
   "admin consent API must route PIN verification through throttled server helper"
+);
+assertCheck(
+  dockerfileSource.includes("RUN npm run build") &&
+    dockerfileSource.includes("RUN npm run test:source-integrity") &&
+    dockerfileSource.indexOf("RUN npm run test:source-integrity") >
+      dockerfileSource.indexOf("RUN npm run build") &&
+    dockerfileSource.includes("node scripts/smoke-server-import.mjs") &&
+    !dockerfileSource.match(/runner[\s\S]*RUN npm run test:source-integrity/),
+  "Docker builder must run source integrity after build; runner must use runtime smoke only"
+);
+assertCheck(
+  !smokeServerImportSource.includes('join(rootPath, "src"') &&
+    !smokeServerImportSource.includes("readSrc(") &&
+    smokeServerImportSource.includes("server/production.js"),
+  "runtime smoke must not depend on src/"
+);
+assertCheck(
+  sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&
+    sourceIntegrityScriptSource.includes("source integrity skipped"),
+  "source integrity must skip gracefully when src/ is absent"
 );
 
 console.log("source integrity ok");

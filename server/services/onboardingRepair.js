@@ -1,4 +1,4 @@
-import { findAppUserIdentity } from "../db.js";
+import { findAppUserIdentity, isDatabaseReady, query } from "../db.js";
 import { findMemberProfileByUserKey } from "../cityHome.js";
 import { markMemberOnboardingComplete } from "../memberSocial.js";
 import { resolveLoginAccount } from "./loginResolve.js";
@@ -35,6 +35,7 @@ export function normalizeOnboardingStatus(profileJson = {}, member = {}) {
   const onboardingComplete = Boolean(
     member.onboarding_complete ||
       profileJson.onboardingComplete ||
+      profileJson.onboardingCompleted ||
       profileJson.onboarding_completed
   );
   const setupCompleted = Boolean(profileJson.setupCompleted || profileJson.setup_completed);
@@ -113,6 +114,7 @@ function buildDatingProfilePatch(member, profileJson, status) {
   const now = new Date().toISOString();
   return {
     ...profileJson,
+    onboardingCompleted: true,
     state: pickString(member?.state, profileJson.state) || undefined,
     city: pickString(member?.city, profileJson.city) || undefined,
     onboardingComplete: true,
@@ -121,6 +123,38 @@ function buildDatingProfilePatch(member, profileJson, status) {
     profileCompletedAt: status.profileCompletedAt || now,
     completedAt: status.completedAt || now
   };
+}
+
+function profileMissingCompletionPatch(profileJson = {}, member = {}) {
+  return Boolean(
+    !member?.onboarding_complete ||
+      !profileJson.onboardingCompleted ||
+      !profileJson.onboardingComplete ||
+      !profileJson.setupCompleted ||
+      !pickString(profileJson.profileCompletedAt, profileJson.profile_completed_at) ||
+      !pickString(profileJson.onboardingCompletedAt, profileJson.onboarding_completed_at)
+  );
+}
+
+async function persistCompletionPatch({ member, profileJson, status, email, phone }) {
+  if (!member?.id || !isDatabaseReady()) return false;
+  const patch = buildDatingProfilePatch(member, profileJson, status);
+  await query(
+    `update app_member_profiles
+     set onboarding_complete = true,
+         profile = $2::jsonb,
+         updated_at = now()
+     where id = $1`,
+    [member.id, patch]
+  );
+  await query(
+    `update app_users
+     set onboarding_completed_at = coalesce(onboarding_completed_at, now()), updated_at = now()
+     where ($1::text is not null and lower(email) = lower($1::text))
+        or ($2::text is not null and phone = $2::text)`,
+    [email || null, phone || null]
+  );
+  return true;
 }
 
 function inferIncompleteReason(member, appUser, profileJson, status) {
@@ -159,6 +193,96 @@ async function resolveMemberForOnboarding({ email, phone, username }) {
 
   const appUser = await findAppUserIdentity({ email: resolvedEmail, phone: resolvedPhone });
   return { member, appUser, resolvedEmail, resolvedPhone };
+}
+
+function looksLikeUuid(value = "") {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    String(value || "").trim()
+  );
+}
+
+async function resolveIdentityFromUserId(userId, identity = {}) {
+  const rawUserId = String(userId || "").trim();
+  let resolvedEmail = pickString(identity.email);
+  let resolvedPhone = pickString(identity.phone);
+  let resolvedUsername = pickString(identity.username);
+  let member = null;
+  let appUser = null;
+
+  if (!isDatabaseReady()) {
+    return { member, appUser, resolvedEmail, resolvedPhone, resolvedUsername };
+  }
+
+  if (!resolvedEmail && rawUserId.includes("@")) {
+    resolvedEmail = rawUserId.toLowerCase();
+  }
+
+  if (looksLikeUuid(rawUserId)) {
+    const memberResult = await query(
+      "select * from app_member_profiles where id = $1::uuid limit 1",
+      [rawUserId]
+    );
+    member = memberResult.rows[0] || null;
+    if (member) {
+      resolvedEmail = pickString(resolvedEmail, member.email);
+      resolvedPhone = pickString(resolvedPhone, member.phone);
+      resolvedUsername = pickString(resolvedUsername, member.username, member.profile?.username);
+    }
+
+    const appUserResult = await query("select * from app_users where id = $1::uuid limit 1", [
+      rawUserId
+    ]);
+    appUser = appUserResult.rows[0] || appUser;
+    if (appUser) {
+      resolvedEmail = pickString(resolvedEmail, appUser.email);
+      resolvedPhone = pickString(resolvedPhone, appUser.phone);
+    }
+
+    const authResult = await query(
+      "select id, email, raw_user_meta_data from auth.users where id = $1::uuid limit 1",
+      [rawUserId]
+    );
+    const authUser = authResult.rows[0] || null;
+    if (authUser) {
+      const meta = authUser.raw_user_meta_data && typeof authUser.raw_user_meta_data === "object"
+        ? authUser.raw_user_meta_data
+        : {};
+      resolvedEmail = pickString(resolvedEmail, authUser.email, meta.email).toLowerCase();
+      resolvedPhone = pickString(resolvedPhone, meta.phone);
+      resolvedUsername = pickString(resolvedUsername, meta.username);
+    }
+  }
+
+  if (!member?.id && (resolvedEmail || resolvedPhone)) {
+    member = await findMemberProfileByUserKey(resolvedEmail, resolvedPhone);
+  }
+
+  if (!member?.id && resolvedUsername) {
+    const account = await resolveLoginAccount(resolvedUsername);
+    if (account.member) member = account.member;
+    if (account.email) resolvedEmail = account.email;
+    if (!resolvedPhone && account.member?.phone) resolvedPhone = account.member.phone;
+  }
+
+  if (!appUser && (resolvedEmail || resolvedPhone)) {
+    appUser = await findAppUserIdentity({ email: resolvedEmail, phone: resolvedPhone });
+  }
+
+  return { member, appUser, resolvedEmail, resolvedPhone, resolvedUsername };
+}
+
+export async function repairOnboardingStatus(userId, identity = {}) {
+  const { member, resolvedEmail, resolvedPhone, resolvedUsername } = await resolveIdentityFromUserId(
+    userId,
+    identity
+  );
+  const email = pickString(resolvedEmail, member?.email);
+  const phone = pickString(resolvedPhone, member?.phone);
+  return repairMemberOnboarding({
+    email,
+    phone,
+    username: pickString(resolvedUsername, member?.username, member?.profile?.username)
+  });
 }
 
 export async function getMemberOnboardingStatus({ email, phone, username }) {
@@ -219,6 +343,7 @@ export async function forceCompleteMemberOnboarding({ email, phone, username }) 
   }
 
   const now = new Date().toISOString();
+  profileJson.onboardingCompleted = true;
   profileJson.onboardingComplete = true;
   profileJson.setupCompleted = true;
   profileJson.onboardingCompletedAt = profileJson.onboardingCompletedAt || now;
@@ -285,10 +410,19 @@ export async function repairMemberOnboarding({ email, phone, username }) {
   const diagnostics = buildDiagnostics({ appUser, member, profileJson, status });
 
   if (status.markedComplete) {
+    const persisted = profileMissingCompletionPatch(profileJson, member)
+      ? await persistCompletionPatch({
+          member,
+          profileJson,
+          status,
+          email: resolvedEmail,
+          phone: resolvedPhone
+        })
+      : false;
     return {
       ok: true,
       completed: true,
-      repaired: false,
+      repaired: persisted,
       nextRoute: "/home",
       diagnostics,
       datingProfile: buildDatingProfilePatch(member, profileJson, status)

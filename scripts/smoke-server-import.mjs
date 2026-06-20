@@ -19,8 +19,47 @@ for (const route of requiredRoutes) {
   }
 }
 
+async function waitForServer(baseUrl) {
+  let lastError;
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    try {
+      const response = await fetch(`${baseUrl}/health`, { method: "HEAD" });
+      if (response.ok) return;
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw lastError || new Error("server did not become ready");
+}
+
 try {
   await import("../server/production.js");
+  const baseUrl = `http://127.0.0.1:${port}`;
+  await waitForServer(baseUrl);
+  const routeChecks = [
+    {
+      path: "/api/auth/pin-login",
+      body: { username: "__smoke__", password: "000000" }
+    },
+    {
+      path: "/api/auth/pin-reset?action=__smoke__",
+      body: { action: "__smoke__" }
+    }
+  ];
+
+  for (const check of routeChecks) {
+    const response = await fetch(`${baseUrl}${check.path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(check.body)
+    });
+    if (response.status === 404) {
+      console.error(`server smoke failed: route is not mounted: ${check.path}`);
+      process.exit(1);
+    }
+  }
+
   console.log("server ok");
   process.exit(0);
 } catch (error) {

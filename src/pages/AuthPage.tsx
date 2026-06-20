@@ -462,7 +462,10 @@ export function AuthPage({
           { ...profile, username: profile.username || username },
           { loginEmail: loginResult.email }
         );
-        await proceedAfterSecurityChecks(loginProfile, { isNewSignup: false });
+        await proceedAfterSecurityChecks(loginProfile, {
+          isNewSignup: false,
+          loginEmail: resolvedEmail || undefined
+        });
         return;
       }
 

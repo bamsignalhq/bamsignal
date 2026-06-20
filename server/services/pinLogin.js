@@ -6,6 +6,8 @@ import { resolveSupabaseUrl } from "../supabaseEnv.js";
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
 
 export const INVALID_LOGIN_MESSAGE = "Invalid username or PIN.";
+const DEFAULT_REPAIR_CITY = "Lagos";
+const DEFAULT_REPAIR_STATE = "Lagos";
 
 function pinLoginLog(label, value) {
   console.info(`[pin-login] ${label}`, value);
@@ -294,6 +296,119 @@ function resolveAccountEmail(account) {
   return null;
 }
 
+function completionMarked(profileJson = {}, member = {}) {
+  const profile = profileJson && typeof profileJson === "object" ? profileJson : {};
+  return Boolean(
+    member?.onboarding_complete ||
+      profile.onboardingComplete ||
+      profile.onboardingCompleted ||
+      profile.onboarding_completed ||
+      profile.setupCompleted ||
+      profile.setup_completed ||
+      profile.profileCompletedAt ||
+      profile.profile_completed_at ||
+      profile.onboardingCompletedAt ||
+      profile.onboarding_completed_at ||
+      profile.completedAt ||
+      profile.completed_at
+  );
+}
+
+async function repairLoginIdentityAfterSuccess(account, email, session) {
+  if (!isDatabaseReady()) return;
+
+  try {
+    const sessionUser = session?.user && typeof session.user === "object" ? session.user : {};
+    const sessionMeta =
+      sessionUser.user_metadata && typeof sessionUser.user_metadata === "object"
+        ? sessionUser.user_metadata
+        : {};
+    const authMeta =
+      account.authUser?.raw_user_meta_data && typeof account.authUser.raw_user_meta_data === "object"
+        ? account.authUser.raw_user_meta_data
+        : {};
+    const normalizedEmail = String(email || account.email || sessionUser.email || "")
+      .trim()
+      .toLowerCase();
+    const username = normalizeLoginUsername(
+      account.username || account.member?.username || authMeta.username || sessionMeta.username || ""
+    );
+    const phone = normalizeSignupPhone(
+      pickString(account.member?.phone, authMeta.phone, sessionMeta.phone)
+    );
+    const name = pickString(account.member?.name, authMeta.name, sessionMeta.name, "Member");
+
+    if (!normalizedEmail && !phone) return;
+
+    const { upsertAppUserIdentity } = await import("../db.js");
+    const { findMemberProfileByUserKey, upsertMemberProfile } = await import("../cityHome.js");
+    const { repairOnboardingStatus } = await import("./onboardingRepair.js");
+
+    const appUser = await upsertAppUserIdentity({
+      email: normalizedEmail || null,
+      phone: phone || null,
+      name
+    });
+
+    let member =
+      account.member?.id
+        ? account.member
+        : await findMemberProfileByUserKey(normalizedEmail, phone);
+
+    const existingProfile =
+      member?.profile && typeof member.profile === "object" ? { ...member.profile } : {};
+    const hasMember = Boolean(member?.id);
+    const profile = {
+      ...existingProfile,
+      name: pickString(existingProfile.name, name),
+      username: pickString(existingProfile.username, username) || undefined,
+      photos: Array.isArray(existingProfile.photos) ? existingProfile.photos : []
+    };
+    const city = pickString(member?.city, existingProfile.city, DEFAULT_REPAIR_CITY);
+    const state = pickString(member?.state, existingProfile.state, DEFAULT_REPAIR_STATE);
+    const complete = completionMarked(existingProfile, member);
+
+    const repairedMember = await upsertMemberProfile({
+      email: normalizedEmail || member?.email || null,
+      phone: phone || member?.phone || null,
+      name,
+      username: username || member?.username || existingProfile.username || null,
+      city,
+      state,
+      profile,
+      discoverable: hasMember ? member.discoverable !== false : false,
+      onboardingComplete: complete,
+      cityHomeHidden: hasMember ? Boolean(member.city_home_hidden) : true
+    });
+    member = repairedMember || member;
+
+    const authUserId = pickString(sessionUser.id, account.authUser?.id);
+    const repair = await repairOnboardingStatus(authUserId || member?.id || appUser?.id || normalizedEmail, {
+      email: normalizedEmail,
+      phone,
+      username,
+      name
+    });
+    if (repair?.completed) {
+      pinLoginLog("identity repair", {
+        linked: Boolean(member?.id && appUser?.id),
+        onboarding: "complete",
+        repaired: Boolean(repair.repaired)
+      });
+    } else {
+      pinLoginLog("identity repair", {
+        linked: Boolean(member?.id && appUser?.id),
+        onboarding: "incomplete"
+      });
+    }
+  } catch (error) {
+    pinLoginLog("identity repair", {
+      ok: false,
+      reason: error instanceof Error ? error.message.slice(0, 160) : "failed"
+    });
+  }
+}
+
 /** Resolve username to the Supabase auth email used for PIN login. */
 export async function resolveLoginUsername(rawUsername = "") {
   pinLoginLog("raw username received", String(rawUsername || "").trim());
@@ -568,9 +683,10 @@ async function verifyWithLegacyFallback(account, password) {
   return { ok: true, migrated: true, email, hashExists: true };
 }
 
-function loginSuccess(account, email, session) {
+async function loginSuccess(account, email, session) {
   pinLoginLog("session created", true);
   pinLoginLog("profile found", Boolean(account.profileExists || account.member?.id));
+  await repairLoginIdentityAfterSuccess(account, email, session);
   return {
     ok: true,
     email,

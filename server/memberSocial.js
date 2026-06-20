@@ -570,6 +570,7 @@ export async function markMemberOnboardingComplete({ email, phone }) {
 
   const profileJson = { ...(member.profile || {}) };
   const now = new Date().toISOString();
+  profileJson.onboardingCompleted = true;
   profileJson.onboardingComplete = true;
   profileJson.setupCompleted = true;
   profileJson.onboardingCompletedAt = profileJson.onboardingCompletedAt || now;
@@ -717,6 +718,7 @@ export async function fetchMemberSocialBundle({ email, phone }) {
   const photos = Array.isArray(profileJson.photos) ? profileJson.photos : [];
   const markedComplete = Boolean(
     ownProfile?.onboarding_complete ||
+      profileJson.onboardingCompleted ||
       profileJson.onboardingComplete ||
       profileJson.setupCompleted ||
       profileJson.profileCompletedAt ||

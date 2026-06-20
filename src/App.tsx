@@ -131,7 +131,7 @@ import { USER_MESSAGES } from "./constants/userMessages";
 import { DEMO_USER } from "./constants/demoAccounts";
 import { getMemberCity } from "./utils/memberCity";
 import { flowLog } from "./utils/flowLog";
-import { clearOnboardingDrafts, logRouteDecision, shouldRouteToOnboarding } from "./utils/onboardingStatus";
+import { clearOnboardingDrafts, logRouteDecision } from "./utils/onboardingStatus";
 import { repairMemberCaches } from "./utils/repairMemberCaches";
 import { memberFirstName } from "./utils/safeProfile";
 import { MemberRouteBoundary, PublicRouteBoundary } from "./components/RouteErrorBoundary";
@@ -881,7 +881,11 @@ export function App() {
       } else if (meta?.recovered) {
         flowLog("signup_recovered_existing");
       }
-      const appResult = await goToApp({ forceOnboarding, referralCode: ref });
+      const appResult = await goToApp({
+        forceOnboarding,
+        referralCode: ref,
+        loginEmail: meta?.loginEmail || withPhone.email
+      });
       if (!appResult.ok) {
         setMemberHydrating(false);
         return;
@@ -1100,15 +1104,24 @@ export function App() {
 
   useEffect(() => {
     if (authLoading || memberHydrating || !isAuthed || !authPath) return;
-    const profile = getDatingProfile();
-    const needsOnboarding = shouldRouteToOnboarding(user, profile);
-    logRouteDecision(user, profile, needsOnboarding ? "onboarding" : "home", { source: "auth_path_guard" });
-    navigateToPath(needsOnboarding ? "/onboarding" : "/");
-    setAuthPath(null);
-    if (needsOnboarding) {
-      setProfileComplete(false);
-    }
-  }, [authLoading, memberHydrating, isAuthed, authPath, user]);
+    let cancelled = false;
+    void goToApp({ loginEmail: user.email }).then((result) => {
+      if (cancelled || !result.ok) return;
+      const needsOnboarding = result.route === "onboarding";
+      logRouteDecision(result.user, getDatingProfile(), needsOnboarding ? "onboarding" : "home", {
+        source: "auth_path_guard",
+        repaired: result.status?.repaired,
+        reason: result.status?.reason ?? null
+      });
+      setUser(result.user);
+      setProfileComplete(!needsOnboarding);
+      navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
+      setAuthPath(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, memberHydrating, isAuthed, authPath, user.email]);
 
   const reloadApp = useCallback(() => {
     window.location.reload();

@@ -449,6 +449,7 @@ export type AuthMode = "login" | "signup" | "verify" | "reset";
 export type AuthMeta = {
   isNewSignup?: boolean;
   recovered?: boolean;
+  loginEmail?: string;
 };
 
 export type DiscoverMode = "signals" | "radar" | "trending";

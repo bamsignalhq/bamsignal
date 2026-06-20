@@ -36,7 +36,9 @@ export function normalizeOnboardingStatus(
   raw: Partial<DatingProfile> | Record<string, unknown> | null | undefined
 ): OnboardingStatusSnapshot {
   const profile = (raw ?? {}) as Record<string, unknown>;
-  const onboardingComplete = Boolean(profile.onboardingComplete ?? profile.onboarding_completed);
+  const onboardingComplete = Boolean(
+    profile.onboardingComplete ?? profile.onboardingCompleted ?? profile.onboarding_completed
+  );
   const setupCompleted = Boolean(profile.setupCompleted ?? profile.setup_completed);
   const profileCompletedAt =
     safeString(profile.profileCompletedAt ?? profile.profile_completed_at) || undefined;

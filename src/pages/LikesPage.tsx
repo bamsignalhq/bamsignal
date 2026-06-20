@@ -1,5 +1,6 @@
 import { ChevronRight, Shield } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { BRAND, MONETIZATION_COPY, PREMIUM_COPY } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
@@ -20,7 +21,6 @@ import {
 import { blockAndReportUser, blockUser, filterBlockedByProfileId } from "../utils/safety";
 import { trackEvent } from "../utils/analytics";
 import { notifySignalAccepted } from "../utils/notifyHelpers";
-import { getDatingProfile } from "../utils/profile";
 import { readJson, writeJson } from "../utils/storage";
 import { getVerificationTier } from "../utils/verification";
 import { getMemberCity } from "../utils/memberCity";
@@ -114,7 +114,7 @@ export function LikesPage({
   onOpenSafety
 }: LikesPageProps) {
   const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
-  const viewer = getDatingProfile();
+  const { profile: viewer } = useMemberProfileListener();
   const [signals, setSignals] = useState<LikeEntry[]>(() =>
     mergeReviewerDemoSignals(
       user,

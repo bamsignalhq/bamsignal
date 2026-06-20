@@ -23,7 +23,6 @@ import { buildHomeFeedGridItems, filterProfilesByName, injectSignalPassPromos } 
 import { homeAdvancedToSearchFilters, filterProfilesByDistance } from "../../utils/homeFilters";
 import { effectiveHomeDistanceKm } from "../../utils/cityMetroRadius";
 import { rankProfiles } from "../../utils/matching";
-import { normalizeMatchPreferences } from "../../utils/profile";
 import { blockAndReportUser, blockUser, filterDiscoverDeck, isAutoFlagged } from "../../utils/safety";
 import {
   evaluateSignalGate,
@@ -39,6 +38,7 @@ import { flowLog } from "../../utils/flowLog";
 type HomeSignalsFeedProps = {
   user: UserProfile;
   viewer: DatingProfile;
+  prefs: MatchPreferences;
   isPremium: boolean;
   adSettings: HomeFeedAdsSettings;
   nameQuery: string;
@@ -85,6 +85,7 @@ function profileToDatingStub(profile: DiscoverProfile): DatingProfile {
 export function HomeSignalsFeed({
   user,
   viewer,
+  prefs,
   isPremium,
   adSettings,
   nameQuery,
@@ -105,10 +106,6 @@ export function HomeSignalsFeed({
   onResetFilters,
   onSignalSent
 }: HomeSignalsFeedProps) {
-  const prefs = useMemo(
-    () => normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {})),
-    []
-  );
   const [baseProfiles, setBaseProfiles] = useState<DiscoverProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const loadedOnceRef = useRef(false);

@@ -1,9 +1,8 @@
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../types";
-import { STORAGE_KEYS } from "../constants/limits";
+import { applyCanonicalMemberSnapshot } from "../services/memberProfileSync";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { applyCoverPhotoUpdate } from "../utils/coverPhoto";
 import { normalizeDatingProfile } from "../utils/profile";
-import { writeJson } from "../utils/storage";
 
 export function persistCoverPhotoChange(
   user: Pick<UserProfile, "email" | "phone" | "name" | "username">,
@@ -15,7 +14,7 @@ export function persistCoverPhotoChange(
     { url: update.url, path: update.path, explicit: Boolean(update.url) }
   );
   const next = normalizeDatingProfile(withCover);
-  writeJson(STORAGE_KEYS.datingProfile, next);
+  applyCanonicalMemberSnapshot(next);
   void syncMemberProfileRemote(user, next);
   return next;
 }

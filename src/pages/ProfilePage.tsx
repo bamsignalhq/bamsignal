@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Mic, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay, profileIntentLabel, toggleIntentSelection, INTENT_LIMIT_MESSAGE } from "../constants/intents";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
@@ -55,7 +56,7 @@ import { notifyVerificationApproved } from "../utils/notifyHelpers";
 import { MAX_PROFILE_PHOTOS } from "../constants/photos";
 import { persistCoverPhotoChange } from "../utils/persistCoverPhoto";
 import { syncMemberProfileRemote, syncMemberProfileWithResult } from "../services/cityHome";
-import { hydrateMemberData } from "../services/memberData";
+import { revalidateMemberProfileAfterUpdate } from "../services/memberProfileSync";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { TwoFactorSettingsCard } from "../components/TwoFactorSettingsCard";
 import { ContactForm } from "../components/ContactForm";
@@ -200,12 +201,7 @@ export function ProfilePage({
   onPurchaseBoost,
   boostCheckoutLoading = false
 }: ProfilePageProps) {
-  const [profile, setProfile] = useState<DatingProfile>(() =>
-    normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
-  );
-  const [prefs, setPrefs] = useState<MatchPreferences>(() =>
-    normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}))
-  );
+  const { profile, setProfile, prefs, setPrefs } = useMemberProfileListener();
   const [saved, setSaved] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
@@ -298,6 +294,19 @@ export function ProfilePage({
     void save(source);
   };
 
+  const commitProfileMediaUpdate = (next: DatingProfile) => {
+    const normalized = normalizeDatingProfile({ ...next, premium: isPremium });
+    setProfile(normalized);
+    void syncMemberProfileWithResult(user, normalized).then(async (synced) => {
+      if (!synced.ok) return;
+      const canonical = await revalidateMemberProfileAfterUpdate(user, {
+        profile: synced.profile ?? normalized
+      });
+      setProfile({ ...canonical.profile, premium: isPremium });
+    });
+    return normalized;
+  };
+
   const save = async (source: SaveFeedbackSource = "edit") => {
     if (saveBusy) return;
     const nameError = validateDisplayName(user.name);
@@ -320,23 +329,18 @@ export function ProfilePage({
     try {
       const normalized = normalizeDatingProfile({ ...profile, premium: isPremium });
       const normalizedPrefs = normalizeMatchPreferences(prefs);
-      writeJson(STORAGE_KEYS.datingProfile, normalized);
-      writeJson(STORAGE_KEYS.matchPreferences, normalizedPrefs);
       const synced = await syncMemberProfileWithResult(user, normalized);
       onUserChange({ ...user, name: user.name });
       if (!synced.ok) {
         showSaveFeedback(USER_MESSAGES.profileSaveFailed, false, source);
         return;
       }
-      await hydrateMemberData(user);
-      const refreshed = normalizeDatingProfile({
-        ...(synced.profile ?? readJson(STORAGE_KEYS.datingProfile, normalized)),
-        premium: isPremium
+      const canonical = await revalidateMemberProfileAfterUpdate(user, {
+        profile: synced.profile ?? normalized,
+        prefs: normalizedPrefs
       });
-      setProfile(refreshed);
-      writeJson(STORAGE_KEYS.datingProfile, refreshed);
-      setPrefs(normalizedPrefs);
-      writeJson(STORAGE_KEYS.matchPreferences, normalizedPrefs);
+      setProfile({ ...canonical.profile, premium: isPremium });
+      setPrefs(canonical.prefs);
       setSaved(true);
       showSaveFeedback(USER_MESSAGES.profileSaved, true, source);
       saveNavigateTimerRef.current = window.setTimeout(() => {
@@ -485,20 +489,14 @@ export function ProfilePage({
             onCoverModerationMessage={showModMessage}
             editablePhotos
             onPhotosChange={(photos, nextPhotoMeta, nextMainPhotoUrl) => {
-              setProfile((p) => {
-                const next = normalizeDatingProfile({
-                  ...p,
+              commitProfileMediaUpdate(
+                normalizeDatingProfile({
+                  ...profile,
                   photos,
-                  photoMeta: nextPhotoMeta ?? p.photoMeta,
+                  photoMeta: nextPhotoMeta ?? profile.photoMeta,
                   mainPhotoUrl: nextMainPhotoUrl
-                });
-                if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
-                  showModMessage(USER_MESSAGES.profileSaveFailed);
-                  return next;
-                }
-                syncMemberProfileRemote(user, next);
-                return next;
-              });
+                })
+              );
             }}
             onPhotoModerationMessage={showModMessage}
           />
@@ -695,20 +693,14 @@ export function ProfilePage({
               photoMeta={profile.photoMeta}
               coverPhoto={profile.coverPhoto}
               onChange={(photos, nextPhotoMeta, nextMainPhotoUrl) => {
-                setProfile((p) => {
-                  const next = normalizeDatingProfile({
-                    ...p,
+                commitProfileMediaUpdate(
+                  normalizeDatingProfile({
+                    ...profile,
                     photos,
-                    photoMeta: nextPhotoMeta ?? p.photoMeta,
+                    photoMeta: nextPhotoMeta ?? profile.photoMeta,
                     mainPhotoUrl: nextMainPhotoUrl
-                  });
-                  if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
-                    showModMessage(USER_MESSAGES.profileSaveFailed);
-                    return next;
-                  }
-                  syncMemberProfileRemote(user, next);
-                  return next;
-                });
+                  })
+                );
               }}
               onModerationMessage={showModMessage}
             />
@@ -886,22 +878,15 @@ export function ProfilePage({
               onRecorded={async (voiceIntroUrl) => {
                 const next = normalizeDatingProfile({ ...profile, voiceIntroUrl, premium: isPremium });
                 setProfile(next);
-                if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
-                  showModMessage(USER_MESSAGES.voiceIntroSaveFailed);
-                  return;
-                }
                 const synced = await syncMemberProfileWithResult(user, next);
                 if (!synced.ok) {
                   showModMessage(USER_MESSAGES.voiceIntroSaveFailed);
                   return;
                 }
-                await hydrateMemberData(user);
-                const refreshed = normalizeDatingProfile({
-                  ...(synced.profile ?? readJson(STORAGE_KEYS.datingProfile, next)),
-                  premium: isPremium
+                const canonical = await revalidateMemberProfileAfterUpdate(user, {
+                  profile: synced.profile ?? next
                 });
-                setProfile(refreshed);
-                writeJson(STORAGE_KEYS.datingProfile, refreshed);
+                setProfile({ ...canonical.profile, premium: isPremium });
               }}
               onClear={() => {
                 const next = normalizeDatingProfile({
@@ -910,8 +895,13 @@ export function ProfilePage({
                   premium: isPremium
                 });
                 setProfile(next);
-                writeJson(STORAGE_KEYS.datingProfile, next);
-                void syncMemberProfileRemote(user, next);
+                void syncMemberProfileWithResult(user, next).then(async (synced) => {
+                  if (!synced.ok) return;
+                  const canonical = await revalidateMemberProfileAfterUpdate(user, {
+                    profile: synced.profile ?? next
+                  });
+                  setProfile({ ...canonical.profile, premium: isPremium });
+                });
               }}
               onRejected={showModMessage}
             />

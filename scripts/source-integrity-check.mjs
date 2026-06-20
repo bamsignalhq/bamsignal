@@ -33,9 +33,11 @@ const adminShellSource = readSrc("src/components/admin/AdminShell.tsx");
 const paymentsSource = readSrc("src/services/payments.ts");
 const paymentReturnSource = readSrc("src/utils/paymentReturn.ts");
 const purchaseEmailSource = readSrc("server/services/purchaseEmail.js");
+const memberProfileSyncSource = readSrc("src/services/memberProfileSync.ts");
+const memberProfileListenerSource = readSrc("src/hooks/useMemberProfileListener.ts");
 const memberDataApiSource = readSrc("api/member/data.js");
-const memberAuthSource = readSrc("server/services/memberAuth.js");
 const memberDataClientSource = readSrc("src/services/memberData.ts");
+const memberAuthSource = readSrc("server/services/memberAuth.js");
 const memberApiAuthSource = readSrc("src/utils/memberApiAuth.ts");
 const pinLoginApiSource = readSrc("api/auth/pin-login.js");
 const pinResetApiSource = readSrc("api/auth/pin-reset.js");
@@ -71,6 +73,8 @@ const profilePhotoUploadSource = readSrc("src/utils/profilePhotoUpload.ts");
 const complianceGateSource = readSrc("src/components/ComplianceGateModal.tsx");
 const complianceUtilSource = readSrc("src/utils/compliance.ts");
 const profilePageSource = readSrc("src/pages/ProfilePage.tsx");
+const discoverPageSource = readSrc("src/pages/DiscoverPage.tsx");
+const homePageSource = readSrc("src/pages/HomePage.tsx");
 const onboardingPageSource = readSrc("src/pages/OnboardingPage.tsx");
 const fastConnectionIntentSource = readSrc("src/utils/fastConnectionIntent.ts");
 const fastConnectionSheetSource = readSrc("src/components/profile/FastConnectionSheet.tsx");
@@ -464,7 +468,7 @@ assertCheck(
 assertCheck(
   profilePageSource.includes("profile-save-feedback") &&
     profilePageSource.includes("syncMemberProfileWithResult") &&
-    profilePageSource.includes("hydrateMemberData") &&
+    profilePageSource.includes("revalidateMemberProfileAfterUpdate") &&
     profilePageSource.includes("returnToProfileOverview") &&
     profilePageSource.includes("USER_MESSAGES.profileSaved") &&
     profilePageSource.includes("600"),
@@ -481,6 +485,17 @@ assertCheck(
     profilePageSource.includes("voiceIntroUrl") &&
     userMessagesSource.includes("voiceIntroSaveFailed"),
   "voice intro must record, upload to storage, and persist on profile"
+);
+assertCheck(
+  memberProfileSyncSource.includes("revalidateMemberProfileAfterUpdate") &&
+    memberProfileSyncSource.includes("MEMBER_PROFILE_UPDATED_EVENT") &&
+    memberProfileSyncSource.includes("invalidateMemberProfileCaches") &&
+    memberProfileListenerSource.includes("useMemberProfileListener") &&
+    memberDataClientSource.includes("serverWins") &&
+    profilePageSource.includes("revalidateMemberProfileAfterUpdate") &&
+    discoverPageSource.includes("useMemberProfileListener") &&
+    homePageSource.includes("useMemberProfileListener"),
+  "profile updates must revalidate server snapshot and broadcast to member pages"
 );
 assertCheck(
   sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&

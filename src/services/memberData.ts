@@ -140,7 +140,30 @@ export async function bootstrapMemberSession(
   return { hydrated, status, nextRoute: "onboarding" };
 }
 
-export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> {
+function sanitizeRemoteDatingProfile(remoteRaw: Record<string, unknown>): Record<string, unknown> {
+  const remote = { ...remoteRaw };
+  const remoteCoverUrl =
+    typeof remote.coverPhotoUrl === "string"
+      ? remote.coverPhotoUrl
+      : typeof remote.coverPhoto === "string"
+        ? remote.coverPhoto
+        : undefined;
+  if (remoteCoverUrl?.startsWith("/showcase/")) {
+    remote.coverPhotoUrl = undefined;
+    remote.coverPhoto = undefined;
+    remote.coverPhotoExplicit = false;
+    remote.coverPhotoPath = undefined;
+  } else if (typeof remote.coverPhoto === "string" && remote.coverPhoto.startsWith("/showcase/")) {
+    remote.coverPhoto = undefined;
+    remote.coverPhotoExplicit = false;
+  }
+  return remote;
+}
+
+export async function hydrateMemberData(
+  user: MemberIdentity,
+  options?: { serverWins?: boolean }
+): Promise<boolean> {
   const payload = await postMemberAction("pull", user);
   const bundle = payload?.bundle;
   if (!bundle) return false;
@@ -225,22 +248,38 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
 
   if (bundle.datingProfile && typeof bundle.datingProfile === "object") {
     const local = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
-    const remote = { ...(bundle.datingProfile as Record<string, unknown>) };
-    const remoteCoverUrl =
-      typeof remote.coverPhotoUrl === "string"
-        ? remote.coverPhotoUrl
-        : typeof remote.coverPhoto === "string"
-          ? remote.coverPhoto
-          : undefined;
-    if (remoteCoverUrl?.startsWith("/showcase/")) {
-      remote.coverPhotoUrl = undefined;
-      remote.coverPhoto = undefined;
-      remote.coverPhotoExplicit = false;
-      remote.coverPhotoPath = undefined;
-    } else if (typeof remote.coverPhoto === "string" && remote.coverPhoto.startsWith("/showcase/")) {
-      remote.coverPhoto = undefined;
-      remote.coverPhotoExplicit = false;
-    }
+    const remote = sanitizeRemoteDatingProfile(bundle.datingProfile as Record<string, unknown>);
+
+    if (options?.serverWins) {
+      const remoteComplete = mergeOnboardingCompleteFlag(local, remote as Partial<DatingProfile>);
+      const remoteStatus = normalizeOnboardingStatus(remote);
+      const merged = normalizeDatingProfile({
+        ...remote,
+        onboardingComplete: remoteComplete,
+        setupCompleted: remoteComplete || remoteStatus.setupCompleted || Boolean(remote.setupCompleted),
+        onboardingCompletedAt:
+          safeString(remote.onboardingCompletedAt) ||
+          safeString(remote.onboarding_completed_at) ||
+          safeString(local.onboardingCompletedAt) ||
+          remoteStatus.onboardingCompletedAt ||
+          undefined,
+        profileCompletedAt:
+          safeString(remote.profileCompletedAt) ||
+          safeString(remote.profile_completed_at) ||
+          safeString(local.profileCompletedAt) ||
+          remoteStatus.profileCompletedAt ||
+          undefined,
+        completedAt:
+          safeString(remote.completedAt) ||
+          safeString(remote.completed_at) ||
+          safeString(local.completedAt) ||
+          remoteStatus.completedAt ||
+          undefined,
+        compliance: mergeHydratedCompliance(local.compliance, remote.compliance)
+      });
+      writeJson(STORAGE_KEYS.datingProfile, merged);
+      syncComplianceDoneMarkerFromProfile(user, merged.compliance);
+    } else {
     const remotePhotos = safePhotos(remote.photos);
     const localPhotos = safePhotos(local.photos);
     const remotePersistable = remotePhotos.filter(isPersistablePhotoUrl);
@@ -361,6 +400,7 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
       repaired: false,
       remoteComplete
     });
+    }
   }
 
   writeJson(

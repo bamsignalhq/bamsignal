@@ -10,6 +10,14 @@ function sanitizeProfiles(profiles: DiscoverProfile[]): DiscoverProfile[] {
   return profiles.map((profile) => safeDiscoverProfile(profile));
 }
 
+export function clearDiscoverProfileCache(profileId?: string): void {
+  if (profileId) {
+    profileCache.delete(profileId);
+    return;
+  }
+  profileCache.clear();
+}
+
 export function cacheDiscoverProfiles(profiles: DiscoverProfile[]): void {
   for (const profile of profiles) {
     profileCache.set(profile.id, profile);

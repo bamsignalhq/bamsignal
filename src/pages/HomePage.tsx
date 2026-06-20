@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { greetingForHour } from "../constants/copy";
 import { firstNameFromDisplayName } from "../constants/homeFilters";
 import { DEFAULT_HOME_FEED_ADS } from "../constants/homeFeedAds";
@@ -22,8 +23,6 @@ import {
   homeHasCustomFilters
 } from "../utils/homeFilters";
 import { normalizePath } from "../constants/routes";
-import { getDatingProfile, normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
-import { readJson } from "../utils/storage";
 import { useAndroidBack } from "../hooks/useAndroidBack";
 
 type HomePageProps = {
@@ -46,8 +45,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   }, []);
 
   const firstName = firstNameFromDisplayName(userName || user.name);
-  const viewer = normalizeDatingProfile(getDatingProfile());
-  const prefs = normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}));
+  const { profile: viewer, prefs } = useMemberProfileListener();
   const filterDefaults = useMemo(
     () => resolveHomeFilterDefaults(viewer, prefs),
     [
@@ -201,6 +199,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
       <HomeSignalsFeed
         user={user}
         viewer={viewer}
+        prefs={prefs}
         isPremium={isPremium}
         adSettings={adSettings}
         nameQuery={nameQuery}

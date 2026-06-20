@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { Compass } from "lucide-react";
 import { BRAND, ERROR_COPY, SUCCESS_COPY } from "../constants/copy";
 import { FREE_DAILY_SWIPES, STORAGE_KEYS } from "../constants/limits";
@@ -73,9 +74,7 @@ export function DiscoverPage({
   const [passedIds, setPassedIds] = useState<string[]>(() =>
     readJson<string[]>(STORAGE_KEYS.passed, [])
   );
-  const [prefs, setPrefs] = useState<MatchPreferences>(() =>
-    normalizeMatchPreferences(readJson(STORAGE_KEYS.matchPreferences, {}))
-  );
+  const { profile: viewer, prefs, setPrefs } = useMemberProfileListener();
   const [savedIds, setSavedIds] = useState<string[]>(() =>
     readJson<string[]>(STORAGE_KEYS.savedDiscoverProfiles, [])
   );
@@ -83,9 +82,6 @@ export function DiscoverPage({
   const [signalSent, setSignalSent] = useState(false);
   const [cardKey, setCardKey] = useState(0);
   const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
-  const [viewer] = useState(() =>
-    normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}))
-  );
   const [profilesLoading, setProfilesLoading] = useState(true);
   const profilesLoadedOnce = useRef(false);
   const [allProfiles, setAllProfiles] = useState<DiscoverProfile[]>([]);
@@ -123,7 +119,7 @@ export function DiscoverPage({
     return () => {
       cancelled = true;
     };
-  }, [viewer.city, blocked.length, passedIds.length, prefs.states, prefs.cities]);
+  }, [viewer.city, viewer.bio, viewer.interests, blocked.length, passedIds.length, prefs.states, prefs.cities, prefs.religions, prefs.ethnicities, prefs.lifestyles, prefs.relationshipIntentions]);
 
   const baseDeck = useMemo(() => {
     const available = filterDiscoverDeck(allProfiles, viewer, blocked, passedIds);

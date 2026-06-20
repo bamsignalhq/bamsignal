@@ -18,16 +18,18 @@ type VerifyCodeResponse = {
 export class AuthEmailError extends Error {
   readonly kind: "network" | "server" | "validation" | "rate_limit" | "exists";
   readonly field?: "email" | "phone" | "username";
+  readonly code?: string;
 
   constructor(
     message: string,
     kind: AuthEmailError["kind"] = "server",
-    field?: AuthEmailError["field"]
+    field?: AuthEmailError["field"],
+    code?: string
   ) {
     super(message);
     this.name = "AuthEmailError";
     this.kind = kind;
-    this.field = field;
+    this.code = code;
   }
 }
 
@@ -72,7 +74,7 @@ async function readApiResponse<T extends { ok?: boolean; error?: string; field?:
       throw new AuthEmailError(message, "exists", field);
     }
     if (response.status === 400) {
-      throw new AuthEmailError(message, "validation");
+      throw new AuthEmailError(message, "validation", payload?.field as AuthEmailError["field"], payload?.code);
     }
     if (response.status === 503 || /not configured|unavailable/i.test(message)) {
       throw new AuthEmailError(
@@ -180,10 +182,12 @@ export async function requestSignupMathChallenge(): Promise<{ token: string; a: 
   const payload = await readApiResponse<{
     ok?: boolean;
     token: string;
+    challengeToken?: string;
     a: number;
     b: number;
   }>(response, "We couldn't load the quick check. Please try again.");
-  return { token: payload.token, a: Number(payload.a), b: Number(payload.b) };
+  const token = payload.challengeToken || payload.token;
+  return { token, a: Number(payload.a), b: Number(payload.b) };
 }
 
 export async function resendSignupEmailCode(

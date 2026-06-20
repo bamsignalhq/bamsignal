@@ -3,8 +3,10 @@ type SignupMathGateProps = {
   b: number;
   answer: string;
   onAnswerChange: (value: string) => void;
+  onRefresh?: () => void;
   error?: string;
   disabled?: boolean;
+  refreshing?: boolean;
 };
 
 export function SignupMathGate({
@@ -12,8 +14,10 @@ export function SignupMathGate({
   b,
   answer,
   onAnswerChange,
+  onRefresh,
   error,
-  disabled
+  disabled,
+  refreshing = false
 }: SignupMathGateProps) {
   return (
     <div className="signup-math-gate">
@@ -34,6 +38,17 @@ export function SignupMathGate({
           maxLength={2}
           onChange={(event) => onAnswerChange(event.target.value.replace(/\D/g, "").slice(0, 2))}
         />
+        {onRefresh ? (
+          <button
+            type="button"
+            className="signup-math-gate__refresh"
+            onClick={onRefresh}
+            disabled={disabled || refreshing}
+            aria-label="Refresh quick check"
+          >
+            ↻
+          </button>
+        ) : null}
       </div>
       {error ? (
         <p className="signup-math-gate__error" role="alert">

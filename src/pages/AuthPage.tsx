@@ -611,8 +611,12 @@ export function AuthPage({
           clearPendingSignup();
           onModeChange("signup");
         }
-        if (/quick check|answer correctly/i.test(error.message)) {
-          setMathError("Please answer correctly.");
+        if (error.code === "challenge_expired" || /quick check|answer correctly/i.test(error.message)) {
+          setMathError(
+            error.code === "challenge_expired"
+              ? "This quick check expired. Please try again."
+              : "Please answer correctly."
+          );
           void loadMathChallenge();
         }
       }
@@ -960,8 +964,10 @@ export function AuthPage({
                     setMathAnswer(value);
                     setMathError("");
                   }}
+                  onRefresh={() => void loadMathChallenge()}
                   error={mathError}
                   disabled={mathLoading || busy === "signup"}
+                  refreshing={mathLoading}
                 />
               ) : mathLoading ? (
                 <p className="auth-message auth-message--inline">One moment…</p>

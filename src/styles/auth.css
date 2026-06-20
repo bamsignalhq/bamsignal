@@ -315,6 +315,22 @@
   border-color: color-mix(in srgb, #ef4444 55%, var(--border));
 }
 
+.signup-math-gate__refresh {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.signup-math-gate__refresh:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .signup-math-gate__error {
   margin: 0;
   font-size: 0.82rem;

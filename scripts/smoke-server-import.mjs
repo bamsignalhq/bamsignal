@@ -35,6 +35,8 @@ function assertSmoke(condition, message) {
   process.exit(1);
 }
 
+const signupMathSource = readFileSync(join(rootPath, "server", "services", "signupMathChallenge.js"), "utf8");
+const authPageSource = readFileSync(join(rootPath, "src", "pages", "AuthPage.tsx"), "utf8");
 const appSource = readFileSync(join(rootPath, "src", "App.tsx"), "utf8");
 const adminSessionSource = readFileSync(join(rootPath, "src", "utils", "adminSession.ts"), "utf8");
 const adminShellSource = readFileSync(join(rootPath, "src", "components", "admin", "AdminShell.tsx"), "utf8");
@@ -74,6 +76,18 @@ assertSmoke(
     purchaseEmailSource.indexOf("markPurchaseEmailSent(reference)") <
       purchaseEmailSource.indexOf("const sendResult = await sendResendPurchaseEmail"),
   "purchase confirmation email must be claimed once per reference before sending"
+);
+assertSmoke(
+  signupMathSource.includes("createHmac") &&
+    signupMathSource.includes("buildSignupMathChallengeToken") &&
+    !signupMathSource.includes("const challenges = new Map") &&
+    signupMathSource.includes('"challenge_expired"'),
+  "signup math challenge must use signed stateless tokens"
+);
+assertSmoke(
+  authPageSource.includes("onRefresh={() => void loadMathChallenge()}") &&
+    authPageSource.includes('error.code === "challenge_expired"'),
+  "signup math challenge must refresh expired tokens in the client"
 );
 assertSmoke(
   appSource.includes("const isPublicSurface") &&

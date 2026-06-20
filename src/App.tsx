@@ -162,8 +162,16 @@ import {
   getPaymentReturnMeta,
   getPaymentReturnPath,
   hasPaystackCallbackInUrl,
+  normalizePaymentReturnPath,
   resolvePaymentReturnPath
 } from "./utils/paymentReturn";
+
+type VerifiedPaymentRoute = {
+  productId?: string;
+  returnPath?: string;
+  sourcePage?: string;
+  boostId?: string;
+};
 
 export function App() {
   const isNative = Capacitor.getPlatform() !== "web";
@@ -506,10 +514,19 @@ export function App() {
   );
 
   const applyPaymentSuccess = useCallback(
-    (kind: "premium" | "boost" | "quickie") => {
-      const returnPath = getPaymentReturnPath();
-      const meta = getPaymentReturnMeta();
-      const boostId = localStorage.getItem(STORAGE_KEYS.paymentBoostId) || "city-boost";
+    (kind: "premium" | "boost" | "quickie", route?: VerifiedPaymentRoute) => {
+      const returnPath = normalizePaymentReturnPath(route?.returnPath || getPaymentReturnPath());
+      const storedMeta = getPaymentReturnMeta();
+      const meta = {
+        productType: kind,
+        productId: route?.productId || storedMeta.productId,
+        sourcePage: normalizePaymentReturnPath(route?.sourcePage || storedMeta.sourcePage)
+      };
+      const boostId =
+        route?.boostId ||
+        (kind === "boost" ? route?.productId : undefined) ||
+        localStorage.getItem(STORAGE_KEYS.paymentBoostId) ||
+        "city-boost";
       clearPaymentSession();
       setPaymentFlowState("success");
       setPaymentFlowTick((v) => v + 1);
@@ -551,10 +568,10 @@ export function App() {
     const params = new URLSearchParams(window.location.search);
     const urlRef = params.get("trxref") || params.get("reference");
     const state = getPaymentFlowState();
-    const callbackActive = isPaymentReturnPath() || Boolean(urlRef?.trim());
+    const callbackActive = isPaymentReturnPath() || hasPaystackCallbackInUrl();
 
-    if (!urlRef && (state === "initializing" || state === "checkout_open")) return;
-    if (!urlRef && state !== "verifying") return;
+    if (!callbackActive && !urlRef && (state === "initializing" || state === "checkout_open")) return;
+    if (!callbackActive && !urlRef && state !== "verifying") return;
 
     paymentVerifyInFlight.current = true;
     if (callbackActive) {
@@ -568,7 +585,12 @@ export function App() {
 
       if (result.ok) {
         logPaymentEvent("verification result", { ok: true, kind: result.kind });
-        applyPaymentSuccess(result.kind);
+        applyPaymentSuccess(result.kind, {
+          productId: result.productId,
+          returnPath: result.returnPath,
+          sourcePage: result.sourcePage,
+          boostId: result.boostId
+        });
         return;
       }
 

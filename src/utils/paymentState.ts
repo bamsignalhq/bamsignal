@@ -112,6 +112,10 @@ export function beginPaymentSession(): void {
   localStorage.removeItem(STORAGE_KEYS.paymentBoostId);
   localStorage.removeItem(STORAGE_KEYS.paymentCheckoutOpened);
   localStorage.removeItem(STORAGE_KEYS.paymentStartedAt);
+  localStorage.removeItem(STORAGE_KEYS.paymentReturnPath);
+  localStorage.removeItem(STORAGE_KEYS.paymentProductType);
+  localStorage.removeItem(STORAGE_KEYS.paymentProductId);
+  localStorage.removeItem(STORAGE_KEYS.paymentSourcePage);
   writeJson(STORAGE_KEYS.paymentFlowState, "initializing");
   logPaymentEvent("session started");
   notifyPaymentStateChange("initializing");
@@ -120,7 +124,7 @@ export function beginPaymentSession(): void {
 function hasPaymentReturnInUrl(): boolean {
   if (typeof window === "undefined") return false;
   const params = new URLSearchParams(window.location.search);
-  return Boolean(params.get("trxref") || params.get("reference"));
+  return Boolean(params.get("trxref") || params.get("reference") || params.get("status"));
 }
 
 /** Drop orphaned failed/cancelled sessions from prior app loads. */

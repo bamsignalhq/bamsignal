@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import express from "express";
 import { config } from "../config.js";
-import { activateAppUserPremium } from "../db.js";
+import { activateAppUserFastConnectionPass, activateAppUserPremium } from "../db.js";
+import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../cityHome.js";
 import { createVipInviteLink } from "../telegram.js";
 import { planDaysFromAmount, normalizePlans } from "../pricing.js";
 import { sendPurchaseConfirmationEmail } from "../services/purchaseEmail.js";
@@ -33,45 +34,111 @@ function premiumUntilFromEvent(data = {}) {
   return new Date(Date.now() + Math.max(1, Math.min(days || 7, 370)) * 86400000).toISOString();
 }
 
-async function activatePremium(event) {
+function normalizePhone(value = "") {
+  return String(value).replace(/\D/g, "").replace(/^234/, "");
+}
+
+function normalizeReturnPath(value) {
+  const raw = String(value || "").trim();
+  if (!raw || raw === "/" || raw.startsWith("//") || /^[a-z][a-z\d+.-]*:/i.test(raw)) return "/home";
+  const path = raw.split(/[?#]/)[0].replace(/\/$/, "") || "/";
+  const allowed = ["/home", "/profile", "/settings", "/subscription", "/discover", "/chats", "/signals"];
+  return allowed.some((prefix) => path === prefix || path.startsWith(`${prefix}/`)) ? raw.replace(/\/$/, "") : "/home";
+}
+
+function productDetails(data = {}) {
+  const metadata = data.metadata || {};
+  const productType = String(metadata.product_type || "premium").trim();
+  if (productType === "quickie") {
+    return { productType, productId: String(metadata.product_id || "fast-connection-pass") };
+  }
+  if (productType === "boost") {
+    const boostId = String(metadata.boost_id || metadata.product_id || "city-boost").trim();
+    return { productType, productId: String(metadata.product_id || boostId), boostId };
+  }
+  return {
+    productType: "premium",
+    productId: String(metadata.product_id || metadata.plan || metadata.plan_days || "monthly")
+  };
+}
+
+async function activatePurchase(event) {
   const data = event.data || {};
   const customer = data.customer || {};
   const metadata = data.metadata || {};
   const email = String(customer.email || data.customer_email || metadata.email || "").toLowerCase();
-  const phone = String(metadata.phone || metadata.phone_number || "").replace(/\D/g, "").replace(/^234/, "");
+  const phone = normalizePhone(metadata.phone || metadata.phone_number || "");
   const name = String(metadata.name || customer.first_name || "").trim();
   const reference = String(data.reference || metadata.reference || "");
-  const premiumUntil = premiumUntilFromEvent(data);
-  const inviteLink = await createVipInviteLink(email || phone).catch(() => null);
+  const { productType, productId, boostId } = productDetails(data);
+  const returnPath = normalizeReturnPath(metadata.return_path || metadata.returnPath);
 
   if (!email && !phone) {
     return { ok: false, reason: "No user identifier in Paystack metadata/customer" };
   }
 
-  const user = await activateAppUserPremium({
-    email: email || null,
-    phone: phone || null,
-    name,
-    premiumUntil,
-    paystackReference: reference,
-    inviteLink
-  });
+  let activation = null;
+  if (productType === "quickie") {
+    const passDays = Math.max(1, Math.round(Number(metadata.quickie_days || 7)));
+    const passUntil = new Date(Date.now() + passDays * 86400000).toISOString();
+    activation = await activateAppUserFastConnectionPass({
+      email: email || null,
+      phone: phone || null,
+      name,
+      passUntil,
+      paystackReference: reference
+    });
+  } else if (productType === "boost") {
+    const city = String(metadata.city || "").trim();
+    const durationHours = Math.max(1, Math.round(Number(metadata.duration_hours || 48)));
+    if (boostId === "city-spotlight") {
+      activation = await activateCitySpotlightPlacement({
+        email: email || null,
+        phone: phone || null,
+        city,
+        durationHours: durationHours || 24,
+        paystackReference: reference
+      });
+    } else if (boostId === "city-boost") {
+      activation = await activateCityBoostPlacement({
+        email: email || null,
+        phone: phone || null,
+        city,
+        durationHours,
+        paystackReference: reference
+      });
+    } else {
+      activation = { ok: true, productType, boostId, paystackReference: reference };
+    }
+  } else {
+    const premiumUntil = premiumUntilFromEvent(data);
+    const inviteLink = await createVipInviteLink(email || phone).catch(() => null);
+    activation = await activateAppUserPremium({
+      email: email || null,
+      phone: phone || null,
+      name,
+      premiumUntil,
+      paystackReference: reference,
+      inviteLink
+    });
+  }
 
   if (reference && email) {
     await sendPurchaseConfirmationEmail({
       reference,
       email,
       firstName: name.split(/\s+/)[0] || "there",
-      productType: "premium",
-      productId: String(metadata.plan || metadata.plan_days || "monthly"),
+      productType,
+      productId,
       amountKobo: Number(data.amount || 0),
-      userId: metadata.user_id || metadata.userId || null
+      userId: metadata.user_id || metadata.userId || null,
+      returnPath
     }).catch((error) => {
       console.error("[paystack webhook] purchase email failed", error?.message || error);
     });
   }
 
-  return { ok: true, email, premium_until: premiumUntil, invite_link: inviteLink, user };
+  return { ok: true, email, productType, productId, activation };
 }
 
 async function handlePaystackWebhook(req, res, next) {
@@ -86,8 +153,8 @@ async function handlePaystackWebhook(req, res, next) {
       return res.json({ ok: true, ignored: true, event: event.event });
     }
 
-    const result = await activatePremium(event);
-    return res.json({ ok: true, event: event.event, premium: result });
+    const result = await activatePurchase(event);
+    return res.json({ ok: true, event: event.event, purchase: result });
   } catch (error) {
     return next(error);
   }

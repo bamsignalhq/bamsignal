@@ -12,6 +12,7 @@ import {
   verifyPaystackTransaction
 } from "../../server/services/paystackClient.js";
 import { sendPurchaseConfirmationEmail, logPaymentInitialized } from "../../server/services/purchaseEmail.js";
+import { appendPaymentAudit } from "../../server/services/paymentEvents.js";
 import {
   activePlanPrice,
   getProductFromCatalog,
@@ -38,6 +39,55 @@ function buildReference(prefix) {
   const stamp = Date.now().toString(36);
   const random = Math.random().toString(36).slice(2, 8);
   return `bs_${prefix}_${stamp}_${random}`.slice(0, 64);
+}
+
+const APP_RETURN_PREFIXES = ["/home", "/profile", "/settings", "/subscription", "/discover", "/chats", "/signals"];
+
+function normalizePaymentReturnPath(value, fallback = "/home") {
+  const raw = String(value || "").trim();
+  const fallbackPathname = String(fallback || "").split(/[?#]/)[0].replace(/\/$/, "") || "/";
+  const safeFallback = APP_RETURN_PREFIXES.some(
+    (path) => fallbackPathname === path || fallbackPathname.startsWith(`${path}/`)
+  )
+    ? fallback
+    : "/home";
+  if (!raw || raw === "/" || raw.startsWith("//") || /^[a-z][a-z\d+.-]*:/i.test(raw)) {
+    return safeFallback;
+  }
+  const pathname = raw.split(/[?#]/)[0].replace(/\/$/, "") || "/";
+  if (APP_RETURN_PREFIXES.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+    return raw.replace(/\/$/, "") || safeFallback;
+  }
+  return safeFallback;
+}
+
+function paymentReturnFrom(metadata = {}, body = {}, fallback = "/home") {
+  const returnPath = normalizePaymentReturnPath(
+    metadata.return_path || metadata.returnPath || body.returnPath || body.paymentReturnPath,
+    fallback
+  );
+  const sourcePage = normalizePaymentReturnPath(
+    metadata.source_page || metadata.sourcePage || body.sourcePage || returnPath,
+    returnPath
+  );
+  return { returnPath, sourcePage };
+}
+
+async function logPaymentReturnRedirect({ reference, returnPath, productType, productId, sourcePage }) {
+  try {
+    await appendPaymentAudit(reference, "payment_return_redirect", {
+      returnPath,
+      productType,
+      productId,
+      sourcePage: sourcePage || null,
+      source: "verify_response"
+    });
+  } catch (error) {
+    console.error("[paystack] payment return audit failed", {
+      reference,
+      message: error?.message || String(error)
+    });
+  }
 }
 
 let pricingPlansCache = null;
@@ -94,7 +144,8 @@ async function notifyPurchaseEmail({
   productType,
   productId,
   amountKobo,
-  metadata = {}
+  metadata = {},
+  returnPath
 }) {
   const firstName = String(name || metadata.name || "").trim().split(/\s+/)[0] || "there";
   try {
@@ -105,7 +156,8 @@ async function notifyPurchaseEmail({
       productType,
       productId,
       amountKobo: Number(amountKobo || 0),
-      userId: metadata.user_id || metadata.userId || null
+      userId: metadata.user_id || metadata.userId || null,
+      returnPath
     });
   } catch (error) {
     console.error("[paystack] purchase email failed", {
@@ -151,6 +203,7 @@ export default async function handler(req, res) {
       }
 
       const planMeta = String(body.plan || plans.find((item) => item.days === days)?.id || "monthly");
+      const { returnPath, sourcePage } = paymentReturnFrom({}, body, "/home");
       const reference = buildReference(planMeta);
       const startedAt = Date.now();
 
@@ -168,7 +221,10 @@ export default async function handler(req, res) {
             days,
             plan_days: days,
             plan: planMeta,
-            product_type: "premium"
+            product_type: "premium",
+            product_id: String(body.productId || planMeta),
+            return_path: returnPath,
+            source_page: sourcePage
           }
         });
 
@@ -185,7 +241,8 @@ export default async function handler(req, res) {
           reference: data?.reference || reference,
           userEmail: email,
           productType: "premium",
-          productId: planMeta
+          productId: String(body.productId || planMeta),
+          returnPath
         });
 
         return res.status(200).json({
@@ -218,6 +275,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: "Invalid boost price." });
       }
 
+      const { returnPath, sourcePage } = paymentReturnFrom({}, body, "/profile");
       const reference = buildReference(boostId);
 
       try {
@@ -234,7 +292,10 @@ export default async function handler(req, res) {
             city,
             boost_id: boostId,
             duration_hours: durationHours,
-            product_type: "boost"
+            product_type: "boost",
+            product_id: String(body.productId || boostId),
+            return_path: returnPath,
+            source_page: sourcePage
           }
         });
 
@@ -242,7 +303,8 @@ export default async function handler(req, res) {
           reference: data?.reference || reference,
           userEmail: email,
           productType: "boost",
-          productId: boostId
+          productId: String(body.productId || boostId),
+          returnPath
         });
 
         return res.status(200).json({
@@ -279,6 +341,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: "Fast Connection Pass pricing is not configured yet." });
       }
 
+      const { returnPath, sourcePage } = paymentReturnFrom({}, body, "/home");
       const reference = buildReference("quickie");
 
       try {
@@ -293,7 +356,10 @@ export default async function handler(req, res) {
             name,
             phone,
             product_type: "quickie",
-            quickie_days: passDays
+            product_id: String(body.productId || "fast-connection-pass"),
+            quickie_days: passDays,
+            return_path: returnPath,
+            source_page: sourcePage
           }
         });
 
@@ -301,7 +367,8 @@ export default async function handler(req, res) {
           reference: data?.reference || reference,
           userEmail: email,
           productType: "quickie",
-          productId: "fast-connection-pass"
+          productId: String(body.productId || "fast-connection-pass"),
+          returnPath
         });
 
         return res.status(200).json({
@@ -351,10 +418,13 @@ export default async function handler(req, res) {
       return res.status(403).json({ ok: false, error: "Payment email does not match this BamSignal account." });
     }
 
-    const productType = String(transaction?.metadata?.product_type || body.productType || "premium").trim();
+    const metadata = transaction?.metadata || {};
+    const productType = String(metadata.product_type || body.productType || "premium").trim();
+    const { returnPath, sourcePage } = paymentReturnFrom(metadata, body, "/home");
 
     if (productType === "quickie") {
-      const passDays = Math.max(1, Math.round(Number(transaction?.metadata?.quickie_days || 7)));
+      const productId = String(metadata.product_id || body.productId || "fast-connection-pass");
+      const passDays = Math.max(1, Math.round(Number(metadata.quickie_days || 7)));
       const passUntil = new Date(Date.now() + passDays * 24 * 3600000).toISOString();
       await activateAppUserFastConnectionPass({
         email: email || transactionEmail,
@@ -368,24 +438,36 @@ export default async function handler(req, res) {
         email: email || transactionEmail,
         name,
         productType: "quickie",
-        productId: "fast-connection-pass",
+        productId,
         amountKobo: transaction?.amount,
-        metadata: transaction?.metadata || {}
+        metadata,
+        returnPath
+      });
+      await logPaymentReturnRedirect({
+        reference,
+        returnPath,
+        sourcePage,
+        productType: "quickie",
+        productId
       });
       return res.status(200).json({
         ok: true,
         productType: "quickie",
+        productId,
+        returnPath,
+        sourcePage,
         quickiePassUntil: passUntil,
         fastConnectionPassUntil: passUntil
       });
     }
 
     if (productType === "boost") {
-      const boostId = String(transaction?.metadata?.boost_id || body.boostId || "city-boost").trim();
-      const city = String(transaction?.metadata?.city || body.city || "").trim();
+      const boostId = String(metadata.boost_id || metadata.product_id || body.boostId || body.productId || "city-boost").trim();
+      const productId = String(metadata.product_id || boostId);
+      const city = String(metadata.city || body.city || "").trim();
       const durationHours = Math.max(
         1,
-        Math.round(Number(transaction?.metadata?.duration_hours || body.durationHours || 48))
+        Math.round(Number(metadata.duration_hours || body.durationHours || 48))
       );
 
       const allowedBoosts = new Set([
@@ -418,13 +500,24 @@ export default async function handler(req, res) {
           email: email || transactionEmail,
           name,
           productType: "boost",
-          productId: boostId,
+          productId,
           amountKobo: transaction?.amount,
-          metadata: transaction?.metadata || {}
+          metadata,
+          returnPath
+        });
+        await logPaymentReturnRedirect({
+          reference,
+          returnPath,
+          sourcePage,
+          productType: "boost",
+          productId
         });
         return res.status(200).json({
           ok: true,
           productType: "boost",
+          productId,
+          returnPath,
+          sourcePage,
           boostId,
           city: placement.city,
           expiresAt: placement.expires_at
@@ -450,13 +543,24 @@ export default async function handler(req, res) {
           email: email || transactionEmail,
           name,
           productType: "boost",
-          productId: boostId,
+          productId,
           amountKobo: transaction?.amount,
-          metadata: transaction?.metadata || {}
+          metadata,
+          returnPath
+        });
+        await logPaymentReturnRedirect({
+          reference,
+          returnPath,
+          sourcePage,
+          productType: "boost",
+          productId
         });
         return res.status(200).json({
           ok: true,
           productType: "boost",
+          productId,
+          returnPath,
+          sourcePage,
           boostId,
           city: placement.city,
           expiresAt: placement.expires_at
@@ -468,13 +572,24 @@ export default async function handler(req, res) {
         email: email || transactionEmail,
         name,
         productType: "boost",
-        productId: boostId,
+        productId,
         amountKobo: transaction?.amount,
-        metadata: transaction?.metadata || {}
+        metadata,
+        returnPath
+      });
+      await logPaymentReturnRedirect({
+        reference,
+        returnPath,
+        sourcePage,
+        productType: "boost",
+        productId
       });
       return res.status(200).json({
         ok: true,
         productType: "boost",
+        productId,
+        returnPath,
+        sourcePage,
         boostId,
         expiresAt: new Date(Date.now() + durationHours * 3600000).toISOString()
       });
@@ -496,19 +611,32 @@ export default async function handler(req, res) {
       inviteLink
     });
 
-    const planMeta = String(transaction?.metadata?.plan || transaction?.metadata?.plan_days || days);
+    const planMeta = String(metadata.plan || metadata.plan_days || days);
+    const productId = String(metadata.product_id || body.productId || planMeta);
     await notifyPurchaseEmail({
       reference,
       email: email || transactionEmail,
       name,
       productType: "premium",
-      productId: planMeta,
+      productId,
       amountKobo: transaction?.amount,
-      metadata: transaction?.metadata || {}
+      metadata,
+      returnPath
+    });
+    await logPaymentReturnRedirect({
+      reference,
+      returnPath,
+      sourcePage,
+      productType: "premium",
+      productId
     });
 
     return res.status(200).json({
       ok: true,
+      productType: "premium",
+      productId,
+      returnPath,
+      sourcePage,
       premium_until: premiumUntil,
       days,
       invite_link: inviteLink,

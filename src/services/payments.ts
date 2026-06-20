@@ -14,6 +14,9 @@ import {
 } from "../utils/paymentState";
 import { PAYMENT_START_ERROR } from "../config/paystack";
 import {
+  getPaymentReturnMeta,
+  getPaymentReturnPath,
+  normalizePaymentReturnPath,
   resolvePaymentReturnPath,
   savePaymentReturnContext,
   type PaymentReturnContext
@@ -57,6 +60,65 @@ type CheckoutCallbacks = {
   onPhase?: (phase: PaymentCheckoutPhase) => void;
 };
 
+type PaymentKind = "premium" | "boost" | "quickie";
+
+type VerifyPaymentPayload = {
+  ok?: boolean;
+  error?: string;
+  productType?: PaymentKind;
+  productId?: string;
+  returnPath?: string;
+  sourcePage?: string;
+  premium_until?: string;
+  quickiePassUntil?: string;
+  fastConnectionPassUntil?: string;
+  boostId?: string;
+  expiresAt?: string;
+};
+
+type VerifyResult = {
+  ok: boolean;
+  error?: string;
+  pending?: boolean;
+  productType?: PaymentKind;
+  productId?: string;
+  returnPath?: string;
+  sourcePage?: string;
+  premiumUntil?: string;
+  quickiePassUntil?: string;
+  boostId?: string;
+  expiresAt?: string;
+};
+
+function normalizePaymentKind(kind?: string | null): PaymentKind {
+  return kind === "boost" || kind === "quickie" || kind === "premium" ? kind : "premium";
+}
+
+function currentPaymentReturnBody(): Pick<PaymentReturnContext, "returnPath" | "productType" | "productId" | "sourcePage"> {
+  const meta = getPaymentReturnMeta();
+  return {
+    returnPath: getPaymentReturnPath(),
+    productType: meta.productType,
+    productId: meta.productId,
+    sourcePage: meta.sourcePage
+  };
+}
+
+function buildReturnContext(
+  kind: PaymentKind,
+  productId: string,
+  returnContext?: Partial<PaymentReturnContext>,
+  fallbackReturnPath = resolvePaymentReturnPath()
+): PaymentReturnContext {
+  const returnPath = normalizePaymentReturnPath(returnContext?.returnPath || fallbackReturnPath);
+  return {
+    returnPath,
+    productType: kind,
+    productId: returnContext?.productId || productId,
+    sourcePage: normalizePaymentReturnPath(returnContext?.sourcePage || returnPath)
+  };
+}
+
 async function postInitialize(url: string, body: Record<string, unknown>): Promise<InitPayload> {
   const started = typeof performance !== "undefined" ? performance.now() : 0;
   const response = await fetch(url, {
@@ -79,7 +141,7 @@ async function postInitialize(url: string, body: Record<string, unknown>): Promi
 
 async function launchCheckout(
   init: InitPayload,
-  kind: "premium" | "boost" | "quickie",
+  kind: PaymentKind,
   extraKeys?: Record<string, string>,
   returnContext?: Partial<PaymentReturnContext>
 ): Promise<StartPaymentResult> {
@@ -148,6 +210,7 @@ export async function startPlanPayment(
   callbacks.onPhase?.("preparing");
 
   try {
+    const paymentReturnContext = buildReturnContext("premium", plan.id, returnContext);
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize"), {
       email: user.email,
       phone: user.phone,
@@ -155,7 +218,11 @@ export async function startPlanPayment(
       days: plan.days,
       amount: plan.price,
       plan: plan.id,
-      platform: paymentPlatform()
+      platform: paymentPlatform(),
+      returnPath: paymentReturnContext.returnPath,
+      sourcePage: paymentReturnContext.sourcePage,
+      productType: paymentReturnContext.productType,
+      productId: paymentReturnContext.productId
     });
 
     if (!init.ok) {
@@ -164,11 +231,7 @@ export async function startPlanPayment(
     }
 
     callbacks.onPhase?.("opening");
-    return await launchCheckout(init, "premium", undefined, {
-      ...returnContext,
-      productType: "premium",
-      productId: returnContext?.productId || plan.id
-    });
+    return await launchCheckout(init, "premium", undefined, paymentReturnContext);
   } catch {
     setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };
@@ -207,13 +270,14 @@ export async function verifyPayment(user: UserProfile): Promise<{
   premiumUntil?: string;
   error?: string;
   pending?: boolean;
-}> {
+} & VerifyResult> {
   const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
   if (!reference) {
     return { ok: false, error: "No payment reference found." };
   }
 
   try {
+    const returnBody = currentPaymentReturnBody();
     const response = await fetch(apiUrl("/api/paystack/verify"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -221,10 +285,11 @@ export async function verifyPayment(user: UserProfile): Promise<{
         reference,
         email: user.email,
         phone: user.phone,
-        name: user.name
+        name: user.name,
+        ...returnBody
       })
     });
-    const payload = await readResponseJson<{ ok?: boolean; error?: string; premium_until?: string }>(response);
+    const payload = await readResponseJson<VerifyPaymentPayload>(response);
     if (response.status === 402) {
       return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
     }
@@ -234,7 +299,17 @@ export async function verifyPayment(user: UserProfile): Promise<{
     if (payload.premium_until) {
       setPremiumSnapshot({ isPremium: true, premiumUntil: payload.premium_until });
     }
-    return { ok: true, premiumUntil: payload.premium_until };
+    return {
+      ok: true,
+      premiumUntil: payload.premium_until,
+      productType: normalizePaymentKind(payload.productType),
+      productId: payload.productId,
+      returnPath: payload.returnPath,
+      sourcePage: payload.sourcePage,
+      quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil,
+      boostId: payload.boostId,
+      expiresAt: payload.expiresAt
+    };
   } catch {
     return { ok: false, error: "Verification failed." };
   }
@@ -254,9 +329,10 @@ export async function startQuickiePassPayment(
   callbacks.onPhase?.("preparing");
 
   try {
-    const catalog = await fetchSubscriptionCatalog();
+    await fetchSubscriptionCatalog();
     const amount = fastConnectionWeeklyAmount() || undefined;
     const days = quickiePassDays();
+    const paymentReturnContext = buildReturnContext("quickie", "fast-connection-pass", returnContext);
 
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize-quickie"), {
       email: user.email,
@@ -264,7 +340,11 @@ export async function startQuickiePassPayment(
       name: user.name,
       amount,
       days,
-      platform: paymentPlatform()
+      platform: paymentPlatform(),
+      returnPath: paymentReturnContext.returnPath,
+      sourcePage: paymentReturnContext.sourcePage,
+      productType: paymentReturnContext.productType,
+      productId: paymentReturnContext.productId
     });
 
     if (!init.ok) {
@@ -273,11 +353,7 @@ export async function startQuickiePassPayment(
     }
 
     callbacks.onPhase?.("opening");
-    return await launchCheckout(init, "quickie", undefined, {
-      ...returnContext,
-      productType: "quickie",
-      productId: returnContext?.productId || "fast-connection-pass"
-    });
+    return await launchCheckout(init, "quickie", undefined, paymentReturnContext);
   } catch {
     setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };
@@ -289,13 +365,14 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
   error?: string;
   pending?: boolean;
   quickiePassUntil?: string;
-}> {
+} & VerifyResult> {
   const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
   if (!reference) {
     return { ok: false, error: "No payment reference found." };
   }
 
   try {
+    const returnBody = currentPaymentReturnBody();
     const response = await fetch(apiUrl("/api/paystack/verify"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -304,15 +381,11 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
         email: user.email,
         phone: user.phone,
         name: user.name,
+        ...returnBody,
         productType: "quickie"
       })
     });
-    const payload = await readResponseJson<{
-      ok?: boolean;
-      error?: string;
-      quickiePassUntil?: string;
-      fastConnectionPassUntil?: string;
-    }>(response);
+    const payload = await readResponseJson<VerifyPaymentPayload>(response);
     if (response.status === 402) {
       return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
     }
@@ -321,7 +394,14 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
     }
     return {
       ok: true,
-      quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil
+      quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil,
+      productType: normalizePaymentKind(payload.productType),
+      productId: payload.productId,
+      returnPath: payload.returnPath,
+      sourcePage: payload.sourcePage,
+      premiumUntil: payload.premium_until,
+      boostId: payload.boostId,
+      expiresAt: payload.expiresAt
     };
   } catch {
     return { ok: false, error: "Verification failed." };
@@ -346,6 +426,7 @@ export async function startBoostPayment(
   callbacks.onPhase?.("preparing");
 
   try {
+    const paymentReturnContext = buildReturnContext("boost", boostId, returnContext, "/profile");
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize-boost"), {
       email: user.email,
       phone: user.phone,
@@ -354,7 +435,11 @@ export async function startBoostPayment(
       city,
       amount: price,
       durationHours,
-      platform: paymentPlatform()
+      platform: paymentPlatform(),
+      returnPath: paymentReturnContext.returnPath,
+      sourcePage: paymentReturnContext.sourcePage,
+      productType: paymentReturnContext.productType,
+      productId: paymentReturnContext.productId
     });
 
     if (!init.ok) {
@@ -369,12 +454,7 @@ export async function startBoostPayment(
       {
         [STORAGE_KEYS.paymentBoostId]: boostId
       },
-      {
-        ...returnContext,
-        productType: "boost",
-        productId: returnContext?.productId || boostId,
-        returnPath: returnContext?.returnPath || "/profile"
-      }
+      paymentReturnContext
     );
   } catch {
     setPaymentFlowState("idle");
@@ -386,7 +466,7 @@ export async function verifyBoostPayment(
   user: UserProfile,
   boostId = "city-boost",
   city?: string
-): Promise<{ ok: boolean; error?: string; expiresAt?: string; pending?: boolean }> {
+): Promise<{ ok: boolean; error?: string; expiresAt?: string; pending?: boolean } & VerifyResult> {
   const resolvedCity = city?.trim() || getMemberCity();
   const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
   if (!reference) {
@@ -394,6 +474,7 @@ export async function verifyBoostPayment(
   }
 
   try {
+    const returnBody = currentPaymentReturnBody();
     const response = await fetch(apiUrl("/api/paystack/verify"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -402,19 +483,30 @@ export async function verifyBoostPayment(
         email: user.email,
         phone: user.phone,
         name: user.name,
+        ...returnBody,
         productType: "boost",
         boostId,
         city: resolvedCity
       })
     });
-    const payload = await readResponseJson<{ ok?: boolean; error?: string; expiresAt?: string }>(response);
+    const payload = await readResponseJson<VerifyPaymentPayload>(response);
     if (response.status === 402) {
       return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
     }
     if (!response.ok || !payload?.ok) {
       return { ok: false, error: payload?.error || "Payment not verified yet." };
     }
-    return { ok: true, expiresAt: payload.expiresAt };
+    return {
+      ok: true,
+      expiresAt: payload.expiresAt,
+      productType: normalizePaymentKind(payload.productType),
+      productId: payload.productId,
+      returnPath: payload.returnPath,
+      sourcePage: payload.sourcePage,
+      boostId: payload.boostId || boostId,
+      premiumUntil: payload.premium_until,
+      quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil
+    };
   } catch {
     return { ok: false, error: "Verification failed." };
   }
@@ -422,36 +514,66 @@ export async function verifyBoostPayment(
 
 export async function completePendingPayment(user: UserProfile): Promise<{
   ok: boolean;
-  kind: "premium" | "boost" | "quickie";
+  kind: PaymentKind;
   error?: string;
   pending?: boolean;
   cancelled?: boolean;
+  productId?: string;
+  returnPath?: string;
+  sourcePage?: string;
+  boostId?: string;
 }> {
+  const params = new URLSearchParams(window.location.search);
+  const urlStatus = params.get("status")?.trim().toLowerCase();
   const reference =
-    new URLSearchParams(window.location.search).get("trxref") ||
-    new URLSearchParams(window.location.search).get("reference") ||
+    params.get("trxref") ||
+    params.get("reference") ||
     localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
+  const meta = getPaymentReturnMeta();
+  const storedKind = normalizePaymentKind(localStorage.getItem(STORAGE_KEYS.paymentKind) || meta.productType);
+
+  if (urlStatus === "cancelled" || urlStatus === "canceled") {
+    logPaymentEvent("verification result", { reference, ok: false, kind: storedKind, cancelled: true });
+    return { ok: false, kind: storedKind, cancelled: true };
+  }
 
   if (!reference) {
-    return { ok: false, kind: "premium", error: "No payment reference." };
+    return { ok: false, kind: storedKind, error: "No payment reference." };
   }
 
   localStorage.setItem(STORAGE_KEYS.paymentReference, reference);
   setPaymentFlowState("verifying");
   logPaymentEvent("verification started", { reference });
 
-  const kind = (localStorage.getItem(STORAGE_KEYS.paymentKind) || "premium") as
-    | "premium"
-    | "boost"
-    | "quickie";
+  if (urlStatus === "failed") {
+    logPaymentEvent("verification result", { reference, ok: false, kind: storedKind, status: "failed" });
+    if (checkoutWasOpened()) {
+      setPaymentFlowState("failed");
+    } else {
+      setPaymentFlowState("idle");
+    }
+    return { ok: false, kind: storedKind, error: "Payment was not completed." };
+  }
 
-  if (kind === "boost") {
+  if (storedKind === "boost") {
     const datingProfile = readJson<{ city?: string }>(STORAGE_KEYS.datingProfile, {});
     const boostId = localStorage.getItem(STORAGE_KEYS.paymentBoostId) || "city-boost";
     const result = await verifyBoostPayment(user, boostId, datingProfile.city || getMemberCity());
     if (result.ok) {
-      logPaymentEvent("verification result", { reference, ok: true, kind: "boost" });
-      return { ok: true, kind: "boost" };
+      const kind = normalizePaymentKind(result.productType || "boost");
+      if (kind === "quickie" && result.quickiePassUntil) {
+        const { activateQuickiePass } = await import("../utils/quickie");
+        activateQuickiePass(result.quickiePassUntil);
+      }
+      logPaymentEvent("verification result", { reference, ok: true, kind });
+      return {
+        ok: true,
+        kind,
+        productId: result.productId,
+        returnPath: result.returnPath,
+        sourcePage: result.sourcePage,
+        boostId: result.boostId || boostId
+      };
     }
     if (result.pending) return { ok: false, kind: "boost", pending: true };
     logPaymentEvent("verification result", { reference, ok: false, kind: "boost", error: result.error });
@@ -463,15 +585,23 @@ export async function completePendingPayment(user: UserProfile): Promise<{
     return { ok: false, kind: "boost", error: result.error };
   }
 
-  if (kind === "quickie") {
+  if (storedKind === "quickie") {
     const result = await verifyQuickiePayment(user);
     if (result.ok) {
       if (result.quickiePassUntil) {
         const { activateQuickiePass } = await import("../utils/quickie");
         activateQuickiePass(result.quickiePassUntil);
       }
-      logPaymentEvent("verification result", { reference, ok: true, kind: "quickie" });
-      return { ok: true, kind: "quickie" };
+      const kind = normalizePaymentKind(result.productType || "quickie");
+      logPaymentEvent("verification result", { reference, ok: true, kind });
+      return {
+        ok: true,
+        kind,
+        productId: result.productId,
+        returnPath: result.returnPath,
+        sourcePage: result.sourcePage,
+        boostId: result.boostId
+      };
     }
     if (result.pending) return { ok: false, kind: "quickie", pending: true };
     logPaymentEvent("verification result", { reference, ok: false, kind: "quickie", error: result.error });
@@ -485,8 +615,20 @@ export async function completePendingPayment(user: UserProfile): Promise<{
 
   const result = await verifyPayment(user);
   if (result.ok) {
-    logPaymentEvent("verification result", { reference, ok: true, kind: "premium" });
-    return { ok: true, kind: "premium" };
+    const kind = normalizePaymentKind(result.productType || "premium");
+    if (kind === "quickie" && result.quickiePassUntil) {
+      const { activateQuickiePass } = await import("../utils/quickie");
+      activateQuickiePass(result.quickiePassUntil);
+    }
+    logPaymentEvent("verification result", { reference, ok: true, kind });
+    return {
+      ok: true,
+      kind,
+      productId: result.productId,
+      returnPath: result.returnPath,
+      sourcePage: result.sourcePage,
+      boostId: result.boostId
+    };
   }
   if (result.pending) return { ok: false, kind: "premium", pending: true };
   logPaymentEvent("verification result", { reference, ok: false, kind: "premium", error: result.error });

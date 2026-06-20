@@ -14,6 +14,15 @@ export type PaymentReturnContext = {
 
 const DEFAULT_RETURN_PATH = "/home";
 
+export function normalizePaymentReturnPath(value?: string | null): string {
+  const raw = String(value || "").trim();
+  if (!raw || raw === "/" || raw.startsWith("//") || /^[a-z][a-z\d+.-]*:/i.test(raw)) {
+    return DEFAULT_RETURN_PATH;
+  }
+  const appPath = normalizePath(raw.split(/[?#]/)[0]);
+  return isMemberAppPath(appPath) ? raw.replace(/\/$/, "") : DEFAULT_RETURN_PATH;
+}
+
 export function resolvePaymentReturnPath(options?: {
   tab?: NavTab;
   pathname?: string;
@@ -29,18 +38,22 @@ export function resolvePaymentReturnPath(options?: {
 
 export function savePaymentReturnContext(context: PaymentReturnContext): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.paymentReturnPath, context.returnPath);
+  const returnPath = normalizePaymentReturnPath(context.returnPath);
+  localStorage.setItem(STORAGE_KEYS.paymentReturnPath, returnPath);
   localStorage.setItem(STORAGE_KEYS.paymentProductType, context.productType);
   localStorage.setItem(STORAGE_KEYS.paymentProductId, context.productId);
-  localStorage.setItem(STORAGE_KEYS.paymentSourcePage, context.sourcePage);
+  localStorage.setItem(STORAGE_KEYS.paymentSourcePage, normalizePaymentReturnPath(context.sourcePage));
+  if (!localStorage.getItem(STORAGE_KEYS.paymentStartedAt)) {
+    localStorage.setItem(STORAGE_KEYS.paymentStartedAt, String(Date.now()));
+  }
   if (context.reference) {
     localStorage.setItem(STORAGE_KEYS.paymentReference, context.reference);
   }
   logPaymentEvent("payment_initialized", {
-    returnPath: context.returnPath,
+    returnPath,
     productType: context.productType,
     productId: context.productId,
-    sourcePage: context.sourcePage,
+    sourcePage: normalizePaymentReturnPath(context.sourcePage),
     reference: context.reference
   });
 }
@@ -48,10 +61,7 @@ export function savePaymentReturnContext(context: PaymentReturnContext): void {
 export function getPaymentReturnPath(): string {
   if (typeof window === "undefined") return DEFAULT_RETURN_PATH;
   const stored = localStorage.getItem(STORAGE_KEYS.paymentReturnPath)?.trim();
-  if (stored && (stored.startsWith("/") || isMemberAppPath(stored))) {
-    return normalizePath(stored);
-  }
-  return DEFAULT_RETURN_PATH;
+  return normalizePaymentReturnPath(stored);
 }
 
 export function getPaymentReturnMeta(): Pick<PaymentReturnContext, "productType" | "productId" | "sourcePage"> {
@@ -77,10 +87,8 @@ export function clearPaymentReturnContext(): void {
 export function hasPaystackCallbackInUrl(search = typeof window !== "undefined" ? window.location.search : ""): boolean {
   const params = new URLSearchParams(search);
   const reference = params.get("trxref") || params.get("reference");
-  if (!reference?.trim()) return false;
   const status = params.get("status")?.trim().toLowerCase();
-  if (status === "cancelled" || status === "failed") return false;
-  return true;
+  return Boolean(reference?.trim() || status);
 }
 
 export function isPaymentReturnRoute(pathname = typeof window !== "undefined" ? window.location.pathname : "/"): boolean {

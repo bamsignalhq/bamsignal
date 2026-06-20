@@ -9,6 +9,12 @@ import {
   normalizeFaith,
   normalizeFaithList,
   normalizeLifestyleTraits,
+  normalizeOccupations,
+  normalizeStatesOfOrigin,
+  normalizeGenotypes,
+  normalizeHasKidsOptions,
+  normalizeWantsKidsOptions,
+  normalizeBodyTypes,
   normalizeRelationshipIntentions,
   resolveStateName
 } from "../constants/profileOptions";
@@ -162,15 +168,15 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     ...safeArray<string>(cleaned.lifestyles),
     ...(cleaned.lifestyle && !isPreferNot(cleaned.lifestyle) ? [cleaned.lifestyle] : [])
   ]);
-  const statesOfOrigin = safeArray<string>(cleaned.statesOfOrigin).slice(0, 1);
-  const stateOfOrigin = safeString(cleaned.stateOfOrigin) || statesOfOrigin[0];
-  const hasKidsOptions = safeArray<import("../types").HasKidsOption>(cleaned.hasKidsOptions).slice(0, 1);
-  const wantsKidsOptions = safeArray<import("../types").WantsKidsOption>(cleaned.wantsKidsOptions).slice(0, 1);
-  const bodyTypes = safeArray<import("../types").BodyType>(cleaned.bodyTypes).slice(0, 1);
-  const genotypes = safeArray<import("../types").Genotype>(cleaned.genotypes).slice(0, 1);
-  const genotype = safeString(cleaned.genotype) || genotypes[0] || undefined;
-  const occupations = safeArray<import("../types").Occupation>(cleaned.occupations).slice(0, 1);
-  const occupation = safeString(cleaned.occupation) || occupations[0] || undefined;
+  const statesOfOrigin = normalizeStatesOfOrigin(cleaned.statesOfOrigin, cleaned.stateOfOrigin);
+  const stateOfOrigin = statesOfOrigin[0];
+  const hasKidsOptions = normalizeHasKidsOptions(cleaned.hasKidsOptions);
+  const wantsKidsOptions = normalizeWantsKidsOptions(cleaned.wantsKidsOptions);
+  const bodyTypes = normalizeBodyTypes(cleaned.bodyTypes);
+  const genotypes = normalizeGenotypes(cleaned.genotypes, cleaned.genotype);
+  const genotype = genotypes[0];
+  const occupations = normalizeOccupations(cleaned.occupations, cleaned.occupation);
+  const occupation = occupations[0];
   const ethnicities = normalizeEthnicities(cleaned.ethnicities, cleaned.ethnicity);
   const religion = normalizeFaith(cleaned.religion ?? (cleaned as { religions?: unknown }).religions);
 
@@ -211,12 +217,12 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     profilePrompts: safeArray(cleaned.profilePrompts),
     lifestyles,
     lifestyle: lifestyles[0],
-    statesOfOrigin: stateOfOrigin ? [stateOfOrigin] : statesOfOrigin,
+    statesOfOrigin,
     stateOfOrigin: stateOfOrigin || undefined,
     genotype: genotype as import("../types").Genotype | undefined,
-    genotypes: genotype ? [genotype as import("../types").Genotype] : genotypes,
+    genotypes,
     occupation: occupation as import("../types").Occupation | undefined,
-    occupations: occupation ? [occupation as import("../types").Occupation] : occupations,
+    occupations,
     hasKidsOptions,
     wantsKidsOptions,
     bodyTypes,
@@ -273,13 +279,13 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
     lifestyles: normalizeLifestyleTraits(raw.lifestyles),
     cities: normalizeSearchCities(raw.cities, normalizedState),
     states: normalizedState ? [normalizedState] : [],
-    statesOfOrigin: safeArray<string>(raw.statesOfOrigin).slice(0, 1),
-    occupations: safeArray<import("../types").Occupation>(raw.occupations).slice(0, 1),
-    genotypes: safeArray<import("../types").Genotype>(raw.genotypes).slice(0, 1),
-    bodyTypes: safeArray<import("../types").BodyType>(raw.bodyTypes).slice(0, 1),
+    statesOfOrigin: normalizeStatesOfOrigin(raw.statesOfOrigin),
+    occupations: normalizeOccupations(raw.occupations),
+    genotypes: normalizeGenotypes(raw.genotypes),
+    bodyTypes: normalizeBodyTypes(raw.bodyTypes),
     relationshipIntentions: normalizeRelationshipIntentions(raw.relationshipIntentions),
-    hasKids: hasKids.slice(0, 1),
-    wantsKids: wantsKids.slice(0, 1),
+    hasKids: normalizeHasKidsOptions(hasKids),
+    wantsKids: normalizeWantsKidsOptions(wantsKids),
     verificationPreferences,
     preferenceMode: raw.preferenceMode ?? base.preferenceMode,
     onlineNow: raw.onlineNow ?? false,

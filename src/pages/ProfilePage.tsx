@@ -14,6 +14,12 @@ import {
   NIGERIAN_STATES,
   normalizeEthnicities,
   normalizeLifestyleTraits,
+  normalizeOccupations,
+  normalizeStatesOfOrigin,
+  normalizeGenotypes,
+  normalizeHasKidsOptions,
+  normalizeWantsKidsOptions,
+  normalizeBodyTypes,
   stateDisplayLabel
 } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
@@ -803,47 +809,50 @@ export function ProfilePage({
                   lifestyle: lifestyles[0]
                 })
               }
-              occupation={profile.occupation ?? profile.occupations?.[0]}
-              onOccupationChange={(occupation) =>
+              occupations={normalizeOccupations(profile.occupations, profile.occupation)}
+              onOccupationsChange={(occupations) => {
+                const normalized = normalizeOccupations(occupations);
                 setProfile({
                   ...profile,
-                  occupation,
-                  occupations: occupation ? [occupation] : []
-                })
-              }
-              stateOfOrigin={profile.stateOfOrigin ?? profile.statesOfOrigin?.[0]}
-              onStateOfOriginChange={(stateOfOrigin) =>
+                  occupations: normalized,
+                  occupation: normalized[0]
+                });
+              }}
+              statesOfOrigin={normalizeStatesOfOrigin(profile.statesOfOrigin, profile.stateOfOrigin)}
+              onStatesOfOriginChange={(statesOfOrigin) => {
+                const normalized = normalizeStatesOfOrigin(statesOfOrigin);
                 setProfile({
                   ...profile,
-                  stateOfOrigin,
-                  statesOfOrigin: stateOfOrigin ? [stateOfOrigin] : []
-                })
-              }
-              genotype={profile.genotype ?? profile.genotypes?.[0]}
-              onGenotypeChange={(genotype) =>
+                  statesOfOrigin: normalized,
+                  stateOfOrigin: normalized[0]
+                });
+              }}
+              genotypes={normalizeGenotypes(profile.genotypes, profile.genotype)}
+              onGenotypesChange={(genotypes) => {
+                const normalized = normalizeGenotypes(genotypes);
                 setProfile({
                   ...profile,
-                  genotype,
-                  genotypes: genotype ? [genotype] : []
-                })
-              }
-              hasKidsOption={profile.hasKidsOptions?.[0]}
-              onHasKidsOptionChange={(hasKidsOption) =>
+                  genotypes: normalized,
+                  genotype: normalized[0]
+                });
+              }}
+              hasKids={normalizeHasKidsOptions(profile.hasKidsOptions)}
+              onHasKidsChange={(hasKids) =>
                 setProfile({
                   ...profile,
-                  hasKidsOptions: hasKidsOption ? [hasKidsOption] : []
+                  hasKidsOptions: normalizeHasKidsOptions(hasKids)
                 })
               }
-              wantsKidsOption={profile.wantsKidsOptions?.[0]}
-              onWantsKidsOptionChange={(wantsKidsOption) =>
+              wantsKids={normalizeWantsKidsOptions(profile.wantsKidsOptions)}
+              onWantsKidsChange={(wantsKids) =>
                 setProfile({
                   ...profile,
-                  wantsKidsOptions: wantsKidsOption ? [wantsKidsOption] : []
+                  wantsKidsOptions: normalizeWantsKidsOptions(wantsKids)
                 })
               }
-              bodyType={profile.bodyTypes?.[0]}
-              onBodyTypeChange={(bodyType) =>
-                setProfile({ ...profile, bodyTypes: bodyType ? [bodyType] : [] })
+              bodyTypes={normalizeBodyTypes(profile.bodyTypes)}
+              onBodyTypesChange={(bodyTypes) =>
+                setProfile({ ...profile, bodyTypes: normalizeBodyTypes(bodyTypes) })
               }
             />
           </EditAccordion>
@@ -1025,33 +1034,33 @@ export function ProfilePage({
                 ageMin={prefs.ageMin ?? 22}
                 ageMax={prefs.ageMax ?? 35}
                 onAgeRangeChange={(ageMin, ageMax) => setPrefs({ ...prefs, ageMin, ageMax })}
-                occupation={prefs.occupations[0]}
-                onOccupationChange={(occupation) =>
-                  setPrefs({ ...prefs, occupations: occupation ? [occupation] : [] })
+                occupations={prefs.occupations}
+                onOccupationsChange={(occupations) =>
+                  setPrefs({ ...prefs, occupations: normalizeOccupations(occupations) })
                 }
-                stateOfOrigin={prefs.statesOfOrigin[0]}
-                onStateOfOriginChange={(stateOfOrigin) =>
-                  setPrefs({ ...prefs, statesOfOrigin: stateOfOrigin ? [stateOfOrigin] : [] })
+                statesOfOrigin={prefs.statesOfOrigin}
+                onStatesOfOriginChange={(statesOfOrigin) =>
+                  setPrefs({ ...prefs, statesOfOrigin: normalizeStatesOfOrigin(statesOfOrigin) })
                 }
                 relationshipIntentions={prefs.relationshipIntentions}
                 onRelationshipIntentionsChange={(relationshipIntentions) =>
                   setPrefs({ ...prefs, relationshipIntentions })
                 }
-                genotype={prefs.genotypes[0]}
-                onGenotypeChange={(genotype) =>
-                  setPrefs({ ...prefs, genotypes: genotype ? [genotype] : [] })
+                genotypes={prefs.genotypes}
+                onGenotypesChange={(genotypes) =>
+                  setPrefs({ ...prefs, genotypes: normalizeGenotypes(genotypes) })
                 }
-                hasKidsOption={prefs.hasKids[0]}
-                onHasKidsOptionChange={(hasKidsOption) =>
-                  setPrefs({ ...prefs, hasKids: hasKidsOption ? [hasKidsOption] : [] })
+                hasKids={prefs.hasKids}
+                onHasKidsChange={(hasKids) =>
+                  setPrefs({ ...prefs, hasKids: normalizeHasKidsOptions(hasKids) })
                 }
-                wantsKidsOption={prefs.wantsKids[0]}
-                onWantsKidsOptionChange={(wantsKidsOption) =>
-                  setPrefs({ ...prefs, wantsKids: wantsKidsOption ? [wantsKidsOption] : [] })
+                wantsKids={prefs.wantsKids}
+                onWantsKidsChange={(wantsKids) =>
+                  setPrefs({ ...prefs, wantsKids: normalizeWantsKidsOptions(wantsKids) })
                 }
-                bodyType={prefs.bodyTypes[0]}
-                onBodyTypeChange={(bodyType) =>
-                  setPrefs({ ...prefs, bodyTypes: bodyType ? [bodyType] : [] })
+                bodyTypes={prefs.bodyTypes}
+                onBodyTypesChange={(bodyTypes) =>
+                  setPrefs({ ...prefs, bodyTypes: normalizeBodyTypes(bodyTypes) })
                 }
                 verificationPreferences={prefs.verificationPreferences}
                 onVerificationPreferencesChange={(verificationPreferences) =>

@@ -191,12 +191,22 @@ export const FAITH_OPTIONS = ["Christian", "Muslim", "Traditional", "Other"] as 
 export const FILTER_RELIGIONS = FAITH_OPTIONS;
 export const FILTER_ETHNICITIES = ETHNIC_BACKGROUNDS.filter((e) => e !== "Prefer not to say");
 export const FILTER_LIFESTYLES = SOCIAL_LIFESTYLES.filter((l) => l !== "Prefer not to say");
+export const FILTER_OCCUPATIONS = OCCUPATIONS.filter((o) => o !== "Prefer not to say");
+export const FILTER_GENOTYPES = GENOTYPES.filter((g) => g !== "Prefer not to say");
+export const FILTER_KIDS_PREFERENCES = KIDS_PREFERENCES.filter((k) => k !== "Prefer not to say");
+export const FILTER_BODY_TYPES = BODY_TYPES.filter((b) => b !== "Prefer not to say");
+export const FILTER_VERIFICATION_PREFERENCES = VERIFICATION_PREFERENCES.filter(
+  (v) => v !== "No preference" && v !== "Anyone"
+);
 
 export const MAX_LIFESTYLE_TRAITS = 3;
 export const LIFESTYLE_TRAITS_LIMIT_MESSAGE = "Choose up to 3 lifestyle traits.";
 
-export const MAX_TRIBE_SELECTIONS = 3;
-export const TRIBE_SELECTION_LIMIT_MESSAGE = "Choose up to 3 tribes.";
+export const MAX_OPTIONAL_PREFERENCE_SELECTIONS = 3;
+export const OPTIONAL_PREFERENCE_LIMIT_MESSAGE = "You can select up to 3 options.";
+
+export const MAX_TRIBE_SELECTIONS = MAX_OPTIONAL_PREFERENCE_SELECTIONS;
+export const TRIBE_SELECTION_LIMIT_MESSAGE = OPTIONAL_PREFERENCE_LIMIT_MESSAGE;
 
 export type TapSelectGroup<T extends string = EthnicBackground> = {
   title: string;
@@ -289,6 +299,78 @@ export function normalizeEthnicities(values: unknown, legacySingle?: unknown): E
   return out;
 }
 
+function normalizeOptionalPreferenceList<T extends string>(
+  values: unknown,
+  allowed: ReadonlySet<T>,
+  legacySingle?: unknown,
+  max = MAX_OPTIONAL_PREFERENCE_SELECTIONS
+): T[] {
+  const seen = new Set<T>();
+  const out: T[] = [];
+  const list = Array.isArray(values) ? values : values != null ? [values] : [];
+  const sources =
+    list.length > 0 ? list : legacySingle != null && legacySingle !== "" ? [legacySingle] : [];
+
+  for (const raw of sources) {
+    if (typeof raw !== "string" || raw === "Prefer not to say") continue;
+    const value = raw as T;
+    if (!allowed.has(value) || seen.has(value)) continue;
+    seen.add(value);
+    out.push(value);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+const OCCUPATION_OPTION_SET = new Set<Occupation>(FILTER_OCCUPATIONS);
+const GENOTYPE_OPTION_SET = new Set<Genotype>(FILTER_GENOTYPES);
+const BODY_TYPE_OPTION_SET = new Set<BodyType>(FILTER_BODY_TYPES);
+const HAS_KIDS_OPTION_SET = new Set<HasKidsOption>(HAS_KIDS_OPTIONS);
+const WANTS_KIDS_OPTION_SET = new Set<WantsKidsOption>(WANTS_KIDS_OPTIONS);
+
+/** Profile / filter occupations — dedupe and cap at MAX_OPTIONAL_PREFERENCE_SELECTIONS. */
+export function normalizeOccupations(values: unknown, legacySingle?: unknown): Occupation[] {
+  return normalizeOptionalPreferenceList(values, OCCUPATION_OPTION_SET, legacySingle);
+}
+
+/** Profile / filter states of origin — dedupe and cap at MAX_OPTIONAL_PREFERENCE_SELECTIONS. */
+export function normalizeStatesOfOrigin(values: unknown, legacySingle?: unknown): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const list = Array.isArray(values) ? values : values != null ? [values] : [];
+  const sources =
+    list.length > 0 ? list : legacySingle != null && legacySingle !== "" ? [legacySingle] : [];
+
+  for (const raw of sources) {
+    const value = String(raw || "").trim();
+    if (!value || value === "Prefer not to say" || seen.has(value)) continue;
+    seen.add(value);
+    out.push(value);
+    if (out.length >= MAX_OPTIONAL_PREFERENCE_SELECTIONS) break;
+  }
+  return out;
+}
+
+/** Profile / filter genotypes — dedupe and cap at MAX_OPTIONAL_PREFERENCE_SELECTIONS. */
+export function normalizeGenotypes(values: unknown, legacySingle?: unknown): Genotype[] {
+  return normalizeOptionalPreferenceList(values, GENOTYPE_OPTION_SET, legacySingle);
+}
+
+/** Profile / filter has-kids answers — dedupe and cap at MAX_OPTIONAL_PREFERENCE_SELECTIONS. */
+export function normalizeHasKidsOptions(values: unknown, legacySingle?: unknown): HasKidsOption[] {
+  return normalizeOptionalPreferenceList(values, HAS_KIDS_OPTION_SET, legacySingle);
+}
+
+/** Profile / filter wants-kids answers — dedupe and cap at MAX_OPTIONAL_PREFERENCE_SELECTIONS. */
+export function normalizeWantsKidsOptions(values: unknown, legacySingle?: unknown): WantsKidsOption[] {
+  return normalizeOptionalPreferenceList(values, WANTS_KIDS_OPTION_SET, legacySingle);
+}
+
+/** Profile / filter body types — dedupe and cap at MAX_OPTIONAL_PREFERENCE_SELECTIONS. */
+export function normalizeBodyTypes(values: unknown, legacySingle?: unknown): BodyType[] {
+  return normalizeOptionalPreferenceList(values, BODY_TYPE_OPTION_SET, legacySingle);
+}
+
 /** Dedupe lifestyle traits and cap at MAX_LIFESTYLE_TRAITS. */
 export function normalizeLifestyleTraits(values: unknown): SocialLifestyle[] {
   const allowed = new Set<SocialLifestyle>(FILTER_LIFESTYLES);
@@ -305,13 +387,6 @@ export function normalizeLifestyleTraits(values: unknown): SocialLifestyle[] {
   }
   return out;
 }
-export const FILTER_OCCUPATIONS = OCCUPATIONS.filter((o) => o !== "Prefer not to say");
-export const FILTER_GENOTYPES = GENOTYPES.filter((g) => g !== "Prefer not to say");
-export const FILTER_KIDS_PREFERENCES = KIDS_PREFERENCES.filter((k) => k !== "Prefer not to say");
-export const FILTER_BODY_TYPES = BODY_TYPES.filter((b) => b !== "Prefer not to say");
-export const FILTER_VERIFICATION_PREFERENCES = VERIFICATION_PREFERENCES.filter(
-  (v) => v !== "No preference" && v !== "Anyone"
-);
 
 export function stateDisplayLabel(state: string): string {
   return state === "FCT" ? "Abuja" : state;

@@ -121,7 +121,7 @@ export function TapSelectField<T extends string>({
         return;
       }
       if (maxSelections != null && selected.length >= maxSelections) {
-        setSelectionLimitMessage(limitMessage ?? `Choose up to ${maxSelections}.`);
+        setSelectionLimitMessage(limitMessage ?? `You can select up to ${maxSelections} options.`);
         return;
       }
       setSelectionLimitMessage("");

@@ -85,6 +85,10 @@ const profileOptionsSource = readSrc("src/constants/profileOptions.ts");
 const discoverFiltersSource = readSrc("src/components/DiscoverFilters.tsx");
 const matchPreferenceFieldsSource = readSrc("src/components/preferences/MatchPreferenceFields.tsx");
 const memberIntentsSharedSource = readFileSync(join(rootPath, "shared/memberIntents.mjs"), "utf8");
+const memberOptionalPreferencesSource = readFileSync(
+  join(rootPath, "shared/memberOptionalPreferences.mjs"),
+  "utf8"
+);
 const voiceIntroSource = readSrc("src/components/VoiceIntro.tsx");
 const voiceRecordingSource = readSrc("src/utils/voiceRecording.ts");
 const voiceIntroUploadSource = readSrc("src/services/voiceIntroUpload.ts");
@@ -450,6 +454,23 @@ assertCheck(
     memberDataApiSource.includes('action === "two-factor-enable"') &&
     memberDataApiSource.includes("requireMemberAuth"),
   "two-factor settings must load and save through authenticated member API"
+);
+assertCheck(
+  profileOptionsSource.includes("MAX_OPTIONAL_PREFERENCE_SELECTIONS = 3") &&
+    profileOptionsSource.includes("OPTIONAL_PREFERENCE_LIMIT_MESSAGE") &&
+    profileOptionsSource.includes("normalizeOccupations") &&
+    profileOptionsSource.includes("normalizeStatesOfOrigin") &&
+    profileOptionsSource.includes("normalizeGenotypes") &&
+    profileOptionsSource.includes("normalizeHasKidsOptions") &&
+    profileOptionsSource.includes("normalizeWantsKidsOptions") &&
+    profileOptionsSource.includes("normalizeBodyTypes") &&
+    matchPreferenceFieldsSource.includes("MAX_OPTIONAL_PREFERENCE_SELECTIONS") &&
+    matchPreferenceFieldsSource.includes("OPTIONAL_PREFERENCE_LIMIT_MESSAGE") &&
+    memberOptionalPreferencesSource.includes("normalizeProfileOptionalPreferences") &&
+    memberDataApiSource.includes("normalizeProfileOptionalPreferences") &&
+    memberSocialSource.includes("normalizeSearchOccupations") &&
+    memberSocialSource.includes("normalizeSearchStatesOfOrigin"),
+  "optional profile preferences must cap at three selections client and server"
 );
 assertCheck(
   intentsSource.includes("MAX_INTENT_SELECTIONS = 3") &&

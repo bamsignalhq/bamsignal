@@ -454,9 +454,13 @@ export default async function handler(req, res) {
           : {};
       const profile = mergeMemberProfilePayload(existingProfile, incomingProfile);
       const { normalizeProfileIntents } = await import("../../shared/memberIntents.mjs");
+      const { normalizeProfileOptionalPreferences } = await import(
+        "../../shared/memberOptionalPreferences.mjs"
+      );
       if (Array.isArray(profile.intents)) {
         profile.intents = normalizeProfileIntents(profile.intents);
       }
+      Object.assign(profile, normalizeProfileOptionalPreferences(profile));
       if (profile.voiceIntroUrl) {
         const voiceUrl = String(profile.voiceIntroUrl).trim();
         profile.voiceIntroUrl =

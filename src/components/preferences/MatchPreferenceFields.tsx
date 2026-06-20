@@ -17,8 +17,16 @@ import {
   LIFESTYLE_TRAITS_LIMIT_MESSAGE,
   MAX_LIFESTYLE_TRAITS,
   MAX_TRIBE_SELECTIONS,
-  NIGERIAN_STATES,
+  MAX_OPTIONAL_PREFERENCE_SELECTIONS,
+  OPTIONAL_PREFERENCE_LIMIT_MESSAGE,
+  normalizeBodyTypes,
   normalizeEthnicities,
+  normalizeGenotypes,
+  normalizeHasKidsOptions,
+  normalizeOccupations,
+  normalizeStatesOfOrigin,
+  normalizeWantsKidsOptions,
+  NIGERIAN_STATES,
   normalizeFaithList,
   normalizeLifestyleTraits,
   RELATIONSHIP_INTENTIONS,
@@ -278,47 +286,34 @@ export function MatchPreferenceFields({
         <AgeRangeTapSelect ageMin={ageMin} ageMax={ageMax} onChange={onAgeRangeChange} label={ageLabel} />
       ) : null}
 
-      {onOccupationChange ? (
-        <TapSelectField
-          label="Occupation"
-          optional
-          options={FILTER_OCCUPATIONS}
-          value={occupation}
-          onChange={(next) => onOccupationChange(next as Occupation | undefined)}
-        />
-      ) : onOccupationsChange ? (
+      {onOccupationsChange ? (
         <TapSelectField
           label="Occupation"
           optional
           multiple
-          maxSelections={1}
-          limitMessage="Choose one occupation."
+          maxSelections={MAX_OPTIONAL_PREFERENCE_SELECTIONS}
+          limitMessage={OPTIONAL_PREFERENCE_LIMIT_MESSAGE}
           options={FILTER_OCCUPATIONS}
-          value={(occupations ?? []).slice(0, 1)}
-          onChange={(next) => onOccupationsChange((next as Occupation[]) ?? [])}
+          value={normalizeOccupations(occupations ?? [])}
+          onChange={(next) =>
+            onOccupationsChange(normalizeOccupations((next as Occupation[]) ?? []))
+          }
         />
       ) : null}
 
-      {onStateOfOriginChange ? (
-        <TapSelectField
-          label="State of origin"
-          optional
-          options={STATE_OPTIONS}
-          value={stateOfOrigin}
-          formatValue={stateDisplayLabel}
-          onChange={(next) => onStateOfOriginChange(next as string | undefined)}
-        />
-      ) : onStatesOfOriginChange ? (
+      {onStatesOfOriginChange ? (
         <TapSelectField
           label="State of origin"
           optional
           multiple
-          maxSelections={1}
-          limitMessage="Choose one state of origin."
+          maxSelections={MAX_OPTIONAL_PREFERENCE_SELECTIONS}
+          limitMessage={OPTIONAL_PREFERENCE_LIMIT_MESSAGE}
           options={STATE_OPTIONS}
-          value={(statesOfOrigin ?? []).slice(0, 1)}
+          value={normalizeStatesOfOrigin(statesOfOrigin ?? [])}
           formatValue={stateDisplayLabel}
-          onChange={(next) => onStatesOfOriginChange((next as string[]) ?? [])}
+          onChange={(next) =>
+            onStatesOfOriginChange(normalizeStatesOfOrigin((next as string[]) ?? []))
+          }
         />
       ) : null}
 
@@ -337,87 +332,63 @@ export function MatchPreferenceFields({
         />
       ) : null}
 
-      {onGenotypeChange ? (
-        <TapSelectField
-          label="Genotype"
-          optional
-          options={FILTER_GENOTYPES}
-          value={genotype}
-          onChange={(next) => onGenotypeChange(next as Genotype | undefined)}
-        />
-      ) : onGenotypesChange ? (
+      {onGenotypesChange ? (
         <TapSelectField
           label="Genotype"
           optional
           multiple
-          maxSelections={1}
-          limitMessage="Choose one genotype."
+          maxSelections={MAX_OPTIONAL_PREFERENCE_SELECTIONS}
+          limitMessage={OPTIONAL_PREFERENCE_LIMIT_MESSAGE}
           options={FILTER_GENOTYPES}
-          value={(genotypes ?? []).slice(0, 1)}
-          onChange={(next) => onGenotypesChange((next as Genotype[]) ?? [])}
+          value={normalizeGenotypes(genotypes ?? [])}
+          onChange={(next) =>
+            onGenotypesChange(normalizeGenotypes((next as Genotype[]) ?? []))
+          }
         />
       ) : null}
 
-      {onHasKidsOptionChange ? (
-        <TapSelectField
-          label="Has kids"
-          optional
-          options={HAS_KIDS_OPTIONS}
-          value={hasKidsOption}
-          onChange={(next) => onHasKidsOptionChange(next as HasKidsOption | undefined)}
-        />
-      ) : onHasKidsChange ? (
+      {onHasKidsChange ? (
         <TapSelectField
           label="Has kids"
           optional
           multiple
-          maxSelections={1}
-          limitMessage="Choose one option."
+          maxSelections={MAX_OPTIONAL_PREFERENCE_SELECTIONS}
+          limitMessage={OPTIONAL_PREFERENCE_LIMIT_MESSAGE}
           options={HAS_KIDS_OPTIONS}
-          value={(hasKids ?? []).slice(0, 1)}
-          onChange={(next) => onHasKidsChange((next as HasKidsOption[]) ?? [])}
+          value={normalizeHasKidsOptions(hasKids ?? [])}
+          onChange={(next) =>
+            onHasKidsChange(normalizeHasKidsOptions((next as HasKidsOption[]) ?? []))
+          }
         />
       ) : null}
 
-      {onWantsKidsOptionChange ? (
-        <TapSelectField
-          label="Wants kids"
-          optional
-          options={WANTS_KIDS_OPTIONS}
-          value={wantsKidsOption}
-          onChange={(next) => onWantsKidsOptionChange(next as WantsKidsOption | undefined)}
-        />
-      ) : onWantsKidsChange ? (
+      {onWantsKidsChange ? (
         <TapSelectField
           label="Wants kids"
           optional
           multiple
-          maxSelections={1}
-          limitMessage="Choose one option."
+          maxSelections={MAX_OPTIONAL_PREFERENCE_SELECTIONS}
+          limitMessage={OPTIONAL_PREFERENCE_LIMIT_MESSAGE}
           options={WANTS_KIDS_OPTIONS}
-          value={(wantsKids ?? []).slice(0, 1)}
-          onChange={(next) => onWantsKidsChange((next as WantsKidsOption[]) ?? [])}
+          value={normalizeWantsKidsOptions(wantsKids ?? [])}
+          onChange={(next) =>
+            onWantsKidsChange(normalizeWantsKidsOptions((next as WantsKidsOption[]) ?? []))
+          }
         />
       ) : null}
 
-      {onBodyTypeChange ? (
-        <TapSelectField
-          label="Body type"
-          optional
-          options={FILTER_BODY_TYPES}
-          value={bodyType}
-          onChange={(next) => onBodyTypeChange(next as import("../../types").BodyType | undefined)}
-        />
-      ) : onBodyTypesChange ? (
+      {onBodyTypesChange ? (
         <TapSelectField
           label="Body type"
           optional
           multiple
-          maxSelections={1}
-          limitMessage="Choose one body type."
+          maxSelections={MAX_OPTIONAL_PREFERENCE_SELECTIONS}
+          limitMessage={OPTIONAL_PREFERENCE_LIMIT_MESSAGE}
           options={FILTER_BODY_TYPES}
-          value={(bodyTypes ?? []).slice(0, 1)}
-          onChange={(next) => onBodyTypesChange((next as import("../../types").BodyType[]) ?? [])}
+          value={normalizeBodyTypes(bodyTypes ?? [])}
+          onChange={(next) =>
+            onBodyTypesChange(normalizeBodyTypes((next as import("../../types").BodyType[]) ?? []))
+          }
         />
       ) : null}
 

@@ -3,6 +3,13 @@ import {
   normalizeRelationshipIntentions
 } from "../shared/memberIntents.mjs";
 import {
+  normalizeSearchBodyTypes,
+  normalizeSearchGenotypes,
+  normalizeSearchOccupations,
+  normalizeSearchStatesOfOrigin,
+  normalizeSearchTribes
+} from "../shared/memberOptionalPreferences.mjs";
+import {
   resolveFastConnectionPassStatus,
   resolveSignalPassStatus,
   shouldClearStalePremiumFlag
@@ -184,6 +191,11 @@ export async function searchMemberProfiles({
   if (!isDatabaseReady()) return [];
   await ensureSocialSchema();
   relationshipIntentions = normalizeRelationshipIntentions(relationshipIntentions);
+  tribes = normalizeSearchTribes(tribes);
+  occupations = normalizeSearchOccupations(occupations);
+  statesOfOrigin = normalizeSearchStatesOfOrigin(statesOfOrigin);
+  genotypes = normalizeSearchGenotypes(genotypes);
+  bodyTypes = normalizeSearchBodyTypes(bodyTypes);
 
   const own = await findMemberProfileByUserKey(email, phone);
   if (!own?.id) return [];

@@ -22,7 +22,7 @@ import {
 } from "./interestedInDefaults";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
-import { isPersistablePhotoUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString, safeUserCoverPhoto } from "./safeProfile";
+import { isPersistablePhotoUrl, isPersistableVoiceIntroUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString, safeUserCoverPhoto } from "./safeProfile";
 import { prunePhotoMeta, safePhotoMeta } from "./photoMeta";
 import { normalizeMainPhoto } from "./mainPhoto";
 import {
@@ -200,6 +200,9 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     photoMeta,
     verificationSelfie: isPersistablePhotoUrl(cleaned.verificationSelfie)
       ? cleaned.verificationSelfie
+      : undefined,
+    voiceIntroUrl: isPersistableVoiceIntroUrl(cleaned.voiceIntroUrl)
+      ? safeString(cleaned.voiceIntroUrl)
       : undefined,
     verificationStatus: cleaned.verificationStatus ?? "none",
     visibility: { ...base.visibility!, ...(cleaned.visibility ?? {}) },

@@ -9,7 +9,7 @@ import {
 } from "./coverPhoto";
 import { normalizeIntents } from "../constants/intents";
 import type { DatingProfile, DiscoverProfile, IntentTag, UserProfile } from "../types";
-import { isBlobPreviewUrl, isDataUrl, isStoragePhotoUrl } from "./photoRefs";
+import { isBlobPreviewUrl, isDataUrl, isStoragePhotoUrl, isStorageVoiceIntroUrl } from "./photoRefs";
 import { resolveMainPhotoUrl } from "./mainPhoto";
 
 /** Marketing / demo assets — never a member's backdrop. */
@@ -38,6 +38,18 @@ export function isPersistablePhotoUrl(src?: string | null): boolean {
   if (import.meta.env.PROD && isDataUrl(trimmed)) return false;
   if (isStoragePhotoUrl(trimmed)) return true;
   if (trimmed.startsWith("/")) return true;
+  if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) return true;
+  return false;
+}
+
+/** URLs safe to persist and play after refresh. */
+export function isPersistableVoiceIntroUrl(src?: string | null): boolean {
+  if (!src || typeof src !== "string") return false;
+  const trimmed = src.trim();
+  if (!trimmed) return false;
+  if (isBlobPreviewUrl(trimmed)) return false;
+  if (trimmed.startsWith("data:audio/")) return !import.meta.env.PROD;
+  if (isStorageVoiceIntroUrl(trimmed)) return true;
   if (trimmed.startsWith("https://") || trimmed.startsWith("http://")) return true;
   return false;
 }
@@ -158,7 +170,7 @@ export function safeDiscoverProfile(raw: Partial<DiscoverProfile>): DiscoverProf
     lifestyle: raw.lifestyle,
     lifestyles: normalizeLifestyleTraits(raw.lifestyles),
     bodyTypes: safeArray(raw.bodyTypes),
-    voiceIntroUrl: raw.voiceIntroUrl ? safeString(raw.voiceIntroUrl) : undefined,
+    voiceIntroUrl: isPersistableVoiceIntroUrl(raw.voiceIntroUrl) ? safeString(raw.voiceIntroUrl) : undefined,
     distanceKm: raw.distanceKm != null ? safeNumber(raw.distanceKm) : undefined,
     verified: Boolean(raw.verified),
     safetySettings: raw.safetySettings,

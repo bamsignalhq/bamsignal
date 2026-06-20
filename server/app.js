@@ -23,6 +23,7 @@ import viewSecurityHandler from "../api/diagnostics/view-security.js";
 import functionSecurityHandler from "../api/diagnostics/function-security.js";
 import memberDataHandler from "../api/member/data.js";
 import memberPhotosHandler from "../api/member/photos.js";
+import memberVoiceHandler from "../api/member/voice.js";
 import { isPhotoStorageConfigured } from "./services/photoStorage.js";
 import cityHomeHandler from "../api/city/home.js";
 import citySpotlightHandler from "../api/city/spotlight.js";
@@ -121,6 +122,7 @@ export function createApp(options = {}) {
   mountHandler(app, "get", "/api/verify/submissions", verificationSubmissionsHandler);
   mountHandler(app, "post", "/api/member/data", memberDataHandler);
   mountHandler(app, "post", "/api/member/photos", memberPhotosHandler);
+  mountHandler(app, "post", "/api/member/voice", memberVoiceHandler);
   mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);
   mountHandler(app, "get", "/api/diagnostics/paystack-connectivity", paystackConnectivityHandler);
   mountHandler(app, "get", "/api/diagnostics/view-security", viewSecurityHandler);

@@ -457,6 +457,19 @@ export default async function handler(req, res) {
       if (Array.isArray(profile.intents)) {
         profile.intents = normalizeProfileIntents(profile.intents);
       }
+      if (profile.voiceIntroUrl) {
+        const voiceUrl = String(profile.voiceIntroUrl).trim();
+        profile.voiceIntroUrl =
+          voiceUrl &&
+          !voiceUrl.startsWith("data:") &&
+          !voiceUrl.startsWith("blob:") &&
+          voiceUrl.includes("/storage/v1/object/public/voice-intros/")
+            ? voiceUrl
+            : existingProfile.voiceIntroUrl &&
+                String(existingProfile.voiceIntroUrl).includes("/storage/v1/object/public/voice-intros/")
+              ? existingProfile.voiceIntroUrl
+              : undefined;
+      }
       const { assertProfileSafeForContactLeak } = await import("../../server/services/contactLeak.js");
       const leakCheck = await assertProfileSafeForContactLeak({
         email: identity.email,

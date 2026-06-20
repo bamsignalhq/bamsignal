@@ -10,5 +10,8 @@ export const USER_MESSAGES = {
   photoUploadFailed: "Couldn't upload photo. Please try again.",
   profileSaveFailed: "We couldn't save your profile. Please try again.",
   profileSaved: "Your profile was saved.",
+  voiceIntroUnsupported: "Voice recording is not supported on this browser.",
+  voiceIntroMicDenied: "Microphone access is needed to record your voice intro.",
+  voiceIntroSaveFailed: "Couldn't save voice intro. Please try again.",
   paymentNotCompleted: "No worries — your upgrade is still available whenever you're ready."
 } as const;

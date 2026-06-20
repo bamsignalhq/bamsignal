@@ -883,8 +883,36 @@ export function ProfilePage({
           >
             <VoiceIntroRecorder
               url={profile.voiceIntroUrl}
-              onRecorded={(url) => setProfile({ ...profile, voiceIntroUrl: url })}
-              onClear={() => setProfile({ ...profile, voiceIntroUrl: undefined })}
+              onRecorded={async (voiceIntroUrl) => {
+                const next = normalizeDatingProfile({ ...profile, voiceIntroUrl, premium: isPremium });
+                setProfile(next);
+                if (!writeJson(STORAGE_KEYS.datingProfile, next)) {
+                  showModMessage(USER_MESSAGES.voiceIntroSaveFailed);
+                  return;
+                }
+                const synced = await syncMemberProfileWithResult(user, next);
+                if (!synced.ok) {
+                  showModMessage(USER_MESSAGES.voiceIntroSaveFailed);
+                  return;
+                }
+                await hydrateMemberData(user);
+                const refreshed = normalizeDatingProfile({
+                  ...(synced.profile ?? readJson(STORAGE_KEYS.datingProfile, next)),
+                  premium: isPremium
+                });
+                setProfile(refreshed);
+                writeJson(STORAGE_KEYS.datingProfile, refreshed);
+              }}
+              onClear={() => {
+                const next = normalizeDatingProfile({
+                  ...profile,
+                  voiceIntroUrl: undefined,
+                  premium: isPremium
+                });
+                setProfile(next);
+                writeJson(STORAGE_KEYS.datingProfile, next);
+                void syncMemberProfileRemote(user, next);
+              }}
               onRejected={showModMessage}
             />
           </EditAccordion>

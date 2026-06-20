@@ -16,6 +16,13 @@ export function isStoragePhotoUrl(src?: string | null): boolean {
   return STORAGE_PUBLIC_RE.test(src);
 }
 
+const VOICE_STORAGE_PUBLIC_RE = /\/storage\/v1\/object\/public\/voice-intros\//i;
+
+export function isStorageVoiceIntroUrl(src?: string | null): boolean {
+  if (!src) return false;
+  return VOICE_STORAGE_PUBLIC_RE.test(src);
+}
+
 export function parseStoragePhotoRef(src: string): { bucket: string; path: string } | null {
   const match = src.match(STORAGE_PUBLIC_RE);
   if (!match) return null;

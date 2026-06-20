@@ -81,6 +81,12 @@ const profileOptionsSource = readSrc("src/constants/profileOptions.ts");
 const discoverFiltersSource = readSrc("src/components/DiscoverFilters.tsx");
 const matchPreferenceFieldsSource = readSrc("src/components/preferences/MatchPreferenceFields.tsx");
 const memberIntentsSharedSource = readFileSync(join(rootPath, "shared/memberIntents.mjs"), "utf8");
+const voiceIntroSource = readSrc("src/components/VoiceIntro.tsx");
+const voiceRecordingSource = readSrc("src/utils/voiceRecording.ts");
+const voiceIntroUploadSource = readSrc("src/services/voiceIntroUpload.ts");
+const voiceIntroStorageSource = readFileSync(join(rootPath, "server/services/voiceIntroStorage.js"), "utf8");
+const serverAppSource = readFileSync(join(rootPath, "server/app.js"), "utf8");
+const userMessagesSource = readSrc("src/constants/userMessages.ts");
 const serviceWorkerSource = readSrc("src/utils/serviceWorker.ts");
 const mainSource = readSrc("src/main.tsx");
 const sourceIntegrityScriptSource = readSrc("scripts/source-integrity-check.mjs");
@@ -463,6 +469,18 @@ assertCheck(
     profilePageSource.includes("USER_MESSAGES.profileSaved") &&
     profilePageSource.includes("600"),
   "profile save must confirm below Save, refresh data, and return to overview"
+);
+assertCheck(
+  voiceIntroSource.includes("uploadVoiceIntroBlob") &&
+    voiceIntroSource.includes("Use this voice intro") &&
+    voiceIntroSource.includes("isVoiceRecordingSupported") &&
+    voiceRecordingSource.includes("MAX_VOICE_SECONDS = 30") &&
+    voiceIntroUploadSource.includes("/api/member/voice?action=upload") &&
+    voiceIntroStorageSource.includes("VOICE_INTROS_BUCKET") &&
+    serverAppSource.includes('"/api/member/voice"') &&
+    profilePageSource.includes("voiceIntroUrl") &&
+    userMessagesSource.includes("voiceIntroSaveFailed"),
+  "voice intro must record, upload to storage, and persist on profile"
 );
 assertCheck(
   sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&

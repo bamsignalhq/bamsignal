@@ -34,7 +34,6 @@ import {
   complianceGatePhase,
   hasComplianceSyncPending,
   logComplianceRoute,
-  resolveComplianceUserKey,
   shouldBlockForCompliance
 } from "./utils/compliance";
 import {
@@ -42,6 +41,7 @@ import {
   retryPendingComplianceSync,
   syncComplianceDoneMarkerFromProfile
 } from "./services/compliance";
+import { normalizeOnboardingStatus } from "./utils/onboardingStatus";
 import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
@@ -232,14 +232,18 @@ export function App() {
     isPublicHome && (!isAuthed || !memberAppEntered) && !isOnboardingRoute && !paystackCallbackActive;
   const showGuestChrome = isGuest || showMarketingHome;
   void complianceTick;
-  const complianceUserKey = resolveComplianceUserKey(user);
+  const datingProfileForCompliance = getDatingProfile();
+  const onboardingCompleteForCompliance =
+    normalizeOnboardingStatus(datingProfileForCompliance).markedComplete;
   const showComplianceGate =
     isAuthed &&
     memberAppEntered &&
     !memberHydrating &&
     !isOnboardingRoute &&
     profileComplete === true &&
-    shouldBlockForCompliance(getDatingProfile().compliance, complianceUserKey);
+    shouldBlockForCompliance(datingProfileForCompliance.compliance, user, {
+      onboardingComplete: onboardingCompleteForCompliance
+    });
   const complianceSyncPending = hasComplianceSyncPending();
   const memberAccessReady =
     isAuthed && memberAppEntered && profileComplete === true && !showComplianceGate;
@@ -847,6 +851,7 @@ export function App() {
       });
       setUser(withPhone);
       setIsAuthed(true);
+      restoreComplianceFromMarker(withPhone);
       setAuthMessage("");
       recordStreakActivity();
       checkPremiumTrialExpiry();

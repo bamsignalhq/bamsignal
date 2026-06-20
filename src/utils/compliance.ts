@@ -7,7 +7,7 @@ import {
   type ComplianceAckType
 } from "../constants/compliance";
 import type { MemberCompliance, UserProfile } from "../types";
-import { normalizeUsername } from "./authIdentity";
+import { lookupUsernameEmail, normalizeUsername } from "./authIdentity";
 
 export const COMPLIANCE_SYNC_PENDING_KEY = "bamsignal_compliance_sync_pending";
 export const COMPLIANCE_PENDING_ACKS_KEY = "bamsignal_compliance_pending_acks";
@@ -180,20 +180,34 @@ export function complianceVersionBundle(): string {
   return [TERMS_VERSION, PRIVACY_VERSION, SAFETY_PLEDGE_VERSION, ADULT_RISK_VERSION].join("|");
 }
 
-export function resolveComplianceUserKey(
+export function resolveComplianceUserKeys(
   user?: Pick<UserProfile, "email" | "phone" | "username">
-): string {
+): string[] {
+  const keys = new Set<string>();
   const email = String(user?.email || "")
     .trim()
     .toLowerCase();
   if (email.includes("@") && !email.includes("@phone.bamsignal.local")) {
-    return `email:${email}`;
+    keys.add(`email:${email}`);
   }
-  const phone = String(user?.phone || "").replace(/\D/g, "");
-  if (phone) return `phone:${phone}`;
+
   const username = normalizeUsername(user?.username || "");
-  if (username) return `username:${username}`;
-  return "";
+  if (username) {
+    keys.add(`username:${username}`);
+    const indexedEmail = lookupUsernameEmail(username);
+    if (indexedEmail) keys.add(`email:${indexedEmail}`);
+  }
+
+  const phone = String(user?.phone || "").replace(/\D/g, "");
+  if (phone) keys.add(`phone:${phone}`);
+
+  return [...keys];
+}
+
+export function resolveComplianceUserKey(
+  user?: Pick<UserProfile, "email" | "phone" | "username">
+): string {
+  return resolveComplianceUserKeys(user)[0] || "";
 }
 
 export function readComplianceDoneMarker(userKey = ""): string | null {
@@ -218,12 +232,26 @@ export function hasComplianceDoneMarker(userKey = ""): boolean {
   return readComplianceDoneMarker(userKey) === complianceVersionBundle();
 }
 
+export function hasComplianceDoneMarkerForUser(
+  user?: Pick<UserProfile, "email" | "phone" | "username">
+): boolean {
+  return resolveComplianceUserKeys(user).some((key) => hasComplianceDoneMarker(key));
+}
+
+export function writeComplianceDoneMarkerForUser(
+  user?: Pick<UserProfile, "email" | "phone" | "username">
+): void {
+  for (const key of resolveComplianceUserKeys(user)) {
+    writeComplianceDoneMarker(key);
+  }
+}
+
 export function isComplianceCompleteForUser(
   compliance?: MemberCompliance,
-  userKey = ""
+  user?: Pick<UserProfile, "email" | "phone" | "username">
 ): boolean {
   if (isComplianceComplete(compliance)) return true;
-  return Boolean(userKey && hasComplianceDoneMarker(userKey));
+  return hasComplianceDoneMarkerForUser(user);
 }
 
 export function allGateAckTypes(): ComplianceAckType[] {
@@ -276,9 +304,11 @@ export function isLocalComplianceSufficient(compliance?: MemberCompliance): bool
 
 export function shouldBlockForCompliance(
   compliance?: MemberCompliance,
-  userKey = ""
+  user?: Pick<UserProfile, "email" | "phone" | "username">,
+  options?: { onboardingComplete?: boolean }
 ): boolean {
-  if (isComplianceCompleteForUser(compliance, userKey)) return false;
+  if (options?.onboardingComplete) return false;
+  if (isComplianceCompleteForUser(compliance, user)) return false;
   if (hasComplianceSyncPending() && isLocalComplianceSufficient(compliance)) return false;
   return true;
 }

@@ -5,16 +5,15 @@ import {
   allGateAckTypes,
   buildCompliancePatch,
   clearComplianceSyncPending,
-  hasComplianceDoneMarker,
+  hasComplianceDoneMarkerForUser,
   isComplianceComplete,
   isComplianceCompleteForUser,
   logComplianceSave,
   mergeMemberCompliance,
   normalizeCompliance,
   readPendingComplianceAcks,
-  resolveComplianceUserKey,
   setComplianceSyncPending,
-  writeComplianceDoneMarker
+  writeComplianceDoneMarkerForUser
 } from "../utils/compliance";
 import { clearFlowCompletionKeys, clearFlowState } from "../utils/flowWatchdog";
 import { getDatingProfile, normalizeDatingProfile } from "../utils/profile";
@@ -54,25 +53,33 @@ export function clearComplianceFlowState(): void {
 }
 
 function maybeWriteComplianceDoneMarker(user: Pick<UserProfile, "email" | "phone" | "username">): void {
-  const userKey = resolveComplianceUserKey(user);
-  if (!userKey) return;
-  if (isComplianceCompleteForUser(getDatingProfile().compliance, userKey)) {
-    writeComplianceDoneMarker(userKey);
+  if (isComplianceCompleteForUser(getDatingProfile().compliance, user)) {
+    writeComplianceDoneMarkerForUser(user);
   }
+}
+
+/** One tap on the safety check — never show the gate again for this member. */
+export function dismissComplianceGateForever(
+  user: Pick<UserProfile, "email" | "phone" | "username">
+): MemberCompliance {
+  const compliance = mergeLocalCompliance(allGateAckTypes());
+  writeComplianceDoneMarkerForUser(user);
+  clearComplianceFlowState();
+  void saveComplianceAcknowledgements(user, allGateAckTypes()).catch(() => undefined);
+  return compliance;
 }
 
 /** Restore local compliance from durable per-user marker after logout/session clear. */
 export function restoreComplianceFromMarker(
   user: Pick<UserProfile, "email" | "phone" | "username">
 ): MemberCompliance | null {
-  const userKey = resolveComplianceUserKey(user);
-  if (!userKey || !hasComplianceDoneMarker(userKey)) return null;
+  if (!hasComplianceDoneMarkerForUser(user)) return null;
   if (isComplianceComplete(getDatingProfile().compliance)) {
-    writeComplianceDoneMarker(userKey);
+    writeComplianceDoneMarkerForUser(user);
     return getDatingProfile().compliance ?? null;
   }
   const compliance = mergeLocalCompliance(allGateAckTypes());
-  writeComplianceDoneMarker(userKey);
+  writeComplianceDoneMarkerForUser(user);
   return compliance;
 }
 
@@ -181,9 +188,7 @@ export function syncComplianceDoneMarkerFromProfile(
   user: Pick<UserProfile, "email" | "phone" | "username">,
   compliance?: MemberCompliance
 ): void {
-  const userKey = resolveComplianceUserKey(user);
-  if (!userKey) return;
-  if (isComplianceComplete(compliance) || hasComplianceDoneMarker(userKey)) {
-    writeComplianceDoneMarker(userKey);
+  if (isComplianceComplete(compliance) || hasComplianceDoneMarkerForUser(user)) {
+    writeComplianceDoneMarkerForUser(user);
   }
 }

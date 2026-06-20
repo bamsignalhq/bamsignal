@@ -1,6 +1,16 @@
 #!/usr/bin/env node
 /**
- * One-command Android release: bump versions, clean, build web, sync Capacitor, APK + AAB.
+ * One-command Android release with strict web asset parity gate.
+ *
+ * Order (stop immediately if verify fails — no AAB/APK):
+ * 1. remove dist
+ * 2. remove android/app/src/main/assets/public
+ * 3. npm run build
+ * 4. npx cap sync android
+ * 5. npm run android:verify-assets
+ * 6. gradle clean
+ * 7. gradle bundleRelease
+ * 8. gradle assembleRelease
  *
  * Requires .env (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) and android/key.properties.
  */
@@ -18,6 +28,8 @@ const gradlePath = join(root, "android", "app", "build.gradle");
 const buildInfoPath = join(root, "src", "buildInfo.ts");
 const swPath = join(root, "public", "sw.js");
 const appReleasePath = join(root, "src", "constants", "appRelease.ts");
+const distRoot = join(root, "dist");
+const androidPublicRoot = join(root, "android", "app", "src", "main", "assets", "public");
 
 const requiredEnv = ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"];
 const missingEnv = requiredEnv.filter((key) => !String(process.env[key] || "").trim());
@@ -94,13 +106,8 @@ export const APP_BUILD_LABEL = \`Build \${BUILD_VERSION} (\${BUILD_CODE})\`;
   return cacheVersion;
 }
 
-function cleanPaths() {
-  const targets = [
-    join(root, "dist"),
-    join(root, "android", "app", "build"),
-    join(root, "android", "app", "src", "main", "assets", "public")
-  ];
-  for (const target of targets) {
+function cleanWebAssets() {
+  for (const target of [distRoot, androidPublicRoot]) {
     if (!existsSync(target)) continue;
     rmSync(target, { recursive: true, force: true });
     console.log(`[bamsignal] Removed ${target.replace(root + "/", "")}`);
@@ -132,14 +139,18 @@ function resolveJavaHome() {
   process.exit(1);
 }
 
-function run(cmd, args, extraEnv = {}, cwd = root) {
+function run(step, cmd, args, extraEnv = {}, cwd = root) {
+  console.log(`\n[bamsignal] Step ${step}: ${cmd} ${args.join(" ")}`);
   const result = spawnSync(cmd, args, {
     stdio: "inherit",
     cwd,
     env: { ...process.env, ...extraEnv },
     shell: process.platform === "win32"
   });
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  if (result.status !== 0) {
+    console.error(`[bamsignal] Step ${step} failed — release stopped.`);
+    process.exit(result.status ?? 1);
+  }
 }
 
 const current = readVersions();
@@ -154,32 +165,28 @@ console.log(
 const gradleContent = readFileSync(gradlePath, "utf8");
 writeFileSync(gradlePath, patchGradle(gradleContent, nextVersionCode, nextVersionName), "utf8");
 
-const cacheVersion = writeBuildInfo(nextVersionName, nextVersionCode, buildTime);
-console.log(`[bamsignal] CACHE_VERSION = ${cacheVersion}`);
+writeBuildInfo(nextVersionName, nextVersionCode, buildTime);
 
-cleanPaths();
+console.log("[bamsignal] Strict Android release flow starting…");
+cleanWebAssets();
 
 const javaHome = resolveJavaHome();
 console.log(`[bamsignal] Using JAVA_HOME=${javaHome}`);
 
-run("npm", ["run", "build"], {
-  VITE_APP_BUILD_ID: cacheVersion,
-  VITE_APP_BUILD_TIME: buildTime
-});
-run("npx", ["cap", "sync", "android"]);
-run("npm", ["run", "android:verify-assets"]);
+run("3", "npm", ["run", "build"]);
+run("4", "npx", ["cap", "sync", "android"]);
+run("5", "npm", ["run", "android:verify-assets"]);
 
 const androidDir = join(root, "android");
 const gradlew = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
-run(
-  gradlew,
-  ["clean", "bundleRelease", "assembleRelease"],
-  {
-    JAVA_HOME: javaHome,
-    PATH: `${join(javaHome, "bin")}:${process.env.PATH || ""}`
-  },
-  androidDir
-);
+const gradleEnv = {
+  JAVA_HOME: javaHome,
+  PATH: `${join(javaHome, "bin")}:${process.env.PATH || ""}`
+};
+
+run("6", gradlew, ["clean"], gradleEnv, androidDir);
+run("7", gradlew, ["bundleRelease"], gradleEnv, androidDir);
+run("8", gradlew, ["assembleRelease"], gradleEnv, androidDir);
 
 const apk = join(root, "android", "app", "build", "outputs", "apk", "release", "app-release.apk");
 const aab = join(root, "android", "app", "build", "outputs", "bundle", "release", "app-release.aab");

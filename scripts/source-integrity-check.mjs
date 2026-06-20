@@ -49,6 +49,8 @@ const paystackDiagnosticsApiSource = readSrc("api/diagnostics/paystack-connectiv
 const memberPhotosApiSource = readSrc("api/member/photos.js");
 const photoUploadAttributionSource = readSrc("server/services/photoUploadAttribution.js");
 const photoReviewServiceSource = readSrc("server/services/photoReview.js");
+const androidReleaseSource = readSrc("scripts/build-android-release.mjs");
+const androidVerifySource = readSrc("scripts/verify-android-assets.mjs");
 
 assertCheck(
   paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
@@ -242,6 +244,23 @@ assertCheck(
     photoReviewServiceSource.includes("attachUploadedPhotoToProfile") &&
     photoReviewServiceSource.includes("unattributed"),
   "photo reviews must store auth user attribution and flag unattributed rows"
+);
+assertCheck(
+  androidReleaseSource.includes("cleanWebAssets") &&
+    androidReleaseSource.includes('run("5", "npm", ["run", "android:verify-assets"])') &&
+    androidReleaseSource.indexOf("android:verify-assets") <
+      androidReleaseSource.indexOf('run("6", gradlew, ["clean"]') &&
+    androidReleaseSource.includes('run("7", gradlew, ["bundleRelease"]') &&
+    androidReleaseSource.includes('run("8", gradlew, ["assembleRelease"]') &&
+    !androidReleaseSource.includes("VITE_APP_BUILD_ID"),
+  "android release must clean, build, sync, verify, then gradle clean/bundle/assemble without stale build-id override"
+);
+assertCheck(
+  androidVerifySource.includes("extractBuildMarker") &&
+    androidVerifySource.includes("compareHashes") &&
+    androidVerifySource.includes("swHash") &&
+    androidVerifySource.includes("ANDROID_ASSET_FIX_HINT"),
+  "android asset verifier must compare refs, hashes, build marker, and service worker cache"
 );
 
 console.log("source integrity ok");

@@ -8,9 +8,14 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const distRoot = join(root, "dist");
 const androidRoot = join(root, "android", "app", "src", "main", "assets", "public");
 
-function readRequired(path) {
+export const ANDROID_ASSET_FIX_HINT =
+  "Fix: rm -rf dist android/app/src/main/assets/public && npm run build && npx cap sync android && npm run android:verify-assets";
+
+function readRequired(path, label) {
   if (!existsSync(path)) {
-    throw new Error(`Missing ${relative(root, path)}. Run npm run build and npx cap sync android first.`);
+    throw new Error(
+      `${label} is missing at ${relative(root, path)}.\n${ANDROID_ASSET_FIX_HINT}`
+    );
   }
   return readFileSync(path, "utf8");
 }
@@ -49,22 +54,29 @@ function extractServiceWorkerCacheName(targetRoot) {
   return sw.match(/\bCACHE_NAME\s*=\s*["']([^"']+)["']/)?.[1] ?? null;
 }
 
-function hashAsset(targetRoot, ref) {
-  const path = join(targetRoot, ref);
+function hashFile(targetRoot, relativePath) {
+  const path = join(targetRoot, relativePath);
   if (!existsSync(path)) return null;
   return createHash("sha256").update(readFileSync(path)).digest("hex").slice(0, 16);
 }
 
+function hashAsset(targetRoot, ref) {
+  return hashFile(targetRoot, ref);
+}
+
 function collectTarget(label, targetRoot) {
-  const html = readRequired(join(targetRoot, "index.html"));
+  const indexPath = join(targetRoot, "index.html");
+  const html = readRequired(indexPath, `${label}/index.html`);
   const jsRefs = extractAssetRefs(html, ".js");
   const cssRefs = extractAssetRefs(html, ".css");
 
   return {
     label,
     root: targetRoot,
+    indexPath,
     buildMarker: extractBuildMarker(html),
     swCacheVersion: extractServiceWorkerCacheName(targetRoot),
+    swHash: hashFile(targetRoot, "sw.js"),
     js: jsRefs.map((ref) => ({ ref, hash: hashAsset(targetRoot, ref) })),
     css: cssRefs.map((ref) => ({ ref, hash: hashAsset(targetRoot, ref) }))
   };
@@ -83,9 +95,10 @@ function compareRefList(errors, kind, distItems, androidItems) {
   const androidRefs = listRefs(androidItems);
   if (!sameList(distRefs, androidRefs)) {
     errors.push(
-      `${kind} asset references differ:\n` +
-        `  dist: ${distRefs.length ? distRefs.join(", ") : "(none)"}\n` +
-        `  android: ${androidRefs.length ? androidRefs.join(", ") : "(none)"}`
+      `${kind} asset references differ between dist and Android bundle.\n` +
+        `  dist:    ${distRefs.length ? distRefs.join(", ") : "(none)"}\n` +
+        `  android: ${androidRefs.length ? androidRefs.join(", ") : "(none)"}\n` +
+        ANDROID_ASSET_FIX_HINT
     );
   }
 }
@@ -100,13 +113,15 @@ function compareHashes(errors, kind, distItems, androidItems) {
       continue;
     }
     if (!androidItem.hash) {
-      errors.push(`android is missing ${kind} asset ${distItem.ref}`);
+      errors.push(`android bundle is missing ${kind} asset ${distItem.ref}`);
       continue;
     }
     if (distItem.hash !== androidItem.hash) {
       errors.push(
-        `${kind} asset content differs for ${distItem.ref}: ` +
-          `dist=${distItem.hash} android=${androidItem.hash}`
+        `${kind} asset content hash differs for ${distItem.ref}:\n` +
+          `  dist sha256=${distItem.hash}\n` +
+          `  android sha256=${androidItem.hash}\n` +
+          ANDROID_ASSET_FIX_HINT
       );
     }
   }
@@ -123,13 +138,24 @@ export function collectAndroidAssetParity() {
   compareHashes(errors, "CSS", dist.css, android.css);
 
   if (!dist.buildMarker || dist.buildMarker.includes("__BAMSIGNAL_BUILD__")) {
-    errors.push("dist/index.html is missing a resolved bamsignal-build marker");
+    errors.push(
+      "dist/index.html is missing a resolved bamsignal-build marker.\n" +
+        "Run npm run build and confirm index.html contains meta name=\"bamsignal-build\"."
+    );
   }
   if (!android.buildMarker || android.buildMarker.includes("__BAMSIGNAL_BUILD__")) {
-    errors.push("Android index.html is missing a resolved bamsignal-build marker");
+    errors.push(
+      "android/app/src/main/assets/public/index.html is missing a resolved bamsignal-build marker.\n" +
+        "Run npx cap sync android after a fresh npm run build."
+    );
   }
   if (dist.buildMarker && android.buildMarker && dist.buildMarker !== android.buildMarker) {
-    errors.push(`Build marker differs: dist=${dist.buildMarker} android=${android.buildMarker}`);
+    errors.push(
+      `Build marker differs:\n` +
+        `  dist:    ${dist.buildMarker}\n` +
+        `  android: ${android.buildMarker}\n` +
+        ANDROID_ASSET_FIX_HINT
+    );
   }
 
   if (
@@ -137,8 +163,28 @@ export function collectAndroidAssetParity() {
     dist.swCacheVersion !== android.swCacheVersion
   ) {
     errors.push(
-      `Service worker cache version differs: ` +
-        `dist=${dist.swCacheVersion ?? "(none)"} android=${android.swCacheVersion ?? "(none)"}`
+      `Service worker CACHE_NAME differs:\n` +
+        `  dist:    ${dist.swCacheVersion ?? "(none)"}\n` +
+        `  android: ${android.swCacheVersion ?? "(none)"}\n` +
+        ANDROID_ASSET_FIX_HINT
+    );
+  }
+
+  if (dist.swHash && android.swHash && dist.swHash !== android.swHash) {
+    errors.push(
+      `Service worker file content differs:\n` +
+        `  dist sha256=${dist.swHash}\n` +
+        `  android sha256=${android.swHash}\n` +
+        ANDROID_ASSET_FIX_HINT
+    );
+  }
+
+  if (dist.buildMarker && dist.swCacheVersion && dist.buildMarker !== dist.swCacheVersion) {
+    errors.push(
+      `dist build marker does not match service worker cache name:\n` +
+        `  index.html marker: ${dist.buildMarker}\n` +
+        `  sw.js CACHE_NAME:  ${dist.swCacheVersion}\n` +
+        "Rebuild web assets — npm run build must stamp both values together."
     );
   }
 
@@ -155,13 +201,14 @@ export function formatAndroidAssetParityReport(result) {
     "[bamsignal] Android asset parity",
     `build marker: dist=${result.dist.buildMarker ?? "(none)"} android=${result.android.buildMarker ?? "(none)"}`,
     `service worker cache: dist=${result.dist.swCacheVersion ?? "(none)"} android=${result.android.swCacheVersion ?? "(none)"}`,
-    "dist JS hashes:",
+    `service worker hash: dist=${result.dist.swHash ?? "(none)"} android=${result.android.swHash ?? "(none)"}`,
+    "dist JS refs:",
     ...formatHashLines(result.dist.js),
-    "Android JS hashes:",
+    "Android JS refs:",
     ...formatHashLines(result.android.js),
-    "dist CSS hashes:",
+    "dist CSS refs:",
     ...formatHashLines(result.dist.css),
-    "Android CSS hashes:",
+    "Android CSS refs:",
     ...formatHashLines(result.android.css)
   ].join("\n");
 }
@@ -169,7 +216,7 @@ export function formatAndroidAssetParityReport(result) {
 export function verifyAndroidAssetParity() {
   const result = collectAndroidAssetParity();
   if (result.errors.length) {
-    const error = new Error(result.errors.join("\n"));
+    const error = new Error(result.errors.join("\n\n"));
     error.result = result;
     throw error;
   }
@@ -186,7 +233,7 @@ if (invokedPath && invokedPath === fileURLToPath(import.meta.url)) {
     if (error.result) {
       console.error(formatAndroidAssetParityReport(error.result));
     }
-    console.error("[bamsignal] Android assets are stale.");
+    console.error("[bamsignal] Android assets are stale — release blocked.");
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
   }

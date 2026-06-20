@@ -11,11 +11,13 @@ const buildInfoPath = join(root, "src", "buildInfo.ts");
 const swPath = join(root, "public", "sw.js");
 const buildTime = new Date().toISOString();
 const buildStamp = Date.now().toString(36);
+const envBuildId = String(process.env.VITE_APP_BUILD_ID || "").trim();
 
 const raw = readFileSync(buildInfoPath, "utf8");
 const version = raw.match(/BUILD_VERSION = "([^"]+)"/)?.[1] ?? "1.0.17";
 const code = raw.match(/BUILD_CODE = "([^"]+)"/)?.[1] ?? "0";
-const cacheVersion = `bamsignal-v${version}-${code}-${buildStamp}`;
+const cacheVersion =
+  envBuildId || `bamsignal-v${version}-${code}-${buildStamp}`;
 
 const nextBuildInfo = raw
   .replace(/export const CACHE_VERSION = "[^"]+";/, `export const CACHE_VERSION = "${cacheVersion}";`)

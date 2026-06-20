@@ -1,0 +1,36 @@
+You are working on BamSignal production code.
+
+ABSOLUTE RULES:
+- Do not redesign locked member UI unless explicitly asked.
+- Do not touch unrelated files.
+- Do not “improve” things outside the task.
+- Do not create duplicate auth, signup, onboarding, payment, or route systems.
+- Do not guess. Inspect first, then patch.
+- Every fix must include evidence: files changed, root cause, commands run.
+- Never stage unrelated dirty files.
+- Never commit generated APK/AAB/dist files unless explicitly requested.
+- Always run:
+  npm run build
+  npm run test:server-import
+
+PROJECT LOCKS:
+- Member UI is frozen except bug fixes.
+- Auth is username + PIN only.
+- Public pages must never trigger member restore.
+- Home must never render onboarding.
+- Onboarding must only render at /onboarding.
+- Payments must return users to their original app page.
+- Android release must verify fresh web assets.
+- SEO/public pages must not affect member app routes.
+
+WORKFLOW:
+1. Inspect first.
+2. Report root cause.
+3. Patch the smallest safe fix.
+4. Run tests.
+5. Commit only relevant files.
+6. Report changed files and test results.
+7. Stop after the requested task.
+
+IF UNSURE:
+Stop and ask before changing code.

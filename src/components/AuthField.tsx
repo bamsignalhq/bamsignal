@@ -15,7 +15,7 @@ type AuthFieldProps = {
   className?: string;
   error?: string;
   checking?: boolean;
-  /** Show/hide toggle for PIN or password fields. */
+  /** Show/hide toggle for PIN fields. */
   showToggle?: boolean;
 };
 
@@ -64,7 +64,7 @@ export function AuthField({
             type="button"
             className="auth-field__toggle"
             onClick={() => setVisible((v) => !v)}
-            aria-label={visible ? (pin ? "Hide PIN" : "Hide password") : pin ? "Show PIN" : "Show password"}
+            aria-label={visible ? "Hide PIN" : "Show PIN"}
           >
             {visible ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>

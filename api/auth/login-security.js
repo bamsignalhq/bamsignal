@@ -7,6 +7,12 @@ import {
   verifyLogin2faCode,
   Login2faError
 } from "../../server/services/accountSecurity.js";
+import { requireMemberAuth } from "../../server/services/memberAuth.js";
+import {
+  GENERIC_NOT_AUTHORIZED,
+  logIdentityExposureBlocked,
+  sendGenericServiceUnavailable
+} from "../../server/services/identityExposure.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -38,22 +44,30 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const database = getDatabaseStatus();
-  if (database !== "connected") {
-    return res.status(503).json({ ok: false, error: "Database is not connected.", database });
+  if (getDatabaseStatus() !== "connected") {
+    return sendGenericServiceUnavailable(res);
   }
 
   const body = parseBody(req);
   const action = String(req.query.action || body.action || "").trim();
-  const email = String(body.email || "").trim().toLowerCase();
-  const phone = normalizePhone(body.phone);
   const deviceId = String(body.deviceId || "").trim();
   const ip = clientIp(req);
   const userAgent = String(req.headers["user-agent"] || "").slice(0, 512) || null;
 
-  if (!email && !phone) {
-    return res.status(400).json({ ok: false, error: "Email or phone is required." });
+  if (action === "security-settings" || action === "two-factor-enable") {
+    logIdentityExposureBlocked({ endpoint: "login-security", action, reason: "deprecated_public_action" });
+    return res.status(401).json({ ok: false, error: GENERIC_NOT_AUTHORIZED });
   }
+
+  const authResult = await requireMemberAuth(req, body);
+  if (!authResult.ok) {
+    logIdentityExposureBlocked({ endpoint: "login-security", action });
+    return res.status(authResult.status || 401).json({ ok: false, error: GENERIC_NOT_AUTHORIZED });
+  }
+
+  const identity = authResult.identity;
+  const email = identity.email;
+  const phone = identity.phone;
 
   try {
     if (action === "login-check") {
@@ -78,29 +92,12 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
-    if (action === "security-settings") {
-      const settings = await getAccountSecuritySettings({ email, phone });
-      return res.status(200).json({ ok: true, settings });
-    }
-
-    if (action === "two-factor-enable") {
-      const result = await setTwoFactorEnabled({
-        email,
-        phone,
-        enabled: Boolean(body.enabled),
-        method: body.method,
-        ip,
-        userAgent
-      });
-      return res.status(result.ok ? 200 : 400).json(result);
-    }
-
     return res.status(400).json({ ok: false, error: "Unknown action." });
   } catch (error) {
     if (error instanceof Login2faError) {
       return res.status(error.status || 400).json({ ok: false, error: error.message, code: error.code });
     }
     console.error("[bamsignal] login-security error:", error);
-    return res.status(500).json({ ok: false, error: error.message || "Login security request failed." });
+    return res.status(500).json({ ok: false, error: "Login security request failed." });
   }
 }

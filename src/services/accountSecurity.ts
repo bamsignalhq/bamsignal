@@ -64,7 +64,7 @@ async function postLoginSecurity(
   const identity = resolvedUser(user);
   const response = await fetch(apiUrl(`/api/auth/login-security?action=${action}`), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await memberApiHeaders(),
     body: JSON.stringify({
       email: identity.email,
       phone: identity.phone,
@@ -107,7 +107,7 @@ export async function sendLogin2faRemote(user: Pick<UserProfile, "email" | "phon
   const identity = resolvedUser(user);
   const response = await fetch(apiUrl("/api/auth/login-security?action=login-2fa-send"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await memberApiHeaders(),
     body: JSON.stringify({
       email: identity.email,
       phone: identity.phone,
@@ -130,7 +130,7 @@ export async function verifyLogin2faRemote(
   const identity = resolvedUser(user);
   const response = await fetch(apiUrl("/api/auth/login-security?action=login-2fa-verify"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await memberApiHeaders(),
     body: JSON.stringify({
       email: identity.email,
       phone: identity.phone,

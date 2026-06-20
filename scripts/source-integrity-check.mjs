@@ -47,6 +47,11 @@ const photoReviewSharedSource = readSrc("shared/photoReview.mjs");
 const cityHomeSource = readSrc("server/cityHome.js");
 const memberSocialSource = readSrc("server/memberSocial.js");
 const diagnosticsAccessSource = readSrc("server/services/diagnosticsAccess.js");
+const identityExposureSource = readSrc("server/services/identityExposure.js");
+const identityApiSource = readSrc("api/auth/identity.js");
+const loginSecurityApiSource = readSrc("api/auth/login-security.js");
+const hardSetupApiSource = readSrc("api/hard/setup.js");
+const adminAuthServerSource = readSrc("server/adminAuth.js");
 const viewSecurityApiSource = readSrc("api/diagnostics/view-security.js");
 const functionSecurityApiSource = readSrc("api/diagnostics/function-security.js");
 const paystackVerifySource = readFileSync(join(rootPath, "api/paystack/verify.js"), "utf8");
@@ -662,6 +667,21 @@ assertCheck(
   dockerfileSource.includes("/ready") &&
     !dockerfileSource.match(/HEALTHCHECK[\s\S]*\/health/),
   "Docker HEALTHCHECK must probe /ready for production dependency readiness"
+);
+assertCheck(
+  identityExposureSource.includes("identity_exposure_blocked") &&
+    identityExposureSource.includes("admin_status_hidden") &&
+    identityExposureSource.includes("sanitizePublicMemberProfile") &&
+    identityApiSource.includes("requireMemberIdentity") &&
+    !identityApiSource.includes("exists: true") &&
+    memberDataApiSource.includes("sanitizePublicMemberProfile") &&
+    !memberDataApiSource.includes("Account not found") &&
+    loginSecurityApiSource.includes("requireMemberAuth(req, body)") &&
+    diagnosticsAccessSource.includes("logDiagnosticsAccessDenied") &&
+    adminAuthServerSource.includes("logAdminStatusHidden") &&
+    hardSetupApiSource.includes("hasSetupSecret") &&
+    !memberAuthSource.includes('"check-username"'),
+  "identity and admin status exposure must stay minimized for public callers"
 );
 
 console.log("source integrity ok");

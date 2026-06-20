@@ -1,5 +1,9 @@
 import { commandCenterEmails } from "./consoleEnv.js";
 import { isPlatformAdminEmail } from "./db.js";
+import {
+  GENERIC_NOT_AUTHORIZED,
+  logAdminStatusHidden
+} from "./services/identityExposure.js";
 
 export function allowedAdminEmails() {
   return commandCenterEmails();
@@ -28,6 +32,7 @@ export async function requireAdmin(req, res) {
   const provided = req.headers["x-bamsignal-secret"] || req.query.secret || req.body?.secret;
   if (provided && allowedSecrets.includes(provided)) return true;
   if (await verifySupabaseAdmin(req)) return true;
-  res.status(401).json({ ok: false, error: "Admin login required." });
+  logAdminStatusHidden({ endpoint: req?.path || req?.url || "admin" });
+  res.status(401).json({ ok: false, error: GENERIC_NOT_AUTHORIZED });
   return false;
 }

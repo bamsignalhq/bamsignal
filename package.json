@@ -29,7 +29,7 @@
     "test:photo-upload-attribution": "node scripts/test-photo-upload-attribution.mjs",
     "test:open-app-onboarding": "node scripts/test-open-app-onboarding.mjs",
     "test:admin-action-pin-throttle": "node scripts/test-admin-action-pin-throttle.mjs",
-    "test:source-integrity": "node scripts/source-integrity-check.mjs && node scripts/test-payment-catalog.mjs && node scripts/test-payment-persistence.mjs && node scripts/test-payment-webhook.mjs && node scripts/test-photo-moderation-authority.mjs && node scripts/test-profile-patch-races.mjs && node scripts/test-readiness-health.mjs && node scripts/test-auth-throttle-outage.mjs",
+    "test:source-integrity": "node scripts/source-integrity-check.mjs && node scripts/test-payment-catalog.mjs && node scripts/test-payment-persistence.mjs && node scripts/test-payment-webhook.mjs && node scripts/test-photo-moderation-authority.mjs && node scripts/test-profile-patch-races.mjs && node scripts/test-readiness-health.mjs && node scripts/test-auth-throttle-outage.mjs && node scripts/test-identity-exposure.mjs",
     "test:all-integrity": "npm run test:source-integrity && npm run test:server-import",
     "test:docker-integrity-stages": "node scripts/test-docker-integrity-stages.mjs",
     "prepare": "node scripts/install-githooks.mjs",

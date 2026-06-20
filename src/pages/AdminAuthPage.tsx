@@ -390,6 +390,12 @@ export function AdminAuthPage({
             </button>
           )}
 
+          {mode === "login" && (
+            <button type="button" className="link-btn auth-switch" onClick={() => setMode("setup")}>
+              First-time Command Center setup
+            </button>
+          )}
+
           {(mode === "forgot" || mode === "recovery") && (
             <button type="button" className="link-btn auth-switch" onClick={() => setMode("login")}>
               Back to sign in

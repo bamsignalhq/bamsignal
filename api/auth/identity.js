@@ -2,7 +2,6 @@ import {
   deactivatePlatformAdmin,
   findAppUserIdentity,
   getPlatformSetting,
-  isPlatformAdminEmail,
   listPlatformAdmins,
   setPlatformSetting,
   upsertAppUserIdentity,
@@ -13,8 +12,15 @@ import { normalizeHomeFeedAds } from "../../server/services/homeFeedAds.js";
 import { normalizePlans } from "../../server/pricing.js";
 import { registerDevicePush } from "../../server/firebase.js";
 import { bot, registerBotCommands } from "../../server/telegram.js";
-import { allowedAdminEmails } from "../../server/adminAuth.js";
+import { allowedAdminEmails, requireAdmin } from "../../server/adminAuth.js";
 import { requireAdminConsent } from "../../server/adminConsent.js";
+import { requireMemberAuth } from "../../server/services/memberAuth.js";
+import {
+  GENERIC_NOT_AVAILABLE,
+  GENERIC_NOT_AUTHORIZED,
+  logIdentityExposureBlocked,
+  sendGenericNotAvailable
+} from "../../server/services/identityExposure.js";
 
 function normalizePhone(value = "") {
   const digits = String(value).replace(/\D/g, "");
@@ -33,31 +39,14 @@ function normalizePayload(body = {}) {
   };
 }
 
-async function verifySupabaseAdmin(req) {
-  const adminEmails = allowedAdminEmails();
-  const authHeader = req.headers.authorization || "";
-  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  if (!bearer || !process.env.VITE_SUPABASE_URL || !process.env.VITE_SUPABASE_ANON_KEY) return false;
-
-  const response = await fetch(`${process.env.VITE_SUPABASE_URL.replace(/\/$/, "")}/auth/v1/user`, {
-    headers: {
-      apikey: process.env.VITE_SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${bearer}`
-    }
-  });
-  if (!response.ok) return false;
-  const user = await response.json();
-  const email = String(user.email || "").toLowerCase();
-  return adminEmails.includes(email) || await isPlatformAdminEmail(email);
-}
-
-async function requireAdmin(req, res) {
-  const allowedSecrets = [process.env.CRON_SECRET].filter(Boolean);
-  const provided = req.headers["x-bamsignal-secret"] || req.query.secret || req.body?.secret;
-  if (provided && allowedSecrets.includes(provided)) return true;
-  if (await verifySupabaseAdmin(req)) return true;
-  res.status(401).json({ ok: false, error: "Admin login required." });
-  return false;
+async function requireMemberIdentity(req, res, body = {}) {
+  const authResult = await requireMemberAuth(req, body);
+  if (!authResult.ok) {
+    logIdentityExposureBlocked({ endpoint: "identity", action: String(req.query.action || "") });
+    res.status(authResult.status || 401).json({ ok: false, error: GENERIC_NOT_AUTHORIZED });
+    return null;
+  }
+  return authResult.identity;
 }
 
 export default async function handler(req, res) {
@@ -129,12 +118,13 @@ export default async function handler(req, res) {
         } catch {
           /* best effort */
         }
-        return res.status(200).json({ ok: true, method: "admin" });
+        return res.status(200).json({ ok: true });
       }
-      return res.status(401).json({ ok: false, error: "Admin login required." });
+      return;
     }
 
     if (req.query.action === "settings") {
+      if (!(await requireAdmin(req, res))) return;
       const value = await getPlatformSetting("admin_content", null);
       return res.status(200).json({ ok: true, value });
     }
@@ -261,41 +251,46 @@ export default async function handler(req, res) {
     }
 
     if (req.query.action === "status") {
-      const user = await findAppUserIdentity(identity);
+      const memberIdentity = await requireMemberIdentity(req, res, req.body);
+      if (!memberIdentity) return;
+      const user = await findAppUserIdentity(memberIdentity);
       return res.status(200).json({ ok: true, user });
     }
 
     if (req.query.action === "push-token") {
+      const memberIdentity = await requireMemberIdentity(req, res, req.body);
+      if (!memberIdentity) return;
       const token = String(req.body?.token || "").trim();
       if (!token) return res.status(400).json({ ok: false, error: "Push token is required" });
-      const user = await findAppUserIdentity(identity);
+      const user = await findAppUserIdentity(memberIdentity);
       const premiumUntil = user?.premium_until ? new Date(user.premium_until).getTime() : 0;
       const isPremium = Boolean(user?.is_premium && premiumUntil > Date.now());
       const registration = await registerDevicePush({ token, isPremium });
-      return res.status(200).json({ ok: true, is_premium: isPremium, registration });
+      return res.status(200).json({ ok: true, registration });
     }
 
     if (req.query.action === "register") {
-      const existing = await findAppUserIdentity(identity);
-      const emailTaken = existing?.email && identity.email && existing.email.toLowerCase() !== identity.email.toLowerCase();
-      const phoneTaken = existing?.phone && identity.phone && existing.phone !== identity.phone;
+      const memberIdentity = await requireMemberIdentity(req, res, req.body);
+      if (!memberIdentity) return;
+      const existing = await findAppUserIdentity(memberIdentity);
+      const emailTaken =
+        existing?.email &&
+        memberIdentity.email &&
+        existing.email.toLowerCase() !== memberIdentity.email.toLowerCase();
+      const phoneTaken =
+        existing?.phone &&
+        memberIdentity.phone &&
+        existing.phone !== memberIdentity.phone;
       if (emailTaken || phoneTaken) {
-        return res.status(409).json({
-          ok: false,
-          exists: true,
-          field: emailTaken ? "email" : "phone",
-          error: `${emailTaken ? "Email" : "Phone number"} is already in use. Login instead.`
-        });
+        logIdentityExposureBlocked({ endpoint: "identity", action: "register", reason: "conflict" });
+        return res.status(409).json({ ok: false, error: GENERIC_NOT_AVAILABLE });
       }
-      const user = await upsertAppUserIdentity(identity);
+      const user = await upsertAppUserIdentity({ ...memberIdentity, ...identity });
       return res.status(200).json({ ok: true, user });
     }
 
-    const existing = await findAppUserIdentity(identity);
-    if (!existing) return res.status(200).json({ ok: true, exists: false });
-
-    const field = identity.email && existing.email?.toLowerCase() === identity.email ? "email" : "phone";
-    return res.status(200).json({ ok: true, exists: true, field });
+    logIdentityExposureBlocked({ endpoint: "identity", action: "exists-check" });
+    return sendGenericNotAvailable(res);
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Identity check failed" });
   }

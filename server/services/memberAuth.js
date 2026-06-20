@@ -6,8 +6,7 @@ export const PUBLIC_MEMBER_DATA_ACTIONS = new Set([
   "resolve-username",
   "resolve-login",
   "profile-by-id",
-  "subscription-catalog",
-  "check-username"
+  "subscription-catalog"
 ]);
 
 function normalizePhone(value = "") {

@@ -10,6 +10,12 @@ import {
   PUBLIC_MEMBER_DATA_ACTIONS,
   requireMemberAuth
 } from "../../server/services/memberAuth.js";
+import {
+  GENERIC_NOT_AUTHORIZED,
+  logIdentityExposureBlocked,
+  sanitizePublicMemberProfile,
+  sendGenericServiceUnavailable
+} from "../../server/services/identityExposure.js";
 import { upsertMemberProfile } from "../../server/cityHome.js";
 import {
   acceptIncomingSignal,
@@ -50,12 +56,7 @@ function parseBody(req) {
 function requireDatabase(res) {
   const database = getDatabaseStatus();
   if (database !== "connected") {
-    res.status(503).json({
-      ok: false,
-      error: "Database is not connected.",
-      database
-    });
-    return false;
+    return sendGenericServiceUnavailable(res);
   }
   return true;
 }
@@ -94,7 +95,8 @@ export default async function handler(req, res) {
       }
       const resolved = await resolveLoginUsername(username);
       if (!resolved.email) {
-        return res.status(404).json({ ok: false, error: "Account not found." });
+        logIdentityExposureBlocked({ endpoint: "resolve-login", reason: "unresolved" });
+        return res.status(401).json({ ok: false, error: GENERIC_NOT_AUTHORIZED });
       }
       return res.status(200).json({ ok: true, email: resolved.email });
     }
@@ -103,7 +105,10 @@ export default async function handler(req, res) {
       if (!requireDatabase(res)) return;
       if (!(await enforceRate(req, res, {}, "profile-view"))) return;
       const profile = await getMemberProfileById(String(body.profileId || "").trim());
-      return res.status(200).json({ ok: Boolean(profile), profile });
+      return res.status(200).json({
+        ok: true,
+        profile: sanitizePublicMemberProfile(profile)
+      });
     }
 
     if (action === "subscription-catalog") {
@@ -113,13 +118,21 @@ export default async function handler(req, res) {
     }
 
     if (action === "check-username") {
+      const authResult = await requireMemberAuth(req, body);
+      if (!authResult.ok) {
+        logIdentityExposureBlocked({ endpoint: "check-username" });
+        return res.status(authResult.status || 401).json({ ok: false, error: GENERIC_NOT_AUTHORIZED });
+      }
       if (!requireDatabase(res)) return;
       const { checkUsernameAvailable } = await import("../../server/memberTrust.js");
       const result = await checkUsernameAvailable(
         String(body.username || ""),
         body.excludeProfileId || null
       );
-      return res.status(result.available ? 200 : 409).json(result);
+      if (!result.ok || !result.available) {
+        return res.status(200).json({ ok: false, available: false, error: GENERIC_NOT_AUTHORIZED });
+      }
+      return res.status(200).json({ ok: true, available: true, username: result.username });
     }
 
     if (!action) {

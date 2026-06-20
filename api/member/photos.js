@@ -130,7 +130,6 @@ export default async function handler(req, res) {
     if (action === "submit-review") {
       const photoUrl = String(body.photoUrl || "").trim();
       const photoType = String(body.photoType || "profile").trim();
-      const photoReviewStatus = String(body.photoReviewStatus || "pending_review").trim();
       const photoRiskFlags = Array.isArray(body.photoRiskFlags) ? body.photoRiskFlags : [];
 
       if (!photoUrl) {
@@ -145,12 +144,13 @@ export default async function handler(req, res) {
       const review = await submitPhotoReview({
         photoUrl,
         photoType,
-        photoReviewStatus,
+        photoReviewStatus: "pending_review",
         photoRiskFlags,
         memberName: owner.member?.name || owner.identity?.name || owner.username || null,
         userKey: owner.userKey || null,
         profileId: owner.memberId || null,
-        authUserId: owner.authUserId || null
+        authUserId: owner.authUserId || null,
+        trustedModeration: false
       });
 
       return res.status(200).json({ ok: true, review });

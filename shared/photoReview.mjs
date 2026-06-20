@@ -3,6 +3,9 @@ import { resolveMainPhotoUrl } from "./mainPhoto.mjs";
 
 export const PHOTO_REVIEW_STATUSES = ["approved", "pending_review", "rejected", "hidden"];
 
+/** Statuses only admin/server moderation may set. */
+export const PRIVILEGED_PHOTO_REVIEW_STATUSES = ["approved", "hidden", "rejected"];
+
 export const PHOTO_RISK_FLAG_VALUES = [
   "no_face_detected",
   "possible_ai",
@@ -64,6 +67,81 @@ export function normalizePhotoMetaMap(raw) {
     if (normalized && url) out[url] = normalized;
   }
   return out;
+}
+
+function isPrivilegedPhotoStatus(status) {
+  return PRIVILEGED_PHOTO_REVIEW_STATUSES.includes(status);
+}
+
+/**
+ * Strip moderation fields members must never control via profile save payloads.
+ */
+export function stripMemberPhotoModerationFields(raw) {
+  if (!raw || typeof raw !== "object") return {};
+  const {
+    photoReviewStatus: _photoReviewStatus,
+    rejectReason: _rejectReason,
+    reviewedAt: _reviewedAt,
+    reviewedBy: _reviewedBy,
+    approvedAt: _approvedAt,
+    hiddenAt: _hiddenAt,
+    rejectedAt: _rejectedAt,
+    moderationReason: _moderationReason,
+    status: _status,
+    moderationStatus: _moderationStatus,
+    ...rest
+  } = raw;
+  return rest;
+}
+
+/**
+ * Merge member photoMeta safely: preserve server moderation, force pending on new uploads.
+ */
+export function sanitizeMemberPhotoMeta(existingMeta = {}, incomingMeta = {}, allowedUrls = []) {
+  const existing = normalizePhotoMetaMap(existingMeta);
+  const incoming = normalizePhotoMetaMap(incomingMeta);
+  const allowed = Array.from(
+    new Set((Array.isArray(allowedUrls) ? allowedUrls : []).filter(Boolean))
+  );
+  const out = {};
+
+  for (const url of allowed) {
+    const prev = existing[url];
+    if (prev) {
+      out[url] = { ...prev };
+      continue;
+    }
+
+    const inc = incoming[url];
+    const safeInput = stripMemberPhotoModerationFields(inc || {});
+    out[url] = normalizePhotoMetaEntry(
+      {
+        ...safeInput,
+        photoReviewStatus: "pending_review",
+        type: safeInput.type === "cover" ? "cover" : "profile"
+      },
+      safeInput.type === "cover" ? "cover" : "profile"
+    );
+  }
+
+  return out;
+}
+
+export function resolveMemberPhotoReviewStatus({
+  requestedStatus = "pending_review",
+  previousStatus = null,
+  trustedModeration = false
+} = {}) {
+  if (trustedModeration && PHOTO_REVIEW_STATUSES.includes(requestedStatus)) {
+    return requestedStatus;
+  }
+  if (previousStatus && isPrivilegedPhotoStatus(previousStatus)) {
+    return previousStatus;
+  }
+  if (isPrivilegedPhotoStatus(requestedStatus)) {
+    return "pending_review";
+  }
+  return "pending_review";
 }
 
 function cleanPhotos(photos) {

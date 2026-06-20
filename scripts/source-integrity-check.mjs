@@ -63,6 +63,7 @@ const paystackDiagnosticsApiSource = readSrc("api/diagnostics/paystack-connectiv
 const memberPhotosApiSource = readSrc("api/member/photos.js");
 const photoUploadAttributionSource = readSrc("server/services/photoUploadAttribution.js");
 const photoReviewServiceSource = readSrc("server/services/photoReview.js");
+const profileMergeSource = readSrc("server/utils/profileMerge.js");
 const androidReleaseSource = readSrc("scripts/build-android-release.mjs");
 const androidVerifySource = readSrc("scripts/verify-android-assets.mjs");
 const goToAppSource = readSrc("src/services/goToApp.ts");
@@ -306,8 +307,16 @@ assertCheck(
 assertCheck(
   photoReviewServiceSource.includes("auth_user_id") &&
     photoReviewServiceSource.includes("attachUploadedPhotoToProfile") &&
-    photoReviewServiceSource.includes("unattributed"),
-  "photo reviews must store auth user attribution and flag unattributed rows"
+    photoReviewServiceSource.includes("unattributed") &&
+    photoReviewServiceSource.includes("trustedModeration") &&
+    photoReviewServiceSource.includes("resolveMemberPhotoReviewStatus"),
+  "photo reviews must store auth user attribution and enforce moderation authority"
+);
+assertCheck(
+  profileMergeSource.includes("sanitizeMemberPhotoMeta") &&
+    photoReviewSharedSource.includes("sanitizeMemberPhotoMeta") &&
+    !memberPhotosApiSource.includes("body.photoReviewStatus"),
+  "member profile save and photo APIs must not trust client moderation status"
 );
 assertCheck(
   androidReleaseSource.includes("cleanWebAssets") &&

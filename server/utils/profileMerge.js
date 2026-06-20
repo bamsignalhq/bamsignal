@@ -1,5 +1,7 @@
 /** Safe merge for app_member_profiles.profile JSON — never drop cover or gallery fields. */
 
+import { sanitizeMemberPhotoMeta } from "../../shared/photoReview.mjs";
+
 function pickCover(raw = {}) {
   return raw.coverPhotoUrl || raw.coverPhoto || null;
 }
@@ -46,15 +48,19 @@ export function mergeMemberProfilePayload(existing = {}, incoming = {}) {
 
   if (!Array.isArray(incoming.photos) || incoming.photos.length === 0) {
     next.photos = Array.isArray(existing.photos) ? existing.photos : incoming.photos ?? [];
+  } else {
+    next.photos = incoming.photos.filter(Boolean);
   }
 
   if (!incoming.mainPhotoUrl && existing.mainPhotoUrl) {
     next.mainPhotoUrl = existing.mainPhotoUrl;
   }
 
-  if (!incoming.photoMeta && existing.photoMeta) {
-    next.photoMeta = existing.photoMeta;
-  }
+  const photos = Array.isArray(next.photos) ? next.photos.filter(Boolean) : [];
+  next.photos = photos;
+  const cover = pickCover(next);
+  const allowedPhotoUrls = cover ? [...photos, cover] : photos;
+  next.photoMeta = sanitizeMemberPhotoMeta(existing.photoMeta, incoming.photoMeta, allowedPhotoUrls);
 
   return next;
 }

@@ -1,6 +1,11 @@
 import { isDatabaseReady, query } from "../db.js";
 import { ensureMemberProfilesTable } from "../cityHome.js";
-import { filterPhotosForPublicView, normalizePhotoMetaMap } from "../../shared/photoReview.mjs";
+import {
+  filterPhotosForPublicView,
+  normalizePhotoMetaMap,
+  PRIVILEGED_PHOTO_REVIEW_STATUSES,
+  resolveMemberPhotoReviewStatus
+} from "../../shared/photoReview.mjs";
 import {
   deletePhotoStorageObject,
   parsePhotoStorageUrl
@@ -277,7 +282,8 @@ export async function submitPhotoReview({
   memberName = null,
   userKey = null,
   profileId: explicitProfileId = null,
-  authUserId = null
+  authUserId = null,
+  trustedModeration = false
 }) {
   if (!isDatabaseReady()) return null;
   await ensurePhotoReviewSchema();
@@ -299,14 +305,37 @@ export async function submitPhotoReview({
   const resolvedName = memberName || profileRow?.name || profileRow?.profile?.name || null;
 
   const existingReview = await query(
-    "select photo_review_status from photo_reviews where photo_url = $1 limit 1",
+    "select * from photo_reviews where photo_url = $1 limit 1",
     [url]
   );
-  const previousStatus = existingReview.rows[0]?.photo_review_status || null;
+  const previousReview = existingReview.rows[0] || null;
+  const previousStatus = previousReview?.photo_review_status || null;
 
-  if (profileRow) {
+  const effectiveStatus = resolveMemberPhotoReviewStatus({
+    requestedStatus: photoReviewStatus,
+    previousStatus,
+    trustedModeration
+  });
+
+  if (
+    !trustedModeration &&
+    previousStatus &&
+    PRIVILEGED_PHOTO_REVIEW_STATUSES.includes(previousStatus)
+  ) {
+    return mapReviewRow(previousReview);
+  }
+
+  const existingMeta = profileRow
+    ? normalizePhotoMetaMap(profileRow.profile?.photoMeta)[url]
+    : null;
+  const preserveProfileMeta =
+    !trustedModeration &&
+    existingMeta &&
+    PRIVILEGED_PHOTO_REVIEW_STATUSES.includes(existingMeta.photoReviewStatus);
+
+  if (profileRow && !preserveProfileMeta) {
     const meta = {
-      photoReviewStatus,
+      photoReviewStatus: effectiveStatus,
       photoRiskFlags,
       type: photoType === "cover" ? "cover" : "profile",
       uploadedAt: new Date().toISOString()
@@ -333,7 +362,11 @@ export async function submitPhotoReview({
        user_key = coalesce(excluded.user_key, photo_reviews.user_key),
        member_name = coalesce(excluded.member_name, photo_reviews.member_name),
        photo_type = excluded.photo_type,
-       photo_review_status = excluded.photo_review_status,
+       photo_review_status = case
+         when photo_reviews.photo_review_status = any($9::text[]) and $10 = false
+         then photo_reviews.photo_review_status
+         else excluded.photo_review_status
+       end,
        photo_risk_flags = excluded.photo_risk_flags,
        updated_at = now()
      returning *`,
@@ -344,14 +377,16 @@ export async function submitPhotoReview({
       resolvedName,
       url,
       photoType === "cover" ? "cover" : "profile",
-      photoReviewStatus,
-      JSON.stringify(photoRiskFlags)
+      effectiveStatus,
+      JSON.stringify(photoRiskFlags),
+      PRIVILEGED_PHOTO_REVIEW_STATUSES,
+      trustedModeration
     ]
   );
 
   const reviewRow = mapReviewRow(result.rows[0]);
   const unhealthy = isUnhealthyPhotoSubmission({
-    photoReviewStatus,
+    photoReviewStatus: effectiveStatus,
     photoRiskFlags
   });
   const newlyFlagged =
@@ -359,7 +394,7 @@ export async function submitPhotoReview({
     previousStatus !== "pending_review" &&
     previousStatus !== "rejected" &&
     previousStatus !== "hidden" &&
-    photoReviewStatus !== "approved";
+    effectiveStatus !== "approved";
 
   if (newlyFlagged && profileId) {
     const violation = await recordPhotoViolation({
@@ -367,7 +402,7 @@ export async function submitPhotoReview({
       userKey: resolvedUserKey,
       photoUrl: url,
       reason:
-        photoReviewStatus === "rejected"
+        effectiveStatus === "rejected"
           ? "Rejected unhealthy photo upload"
           : "Flagged unhealthy photo for admin review",
       source: "system",

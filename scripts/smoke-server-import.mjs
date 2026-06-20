@@ -11,6 +11,7 @@ process.env.PORT = String(port);
 
 const productionPath = join(dirname(fileURLToPath(import.meta.url)), "..", "server", "production.js");
 const productionSource = readFileSync(productionPath, "utf8");
+const rootPath = join(dirname(fileURLToPath(import.meta.url)), "..");
 const requiredRouteMounts = [
   { method: "post", route: "/api/auth/pin-login" },
   { method: "post", route: "/api/auth/pin-reset" },
@@ -27,6 +28,51 @@ for (const { method, route } of requiredRouteMounts) {
     process.exit(1);
   }
 }
+
+function assertSmoke(condition, message) {
+  if (condition) return;
+  console.error(`server smoke failed: ${message}`);
+  process.exit(1);
+}
+
+const appSource = readFileSync(join(rootPath, "src", "App.tsx"), "utf8");
+const paymentsSource = readFileSync(join(rootPath, "src", "services", "payments.ts"), "utf8");
+const paymentReturnSource = readFileSync(join(rootPath, "src", "utils", "paymentReturn.ts"), "utf8");
+const purchaseEmailSource = readFileSync(
+  join(rootPath, "server", "services", "purchaseEmail.js"),
+  "utf8"
+);
+
+assertSmoke(
+  paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
+    paymentReturnSource.includes('path === "/payment/success" || hasPaystackCallbackInUrl()'),
+  "payment callback params must be intercepted before public homepage render"
+);
+assertSmoke(
+  paymentsSource.includes('buildReturnContext("boost", boostId, returnContext, "/profile")'),
+  "profile boost checkout must default back to /profile"
+);
+assertSmoke(
+  paymentsSource.includes("returnPath: resolvePaymentReturnPath({ tab, pathname: memberPathname })") ||
+    appSource.includes("returnPath: resolvePaymentReturnPath({ tab, pathname: memberPathname })"),
+  "Signal Pass checkout must save the current member return path"
+);
+assertSmoke(
+  appSource.indexOf("const returnPath = normalizePaymentReturnPath") >= 0 &&
+    appSource.indexOf("const returnPath = normalizePaymentReturnPath") < appSource.indexOf("clearPaymentSession()"),
+  "payment success must preserve returnPath before clearing payment state"
+);
+assertSmoke(
+  appSource.includes("paymentReturnActive") && appSource.includes("!paymentReturnActive"),
+  "session restore must not swallow Paystack callback params"
+);
+assertSmoke(
+  purchaseEmailSource.includes("purchaseEmailAlreadySent(reference)") &&
+    purchaseEmailSource.includes("markPurchaseEmailSent(reference)") &&
+    purchaseEmailSource.indexOf("markPurchaseEmailSent(reference)") <
+      purchaseEmailSource.indexOf("const sendResult = await sendResendPurchaseEmail"),
+  "purchase confirmation email must be claimed once per reference before sending"
+);
 
 async function waitForServer(baseUrl) {
   let lastError;

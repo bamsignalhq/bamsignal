@@ -171,6 +171,7 @@ type VerifiedPaymentRoute = {
   returnPath?: string;
   sourcePage?: string;
   boostId?: string;
+  quickiePassUntil?: string;
 };
 
 export function App() {
@@ -452,8 +453,9 @@ export function App() {
     flowLog("profile_hydrate", { ok: true, route: session.route, reason: session.status?.reason });
     const datingProfile = getDatingProfile();
     const needsOnboarding = session.route === "onboarding";
+    const paymentReturnActive = isPaymentReturnPath() || hasPaystackCallbackInUrl();
     setProfileComplete(!needsOnboarding);
-    if (blocking || memberAppEntered || !isPublicWebRoute()) {
+    if (!paymentReturnActive && (blocking || memberAppEntered || !isPublicWebRoute())) {
       if (isMemberAppPath() || requiresMemberRestoreBlocking(window.location.pathname, isNative)) {
         navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
       }
@@ -539,7 +541,7 @@ export function App() {
         notifyBoostActivated(boostId);
         trackEvent("boost_activated", { product: boostId, paid: "true" });
       } else if (kind === "quickie") {
-        activateQuickiePass();
+        activateQuickiePass(route?.quickiePassUntil);
         setPaymentSuccess({
           title: "Payment successful",
           body: "Your Fast Connection Pass is active."
@@ -589,7 +591,8 @@ export function App() {
           productId: result.productId,
           returnPath: result.returnPath,
           sourcePage: result.sourcePage,
-          boostId: result.boostId
+          boostId: result.boostId,
+          quickiePassUntil: result.quickiePassUntil
         });
         return;
       }
@@ -830,6 +833,13 @@ export function App() {
 
     let cancelled = false;
     const bootAndVerify = async () => {
+      const callbackReference =
+        new URLSearchParams(window.location.search).get("trxref") ||
+        new URLSearchParams(window.location.search).get("reference");
+      if (callbackReference?.trim()) {
+        localStorage.setItem(STORAGE_KEYS.paymentReference, callbackReference.trim());
+      }
+
       if (supabase && !isAuthedRef.current) {
         const {
           data: { session }

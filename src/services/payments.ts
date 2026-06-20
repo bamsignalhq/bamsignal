@@ -522,6 +522,9 @@ export async function completePendingPayment(user: UserProfile): Promise<{
   returnPath?: string;
   sourcePage?: string;
   boostId?: string;
+  quickiePassUntil?: string;
+  premiumUntil?: string;
+  expiresAt?: string;
 }> {
   const params = new URLSearchParams(window.location.search);
   const urlStatus = params.get("status")?.trim().toLowerCase();
@@ -572,7 +575,10 @@ export async function completePendingPayment(user: UserProfile): Promise<{
         productId: result.productId,
         returnPath: result.returnPath,
         sourcePage: result.sourcePage,
-        boostId: result.boostId || boostId
+        boostId: result.boostId || boostId,
+        quickiePassUntil: result.quickiePassUntil,
+        premiumUntil: result.premiumUntil,
+        expiresAt: result.expiresAt
       };
     }
     if (result.pending) return { ok: false, kind: "boost", pending: true };
@@ -600,7 +606,10 @@ export async function completePendingPayment(user: UserProfile): Promise<{
         productId: result.productId,
         returnPath: result.returnPath,
         sourcePage: result.sourcePage,
-        boostId: result.boostId
+        boostId: result.boostId,
+        quickiePassUntil: result.quickiePassUntil,
+        premiumUntil: result.premiumUntil,
+        expiresAt: result.expiresAt
       };
     }
     if (result.pending) return { ok: false, kind: "quickie", pending: true };
@@ -627,7 +636,10 @@ export async function completePendingPayment(user: UserProfile): Promise<{
       productId: result.productId,
       returnPath: result.returnPath,
       sourcePage: result.sourcePage,
-      boostId: result.boostId
+      boostId: result.boostId,
+      quickiePassUntil: result.quickiePassUntil,
+      premiumUntil: result.premiumUntil,
+      expiresAt: result.expiresAt
     };
   }
   if (result.pending) return { ok: false, kind: "premium", pending: true };

@@ -5,6 +5,7 @@ import type {
   UserProfile
 } from "../types";
 import { apiUrl } from "./supabase";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 
 type ExchangePayload = {
@@ -29,7 +30,7 @@ async function postExchange(
 ) {
   const response = await fetch(apiUrl(`/api/member/data?action=${action}`), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await memberApiHeaders(),
     body: JSON.stringify({ email: user.email, phone: user.phone, ...body })
   });
   return readResponseJson<ExchangePayload>(response);

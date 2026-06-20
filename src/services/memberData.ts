@@ -9,6 +9,7 @@ import { mergeHydratedCompliance, syncComplianceDoneMarkerFromProfile } from "./
 import { normalizeDatingProfile } from "../utils/profile";
 import { resolveMemberIdentity } from "../utils/authIdentity";
 import { mergeIncomingSocial } from "../utils/profileSocial";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import { mergeMemberCover, safeArray, safePhotos, safeString, isPersistablePhotoUrl } from "../utils/safeProfile";
 import {
@@ -65,7 +66,7 @@ async function postMemberAction(
   try {
     const response = await fetch(apiUrl(`/api/member/data?action=${action}`), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({
         email: identity.email,
         phone: identity.phone,

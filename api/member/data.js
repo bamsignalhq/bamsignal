@@ -5,7 +5,12 @@ import {
   persistReport,
   upsertAppUserIdentity
 } from "../../server/db.js";
-import { findEmailByUsername, upsertMemberProfile } from "../../server/cityHome.js";
+import {
+  isPublicMemberDataAction,
+  PUBLIC_MEMBER_DATA_ACTIONS,
+  requireMemberAuth
+} from "../../server/services/memberAuth.js";
+import { upsertMemberProfile } from "../../server/cityHome.js";
 import {
   acceptIncomingSignal,
   completeOnboardingReferral,
@@ -35,35 +40,6 @@ function parseBody(req) {
     }
   }
   return req.body;
-}
-
-function normalizePhone(value = "") {
-  return String(value).replace(/\D/g, "").replace(/^234/, "");
-}
-
-function normalizeIdentity(body = {}) {
-  return {
-    email: String(body.email || "").trim().toLowerCase(),
-    phone: normalizePhone(body.phone),
-    name: String(body.name || "").trim(),
-    username: String(body.username || "")
-      .trim()
-      .toLowerCase()
-      .replace(/^@+/, "")
-  };
-}
-
-async function resolveRequestIdentity(body = {}) {
-  const identity = normalizeIdentity(body);
-  if (identity.email || identity.phone) return identity;
-  if (!identity.username) return identity;
-
-  const { resolveLoginUsername } = await import("../../server/services/pinLogin.js");
-  const resolved = await resolveLoginUsername(identity.username);
-  if (resolved.email) {
-    identity.email = String(resolved.email).trim().toLowerCase();
-  }
-  return identity;
 }
 
 function requireDatabase(res) {
@@ -101,9 +77,10 @@ export default async function handler(req, res) {
   }
 
   const body = parseBody(req);
+  const action = String(req.query.action || "").trim();
 
   try {
-    if (req.query.action === "resolve-username" || req.query.action === "resolve-login") {
+    if (action === "resolve-username" || action === "resolve-login") {
       if (!requireDatabase(res)) return;
       const { resolveLoginUsername } = await import("../../server/services/pinLogin.js");
       const username = String(body.username || body.identifier || "").trim();
@@ -117,19 +94,50 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, email: resolved.email });
     }
 
-    const identity = await resolveRequestIdentity(body);
-
-    if (!identity.email && !identity.phone) {
-      return res.status(400).json({ ok: false, error: "Email, phone, or username is required." });
+    if (action === "profile-by-id") {
+      if (!requireDatabase(res)) return;
+      if (!(await enforceRate(req, res, {}, "profile-view"))) return;
+      const profile = await getMemberProfileById(String(body.profileId || "").trim());
+      return res.status(200).json({ ok: Boolean(profile), profile });
     }
 
-    if (req.query.action === "pull") {
+    if (action === "subscription-catalog") {
+      const { getSubscriptionCatalog } = await import("../../server/services/subscriptionCatalog.js");
+      const catalog = await getSubscriptionCatalog();
+      return res.status(200).json({ ok: true, catalog });
+    }
+
+    if (action === "check-username") {
+      if (!requireDatabase(res)) return;
+      const { checkUsernameAvailable } = await import("../../server/memberTrust.js");
+      const result = await checkUsernameAvailable(
+        String(body.username || ""),
+        body.excludeProfileId || null
+      );
+      return res.status(result.available ? 200 : 409).json(result);
+    }
+
+    if (!action) {
+      return res.status(400).json({ ok: false, error: "Unknown action." });
+    }
+
+    if (isPublicMemberDataAction(action)) {
+      return res.status(400).json({ ok: false, error: "Unknown action." });
+    }
+
+    const authResult = await requireMemberAuth(req, body);
+    if (!authResult.ok) {
+      return res.status(authResult.status).json({ ok: false, error: authResult.error || "not_authorized" });
+    }
+    const identity = authResult.identity;
+
+    if (action === "pull") {
       if (!requireDatabase(res)) return;
       const bundle = await fetchMemberBundle(identity);
       return res.status(200).json({ ok: true, database: "connected", bundle });
     }
 
-    if (req.query.action === "register") {
+    if (action === "register") {
       if (!requireDatabase(res)) return;
       const user = body.referralCode
         ? await registerWithReferral({ ...identity, referralCode: body.referralCode })
@@ -139,14 +147,14 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, user: freshUser || user });
     }
 
-    if (req.query.action === "status") {
+    if (action === "status") {
       if (!requireDatabase(res)) return;
       const user = await findAppUserIdentity(identity);
       const premium = await fetchPremiumStatus(identity);
       return res.status(200).json({ ok: true, user, premium });
     }
 
-    if (req.query.action === "discover") {
+    if (action === "discover") {
       if (!requireDatabase(res)) return;
       if (!(await enforceRate(req, res, identity, "discover"))) return;
       const city = String(body.city || "").trim();
@@ -161,7 +169,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, profiles });
     }
 
-    if (req.query.action === "search") {
+    if (action === "search") {
       if (!requireDatabase(res)) return;
       if (!(await enforceRate(req, res, identity, "search"))) return;
       const city = String(body.city || "").trim();
@@ -195,32 +203,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, profiles });
     }
 
-    if (req.query.action === "profile-by-id") {
-      if (!requireDatabase(res)) return;
-      if (!(await enforceRate(req, res, identity, "profile-view"))) return;
-      const profile = await getMemberProfileById(String(body.profileId || "").trim());
-      return res.status(200).json({ ok: Boolean(profile), profile });
-    }
-
-    if (req.query.action === "incoming") {
+    if (action === "incoming") {
       if (!requireDatabase(res)) return;
       const incomingSignals = await fetchIncomingSignals(identity);
       return res.status(200).json({ ok: true, incomingSignals });
     }
 
-    if (req.query.action === "visitors") {
+    if (action === "visitors") {
       if (!requireDatabase(res)) return;
       const viewers = await fetchProfileVisitors(identity);
       return res.status(200).json({ ok: true, viewers });
     }
 
-    if (req.query.action === "referral") {
+    if (action === "referral") {
       if (!requireDatabase(res)) return;
       const referral = await fetchReferralStats(identity);
       return res.status(200).json({ ok: true, referral });
     }
 
-    if (req.query.action === "signal") {
+    if (action === "signal") {
       if (!requireDatabase(res)) return;
       const row = await sendSignalToProfile({
         email: identity.email,
@@ -238,7 +239,7 @@ export default async function handler(req, res) {
       return res.status(row ? 200 : 503).json({ ok: Boolean(row), signal: row });
     }
 
-    if (req.query.action === "accept-signal") {
+    if (action === "accept-signal") {
       if (!requireDatabase(res)) return;
       const result = await acceptIncomingSignal({
         email: identity.email,
@@ -248,7 +249,7 @@ export default async function handler(req, res) {
       return res.status(result ? 200 : 404).json({ ok: Boolean(result), ...result });
     }
 
-    if (req.query.action === "decline-signal") {
+    if (action === "decline-signal") {
       if (!requireDatabase(res)) return;
       const ok = await declineIncomingSignal({
         email: identity.email,
@@ -258,7 +259,7 @@ export default async function handler(req, res) {
       return res.status(ok ? 200 : 404).json({ ok });
     }
 
-    if (req.query.action === "ignore-signal") {
+    if (action === "ignore-signal") {
       if (!requireDatabase(res)) return;
       const ok = await ignoreIncomingSignal({
         email: identity.email,
@@ -268,7 +269,7 @@ export default async function handler(req, res) {
       return res.status(ok ? 200 : 404).json({ ok });
     }
 
-    if (req.query.action === "like-profile") {
+    if (action === "like-profile") {
       if (!requireDatabase(res)) return;
       const row = await likeMemberProfile({
         email: identity.email,
@@ -279,7 +280,7 @@ export default async function handler(req, res) {
       return res.status(row ? 200 : 400).json({ ok: Boolean(row), like: row });
     }
 
-    if (req.query.action === "follow-profile") {
+    if (action === "follow-profile") {
       if (!requireDatabase(res)) return;
       const row = await followMemberProfile({
         email: identity.email,
@@ -289,7 +290,7 @@ export default async function handler(req, res) {
       return res.status(row ? 200 : 400).json({ ok: Boolean(row), follow: row });
     }
 
-    if (req.query.action === "complete-onboarding") {
+    if (action === "complete-onboarding") {
       if (!requireDatabase(res)) return;
       const { markMemberOnboardingComplete, completeOnboardingReferral } = await import(
         "../../server/memberSocial.js"
@@ -303,22 +304,15 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, result, referral });
     }
 
-    if (req.query.action === "onboarding-status") {
+    if (action === "onboarding-status") {
       if (!requireDatabase(res)) return;
       const { getMemberOnboardingStatus } = await import("../../server/services/onboardingRepair.js");
       const result = await getMemberOnboardingStatus(identity);
       return res.status(200).json(result);
     }
 
-    if (req.query.action === "force-complete-onboarding") {
+    if (action === "force-complete-onboarding") {
       if (!requireDatabase(res)) return;
-      const { verifySupabaseBearerUserId } = await import("../../server/supabaseEnv.js");
-      const authHeader = String(req.headers.authorization || "");
-      const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
-      const userId = await verifySupabaseBearerUserId(bearer);
-      if (!userId) {
-        return res.status(401).json({ ok: false, error: "Unauthorized." });
-      }
       const { forceCompleteMemberOnboarding } = await import("../../server/services/onboardingRepair.js");
       const result = await forceCompleteMemberOnboarding(identity);
       if (!result.ok) {
@@ -327,7 +321,7 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
-    if (req.query.action === "repair-onboarding") {
+    if (action === "repair-onboarding") {
       if (!requireDatabase(res)) return;
       const { repairMemberOnboarding } = await import("../../server/services/onboardingRepair.js");
       const result = await repairMemberOnboarding(identity);
@@ -337,7 +331,7 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
-    if (req.query.action === "compliance-ack") {
+    if (action === "compliance-ack") {
       const { recordComplianceAcknowledgements } = await import(
         "../../server/services/compliance.js"
       );
@@ -360,7 +354,7 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
-    if (req.query.action === "repair-flow") {
+    if (action === "repair-flow") {
       if (!requireDatabase(res)) return;
       const { repairMemberFlow } = await import("../../server/services/flowRepair.js");
       const result = await repairMemberFlow({
@@ -376,7 +370,7 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
-    if (req.query.action === "match") {
+    if (action === "match") {
       if (!requireDatabase(res)) return;
       const { persistMatch } = await import("../../server/db.js");
       const row = await persistMatch({
@@ -387,7 +381,7 @@ export default async function handler(req, res) {
       return res.status(row ? 200 : 503).json({ ok: Boolean(row), match: row });
     }
 
-    if (req.query.action === "message") {
+    if (action === "message") {
       if (!requireDatabase(res)) return;
       const { persistMessage } = await import("../../server/db.js");
       try {
@@ -407,7 +401,7 @@ export default async function handler(req, res) {
       }
     }
 
-    if (req.query.action === "report") {
+    if (action === "report") {
       if (!requireDatabase(res)) return;
       try {
         const row = await persistReport({
@@ -424,7 +418,7 @@ export default async function handler(req, res) {
       }
     }
 
-    if (req.query.action === "profile") {
+    if (action === "profile") {
       if (!requireDatabase(res)) return;
       const city = String(body.city || body.profile?.city || "").trim();
       if (!city) {
@@ -458,7 +452,7 @@ export default async function handler(req, res) {
         email: identity.email,
         phone: identity.phone,
         name: identity.name || body.name,
-        username: String(body.username || "").trim() || null,
+        username: identity.username || null,
         profile
       });
       if (!leakCheck.ok) {
@@ -473,7 +467,7 @@ export default async function handler(req, res) {
         email: identity.email,
         phone: identity.phone,
         name: identity.name || body.name,
-        username: String(body.username || "").trim() || null,
+        username: identity.username || String(body.username || "").trim() || null,
         city,
         state: String(body.state || body.profile?.state || "").trim() || null,
         profile,
@@ -484,24 +478,14 @@ export default async function handler(req, res) {
       return res.status(row ? 200 : 503).json({ ok: Boolean(row), profile: row });
     }
 
-    if (req.query.action === "account-state") {
+    if (action === "account-state") {
       if (!requireDatabase(res)) return;
       const { fetchMemberAccountState } = await import("../../server/memberTrust.js");
       const state = await fetchMemberAccountState(identity);
       return res.status(200).json({ ok: true, account: state });
     }
 
-    if (req.query.action === "check-username") {
-      if (!requireDatabase(res)) return;
-      const { checkUsernameAvailable } = await import("../../server/memberTrust.js");
-      const result = await checkUsernameAvailable(
-        String(body.username || ""),
-        body.excludeProfileId || null
-      );
-      return res.status(result.available ? 200 : 409).json(result);
-    }
-
-    if (req.query.action === "change-username") {
+    if (action === "change-username") {
       if (!requireDatabase(res)) return;
       const { changeMemberUsername } = await import("../../server/memberTrust.js");
       const result = await changeMemberUsername({
@@ -512,7 +496,7 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "pause-profile") {
+    if (action === "pause-profile") {
       if (!requireDatabase(res)) return;
       const { pauseMemberProfile } = await import("../../server/memberTrust.js");
       const result = await pauseMemberProfile({
@@ -523,28 +507,28 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "unpause-profile") {
+    if (action === "unpause-profile") {
       if (!requireDatabase(res)) return;
       const { unpauseMemberProfile } = await import("../../server/memberTrust.js");
       const result = await unpauseMemberProfile({ email: identity.email, phone: identity.phone });
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "soft-delete-account") {
+    if (action === "soft-delete-account") {
       if (!requireDatabase(res)) return;
       const { softDeleteMemberAccount } = await import("../../server/memberTrust.js");
       const result = await softDeleteMemberAccount({ email: identity.email, phone: identity.phone });
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "restore-account") {
+    if (action === "restore-account") {
       if (!requireDatabase(res)) return;
       const { restoreMemberAccount } = await import("../../server/memberTrust.js");
       const result = await restoreMemberAccount({ email: identity.email, phone: identity.phone });
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "user-block") {
+    if (action === "user-block") {
       if (!requireDatabase(res)) return;
       const targetProfileId = String(body.targetProfileId || "").trim();
       if (!targetProfileId) {
@@ -562,7 +546,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    if (req.query.action === "connection-note") {
+    if (action === "connection-note") {
       if (!requireDatabase(res)) return;
       const { fetchConnectionNote, upsertConnectionNote } = await import("../../server/memberTrust.js");
       const targetProfileId = String(body.targetProfileId || "").trim();
@@ -583,7 +567,7 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "send-introduction") {
+    if (action === "send-introduction") {
       if (!requireDatabase(res)) return;
       const { sendMemberIntroduction } = await import("../../server/memberTrust.js");
       const result = await sendMemberIntroduction({
@@ -596,7 +580,7 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "success-story") {
+    if (action === "success-story") {
       if (!requireDatabase(res)) return;
       const { submitSuccessStory } = await import("../../server/memberTrust.js");
       const result = await submitSuccessStory({
@@ -608,7 +592,7 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "moderation-flag") {
+    if (action === "moderation-flag") {
       if (!requireDatabase(res)) return;
       const { createModerationFlag } = await import("../../server/memberTrust.js");
       const { normalizeUserKey } = await import("../../server/db.js");
@@ -623,7 +607,7 @@ export default async function handler(req, res) {
       return res.status(flag ? 200 : 400).json({ ok: Boolean(flag), flag });
     }
 
-    if (req.query.action === "contact-exchange-state") {
+    if (action === "contact-exchange-state") {
       if (!requireDatabase(res)) return;
       const { getContactExchangeState } = await import("../../server/services/contactExchange.js");
       const result = await getContactExchangeState({
@@ -634,7 +618,7 @@ export default async function handler(req, res) {
       return res.status(200).json(result);
     }
 
-    if (req.query.action === "contact-exchange-request") {
+    if (action === "contact-exchange-request") {
       if (!requireDatabase(res)) return;
       const { requestContactExchange } = await import("../../server/services/contactExchange.js");
       const result = await requestContactExchange({
@@ -647,7 +631,7 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "contact-exchange-respond") {
+    if (action === "contact-exchange-respond") {
       if (!requireDatabase(res)) return;
       const { respondContactExchange } = await import("../../server/services/contactExchange.js");
       const result = await respondContactExchange({
@@ -660,7 +644,7 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "contact-exchange-complete") {
+    if (action === "contact-exchange-complete") {
       if (!requireDatabase(res)) return;
       const { completeContactExchange } = await import("../../server/services/contactExchange.js");
       const result = await completeContactExchange({
@@ -673,7 +657,7 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "contact-exchange-cancel") {
+    if (action === "contact-exchange-cancel") {
       if (!requireDatabase(res)) return;
       const { cancelContactExchange } = await import("../../server/services/contactExchange.js");
       const result = await cancelContactExchange({
@@ -685,7 +669,7 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "contact-exchange-disable") {
+    if (action === "contact-exchange-disable") {
       if (!requireDatabase(res)) return;
       const { disableContactSharing } = await import("../../server/services/contactExchange.js");
       const result = await disableContactSharing({
@@ -697,14 +681,10 @@ export default async function handler(req, res) {
       return res.status(result.ok ? 200 : 400).json(result);
     }
 
-    if (req.query.action === "subscription-catalog") {
-      const { getSubscriptionCatalog } = await import("../../server/services/subscriptionCatalog.js");
-      const catalog = await getSubscriptionCatalog();
-      return res.status(200).json({ ok: true, catalog });
-    }
-
     return res.status(400).json({ ok: false, error: "Unknown action." });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Member data request failed." });
   }
 }
+
+export { PUBLIC_MEMBER_DATA_ACTIONS };

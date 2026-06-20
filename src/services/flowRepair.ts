@@ -1,5 +1,6 @@
 import type { ComplianceAckType } from "../constants/compliance";
 import { apiUrl } from "./supabase";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import type { MemberCompliance, UserProfile } from "../types";
 import type { FlowRepairPayload } from "../utils/flowWatchdog";
@@ -26,7 +27,7 @@ export async function repairMemberFlow(
   try {
     const response = await fetch(apiUrl("/api/member/data?action=repair-flow"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({
         email: user.email,
         phone: user.phone,

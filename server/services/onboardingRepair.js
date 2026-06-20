@@ -201,7 +201,7 @@ function looksLikeUuid(value = "") {
   );
 }
 
-async function resolveIdentityFromUserId(userId, identity = {}) {
+export async function resolveIdentityFromUserId(userId, identity = {}) {
   const rawUserId = String(userId || "").trim();
   let resolvedEmail = pickString(identity.email);
   let resolvedPhone = pickString(identity.phone);

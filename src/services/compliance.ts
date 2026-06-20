@@ -19,6 +19,7 @@ import { clearFlowCompletionKeys, clearFlowState } from "../utils/flowWatchdog";
 import { getDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { readJson, writeJson } from "../utils/storage";
 import { apiUrl } from "./supabase";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 
 type ComplianceResponse = {
@@ -104,7 +105,7 @@ export async function saveComplianceAcknowledgements(
   try {
     const response = await fetch(apiUrl("/api/member/data?action=compliance-ack"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({
         email: user.email,
         phone: user.phone,

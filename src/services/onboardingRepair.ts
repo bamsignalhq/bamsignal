@@ -8,6 +8,7 @@ import {
 } from "../utils/onboardingStatus";
 import { readJson, writeJson } from "../utils/storage";
 import { apiUrl } from "./supabase";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name" | "username">;
@@ -89,7 +90,7 @@ export async function fetchOnboardingStatus(user: MemberIdentity): Promise<Onboa
   try {
     const response = await fetch(apiUrl("/api/member/data?action=onboarding-status"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({
         email: user.email,
         phone: user.phone,
@@ -110,8 +111,9 @@ export async function forceCompleteOnboardingRemote(
   accessToken?: string
 ): Promise<OnboardingStatusResult | null> {
   try {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+    const headers = await memberApiHeaders(
+      accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
+    );
     const response = await fetch(apiUrl("/api/member/data?action=force-complete-onboarding"), {
       method: "POST",
       headers,
@@ -134,7 +136,7 @@ export async function repairOnboardingRemote(user: MemberIdentity): Promise<Repa
   try {
     const response = await fetch(apiUrl("/api/member/data?action=repair-onboarding"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({
         email: user.email,
         phone: user.phone,

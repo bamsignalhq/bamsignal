@@ -1,4 +1,5 @@
 import type { DiscoverProfile, MemberSearchFilters, UserProfile } from "../types";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import { safeDiscoverProfile } from "../utils/safeProfile";
 import { apiUrl } from "./supabase";
@@ -29,7 +30,7 @@ export async function fetchDiscoverProfiles(
   try {
     const response = await fetch(apiUrl("/api/member/data?action=discover"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({
         email: user.email,
         phone: user.phone,
@@ -72,7 +73,7 @@ export async function searchMemberProfiles(
   try {
     const response = await fetch(apiUrl("/api/member/data?action=search"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({
         email: user.email,
         phone: user.phone,
@@ -112,7 +113,7 @@ export async function fetchMemberProfileById(
   try {
     const response = await fetch(apiUrl("/api/member/data?action=profile-by-id"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({ email: user.email, phone: user.phone, profileId })
     });
     const payload = await readResponseJson<{ profile?: DiscoverProfile }>(response);

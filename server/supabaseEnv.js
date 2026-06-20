@@ -109,8 +109,12 @@ export function resolveSupabaseAnonKey() {
   return normalizeEnvValue(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "");
 }
 
-/** Resolve Supabase user id from a member access token. */
-export async function verifySupabaseBearerUserId(bearer = "") {
+function normalizeBearerPhone(value = "") {
+  return String(value).replace(/\D/g, "").replace(/^234/, "");
+}
+
+/** Resolve Supabase auth user from a member access token. */
+export async function verifySupabaseBearerUser(bearer = "") {
   const token = String(bearer || "").trim();
   if (!token) return null;
 
@@ -126,5 +130,29 @@ export async function verifySupabaseBearerUserId(bearer = "") {
   });
   if (!response.ok) return null;
   const user = await response.json().catch(() => null);
-  return user?.id ? String(user.id) : null;
+  if (!user?.id) return null;
+
+  const meta =
+    user.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
+  const email = String(user.email || meta.email || "")
+    .trim()
+    .toLowerCase();
+  const phone = normalizeBearerPhone(meta.phone || user.phone || "");
+
+  return {
+    id: String(user.id),
+    email: email.includes("@") ? email : "",
+    phone,
+    username: String(meta.username || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^@+/, ""),
+    name: String(meta.name || meta.full_name || "").trim()
+  };
+}
+
+/** Resolve Supabase user id from a member access token. */
+export async function verifySupabaseBearerUserId(bearer = "") {
+  const user = await verifySupabaseBearerUser(bearer);
+  return user?.id || null;
 }

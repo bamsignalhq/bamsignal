@@ -1,4 +1,5 @@
 import type { UserProfile } from "../types";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import { isPremiumTrialActive } from "../utils/premiumTrial";
 import { apiUrl } from "./supabase";
@@ -35,7 +36,7 @@ export async function refreshPremiumStatus(
   try {
     const response = await fetch(apiUrl("/api/member/data?action=status"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({ email: user.email, phone: user.phone })
     });
     const payload = await readResponseJson<{ ok?: boolean; premium?: PremiumSnapshot }>(response);

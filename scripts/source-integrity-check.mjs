@@ -32,6 +32,10 @@ const adminShellSource = readSrc("src/components/admin/AdminShell.tsx");
 const paymentsSource = readSrc("src/services/payments.ts");
 const paymentReturnSource = readSrc("src/utils/paymentReturn.ts");
 const purchaseEmailSource = readSrc("server/services/purchaseEmail.js");
+const memberDataApiSource = readSrc("api/member/data.js");
+const memberAuthSource = readSrc("server/services/memberAuth.js");
+const memberDataClientSource = readSrc("src/services/memberData.ts");
+const memberApiAuthSource = readSrc("src/utils/memberApiAuth.ts");
 
 assertCheck(
   paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
@@ -124,6 +128,22 @@ assertCheck(
     adminShellSource.includes("validateHardSession()") &&
     adminShellSource.indexOf("{children}") > adminShellSource.indexOf('phase === "authorized"'),
   "admin shell must not render dashboard content before server validation"
+);
+assertCheck(
+  memberAuthSource.includes("PUBLIC_MEMBER_DATA_ACTIONS") &&
+    memberAuthSource.includes("requireMemberAuth") &&
+    memberAuthSource.includes("hasBodyIdentityMismatch"),
+  "member data API must resolve identity from verified bearer tokens"
+);
+assertCheck(
+  memberDataApiSource.includes("requireMemberAuth(req, body)") &&
+    !memberDataApiSource.includes("resolveRequestIdentity"),
+  "member data handler must not trust body identity"
+);
+assertCheck(
+  memberDataClientSource.includes("memberApiHeaders") &&
+    memberApiAuthSource.includes("supabase.auth.getSession"),
+  "member data client calls must attach Supabase bearer tokens"
 );
 
 console.log("source integrity ok");

@@ -1,5 +1,6 @@
 import type { UserProfile } from "../types";
 import { apiUrl } from "./supabase";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 
 async function postMemberTrust(
@@ -9,7 +10,7 @@ async function postMemberTrust(
 ) {
   const response = await fetch(apiUrl(`/api/member/data?action=${action}`), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await memberApiHeaders(),
     body: JSON.stringify({ email: user.email, phone: user.phone, ...body })
   });
   return readResponseJson<Record<string, unknown>>(response);
@@ -38,7 +39,7 @@ export async function checkUsernameRemote(
 ) {
   const response = await fetch(apiUrl("/api/member/data?action=check-username"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await memberApiHeaders(),
     body: JSON.stringify({
       email: user.email,
       phone: user.phone,

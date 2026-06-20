@@ -1,5 +1,6 @@
 import type { DatingProfile, DiscoverProfile, UserProfile } from "../types";
 import { apiUrl } from "./supabase";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import { appendAdminConsentHeader } from "../utils/adminConsent";
 import { shouldHideFromDiscovery } from "../utils/safety";
@@ -145,7 +146,7 @@ export async function syncMemberProfileRemote(
     const paused = Boolean(profile.profilePausedAt);
     const response = await fetch(apiUrl("/api/member/data?action=profile"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: await memberApiHeaders(),
       body: JSON.stringify({
         email: user.email,
         phone: user.phone,

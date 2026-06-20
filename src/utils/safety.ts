@@ -19,6 +19,7 @@ import { meetsDiscoveryQuality } from "./launchSeed";
 import { readJson, writeJson } from "./storage";
 import { persistReportRemote } from "../services/memberData";
 import { apiUrl } from "../services/supabase";
+import { memberApiHeaders } from "./memberApiAuth";
 import { trackSafetyBlock, trackSafetyReport } from "./safetyAnalytics";
 
 export function resolveSafetySettings(profile: {
@@ -109,15 +110,17 @@ export function blockUser(profileId: string): void {
       phone: ""
     });
     if (user.email || user.phone) {
-      void fetch(apiUrl("/api/member/data?action=user-block"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: user.email || "",
-          phone: user.phone || "",
-          targetProfileId: profileId
+      void memberApiHeaders().then((headers) =>
+        fetch(apiUrl("/api/member/data?action=user-block"), {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            email: user.email || "",
+            phone: user.phone || "",
+            targetProfileId: profileId
+          })
         })
-      }).catch(() => undefined);
+      ).catch(() => undefined);
     }
   }
   const matches = readJson<{ profileId: string; id?: string }[]>(STORAGE_KEYS.matches, []);

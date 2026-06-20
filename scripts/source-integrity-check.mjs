@@ -51,6 +51,8 @@ const photoUploadAttributionSource = readSrc("server/services/photoUploadAttribu
 const photoReviewServiceSource = readSrc("server/services/photoReview.js");
 const androidReleaseSource = readSrc("scripts/build-android-release.mjs");
 const androidVerifySource = readSrc("scripts/verify-android-assets.mjs");
+const goToAppSource = readSrc("src/services/goToApp.ts");
+const openAppCacheSource = readSrc("src/utils/openAppOnboardingCache.ts");
 
 assertCheck(
   paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
@@ -107,11 +109,11 @@ assertCheck(
 );
 assertCheck(
   appSource.includes("showOpenApp={isAuthed && isPublicHome}") &&
-    appSource.includes('flowLog("home_enter", { source: "open_app_fast" })') &&
-    appSource.includes("validateServerSession") &&
-    appSource.includes("repairGoToAppInBackground") &&
-    appSource.includes('navigateToPath("/home", true)'),
-  "Open App must route cached completed users to /home immediately"
+    appSource.includes("goToApp({ loginEmail: undefined })") &&
+    appSource.includes("open_app_server_confirmed") &&
+    !appSource.includes('flowLog("home_enter", { source: "open_app_fast" })') &&
+    appSource.includes("readOpenAppOnboardingCache"),
+  "Open App must route only after server onboarding status or cached fallback"
 );
 assertCheck(
   appSource.includes("setAuthPath(AUTH_SIGNUP_PATH)") &&
@@ -261,6 +263,13 @@ assertCheck(
     androidVerifySource.includes("swHash") &&
     androidVerifySource.includes("ANDROID_ASSET_FIX_HINT"),
   "android asset verifier must compare refs, hashes, build marker, and service worker cache"
+);
+assertCheck(
+  goToAppSource.includes("fetchOnboardingStatusWithTimeout") &&
+    goToAppSource.includes("hydrateMemberAppInBackground") &&
+    !goToAppSource.includes("await bootstrapMemberSession") &&
+    openAppCacheSource.includes("readOpenAppOnboardingCache"),
+  "Open App must confirm onboarding on the server before routing home"
 );
 
 console.log("source integrity ok");

@@ -42,6 +42,7 @@ import {
   syncComplianceDoneMarkerFromProfile
 } from "./services/compliance";
 import { normalizeOnboardingStatus } from "./utils/onboardingStatus";
+import { readOpenAppOnboardingCache } from "./utils/openAppOnboardingCache";
 import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
@@ -60,9 +61,9 @@ import {
   clearOpenAppPendingState,
   expireStaleOpenAppState,
   goToApp,
+  hydrateMemberAppInBackground,
   markOpenAppPending,
   OPEN_APP_FAILSAFE_MS,
-  repairGoToAppInBackground,
   validateServerSession
 } from "./services/goToApp";
 import { supabase } from "./services/supabase";
@@ -516,6 +517,7 @@ export function App() {
         return;
       }
       applyGoToAppResult(session, { blocking, source: "session_restore" });
+      hydrateMemberAppInBackground(merged, { loginEmail: merged.email || undefined });
     };
 
     if (blocking) {
@@ -846,6 +848,7 @@ export function App() {
     markOpenAppPending();
 
     let released = false;
+    let routed = false;
     const releaseOpenApp = () => {
       if (released) return;
       released = true;
@@ -854,7 +857,10 @@ export function App() {
       setOpenAppLoading(false);
     };
 
-    const applyBackgroundResult = (result: Awaited<ReturnType<typeof goToApp>>) => {
+    const applyOpenAppResult = (result: Awaited<ReturnType<typeof goToApp>>) => {
+      if (routed) return;
+      routed = true;
+
       if (!result.ok) {
         setMemberAppEntered(false);
         setIsAuthed(false);
@@ -863,65 +869,71 @@ export function App() {
         navigateToPath(AUTH_SIGNUP_PATH, true);
         return;
       }
+
       setUser(result.user);
       setIsAuthed(true);
+      setMemberAppEntered(true);
+      setAuthMessage("");
       setProfileComplete(result.route === "home");
+
       if (result.route === "home") {
         clearOnboardingDrafts();
         setTab("home");
-        if (normalizePath(window.location.pathname) !== "/home") {
-          navigateToPath("/home", true);
-        }
-        flowLog("home_enter", { source: "open_app_background" });
-        return;
+        navigateToPath("/home", true);
+        flowLog("home_enter", {
+          source: result.source === "cache_fallback" ? "open_app_cache_fallback" : "open_app_server_confirmed"
+        });
+      } else {
+        navigateToPath("/onboarding", true);
+        flowLog("onboarding_start", { source: "open_app_server_confirmed" });
       }
-      setProfileComplete(false);
-      navigateToPath("/onboarding", true);
-      flowLog("onboarding_start", { source: "open_app_background" });
+
+      hydrateMemberAppInBackground(
+        result.user,
+        { loginEmail: result.user.email || undefined },
+        (bootstrap) => {
+          if (bootstrap.nextRoute === "home" && result.route === "onboarding") {
+            setProfileComplete(true);
+            clearOnboardingDrafts();
+            setTab("home");
+            navigateToPath("/home", true);
+            flowLog("home_enter", { source: "open_app_hydrate_repair" });
+          }
+        }
+      );
     };
 
     const failsafeTimer = window.setTimeout(() => {
+      if (routed) {
+        releaseOpenApp();
+        return;
+      }
       void validateServerSession().then((validated) => {
-        if (validated.ok) {
-          setUser(validated.user);
-          setIsAuthed(true);
-          setMemberAppEntered(true);
-          setTab("home");
-          navigateToPath("/home", true);
-          flowLog("home_enter", { source: "open_app_failsafe" });
-          repairGoToAppInBackground({ loginEmail: validated.user.email || undefined }, applyBackgroundResult);
+        if (!validated.ok) {
+          applyOpenAppResult({ ok: false, route: "login" });
+          releaseOpenApp();
+          return;
+        }
+        if (readOpenAppOnboardingCache(validated.authUserId)) {
+          applyOpenAppResult({
+            ok: true,
+            route: "home",
+            user: validated.user,
+            authUserId: validated.authUserId,
+            status: null,
+            hydrated: false,
+            source: "cache_fallback"
+          });
         } else {
-          setIsAuthed(false);
-          setProfileComplete(false);
-          setMemberAppEntered(false);
-          setAuthPath(AUTH_SIGNUP_PATH);
-          navigateToPath(AUTH_SIGNUP_PATH, true);
+          applyOpenAppResult({ ok: false, route: "login" });
         }
         releaseOpenApp();
       });
     }, OPEN_APP_FAILSAFE_MS);
 
-    void validateServerSession().then((validated) => {
-      if (!validated.ok) {
-        setMemberAppEntered(false);
-        setIsAuthed(false);
-        setProfileComplete(false);
-        setAuthPath(AUTH_SIGNUP_PATH);
-        navigateToPath(AUTH_SIGNUP_PATH, true);
-        releaseOpenApp();
-        return;
-      }
-
-      setUser(validated.user);
-      setIsAuthed(true);
-      setMemberAppEntered(true);
-      setAuthMessage("");
-      setTab("home");
-      navigateToPath("/home", true);
-      flowLog("home_enter", { source: "open_app_fast" });
+    void goToApp({ loginEmail: undefined }).then((result) => {
+      applyOpenAppResult(result);
       releaseOpenApp();
-
-      repairGoToAppInBackground({ loginEmail: validated.user.email || undefined }, applyBackgroundResult);
     });
   }, [openAppLoading]);
 
@@ -1017,6 +1029,8 @@ export function App() {
       });
       if (!appResult.ok) {
         setMemberHydrating(false);
+        setAuthPath(AUTH_SIGNUP_PATH);
+        navigateToPath(AUTH_SIGNUP_PATH, true);
         return;
       }
       setUser(appResult.user);
@@ -1047,6 +1061,11 @@ export function App() {
         void refreshPremiumStatus(appResult.user).then((premium) => {
           setIsPremium(Boolean(premium.isPremium));
         });
+        hydrateMemberAppInBackground(appResult.user, {
+          forceOnboarding,
+          referralCode: ref,
+          loginEmail: meta?.loginEmail || withPhone.email
+        });
         return;
       }
       void refreshPremiumStatus(appResult.user).then((premium) => {
@@ -1064,6 +1083,11 @@ export function App() {
       }
       flowLog("home_enter");
       setMemberHydrating(false);
+      hydrateMemberAppInBackground(appResult.user, {
+        forceOnboarding,
+        referralCode: ref,
+        loginEmail: meta?.loginEmail || withPhone.email
+      });
     },
     [pendingTab]
   );

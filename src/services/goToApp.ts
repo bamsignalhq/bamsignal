@@ -2,13 +2,23 @@ import { AUTH_SIGNUP_PATH } from "../constants/routes";
 import { STORAGE_KEYS } from "../constants/limits";
 import type { DatingProfile, UserProfile } from "../types";
 import { profileFromSessionUser, resolveMemberIdentity } from "../utils/authIdentity";
+import {
+  clearOpenAppOnboardingCache,
+  readOpenAppOnboardingCache,
+  writeOpenAppOnboardingCache
+} from "../utils/openAppOnboardingCache";
 import { clearOnboardingDrafts, logRouteDecision } from "../utils/onboardingStatus";
 import { readJson } from "../utils/storage";
-import { bootstrapMemberSession } from "./memberData";
+import { bootstrapMemberSession, type MemberSessionBootstrapResult } from "./memberData";
 import type { OnboardingStatusResult } from "./onboardingRepair";
+import {
+  applyOnboardingRepairLocal,
+  fetchOnboardingStatusWithTimeout
+} from "./onboardingRepair";
 import { supabase } from "./supabase";
 
 export const OPEN_APP_FAILSAFE_MS = 2000;
+export const OPEN_APP_STATUS_TIMEOUT_MS = 2000;
 
 const OPEN_APP_SESSION_KEYS = {
   openingState: "bamsignal-opening-state",
@@ -17,7 +27,15 @@ const OPEN_APP_SESSION_KEYS = {
 } as const;
 
 export type GoToAppResult =
-  | { ok: true; route: "home" | "onboarding"; user: UserProfile; status: OnboardingStatusResult | null; hydrated: boolean }
+  | {
+      ok: true;
+      route: "home" | "onboarding";
+      user: UserProfile;
+      authUserId: string;
+      status: OnboardingStatusResult | null;
+      hydrated: boolean;
+      source: "server" | "cache_fallback";
+    }
   | { ok: false; route: "login" };
 
 let goToAppInFlight: Promise<GoToAppResult> | null = null;
@@ -44,7 +62,9 @@ export function expireStaleOpenAppState(): boolean {
 }
 
 /** Server-validated Supabase session — not localStorage profile alone. */
-export async function validateServerSession(): Promise<{ ok: true; user: UserProfile } | { ok: false }> {
+export async function validateServerSession(): Promise<
+  { ok: true; user: UserProfile; authUserId: string } | { ok: false }
+> {
   if (!supabase) return { ok: false };
 
   const {
@@ -65,18 +85,18 @@ export async function validateServerSession(): Promise<{ ok: true; user: UserPro
   const profile = resolveMemberIdentity(profileFromSessionUser(user), {
     loginEmail: stored.email || undefined
   });
-  return { ok: true, user: profile };
+  return { ok: true, user: profile, authUserId: user.id };
 }
 
-export function navigateOpenAppFallback(hasSession: boolean): void {
-  if (hasSession) {
+export function navigateOpenAppFallback(hasSession: boolean, authUserId = ""): void {
+  if (hasSession && authUserId && readOpenAppOnboardingCache(authUserId)) {
     window.location.replace("/home");
     return;
   }
   window.location.replace(AUTH_SIGNUP_PATH);
 }
 
-/** Authoritative entry from public homepage — session + server hydrate/repair, never local drafts. */
+/** Authoritative entry from public homepage — session + server onboarding status, never local drafts. */
 export async function goToApp(options?: {
   forceOnboarding?: boolean;
   referralCode?: string | null;
@@ -109,48 +129,105 @@ async function runGoToApp(options?: {
   const user = resolveMemberIdentity(validated.user, {
     loginEmail: options?.loginEmail || undefined
   });
+  const authUserId = validated.authUserId;
 
-  const sessionResult = await bootstrapMemberSession(user, {
-    forceOnboarding: options?.forceOnboarding,
-    referralCode: options?.referralCode,
-    loginEmail: options?.loginEmail || undefined
-  });
-  const rawProfile = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
-
-  logRouteDecision(user, rawProfile, sessionResult.nextRoute, {
-    source: "go_to_app",
-    hydrated: sessionResult.hydrated,
-    repaired: sessionResult.status?.repaired,
-    repairRoute: sessionResult.status?.nextRoute ?? null,
-    reason: sessionResult.status?.reason ?? null
-  });
-
-  if (sessionResult.nextRoute === "home") {
-    clearOnboardingDrafts();
+  if (options?.forceOnboarding) {
+    clearOpenAppOnboardingCache(authUserId);
+    return {
+      ok: true,
+      route: "onboarding",
+      user,
+      authUserId,
+      status: null,
+      hydrated: false,
+      source: "server"
+    };
   }
 
+  const statusResult = await fetchOnboardingStatusWithTimeout(user, OPEN_APP_STATUS_TIMEOUT_MS);
+
+  if (statusResult === "timeout" || statusResult === null) {
+    if (readOpenAppOnboardingCache(authUserId)) {
+      return {
+        ok: true,
+        route: "home",
+        user,
+        authUserId,
+        status: null,
+        hydrated: false,
+        source: "cache_fallback"
+      };
+    }
+    return { ok: false, route: "login" };
+  }
+
+  if (statusResult.completed || statusResult.nextRoute === "/home") {
+    writeOpenAppOnboardingCache(authUserId);
+    if (statusResult.datingProfile) {
+      applyOnboardingRepairLocal({
+        ok: true,
+        completed: true,
+        repaired: Boolean(statusResult.repaired),
+        nextRoute: "/home",
+        datingProfile: statusResult.datingProfile
+      });
+    }
+    clearOnboardingDrafts();
+    logRouteDecision(user, readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {}), "home", {
+      source: "go_to_app",
+      hydrated: false,
+      repaired: statusResult.repaired,
+      repairRoute: statusResult.nextRoute,
+      reason: statusResult.reason
+    });
+    return {
+      ok: true,
+      route: "home",
+      user,
+      authUserId,
+      status: statusResult,
+      hydrated: false,
+      source: "server"
+    };
+  }
+
+  clearOpenAppOnboardingCache(authUserId);
+  logRouteDecision(user, readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {}), "onboarding", {
+    source: "go_to_app",
+    hydrated: false,
+    repaired: statusResult.repaired,
+    repairRoute: statusResult.nextRoute,
+    reason: statusResult.reason
+  });
   return {
     ok: true,
-    route: sessionResult.nextRoute,
+    route: "onboarding",
     user,
-    status: sessionResult.status,
-    hydrated: sessionResult.hydrated
+    authUserId,
+    status: statusResult,
+    hydrated: false,
+    source: "server"
   };
 }
 
-/** Hydrate/repair after fast Open App navigation — never blocks the click handler. */
-export function repairGoToAppInBackground(
+/** Hydrate member bundle after routing — never blocks Open App click handler. */
+export function hydrateMemberAppInBackground(
+  user: Pick<UserProfile, "email" | "phone" | "name" | "username">,
   options?: {
     forceOnboarding?: boolean;
     referralCode?: string | null;
     loginEmail?: string | null;
   },
-  onResult?: (result: GoToAppResult) => void
+  onResult?: (result: MemberSessionBootstrapResult) => void
 ): void {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(OPEN_APP_SESSION_KEYS.restorePending, String(Date.now()));
   }
-  void goToApp(options)
+  void bootstrapMemberSession(user, {
+    forceOnboarding: options?.forceOnboarding,
+    referralCode: options?.referralCode,
+    loginEmail: options?.loginEmail || undefined
+  })
     .then((result) => {
       onResult?.(result);
     })
@@ -159,4 +236,33 @@ export function repairGoToAppInBackground(
         sessionStorage.removeItem(OPEN_APP_SESSION_KEYS.restorePending);
       }
     });
+}
+
+/** @deprecated Use hydrateMemberAppInBackground after goToApp routing. */
+export function repairGoToAppInBackground(
+  options?: {
+    forceOnboarding?: boolean;
+    referralCode?: string | null;
+    loginEmail?: string | null;
+  },
+  onResult?: (result: GoToAppResult) => void
+): void {
+  const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+  hydrateMemberAppInBackground(
+    stored,
+    options,
+    onResult
+      ? (bootstrap) => {
+          onResult({
+            ok: true,
+            route: bootstrap.nextRoute,
+            user: stored,
+            authUserId: "",
+            status: bootstrap.status,
+            hydrated: bootstrap.hydrated,
+            source: "server"
+          });
+        }
+      : undefined
+  );
 }

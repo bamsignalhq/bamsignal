@@ -91,18 +91,30 @@ export async function fetchOnboardingStatus(user: MemberIdentity): Promise<Onboa
     const response = await fetch(apiUrl("/api/member/data?action=onboarding-status"), {
       method: "POST",
       headers: await memberApiHeaders(),
-      body: JSON.stringify({
-        email: user.email,
-        phone: user.phone,
-        name: user.name,
-        username: user.username
-      })
+      body: JSON.stringify({ name: user.name })
     });
     const payload = await readResponseJson<OnboardingStatusResult>(response);
     if (!response.ok || !payload?.ok) return null;
     return payload;
   } catch {
     return null;
+  }
+}
+
+export async function fetchOnboardingStatusWithTimeout(
+  user: MemberIdentity,
+  timeoutMs = 2000
+): Promise<OnboardingStatusResult | null | "timeout"> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      fetchOnboardingStatus(user),
+      new Promise<"timeout">((resolve) => {
+        timer = setTimeout(() => resolve("timeout"), timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 

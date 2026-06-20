@@ -233,12 +233,15 @@ export function App() {
   const userRef = useRef(user);
   const logoutInProgressRef = useRef(false);
 
+  const currentPathname = typeof window !== "undefined" ? normalizePath(window.location.pathname) : "/";
+  const isPublicSurface =
+    !isNative && isPublicWebRoute(currentPathname) && !paystackCallbackActive;
   const isGuest = !isAuthed;
   const isPublicHome =
-    !isNative && normalizePath(window.location.pathname) === "/" && !paystackCallbackActive;
-  const isOnboardingRoute = isOnboardingPath(memberPathname);
+    !isNative && currentPathname === "/" && !paystackCallbackActive;
+  const isOnboardingRoute = isOnboardingPath(currentPathname);
   const showMarketingHome =
-    isPublicHome && (!isAuthed || !memberAppEntered) && !isOnboardingRoute && !paystackCallbackActive;
+    isPublicHome && !isOnboardingRoute && !paystackCallbackActive;
   const showGuestChrome = isGuest || showMarketingHome;
   void complianceTick;
   const datingProfileForCompliance = getDatingProfile();
@@ -247,6 +250,7 @@ export function App() {
   const showComplianceGate =
     isAuthed &&
     memberAppEntered &&
+    !isPublicSurface &&
     !memberHydrating &&
     !isOnboardingRoute &&
     profileComplete === true &&
@@ -255,7 +259,7 @@ export function App() {
     });
   const complianceSyncPending = hasComplianceSyncPending();
   const memberAccessReady =
-    isAuthed && memberAppEntered && profileComplete === true && !showComplianceGate;
+    isAuthed && memberAppEntered && !isPublicSurface && profileComplete === true && !showComplianceGate;
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -352,18 +356,19 @@ export function App() {
   }, [isNative]);
 
   useEffect(() => {
-    if (!isMemberAppPath(memberPathname)) return;
+    const pathname = normalizePath(window.location.pathname);
+    if (!isMemberAppPath(pathname)) return;
     const guard = evaluateMemberRouteGuard({
       authLoading,
       memberHydrating,
       isAuthed,
       profileComplete,
-      pathname: memberPathname
+      pathname
     });
     if (
       (guard.phase === "redirect" || guard.phase === "unauthenticated") &&
       guard.redirectTo &&
-      normalizePath(memberPathname) !== normalizePath(guard.redirectTo)
+      pathname !== normalizePath(guard.redirectTo)
     ) {
       navigateToPath(guard.redirectTo, true);
     }
@@ -796,11 +801,22 @@ export function App() {
   const enterMemberApp = useCallback(async () => {
     if (openAppLoading) return;
     setOpenAppLoading(true);
-    setMemberHydrating(true);
     try {
+      if (isAuthed && profileComplete === true) {
+        clearOnboardingDrafts();
+        setMemberAppEntered(true);
+        setAuthMessage("");
+        setTab("home");
+        navigateToPath("/home", true);
+        flowLog("home_enter", { source: "open_app_cached" });
+      }
+
       const result = await goToApp();
       if (!result.ok) {
-        openAuth("login");
+        setMemberAppEntered(false);
+        setProfileComplete(false);
+        setAuthPath(AUTH_SIGNUP_PATH);
+        navigateToPath(AUTH_SIGNUP_PATH, true);
         return;
       }
 
@@ -813,20 +829,19 @@ export function App() {
         clearOnboardingDrafts();
         setProfileComplete(true);
         setTab("home");
-        navigateToPath("/home");
+        navigateToPath("/home", true);
         flowLog("home_enter", { source: "open_app" });
         return;
       }
 
       setProfileComplete(false);
       setTab("home");
-      navigateToPath("/onboarding");
+      navigateToPath("/onboarding", true);
       flowLog("onboarding_start", { source: "open_app" });
     } finally {
-      setMemberHydrating(false);
       setOpenAppLoading(false);
     }
-  }, [openAppLoading, openAuth]);
+  }, [isAuthed, openAppLoading, profileComplete]);
 
   useEffect(() => {
     if (!paystackCallbackActive || authLoading) return;
@@ -1449,13 +1464,13 @@ export function App() {
     );
   }
 
-  const memberRouteGuard = isMemberAppPath(memberPathname)
+  const memberRouteGuard = isMemberAppPath(currentPathname)
     ? evaluateMemberRouteGuard({
         authLoading,
         memberHydrating,
         isAuthed,
         profileComplete,
-        pathname: memberPathname
+        pathname: currentPathname
       })
     : null;
 
@@ -1483,7 +1498,7 @@ export function App() {
   ) {
     if (
       memberRouteGuard.redirectTo &&
-      normalizePath(memberPathname) !== normalizePath(memberRouteGuard.redirectTo)
+      currentPathname !== normalizePath(memberRouteGuard.redirectTo)
     ) {
       navigateToPath(memberRouteGuard.redirectTo, true);
     }
@@ -1674,7 +1689,7 @@ export function App() {
 
   return (
     <PremiumCheckoutProvider value={premiumCheckoutValue}>
-    <div className={`app ${theme} platform-root ${memberAppEntered ? "platform-root--member" : ""}`}>
+    <div className={`app ${theme} platform-root ${memberAppEntered && !isPublicSurface ? "platform-root--member" : ""}`}>
       <div
         className="platform-shell"
       >
@@ -1686,14 +1701,14 @@ export function App() {
             isGuest={!isAuthed}
             onLogin={() => openAuth("login")}
             onLogoClick={goHome}
-            showOpenApp={isAuthed && !memberAppEntered && isPublicHome}
+            showOpenApp={isAuthed && isPublicHome}
             onOpenApp={enterMemberApp}
             openAppLoading={openAppLoading}
-            showNotifications={isAuthed && memberAppEntered}
+            showNotifications={isAuthed && memberAppEntered && !isPublicSurface}
             notificationCount={notificationUnread}
             onNotificationsClick={() => setNotificationsOpen(true)}
             showEarlyAccess={false}
-            showMemberNav={isAuthed && memberAppEntered}
+            showMemberNav={isAuthed && memberAppEntered && !isPublicSurface}
             memberTab={tab}
             onMemberNavigate={navigateTab}
             likeCount={incomingSignals}
@@ -1802,7 +1817,7 @@ export function App() {
               }}
             />
           )}
-          {memberAccessReady && !memberOverlay && tab === "home" && memberPathname === "/home" && (
+          {memberAccessReady && !memberOverlay && tab === "home" && currentPathname === "/home" && (
             <MemberRouteBoundary name="home">
               <HomePage
                 user={user}

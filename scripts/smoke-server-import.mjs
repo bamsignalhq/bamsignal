@@ -73,6 +73,33 @@ assertSmoke(
       purchaseEmailSource.indexOf("const sendResult = await sendResendPurchaseEmail"),
   "purchase confirmation email must be claimed once per reference before sending"
 );
+assertSmoke(
+  appSource.includes("const isPublicSurface") &&
+    appSource.includes('memberAppEntered && !isPublicSurface ? "platform-root--member" : ""') &&
+    appSource.includes("showMemberNav={isAuthed && memberAppEntered && !isPublicSurface}"),
+  "public routes must not render the member shell"
+);
+assertSmoke(
+  appSource.includes("showOpenApp={isAuthed && isPublicHome}") &&
+    appSource.includes('flowLog("home_enter", { source: "open_app_cached" })') &&
+    appSource.includes('navigateToPath("/home", true)'),
+  "Open App must route cached completed users to /home immediately"
+);
+assertSmoke(
+  appSource.includes("setAuthPath(AUTH_SIGNUP_PATH)") &&
+    appSource.includes("navigateToPath(AUTH_SIGNUP_PATH, true)"),
+  "Open App without a session must route to /love/sign"
+);
+assertSmoke(
+  appSource.includes("isMemberAppPath(currentPathname)") &&
+    appSource.includes("pathname: currentPathname"),
+  "member route guard must evaluate the current URL, not stale route state"
+);
+assertSmoke(
+  !appSource.includes("You're signed in. Go to app") &&
+    !appSource.includes("You’re signed in. Go to app"),
+  "intrusive signed-in homepage banner must stay removed"
+);
 
 async function waitForServer(baseUrl) {
   let lastError;

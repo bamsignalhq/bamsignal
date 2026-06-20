@@ -8,7 +8,7 @@ export const USER_MESSAGES = {
   signupCompleteFailed: "We couldn't finish setting up your account. Please try again.",
   progressSaveFailed: "We couldn't save your progress. Please try again.",
   photoUploadFailed: "Couldn't upload photo. Please try again.",
-  profileSaveFailed: "We couldn't save just now. Your changes are kept on this device — please try again.",
+  profileSaveFailed: "We couldn't save your profile. Please try again.",
   profileSaved: "Your profile was saved.",
   paymentNotCompleted: "No worries — your upgrade is still available whenever you're ready."
 } as const;

@@ -456,6 +456,15 @@ assertCheck(
   "relationship and profile intentions must cap at three selections client and server"
 );
 assertCheck(
+  profilePageSource.includes("profile-save-feedback") &&
+    profilePageSource.includes("syncMemberProfileWithResult") &&
+    profilePageSource.includes("hydrateMemberData") &&
+    profilePageSource.includes("returnToProfileOverview") &&
+    profilePageSource.includes("USER_MESSAGES.profileSaved") &&
+    profilePageSource.includes("600"),
+  "profile save must confirm below Save, refresh data, and return to overview"
+);
+assertCheck(
   sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&
     sourceIntegrityScriptSource.includes("source integrity skipped"),
   "source integrity must skip gracefully when src/ is absent"

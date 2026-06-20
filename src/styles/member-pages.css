@@ -2371,6 +2371,23 @@
   border-top: 1px solid var(--border);
 }
 
+.profile-save-feedback {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: #b91c1c;
+  text-align: center;
+}
+
+.profile-save-feedback--inline {
+  margin-top: 0.75rem;
+}
+
+.profile-save-feedback--success {
+  color: color-mix(in srgb, #166534 85%, var(--text));
+}
+
 .settings-hub-card {
   padding: 0;
   overflow: hidden;

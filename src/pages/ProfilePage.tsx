@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Mic, Moon, Settings, Sun } from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay, profileIntentLabel, toggleIntentSelection, INTENT_LIMIT_MESSAGE } from "../constants/intents";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
@@ -54,7 +54,8 @@ import {
 import { notifyVerificationApproved } from "../utils/notifyHelpers";
 import { MAX_PROFILE_PHOTOS } from "../constants/photos";
 import { persistCoverPhotoChange } from "../utils/persistCoverPhoto";
-import { syncMemberProfileRemote } from "../services/cityHome";
+import { syncMemberProfileRemote, syncMemberProfileWithResult } from "../services/cityHome";
+import { hydrateMemberData } from "../services/memberData";
 import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { TwoFactorSettingsCard } from "../components/TwoFactorSettingsCard";
 import { ContactForm } from "../components/ContactForm";
@@ -74,6 +75,13 @@ import { useFastConnectionCheckout } from "../hooks/useFastConnectionCheckout";
 import { fastConnectionActiveLabel } from "../utils/quickie";
 
 type ProfileView = "overview" | "edit" | "settings";
+type SaveFeedbackSource = "edit" | "preferences";
+
+type SaveFeedback = {
+  text: string;
+  success: boolean;
+  source: SaveFeedbackSource;
+};
 type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help" | "about";
 type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "details" | "prompts" | "voice";
 
@@ -200,6 +208,8 @@ export function ProfilePage({
   );
   const [saved, setSaved] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
+  const saveNavigateTimerRef = useRef<number | null>(null);
   const [modMessage, setModMessage] = useState("");
   const [modMessageSuccess, setModMessageSuccess] = useState(false);
   const [view, setView] = useState<ProfileView>("overview");
@@ -256,37 +266,83 @@ export function ProfilePage({
     onPurchaseBoost(product);
   };
 
-  const save = async () => {
+  useEffect(() => {
+    return () => {
+      if (saveNavigateTimerRef.current !== null) {
+        window.clearTimeout(saveNavigateTimerRef.current);
+      }
+    };
+  }, []);
+
+  const showSaveFeedback = (text: string, success: boolean, source: SaveFeedbackSource) => {
+    if (saveNavigateTimerRef.current !== null) {
+      window.clearTimeout(saveNavigateTimerRef.current);
+      saveNavigateTimerRef.current = null;
+    }
+    setSaveFeedback({ text, success, source });
+  };
+
+  const clearSaveFeedback = () => {
+    setSaveFeedback(null);
+    setSaved(false);
+  };
+
+  const returnToProfileOverview = () => {
+    setView("overview");
+    setSettingsPanel("hub");
+    setEditOpen(null);
+    clearSaveFeedback();
+  };
+
+  const triggerSave = (source: SaveFeedbackSource) => {
+    void save(source);
+  };
+
+  const save = async (source: SaveFeedbackSource = "edit") => {
     if (saveBusy) return;
     const nameError = validateDisplayName(user.name);
     if (nameError) {
-      showModMessage(nameError);
+      showSaveFeedback(nameError, false, source);
       return;
     }
     const bioError = validateUserText(profile.bio);
     if (bioError) {
-      showModMessage(bioError);
+      showSaveFeedback(bioError, false, source);
       return;
     }
     const profileLeak = validateProfileContactLeaks(profile, user);
     if (profileLeak.blocked) {
-      showModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
+      showSaveFeedback(CONTACT_LEAK_BLOCK_MESSAGE, false, source);
       return;
     }
     setSaveBusy(true);
+    setSaveFeedback(null);
     try {
       const normalized = normalizeDatingProfile({ ...profile, premium: isPremium });
+      const normalizedPrefs = normalizeMatchPreferences(prefs);
       writeJson(STORAGE_KEYS.datingProfile, normalized);
-      writeJson(STORAGE_KEYS.matchPreferences, prefs);
-      const synced = await syncMemberProfileRemote(user, normalized);
+      writeJson(STORAGE_KEYS.matchPreferences, normalizedPrefs);
+      const synced = await syncMemberProfileWithResult(user, normalized);
       onUserChange({ ...user, name: user.name });
-      if (!synced) {
-        showModMessage(USER_MESSAGES.profileSaveFailed);
+      if (!synced.ok) {
+        showSaveFeedback(USER_MESSAGES.profileSaveFailed, false, source);
         return;
       }
+      await hydrateMemberData(user);
+      const refreshed = normalizeDatingProfile({
+        ...(synced.profile ?? readJson(STORAGE_KEYS.datingProfile, normalized)),
+        premium: isPremium
+      });
+      setProfile(refreshed);
+      writeJson(STORAGE_KEYS.datingProfile, refreshed);
+      setPrefs(normalizedPrefs);
+      writeJson(STORAGE_KEYS.matchPreferences, normalizedPrefs);
       setSaved(true);
-      showModMessage(USER_MESSAGES.profileSaved, true);
-      window.setTimeout(() => setSaved(false), 2000);
+      showSaveFeedback(USER_MESSAGES.profileSaved, true, source);
+      saveNavigateTimerRef.current = window.setTimeout(() => {
+        saveNavigateTimerRef.current = null;
+        returnToProfileOverview();
+      }, 600);
     } finally {
       setSaveBusy(false);
     }
@@ -834,9 +890,22 @@ export function ProfilePage({
           </EditAccordion>
 
           <div className="profile-edit-save-bar">
-            <button type="button" className="btn-primary btn-full" onClick={() => void save()} disabled={saveBusy}>
+            <button
+              type="button"
+              className="btn-primary btn-full"
+              onClick={() => triggerSave("edit")}
+              disabled={saveBusy}
+            >
               {saveBusy ? "Saving…" : saved ? "Saved" : "Save"}
             </button>
+            {saveFeedback?.source === "edit" ? (
+              <p
+                className={`profile-save-feedback${saveFeedback.success ? " profile-save-feedback--success" : ""}`}
+                role="status"
+              >
+                {saveFeedback.text}
+              </p>
+            ) : null}
           </div>
         </>
       )}
@@ -972,9 +1041,24 @@ export function ProfilePage({
                 }
               />
 
-              <button type="button" className="btn-primary btn-full" onClick={save}>
-                {BUTTON_COPY.save}
+              <button
+                type="button"
+                className="btn-primary btn-full"
+                onClick={() => triggerSave("preferences")}
+                disabled={saveBusy}
+              >
+                {saveBusy ? "Saving…" : saved && saveFeedback?.success ? "Saved" : BUTTON_COPY.save}
               </button>
+              {saveFeedback?.source === "preferences" ? (
+                <p
+                  className={`profile-save-feedback profile-save-feedback--inline${
+                    saveFeedback.success ? " profile-save-feedback--success" : ""
+                  }`}
+                  role="status"
+                >
+                  {saveFeedback.text}
+                </p>
+              ) : null}
             </section>
           )}
 

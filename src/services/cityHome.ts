@@ -138,10 +138,15 @@ export async function setAdminCityHomeHidden(profileId: string, hidden: boolean)
   }
 }
 
-export async function syncMemberProfileRemote(
+export type MemberProfileSyncResult = {
+  ok: boolean;
+  profile?: DatingProfile;
+};
+
+export async function syncMemberProfileWithResult(
   user: Pick<UserProfile, "email" | "phone" | "name" | "username">,
   profile: DatingProfile
-): Promise<boolean> {
+): Promise<MemberProfileSyncResult> {
   try {
     const paused = Boolean(profile.profilePausedAt);
     const response = await fetch(apiUrl("/api/member/data?action=profile"), {
@@ -159,9 +164,24 @@ export async function syncMemberProfileRemote(
         discoverable: !shouldHideFromDiscovery(profile) && !paused
       })
     });
-    const payload = await readResponseJson<{ ok?: boolean }>(response);
-    return Boolean(response.ok && payload?.ok);
+    const payload = await readResponseJson<{
+      ok?: boolean;
+      profile?: { profile?: Record<string, unknown> };
+    }>(response);
+    const ok = Boolean(response.ok && payload?.ok);
+    const remoteProfile =
+      payload?.profile?.profile && typeof payload.profile.profile === "object"
+        ? normalizeDatingProfile(payload.profile.profile)
+        : undefined;
+    return { ok, profile: remoteProfile };
   } catch {
-    return false;
+    return { ok: false };
   }
+}
+
+export async function syncMemberProfileRemote(
+  user: Pick<UserProfile, "email" | "phone" | "name" | "username">,
+  profile: DatingProfile
+): Promise<boolean> {
+  return (await syncMemberProfileWithResult(user, profile)).ok;
 }

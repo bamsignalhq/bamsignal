@@ -1,9 +1,8 @@
 import {
   appendPaymentAudit,
-  markPurchaseEmailSent,
-  purchaseEmailAlreadySent,
   recordPaymentVerified
 } from "./paymentEvents.js";
+import { claimFulfillmentEmailSend, fulfillmentEmailAlreadySent } from "./paymentFulfillments.js";
 import {
   buildPurchaseConfirmationEmailBody,
   buildPurchaseConfirmationPlainText,
@@ -138,7 +137,7 @@ export async function sendPurchaseConfirmationEmail({
     returnPath
   });
 
-  if (await purchaseEmailAlreadySent(reference)) {
+  if (await fulfillmentEmailAlreadySent(reference)) {
     await appendPaymentAudit(reference, "payment_success_email_skipped", {
       reason: "already_sent",
       userId: userId || null,
@@ -148,7 +147,7 @@ export async function sendPurchaseConfirmationEmail({
     return { ok: true, skipped: true, reason: "already_sent" };
   }
 
-  const claimed = await markPurchaseEmailSent(reference);
+  const claimed = await claimFulfillmentEmailSend(reference);
   if (!claimed) {
     await appendPaymentAudit(reference, "payment_success_email_skipped", {
       reason: "already_sent",

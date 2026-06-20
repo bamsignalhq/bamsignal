@@ -71,6 +71,33 @@ export async function ensureSubscriptionEventsTable() {
   `);
 }
 
+export async function ensurePaymentFulfillmentsTable() {
+  if (!pool) return;
+  await query(`
+    create table if not exists payment_fulfillments (
+      id uuid primary key default gen_random_uuid(),
+      paystack_reference text not null unique,
+      user_id text,
+      product_type text not null,
+      product_id text,
+      amount_kobo bigint,
+      currency text,
+      status text not null default 'pending',
+      fulfilled_at timestamptz,
+      email_sent_at timestamptz,
+      raw_payload jsonb not null default '{}'::jsonb,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    )
+  `);
+  await query(
+    "create index if not exists payment_fulfillments_user_id_idx on payment_fulfillments (user_id, created_at desc)"
+  );
+  await query(
+    "create index if not exists payment_fulfillments_product_idx on payment_fulfillments (product_type, product_id, created_at desc)"
+  );
+}
+
 export async function ensureAppSignalsTable() {
   if (!pool) return;
 
@@ -168,6 +195,7 @@ export async function ensureAllTables() {
   await ensurePlatformSettingsTable();
   await ensureAdminUsersTable();
   await ensureSubscriptionEventsTable();
+  await ensurePaymentFulfillmentsTable();
   await ensureAppSignalsTable();
   await ensureAppMatchesTable();
   await ensureAppMessagesTable();

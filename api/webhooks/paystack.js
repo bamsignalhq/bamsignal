@@ -3,6 +3,11 @@ import { activateAppUserFastConnectionPass, activateAppUserPremium, query, withD
 import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../../server/cityHome.js";
 import { createVipInviteLink } from "../../server/telegram.js";
 import { sendPurchaseConfirmationEmail } from "../../server/services/purchaseEmail.js";
+import {
+  claimPaymentFulfillment,
+  getPaymentFulfillment,
+  markPaymentFulfillmentStatus
+} from "../../server/services/paymentFulfillments.js";
 
 async function readRawBody(req) {
   const chunks = [];
@@ -133,6 +138,36 @@ export default async function handler(req, res) {
     const returnPath = normalizeReturnPath(metadata.return_path || metadata.returnPath);
     let activationResult = null;
 
+    const claim = reference
+      ? await claimPaymentFulfillment({
+          reference,
+          userId: metadata.user_id || metadata.userId || null,
+          productType,
+          productId,
+          amountKobo: Number(data.amount || 0),
+          currency: String(data.currency || "").trim() || null,
+          rawPayload: { source: "webhook", event: event.event, data }
+        })
+      : null;
+    const existing = reference ? claim || (await getPaymentFulfillment(reference)) : null;
+    if (existing?.status === "fulfilled") {
+      return res.status(200).json({ ok: true, idempotent: true, reference, productType, productId });
+    }
+
+    const expectedAmount = Number(metadata.expected_amount_kobo || 0);
+    if (expectedAmount > 0 && Number(data.amount || 0) !== expectedAmount) {
+      if (reference) {
+        await markPaymentFulfillmentStatus(reference, "failed", {
+          productType,
+          productId,
+          amountKobo: Number(data.amount || 0),
+          currency: String(data.currency || "").trim() || null,
+          rawPayload: { error: "amount_mismatch", expectedAmount }
+        });
+      }
+      return res.status(200).json({ ok: true, ignored: true, reason: "amount_mismatch" });
+    }
+
     await withDbRetry(async () => {
       activationResult = await fulfillWebhookPurchase({
         productType,
@@ -149,6 +184,15 @@ export default async function handler(req, res) {
         [event.event, email || null, metadata.user_id || metadata.userId || null, event]
       );
     });
+
+    if (reference) {
+      await markPaymentFulfillmentStatus(reference, "fulfilled", {
+        productType,
+        productId,
+        amountKobo: Number(data.amount || 0),
+        currency: String(data.currency || "").trim() || null
+      });
+    }
 
     if (reference && email) {
       await sendPurchaseConfirmationEmail({

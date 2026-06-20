@@ -67,10 +67,15 @@ assertCheck(
   "session restore must not swallow Paystack callback params"
 );
 assertCheck(
-  purchaseEmailSource.includes("purchaseEmailAlreadySent(reference)") &&
-    purchaseEmailSource.includes("markPurchaseEmailSent(reference)") &&
-    purchaseEmailSource.indexOf("markPurchaseEmailSent(reference)") <
-      purchaseEmailSource.indexOf("const sendResult = await sendResendPurchaseEmail"),
+  (purchaseEmailSource.includes("fulfillmentEmailAlreadySent(reference)") ||
+    purchaseEmailSource.includes("purchaseEmailAlreadySent(reference)")) &&
+    (purchaseEmailSource.includes("claimFulfillmentEmailSend(reference)") ||
+      purchaseEmailSource.includes("markPurchaseEmailSent(reference)")) &&
+    (purchaseEmailSource.indexOf("claimFulfillmentEmailSend(reference)") >= 0
+      ? purchaseEmailSource.indexOf("claimFulfillmentEmailSend(reference)") <
+        purchaseEmailSource.indexOf("const sendResult = await sendResendPurchaseEmail")
+      : purchaseEmailSource.indexOf("markPurchaseEmailSent(reference)") <
+        purchaseEmailSource.indexOf("const sendResult = await sendResendPurchaseEmail")),
   "purchase confirmation email must be claimed once per reference before sending"
 );
 assertCheck(

@@ -6,6 +6,11 @@ import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../c
 import { createVipInviteLink } from "../telegram.js";
 import { planDaysFromAmount, normalizePlans } from "../pricing.js";
 import { sendPurchaseConfirmationEmail } from "../services/purchaseEmail.js";
+import {
+  claimPaymentFulfillment,
+  getPaymentFulfillment,
+  markPaymentFulfillmentStatus
+} from "../services/paymentFulfillments.js";
 
 export const paystackRouter = express.Router();
 
@@ -77,6 +82,34 @@ async function activatePurchase(event) {
     return { ok: false, reason: "No user identifier in Paystack metadata/customer" };
   }
 
+  if (reference) {
+    const claim = await claimPaymentFulfillment({
+      reference,
+      userId: metadata.user_id || metadata.userId || null,
+      productType,
+      productId,
+      amountKobo: Number(data.amount || 0),
+      currency: String(data.currency || "").trim() || null,
+      rawPayload: { source: "webhook_route", event: event.event, data }
+    });
+    const existing = claim || (await getPaymentFulfillment(reference));
+    if (existing?.status === "fulfilled") {
+      return { ok: true, idempotent: true, reference, productType, productId };
+    }
+
+    const expectedAmount = Number(metadata.expected_amount_kobo || 0);
+    if (expectedAmount > 0 && Number(data.amount || 0) !== expectedAmount) {
+      await markPaymentFulfillmentStatus(reference, "failed", {
+        productType,
+        productId,
+        amountKobo: Number(data.amount || 0),
+        currency: String(data.currency || "").trim() || null,
+        rawPayload: { error: "amount_mismatch", expectedAmount }
+      });
+      return { ok: false, reference, reason: "amount_mismatch" };
+    }
+  }
+
   let activation = null;
   if (productType === "quickie") {
     const passDays = Math.max(1, Math.round(Number(metadata.quickie_days || 7)));
@@ -124,6 +157,12 @@ async function activatePurchase(event) {
   }
 
   if (reference && email) {
+    await markPaymentFulfillmentStatus(reference, "fulfilled", {
+      productType,
+      productId,
+      amountKobo: Number(data.amount || 0),
+      currency: String(data.currency || "").trim() || null
+    });
     await sendPurchaseConfirmationEmail({
       reference,
       email,

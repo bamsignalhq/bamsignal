@@ -14,6 +14,11 @@ import {
 import { sendPurchaseConfirmationEmail, logPaymentInitialized } from "../../server/services/purchaseEmail.js";
 import { appendPaymentAudit } from "../../server/services/paymentEvents.js";
 import {
+  claimPaymentFulfillment,
+  getPaymentFulfillment,
+  markPaymentFulfillmentStatus
+} from "../../server/services/paymentFulfillments.js";
+import {
   activePlanPrice,
   getProductFromCatalog,
   getSubscriptionCatalog
@@ -221,6 +226,7 @@ export default async function handler(req, res) {
             days,
             plan_days: days,
             plan: planMeta,
+            expected_amount_kobo: amount,
             product_type: "premium",
             product_id: String(body.productId || planMeta),
             return_path: returnPath,
@@ -292,6 +298,7 @@ export default async function handler(req, res) {
             city,
             boost_id: boostId,
             duration_hours: durationHours,
+            expected_amount_kobo: amount,
             product_type: "boost",
             product_id: String(body.productId || boostId),
             return_path: returnPath,
@@ -358,6 +365,7 @@ export default async function handler(req, res) {
             product_type: "quickie",
             product_id: String(body.productId || "fast-connection-pass"),
             quickie_days: passDays,
+            expected_amount_kobo: amount,
             return_path: returnPath,
             source_page: sourcePage
           }
@@ -421,6 +429,43 @@ export default async function handler(req, res) {
     const metadata = transaction?.metadata || {};
     const productType = String(metadata.product_type || body.productType || "premium").trim();
     const { returnPath, sourcePage } = paymentReturnFrom(metadata, body, "/home");
+    const productIdFromMeta = String(metadata.product_id || body.productId || "").trim() || null;
+
+    const fulfillmentClaim = await claimPaymentFulfillment({
+      reference,
+      userId: metadata.user_id || metadata.userId || null,
+      productType,
+      productId: productIdFromMeta,
+      amountKobo: Number(transaction?.amount || 0),
+      currency: String(transaction?.currency || "").trim() || null,
+      rawPayload: {
+        source: "verify",
+        transaction
+      }
+    });
+
+    const existingFulfillment = fulfillmentClaim || (await getPaymentFulfillment(reference));
+    if (existingFulfillment?.status === "fulfilled") {
+      return res.status(200).json({
+        ok: true,
+        productType: existingFulfillment.product_type,
+        productId: existingFulfillment.product_id,
+        returnPath,
+        sourcePage
+      });
+    }
+
+    const expectedAmount = Number(metadata.expected_amount_kobo || 0);
+    if (expectedAmount > 0 && Number(transaction?.amount || 0) !== expectedAmount) {
+      await markPaymentFulfillmentStatus(reference, "failed", {
+        productType,
+        productId: productIdFromMeta,
+        amountKobo: Number(transaction?.amount || 0),
+        currency: String(transaction?.currency || "").trim() || null,
+        rawPayload: { error: "amount_mismatch", expectedAmount }
+      });
+      return res.status(422).json({ ok: false, error: "Payment amount does not match this purchase." });
+    }
 
     if (productType === "quickie") {
       const productId = String(metadata.product_id || body.productId || "fast-connection-pass");
@@ -432,6 +477,12 @@ export default async function handler(req, res) {
         name,
         passUntil,
         paystackReference: reference
+      });
+      await markPaymentFulfillmentStatus(reference, "fulfilled", {
+        productType: "quickie",
+        productId,
+        amountKobo: Number(transaction?.amount || 0),
+        currency: String(transaction?.currency || "").trim() || null
       });
       await notifyPurchaseEmail({
         reference,
@@ -495,6 +546,13 @@ export default async function handler(req, res) {
             error: "Complete onboarding in your city before buying City Spotlight."
           });
         }
+        await markPaymentFulfillmentStatus(reference, "fulfilled", {
+          productType: "boost",
+          productId,
+          amountKobo: Number(transaction?.amount || 0),
+          currency: String(transaction?.currency || "").trim() || null,
+          rawPayload: { boostId, placement }
+        });
         await notifyPurchaseEmail({
           reference,
           email: email || transactionEmail,
@@ -538,6 +596,13 @@ export default async function handler(req, res) {
             error: "Complete onboarding in your city before buying a City Boost."
           });
         }
+        await markPaymentFulfillmentStatus(reference, "fulfilled", {
+          productType: "boost",
+          productId,
+          amountKobo: Number(transaction?.amount || 0),
+          currency: String(transaction?.currency || "").trim() || null,
+          rawPayload: { boostId, placement }
+        });
         await notifyPurchaseEmail({
           reference,
           email: email || transactionEmail,
@@ -567,6 +632,13 @@ export default async function handler(req, res) {
         });
       }
 
+      await markPaymentFulfillmentStatus(reference, "fulfilled", {
+        productType: "boost",
+        productId,
+        amountKobo: Number(transaction?.amount || 0),
+        currency: String(transaction?.currency || "").trim() || null,
+        rawPayload: { boostId }
+      });
       await notifyPurchaseEmail({
         reference,
         email: email || transactionEmail,
@@ -613,6 +685,13 @@ export default async function handler(req, res) {
 
     const planMeta = String(metadata.plan || metadata.plan_days || days);
     const productId = String(metadata.product_id || body.productId || planMeta);
+    await markPaymentFulfillmentStatus(reference, "fulfilled", {
+      productType: "premium",
+      productId,
+      amountKobo: Number(transaction?.amount || 0),
+      currency: String(transaction?.currency || "").trim() || null,
+      rawPayload: { days }
+    });
     await notifyPurchaseEmail({
       reference,
       email: email || transactionEmail,

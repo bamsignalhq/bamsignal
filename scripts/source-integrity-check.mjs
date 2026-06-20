@@ -76,6 +76,11 @@ const fastConnectionIntentSource = readSrc("src/utils/fastConnectionIntent.ts");
 const fastConnectionSheetSource = readSrc("src/components/profile/FastConnectionSheet.tsx");
 const accountSecuritySource = readSrc("src/services/accountSecurity.ts");
 const twoFactorCardSource = readSrc("src/components/TwoFactorSettingsCard.tsx");
+const intentsSource = readSrc("src/constants/intents.ts");
+const profileOptionsSource = readSrc("src/constants/profileOptions.ts");
+const discoverFiltersSource = readSrc("src/components/DiscoverFilters.tsx");
+const matchPreferenceFieldsSource = readSrc("src/components/preferences/MatchPreferenceFields.tsx");
+const memberIntentsSharedSource = readFileSync(join(rootPath, "shared/memberIntents.mjs"), "utf8");
 const serviceWorkerSource = readSrc("src/utils/serviceWorker.ts");
 const mainSource = readSrc("src/main.tsx");
 const sourceIntegrityScriptSource = readSrc("scripts/source-integrity-check.mjs");
@@ -435,6 +440,20 @@ assertCheck(
     memberDataApiSource.includes('action === "two-factor-enable"') &&
     memberDataApiSource.includes("requireMemberAuth"),
   "two-factor settings must load and save through authenticated member API"
+);
+assertCheck(
+  intentsSource.includes("MAX_INTENT_SELECTIONS = 3") &&
+    intentsSource.includes("toggleIntentSelection") &&
+    intentsSource.includes("You can select up to 3 intentions.") &&
+    profileOptionsSource.includes("MAX_RELATIONSHIP_INTENTION_SELECTIONS = 3") &&
+    profileOptionsSource.includes("normalizeRelationshipIntentions") &&
+    matchPreferenceFieldsSource.includes("MAX_RELATIONSHIP_INTENTION_SELECTIONS") &&
+    discoverFiltersSource.includes("toggleIntentSelection") &&
+    discoverFiltersSource.includes("MAX_INTENT_SELECTIONS") &&
+    memberDataApiSource.includes("normalizeProfileIntents") &&
+    memberIntentsSharedSource.includes("MAX_INTENT_SELECTIONS = 3") &&
+    memberSocialSource.includes("normalizeRelationshipIntentions"),
+  "relationship and profile intentions must cap at three selections client and server"
 );
 assertCheck(
   sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&

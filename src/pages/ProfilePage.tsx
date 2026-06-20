@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Mic, Moon, Settings, Sun } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay, profileIntentLabel } from "../constants/intents";
+import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay, profileIntentLabel, toggleIntentSelection, INTENT_LIMIT_MESSAGE } from "../constants/intents";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
 import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
@@ -343,13 +343,12 @@ export function ProfilePage({
   };
 
   const toggleIntent = (intent: IntentTag) => {
-    setProfile((p) => {
-      if (p.intents.includes(intent)) {
-        return { ...p, intents: p.intents.filter((i) => i !== intent) };
-      }
-      if (p.intents.length >= MAX_INTENT_SELECTIONS) return p;
-      return { ...p, intents: [...p.intents, intent] };
-    });
+    const result = toggleIntentSelection(profile.intents, intent);
+    if (result.blocked) {
+      showModMessage(result.blockedReason || INTENT_LIMIT_MESSAGE);
+      return;
+    }
+    setProfile((p) => ({ ...p, intents: result.next }));
   };
 
   const handleIntentSelection = (intent: IntentTag) => {

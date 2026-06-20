@@ -2,8 +2,17 @@ import { ageFromDateOfBirth, defaultAdultDob } from "./ageFromDob";
 import { STORAGE_KEYS } from "../constants/limits";
 import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
+import {
+  stateForCity,
+  citiesForState,
+  normalizeEthnicities,
+  normalizeFaith,
+  normalizeFaithList,
+  normalizeLifestyleTraits,
+  normalizeRelationshipIntentions,
+  resolveStateName
+} from "../constants/profileOptions";
 import { sanitizeIntentsForActivePass } from "./fastConnectionIntent";
-import { stateForCity, citiesForState, normalizeEthnicities, normalizeFaith, normalizeFaithList, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
 import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { normalizeCoverFields } from "./coverPhoto";
@@ -265,7 +274,7 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
     occupations: safeArray<import("../types").Occupation>(raw.occupations).slice(0, 1),
     genotypes: safeArray<import("../types").Genotype>(raw.genotypes).slice(0, 1),
     bodyTypes: safeArray<import("../types").BodyType>(raw.bodyTypes).slice(0, 1),
-    relationshipIntentions: safeArray(raw.relationshipIntentions),
+    relationshipIntentions: normalizeRelationshipIntentions(raw.relationshipIntentions),
     hasKids: hasKids.slice(0, 1),
     wantsKids: wantsKids.slice(0, 1),
     verificationPreferences,

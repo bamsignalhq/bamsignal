@@ -1,5 +1,5 @@
 import { intentDisplay } from "../constants/intents";
-import { relationshipIntentionsToSearchIntents, normalizeEthnicities, normalizeFaithList } from "../constants/profileOptions";
+import { relationshipIntentionsToSearchIntents, normalizeEthnicities, normalizeFaithList, normalizeRelationshipIntentions } from "../constants/profileOptions";
 import type {
   DiscoverProfile,
   EthnicBackground,
@@ -41,7 +41,7 @@ export function normalizeHomeAdvancedFilters(
     religions: Array.isArray(raw.religions) ? raw.religions : [],
     occupations: Array.isArray(raw.occupations) ? raw.occupations : [],
     statesOfOrigin: Array.isArray(raw.statesOfOrigin) ? raw.statesOfOrigin : [],
-    relationshipIntentions: Array.isArray(raw.relationshipIntentions) ? raw.relationshipIntentions : [],
+    relationshipIntentions: normalizeRelationshipIntentions(raw.relationshipIntentions),
     genotypes: Array.isArray(raw.genotypes) ? raw.genotypes : [],
     hasKids: Array.isArray(raw.hasKids) ? raw.hasKids : [],
     wantsKids: Array.isArray(raw.wantsKids) ? raw.wantsKids : [],

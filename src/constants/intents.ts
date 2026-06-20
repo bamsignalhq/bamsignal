@@ -13,7 +13,9 @@ export const INTENT_OPTIONS: {
   { id: "Quickie", label: "Fast Connection", emoji: "⚡" }
 ];
 
-export const MAX_INTENT_SELECTIONS = 2;
+export const MAX_INTENT_SELECTIONS = 3;
+
+export const INTENT_LIMIT_MESSAGE = "You can select up to 3 intentions.";
 
 export function intentLabel(id: IntentTag): string {
   return INTENT_OPTIONS.find((o) => o.id === id)?.label ?? id;
@@ -51,4 +53,17 @@ export function normalizeIntents(raw: string[] | undefined): IntentTag[] {
   const out = raw.map(normalizeIntent).filter(Boolean) as IntentTag[];
   const unique = [...new Set(out)].slice(0, MAX_INTENT_SELECTIONS);
   return unique.length ? unique : ["Relationship"];
+}
+
+export function toggleIntentSelection(
+  current: IntentTag[],
+  intent: IntentTag
+): { next: IntentTag[]; blocked: boolean; blockedReason?: string } {
+  if (current.includes(intent)) {
+    return { next: current.filter((item) => item !== intent), blocked: false };
+  }
+  if (current.length >= MAX_INTENT_SELECTIONS) {
+    return { next: current, blocked: true, blockedReason: INTENT_LIMIT_MESSAGE };
+  }
+  return { next: [...current, intent], blocked: false };
 }

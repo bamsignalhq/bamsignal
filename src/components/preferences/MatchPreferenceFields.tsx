@@ -22,6 +22,8 @@ import {
   normalizeFaithList,
   normalizeLifestyleTraits,
   RELATIONSHIP_INTENTIONS,
+  MAX_RELATIONSHIP_INTENTION_SELECTIONS,
+  RELATIONSHIP_INTENTION_LIMIT_MESSAGE,
   TRIBE_GROUP_SECTIONS,
   TRIBE_SELECTION_LIMIT_MESSAGE,
   WANTS_KIDS_OPTIONS,
@@ -325,6 +327,8 @@ export function MatchPreferenceFields({
           label="Relationship intention"
           optional
           multiple
+          maxSelections={MAX_RELATIONSHIP_INTENTION_SELECTIONS}
+          limitMessage={RELATIONSHIP_INTENTION_LIMIT_MESSAGE}
           options={RELATIONSHIP_INTENTIONS}
           value={relationshipIntentions ?? []}
           onChange={(next) =>

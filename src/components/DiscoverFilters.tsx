@@ -1,6 +1,6 @@
 import { SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { INTENT_OPTIONS } from "../constants/intents";
+import { INTENT_OPTIONS, INTENT_LIMIT_MESSAGE, MAX_INTENT_SELECTIONS, toggleIntentSelection } from "../constants/intents";
 import { StateCitySelect } from "./StateCitySelect";
 import { searchStateFromPrefs, withSearchStateChange, normalizeSearchCities } from "../utils/searchLocationPrefs";
 import { normalizeLifestyleTraits } from "../constants/profileOptions";
@@ -8,7 +8,7 @@ import { MatchPreferenceFields } from "./preferences/MatchPreferenceFields";
 import { AgeRangeTapSelect } from "./AgeRangeTapSelect";
 import { TapSelectField } from "./TapSelectField";
 import { MAX_DISCOVER_RADIUS_MILES, kmToMiles, milesToKm } from "../utils/discoverLocation";
-import type { MatchPreferences, PreferenceMode } from "../types";
+import type { IntentTag, MatchPreferences, PreferenceMode } from "../types";
 import { defaultMatchPreferences } from "../utils/profile";
 
 type DiscoverFiltersProps = {
@@ -62,7 +62,19 @@ export function DiscoverFilters({
     };
   }, [freeStateChangesRemaining, isPremium]);
 
+  const [intentLimitMessage, setIntentLimitMessage] = useState("");
+
   const toggle = <T extends string>(key: keyof MatchPreferences, value: T) => {
+    if (key === "intents") {
+      const result = toggleIntentSelection((prefs.intents ?? []) as IntentTag[], value as IntentTag);
+      if (result.blocked) {
+        setIntentLimitMessage(result.blockedReason || INTENT_LIMIT_MESSAGE);
+        return;
+      }
+      setIntentLimitMessage("");
+      onChange({ ...prefs, intents: result.next });
+      return;
+    }
     const list = (prefs[key] as T[]) ?? [];
     const next = list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
     onChange({ ...prefs, [key]: next });
@@ -186,17 +198,29 @@ export function DiscoverFilters({
             <section className="discover-filters-card">
               <h4 className="discover-filters-card__title">Intent</h4>
               <div className="discover-filters-intents intent-tags selectable">
-                {INTENT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    className={`intent-tag ${prefs.intents.includes(opt.id) ? "selected" : ""}`}
-                    onClick={() => toggle("intents", opt.id)}
-                  >
-                    {opt.emoji} {opt.label}
-                  </button>
-                ))}
+                {INTENT_OPTIONS.map((opt) => {
+                  const selected = prefs.intents.includes(opt.id);
+                  const disabled = !selected && prefs.intents.length >= MAX_INTENT_SELECTIONS;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={`intent-tag ${selected ? "selected" : ""}`}
+                      disabled={disabled}
+                      onClick={() => toggle("intents", opt.id)}
+                    >
+                      {opt.emoji} {opt.label}
+                    </button>
+                  );
+                })}
               </div>
+              {intentLimitMessage ? (
+                <p className="discover-filters-card__hint" role="alert">
+                  {intentLimitMessage}
+                </p>
+              ) : (
+                <p className="discover-filters-card__hint">Select up to {MAX_INTENT_SELECTIONS} intentions.</p>
+              )}
             </section>
 
             <section className="discover-filters-card discover-filters-card--fields">

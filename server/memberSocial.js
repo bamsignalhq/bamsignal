@@ -1,5 +1,8 @@
 import { getApprovedMainPhoto } from "../shared/photoReview.mjs";
 import {
+  normalizeRelationshipIntentions
+} from "../shared/memberIntents.mjs";
+import {
   resolveFastConnectionPassStatus,
   resolveSignalPassStatus,
   shouldClearStalePremiumFlag
@@ -180,6 +183,7 @@ export async function searchMemberProfiles({
 }) {
   if (!isDatabaseReady()) return [];
   await ensureSocialSchema();
+  relationshipIntentions = normalizeRelationshipIntentions(relationshipIntentions);
 
   const own = await findMemberProfileByUserKey(email, phone);
   if (!own?.id) return [];

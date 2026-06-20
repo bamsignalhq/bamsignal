@@ -453,6 +453,10 @@ export default async function handler(req, res) {
           ? existingMember.profile
           : {};
       const profile = mergeMemberProfilePayload(existingProfile, incomingProfile);
+      const { normalizeProfileIntents } = await import("../../shared/memberIntents.mjs");
+      if (Array.isArray(profile.intents)) {
+        profile.intents = normalizeProfileIntents(profile.intents);
+      }
       const { assertProfileSafeForContactLeak } = await import("../../server/services/contactLeak.js");
       const leakCheck = await assertProfileSafeForContactLeak({
         email: identity.email,

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { Preloader } from "../components/Preloader";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
-import { INTENT_OPTIONS } from "../constants/intents";
+import { INTENT_OPTIONS, MAX_INTENT_SELECTIONS, toggleIntentSelection, INTENT_LIMIT_MESSAGE } from "../constants/intents";
 import { durationLabel } from "../constants/plans";
 import { MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { MIN_PROFILE_INTERESTS } from "../constants/interestCategories";
@@ -56,7 +56,7 @@ function countSignupPhotos(profile: Pick<DatingProfile, "photos" | "photoMeta">)
 
 const STEPS = ["Basic info", "About you", "Photos", "Preferences"] as const;
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
-const MAX_INTENTS = 2;
+const MAX_INTENTS = MAX_INTENT_SELECTIONS;
 const MIN_ONBOARDING_AGE = 17;
 const MAX_ONBOARDING_AGE = 75;
 const ONBOARDING_AGES = Array.from(
@@ -350,11 +350,12 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
 
   const toggleIntent = (intent: IntentTag) => {
     setProfile((p) => {
-      if (p.intents.includes(intent)) {
-        return { ...p, intents: p.intents.filter((i) => i !== intent) };
+      const result = toggleIntentSelection(p.intents, intent);
+      if (result.blocked) {
+        showModMessage(result.blockedReason || INTENT_LIMIT_MESSAGE);
+        return p;
       }
-      if (p.intents.length >= MAX_INTENTS) return p;
-      return { ...p, intents: [...p.intents, intent] };
+      return { ...p, intents: result.next };
     });
   };
 

@@ -151,6 +151,23 @@ export const RELATIONSHIP_INTENTIONS = [
 
 export type RelationshipIntention = (typeof RELATIONSHIP_INTENTIONS)[number];
 
+export const MAX_RELATIONSHIP_INTENTION_SELECTIONS = 3;
+
+export const RELATIONSHIP_INTENTION_LIMIT_MESSAGE = "You can select up to 3 intentions.";
+
+export function normalizeRelationshipIntentions(raw: unknown): RelationshipIntention[] {
+  const valid = new Set<RelationshipIntention>(RELATIONSHIP_INTENTIONS);
+  const out: RelationshipIntention[] = [];
+  const list = Array.isArray(raw) ? raw : [];
+  for (const item of list) {
+    const value = String(item || "").trim() as RelationshipIntention;
+    if (!valid.has(value) || out.includes(value)) continue;
+    out.push(value);
+    if (out.length >= MAX_RELATIONSHIP_INTENTION_SELECTIONS) break;
+  }
+  return out;
+}
+
 export const VERIFICATION_PREFERENCES = [
   "Anyone",
   "Phone verified",

@@ -487,7 +487,8 @@ export default async function handler(req, res) {
         productType,
         productId,
         amountKobo: Number(transaction?.amount || 0),
-        currency: String(transaction?.currency || "").trim() || null
+        currency: String(transaction?.currency || "").trim() || null,
+        rawPayload: { pass_until: passUntil, quickie_days: passDays }
       });
       await notifyPurchaseEmail({
         reference,

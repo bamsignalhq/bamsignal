@@ -448,6 +448,75 @@
   color: #b45309;
 }
 
+.fast-connection-expiry-banner {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--brand-pink) 24%, var(--border));
+  background: color-mix(in srgb, var(--brand-pink) 8%, var(--surface));
+}
+
+.fast-connection-expiry-banner p {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.fast-connection-expiry-banner__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.fast-connection-purchase-history {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.fast-connection-purchase-history__title {
+  margin: 0 0 0.65rem;
+  font-size: 0.92rem;
+}
+
+.fast-connection-purchase-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.fast-connection-purchase-history__item {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.84rem;
+}
+
+.fast-connection-purchase-history__item p {
+  margin: 0;
+  color: var(--text-muted, var(--muted));
+}
+
+.fast-connection-purchase-history__status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.fast-connection-purchase-history__status--active {
+  background: color-mix(in srgb, #16a34a 12%, var(--surface));
+  color: #15803d;
+}
+
+.fast-connection-purchase-history__status--expired {
+  background: color-mix(in srgb, var(--border) 70%, var(--surface));
+  color: var(--text-muted, var(--muted));
+}
+
 .account-settings-retry {
   display: grid;
   gap: 0.65rem;

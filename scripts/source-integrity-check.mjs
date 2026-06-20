@@ -78,6 +78,7 @@ const homePageSource = readSrc("src/pages/HomePage.tsx");
 const onboardingPageSource = readSrc("src/pages/OnboardingPage.tsx");
 const fastConnectionIntentSource = readSrc("src/utils/fastConnectionIntent.ts");
 const fastConnectionActivationSheetSource = readSrc("src/components/profile/FastConnectionActivationSheet.tsx");
+const fastConnectionRenewalSheetSource = readSrc("src/components/profile/FastConnectionRenewalSheet.tsx");
 const fastConnectionActivationHookSource = readSrc("src/hooks/useFastConnectionActivationPrompt.ts");
 const fastConnectionStateSource = readSrc("src/utils/fastConnectionState.ts");
 const fastConnectionPageSource = readSrc("src/pages/FastConnectionPage.tsx");
@@ -459,10 +460,22 @@ assertCheck(
     memberDataApiSource.includes('action === "fast-connection-signal"') &&
     fastConnectionPoolServiceSource.includes("fetchFastConnectionPool") &&
     fastConnectionPageSource.includes("No Fast Connection matches nearby yet") &&
-    fastConnectionPageSource.includes("fastSignalsLeftLabel") &&
+    fastConnectionPageSource.includes("fastSignalsStatusLabel") &&
     !fastConnectionPageSource.includes('navigateToPath("/discover")') &&
     !fastConnectionPageSource.includes("Open Discover"),
   "Fast Connection must use a dedicated local pool with server-enforced signals"
+);
+assertCheck(
+  fastConnectionServerSource.includes("computeFastConnectionExpiryReminder") &&
+    fastConnectionServerSource.includes("listFastConnectionPurchaseHistory") &&
+    memberDataApiSource.includes('action === "fast-connection-history"') &&
+    fastConnectionPageSource.includes("FastConnectionRenewalSheet") &&
+    fastConnectionRenewalSheetSource.includes("Fast Connection expired.") &&
+    homePageSource.includes("FastConnectionExpiryBanner") &&
+    fastConnectionPoolServiceSource.includes("fetchFastConnectionPurchaseHistory") &&
+    paymentsSource.includes("startFastConnectionRenewalPayment") &&
+    profilePageSource.includes("FastConnectionPurchaseHistory"),
+  "Fast Connection must handle expiry, renewal, reminders, and purchase history"
 );
 assertCheck(
   accountSecuritySource.includes("memberApiHeaders") &&

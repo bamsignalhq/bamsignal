@@ -8,7 +8,7 @@ import {
   type SignalPassSnapshot
 } from "../utils/memberEntitlements";
 import { isPremiumTrialActive } from "../utils/premiumTrial";
-import { activateQuickiePass, clearQuickiePass, getQuickiePassUntil } from "../utils/quickie";
+import { activateQuickiePass, clearQuickiePass, getQuickiePassUntil, syncFastConnectionPassFromServer } from "../utils/quickie";
 import { pruneExpiredBoosts } from "../utils/activeBoosts";
 import { apiUrl } from "./supabase";
 
@@ -73,11 +73,7 @@ function applyEntitlementsPayload(payload?: {
     payload?.entitlements?.fastConnectionPass?.expiresAt ||
     (payload?.entitlements?.fastConnectionPass?.active ? getQuickiePassUntil() : null);
   const fastConnectionPass = resolveFastConnectionPassSnapshot(passUntil);
-  if (fastConnectionPass.active && fastConnectionPass.expiresAt) {
-    activateQuickiePass(fastConnectionPass.expiresAt);
-  } else if (!fastConnectionPass.active) {
-    clearQuickiePass();
-  }
+  syncFastConnectionPassFromServer(fastConnectionPass.expiresAt, fastConnectionPass.active);
 
   pruneExpiredBoosts();
 

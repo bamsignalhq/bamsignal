@@ -377,6 +377,18 @@ export async function startFastConnectionActivationPayment(
   });
 }
 
+export async function startFastConnectionRenewalPayment(
+  user: UserProfile,
+  callbacks: CheckoutCallbacks = {}
+): Promise<StartPaymentResult> {
+  return startQuickiePassPayment(user, callbacks, {
+    returnPath: "/fast-connection",
+    sourcePage: "/fast-connection",
+    productType: "fast_connection",
+    productId: "fast-connection-pass"
+  });
+}
+
 export async function verifyQuickiePayment(user: UserProfile): Promise<{
   ok: boolean;
   error?: string;

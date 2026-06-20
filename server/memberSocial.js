@@ -929,5 +929,7 @@ export {
   listFastConnectionPool,
   fetchFastConnectionSignalStatus,
   sendFastConnectionSignal,
-  resetFastConnectionDailySignals
+  resetFastConnectionDailySignals,
+  listFastConnectionPurchaseHistory,
+  computeFastConnectionExpiryReminder
 } from "./services/fastConnection.js";

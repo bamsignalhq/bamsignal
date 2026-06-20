@@ -80,6 +80,11 @@ import { getMemberCity } from "../utils/memberCity";
 import { canShowProfileBoostEntry } from "../utils/profileBoostEntry";
 import { useFastConnectionCheckout } from "../hooks/useFastConnectionCheckout";
 import { fastConnectionActiveLabel } from "../utils/quickie";
+import {
+  FastConnectionPurchaseHistory,
+  type FastConnectionPurchaseRecord
+} from "../components/profile/FastConnectionPurchaseHistory";
+import { fetchFastConnectionPurchaseHistory } from "../services/fastConnectionPool";
 
 type ProfileView = "overview" | "edit" | "settings";
 type SaveFeedbackSource = "edit" | "preferences";
@@ -226,11 +231,22 @@ export function ProfilePage({
     verifySubmitted ||
     profile.verificationStatus === "pending" ||
     isUserVerificationPending(user.phone);
+  const [fastConnectionPurchases, setFastConnectionPurchases] = useState<FastConnectionPurchaseRecord[]>([]);
+  const [fastConnectionHistoryLoading, setFastConnectionHistoryLoading] = useState(false);
 
   const profileCityOptions = useMemo(
     () => (profile.state ? citiesForState(profile.state) : []),
     [profile.state]
   );
+
+  useEffect(() => {
+    if (settingsPanel !== "subscription") return;
+    setFastConnectionHistoryLoading(true);
+    void fetchFastConnectionPurchaseHistory(user).then((result) => {
+      setFastConnectionPurchases(result.purchases || []);
+      setFastConnectionHistoryLoading(false);
+    });
+  }, [settingsPanel, user]);
 
   useEffect(() => {
     if (profile.verified || !user.phone) return;
@@ -1154,6 +1170,10 @@ export function ProfilePage({
                   <ChevronRight size={18} aria-hidden="true" />
                 </button>
               )}
+              <FastConnectionPurchaseHistory
+                purchases={fastConnectionPurchases}
+                loading={fastConnectionHistoryLoading}
+              />
             </section>
           )}
 

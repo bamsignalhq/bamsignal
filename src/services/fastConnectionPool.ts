@@ -1,6 +1,7 @@
 import type { DiscoverProfile, UserProfile } from "../types";
 import type { FastSignalStatus } from "../utils/fastSignals";
 import { syncFastSignalStatusFromServer } from "../utils/fastSignals";
+import { syncFastConnectionPassFromServer } from "../utils/quickie";
 import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import { apiUrl } from "./supabase";
@@ -16,6 +17,17 @@ type PoolResponse = {
 type StatusResponse = FastSignalStatus & {
   ok?: boolean;
   error?: string;
+};
+
+type HistoryResponse = {
+  ok?: boolean;
+  purchases?: Array<{
+    id: string;
+    productLabel: string;
+    activatedAt: string;
+    expiresAt: string | null;
+    status: "Active" | "Expired";
+  }>;
 };
 
 type SignalResponse = {
@@ -100,6 +112,7 @@ export async function fetchFastConnectionSignalStatus(
       };
     }
     const synced = syncFastSignalStatusFromServer(payload);
+    syncFastConnectionPassFromServer(synced.expiresAt, synced.passActive);
     return { ok: true, ...synced };
   } catch {
     return {
@@ -164,7 +177,29 @@ export async function sendFastConnectionSignalRemote(
     return {
       ok: false,
       error: "Could not send Fast Signal.",
-      status: syncFastSignalStatusFromServer({ passActive: true })
+      status: syncFastSignalStatusFromServer({ passActive: false, expired: true })
     };
+  }
+}
+
+export async function fetchFastConnectionPurchaseHistory(
+  user: Pick<UserProfile, "email" | "phone">
+): Promise<{ ok: boolean; purchases: HistoryResponse["purchases"] }> {
+  try {
+    const response = await fetch(apiUrl("/api/member/data?action=fast-connection-history"), {
+      method: "POST",
+      headers: await memberApiHeaders(),
+      body: JSON.stringify({
+        email: user.email,
+        phone: user.phone
+      })
+    });
+    const payload = await readResponseJson<HistoryResponse>(response);
+    if (!response.ok || !payload?.ok) {
+      return { ok: false, purchases: [] };
+    }
+    return { ok: true, purchases: Array.isArray(payload.purchases) ? payload.purchases : [] };
+  } catch {
+    return { ok: false, purchases: [] };
   }
 }

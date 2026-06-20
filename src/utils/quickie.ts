@@ -44,14 +44,26 @@ export function activateQuickiePass(untilIso?: string): void {
   const until =
     untilIso || new Date(Date.now() + quickiePassDays() * 24 * 60 * 60 * 1000).toISOString();
   writeJson(STORAGE_KEYS.quickiePassUntil, until);
+  localStorage.setItem(STORAGE_KEYS.fastConnectionExpiresAt, until);
 }
 
 export function clearQuickiePass(): void {
   try {
     localStorage.removeItem(STORAGE_KEYS.quickiePassUntil);
+    localStorage.removeItem(STORAGE_KEYS.fastConnectionStartsAt);
+    localStorage.removeItem(STORAGE_KEYS.fastConnectionExpiresAt);
   } catch {
     /* ignore */
   }
+}
+
+export function syncFastConnectionPassFromServer(expiresAt?: string | null, active?: boolean): void {
+  if (active && expiresAt) {
+    writeJson(STORAGE_KEYS.quickiePassUntil, expiresAt);
+    localStorage.setItem(STORAGE_KEYS.fastConnectionExpiresAt, expiresAt);
+    return;
+  }
+  clearQuickiePass();
 }
 
 export function getUnlockedQuickieMatches(): string[] {

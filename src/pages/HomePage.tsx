@@ -25,7 +25,10 @@ import {
 import { normalizePath } from "../constants/routes";
 import { useAndroidBack } from "../hooks/useAndroidBack";
 import { FastConnectionActivationSheet } from "../components/profile/FastConnectionActivationSheet";
+import { FastConnectionExpiryBanner } from "../components/profile/FastConnectionExpiryBanner";
 import { useFastConnectionActivationPrompt } from "../hooks/useFastConnectionActivationPrompt";
+import { useFastConnectionExpiryReminder } from "../hooks/useFastConnectionExpiryReminder";
+import { navigateToPath } from "../constants/routes";
 
 type HomePageProps = {
   user: UserProfile;
@@ -90,6 +93,16 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
     user,
     enabled: true,
     onPaymentError: (message) => setActivationMessage(message)
+  });
+
+  const {
+    bannerMessage: fastConnectionExpiryBanner,
+    dismissBanner: dismissFastConnectionExpiryBanner,
+    renew: renewFastConnectionFromBanner
+  } = useFastConnectionExpiryReminder({
+    user,
+    enabled: true,
+    onRenewNavigate: () => navigateToPath("/fast-connection")
   });
 
   const fetchCitiesForFeed = useMemo(() => {
@@ -268,6 +281,14 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         <p className="profile-mod-toast" role="status">
           {activationMessage}
         </p>
+      ) : null}
+
+      {fastConnectionExpiryBanner ? (
+        <FastConnectionExpiryBanner
+          message={fastConnectionExpiryBanner}
+          onRenew={() => void renewFastConnectionFromBanner()}
+          onDismiss={dismissFastConnectionExpiryBanner}
+        />
       ) : null}
 
       <FastConnectionActivationSheet

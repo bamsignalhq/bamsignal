@@ -31,7 +31,8 @@ import {
   sendSignalToProfile,
   listFastConnectionPool,
   fetchFastConnectionSignalStatus,
-  sendFastConnectionSignal
+  sendFastConnectionSignal,
+  listFastConnectionPurchaseHistory
 } from "../../server/memberSocial.js";
 
 function parseBody(req) {
@@ -187,10 +188,17 @@ export default async function handler(req, res) {
         excludeProfileIds: Array.isArray(body.excludeProfileIds) ? body.excludeProfileIds : [],
         limit: Number(body.limit) || 48
       });
-      if (!result.ok && !result.passActive) {
-        return res.status(403).json(result);
-      }
-      return res.status(result.ok ? 200 : 503).json(result);
+      return res.status(result.ok || result.passActive === false ? 200 : 503).json(result);
+    }
+
+    if (action === "fast-connection-history") {
+      if (!requireDatabase(res)) return;
+      const history = await listFastConnectionPurchaseHistory({
+        email: identity.email,
+        phone: identity.phone,
+        limit: Number(body.limit) || 12
+      });
+      return res.status(history.ok ? 200 : 503).json(history);
     }
 
     if (action === "fast-connection-status") {

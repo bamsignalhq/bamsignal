@@ -10,6 +10,39 @@ import { publicPhotosFromProfile } from "./photoReview.js";
 
 export const FAST_CONNECTION_DAILY_SIGNALS = 30;
 const RESET_MS = 24 * 60 * 60 * 1000;
+const PASS_DAYS_DEFAULT = 7;
+
+function isFastConnectionProductType(productType = "") {
+  const value = String(productType || "").trim().toLowerCase();
+  return value === "quickie" || value === "fast_connection";
+}
+
+function startOfLocalDay(date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function computeFastConnectionExpiryReminder(expiresAt) {
+  if (!expiresAt) return null;
+  const expMs = new Date(expiresAt).getTime();
+  if (!Number.isFinite(expMs) || expMs <= Date.now()) return null;
+
+  const today = startOfLocalDay();
+  const expiryDay = startOfLocalDay(new Date(expMs));
+  const diffDays = Math.round((expiryDay.getTime() - today.getTime()) / 86400000);
+  if (diffDays === 0) return "today";
+  if (diffDays === 1) return "tomorrow";
+  return null;
+}
+
+function passWindowFromUntil(expiresAt, passDays = PASS_DAYS_DEFAULT) {
+  if (!expiresAt) return { startsAt: null, expiresAt: null };
+  const expiresMs = new Date(expiresAt).getTime();
+  if (!Number.isFinite(expiresMs)) return { startsAt: null, expiresAt: null };
+  return {
+    startsAt: new Date(expiresMs - passDays * 86400000).toISOString(),
+    expiresAt: new Date(expiresMs).toISOString()
+  };
+}
 
 export async function ensureFastConnectionSchema() {
   if (!isDatabaseReady()) return;
@@ -143,7 +176,13 @@ export async function listFastConnectionPool({
 
   const passCheck = await assertSenderPassActive({ email, phone });
   if (!passCheck.ok) {
-    return { ok: false, passActive: false, error: passCheck.error, profiles: [], locationTier: "none" };
+    return {
+      ok: true,
+      passActive: false,
+      expired: true,
+      profiles: [],
+      locationTier: "none"
+    };
   }
 
   const own = await findMemberProfileByUserKey(email, phone);
@@ -203,24 +242,38 @@ export async function fetchFastConnectionSignalStatus({ email, phone }) {
     return {
       ok: false,
       passActive: false,
+      expired: false,
+      expiresAt: null,
+      startsAt: null,
+      expiryReminder: null,
       usedToday: 0,
       dailyLimit: FAST_CONNECTION_DAILY_SIGNALS,
       remaining: 0,
-      resetAt: null
+      resetAt: null,
+      freshDailyReset: false
     };
   }
 
   await ensureFastConnectionSchema();
 
-  const passCheck = await assertSenderPassActive({ email, phone });
-  if (!passCheck.ok) {
+  const user = await findAppUserIdentity({ email, phone });
+  const pass = resolveFastConnectionPassStatus(user);
+  const passWindow = passWindowFromUntil(pass.expiresAt);
+  const expired = Boolean(pass.expiresAt && !pass.active);
+
+  if (!pass.active) {
     return {
       ok: true,
       passActive: false,
+      expired,
+      expiresAt: pass.expiresAt,
+      startsAt: passWindow.startsAt,
+      expiryReminder: null,
       usedToday: 0,
       dailyLimit: FAST_CONNECTION_DAILY_SIGNALS,
       remaining: 0,
-      resetAt: null
+      resetAt: null,
+      freshDailyReset: false
     };
   }
 
@@ -229,11 +282,16 @@ export async function fetchFastConnectionSignalStatus({ email, phone }) {
     return {
       ok: false,
       passActive: true,
+      expired: false,
       error: "User identity missing.",
+      expiresAt: pass.expiresAt,
+      startsAt: passWindow.startsAt,
+      expiryReminder: computeFastConnectionExpiryReminder(pass.expiresAt),
       usedToday: 0,
       dailyLimit: FAST_CONNECTION_DAILY_SIGNALS,
       remaining: 0,
-      resetAt: null
+      resetAt: null,
+      freshDailyReset: false
     };
   }
 
@@ -242,8 +300,10 @@ export async function fetchFastConnectionSignalStatus({ email, phone }) {
   ).rows[0];
 
   const now = Date.now();
+  let freshDailyReset = false;
   if (!row || new Date(row.reset_at).getTime() <= now) {
     row = await resetDailyRow(userKey);
+    freshDailyReset = true;
   }
 
   const usedToday = Math.max(0, Number(row.used_today) || 0);
@@ -253,10 +313,15 @@ export async function fetchFastConnectionSignalStatus({ email, phone }) {
   return {
     ok: true,
     passActive: true,
+    expired: false,
+    expiresAt: pass.expiresAt,
+    startsAt: passWindow.startsAt,
+    expiryReminder: computeFastConnectionExpiryReminder(pass.expiresAt),
     usedToday,
     dailyLimit,
     remaining,
-    resetAt: row.reset_at
+    resetAt: row.reset_at,
+    freshDailyReset: freshDailyReset || usedToday === 0
   };
 }
 
@@ -409,4 +474,67 @@ export async function sendFastConnectionSignal({ email, phone, targetProfileId }
     remaining,
     resetAt: nextDaily.reset_at
   };
+}
+
+export async function listFastConnectionPurchaseHistory({ email, phone, limit = 12 }) {
+  if (!isDatabaseReady()) return { ok: false, purchases: [] };
+
+  const { ensurePaymentFulfillmentsSchema } = await import("./paymentFulfillments.js");
+  await ensurePaymentFulfillmentsSchema();
+
+  const userKey = normalizeUserKey({ email, phone });
+  const user = await findAppUserIdentity({ email, phone });
+  const currentPass = resolveFastConnectionPassStatus(user);
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+
+  const result = await query(
+    `select paystack_reference, product_type, product_id, amount_kobo, currency, status,
+            fulfilled_at, created_at, raw_payload
+     from payment_fulfillments
+     where status = 'fulfilled'
+       and lower(product_type) in ('quickie', 'fast_connection')
+       and (
+         ($1::text is not null and user_id = $1::text)
+         or ($2::text <> '' and lower(raw_payload->>'email') = $2::text)
+       )
+     order by coalesce(fulfilled_at, created_at) desc
+     limit $3`,
+    [userKey || null, normalizedEmail || "", Math.min(24, Math.max(1, Number(limit) || 12))]
+  );
+
+  const currentExpiresMs = currentPass.expiresAt ? new Date(currentPass.expiresAt).getTime() : 0;
+
+  const purchases = result.rows.map((row) => {
+    const payload = row.raw_payload && typeof row.raw_payload === "object" ? row.raw_payload : {};
+    const nested = payload.transaction?.metadata || payload.metadata || payload;
+    const passDays = Math.max(1, Math.round(Number(nested.quickie_days || nested.duration_days || PASS_DAYS_DEFAULT)));
+    const activatedAt = row.fulfilled_at || row.created_at;
+    const explicitUntil = nested.pass_until || nested.fast_connection_pass_until || nested.quickiePassUntil;
+    const expiresAt =
+      explicitUntil ||
+      (activatedAt
+        ? new Date(new Date(activatedAt).getTime() + passDays * 86400000).toISOString()
+        : null);
+    const expiresMs = expiresAt ? new Date(expiresAt).getTime() : 0;
+    const isCurrent =
+      currentPass.active &&
+      currentExpiresMs &&
+      expiresMs &&
+      Math.abs(expiresMs - currentExpiresMs) < 120000;
+    const statusLabel = isCurrent && expiresMs > Date.now() ? "Active" : "Expired";
+
+    return {
+      id: row.paystack_reference,
+      productLabel: "Fast Connection",
+      activatedAt,
+      expiresAt,
+      status: statusLabel,
+      amountKobo: row.amount_kobo,
+      currency: row.currency || "NGN"
+    };
+  });
+
+  return { ok: true, purchases, currentPassActive: currentPass.active, currentExpiresAt: currentPass.expiresAt };
 }

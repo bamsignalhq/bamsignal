@@ -1,4 +1,4 @@
-import { discoverPhotoFromProfile } from "../shared/mainPhoto.mjs";
+import { getApprovedMainPhoto } from "../shared/photoReview.mjs";
 import {
   isDatabaseReady,
   normalizeUserKey,
@@ -116,7 +116,7 @@ function profilePayload(row) {
     name: row.name || profile.name || "Member",
     city: row.city,
     state: row.state,
-    photo: discoverPhotoFromProfile(profile),
+    photo: getApprovedMainPhoto(profile),
     photos,
     bio,
     age: profile.age,

@@ -1,4 +1,5 @@
 /** Photo review status helpers — shared by browser + Node. */
+import { resolveMainPhotoUrl } from "./mainPhoto.mjs";
 
 export const PHOTO_REVIEW_STATUSES = ["approved", "pending_review", "rejected", "hidden"];
 
@@ -13,15 +14,15 @@ export const PHOTO_RISK_FLAG_VALUES = [
 ];
 
 /**
- * Photos visible to others — rejected and hidden are excluded from public discovery.
- * Pending review still shows (uploader sees their own via owner view).
+ * Photos visible to others on discovery/public surfaces.
+ * Only approved photos may be shown publicly.
  */
 export function filterPhotosForPublicView(photos, photoMeta = {}) {
   const list = Array.isArray(photos) ? photos : [];
   return list.filter((url) => {
     const meta = photoMeta?.[url];
     const status = meta?.photoReviewStatus;
-    return !status || (status !== "rejected" && status !== "hidden");
+    return status === "approved";
   });
 }
 
@@ -63,4 +64,27 @@ export function normalizePhotoMetaMap(raw) {
     if (normalized && url) out[url] = normalized;
   }
   return out;
+}
+
+function cleanPhotos(photos) {
+  return (Array.isArray(photos) ? photos : []).filter(Boolean);
+}
+
+function normalizeMainCandidate(url) {
+  return typeof url === "string" ? url.trim() : "";
+}
+
+/** Public-safe photos: approved only. Unknown status is blocked. */
+export function getApprovedPublicPhotos(profile = {}) {
+  const photos = cleanPhotos(profile.photos);
+  const photoMeta = normalizePhotoMetaMap(profile.photoMeta);
+  return filterPhotosForPublicView(photos, photoMeta);
+}
+
+/** Public-safe main photo: approved only (or empty when none exists). */
+export function getApprovedMainPhoto(profile = {}) {
+  const approved = getApprovedPublicPhotos(profile);
+  if (!approved.length) return "";
+  const mainCandidate = normalizeMainCandidate(profile.mainPhotoUrl);
+  return resolveMainPhotoUrl(approved, mainCandidate) || approved[0] || "";
 }

@@ -39,6 +39,9 @@ const memberApiAuthSource = readSrc("src/utils/memberApiAuth.ts");
 const pinLoginApiSource = readSrc("api/auth/pin-login.js");
 const pinResetApiSource = readSrc("api/auth/pin-reset.js");
 const pinAuthThrottleSource = readSrc("server/services/pinAuthThrottle.js");
+const photoReviewSharedSource = readSrc("shared/photoReview.mjs");
+const cityHomeSource = readSrc("server/cityHome.js");
+const memberSocialSource = readSrc("server/memberSocial.js");
 
 assertCheck(
   paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
@@ -179,6 +182,21 @@ assertCheck(
 assertCheck(
   pinResetApiSource.includes("INVALID_RESET_MESSAGE"),
   "PIN reset API must return generic invalid reset message"
+);
+assertCheck(
+  photoReviewSharedSource.includes("getApprovedPublicPhotos") &&
+    photoReviewSharedSource.includes("getApprovedMainPhoto") &&
+    photoReviewSharedSource.includes('return status === "approved"'),
+  "public photo surfaces must restrict to approved photos only"
+);
+assertCheck(
+  cityHomeSource.includes("getApprovedMainPhoto") && !cityHomeSource.includes("discoverPhotoFromProfile"),
+  "city home cards must use approved main photo helper"
+);
+assertCheck(
+  memberSocialSource.includes("getApprovedMainPhoto") &&
+    !memberSocialSource.includes("discoverPhotoFromProfile"),
+  "member social discovery must use approved main photo helper"
 );
 
 console.log("source integrity ok");

@@ -1,4 +1,4 @@
-import { discoverPhotoFromProfile } from "../shared/mainPhoto.mjs";
+import { getApprovedMainPhoto } from "../shared/photoReview.mjs";
 import {
   findAppUserIdentity,
   isDatabaseReady,
@@ -97,7 +97,7 @@ export function rowToDiscoverProfile(row) {
     city: row.city,
     state: row.state,
     bio: profile.bio || "",
-    photo: discoverPhotoFromProfile(profile),
+    photo: getApprovedMainPhoto(profile),
     photos,
     intents: profile.intents || [],
     interests: profile.interests || [],
@@ -336,7 +336,7 @@ function signalToLikeEntry(row, senderProfile) {
     id: row.id,
     profileId: profile.id || row.user_key,
     name: profile.name || row.sender_email || "Member",
-    photo: discoverPhotoFromProfile(nested),
+    photo: getApprovedMainPhoto(nested),
     city: profile.city || "",
     at: row.created_at,
     superLike: row.signal_type === "priority" || row.signal_type === "priority-signal-once"
@@ -836,7 +836,7 @@ async function fetchIncomingProfileLikes({ email, phone }) {
     return {
       profileId: row.actor_profile_id,
       name: row.name || "Member",
-      photo: discoverPhotoFromProfile(profile),
+      photo: getApprovedMainPhoto(profile),
       at: row.created_at
     };
   });
@@ -859,7 +859,7 @@ async function fetchIncomingProfileFollows({ email, phone }) {
     return {
       profileId: row.actor_profile_id,
       name: row.name || "Member",
-      photo: discoverPhotoFromProfile(profile),
+      photo: getApprovedMainPhoto(profile),
       at: row.created_at
     };
   });

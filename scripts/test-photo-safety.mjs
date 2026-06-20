@@ -282,6 +282,7 @@ function testPhotoReviewVisibility() {
   const rejectedUrl = "https://example.com/rejected.webp";
   const photos = [url, rejectedUrl];
   const photoMeta = {
+    [url]: { photoReviewStatus: "approved", photoRiskFlags: [], type: "profile", uploadedAt: "" },
     [rejectedUrl]: { photoReviewStatus: "rejected", photoRiskFlags: [], type: "profile", uploadedAt: "" }
   };
   assert.deepEqual(filterPhotosForPublicView(photos, photoMeta), [url]);

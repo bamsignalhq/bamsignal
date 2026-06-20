@@ -9,6 +9,7 @@ import { friendlyAuthError, supabase } from "../services/supabase";
 import {
   getHardLastRoute,
   persistHardSession,
+  clearStaleAdminBrowserState,
   snapshotMemberSessionBeforeHardLogin
 } from "../utils/adminSession";
 
@@ -35,6 +36,10 @@ export function AdminAuthPage({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [checkingSetup, setCheckingSetup] = useState(!allowPasswordChange);
+
+  useEffect(() => {
+    clearStaleAdminBrowserState({ keepLastRoute: true });
+  }, []);
 
   useEffect(() => {
     if (!supabase || allowPasswordChange) return;

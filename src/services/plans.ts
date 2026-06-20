@@ -8,9 +8,9 @@ import {
 import { STORAGE_KEYS } from "../constants/limits";
 import { readResponseJson } from "../utils/httpJson";
 import { apiUrl } from "./supabase";
-import { isAdminSessionActive } from "../utils/adminSession";
-import { readJson, writeJson } from "../utils/storage";
 import { appendAdminConsentHeader } from "../utils/adminConsent";
+import { readJson, writeJson } from "../utils/storage";
+export { verifyAdminSession } from "../utils/adminSession";
 
 const VALID_IDS = new Set(["weekly", "monthly", "quarterly"]);
 
@@ -107,23 +107,4 @@ export async function savePremiumPlansAdmin(
     }
     return { ok: false, error: error instanceof Error ? error.message : "Save failed." };
   }
-}
-
-export async function verifyAdminSession(accessToken?: string): Promise<boolean> {
-  if (isAdminSessionActive()) return true;
-  if (!accessToken) return false;
-  try {
-    const response = await fetch(apiUrl("/api/auth/identity?action=admin-session"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`
-      },
-      body: "{}"
-    });
-    if (response.ok) return true;
-  } catch {
-    /* fall through */
-  }
-  return false;
 }

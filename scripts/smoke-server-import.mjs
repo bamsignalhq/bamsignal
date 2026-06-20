@@ -36,6 +36,8 @@ function assertSmoke(condition, message) {
 }
 
 const appSource = readFileSync(join(rootPath, "src", "App.tsx"), "utf8");
+const adminSessionSource = readFileSync(join(rootPath, "src", "utils", "adminSession.ts"), "utf8");
+const adminShellSource = readFileSync(join(rootPath, "src", "components", "admin", "AdminShell.tsx"), "utf8");
 const paymentsSource = readFileSync(join(rootPath, "src", "services", "payments.ts"), "utf8");
 const paymentReturnSource = readFileSync(join(rootPath, "src", "utils", "paymentReturn.ts"), "utf8");
 const purchaseEmailSource = readFileSync(
@@ -107,6 +109,21 @@ assertSmoke(
   !appSource.includes("You're signed in. Go to app") &&
     !appSource.includes("You’re signed in. Go to app"),
   "intrusive signed-in homepage banner must stay removed"
+);
+assertSmoke(
+  adminSessionSource.includes("export async function verifyAdminSession") &&
+    adminSessionSource.includes('/api/auth/identity?action=admin-session"') &&
+    !adminSessionSource.includes("isAdminSessionActive()") &&
+    adminSessionSource.includes("clearStaleAdminBrowserState") &&
+    adminSessionSource.includes('logAdminAudit("admin_restore_success")'),
+  "admin session must be validated on the server, not localStorage"
+);
+assertSmoke(
+  adminShellSource.includes('phase === "checking"') &&
+    adminShellSource.includes("Session expired. Please sign in again.") &&
+    adminShellSource.includes("validateHardSession()") &&
+    adminShellSource.indexOf("{children}") > adminShellSource.indexOf('phase === "authorized"'),
+  "admin shell must not render dashboard content before server validation"
 );
 
 async function waitForServer(baseUrl) {

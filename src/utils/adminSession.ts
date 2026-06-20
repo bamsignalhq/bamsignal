@@ -3,9 +3,9 @@ import type { HardTab } from "../components/admin/adminConsoleNav";
 import { hardPathForTab, parseHardTabFromPath } from "../constants/hardRoutes";
 import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
 import { apiUrl, supabase } from "../services/supabase";
-import { verifyAdminSession } from "../services/plans";
+import { readResponseJson } from "./httpJson";
 
-/** Console persistence — separate from member session keys. */
+/** Console persistence — route preference only; never use for access control. */
 export const HARD_STORAGE = {
   session: "bamsignal_hard_session",
   lastRoute: "bamsignal_hard_last_route",
@@ -22,7 +22,22 @@ const LEGACY_STORAGE = {
   authAt: "bamsignal_admin_auth_at"
 } as const;
 
-const HARD_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+const STALE_ADMIN_BROWSER_KEYS = [
+  ...Object.values(LEGACY_STORAGE),
+  "bamsignal_admin_user",
+  "bamsignal_admin_role",
+  "bamsignal_command_center_state",
+  "adminSession",
+  "adminUser",
+  "adminRole",
+  "commandCenterState",
+  HARD_STORAGE.session,
+  HARD_STORAGE.authAt
+] as const;
+
+const DEV_DEMO_FLAG = "bamsignal_dev_demo_hard";
+
+let validatedOperatorEmail: string | null = null;
 
 export type HardSessionRecord = {
   email: string;
@@ -33,63 +48,65 @@ export type HardSessionRecord = {
 export type AdminSessionRecord = HardSessionRecord;
 
 function migrateLegacyStorage(): void {
-  for (const key of ["session", "lastRoute", "authAt"] as const) {
+  for (const key of ["lastRoute"] as const) {
     const legacy = localStorage.getItem(LEGACY_STORAGE[key]);
     if (legacy && !localStorage.getItem(HARD_STORAGE[key])) {
       localStorage.setItem(HARD_STORAGE[key], legacy);
     }
+  }
+  for (const key of ["session", "authAt"] as const) {
     localStorage.removeItem(LEGACY_STORAGE[key]);
   }
 }
 
-function readSession(): HardSessionRecord | null {
+export function logAdminAudit(event: string, detail?: Record<string, unknown>): void {
+  if (detail && Object.keys(detail).length > 0) {
+    console.info(`[bamsignal:admin-audit] ${event}`, detail);
+    return;
+  }
+  console.info(`[bamsignal:admin-audit] ${event}`);
+}
+
+export function clearStaleAdminBrowserState(options?: { keepLastRoute?: boolean }): void {
   migrateLegacyStorage();
-  try {
-    const raw = localStorage.getItem(HARD_STORAGE.session);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as HardSessionRecord;
-    if (!parsed?.email) return null;
-    return parsed;
-  } catch {
-    return null;
+  for (const key of STALE_ADMIN_BROWSER_KEYS) {
+    localStorage.removeItem(key);
+  }
+  sessionStorage.removeItem("bamsignal_command_center_state");
+  sessionStorage.removeItem("commandCenterState");
+  sessionStorage.removeItem(DEV_DEMO_FLAG);
+  validatedOperatorEmail = null;
+  if (!options?.keepLastRoute) {
+    localStorage.removeItem(HARD_STORAGE.lastRoute);
+    localStorage.removeItem(LEGACY_STORAGE.lastRoute);
   }
 }
 
-function writeSession(record: HardSessionRecord): void {
-  localStorage.setItem(HARD_STORAGE.session, JSON.stringify(record));
-  localStorage.setItem(HARD_STORAGE.authAt, String(Date.now()));
-}
-
 export function getHardSessionEmail(): string | null {
-  return readSession()?.email ?? null;
+  if (validatedOperatorEmail) return validatedOperatorEmail;
+  if (isDevDemoHardSession()) return DEMO_ADMIN.email.toLowerCase();
+  return null;
 }
 
 /** @deprecated use getHardSessionEmail */
 export const getAdminSessionEmail = getHardSessionEmail;
 
+/** @deprecated local auth timestamp must not gate access */
 export function getHardAuthAt(): number | null {
-  migrateLegacyStorage();
-  const raw = localStorage.getItem(HARD_STORAGE.authAt);
-  if (!raw) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : null;
+  return null;
 }
 
 /** @deprecated */
 export const getAdminAuthAt = getHardAuthAt;
 
+/** @deprecated local freshness must not gate access */
 export function isHardSessionFresh(): boolean {
-  const at = getHardAuthAt();
-  if (!at) return false;
-  return Date.now() - at < HARD_SESSION_TTL_MS;
+  return false;
 }
 
+/** @deprecated browser cache must not grant console access */
 export function hasLocalHardSession(): boolean {
-  const email = getHardSessionEmail();
-  if (!email) return false;
-  if (!isHardSessionFresh()) return false;
-  if (import.meta.env.DEV && email === DEMO_ADMIN.email.toLowerCase()) return true;
-  return Boolean(readSession()?.accessToken);
+  return false;
 }
 
 /** @deprecated */
@@ -133,35 +150,57 @@ export async function restoreMemberSessionAfterHardLogout(): Promise<boolean> {
 /** @deprecated */
 export const restoreMemberSessionAfterAdminLogout = restoreMemberSessionAfterHardLogout;
 
+export async function verifyAdminSession(accessToken?: string): Promise<boolean> {
+  if (isDevDemoHardSession()) return true;
+  if (!accessToken) return false;
+  try {
+    const response = await fetch(apiUrl("/api/auth/identity?action=admin-session"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      },
+      body: "{}",
+      cache: "no-store"
+    });
+    if (!response.ok) return false;
+    const payload = await readResponseJson<{ ok?: boolean }>(response);
+    return payload?.ok !== false;
+  } catch {
+    return false;
+  }
+}
+
 export async function persistHardSession(email: string, accessToken?: string): Promise<void> {
-  writeSession({
-    email: email.trim().toLowerCase(),
-    accessToken: accessToken || undefined
-  });
+  void accessToken;
+  clearStaleAdminBrowserState({ keepLastRoute: true });
+  if (import.meta.env.DEV && email.trim().toLowerCase() === DEMO_ADMIN.email.toLowerCase() && !accessToken) {
+    sessionStorage.setItem(DEV_DEMO_FLAG, "1");
+  }
+  validatedOperatorEmail = email.trim().toLowerCase();
   saveHardLastRoute(hardPathForTab("command"));
+  logAdminAudit("admin_login_success");
 }
 
 /** @deprecated */
 export const persistAdminSession = persistHardSession;
 
 export function clearHardSessionOnly(): void {
-  localStorage.removeItem(HARD_STORAGE.session);
-  localStorage.removeItem(HARD_STORAGE.authAt);
-  localStorage.removeItem(HARD_STORAGE.lastRoute);
+  clearStaleAdminBrowserState({ keepLastRoute: true });
 }
 
 /** @deprecated */
 export const clearAdminSessionOnly = clearHardSessionOnly;
 
 export async function exitHardSession(): Promise<void> {
-  const session = readSession();
-  if (session?.accessToken) {
+  const token = (await supabase?.auth.getSession())?.data.session?.access_token;
+  if (token) {
     try {
       await fetch(apiUrl("/api/auth/identity?action=operator-logout"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.accessToken}`
+          Authorization: `Bearer ${token}`
         },
         body: "{}"
       });
@@ -169,7 +208,9 @@ export async function exitHardSession(): Promise<void> {
       /* best effort */
     }
   }
-  clearHardSessionOnly();
+  await supabase?.auth.signOut().catch(() => undefined);
+  clearStaleAdminBrowserState({ keepLastRoute: true });
+  logAdminAudit("admin_logout");
   await restoreMemberSessionAfterHardLogout();
 }
 
@@ -233,42 +274,47 @@ export const restoreAdminRouteOnLoad = restoreHardRouteOnLoad;
 
 export function isDevDemoHardSession(): boolean {
   if (!import.meta.env.DEV) return false;
-  const email = getHardSessionEmail();
-  return Boolean(email && email === DEMO_ADMIN.email.toLowerCase() && isHardSessionFresh());
+  return sessionStorage.getItem(DEV_DEMO_FLAG) === "1";
 }
 
 /** @deprecated */
 export const isDevDemoAdminSession = isDevDemoHardSession;
 
 export async function validateHardSession(): Promise<boolean> {
-  if (isDevDemoHardSession()) return true;
+  if (isDevDemoHardSession()) {
+    validatedOperatorEmail = DEMO_ADMIN.email.toLowerCase();
+    logAdminAudit("admin_restore_success", { mode: "dev_demo" });
+    return true;
+  }
 
-  const record = readSession();
-  if (!record?.email || !isHardSessionFresh()) {
-    clearHardSessionOnly();
+  if (!supabase) {
+    clearStaleAdminBrowserState({ keepLastRoute: true });
+    logAdminAudit("admin_restore_denied", { reason: "supabase_unconfigured" });
     return false;
   }
 
-  let token = record.accessToken;
-  if (!token && supabase) {
-    const { data } = await supabase.auth.getSession();
-    token = data.session?.access_token;
-    if (token && data.session?.user?.email?.toLowerCase() === record.email) {
-      writeSession({ ...record, accessToken: token });
-    }
-  }
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  const email = session?.user?.email?.trim().toLowerCase() || null;
 
-  if (!token) {
-    clearHardSessionOnly();
+  if (!token || !email) {
+    clearStaleAdminBrowserState({ keepLastRoute: true });
+    logAdminAudit("admin_restore_denied", { reason: "missing_session" });
     return false;
   }
 
   const ok = await verifyAdminSession(token);
   if (!ok) {
-    clearHardSessionOnly();
+    clearStaleAdminBrowserState({ keepLastRoute: true });
+    await supabase.auth.signOut().catch(() => undefined);
+    logAdminAudit("admin_restore_denied", { reason: "server_rejected" });
     return false;
   }
 
+  validatedOperatorEmail = email;
+  logAdminAudit("admin_restore_success");
   return true;
 }
 
@@ -289,8 +335,9 @@ export function clearHardSession(): void {
 /** @deprecated */
 export const clearAdminSession = clearHardSession;
 
+/** @deprecated use validateHardSession() — never trust browser cache for access */
 export function isHardSessionActive(): boolean {
-  return hasLocalHardSession() || isDevDemoHardSession();
+  return false;
 }
 
 /** @deprecated */
@@ -302,3 +349,10 @@ export function redirectToHardLogin(): void {
 
 /** @deprecated */
 export const redirectToAdminLogin = redirectToHardLogin;
+
+export async function handleAdminSessionExpired(onRedirect: () => void): Promise<void> {
+  clearStaleAdminBrowserState({ keepLastRoute: true });
+  await supabase?.auth.signOut().catch(() => undefined);
+  logAdminAudit("admin_session_expired");
+  onRedirect();
+}

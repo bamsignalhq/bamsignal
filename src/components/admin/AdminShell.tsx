@@ -8,7 +8,11 @@ import {
   normalizePath
 } from "../../constants/routes";
 import { AdminErrorBoundary } from "./AdminErrorBoundary";
-import { validateHardSession } from "../../utils/adminSession";
+import {
+  handleAdminSessionExpired,
+  validateHardSession
+} from "../../utils/adminSession";
+import { supabase } from "../../services/supabase";
 
 type AdminShellProps = {
   children: ReactNode;
@@ -16,8 +20,12 @@ type AdminShellProps = {
   onUnauthorized: () => void;
 };
 
-export function AdminShell({ children, authorized, onUnauthorized }: AdminShellProps) {
-  const [checking, setChecking] = useState(authorized === null);
+type AdminGatePhase = "checking" | "authorized" | "denied";
+
+export function AdminShell({ children, onUnauthorized }: AdminShellProps) {
+  const [phase, setPhase] = useState<AdminGatePhase>(() =>
+    isHardAuthRoute() ? "authorized" : "checking"
+  );
 
   useEffect(() => {
     document.documentElement.classList.add("hard-mode");
@@ -29,18 +37,47 @@ export function AdminShell({ children, authorized, onUnauthorized }: AdminShellP
 
   useEffect(() => {
     if (isHardAuthRoute()) {
-      setChecking(false);
+      setPhase("authorized");
       return;
     }
+
     let cancelled = false;
     void validateHardSession().then((ok) => {
       if (cancelled) return;
-      setChecking(false);
-      if (!ok) onUnauthorized();
+      if (!ok) {
+        setPhase("denied");
+        window.setTimeout(() => onUnauthorized(), 900);
+        return;
+      }
+      setPhase("authorized");
     });
     return () => {
       cancelled = true;
     };
+  }, [onUnauthorized]);
+
+  useEffect(() => {
+    if (!supabase || isHardAuthRoute()) return;
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session?.access_token) {
+        void handleAdminSessionExpired(onUnauthorized);
+        setPhase("denied");
+        return;
+      }
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        void validateHardSession().then((ok) => {
+          if (!ok) {
+            setPhase("denied");
+            void handleAdminSessionExpired(onUnauthorized);
+          }
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [onUnauthorized]);
 
   const handleHardBack = useCallback(() => {
@@ -75,19 +112,28 @@ export function AdminShell({ children, authorized, onUnauthorized }: AdminShellP
 
   useEffect(() => {
     const onPopState = () => {
-      if (!isHardRoute() || !isHardAuthRoute()) return;
+      if (!isHardRoute() || isHardAuthRoute()) return;
       void validateHardSession().then((ok) => {
         if (ok) navigateToPath(hardPathForTab("command"));
+        else void handleAdminSessionExpired(onUnauthorized);
       });
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [onUnauthorized]);
 
-  if (checking && !isHardAuthRoute()) {
+  if (phase === "checking") {
     return (
       <div className="admin-console admin-console--boot">
         <p className="admin-console__boot-msg">Authenticating…</p>
+      </div>
+    );
+  }
+
+  if (phase === "denied") {
+    return (
+      <div className="admin-console admin-console--boot">
+        <p className="admin-console__boot-msg">Session expired. Please sign in again.</p>
       </div>
     );
   }

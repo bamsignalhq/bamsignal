@@ -93,6 +93,7 @@ import { AdminAuthPage } from "./AdminAuthPage";
 import { HARD_TAB_TITLES, type HardTab } from "../components/admin/adminConsoleNav";
 import {
   exitHardSession,
+  handleAdminSessionExpired,
   restoreHardRouteOnLoad,
   saveHardLastRoute,
   validateHardSession
@@ -331,12 +332,38 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
     void validateHardSession().then((ok) => {
       if (cancelled) return;
       setAuthorized(ok);
-      if (!ok) onLogout();
+      if (!ok) {
+        window.setTimeout(() => {
+          void handleAdminSessionExpired(onLogout);
+        }, 900);
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [onLogout]);
+
+  useEffect(() => {
+    if (!supabase || authorized !== true) return;
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session?.access_token) {
+        setAuthorized(false);
+        void handleAdminSessionExpired(onLogout);
+        return;
+      }
+      if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        void validateHardSession().then((ok) => {
+          if (!ok) {
+            setAuthorized(false);
+            void handleAdminSessionExpired(onLogout);
+          }
+        });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [authorized, onLogout]);
 
   if (authorized === null) {
     return (
@@ -349,7 +376,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   if (!authorized) {
     return (
       <div className="admin-console page admin-page">
-        <AdminTerminalEmpty>Session expired. Redirecting…</AdminTerminalEmpty>
+        <AdminTerminalEmpty>Session expired. Please sign in again.</AdminTerminalEmpty>
       </div>
     );
   }

@@ -1,6 +1,8 @@
 node_modules/
 dist/
 build/
+coverage/
+store-assets/
 .vercel/
 .env
 .env.local

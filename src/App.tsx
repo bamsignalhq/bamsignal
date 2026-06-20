@@ -56,7 +56,15 @@ import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelp
 import { markFirstDayStep } from "./utils/firstDayJourney";
 import { markJoinedAt } from "./utils/launchSeed";
 import { hydrateMemberData } from "./services/memberData";
-import { goToApp } from "./services/goToApp";
+import {
+  clearOpenAppPendingState,
+  expireStaleOpenAppState,
+  goToApp,
+  markOpenAppPending,
+  OPEN_APP_FAILSAFE_MS,
+  repairGoToAppInBackground,
+  validateServerSession
+} from "./services/goToApp";
 import { supabase } from "./services/supabase";
 import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
@@ -426,8 +434,61 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (expireStaleOpenAppState()) {
+      setOpenAppLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
     writeJson(STORAGE_KEYS.userProfile, safeUserProfile(user));
   }, [user]);
+
+  const applyGoToAppResult = useCallback(
+    (
+      session: Extract<Awaited<ReturnType<typeof goToApp>>, { ok: true }>,
+      meta: { blocking: boolean; source: string }
+    ) => {
+      setUser(session.user);
+      restoreComplianceFromMarker(session.user);
+      syncComplianceDoneMarkerFromProfile(session.user, getDatingProfile().compliance);
+      void retryPendingComplianceSync(session.user);
+      flowLog("profile_hydrate", { ok: true, route: session.route, reason: session.status?.reason });
+      const datingProfile = getDatingProfile();
+      const needsOnboarding = session.route === "onboarding";
+      const paymentReturnActive = isPaymentReturnPath() || hasPaystackCallbackInUrl();
+      setProfileComplete(!needsOnboarding);
+      if (
+        !paymentReturnActive &&
+        (meta.blocking || memberAppEntered || !isPublicWebRoute())
+      ) {
+        if (isMemberAppPath() || requiresMemberRestoreBlocking(window.location.pathname, isNative)) {
+          navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
+        }
+      }
+      logRouteDecision(session.user, datingProfile, needsOnboarding ? "onboarding" : "home", {
+        source: meta.source,
+        hydrated: session.hydrated,
+        repaired: session.status?.repaired,
+        reason: session.status?.reason ?? null,
+        blocking: meta.blocking
+      });
+      if (!needsOnboarding) {
+        clearOnboardingDrafts();
+        flowLog("session_restore_home");
+      } else {
+        flowLog("session_restore_onboarding");
+      }
+      void refreshPremiumStatus(session.user).then((premium) => {
+        setIsPremium(
+          needsOnboarding
+            ? Boolean(premium.isPremium)
+            : premium.isPremium || isPremiumTrialActive()
+        );
+      });
+      flowLog("session_restore_done");
+    },
+    [memberAppEntered]
+  );
 
   const applyRestoredSession = useCallback(async (profile: UserProfile, options?: { blocking?: boolean }) => {
     const blocking = options?.blocking ?? true;
@@ -446,49 +507,28 @@ export function App() {
     setIsAuthed(true);
     recordStreakActivity();
     checkPremiumTrialExpiry();
-    const session = await goToApp({ forceOnboarding: false });
-    if (!session.ok) {
-      if (blocking) setMemberHydrating(false);
+
+    const finishRestore = async () => {
+      const session = await goToApp({ forceOnboarding: false, loginEmail: merged.email || undefined });
+      if (!session.ok) {
+        setIsAuthed(false);
+        setProfileComplete(false);
+        return;
+      }
+      applyGoToAppResult(session, { blocking, source: "session_restore" });
+    };
+
+    if (blocking) {
+      try {
+        await finishRestore();
+      } finally {
+        setMemberHydrating(false);
+      }
       return;
     }
-    setUser(session.user);
-    restoreComplianceFromMarker(session.user);
-    syncComplianceDoneMarkerFromProfile(session.user, getDatingProfile().compliance);
-    void retryPendingComplianceSync(session.user);
-    flowLog("profile_hydrate", { ok: true, route: session.route, reason: session.status?.reason });
-    const datingProfile = getDatingProfile();
-    const needsOnboarding = session.route === "onboarding";
-    const paymentReturnActive = isPaymentReturnPath() || hasPaystackCallbackInUrl();
-    setProfileComplete(!needsOnboarding);
-    if (!paymentReturnActive && (blocking || memberAppEntered || !isPublicWebRoute())) {
-      if (isMemberAppPath() || requiresMemberRestoreBlocking(window.location.pathname, isNative)) {
-        navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
-      }
-    }
-    logRouteDecision(session.user, datingProfile, needsOnboarding ? "onboarding" : "home", {
-      source: "session_restore",
-      hydrated: session.hydrated,
-      repaired: session.status?.repaired,
-      reason: session.status?.reason ?? null,
-      blocking
-    });
-    if (!needsOnboarding) {
-      clearOnboardingDrafts();
-      flowLog("session_restore_home");
-    } else {
-      flowLog("session_restore_onboarding");
-    }
-    const premium = await refreshPremiumStatus(session.user);
-    setIsPremium(
-      needsOnboarding
-        ? Boolean(premium.isPremium)
-        : premium.isPremium || isPremiumTrialActive()
-    );
-    flowLog("session_restore_done");
-    if (blocking) {
-      setMemberHydrating(false);
-    }
-  }, [memberAppEntered]);
+
+    void finishRestore();
+  }, [applyGoToAppResult]);
 
   useEffect(() => {
     if (memberAccessReady) recordDailyActive();
@@ -798,50 +838,92 @@ export function App() {
     }
   }, []);
 
-  const enterMemberApp = useCallback(async () => {
+  const enterMemberApp = useCallback(() => {
     if (openAppLoading) return;
-    setOpenAppLoading(true);
-    try {
-      if (isAuthed && profileComplete === true) {
-        clearOnboardingDrafts();
-        setMemberAppEntered(true);
-        setAuthMessage("");
-        setTab("home");
-        navigateToPath("/home", true);
-        flowLog("home_enter", { source: "open_app_cached" });
-      }
 
-      const result = await goToApp();
+    setOpenAppLoading(true);
+    clearOpenAppPendingState();
+    markOpenAppPending();
+
+    let released = false;
+    const releaseOpenApp = () => {
+      if (released) return;
+      released = true;
+      window.clearTimeout(failsafeTimer);
+      clearOpenAppPendingState();
+      setOpenAppLoading(false);
+    };
+
+    const applyBackgroundResult = (result: Awaited<ReturnType<typeof goToApp>>) => {
       if (!result.ok) {
         setMemberAppEntered(false);
+        setIsAuthed(false);
         setProfileComplete(false);
         setAuthPath(AUTH_SIGNUP_PATH);
         navigateToPath(AUTH_SIGNUP_PATH, true);
         return;
       }
-
       setUser(result.user);
       setIsAuthed(true);
-      setMemberAppEntered(true);
-      setAuthMessage("");
-
+      setProfileComplete(result.route === "home");
       if (result.route === "home") {
         clearOnboardingDrafts();
-        setProfileComplete(true);
         setTab("home");
-        navigateToPath("/home", true);
-        flowLog("home_enter", { source: "open_app" });
+        if (normalizePath(window.location.pathname) !== "/home") {
+          navigateToPath("/home", true);
+        }
+        flowLog("home_enter", { source: "open_app_background" });
+        return;
+      }
+      setProfileComplete(false);
+      navigateToPath("/onboarding", true);
+      flowLog("onboarding_start", { source: "open_app_background" });
+    };
+
+    const failsafeTimer = window.setTimeout(() => {
+      void validateServerSession().then((validated) => {
+        if (validated.ok) {
+          setUser(validated.user);
+          setIsAuthed(true);
+          setMemberAppEntered(true);
+          setTab("home");
+          navigateToPath("/home", true);
+          flowLog("home_enter", { source: "open_app_failsafe" });
+          repairGoToAppInBackground({ loginEmail: validated.user.email || undefined }, applyBackgroundResult);
+        } else {
+          setIsAuthed(false);
+          setProfileComplete(false);
+          setMemberAppEntered(false);
+          setAuthPath(AUTH_SIGNUP_PATH);
+          navigateToPath(AUTH_SIGNUP_PATH, true);
+        }
+        releaseOpenApp();
+      });
+    }, OPEN_APP_FAILSAFE_MS);
+
+    void validateServerSession().then((validated) => {
+      if (!validated.ok) {
+        setMemberAppEntered(false);
+        setIsAuthed(false);
+        setProfileComplete(false);
+        setAuthPath(AUTH_SIGNUP_PATH);
+        navigateToPath(AUTH_SIGNUP_PATH, true);
+        releaseOpenApp();
         return;
       }
 
-      setProfileComplete(false);
+      setUser(validated.user);
+      setIsAuthed(true);
+      setMemberAppEntered(true);
+      setAuthMessage("");
       setTab("home");
-      navigateToPath("/onboarding", true);
-      flowLog("onboarding_start", { source: "open_app" });
-    } finally {
-      setOpenAppLoading(false);
-    }
-  }, [isAuthed, openAppLoading, profileComplete]);
+      navigateToPath("/home", true);
+      flowLog("home_enter", { source: "open_app_fast" });
+      releaseOpenApp();
+
+      repairGoToAppInBackground({ loginEmail: validated.user.email || undefined }, applyBackgroundResult);
+    });
+  }, [openAppLoading]);
 
   useEffect(() => {
     if (!paystackCallbackActive || authLoading) return;
@@ -1022,6 +1104,17 @@ export function App() {
       options?: { blocking?: boolean }
     ) => {
       if (!session?.user || sessionRestored) return;
+
+      if (!shouldBlockBoot) {
+        const validated = await validateServerSession();
+        if (!validated.ok) {
+          sessionRestored = true;
+          setIsAuthed(false);
+          setProfileComplete(false);
+          return;
+        }
+      }
+
       sessionRestored = true;
       const blocking = options?.blocking ?? shouldBlockBoot;
       await applyRestoredSession(profileFromSessionUser(session.user), { blocking });

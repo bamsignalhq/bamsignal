@@ -81,7 +81,9 @@ assertSmoke(
 );
 assertSmoke(
   appSource.includes("showOpenApp={isAuthed && isPublicHome}") &&
-    appSource.includes('flowLog("home_enter", { source: "open_app_cached" })') &&
+    appSource.includes('flowLog("home_enter", { source: "open_app_fast" })') &&
+    appSource.includes("validateServerSession") &&
+    appSource.includes("repairGoToAppInBackground") &&
     appSource.includes('navigateToPath("/home", true)'),
   "Open App must route cached completed users to /home immediately"
 );
@@ -89,6 +91,12 @@ assertSmoke(
   appSource.includes("setAuthPath(AUTH_SIGNUP_PATH)") &&
     appSource.includes("navigateToPath(AUTH_SIGNUP_PATH, true)"),
   "Open App without a session must route to /love/sign"
+);
+assertSmoke(
+  appSource.includes("OPEN_APP_FAILSAFE_MS") &&
+    appSource.includes("clearOpenAppPendingState") &&
+    appSource.includes("expireStaleOpenAppState"),
+  "Open App must fail safe and clear stale opening state"
 );
 assertSmoke(
   appSource.includes("isMemberAppPath(currentPathname)") &&

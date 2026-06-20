@@ -224,6 +224,8 @@ export async function verifySignupOtp(email, code) {
   await ensureEmailVerificationTable();
 
   const normalized = normalizeEmail(email);
+  assertEmailNotDisposable(normalized);
+
   const cleaned = String(code || "").replace(/\D/g, "");
   if (cleaned.length !== 6) {
     throw new SignupOtpError(400, "Enter the 6-digit code from your email.");

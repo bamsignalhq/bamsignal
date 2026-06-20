@@ -5,6 +5,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { isDisposableEmail } from "../shared/blockedEmailDomains.mjs";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "..");
 const srcRoot = join(rootPath, "src");
@@ -62,6 +63,9 @@ const memberEntitlementsSource = readSrc("shared/memberEntitlements.mjs");
 const memberEntitlementsClientSource = readSrc("src/utils/memberEntitlements.ts");
 const premiumStatusSource = readSrc("src/services/premiumStatus.ts");
 const bootFlagsSource = readSrc("src/utils/bootFlags.ts");
+const blockedEmailSource = readSrc("shared/blockedEmailDomains.mjs");
+const signupOtpSource = readSrc("server/services/signupOtp.js");
+const signupIdentitySource = readSrc("server/services/signupIdentity.js");
 const serviceWorkerSource = readSrc("src/utils/serviceWorker.ts");
 const mainSource = readSrc("src/main.tsx");
 const sourceIntegrityScriptSource = readSrc("scripts/source-integrity-check.mjs");
@@ -354,6 +358,23 @@ assertCheck(
     !serviceWorkerSource.includes("showUpdatingOverlay") &&
     serviceWorkerSource.includes("silentRecoveryReload"),
   "app update recovery must reload silently without the updating overlay"
+);
+assertCheck(
+  blockedEmailSource.includes('"blondmail.com"') &&
+    blockedEmailSource.includes('"tempmailo.com"') &&
+    isDisposableEmail("jamesowen@blondmail.com") &&
+    isDisposableEmail("USER@BLONDMAIL.COM") &&
+    isDisposableEmail("user@sub.blondmail.com") &&
+    !isDisposableEmail("user@gmail.com") &&
+    !isDisposableEmail("user@yahoo.com") &&
+    !isDisposableEmail("user@outlook.com"),
+  "disposable email blocklist must reject blondmail and allow real providers"
+);
+assertCheck(
+  signupOtpSource.includes("assertEmailNotDisposable(normalized)") &&
+    signupIdentitySource.includes("Please use a real email address to continue.") &&
+    authPageSource.includes("DISPOSABLE_EMAIL_MESSAGE"),
+  "signup must block disposable emails on server and client before OTP"
 );
 assertCheck(
   sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&

@@ -19,7 +19,13 @@ function assert(condition, message) {
 
 assert(isDisposableEmail("user@mailinator.com"), "blocks mailinator");
 assert(isDisposableEmail("user@sub.mailinator.com"), "blocks subdomain mailinator");
+assert(isDisposableEmail("jamesowen@blondmail.com"), "blocks blondmail.com");
+assert(isDisposableEmail("USER@BLONDMAIL.COM"), "blocks blondmail case-insensitive");
+assert(isDisposableEmail("user@sub.blondmail.com"), "blocks blondmail subdomain");
+assert(isDisposableEmail("user@tempmailo.com"), "blocks tempmailo.com");
 assert(!isDisposableEmail("user@gmail.com"), "allows gmail");
+assert(!isDisposableEmail("user@yahoo.com"), "allows yahoo");
+assert(!isDisposableEmail("user@outlook.com"), "allows outlook");
 
 const challenge = issueSignupMathChallenge();
 assert(challenge.ok !== false, "issues math challenge");

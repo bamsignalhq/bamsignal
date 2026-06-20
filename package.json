@@ -27,8 +27,8 @@
     "prepare": "node scripts/install-githooks.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "start": "node server/production.js",
-    "server": "node server/index.js",
-    "dev:server": "node --watch server/index.js",
+    "server": "node server/production.js",
+    "dev:server": "node --watch server/production.js",
     "cap:sync": "npm run build && cap sync",
     "ios": "npm run cap:sync && cap open ios",
     "android": "npm run cap:sync && cap open android"

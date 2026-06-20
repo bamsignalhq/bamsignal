@@ -2,37 +2,52 @@
  * Verify production server modules resolve (catches missing shared/*.mjs, etc.).
  * Uses a free port so local dev on :3000 does not block the check.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const port = Number(process.env.SMOKE_PORT || process.env.PORT || 39451);
 process.env.PORT = String(port);
 
+function assertSmoke(condition, message) {
+  if (condition) return;
+  console.error(`server smoke failed: ${message}`);
+  process.exit(1);
+}
+
 const productionPath = join(dirname(fileURLToPath(import.meta.url)), "..", "server", "production.js");
+const serverAppPath = join(dirname(fileURLToPath(import.meta.url)), "..", "server", "app.js");
+const indexPath = join(dirname(fileURLToPath(import.meta.url)), "..", "server", "index.js");
 const productionSource = readFileSync(productionPath, "utf8");
+const serverAppSource = readFileSync(serverAppPath, "utf8");
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+assertSmoke(
+  !existsSync(indexPath),
+  "server/index.js must not exist — use server/production.js as the only entrypoint"
+);
+assertSmoke(
+  productionSource.includes('from "./app.js"') && productionSource.includes("createApp({ distDir })"),
+  "server/production.js must delegate app creation to server/app.js"
+);
+
 const requiredRouteMounts = [
   { method: "post", route: "/api/auth/pin-login" },
   { method: "post", route: "/api/auth/pin-reset" },
   { method: "post", route: "/api/auth/email-code" },
-  { method: "post", route: "/api/member/data" }
+  { method: "post", route: "/api/member/data" },
+  { method: "post", route: "/api/member/photos" },
+  { method: "post", route: "/api/paystack/verify" }
 ];
 for (const { method, route } of requiredRouteMounts) {
   const mountPattern = new RegExp(
     `mountHandler\\(\\s*app\\s*,\\s*["']${method}["']\\s*,\\s*["']${route.replace(/\//g, "\\/")}["']`
   );
   const expressPattern = new RegExp(`app\\.${method}\\(\\s*["']${route.replace(/\//g, "\\/")}["']`);
-  if (!mountPattern.test(productionSource) && !expressPattern.test(productionSource)) {
-    console.error(`server smoke failed: missing ${method.toUpperCase()} route mount for ${route}`);
+  if (!mountPattern.test(serverAppSource) && !expressPattern.test(serverAppSource)) {
+    console.error(`server smoke failed: missing ${method.toUpperCase()} route mount for ${route} in server/app.js`);
     process.exit(1);
   }
-}
-
-function assertSmoke(condition, message) {
-  if (condition) return;
-  console.error(`server smoke failed: ${message}`);
-  process.exit(1);
 }
 
 const signupMathSource = readFileSync(join(rootPath, "server", "services", "signupMathChallenge.js"), "utf8");
@@ -158,6 +173,18 @@ try {
   await import("../server/production.js");
   const baseUrl = `http://127.0.0.1:${port}`;
   await waitForServer(baseUrl);
+
+  const healthResponse = await fetch(`${baseUrl}/health`);
+  if (!healthResponse.ok) {
+    console.error(`server smoke failed: GET /health returned ${healthResponse.status}`);
+    process.exit(1);
+  }
+  const health = await healthResponse.json();
+  if (!health?.ok || health.service !== "bamsignal") {
+    console.error("server smoke failed: GET /health payload missing ok/service");
+    process.exit(1);
+  }
+
   const routeChecks = [
     {
       path: "/api/auth/pin-login",
@@ -166,6 +193,18 @@ try {
     {
       path: "/api/auth/pin-reset?action=__smoke__",
       body: { action: "__smoke__" }
+    },
+    {
+      path: "/api/paystack/verify",
+      body: { action: "__smoke__" }
+    },
+    {
+      path: "/api/member/photos?action=__smoke__",
+      body: { action: "__smoke__" }
+    },
+    {
+      path: "/api/paystack/webhook",
+      body: {}
     }
   ];
 

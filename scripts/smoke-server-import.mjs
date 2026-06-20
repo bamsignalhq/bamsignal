@@ -79,6 +79,18 @@ try {
     console.error("server smoke failed: GET /health payload missing ok/service");
     process.exit(1);
   }
+  if ("database" in health || "paystack" in health || "signupEmailTrace" in health) {
+    console.error("server smoke failed: GET /health must stay liveness-only");
+    process.exit(1);
+  }
+
+  const readyResponse = await fetch(`${baseUrl}/ready`);
+  if (readyResponse.status !== 503) {
+    console.error(
+      `server smoke failed: GET /ready must return 503 without production secrets (got ${readyResponse.status})`
+    );
+    process.exit(1);
+  }
 
   const routeChecks = [
     {

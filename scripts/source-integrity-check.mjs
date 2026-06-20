@@ -644,5 +644,20 @@ assertCheck(
     serverAppSource.includes("PAYSTACK_WEBHOOK_MOUNT_PATHS"),
   "Paystack webhook routes must use one shared handler"
 );
+const readinessServiceSource = readFileSync(join(rootPath, "server/services/readiness.js"), "utf8");
+assertCheck(
+  serverAppSource.includes('app.get("/health"') &&
+    serverAppSource.includes("livenessPayload()") &&
+    serverAppSource.includes('app.get("/ready"') &&
+    serverAppSource.includes("readinessPayload") &&
+    readinessServiceSource.includes("isPhotoStorageConfigured") &&
+    !serverAppSource.includes("healthPayload"),
+  "health endpoints must split liveness (/health) from readiness (/ready)"
+);
+assertCheck(
+  dockerfileSource.includes("/ready") &&
+    !dockerfileSource.match(/HEALTHCHECK[\s\S]*\/health/),
+  "Docker HEALTHCHECK must probe /ready for production dependency readiness"
+);
 
 console.log("source integrity ok");

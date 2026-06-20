@@ -4,11 +4,10 @@
  */
 import express from "express";
 import path from "node:path";
-import { config } from "./config.js";
-import { isSignupEmailConfigured, getSignupEmailHealthTrace } from "./supabaseEnv.js";
 import { corsMiddleware } from "./cors.js";
-import { getDatabaseStatus, pingDatabase } from "./db.js";
 import { PAYSTACK_WEBHOOK_MOUNT_PATHS } from "./services/paystackWebhookHandler.js";
+import { livenessPayload, readinessPayload } from "./services/readiness.js";
+import { requireDiagnosticsAccess } from "./services/diagnosticsAccess.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
 import { mountHandler } from "./mountHandler.js";
@@ -25,7 +24,6 @@ import functionSecurityHandler from "../api/diagnostics/function-security.js";
 import memberDataHandler from "../api/member/data.js";
 import memberPhotosHandler from "../api/member/photos.js";
 import memberVoiceHandler from "../api/member/voice.js";
-import { isPhotoStorageConfigured } from "./services/photoStorage.js";
 import cityHomeHandler from "../api/city/home.js";
 import citySpotlightHandler from "../api/city/spotlight.js";
 import citySpotlightEventHandler from "../api/city/spotlight-event.js";
@@ -40,32 +38,7 @@ import whatsappVerifyStartHandler from "../api/verify/whatsapp/start.js";
 import whatsappVerifyConfirmHandler from "../api/verify/whatsapp/confirm.js";
 import whatsappVerifyWebhookHandler from "../api/verify/whatsapp/webhook.js";
 import verificationSubmissionsHandler from "../api/verify/submissions.js";
-import { getSendchampHealthTrace, isSendchampConfigured } from "./services/sendchamp.js";
-import { getFirebaseHealth } from "./firebase.js";
 import { buildSitemapXml, getRobotsTxt } from "./seoSitemap.js";
-
-export async function healthPayload() {
-  let database = getDatabaseStatus();
-  if (database === "connected") {
-    const alive = await pingDatabase();
-    database = alive ? "connected" : "disconnected";
-  }
-
-  return {
-    ok: true,
-    service: "bamsignal",
-    database,
-    paystack: Boolean(config.paystackSecretKey),
-    resend: Boolean(process.env.RESEND_API_KEY?.trim()),
-    signupEmail: isSignupEmailConfigured(),
-    signupEmailTrace: getSignupEmailHealthTrace(),
-    ...getFirebaseHealth(),
-    telegram: Boolean(config.telegram.botToken),
-    sendchamp: isSendchampConfigured(),
-    sendchampTrace: getSendchampHealthTrace(),
-    photoStorage: isPhotoStorageConfigured()
-  };
-}
 
 /**
  * @param {{ distDir?: string | null }} [options]
@@ -97,12 +70,23 @@ export function createApp(options = {}) {
     express.json({ limit: "12mb" })(req, res, next);
   });
 
-  app.get("/health", async (_req, res) => {
-    res.status(200).json(await healthPayload());
+  app.get("/health", (_req, res) => {
+    res.status(200).json(livenessPayload());
   });
 
   app.head("/health", (_req, res) => {
     res.status(200).end();
+  });
+
+  app.get("/ready", async (req, res) => {
+    const access = await requireDiagnosticsAccess(req);
+    const payload = await readinessPayload({ detailed: access.ok });
+    res.status(payload.ready ? 200 : 503).json(payload);
+  });
+
+  app.head("/ready", async (_req, res) => {
+    const payload = await readinessPayload({ detailed: false });
+    res.status(payload.ready ? 200 : 503).end();
   });
 
   app.post("/api/contact", handleContactNodeRequest);

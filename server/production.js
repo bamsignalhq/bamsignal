@@ -10,7 +10,8 @@ import { initDatabase } from "./db.js";
 import { fixFunctionSecurity } from "./fixFunctionSecurity.js";
 import { fixSecurityDefinerViews } from "./fixSecurityDefinerViews.js";
 import { registerBotCommands, bot } from "./telegram.js";
-import { createApp, healthPayload } from "./app.js";
+import { createApp } from "./app.js";
+import { readinessPayload } from "./services/readiness.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "..", "dist");
@@ -35,8 +36,13 @@ const app = createApp({ distDir });
 
 const server = app.listen(port, host, async () => {
   console.log(`[bamsignal] Running on http://${host}:${port}`);
-  const health = await healthPayload();
-  if (!health.signupEmail) {
+  const readiness = await readinessPayload({ detailed: true });
+  if (!readiness.ready) {
+    console.warn(
+      "[bamsignal] Production readiness incomplete — GET /ready returns 503 until database, Paystack, signup email, and photo storage are configured."
+    );
+  }
+  if (!readiness.signupEmail) {
     console.warn(
       "[bamsignal] signupEmail=false — set RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_URL in Coolify."
     );

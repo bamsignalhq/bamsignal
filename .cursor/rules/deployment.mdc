@@ -15,6 +15,7 @@ alwaysApply: true
 2. Before pushing, run the server import smoke test: `npm run test:server-import` (also enforced by the `.githooks/pre-push` hook after `npm install`).
 3. Coolify rebuilds from the repo `Dockerfile` (`npm run build` → server import smoke test → `node server/production.js`).
 4. Confirm deploy status in Coolify at control.bamsignal.com (manual redeploy if webhook did not fire).
+5. **Health checks:** use **`GET /ready`** for production readiness (Docker `HEALTHCHECK` and Coolify health check). **`GET /health`** is liveness only (process alive). Detailed dependency status requires `x-diagnostics-secret` or admin session on `/ready?details=1`.
 
 ## Build args / env (Coolify)
 
@@ -32,6 +33,6 @@ alwaysApply: true
 - `FIREBASE_SERVICE_ACCOUNT_JSON`, `FIREBASE_PRIVATE_KEY` (and discrete Firebase admin vars)
 - `CRON_SECRET`, `ADMIN_ACTION_PIN`, `COMMAND_CENTER_PIN`
 
-`/health` reports which runtime services are configured after deploy. The Docker build and smoke import must succeed **without** runtime secrets present.
+`/ready` returns **503** when critical runtime dependencies are missing (database, Paystack secret, signup email, photo storage). `/health` always returns **200** when the Node process is up. The Docker build and smoke import must succeed **without** runtime secrets present.
 
 See `.env.example` for the full list.

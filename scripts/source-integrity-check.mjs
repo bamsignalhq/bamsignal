@@ -235,8 +235,10 @@ assertCheck(
 assertCheck(
   pinAuthThrottleSource.includes("PIN_AUTH_MAX_ATTEMPTS") &&
     pinAuthThrottleSource.includes("PIN_AUTH_WINDOW_MS") &&
-    pinAuthThrottleSource.includes("PIN_AUTH_LOCK_MS"),
-  "PIN auth throttle must expose attempts, window, and lock constants"
+    pinAuthThrottleSource.includes("PIN_AUTH_LOCK_MS") &&
+    pinAuthThrottleSource.includes("checkMemoryMemberThrottle") &&
+    pinAuthThrottleSource.includes("logMemberMemoryThrottleUsed"),
+  "PIN auth throttle must expose attempts, window, lock constants, and memory fallback"
 );
 assertCheck(
   pinAuthThrottleSource.includes("action: \"pin_login\"") &&
@@ -354,8 +356,10 @@ assertCheck(
 assertCheck(
   adminActionPinThrottleSource.includes("ADMIN_ACTION_PIN_MAX_ATTEMPTS") &&
     adminActionPinThrottleSource.includes("ADMIN_ACTION_PIN_LOCK_MS") &&
-    adminActionPinThrottleSource.includes('ACTION = "admin_action_pin"'),
-  "admin action PIN throttle must track durable attempts with lock constants"
+    adminActionPinThrottleSource.includes('ACTION = "admin_action_pin"') &&
+    adminActionPinThrottleSource.includes("ADMIN_SECURITY_UNAVAILABLE_MESSAGE") &&
+    adminActionPinThrottleSource.includes("failClosed"),
+  "admin action PIN throttle must track durable attempts and fail closed during outages"
 );
 assertCheck(
   adminConsentServerSource.includes("attemptAdminActionPin") &&

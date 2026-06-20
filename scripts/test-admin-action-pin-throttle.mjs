@@ -37,7 +37,9 @@ assertCheck(
     adminConsentSource.includes("admin_action_pin_locked") &&
     adminConsentSource.includes("admin_action_pin_success") &&
     adminConsentSource.includes("INVALID_ADMIN_ACTION_PIN_MESSAGE") &&
-    adminConsentSource.includes("ADMIN_ACTION_PIN_LOCKED_MESSAGE"),
+    adminConsentSource.includes("ADMIN_ACTION_PIN_LOCKED_MESSAGE") &&
+    adminConsentSource.includes("ADMIN_SECURITY_UNAVAILABLE_MESSAGE") &&
+    adminConsentSource.includes("throttle.failClosed"),
   "admin consent must enforce throttled PIN attempts with generic responses"
 );
 

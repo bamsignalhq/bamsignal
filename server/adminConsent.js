@@ -4,6 +4,7 @@ import { getPlatformSetting, setPlatformSetting } from "./db.js";
 import { requireAdmin, verifySupabaseAdmin } from "./adminAuth.js";
 import {
   ADMIN_ACTION_PIN_LOCKED_MESSAGE,
+  ADMIN_SECURITY_UNAVAILABLE_MESSAGE,
   checkAdminActionPinThrottle,
   INVALID_ADMIN_ACTION_PIN_MESSAGE,
   recordAdminActionPinFailure,
@@ -57,6 +58,9 @@ export async function attemptAdminActionPin(req, pin) {
   }
 
   const throttle = await checkAdminActionPinThrottle(req, email);
+  if (throttle.failClosed) {
+    return { ok: false, status: 503, error: throttle.error || ADMIN_SECURITY_UNAVAILABLE_MESSAGE };
+  }
   if (!throttle.ok || throttle.locked) {
     console.info("admin_action_pin_locked", {
       email,
@@ -68,6 +72,9 @@ export async function attemptAdminActionPin(req, pin) {
   const verify = await verifyAdminActionPin(pin);
   if (!verify.ok) {
     const record = await recordAdminActionPinFailure(req, email);
+    if (record.failClosed) {
+      return { ok: false, status: 503, error: record.error || ADMIN_SECURITY_UNAVAILABLE_MESSAGE };
+    }
     console.info("admin_action_pin_failed", {
       email,
       attempts: record.attempts,

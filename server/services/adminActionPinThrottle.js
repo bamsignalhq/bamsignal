@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { isDatabaseReady, query } from "../db.js";
 import { rateLimitIp } from "./rateLimit.js";
 import { ensurePinAuthAttemptsTable } from "./pinAuthThrottle.js";
+import { logAdminFailClosed, logThrottleDbUnavailable } from "./memoryThrottle.js";
 
 const ACTION = "admin_action_pin";
 const WINDOW_MS = 15 * 60 * 1000;
@@ -13,6 +14,8 @@ export const ADMIN_ACTION_PIN_WINDOW_MS = WINDOW_MS;
 export const ADMIN_ACTION_PIN_LOCK_MS = LOCK_MS;
 export const INVALID_ADMIN_ACTION_PIN_MESSAGE = "Invalid action PIN.";
 export const ADMIN_ACTION_PIN_LOCKED_MESSAGE = "Too many attempts. Please try again later.";
+export const ADMIN_SECURITY_UNAVAILABLE_MESSAGE =
+  "Unable to verify admin security right now. Try again later.";
 
 function hashUserAgent(userAgent = "") {
   const value = String(userAgent || "").trim();
@@ -24,6 +27,17 @@ function throttleKeyFromRequest(req) {
   const ip = rateLimitIp(req);
   const userAgent = String(req?.headers?.["user-agent"] || "").trim();
   return { ip, userAgentHash: hashUserAgent(userAgent) };
+}
+
+function adminPersistenceUnavailableResult() {
+  logThrottleDbUnavailable(ACTION, "admin");
+  logAdminFailClosed(ACTION, "database_unavailable");
+  return {
+    ok: false,
+    locked: false,
+    failClosed: true,
+    error: ADMIN_SECURITY_UNAVAILABLE_MESSAGE
+  };
 }
 
 async function loadAttemptRow({ identifier, ip, userAgentHash }) {
@@ -44,7 +58,7 @@ async function loadAttemptRow({ identifier, ip, userAgentHash }) {
 
 async function upsertAttemptRow({ identifier, ip, userAgentHash, success }) {
   if (!isDatabaseReady()) {
-    return { ok: true, attempts: 0, locked: false, lockedUntil: null };
+    return adminPersistenceUnavailableResult();
   }
 
   const now = new Date();
@@ -111,7 +125,7 @@ export async function checkAdminActionPinThrottle(req, adminEmail) {
     return { ok: true, locked: false, lockedUntil: null };
   }
   if (!isDatabaseReady()) {
-    return { ok: true, locked: false, lockedUntil: null };
+    return adminPersistenceUnavailableResult();
   }
 
   await ensurePinAuthAttemptsTable();

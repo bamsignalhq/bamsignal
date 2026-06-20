@@ -1,6 +1,13 @@
 import { createHash } from "node:crypto";
 import { isDatabaseReady, query } from "../db.js";
 import { rateLimitIp } from "./rateLimit.js";
+import {
+  checkMemoryMemberThrottle,
+  clearMemoryMemberThrottleForIdentifier,
+  logMemberMemoryThrottleUsed,
+  logThrottleDbUnavailable,
+  recordMemoryMemberThrottleFailure
+} from "./memoryThrottle.js";
 
 const WINDOW_MS = 15 * 60 * 1000;
 const LOCK_MS = 15 * 60 * 1000;
@@ -32,6 +39,27 @@ function hashUserAgent(userAgent = "") {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
 }
 
+function throttleKeyFromRequest(req) {
+  const ip = rateLimitIp(req);
+  const userAgent = String(req?.headers?.["user-agent"] || "").trim();
+  return { ip, userAgentHash: hashUserAgent(userAgent) };
+}
+
+function memoryThrottleConfig() {
+  return {
+    windowMs: WINDOW_MS,
+    lockMs: LOCK_MS,
+    maxAttempts: MAX_ATTEMPTS
+  };
+}
+
+function useMemberMemoryFallback(action) {
+  if (isDatabaseReady()) return false;
+  logThrottleDbUnavailable(action, "member");
+  logMemberMemoryThrottleUsed(action);
+  return true;
+}
+
 async function loadAttemptRow({ action, identifier, ip, userAgentHash }) {
   if (!isDatabaseReady()) {
     return null;
@@ -53,8 +81,18 @@ async function loadAttemptRow({ action, identifier, ip, userAgentHash }) {
 }
 
 async function upsertAttemptRow({ action, identifier, ip, userAgentHash, success }) {
-  if (!isDatabaseReady()) {
-    return { ok: true, attempts: 0, locked: false, lockedUntil: null };
+  if (useMemberMemoryFallback(action)) {
+    if (success) {
+      clearMemoryMemberThrottleForIdentifier(action, identifier);
+      return { ok: true, attempts: 0, locked: false, lockedUntil: null };
+    }
+    return recordMemoryMemberThrottleFailure({
+      action,
+      identifier,
+      ip,
+      userAgentHash,
+      ...memoryThrottleConfig()
+    });
   }
 
   const now = new Date();
@@ -115,23 +153,24 @@ async function upsertAttemptRow({ action, identifier, ip, userAgentHash, success
   return { ok: !locked, attempts, locked, lockedUntil };
 }
 
-function throttleKeyFromRequest(req) {
-  const ip = rateLimitIp(req);
-  const userAgent = String(req?.headers?.["user-agent"] || "").trim();
-  return { ip, userAgentHash: hashUserAgent(userAgent) };
-}
-
 async function checkThrottleGeneric({ action, identifier, req }) {
   if (!identifier) {
     return { ok: true, locked: false, lockedUntil: null };
   }
 
-  if (!isDatabaseReady()) {
-    return { ok: true, locked: false, lockedUntil: null };
+  const { ip, userAgentHash } = throttleKeyFromRequest(req);
+
+  if (useMemberMemoryFallback(action)) {
+    return checkMemoryMemberThrottle({
+      action,
+      identifier,
+      ip,
+      userAgentHash,
+      ...memoryThrottleConfig()
+    });
   }
 
   await ensurePinAuthAttemptsTable();
-  const { ip, userAgentHash } = throttleKeyFromRequest(req);
   const row = await loadAttemptRow({ action, identifier, ip, userAgentHash });
 
   if (!row?.locked_until) {
@@ -161,7 +200,10 @@ export async function recordPinLoginFailure(req, username) {
 export async function recordPinLoginSuccess(username) {
   const identifier = String(username || "").trim().toLowerCase();
   if (!identifier) return { ok: true, attempts: 0, locked: false, lockedUntil: null };
-  if (!isDatabaseReady()) return { ok: true, attempts: 0, locked: false, lockedUntil: null };
+  if (useMemberMemoryFallback("pin_login")) {
+    clearMemoryMemberThrottleForIdentifier("pin_login", identifier);
+    return { ok: true, attempts: 0, locked: false, lockedUntil: null };
+  }
   await ensurePinAuthAttemptsTable();
   await query(`delete from pin_auth_attempts where action = $1 and identifier = $2`, [
     "pin_login",
@@ -190,7 +232,10 @@ export async function recordPinResetFailure(req, email) {
 export async function recordPinResetSuccess(email) {
   const identifier = String(email || "").trim().toLowerCase();
   if (!identifier) return { ok: true, attempts: 0, locked: false, lockedUntil: null };
-  if (!isDatabaseReady()) return { ok: true, attempts: 0, locked: false, lockedUntil: null };
+  if (useMemberMemoryFallback("pin_reset_complete")) {
+    clearMemoryMemberThrottleForIdentifier("pin_reset_complete", identifier);
+    return { ok: true, attempts: 0, locked: false, lockedUntil: null };
+  }
   await ensurePinAuthAttemptsTable();
   await query(`delete from pin_auth_attempts where action = $1 and identifier = $2`, [
     "pin_reset_complete",
@@ -202,4 +247,3 @@ export async function recordPinResetSuccess(email) {
 export const PIN_AUTH_WINDOW_MS = WINDOW_MS;
 export const PIN_AUTH_LOCK_MS = LOCK_MS;
 export const PIN_AUTH_MAX_ATTEMPTS = MAX_ATTEMPTS;
-

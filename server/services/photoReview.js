@@ -18,6 +18,7 @@ export async function ensurePhotoReviewSchema() {
     create table if not exists photo_reviews (
       id uuid primary key default gen_random_uuid(),
       profile_id uuid references app_member_profiles(id) on delete cascade,
+      auth_user_id uuid,
       user_key text,
       member_name text,
       photo_url text not null,
@@ -32,7 +33,13 @@ export async function ensurePhotoReviewSchema() {
     )
   `);
   await query(
+    "alter table photo_reviews add column if not exists auth_user_id uuid"
+  );
+  await query(
     "create index if not exists photo_reviews_status_idx on photo_reviews (photo_review_status, created_at desc)"
+  );
+  await query(
+    "create index if not exists photo_reviews_auth_user_idx on photo_reviews (auth_user_id)"
   );
   await query(
     "create unique index if not exists photo_reviews_url_idx on photo_reviews (photo_url)"
@@ -41,11 +48,17 @@ export async function ensurePhotoReviewSchema() {
 
 function mapReviewRow(row) {
   if (!row) return null;
+  const profileId = row.profile_id || null;
+  const userKey = row.user_key || null;
+  const authUserId = row.auth_user_id || null;
+  const attributed = Boolean(profileId && userKey);
   return {
     id: row.id,
-    profileId: row.profile_id,
-    userKey: row.user_key,
-    memberName: row.member_name || "Member",
+    profileId,
+    authUserId,
+    userKey,
+    memberName: row.member_name || (attributed ? "Member" : "Unattributed"),
+    unattributed: !attributed,
     photoUrl: row.photo_url,
     photoType: row.photo_type,
     photoReviewStatus: row.photo_review_status,
@@ -172,6 +185,53 @@ async function findProfileByPhotoUrl(photoUrl) {
   return result.rows[0] || null;
 }
 
+export async function attachUploadedPhotoToProfile({
+  profileId,
+  photoUrl,
+  photoType = "profile",
+  photoReviewStatus = "pending_review",
+  photoRiskFlags = [],
+  coverPath = null
+}) {
+  if (!isDatabaseReady() || !profileId || !photoUrl) {
+    return { ok: false, attached: false };
+  }
+
+  const row = await query("select profile from app_member_profiles where id = $1 limit 1", [profileId]);
+  if (!row.rows[0]) {
+    return { ok: false, attached: false, error: "Profile not found." };
+  }
+
+  const kind = photoType === "cover" ? "cover" : "profile";
+  const meta = {
+    photoReviewStatus,
+    photoRiskFlags,
+    type: kind,
+    uploadedAt: new Date().toISOString()
+  };
+  const nextProfile = applyPhotoMetaToProfile(row.rows[0].profile, photoUrl, meta);
+
+  if (kind === "cover") {
+    nextProfile.coverPhoto = photoUrl;
+    nextProfile.coverPhotoUrl = photoUrl;
+    nextProfile.coverPhotoExplicit = true;
+    nextProfile.coverPhotoUpdatedAt = new Date().toISOString();
+    if (coverPath) nextProfile.coverPhotoPath = coverPath;
+  } else {
+    const photos = Array.isArray(nextProfile.photos) ? nextProfile.photos.filter(Boolean) : [];
+    if (!photos.includes(photoUrl)) photos.push(photoUrl);
+    nextProfile.photos = photos;
+    if (!nextProfile.mainPhotoUrl) nextProfile.mainPhotoUrl = photoUrl;
+  }
+
+  await query(
+    `update app_member_profiles set profile = $2::jsonb, updated_at = now() where id = $1`,
+    [profileId, nextProfile]
+  );
+
+  return { ok: true, attached: true };
+}
+
 function applyPhotoMetaToProfile(profileJson, photoUrl, meta) {
   const profile = profileJson && typeof profileJson === "object" ? { ...profileJson } : {};
   const photoMeta = normalizePhotoMetaMap(profile.photoMeta);
@@ -216,7 +276,8 @@ export async function submitPhotoReview({
   photoRiskFlags = [],
   memberName = null,
   userKey = null,
-  profileId: explicitProfileId = null
+  profileId: explicitProfileId = null,
+  authUserId = null
 }) {
   if (!isDatabaseReady()) return null;
   await ensurePhotoReviewSchema();
@@ -234,6 +295,7 @@ export async function submitPhotoReview({
 
   const profileId = profileRow?.id || explicitProfileId || null;
   const resolvedUserKey = userKey || profileRow?.user_key || null;
+  const resolvedAuthUserId = authUserId || null;
   const resolvedName = memberName || profileRow?.name || profileRow?.profile?.name || null;
 
   const existingReview = await query(
@@ -260,13 +322,14 @@ export async function submitPhotoReview({
 
   const result = await query(
     `insert into photo_reviews (
-       profile_id, user_key, member_name, photo_url, photo_type,
+       profile_id, auth_user_id, user_key, member_name, photo_url, photo_type,
        photo_review_status, photo_risk_flags, updated_at
      )
-     values ($1, $2, $3, $4, $5, $6, $7::jsonb, now())
+     values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, now())
      on conflict (photo_url)
      do update set
        profile_id = coalesce(excluded.profile_id, photo_reviews.profile_id),
+       auth_user_id = coalesce(excluded.auth_user_id, photo_reviews.auth_user_id),
        user_key = coalesce(excluded.user_key, photo_reviews.user_key),
        member_name = coalesce(excluded.member_name, photo_reviews.member_name),
        photo_type = excluded.photo_type,
@@ -276,6 +339,7 @@ export async function submitPhotoReview({
      returning *`,
     [
       profileId,
+      resolvedAuthUserId,
       resolvedUserKey,
       resolvedName,
       url,

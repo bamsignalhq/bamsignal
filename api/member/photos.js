@@ -8,44 +8,13 @@ import {
   uploadProfilePhotoObject,
   PhotoStorageError
 } from "../../server/services/photoStorage.js";
-import { moderatePhoto } from "../../server/services/photoModerationProvider.js";
-import { submitPhotoReview } from "../../server/services/photoReview.js";
 import { recordPhotoViolation } from "../../server/services/moderation.js";
-import { verifySupabaseBearerUserId } from "../../server/supabaseEnv.js";
-
-async function finalizeUploadedPhoto({ userId, kind, result, body }) {
-  const filename = String(body.sourceFilename || body.filename || "").trim();
-  const moderation = await moderatePhoto({
-    imageUrl: result.url,
-    userId,
-    photoType: kind,
-    hints: { filename }
-  });
-
-  const photoRiskFlags = moderation.flags || [];
-  const reviewStatus = "pending_review";
-
-  try {
-    await submitPhotoReview({
-      photoUrl: result.url,
-      photoType: kind,
-      photoReviewStatus: reviewStatus,
-      photoRiskFlags,
-      profileId: body.profileId || null,
-      memberName: body.memberName || null
-    });
-  } catch (error) {
-    console.warn("[bamsignal] photo review enqueue failed:", error);
-  }
-
-  return {
-    reviewStatus,
-    photoRiskFlags,
-    moderationRejected: false,
-    moderationConfidence: moderation.confidence ?? 0,
-    moderationProvider: moderation.provider || "manual"
-  };
-}
+import { submitPhotoReview } from "../../server/services/photoReview.js";
+import {
+  finalizeAuthenticatedPhotoUpload,
+  finalizeExistingPhotoUpload,
+  resolvePhotoUploadOwner
+} from "../../server/services/photoUploadAttribution.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -59,10 +28,8 @@ function parseBody(req) {
   return req.body;
 }
 
-async function verifyBearerUserId(req) {
-  const authHeader = req.headers.authorization || "";
-  const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
-  return verifySupabaseBearerUserId(bearer);
+function unauthorized(res, auth) {
+  return res.status(auth?.status || 401).json({ ok: false, error: auth?.error || "not_authorized" });
 }
 
 export default async function handler(req, res) {
@@ -71,21 +38,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  if (!isPhotoStorageConfigured()) {
-    return res.status(503).json({
-      ok: false,
-      error: "Photo storage is not configured.",
-      storageUnavailable: true
-    });
-  }
-
   const action = String(req.query.action || "").trim();
   const body = parseBody(req);
 
   try {
-    const userId = await verifyBearerUserId(req);
-    if (!userId) {
-      return res.status(401).json({ ok: false, error: "Login required to upload photos." });
+    const owner = await resolvePhotoUploadOwner(req, body);
+    if (!owner.ok) {
+      return unauthorized(res, owner);
+    }
+
+    const needsStorage = action === "upload" || action === "delete" || action === "finalize";
+    if (needsStorage && !isPhotoStorageConfigured()) {
+      return res.status(503).json({
+        ok: false,
+        error: "Photo storage is not configured.",
+        storageUnavailable: true
+      });
     }
 
     if (action === "upload") {
@@ -95,10 +63,21 @@ export default async function handler(req, res) {
       }
 
       const { contentType, buffer } = decodeBase64ImagePayload(body.imageBase64);
+      const filename = String(body.sourceFilename || body.filename || "").trim();
 
       if (kind === "cover") {
-        const result = await uploadCoverPhotoObject({ userId, bytes: buffer, contentType });
-        const moderation = await finalizeUploadedPhoto({ userId, kind, result, body });
+        const result = await uploadCoverPhotoObject({
+          userId: owner.authUserId,
+          bytes: buffer,
+          contentType
+        });
+        const moderation = await finalizeAuthenticatedPhotoUpload({
+          owner,
+          kind,
+          photoUrl: result.url,
+          coverPath: result.path,
+          filename
+        });
         return res.status(200).json({
           ok: true,
           url: result.url,
@@ -109,12 +88,17 @@ export default async function handler(req, res) {
       }
 
       const result = await uploadProfilePhotoObject({
-        userId,
+        userId: owner.authUserId,
         photoId: body.photoId,
         bytes: buffer,
         contentType
       });
-      const moderation = await finalizeUploadedPhoto({ userId, kind, result, body });
+      const moderation = await finalizeAuthenticatedPhotoUpload({
+        owner,
+        kind,
+        photoUrl: result.url,
+        filename
+      });
       return res.status(200).json({
         ok: true,
         url: result.url,
@@ -124,13 +108,21 @@ export default async function handler(req, res) {
       });
     }
 
+    if (action === "finalize") {
+      const result = await finalizeExistingPhotoUpload(req, body);
+      if (!result.ok) {
+        return res.status(result.status || 400).json({ ok: false, error: result.error || "Finalize failed." });
+      }
+      return res.status(200).json(result);
+    }
+
     if (action === "delete") {
       const url = String(body.url || "").trim();
       const parsed = parsePhotoStorageUrl(url);
       if (!parsed) {
         return res.status(400).json({ ok: false, error: "Invalid photo URL." });
       }
-      assertUserOwnsStoragePath(userId, parsed.path);
+      assertUserOwnsStoragePath(owner.authUserId, parsed.path);
       await deletePhotoStorageObject(parsed.bucket, parsed.path);
       return res.status(200).json({ ok: true });
     }
@@ -147,7 +139,7 @@ export default async function handler(req, res) {
 
       const parsed = parsePhotoStorageUrl(photoUrl);
       if (parsed) {
-        assertUserOwnsStoragePath(userId, parsed.path);
+        assertUserOwnsStoragePath(owner.authUserId, parsed.path);
       }
 
       const review = await submitPhotoReview({
@@ -155,24 +147,27 @@ export default async function handler(req, res) {
         photoType,
         photoReviewStatus,
         photoRiskFlags,
-        memberName: body.memberName || null,
-        profileId: body.profileId || null
+        memberName: owner.member?.name || owner.identity?.name || owner.username || null,
+        userKey: owner.userKey || null,
+        profileId: owner.memberId || null,
+        authUserId: owner.authUserId || null
       });
 
       return res.status(200).json({ ok: true, review });
     }
 
     if (action === "report-violation") {
-      const profileId = String(body.profileId || "").trim();
+      const profileId = owner.memberId;
       const reason = String(body.reason || "").trim() || "Blocked unhealthy photo before upload";
       const photoRiskFlags = Array.isArray(body.photoRiskFlags) ? body.photoRiskFlags : [];
 
       if (!profileId) {
-        return res.status(400).json({ ok: false, error: "Profile id required." });
+        return res.status(404).json({ ok: false, error: "Member profile not found." });
       }
 
       const violation = await recordPhotoViolation({
         profileId,
+        userKey: owner.userKey || null,
         photoUrl: body.photoUrl ? String(body.photoUrl).trim() : null,
         reason,
         source: "system",

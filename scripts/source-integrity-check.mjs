@@ -46,6 +46,9 @@ const diagnosticsAccessSource = readSrc("server/services/diagnosticsAccess.js");
 const viewSecurityApiSource = readSrc("api/diagnostics/view-security.js");
 const functionSecurityApiSource = readSrc("api/diagnostics/function-security.js");
 const paystackDiagnosticsApiSource = readSrc("api/diagnostics/paystack-connectivity.js");
+const memberPhotosApiSource = readSrc("api/member/photos.js");
+const photoUploadAttributionSource = readSrc("server/services/photoUploadAttribution.js");
+const photoReviewServiceSource = readSrc("server/services/photoReview.js");
 
 assertCheck(
   paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
@@ -226,5 +229,19 @@ for (const [label, source] of [
     `${label} diagnostics endpoint must use shared auth and hide purpose on failure`
   );
 }
+
+assertCheck(
+  photoUploadAttributionSource.includes("requireMemberAuth") &&
+    photoUploadAttributionSource.includes("finalizeAuthenticatedPhotoUpload") &&
+    memberPhotosApiSource.includes("resolvePhotoUploadOwner") &&
+    !memberPhotosApiSource.includes("body.profileId"),
+  "photo uploads must derive owner from bearer auth and attach server-side"
+);
+assertCheck(
+  photoReviewServiceSource.includes("auth_user_id") &&
+    photoReviewServiceSource.includes("attachUploadedPhotoToProfile") &&
+    photoReviewServiceSource.includes("unattributed"),
+  "photo reviews must store auth user attribution and flag unattributed rows"
+);
 
 console.log("source integrity ok");

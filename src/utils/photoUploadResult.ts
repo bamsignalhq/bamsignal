@@ -20,8 +20,7 @@ export function photoMetaFromUpload(
 export function queuePhotoReviewAsync(
   photoUrl: string,
   type: "profile" | "cover",
-  payload: PhotoUploadModerationPayload,
-  memberName?: string
+  payload: PhotoUploadModerationPayload
 ): void {
   const status = payload.reviewStatus || "pending_review";
   if (status === "approved" && !(payload.photoRiskFlags || []).length) return;
@@ -30,7 +29,6 @@ export function queuePhotoReviewAsync(
     photoUrl,
     photoType: type,
     photoReviewStatus: status,
-    photoRiskFlags: (payload.photoRiskFlags || []) as PhotoRiskFlag[],
-    memberName
+    photoRiskFlags: (payload.photoRiskFlags || []) as PhotoRiskFlag[]
   });
 }

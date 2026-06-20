@@ -149,6 +149,32 @@ export async function deletePhotoStorageObject(bucket, objectPath) {
   }
 }
 
+export async function listBucketObjects(bucket, { prefix = "", limit = 100, offset = 0 } = {}) {
+  await ensurePhotoBuckets();
+  const response = await storageRequest(`/object/list/${bucket}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prefix, limit, offset })
+  });
+  if (!response.ok) return [];
+  const objects = await response.json().catch(() => []);
+  return Array.isArray(objects) ? objects : [];
+}
+
+export async function listAllBucketObjects(bucket) {
+  const all = [];
+  let offset = 0;
+  const limit = 100;
+  for (;;) {
+    const batch = await listBucketObjects(bucket, { limit, offset });
+    if (!batch.length) break;
+    all.push(...batch);
+    if (batch.length < limit) break;
+    offset += batch.length;
+  }
+  return all;
+}
+
 export async function deleteAllUserPhotoStorage(userId) {
   if (!userId || !isPhotoStorageConfigured()) return { deleted: 0 };
   const prefix = `${String(userId).replace(/[^a-zA-Z0-9_-]/g, "")}/`;

@@ -522,8 +522,13 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                 <div className="admin-moderation-row__main">
                   <img src={item.photoUrl} alt="" className="admin-photo-review-row__thumb" />
                   <div>
-                    <strong>{item.memberName}</strong>
+                    <strong>
+                      {item.unattributed ? "Unattributed" : item.memberName}
+                      {item.unattributed ? " (missing profile/user link)" : null}
+                    </strong>
                     <span>
+                      {item.profileId ? `Profile ${item.profileId.slice(0, 8)}…` : "No profile id"}
+                      {item.userKey ? ` · ${item.userKey}` : " · No user key"} ·{" "}
                       {photoReviewLabel(item.photoReviewStatus as never)} · {item.photoType} ·{" "}
                       {item.photoRiskFlags.map((flag) => riskFlagLabel(flag as never)).join(", ") || "No flags"}
                       {item.rejectReason ? ` · ${item.rejectReason}` : ""} ·{" "}
@@ -611,8 +616,13 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                     <div className="admin-moderation-row__main">
                       <img src={item.photoUrl} alt="" className="admin-photo-review-row__thumb" />
                       <div>
-                        <strong>{item.memberName}</strong>
+                        <strong>
+                          {item.unattributed ? "Unattributed" : item.memberName}
+                          {item.unattributed ? " (missing profile/user link)" : null}
+                        </strong>
                         <span>
+                          {item.profileId ? `Profile ${item.profileId.slice(0, 8)}…` : "No profile id"}
+                          {item.userKey ? ` · ${item.userKey}` : " · No user key"} ·{" "}
                           {photoReviewLabel(item.photoReviewStatus as never)} · {item.photoType} ·{" "}
                           {item.rejectReason || "Hidden by moderator"} ·{" "}
                           {new Date(item.uploadedAt).toLocaleString()}

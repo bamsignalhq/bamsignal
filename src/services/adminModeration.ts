@@ -93,8 +93,10 @@ export async function fetchContactLeakAttempts(limit = 50) {
 export type PhotoReviewItem = {
   id: string;
   profileId?: string | null;
+  authUserId?: string | null;
   userKey?: string | null;
   memberName: string;
+  unattributed?: boolean;
   photoUrl: string;
   photoType: "profile" | "cover";
   photoReviewStatus: "approved" | "pending_review" | "rejected" | "hidden";

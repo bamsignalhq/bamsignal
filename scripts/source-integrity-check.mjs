@@ -36,6 +36,9 @@ const memberDataApiSource = readSrc("api/member/data.js");
 const memberAuthSource = readSrc("server/services/memberAuth.js");
 const memberDataClientSource = readSrc("src/services/memberData.ts");
 const memberApiAuthSource = readSrc("src/utils/memberApiAuth.ts");
+const pinLoginApiSource = readSrc("api/auth/pin-login.js");
+const pinResetApiSource = readSrc("api/auth/pin-reset.js");
+const pinAuthThrottleSource = readSrc("server/services/pinAuthThrottle.js");
 
 assertCheck(
   paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
@@ -144,6 +147,38 @@ assertCheck(
   memberDataClientSource.includes("memberApiHeaders") &&
     memberApiAuthSource.includes("supabase.auth.getSession"),
   "member data client calls must attach Supabase bearer tokens"
+);
+assertCheck(
+  pinAuthThrottleSource.includes("PIN_AUTH_MAX_ATTEMPTS") &&
+    pinAuthThrottleSource.includes("PIN_AUTH_WINDOW_MS") &&
+    pinAuthThrottleSource.includes("PIN_AUTH_LOCK_MS"),
+  "PIN auth throttle must expose attempts, window, and lock constants"
+);
+assertCheck(
+  pinAuthThrottleSource.includes("action: \"pin_login\"") &&
+    pinAuthThrottleSource.includes("action: \"pin_reset_complete\""),
+  "PIN auth throttle must track pin_login and pin_reset_complete actions"
+);
+assertCheck(
+  pinLoginApiSource.includes("pin_login_failed") &&
+    pinLoginApiSource.includes("pin_login_locked") &&
+    pinLoginApiSource.includes("pin_login_success"),
+  "PIN login API must log success, failure, and lock events"
+);
+assertCheck(
+  pinResetApiSource.includes("pin_reset_failed") &&
+    pinResetApiSource.includes("pin_reset_locked") &&
+    pinResetApiSource.includes("pin_reset_success"),
+  "PIN reset API must log success, failure, and lock events"
+);
+assertCheck(
+  pinLoginApiSource.includes("INVALID_LOGIN_MESSAGE") &&
+    !pinLoginApiSource.includes("result.error || INVALID_LOGIN_MESSAGE"),
+  "PIN login API must return generic invalid message"
+);
+assertCheck(
+  pinResetApiSource.includes("INVALID_RESET_MESSAGE"),
+  "PIN reset API must return generic invalid reset message"
 );
 
 console.log("source integrity ok");

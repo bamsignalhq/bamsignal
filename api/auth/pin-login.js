@@ -1,4 +1,9 @@
 import { INVALID_LOGIN_MESSAGE, loginWithUsernameAndPin } from "../../server/services/pinLogin.js";
+import {
+  checkPinLoginThrottle,
+  recordPinLoginFailure,
+  recordPinLoginSuccess
+} from "../../server/services/pinAuthThrottle.js";
 import { normalizeLoginUsername } from "../../server/services/loginResolve.js";
 
 function parseBody(req) {
@@ -23,19 +28,45 @@ export default async function handler(req, res) {
   const rawUsername = String(body.username || "");
   const username = normalizeLoginUsername(rawUsername);
   const pin = body.pin != null ? String(body.pin) : "";
+  const lockError = "Too many attempts. Please try again later.";
 
   try {
     if (!username || !pin) {
       return res.status(401).json({ ok: false, error: INVALID_LOGIN_MESSAGE });
     }
 
-    const result = await loginWithUsernameAndPin(username, pin);
-    if (!result.ok) {
-      return res.status(401).json({
+    const throttle = await checkPinLoginThrottle(req, username);
+    if (throttle.locked) {
+      console.info("pin_login_locked", {
+        username,
+        lockedUntil: throttle.lockedUntil || null
+      });
+      return res.status(429).json({
         ok: false,
-        error: result.error || INVALID_LOGIN_MESSAGE
+        error: lockError
       });
     }
+
+    const result = await loginWithUsernameAndPin(username, pin);
+    if (!result.ok) {
+      const record = await recordPinLoginFailure(req, username);
+      console.info("pin_login_failed", {
+        username,
+        attempts: record.attempts,
+        locked: record.locked,
+        lockedUntil: record.lockedUntil || null
+      });
+      return res.status(401).json({
+        ok: false,
+        error: INVALID_LOGIN_MESSAGE
+      });
+    }
+
+    await recordPinLoginSuccess(username);
+    console.info("pin_login_success", {
+      username
+    });
+
     return res.status(200).json({
       ok: true,
       email: result.email,

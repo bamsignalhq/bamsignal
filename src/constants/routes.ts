@@ -124,6 +124,7 @@ export function shouldShowPublicNotFound(
 
 const MEMBER_APP_PATHS = [
   "/home",
+  "/fast-connection",
   "/onboarding",
   "/discover",
   "/chats",

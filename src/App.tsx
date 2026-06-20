@@ -10,6 +10,7 @@ import { GuestGate } from "./components/GuestGate";
 import { LandingPage } from "./pages/LandingPage";
 import { GuestDiscoverPage } from "./pages/GuestDiscoverPage";
 import { HomePage } from "./pages/HomePage";
+import { FastConnectionPage } from "./pages/FastConnectionPage";
 import { DiscoverPage } from "./pages/DiscoverPage";
 import { LikesPage } from "./pages/LikesPage";
 import { ChatsPage } from "./pages/ChatsPage";
@@ -186,6 +187,13 @@ type VerifiedPaymentRoute = {
   quickiePassUntil?: string;
   expiresAt?: string;
 };
+
+function fastConnectionPaymentFailureMessage(): string {
+  const productType = getPaymentReturnMeta().productType;
+  return productType === "fast_connection" || productType === "quickie"
+    ? "Fast Connection was not activated."
+    : USER_MESSAGES.paymentNotCompleted;
+}
 
 export function App() {
   const isNative = Capacitor.getPlatform() !== "web";
@@ -604,7 +612,7 @@ export function App() {
         applyQuickieIntentAfterPayment(user, route?.quickiePassUntil);
         setPaymentSuccess({
           title: "Payment successful",
-          body: "Your Fast Connection Pass is active."
+          body: "Fast Connection is active."
         });
         trackEvent("quickie_unlock");
       } else {
@@ -663,7 +671,7 @@ export function App() {
 
       if (result.cancelled) {
         setPaymentFlowState("cancelled");
-        setAuthMessage(USER_MESSAGES.paymentNotCompleted);
+        setAuthMessage(fastConnectionPaymentFailureMessage());
         if (callbackActive) {
           const returnPath = getPaymentReturnPath();
           setPaymentReturnPhase("idle");
@@ -677,7 +685,11 @@ export function App() {
         setPaymentFlowState("failed");
       }
       logPaymentEvent("verification result", { ok: false, kind: result.kind, error: result.error });
-      if (result.error) setAuthMessage(result.error);
+      if (result.error) {
+        setAuthMessage(
+          result.kind === "quickie" ? fastConnectionPaymentFailureMessage() : result.error
+        );
+      }
       if (callbackActive) setPaymentReturnPhase("failed");
     } finally {
       paymentVerifyInFlight.current = false;
@@ -1959,6 +1971,17 @@ export function App() {
                 isPremium={isPremium}
                 onDiscover={() => setTab("discover")}
                 onOpenPremium={startPremiumCheckout}
+              />
+            </MemberRouteBoundary>
+          )}
+          {memberAccessReady && !memberOverlay && currentPathname === "/fast-connection" && (
+            <MemberRouteBoundary name="fast-connection">
+              <FastConnectionPage
+                onDiscover={() => {
+                  setTab("discover");
+                  navigateToPath("/discover");
+                }}
+                onHome={() => navigateToPath("/home")}
               />
             </MemberRouteBoundary>
           )}

@@ -15,6 +15,7 @@ const TAB_TO_PATH: Record<NavTab, string> = {
 
 const PATH_TO_TAB: Record<string, NavTab> = {
   "/home": "home",
+  "/fast-connection": "home",
   "/discover": "discover",
   "/signals": "likes",
   "/chats": "chats",

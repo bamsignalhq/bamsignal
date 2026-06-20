@@ -40,14 +40,18 @@ function normalizeReturnPath(value) {
   const raw = String(value || "").trim();
   if (!raw || raw === "/" || raw.startsWith("//") || /^[a-z][a-z\d+.-]*:/i.test(raw)) return "/home";
   const path = raw.split(/[?#]/)[0].replace(/\/$/, "") || "/";
-  const allowed = ["/home", "/profile", "/settings", "/subscription", "/discover", "/chats", "/signals"];
+  const allowed = ["/home", "/fast-connection", "/profile", "/settings", "/subscription", "/discover", "/chats", "/signals"];
   return allowed.some((prefix) => path === prefix || path.startsWith(`${prefix}/`)) ? raw.replace(/\/$/, "") : "/home";
+}
+
+function isFastConnectionProductType(productType) {
+  return productType === "quickie" || productType === "fast_connection";
 }
 
 function productDetails(data = {}) {
   const metadata = data.metadata || {};
   const productType = String(metadata.product_type || "premium").trim();
-  if (productType === "quickie") {
+  if (isFastConnectionProductType(productType)) {
     return { productType, productId: String(metadata.product_id || "fast-connection-pass") };
   }
   if (productType === "boost") {
@@ -62,7 +66,7 @@ function productDetails(data = {}) {
 
 async function fulfillWebhookPurchase({ productType, boostId, email, phone, name, reference, data }) {
   const metadata = data.metadata || {};
-  if (productType === "quickie") {
+  if (isFastConnectionProductType(productType)) {
     const passDays = Math.max(1, Math.round(Number(metadata.quickie_days || 7)));
     const passUntil = new Date(Date.now() + passDays * 86400000).toISOString();
     return activateAppUserFastConnectionPass({

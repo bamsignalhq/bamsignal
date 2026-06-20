@@ -2,6 +2,7 @@ import { MAX_INTENT_SELECTIONS } from "../constants/intents";
 import { STORAGE_KEYS } from "../constants/limits";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import type { IntentTag, UserProfile } from "../types";
+import { activateFastConnectionEntitlements } from "./fastConnectionState";
 import {
   activateQuickiePass,
   clearPendingQuickieIntent,
@@ -25,12 +26,26 @@ export function applyQuickieIntentAfterPayment(
   untilIso?: string,
   options?: { addIntent?: boolean }
 ): void {
-  if (untilIso) activateQuickiePass(untilIso);
-  const shouldAddIntent = options?.addIntent ?? hasPendingQuickieIntent();
-  clearPendingQuickieIntent();
-  if (!shouldAddIntent) return;
-
+  if (untilIso) {
+    activateQuickiePass(untilIso);
+    activateFastConnectionEntitlements(untilIso);
+  }
   const profile = getDatingProfile();
+  const shouldAddIntent =
+    options?.addIntent !== undefined
+      ? options.addIntent
+      : hasPendingQuickieIntent() || profile.fastConnectionInterested === true;
+  clearPendingQuickieIntent();
+  if (!shouldAddIntent) {
+    const interestedOnly = normalizeDatingProfile({
+      ...profile,
+      fastConnectionInterested: true
+    });
+    writeJson(STORAGE_KEYS.datingProfile, interestedOnly);
+    void syncMemberProfileRemote(user, interestedOnly);
+    return;
+  }
+
   let intents = [...profile.intents];
   if (!intents.includes(QUICKIE_INTENT)) {
     if (intents.length >= MAX_INTENT_SELECTIONS) {
@@ -40,7 +55,11 @@ export function applyQuickieIntentAfterPayment(
     }
   }
 
-  const next = normalizeDatingProfile({ ...profile, intents: sanitizeIntentsForActivePass(intents) });
+  const next = normalizeDatingProfile({
+    ...profile,
+    fastConnectionInterested: true,
+    intents: sanitizeIntentsForActivePass(intents)
+  });
   writeJson(STORAGE_KEYS.datingProfile, next);
   void syncMemberProfileRemote(user, next);
 }

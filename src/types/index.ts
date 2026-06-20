@@ -194,6 +194,8 @@ export type DatingProfile = {
   /** Set when member picks interested-in during onboarding; prevents gender-based auto overrides. */
   interestedInManuallyChanged?: boolean;
   intents: IntentTag[];
+  /** Selected during onboarding/profile — activates after paid Fast Connection pass. */
+  fastConnectionInterested?: boolean;
   interests: string[];
   /** True once member picks interests in the picker (prevents stale auto-filled chips during onboarding). */
   interestsTouched?: boolean;

@@ -92,6 +92,7 @@ type VerifyResult = {
 };
 
 function normalizePaymentKind(kind?: string | null): PaymentKind {
+  if (kind === "fast_connection") return "quickie";
   return kind === "boost" || kind === "quickie" || kind === "premium" ? kind : "premium";
 }
 
@@ -114,7 +115,7 @@ function buildReturnContext(
   const returnPath = normalizePaymentReturnPath(returnContext?.returnPath || fallbackReturnPath);
   return {
     returnPath,
-    productType: kind,
+    productType: (returnContext?.productType as PaymentReturnContext["productType"]) || kind,
     productId: returnContext?.productId || productId,
     sourcePage: normalizePaymentReturnPath(returnContext?.sourcePage || returnPath)
   };
@@ -342,6 +343,8 @@ export async function startQuickiePassPayment(
       name: user.name,
       amount,
       days,
+      durationDays: days,
+      dailyFastSignals: 30,
       platform: paymentPlatform(),
       returnPath: paymentReturnContext.returnPath,
       sourcePage: paymentReturnContext.sourcePage,
@@ -360,6 +363,18 @@ export async function startQuickiePassPayment(
     setPaymentFlowState("idle");
     return { ok: false, error: INIT_ERROR };
   }
+}
+
+export async function startFastConnectionActivationPayment(
+  user: UserProfile,
+  callbacks: CheckoutCallbacks = {}
+): Promise<StartPaymentResult> {
+  return startQuickiePassPayment(user, callbacks, {
+    returnPath: "/fast-connection",
+    sourcePage: "/home",
+    productType: "fast_connection",
+    productId: "fast-connection-pass"
+  });
 }
 
 export async function verifyQuickiePayment(user: UserProfile): Promise<{
@@ -384,7 +399,7 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
         phone: user.phone,
         name: user.name,
         ...returnBody,
-        productType: "quickie"
+        productType: returnBody.productType === "fast_connection" ? "fast_connection" : "quickie"
       })
     });
     const payload = await readResponseJson<VerifyPaymentPayload>(response);

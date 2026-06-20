@@ -4,7 +4,6 @@ import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import { Preloader } from "../components/Preloader";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
 import { INTENT_OPTIONS, MAX_INTENT_SELECTIONS, toggleIntentSelection, INTENT_LIMIT_MESSAGE } from "../constants/intents";
-import { durationLabel } from "../constants/plans";
 import { MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
 import { MIN_PROFILE_INTERESTS } from "../constants/interestCategories";
 import { CONTACT_LEAK_BLOCK_MESSAGE, validateDisplayName, validateProfileContactLeaks, validateUserText } from "../utils/contactGuard";
@@ -35,9 +34,8 @@ import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { clearOnboardingDrafts, looksLikeSavedOnboardingProgress } from "../utils/onboardingStatus";
 import { resolveMemberIdentity } from "../utils/authIdentity";
 import { writeJson, readJson } from "../utils/storage";
-import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
-import { FastConnectionSheet } from "../components/profile/FastConnectionSheet";
-import { useFastConnectionCheckout } from "../hooks/useFastConnectionCheckout";
+import { isQuickiePassActive, QUICKIE_INTENT } from "../utils/quickie";
+import { isFastConnectionInterested } from "../utils/fastConnectionState";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { isSignupPhotoCountable } from "../utils/photoMeta";
 import { flowLog } from "../utils/flowLog";
@@ -113,22 +111,6 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       modMessageTimerRef.current = undefined;
     }, 4000);
   };
-  const {
-    sheetOpen: fastConnectionSheetOpen,
-    loading: fastConnectionLoading,
-    closeSheet: closeFastConnectionSheet,
-    continueToPayment: continueFastConnectionPayment,
-    handleIntentTap,
-    refreshProfileIntents
-  } = useFastConnectionCheckout({
-    user,
-    returnPath: "/onboarding",
-    onPaymentSuccess: () => {
-      setProfile((current) => ({ ...current, intents: refreshProfileIntents() }));
-      showModMessage("Fast Connection is active.");
-    },
-    onPaymentError: (message) => showModMessage(message)
-  });
   const [profile, setProfile] = useState<DatingProfile>(() => {
     const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
     const normalized = normalizeDatingProfile(stored);
@@ -360,10 +342,14 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   };
 
   const handleIntentSelection = (intent: IntentTag) => {
-    const handled = handleIntentTap(intent, profile.intents, (intents) =>
-      setProfile((current) => ({ ...current, intents }))
-    );
-    if (!handled) toggleIntent(intent);
+    if (intent === QUICKIE_INTENT && !isQuickiePassActive()) {
+      setProfile((current) => ({
+        ...current,
+        fastConnectionInterested: !isFastConnectionInterested(current)
+      }));
+      return;
+    }
+    toggleIntent(intent);
   };
 
   if (showWelcome) {
@@ -491,8 +477,14 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
             <legend>Intent · select up to {MAX_INTENTS}</legend>
             <div className="intent-tags selectable welcome-intent-grid">
               {INTENT_OPTIONS.map((opt) => {
-                const selected = profile.intents.includes(opt.id);
-                const disabled = !selected && profile.intents.length >= MAX_INTENTS;
+                const selected =
+                  opt.id === QUICKIE_INTENT && !isQuickiePassActive()
+                    ? isFastConnectionInterested(profile)
+                    : profile.intents.includes(opt.id);
+                const disabled =
+                  opt.id === QUICKIE_INTENT && !isQuickiePassActive()
+                    ? false
+                    : !selected && profile.intents.length >= MAX_INTENTS;
                 return (
                   <button
                     key={opt.id}
@@ -503,11 +495,6 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
                   >
                     <span className="intent-tag__emoji">{opt.emoji}</span>
                     {opt.label}
-                    {opt.id === "Quickie" && (
-                      <small className="intent-tag__price">
-                        {quickiePriceLabel()} / {durationLabel(quickiePassDays())}
-                      </small>
-                    )}
                   </button>
                 );
               })}
@@ -597,13 +584,6 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           {step < STEPS.length - 1 && <ChevronRight size={18} />}
         </button>
       </footer>
-
-      <FastConnectionSheet
-        open={fastConnectionSheetOpen}
-        onClose={closeFastConnectionSheet}
-        onContinuePayment={() => void continueFastConnectionPayment()}
-        loading={fastConnectionLoading}
-      />
     </div>
   );
 }

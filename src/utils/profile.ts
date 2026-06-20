@@ -194,6 +194,7 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     intents: sanitizeIntentsForActivePass(
       normalizeIntents(safeArray<string>(cleaned.intents) as string[] | undefined)
     ),
+    fastConnectionInterested: Boolean(cleaned.fastConnectionInterested),
     interests,
     interestsTouched: onboardingComplete ? interests.length > 0 || interestsTouched : interestsTouched,
     coverPhoto,

@@ -46,7 +46,7 @@ function buildReference(prefix) {
   return `bs_${prefix}_${stamp}_${random}`.slice(0, 64);
 }
 
-const APP_RETURN_PREFIXES = ["/home", "/profile", "/settings", "/subscription", "/discover", "/chats", "/signals"];
+const APP_RETURN_PREFIXES = ["/home", "/fast-connection", "/profile", "/settings", "/subscription", "/discover", "/chats", "/signals"];
 
 function normalizePaymentReturnPath(value, fallback = "/home") {
   const raw = String(value || "").trim();
@@ -348,6 +348,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: "Fast Connection Pass pricing is not configured yet." });
       }
 
+      const productType = String(body.productType || "quickie").trim();
       const { returnPath, sourcePage } = paymentReturnFrom({}, body, "/home");
       const reference = buildReference("quickie");
 
@@ -362,9 +363,11 @@ export default async function handler(req, res) {
             app: "BamSignal",
             name,
             phone,
-            product_type: "quickie",
+            product_type: productType,
             product_id: String(body.productId || "fast-connection-pass"),
             quickie_days: passDays,
+            duration_days: passDays,
+            daily_fast_signals: Math.max(1, Math.round(Number(body.dailyFastSignals || 30))),
             expected_amount_kobo: amount,
             return_path: returnPath,
             source_page: sourcePage
@@ -374,7 +377,7 @@ export default async function handler(req, res) {
         await logPaymentInitialized({
           reference: data?.reference || reference,
           userEmail: email,
-          productType: "quickie",
+          productType,
           productId: String(body.productId || "fast-connection-pass"),
           returnPath
         });
@@ -467,7 +470,7 @@ export default async function handler(req, res) {
       return res.status(422).json({ ok: false, error: "Payment amount does not match this purchase." });
     }
 
-    if (productType === "quickie") {
+    if (productType === "quickie" || productType === "fast_connection") {
       const productId = String(metadata.product_id || body.productId || "fast-connection-pass");
       const passDays = Math.max(1, Math.round(Number(metadata.quickie_days || 7)));
       const passUntil = new Date(Date.now() + passDays * 24 * 3600000).toISOString();
@@ -479,7 +482,7 @@ export default async function handler(req, res) {
         paystackReference: reference
       });
       await markPaymentFulfillmentStatus(reference, "fulfilled", {
-        productType: "quickie",
+        productType,
         productId,
         amountKobo: Number(transaction?.amount || 0),
         currency: String(transaction?.currency || "").trim() || null
@@ -488,7 +491,7 @@ export default async function handler(req, res) {
         reference,
         email: email || transactionEmail,
         name,
-        productType: "quickie",
+        productType,
         productId,
         amountKobo: transaction?.amount,
         metadata,
@@ -498,12 +501,12 @@ export default async function handler(req, res) {
         reference,
         returnPath,
         sourcePage,
-        productType: "quickie",
+        productType,
         productId
       });
       return res.status(200).json({
         ok: true,
-        productType: "quickie",
+        productType,
         productId,
         returnPath,
         sourcePage,

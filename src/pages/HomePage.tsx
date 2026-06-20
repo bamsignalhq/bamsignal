@@ -24,6 +24,8 @@ import {
 } from "../utils/homeFilters";
 import { normalizePath } from "../constants/routes";
 import { useAndroidBack } from "../hooks/useAndroidBack";
+import { FastConnectionActivationSheet } from "../components/profile/FastConnectionActivationSheet";
+import { useFastConnectionActivationPrompt } from "../hooks/useFastConnectionActivationPrompt";
 
 type HomePageProps = {
   user: UserProfile;
@@ -77,6 +79,18 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   );
   const [signalRefresh, setSignalRefresh] = useState(0);
   const [signalLimitOpen, setSignalLimitOpen] = useState(false);
+  const [activationMessage, setActivationMessage] = useState("");
+
+  const {
+    open: fastConnectionActivationOpen,
+    loading: fastConnectionActivationLoading,
+    snooze: snoozeFastConnectionActivation,
+    activate: activateFastConnection
+  } = useFastConnectionActivationPrompt({
+    user,
+    enabled: true,
+    onPaymentError: (message) => setActivationMessage(message)
+  });
 
   const fetchCitiesForFeed = useMemo(() => {
     const usingSavedSearch =
@@ -248,6 +262,19 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
         open={signalLimitOpen}
         onClose={() => setSignalLimitOpen(false)}
         onGetSignalPass={onOpenPremium}
+      />
+
+      {activationMessage ? (
+        <p className="profile-mod-toast" role="status">
+          {activationMessage}
+        </p>
+      ) : null}
+
+      <FastConnectionActivationSheet
+        open={fastConnectionActivationOpen}
+        onClose={snoozeFastConnectionActivation}
+        onActivate={() => void activateFastConnection()}
+        loading={fastConnectionActivationLoading}
       />
     </div>
   );

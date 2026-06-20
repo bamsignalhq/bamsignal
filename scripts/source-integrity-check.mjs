@@ -77,7 +77,9 @@ const discoverPageSource = readSrc("src/pages/DiscoverPage.tsx");
 const homePageSource = readSrc("src/pages/HomePage.tsx");
 const onboardingPageSource = readSrc("src/pages/OnboardingPage.tsx");
 const fastConnectionIntentSource = readSrc("src/utils/fastConnectionIntent.ts");
-const fastConnectionSheetSource = readSrc("src/components/profile/FastConnectionSheet.tsx");
+const fastConnectionActivationSheetSource = readSrc("src/components/profile/FastConnectionActivationSheet.tsx");
+const fastConnectionActivationHookSource = readSrc("src/hooks/useFastConnectionActivationPrompt.ts");
+const fastConnectionStateSource = readSrc("src/utils/fastConnectionState.ts");
 const accountSecuritySource = readSrc("src/services/accountSecurity.ts");
 const twoFactorCardSource = readSrc("src/components/TwoFactorSettingsCard.tsx");
 const intentsSource = readSrc("src/constants/intents.ts");
@@ -429,16 +431,20 @@ assertCheck(
 );
 assertCheck(
   fastConnectionIntentSource.includes("sanitizeIntentsForActivePass") &&
-    fastConnectionIntentSource.includes("require_payment") &&
     fastConnectionIntentSource.includes("handleQuickieIntentTap") &&
-    profilePageSource.includes("useFastConnectionCheckout") &&
-    profilePageSource.includes("FastConnectionSheet") &&
-    onboardingPageSource.includes("handleIntentSelection") &&
-    onboardingPageSource.includes("FastConnectionSheet") &&
-    fastConnectionSheetSource.includes("Maybe later") &&
-    fastConnectionSheetSource.includes("Continue to payment") &&
+    fastConnectionStateSource.includes("fastConnectionInterested") &&
+    fastConnectionStateSource.includes("snoozeFastConnectionActivation") &&
+    onboardingPageSource.includes("fastConnectionInterested") &&
+    !onboardingPageSource.includes("useFastConnectionCheckout") &&
+    !onboardingPageSource.includes("FastConnectionSheet") &&
+    homePageSource.includes("FastConnectionActivationSheet") &&
+    homePageSource.includes("useFastConnectionActivationPrompt") &&
+    fastConnectionActivationSheetSource.includes("Activate Fast Connection") &&
+    fastConnectionActivationSheetSource.includes("Maybe later") &&
+    fastConnectionActivationHookSource.includes("startFastConnectionActivationPayment") &&
+    paymentsSource.includes("startFastConnectionActivationPayment") &&
     profilePageSource.includes("fastConnectionActiveLabel"),
-  "Fast Connection intent must require payment before activation"
+  "Fast Connection must defer payment from onboarding and prompt activation on Home"
 );
 assertCheck(
   accountSecuritySource.includes("memberApiHeaders") &&

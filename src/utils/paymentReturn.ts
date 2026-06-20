@@ -6,7 +6,7 @@ import { logPaymentEvent } from "./paymentState";
 
 export type PaymentReturnContext = {
   returnPath: string;
-  productType: "premium" | "boost" | "quickie";
+  productType: "premium" | "boost" | "quickie" | "fast_connection";
   productId: string;
   sourcePage: string;
   reference?: string;
@@ -68,7 +68,10 @@ export function getPaymentReturnMeta(): Pick<PaymentReturnContext, "productType"
   const productType = localStorage.getItem(STORAGE_KEYS.paymentProductType)?.trim();
   return {
     productType:
-      productType === "boost" || productType === "quickie" || productType === "premium"
+      productType === "boost" ||
+      productType === "quickie" ||
+      productType === "premium" ||
+      productType === "fast_connection"
         ? productType
         : "premium",
     productId: localStorage.getItem(STORAGE_KEYS.paymentProductId)?.trim() || "monthly",

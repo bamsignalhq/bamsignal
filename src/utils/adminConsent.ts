@@ -81,7 +81,10 @@ export async function verifyAdminActionPin(pin: string): Promise<{ ok: boolean; 
     });
     const payload = await response.json();
     if (!response.ok || !payload?.ok || !payload.consentToken) {
-      return { ok: false, error: payload?.error || "Invalid console PIN." };
+      return {
+        ok: false,
+        error: payload?.error || "Invalid action PIN."
+      };
     }
     setAdminConsentToken(payload.consentToken, Number(payload.expiresAt) || Date.now() + 15 * 60 * 1000);
     return { ok: true };

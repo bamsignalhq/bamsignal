@@ -2,6 +2,13 @@ import crypto from "node:crypto";
 import { commandCenterPin } from "./consoleEnv.js";
 import { getPlatformSetting, setPlatformSetting } from "./db.js";
 import { requireAdmin, verifySupabaseAdmin } from "./adminAuth.js";
+import {
+  ADMIN_ACTION_PIN_LOCKED_MESSAGE,
+  checkAdminActionPinThrottle,
+  INVALID_ADMIN_ACTION_PIN_MESSAGE,
+  recordAdminActionPinFailure,
+  recordAdminActionPinSuccess
+} from "./services/adminActionPinThrottle.js";
 
 const CONSENT_TTL_MS = 15 * 60 * 1000;
 const PIN_SETTING_KEY = "admin_action_pin_hash";
@@ -33,10 +40,53 @@ export async function verifyAdminActionPin(pin) {
   }
   const candidate = hashPin(String(pin || ""));
   if (candidate.length !== expected.length) {
-    return { ok: false, error: "Invalid admin PIN." };
+    return { ok: false, error: INVALID_ADMIN_ACTION_PIN_MESSAGE };
   }
   const valid = crypto.timingSafeEqual(Buffer.from(candidate), Buffer.from(expected));
-  return valid ? { ok: true } : { ok: false, error: "Invalid admin PIN." };
+  return valid ? { ok: true } : { ok: false, error: INVALID_ADMIN_ACTION_PIN_MESSAGE };
+}
+
+export async function attemptAdminActionPin(req, pin) {
+  if (!(await verifySupabaseAdmin(req))) {
+    return { ok: false, status: 401, error: "Admin login required." };
+  }
+
+  const email = await getAdminEmailFromRequest(req);
+  if (!email) {
+    return { ok: false, status: 401, error: "Admin login required." };
+  }
+
+  const throttle = await checkAdminActionPinThrottle(req, email);
+  if (!throttle.ok || throttle.locked) {
+    console.info("admin_action_pin_locked", {
+      email,
+      lockedUntil: throttle.lockedUntil || null
+    });
+    return { ok: false, status: 429, error: ADMIN_ACTION_PIN_LOCKED_MESSAGE };
+  }
+
+  const verify = await verifyAdminActionPin(pin);
+  if (!verify.ok) {
+    const record = await recordAdminActionPinFailure(req, email);
+    console.info("admin_action_pin_failed", {
+      email,
+      attempts: record.attempts,
+      locked: record.locked,
+      lockedUntil: record.lockedUntil || null
+    });
+    if (record.locked) {
+      console.info("admin_action_pin_locked", {
+        email,
+        lockedUntil: record.lockedUntil || null
+      });
+      return { ok: false, status: 429, error: ADMIN_ACTION_PIN_LOCKED_MESSAGE };
+    }
+    return { ok: false, status: 403, error: INVALID_ADMIN_ACTION_PIN_MESSAGE };
+  }
+
+  await recordAdminActionPinSuccess(email);
+  console.info("admin_action_pin_success", { email });
+  return { ok: true, email };
 }
 
 export function issueAdminConsentToken(email) {
@@ -112,9 +162,11 @@ export async function requireAdminConsent(req, res) {
   return false;
 }
 
-export async function rotateAdminActionPin(currentPin, nextPin) {
-  const verify = await verifyAdminActionPin(currentPin);
-  if (!verify.ok) return verify;
+export async function rotateAdminActionPin(req, currentPin, nextPin) {
+  const attempt = await attemptAdminActionPin(req, currentPin);
+  if (!attempt.ok) {
+    return { ok: false, error: attempt.error, status: attempt.status };
+  }
 
   const normalized = String(nextPin || "").trim();
   if (!/^\d{4,8}$/.test(normalized)) {
@@ -139,17 +191,11 @@ export async function setInitialAdminActionPin(pin) {
 }
 
 export async function createConsentFromPin(req, pin) {
-  if (!(await verifySupabaseAdmin(req))) {
-    return { ok: false, status: 401, error: "Admin login required." };
+  const attempt = await attemptAdminActionPin(req, pin);
+  if (!attempt.ok) {
+    return { ok: false, status: attempt.status, error: attempt.error };
   }
-  const verify = await verifyAdminActionPin(pin);
-  if (!verify.ok) {
-    return { ok: false, status: 403, error: verify.error || "Invalid admin PIN." };
-  }
-  const email = await getAdminEmailFromRequest(req);
-  if (!email) {
-    return { ok: false, status: 401, error: "Admin session email not found." };
-  }
+  const email = attempt.email;
   const token = issueAdminConsentToken(email);
   return {
     ok: true,

@@ -105,7 +105,7 @@ export function AdminConsentProvider({ children }: { children: ReactNode }) {
 
       const result = await verifyAdminActionPin(pin);
       if (!result.ok) {
-        setError(result.error || "Invalid PIN.");
+        setError(result.error || "Invalid action PIN.");
         return;
       }
       closeModal(true);

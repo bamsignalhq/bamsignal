@@ -53,6 +53,9 @@ const androidReleaseSource = readSrc("scripts/build-android-release.mjs");
 const androidVerifySource = readSrc("scripts/verify-android-assets.mjs");
 const goToAppSource = readSrc("src/services/goToApp.ts");
 const openAppCacheSource = readSrc("src/utils/openAppOnboardingCache.ts");
+const adminActionPinThrottleSource = readSrc("server/services/adminActionPinThrottle.js");
+const adminConsentServerSource = readSrc("server/adminConsent.js");
+const adminConsentApiSource = readSrc("api/admin/consent.js");
 
 assertCheck(
   paymentReturnSource.includes("hasPaystackCallbackInUrl") &&
@@ -270,6 +273,25 @@ assertCheck(
     !goToAppSource.includes("await bootstrapMemberSession") &&
     openAppCacheSource.includes("readOpenAppOnboardingCache"),
   "Open App must confirm onboarding on the server before routing home"
+);
+assertCheck(
+  adminActionPinThrottleSource.includes("ADMIN_ACTION_PIN_MAX_ATTEMPTS") &&
+    adminActionPinThrottleSource.includes("ADMIN_ACTION_PIN_LOCK_MS") &&
+    adminActionPinThrottleSource.includes('ACTION = "admin_action_pin"'),
+  "admin action PIN throttle must track durable attempts with lock constants"
+);
+assertCheck(
+  adminConsentServerSource.includes("attemptAdminActionPin") &&
+    adminConsentServerSource.includes("admin_action_pin_failed") &&
+    adminConsentServerSource.includes("admin_action_pin_locked") &&
+    adminConsentServerSource.includes("admin_action_pin_success") &&
+    adminConsentServerSource.includes("INVALID_ADMIN_ACTION_PIN_MESSAGE"),
+  "admin consent must throttle action PIN with generic audit events"
+);
+assertCheck(
+  adminConsentApiSource.includes("createConsentFromPin(req, body.pin)") &&
+    adminConsentApiSource.includes("rotateAdminActionPin(req,"),
+  "admin consent API must route PIN verification through throttled server helper"
 );
 
 console.log("source integrity ok");

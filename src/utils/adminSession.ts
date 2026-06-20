@@ -4,6 +4,7 @@ import { hardPathForTab, parseHardTabFromPath } from "../constants/hardRoutes";
 import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
 import { apiUrl, supabase } from "../services/supabase";
 import { readResponseJson } from "./httpJson";
+import { clearAdminConsentToken } from "./adminConsent";
 
 /** Console persistence — route preference only; never use for access control. */
 export const HARD_STORAGE = {
@@ -351,6 +352,7 @@ export function redirectToHardLogin(): void {
 export const redirectToAdminLogin = redirectToHardLogin;
 
 export async function handleAdminSessionExpired(onRedirect: () => void): Promise<void> {
+  clearAdminConsentToken();
   clearStaleAdminBrowserState({ keepLastRoute: true });
   await supabase?.auth.signOut().catch(() => undefined);
   logAdminAudit("admin_session_expired");

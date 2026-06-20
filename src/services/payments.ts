@@ -25,7 +25,7 @@ import { openPaystackCheckout } from "./paymentCheckout";
 import { apiUrl } from "./supabase";
 import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
 import { readResponseJson } from "../utils/httpJson";
-import { activateQuickiePass, fastConnectionWeeklyAmount, quickiePassDays } from "../utils/quickie";
+import { activateQuickiePass } from "../utils/quickie";
 import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
 import { fetchSubscriptionCatalog } from "./subscriptionCatalog";
 
@@ -217,14 +217,10 @@ export async function startPlanPayment(
       email: user.email,
       phone: user.phone,
       name: user.name,
-      days: plan.days,
-      amount: plan.price,
-      plan: plan.id,
+      productId: plan.id,
       platform: paymentPlatform(),
       returnPath: paymentReturnContext.returnPath,
-      sourcePage: paymentReturnContext.sourcePage,
-      productType: paymentReturnContext.productType,
-      productId: paymentReturnContext.productId
+      sourcePage: paymentReturnContext.sourcePage
     });
 
     if (!init.ok) {
@@ -333,23 +329,17 @@ export async function startQuickiePassPayment(
 
   try {
     await fetchSubscriptionCatalog();
-    const amount = fastConnectionWeeklyAmount() || undefined;
-    const days = quickiePassDays();
     const paymentReturnContext = buildReturnContext("quickie", "fast-connection-pass", returnContext);
 
     const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize-quickie"), {
       email: user.email,
       phone: user.phone,
       name: user.name,
-      amount,
-      days,
-      durationDays: days,
-      dailyFastSignals: 30,
+      productId: "fast-connection-pass",
       platform: paymentPlatform(),
       returnPath: paymentReturnContext.returnPath,
       sourcePage: paymentReturnContext.sourcePage,
-      productType: paymentReturnContext.productType,
-      productId: paymentReturnContext.productId
+      productType: paymentReturnContext.productType
     });
 
     if (!init.ok) {
@@ -439,10 +429,8 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
 
 export async function startBoostPayment(
   boostId: string,
-  price: number,
   user: UserProfile,
   city: string,
-  durationHours = 48,
   callbacks: CheckoutCallbacks = {},
   returnContext?: Partial<PaymentReturnContext>
 ): Promise<StartPaymentResult> {
@@ -460,15 +448,11 @@ export async function startBoostPayment(
       email: user.email,
       phone: user.phone,
       name: user.name,
-      boostId,
+      productId: boostId,
       city,
-      amount: price,
-      durationHours,
       platform: paymentPlatform(),
       returnPath: paymentReturnContext.returnPath,
-      sourcePage: paymentReturnContext.sourcePage,
-      productType: paymentReturnContext.productType,
-      productId: paymentReturnContext.productId
+      sourcePage: paymentReturnContext.sourcePage
     });
 
     if (!init.ok) {

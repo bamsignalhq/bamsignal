@@ -1,14 +1,15 @@
 import crypto from "node:crypto";
-import { activateAppUserFastConnectionPass, activateAppUserPremium, query, withDbRetry } from "../../server/db.js";
-import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../../server/cityHome.js";
-import { createVipInviteLink } from "../../server/telegram.js";
+import { query, withDbRetry } from "../../server/db.js";
 import { sendPurchaseConfirmationEmail } from "../../server/services/purchaseEmail.js";
 import {
   claimPaymentFulfillment,
   getPaymentFulfillment,
   markPaymentFulfillmentStatus
 } from "../../server/services/paymentFulfillments.js";
-import { resetFastConnectionDailySignals } from "../../server/services/fastConnection.js";
+import {
+  assertVerifiedPurchaseAmount,
+  fulfillVerifiedPurchase
+} from "../../server/services/paymentFortress.js";
 
 async function readRawBody(req) {
   const chunks = [];
@@ -25,14 +26,6 @@ function verifySignature(rawBody, signature) {
   return hash === signature;
 }
 
-function premiumUntilFromEvent(data = {}) {
-  const metadata = data.metadata || {};
-  const explicit = metadata.premium_until || metadata.premiumUntil;
-  if (explicit) return new Date(explicit).toISOString();
-  const days = Number(metadata.days || metadata.plan_days || metadata.planDays || (Number(data.amount || 0) >= 295000 ? 30 : 7));
-  return new Date(Date.now() + Math.max(1, Math.min(days, 370)) * 86400000).toISOString();
-}
-
 function normalizePhone(value = "") {
   return String(value).replace(/\D/g, "").replace(/^234/, "");
 }
@@ -43,78 +36,6 @@ function normalizeReturnPath(value) {
   const path = raw.split(/[?#]/)[0].replace(/\/$/, "") || "/";
   const allowed = ["/home", "/fast-connection", "/profile", "/settings", "/subscription", "/discover", "/chats", "/signals"];
   return allowed.some((prefix) => path === prefix || path.startsWith(`${prefix}/`)) ? raw.replace(/\/$/, "") : "/home";
-}
-
-function isFastConnectionProductType(productType) {
-  return productType === "quickie" || productType === "fast_connection";
-}
-
-function productDetails(data = {}) {
-  const metadata = data.metadata || {};
-  const productType = String(metadata.product_type || "premium").trim();
-  if (isFastConnectionProductType(productType)) {
-    return { productType, productId: String(metadata.product_id || "fast-connection-pass") };
-  }
-  if (productType === "boost") {
-    const boostId = String(metadata.boost_id || metadata.product_id || "city-boost").trim();
-    return { productType, productId: String(metadata.product_id || boostId), boostId };
-  }
-  return {
-    productType: "premium",
-    productId: String(metadata.product_id || metadata.plan || metadata.plan_days || "monthly")
-  };
-}
-
-async function fulfillWebhookPurchase({ productType, boostId, email, phone, name, reference, data }) {
-  const metadata = data.metadata || {};
-  if (isFastConnectionProductType(productType)) {
-    const passDays = Math.max(1, Math.round(Number(metadata.quickie_days || 7)));
-    const passUntil = new Date(Date.now() + passDays * 86400000).toISOString();
-    const activation = await activateAppUserFastConnectionPass({
-      email,
-      phone,
-      name,
-      passUntil,
-      paystackReference: reference
-    });
-    await resetFastConnectionDailySignals({ email, phone }).catch(() => null);
-    return activation;
-  }
-
-  if (productType === "boost") {
-    const city = String(metadata.city || "").trim();
-    const durationHours = Math.max(1, Math.round(Number(metadata.duration_hours || 48)));
-    if (boostId === "city-spotlight") {
-      return activateCitySpotlightPlacement({
-        email,
-        phone,
-        city,
-        durationHours: durationHours || 24,
-        paystackReference: reference
-      });
-    }
-    if (boostId === "city-boost") {
-      return activateCityBoostPlacement({
-        email,
-        phone,
-        city,
-        durationHours,
-        paystackReference: reference
-      });
-    }
-    return { ok: true, productType, boostId, paystackReference: reference };
-  }
-
-  const premiumUntil = premiumUntilFromEvent(data);
-  const inviteLink = await createVipInviteLink(email || phone).catch(() => null);
-  return activateAppUserPremium({
-    email,
-    phone,
-    name,
-    premiumUntil,
-    paystackReference: reference,
-    inviteLink
-  });
 }
 
 export default async function handler(req, res) {
@@ -141,7 +62,8 @@ export default async function handler(req, res) {
     const phone = normalizePhone(metadata.phone || metadata.phone_number || "");
     const name = String(metadata.name || data.customer?.first_name || "").trim();
     const reference = String(data.reference || metadata.reference || "");
-    const { productType, productId, boostId } = productDetails(data);
+    const productType = String(metadata.product_type || "premium").trim();
+    const productId = String(metadata.product_id || metadata.plan || "monthly").trim();
     const returnPath = normalizeReturnPath(metadata.return_path || metadata.returnPath);
     let activationResult = null;
 
@@ -161,29 +83,22 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, idempotent: true, reference, productType, productId });
     }
 
-    const expectedAmount = Number(metadata.expected_amount_kobo || 0);
-    if (expectedAmount > 0 && Number(data.amount || 0) !== expectedAmount) {
-      if (reference) {
-        await markPaymentFulfillmentStatus(reference, "failed", {
-          productType,
-          productId,
-          amountKobo: Number(data.amount || 0),
-          currency: String(data.currency || "").trim() || null,
-          rawPayload: { error: "amount_mismatch", expectedAmount }
-        });
-      }
-      return res.status(200).json({ ok: true, ignored: true, reason: "amount_mismatch" });
+    const amountCheck = await assertVerifiedPurchaseAmount(reference, data, metadata);
+    if (!amountCheck.ok) {
+      return res.status(200).json({ ok: true, ignored: true, reason: amountCheck.amountCheck?.reason || "amount_mismatch" });
     }
 
+    const intent = amountCheck.intent;
+
     await withDbRetry(async () => {
-      activationResult = await fulfillWebhookPurchase({
-        productType,
-        boostId,
+      activationResult = await fulfillVerifiedPurchase({
+        intent,
         email,
         phone,
         name,
         reference,
-        data
+        city: metadata.city || "",
+        transaction: data
       });
       await query(
         `insert into subscription_events (provider, event_type, user_email, user_id, payload)
@@ -194,10 +109,11 @@ export default async function handler(req, res) {
 
     if (reference) {
       await markPaymentFulfillmentStatus(reference, "fulfilled", {
-        productType,
-        productId,
+        productType: intent.productType,
+        productId: intent.productId,
         amountKobo: Number(data.amount || 0),
-        currency: String(data.currency || "").trim() || null
+        currency: String(data.currency || "").trim() || null,
+        rawPayload: { purchaseIntent: intent, activation: activationResult }
       });
     }
 
@@ -206,8 +122,8 @@ export default async function handler(req, res) {
         reference,
         email,
         firstName: name.split(/\s+/)[0] || "there",
-        productType,
-        productId,
+        productType: intent.productType,
+        productId: intent.productId,
         amountKobo: Number(data.amount || 0),
         userId: metadata.user_id || metadata.userId || null,
         returnPath
@@ -216,7 +132,13 @@ export default async function handler(req, res) {
       });
     }
 
-    return res.status(200).json({ ok: true, event: event.event, productType, productId, activation: activationResult });
+    return res.status(200).json({
+      ok: true,
+      event: event.event,
+      productType: intent.productType,
+      productId: intent.productId,
+      activation: activationResult
+    });
   } catch (error) {
     return res.status(500).json({ ok: false, error: error.message || "Paystack webhook failed" });
   }

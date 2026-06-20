@@ -1,9 +1,3 @@
-import { activateAppUserPremium, activateAppUserFastConnectionPass } from "../../server/db.js";
-import { resetFastConnectionDailySignals } from "../../server/services/fastConnection.js";
-import { getPlatformSetting } from "../../server/db.js";
-import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../../server/cityHome.js";
-import { createVipInviteLink } from "../../server/telegram.js";
-import { normalizePlan, normalizePlans, planDaysFromAmount } from "../../server/pricing.js";
 import { config } from "../../server/config.js";
 import { PAYSTACK_CHANNELS } from "../../server/paystackChannels.js";
 import {
@@ -20,10 +14,13 @@ import {
   markPaymentFulfillmentStatus
 } from "../../server/services/paymentFulfillments.js";
 import {
-  activePlanPrice,
-  getProductFromCatalog,
-  getSubscriptionCatalog
-} from "../../server/services/subscriptionCatalog.js";
+  assertVerifiedPurchaseAmount,
+  buildPaystackPurchaseMetadata,
+  fulfillVerifiedPurchase,
+  recordPurchaseIntent,
+  resolveInitializeIntent
+} from "../../server/services/paymentFortress.js";
+import { isFastConnectionProductType } from "../../server/services/paymentCatalog.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -79,61 +76,6 @@ function paymentReturnFrom(metadata = {}, body = {}, fallback = "/home") {
   return { returnPath, sourcePage };
 }
 
-async function logPaymentReturnRedirect({ reference, returnPath, productType, productId, sourcePage }) {
-  try {
-    await appendPaymentAudit(reference, "payment_return_redirect", {
-      returnPath,
-      productType,
-      productId,
-      sourcePage: sourcePage || null,
-      source: "verify_response"
-    });
-  } catch (error) {
-    console.error("[paystack] payment return audit failed", {
-      reference,
-      message: error?.message || String(error)
-    });
-  }
-}
-
-let pricingPlansCache = null;
-let pricingPlansCacheAt = 0;
-
-async function loadPricingPlans() {
-  const now = Date.now();
-  if (pricingPlansCache && now - pricingPlansCacheAt < 60_000) {
-    return pricingPlansCache;
-  }
-  const stored = await getPlatformSetting("premium_plans", null);
-  pricingPlansCache = normalizePlans(stored);
-  pricingPlansCacheAt = now;
-  return pricingPlansCache;
-}
-
-async function premiumDaysFromTransaction(data) {
-  const metadataDays = Number(data?.metadata?.days || data?.metadata?.plan_days || data?.metadata?.planDays);
-  if (Number.isFinite(metadataDays) && metadataDays > 0 && metadataDays <= 370) return metadataDays;
-
-  const plans = await loadPricingPlans();
-  const amount = Number(data?.amount || 0);
-  return planDaysFromAmount(amount, plans);
-}
-
-function resolvePlanAmount(body, plans) {
-  const configuredAmount = Number(body.amount || 0);
-  if (configuredAmount > 0) return Math.round(configuredAmount * 100);
-
-  const planId = String(body.plan || "").trim();
-  const byId = plans.find((item) => item.id === planId);
-  if (byId) return byId.amountKobo;
-
-  const days = Number(body.days || body.planDays || 30);
-  const byDays = plans.find((item) => item.days === days);
-  if (byDays) return byDays.amountKobo;
-
-  return normalizePlan(plans[plans.length - 1] || {}).amountKobo;
-}
-
 function logPaystackFailure(scope, error, extra = {}) {
   console.error(`[paystack] ${scope} failed`, {
     code: error?.code,
@@ -173,6 +115,110 @@ async function notifyPurchaseEmail({
   }
 }
 
+async function logPaymentReturnRedirect({ reference, returnPath, productType, productId, sourcePage }) {
+  try {
+    await appendPaymentAudit(reference, "payment_return_redirect", {
+      returnPath,
+      productType,
+      productId,
+      sourcePage: sourcePage || null,
+      source: "verify_response"
+    });
+  } catch (error) {
+    console.error("[paystack] payment return audit failed", {
+      reference,
+      message: error?.message || String(error)
+    });
+  }
+}
+
+async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fallbackReturnPath) {
+  const email = String(body.email || "").trim().toLowerCase();
+  const phone = normalizePhone(body.phone);
+  const name = String(body.name || "").trim();
+  const city = String(body.city || "Lagos").trim();
+  const intent = await resolveInitializeIntent(action, body);
+
+  if (!email) {
+    return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
+  }
+  if (!intent?.amountKobo) {
+    return res.status(400).json({ ok: false, error: "Unknown product or pricing is not configured yet." });
+  }
+
+  const { returnPath, sourcePage } = paymentReturnFrom({}, body, fallbackReturnPath);
+  const referencePrefix =
+    intent.productType === "boost"
+      ? intent.boostId || intent.productId
+      : isFastConnectionProductType(intent.productType)
+        ? "quickie"
+        : intent.productId;
+  const reference = buildReference(referencePrefix);
+  const startedAt = Date.now();
+
+  try {
+    await recordPurchaseIntent({
+      reference,
+      userId: body.userId || body.user_id || null,
+      intent,
+      source: action
+    });
+
+    const data = await initializePaystackTransaction({
+      email,
+      amount: intent.amountKobo,
+      reference,
+      callback_url: callbackUrl,
+      channels: PAYSTACK_CHANNELS,
+      metadata: buildPaystackPurchaseMetadata({
+        intent,
+        name,
+        phone,
+        returnPath,
+        sourcePage,
+        city
+      })
+    });
+
+    console.info("[paystack] payment initialized", {
+      reference: data?.reference || reference,
+      email,
+      productType: intent.productType,
+      productId: intent.productId,
+      amount: intent.amountKobo,
+      hasAccessCode: Boolean(data?.access_code),
+      ms: Date.now() - startedAt
+    });
+
+    await logPaymentInitialized({
+      reference: data?.reference || reference,
+      userEmail: email,
+      productType: intent.productType,
+      productId: intent.productId,
+      returnPath
+    });
+
+    return res.status(200).json({
+      ok: true,
+      reference: data?.reference || reference,
+      authorization_url: data?.authorization_url,
+      access_code: data?.access_code,
+      productType: intent.productType,
+      productId: intent.productId,
+      boostId: intent.boostId || undefined
+    });
+  } catch (error) {
+    logPaystackFailure(action, error, {
+      email,
+      productType: intent.productType,
+      productId: intent.productId,
+      amount: intent.amountKobo
+    });
+    const mapped = paystackErrorResponse(error, "Unable to start payment. Please try again shortly.");
+    return res.status(mapped.status).json(mapped.body);
+  }
+}
+
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
@@ -185,7 +231,6 @@ export default async function handler(req, res) {
     }
 
     const body = parseBody(req);
-    const plans = await loadPricingPlans();
     const useNativeCallback =
       body.platform === "native" ||
       body.platform === "android" ||
@@ -195,208 +240,15 @@ export default async function handler(req, res) {
       : config.paystackCallbackUrl;
 
     if (req.query.action === "initialize") {
-      const email = String(body.email || "").trim().toLowerCase();
-      const phone = normalizePhone(body.phone);
-      const name = String(body.name || "").trim();
-      const days = Number(body.days || body.planDays || 30);
-      const amount = resolvePlanAmount(body, plans);
-
-      if (!email) {
-        return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
-      }
-      if (!Number.isFinite(days) || days <= 0 || days > 370) {
-        return res.status(400).json({ ok: false, error: "Invalid VIP plan duration." });
-      }
-
-      const planMeta = String(body.plan || plans.find((item) => item.days === days)?.id || "monthly");
-      const { returnPath, sourcePage } = paymentReturnFrom({}, body, "/home");
-      const reference = buildReference(planMeta);
-      const startedAt = Date.now();
-
-      try {
-        const data = await initializePaystackTransaction({
-          email,
-          amount,
-          reference,
-          callback_url: callbackUrl,
-          channels: PAYSTACK_CHANNELS,
-          metadata: {
-            app: "BamSignal",
-            name,
-            phone,
-            days,
-            plan_days: days,
-            plan: planMeta,
-            expected_amount_kobo: amount,
-            product_type: "premium",
-            product_id: String(body.productId || planMeta),
-            return_path: returnPath,
-            source_page: sourcePage
-          }
-        });
-
-        console.info("[paystack] payment initialized", {
-          reference: data?.reference || reference,
-          email,
-          plan: planMeta,
-          amount,
-          hasAccessCode: Boolean(data?.access_code),
-          ms: Date.now() - startedAt
-        });
-
-        await logPaymentInitialized({
-          reference: data?.reference || reference,
-          userEmail: email,
-          productType: "premium",
-          productId: String(body.productId || planMeta),
-          returnPath
-        });
-
-        return res.status(200).json({
-          ok: true,
-          reference: data?.reference || reference,
-          authorization_url: data?.authorization_url,
-          access_code: data?.access_code
-        });
-      } catch (error) {
-        logPaystackFailure("initialize", error, { email, plan: planMeta, amount });
-        const mapped = paystackErrorResponse(error, "Unable to start payment. Please try again shortly.");
-        return res.status(mapped.status).json(mapped.body);
-      }
+      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize", "/home");
     }
 
     if (req.query.action === "initialize-boost") {
-      const email = String(body.email || "").trim().toLowerCase();
-      const phone = normalizePhone(body.phone);
-      const name = String(body.name || "").trim();
-      const boostId = String(body.boostId || body.product || "city-boost").trim();
-      const city = String(body.city || "Lagos").trim();
-      const priceNaira = Math.max(0, Math.round(Number(body.amount || body.price || 600)));
-      const amount = priceNaira * 100;
-      const durationHours = Math.max(1, Math.round(Number(body.durationHours || 48)));
-
-      if (!email) {
-        return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
-      }
-      if (!amount) {
-        return res.status(400).json({ ok: false, error: "Invalid boost price." });
-      }
-
-      const { returnPath, sourcePage } = paymentReturnFrom({}, body, "/profile");
-      const reference = buildReference(boostId);
-
-      try {
-        const data = await initializePaystackTransaction({
-          email,
-          amount,
-          reference,
-          callback_url: callbackUrl,
-          channels: PAYSTACK_CHANNELS,
-          metadata: {
-            app: "BamSignal",
-            name,
-            phone,
-            city,
-            boost_id: boostId,
-            duration_hours: durationHours,
-            expected_amount_kobo: amount,
-            product_type: "boost",
-            product_id: String(body.productId || boostId),
-            return_path: returnPath,
-            source_page: sourcePage
-          }
-        });
-
-        await logPaymentInitialized({
-          reference: data?.reference || reference,
-          userEmail: email,
-          productType: "boost",
-          productId: String(body.productId || boostId),
-          returnPath
-        });
-
-        return res.status(200).json({
-          ok: true,
-          reference: data?.reference || reference,
-          authorization_url: data?.authorization_url,
-          access_code: data?.access_code,
-          productType: "boost",
-          boostId
-        });
-      } catch (error) {
-        logPaystackFailure("initialize-boost", error, { email, boostId, amount });
-        const mapped = paystackErrorResponse(error, "Unable to start payment. Please try again shortly.");
-        return res.status(mapped.status).json(mapped.body);
-      }
+      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize-boost", "/profile");
     }
 
     if (req.query.action === "initialize-quickie") {
-      const email = String(body.email || "").trim().toLowerCase();
-      const phone = normalizePhone(body.phone);
-      const name = String(body.name || "").trim();
-      const catalog = await getSubscriptionCatalog();
-      const product = getProductFromCatalog(catalog, "fast_connection_pass");
-      const weeklyPlan = product?.plans?.find((plan) => plan.id === "weekly" && plan.active !== false);
-      const defaultPrice = activePlanPrice(product, "weekly");
-      const priceNaira = Math.max(0, Math.round(Number(body.amount || defaultPrice)));
-      const passDays = Math.max(1, Math.round(Number(body.days || weeklyPlan?.days || 7)));
-      const amount = priceNaira * 100;
-
-      if (!email) {
-        return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
-      }
-      if (!priceNaira) {
-        return res.status(400).json({ ok: false, error: "Fast Connection Pass pricing is not configured yet." });
-      }
-
-      const productType = String(body.productType || "quickie").trim();
-      const { returnPath, sourcePage } = paymentReturnFrom({}, body, "/home");
-      const reference = buildReference("quickie");
-
-      try {
-        const data = await initializePaystackTransaction({
-          email,
-          amount,
-          reference,
-          callback_url: callbackUrl,
-          channels: PAYSTACK_CHANNELS,
-          metadata: {
-            app: "BamSignal",
-            name,
-            phone,
-            product_type: productType,
-            product_id: String(body.productId || "fast-connection-pass"),
-            quickie_days: passDays,
-            duration_days: passDays,
-            daily_fast_signals: Math.max(1, Math.round(Number(body.dailyFastSignals || 30))),
-            expected_amount_kobo: amount,
-            return_path: returnPath,
-            source_page: sourcePage
-          }
-        });
-
-        await logPaymentInitialized({
-          reference: data?.reference || reference,
-          userEmail: email,
-          productType,
-          productId: String(body.productId || "fast-connection-pass"),
-          returnPath
-        });
-
-        return res.status(200).json({
-          ok: true,
-          reference: data?.reference || reference,
-          authorization_url: data?.authorization_url,
-          access_code: data?.access_code,
-          productType: "quickie",
-          amount: priceNaira,
-          days: passDays
-        });
-      } catch (error) {
-        logPaystackFailure("initialize-quickie", error, { email, amount });
-        const mapped = paystackErrorResponse(error, "Unable to start payment. Please try again shortly.");
-        return res.status(mapped.status).json(mapped.body);
-      }
+      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize-quickie", "/home");
     }
 
     const reference = String(body.reference || body.trxref || "").trim();
@@ -431,15 +283,13 @@ export default async function handler(req, res) {
     }
 
     const metadata = transaction?.metadata || {};
-    const productType = String(metadata.product_type || body.productType || "premium").trim();
-    const { returnPath, sourcePage } = paymentReturnFrom(metadata, body, "/home");
-    const productIdFromMeta = String(metadata.product_id || body.productId || "").trim() || null;
+    const { returnPath, sourcePage } = paymentReturnFrom(metadata, {}, "/home");
 
-    const fulfillmentClaim = await claimPaymentFulfillment({
+    await claimPaymentFulfillment({
       reference,
       userId: metadata.user_id || metadata.userId || null,
-      productType,
-      productId: productIdFromMeta,
+      productType: metadata.product_type || "premium",
+      productId: metadata.product_id || null,
       amountKobo: Number(transaction?.amount || 0),
       currency: String(transaction?.currency || "").trim() || null,
       rawPayload: {
@@ -448,7 +298,7 @@ export default async function handler(req, res) {
       }
     });
 
-    const existingFulfillment = fulfillmentClaim || (await getPaymentFulfillment(reference));
+    const existingFulfillment = await getPaymentFulfillment(reference);
     if (existingFulfillment?.status === "fulfilled") {
       return res.status(200).json({
         ok: true,
@@ -459,273 +309,100 @@ export default async function handler(req, res) {
       });
     }
 
-    const expectedAmount = Number(metadata.expected_amount_kobo || 0);
-    if (expectedAmount > 0 && Number(transaction?.amount || 0) !== expectedAmount) {
-      await markPaymentFulfillmentStatus(reference, "failed", {
-        productType,
-        productId: productIdFromMeta,
-        amountKobo: Number(transaction?.amount || 0),
-        currency: String(transaction?.currency || "").trim() || null,
-        rawPayload: { error: "amount_mismatch", expectedAmount }
-      });
-      return res.status(422).json({ ok: false, error: "Payment amount does not match this purchase." });
+    const amountCheck = await assertVerifiedPurchaseAmount(reference, transaction, metadata);
+    if (!amountCheck.ok) {
+      return res.status(422).json({ ok: false, error: amountCheck.error || "Payment amount does not match this purchase." });
     }
 
-    if (productType === "quickie" || productType === "fast_connection") {
-      const productId = String(metadata.product_id || body.productId || "fast-connection-pass");
-      const passDays = Math.max(1, Math.round(Number(metadata.quickie_days || 7)));
-      const passUntil = new Date(Date.now() + passDays * 24 * 3600000).toISOString();
-      await activateAppUserFastConnectionPass({
-        email: email || transactionEmail,
-        phone,
-        name,
-        passUntil,
-        paystackReference: reference
-      });
-      await resetFastConnectionDailySignals({ email: email || transactionEmail, phone }).catch(() => null);
-      await markPaymentFulfillmentStatus(reference, "fulfilled", {
-        productType,
-        productId,
-        amountKobo: Number(transaction?.amount || 0),
-        currency: String(transaction?.currency || "").trim() || null,
-        rawPayload: { pass_until: passUntil, quickie_days: passDays }
-      });
-      await notifyPurchaseEmail({
-        reference,
-        email: email || transactionEmail,
-        name,
-        productType,
-        productId,
-        amountKobo: transaction?.amount,
-        metadata,
-        returnPath
-      });
-      await logPaymentReturnRedirect({
-        reference,
-        returnPath,
-        sourcePage,
-        productType,
-        productId
-      });
-      return res.status(200).json({
-        ok: true,
-        productType,
-        productId,
-        returnPath,
-        sourcePage,
-        quickiePassUntil: passUntil,
-        fastConnectionPassUntil: passUntil
-      });
-    }
-
-    if (productType === "boost") {
-      const boostId = String(metadata.boost_id || metadata.product_id || body.boostId || body.productId || "city-boost").trim();
-      const productId = String(metadata.product_id || boostId);
-      const city = String(metadata.city || body.city || "").trim();
-      const durationHours = Math.max(
-        1,
-        Math.round(Number(metadata.duration_hours || body.durationHours || 48))
-      );
-
-      const allowedBoosts = new Set([
-        "city-spotlight",
-        "city-boost",
-        "signal-boost",
-        "profile-boost",
-        "priority-signal-once"
-      ]);
-      if (!allowedBoosts.has(boostId)) {
-        return res.status(422).json({ ok: false, error: "Unknown boost product." });
-      }
-
-      if (boostId === "city-spotlight") {
-        const placement = await activateCitySpotlightPlacement({
-          email: email || transactionEmail,
-          phone,
-          city,
-          durationHours: durationHours || 24,
-          paystackReference: reference
-        });
-        if (!placement) {
-          return res.status(422).json({
-            ok: false,
-            error: "Complete onboarding in your city before buying City Spotlight."
-          });
-        }
-        await markPaymentFulfillmentStatus(reference, "fulfilled", {
-          productType: "boost",
-          productId,
-          amountKobo: Number(transaction?.amount || 0),
-          currency: String(transaction?.currency || "").trim() || null,
-          rawPayload: { boostId, placement }
-        });
-        await notifyPurchaseEmail({
-          reference,
-          email: email || transactionEmail,
-          name,
-          productType: "boost",
-          productId,
-          amountKobo: transaction?.amount,
-          metadata,
-          returnPath
-        });
-        await logPaymentReturnRedirect({
-          reference,
-          returnPath,
-          sourcePage,
-          productType: "boost",
-          productId
-        });
-        return res.status(200).json({
-          ok: true,
-          productType: "boost",
-          productId,
-          returnPath,
-          sourcePage,
-          boostId,
-          city: placement.city,
-          expiresAt: placement.expires_at
-        });
-      }
-
-      if (boostId === "city-boost") {
-        const placement = await activateCityBoostPlacement({
-          email: email || transactionEmail,
-          phone,
-          city,
-          durationHours,
-          paystackReference: reference
-        });
-        if (!placement) {
-          return res.status(422).json({
-            ok: false,
-            error: "Complete onboarding in your city before buying a City Boost."
-          });
-        }
-        await markPaymentFulfillmentStatus(reference, "fulfilled", {
-          productType: "boost",
-          productId,
-          amountKobo: Number(transaction?.amount || 0),
-          currency: String(transaction?.currency || "").trim() || null,
-          rawPayload: { boostId, placement }
-        });
-        await notifyPurchaseEmail({
-          reference,
-          email: email || transactionEmail,
-          name,
-          productType: "boost",
-          productId,
-          amountKobo: transaction?.amount,
-          metadata,
-          returnPath
-        });
-        await logPaymentReturnRedirect({
-          reference,
-          returnPath,
-          sourcePage,
-          productType: "boost",
-          productId
-        });
-        return res.status(200).json({
-          ok: true,
-          productType: "boost",
-          productId,
-          returnPath,
-          sourcePage,
-          boostId,
-          city: placement.city,
-          expiresAt: placement.expires_at
-        });
-      }
-
-      await markPaymentFulfillmentStatus(reference, "fulfilled", {
-        productType: "boost",
-        productId,
-        amountKobo: Number(transaction?.amount || 0),
-        currency: String(transaction?.currency || "").trim() || null,
-        rawPayload: { boostId }
-      });
-      await notifyPurchaseEmail({
-        reference,
-        email: email || transactionEmail,
-        name,
-        productType: "boost",
-        productId,
-        amountKobo: transaction?.amount,
-        metadata,
-        returnPath
-      });
-      await logPaymentReturnRedirect({
-        reference,
-        returnPath,
-        sourcePage,
-        productType: "boost",
-        productId
-      });
-      return res.status(200).json({
-        ok: true,
-        productType: "boost",
-        productId,
-        returnPath,
-        sourcePage,
-        boostId,
-        expiresAt: new Date(Date.now() + durationHours * 3600000).toISOString()
-      });
-    }
-
-    const days = await premiumDaysFromTransaction(transaction);
-    if (!days) {
-      return res.status(422).json({ ok: false, error: "Payment amount does not match an active VIP plan." });
-    }
-
-    const premiumUntil = new Date(Date.now() + days * 86400000).toISOString();
-    const inviteLink = await createVipInviteLink(email || phone).catch(() => null);
-    const user = await activateAppUserPremium({
+    const intent = amountCheck.intent;
+    const activation = await fulfillVerifiedPurchase({
+      intent,
       email: email || transactionEmail,
       phone,
       name,
-      premiumUntil,
-      paystackReference: reference,
-      inviteLink
+      reference,
+      city: metadata.city || "",
+      transaction
     });
 
-    const planMeta = String(metadata.plan || metadata.plan_days || days);
-    const productId = String(metadata.product_id || body.productId || planMeta);
+    if (!activation.ok) {
+      if (activation.requiresCity) {
+        return res.status(422).json({
+          ok: false,
+          error:
+            activation.boostId === "city-spotlight"
+              ? "Complete onboarding in your city before buying City Spotlight."
+              : "Complete onboarding in your city before buying a City Boost."
+        });
+      }
+      return res.status(422).json({ ok: false, error: "Unable to activate this purchase." });
+    }
+
     await markPaymentFulfillmentStatus(reference, "fulfilled", {
-      productType: "premium",
-      productId,
+      productType: intent.productType,
+      productId: intent.productId,
       amountKobo: Number(transaction?.amount || 0),
       currency: String(transaction?.currency || "").trim() || null,
-      rawPayload: { days }
+      rawPayload: {
+        purchaseIntent: intent,
+        activation
+      }
     });
+
     await notifyPurchaseEmail({
       reference,
       email: email || transactionEmail,
       name,
-      productType: "premium",
-      productId,
+      productType: intent.productType,
+      productId: intent.productId,
       amountKobo: transaction?.amount,
       metadata,
       returnPath
     });
+
     await logPaymentReturnRedirect({
       reference,
       returnPath,
       sourcePage,
-      productType: "premium",
-      productId
+      productType: intent.productType,
+      productId: intent.productId
     });
+
+    if (isFastConnectionProductType(intent.productType)) {
+      return res.status(200).json({
+        ok: true,
+        productType: intent.productType,
+        productId: intent.productId,
+        returnPath,
+        sourcePage,
+        quickiePassUntil: activation.passUntil,
+        fastConnectionPassUntil: activation.passUntil
+      });
+    }
+
+    if (intent.productType === "boost") {
+      return res.status(200).json({
+        ok: true,
+        productType: "boost",
+        productId: intent.productId,
+        returnPath,
+        sourcePage,
+        boostId: activation.boostId,
+        city: activation.placement?.city,
+        expiresAt: activation.expiresAt
+      });
+    }
 
     return res.status(200).json({
       ok: true,
       productType: "premium",
-      productId,
+      productId: intent.productId,
       returnPath,
       sourcePage,
-      premium_until: premiumUntil,
-      days,
-      invite_link: inviteLink,
-      user
+      premium_until: activation.premiumUntil,
+      days: intent.days,
+      invite_link: activation.inviteLink,
+      user: activation.activation
     });
   } catch (error) {
     logPaystackFailure("handler", error);

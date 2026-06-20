@@ -1463,7 +1463,6 @@ export function App() {
       }
 
       const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
-      const durationHours = product.id === "profile-boost" ? 48 : 24;
 
       setPaymentFlowTick((v) => v + 1);
       setPaymentLoading(true);
@@ -1472,10 +1471,8 @@ export function App() {
       try {
         const result = await startBoostPayment(
           product.id,
-          product.price,
           user,
           memberCity || datingProfile.city || "",
-          durationHours,
           { onPhase: (phase) => setPaymentPhase(phase) },
           {
             returnPath: "/profile",

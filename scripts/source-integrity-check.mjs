@@ -48,6 +48,10 @@ const memberSocialSource = readSrc("server/memberSocial.js");
 const diagnosticsAccessSource = readSrc("server/services/diagnosticsAccess.js");
 const viewSecurityApiSource = readSrc("api/diagnostics/view-security.js");
 const functionSecurityApiSource = readSrc("api/diagnostics/function-security.js");
+const paystackVerifySource = readFileSync(join(rootPath, "api/paystack/verify.js"), "utf8");
+const paystackWebhookSource = readFileSync(join(rootPath, "api/webhooks/paystack.js"), "utf8");
+const paymentCatalogSource = readFileSync(join(rootPath, "server/services/paymentCatalog.js"), "utf8");
+const paymentFortressSource = readFileSync(join(rootPath, "server/services/paymentFortress.js"), "utf8");
 const paystackDiagnosticsApiSource = readSrc("api/diagnostics/paystack-connectivity.js");
 const memberPhotosApiSource = readSrc("api/member/photos.js");
 const photoUploadAttributionSource = readSrc("server/services/photoUploadAttribution.js");
@@ -559,6 +563,30 @@ assertCheck(
   sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&
     sourceIntegrityScriptSource.includes("source integrity skipped"),
   "source integrity must skip gracefully when src/ is absent"
+);
+assertCheck(
+  paymentCatalogSource.includes("DEFAULT_BOOST_CATALOG") &&
+    paymentCatalogSource.includes("resolvePaymentProduct") &&
+    paymentCatalogSource.includes("verifyExpectedAmount") &&
+    paymentFortressSource.includes("recordPurchaseIntent") &&
+    paymentFortressSource.includes("assertVerifiedPurchaseAmount") &&
+    paystackVerifySource.includes("resolveInitializeIntent") &&
+    paystackVerifySource.includes("assertVerifiedPurchaseAmount") &&
+    paystackVerifySource.includes("fulfillVerifiedPurchase") &&
+    !paystackVerifySource.includes("body.amount") &&
+    !paystackVerifySource.includes("body.durationHours") &&
+    !paystackVerifySource.includes("metadata.quickie_days") &&
+    !paystackVerifySource.includes("metadata.duration_hours || body.durationHours") &&
+    paystackWebhookSource.includes("assertVerifiedPurchaseAmount") &&
+    !paystackWebhookSource.includes("metadata.quickie_days") &&
+    paymentsSource.includes("?action=initialize") &&
+    paymentsSource.includes("productId: plan.id") &&
+    paymentsSource.includes('productId: "fast-connection-pass"') &&
+    paymentsSource.includes("productId: boostId") &&
+    !paymentsSource.includes("durationHours,") &&
+    !paymentsSource.includes("amount: plan.price") &&
+    !paymentsSource.includes("dailyFastSignals"),
+  "payment pricing and entitlements must be server authoritative"
 );
 
 console.log("source integrity ok");

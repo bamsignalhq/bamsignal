@@ -70,6 +70,10 @@ const photoUploadGridSource = readSrc("src/components/PhotoUploadGrid.tsx");
 const profilePhotoUploadSource = readSrc("src/utils/profilePhotoUpload.ts");
 const complianceGateSource = readSrc("src/components/ComplianceGateModal.tsx");
 const complianceUtilSource = readSrc("src/utils/compliance.ts");
+const profilePageSource = readSrc("src/pages/ProfilePage.tsx");
+const onboardingPageSource = readSrc("src/pages/OnboardingPage.tsx");
+const fastConnectionIntentSource = readSrc("src/utils/fastConnectionIntent.ts");
+const fastConnectionSheetSource = readSrc("src/components/profile/FastConnectionSheet.tsx");
 const serviceWorkerSource = readSrc("src/utils/serviceWorker.ts");
 const mainSource = readSrc("src/main.tsx");
 const sourceIntegrityScriptSource = readSrc("scripts/source-integrity-check.mjs");
@@ -401,6 +405,19 @@ assertCheck(
     complianceGateSource.includes("SAFETY_PLEDGE_RULES") &&
     complianceGateSource.includes("OFFLINE_SAFETY_COPY"),
   "post-onboarding compliance gate must run multi-step checkpoints without onboarding bypass"
+);
+assertCheck(
+  fastConnectionIntentSource.includes("sanitizeIntentsForActivePass") &&
+    fastConnectionIntentSource.includes("require_payment") &&
+    fastConnectionIntentSource.includes("handleQuickieIntentTap") &&
+    profilePageSource.includes("useFastConnectionCheckout") &&
+    profilePageSource.includes("FastConnectionSheet") &&
+    onboardingPageSource.includes("handleIntentSelection") &&
+    onboardingPageSource.includes("FastConnectionSheet") &&
+    fastConnectionSheetSource.includes("Maybe later") &&
+    fastConnectionSheetSource.includes("Continue to payment") &&
+    profilePageSource.includes("fastConnectionActiveLabel"),
+  "Fast Connection intent must require payment before activation"
 );
 assertCheck(
   sourceIntegrityScriptSource.includes('if (!existsSync(srcRoot))') &&

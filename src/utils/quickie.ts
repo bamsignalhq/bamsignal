@@ -1,8 +1,11 @@
+import { MAX_INTENT_SELECTIONS } from "../constants/intents";
 import { STORAGE_KEYS } from "../constants/limits";
 import {
   fastConnectionWeeklyPrice,
   type SubscriptionCatalog
 } from "../services/subscriptionCatalog";
+import type { IntentTag } from "../types";
+import { formatEntitlementUntil } from "./memberEntitlements";
 import { readJson, writeJson } from "./storage";
 
 const DEFAULT_PASS_DAYS = 7;
@@ -75,4 +78,28 @@ export function profileHasQuickieIntent(intents: string[] = []): boolean {
 export function fastConnectionWeeklyAmount(): number {
   const catalog = readJson<SubscriptionCatalog | null>(STORAGE_KEYS.subscriptionCatalog, null);
   return fastConnectionWeeklyPrice(catalog);
+}
+
+export const QUICKIE_INTENT: IntentTag = "Quickie";
+
+export function markPendingQuickieIntent(): void {
+  writeJson(STORAGE_KEYS.pendingQuickieIntent, true);
+}
+
+export function clearPendingQuickieIntent(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.pendingQuickieIntent);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function hasPendingQuickieIntent(): boolean {
+  return readJson<boolean>(STORAGE_KEYS.pendingQuickieIntent, false) === true;
+}
+
+export function fastConnectionActiveLabel(): string | null {
+  const until = getQuickiePassUntil();
+  if (!isQuickiePassActive() || !until) return null;
+  return `Fast Connection active until ${formatEntitlementUntil(until)}`;
 }

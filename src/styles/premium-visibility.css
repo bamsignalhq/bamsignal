@@ -362,6 +362,47 @@
   justify-content: center;
 }
 
+.fast-connection-sheet__intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.fast-connection-sheet__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand-pink) 12%, var(--surface));
+  color: var(--brand-pink);
+  flex: 0 0 auto;
+}
+
+.fast-connection-sheet__price {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.fast-connection-sheet__actions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.profile-fast-connection-status {
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand-pink) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--brand-pink) 24%, var(--border));
+  color: var(--text);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+
 .profile-boost-sheet__backdrop {
   position: absolute;
   inset: 0;

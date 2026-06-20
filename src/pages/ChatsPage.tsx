@@ -39,7 +39,8 @@ import {
 } from "../services/contactExchange";
 import { persistMessageRemote, acceptSignalRemote, declineSignalRemote, fetchIncomingSignalsRemote, ignoreSignalRemote } from "../services/memberData";
 import { startQuickiePassPayment, completePendingPayment } from "../services/payments";
-import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch, activateQuickiePass } from "../utils/quickie";
+import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch } from "../utils/quickie";
+import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
 
 type ChatsPageProps = {
   isPremium: boolean;
@@ -746,7 +747,7 @@ function ChatDetail({
           if (result.needsVerify) {
             const verified = await completePendingPayment(user);
             if (verified.ok) {
-              activateQuickiePass();
+              applyQuickieIntentAfterPayment(user, verified.quickiePassUntil, { addIntent: false });
               unlockQuickieMatch(match.profileId);
               setQuickiePaywallOpen(false);
             } else if (!verified.pending && verified.error) {

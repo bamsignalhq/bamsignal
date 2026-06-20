@@ -36,6 +36,8 @@ import { clearOnboardingDrafts, looksLikeSavedOnboardingProgress } from "../util
 import { resolveMemberIdentity } from "../utils/authIdentity";
 import { writeJson, readJson } from "../utils/storage";
 import { quickiePassDays, quickiePriceLabel } from "../utils/quickie";
+import { FastConnectionSheet } from "../components/profile/FastConnectionSheet";
+import { useFastConnectionCheckout } from "../hooks/useFastConnectionCheckout";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { isSignupPhotoCountable } from "../utils/photoMeta";
 import { flowLog } from "../utils/flowLog";
@@ -111,6 +113,22 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       modMessageTimerRef.current = undefined;
     }, 4000);
   };
+  const {
+    sheetOpen: fastConnectionSheetOpen,
+    loading: fastConnectionLoading,
+    closeSheet: closeFastConnectionSheet,
+    continueToPayment: continueFastConnectionPayment,
+    handleIntentTap,
+    refreshProfileIntents
+  } = useFastConnectionCheckout({
+    user,
+    returnPath: "/onboarding",
+    onPaymentSuccess: () => {
+      setProfile((current) => ({ ...current, intents: refreshProfileIntents() }));
+      showModMessage("Fast Connection is active.");
+    },
+    onPaymentError: (message) => showModMessage(message)
+  });
   const [profile, setProfile] = useState<DatingProfile>(() => {
     const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
     const normalized = normalizeDatingProfile(stored);
@@ -340,6 +358,13 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     });
   };
 
+  const handleIntentSelection = (intent: IntentTag) => {
+    const handled = handleIntentTap(intent, profile.intents, (intents) =>
+      setProfile((current) => ({ ...current, intents }))
+    );
+    if (!handled) toggleIntent(intent);
+  };
+
   if (showWelcome) {
     return (
       <div className="page onboarding-page onboarding-welcome-screen">
@@ -473,7 +498,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
                     type="button"
                     className={`intent-tag intent-tag--large ${selected ? "selected" : ""} ${opt.id === "Quickie" ? "intent-tag--quickie" : ""}`}
                     disabled={disabled}
-                    onClick={() => toggleIntent(opt.id)}
+                    onClick={() => handleIntentSelection(opt.id)}
                   >
                     <span className="intent-tag__emoji">{opt.emoji}</span>
                     {opt.label}
@@ -571,6 +596,13 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           {step < STEPS.length - 1 && <ChevronRight size={18} />}
         </button>
       </footer>
+
+      <FastConnectionSheet
+        open={fastConnectionSheetOpen}
+        onClose={closeFastConnectionSheet}
+        onContinuePayment={() => void continueFastConnectionPayment()}
+        loading={fastConnectionLoading}
+      />
     </div>
   );
 }

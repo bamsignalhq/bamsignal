@@ -74,7 +74,8 @@ import { getProfileViewsToday } from "./utils/profileViews";
 import { unreadCount, notificationDestination, type AppNotification } from "./utils/notifications";
 import { activateBoost, pruneExpiredBoosts } from "./utils/activeBoosts";
 import { BoostActiveBanner } from "./components/BoostActiveBanner";
-import { activateQuickiePass, cacheSubscriptionCatalogPricing } from "./utils/quickie";
+import { cacheSubscriptionCatalogPricing } from "./utils/quickie";
+import { applyQuickieIntentAfterPayment, applyPendingQuickieIntentIfNeeded } from "./utils/fastConnectionIntent";
 import { fetchSubscriptionCatalog } from "./services/subscriptionCatalog";
 import {
   getPaymentFlowState,
@@ -538,7 +539,10 @@ export function App() {
 
   useEffect(() => {
     if (!memberAccessReady) return;
-    void refreshPremiumStatus(user).then(() => syncPremiumState());
+    void refreshPremiumStatus(user).then(() => {
+      syncPremiumState();
+      applyPendingQuickieIntentIfNeeded(user);
+    });
   }, [memberAccessReady, syncPremiumState, user]);
 
   const finishPaymentReturnRedirect = useCallback(
@@ -597,7 +601,7 @@ export function App() {
         notifyBoostActivated(boostId);
         trackEvent("boost_activated", { product: boostId, paid: "true" });
       } else if (kind === "quickie") {
-        activateQuickiePass(route?.quickiePassUntil);
+        applyQuickieIntentAfterPayment(user, route?.quickiePassUntil);
         setPaymentSuccess({
           title: "Payment successful",
           body: "Your Fast Connection Pass is active."

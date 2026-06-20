@@ -26,6 +26,7 @@ import { apiUrl } from "./supabase";
 import { setPremiumSnapshot, isPremiumActive, refreshPremiumStatus } from "./premiumStatus";
 import { readResponseJson } from "../utils/httpJson";
 import { activateQuickiePass, fastConnectionWeeklyAmount, quickiePassDays } from "../utils/quickie";
+import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
 import { fetchSubscriptionCatalog } from "./subscriptionCatalog";
 
 export { isPremiumActive, refreshPremiumStatus };
@@ -594,9 +595,7 @@ export async function completePendingPayment(user: UserProfile): Promise<{
   if (storedKind === "quickie") {
     const result = await verifyQuickiePayment(user);
     if (result.ok) {
-      if (result.quickiePassUntil) {
-        activateQuickiePass(result.quickiePassUntil);
-      }
+      applyQuickieIntentAfterPayment(user, result.quickiePassUntil);
       const kind = normalizePaymentKind(result.productType || "quickie");
       logPaymentEvent("verification result", { reference, ok: true, kind });
       return {

@@ -59,6 +59,7 @@ import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
 import { TwoFactorSettingsCard } from "../components/TwoFactorSettingsCard";
 import { ContactForm } from "../components/ContactForm";
 import { ProfileBoostSheet } from "../components/profile/ProfileBoostSheet";
+import { FastConnectionSheet } from "../components/profile/FastConnectionSheet";
 import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
 import { ProfileOverviewCard } from "../components/profile/ProfileOverviewCard";
 import {
@@ -69,6 +70,8 @@ import { boostNeedsMemberCity } from "../constants/boosts";
 import { fetchAccountStateRemote } from "../services/memberTrust";
 import { getMemberCity } from "../utils/memberCity";
 import { canShowProfileBoostEntry } from "../utils/profileBoostEntry";
+import { useFastConnectionCheckout } from "../hooks/useFastConnectionCheckout";
+import { fastConnectionActiveLabel } from "../utils/quickie";
 
 type ProfileView = "overview" | "edit" | "settings";
 type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help" | "about";
@@ -237,6 +240,7 @@ export function ProfilePage({
 
   const showBoostEntry = canShowProfileBoostEntry(user, profile, { deletePending }) && Boolean(onPurchaseBoost);
   const memberCity = getMemberCity() || profile.city?.trim() || "";
+  const fastConnectionStatus = fastConnectionActiveLabel();
 
   const handlePurchaseBoost = (product: BoostProduct) => {
     if (!onPurchaseBoost) return;
@@ -297,6 +301,23 @@ export function ProfilePage({
     }, 4000);
   };
 
+  const {
+    sheetOpen: fastConnectionSheetOpen,
+    loading: fastConnectionLoading,
+    closeSheet: closeFastConnectionSheet,
+    continueToPayment: continueFastConnectionPayment,
+    handleIntentTap,
+    refreshProfileIntents
+  } = useFastConnectionCheckout({
+    user,
+    returnPath: "/profile",
+    onPaymentSuccess: () => {
+      setProfile((current) => ({ ...current, intents: refreshProfileIntents() }));
+      showModMessage("Fast Connection is active.", true);
+    },
+    onPaymentError: (message) => showModMessage(message)
+  });
+
   const startSelfieVerification = () => {
     openSettings("verification");
   };
@@ -329,6 +350,13 @@ export function ProfilePage({
       if (p.intents.length >= MAX_INTENT_SELECTIONS) return p;
       return { ...p, intents: [...p.intents, intent] };
     });
+  };
+
+  const handleIntentSelection = (intent: IntentTag) => {
+    const handled = handleIntentTap(intent, profile.intents, (intents) =>
+      setProfile((current) => ({ ...current, intents }))
+    );
+    if (!handled) toggleIntent(intent);
   };
 
   const handleLogout = () => {
@@ -495,6 +523,11 @@ export function ProfilePage({
               >
                 Boost visibility →
               </button>
+            ) : null}
+            {fastConnectionStatus ? (
+              <p className="profile-fast-connection-status" role="status">
+                {fastConnectionStatus}
+              </p>
             ) : null}
           </div>
         </>
@@ -668,6 +701,11 @@ export function ProfilePage({
           >
             <fieldset className="intent-fieldset intent-fieldset--flat">
               <legend>Up to {MAX_INTENT_SELECTIONS}</legend>
+              {fastConnectionStatus ? (
+                <p className="profile-fast-connection-status" role="status">
+                  {fastConnectionStatus}
+                </p>
+              ) : null}
               <div className="intent-tags selectable">
                 {INTENT_OPTIONS.map((opt) => {
                   const selected = profile.intents.includes(opt.id);
@@ -678,7 +716,7 @@ export function ProfilePage({
                       type="button"
                       className={`intent-tag ${selected ? "selected" : ""}`}
                       disabled={disabled}
-                      onClick={() => toggleIntent(opt.id)}
+                      onClick={() => handleIntentSelection(opt.id)}
                     >
                       {opt.label}
                     </button>
@@ -1096,6 +1134,13 @@ export function ProfilePage({
         onPurchase={handlePurchaseBoost}
         loading={boostCheckoutLoading}
         memberCity={memberCity}
+      />
+
+      <FastConnectionSheet
+        open={fastConnectionSheetOpen}
+        onClose={closeFastConnectionSheet}
+        onContinuePayment={() => void continueFastConnectionPayment()}
+        loading={fastConnectionLoading}
       />
     </div>
   );

@@ -48,6 +48,7 @@ export const STORAGE_KEYS = {
   discoverCityConfig: "bamsignal-discover-city-config",
   quickieUnlockedMatches: "bamsignal-quickie-unlocked-matches",
   quickiePassUntil: "bamsignal-quickie-pass-until",
+  pendingQuickieIntent: "bamsignal-pending-quickie-intent",
   profileSocial: "bamsignal-profile-social",
   memberProfileId: "bamsignal-member-profile-id",
   authUsernameIndex: "bamsignal-auth-usernames",

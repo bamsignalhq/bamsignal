@@ -2,6 +2,7 @@ import { ageFromDateOfBirth, defaultAdultDob } from "./ageFromDob";
 import { STORAGE_KEYS } from "../constants/limits";
 import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
+import { sanitizeIntentsForActivePass } from "./fastConnectionIntent";
 import { stateForCity, citiesForState, normalizeEthnicities, normalizeFaith, normalizeFaithList, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
 import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
@@ -175,7 +176,9 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     lookingFor,
     interestedInManuallyChanged,
     bio: safeString(cleaned.bio),
-    intents: normalizeIntents(safeArray<string>(cleaned.intents) as string[] | undefined),
+    intents: sanitizeIntentsForActivePass(
+      normalizeIntents(safeArray<string>(cleaned.intents) as string[] | undefined)
+    ),
     interests,
     interestsTouched: onboardingComplete ? interests.length > 0 || interestsTouched : interestsTouched,
     coverPhoto,

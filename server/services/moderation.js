@@ -242,7 +242,8 @@ export async function ensurePhotoViolationSchema() {
 }
 
 export function isUnhealthyPhotoSubmission({ photoReviewStatus } = {}) {
-  return String(photoReviewStatus || "").trim() === "rejected";
+  const status = String(photoReviewStatus || "").trim();
+  return status === "rejected" || status === "hidden";
 }
 
 export async function recordPhotoViolation({

@@ -23,6 +23,7 @@ export function getPhotoModerationMode() {
 }
 
 /**
+ * Upload-first: never reject at upload time — flag for review instead.
  * @param {{ blocked?: boolean; category?: string | null }} scan
  * @param {string} provider
  */
@@ -32,22 +33,12 @@ function decisionFromScan(scan, provider = "manual") {
   }
 
   const flag = FLAG_BY_CATEGORY[scan.category] || "contact_info_detected";
-  const confidence = 0.92;
-  const mode = getPhotoModerationMode();
-
-  if (mode === "upload_first") {
-    return { decision: "pending_review", flags: [flag], confidence, provider };
-  }
-
-  if (mode === "review") {
-    return { decision: "pending_review", flags: [flag], confidence, provider };
-  }
-
-  if (confidence >= 0.85) {
-    return { decision: "rejected", flags: [flag], confidence, provider };
-  }
-
-  return { decision: "pending_review", flags: [flag], confidence, provider };
+  return {
+    decision: "pending_review",
+    flags: [flag],
+    confidence: 0.92,
+    provider
+  };
 }
 
 /**
@@ -58,7 +49,7 @@ function decisionFromScan(scan, provider = "manual") {
  *   hints?: { filename?: string; ocrText?: string };
  * }} input
  * @returns {Promise<{
- *   decision: "approved" | "pending_review" | "rejected";
+ *   decision: "approved" | "pending_review";
  *   flags: string[];
  *   confidence: number;
  *   provider: string;

@@ -45,7 +45,9 @@ import {
   fetchAdminReports,
   fetchContactLeakAttempts,
   fetchPhotoReviews,
-  rejectPhotoReviewAdmin,
+  fetchHiddenPhotoReviews,
+  hidePhotoReviewAdmin,
+  restorePhotoReviewAdmin,
   shadowBanAdmin,
   type AdminReportRow,
   type ContactLeakAttempt,
@@ -71,7 +73,7 @@ import {
 } from "../constants/emailBranding";
 import { getTrustAnalyticsSummary } from "../utils/trustAnalytics";
 import { getPhotoRejectionMetrics, totalPhotoRejectionsToday } from "../utils/photoRejectionMetrics";
-import { riskFlagLabel } from "../utils/photoMeta";
+import { riskFlagLabel, photoReviewLabel } from "../utils/photoMeta";
 import { reportReasonLabel } from "../constants/safety";
 import { fetchEmailBranding, saveEmailBrandingAdmin } from "../services/emailBranding";
 import {
@@ -157,6 +159,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [contactLeaks, setContactLeaks] = useState<ContactLeakAttempt[]>([]);
   const [contactLeaksLoading, setContactLeaksLoading] = useState(false);
   const [photoReviews, setPhotoReviews] = useState<PhotoReviewItem[]>([]);
+  const [hiddenPhotoReviews, setHiddenPhotoReviews] = useState<PhotoReviewItem[]>([]);
   const [photoReviewsLoading, setPhotoReviewsLoading] = useState(false);
   const [photoReviewBusyId, setPhotoReviewBusyId] = useState<string | null>(null);
   const [photoRejectReason, setPhotoRejectReason] = useState("");
@@ -259,9 +262,10 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       })
       .finally(() => setContactLeaksLoading(false));
     setPhotoReviewsLoading(true);
-    void fetchPhotoReviews(50)
-      .then((result) => {
-        if (result.ok) setPhotoReviews(result.reviews);
+    void Promise.all([fetchPhotoReviews(50), fetchHiddenPhotoReviews(50)])
+      .then(([pending, hidden]) => {
+        if (pending.ok) setPhotoReviews(pending.reviews);
+        if (hidden.ok) setHiddenPhotoReviews(hidden.reviews);
       })
       .finally(() => setPhotoReviewsLoading(false));
     void fetchContactExchangeMetricsAdmin(50)
@@ -506,9 +510,8 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
           <section className="card admin-command-panel">
             <h3>Photo review</h3>
             <p className="match-prefs-note">
-              Suspicious uploads are queued here automatically. Approve to keep a photo public, or
-              delete to remove it from storage and the member profile. Only rejected uploads count
-              toward the unhealthy-upload limit.
+              Uploads are saved first and queued here for review. Approve to keep a photo public, hide
+              to remove it from discovery without deleting the original, or delete to purge storage.
             </p>
             {photoReviewsLoading && <AdminTerminalEmpty>Loading photo review queue…</AdminTerminalEmpty>}
             {!photoReviewsLoading && photoReviews.length === 0 && (
@@ -521,7 +524,9 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                   <div>
                     <strong>{item.memberName}</strong>
                     <span>
-                      {item.photoType} · {item.photoRiskFlags.map((flag) => riskFlagLabel(flag as never)).join(", ") || "No flags"} ·{" "}
+                      {photoReviewLabel(item.photoReviewStatus as never)} · {item.photoType} ·{" "}
+                      {item.photoRiskFlags.map((flag) => riskFlagLabel(flag as never)).join(", ") || "No flags"}
+                      {item.rejectReason ? ` · ${item.rejectReason}` : ""} ·{" "}
                       {item.photoViolationCount ? `${item.photoViolationCount} unhealthy upload${item.photoViolationCount === 1 ? "" : "s"}` : "First flag"} ·{" "}
                       {new Date(item.uploadedAt).toLocaleString()}
                     </span>
@@ -531,7 +536,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                   <input
                     type="text"
                     className="admin-input"
-                    placeholder="Reject reason (optional)"
+                    placeholder="Hide reason (optional)"
                     value={photoReviewBusyId === item.id ? photoRejectReason : ""}
                     onChange={(e) => {
                       setPhotoReviewBusyId(item.id);
@@ -582,21 +587,61 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
                     disabled={photoReviewBusyId === item.id && photoReviewsLoading}
                     onClick={async () => {
                       setPhotoReviewBusyId(item.id);
-                      const result = await rejectPhotoReviewAdmin(item.id, photoRejectReason);
+                      const result = await hidePhotoReviewAdmin(item.id, photoRejectReason);
                       if (!result.ok) {
-                        pushToast(result.error || "Reject failed.");
+                        pushToast(result.error || "Hide failed.");
                         return;
                       }
-                      pushToast("Photo rejected.");
+                      pushToast("Photo hidden.");
                       setPhotoRejectReason("");
                       setPhotoReviews((rows) => rows.filter((row) => row.id !== item.id));
                     }}
                   >
-                    Reject
+                    Hide
                   </button>
                 </div>
               </article>
             ))}
+
+            {!photoReviewsLoading && hiddenPhotoReviews.length > 0 && (
+              <>
+                <h4 className="admin-subsection-title">Hidden photos</h4>
+                {hiddenPhotoReviews.map((item) => (
+                  <article key={item.id} className="card admin-moderation-row admin-photo-review-row">
+                    <div className="admin-moderation-row__main">
+                      <img src={item.photoUrl} alt="" className="admin-photo-review-row__thumb" />
+                      <div>
+                        <strong>{item.memberName}</strong>
+                        <span>
+                          {photoReviewLabel(item.photoReviewStatus as never)} · {item.photoType} ·{" "}
+                          {item.rejectReason || "Hidden by moderator"} ·{" "}
+                          {new Date(item.uploadedAt).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="admin-moderation-row__actions">
+                      <button
+                        type="button"
+                        className="btn-secondary btn-sm"
+                        disabled={photoReviewBusyId === item.id && photoReviewsLoading}
+                        onClick={async () => {
+                          setPhotoReviewBusyId(item.id);
+                          const result = await restorePhotoReviewAdmin(item.id);
+                          if (!result.ok) {
+                            pushToast(result.error || "Restore failed.");
+                            return;
+                          }
+                          pushToast("Photo restored.");
+                          setHiddenPhotoReviews((rows) => rows.filter((row) => row.id !== item.id));
+                        }}
+                      >
+                        Restore
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </>
+            )}
           </section>
 
           <section className="card admin-command-panel">

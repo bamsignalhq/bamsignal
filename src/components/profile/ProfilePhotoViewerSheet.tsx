@@ -6,7 +6,6 @@ import {
   MAX_PROFILE_PHOTOS,
   MIN_PROFILE_PHOTOS,
   PHOTO_UPLOAD_FAIL,
-  photoModerationUserMessage,
   photoUploadUserMessage
 } from "../../constants/photos";
 import {
@@ -141,10 +140,6 @@ export function ProfilePhotoViewerSheet({
       }
 
       const uploadResult = await uploadCompressedProfileBlob(compressed.blob, file, compressed.mime);
-      if (uploadResult.moderationRejected) {
-        onModerationMessage?.(photoModerationUserMessage());
-        return;
-      }
 
       const remoteUrl = uploadResult.url;
       const meta = photoMetaFromUpload("profile", uploadResult);

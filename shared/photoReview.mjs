@@ -1,6 +1,6 @@
 /** Photo review status helpers — shared by browser + Node. */
 
-export const PHOTO_REVIEW_STATUSES = ["approved", "pending_review", "rejected"];
+export const PHOTO_REVIEW_STATUSES = ["approved", "pending_review", "rejected", "hidden"];
 
 export const PHOTO_RISK_FLAG_VALUES = [
   "no_face_detected",
@@ -13,21 +13,23 @@ export const PHOTO_RISK_FLAG_VALUES = [
 ];
 
 /**
- * Photos visible to others — rejected are hidden from public discovery.
+ * Photos visible to others — rejected and hidden are excluded from public discovery.
  * Pending review still shows (uploader sees their own via owner view).
  */
 export function filterPhotosForPublicView(photos, photoMeta = {}) {
   const list = Array.isArray(photos) ? photos : [];
   return list.filter((url) => {
     const meta = photoMeta?.[url];
-    return !meta || meta.photoReviewStatus !== "rejected";
+    const status = meta?.photoReviewStatus;
+    return !status || (status !== "rejected" && status !== "hidden");
   });
 }
 
 /** Count toward signup minimum — pending_review and approved both count. */
 export function isPhotoCountableForSignup(url, photoMeta = {}) {
   const meta = photoMeta?.[url];
-  return !meta || meta.photoReviewStatus !== "rejected";
+  const status = meta?.photoReviewStatus;
+  return !status || (status !== "rejected" && status !== "hidden");
 }
 
 export function countCountableSignupPhotos(photos, photoMeta = {}) {
@@ -39,7 +41,7 @@ export function normalizePhotoMetaEntry(raw, fallbackType = "profile") {
   if (!raw || typeof raw !== "object") return null;
   const status = PHOTO_REVIEW_STATUSES.includes(raw.photoReviewStatus)
     ? raw.photoReviewStatus
-    : "approved";
+    : "pending_review";
   const flags = Array.isArray(raw.photoRiskFlags)
     ? raw.photoRiskFlags.filter((flag) => PHOTO_RISK_FLAG_VALUES.includes(flag))
     : [];

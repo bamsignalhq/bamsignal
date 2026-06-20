@@ -147,7 +147,7 @@ export type MemberCompliance = {
 
 export type VerificationReviewStatus = "none" | "pending" | "approved" | "rejected";
 
-export type PhotoReviewStatus = "approved" | "pending_review" | "rejected";
+export type PhotoReviewStatus = "approved" | "pending_review" | "rejected" | "hidden";
 
 export type PhotoRiskFlag =
   | "no_face_detected"

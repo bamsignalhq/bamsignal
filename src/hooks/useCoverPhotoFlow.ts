@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
-import { PHOTO_UPLOAD_FAIL, photoModerationUserMessage, photoUploadUserMessage } from "../constants/photos";
+import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
@@ -118,15 +118,8 @@ export function useCoverPhotoFlow({
         const uploadResult = await uploadCompressedCoverBlob(compressed.blob, croppedFile, compressed.mime);
         logPhotoPipeline("uploaded", {
           kind: "cover",
-          reviewStatus: uploadResult.reviewStatus || "approved"
+          reviewStatus: uploadResult.reviewStatus || "pending_review"
         });
-
-        if (uploadResult.moderationRejected) {
-          setLocalPreview(null);
-          setPendingCover(null);
-          onModerationMessage?.(photoModerationUserMessage());
-          return;
-        }
 
         const remoteUrl = uploadResult.url;
         const remotePath = uploadResult.path;

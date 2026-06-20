@@ -142,17 +142,11 @@ export function PhotoUploadGrid({
         });
         flowLog("photo_upload_ok", { signupMode });
       } else {
-        if (result.moderation) {
-          onModerationMessage?.(result.message);
-        } else {
-          uploadFailCount += 1;
-        }
+        uploadFailCount += 1;
         setPending((current) =>
           current.map((item) => (item.key === entry.key ? { ...item, status: "failed" as const } : item))
         );
-        if (!result.moderation) {
-          onModerationMessage?.(result.message);
-        }
+        onModerationMessage?.(result.message);
       }
 
       return result;

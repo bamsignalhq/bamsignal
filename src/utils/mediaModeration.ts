@@ -79,7 +79,7 @@ export async function moderatePhotoUpload(
     allowed: true,
     message: "",
     mode,
-    photoReviewStatus: "approved",
+    photoReviewStatus: "pending_review",
     photoRiskFlags: []
   };
 }
@@ -91,13 +91,13 @@ export type PhotoReviewAssessment = {
   hardBlockMessage?: string;
 };
 
-/** Post-upload metadata — always approved until admin review changes it. */
+/** Post-upload metadata — pending review until admin approves. */
 export async function assessUploadedPhoto(
   _file: File,
   kind: PhotoUploadKind
 ): Promise<PhotoReviewAssessment> {
   void kind;
-  return { photoReviewStatus: "approved", photoRiskFlags: [], hardBlock: false };
+  return { photoReviewStatus: "pending_review", photoRiskFlags: [], hardBlock: false };
 }
 
 export function toPhotoReviewMeta(

@@ -258,7 +258,7 @@ export function mapUploadError(error: unknown): PhotoUploadError {
 export type PhotoReviewSubmitPayload = {
   photoUrl: string;
   photoType: "profile" | "cover";
-  photoReviewStatus: "approved" | "pending_review" | "rejected";
+  photoReviewStatus: "approved" | "pending_review" | "rejected" | "hidden";
   photoRiskFlags: string[];
   memberName?: string;
   profileId?: string;

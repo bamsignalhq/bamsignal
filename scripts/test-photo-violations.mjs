@@ -9,6 +9,7 @@ assert.equal(PHOTO_VIOLATION_SHADOW_BAN_THRESHOLD, 3);
 
 assert.equal(isUnhealthyPhotoSubmission({ photoReviewStatus: "pending_review" }), false);
 assert.equal(isUnhealthyPhotoSubmission({ photoReviewStatus: "rejected" }), true);
+assert.equal(isUnhealthyPhotoSubmission({ photoReviewStatus: "hidden" }), true);
 assert.equal(isUnhealthyPhotoSubmission({ photoReviewStatus: "approved", photoRiskFlags: [] }), false);
 assert.equal(
   isUnhealthyPhotoSubmission({ photoReviewStatus: "approved", photoRiskFlags: ["no_face_detected"] }),

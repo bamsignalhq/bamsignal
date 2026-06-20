@@ -62,7 +62,7 @@ async function testUploadFirstFlagsContactFilename() {
   assert.ok(result.flags.includes("contact_info_detected"));
 }
 
-async function testStrictRejectsObviousDanger() {
+async function testStrictFlagsObviousDanger() {
   process.env.PHOTO_MODERATION_MODE = "strict";
   const result = await moderatePhoto({
     imageUrl: "https://example.com/photo.webp",
@@ -70,7 +70,7 @@ async function testStrictRejectsObviousDanger() {
     photoType: "profile",
     hints: { ocrText: "NIN National Identification Number Federal Republic of Nigeria" }
   });
-  assert.equal(result.decision, "rejected");
+  assert.equal(result.decision, "pending_review");
   assert.ok(result.flags.includes("document_like"));
 }
 
@@ -92,7 +92,7 @@ async function testProviderFailurePendingReview() {
 
 await testUploadFirstAllowsRealPhotos();
 await testUploadFirstFlagsContactFilename();
-await testStrictRejectsObviousDanger();
+await testStrictFlagsObviousDanger();
 await testProviderFailurePendingReview();
 
 if (originalMode === undefined) delete process.env.PHOTO_MODERATION_MODE;

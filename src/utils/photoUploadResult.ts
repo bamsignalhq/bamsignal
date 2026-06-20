@@ -12,9 +12,7 @@ export function photoMetaFromUpload(
   type: "profile" | "cover",
   payload: PhotoUploadModerationPayload
 ) {
-  const status = payload.moderationRejected
-    ? "rejected"
-    : payload.reviewStatus || "approved";
+  const status = payload.reviewStatus || "pending_review";
   const flags = (payload.photoRiskFlags || []) as PhotoRiskFlag[];
   return buildPhotoMetaEntry(type, status, flags);
 }
@@ -25,7 +23,7 @@ export function queuePhotoReviewAsync(
   payload: PhotoUploadModerationPayload,
   memberName?: string
 ): void {
-  const status = payload.reviewStatus || "approved";
+  const status = payload.reviewStatus || "pending_review";
   if (status === "approved" && !(payload.photoRiskFlags || []).length) return;
 
   void submitPhotoReviewRemote({

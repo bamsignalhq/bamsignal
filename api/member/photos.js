@@ -22,41 +22,26 @@ async function finalizeUploadedPhoto({ userId, kind, result, body }) {
     hints: { filename }
   });
 
-  const reviewStatus =
-    moderation.decision === "rejected"
-      ? "rejected"
-      : moderation.decision === "pending_review"
-        ? "pending_review"
-        : "approved";
+  const photoRiskFlags = moderation.flags || [];
+  const reviewStatus = "pending_review";
 
-  const parsed = parsePhotoStorageUrl(result.url);
-  if (reviewStatus === "rejected" && parsed) {
-    try {
-      await deletePhotoStorageObject(parsed.bucket, parsed.path);
-    } catch (error) {
-      console.warn("[bamsignal] failed to delete rejected photo:", error);
-    }
-  }
-
-  if (reviewStatus !== "approved") {
-    try {
-      await submitPhotoReview({
-        photoUrl: result.url,
-        photoType: kind,
-        photoReviewStatus: reviewStatus,
-        photoRiskFlags: moderation.flags || [],
-        profileId: body.profileId || null,
-        memberName: body.memberName || null
-      });
-    } catch (error) {
-      console.warn("[bamsignal] photo review enqueue failed:", error);
-    }
+  try {
+    await submitPhotoReview({
+      photoUrl: result.url,
+      photoType: kind,
+      photoReviewStatus: reviewStatus,
+      photoRiskFlags,
+      profileId: body.profileId || null,
+      memberName: body.memberName || null
+    });
+  } catch (error) {
+    console.warn("[bamsignal] photo review enqueue failed:", error);
   }
 
   return {
     reviewStatus,
-    photoRiskFlags: moderation.flags || [],
-    moderationRejected: reviewStatus === "rejected",
+    photoRiskFlags,
+    moderationRejected: false,
     moderationConfidence: moderation.confidence ?? 0,
     moderationProvider: moderation.provider || "manual"
   };

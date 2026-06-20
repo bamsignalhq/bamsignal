@@ -25,7 +25,7 @@ export function buildPhotoMetaEntry(
 }
 
 export function defaultApprovedPhotoMeta(type: "profile" | "cover"): PhotoReviewMeta {
-  return buildPhotoMetaEntry(type, "approved", []);
+  return buildPhotoMetaEntry(type, "pending_review", []);
 }
 
 export function upsertPhotoMeta(
@@ -71,6 +71,7 @@ export function isSignupPhotoCountable(
 
 export function photoReviewLabel(status: PhotoReviewStatus): string {
   if (status === "pending_review") return "Pending review";
+  if (status === "hidden") return "Hidden";
   if (status === "rejected") return "Rejected";
   return "Approved";
 }

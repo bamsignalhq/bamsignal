@@ -97,7 +97,7 @@ export type PhotoReviewItem = {
   memberName: string;
   photoUrl: string;
   photoType: "profile" | "cover";
-  photoReviewStatus: "approved" | "pending_review" | "rejected";
+  photoReviewStatus: "approved" | "pending_review" | "rejected" | "hidden";
   photoRiskFlags: string[];
   rejectReason?: string | null;
   uploadedAt: string;
@@ -119,11 +119,31 @@ export async function approvePhotoReviewAdmin(reviewId: string) {
   });
 }
 
-export async function rejectPhotoReviewAdmin(reviewId: string, reason: string) {
-  return adminPostJson<{ ok?: boolean; error?: string }>("/api/admin/moderation?action=reject-photo-review", {
+export async function hidePhotoReviewAdmin(reviewId: string, reason: string) {
+  return adminPostJson<{ ok?: boolean; error?: string }>("/api/admin/moderation?action=hide-photo-review", {
     reviewId,
     reason
   });
+}
+
+/** @deprecated Use hidePhotoReviewAdmin — reject now hides without deleting storage. */
+export async function rejectPhotoReviewAdmin(reviewId: string, reason: string) {
+  return hidePhotoReviewAdmin(reviewId, reason);
+}
+
+export async function restorePhotoReviewAdmin(reviewId: string) {
+  return adminPostJson<{ ok?: boolean; error?: string }>("/api/admin/moderation?action=restore-photo-review", {
+    reviewId
+  });
+}
+
+export async function fetchHiddenPhotoReviews(limit = 50) {
+  const result = await adminPostJson<{ reviews?: PhotoReviewItem[]; count?: number }>(
+    "/api/admin/moderation?action=list-photo-reviews",
+    { status: "hidden", limit }
+  );
+  if (!result.ok) return { ok: false as const, reviews: [] as PhotoReviewItem[], error: result.error };
+  return { ok: true as const, reviews: result.data.reviews || [], count: result.data.count };
 }
 
 export async function deletePhotoReviewAdmin(reviewId: string, reason?: string) {

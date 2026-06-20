@@ -70,6 +70,53 @@ async function deleteStoredPhotoUrl(photoUrl) {
   }
 }
 
+async function hidePhotoFromPublic(review, { operatorEmail, reason, status = "hidden" }) {
+  if (!review) return { ok: false, error: "Review not found." };
+
+  const hideReason = String(reason || "").trim() || "Hidden by moderator";
+
+  if (review.profile_id) {
+    const row = await query("select profile from app_member_profiles where id = $1 limit 1", [
+      review.profile_id
+    ]);
+    if (row.rows[0]) {
+      const meta = {
+        photoReviewStatus: status,
+        photoRiskFlags: Array.isArray(review.photo_risk_flags) ? review.photo_risk_flags : [],
+        type: review.photo_type === "cover" ? "cover" : "profile",
+        uploadedAt: review.created_at,
+        rejectReason: hideReason
+      };
+      const nextProfile = applyPhotoMetaToProfile(row.rows[0].profile, review.photo_url, meta);
+      await query(
+        `update app_member_profiles set profile = $2::jsonb, updated_at = now() where id = $1`,
+        [review.profile_id, nextProfile]
+      );
+    }
+  }
+
+  await query(
+    `update photo_reviews
+     set photo_review_status = $3,
+         reject_reason = $4,
+         reviewed_at = now(),
+         reviewed_by = $2,
+         updated_at = now()
+     where id = $1`,
+    [review.id, operatorEmail, status, hideReason]
+  );
+
+  return {
+    ok: true,
+    review: mapReviewRow({
+      ...review,
+      photo_review_status: status,
+      reject_reason: hideReason,
+      reviewed_by: operatorEmail
+    })
+  };
+}
+
 async function purgeUnhealthyPhoto(review, { operatorEmail, reason, status = "rejected" }) {
   if (!review) return { ok: false, error: "Review not found." };
 
@@ -247,6 +294,7 @@ export async function submitPhotoReview({
     unhealthy &&
     previousStatus !== "pending_review" &&
     previousStatus !== "rejected" &&
+    previousStatus !== "hidden" &&
     photoReviewStatus !== "approved";
 
   if (newlyFlagged && profileId) {
@@ -332,11 +380,56 @@ export async function rejectPhotoReview({ reviewId, operatorEmail, reason = "" }
   const review = existing.rows[0];
   if (!review) return { ok: false, error: "Review not found." };
 
-  return purgeUnhealthyPhoto(review, {
+  return hidePhotoFromPublic(review, {
     operatorEmail,
-    reason: String(reason || "").trim() || "Rejected by moderator",
-    status: "rejected"
+    reason: String(reason || "").trim() || "Hidden by moderator",
+    status: "hidden"
   });
+}
+
+export async function hidePhotoReview({ reviewId, operatorEmail, reason = "" }) {
+  if (!isDatabaseReady()) return { ok: false, error: "Database unavailable." };
+  await ensurePhotoReviewSchema();
+
+  const existing = await query("select * from photo_reviews where id = $1 limit 1", [reviewId]);
+  const review = existing.rows[0];
+  if (!review) return { ok: false, error: "Review not found." };
+
+  return hidePhotoFromPublic(review, {
+    operatorEmail,
+    reason: String(reason || "").trim() || "Hidden by moderator",
+    status: "hidden"
+  });
+}
+
+export async function restorePhotoReview({ reviewId, operatorEmail }) {
+  if (!isDatabaseReady()) return { ok: false, error: "Database unavailable." };
+  await ensurePhotoReviewSchema();
+
+  const existing = await query("select * from photo_reviews where id = $1 limit 1", [reviewId]);
+  const review = existing.rows[0];
+  if (!review) return { ok: false, error: "Review not found." };
+
+  await query(
+    `update photo_reviews
+     set photo_review_status = 'approved',
+         reject_reason = null,
+         reviewed_at = now(),
+         reviewed_by = $2,
+         updated_at = now()
+     where id = $1`,
+    [reviewId, operatorEmail]
+  );
+
+  const meta = {
+    photoReviewStatus: "approved",
+    photoRiskFlags: [],
+    type: review.photo_type === "cover" ? "cover" : "profile",
+    uploadedAt: review.created_at
+  };
+  await updateProfilePhotoMeta(review.profile_id, review.photo_url, meta);
+
+  return { ok: true, review: mapReviewRow({ ...review, photo_review_status: "approved" }) };
 }
 
 export async function deletePhotoReview({ reviewId, operatorEmail, reason = "" }) {

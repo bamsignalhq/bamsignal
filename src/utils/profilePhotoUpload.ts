@@ -1,5 +1,5 @@
 import type { PhotoUploadErrorCode } from "../constants/photoUploadErrors";
-import { PHOTO_UPLOAD_FAIL, photoModerationUserMessage, photoUploadUserMessage } from "../constants/photos";
+import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
   mapUploadError,
@@ -13,7 +13,7 @@ import { samePhotoRef } from "./photoRefs";
 
 export type ProfilePhotoUploadResult =
   | { ok: true; url: string; meta: PhotoReviewMeta }
-  | { ok: false; message: string; code?: PhotoUploadErrorCode; moderation?: boolean };
+  | { ok: false; message: string; code?: PhotoUploadErrorCode };
 
 export async function uploadSingleProfilePhotoFile(options: {
   file: File;
@@ -47,12 +47,8 @@ export async function uploadSingleProfilePhotoFile(options: {
     logPhotoPipeline("uploaded", {
       signupMode,
       kind: "profile",
-      reviewStatus: uploadResult.reviewStatus || "approved"
+      reviewStatus: uploadResult.reviewStatus || "pending_review"
     });
-
-    if (uploadResult.moderationRejected) {
-      return { ok: false, message: photoModerationUserMessage(), moderation: true };
-    }
 
     const meta = photoMetaFromUpload("profile", uploadResult);
     return { ok: true, url: uploadResult.url, meta };

@@ -72,7 +72,8 @@ import { filterBlockedByProfileId } from "./utils/safety";
 import { recordDailyActive, trackEvent } from "./utils/analytics";
 import { getProfileViewsToday } from "./utils/profileViews";
 import { unreadCount, notificationDestination, type AppNotification } from "./utils/notifications";
-import { activateBoost } from "./utils/activeBoosts";
+import { activateBoost, pruneExpiredBoosts } from "./utils/activeBoosts";
+import { BoostActiveBanner } from "./components/BoostActiveBanner";
 import { activateQuickiePass, cacheSubscriptionCatalogPricing } from "./utils/quickie";
 import { fetchSubscriptionCatalog } from "./services/subscriptionCatalog";
 import {
@@ -182,6 +183,7 @@ type VerifiedPaymentRoute = {
   sourcePage?: string;
   boostId?: string;
   quickiePassUntil?: string;
+  expiresAt?: string;
 };
 
 export function App() {
@@ -219,6 +221,7 @@ export function App() {
   const [isAuthed, setIsAuthed] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [isPremium, setIsPremium] = useState(() => isPremiumActive());
+  const [boostTick, setBoostTick] = useState(0);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentPhase, setPaymentPhase] = useState<CheckoutPhase>("idle");
   const [pricingOpen, setPricingOpen] = useState(false);
@@ -446,6 +449,11 @@ export function App() {
     writeJson(STORAGE_KEYS.userProfile, safeUserProfile(user));
   }, [user]);
 
+  const syncPremiumState = useCallback(() => {
+    pruneExpiredBoosts();
+    setIsPremium(isPremiumActive());
+  }, []);
+
   const applyGoToAppResult = useCallback(
     (
       session: Extract<Awaited<ReturnType<typeof goToApp>>, { ok: true }>,
@@ -481,16 +489,10 @@ export function App() {
       } else {
         flowLog("session_restore_onboarding");
       }
-      void refreshPremiumStatus(session.user).then((premium) => {
-        setIsPremium(
-          needsOnboarding
-            ? Boolean(premium.isPremium)
-            : premium.isPremium || isPremiumTrialActive()
-        );
-      });
+      void refreshPremiumStatus(session.user).then(() => syncPremiumState());
       flowLog("session_restore_done");
     },
-    [memberAppEntered]
+    [memberAppEntered, syncPremiumState]
   );
 
   const applyRestoredSession = useCallback(async (profile: UserProfile, options?: { blocking?: boolean }) => {
@@ -538,6 +540,11 @@ export function App() {
     if (memberAccessReady) recordDailyActive();
   }, [isAuthed, memberAccessReady]);
 
+  useEffect(() => {
+    if (!memberAccessReady) return;
+    void refreshPremiumStatus(user).then(() => syncPremiumState());
+  }, [memberAccessReady, syncPremiumState, user]);
+
   const finishPaymentReturnRedirect = useCallback(
     (
       kind: "premium" | "boost" | "quickie",
@@ -584,7 +591,11 @@ export function App() {
 
       if (kind === "boost") {
         const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
-        activateBoost(boostId as BoostProduct["id"], user, datingProfile);
+        activateBoost(boostId as BoostProduct["id"], user, datingProfile, {
+          expiresAt: route?.expiresAt || null
+        });
+        setBoostTick((tick) => tick + 1);
+        void refreshPremiumStatus(user).then(() => syncPremiumState());
         const boostCopy = boostSuccessCopy(boostId as BoostProduct["id"], datingProfile.city);
         setPaymentSuccess(boostCopy);
         notifyBoostActivated(boostId);
@@ -597,9 +608,7 @@ export function App() {
         });
         trackEvent("quickie_unlock");
       } else {
-        void refreshPremiumStatus(user).then((premium) => {
-          setIsPremium(premium.isPremium || isPremiumTrialActive());
-        });
+        void refreshPremiumStatus(user).then(() => syncPremiumState());
         setPaymentSuccess({
           title: MONETIZATION_COPY.paymentSuccessTitle,
           body: MONETIZATION_COPY.paymentSuccessBody
@@ -610,7 +619,7 @@ export function App() {
       setNotifVersion((v) => v + 1);
       finishPaymentReturnRedirect(kind, returnPath, meta);
     },
-    [finishPaymentReturnRedirect, user]
+    [finishPaymentReturnRedirect, syncPremiumState, user]
   );
 
   const processPaymentReturn = useCallback(async () => {
@@ -641,7 +650,8 @@ export function App() {
           returnPath: result.returnPath,
           sourcePage: result.sourcePage,
           boostId: result.boostId,
-          quickiePassUntil: result.quickiePassUntil
+          quickiePassUntil: result.quickiePassUntil,
+          expiresAt: result.expiresAt
         });
         return;
       }
@@ -699,9 +709,7 @@ export function App() {
         const profile = userRef.current;
         if (profile.email || profile.phone) {
           void hydrateMemberData(profile);
-          void refreshPremiumStatus(profile).then((premium) => {
-            setIsPremium(premium.isPremium || isPremiumTrialActive());
-          });
+          void refreshPremiumStatus(profile).then(() => syncPremiumState());
         }
       }
       const state = getPaymentFlowState();
@@ -740,8 +748,8 @@ export function App() {
         if (blocking || memberAppEntered) {
           void hydrateMemberData(profile);
         }
-        const premium = await refreshPremiumStatus(profile);
-        setIsPremium(premium.isPremium || isPremiumTrialActive());
+        await refreshPremiumStatus(profile);
+        syncPremiumState();
         return;
       }
       if (
@@ -771,7 +779,7 @@ export function App() {
       document.removeEventListener("visibilitychange", onReturnToApp);
       window.removeEventListener("pageshow", onReturnToApp);
     };
-  }, [isAuthed, isNative, memberAppEntered]);
+  }, [isAuthed, isNative, memberAppEntered, syncPremiumState]);
 
   useEffect(() => {
     if (!isNative) return;
@@ -1060,9 +1068,7 @@ export function App() {
         setPendingTab(null);
         flowLog("onboarding_start");
         setMemberHydrating(false);
-        void refreshPremiumStatus(appResult.user).then((premium) => {
-          setIsPremium(Boolean(premium.isPremium));
-        });
+        void refreshPremiumStatus(appResult.user).then(() => syncPremiumState());
         hydrateMemberAppInBackground(appResult.user, {
           forceOnboarding,
           referralCode: ref,
@@ -1070,9 +1076,7 @@ export function App() {
         });
         return;
       }
-      void refreshPremiumStatus(appResult.user).then((premium) => {
-        setIsPremium(premium.isPremium || isPremiumTrialActive());
-      });
+      void refreshPremiumStatus(appResult.user).then(() => syncPremiumState());
       clearOnboardingDrafts();
       if (pendingTab) {
         setTab(pendingTab);
@@ -1213,8 +1217,8 @@ export function App() {
           }
           if (sessionResult.route === "home") clearOnboardingDrafts();
         });
-        const premium = await refreshPremiumStatus(profile);
-        setIsPremium(premium.isPremium || isPremiumTrialActive());
+        await refreshPremiumStatus(profile);
+        syncPremiumState();
         return;
       }
 
@@ -1271,7 +1275,7 @@ export function App() {
       subscription.unsubscribe();
       window.clearTimeout(fallback);
     };
-  }, [applyRestoredSession, isNative]);
+  }, [applyRestoredSession, isNative, syncPremiumState]);
 
   useEffect(() => {
     if (authLoading || memberHydrating || !isAuthed || !authPath) return;
@@ -1304,14 +1308,13 @@ export function App() {
     clearOnboardingDrafts();
     setTab("home");
     navigateToPath("/home", true);
-    void refreshPremiumStatus(user).then((premium) => {
-      const trialActive = isPremiumTrialActive();
-      setIsPremium(premium.isPremium || trialActive);
-      if (trialActive && !premium.isPremium) {
+    void refreshPremiumStatus(user).then(() => {
+      syncPremiumState();
+      if (isPremiumTrialActive()) {
         notifyPremiumActivated();
       }
     });
-  }, [user]);
+  }, [syncPremiumState, user]);
 
   const resetLoggedOutState = useCallback(() => {
     clearMemberSessionCaches();
@@ -1859,6 +1862,8 @@ export function App() {
             Recovered your session.
           </p>
         ) : null}
+
+        {memberAccessReady ? <BoostActiveBanner user={user} refreshKey={boostTick} /> : null}
 
         {complianceSyncPending && memberAccessReady ? (
           <p className="compliance-sync-banner" role="status">

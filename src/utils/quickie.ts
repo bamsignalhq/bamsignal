@@ -43,6 +43,14 @@ export function activateQuickiePass(untilIso?: string): void {
   writeJson(STORAGE_KEYS.quickiePassUntil, until);
 }
 
+export function clearQuickiePass(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.quickiePassUntil);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function getUnlockedQuickieMatches(): string[] {
   return readJson<string[]>(STORAGE_KEYS.quickieUnlockedMatches, []);
 }

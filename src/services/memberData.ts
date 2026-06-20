@@ -4,6 +4,7 @@ import { readJson, writeJson, recordApiError } from "../utils/storage";
 import { liftShadowBan, memberShadowKey, shadowBanId } from "../utils/shadowBan";
 import { cacheDiscoverProfiles } from "./discoverProfiles";
 import { setPremiumSnapshot } from "./premiumStatus";
+import { resolveSignalPassSnapshot } from "../utils/memberEntitlements";
 import { apiUrl } from "./supabase";
 import { mergeHydratedCompliance, syncComplianceDoneMarkerFromProfile } from "./compliance";
 import { normalizeDatingProfile } from "../utils/profile";
@@ -194,13 +195,19 @@ export async function hydrateMemberData(user: MemberIdentity): Promise<boolean> 
   }
 
   if (bundle.premium) {
-    setPremiumSnapshot(bundle.premium);
-  } else if (bundle.user) {
-    const until = bundle.user.premium_until as string | null;
-    setPremiumSnapshot({
-      isPremium: until ? new Date(until).getTime() > Date.now() : Boolean(bundle.user.is_premium),
-      premiumUntil: until || null
+    const resolved = resolveSignalPassSnapshot({
+      premiumUntil: bundle.premium.premiumUntil,
+      isPremium: bundle.premium.isPremium,
+      includeTrial: false
     });
+    setPremiumSnapshot({ isPremium: resolved.active, premiumUntil: resolved.expiresAt });
+  } else if (bundle.user) {
+    const resolved = resolveSignalPassSnapshot({
+      premiumUntil: bundle.user.premium_until as string | null,
+      isPremium: Boolean(bundle.user.is_premium),
+      includeTrial: false
+    });
+    setPremiumSnapshot({ isPremium: resolved.active, premiumUntil: resolved.expiresAt });
   }
 
   if (bundle.memberProfileId) {

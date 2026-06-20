@@ -1,7 +1,15 @@
 import type { UserProfile } from "../types";
 import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
+import {
+  resolveFastConnectionPassSnapshot,
+  resolveSignalPassSnapshot,
+  type FastConnectionPassSnapshot,
+  type SignalPassSnapshot
+} from "../utils/memberEntitlements";
 import { isPremiumTrialActive } from "../utils/premiumTrial";
+import { activateQuickiePass, clearQuickiePass, getQuickiePassUntil } from "../utils/quickie";
+import { pruneExpiredBoosts } from "../utils/activeBoosts";
 import { apiUrl } from "./supabase";
 
 type PremiumSnapshot = {
@@ -9,12 +17,22 @@ type PremiumSnapshot = {
   premiumUntil: string | null;
 };
 
+export type MemberEntitlementsSnapshot = {
+  signalPass: SignalPassSnapshot;
+  fastConnectionPass: FastConnectionPassSnapshot;
+};
+
 let snapshot: PremiumSnapshot = { isPremium: false, premiumUntil: null };
 
 export function setPremiumSnapshot(premium: PremiumSnapshot): void {
+  const resolved = resolveSignalPassSnapshot({
+    premiumUntil: premium.premiumUntil,
+    isPremium: premium.isPremium,
+    includeTrial: false
+  });
   snapshot = {
-    isPremium: Boolean(premium.isPremium),
-    premiumUntil: premium.premiumUntil || null
+    isPremium: resolved.active,
+    premiumUntil: resolved.expiresAt
   };
 }
 
@@ -22,12 +40,51 @@ export function getPremiumSnapshot(): PremiumSnapshot {
   return snapshot;
 }
 
+/** Signal Pass / subscription only — boosts and Fast Connection never grant this. */
 export function isPremiumActive(): boolean {
-  if (isPremiumTrialActive()) return true;
-  if (snapshot.premiumUntil) {
-    return new Date(snapshot.premiumUntil).getTime() > Date.now();
+  return resolveSignalPassSnapshot({
+    premiumUntil: snapshot.premiumUntil,
+    isPremium: snapshot.isPremium,
+    includeTrial: true
+  }).active;
+}
+
+export function getSignalPassSnapshot(): SignalPassSnapshot {
+  return resolveSignalPassSnapshot({
+    premiumUntil: snapshot.premiumUntil,
+    isPremium: snapshot.isPremium,
+    includeTrial: true
+  });
+}
+
+function applyEntitlementsPayload(payload?: {
+  premium?: PremiumSnapshot;
+  entitlements?: {
+    signalPass?: PremiumSnapshot;
+    fastConnectionPass?: { active?: boolean; expiresAt?: string | null };
+  };
+}): MemberEntitlementsSnapshot {
+  const signalSource = payload?.entitlements?.signalPass || payload?.premium;
+  if (signalSource) {
+    setPremiumSnapshot(signalSource);
   }
-  return snapshot.isPremium;
+
+  const passUntil =
+    payload?.entitlements?.fastConnectionPass?.expiresAt ||
+    (payload?.entitlements?.fastConnectionPass?.active ? getQuickiePassUntil() : null);
+  const fastConnectionPass = resolveFastConnectionPassSnapshot(passUntil);
+  if (fastConnectionPass.active && fastConnectionPass.expiresAt) {
+    activateQuickiePass(fastConnectionPass.expiresAt);
+  } else if (!fastConnectionPass.active) {
+    clearQuickiePass();
+  }
+
+  pruneExpiredBoosts();
+
+  return {
+    signalPass: getSignalPassSnapshot(),
+    fastConnectionPass: resolveFastConnectionPassSnapshot(getQuickiePassUntil())
+  };
 }
 
 export async function refreshPremiumStatus(
@@ -39,13 +96,42 @@ export async function refreshPremiumStatus(
       headers: await memberApiHeaders(),
       body: JSON.stringify({ email: user.email, phone: user.phone })
     });
-    const payload = await readResponseJson<{ ok?: boolean; premium?: PremiumSnapshot }>(response);
-    if (response.ok && payload?.ok && payload.premium) {
-      setPremiumSnapshot(payload.premium);
-      return payload.premium;
+    const payload = await readResponseJson<{
+      ok?: boolean;
+      premium?: PremiumSnapshot;
+      entitlements?: {
+        signalPass?: PremiumSnapshot;
+        fastConnectionPass?: { active?: boolean; expiresAt?: string | null };
+      };
+    }>(response);
+    if (response.ok && payload?.ok) {
+      applyEntitlementsPayload(payload);
+      return getPremiumSnapshot();
     }
   } catch {
     // keep last snapshot
   }
+
+  pruneExpiredBoosts();
+  const resolved = resolveSignalPassSnapshot({
+    premiumUntil: snapshot.premiumUntil,
+    isPremium: snapshot.isPremium,
+    includeTrial: false
+  });
+  snapshot = { isPremium: resolved.active, premiumUntil: resolved.expiresAt };
   return getPremiumSnapshot();
+}
+
+export async function refreshMemberEntitlements(
+  user: Pick<UserProfile, "email" | "phone">
+): Promise<MemberEntitlementsSnapshot> {
+  await refreshPremiumStatus(user);
+  return {
+    signalPass: getSignalPassSnapshot(),
+    fastConnectionPass: resolveFastConnectionPassSnapshot(getQuickiePassUntil())
+  };
+}
+
+export function hasUnlimitedSignalsAccess(): boolean {
+  return getSignalPassSnapshot().active;
 }

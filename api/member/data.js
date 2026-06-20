@@ -18,6 +18,7 @@ import {
   ensureUserReferralCode,
   fetchIncomingSignals,
   fetchPremiumStatus,
+  fetchMemberEntitlements,
   fetchProfileVisitors,
   fetchReferralStats,
   getMemberProfileById,
@@ -150,8 +151,13 @@ export default async function handler(req, res) {
     if (action === "status") {
       if (!requireDatabase(res)) return;
       const user = await findAppUserIdentity(identity);
-      const premium = await fetchPremiumStatus(identity);
-      return res.status(200).json({ ok: true, user, premium });
+      const entitlements = await fetchMemberEntitlements(identity);
+      return res.status(200).json({
+        ok: true,
+        user,
+        premium: entitlements.signalPass,
+        entitlements
+      });
     }
 
     if (action === "discover") {

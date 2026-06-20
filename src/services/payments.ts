@@ -296,7 +296,8 @@ export async function verifyPayment(user: UserProfile): Promise<{
     if (!response.ok || !payload?.ok) {
       return { ok: false, error: payload?.error || "Payment not verified yet." };
     }
-    if (payload.premium_until) {
+    const kind = normalizePaymentKind(payload.productType);
+    if (kind === "premium" && payload.premium_until) {
       setPremiumSnapshot({ isPremium: true, premiumUntil: payload.premium_until });
     }
     return {

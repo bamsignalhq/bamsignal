@@ -58,6 +58,9 @@ const adminConsentServerSource = readSrc("server/adminConsent.js");
 const adminConsentApiSource = readSrc("api/admin/consent.js");
 const dockerfileSource = readSrc("Dockerfile");
 const smokeServerImportSource = readSrc("scripts/smoke-server-import.mjs");
+const memberEntitlementsSource = readSrc("shared/memberEntitlements.mjs");
+const memberEntitlementsClientSource = readSrc("src/utils/memberEntitlements.ts");
+const premiumStatusSource = readSrc("src/services/premiumStatus.ts");
 const bootFlagsSource = readSrc("src/utils/bootFlags.ts");
 const serviceWorkerSource = readSrc("src/utils/serviceWorker.ts");
 const mainSource = readSrc("src/main.tsx");
@@ -319,6 +322,14 @@ assertCheck(
     appSource.includes("!onPublicWebRoute") &&
     appSource.includes("shouldBlockForAuthRestore"),
   "public routes must never block on member session restore"
+);
+assertCheck(
+  memberEntitlementsSource.includes("resolveSignalPassStatus") &&
+    memberSocialSource.includes("resolveSignalPassStatus") &&
+    !memberSocialSource.includes("Boolean(user.is_premium)") &&
+    memberEntitlementsClientSource.includes("hasUnlimitedSignals") &&
+    premiumStatusSource.includes("pruneExpiredBoosts"),
+  "Signal Pass must be time-bound and separate from boost entitlements"
 );
 assertCheck(
   bootFlagsSource.includes("clearStaleBootFlags") &&

@@ -1,5 +1,10 @@
 import { getApprovedMainPhoto } from "../shared/photoReview.mjs";
 import {
+  resolveFastConnectionPassStatus,
+  resolveSignalPassStatus,
+  shouldClearStalePremiumFlag
+} from "../shared/memberEntitlements.mjs";
+import {
   findAppUserIdentity,
   isDatabaseReady,
   normalizeUserKey,
@@ -683,15 +688,41 @@ export async function fetchReferralStats({ email, phone }) {
 }
 
 export function resolvePremiumStatus(user) {
-  if (!user) return { isPremium: false, premiumUntil: null };
-  const until = user.premium_until;
-  const isPremium = until ? new Date(until).getTime() > Date.now() : Boolean(user.is_premium);
-  return { isPremium, premiumUntil: until || null };
+  return resolveSignalPassStatus(user);
+}
+
+async function expireStalePremiumFlags(user) {
+  if (!user?.id || !shouldClearStalePremiumFlag(user)) return user;
+  const result = await query(
+    `update app_users
+     set is_premium = false, updated_at = now()
+     where id = $1
+     returning *`,
+    [user.id]
+  );
+  return result.rows[0] || user;
 }
 
 export async function fetchPremiumStatus({ email, phone }) {
-  const user = await findAppUserIdentity({ email, phone });
+  let user = await findAppUserIdentity({ email, phone });
+  if (!user) return resolvePremiumStatus(null);
+  user = await expireStalePremiumFlags(user);
   return resolvePremiumStatus(user);
+}
+
+export async function fetchMemberEntitlements({ email, phone }) {
+  let user = await findAppUserIdentity({ email, phone });
+  if (!user) {
+    return {
+      signalPass: resolvePremiumStatus(null),
+      fastConnectionPass: resolveFastConnectionPassStatus(null)
+    };
+  }
+  user = await expireStalePremiumFlags(user);
+  return {
+    signalPass: resolveSignalPassStatus(user),
+    fastConnectionPass: resolveFastConnectionPassStatus(user)
+  };
 }
 
 export async function fetchMemberSocialBundle({ email, phone }) {

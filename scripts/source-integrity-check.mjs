@@ -702,5 +702,13 @@ assertCheck(
     existsSync(join(rootPath, "docs/runbooks/payment-recovery.md")),
   "disaster recovery runbooks must exist under docs/runbooks/"
 );
+assertCheck(
+  existsSync(join(rootPath, "src/app/lazyRoutes.ts")) &&
+    existsSync(join(rootPath, "src/app/AdminConsoleRoot.tsx")) &&
+    !appSource.includes('from "./pages/AdminHubPage"') &&
+    !appSource.includes('from "./pages/AdminAuthPage"') &&
+    appSource.includes("LazyAdminConsoleRoot"),
+  "admin console must stay out of the App.tsx main bundle"
+);
 
 console.log("source integrity ok");

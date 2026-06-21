@@ -1,12 +1,12 @@
 import { ChevronLeft, ChevronRight, Heart, MoreHorizontal, UserPlus, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { BRAND } from "../constants/copy";
 import { profileIntentLabel } from "../constants/intents";
 import type { DiscoverProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
 import { ShowcaseImage } from "./ShowcaseImage";
 import { VerificationBadge } from "./VerificationBadge";
-import { VoiceIntro } from "./VoiceIntro";
+import { LazyVoiceIntro } from "./lazyProfileUi";
 import { WhyThisProfile } from "./WhyThisProfile";
 import { ProfileInterestsPreview } from "./profile/ProfileInterestsPreview";
 import { ProfileDetailsList } from "./profile/ProfileDetailsList";
@@ -217,7 +217,9 @@ export function ProfileDetailSheet({
           {profile.voiceIntroUrl && (
             <section className="profile-detail-sheet__card">
               <h3>Voice intro</h3>
-              <VoiceIntro url={profile.voiceIntroUrl} />
+              <Suspense fallback={null}>
+                <LazyVoiceIntro url={profile.voiceIntroUrl} />
+              </Suspense>
             </section>
           )}
 

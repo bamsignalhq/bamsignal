@@ -175,7 +175,8 @@ export default defineConfig({
           react: ["react", "react-dom"],
           supabase: ["@supabase/supabase-js"],
           capacitor: ["@capacitor/app", "@capacitor/browser", "@capacitor/core", "@capacitor/push-notifications"],
-          icons: ["lucide-react"]
+          icons: ["lucide-react"],
+          heic2any: ["heic2any"]
         }
       }
     }

@@ -1,9 +1,16 @@
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Mic, Moon, Settings, Sun } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay, profileIntentLabel, toggleIntentSelection, INTENT_LIMIT_MESSAGE } from "../constants/intents";
-import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
-import { CoverPhotoUpload } from "../components/CoverPhotoUpload";
+import {
+  LazyCoverPhotoUpload,
+  LazyPhotoUploadGrid,
+  LazyProfileAccountPanel,
+  LazySafetySettingsCard,
+  LazyTwoFactorSettingsCard,
+  LazyVoiceIntro,
+  LazyVoiceIntroRecorder
+} from "../components/lazyProfileUi";
 import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import { TapSelectField } from "../components/TapSelectField";
@@ -25,8 +32,6 @@ import {
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
 import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
 import { InterestPicker } from "../components/InterestPicker";
-import { VoiceIntroRecorder } from "../components/VoiceIntro";
-import { VoiceIntro } from "../components/VoiceIntro";
 import type {
   DatingProfile,
   IntentTag,
@@ -53,7 +58,6 @@ import {
   validateUserText
 } from "../utils/contactGuard";
 import { readJson, writeJson } from "../utils/storage";
-import { SafetySettingsCard } from "../components/SafetySettingsCard";
 import {
   isUserVerificationApproved,
   isUserVerificationPending
@@ -63,8 +67,6 @@ import { MAX_PROFILE_PHOTOS } from "../constants/photos";
 import { persistCoverPhotoChange } from "../utils/persistCoverPhoto";
 import { syncMemberProfileRemote, syncMemberProfileWithResult } from "../services/cityHome";
 import { revalidateMemberProfileAfterUpdate } from "../services/memberProfileSync";
-import { ProfileAccountPanel } from "../components/profile/ProfileAccountPanel";
-import { TwoFactorSettingsCard } from "../components/TwoFactorSettingsCard";
 import { ContactForm } from "../components/ContactForm";
 import { ProfileBoostSheet } from "../components/profile/ProfileBoostSheet";
 import { FastConnectionSheet } from "../components/profile/FastConnectionSheet";
@@ -562,7 +564,9 @@ export function ProfilePage({
                 </span>
                 <span className="profile-premium-voice__label">Voice intro</span>
                 {profile.voiceIntroUrl ? (
-                  <VoiceIntro url={profile.voiceIntroUrl} label="Play" compact />
+                  <Suspense fallback={null}>
+                    <LazyVoiceIntro url={profile.voiceIntroUrl} label="Play" compact />
+                  </Suspense>
                 ) : (
                   <button
                     type="button"
@@ -689,7 +693,8 @@ export function ProfilePage({
             onToggle={toggleEditSection}
           >
             <h4 className="profile-form-row__label">Backdrop photo</h4>
-            <CoverPhotoUpload
+            <Suspense fallback={null}>
+              <LazyCoverPhotoUpload
               coverPhoto={profile.coverPhoto}
               coverPhotoUrl={profile.coverPhotoUrl}
               coverPhotoExplicit={profile.coverPhotoExplicit}
@@ -706,9 +711,11 @@ export function ProfilePage({
                 );
               }}
               onModerationMessage={showModMessage}
-            />
+              />
+            </Suspense>
             <h4 className="profile-form-row__label">Profile photos</h4>
-            <PhotoUploadGrid
+            <Suspense fallback={null}>
+              <LazyPhotoUploadGrid
               className="photo-upload-grid--centered"
               photos={profile.photos}
               mainPhotoUrl={profile.mainPhotoUrl}
@@ -726,6 +733,7 @@ export function ProfilePage({
               }}
               onModerationMessage={showModMessage}
             />
+            </Suspense>
           </EditAccordion>
 
           <EditAccordion
@@ -898,7 +906,8 @@ export function ProfilePage({
             open={editOpen === "voice"}
             onToggle={toggleEditSection}
           >
-            <VoiceIntroRecorder
+            <Suspense fallback={null}>
+              <LazyVoiceIntroRecorder
               url={profile.voiceIntroUrl}
               onRecorded={async (voiceIntroUrl) => {
                 const next = normalizeDatingProfile({ ...profile, voiceIntroUrl, premium: isPremium });
@@ -930,6 +939,7 @@ export function ProfilePage({
               }}
               onRejected={showModMessage}
             />
+            </Suspense>
           </EditAccordion>
 
           <div className="profile-edit-save-bar">
@@ -1107,7 +1117,9 @@ export function ProfilePage({
 
           {settingsPanel === "privacy" && (
             <>
-              <TwoFactorSettingsCard user={user} onMessage={showModMessage} />
+              <Suspense fallback={null}>
+                <LazyTwoFactorSettingsCard user={user} onMessage={showModMessage} />
+              </Suspense>
               <section className="card profile-privacy-card">
                 {(
                   [
@@ -1135,13 +1147,15 @@ export function ProfilePage({
               </section>
               <details className="settings-advanced" open>
                 <summary>Privacy & Safety controls</summary>
-                <SafetySettingsCard
+                <Suspense fallback={null}>
+                  <LazySafetySettingsCard
                   profile={profile}
                   onChange={(safetySettings: SafetySettings) => {
                     setProfile({ ...profile, safetySettings });
                     writeJson(STORAGE_KEYS.datingProfile, { ...profile, safetySettings, premium: isPremium });
                   }}
-                />
+                  />
+                </Suspense>
               </details>
             </>
           )}
@@ -1230,7 +1244,8 @@ export function ProfilePage({
 
           {settingsPanel === "account" && (
             <>
-              <ProfileAccountPanel
+              <Suspense fallback={null}>
+                <LazyProfileAccountPanel
                 user={user}
                 profile={profile}
                 isPremium={isPremium}
@@ -1242,7 +1257,8 @@ export function ProfilePage({
                 }}
                 onLogout={handleLogout}
                 onMessage={showModMessage}
-              />
+                />
+              </Suspense>
               <section className="card settings-card">
                 <button type="button" className="settings-row" onClick={onToggleTheme}>
                   {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}

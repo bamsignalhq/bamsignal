@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Preloader } from "./components/Preloader";
@@ -10,15 +10,21 @@ import { GuestGate } from "./components/GuestGate";
 import { LandingPage } from "./pages/LandingPage";
 import { GuestDiscoverPage } from "./pages/GuestDiscoverPage";
 import { HomePage } from "./pages/HomePage";
-import { FastConnectionPage } from "./pages/FastConnectionPage";
 import { DiscoverPage } from "./pages/DiscoverPage";
 import { LikesPage } from "./pages/LikesPage";
 import { ChatsPage } from "./pages/ChatsPage";
 import { ProfilePage } from "./pages/ProfilePage";
-import { AdminShell } from "./components/admin/AdminShell";
-import { AdminToastProvider } from "./components/admin/AdminToast";
-import { AdminConsentProvider } from "./components/admin/AdminConsentProvider";
-import { AdminHubPage } from "./pages/AdminHubPage";
+import { LazyRouteFallback } from "./app/LazyRouteFallback";
+import {
+  LazyAdminConsoleRoot,
+  LazyFastConnectionPage,
+  LazyLegalPage,
+  LazyMomentPage,
+  LazyPremiumPage,
+  LazyPublicMarketingRoutes,
+  LazySafetyCenterPage,
+  LazyVisitorsPage
+} from "./app/lazyRoutes";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
 import { PaymentLoadingOverlay } from "./components/PaymentLoadingOverlay";
 import { PaymentReturnScreen } from "./components/PaymentReturnScreen";
@@ -88,21 +94,8 @@ import {
   shouldShowPaymentRecovery,
   subscribePaymentState
 } from "./utils/paymentState";
-import { LegalPage } from "./pages/LegalPage";
-import { PremiumPage } from "./pages/PremiumPage";
-import { VisitorsPage } from "./pages/VisitorsPage";
-import { SafetyCenterPage } from "./pages/SafetyCenterPage";
 import { SiteFooter } from "./components/SiteFooter";
 import { LoveAuthRoutePage } from "./pages/LoveAuthRoutePage";
-import { StoreScreenshotsPage } from "./pages/StoreScreenshotsPage";
-import { AdminAuthPage } from "./pages/AdminAuthPage";
-import { BlogIndexPage } from "./pages/BlogIndexPage";
-import { BlogPostPage } from "./pages/BlogPostPage";
-import { SeoLayout } from "./pages/seo/SeoLayout";
-import { SeoRouter } from "./pages/seo/SeoRouter";
-import { NigeriaLocationRouter } from "./pages/seo/NigeriaLocationRouter";
-import { PublicNotFoundPage } from "./pages/seo/PublicNotFoundPage";
-import { MomentPage } from "./pages/MomentPage";
 import { getBlogPost } from "./data/blogPosts";
 import { getMomentPage, type MomentPageId } from "./data/momentPages";
 import {
@@ -1563,7 +1556,18 @@ export function App() {
     normalizePath(window.location.pathname) === "/store-screenshots" &&
     (import.meta.env.VITE_STORE_SCREENSHOTS === "true" || import.meta.env.DEV)
   ) {
-    return <StoreScreenshotsPage />;
+    return (
+      <Suspense fallback={<LazyRouteFallback />}>
+        <LazyPublicMarketingRoutes
+          variant="store-screenshots"
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onLogoClick={goHome}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup", "discover")}
+        />
+      </Suspense>
+    );
   }
 
   if (paystackCallbackActive) {
@@ -1575,29 +1579,18 @@ export function App() {
   }
 
   if (showAdminAuth || showAdminHub) {
-    if (showAdminAuth) {
-      return (
-        <AdminToastProvider>
-          <div className="admin-console-root">
-            <AdminAuthPage
-              onAuthed={() => {
-                setShowAdminAuth(false);
-                setShowAdminHub(true);
-              }}
-            />
-          </div>
-        </AdminToastProvider>
-      );
-    }
-
     return (
-      <AdminToastProvider>
-        <AdminConsentProvider>
-          <AdminShell authorized={null} onUnauthorized={openHardLogin}>
-            <AdminHubPage onLogout={openHardLogin} />
-          </AdminShell>
-        </AdminConsentProvider>
-      </AdminToastProvider>
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading command center…" />}>
+        <LazyAdminConsoleRoot
+          mode={showAdminAuth ? "auth" : "hub"}
+          onAuthed={() => {
+            setShowAdminAuth(false);
+            setShowAdminHub(true);
+          }}
+          onLogout={openHardLogin}
+          onUnauthorized={openHardLogin}
+        />
+      </Suspense>
     );
   }
 
@@ -1696,7 +1689,12 @@ export function App() {
             }
           />
           <main className="app-main app-main--legal">
-            <MomentPage momentId={momentSlug as MomentPageId} onSignup={() => openAuth("signup", "discover")} />
+            <Suspense fallback={<LazyRouteFallback />}>
+              <LazyMomentPage
+                momentId={momentSlug as MomentPageId}
+                onSignup={() => openAuth("signup", "discover")}
+              />
+            </Suspense>
           </main>
         </div>
       </div>
@@ -1706,77 +1704,65 @@ export function App() {
   if (showBlogIndex || blogSlug) {
     const post = blogSlug ? getBlogPost(blogSlug) : null;
     return (
-      <div className={`app ${theme} platform-root`}>
-        <SeoLayout
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading guides…" />}>
+        <LazyPublicMarketingRoutes
+          variant={post ? "blog-post" : blogSlug ? "blog-missing" : "blog-index"}
           theme={theme}
           onToggleTheme={toggleTheme}
           onLogoClick={goHome}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup", "discover")}
-        >
-          {post ? (
-            <BlogPostPage post={post} onSignup={() => openAuth("signup", "discover")} />
-          ) : blogSlug ? (
-            <div className="seo-not-found">
-              <h1>Guide not found</h1>
-              <p>This article is not available.</p>
-              <button type="button" className="seo-header__join" onClick={() => navigateToPath("/blog")}>
-                Back to blog
-              </button>
-            </div>
-          ) : (
-            <BlogIndexPage onSignup={() => openAuth("signup", "discover")} />
-          )}
-        </SeoLayout>
-      </div>
+          onBackToBlog={() => navigateToPath("/blog")}
+          blogPost={post}
+        />
+      </Suspense>
     );
   }
 
   if (shouldShowPublicNotFound(window.location.pathname, isNative) && !authPath) {
     return (
-      <div className={`app ${theme} platform-root`}>
-        <SeoLayout
+      <Suspense fallback={<LazyRouteFallback />}>
+        <LazyPublicMarketingRoutes
+          variant="not-found"
           theme={theme}
           onToggleTheme={toggleTheme}
           onLogoClick={goHome}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup", "discover")}
-        >
-          <PublicNotFoundPage />
-        </SeoLayout>
-      </div>
+        />
+      </Suspense>
     );
   }
 
   if (nigeriaRoute) {
     return (
-      <div className={`app ${theme} platform-root`}>
-        <SeoLayout
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading…" />}>
+        <LazyPublicMarketingRoutes
+          variant="nigeria"
           theme={theme}
           onToggleTheme={toggleTheme}
           onLogoClick={goHome}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup", "discover")}
-        >
-          <NigeriaLocationRouter route={nigeriaRoute} />
-        </SeoLayout>
-      </div>
+          nigeriaRoute={nigeriaRoute}
+        />
+      </Suspense>
     );
   }
 
   if (seoRoute) {
     return (
-      <div className={`app ${theme} platform-root`}>
-        <SeoLayout
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading…" />}>
+        <LazyPublicMarketingRoutes
+          variant="seo"
           theme={theme}
           onToggleTheme={toggleTheme}
           onLogoClick={goHome}
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup", "discover")}
-        >
-          <SeoRouter route={seoRoute} />
-        </SeoLayout>
-      </div>
+          seoRoute={seoRoute}
+        />
+      </Suspense>
     );
   }
 
@@ -1800,7 +1786,9 @@ export function App() {
             }
           />
           <main className="app-main app-main--legal">
-            <LegalPage path={legalPath} />
+            <Suspense fallback={<LazyRouteFallback />}>
+              <LazyLegalPage path={legalPath} />
+            </Suspense>
           </main>
           <SiteFooter onLogoClick={goHome} />
         </div>
@@ -1926,39 +1914,45 @@ export function App() {
             </MemberRouteBoundary>
           )}
           {isAuthed && memberAccessReady && memberOverlay === "premium" && (
-            <PremiumPage
-              isPremium={isPremium}
-              plans={plans}
-              onBack={() => setMemberOverlay(null)}
-              onSelectPlan={(plan) => void handleUpgrade(plan)}
-              loading={paymentLoading}
-            />
+            <Suspense fallback={<LazyRouteFallback subtitle="Loading Signal Pass…" />}>
+              <LazyPremiumPage
+                isPremium={isPremium}
+                plans={plans}
+                onBack={() => setMemberOverlay(null)}
+                onSelectPlan={(plan) => void handleUpgrade(plan)}
+                loading={paymentLoading}
+              />
+            </Suspense>
           )}
           {isAuthed && memberAccessReady && memberOverlay === "visitors" && (
-            <VisitorsPage
-              viewers={readJson(STORAGE_KEYS.profileViews, { count: 0, viewers: [] }).viewers}
-              viewsToday={getProfileViewsToday()}
-              isPremium={isPremium}
-              onBack={() => setMemberOverlay(null)}
-              onUpgrade={startPremiumCheckout}
-              onSendSignal={() => {
-                setMemberOverlay(null);
-                setTab("discover");
-              }}
-              onCompleteProfile={() => {
-                setMemberOverlay(null);
-                setTab("me");
-              }}
-            />
+            <Suspense fallback={<LazyRouteFallback />}>
+              <LazyVisitorsPage
+                viewers={readJson(STORAGE_KEYS.profileViews, { count: 0, viewers: [] }).viewers}
+                viewsToday={getProfileViewsToday()}
+                isPremium={isPremium}
+                onBack={() => setMemberOverlay(null)}
+                onUpgrade={startPremiumCheckout}
+                onSendSignal={() => {
+                  setMemberOverlay(null);
+                  setTab("discover");
+                }}
+                onCompleteProfile={() => {
+                  setMemberOverlay(null);
+                  setTab("me");
+                }}
+              />
+            </Suspense>
           )}
           {isAuthed && memberAccessReady && memberOverlay === "safety" && (
-            <SafetyCenterPage
-              onBack={() => setMemberOverlay(null)}
-              onOpenProfile={() => {
-                setMemberOverlay(null);
-                setTab("me");
-              }}
-            />
+            <Suspense fallback={<LazyRouteFallback subtitle="Loading Safety Center…" />}>
+              <LazySafetyCenterPage
+                onBack={() => setMemberOverlay(null)}
+                onOpenProfile={() => {
+                  setMemberOverlay(null);
+                  setTab("me");
+                }}
+              />
+            </Suspense>
           )}
           {memberAccessReady && !memberOverlay && tab === "home" && currentPathname === "/home" && (
             <MemberRouteBoundary name="home">
@@ -1973,12 +1967,14 @@ export function App() {
           )}
           {memberAccessReady && !memberOverlay && currentPathname === "/fast-connection" && (
             <MemberRouteBoundary name="fast-connection">
-              <FastConnectionPage
-                user={user}
-                isPremium={isPremium}
-                onHome={() => navigateToPath("/home")}
-                onOpenPremium={startPremiumCheckout}
-              />
+              <Suspense fallback={<LazyRouteFallback subtitle="Loading Fast Connection…" />}>
+                <LazyFastConnectionPage
+                  user={user}
+                  isPremium={isPremium}
+                  onHome={() => navigateToPath("/home")}
+                  onOpenPremium={startPremiumCheckout}
+                />
+              </Suspense>
             </MemberRouteBoundary>
           )}
           {showMarketingHome && tab === "home" && !isOnboardingRoute && (

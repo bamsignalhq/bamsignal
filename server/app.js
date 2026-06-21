@@ -8,6 +8,12 @@ import { corsMiddleware } from "./cors.js";
 import { PAYSTACK_WEBHOOK_MOUNT_PATHS } from "./services/paystackWebhookHandler.js";
 import { livenessPayload, readinessPayload } from "./services/readiness.js";
 import { requireDiagnosticsAccess } from "./services/diagnosticsAccess.js";
+import {
+  logAlertableEvent,
+  logReadyCheckFailed,
+  observabilityContext,
+  requestContextMiddleware
+} from "./services/observability.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
 import { mountHandler } from "./mountHandler.js";
@@ -58,6 +64,7 @@ export function createApp(options = {}) {
   });
 
   app.use(corsMiddleware);
+  app.use(requestContextMiddleware);
 
   app.use((req, res, next) => {
     if (PAYSTACK_WEBHOOK_MOUNT_PATHS.includes(req.path)) {
@@ -81,11 +88,29 @@ export function createApp(options = {}) {
   app.get("/ready", async (req, res) => {
     const access = await requireDiagnosticsAccess(req);
     const payload = await readinessPayload({ detailed: access.ok });
+    if (!payload.ready) {
+      logReadyCheckFailed(
+        observabilityContext(req, {
+          path: "/ready",
+          detailed: access.ok,
+          ready: false
+        })
+      );
+    }
     res.status(payload.ready ? 200 : 503).json(payload);
   });
 
-  app.head("/ready", async (_req, res) => {
+  app.head("/ready", async (req, res) => {
     const payload = await readinessPayload({ detailed: false });
+    if (!payload.ready) {
+      logReadyCheckFailed(
+        observabilityContext(req, {
+          path: "/ready",
+          method: "HEAD",
+          ready: false
+        })
+      );
+    }
     res.status(payload.ready ? 200 : 503).end();
   });
 
@@ -156,10 +181,17 @@ export function createApp(options = {}) {
     });
   }
 
-  app.use((error, _req, res, _next) => {
-    console.error(error);
+  app.use((error, req, res, _next) => {
+    logAlertableEvent(
+      "unhandled_request_error",
+      observabilityContext(req, {
+        path: req.path,
+        method: req.method,
+        error: error?.message || String(error)
+      })
+    );
     if (!res.headersSent) {
-      res.status(500).json({ ok: false, error: error.message || "Internal server error" });
+      res.status(500).json({ ok: false, error: "Internal server error" });
     }
   });
 

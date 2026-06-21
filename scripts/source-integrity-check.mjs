@@ -52,6 +52,8 @@ const identityApiSource = readSrc("api/auth/identity.js");
 const loginSecurityApiSource = readSrc("api/auth/login-security.js");
 const hardSetupApiSource = readSrc("api/hard/setup.js");
 const adminAuthServerSource = readSrc("server/adminAuth.js");
+const observabilitySource = readSrc("server/services/observability.js");
+const paystackVerifyApiSource = readSrc("api/paystack/verify.js");
 const viewSecurityApiSource = readSrc("api/diagnostics/view-security.js");
 const functionSecurityApiSource = readSrc("api/diagnostics/function-security.js");
 const paystackVerifySource = readFileSync(join(rootPath, "api/paystack/verify.js"), "utf8");
@@ -682,6 +684,14 @@ assertCheck(
     hardSetupApiSource.includes("hasSetupSecret") &&
     !memberAuthSource.includes('"check-username"'),
   "identity and admin status exposure must stay minimized for public callers"
+);
+assertCheck(
+  observabilitySource.includes("requestContextMiddleware") &&
+    observabilitySource.includes("sanitizeLogContext") &&
+    serverAppSource.includes("requestContextMiddleware") &&
+    paystackVerifyApiSource.includes("payment_verify_failed") &&
+    paystackVerifyApiSource.includes("observabilityContext"),
+  "observability middleware and payment failure events must be wired"
 );
 
 console.log("source integrity ok");

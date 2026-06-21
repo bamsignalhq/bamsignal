@@ -10,6 +10,7 @@ import {
   loadEmailBranding,
   wrapEmailLayoutAsync
 } from "./emailBranding.js";
+import { logAlertableEvent, logObservabilityEvent } from "./observability.js";
 
 const SUPPORT_EMAIL = "support@bamsignal.com";
 
@@ -81,10 +82,14 @@ function nextStepsCopy(productType, productId) {
   return "Your BamSignal benefits are now active.";
 }
 
-async function sendResendPurchaseEmail({ to, subject, html, text }) {
+async function sendResendPurchaseEmail({ to, subject, html, text, reference = null }) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
-    console.warn("[payment-email] RESEND_API_KEY not configured — skipping purchase email");
+    logObservabilityEvent(
+      "email_send_skipped",
+      { reason: "resend_not_configured", channel: "purchase_confirmation" },
+      "warn"
+    );
     return { ok: false, skipped: true, reason: "resend_not_configured" };
   }
 
@@ -103,9 +108,13 @@ async function sendResendPurchaseEmail({ to, subject, html, text }) {
   });
 
   if (!response.ok) {
-    const detail = await response.text();
-    console.error("[payment-email] purchase confirmation failed:", detail);
-    return { ok: false, error: detail };
+    logAlertableEvent("email_send_failed", {
+      channel: "purchase_confirmation",
+      reference,
+      status: response.status,
+      reason: "resend_rejected"
+    });
+    return { ok: false, error: "email_send_failed" };
   }
 
   return { ok: true };
@@ -194,7 +203,8 @@ export async function sendPurchaseConfirmationEmail({
     to: normalizedEmail,
     subject: purchaseEmailSubject(productType, productId),
     html,
-    text
+    text,
+    reference
   });
 
   if (!sendResult.ok) {

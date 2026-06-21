@@ -4,6 +4,7 @@ import {
   GENERIC_NOT_AUTHORIZED,
   logAdminStatusHidden
 } from "./services/identityExposure.js";
+import { logAlertableEvent, observabilityContext } from "./services/observability.js";
 
 export function allowedAdminEmails() {
   return commandCenterEmails();
@@ -33,6 +34,12 @@ export async function requireAdmin(req, res) {
   if (provided && allowedSecrets.includes(provided)) return true;
   if (await verifySupabaseAdmin(req)) return true;
   logAdminStatusHidden({ endpoint: req?.path || req?.url || "admin" });
+  logAlertableEvent(
+    "admin_auth_failed",
+    observabilityContext(req, {
+      endpoint: req?.path || req?.url || "admin"
+    })
+  );
   res.status(401).json({ ok: false, error: GENERIC_NOT_AUTHORIZED });
   return false;
 }

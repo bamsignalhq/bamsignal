@@ -15,6 +15,7 @@ import {
   isPaymentDatabaseError,
   paymentHttpStatusForError
 } from "./paymentDb.js";
+import { logAlertableEvent, observabilityContext } from "./observability.js";
 
 export const PAYSTACK_WEBHOOK_CANONICAL_PATH = "/api/paystack/webhook";
 
@@ -124,8 +125,15 @@ export async function handlePaystackWebhookRequest({
   rawBody,
   signature,
   secretKey = config.paystackSecretKey,
-  ledgerSource = "webhook"
+  ledgerSource = "webhook",
+  requestId = null,
+  correlationId = null
 } = {}) {
+  const logContext = observabilityContext(
+    { observability: { requestId, correlationId } },
+    { ledgerSource }
+  );
+
   if (String(method || "").toUpperCase() !== "POST") {
     return {
       status: 405,
@@ -136,6 +144,10 @@ export async function handlePaystackWebhookRequest({
 
   const bodyBuffer = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody || "");
   if (!verifyPaystackWebhookSignature(bodyBuffer, signature, secretKey)) {
+    logAlertableEvent("payment_webhook_failed", {
+      ...logContext,
+      reason: "invalid_signature"
+    });
     return {
       status: 401,
       body: { ok: false, error: "Invalid Paystack signature" }
@@ -159,6 +171,12 @@ export async function handlePaystackWebhookRequest({
           body: { ok: true, ignored: true, reason: "amount_mismatch" }
         };
       }
+      logAlertableEvent("payment_webhook_failed", {
+        ...logContext,
+        event: event.event,
+        reason: result?.error || "fulfillment_failed",
+        status: result?.status || 422
+      });
       return {
         status: result?.status || 422,
         body: { ok: false, error: result?.error || "Unable to fulfill purchase." }
@@ -171,12 +189,21 @@ export async function handlePaystackWebhookRequest({
     };
   } catch (error) {
     if (isPaymentDatabaseError(error)) {
-      console.error("[paystack webhook] persistence unavailable", error?.message || error);
+      logAlertableEvent("payment_webhook_failed", {
+        ...logContext,
+        reason: "persistence_unavailable",
+        code: error?.code || null
+      });
       return {
         status: 503,
         body: { ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE }
       };
     }
+    logAlertableEvent("payment_webhook_failed", {
+      ...logContext,
+      reason: error?.message || "webhook_error",
+      code: error?.code || null
+    });
     return {
       status: paymentHttpStatusForError(error),
       body: { ok: false, error: error.message || "Paystack webhook failed" }
@@ -198,7 +225,9 @@ export async function handlePaystackWebhookExpress(req, res, next) {
     const outcome = await handlePaystackWebhookRequest({
       method: req.method,
       rawBody: req.rawBody,
-      signature: req.headers["x-paystack-signature"]
+      signature: req.headers["x-paystack-signature"],
+      requestId: req?.observability?.requestId || null,
+      correlationId: req?.observability?.correlationId || null
     });
     return sendPaystackWebhookHttpResponse(res, outcome);
   } catch (error) {

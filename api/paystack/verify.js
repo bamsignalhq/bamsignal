@@ -20,6 +20,11 @@ import {
   isPaymentDatabaseError,
   paymentHttpStatusForError
 } from "../../server/services/paymentDb.js";
+import {
+  logAlertableEvent,
+  logObservabilityEvent,
+  observabilityContext
+} from "../../server/services/observability.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -75,16 +80,22 @@ function paymentReturnFrom(metadata = {}, body = {}, fallback = "/home") {
   return { returnPath, sourcePage };
 }
 
-function logPaystackFailure(scope, error, extra = {}) {
-  console.error(`[paystack] ${scope} failed`, {
-    code: error?.code,
-    message: error?.message,
-    upstreamStatus: error?.upstreamStatus,
-    ...extra
-  });
+function logPaystackFailure(req, scope, error, extra = {}) {
+  logAlertableEvent(
+    "payment_verify_failed",
+    observabilityContext(req, {
+      scope,
+      code: error?.code || null,
+      message: error?.message || null,
+      upstreamStatus: error?.upstreamStatus || null,
+      reference: extra.reference || null,
+      productType: extra.productType || null,
+      productId: extra.productId || null
+    })
+  );
 }
 
-async function logPaymentReturnRedirect({ reference, returnPath, productType, productId, sourcePage }) {
+async function logPaymentReturnRedirect(req, { reference, returnPath, productType, productId, sourcePage }) {
   try {
     await appendPaymentAudit(reference, "payment_return_redirect", {
       returnPath,
@@ -94,10 +105,15 @@ async function logPaymentReturnRedirect({ reference, returnPath, productType, pr
       source: "verify_response"
     });
   } catch (error) {
-    console.error("[paystack] payment return audit failed", {
-      reference,
-      message: error?.message || String(error)
-    });
+    logObservabilityEvent(
+      "payment_audit_failed",
+      observabilityContext(req, {
+        scope: "payment_return_redirect",
+        reference,
+        error: error?.message || String(error)
+      }),
+      "warn"
+    );
   }
 }
 
@@ -200,15 +216,18 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
       })
     });
 
-    console.info("[paystack] payment initialized", {
-      reference: data?.reference || reference,
-      email,
-      productType: intent.productType,
-      productId: intent.productId,
-      amount: intent.amountKobo,
-      hasAccessCode: Boolean(data?.access_code),
-      ms: Date.now() - startedAt
-    });
+    logObservabilityEvent(
+      "payment_initialized",
+      observabilityContext(req, {
+        reference: data?.reference || reference,
+        productType: intent.productType,
+        productId: intent.productId,
+        amount: intent.amountKobo,
+        hasAccessCode: Boolean(data?.access_code),
+        ms: Date.now() - startedAt
+      }),
+      "info"
+    );
 
     await logPaymentInitialized({
       reference: data?.reference || reference,
@@ -229,11 +248,13 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
     });
   } catch (error) {
     if (isPaymentDatabaseError(error)) {
-      logPaystackFailure(action, error, { email, productType: intent.productType, productId: intent.productId });
+      logPaystackFailure(req, action, error, {
+        productType: intent.productType,
+        productId: intent.productId
+      });
       return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
     }
-    logPaystackFailure(action, error, {
-      email,
+    logPaystackFailure(req, action, error, {
       productType: intent.productType,
       productId: intent.productId,
       amount: intent.amountKobo
@@ -286,20 +307,32 @@ export default async function handler(req, res) {
 
     let transaction;
     try {
-      console.info("[paystack] verification started", { reference, email: email || phone });
+      logObservabilityEvent(
+        "payment_verify_started",
+        observabilityContext(req, { reference }),
+        "info"
+      );
       transaction = await verifyPaystackTransaction(reference);
     } catch (error) {
-      logPaystackFailure("verify", error, { reference });
+      logPaystackFailure(req, "verify", error, { reference });
       const mapped = paystackErrorResponse(error, "Payment verification is unavailable right now.");
       return res.status(mapped.status).json(mapped.body);
     }
 
     if (transaction?.status !== "success") {
-      console.info("[paystack] verification result", { reference, ok: false, status: transaction?.status });
+      logObservabilityEvent(
+        "payment_verify_result",
+        observabilityContext(req, { reference, ok: false, status: transaction?.status || null }),
+        "info"
+      );
       return res.status(402).json({ ok: false, error: "Payment is not successful yet." });
     }
 
-    console.info("[paystack] verification result", { reference, ok: true, status: transaction.status });
+    logObservabilityEvent(
+      "payment_verify_result",
+      observabilityContext(req, { reference, ok: true, status: transaction.status }),
+      "info"
+    );
 
     const transactionEmail = String(transaction?.customer?.email || transaction?.metadata?.email || "").toLowerCase();
     if (email && transactionEmail && transactionEmail !== email) {
@@ -328,7 +361,7 @@ export default async function handler(req, res) {
       }
 
       if (!result.idempotent) {
-        await logPaymentReturnRedirect({
+        await logPaymentReturnRedirect(req, {
           reference,
           returnPath,
           sourcePage,
@@ -340,13 +373,13 @@ export default async function handler(req, res) {
       return res.status(200).json(buildVerifySuccessResponse(result));
     } catch (error) {
       if (isPaymentDatabaseError(error)) {
-        logPaystackFailure("verify persistence", error, { reference });
+        logPaystackFailure(req, "verify persistence", error, { reference });
         return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
       }
       throw error;
     }
   } catch (error) {
-    logPaystackFailure("handler", error);
+    logPaystackFailure(req, "handler", error);
     const status = paymentHttpStatusForError(error);
     return res.status(status).json({
       ok: false,

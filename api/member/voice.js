@@ -5,6 +5,10 @@ import {
   uploadVoiceIntroObject,
   VoiceIntroStorageError
 } from "../../server/services/voiceIntroStorage.js";
+import {
+  logAlertableEvent,
+  observabilityContext
+} from "../../server/services/observability.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -42,6 +46,10 @@ export default async function handler(req, res) {
     }
 
     if (!isVoiceIntroStorageConfigured()) {
+      logAlertableEvent(
+        "photo_storage_unavailable",
+        observabilityContext(req, { action, resource: "voice_intro" })
+      );
       return res.status(503).json({
         ok: false,
         error: "Voice intro storage is not configured.",
@@ -65,7 +73,13 @@ export default async function handler(req, res) {
     if (error instanceof VoiceIntroStorageError) {
       return res.status(error.status || 400).json({ ok: false, error: error.message });
     }
-    console.error("[voice-intro]", error);
+    logAlertableEvent(
+      "voice_intro_failed",
+      observabilityContext(req, {
+        action,
+        error: error?.message || String(error)
+      })
+    );
     return res.status(500).json({ ok: false, error: "Voice intro upload failed." });
   }
 }

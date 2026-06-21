@@ -2,6 +2,7 @@
  * Process-lifetime member auth throttle fallback when database persistence is unavailable.
  * Not a primary store — used only during outages.
  */
+import { logObservabilityEvent } from "./observability.js";
 
 /** @type {Map<string, { attempts: number; firstAttemptAt: number; lockedUntil: number | null }>} */
 const memberStore = new Map();
@@ -20,11 +21,11 @@ export function logThrottleDbUnavailable(action, scope = "member") {
   const key = `${scope}:${action}`;
   if (loggedDbUnavailable.has(key)) return;
   loggedDbUnavailable.add(key);
-  console.warn("throttle_db_unavailable", { action, scope });
+  logObservabilityEvent("throttle_db_unavailable", { action, scope }, "warn");
 }
 
 export function logMemberMemoryThrottleUsed(action) {
-  console.info("member_memory_throttle_used", { action });
+  logObservabilityEvent("member_memory_throttle_used", { action }, "info");
 }
 
 export function logAdminFailClosed(action, reason = "database_unavailable") {

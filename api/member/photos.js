@@ -15,6 +15,10 @@ import {
   finalizeExistingPhotoUpload,
   resolvePhotoUploadOwner
 } from "../../server/services/photoUploadAttribution.js";
+import {
+  logAlertableEvent,
+  observabilityContext
+} from "../../server/services/observability.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -49,6 +53,10 @@ export default async function handler(req, res) {
 
     const needsStorage = action === "upload" || action === "delete" || action === "finalize";
     if (needsStorage && !isPhotoStorageConfigured()) {
+      logAlertableEvent(
+        "photo_storage_unavailable",
+        observabilityContext(req, { action })
+      );
       return res.status(503).json({
         ok: false,
         error: "Photo storage is not configured.",
@@ -183,7 +191,13 @@ export default async function handler(req, res) {
     if (error instanceof PhotoStorageError) {
       return res.status(error.status).json({ ok: false, error: error.message });
     }
-    console.error("[bamsignal] member photos error:", error);
+    logAlertableEvent(
+      "photo_upload_failed",
+      observabilityContext(req, {
+        action,
+        error: error?.message || String(error)
+      })
+    );
     return res.status(500).json({ ok: false, error: "Photo request failed." });
   }
 }

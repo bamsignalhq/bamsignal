@@ -1,5 +1,6 @@
 import pg from "pg";
 import { config } from "./config.js";
+import { logAlertableEvent } from "./services/observability.js";
 
 const { Pool } = pg;
 
@@ -16,9 +17,12 @@ let dbConnectionError = null;
 
 if (pool) {
   pool.on("error", (error) => {
-    console.error("[bamsignal] Database pool error:", error.message);
     dbConnectionStatus = "disconnected";
     dbConnectionError = error.message;
+    logAlertableEvent("db_unavailable", {
+      reason: "pool_error",
+      error: error.message || "Database pool error"
+    });
   });
 }
 
@@ -224,7 +228,10 @@ export async function initDatabase() {
   } catch (error) {
     dbConnectionStatus = "disconnected";
     dbConnectionError = error.message || "Database connection failed";
-    console.error("[bamsignal] Database connection failed:", dbConnectionError);
+    logAlertableEvent("db_unavailable", {
+      reason: "init_failed",
+      error: dbConnectionError
+    });
     console.warn("[bamsignal] Server will continue without database persistence.");
     return { ok: false, reason: dbConnectionError };
   }

@@ -57,7 +57,7 @@ assert(
 assert(
   memoryThrottleSource.includes("memberStore") &&
     memoryThrottleSource.includes("throttle_db_unavailable") &&
-    memoryThrottleSource.includes("member_memory_throttle_used"),
+    memoryThrottleSource.includes("logObservabilityEvent"),
   "memory throttle fallback must stay process-local with observability logs"
 );
 

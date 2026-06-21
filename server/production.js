@@ -12,6 +12,7 @@ import { fixSecurityDefinerViews } from "./fixSecurityDefinerViews.js";
 import { registerBotCommands, bot } from "./telegram.js";
 import { createApp } from "./app.js";
 import { readinessPayload } from "./services/readiness.js";
+import { logBackgroundTaskFailure, logReadyCheckFailed } from "./services/observability.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "..", "dist");
@@ -38,6 +39,7 @@ const server = app.listen(port, host, async () => {
   console.log(`[bamsignal] Running on http://${host}:${port}`);
   const readiness = await readinessPayload({ detailed: true });
   if (!readiness.ready) {
+    logReadyCheckFailed({ source: "startup", ready: false });
     console.warn(
       "[bamsignal] Production readiness incomplete — GET /ready returns 503 until database, Paystack, signup email, and photo storage are configured."
     );
@@ -52,7 +54,7 @@ const server = app.listen(port, host, async () => {
 void initDatabase()
   .then(async () => {
     const viewFix = await fixSecurityDefinerViews().catch((error) => {
-      console.warn("[bamsignal] security definer view fix skipped:", error.message || error);
+      logBackgroundTaskFailure("security_definer_view_fix", error);
       return null;
     });
     if (viewFix?.fixed?.length) {
@@ -60,7 +62,7 @@ void initDatabase()
     }
 
     const functionFix = await fixFunctionSecurity().catch((error) => {
-      console.warn("[bamsignal] function security fix skipped:", error.message || error);
+      logBackgroundTaskFailure("function_security_fix", error);
       return null;
     });
     if (functionFix?.searchPathFixed?.length || functionFix?.rpcRevoked?.length) {
@@ -71,7 +73,7 @@ void initDatabase()
 
     const { processExpiredAccountDeletions } = await import("./memberTrust.js");
     const deletionResult = await processExpiredAccountDeletions().catch((error) => {
-      console.warn("[bamsignal] account deletion sweep skipped:", error.message || error);
+      logBackgroundTaskFailure("account_deletion_sweep", error);
       return { processed: 0 };
     });
     if (deletionResult?.processed) {
@@ -79,7 +81,7 @@ void initDatabase()
     }
   })
   .catch((error) => {
-    console.error("[bamsignal] Database init error:", error.message || error);
+    logBackgroundTaskFailure("database_init", error);
   });
 
 server.on("error", (error) => {
@@ -91,9 +93,9 @@ try {
   registerBotCommands();
   if (bot && process.env.TELEGRAM_ENABLE_POLLING === "true") {
     bot.launch().catch((error) => {
-      console.error("[bamsignal] Telegram polling failed:", error);
+      logBackgroundTaskFailure("telegram_polling", error);
     });
   }
 } catch (error) {
-  console.error("[bamsignal] Telegram setup skipped:", error);
+  logBackgroundTaskFailure("telegram_setup", error);
 }

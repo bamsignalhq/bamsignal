@@ -16,6 +16,10 @@ import {
   sanitizePublicMemberProfile,
   sendGenericServiceUnavailable
 } from "../../server/services/identityExposure.js";
+import {
+  logAlertableEvent,
+  observabilityContext
+} from "../../server/services/observability.js";
 import { upsertMemberProfile } from "../../server/cityHome.js";
 import {
   acceptIncomingSignal,
@@ -576,6 +580,12 @@ export default async function handler(req, res) {
         onboardingComplete: Boolean(body.onboardingComplete ?? body.profile?.onboardingComplete),
         cityHomeHidden: Boolean(body.cityHomeHidden)
       });
+      if (!row) {
+        logAlertableEvent(
+          "profile_save_failed",
+          observabilityContext(req, { action: "profile", reason: "upsert_returned_null" })
+        );
+      }
       return res.status(row ? 200 : 503).json({ ok: Boolean(row), profile: row });
     }
 
@@ -813,6 +823,16 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ ok: false, error: "Unknown action." });
   } catch (error) {
+    if (action === "profile") {
+      logAlertableEvent(
+        "profile_save_failed",
+        observabilityContext(req, {
+          action,
+          error: error?.message || String(error),
+          code: error?.code || null
+        })
+      );
+    }
     return res.status(500).json({ ok: false, error: error.message || "Member data request failed." });
   }
 }

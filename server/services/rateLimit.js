@@ -2,6 +2,13 @@ import { createHash } from "node:crypto";
 import { isDatabaseReady, normalizeUserKey, query } from "../db.js";
 import { createModerationFlag } from "../memberTrust.js";
 import { assertSchemaTable } from "./schemaVerification.js";
+import {
+  API_RATE_EVENTS_RETENTION_MS,
+  batchDeleteOlderThan,
+  batchDeletePlan
+} from "./retentionBatchDelete.js";
+
+export { API_RATE_EVENTS_RETENTION_MS };
 
 const LIMITS = {
   search: { windowMs: 60_000, max: 30 },
@@ -13,6 +20,24 @@ const LIMITS = {
 export async function ensureRateLimitSchema() {
   if (!isDatabaseReady()) return;
   await assertSchemaTable("api_rate_events");
+}
+
+export async function pruneRateLimitEvents(options = {}) {
+  if (!isDatabaseReady()) {
+    return { deleted: 0, skipped: true };
+  }
+
+  await ensureRateLimitSchema();
+  const plan = batchDeletePlan({
+    table: "api_rate_events",
+    column: "created_at",
+    retentionMs: API_RATE_EVENTS_RETENTION_MS,
+    batchSize: options.batchSize,
+    maxBatches: options.maxBatches,
+    nowMs: options.nowMs
+  });
+
+  return batchDeleteOlderThan(plan);
 }
 
 function clientIp(req) {

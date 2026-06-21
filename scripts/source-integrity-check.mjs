@@ -65,6 +65,13 @@ const paymentInitializeThrottleSource = readFileSync(
   join(rootPath, "server/services/paymentInitializeThrottle.js"),
   "utf8"
 );
+const rateLimitRetentionSource = readSrc("server/services/rateLimitRetention.js");
+const retentionBatchDeleteSource = readSrc("server/services/retentionBatchDelete.js");
+const productionServerSource = readSrc("server/production.js");
+const rateLimitRetentionMigrationSource = readFileSync(
+  join(rootPath, "migrations/0003_rate_limit_retention_indexes.sql"),
+  "utf8"
+);
 const paystackWebhookHandlerSource = readFileSync(
   join(rootPath, "server/services/paystackWebhookHandler.js"),
   "utf8"
@@ -533,6 +540,21 @@ assertCheck(
   "startup must verify migrated schema and never mutate database DDL at runtime"
 );
 assertCheck(
+  rateLimitRetentionSource.includes("runRateLimitRetentionCleanup") &&
+    rateLimitRetentionSource.includes("startRateLimitRetentionScheduler") &&
+    retentionBatchDeleteSource.includes("batchDeleteOlderThan") &&
+    retentionBatchDeleteSource.includes("API_RATE_EVENTS_RETENTION_MS = 7 * DAY_MS") &&
+    retentionBatchDeleteSource.includes("PAYMENT_INITIALIZE_EVENTS_RETENTION_MS = 30 * DAY_MS") &&
+    retentionBatchDeleteSource.includes("OTP_ATTEMPTS_RETENTION_MS = 7 * DAY_MS") &&
+    retentionBatchDeleteSource.includes("PIN_AUTH_ATTEMPTS_RETENTION_MS = 30 * DAY_MS") &&
+    rateLimitRetentionMigrationSource.includes("api_rate_events_created_at_idx") &&
+    rateLimitRetentionMigrationSource.includes("payment_initialize_rate_events_created_at_idx") &&
+    rateLimitRetentionMigrationSource.includes("pin_auth_attempts_last_attempt_at_idx") &&
+    productionServerSource.includes("startRateLimitRetentionScheduler") &&
+    existsSync(join(rootPath, "migrations/0003_rate_limit_retention_indexes.sql")),
+  "rate-limit tables must define retention cleanup, batch deletes, and scheduled pruning"
+);
+assertCheck(
   !complianceUtilSource.includes("onboardingComplete") &&
     complianceUtilSource.includes('"offline_safety"') &&
     complianceUtilSource.includes("offline_safety") &&
@@ -710,6 +732,7 @@ assertCheck(
     paymentInitializeThrottleSource.includes("PAYMENT_INITIALIZE_BURST_MAX_REQUESTS") &&
     paymentInitializeThrottleSource.includes("checkMemoryMemberThrottle") &&
     paymentInitializeThrottleSource.includes("payment_initialize_rate_limited") &&
+    paymentInitializeThrottleSource.includes("prunePaymentThrottleEvents") &&
     paymentsSource.includes("memberApiHeaders") &&
     paymentsSource.includes("headers: await memberApiHeaders()"),
   "Paystack initialize must require member auth, throttle by member/client identity, fail closed to memory, and log rate limits"

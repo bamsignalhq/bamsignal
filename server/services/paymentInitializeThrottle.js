@@ -13,6 +13,13 @@ import {
 } from "./observability.js";
 import { sanitizeApiErrorForLog } from "./errorResponse.js";
 import { assertSchemaTable } from "./schemaVerification.js";
+import {
+  PAYMENT_INITIALIZE_EVENTS_RETENTION_MS,
+  batchDeleteOlderThan,
+  batchDeletePlan
+} from "./retentionBatchDelete.js";
+
+export { PAYMENT_INITIALIZE_EVENTS_RETENTION_MS };
 
 const ENDPOINT = "payment_initialize";
 
@@ -43,6 +50,24 @@ function paymentClientFingerprint(req) {
 export async function ensurePaymentInitializeThrottleTable() {
   if (!isDatabaseReady()) return;
   await assertSchemaTable("payment_initialize_rate_events");
+}
+
+export async function prunePaymentThrottleEvents(options = {}) {
+  if (!isDatabaseReady()) {
+    return { deleted: 0, skipped: true };
+  }
+
+  await ensurePaymentInitializeThrottleTable();
+  const plan = batchDeletePlan({
+    table: "payment_initialize_rate_events",
+    column: "created_at",
+    retentionMs: PAYMENT_INITIALIZE_EVENTS_RETENTION_MS,
+    batchSize: options.batchSize,
+    maxBatches: options.maxBatches,
+    nowMs: options.nowMs
+  });
+
+  return batchDeleteOlderThan(plan);
 }
 
 async function countRecentEvents({ memberId, ip, clientHash, sinceIso }) {

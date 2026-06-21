@@ -9,6 +9,13 @@ import {
   recordMemoryMemberThrottleFailure
 } from "./memoryThrottle.js";
 import { assertSchemaTable } from "./schemaVerification.js";
+import {
+  PIN_AUTH_ATTEMPTS_RETENTION_MS,
+  batchDeleteOlderThan,
+  batchDeletePlan
+} from "./retentionBatchDelete.js";
+
+export { PIN_AUTH_ATTEMPTS_RETENTION_MS };
 
 const WINDOW_MS = 15 * 60 * 1000;
 const LOCK_MS = 15 * 60 * 1000;
@@ -17,6 +24,24 @@ const MAX_ATTEMPTS = 5;
 export async function ensurePinAuthAttemptsTable() {
   if (!isDatabaseReady()) return;
   await assertSchemaTable("pin_auth_attempts");
+}
+
+export async function prunePinAuthThrottleEvents(options = {}) {
+  if (!isDatabaseReady()) {
+    return { deleted: 0, skipped: true };
+  }
+
+  await ensurePinAuthAttemptsTable();
+  const plan = batchDeletePlan({
+    table: "pin_auth_attempts",
+    column: "last_attempt_at",
+    retentionMs: PIN_AUTH_ATTEMPTS_RETENTION_MS,
+    batchSize: options.batchSize,
+    maxBatches: options.maxBatches,
+    nowMs: options.nowMs
+  });
+
+  return batchDeleteOlderThan(plan);
 }
 
 function hashUserAgent(userAgent = "") {

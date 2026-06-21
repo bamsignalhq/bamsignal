@@ -79,6 +79,14 @@ void initDatabase()
     if (deletionResult?.processed) {
       console.log(`[bamsignal] finalized ${deletionResult.processed} scheduled account deletion(s)`);
     }
+
+    const { startRateLimitRetentionScheduler } = await import("./services/rateLimitRetention.js");
+    const retentionScheduler = startRateLimitRetentionScheduler();
+    if (retentionScheduler.started) {
+      console.log(
+        `[bamsignal] rate-limit retention cleanup scheduled every ${Math.round(retentionScheduler.intervalMs / 60_000)} minutes`
+      );
+    }
   })
   .catch((error) => {
     logBackgroundTaskFailure("database_init", error);

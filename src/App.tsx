@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Preloader } from "./components/Preloader";
@@ -276,7 +276,18 @@ export function App() {
     shouldBlockForCompliance(datingProfileForCompliance.compliance, user);
   const complianceSyncPending = hasComplianceSyncPending();
   const memberAccessReady =
-    isAuthed && memberAppEntered && !isPublicSurface && profileComplete === true && !showComplianceGate;
+    isAuthed &&
+    memberAppEntered &&
+    !authLoading &&
+    !memberHydrating &&
+    !isPublicSurface &&
+    profileComplete === true &&
+    !showComplianceGate;
+  const memberSurfaceBooting =
+    isAuthed &&
+    isMemberAppPath(currentPathname) &&
+    !activeAuthPath &&
+    (authLoading || memberHydrating || profileComplete === null);
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -387,8 +398,18 @@ export function App() {
     return () => window.removeEventListener("popstate", syncRoute);
   }, [isNative]);
 
+  useLayoutEffect(() => {
+    const routeAuth = getAuthPath();
+    setAuthPath((current) => (current === routeAuth ? current : routeAuth));
+  }, [memberPathname]);
+
   useEffect(() => {
     const pathname = normalizePath(window.location.pathname);
+    const routeAuth = getAuthPath(pathname);
+    if (routeAuth) {
+      setAuthPath(routeAuth);
+    }
+
     if (!isMemberAppPath(pathname)) return;
     const guard = evaluateMemberRouteGuard({
       authLoading,
@@ -402,6 +423,10 @@ export function App() {
       guard.redirectTo &&
       pathname !== normalizePath(guard.redirectTo)
     ) {
+      const redirectAuth = getAuthPath(guard.redirectTo);
+      if (redirectAuth) {
+        setAuthPath(redirectAuth);
+      }
       navigateToPath(guard.redirectTo, true);
     }
   }, [authLoading, memberHydrating, isAuthed, profileComplete, memberPathname]);
@@ -1712,12 +1737,6 @@ export function App() {
     memberRouteGuard &&
     (memberRouteGuard.phase === "redirect" || memberRouteGuard.phase === "unauthenticated")
   ) {
-    if (
-      memberRouteGuard.redirectTo &&
-      currentPathname !== normalizePath(memberRouteGuard.redirectTo)
-    ) {
-      navigateToPath(memberRouteGuard.redirectTo, true);
-    }
     return (
       <div className={`app ${theme}`}>
         <Preloader
@@ -1992,6 +2011,11 @@ export function App() {
                 : "app-main--experience"
           }`}
         >
+          {memberSurfaceBooting && (
+            <LazyRouteFallback
+              subtitle={memberHydrating ? "Restoring your account…" : "Restoring your session…"}
+            />
+          )}
           {isAuthed && memberAppEntered && isOnboardingRoute && profileComplete === false && (
             <MemberRouteBoundary name="onboarding">
               <OnboardingPage user={user} onUserChange={setUser} onComplete={finishOnboarding} />

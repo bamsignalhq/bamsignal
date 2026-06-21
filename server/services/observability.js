@@ -5,6 +5,7 @@ export const CORRELATION_ID_HEADER = "x-correlation-id";
 
 const ALERTABLE_EVENTS = new Set([
   "payment_verify_failed",
+  "payment_initialize_failed",
   "payment_webhook_failed",
   "email_send_failed",
   "photo_upload_failed",
@@ -23,6 +24,7 @@ const ALERTABLE_EVENTS = new Set([
 /** Minimum interval between repeated alert logs for the same event key. */
 const ALERT_THRESHOLDS_MS = {
   payment_verify_failed: 2 * 60 * 1000,
+  payment_initialize_failed: 2 * 60 * 1000,
   payment_webhook_failed: 2 * 60 * 1000,
   email_send_failed: 5 * 60 * 1000,
   photo_upload_failed: 3 * 60 * 1000,

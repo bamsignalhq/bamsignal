@@ -648,6 +648,20 @@ assertCheck(
   "Paystack initialize must require member auth, throttle by member/client identity, fail closed to memory, and log rate limits"
 );
 assertCheck(
+  paystackVerifySource.includes("PAYMENT_INITIALIZE_CLIENT_ERROR") &&
+    paystackVerifySource.includes("PAYMENT_VERIFY_CLIENT_ERROR") &&
+    paystackVerifySource.includes("logPaymentProviderError") &&
+    !paystackVerifySource.includes("PAYSTACK_SECRET_KEY is not configured.") &&
+    !paystackVerifySource.includes("error.message || \"Payment request failed.\"") &&
+    readFileSync(join(rootPath, "server/services/paystackClient.js"), "utf8").includes(
+      "payment_provider_error"
+    ) &&
+    readFileSync(join(rootPath, "server/services/paystackClient.js"), "utf8").includes(
+      "upstreamMessage"
+    ),
+  "Paystack client responses must stay generic while provider diagnostics remain server-side"
+);
+assertCheck(
   paymentDbSource.includes("requireDatabaseReadyForPayments") &&
     paymentDbSource.includes("paymentQuery") &&
     paymentFulfillmentsSource.includes("requireDatabaseReadyForPayments") &&
@@ -723,8 +737,11 @@ assertCheck(
   observabilitySource.includes("requestContextMiddleware") &&
     observabilitySource.includes("sanitizeLogContext") &&
     serverAppSource.includes("requestContextMiddleware") &&
-    paystackVerifyApiSource.includes("payment_verify_failed") &&
-    paystackVerifyApiSource.includes("observabilityContext"),
+    paystackVerifyApiSource.includes("logPaymentProviderError") &&
+    paystackVerifyApiSource.includes("observabilityContext") &&
+    readFileSync(join(rootPath, "server/services/paystackClient.js"), "utf8").includes(
+      "payment_verify_failed"
+    ),
   "observability middleware and payment failure events must be wired"
 );
 assertCheck(

@@ -1,24 +1,46 @@
 import dns from "node:dns";
 import { config } from "../config.js";
 import { isRetryableNetworkError, withBoundedRetry } from "./retryPolicy.js";
+import {
+  logObservabilityEvent,
+  logThresholdedAlert,
+  observabilityContext
+} from "./observability.js";
 
 dns.setDefaultResultOrder("ipv4first");
 
 const PAYSTACK_API_BASE = "https://api.paystack.co";
 const DEFAULT_TIMEOUT_MS = 20000;
 
+export const PAYMENT_INITIALIZE_CLIENT_ERROR = "Unable to start payment. Please try again.";
+export const PAYMENT_VERIFY_CLIENT_ERROR = "Payment could not be verified. Please try again.";
+
 export class PaystackClientError extends Error {
   code;
   status;
   upstreamStatus;
+  upstreamMessage;
+  upstreamBody;
   cause;
 
-  constructor(message, { code = "paystack_error", status = 503, upstreamStatus, cause } = {}) {
+  constructor(
+    message,
+    {
+      code = "paystack_error",
+      status = 503,
+      upstreamStatus,
+      upstreamMessage,
+      upstreamBody,
+      cause
+    } = {}
+  ) {
     super(message);
     this.name = "PaystackClientError";
     this.code = code;
     this.status = status;
     this.upstreamStatus = upstreamStatus;
+    this.upstreamMessage = upstreamMessage || null;
+    this.upstreamBody = upstreamBody || null;
     this.cause = cause;
   }
 }
@@ -224,24 +246,52 @@ export async function probePaystackConnectivity() {
   return result;
 }
 
-export function paystackErrorResponse(error, fallback = "Unable to start payment. Please try again shortly.") {
+function sanitizeProviderPayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    return payload ? { raw: String(payload).slice(0, 240) } : null;
+  }
+  return {
+    status: payload.status ?? null,
+    message: payload.message || null,
+    code: payload.code || payload.type || null
+  };
+}
+
+function providerErrorDetail(error, extra = {}) {
   if (error instanceof PaystackClientError) {
     return {
-      status: error.status,
-      body: {
-        ok: false,
-        error: error.message || fallback,
-        code: error.code
-      }
+      code: error.code || null,
+      upstreamStatus: error.upstreamStatus || null,
+      providerMessage: error.upstreamMessage || error.message || null,
+      providerBody: error.upstreamBody || null,
+      ...extra
     };
   }
-
   return {
-    status: 503,
+    code: error?.code || null,
+    message: error instanceof Error ? error.message : String(error || "unknown"),
+    ...extra
+  };
+}
+
+export function logPaymentProviderError(req, scope, error, extra = {}) {
+  const detail = providerErrorDetail(error, extra);
+  logObservabilityEvent(
+    "payment_provider_error",
+    observabilityContext(req, { scope, ...detail }),
+    "warn"
+  );
+  const alertEvent = scope === "initialize" ? "payment_initialize_failed" : "payment_verify_failed";
+  logThresholdedAlert(alertEvent, observabilityContext(req, { scope, ...detail }));
+}
+
+export function paystackErrorResponse(error, clientMessage = PAYMENT_INITIALIZE_CLIENT_ERROR) {
+  const status = error instanceof PaystackClientError ? error.status : 503;
+  return {
+    status,
     body: {
       ok: false,
-      error: fallback,
-      code: "paystack_error"
+      error: clientMessage
     }
   };
 }
@@ -253,10 +303,12 @@ export async function initializePaystackTransaction(body) {
   });
 
   if (!response.ok || !payload?.status) {
-    throw new PaystackClientError(payload?.message || "Paystack checkout could not start.", {
+    throw new PaystackClientError("Paystack initialize request failed.", {
       code: "initialize_failed",
       status: 503,
-      upstreamStatus: response.status
+      upstreamStatus: response.status,
+      upstreamMessage: payload?.message || null,
+      upstreamBody: sanitizeProviderPayload(payload)
     });
   }
 
@@ -270,10 +322,12 @@ export async function verifyPaystackTransaction(reference) {
   );
 
   if (!response.ok || !payload?.status) {
-    throw new PaystackClientError(payload?.message || "Paystack verification failed.", {
+    throw new PaystackClientError("Paystack verify request failed.", {
       code: "verify_failed",
       status: 503,
-      upstreamStatus: response.status
+      upstreamStatus: response.status,
+      upstreamMessage: payload?.message || null,
+      upstreamBody: sanitizeProviderPayload(payload)
     });
   }
 

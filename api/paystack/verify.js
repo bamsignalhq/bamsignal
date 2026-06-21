@@ -1,7 +1,10 @@
 import { config } from "../../server/config.js";
 import { PAYSTACK_CHANNELS } from "../../server/paystackChannels.js";
 import {
+  PAYMENT_INITIALIZE_CLIENT_ERROR,
+  PAYMENT_VERIFY_CLIENT_ERROR,
   initializePaystackTransaction,
+  logPaymentProviderError,
   paystackConfigured,
   paystackErrorResponse,
   verifyPaystackTransaction
@@ -22,7 +25,6 @@ import {
 } from "../../server/services/paymentDb.js";
 import {
   logObservabilityEvent,
-  logThresholdedAlert,
   observabilityContext
 } from "../../server/services/observability.js";
 import { requireMemberAuth } from "../../server/services/memberAuth.js";
@@ -83,21 +85,6 @@ function paymentReturnFrom(metadata = {}, body = {}, fallback = "/home") {
     returnPath
   );
   return { returnPath, sourcePage };
-}
-
-function logPaystackFailure(req, scope, error, extra = {}) {
-  logThresholdedAlert(
-    "payment_verify_failed",
-    observabilityContext(req, {
-      scope,
-      code: error?.code || null,
-      message: error?.message || null,
-      upstreamStatus: error?.upstreamStatus || null,
-      reference: extra.reference || null,
-      productType: extra.productType || null,
-      productId: extra.productId || null
-    })
-  );
 }
 
 async function logPaymentReturnRedirect(req, { reference, returnPath, productType, productId, sourcePage }) {
@@ -253,18 +240,18 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
     });
   } catch (error) {
     if (isPaymentDatabaseError(error)) {
-      logPaystackFailure(req, action, error, {
+      logPaymentProviderError(req, "initialize", error, {
         productType: intent.productType,
         productId: intent.productId
       });
       return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
     }
-    logPaystackFailure(req, action, error, {
+    logPaymentProviderError(req, "initialize", error, {
       productType: intent.productType,
       productId: intent.productId,
       amount: intent.amountKobo
     });
-    const mapped = paystackErrorResponse(error, "Unable to start payment. Please try again shortly.");
+    const mapped = paystackErrorResponse(error, PAYMENT_INITIALIZE_CLIENT_ERROR);
     return res.status(mapped.status).json(mapped.body);
   }
 }
@@ -298,7 +285,10 @@ export default async function handler(req, res) {
     }
 
     if (!paystackConfigured()) {
-      return res.status(503).json({ ok: false, error: "PAYSTACK_SECRET_KEY is not configured." });
+      return res.status(503).json({
+        ok: false,
+        error: isInitializeAction ? PAYMENT_INITIALIZE_CLIENT_ERROR : PAYMENT_VERIFY_CLIENT_ERROR
+      });
     }
 
     const useNativeCallback =
@@ -339,8 +329,8 @@ export default async function handler(req, res) {
       );
       transaction = await verifyPaystackTransaction(reference);
     } catch (error) {
-      logPaystackFailure(req, "verify", error, { reference });
-      const mapped = paystackErrorResponse(error, "Payment verification is unavailable right now.");
+      logPaymentProviderError(req, "verify", error, { reference });
+      const mapped = paystackErrorResponse(error, PAYMENT_VERIFY_CLIENT_ERROR);
       return res.status(mapped.status).json(mapped.body);
     }
 
@@ -398,19 +388,19 @@ export default async function handler(req, res) {
       return res.status(200).json(buildVerifySuccessResponse(result));
     } catch (error) {
       if (isPaymentDatabaseError(error)) {
-        logPaystackFailure(req, "verify persistence", error, { reference });
+        logPaymentProviderError(req, "verify", error, { reference, scope: "verify persistence" });
         return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
       }
       throw error;
     }
   } catch (error) {
-    logPaystackFailure(req, "handler", error);
+    logPaymentProviderError(req, "verify", error, { scope: "handler" });
     const status = paymentHttpStatusForError(error);
     return res.status(status).json({
       ok: false,
       error: isPaymentDatabaseError(error)
         ? PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE
-        : error.message || "Payment request failed."
+        : PAYMENT_VERIFY_CLIENT_ERROR
     });
   }
 }

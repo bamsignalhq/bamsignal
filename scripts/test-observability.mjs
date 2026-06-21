@@ -95,6 +95,7 @@ assert(
   observabilitySource.includes("requestContextMiddleware") &&
     observabilitySource.includes("sanitizeLogContext") &&
     observabilitySource.includes("payment_verify_failed") &&
+    observabilitySource.includes("payment_initialize_failed") &&
     observabilitySource.includes("background_task_failed") &&
     observabilitySource.includes("logThresholdedAlert") &&
     observabilitySource.includes("logRetryExhausted"),
@@ -107,7 +108,9 @@ assert(
   "Express app must attach request ids and log unhandled errors"
 );
 assert(
-  paystackVerifySource.includes("payment_verify_failed") &&
+  paystackVerifySource.includes("logPaymentProviderError") &&
+    read("server/services/paystackClient.js").includes("payment_verify_failed") &&
+    read("server/services/paystackClient.js").includes("payment_initialize_failed") &&
     webhookSource.includes("payment_webhook_failed") &&
     purchaseEmailSource.includes("email_send_failed") &&
     photosSource.includes("photo_upload_failed") &&

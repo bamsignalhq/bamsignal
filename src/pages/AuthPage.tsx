@@ -849,7 +849,7 @@ export function AuthPage({
 
   return (
     <main
-      className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""} ${mode === "login" ? "auth-page--login" : ""} ${mode === "signup" ? "auth-page--signup" : ""}`.trim()}
+      className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""} ${mode === "login" ? "auth-page--login" : ""} ${mode === "signup" ? "auth-page--signup" : ""} ${mode === "reset" ? "auth-page--reset" : ""}`.trim()}
     >
       <div className="auth-shell">
         <div className="auth-shell__glow" aria-hidden />
@@ -1113,138 +1113,150 @@ export function AuthPage({
             <>
               <h1 className="auth-title">Reset PIN</h1>
               <p className="auth-sub">We&apos;ll email a code to the address on your account.</p>
-              <AuthField
-                label="Email"
-                value={resetEmail}
-                onChange={setResetEmail}
-                type="email"
-                autoComplete="email"
-              />
-              <button type="button" className="btn-primary btn-full btn-auth" onClick={sendReset} disabled={busy === "reset"}>
-                {busy === "reset" ? <Loader2 className="spin" size={20} /> : "Send code"}
-              </button>
-              <button type="button" className="auth-switch" onClick={() => onModeChange("login")}>
-                <span className="auth-switch__lead">Remember your PIN?</span>
-                <span className="auth-switch__action">Back to login</span>
-              </button>
+              <div className="auth-reset-main">
+                <AuthField
+                  label="Email"
+                  value={resetEmail}
+                  onChange={setResetEmail}
+                  type="email"
+                  autoComplete="email"
+                />
+                {message ? (
+                  <p
+                    className={`auth-message ${message.toLowerCase().includes("sent") ? "auth-message--success" : ""}`}
+                    role="status"
+                  >
+                    {message}
+                  </p>
+                ) : null}
+                <button type="button" className="btn-primary btn-full btn-auth" onClick={sendReset} disabled={busy === "reset"}>
+                  {busy === "reset" ? <Loader2 className="spin" size={20} /> : "Send code"}
+                </button>
+              </div>
+              <div className="auth-reset-footer">
+                <button type="button" className="auth-switch" onClick={() => onModeChange("login")}>
+                  <span className="auth-switch__lead">Remember your PIN?</span>
+                  <span className="auth-switch__action">Back to login</span>
+                </button>
+              </div>
             </>
           )}
 
           {mode === "reset" && resetStep === "code" && (
-            <div className="auth-verify">
-              <div className="auth-verify__hero">
-                <div className="auth-verify__icon-ring" aria-hidden>
-                  <div className="auth-verify__icon">
-                    <Mail size={26} strokeWidth={2.2} />
+            <>
+              <div className="auth-reset-body auth-reset-body--code">
+                <div className="auth-verify auth-verify--reset">
+                  <div className="auth-verify__hero">
+                    <div className="auth-verify__icon-ring" aria-hidden>
+                      <div className="auth-verify__icon">
+                        <Mail size={26} strokeWidth={2.2} />
+                      </div>
+                    </div>
+                    <p className="auth-verify__step">Reset your PIN</p>
+                    <h1 className="auth-title auth-verify__title">Check your email</h1>
+                    <p className="auth-verify__lede">
+                      Sent to <strong>{maskEmail(resetEmail)}</strong>
+                    </p>
+                  </div>
+
+                  <label
+                    className="auth-verify__otp-field"
+                    onClick={(event) => {
+                      if (event.target === event.currentTarget) {
+                        resetOtpRef.current?.focus({ preventScroll: true });
+                      }
+                    }}
+                  >
+                    <span className="auth-verify__otp-label">Reset code</span>
+                    <OtpCodeInput
+                      ref={resetOtpRef}
+                      className="auth-verify__code-input"
+                      value={resetCode}
+                      verifying={busy === "reset-complete"}
+                      onChange={setResetCode}
+                      aria-label="PIN reset code"
+                    />
+                  </label>
+
+                  {message ? (
+                    <p
+                      className={`auth-message auth-verify__message ${
+                        message.toLowerCase().includes("sent") || message.toLowerCase().includes("updated")
+                          ? "auth-message--success"
+                          : ""
+                      }`}
+                      role="status"
+                    >
+                      {message}
+                    </p>
+                  ) : null}
+
+                  <div className="auth-fields">
+                    <AuthField
+                      label="New PIN"
+                      value={resetNewPin}
+                      onChange={(pin) => setResetNewPin(pinDigits(pin))}
+                      pin
+                      maxLength={6}
+                      autoComplete="new-password"
+                    />
+                    <AuthField
+                      label="Confirm PIN"
+                      value={resetConfirmPin}
+                      onChange={(pin) => setResetConfirmPin(pinDigits(pin))}
+                      pin
+                      maxLength={6}
+                      autoComplete="new-password"
+                    />
                   </div>
                 </div>
-                <p className="auth-verify__step">Reset your PIN</p>
-                <h1 className="auth-title auth-verify__title">Check your email</h1>
-                <p className="auth-verify__lede">
-                  Sent to <strong>{maskEmail(resetEmail)}</strong>
-                </p>
               </div>
 
-              <label
-                className="auth-verify__otp-field"
-                onClick={(event) => {
-                  if (event.target === event.currentTarget) {
-                    resetOtpRef.current?.focus({ preventScroll: true });
-                  }
-                }}
-              >
-                <span className="auth-verify__otp-label">Reset code</span>
-                <OtpCodeInput
-                  ref={resetOtpRef}
-                  className="auth-verify__code-input"
-                  value={resetCode}
-                  verifying={busy === "reset-complete"}
-                  onChange={setResetCode}
-                  aria-label="PIN reset code"
-                />
-              </label>
-
-              {message ? (
-                <p
-                  className={`auth-message auth-verify__message ${
-                    message.toLowerCase().includes("sent") || message.toLowerCase().includes("updated")
-                      ? "auth-message--success"
-                      : ""
-                  }`}
-                  role="status"
-                >
-                  {message}
-                </p>
-              ) : null}
-
-              <div className="auth-fields">
-                <AuthField
-                  label="New PIN"
-                  value={resetNewPin}
-                  onChange={(pin) => setResetNewPin(pinDigits(pin))}
-                  pin
-                  maxLength={6}
-                  autoComplete="new-password"
-                />
-                <AuthField
-                  label="Confirm PIN"
-                  value={resetConfirmPin}
-                  onChange={(pin) => setResetConfirmPin(pinDigits(pin))}
-                  pin
-                  maxLength={6}
-                  autoComplete="new-password"
-                />
-              </div>
-
-              <button
-                type="button"
-                className="btn-primary btn-full btn-auth auth-verify__submit"
-                onClick={submitPinReset}
-                disabled={
-                  busy === "reset-complete" ||
-                  resetCode.length !== OTP_LENGTH ||
-                  resetNewPin.length !== OTP_LENGTH ||
-                  resetConfirmPin.length !== OTP_LENGTH
-                }
-              >
-                {busy === "reset-complete" ? <Loader2 className="spin" size={20} /> : "Save new PIN"}
-              </button>
-
-              <div className="auth-verify__meta">
-                <p className="auth-verify__hint">
-                  <ShieldCheck size={15} aria-hidden />
-                  If you don&apos;t see it within a minute, check your spam folder.
-                </p>
-                <p className="auth-verify__resend">
-                  <ResendCooldown
-                    codeSentAt={resetCodeSentAt}
-                    cooldownSec={RESEND_COOLDOWN_SEC}
-                    busy={busy === "reset-resend"}
-                    onResend={() => void resendResetCode()}
-                  />
-                </p>
+              <div className="auth-reset-footer auth-reset-footer--code">
                 <button
                   type="button"
-                  className="link-btn auth-verify__back"
-                  onClick={() => {
-                    setResetStep("email");
-                    setResetCode("");
-                    setResetNewPin("");
-                    setResetConfirmPin("");
-                    onMessage("");
-                  }}
+                  className="btn-primary btn-full btn-auth auth-verify__submit"
+                  onClick={submitPinReset}
+                  disabled={
+                    busy === "reset-complete" ||
+                    resetCode.length !== OTP_LENGTH ||
+                    resetNewPin.length !== OTP_LENGTH ||
+                    resetConfirmPin.length !== OTP_LENGTH
+                  }
                 >
-                  Use a different email
+                  {busy === "reset-complete" ? <Loader2 className="spin" size={20} /> : "Save new PIN"}
                 </button>
-              </div>
-            </div>
-          )}
 
-          {message && mode === "reset" && resetStep === "email" ? (
-            <p className={`auth-message ${message.toLowerCase().includes("sent") ? "auth-message--success" : ""}`}>
-              {message}
-            </p>
-          ) : null}
+                <div className="auth-verify__meta">
+                  <p className="auth-verify__hint">
+                    <ShieldCheck size={15} aria-hidden />
+                    If you don&apos;t see it within a minute, check your spam folder.
+                  </p>
+                  <p className="auth-verify__resend">
+                    <ResendCooldown
+                      codeSentAt={resetCodeSentAt}
+                      cooldownSec={RESEND_COOLDOWN_SEC}
+                      busy={busy === "reset-resend"}
+                      onResend={() => void resendResetCode()}
+                    />
+                  </p>
+                  <button
+                    type="button"
+                    className="link-btn auth-verify__back"
+                    onClick={() => {
+                      setResetStep("email");
+                      setResetCode("");
+                      setResetNewPin("");
+                      setResetConfirmPin("");
+                      onMessage("");
+                    }}
+                  >
+                    Use a different email
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
           {message && mode !== "verify" && mode !== "reset" ? (
             <p className={`auth-message ${message.toLowerCase().includes("sent") ? "auth-message--success" : ""}`}>

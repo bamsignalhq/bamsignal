@@ -82,6 +82,9 @@
 .auth-card--fintech > .auth-login-main,
 .auth-card--fintech > .auth-signup-body,
 .auth-card--fintech > .auth-signup-footer,
+.auth-card--fintech > .auth-reset-main,
+.auth-card--fintech > .auth-reset-body,
+.auth-card--fintech > .auth-reset-footer,
 .auth-card--fintech > .auth-fields,
 .auth-card--fintech > .auth-links,
 .auth-card--fintech > .auth-switch,
@@ -658,7 +661,8 @@
 /* Mobile auth — full-height premium layout (standalone route only) */
 @media (max-width: 480px) {
   .auth-page--login:not(.auth-page--embedded),
-  .auth-page--signup:not(.auth-page--embedded) {
+  .auth-page--signup:not(.auth-page--embedded),
+  .auth-page--reset:not(.auth-page--embedded) {
     min-height: 100dvh;
     height: 100dvh;
     padding: 0;
@@ -667,7 +671,8 @@
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-shell,
-  .auth-page--signup:not(.auth-page--embedded) .auth-shell {
+  .auth-page--signup:not(.auth-page--embedded) .auth-shell,
+  .auth-page--reset:not(.auth-page--embedded) .auth-shell {
     max-width: none;
     min-height: 100%;
     height: 100%;
@@ -677,13 +682,15 @@
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-shell__glow,
-  .auth-page--signup:not(.auth-page--embedded) .auth-shell__glow {
+  .auth-page--signup:not(.auth-page--embedded) .auth-shell__glow,
+  .auth-page--reset:not(.auth-page--embedded) .auth-shell__glow {
     inset: -10% -20% auto;
     height: 280px;
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-card--fintech,
-  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech {
+  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech,
+  .auth-page--reset:not(.auth-page--embedded) .auth-card--fintech {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -698,18 +705,21 @@
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-brand,
-  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-brand {
+  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-brand,
+  .auth-page--reset:not(.auth-page--embedded) .auth-card--fintech > .auth-brand {
     padding-top: max(calc(env(safe-area-inset-top, 0px) + 24px), 28px);
     margin-bottom: 24px;
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-title,
-  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-title {
+  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-title,
+  .auth-page--reset:not(.auth-page--embedded) .auth-card--fintech > .auth-title {
     margin-bottom: 10px;
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-sub,
-  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-sub {
+  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-sub,
+  .auth-page--reset:not(.auth-page--embedded) .auth-card--fintech > .auth-sub {
     margin-bottom: 0;
   }
 
@@ -812,6 +822,90 @@
   .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-message {
     margin-top: 0;
     margin-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-card--fintech > .auth-sub {
+    margin-bottom: 16px;
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    min-height: 0;
+    padding-top: 28px;
+    padding-bottom: 12px;
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-main .auth-message {
+    margin-top: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-main .btn-auth {
+    min-height: 58px;
+    font-size: 1.06rem;
+    border-radius: 18px;
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-footer {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 12px;
+    padding-bottom: max(28px, calc(env(safe-area-inset-bottom, 0px) + 16px));
+    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--card) 96%, transparent);
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-footer .auth-switch {
+    margin-top: 0;
+    padding-bottom: 0;
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-body--code {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 4px;
+    padding-bottom: 12px;
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-body--code .auth-verify--reset {
+    display: grid;
+    gap: 18px;
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-body--code .auth-fields {
+    gap: 14px;
+    margin-bottom: 0;
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-footer--code {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 12px;
+    padding-bottom: max(28px, calc(env(safe-area-inset-bottom, 0px) + 16px));
+    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--card) 96%, transparent);
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-footer--code .btn-auth {
+    min-height: 58px;
+    font-size: 1.06rem;
+    border-radius: 18px;
+  }
+
+  .auth-page--reset:not(.auth-page--embedded) .auth-reset-footer--code .auth-verify__meta {
+    margin-top: 0;
   }
 }
 

@@ -693,5 +693,14 @@ assertCheck(
     paystackVerifyApiSource.includes("observabilityContext"),
   "observability middleware and payment failure events must be wired"
 );
+assertCheck(
+  existsSync(join(rootPath, "docs/runbooks/database-backup.md")) &&
+    existsSync(join(rootPath, "docs/runbooks/database-restore.md")) &&
+    existsSync(join(rootPath, "docs/runbooks/storage-backup.md")) &&
+    existsSync(join(rootPath, "docs/runbooks/storage-restore.md")) &&
+    existsSync(join(rootPath, "docs/runbooks/deployment-recovery.md")) &&
+    existsSync(join(rootPath, "docs/runbooks/payment-recovery.md")),
+  "disaster recovery runbooks must exist under docs/runbooks/"
+);
 
 console.log("source integrity ok");

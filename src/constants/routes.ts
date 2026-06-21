@@ -2,6 +2,7 @@ import { hardPathForTab, parseHardTabFromPath } from "./hardRoutes";
 import { getLegalPath } from "./footer";
 import { isSeoRoute } from "./seoRoutes";
 import { isNigeriaSeoRoute } from "./nigeriaRoutes";
+import { isSignalConciergeRoute } from "./signalConciergeRoutes";
 
 export const AUTH_LOGIN_PATH = "/love/login";
 export const AUTH_SIGNUP_PATH = "/love/sign";
@@ -103,7 +104,7 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   if (getMomentSlug(path)) return true;
   if (isSeoRoute(path)) return true;
   if (isNigeriaSeoRoute(path)) return true;
-  if (path === "/signal-concierge" || path.startsWith("/signal-concierge/")) return true;
+  if (isSignalConciergeRoute(path)) return true;
   if (path === "/") return true;
   return false;
 }

@@ -13,6 +13,7 @@ import type {
   SafetySettings
 } from "../types";
 import { matchesPreferences } from "./compatibility";
+import { isExcludedFromPublicDiscovery } from "./signalConciergePrivacy";
 import { resolveProfileMainPhoto } from "./mainPhoto";
 import { defaultMatchPreferences } from "./profile";
 import { meetsDiscoveryQuality } from "./launchSeed";
@@ -232,6 +233,7 @@ export function canReceiveMessageFrom(
 }
 
 export function shouldHideFromDiscovery(profile: DatingProfile): boolean {
+  if (isExcludedFromPublicDiscovery(profile)) return true;
   return Boolean(resolveSafetySettings(profile).hideFromDiscovery);
 }
 
@@ -242,6 +244,7 @@ export function filterDiscoverDeck(
   passed: string[]
 ): DiscoverProfile[] {
   return profiles.filter((p) => {
+    if (isExcludedFromPublicDiscovery(p)) return false;
     if (!meetsDiscoveryQuality(p)) return false;
     if (blocked.includes(p.id) || passed.includes(p.id)) return false;
     if (!genderMatchesLookingFor(viewer.lookingFor, p.gender)) return false;

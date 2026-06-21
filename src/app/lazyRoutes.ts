@@ -24,6 +24,42 @@ export const LazySafetyCenterPage = lazy(() =>
   import("../pages/SafetyCenterPage").then((module) => ({ default: module.SafetyCenterPage }))
 );
 
+export const LazySignalConciergeLandingPage = lazy(() =>
+  import("../pages/signal-concierge/SignalConciergeLandingPage").then((module) => ({
+    default: module.SignalConciergeLandingPage
+  }))
+);
+
+export const LazySignalConciergeApplicationPage = lazy(() =>
+  import("../pages/signal-concierge/SignalConciergeApplicationPage").then((module) => ({
+    default: module.SignalConciergeApplicationPage
+  }))
+);
+
+export const LazySignalConciergeStatusPage = lazy(() =>
+  import("../pages/signal-concierge/SignalConciergeStatusPage").then((module) => ({
+    default: module.SignalConciergeStatusPage
+  }))
+);
+
+export const LazySignalConciergeConsultationPage = lazy(() =>
+  import("../pages/signal-concierge/SignalConciergeConsultationPage").then((module) => ({
+    default: module.SignalConciergeConsultationPage
+  }))
+);
+
+export const LazySignalConciergePrivacyPage = lazy(() =>
+  import("../pages/signal-concierge/SignalConciergePrivacyPage").then((module) => ({
+    default: module.SignalConciergePrivacyPage
+  }))
+);
+
+export const LazySignalConciergeFaqPage = lazy(() =>
+  import("../pages/signal-concierge/SignalConciergeFaqPage").then((module) => ({
+    default: module.SignalConciergeFaqPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

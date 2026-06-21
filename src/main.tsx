@@ -14,6 +14,7 @@ import "./styles/v6.css";
 import "./styles/safety.css";
 import "./styles/launch.css";
 import "./styles/admin-console.css";
+import "./styles/concierge-consultant.css";
 import "./styles/discover-v2.css";
 import "./styles/discover-premium.css";
 import "./styles/discover-relationship.css";
@@ -43,6 +44,7 @@ import "./styles/activity-highlights.css";
 import "./styles/common-ground.css";
 import "./styles/smart-conversation.css";
 import "./styles/saved-profiles.css";
+import "./styles/signal-concierge.css";
 import "./styles/seo.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";

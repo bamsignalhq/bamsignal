@@ -80,5 +80,7 @@ export const STORAGE_KEYS = {
   screenshotPrivacyNoticeSeen: "bamsignal-screenshot-privacy-seen",
   savedSearches: "bamsignal-saved-searches",
   subscriptionCatalog: "bamsignal-subscription-catalog",
-  premiumBannerDismissedUntil: "bamsignal-premium-banner-dismissed-until"
+  premiumBannerDismissedUntil: "bamsignal-premium-banner-dismissed-until",
+  signalConciergeApplication: "bamsignal-signal-concierge-application",
+  signalConciergeDraft: "bamsignal-signal-concierge-draft"
 } as const;

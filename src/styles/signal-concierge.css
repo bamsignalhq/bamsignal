@@ -1,0 +1,500 @@
+.platform-root--signal-concierge {
+  --sc-bg: #07050f;
+  --sc-bg-elevated: rgba(18, 12, 36, 0.72);
+  --sc-navy: #0d1530;
+  --sc-purple: #2a184a;
+  --sc-purple-soft: rgba(122, 77, 243, 0.16);
+  --sc-gold: #d4af6a;
+  --sc-gold-soft: rgba(212, 175, 106, 0.18);
+  --sc-text: rgba(255, 255, 255, 0.94);
+  --sc-muted: rgba(255, 255, 255, 0.68);
+  --sc-border: rgba(212, 175, 106, 0.22);
+  --sc-shadow: 0 24px 60px rgba(4, 2, 12, 0.45);
+  --sc-radius: 22px;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(122, 77, 243, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 0%, rgba(212, 175, 106, 0.08), transparent 50%),
+    linear-gradient(180deg, #07050f 0%, #0b1024 48%, #07050f 100%);
+  color: var(--sc-text);
+  min-height: 100vh;
+}
+
+.signal-concierge-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.signal-concierge-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(16px);
+  background: rgba(7, 5, 15, 0.78);
+  border-bottom: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.signal-concierge-header__inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.signal-concierge-header__brand {
+  border: 0;
+  background: transparent;
+  color: var(--sc-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.signal-concierge-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.signal-concierge-header__link {
+  border: 0;
+  background: transparent;
+  color: var(--sc-muted);
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.signal-concierge-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 18px 48px;
+}
+
+.signal-concierge-hero {
+  text-align: center;
+  padding: 28px 12px 36px;
+  animation: sc-fade-in 0.6s ease;
+}
+
+.signal-concierge-hero h1 {
+  margin: 0 0 12px;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.signal-concierge-hero p {
+  margin: 0 auto 24px;
+  max-width: 42ch;
+  color: var(--sc-muted);
+  line-height: 1.55;
+  font-size: 1rem;
+}
+
+.signal-concierge-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.signal-concierge-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.signal-concierge-btn:active {
+  transform: scale(0.98);
+}
+
+.signal-concierge-btn--primary {
+  background: linear-gradient(135deg, rgba(212, 175, 106, 0.95), rgba(180, 140, 70, 0.92));
+  color: #1a1028;
+  box-shadow: 0 14px 34px rgba(212, 175, 106, 0.18);
+}
+
+.signal-concierge-btn--ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--sc-border);
+  color: var(--sc-text);
+}
+
+.signal-concierge-section {
+  margin-top: 28px;
+  animation: sc-fade-in 0.55s ease;
+}
+
+.signal-concierge-section__title {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+}
+
+.signal-concierge-section__sub {
+  margin: 0 0 16px;
+  color: var(--sc-muted);
+  line-height: 1.5;
+}
+
+.signal-concierge-glass {
+  border-radius: var(--sc-radius);
+  border: 1px solid rgba(168, 130, 255, 0.18);
+  background: var(--sc-bg-elevated);
+  box-shadow: var(--sc-shadow);
+  backdrop-filter: blur(14px);
+}
+
+.signal-concierge-promises {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 720px) {
+  .signal-concierge-promises {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.signal-concierge-promise {
+  padding: 18px;
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
+}
+
+.signal-concierge-promise:hover {
+  box-shadow: 0 18px 42px rgba(122, 77, 243, 0.14);
+  transform: translateY(-2px);
+}
+
+.signal-concierge-promise h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: var(--sc-gold);
+}
+
+.signal-concierge-promise p {
+  margin: 0;
+  color: var(--sc-muted);
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.signal-concierge-tiers {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .signal-concierge-tiers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.signal-concierge-benefits-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: box-shadow 0.22s ease;
+}
+
+.signal-concierge-benefits-card:hover {
+  box-shadow: 0 20px 48px rgba(212, 175, 106, 0.12);
+}
+
+.signal-concierge-benefits-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.signal-concierge-benefits-card__tier {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.signal-concierge-benefits-card__tagline {
+  margin: 0;
+  color: var(--sc-gold);
+  font-size: 0.88rem;
+}
+
+.signal-concierge-benefits-card__price {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.signal-concierge-benefits-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.signal-concierge-benefits-card__list li {
+  display: flex;
+  gap: 8px;
+  color: var(--sc-muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.signal-concierge-benefits-card__regions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.signal-concierge-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--sc-border);
+  background: var(--sc-gold-soft);
+  color: var(--sc-text);
+  font-size: 0.78rem;
+}
+
+.signal-concierge-privacy {
+  padding: 22px;
+}
+
+.signal-concierge-privacy ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--sc-muted);
+  line-height: 1.55;
+}
+
+.signal-concierge-faq {
+  display: grid;
+  gap: 12px;
+}
+
+.signal-concierge-faq details {
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.signal-concierge-faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.signal-concierge-faq p {
+  margin: 10px 0 0;
+  color: var(--sc-muted);
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.signal-concierge-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(4, 2, 12, 0.72);
+  backdrop-filter: blur(8px);
+  animation: sc-fade-in 0.25s ease;
+}
+
+.signal-concierge-modal {
+  width: min(100%, 460px);
+  padding: 22px;
+  border-radius: 22px;
+  border: 1px solid var(--sc-border);
+  background: linear-gradient(180deg, rgba(24, 16, 44, 0.96), rgba(12, 10, 24, 0.98));
+  box-shadow: var(--sc-shadow);
+}
+
+.signal-concierge-modal h2 {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+}
+
+.signal-concierge-modal p {
+  margin: 0 0 12px;
+  color: var(--sc-muted);
+  line-height: 1.55;
+  white-space: pre-line;
+  font-size: 0.92rem;
+}
+
+.signal-concierge-modal__fee {
+  margin: 0 0 8px;
+  color: var(--sc-gold);
+  font-weight: 700;
+}
+
+.signal-concierge-modal__actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.signal-concierge-wizard {
+  display: grid;
+  gap: 18px;
+}
+
+.signal-concierge-wizard__progress {
+  display: grid;
+  gap: 8px;
+}
+
+.signal-concierge-wizard__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.signal-concierge-wizard__bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(212, 175, 106, 0.9), rgba(122, 77, 243, 0.9));
+  transition: width 0.3s ease;
+}
+
+.signal-concierge-wizard__step-label {
+  margin: 0;
+  color: var(--sc-muted);
+  font-size: 0.84rem;
+}
+
+.signal-concierge-form {
+  padding: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.signal-concierge-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: var(--sc-muted);
+}
+
+.signal-concierge-form input,
+.signal-concierge-form select,
+.signal-concierge-form textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--sc-text);
+  padding: 11px 12px;
+  font: inherit;
+}
+
+.signal-concierge-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.signal-concierge-wizard__nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.signal-concierge-status {
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.signal-concierge-status__badge {
+  display: inline-flex;
+  align-self: start;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--sc-border);
+  background: var(--sc-gold-soft);
+  color: var(--sc-gold);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.signal-concierge-consultation {
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.signal-concierge-channel-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.signal-concierge-channel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(168, 130, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--sc-text);
+  cursor: pointer;
+}
+
+.signal-concierge-channel--selected {
+  border-color: rgba(212, 175, 106, 0.45);
+  background: var(--sc-gold-soft);
+}
+
+.signal-concierge-media-card {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.signal-concierge-media-card video {
+  width: 100%;
+  border-radius: 14px;
+  background: #000;
+}
+
+@keyframes sc-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal-concierge-hero,
+  .signal-concierge-section,
+  .signal-concierge-modal-backdrop,
+  .signal-concierge-promise,
+  .signal-concierge-benefits-card {
+    animation: none;
+    transition: none;
+  }
+}

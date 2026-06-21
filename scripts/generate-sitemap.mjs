@@ -23,7 +23,7 @@ const blogSlugs = [
 ];
 
 const nigeriaPaths = getNigeriaIndexablePaths();
-const staticPaths = ["", "/blog", ...LEGAL_STATIC_PATHS, ...SEO_HUB_PATHS, ...SEO_DETAIL_PATHS, ...nigeriaPaths];
+const staticPaths = ["", "/blog", "/signal-concierge", ...LEGAL_STATIC_PATHS, ...SEO_HUB_PATHS, ...SEO_DETAIL_PATHS, ...nigeriaPaths];
 const lastmod = new Date().toISOString().slice(0, 10);
 const urls = [...staticPaths, ...blogSlugs];
 

@@ -26,6 +26,12 @@ import {
   LazyPremiumPage,
   LazyPublicMarketingRoutes,
   LazySafetyCenterPage,
+  LazySignalConciergeApplicationPage,
+  LazySignalConciergeConsultationPage,
+  LazySignalConciergeFaqPage,
+  LazySignalConciergeLandingPage,
+  LazySignalConciergePrivacyPage,
+  LazySignalConciergeStatusPage,
   LazyVisitorsPage
 } from "./app/lazyRoutes";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
@@ -129,6 +135,13 @@ import {
 import { getLegalPath, type LegalPath } from "./constants/footer";
 import { getSeoRoute, type SeoRoute } from "./constants/seoRoutes";
 import { getNigeriaRoute, type NigeriaRoute } from "./constants/nigeriaRoutes";
+import {
+  getSignalConciergeRoute,
+  isSignalConciergeAuthenticatedRoute,
+  isUnknownSignalConciergeSubroute,
+  SIGNAL_CONCIERGE_ROUTES,
+  type SignalConciergeRoute
+} from "./constants/signalConciergeRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail, resolveMemberIdentity } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
@@ -207,6 +220,9 @@ export function App() {
   const [legalPath, setLegalPath] = useState<LegalPath | null>(() => getLegalPath());
   const [seoRoute, setSeoRoute] = useState<SeoRoute | null>(() => getSeoRoute());
   const [nigeriaRoute, setNigeriaRoute] = useState<NigeriaRoute | null>(() => getNigeriaRoute());
+  const [signalConciergeRoute, setSignalConciergeRoute] = useState<SignalConciergeRoute | null>(() =>
+    getSignalConciergeRoute()
+  );
   const [authPath, setAuthPath] = useState<AuthPath | null>(() => getAuthPath());
   const [blogSlug, setBlogSlug] = useState<string | null>(() => getBlogSlug());
   const [momentSlug, setMomentSlug] = useState<string | null>(() => getMomentSlug());
@@ -373,6 +389,7 @@ export function App() {
       setLegalPath(getLegalPath());
       setSeoRoute(getSeoRoute());
       setNigeriaRoute(getNigeriaRoute());
+      setSignalConciergeRoute(getSignalConciergeRoute());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());
       setMomentSlug(getMomentSlug());
@@ -395,6 +412,11 @@ export function App() {
     syncRoute();
     return () => window.removeEventListener("popstate", syncRoute);
   }, [isNative]);
+
+  useLayoutEffect(() => {
+    if (!isUnknownSignalConciergeSubroute(memberPathname)) return;
+    navigateToPath(SIGNAL_CONCIERGE_ROUTES.landing, true);
+  }, [memberPathname]);
 
   useLayoutEffect(() => {
     const routeAuth = getAuthPath();
@@ -901,6 +923,13 @@ export function App() {
       setAuthPath(null);
     }
   }, []);
+
+  useLayoutEffect(() => {
+    const route = getSignalConciergeRoute(memberPathname);
+    if (!route || !isSignalConciergeAuthenticatedRoute(route)) return;
+    if (authLoading || isAuthed || getAuthPath()) return;
+    openAuth("login");
+  }, [memberPathname, authLoading, isAuthed, openAuth]);
 
   const enterMemberApp = useCallback(() => {
     if (openAppLoading) return;
@@ -1858,6 +1887,55 @@ export function App() {
           onSignup={() => openAuth("signup", "discover")}
           seoRoute={seoRoute}
         />
+      </Suspense>
+    );
+  }
+
+  if (signalConciergeRoute) {
+    if (
+      isUnknownSignalConciergeSubroute(currentPathname) ||
+      (isSignalConciergeAuthenticatedRoute(signalConciergeRoute) && (authLoading || !isAuthed))
+    ) {
+      return (
+        <div className={`app ${theme}`}>
+          <Preloader
+            exiting={false}
+            subtitle={
+              isUnknownSignalConciergeSubroute(currentPathname)
+                ? "Redirecting…"
+                : authLoading
+                  ? "Restoring your session…"
+                  : "Redirecting to login…"
+            }
+            showReload={bootStalled}
+            onReload={reloadApp}
+          />
+        </div>
+      );
+    }
+
+    const signalConciergeShellProps = {
+      theme,
+      onToggleTheme: toggleTheme,
+      onLogoClick: goHome,
+      onLogin: isAuthed ? undefined : () => openAuth("login")
+    };
+
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading Signal Concierge…" />}>
+        {signalConciergeRoute === "landing" ? (
+          <LazySignalConciergeLandingPage {...signalConciergeShellProps} />
+        ) : signalConciergeRoute === "apply" ? (
+          <LazySignalConciergeApplicationPage {...signalConciergeShellProps} />
+        ) : signalConciergeRoute === "status" ? (
+          <LazySignalConciergeStatusPage {...signalConciergeShellProps} />
+        ) : signalConciergeRoute === "consultation" ? (
+          <LazySignalConciergeConsultationPage {...signalConciergeShellProps} />
+        ) : signalConciergeRoute === "privacy" ? (
+          <LazySignalConciergePrivacyPage {...signalConciergeShellProps} />
+        ) : (
+          <LazySignalConciergeFaqPage {...signalConciergeShellProps} />
+        )}
       </Suspense>
     );
   }

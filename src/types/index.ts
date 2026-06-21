@@ -1,3 +1,5 @@
+import type { SignalConciergeStatus } from "../constants/signalConcierge";
+
 export type Theme = "dark" | "light";
 
 export type NavTab = "home" | "discover" | "likes" | "chats" | "me";
@@ -199,6 +201,9 @@ export type DatingProfile = {
   intents: IntentTag[];
   /** Selected during onboarding/profile — activates after paid Fast Connection pass. */
   fastConnectionInterested?: boolean;
+  /** Private matchmaking — excluded from Discover, search, and public surfaces. */
+  signalConciergeMember?: boolean;
+  signalConciergeStatus?: SignalConciergeStatus;
   interests: string[];
   /** True once member picks interests in the picker (prevents stale auto-filled chips during onboarding). */
   interestsTouched?: boolean;
@@ -375,6 +380,8 @@ export type DiscoverProfile = {
   premium?: boolean;
   fastConnectionActive?: boolean;
   fastConnectionInterested?: boolean;
+  signalConciergeMember?: boolean;
+  signalConciergeStatus?: SignalConciergeStatus;
   createdAt?: string;
   lastActiveAt?: string;
   isFoundingMember?: boolean;

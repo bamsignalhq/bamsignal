@@ -849,7 +849,7 @@ export function AuthPage({
 
   return (
     <main
-      className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""} ${mode === "login" ? "auth-page--login" : ""}`.trim()}
+      className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""} ${mode === "login" ? "auth-page--login" : ""} ${mode === "signup" ? "auth-page--signup" : ""}`.trim()}
     >
       <div className="auth-shell">
         <div className="auth-shell__glow" aria-hidden />
@@ -911,116 +911,121 @@ export function AuthPage({
           {mode === "signup" && (
             <>
               <h1 className="auth-title">Create your account</h1>
-              <div className="auth-fields">
-                <AuthField
-                  label="Full name"
-                  value={signupForm.name}
-                  onChange={(name) => setSignupForm({ ...signupForm, name })}
-                  autoComplete="name"
-                />
-                <AuthField
-                  label="Username"
-                  value={signupForm.username}
-                  onChange={(username) => {
-                    clearSignupFieldError("username");
-                    setSignupForm({ ...signupForm, username: formatUsernameInput(username) });
-                  }}
-                  autoComplete="username"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  maxLength={24}
-                  error={signupFieldErrors.username}
-                  checking={signupFieldChecking.username}
-                />
-                <AuthField
-                  label="Phone"
-                  value={signupForm.phone}
-                  onChange={(phone) => {
-                    clearSignupFieldError("phone");
-                    setSignupForm({ ...signupForm, phone: phoneDigits(phone).slice(0, 11) });
-                  }}
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  maxLength={11}
-                  error={signupFieldErrors.phone}
-                  checking={signupFieldChecking.phone}
-                />
-                <AuthField
-                  label="Email"
-                  value={signupForm.email}
-                  onChange={(email) => {
-                    clearSignupFieldError("email");
-                    setSignupForm({ ...signupForm, email });
-                  }}
-                  type="email"
-                  autoComplete="email"
-                  error={signupFieldErrors.email}
-                  checking={signupFieldChecking.email}
-                />
-                <AuthField
-                  label="PIN"
-                  value={signupForm.pin}
-                  onChange={(pin) => setSignupForm({ ...signupForm, pin: pinDigits(pin) })}
-                  pin
-                  maxLength={6}
-                  autoComplete="new-password"
-                />
-                <AuthField
-                  label="Confirm PIN"
-                  value={signupForm.confirmPin}
-                  onChange={(confirmPin) =>
-                    setSignupForm({ ...signupForm, confirmPin: pinDigits(confirmPin) })
-                  }
-                  pin
-                  maxLength={6}
-                  autoComplete="new-password"
-                />
+              <p className="auth-sub">Let&apos;s get you started — it only takes a minute.</p>
+              <div className="auth-signup-body">
+                <div className="auth-fields">
+                  <AuthField
+                    label="Full name"
+                    value={signupForm.name}
+                    onChange={(name) => setSignupForm({ ...signupForm, name })}
+                    autoComplete="name"
+                  />
+                  <AuthField
+                    label="Username"
+                    value={signupForm.username}
+                    onChange={(username) => {
+                      clearSignupFieldError("username");
+                      setSignupForm({ ...signupForm, username: formatUsernameInput(username) });
+                    }}
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    maxLength={24}
+                    error={signupFieldErrors.username}
+                    checking={signupFieldChecking.username}
+                  />
+                  <AuthField
+                    label="Phone"
+                    value={signupForm.phone}
+                    onChange={(phone) => {
+                      clearSignupFieldError("phone");
+                      setSignupForm({ ...signupForm, phone: phoneDigits(phone).slice(0, 11) });
+                    }}
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    maxLength={11}
+                    error={signupFieldErrors.phone}
+                    checking={signupFieldChecking.phone}
+                  />
+                  <AuthField
+                    label="Email"
+                    value={signupForm.email}
+                    onChange={(email) => {
+                      clearSignupFieldError("email");
+                      setSignupForm({ ...signupForm, email });
+                    }}
+                    type="email"
+                    autoComplete="email"
+                    error={signupFieldErrors.email}
+                    checking={signupFieldChecking.email}
+                  />
+                  <AuthField
+                    label="PIN"
+                    value={signupForm.pin}
+                    onChange={(pin) => setSignupForm({ ...signupForm, pin: pinDigits(pin) })}
+                    pin
+                    maxLength={6}
+                    autoComplete="new-password"
+                  />
+                  <AuthField
+                    label="Confirm PIN"
+                    value={signupForm.confirmPin}
+                    onChange={(confirmPin) =>
+                      setSignupForm({ ...signupForm, confirmPin: pinDigits(confirmPin) })
+                    }
+                    pin
+                    maxLength={6}
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <SignupLegalCheckboxes accepted={legalAccepted} onChange={setLegalAccepted} />
+
+                {mathChallenge ? (
+                  <SignupMathGate
+                    a={mathChallenge.a}
+                    b={mathChallenge.b}
+                    answer={mathAnswer}
+                    onAnswerChange={(value) => {
+                      setMathAnswer(value);
+                      setMathError("");
+                    }}
+                    onRefresh={() => void loadMathChallenge()}
+                    error={mathError}
+                    disabled={mathLoading || busy === "signup"}
+                    refreshing={mathLoading}
+                  />
+                ) : mathLoading ? (
+                  <p className="auth-message auth-message--inline">One moment…</p>
+                ) : null}
               </div>
 
-              <SignupLegalCheckboxes accepted={legalAccepted} onChange={setLegalAccepted} />
-
-              {mathChallenge ? (
-                <SignupMathGate
-                  a={mathChallenge.a}
-                  b={mathChallenge.b}
-                  answer={mathAnswer}
-                  onAnswerChange={(value) => {
-                    setMathAnswer(value);
-                    setMathError("");
+              <div className="auth-signup-footer">
+                <button
+                  type="button"
+                  className="btn-primary btn-full btn-auth"
+                  onClick={() => void signUp()}
+                  disabled={
+                    busy === "signup" ||
+                    !isSignupLegalComplete(legalAccepted) ||
+                    mathLoading
+                  }
+                >
+                  {busy === "signup" ? <Loader2 className="spin" size={20} /> : "Continue"}
+                </button>
+                <button
+                  type="button"
+                  className="auth-switch"
+                  onClick={() => {
+                    clearSignupDraft();
+                    onModeChange("login");
                   }}
-                  onRefresh={() => void loadMathChallenge()}
-                  error={mathError}
-                  disabled={mathLoading || busy === "signup"}
-                  refreshing={mathLoading}
-                />
-              ) : mathLoading ? (
-                <p className="auth-message auth-message--inline">One moment…</p>
-              ) : null}
-
-              <button
-                type="button"
-                className="btn-primary btn-full btn-auth"
-                onClick={() => void signUp()}
-                disabled={
-                  busy === "signup" ||
-                  !isSignupLegalComplete(legalAccepted) ||
-                  mathLoading
-                }
-              >
-                {busy === "signup" ? <Loader2 className="spin" size={20} /> : "Continue"}
-              </button>
-              <button
-                type="button"
-                className="auth-switch"
-                onClick={() => {
-                  clearSignupDraft();
-                  onModeChange("login");
-                }}
-              >
-                <span className="auth-switch__lead">Already have an account?</span>
-                <span className="auth-switch__action">Log in</span>
-              </button>
+                >
+                  <span className="auth-switch__lead">Already have an account?</span>
+                  <span className="auth-switch__action">Log in</span>
+                </button>
+              </div>
             </>
           )}
 

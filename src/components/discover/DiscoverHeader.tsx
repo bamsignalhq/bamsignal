@@ -1,4 +1,5 @@
 import { SlidersHorizontal } from "lucide-react";
+import { DISCOVER_SUBTEXT } from "../../constants/discoverExperience";
 
 type DiscoverHeaderProps = {
   cityLabel: string;
@@ -11,7 +12,7 @@ export function DiscoverHeader({ cityLabel, filterCount = 0, onOpenFilters }: Di
     <header className="discover-premium-head">
       <div className="discover-premium-head__titles">
         <h1>Discover</h1>
-        <p>Thoughtful connections start here.</p>
+        <p>{DISCOVER_SUBTEXT}</p>
       </div>
       <div className="discover-premium-head__actions">
         {onOpenFilters ? (

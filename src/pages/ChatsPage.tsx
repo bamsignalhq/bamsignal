@@ -6,6 +6,9 @@ import { getCachedMemberProfile, fetchMemberProfileById } from "../services/disc
 import { ActivityStatus } from "../components/ActivityStatus";
 import { ChatInput } from "../components/ChatInput";
 import { DisableContactSharingModal } from "../components/DisableContactSharingModal";
+import { EmptyChatState } from "../components/chats/EmptyChatState";
+import { SmartConversationSection } from "../components/conversation/SmartConversationSection";
+import { MatchSuccessIcebreakers } from "../components/icebreakers/MatchSuccessIcebreakers";
 import { MessageRequestCard } from "../components/MessageRequestCard";
 import { ContactExchangeConsentCard } from "../components/ContactExchangeConsentCard";
 import { ContactExchangeEnabledModal } from "../components/ContactExchangeEnabledModal";
@@ -14,7 +17,7 @@ import { PaywallModal } from "../components/PaywallModal";
 import { QuickiePaywallModal } from "../components/QuickiePaywallModal";
 import { ReportBlockModal } from "../components/ReportBlockModal";
 import { OfflineSafetyAckModal } from "../components/OfflineSafetyAckModal";
-import type { ChatMessage, ChatThread, ContactExchangeShared, ContactExchangeState, LikeEntry, Match, ReportReason, UserProfile } from "../types";
+import type { ChatMessage, ChatThread, ContactExchangeShared, ContactExchangeState, DiscoverProfile, LikeEntry, Match, ReportReason, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { FEMALE_SAFETY_COPY } from "../constants/safety";
 import { chatListStatus, formatBubbleTime, formatThreadTime } from "../utils/chatListStatus";
@@ -37,10 +40,12 @@ import {
   requestContactExchangeRemote,
   respondContactExchangeRemote
 } from "../services/contactExchange";
-import { persistMessageRemote, acceptSignalRemote, declineSignalRemote, fetchIncomingSignalsRemote, ignoreSignalRemote } from "../services/memberData";
+import { persistMessageRemote, acceptSignalRemote, declineSignalRemote, fetchIncomingSignalsRemote, ignoreSignalRemote, sendSignalRemote } from "../services/memberData";
+import { BRAND } from "../constants/copy";
 import { startQuickiePassPayment, completePendingPayment } from "../services/payments";
 import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch } from "../utils/quickie";
 import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
+import { consumePendingChatDraft, consumePendingChatOpen, setPendingChatDraft, setPendingChatOpen } from "../utils/chatDraft";
 
 type ChatsPageProps = {
   isPremium: boolean;
@@ -48,6 +53,8 @@ type ChatsPageProps = {
   onUpgrade: (plan: PremiumPlan) => void;
   paymentLoading?: boolean;
   onDiscover?: () => void;
+  onBuildProfile?: () => void;
+  phoneVerified?: boolean;
 };
 
 function lastPreview(messages: ChatMessage[], matchId: string): string {
@@ -80,12 +87,31 @@ function toggleThreadPinned(matchId: string): boolean {
   return pinned;
 }
 
+function entryToDiscoverProfile(entry: LikeEntry): DiscoverProfile {
+  const cached = getCachedMemberProfile(entry.profileId);
+  if (cached) return cached;
+  return {
+    id: entry.profileId,
+    name: entry.name,
+    age: entry.age ?? 26,
+    city: entry.city,
+    state: entry.state,
+    bio: entry.message ?? "",
+    photo: entry.photo,
+    intents: ["MeaningfulConversations"],
+    verified: Boolean(entry.verified),
+    distanceKm: entry.distanceKm
+  };
+}
+
 export function ChatsPage({
   isPremium,
   plans,
   onUpgrade,
   paymentLoading,
-  onDiscover
+  onDiscover,
+  onBuildProfile,
+  phoneVerified = false
 }: ChatsPageProps) {
   const [activeMatch, setActiveMatch] = useState<Match | null>(null);
   const [query, setQuery] = useState("");
@@ -93,6 +119,12 @@ export function ChatsPage({
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [listTick, setListTick] = useState(0);
   const [messageRequests, setMessageRequests] = useState<LikeEntry[]>([]);
+  const [matchCelebration, setMatchCelebration] = useState<{
+    match: Match;
+    target: DiscoverProfile;
+    draft: string;
+  } | null>(null);
+  const [emptyToast, setEmptyToast] = useState("");
   const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
   const viewer = getDatingProfile();
 
@@ -114,6 +146,13 @@ export function ChatsPage({
     () => filterBlockedByProfileId(readJson<Match[]>(STORAGE_KEYS.matches, [])),
     [listTick, activeMatch]
   );
+
+  useEffect(() => {
+    const pendingMatchId = consumePendingChatOpen();
+    if (!pendingMatchId) return;
+    const pending = matches.find((row) => row.id === pendingMatchId);
+    if (pending) setActiveMatch(pending);
+  }, [matches]);
 
   const rows = useMemo(() => {
     return matches
@@ -164,7 +203,21 @@ export function ChatsPage({
     setActiveMatch(match);
   };
 
-  const showEmpty = !matches.length && !messageRequests.length;
+  const showEmptyInbox = matches.length === 0;
+
+  const handleEmptySendSignal = async (profile: DiscoverProfile) => {
+    const result = await sendSignalRemote(user, profile.id, "signal");
+    if (result.ok) {
+      setEmptyToast(BRAND.signalSent);
+      window.setTimeout(() => setEmptyToast(""), 2400);
+      return true;
+    }
+    if (result.error) {
+      setEmptyToast(result.error);
+      window.setTimeout(() => setEmptyToast(""), 3200);
+    }
+    return false;
+  };
 
   return (
     <div className="page member-page messages-page messages-page--premium">
@@ -172,6 +225,7 @@ export function ChatsPage({
         <h1>{EXPERIENCE_COPY.chatsTitle}</h1>
       </header>
 
+      {!showEmptyInbox ? (
       <label className="member-search member-search--chats">
         <Search size={18} aria-hidden />
         <input
@@ -181,25 +235,9 @@ export function ChatsPage({
           placeholder={EXPERIENCE_COPY.searchConversations}
         />
       </label>
-
-      {showEmpty ? (
-        <div className="messages-empty messages-empty--compact">
-          <h2>{EXPERIENCE_COPY.chatEmptyTitle}</h2>
-          <p>{EXPERIENCE_COPY.chatEmptyBody}</p>
-          <div className="premium-empty-actions">
-            {onDiscover ? (
-              <button type="button" className="btn-primary" onClick={onDiscover}>
-                Discover People
-              </button>
-            ) : null}
-            {!isPremium ? (
-              <button type="button" className="btn-secondary" onClick={() => setPaywallOpen(true)}>
-                Upgrade Today
-              </button>
-            ) : null}
-          </div>
-        </div>
       ) : null}
+
+      {emptyToast ? <div className="toast toast--member">{emptyToast}</div> : null}
 
       {messageRequests.length > 0 ? (
         <div className="message-requests-list">
@@ -212,7 +250,12 @@ export function ChatsPage({
                 const match = await acceptSignalRemote(user, entry.id);
                 if (match) {
                   setListTick((v) => v + 1);
-                  setActiveMatch(match);
+                  setMessageRequests((current) => current.filter((row) => row.id !== entry.id));
+                  setMatchCelebration({
+                    match,
+                    target: entryToDiscoverProfile(entry),
+                    draft: ""
+                  });
                 }
               }}
               onIgnore={async () => {
@@ -228,6 +271,22 @@ export function ChatsPage({
             />
           ))}
         </div>
+      ) : null}
+
+      {showEmptyInbox ? (
+        <EmptyChatState
+          viewer={viewer}
+          user={user}
+          isPremium={isPremium}
+          phoneVerified={phoneVerified}
+          onDiscover={onDiscover}
+          onBuildProfile={onBuildProfile}
+          onSendSignal={handleEmptySendSignal}
+        />
+      ) : null}
+
+      {!showEmptyInbox && filtered.length === 0 && query.trim() ? (
+        <p className="messages-empty messages-empty--compact">No conversations match your search.</p>
       ) : null}
 
       {filtered.length > 0 ? (
@@ -295,6 +354,24 @@ export function ChatsPage({
         }}
         loading={paymentLoading}
       />
+
+      {matchCelebration ? (
+        <MatchSuccessIcebreakers
+          open
+          matchName={matchCelebration.match.name}
+          viewer={viewer}
+          target={matchCelebration.target}
+          onSelect={(text) => setMatchCelebration((prev) => (prev ? { ...prev, draft: text } : null))}
+          onClose={() => setMatchCelebration(null)}
+          onStartChat={() => {
+            if (matchCelebration.draft.trim()) {
+              setPendingChatDraft(matchCelebration.match.id, matchCelebration.draft);
+            }
+            setActiveMatch(matchCelebration.match);
+            setMatchCelebration(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -349,6 +426,7 @@ function ChatDetail({
     }, 4000);
   };
   const [toast, setToast] = useState("");
+  const [composerDraft, setComposerDraft] = useState(() => consumePendingChatDraft(match.id) ?? "");
   const [screenshotNotice, setScreenshotNotice] = useState(false);
   const [quickiePaywallOpen, setQuickiePaywallOpen] = useState(false);
   const [quickieLoading, setQuickieLoading] = useState(false);
@@ -381,6 +459,19 @@ function ChatDetail({
   const showRequesterWaiting = exchangeStatus === "pending" && exchangeRole === "requester";
   const requesterFirstName = match.name.trim().split(/\s+/)[0] || match.name;
   const requesterProfileId = localStorage.getItem(STORAGE_KEYS.memberProfileId) || undefined;
+  const showConversationSuggestions = messages.length < 10;
+  const conversationContext = messages.length === 0 ? "chat-empty" : "chat";
+  const chatTargetProfile: DiscoverProfile =
+    discoverProfile ?? {
+      id: match.profileId,
+      name: match.name,
+      age: 26,
+      city: match.city,
+      bio: "",
+      photo: match.photo,
+      intents: ["MeaningfulConversations"],
+      verified: false
+    };
 
   const runAfterOfflineSafety = useCallback((action: () => void) => {
     if (hasOfflineSafetyAck(getDatingProfile().compliance)) {
@@ -687,10 +778,24 @@ function ChatDetail({
         {showSeen ? <p className="chat-read-receipt">Seen</p> : null}
       </div>
 
+      {showConversationSuggestions ? (
+        <SmartConversationSection
+          viewer={viewer}
+          target={chatTargetProfile}
+          context={conversationContext}
+          messageCount={messages.length}
+          onSelect={setComposerDraft}
+          className="smart-conversation--chat"
+          showLede={false}
+        />
+      ) : null}
+
       {dmPaused ? (
         <p className="chat-dm-paused">{inboxGate.reason ?? FEMALE_SAFETY_COPY.dmPaused}</p>
       ) : (
         <ChatInput
+          value={composerDraft}
+          onValueChange={setComposerDraft}
           onSend={handleSend}
           placeholder={`Message ${match.name}…`}
           blockWarning={blockWarning}

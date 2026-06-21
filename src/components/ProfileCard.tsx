@@ -5,7 +5,8 @@ import { BRAND } from "../constants/copy";
 import type { DiscoverProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
 import { ShowcaseImage } from "./ShowcaseImage";
-import { VerificationBadge } from "./VerificationBadge";
+import { TrustedMemberBadge } from "./trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../utils/trustedMember";
 
 type ProfileCardProps = {
   profile: DiscoverProfile;
@@ -88,9 +89,9 @@ export function ProfileCard({
               </h3>
             </div>
             <p className="profile-card-v2__city">{profile.city}</p>
-            {verification?.tier ? (
+            {isTrustedMember(profile) ? (
               <div className="profile-card-badges profile-card-badges--minimal">
-                <VerificationBadge info={verification} />
+                <TrustedMemberBadge size="sm" />
               </div>
             ) : null}
           </div>

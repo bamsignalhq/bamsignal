@@ -45,7 +45,7 @@ export function getOwnWhyReasons(profile: DatingProfile): string[] {
   if ((profile.interests?.length ?? 0) >= 1) reasons.push("Similar interests");
 
   const intents = safeArray<IntentTag>(profile.intents);
-  if (intents.includes("Relationship")) {
+  if (intents.includes("SeriousRelationship") || intents.includes("Marriage")) {
     reasons.push("Serious relationship");
   } else if (intents.length) {
     reasons.push(profileIntentLabel(intents[0]));

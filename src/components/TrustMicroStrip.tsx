@@ -16,8 +16,8 @@ export function TrustMicroStrip({
   const activity = lastActiveAt ? cardActivityBadge(lastActiveAt) : null;
   const items: string[] = [];
 
-  if (verified) items.push("Verified");
-  if (voiceIntroUrl) items.push("Voice intro");
+  if (verified) items.push("Trusted Member");
+  if (voiceIntroUrl) items.push("Voice Vibe");
   if (activity?.online) items.push("Active now");
   else if (activity?.label) items.push(activity.label);
 

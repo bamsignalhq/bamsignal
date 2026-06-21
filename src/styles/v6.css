@@ -80,8 +80,9 @@
 }
 
 .trust-badge--trusted-member {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.85);
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.92) 0%, rgba(76, 29, 149, 0.88) 100%);
+  color: #f3e8ff;
+  border: 1px solid rgba(212, 175, 55, 0.45);
 }
 
 .trust-badge--signal-trusted {

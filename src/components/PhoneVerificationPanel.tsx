@@ -137,7 +137,7 @@ export function PhoneVerificationPanel({
           return;
         }
         onSelfieSubmitted(verificationSelfie);
-        onMessage?.("Verification submitted. We'll review it shortly.");
+        onMessage?.("Trusted Member review submitted. We'll update your profile shortly.");
       } finally {
         setBusy("idle");
       }
@@ -151,13 +151,13 @@ export function PhoneVerificationPanel({
         <div className="verification-card__head">
           <ShieldCheck size={22} aria-hidden />
           <div>
-            <h3>Verification</h3>
+            <h3>Trusted Member</h3>
             <p className="verification-card__sub">
               {verificationStatus === "approved"
-                ? "Your profile is verified."
+                ? "You're a Trusted Member."
                 : verificationStatus === "pending"
-                  ? "Your selfie is under review."
-                  : "Verify your WhatsApp number to continue."}
+                  ? "Your photo is under private review."
+                  : "Confirm your WhatsApp number to continue."}
             </p>
           </div>
         </div>
@@ -225,14 +225,14 @@ export function PhoneVerificationPanel({
 
         {phoneVerified && verificationStatus !== "approved" && verificationStatus !== "pending" && (
           <div className="verification-card__block">
-            <p>Take a clear selfie so we can match it with your profile photos.</p>
+            <p>Take a clear selfie for private identity review. It is never shown publicly.</p>
             <button
               type="button"
               className="btn-primary"
               disabled={busy !== "idle"}
               onClick={() => document.getElementById("verification-selfie-input")?.click()}
             >
-              Upload verification selfie
+              Take selfie
             </button>
             <input
               id="verification-selfie-input"
@@ -245,7 +245,9 @@ export function PhoneVerificationPanel({
         )}
 
         {phoneVerified && verificationStatus === "pending" && (
-          <p className="verification-card__status">Verification pending — we'll notify you when it's done.</p>
+          <p className="verification-card__status">
+            Review in progress — your verification photo remains private.
+          </p>
         )}
       </section>
 

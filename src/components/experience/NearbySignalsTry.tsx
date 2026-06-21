@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Zap } from "lucide-react";
 import { BRAND } from "../../constants/copy";
 import { AppLogo } from "../AppLogo";
-import { VerifiedBadge } from "../VerifiedBadge";
+import { TrustedMemberBadge } from "../trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../../utils/trustedMember";
 import { BamEffect } from "./BamEffect";
 import { LANDING_PREVIEW_PROFILES } from "../../data/landingProfiles";
 
@@ -52,7 +53,7 @@ export function NearbySignalsTry({ onGuestAction }: NearbySignalsTryProps) {
             <div className="world-discover-meta">
               <h3>
                 {profile.name}
-                {profile.verified && <VerifiedBadge size="sm" />}
+                {isTrustedMember(profile) ? <TrustedMemberBadge size="sm" /> : null}
               </h3>
               <span className="world-discover-age">{profile.age}</span>
               <span className="world-discover-dist">{profile.distance}</span>

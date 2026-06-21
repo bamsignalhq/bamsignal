@@ -1,6 +1,7 @@
 import { SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { INTENT_OPTIONS, INTENT_LIMIT_MESSAGE, MAX_INTENT_SELECTIONS, toggleIntentSelection } from "../constants/intents";
+import { INTENT_FILTER_OPTIONS, INTENT_LIMIT_MESSAGE, MAX_INTENT_SELECTIONS, toggleIntentSelection } from "../constants/intents";
+import { MORE_ABOUT_ME_CATEGORIES, formatMoreAboutMeChip } from "../constants/moreAboutMe";
 import { StateCitySelect } from "./StateCitySelect";
 import { searchStateFromPrefs, withSearchStateChange, normalizeSearchCities } from "../utils/searchLocationPrefs";
 import { normalizeLifestyleTraits } from "../constants/profileOptions";
@@ -66,7 +67,8 @@ export function DiscoverFilters({
 
   const toggle = <T extends string>(key: keyof MatchPreferences, value: T) => {
     if (key === "intents") {
-      const result = toggleIntentSelection((prefs.intents ?? []) as IntentTag[], value as IntentTag);
+      const list = (prefs.intents ?? []) as IntentTag[];
+      const result = toggleIntentSelection(list, value as IntentTag);
       if (result.blocked) {
         setIntentLimitMessage(result.blockedReason || INTENT_LIMIT_MESSAGE);
         return;
@@ -111,6 +113,7 @@ export function DiscoverFilters({
     prefs.cities.length +
     prefs.states.length +
     prefs.intents.length +
+    prefs.moreAboutMe.length +
     (prefs.ageMin != null || prefs.ageMax != null ? 1 : 0) +
     (prefs.distanceMax != null ? 1 : 0) +
     (prefs.preferenceMode === "strict" ? 1 : 0) +
@@ -196,17 +199,15 @@ export function DiscoverFilters({
             </section>
 
             <section className="discover-filters-card">
-              <h4 className="discover-filters-card__title">Intent</h4>
+              <h4 className="discover-filters-card__title">What brings you here</h4>
               <div className="discover-filters-intents intent-tags selectable">
-                {INTENT_OPTIONS.map((opt) => {
+                {INTENT_FILTER_OPTIONS.map((opt) => {
                   const selected = prefs.intents.includes(opt.id);
-                  const disabled = !selected && prefs.intents.length >= MAX_INTENT_SELECTIONS;
                   return (
                     <button
                       key={opt.id}
                       type="button"
                       className={`intent-tag ${selected ? "selected" : ""}`}
-                      disabled={disabled}
                       onClick={() => toggle("intents", opt.id)}
                     >
                       {opt.emoji} {opt.label}
@@ -219,8 +220,33 @@ export function DiscoverFilters({
                   {intentLimitMessage}
                 </p>
               ) : (
-                <p className="discover-filters-card__hint">Select up to {MAX_INTENT_SELECTIONS} intentions.</p>
+                <p className="discover-filters-card__hint">Filter by what members are looking for.</p>
               )}
+            </section>
+
+            <section className="discover-filters-card">
+              <h4 className="discover-filters-card__title">More About Me</h4>
+              <p className="discover-filters-card__hint">Optional · filter by personality and lifestyle picks.</p>
+              {MORE_ABOUT_ME_CATEGORIES.map((category) => (
+                <div key={category.id} className="discover-filters-more-about-me">
+                  <p className="discover-filters-more-about-me__label">{category.label}</p>
+                  <div className="discover-filters-intents intent-tags selectable">
+                    {category.items.map((item) => {
+                      const selected = prefs.moreAboutMe.includes(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={`intent-tag ${selected ? "selected" : ""}`}
+                          onClick={() => toggle("moreAboutMe", item.id)}
+                        >
+                          {formatMoreAboutMeChip(item.id)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </section>
 
             <section className="discover-filters-card discover-filters-card--fields">
@@ -306,7 +332,7 @@ export function DiscoverFilters({
               </label>
 
               <label className="discover-filters-switch">
-                <span>Voice intro</span>
+                <span>Voice Vibe</span>
                 <input
                   type="checkbox"
                   role="switch"

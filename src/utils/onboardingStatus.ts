@@ -1,8 +1,8 @@
 import { STORAGE_KEYS } from "../constants/limits";
-import { MIN_PROFILE_PHOTOS } from "../constants/photos";
 import type { DatingProfile, UserProfile } from "../types";
 import { clearPendingSignup } from "./signupPersistence";
 import { clearFlowCompletionKeys } from "./flowWatchdog";
+import { hasRequiredProfileBasics } from "./buildProfileLater";
 import { isPersistablePhotoUrl, safePhotos, safeString } from "./safeProfile";
 import { readJson } from "./storage";
 import { normalizeDatingProfile } from "./profile";
@@ -99,24 +99,7 @@ export function hasMinimumProfileData(
   profile: Partial<DatingProfile>,
   user?: Pick<UserProfile, "name">
 ): boolean {
-  const raw = profile ?? {};
-  const photos = safePhotos(raw.photos).filter(isPersistablePhotoUrl);
-  const mainPhotoUrl = safeString(raw.mainPhotoUrl);
-  const hasPhotos =
-    photos.length >= MIN_PROFILE_PHOTOS ||
-    Boolean(mainPhotoUrl && isPersistablePhotoUrl(mainPhotoUrl));
-  const state = safeString(raw.state);
-  const city = safeString(raw.city);
-  const hasState = Boolean(state && !isTemplateProfileValue("state", state));
-  const hasLocation = hasState && Boolean(city && !isPlaceholderCity(city));
-  const gender = safeString(raw.gender);
-  const hasGender =
-    Boolean(gender && gender !== ("Prefer not to say" as DatingProfile["gender"])) &&
-    !isTemplateProfileValue("gender", gender);
-  const age = Number(raw.age);
-  const hasAge = Number.isFinite(age) && age >= 17 && !isTemplateProfileValue("age", age);
-  const hasName = user ? !isPlaceholderName(user.name) : true;
-  return hasName && hasAge && hasGender && hasLocation && hasPhotos;
+  return hasRequiredProfileBasics(profile, user);
 }
 
 export function isProfileOnboardingMarkedComplete(profile: Partial<DatingProfile>): boolean {

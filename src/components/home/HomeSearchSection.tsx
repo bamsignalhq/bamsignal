@@ -8,7 +8,10 @@ import { StateCitySelect } from "../StateCitySelect";
 import { MatchPreferenceFields } from "../preferences/MatchPreferenceFields";
 import { SignalLimitModal } from "../premium/SignalLimitModal";
 import { ShowcaseImage } from "../ShowcaseImage";
-import { VerificationBadge } from "../VerificationBadge";
+import { TrustedMemberBadge } from "../trusted/TrustedMemberBadge";
+import { VoiceVibeChip } from "../voice/VoiceVibeChip";
+import { hasVoiceVibe } from "../../utils/voiceVibe";
+import { isTrustedMember } from "../../utils/trustedMember";
 import { searchMemberProfiles } from "../../services/discoverProfiles";
 import { sendSignalRemote } from "../../services/memberData";
 import type { DiscoverProfile, HomeAdvancedFilters, UserProfile } from "../../types";
@@ -262,10 +265,13 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
                     <span>, {profile.age}</span>
                   </h3>
                   <p className="home-search-card__city">{profile.city}</p>
-                  {verification.tier ? (
+                  {isTrustedMember(profile) ? (
                     <div className="home-search-card__badge">
-                      <VerificationBadge info={verification} />
+                      <TrustedMemberBadge size="sm" />
                     </div>
+                  ) : null}
+                  {hasVoiceVibe(profile) ? (
+                    <VoiceVibeChip className="home-search-card__voice-vibe" />
                   ) : null}
                   <button
                     type="button"

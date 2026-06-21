@@ -19,6 +19,7 @@ import {
   resolveStateName
 } from "../constants/profileOptions";
 import { sanitizeIntentsForActivePass } from "./fastConnectionIntent";
+import { normalizeMoreAboutMeInterests } from "./moreAboutMe";
 import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { normalizeCoverFields } from "./coverPhoto";
@@ -46,7 +47,7 @@ export const defaultDatingProfile = (): DatingProfile => ({
   city: "",
   bio: "",
   lookingFor: "Women",
-  intents: ["Relationship"],
+  intents: ["SeriousRelationship"],
   interests: [],
   verified: false,
   premium: false,
@@ -74,6 +75,7 @@ export const defaultMatchPreferences = (): MatchPreferences => ({
   genotypes: [],
   bodyTypes: [],
   relationshipIntentions: [],
+  moreAboutMe: [],
   hasKids: [],
   wantsKids: [],
   verificationPreferences: [],
@@ -140,7 +142,7 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
   });
   const interestsTouched = Boolean(cleaned.interestsTouched);
   const rawInterests = safeArray<string>(cleaned.interests).map((item) => safeString(item)).filter(Boolean);
-  const interests = onboardingComplete || interestsTouched ? rawInterests : [];
+  const interests = onboardingComplete || interestsTouched ? normalizeMoreAboutMeInterests(rawInterests) : [];
   const rawPhotosList = safePhotos(cleaned.photos ?? base.photos);
   const coverFields = normalizeCoverFields(cleaned);
   const persistableCover = coverFields.coverPhotoUrl;
@@ -211,6 +213,17 @@ export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfi
     voiceIntroUrl: isPersistableVoiceIntroUrl(cleaned.voiceIntroUrl)
       ? safeString(cleaned.voiceIntroUrl)
       : undefined,
+    voiceIntroDuration: safeNumber(cleaned.voiceIntroDuration, 0) || undefined,
+    voiceIntroUpdatedAt: safeString(cleaned.voiceIntroUpdatedAt) || undefined,
+    voiceVibeUrl: isPersistableVoiceIntroUrl(cleaned.voiceVibeUrl)
+      ? safeString(cleaned.voiceVibeUrl)
+      : isPersistableVoiceIntroUrl(cleaned.voiceIntroUrl)
+        ? safeString(cleaned.voiceIntroUrl)
+        : undefined,
+    voiceVibeDuration: safeNumber(cleaned.voiceVibeDuration ?? cleaned.voiceIntroDuration, 0) || undefined,
+    voiceVibeTranscript: safeString(cleaned.voiceVibeTranscript) || undefined,
+    voiceVibeCreatedAt:
+      safeString(cleaned.voiceVibeCreatedAt) || safeString(cleaned.voiceIntroUpdatedAt) || undefined,
     verificationStatus: cleaned.verificationStatus ?? "none",
     visibility: { ...base.visibility!, ...(cleaned.visibility ?? {}) },
     matchingPrivacy: { ...base.matchingPrivacy!, ...(cleaned.matchingPrivacy ?? {}) },
@@ -285,6 +298,7 @@ export function normalizeMatchPreferences(raw: Partial<MatchPreferences>): Match
     genotypes: normalizeGenotypes(raw.genotypes),
     bodyTypes: normalizeBodyTypes(raw.bodyTypes),
     relationshipIntentions: normalizeRelationshipIntentions(raw.relationshipIntentions),
+    moreAboutMe: normalizeMoreAboutMeInterests(raw.moreAboutMe),
     hasKids: normalizeHasKidsOptions(hasKids),
     wantsKids: normalizeWantsKidsOptions(wantsKids),
     verificationPreferences,

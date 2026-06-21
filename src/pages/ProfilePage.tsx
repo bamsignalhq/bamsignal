@@ -1,17 +1,22 @@
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Mic, Moon, Settings, Sun } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, Settings, Sun } from "lucide-react";
 import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
-import { MAX_INTENT_SELECTIONS, INTENT_OPTIONS, intentDisplay, profileIntentLabel, toggleIntentSelection, INTENT_LIMIT_MESSAGE } from "../constants/intents";
+import { profileIntentLabel } from "../constants/intents";
+import { WHAT_BRINGS_ME_HERE_TITLE } from "../constants/relationshipIntent";
+import { WhatBringsYouHerePicker } from "../components/relationshipIntent/WhatBringsYouHerePicker";
+import { WhatBringsYouHereEmptyCard } from "../components/relationshipIntent/WhatBringsYouHereEmptyCard";
+import { relationshipIntentsFrom } from "../constants/relationshipIntent";
 import {
   LazyCoverPhotoUpload,
   LazyPhotoUploadGrid,
   LazyProfileAccountPanel,
   LazySafetySettingsCard,
-  LazyTwoFactorSettingsCard,
-  LazyVoiceIntro,
-  LazyVoiceIntroRecorder
+  LazyTwoFactorSettingsCard
 } from "../components/lazyProfileUi";
-import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
+import { VoiceVibeEmptyCard } from "../components/voice/VoiceVibeEmptyCard";
+import { VoiceVibeWaveformCard } from "../components/voice/VoiceVibeWaveformCard";
+import { TrustedMemberFlow } from "../components/trusted/TrustedMemberFlow";
+import { WhyTrustedMemberCard } from "../components/trusted/WhyTrustedMemberCard";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import { TapSelectField } from "../components/TapSelectField";
 import { searchStateFromPrefs, withSearchStateChange, normalizeSearchCities } from "../utils/searchLocationPrefs";
@@ -30,8 +35,17 @@ import {
   stateDisplayLabel
 } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
+import { ProfilePhotoProgressCard } from "../components/profilePhoto/ProfilePhotoProgressCard";
+import { ProfileStrengthCard } from "../components/profile/ProfileStrengthCard";
+import { ActivityHighlightsCard } from "../components/activity/ActivityHighlightsCard";
+import { SavedProfilesPreview } from "../components/savedProfiles/SavedProfilesPreview";
+import { buildActivityHighlights } from "../utils/buildActivityHighlights";
+import { IncompleteProfileChecklist } from "../components/profile/IncompleteProfileChecklist";
 import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
-import { InterestPicker } from "../components/InterestPicker";
+import { MoreAboutMePicker } from "../components/moreAboutMe/MoreAboutMePicker";
+import { MoreAboutMeEmptyCard } from "../components/moreAboutMe/MoreAboutMeEmptyCard";
+import { normalizeMoreAboutMeInterests } from "../utils/moreAboutMe";
+import { MORE_ABOUT_ME_TITLE } from "../constants/moreAboutMe";
 import type {
   DatingProfile,
   IntentTag,
@@ -48,7 +62,10 @@ import { APP_BUILD_ID } from "../constants/build";
 import { BUILD_CODE, BUILD_TIME, BUILD_VERSION, CACHE_VERSION } from "../buildInfo";
 import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
+import { navigateToPath } from "../constants/routes";
+import { getVoiceVibeDuration, getVoiceVibeUrl, hasVoiceVibe } from "../utils/voiceVibe";
 import { getVerificationTier } from "../utils/verification";
+import { isTrustedMember, isTrustedMemberPending } from "../utils/trustedMember";
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
 import { resolveProfileMainPhoto } from "../utils/mainPhoto";
 import {
@@ -120,19 +137,28 @@ function bioHint(bio: string): string {
 }
 
 function interestsHint(interests?: string[]): string {
-  const count = interests?.length ?? 0;
-  if (!count) return "None yet";
+  const count = normalizeMoreAboutMeInterests(interests).length;
+  if (!count) return "Not added yet";
   return `${count} selected`;
 }
 
 function intentHint(intents: IntentTag[]): string {
-  if (!intents.length) return "Not added";
-  if (intents.length === 1) return intentDisplay(intents[0]);
-  return `${intents.length} selected`;
+  const relationship = relationshipIntentsFrom(intents);
+  if (!relationship.length) return "Not set yet";
+  if (relationship.length === 1) return profileIntentLabel(relationship[0]);
+  return `${relationship.length} selected`;
 }
 
 function voiceHint(url?: string): string {
-  return url ? "Added" : "Not added";
+  return url ? "Added" : "Not added yet";
+}
+
+function openVoiceVibePage() {
+  navigateToPath("/voice-vibe");
+}
+
+function openTrustedMemberPage() {
+  navigateToPath("/trusted-member");
 }
 
 function detailsHint(profile: DatingProfile): string {
@@ -403,7 +429,7 @@ export function ProfilePage({
   });
 
   const startSelfieVerification = () => {
-    openSettings("verification");
+    openTrustedMemberPage();
   };
 
   const handlePhoneVerified = (phone: string) => {
@@ -426,22 +452,6 @@ export function ProfilePage({
     setVerifySubmitted(true);
   };
 
-  const toggleIntent = (intent: IntentTag) => {
-    const result = toggleIntentSelection(profile.intents, intent);
-    if (result.blocked) {
-      showModMessage(result.blockedReason || INTENT_LIMIT_MESSAGE);
-      return;
-    }
-    setProfile((p) => ({ ...p, intents: result.next }));
-  };
-
-  const handleIntentSelection = (intent: IntentTag) => {
-    const handled = handleIntentTap(intent, profile.intents, (intents) =>
-      setProfile((current) => ({ ...current, intents }))
-    );
-    if (!handled) toggleIntent(intent);
-  };
-
   const handleLogout = () => {
     onLogout();
   };
@@ -460,8 +470,25 @@ export function ProfilePage({
     setView("edit");
   };
 
+  useEffect(() => {
+    const pending = localStorage.getItem(STORAGE_KEYS.profileEditSection);
+    if (pending === "photos") {
+      localStorage.removeItem(STORAGE_KEYS.profileEditSection);
+      openEdit("photos");
+    }
+  }, []);
+
   const phoneVerified = Boolean(user.phoneVerified);
   const verification = getVerificationTier(profile, isPremium, phoneVerified);
+
+  const activityHighlights = useMemo(
+    () =>
+      buildActivityHighlights(profile, {
+        phoneVerified,
+        isPremium
+      }),
+    [profile, phoneVerified, isPremium]
+  );
 
   const settingsBack = () => {
     if (settingsPanel === "hub") {
@@ -523,7 +550,57 @@ export function ProfilePage({
               );
             }}
             onPhotoModerationMessage={showModMessage}
+            onAddVoiceVibe={openVoiceVibePage}
           />
+
+          <ActivityHighlightsCard
+            highlights={activityHighlights}
+            variant="profile"
+            className="profile-page__activity-highlights"
+          />
+
+          <SavedProfilesPreview viewerCity={profile.city} />
+
+          <ProfilePhotoProgressCard
+            profile={profile}
+            onAddPhotos={() => openEdit("photos")}
+            className="profile-page__photo-progress"
+          />
+
+          <ProfileStrengthCard
+            profile={profile}
+            phoneVerified={phoneVerified}
+            isPremium={isPremium}
+            className="profile-page__strength"
+            onImprove={() => setView("edit")}
+          />
+
+          <IncompleteProfileChecklist
+            profile={profile}
+            phoneVerified={phoneVerified}
+            isPremium={isPremium}
+          />
+
+          {!isTrustedMember(profile) ? (
+            isTrustedMemberPending(profile) ? (
+              <section className="profile-trusted-empty card">
+                <p className="profile-trusted-empty__label">Review in progress</p>
+                <p className="why-trusted-member-card__hint">
+                  Your verification photo remains private and is never shown publicly.
+                </p>
+              </section>
+            ) : (
+              <WhyTrustedMemberCard onBecome={openTrustedMemberPage} />
+            )
+          ) : null}
+
+          {!relationshipIntentsFrom(profile.intents).length ? (
+            <WhatBringsYouHereEmptyCard onSet={() => openEdit("intent")} />
+          ) : null}
+
+          {!normalizeMoreAboutMeInterests(profile.interests).length ? (
+            <MoreAboutMeEmptyCard onAdd={() => openEdit("interests")} />
+          ) : null}
 
           <div className="profile-premium-sections">
             {(() => {
@@ -539,16 +616,16 @@ export function ProfilePage({
               );
             })()}
 
-            {profile.interests?.length > 0 ? (
-              <ProfileOverviewCard title="Interests" onEdit={() => openEdit("interests")}>
+            {normalizeMoreAboutMeInterests(profile.interests).length > 0 ? (
+              <ProfileOverviewCard title={MORE_ABOUT_ME_TITLE} onEdit={() => openEdit("interests")}>
                 <ProfileInterestsPreview interests={profile.interests} variant="premium" />
               </ProfileOverviewCard>
             ) : null}
 
-            {profile.intents.length > 0 ? (
-              <ProfileOverviewCard title="Looking for" onEdit={() => openEdit("intent")}>
+            {relationshipIntentsFrom(profile.intents).length > 0 ? (
+              <ProfileOverviewCard title={WHAT_BRINGS_ME_HERE_TITLE} onEdit={() => openEdit("intent")}>
                 <div className="profile-premium-pills profile-premium-pills--intent">
-                  {profile.intents.slice(0, MAX_INTENT_SELECTIONS).map((intent) => (
+                  {relationshipIntentsFrom(profile.intents).map((intent) => (
                     <span key={intent} className="profile-premium-pill profile-premium-pill--outline">
                       {profileIntentLabel(intent)}
                     </span>
@@ -557,26 +634,16 @@ export function ProfilePage({
               </ProfileOverviewCard>
             ) : null}
 
-            <ProfileOverviewCard title="Voice intro" onEdit={() => openEdit("voice")}>
-              <div className="profile-premium-voice profile-premium-voice--compact">
-                <span className="profile-premium-voice__icon" aria-hidden>
-                  <Mic size={18} strokeWidth={1.75} />
-                </span>
-                <span className="profile-premium-voice__label">Voice intro</span>
-                {profile.voiceIntroUrl ? (
-                  <Suspense fallback={null}>
-                    <LazyVoiceIntro url={profile.voiceIntroUrl} label="Play" compact />
-                  </Suspense>
-                ) : (
-                  <button
-                    type="button"
-                    className="profile-premium-voice__play-pill"
-                    onClick={() => openEdit("voice")}
-                  >
-                    Add
-                  </button>
-                )}
-              </div>
+            <ProfileOverviewCard title="Voice Vibe" onEdit={openVoiceVibePage}>
+              {hasVoiceVibe(profile) && getVoiceVibeUrl(profile) ? (
+                <VoiceVibeWaveformCard
+                  url={getVoiceVibeUrl(profile)!}
+                  duration={getVoiceVibeDuration(profile)}
+                  variant="card"
+                />
+              ) : (
+                <VoiceVibeEmptyCard onAdd={openVoiceVibePage} />
+              )}
             </ProfileOverviewCard>
           </div>
 
@@ -757,13 +824,12 @@ export function ProfilePage({
 
           <EditAccordion
             id="interests"
-            title="Interests"
+            title={MORE_ABOUT_ME_TITLE}
             hint={interestsHint(profile.interests)}
             open={editOpen === "interests"}
             onToggle={toggleEditSection}
           >
-            <InterestPicker
-              variant="edit"
+            <MoreAboutMePicker
               selected={profile.interests ?? []}
               onChange={(interests) => setProfile({ ...profile, interests, interestsTouched: true })}
             />
@@ -771,36 +837,22 @@ export function ProfilePage({
 
           <EditAccordion
             id="intent"
-            title="Interested in"
+            title={WHAT_BRINGS_ME_HERE_TITLE}
             hint={intentHint(profile.intents)}
             open={editOpen === "intent"}
             onToggle={toggleEditSection}
           >
-            <fieldset className="intent-fieldset intent-fieldset--flat">
-              <legend>Up to {MAX_INTENT_SELECTIONS}</legend>
-              {fastConnectionStatus ? (
-                <p className="profile-fast-connection-status" role="status">
-                  {fastConnectionStatus}
-                </p>
-              ) : null}
-              <div className="intent-tags selectable">
-                {INTENT_OPTIONS.map((opt) => {
-                  const selected = profile.intents.includes(opt.id);
-                  const disabled = !selected && profile.intents.length >= MAX_INTENT_SELECTIONS;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      className={`intent-tag ${selected ? "selected" : ""}`}
-                      disabled={disabled}
-                      onClick={() => handleIntentSelection(opt.id)}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </fieldset>
+            {fastConnectionStatus ? (
+              <p className="profile-fast-connection-status" role="status">
+                {fastConnectionStatus}
+              </p>
+            ) : null}
+            <WhatBringsYouHerePicker
+              value={profile.intents}
+              showHeader={false}
+              onChange={(intents) => setProfile({ ...profile, intents })}
+              onLimitMessage={showModMessage}
+            />
           </EditAccordion>
 
           <EditAccordion
@@ -901,45 +953,17 @@ export function ProfilePage({
 
           <EditAccordion
             id="voice"
-            title="Voice greeting"
-            hint={voiceHint(profile.voiceIntroUrl)}
+            title="Voice Vibe"
+            hint={voiceHint(getVoiceVibeUrl(profile))}
             open={editOpen === "voice"}
             onToggle={toggleEditSection}
           >
-            <Suspense fallback={null}>
-              <LazyVoiceIntroRecorder
-              url={profile.voiceIntroUrl}
-              onRecorded={async (voiceIntroUrl) => {
-                const next = normalizeDatingProfile({ ...profile, voiceIntroUrl, premium: isPremium });
-                setProfile(next);
-                const synced = await syncMemberProfileWithResult(user, next, { patchScope: "voice" });
-                if (!synced.ok) {
-                  showModMessage(USER_MESSAGES.voiceIntroSaveFailed);
-                  return;
-                }
-                const canonical = await revalidateMemberProfileAfterUpdate(user, {
-                  profile: synced.profile ?? next
-                });
-                setProfile({ ...canonical.profile, premium: isPremium });
-              }}
-              onClear={() => {
-                const next = normalizeDatingProfile({
-                  ...profile,
-                  voiceIntroUrl: undefined,
-                  premium: isPremium
-                });
-                setProfile(next);
-                void syncMemberProfileWithResult(user, next, { patchScope: "voice" }).then(async (synced) => {
-                  if (!synced.ok) return;
-                  const canonical = await revalidateMemberProfileAfterUpdate(user, {
-                    profile: synced.profile ?? next
-                  });
-                  setProfile({ ...canonical.profile, premium: isPremium });
-                });
-              }}
-              onRejected={showModMessage}
-            />
-            </Suspense>
+            <p className="profile-edit-voice-copy">
+              Record a short Voice Vibe so people can hear your personality before they signal you.
+            </p>
+            <button type="button" className="btn-primary" onClick={openVoiceVibePage}>
+              {hasVoiceVibe(profile) ? "Manage Voice Vibe" : "Add Voice Vibe"}
+            </button>
           </EditAccordion>
 
           <div className="profile-edit-save-bar">
@@ -980,7 +1004,7 @@ export function ProfilePage({
                     : settingsPanel === "preferences"
                       ? "Preferences"
                       : settingsPanel === "verification"
-                        ? "Verification"
+                        ? "Trusted Member"
                         : settingsPanel === "subscription"
                           ? "Subscription"
                           : settingsPanel === "help"
@@ -1003,7 +1027,7 @@ export function ProfilePage({
                 <SettingsRow label="Account" onClick={() => setSettingsPanel("account")} />
                 <SettingsRow label="Safety Center" onClick={() => onOpenSafetyCenter?.()} />
                 <SettingsRow label="Preferences" onClick={() => setSettingsPanel("preferences")} />
-                <SettingsRow label="Verification" onClick={() => setSettingsPanel("verification")} />
+                <SettingsRow label="Trusted Member" onClick={() => setSettingsPanel("verification")} />
                 <SettingsRow
                   label={PREMIUM_COPY.helpSupport}
                   onClick={() => setSettingsPanel("help")}
@@ -1227,7 +1251,7 @@ export function ProfilePage({
           )}
 
           {settingsPanel === "verification" && (
-            <PhoneVerificationPanel
+            <TrustedMemberFlow
               user={user}
               phoneVerified={phoneVerified}
               profilePhoto={resolveProfileMainPhoto(profile) || undefined}
@@ -1236,9 +1260,12 @@ export function ProfilePage({
                   ? "approved"
                   : profile.verificationStatus || (verifyPending ? "pending" : "none")
               }
+              verified={profile.verified}
+              verificationSelfie={profile.verificationSelfie}
               onPhoneVerified={handlePhoneVerified}
               onSelfieSubmitted={handleSelfieSubmitted}
               onMessage={showModMessage}
+              onComplete={() => setSettingsPanel("hub")}
             />
           )}
 

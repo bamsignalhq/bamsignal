@@ -2,13 +2,16 @@ export type Theme = "dark" | "light";
 
 export type NavTab = "home" | "discover" | "likes" | "chats" | "me";
 
-export type IntentTag =
-  | "Relationship"
+export type RelationshipIntentId =
+  | "SeriousRelationship"
+  | "Marriage"
   | "Friendship"
-  | "Networking"
-  | "Social Events"
-  | "Chat"
-  | "Quickie";
+  | "Companionship"
+  | "OpenToPossibilities"
+  | "MeaningfulConversations";
+
+/** Relationship intents + paid Fast Connection flag (not part of What Brings You Here). */
+export type IntentTag = RelationshipIntentId | "Quickie";
 
 export type Gender = "Man" | "Woman" | "Non-binary";
 
@@ -217,6 +220,14 @@ export type DatingProfile = {
   lifestyles?: SocialLifestyle[];
   bodyTypes?: BodyType[];
   voiceIntroUrl?: string;
+  /** Seconds — stored with voice vibe recording */
+  voiceIntroDuration?: number;
+  voiceIntroUpdatedAt?: string;
+  /** Member-facing alias fields — mirror voiceIntro* when saved */
+  voiceVibeUrl?: string;
+  voiceVibeDuration?: number;
+  voiceVibeTranscript?: string;
+  voiceVibeCreatedAt?: string;
   visibility?: ProfileVisibility;
   matchingPrivacy?: MatchingPrivacy;
   safetySettings?: SafetySettings;
@@ -261,6 +272,8 @@ export type MatchPreferences = {
   ageMax?: number;
   distanceMax?: number;
   preferenceMode: PreferenceMode;
+  /** Optional discover filter — More About Me item ids */
+  moreAboutMe: string[];
   /** Premium — prioritize recently active profiles */
   onlineNow?: boolean;
   /** Premium — minimum compatibility % (65–99) */
@@ -350,6 +363,12 @@ export type DiscoverProfile = {
   lifestyles?: SocialLifestyle[];
   bodyTypes?: BodyType[];
   voiceIntroUrl?: string;
+  voiceIntroDuration?: number;
+  voiceIntroUpdatedAt?: string;
+  voiceVibeUrl?: string;
+  voiceVibeDuration?: number;
+  voiceVibeTranscript?: string;
+  voiceVibeCreatedAt?: string;
   distanceKm?: number;
   verified: boolean;
   safetySettings?: SafetySettings;

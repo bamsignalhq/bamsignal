@@ -1,6 +1,6 @@
 import { MapPin } from "lucide-react";
-import { VerificationBadge } from "./VerificationBadge";
-import { VerifiedBadge } from "./VerifiedBadge";
+import { TrustedMemberBadge } from "./trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../utils/trustedMember";
 import type { DatingProfile, UserProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
 
@@ -32,8 +32,7 @@ export function ProfileIdentityStrip({ user, profile, verification }: ProfileIde
       </p>
       {(verification.tier > 0 || profile.verified) && (
         <div className="profile-identity-strip__badges">
-          {verification.tier > 0 ? <VerificationBadge info={verification} /> : null}
-          {profile.verified && !verification.tier ? <VerifiedBadge /> : null}
+          {isTrustedMember(profile) ? <TrustedMemberBadge size="sm" /> : null}
         </div>
       )}
     </div>

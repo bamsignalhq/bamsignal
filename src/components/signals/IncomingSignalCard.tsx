@@ -1,6 +1,7 @@
 import { Heart } from "lucide-react";
 import type { LikeEntry } from "../../types";
-import { VerifiedBadge } from "../VerifiedBadge";
+import { TrustedMemberBadge } from "../trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../../utils/trustedMember";
 
 type IncomingSignalCardProps = {
   entry: LikeEntry;
@@ -46,7 +47,9 @@ export function IncomingSignalCard({
           <div className="signals-premium-card__title-row">
             <div className="signals-premium-card__identity">
               <strong>{displayName}</strong>
-              {!locked && entry.verified ? <VerifiedBadge size="sm" label="Verified" /> : null}
+              {!locked && isTrustedMember({ verified: entry.verified }) ? (
+                <TrustedMemberBadge size="sm" />
+              ) : null}
             </div>
             <time className="signals-premium-card__time">{timeLabel}</time>
           </div>

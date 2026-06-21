@@ -1,0 +1,190 @@
+/* Smart Conversation Suggestions — warm openers, never robotic */
+
+.smart-conversation {
+  padding: 16px 18px;
+  border-radius: 24px;
+  background: rgba(36, 17, 47, 0.78);
+  border: 1px solid rgba(122, 77, 243, 0.24);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  animation: smart-conversation-enter 0.36s ease-out both;
+}
+
+@keyframes smart-conversation-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.smart-conversation__eyebrow {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(233, 30, 143, 0.95);
+}
+
+.smart-conversation__title {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.smart-conversation__hint,
+.smart-conversation__lede {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.smart-conversation__track {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.smart-conversation__track::-webkit-scrollbar {
+  display: none;
+}
+
+.conversation-suggestion-chip {
+  flex: 0 0 auto;
+  max-width: min(88vw, 320px);
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(122, 77, 243, 0.28);
+  background: linear-gradient(135deg, rgba(122, 77, 243, 0.14), rgba(233, 30, 143, 0.08));
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  animation: conversation-chip-pop 0.28s ease-out both;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.conversation-suggestion-chip:hover {
+  border-color: rgba(233, 30, 143, 0.45);
+  background: linear-gradient(135deg, rgba(122, 77, 243, 0.22), rgba(233, 30, 143, 0.14));
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(122, 77, 243, 0.18);
+}
+
+@keyframes conversation-chip-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.smart-conversation--chat {
+  margin: 0 0 10px;
+  padding: 14px 16px;
+}
+
+.smart-conversation--match {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  animation: none;
+}
+
+.smart-conversation--match .smart-conversation__title {
+  font-size: 1rem;
+}
+
+.match-success-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: end center;
+  padding: 16px;
+}
+
+.match-success-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(10, 4, 18, 0.62);
+  cursor: pointer;
+}
+
+.match-success-sheet__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  padding: 20px 18px 18px;
+  border-radius: 24px;
+  background: rgba(36, 17, 47, 0.94);
+  border: 1px solid rgba(122, 77, 243, 0.28);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+}
+
+.match-success-sheet__hint {
+  margin: 12px 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.profile-detail-sheet__conversation {
+  margin-bottom: 14px;
+}
+
+.app.light .smart-conversation,
+[data-theme="light"] .smart-conversation {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(122, 77, 243, 0.18);
+  box-shadow: 0 8px 24px rgba(27, 11, 46, 0.08);
+}
+
+.app.light .smart-conversation__title,
+[data-theme="light"] .smart-conversation__title {
+  color: #1b0b2e;
+}
+
+.app.light .smart-conversation__hint,
+.app.light .smart-conversation__lede,
+[data-theme="light"] .smart-conversation__hint,
+[data-theme="light"] .smart-conversation__lede {
+  color: rgba(27, 11, 46, 0.62);
+}
+
+.app.light .conversation-suggestion-chip,
+[data-theme="light"] .conversation-suggestion-chip {
+  color: #1b0b2e;
+  background: linear-gradient(135deg, rgba(122, 77, 243, 0.08), rgba(233, 30, 143, 0.05));
+  border-color: rgba(122, 77, 243, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smart-conversation,
+  .conversation-suggestion-chip {
+    animation: none;
+    transition: none;
+  }
+
+  .conversation-suggestion-chip:hover {
+    transform: none;
+  }
+}

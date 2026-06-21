@@ -7,6 +7,8 @@ type ChatInputProps = {
   placeholder?: string;
   blockWarning?: string;
   onClearWarning?: () => void;
+  value?: string;
+  onValueChange?: (value: string) => void;
 };
 
 export function ChatInput({
@@ -14,9 +16,18 @@ export function ChatInput({
   disabled = false,
   placeholder = "Type a message...",
   blockWarning = "",
-  onClearWarning
+  onClearWarning,
+  value,
+  onValueChange
 }: ChatInputProps) {
-  const [text, setText] = useState("");
+  const [internalText, setInternalText] = useState("");
+  const controlled = value !== undefined && onValueChange !== undefined;
+  const text = controlled ? value : internalText;
+
+  const setText = (next: string) => {
+    if (controlled) onValueChange(next);
+    else setInternalText(next);
+  };
 
   const handleSend = () => {
     const trimmed = text.trim();

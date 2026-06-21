@@ -130,6 +130,9 @@ const MEMBER_APP_PATHS = [
   "/chats",
   "/signals",
   "/profile",
+  "/voice-vibe",
+  "/trusted-member",
+  "/saved-profiles",
   "/settings",
   "/subscription",
   PAYMENT_SUCCESS_PATH

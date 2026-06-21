@@ -10,6 +10,11 @@ import { mergeHydratedCompliance, syncComplianceDoneMarkerFromProfile } from "./
 import { normalizeDatingProfile } from "../utils/profile";
 import { resolveMemberIdentity } from "../utils/authIdentity";
 import { mergeIncomingSocial } from "../utils/profileSocial";
+import {
+  mergeSavedProfileIdsFromServer,
+  writeSavedProfileEntries
+} from "../utils/savedProfilesStorage";
+import { dispatchSavedProfilesChanged } from "../constants/savedProfiles";
 import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import { mergeMemberCover, safeArray, safePhotos, safeString, isPersistablePhotoUrl } from "../utils/safeProfile";
@@ -43,6 +48,7 @@ type MemberBundle = {
   datingProfile?: Record<string, unknown>;
   incomingLikes?: Parameters<typeof mergeIncomingSocial>[0]["incomingLikes"];
   incomingFollows?: Parameters<typeof mergeIncomingSocial>[0]["incomingFollows"];
+  savedProfileIds?: { profileId: string; savedAt: string }[];
 };
 
 type MemberActionPayload = {
@@ -57,6 +63,7 @@ type MemberActionPayload = {
   premium?: { isPremium: boolean; premiumUntil: string | null };
   incomingSignals?: LikeEntry[];
   viewers?: import("../utils/profileViews").ProfileViewer[];
+  profiles?: import("../constants/savedProfiles").SavedDiscoverProfile[];
 };
 
 async function postMemberAction(
@@ -415,6 +422,12 @@ export async function hydrateMemberData(
     });
   }
 
+  if (Array.isArray(bundle.savedProfileIds)) {
+    const merged = mergeSavedProfileIdsFromServer(bundle.savedProfileIds);
+    writeSavedProfileEntries(merged);
+    dispatchSavedProfilesChanged();
+  }
+
   const matchProfiles = (bundle.matches as Match[] | undefined)?.map((match) => ({
     id: match.profileId,
     name: match.name,
@@ -446,6 +459,30 @@ export async function followProfileRemote(
 ): Promise<boolean> {
   const payload = await postMemberAction("follow-profile", user, { targetProfileId });
   return Boolean(payload?.ok);
+}
+
+export async function saveProfileRemote(
+  user: MemberIdentity,
+  targetProfileId: string
+): Promise<boolean> {
+  const payload = await postMemberAction("save-profile", user, { targetProfileId });
+  return Boolean(payload?.ok);
+}
+
+export async function unsaveProfileRemote(
+  user: MemberIdentity,
+  targetProfileId: string
+): Promise<boolean> {
+  const payload = await postMemberAction("unsave-profile", user, { targetProfileId });
+  return Boolean(payload?.ok);
+}
+
+export async function fetchSavedProfilesRemote(
+  user: MemberIdentity
+): Promise<import("../constants/savedProfiles").SavedDiscoverProfile[]> {
+  const payload = await postMemberAction("list-saved-profiles", user);
+  if (!Array.isArray(payload?.profiles)) return [];
+  return payload.profiles as import("../constants/savedProfiles").SavedDiscoverProfile[];
 }
 
 export async function sendSignalRemote(

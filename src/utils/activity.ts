@@ -3,7 +3,7 @@ export const ONLINE_NOW_MS = 15 * 60 * 1000;
 
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
-const DAY_MS = 24 * HOUR_MS;
+export const DAY_MS = 24 * HOUR_MS;
 
 /** Human-readable activity — soft labels only (no exact timestamps) */
 export function formatLastActive(lastActiveAt: string | undefined, now = Date.now()): string {

@@ -1,20 +1,33 @@
 import { Heart, MoreHorizontal, UserPlus, X } from "lucide-react";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BRAND } from "../constants/copy";
 import { profileIntentLabel } from "../constants/intents";
+import { MORE_ABOUT_ME_TITLE } from "../constants/moreAboutMe";
+import { WHAT_BRINGS_ME_HERE_TITLE } from "../constants/relationshipIntent";
+import { relationshipIntentsFrom } from "../constants/relationshipIntent";
 import type { DiscoverProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
 import { ShowcaseImage } from "./ShowcaseImage";
-import { VerificationBadge } from "./VerificationBadge";
-import { LazyVoiceIntro } from "./lazyProfileUi";
+import { TrustedMemberBadge } from "./trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../utils/trustedMember";
 import { ProfileInterestsPreview } from "./profile/ProfileInterestsPreview";
 import { ProfileDetailsList } from "./profile/ProfileDetailsList";
 import { CompatibilityReasonsCard } from "./profile/CompatibilityReasonsCard";
+import { YourCommonGroundCard } from "./commonGround/YourCommonGroundCard";
+import { ActivityHighlightsCard } from "./activity/ActivityHighlightsCard";
+import { SmartConversationSection } from "./conversation/SmartConversationSection";
+import { VoiceVibeHero } from "./voice/VoiceVibeHero";
+import { VoiceVibeWaveformCard } from "./voice/VoiceVibeWaveformCard";
 import { hasFilledProfileDetails } from "../utils/profileDetails";
 import { getDatingProfile } from "../utils/profile";
 import { buildCompatibilityReasons } from "../utils/buildCompatibilityReasons";
+import { buildCommonGroundStories } from "../utils/buildCommonGroundStories";
+import { buildActivityHighlights } from "../utils/buildActivityHighlights";
+import { getVoiceVibeDuration, getVoiceVibeUrl, hasVoiceVibe } from "../utils/voiceVibe";
+import { copyIcebreaker } from "../utils/chatDraft";
 import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { safePhotos } from "../utils/safeProfile";
+import { SaveProfileButton } from "./savedProfiles/SaveProfileButton";
 import { likeProfile, followProfile, hasLikedProfile, hasFollowedProfile } from "../utils/profileSocial";
 import { likeProfileRemote, followProfileRemote } from "../services/memberData";
 import type { UserProfile } from "../types";
@@ -54,6 +67,7 @@ export function ProfileDetailSheet({
   const [photoIndex, setPhotoIndex] = useState(0);
   const [liked, setLiked] = useState(() => hasLikedProfile(profile.id));
   const [followed, setFollowed] = useState(() => hasFollowedProfile(profile.id));
+  const [icebreakerToast, setIcebreakerToast] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   const gallery = safePhotos(profile.photos?.length ? profile.photos : [profile.photo]);
@@ -61,6 +75,20 @@ export function ProfileDetailSheet({
   const viewerProfile = getDatingProfile();
   const compatibilityReasons = useMemo(
     () => buildCompatibilityReasons(viewerProfile, profile),
+    [viewerProfile, profile]
+  );
+  const activityHighlights = useMemo(
+    () =>
+      buildActivityHighlights(profile, {
+        viewerCity: viewerProfile.city,
+        phoneVerified: viewer?.phone ? Boolean(viewer.phone) : undefined,
+        isPremium
+      }),
+    [profile, viewerProfile.city, viewer?.phone, isPremium]
+  );
+
+  const commonGroundStories = useMemo(
+    () => buildCommonGroundStories(viewerProfile, profile),
     [viewerProfile, profile]
   );
 
@@ -99,9 +127,16 @@ export function ProfileDetailSheet({
   };
 
   useEffect(() => {
+    if (!icebreakerToast) return;
+    const timer = window.setTimeout(() => setIcebreakerToast(""), 2400);
+    return () => window.clearTimeout(timer);
+  }, [icebreakerToast]);
+
+  useEffect(() => {
     if (!open) {
       setPhotoIndex(0);
       setMenuOpen(false);
+      setIcebreakerToast("");
     }
   }, [open]);
 
@@ -160,15 +195,47 @@ export function ProfileDetailSheet({
               {profile.age}
               {profile.city ? ` · ${profile.city}` : ""}
             </p>
-            {verification && verification.tier > 0 && (
+            {isTrustedMember(profile) ? (
               <div className="profile-detail-sheet__badges">
-                <VerificationBadge info={verification} />
+                <TrustedMemberBadge size="sm" />
               </div>
-            )}
+            ) : null}
+            {hasVoiceVibe(profile) ? (
+              <VoiceVibeHero profile={profile} className="profile-detail-sheet__voice-vibe" />
+            ) : null}
+            <ActivityHighlightsCard highlights={activityHighlights} variant="hero" />
           </div>
         </header>
 
         <div className="profile-detail-sheet__body profile-detail-sheet__body--clean">
+          <SmartConversationSection
+            viewer={viewerProfile}
+            target={profile}
+            context="profile"
+            className="profile-detail-sheet__conversation"
+            onSelect={(text) => {
+              void copyIcebreaker(text).then((ok) => {
+                setIcebreakerToast(ok ? "Copied — paste when you chat" : "Ready to use when you chat");
+              });
+            }}
+          />
+
+          <SaveProfileButton
+            profileId={profile.id}
+            variant="detail"
+            className="profile-detail-sheet__save"
+            onToast={(message) => {
+              setIcebreakerToast(message);
+              window.setTimeout(() => setIcebreakerToast(""), 2800);
+            }}
+          />
+
+          {icebreakerToast ? (
+            <p className="profile-mod-toast profile-mod-toast--success" role="status">
+              {icebreakerToast}
+            </p>
+          ) : null}
+
           <div className="profile-detail-sheet__social-row">
             <button type="button" className={`btn-secondary btn-sm ${liked ? "active" : ""}`} onClick={handleLike}>
               <Heart size={16} /> {liked ? "Liked" : "Like photo"}
@@ -179,6 +246,12 @@ export function ProfileDetailSheet({
           </div>
 
           <CompatibilityReasonsCard reasons={compatibilityReasons} />
+
+          <YourCommonGroundCard
+            stories={commonGroundStories}
+            variant="profile"
+            className="profile-detail-sheet__common-ground"
+          />
 
           <section className="profile-detail-sheet__card profile-detail-sheet__card--bio">
             {profile.bio?.trim() ? (
@@ -195,16 +268,16 @@ export function ProfileDetailSheet({
 
           {profile.interests?.length ? (
             <section className="profile-detail-sheet__card profile-read-section">
-              <h3 className="profile-read__heading">Interests</h3>
+              <h3 className="profile-read__heading">{MORE_ABOUT_ME_TITLE}</h3>
               <ProfileInterestsPreview interests={profile.interests} />
             </section>
           ) : null}
 
-          {profile.intents?.length ? (
+          {relationshipIntentsFrom(profile.intents).length ? (
             <section className="profile-detail-sheet__card profile-read-section">
-              <h3 className="profile-read__heading">Looking For</h3>
+              <h3 className="profile-read__heading">{WHAT_BRINGS_ME_HERE_TITLE}</h3>
               <div className="profile-read-chips">
-                {profile.intents.slice(0, 3).map((tag) => (
+                {relationshipIntentsFrom(profile.intents).map((tag) => (
                   <span key={tag} className="profile-read-chip profile-read-chip--intent">
                     {profileIntentLabel(tag)}
                   </span>
@@ -213,14 +286,15 @@ export function ProfileDetailSheet({
             </section>
           ) : null}
 
-          {profile.voiceIntroUrl && (
-            <section className="profile-detail-sheet__card">
-              <h3>Voice intro</h3>
-              <Suspense fallback={null}>
-                <LazyVoiceIntro url={profile.voiceIntroUrl} />
-              </Suspense>
+          {hasVoiceVibe(profile) && getVoiceVibeUrl(profile) ? (
+            <section className="profile-detail-sheet__card profile-detail-sheet__card--voice-vibe">
+              <VoiceVibeWaveformCard
+                url={getVoiceVibeUrl(profile)!}
+                duration={getVoiceVibeDuration(profile)}
+                variant="card"
+              />
             </section>
-          )}
+          ) : null}
 
         </div>
 

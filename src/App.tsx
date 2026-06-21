@@ -14,6 +14,9 @@ import { DiscoverPage } from "./pages/DiscoverPage";
 import { LikesPage } from "./pages/LikesPage";
 import { ChatsPage } from "./pages/ChatsPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { VoiceVibePage } from "./pages/VoiceVibePage";
+import { SavedProfilesPage } from "./pages/SavedProfilesPage";
+import { TrustedMemberPage } from "./pages/TrustedMemberPage";
 import { LazyRouteFallback } from "./app/LazyRouteFallback";
 import {
   LazyAdminConsoleRoot,
@@ -1975,6 +1978,7 @@ export function App() {
                 user={user}
                 userName={user.name}
                 isPremium={isPremium}
+                phoneVerified={Boolean(user.phoneVerified)}
                 onDiscover={() => setTab("discover")}
                 onOpenPremium={startPremiumCheckout}
               />
@@ -2028,6 +2032,10 @@ export function App() {
                 onCompleteProfile={() => setTab("me")}
                 onDiscover={() => setTab("discover")}
                 onOpenSafety={() => setMemberOverlay("safety")}
+                onOpenChats={() => {
+                  setTab("chats");
+                  navigateToPath(memberPathForTab("chats"), true);
+                }}
               />
             </MemberRouteBoundary>
           )}
@@ -2041,14 +2049,54 @@ export function App() {
                 plans={plans}
                 onUpgrade={handleUpgrade}
                 paymentLoading={paymentLoading}
-                onDiscover={() => setTab("discover")}
+                onDiscover={() => {
+                  setTab("discover");
+                  navigateToPath(memberPathForTab("discover"), true);
+                }}
+                onBuildProfile={() => {
+                  setTab("me");
+                  navigateToPath("/profile", true);
+                }}
+                phoneVerified={Boolean(user.phoneVerified)}
               />
             </MemberRouteBoundary>
           )}
           {tab === "me" && isGuest && (
             <GuestGate tab="me" onJoin={() => openAuth("signup", "me")} onLogin={() => openAuth("login", "me")} />
           )}
-          {memberAccessReady && tab === "me" && (
+          {memberAccessReady && tab === "me" && currentPathname === "/saved-profiles" && (
+            <MemberRouteBoundary name="saved-profiles">
+              <SavedProfilesPage onBack={() => navigateToPath("/profile")} />
+            </MemberRouteBoundary>
+          )}
+          {memberAccessReady && tab === "me" && currentPathname === "/voice-vibe" && (
+            <MemberRouteBoundary name="voice-vibe">
+              <VoiceVibePage
+                user={user}
+                profile={getDatingProfile()}
+                isPremium={isPremium}
+                onProfileChange={(next) => {
+                  writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
+                }}
+                onBack={() => navigateToPath("/profile")}
+              />
+            </MemberRouteBoundary>
+          )}
+          {memberAccessReady && tab === "me" && currentPathname === "/trusted-member" && (
+            <MemberRouteBoundary name="trusted-member">
+              <TrustedMemberPage
+                user={user}
+                profile={getDatingProfile()}
+                phoneVerified={Boolean(user.phoneVerified)}
+                onProfileChange={(next) => {
+                  writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
+                }}
+                onUserChange={setUser}
+                onBack={() => navigateToPath("/profile")}
+              />
+            </MemberRouteBoundary>
+          )}
+          {memberAccessReady && tab === "me" && currentPathname !== "/voice-vibe" && currentPathname !== "/trusted-member" && currentPathname !== "/saved-profiles" && (
             <MemberRouteBoundary name="profile">
               <ProfilePage
                 user={user}

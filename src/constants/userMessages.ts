@@ -10,8 +10,14 @@ export const USER_MESSAGES = {
   photoUploadFailed: "Couldn't upload photo. Please try again.",
   profileSaveFailed: "We couldn't save your profile. Please try again.",
   profileSaved: "Your profile was saved.",
+  voiceVibeUnsupported: "Voice recording is not supported on this browser.",
+  voiceVibeMicDenied: "Microphone access is needed to record your Voice Vibe.",
+  voiceVibeSaveFailed: "Couldn't save your Voice Vibe. Please try again.",
+  /** @deprecated use voiceVibe* keys */
   voiceIntroUnsupported: "Voice recording is not supported on this browser.",
-  voiceIntroMicDenied: "Microphone access is needed to record your voice intro.",
-  voiceIntroSaveFailed: "Couldn't save voice intro. Please try again.",
+  /** @deprecated use voiceVibe* keys */
+  voiceIntroMicDenied: "Microphone access is needed to record your Voice Vibe.",
+  /** @deprecated use voiceVibe* keys */
+  voiceIntroSaveFailed: "Couldn't save your Voice Vibe. Please try again.",
   paymentNotCompleted: "No worries — your upgrade is still available whenever you're ready."
 } as const;

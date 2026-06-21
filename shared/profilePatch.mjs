@@ -13,7 +13,15 @@ export const PROFILE_PHOTO_KEYS = [
   "coverPhotoExplicit"
 ];
 
-export const PROFILE_VOICE_KEYS = ["voiceIntroUrl", "voiceIntroDuration", "voiceIntroUpdatedAt"];
+export const PROFILE_VOICE_KEYS = [
+  "voiceIntroUrl",
+  "voiceIntroDuration",
+  "voiceIntroUpdatedAt",
+  "voiceVibeUrl",
+  "voiceVibeDuration",
+  "voiceVibeTranscript",
+  "voiceVibeCreatedAt"
+];
 
 /** Editable profile fields — excludes photos, voice, and moderation metadata. */
 export const PROFILE_EDITOR_KEYS = [

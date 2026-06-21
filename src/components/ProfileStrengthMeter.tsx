@@ -1,22 +1,28 @@
-import { SUCCESS_COPY } from "../constants/copy";
-import { getProfileStrengthSuggestions } from "../utils/profileStrength";
+import { ProfileStrengthCard } from "./profile/ProfileStrengthCard";
 import type { DatingProfile } from "../types";
 
 type ProfileStrengthMeterProps = {
   profile: DatingProfile;
+  phoneVerified?: boolean;
+  isPremium?: boolean;
   compact?: boolean;
+  onImprove?: () => void;
 };
 
-export function ProfileStrengthMeter({ profile, compact }: ProfileStrengthMeterProps) {
-  const suggestions = getProfileStrengthSuggestions(profile);
-  if (!suggestions.length) return null;
-
+export function ProfileStrengthMeter({
+  profile,
+  phoneVerified,
+  isPremium,
+  compact,
+  onImprove
+}: ProfileStrengthMeterProps) {
   return (
-    <div className={`profile-strength profile-strength--shine ${compact ? "profile-strength--compact" : ""}`}>
-      <p className="profile-strength__label">{SUCCESS_COPY.profileShine}</p>
-      {!compact && (
-        <p className="profile-strength__hint">{suggestions.join(" · ")}</p>
-      )}
-    </div>
+    <ProfileStrengthCard
+      profile={profile}
+      phoneVerified={phoneVerified}
+      isPremium={isPremium}
+      variant={compact ? "mini" : "full"}
+      onImprove={onImprove}
+    />
   );
 }

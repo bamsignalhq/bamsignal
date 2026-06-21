@@ -1,0 +1,169 @@
+/* Your Common Ground — warm shared-value stories */
+
+.common-ground--profile {
+  padding: 20px 20px 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(122, 77, 243, 0.24);
+  background: linear-gradient(155deg, rgba(36, 17, 47, 0.9), rgba(72, 36, 96, 0.62));
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.common-ground__head {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.common-ground__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.common-ground__subtext {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(233, 30, 143, 0.92);
+}
+
+.common-ground__lede {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.common-ground__rows {
+  display: grid;
+  gap: 0;
+}
+
+.common-ground-row {
+  margin: 0;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.94rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.92);
+  animation: common-ground-row-enter 0.38s ease-out both;
+  text-shadow: 0 0 18px rgba(122, 77, 243, 0.12);
+}
+
+.common-ground__rows .common-ground-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.common-ground__rows .common-ground-row:last-child {
+  padding-bottom: 0;
+}
+
+@keyframes common-ground-row-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.common-ground__empty {
+  display: grid;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.common-ground__empty-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.common-ground__empty-copy {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.common-ground--discover {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(122, 77, 243, 0.2);
+  background: rgba(36, 17, 47, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.common-ground--discover .common-ground__eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(122, 77, 243, 0.95);
+}
+
+.common-ground--discover .common-ground-row {
+  padding: 6px 0;
+  border-top: none;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.common-ground--discover .common-ground__rows {
+  gap: 4px;
+}
+
+.app.light .common-ground--profile,
+[data-theme="light"] .common-ground--profile {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.96), rgba(248, 244, 255, 0.92));
+  border-color: rgba(122, 77, 243, 0.18);
+  box-shadow: 0 10px 28px rgba(27, 11, 46, 0.08);
+}
+
+.app.light .common-ground__title,
+.app.light .common-ground__empty-title,
+[data-theme="light"] .common-ground__title,
+[data-theme="light"] .common-ground__empty-title {
+  color: #1b0b2e;
+}
+
+.app.light .common-ground__lede,
+.app.light .common-ground__empty-copy,
+[data-theme="light"] .common-ground__lede,
+[data-theme="light"] .common-ground__empty-copy {
+  color: rgba(27, 11, 46, 0.62);
+}
+
+.app.light .common-ground-row,
+[data-theme="light"] .common-ground-row {
+  color: #1b0b2e;
+  border-top-color: rgba(27, 11, 46, 0.08);
+}
+
+.app.light .common-ground--discover,
+[data-theme="light"] .common-ground--discover {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(122, 77, 243, 0.16);
+}
+
+.app.light .common-ground--discover .common-ground-row,
+[data-theme="light"] .common-ground--discover .common-ground-row {
+  color: #1b0b2e;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .common-ground-row {
+    animation: none;
+  }
+}

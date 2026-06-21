@@ -14,8 +14,8 @@ try {
 
   const viewer = {
     religion: "Christian",
-    intents: ["Relationship"],
-    interests: ["Movies", "Travel", "Food"],
+    intents: ["SeriousRelationship"],
+    interests: ["movies", "travel", "foodLover"],
     occupation: "Tech",
     lifestyle: "Career focused",
     kidsPreference: "Wants kids",
@@ -28,8 +28,8 @@ try {
 
   const target = {
     religion: "Christian",
-    intents: ["Relationship", "Chat"],
-    interests: ["Movies", "Music"],
+    intents: ["SeriousRelationship", "MeaningfulConversations"],
+    interests: ["movies", "music"],
     occupation: "Tech",
     lifestyle: "Family oriented",
     kidsPreference: "Open to kids",
@@ -42,9 +42,10 @@ try {
   const reasons = buildCompatibilityReasons(viewer, target);
 
   assert.ok(reasons.length <= 5, "never more than 5 reasons");
+  assert.ok(reasons.includes("🎬 Movie lovers"), "shared More About Me — movies");
+  assert.ok(reasons.includes("❤️ Both want something serious"), "shared relationship intent");
   assert.ok(reasons.includes("❤️ Both value faith"), "religion match");
-  assert.ok(reasons.includes("💍 Looking for something serious"), "relationship goal match");
-  assert.equal(reasons[0], "❤️ Both value faith", "religion has highest priority");
+  assert.equal(reasons[0], "🎬 Movie lovers", "More About Me ranks first");
   assert.ok(
     !reasons.some((reason) => /%|compatible|match score|things in common/i.test(reason)),
     "no score labels"
@@ -56,21 +57,24 @@ try {
   const deduped = buildCompatibilityReasons(
     {
       religion: "Muslim",
-      intents: ["Relationship"],
+      intents: ["SeriousRelationship"],
       lifestyle: "Faith centered",
-      interests: ["Church community", "Family"]
+      interests: ["faith", "familyOriented"]
     },
     {
       religion: "Muslim",
-      intents: ["Relationship"],
+      intents: ["SeriousRelationship"],
       lifestyle: "Faith centered",
-      interests: ["Mosque hangouts", "Family"],
+      interests: ["faith", "familyOriented"],
       kidsPreference: "Wants kids"
     }
   );
 
   const faithCount = deduped.filter((reason) => reason.includes("faith")).length;
   assert.equal(faithCount, 1, "duplicate faith reasons collapse to one");
+
+  const familyCount = deduped.filter((reason) => reason.includes("Family")).length;
+  assert.equal(familyCount, 1, "family-oriented reasons collapse to one key");
 
   console.log("buildCompatibilityReasons: ok");
 } finally {

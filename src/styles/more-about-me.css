@@ -1,0 +1,193 @@
+/* More About Me — dark purple chips, glass sheet */
+
+.more-about-me-picker {
+  width: 100%;
+}
+
+.more-about-me-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.more-about-me-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #f3e8ff;
+  background: rgba(46, 16, 101, 0.72);
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  box-shadow: 0 2px 8px rgba(15, 6, 36, 0.25);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.more-about-me-chip--compact {
+  font-size: 0.68rem;
+  padding: 4px 8px;
+}
+
+.more-about-me-chip--profile {
+  font-size: 0.78rem;
+  padding: 6px 11px;
+}
+
+.more-about-me-chip--selected {
+  border-color: rgba(212, 175, 55, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.12),
+    0 4px 14px rgba(88, 28, 135, 0.35);
+  animation: more-about-me-chip-pop 0.22s ease-out;
+}
+
+.more-about-me-chip--more {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(237, 233, 254, 0.8);
+}
+
+.more-about-me-chip--disabled {
+  opacity: 0.45;
+}
+
+@keyframes more-about-me-chip-pop {
+  from {
+    opacity: 0.7;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.more-about-me-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.more-about-me-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(8, 4, 20, 0.62);
+}
+
+.more-about-me-sheet__panel {
+  position: relative;
+  width: min(100%, 520px);
+  max-height: min(88vh, 760px);
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-radius: 20px 20px 0 0;
+  background: linear-gradient(165deg, rgba(30, 12, 68, 0.98) 0%, rgba(20, 8, 48, 0.98) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  box-shadow: 0 -12px 40px rgba(15, 6, 36, 0.45);
+}
+
+.more-about-me-sheet__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 16px 10px;
+}
+
+.more-about-me-sheet__head h3 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  color: #faf5ff;
+}
+
+.more-about-me-sheet__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: rgba(237, 233, 254, 0.82);
+}
+
+.more-about-me-sheet__optional,
+.more-about-me-sheet__count,
+.more-about-me-sheet__limit {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  color: rgba(216, 180, 254, 0.72);
+}
+
+.more-about-me-sheet__selected {
+  padding: 0 16px 8px;
+}
+
+.more-about-me-sheet__body {
+  overflow: auto;
+  padding: 0 16px 12px;
+  display: grid;
+  gap: 16px;
+}
+
+.more-about-me-sheet__category h4 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(216, 180, 254, 0.85);
+}
+
+.more-about-me-sheet__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.more-about-me-sheet__foot {
+  padding: 12px 16px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profile-hero__more-about-me {
+  margin-top: 6px;
+}
+
+.more-about-me-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(46, 16, 101, 0.88) 0%, rgba(30, 12, 68, 0.82) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 8px 24px rgba(15, 6, 36, 0.35);
+}
+
+.more-about-me-empty__label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(216, 180, 254, 0.85);
+}
+
+.more-about-me-empty__copy {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: rgba(237, 233, 254, 0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .more-about-me-chip--selected {
+    animation: none;
+  }
+}

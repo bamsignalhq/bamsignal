@@ -20,6 +20,9 @@ const PATH_TO_TAB: Record<string, NavTab> = {
   "/signals": "likes",
   "/chats": "chats",
   "/profile": "me",
+  "/voice-vibe": "me",
+  "/trusted-member": "me",
+  "/saved-profiles": "me",
   "/settings": "me",
   "/subscription": "me"
 };

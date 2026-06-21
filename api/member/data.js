@@ -42,7 +42,10 @@ import {
   listFastConnectionPool,
   fetchFastConnectionSignalStatus,
   sendFastConnectionSignal,
-  listFastConnectionPurchaseHistory
+  listFastConnectionPurchaseHistory,
+  saveMemberProfile,
+  unsaveMemberProfile,
+  fetchSavedProfiles
 } from "../../server/memberSocial.js";
 
 function parseBody(req) {
@@ -367,6 +370,35 @@ export default async function handler(req, res) {
       return res.status(row ? 200 : 400).json({ ok: Boolean(row), follow: row });
     }
 
+    if (action === "save-profile") {
+      if (!requireDatabase(res)) return;
+      const row = await saveMemberProfile({
+        email: identity.email,
+        phone: identity.phone,
+        targetProfileId: String(body.targetProfileId || "").trim()
+      });
+      return res.status(row ? 200 : 400).json({ ok: Boolean(row), saved: row });
+    }
+
+    if (action === "unsave-profile") {
+      if (!requireDatabase(res)) return;
+      const row = await unsaveMemberProfile({
+        email: identity.email,
+        phone: identity.phone,
+        targetProfileId: String(body.targetProfileId || "").trim()
+      });
+      return res.status(row ? 200 : 404).json({ ok: Boolean(row), removed: row });
+    }
+
+    if (action === "list-saved-profiles") {
+      if (!requireDatabase(res)) return;
+      const profiles = await fetchSavedProfiles({
+        email: identity.email,
+        phone: identity.phone
+      });
+      return res.status(200).json({ ok: true, profiles });
+    }
+
     if (action === "complete-onboarding") {
       if (!requireDatabase(res)) return;
       const { markMemberOnboardingComplete, completeOnboardingReferral } = await import(
@@ -538,7 +570,8 @@ export default async function handler(req, res) {
       const voicePatchActive =
         profilePatchScope === "voice" ||
         profilePatchScope === "full" ||
-        Object.prototype.hasOwnProperty.call(incomingProfile, "voiceIntroUrl");
+        Object.prototype.hasOwnProperty.call(incomingProfile, "voiceIntroUrl") ||
+        Object.prototype.hasOwnProperty.call(incomingProfile, "voiceVibeUrl");
       if (voicePatchActive && profile.voiceIntroUrl) {
         const voiceUrl = String(profile.voiceIntroUrl).trim();
         profile.voiceIntroUrl =

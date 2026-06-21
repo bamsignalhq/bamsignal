@@ -1,0 +1,205 @@
+
+/* Build My Profile Later — warm, non-blocking encouragement */
+
+.build-profile-later-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 28px 20px 24px;
+  animation: buildLaterFadeIn 0.55s ease both;
+}
+
+.build-profile-later__illustration {
+  margin-bottom: 4px;
+}
+
+.build-profile-later__svg {
+  width: min(220px, 72vw);
+  height: auto;
+}
+
+.build-profile-later-card__title {
+  margin: 0;
+  font-size: clamp(1.35rem, 4.8vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.build-profile-later-card__subtext,
+.build-profile-later-card__hint {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.build-profile-later-card__actions {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.profile-reminder-card {
+  border-radius: 20px;
+  background: rgba(36, 17, 47, 0.78);
+  border: 1px solid rgba(122, 77, 243, 0.24);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  animation: buildLaterFadeIn 0.5s ease both;
+}
+
+.profile-reminder-card--home {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.profile-reminder-card--discover {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: 0 0 12px;
+}
+
+.profile-reminder-card--empty-chat {
+  padding: 16px;
+  margin-top: 4px;
+}
+
+.profile-reminder-card__title {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.profile-reminder-card__copy {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.profile-reminder-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.profile-reminder-card__dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+}
+
+.incomplete-profile-checklist {
+  margin: 0 16px 14px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(122, 77, 243, 0.18);
+}
+
+.incomplete-profile-checklist__title {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.incomplete-profile-checklist__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.incomplete-profile-checklist__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.incomplete-profile-checklist__mark {
+  color: rgba(233, 30, 143, 0.9);
+  font-size: 0.82rem;
+}
+
+.build-later-stagger {
+  animation: buildLaterFadeIn 0.45s ease both;
+}
+
+.onboarding-footer--split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.onboarding-ready-screen {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px 28px;
+}
+
+@keyframes buildLaterFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app.light .build-profile-later-card__title,
+.app.light .profile-reminder-card__title,
+[data-theme="light"] .build-profile-later-card__title,
+[data-theme="light"] .profile-reminder-card__title {
+  color: #1b0b2e;
+}
+
+.app.light .build-profile-later-card__subtext,
+.app.light .build-profile-later-card__hint,
+.app.light .profile-reminder-card__copy,
+.app.light .incomplete-profile-checklist__item,
+[data-theme="light"] .build-profile-later-card__subtext,
+[data-theme="light"] .build-profile-later-card__hint,
+[data-theme="light"] .profile-reminder-card__copy,
+[data-theme="light"] .incomplete-profile-checklist__item {
+  color: rgba(27, 11, 46, 0.72);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .build-profile-later-card,
+  .profile-reminder-card,
+  .build-later-stagger {
+    animation: none;
+  }
+}

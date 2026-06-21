@@ -1,6 +1,7 @@
 import { Send } from "lucide-react";
 import type { DiscoverProfile } from "../../types";
-import { VerifiedBadge } from "../VerifiedBadge";
+import { TrustedMemberBadge } from "../trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../../utils/trustedMember";
 
 type SignalsMayLikeSectionProps = {
   profiles: DiscoverProfile[];
@@ -42,7 +43,7 @@ export function SignalsMayLikeSection({
               <div className="signals-premium-maylike-card__meta">
                 <span className="signals-premium-maylike-card__name">
                   {profile.name}
-                  {profile.verified ? <VerifiedBadge size="sm" label="Verified" /> : null}
+                  {isTrustedMember(profile) ? <TrustedMemberBadge size="sm" /> : null}
                 </span>
                 <span>
                   {profile.age} • {profile.city}

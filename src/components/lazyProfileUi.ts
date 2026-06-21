@@ -1,11 +1,17 @@
 import { lazy } from "react";
 
-export const LazyVoiceIntro = lazy(() =>
-  import("./VoiceIntro").then((module) => ({ default: module.VoiceIntro }))
+export const LazyVoiceVibePlayer = lazy(() =>
+  import("./voice/VoiceVibePlayer").then((module) => ({ default: module.VoiceVibePlayer }))
 );
 
+/** @deprecated use LazyVoiceVibePlayer */
+export const LazyVoiceIntro = lazy(() =>
+  import("./voice/VoiceVibePlayer").then((module) => ({ default: module.VoiceVibePlayer }))
+);
+
+/** @deprecated recording lives on VoiceVibePage */
 export const LazyVoiceIntroRecorder = lazy(() =>
-  import("./VoiceIntro").then((module) => ({ default: module.VoiceIntroRecorder }))
+  import("../pages/VoiceVibePage").then((module) => ({ default: module.VoiceVibePage }))
 );
 
 export const LazyTwoFactorSettingsCard = lazy(() =>

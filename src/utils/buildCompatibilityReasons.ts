@@ -1,12 +1,22 @@
-import { intentLabel } from "../constants/intents";
+import { relationshipIntentLabel } from "../constants/relationshipIntent";
+import {
+  isRelationshipIntent,
+  relationshipIntentsFrom
+} from "../constants/relationshipIntent";
+import { normalizeRelationshipIntents } from "./relationshipIntent";
 import {
   normalizeLifestyleTraits,
   resolveStateName,
   stateForCity
 } from "../constants/profileOptions";
-import type { DatingProfile, DiscoverProfile, IntentTag } from "../types";
+import type { DatingProfile, DiscoverProfile, IntentTag, RelationshipIntentId } from "../types";
 import { isPreferNot } from "./profile";
 import { safeArray } from "./safeProfile";
+import {
+  MORE_ABOUT_ME_COMPATIBILITY,
+  normalizeMoreAboutMeInterests
+} from "./moreAboutMe";
+import type { MoreAboutMeId } from "../constants/moreAboutMe";
 
 export type CompatibilityProfile = Partial<
   Pick<
@@ -37,41 +47,6 @@ export type CompatibilityProfile = Partial<
 
 const MAX_REASONS = 5;
 
-const INTEREST_CLUSTERS: { test: (interest: string) => boolean; reason: string; key: string }[] = [
-  { test: (i) => /movie|nollywood|cinema|film/i.test(i), reason: "🎬 Both enjoy movies", key: "movies" },
-  {
-    test: (i) => /travel|road trip|island|detty december|weekend/i.test(i),
-    reason: "✈️ Both love travelling",
-    key: "travel"
-  },
-  {
-    test: (i) => /food|jollof|suya|amala|pepper soup|buka|chops|palm wine|street food|cooking/i.test(i),
-    reason: "🍲 Food lovers",
-    key: "food"
-  },
-  {
-    test: (i) => /music|afrobeats|gospel|highlife|hip-hop|wizkid|davido|asake|burna/i.test(i),
-    reason: "🎵 Music lovers",
-    key: "music"
-  },
-  { test: (i) => /pet/i.test(i), reason: "🐶 Animal lovers", key: "pets" },
-  {
-    test: (i) => /gym|fitness|crossfit|swim|hike|football|padel|tennis/i.test(i),
-    reason: "🏃 Health-conscious lifestyles",
-    key: "fitness"
-  },
-  {
-    test: (i) => /business|tech|entrepreneur|networking|side hustle/i.test(i),
-    reason: "🚀 Career-driven personalities",
-    key: "career"
-  },
-  {
-    test: (i) => /family|church community|mosque/i.test(i),
-    reason: "👨‍👩‍👧 Family-oriented",
-    key: "family"
-  }
-];
-
 const LIFESTYLE_REASONS: Record<string, { reason: string; key: string }> = {
   "Family oriented": { reason: "👨‍👩‍👧 Family-oriented", key: "family" },
   "Career focused": { reason: "🚀 Career-driven personalities", key: "career" },
@@ -82,11 +57,12 @@ const LIFESTYLE_REASONS: Record<string, { reason: string; key: string }> = {
 };
 
 const INTENT_REASONS: Partial<Record<IntentTag, { reason: string; key: string }>> = {
-  Relationship: { reason: "💍 Looking for something serious", key: "relationship" },
-  Friendship: { reason: "🤝 Open to friendship", key: "friendship" },
-  Networking: { reason: "🌍 Building connections together", key: "networking" },
-  "Social Events": { reason: "🎉 Both love social energy", key: "social" },
-  Chat: { reason: "💬 Up for good conversation", key: "chat" },
+  Marriage: { reason: "💍 Both are looking for marriage", key: "marriage" },
+  SeriousRelationship: { reason: "❤️ Both want something serious", key: "serious" },
+  Friendship: { reason: "🤝 Both enjoy meaningful connections", key: "friendship" },
+  Companionship: { reason: "🌍 Both value companionship", key: "companionship" },
+  OpenToPossibilities: { reason: "✨ Both are open to possibilities", key: "open" },
+  MeaningfulConversations: { reason: "☕ Both enjoy meaningful conversations", key: "conversations" },
   Quickie: { reason: "⚡ Open to fast connections", key: "fast" }
 };
 
@@ -141,21 +117,51 @@ function profileTribes(profile: CompatibilityProfile): string[] {
   return [];
 }
 
-function reasonFromSharedInterests(
-  viewerInterests: string[],
-  targetInterests: string[]
-): { reason: string; key: string } | null {
-  const shared = sharedList(viewerInterests, targetInterests);
-  if (!shared.length) return null;
+function compatibilityIntents(intents: IntentTag[] | string[] | undefined): RelationshipIntentId[] {
+  if (!intents?.length) return [];
+  return relationshipIntentsFrom(normalizeRelationshipIntents(intents as string[]));
+}
 
-  for (const cluster of INTEREST_CLUSTERS) {
-    if (shared.some(cluster.test)) {
-      return { reason: cluster.reason, key: cluster.key };
-    }
+function reasonsFromSharedMoreAboutMe(
+  viewerInterests: string[],
+  targetInterests: string[],
+  max = 2
+): { reason: string; key: string }[] {
+  const viewer = normalizeMoreAboutMeInterests(viewerInterests);
+  const target = normalizeMoreAboutMeInterests(targetInterests);
+  const shared = viewer.filter((id) => target.includes(id));
+  if (!shared.length) return [];
+
+  const priority: MoreAboutMeId[] = [
+    "romantic",
+    "familyOriented",
+    "music",
+    "travel",
+    "movies",
+    "foodLover",
+    "reading",
+    "ambitious",
+    "fitness",
+    "entrepreneur"
+  ];
+
+  const ordered = [
+    ...priority.filter((id) => shared.includes(id)),
+    ...shared.filter((id) => !priority.includes(id))
+  ];
+
+  const out: { reason: string; key: string }[] = [];
+  const seenKeys = new Set<string>();
+
+  for (const id of ordered) {
+    if (out.length >= max) break;
+    const mapped = MORE_ABOUT_ME_COMPATIBILITY[id];
+    if (!mapped || seenKeys.has(mapped.key)) continue;
+    seenKeys.add(mapped.key);
+    out.push(mapped);
   }
 
-  const first = shared[0];
-  return { reason: `✨ Both into ${first.toLowerCase()}`, key: `interest:${normalizeText(first)}` };
+  return out;
 }
 
 /** Human-readable shared-value explanations — no scores or match labels. */
@@ -172,6 +178,34 @@ export function buildCompatibilityReasons(
     reasons.push(reason);
   };
 
+  for (const item of reasonsFromSharedMoreAboutMe(
+    viewerProfile.interests ?? [],
+    targetProfile.interests ?? []
+  )) {
+    add(item.reason, item.key);
+  }
+
+  const viewerIntents = compatibilityIntents(viewerProfile.intents);
+  const targetIntents = compatibilityIntents(targetProfile.intents);
+  const sharedIntents = viewerIntents.filter((intent) => targetIntents.includes(intent));
+  if (sharedIntents.length) {
+    const priority: RelationshipIntentId[] = [
+      "Marriage",
+      "SeriousRelationship",
+      "MeaningfulConversations",
+      "Friendship",
+      "Companionship",
+      "OpenToPossibilities"
+    ];
+    const primary = priority.find((intent) => sharedIntents.includes(intent)) ?? sharedIntents[0];
+    const intentReason = primary ? INTENT_REASONS[primary] : undefined;
+    if (intentReason) {
+      add(intentReason.reason, intentReason.key);
+    } else if (primary && isRelationshipIntent(primary)) {
+      add(`🤝 Both enjoy ${relationshipIntentLabel(primary).toLowerCase()}`, `intent:${primary}`);
+    }
+  }
+
   const useReligion = viewerProfile.matchingPrivacy?.useReligionForMatching !== false;
 
   if (
@@ -183,29 +217,8 @@ export function buildCompatibilityReasons(
     add("❤️ Both value faith", "faith");
   }
 
-  const viewerIntents = safeArray<IntentTag>(viewerProfile.intents);
-  const targetIntents = safeArray<IntentTag>(targetProfile.intents);
-  const sharedIntents = viewerIntents.filter((intent) => targetIntents.includes(intent));
-  if (sharedIntents.length) {
-    const primary = sharedIntents.includes("Relationship") ? "Relationship" : sharedIntents[0];
-    const intentReason = INTENT_REASONS[primary];
-    if (intentReason) {
-      add(intentReason.reason, intentReason.key);
-    } else {
-      add(`💬 Both open to ${intentLabel(primary).toLowerCase()}`, `intent:${primary}`);
-    }
-  }
-
   if (kidsFamilySignals(viewerProfile) && kidsFamilySignals(targetProfile)) {
     add("👨‍👩‍👧 Family-oriented", "family");
-  }
-
-  const interestReason = reasonFromSharedInterests(
-    viewerProfile.interests ?? [],
-    targetProfile.interests ?? []
-  );
-  if (interestReason) {
-    add(interestReason.reason, interestReason.key);
   }
 
   const sharedTraits = lifestyleTraits(viewerProfile).filter((trait) =>

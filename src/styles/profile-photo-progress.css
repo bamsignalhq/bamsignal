@@ -1,0 +1,304 @@
+/* Make Your Profile Shine — photo psychology */
+
+.profile-photo-progress-card {
+  border-radius: 24px;
+  border: 1px solid rgba(168, 130, 255, 0.2);
+  background: linear-gradient(145deg, rgba(42, 24, 74, 0.78), rgba(24, 14, 44, 0.88));
+  box-shadow: 0 14px 34px rgba(8, 4, 18, 0.3);
+  backdrop-filter: blur(14px);
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  animation: photo-progress-fade 0.42s ease both;
+}
+
+.profile-photo-progress-card--home {
+  padding: 16px;
+}
+
+.profile-photo-progress-card--outstanding {
+  border-color: rgba(212, 160, 23, 0.35);
+  box-shadow: 0 16px 36px rgba(212, 160, 23, 0.12);
+}
+
+.profile-photo-progress-card__head h2 {
+  margin: 0 0 8px;
+  font-size: 1.08rem;
+  letter-spacing: -0.01em;
+}
+
+.profile-photo-progress-card__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.profile-photo-progress-card__level-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile-photo-progress-card__level {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  background: rgba(88, 52, 150, 0.28);
+}
+
+.profile-photo-progress-card__level--outstanding {
+  border-color: rgba(212, 160, 23, 0.45);
+  background: linear-gradient(90deg, rgba(212, 160, 23, 0.28), rgba(240, 199, 94, 0.2));
+  color: #f0c75e;
+  box-shadow: 0 0 18px rgba(212, 160, 23, 0.18);
+}
+
+.profile-photo-progress-card__count {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-photo-progress-card__progress {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.profile-photo-progress-card__progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7a4df3, #e91e8f);
+  transition: width 0.45s ease;
+  box-shadow: 0 0 14px rgba(233, 30, 143, 0.28);
+}
+
+.profile-photo-progress-card__progress-fill--gold {
+  background: linear-gradient(90deg, #d4a017, #f0c75e);
+  box-shadow: 0 0 16px rgba(212, 160, 23, 0.32);
+}
+
+.profile-photo-progress-card__slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.profile-photo-progress-card__benefit {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(122, 77, 243, 0.12);
+  border: 1px solid rgba(168, 130, 255, 0.18);
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.profile-photo-progress-card__tips-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.profile-photo-progress-card__tips-col h3 {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.profile-photo-progress-card__tips-col ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.profile-photo-progress-card__tips-col li {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.35;
+}
+
+.profile-photo-progress-card__tips-col--avoid li {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.photo-slot-card {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: center;
+  cursor: default;
+  animation: photo-slot-fade 0.38s ease both;
+}
+
+.photo-slot-card--empty {
+  cursor: pointer;
+}
+
+.photo-slot-card__frame {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px dashed rgba(168, 130, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.photo-slot-card--filled .photo-slot-card__frame {
+  border-style: solid;
+  border-color: rgba(168, 130, 255, 0.32);
+  box-shadow: 0 8px 20px rgba(8, 4, 18, 0.24);
+  animation: photo-slot-fill 0.42s ease both;
+}
+
+.photo-slot-card--empty:hover .photo-slot-card__frame {
+  border-color: rgba(233, 30, 143, 0.35);
+  transform: translateY(-1px);
+}
+
+.photo-slot-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-slot-card__placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 1.4rem;
+  color: rgba(198, 162, 255, 0.7);
+}
+
+.photo-slot-card__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(122, 77, 243, 0.92);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(8, 4, 18, 0.28);
+  animation: photo-check-pop 0.32s ease both;
+}
+
+.photo-slot-card__label {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.photo-slot-card__done {
+  color: rgba(198, 162, 255, 0.95);
+}
+
+.photo-tips-carousel {
+  border-radius: 18px;
+  border: 1px solid rgba(168, 130, 255, 0.18);
+  background: rgba(36, 17, 47, 0.45);
+  padding: 14px;
+}
+
+.photo-tips-carousel__slide h4 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+.photo-tips-carousel__slide p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  min-height: 2.8em;
+}
+
+.photo-tips-carousel__nav {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.photo-tips-carousel__arrow {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 130, 255, 0.24);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.88);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.photo-tips-carousel__dots {
+  display: flex;
+  gap: 6px;
+}
+
+.photo-tips-carousel__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  border: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+}
+
+.photo-tips-carousel__dot--active {
+  width: 18px;
+  background: linear-gradient(90deg, #e91e8f, #7a4df3);
+}
+
+@keyframes photo-progress-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes photo-slot-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes photo-slot-fill {
+  from { transform: scale(0.96); opacity: 0.7; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes photo-check-pop {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-photo-progress-card,
+  .photo-slot-card,
+  .photo-slot-card--filled .photo-slot-card__frame,
+  .photo-slot-card__check,
+  .profile-photo-progress-card__progress-fill {
+    animation: none;
+    transition: none;
+  }
+}

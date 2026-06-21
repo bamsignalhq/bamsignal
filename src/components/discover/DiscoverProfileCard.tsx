@@ -1,50 +1,37 @@
 import {
-  Bookmark,
   ChevronLeft,
   ChevronRight,
   Quote,
   Send,
-  X,
-  AudioLines
+  X
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DEFAULT_PROFILE_COVER } from "../../constants/photos";
 import { BRAND } from "../../constants/copy";
 import type { DiscoverProfile } from "../../types";
 import type { VerificationInfo } from "../../utils/verification";
-import { isOnlineNow } from "../../utils/activity";
 import { ShowcaseImage } from "../ShowcaseImage";
-import { VerifiedBadge } from "../VerifiedBadge";
-
-const INTEREST_ICONS: Record<string, string> = {
-  Travel: "✈",
-  Food: "🍴",
-  Foodie: "🍴",
-  Music: "🎵",
-  Movies: "🎬",
-  Fitness: "💪",
-  Beach: "🏖",
-  Fashion: "👗",
-  Photography: "📷",
-  Football: "⚽",
-  Comedy: "🎭",
-  Business: "💼"
-};
-
-function interestLabel(interest: string): string {
-  const icon = INTEREST_ICONS[interest] ?? "•";
-  return `${icon} ${interest}`;
-}
+import { TrustedMemberShieldIcon } from "../trusted/TrustedMemberBadge";
+import { VoiceVibeWaveformCard } from "../voice/VoiceVibeWaveformCard";
+import { getVoiceVibeDuration, getVoiceVibeUrl, hasVoiceVibe } from "../../utils/voiceVibe";
+import { isTrustedMember } from "../../utils/trustedMember";
+import { RelationshipIntentChips } from "../relationshipIntent/RelationshipIntentChips";
+import { MoreAboutMeChips } from "../moreAboutMe/MoreAboutMeChips";
+import { ActivityHighlightsCard } from "../activity/ActivityHighlightsCard";
+import { YourCommonGroundCard } from "../commonGround/YourCommonGroundCard";
+import { buildActivityHighlights } from "../../utils/buildActivityHighlights";
+import { buildCommonGroundStories } from "../../utils/buildCommonGroundStories";
+import { getDatingProfile } from "../../utils/profile";
+import { SaveProfileButton } from "../savedProfiles/SaveProfileButton";
 
 type DiscoverProfileCardProps = {
   profile: DiscoverProfile;
   verification?: VerificationInfo;
-  saved?: boolean;
   signalSent?: boolean;
   signalBlockedReason?: string;
   entering?: boolean;
   onIgnore: () => void;
-  onSave: () => void;
+  onSaveToast?: (message: string) => void;
   onSendSignal: () => void;
   onViewProfile: () => void;
 };
@@ -52,12 +39,11 @@ type DiscoverProfileCardProps = {
 export function DiscoverProfileCard({
   profile,
   verification,
-  saved = false,
   signalSent = false,
   signalBlockedReason,
   entering = true,
   onIgnore,
-  onSave,
+  onSaveToast,
   onSendSignal,
   onViewProfile
 }: DiscoverProfileCardProps) {
@@ -67,10 +53,15 @@ export function DiscoverProfileCard({
   );
   const [photoIndex, setPhotoIndex] = useState(0);
   const photo = photos[photoIndex] ?? DEFAULT_PROFILE_COVER;
-  const online = isOnlineNow(profile.lastActiveAt);
-  const interests = profile.interests ?? [];
-  const visibleInterests = interests.slice(0, 3);
-  const hiddenCount = Math.max(0, interests.length - 3);
+  const viewerProfile = useMemo(() => getDatingProfile(), []);
+  const activityHighlights = useMemo(
+    () => buildActivityHighlights(profile, { viewerCity: viewerProfile.city }),
+    [profile, viewerProfile.city]
+  );
+  const commonGroundStories = useMemo(
+    () => buildCommonGroundStories(viewerProfile, profile),
+    [viewerProfile, profile]
+  );
   const locationLabel = profile.state ? `${profile.city}, ${profile.state}` : `${profile.city}, Nigeria`;
   const quote =
     profile.bio?.trim() ||
@@ -128,13 +119,6 @@ export function DiscoverProfileCard({
           </>
         ) : null}
 
-        {online ? (
-          <span className="discover-premium-card__online-pill">
-            <span className="discover-premium-card__online-dot" aria-hidden />
-            Online now
-          </span>
-        ) : null}
-
         <span className="discover-premium-card__photo-count">
           {photoIndex + 1} / {photos.length}
         </span>
@@ -143,22 +127,13 @@ export function DiscoverProfileCard({
           <div className="discover-premium-card__identity">
             <h2>
               {profile.name}, {profile.age}
+              {isTrustedMember(profile) ? <TrustedMemberShieldIcon /> : null}
             </h2>
-            {verification?.tier ? <VerifiedBadge size="sm" label="Verified" /> : null}
+            <RelationshipIntentChips intents={profile.intents} variant="discover" />
+            <MoreAboutMeChips items={profile.interests} variant="discover" />
+            <ActivityHighlightsCard highlights={activityHighlights} variant="discover" />
           </div>
           <p className="discover-premium-card__location">📍 {locationLabel}</p>
-          {visibleInterests.length > 0 ? (
-            <div className="discover-premium-card__tags">
-              {visibleInterests.map((item) => (
-                <span key={item} className="discover-premium-card__tag">
-                  {interestLabel(item)}
-                </span>
-              ))}
-              {hiddenCount > 0 ? (
-                <span className="discover-premium-card__tag">+{hiddenCount}</span>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       </div>
 
@@ -168,18 +143,16 @@ export function DiscoverProfileCard({
           <p>{quote}</p>
         </div>
         <div className="discover-premium-card__quote-divider" aria-hidden />
-        <button
-          type="button"
-          className="discover-premium-card__voice"
-          onClick={onViewProfile}
-          aria-label={profile.voiceIntroUrl ? "Play voice intro" : "Voice intro"}
-        >
-          <span className="discover-premium-card__voice-icon" aria-hidden>
-            <AudioLines size={18} />
-          </span>
-          <span>Voice intro</span>
-        </button>
+        {hasVoiceVibe(profile) && getVoiceVibeUrl(profile) ? (
+          <VoiceVibeWaveformCard
+            url={getVoiceVibeUrl(profile)!}
+            duration={getVoiceVibeDuration(profile)}
+            variant="mini"
+          />
+        ) : null}
       </div>
+
+      <YourCommonGroundCard stories={commonGroundStories} variant="discover" />
 
       {signalBlockedReason ? (
         <p className="discover-premium-card__gate" role="status">
@@ -200,15 +173,12 @@ export function DiscoverProfileCard({
           <span>Not for me</span>
         </div>
         <div className="discover-premium-card__action">
-          <button
-            type="button"
-            className={`discover-premium-card__circle-btn${saved ? " discover-premium-card__circle-btn--saved" : ""}`}
-            onClick={onSave}
-            aria-label={saved ? "Saved" : "Save profile"}
-            aria-pressed={saved}
-          >
-            <Bookmark size={20} fill={saved ? "currentColor" : "none"} />
-          </button>
+          <SaveProfileButton
+            profileId={profile.id}
+            variant="discover"
+            className="discover-premium-card__circle-btn"
+            onToast={onSaveToast}
+          />
           <span>Save</span>
         </div>
         <div className="discover-premium-card__action discover-premium-card__action--primary">

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Zap } from "lucide-react";
 import { AppLogo } from "../AppLogo";
-import { VerifiedBadge } from "../VerifiedBadge";
+import { TrustedMemberBadge } from "../trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../../utils/trustedMember";
 import { LANDING_PREVIEW_PROFILES } from "../../data/landingProfiles";
 
 type SignalExperienceProps = {
@@ -35,7 +36,7 @@ export function SignalExperience({ onGuestAction }: SignalExperienceProps) {
             <div className="exp-signal-photo-meta">
               <h3>
                 {profile.name}
-                {profile.verified && <VerifiedBadge size="sm" />}
+                {isTrustedMember(profile) ? <TrustedMemberBadge size="sm" /> : null}
               </h3>
               <span>
                 {profile.age} · {profile.city}

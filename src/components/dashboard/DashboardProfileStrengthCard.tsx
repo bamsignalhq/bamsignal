@@ -1,25 +1,27 @@
-import { ProfileStrengthMeter } from "../ProfileStrengthMeter";
-import { getProfileStrengthSuggestions } from "../../utils/profileStrength";
+import { ProfileStrengthCard } from "../profile/ProfileStrengthCard";
 import type { DatingProfile } from "../../types";
 
 type DashboardProfileStrengthCardProps = {
   profile: DatingProfile;
+  phoneVerified?: boolean;
+  isPremium?: boolean;
   onCompleteProfile: () => void;
 };
 
 export function DashboardProfileStrengthCard({
   profile,
+  phoneVerified,
+  isPremium,
   onCompleteProfile
 }: DashboardProfileStrengthCardProps) {
-  const suggestions = getProfileStrengthSuggestions(profile);
-  if (!suggestions.length) return null;
-
   return (
-    <section className="dash-strength card dash-animate">
-      <ProfileStrengthMeter profile={profile} />
-      <button type="button" className="btn-secondary btn-full dash-strength__cta" onClick={onCompleteProfile}>
-        Edit profile
-      </button>
+    <section className="dash-strength dash-animate">
+      <ProfileStrengthCard
+        profile={profile}
+        phoneVerified={phoneVerified}
+        isPremium={isPremium}
+        onImprove={onCompleteProfile}
+      />
     </section>
   );
 }

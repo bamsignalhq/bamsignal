@@ -5,8 +5,8 @@ import { Send, MapPin } from "lucide-react";
 import type { DiscoverProfile } from "../../types";
 import type { VerificationInfo } from "../../utils/verification";
 import { ShowcaseImage } from "../ShowcaseImage";
-import { VerifiedBadge } from "../VerifiedBadge";
-import { VerificationBadge } from "../VerificationBadge";
+import { TrustedMemberShieldIcon } from "../trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../../utils/trustedMember";
 
 export type DiscoverFeedCardProps = {
   profile: DiscoverProfile;
@@ -46,13 +46,9 @@ export function DiscoverFeedCard({
             className="discover-feed-card__photo"
             loading="lazy"
           />
-          {verification?.tier ? (
-            <span className="discover-feed-card__verify" aria-label={verification.label}>
-              {isDashboard ? (
-                <VerifiedBadge size="sm" label="Verified" />
-              ) : (
-                <VerificationBadge info={verification} />
-              )}
+          {isTrustedMember(profile) ? (
+            <span className="discover-feed-card__verify">
+              <TrustedMemberShieldIcon />
             </span>
           ) : null}
           {!isDashboard && preview ? <span className="discover-feed-card__preview">Preview</span> : null}

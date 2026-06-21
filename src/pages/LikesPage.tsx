@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { BRAND, MONETIZATION_COPY, PREMIUM_COPY } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
+import { MatchSuccessIcebreakers } from "../components/icebreakers/MatchSuccessIcebreakers";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
 import { ReportBlockModal } from "../components/ReportBlockModal";
 import { IncomingSignalCard } from "../components/signals/IncomingSignalCard";
@@ -13,7 +14,7 @@ import { SignalsSettingsSheet } from "../components/signals/SignalsSettingsSheet
 import { SignalsStoriesRow } from "../components/signals/SignalsStoriesRow";
 import { fetchDiscoverProfiles, fetchMemberProfileById, getCachedMemberProfile } from "../services/discoverProfiles";
 import { acceptSignalRemote, declineSignalRemote, fetchIncomingSignalsRemote, sendSignalRemote } from "../services/memberData";
-import type { DiscoverProfile, LikeEntry, UserProfile } from "../types";
+import type { DiscoverProfile, LikeEntry, Match, UserProfile } from "../types";
 import { blockAndReportUser, blockUser, filterBlockedByProfileId } from "../utils/safety";
 import { trackEvent } from "../utils/analytics";
 import { notifySignalAccepted } from "../utils/notifyHelpers";
@@ -26,6 +27,8 @@ import {
   isDemoSignalEntry,
   mergeReviewerDemoSignals
 } from "../utils/reviewerDemoSignals";
+import { getDatingProfile } from "../utils/profile";
+import { setPendingChatDraft, setPendingChatOpen } from "../utils/chatDraft";
 import { useAndroidBack } from "../hooks/useAndroidBack";
 
 type LikesPageProps = {
@@ -35,6 +38,7 @@ type LikesPageProps = {
   onCompleteProfile?: () => void;
   onDiscover?: () => void;
   onOpenSafety?: () => void;
+  onOpenChats?: () => void;
 };
 
 const FALLBACK_MESSAGES = [
@@ -77,7 +81,7 @@ function likeEntryToProfile(entry: LikeEntry): DiscoverProfile {
     state: entry.state,
     bio: entry.message ?? "",
     photo: entry.photo,
-    intents: ["Chat"],
+    intents: ["MeaningfulConversations"],
     verified: Boolean(entry.verified),
     premium: false,
     distanceKm: entry.distanceKm,
@@ -107,7 +111,8 @@ export function LikesPage({
   paymentLoading,
   onCompleteProfile,
   onDiscover,
-  onOpenSafety
+  onOpenSafety,
+  onOpenChats
 }: LikesPageProps) {
   const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
   const { profile: viewer } = useMemberProfileListener();
@@ -127,6 +132,12 @@ export function LikesPage({
     isReviewerDemoChatUser(user) ? getReviewerDemoMayLikeProfiles() : []
   );
   const [toast, setToast] = useState("");
+  const [matchCelebration, setMatchCelebration] = useState<{
+    match: Match;
+    target: DiscoverProfile;
+    draft: string;
+  } | null>(null);
+  const datingProfile = getDatingProfile();
 
   useEffect(() => {
     void fetchIncomingSignalsRemote(user).then((incoming) => {
@@ -221,7 +232,11 @@ export function LikesPage({
     removeSignal(entry);
     trackEvent("signal_accepted", { profileId: entry.profileId });
     notifySignalAccepted(entry.name);
-    showToast(`${BRAND.matchCreated} ${BRAND.matchCreatedSub}`);
+    setMatchCelebration({
+      match,
+      target: likeEntryToProfile(entry),
+      draft: ""
+    });
   };
 
   const handleBlock = (entry: LikeEntry) => {
@@ -367,6 +382,25 @@ export function LikesPage({
           onClose={() => setSafetyTarget(null)}
           onBlock={() => handleBlock(safetyTarget)}
           onBlockAndReport={(reason, details) => handleBlockAndReport(safetyTarget, reason, details)}
+        />
+      ) : null}
+
+      {matchCelebration ? (
+        <MatchSuccessIcebreakers
+          open
+          matchName={matchCelebration.match.name}
+          viewer={datingProfile}
+          target={matchCelebration.target}
+          onSelect={(text) => setMatchCelebration((prev) => (prev ? { ...prev, draft: text } : null))}
+          onClose={() => setMatchCelebration(null)}
+          onStartChat={() => {
+            if (matchCelebration.draft.trim()) {
+              setPendingChatDraft(matchCelebration.match.id, matchCelebration.draft);
+            }
+            setPendingChatOpen(matchCelebration.match.id);
+            setMatchCelebration(null);
+            onOpenChats?.();
+          }}
         />
       ) : null}
     </div>

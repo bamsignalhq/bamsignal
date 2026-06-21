@@ -1,69 +1,61 @@
-import type { IntentTag } from "../types";
+import {
+  MAX_RELATIONSHIP_INTENT_SELECTIONS,
+  MIN_RELATIONSHIP_INTENT_SELECTIONS,
+  RELATIONSHIP_INTENT_FILTER_OPTIONS,
+  RELATIONSHIP_INTENT_LIMIT_MESSAGE,
+  WHAT_BRINGS_YOU_HERE_OPTIONS,
+  isRelationshipIntent,
+  profileRelationshipIntentLabel,
+  relationshipIntentDisplay,
+  relationshipIntentLabel,
+  relationshipIntentsFrom
+} from "./relationshipIntent";
+import {
+  hasMinimumRelationshipIntents,
+  normalizeRelationshipIntents,
+  toggleIntentSelection as toggleIntentSelectionCore
+} from "../utils/relationshipIntent";
+import type { IntentTag, RelationshipIntentId } from "../types";
 
-export const INTENT_OPTIONS: {
-  id: IntentTag;
-  label: string;
-  emoji: string;
-}[] = [
-  { id: "Relationship", label: "Relationship", emoji: "❤️" },
-  { id: "Friendship", label: "Friendship", emoji: "🤝" },
-  { id: "Networking", label: "Networking", emoji: "🌍" },
-  { id: "Social Events", label: "Social Events", emoji: "🎉" },
-  { id: "Chat", label: "Chat", emoji: "💬" },
-  { id: "Quickie", label: "Fast Connection", emoji: "⚡" }
-];
+/** @deprecated use WHAT_BRINGS_YOU_HERE_OPTIONS */
+export const INTENT_OPTIONS = WHAT_BRINGS_YOU_HERE_OPTIONS;
+
+export const INTENT_FILTER_OPTIONS = RELATIONSHIP_INTENT_FILTER_OPTIONS;
 
 export const MAX_INTENT_SELECTIONS = 3;
-
+export const MIN_INTENT_SELECTIONS = MIN_RELATIONSHIP_INTENT_SELECTIONS;
 export const INTENT_LIMIT_MESSAGE = "You can select up to 3 intentions.";
 
 export function intentLabel(id: IntentTag): string {
-  return INTENT_OPTIONS.find((o) => o.id === id)?.label ?? id;
+  if (!isRelationshipIntent(id)) return "Fast Connection";
+  return relationshipIntentLabel(id);
 }
 
 export function intentDisplay(id: IntentTag): string {
-  const opt = INTENT_OPTIONS.find((o) => o.id === id);
-  return opt ? `${opt.emoji} ${opt.label}` : id;
+  if (!isRelationshipIntent(id)) return "⚡ Fast Connection";
+  return relationshipIntentDisplay(id);
 }
 
-/** Profile read view — no emoji, high-contrast outdoor readability */
 export function profileIntentLabel(id: IntentTag): string {
-  if (id === "Relationship") return "Serious Relationship";
-  return intentLabel(id);
+  if (!isRelationshipIntent(id)) return "Fast Connection";
+  return profileRelationshipIntentLabel(id);
 }
 
-/** Map legacy intent values from older saves */
 export function normalizeIntent(raw: string): IntentTag | null {
-  const map: Record<string, IntentTag> = {
-    Dating: "Relationship",
-    Serious: "Relationship",
-    Fun: "Social Events",
-    Friendship: "Friendship",
-    Networking: "Networking",
-    Relationship: "Relationship",
-    "Social Events": "Social Events",
-    Chat: "Chat",
-    Quickie: "Quickie"
-  };
-  return map[raw] ?? null;
+  const normalized = normalizeRelationshipIntents([raw]);
+  return normalized[0] ?? null;
 }
 
 export function normalizeIntents(raw: string[] | undefined): IntentTag[] {
-  if (!raw?.length) return ["Relationship"];
-  const out = raw.map(normalizeIntent).filter(Boolean) as IntentTag[];
-  const unique = [...new Set(out)].slice(0, MAX_INTENT_SELECTIONS);
-  return unique.length ? unique : ["Relationship"];
+  return normalizeRelationshipIntents(raw);
 }
 
 export function toggleIntentSelection(
   current: IntentTag[],
   intent: IntentTag
 ): { next: IntentTag[]; blocked: boolean; blockedReason?: string } {
-  if (current.includes(intent)) {
-    return { next: current.filter((item) => item !== intent), blocked: false };
-  }
-  if (current.length >= MAX_INTENT_SELECTIONS) {
-    return { next: current, blocked: true, blockedReason: INTENT_LIMIT_MESSAGE };
-  }
-  return { next: [...current, intent], blocked: false };
+  return toggleIntentSelectionCore(current, intent);
 }
+
+export { hasMinimumRelationshipIntents, relationshipIntentsFrom };
+export type { RelationshipIntentId };

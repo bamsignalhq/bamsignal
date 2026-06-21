@@ -1,5 +1,7 @@
-export const MIN_VOICE_SECONDS = 3;
+export const MIN_VOICE_SECONDS = 5;
 export const MAX_VOICE_SECONDS = 30;
+export const RECOMMENDED_VOICE_MIN_SECONDS = 10;
+export const RECOMMENDED_VOICE_MAX_SECONDS = 20;
 
 const PREFERRED_AUDIO_MIME_TYPES = [
   "audio/webm;codecs=opus",
@@ -52,7 +54,7 @@ export function audioBlobToDataUrl(blob: Blob, mimeType: string): Promise<string
 export function micPermissionMessage(error: unknown): string | null {
   if (!(error instanceof DOMException)) return null;
   if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
-    return "Microphone access is needed to record your voice intro.";
+    return "Microphone access is needed to record your Voice Vibe.";
   }
   return null;
 }

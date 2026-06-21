@@ -5,7 +5,6 @@ import { BamEffect } from "./BamEffect";
 import { SignalNode } from "./SignalNode";
 import { SignalWave } from "./SignalWave";
 import { AppLogo } from "../AppLogo";
-import { VerifiedBadge } from "../VerifiedBadge";
 import { NEARBY_SIGNAL_NODES } from "../../data/signalWorld";
 
 type NearbySignalNodesProps = {
@@ -64,7 +63,6 @@ export function NearbySignalNodes({ onGuestAction }: NearbySignalNodesProps) {
               <div className="nearby-signals__panel-meta">
                 <h3>
                   {selected.name}
-                  <VerifiedBadge size="sm" />
                 </h3>
                 <span>{selected.age}</span>
                 <span>{selected.distance}</span>

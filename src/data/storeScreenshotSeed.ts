@@ -38,7 +38,7 @@ export const STORE_VIEWER_PROFILE: DatingProfile = {
   city: "Lagos",
   bio: "Product lead in Victoria Island. Weekend rooftops, live music, and honest conversation.",
   lookingFor: "Men",
-  intents: ["Relationship", "Chat"],
+  intents: ["SeriousRelationship", "MeaningfulConversations"],
   interests: ["Music", "Travel", "Food", "Movies"],
   verified: true,
   premium: false,

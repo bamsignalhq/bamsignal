@@ -29,16 +29,21 @@ import { FastConnectionExpiryBanner } from "../components/profile/FastConnection
 import { useFastConnectionActivationPrompt } from "../hooks/useFastConnectionActivationPrompt";
 import { useFastConnectionExpiryReminder } from "../hooks/useFastConnectionExpiryReminder";
 import { navigateToPath } from "../constants/routes";
+import { ProfilePhotoProgressCard } from "../components/profilePhoto/ProfilePhotoProgressCard";
+import { ProfileReminderCard } from "../components/profile/ProfileReminderCard";
+import { TrustedMemberHomeCard } from "../components/trusted/TrustedMemberHomeCard";
+import { isTrustedMember } from "../utils/trustedMember";
 
 type HomePageProps = {
   user: UserProfile;
   userName: string;
   isPremium: boolean;
+  phoneVerified?: boolean;
   onDiscover: () => void;
   onOpenPremium: () => void;
 };
 
-export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium }: HomePageProps) {
+export function HomePage({ user, userName, isPremium, phoneVerified = false, onDiscover, onOpenPremium }: HomePageProps) {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     if (normalizePath(window.location.pathname) !== "/home") {
@@ -83,6 +88,7 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
   const [signalRefresh, setSignalRefresh] = useState(0);
   const [signalLimitOpen, setSignalLimitOpen] = useState(false);
   const [activationMessage, setActivationMessage] = useState("");
+  const [profileReminderVisible, setProfileReminderVisible] = useState(true);
 
   const {
     open: fastConnectionActivationOpen,
@@ -206,6 +212,31 @@ export function HomePage({ user, userName, isPremium, onDiscover, onOpenPremium 
           refreshKey={signalRefresh}
         />
       </header>
+
+      {profileReminderVisible ? (
+        <ProfileReminderCard
+          profile={viewer}
+          phoneVerified={phoneVerified}
+          isPremium={isPremium}
+          variant="home"
+          onContinue={() => navigateToPath("/profile")}
+          onDismiss={() => setProfileReminderVisible(false)}
+        />
+      ) : null}
+
+      <ProfilePhotoProgressCard
+        profile={viewer}
+        variant="home"
+        onAddPhotos={() => {
+          localStorage.setItem(STORAGE_KEYS.profileEditSection, "photos");
+          navigateToPath("/profile");
+        }}
+        className="home-page__photo-progress"
+      />
+
+      {!isTrustedMember(viewer) ? (
+        <TrustedMemberHomeCard onBecome={() => navigateToPath("/trusted-member")} />
+      ) : null}
 
       <section className="home-discovery home-discovery--compact" aria-label="Filters">
         <HomeFeedFilters

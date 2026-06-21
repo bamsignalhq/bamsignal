@@ -113,7 +113,7 @@ export function getReviewerDemoMayLikeProfiles(): DiscoverProfile[] {
     state,
     bio: "Open to meaningful connections across Nigeria.",
     photo: photoForName(name),
-    intents: ["Relationship", "Chat"],
+    intents: ["SeriousRelationship", "MeaningfulConversations"],
     interests: ["Music", "Food", "Travel"],
     verified: true,
     premium: false,

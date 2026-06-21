@@ -1,4 +1,6 @@
-import { intentLabel } from "../constants/intents";
+import { relationshipIntentLabel, relationshipIntentsFrom } from "../constants/relationshipIntent";
+import { formatMoreAboutMeChip } from "../constants/moreAboutMe";
+import { normalizeMoreAboutMeInterests } from "./moreAboutMe";
 import { stateForCity, normalizeLifestyleTraits, resolveStateName } from "../constants/profileOptions";
 import { normalizeSearchCities, searchStateFromPrefs } from "./searchLocationPrefs";
 import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
@@ -18,8 +20,8 @@ const WEIGHTS = {
 } as const;
 
 function interestScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
-  const a = viewer.interests ?? [];
-  const b = candidate.interests ?? [];
+  const a = normalizeMoreAboutMeInterests(viewer.interests);
+  const b = normalizeMoreAboutMeInterests(candidate.interests);
   if (!a.length || !b.length) return 0;
   const shared = a.filter((i) => b.includes(i)).length;
   const ratio = shared / Math.max(a.length, b.length, 1);
@@ -27,13 +29,19 @@ function interestScore(viewer: DatingProfile, candidate: DiscoverProfile): numbe
 }
 
 function intentScore(viewer: DatingProfile, candidate: DiscoverProfile): number {
-  const a = viewer.intents ?? [];
-  const b = safeArray<IntentTag>(candidate.intents);
+  const a = relationshipIntentsFrom(viewer.intents);
+  const b = relationshipIntentsFrom(candidate.intents);
   if (!a.length || !b.length) return 0;
-  const shared = a.filter((i) => b.includes(i)).length;
-  if (!shared) return 0;
-  if (shared >= 2 || (a.includes("Relationship") && b.includes("Relationship"))) return 1;
-  return 0.65 + (shared / Math.max(a.length, b.length)) * 0.35;
+  const shared = a.filter((i) => b.includes(i));
+  if (!shared.length) return 0;
+  if (
+    shared.includes("Marriage") ||
+    shared.includes("SeriousRelationship") ||
+    shared.length >= 2
+  ) {
+    return 1;
+  }
+  return 0.65 + (shared.length / Math.max(a.length, b.length)) * 0.35;
 }
 
 function profileLifestyleTraits(
@@ -97,22 +105,22 @@ export function compatibilitySubtitle(
   percent: number
 ): string {
   if (percent >= 90) return "Strong match · Shared values";
-  if (interestScore(viewer, candidate) >= 0.5) return "Shared interests · Good fit";
+  if (interestScore(viewer, candidate) >= 0.5) return "Shared vibes · Good fit";
   const viewerTraits = profileLifestyleTraits(viewer);
   const candidateTraits = profileLifestyleTraits(candidate);
   if (viewerTraits.length && viewerTraits.some((trait) => candidateTraits.includes(trait))) {
     return "Similar lifestyle";
   }
   if (viewer.city === candidate.city) return "Same city · Your kind of vibe";
-  if (intentScore(viewer, candidate) >= 0.65) return "Compatible intentions";
+  if (intentScore(viewer, candidate) >= 0.65) return "Aligned on what brings you here";
   return "Selected for you";
 }
 
 type MatchReason = { score: number; label: string };
 
 function sharedInterests(viewer: DatingProfile, candidate: DiscoverProfile): string[] {
-  const viewerInterests = viewer.interests ?? [];
-  const candidateInterests = candidate.interests ?? [];
+  const viewerInterests = normalizeMoreAboutMeInterests(viewer.interests);
+  const candidateInterests = normalizeMoreAboutMeInterests(candidate.interests);
   return viewerInterests.filter((interest) => candidateInterests.includes(interest));
 }
 
@@ -123,24 +131,24 @@ function similarAgeRange(viewer: DatingProfile, candidate: DiscoverProfile): boo
 /** Dynamic reasons for "Why this profile?" — never hardcoded per profile */
 export function getProfileMatchReasons(viewer: DatingProfile, candidate: DiscoverProfile): string[] {
   const reasons: MatchReason[] = [];
-  const sharedIntents = (viewer.intents ?? []).filter((intent) =>
-    safeArray<IntentTag>(candidate.intents).includes(intent)
+  const sharedIntents = relationshipIntentsFrom(viewer.intents).filter((intent) =>
+    relationshipIntentsFrom(candidate.intents).includes(intent)
   );
   const interests = sharedInterests(viewer, candidate);
 
   if (interests.length >= 2) {
-    reasons.push({ score: 96, label: "Shared interests" });
+    reasons.push({ score: 96, label: "Shared More About Me" });
   } else if (interests.length === 1) {
-    reasons.push({ score: 90, label: `Shared interest · ${interests[0]}` });
+    reasons.push({ score: 90, label: `You both chose ${formatMoreAboutMeChip(interests[0])}` });
   }
 
-  if (sharedIntents.includes("Relationship")) {
-    reasons.push({ score: 94, label: "Compatible intentions" });
+  if (sharedIntents.includes("Marriage") || sharedIntents.includes("SeriousRelationship")) {
+    reasons.push({ score: 94, label: "Aligned on what brings you here" });
   } else if (sharedIntents.length) {
     const label =
       sharedIntents.length > 1
-        ? "Compatible intentions"
-        : `Both open to ${intentLabel(sharedIntents[0]).toLowerCase()}`;
+        ? "Aligned on what brings you here"
+        : `Both looking for ${relationshipIntentLabel(sharedIntents[0]).toLowerCase()}`;
     reasons.push({ score: 88, label });
   }
 
@@ -226,7 +234,7 @@ export function getProfileDimensionScores(
   return [
     { label: "Lifestyle", percent: lifestylePct },
     { label: "Faith", percent: faithPct },
-    { label: "Relationship goals", percent: intentPct }
+    { label: "What Brings You Here", percent: intentPct }
   ];
 }
 
@@ -256,6 +264,7 @@ export function hasActivePreferences(prefs: MatchPreferences): boolean {
     prefs.cities.length > 0 ||
     prefs.states.length > 0 ||
     prefs.intents.length > 0 ||
+    prefs.moreAboutMe.length > 0 ||
     prefs.ageMin != null ||
     prefs.ageMax != null ||
     prefs.distanceMax != null ||
@@ -269,6 +278,12 @@ export function hasActivePreferences(prefs: MatchPreferences): boolean {
 export function matchesPreferences(candidate: DiscoverProfile, prefs: MatchPreferences): boolean {
   const candidateIntents = safeArray<IntentTag>(candidate.intents);
   if (prefs.intents.length && !candidateIntents.some((i) => prefs.intents.includes(i))) return false;
+  if (
+    prefs.moreAboutMe.length &&
+    !normalizeMoreAboutMeInterests(candidate.interests).some((id) => prefs.moreAboutMe.includes(id))
+  ) {
+    return false;
+  }
   if (prefs.religions.length && candidate.religion && !prefs.religions.includes(candidate.religion)) return false;
   if (prefs.ethnicities.length) {
     const candidateTribes = candidate.ethnicities?.length

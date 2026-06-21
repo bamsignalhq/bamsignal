@@ -68,6 +68,21 @@ export async function ensureSocialSchema() {
       unique (actor_profile_id, target_profile_id)
     )
   `);
+  await query(`
+    create table if not exists saved_profiles (
+      id uuid primary key default gen_random_uuid(),
+      member_id uuid not null,
+      saved_member_id uuid not null,
+      created_at timestamptz not null default now(),
+      unique (member_id, saved_member_id)
+    )
+  `);
+  await query(
+    "create index if not exists saved_profiles_member_id_idx on saved_profiles (member_id, created_at desc)"
+  );
+  await query(
+    "create index if not exists saved_profiles_saved_member_id_idx on saved_profiles (saved_member_id)"
+  );
 }
 
 function generateReferralCode(name = "") {
@@ -745,14 +760,15 @@ export async function fetchMemberSocialBundle({ email, phone }) {
   if (!isDatabaseReady()) return null;
   await ensureSocialSchema();
 
-  const [incomingSignals, referral, premium, ownProfile, incomingLikes, incomingFollows] =
+  const [incomingSignals, referral, premium, ownProfile, incomingLikes, incomingFollows, savedProfileIds] =
     await Promise.all([
       fetchIncomingSignals({ email, phone }),
       fetchReferralStats({ email, phone }),
       fetchPremiumStatus({ email, phone }),
       findMemberProfileByUserKey(email, phone),
       fetchIncomingProfileLikes({ email, phone }),
-      fetchIncomingProfileFollows({ email, phone })
+      fetchIncomingProfileFollows({ email, phone }),
+      fetchSavedProfileIds({ email, phone })
     ]);
 
   const profileJson = ownProfile?.profile || {};
@@ -832,8 +848,78 @@ export async function fetchMemberSocialBundle({ email, phone }) {
         }
       : null,
     incomingLikes,
-    incomingFollows
+    incomingFollows,
+    savedProfileIds
   };
+}
+
+export async function saveMemberProfile({ email, phone, targetProfileId }) {
+  if (!isDatabaseReady() || !targetProfileId) return null;
+  await ensureSocialSchema();
+  const actor = await findMemberProfileByUserKey(email, phone);
+  if (!actor?.id || actor.id === targetProfileId) return null;
+  const result = await query(
+    `insert into saved_profiles (member_id, saved_member_id)
+     values ($1, $2)
+     on conflict (member_id, saved_member_id) do update set created_at = saved_profiles.created_at
+     returning *`,
+    [actor.id, targetProfileId]
+  );
+  return result.rows[0] || null;
+}
+
+export async function unsaveMemberProfile({ email, phone, targetProfileId }) {
+  if (!isDatabaseReady() || !targetProfileId) return null;
+  await ensureSocialSchema();
+  const actor = await findMemberProfileByUserKey(email, phone);
+  if (!actor?.id) return null;
+  const result = await query(
+    `delete from saved_profiles
+     where member_id = $1 and saved_member_id = $2
+     returning *`,
+    [actor.id, targetProfileId]
+  );
+  return result.rows[0] || null;
+}
+
+export async function fetchSavedProfileIds({ email, phone }) {
+  if (!isDatabaseReady()) return [];
+  await ensureSocialSchema();
+  const actor = await findMemberProfileByUserKey(email, phone);
+  if (!actor?.id) return [];
+  const result = await query(
+    `select saved_member_id, created_at
+     from saved_profiles
+     where member_id = $1
+     order by created_at desc`,
+    [actor.id]
+  );
+  return result.rows.map((row) => ({
+    profileId: row.saved_member_id,
+    savedAt: row.created_at
+  }));
+}
+
+export async function fetchSavedProfiles({ email, phone }) {
+  if (!isDatabaseReady()) return [];
+  await ensureSocialSchema();
+  const actor = await findMemberProfileByUserKey(email, phone);
+  if (!actor?.id) return [];
+  const result = await query(
+    `select s.created_at as saved_at, p.*
+     from saved_profiles s
+     join app_member_profiles p on p.id = s.saved_member_id
+     where s.member_id = $1
+     order by s.created_at desc`,
+    [actor.id]
+  );
+  return result.rows
+    .map((row) => {
+      const profile = rowToDiscoverProfile(row);
+      if (!profile) return null;
+      return { ...profile, savedAt: row.saved_at };
+    })
+    .filter(Boolean);
 }
 
 export async function likeMemberProfile({ email, phone, targetProfileId, photoIndex = 0 }) {

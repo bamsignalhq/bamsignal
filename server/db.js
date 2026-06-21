@@ -834,6 +834,7 @@ export async function fetchMemberBundle({ email, phone }) {
     datingProfile: social?.datingProfile ?? null,
     incomingLikes: social?.incomingLikes ?? [],
     incomingFollows: social?.incomingFollows ?? [],
+    savedProfileIds: social?.savedProfileIds ?? [],
     shadowBanned: Boolean(social?.shadowBanned)
   };
 }

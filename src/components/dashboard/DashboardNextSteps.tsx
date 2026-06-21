@@ -1,8 +1,10 @@
 import { BadgeCheck, Crown, Mic, ShieldCheck, Sparkles } from "lucide-react";
 import { MONETIZATION_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { FREE_DAILY_MESSAGES, FREE_DAILY_SWIPES, STORAGE_KEYS } from "../../constants/limits";
+import { navigateToPath } from "../../constants/routes";
 import type { DatingProfile } from "../../types";
 import { getProfileStrengthSuggestions } from "../../utils/profileStrength";
+import { hasVoiceVibe } from "../../utils/voiceVibe";
 import { readDailyCount } from "../../utils/storage";
 
 type DashboardNextStepsProps = {
@@ -62,12 +64,12 @@ export function DashboardNextSteps({
     });
   }
 
-  if (!profile.voiceIntroUrl) {
+  if (!hasVoiceVibe(profile)) {
     steps.push({
       id: "voice",
-      label: "Voice intro",
+      label: "Voice Vibe",
       icon: Mic,
-      onClick: onCompleteProfile
+      onClick: () => navigateToPath("/voice-vibe")
     });
   }
 

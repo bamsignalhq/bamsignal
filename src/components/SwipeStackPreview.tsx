@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Heart, MapPin, X, Zap } from "lucide-react";
 import { LANDING_PREVIEW_PROFILES, type LandingPreviewProfile } from "../data/landingProfiles";
-import { VerifiedBadge } from "./VerifiedBadge";
+import { TrustedMemberBadge } from "./trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../utils/trustedMember";
 
 type SwipeStackPreviewProps = {
   onGuestAction: () => void;
@@ -69,7 +70,7 @@ function PreviewCard({
         <div className="swipe-card-meta">
           <h3>
             {profile.name}
-            {profile.verified && <VerifiedBadge size="sm" />}
+            {isTrustedMember(profile) ? <TrustedMemberBadge size="sm" /> : null}
           </h3>
           <p className="swipe-card-age-city">
             {profile.age} · {profile.city}

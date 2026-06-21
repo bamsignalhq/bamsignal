@@ -2,8 +2,6 @@ import { ImagePlus, Loader2, MapPin, UserRound } from "lucide-react";
 import { useState } from "react";
 import { useCoverPhotoFlow } from "../hooks/useCoverPhotoFlow";
 import { ShowcaseImage } from "./ShowcaseImage";
-import { VerificationBadge } from "./VerificationBadge";
-import { VerifiedBadge } from "./VerifiedBadge";
 import { CoverPhotoCropModal } from "./CoverPhotoCropModal";
 import { ProfilePhotoViewerSheet } from "./profile/ProfilePhotoViewerSheet";
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../types";
@@ -11,6 +9,13 @@ import type { VerificationInfo } from "../utils/verification";
 import { coverPhotoDisplayUrl, hasExplicitCoverPhoto, readCoverPhotoUrl } from "../utils/coverPhoto";
 import { safePhotos } from "../utils/safeProfile";
 import { resolveProfileMainPhoto, isMainPhoto } from "../utils/mainPhoto";
+import { VoiceVibeHero } from "./voice/VoiceVibeHero";
+import { getVoiceVibeUrl } from "../utils/voiceVibe";
+import { TrustedMemberBadge } from "./trusted/TrustedMemberBadge";
+import { isTrustedMember } from "../utils/trustedMember";
+import { RelationshipIntentChips } from "./relationshipIntent/RelationshipIntentChips";
+import { MoreAboutMeChips } from "./moreAboutMe/MoreAboutMeChips";
+import { relationshipIntentsFrom } from "../constants/relationshipIntent";
 
 type ProfileCoverHeaderProps = {
   user: UserProfile;
@@ -33,6 +38,9 @@ type ProfileCoverHeaderProps = {
     mainPhotoUrl?: string
   ) => void;
   onPhotoModerationMessage?: (message: string) => void;
+  voiceVibeUrl?: string;
+  voiceVibeDuration?: number;
+  onAddVoiceVibe?: () => void;
 };
 
 function formatLocation(profile: DatingProfile): string {
@@ -48,6 +56,13 @@ function formatPremiumLocation(profile: DatingProfile): string | null {
   return state ? `${city} • ${state}` : city;
 }
 
+function formatHeroDetailStrip(profile: DatingProfile): string | null {
+  const parts = [profile.religion, profile.occupation].filter(
+    (value) => value && value !== "Prefer not to say"
+  );
+  return parts.length ? parts.join(" • ") : null;
+}
+
 export function ProfileCoverHeader({
   user,
   profile,
@@ -60,7 +75,10 @@ export function ProfileCoverHeader({
   onCoverModerationMessage,
   editablePhotos = false,
   onPhotosChange,
-  onPhotoModerationMessage
+  onPhotoModerationMessage,
+  voiceVibeUrl,
+  voiceVibeDuration,
+  onAddVoiceVibe
 }: ProfileCoverHeaderProps) {
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
   const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
@@ -96,6 +114,16 @@ export function ProfileCoverHeader({
       : formatLocation(profile)
     : null;
   const stripPhotos = premium ? photos.slice(0, 2) : photos;
+  const vibeProfile = {
+    voiceIntroUrl: voiceVibeUrl ?? profile.voiceIntroUrl,
+    voiceVibeUrl: voiceVibeUrl ?? profile.voiceVibeUrl,
+    voiceIntroDuration: voiceVibeDuration ?? profile.voiceIntroDuration,
+    voiceVibeDuration: voiceVibeDuration ?? profile.voiceVibeDuration
+  };
+  const showVoiceVibe = premium && (getVoiceVibeUrl(vibeProfile) || onAddVoiceVibe);
+  const trusted = isTrustedMember(profile);
+  const detailStrip = premium ? formatHeroDetailStrip(profile) : null;
+  const relationshipIntents = relationshipIntentsFrom(profile.intents);
 
   const openPhotoViewer = (index: number) => {
     if (!editablePhotos || !onPhotosChange) return;
@@ -164,34 +192,47 @@ export function ProfileCoverHeader({
 
           <div className="profile-hero__meta">
             <h1 className="profile-hero__name">
-              <span>{user.name || "Your profile"}</span>
-              {premium && (verification.tier > 0 || profile.verified) ? (
-                <span className="profile-hero__name-badge">
-                  {verification.tier > 0 ? (
-                    <VerificationBadge info={verification} />
-                  ) : (
-                    <VerifiedBadge size="sm" />
-                  )}
-                </span>
-              ) : null}
+              <span>
+                {user.name || "Your profile"}
+                {premium && ageText ? `, ${ageText}` : ""}
+              </span>
             </h1>
-            {(ageText || locationText) && (
+            {relationshipIntents.length ? (
+              <RelationshipIntentChips intents={profile.intents} variant="hero" className="profile-hero__relationship-intent" />
+            ) : null}
+            <MoreAboutMeChips items={profile.interests} variant="hero" className="profile-hero__more-about-me" />
+            {trusted ? (
+              <div className="profile-hero__trusted-member">
+                <TrustedMemberBadge size={premium ? "md" : "sm"} />
+              </div>
+            ) : null}
+            {showVoiceVibe ? (
+              <VoiceVibeHero
+                profile={vibeProfile}
+                editable={Boolean(onAddVoiceVibe)}
+                onAdd={onAddVoiceVibe}
+              />
+            ) : null}
+            {detailStrip ? <p className="profile-hero__detail-strip">{detailStrip}</p> : null}
+            {(ageText || locationText) && !premium ? (
               <p className="profile-hero__meta-line">
                 {ageText ? <span className="profile-hero__age">{ageText}</span> : null}
                 {ageText && locationText ? <span className="profile-hero__meta-dot" aria-hidden>•</span> : null}
                 {locationText ? (
                   <span className="profile-hero__location">
-                    {premium ? <span aria-hidden>📍</span> : <MapPin size={13} aria-hidden />}
+                    <MapPin size={13} aria-hidden />
                     {locationText}
                   </span>
                 ) : null}
               </p>
-            )}
-            {!premium && (verification.tier > 0 || profile.verified) ? (
-              <div className="profile-hero__badges">
-                {verification.tier > 0 ? <VerificationBadge info={verification} /> : null}
-                {profile.verified && !verification.tier ? <VerifiedBadge /> : null}
-              </div>
+            ) : null}
+            {premium && locationText ? (
+              <p className="profile-hero__meta-line profile-hero__meta-line--location">
+                <span className="profile-hero__location">
+                  <span aria-hidden>📍</span>
+                  {locationText}
+                </span>
+              </p>
             ) : null}
           </div>
         </div>

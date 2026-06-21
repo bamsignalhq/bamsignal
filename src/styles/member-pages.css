@@ -2621,8 +2621,21 @@
   color: #1b0b2e;
 }
 
-.profile-detail-sheet__body .compat-reasons-card {
-  margin-top: 4px;
+.profile-detail-sheet__voice-vibe {
+  margin-top: 10px;
+}
+
+.profile-detail-sheet__card--voice-vibe {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.profile-edit-voice-copy {
+  margin: 0 0 12px;
+  color: rgba(27, 11, 46, 0.72);
+  line-height: 1.45;
 }
 
 /* Interest picker — collapsed trigger + bottom sheet */

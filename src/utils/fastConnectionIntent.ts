@@ -1,4 +1,3 @@
-import { MAX_INTENT_SELECTIONS } from "../constants/intents";
 import { STORAGE_KEYS } from "../constants/limits";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import type { IntentTag, UserProfile } from "../types";
@@ -18,7 +17,7 @@ export function sanitizeIntentsForActivePass(intents: IntentTag[]): IntentTag[] 
   if (isQuickiePassActive()) return intents;
   const filtered = intents.filter((intent) => intent !== QUICKIE_INTENT);
   if (filtered.length) return filtered;
-  return intents.includes(QUICKIE_INTENT) ? ["Relationship"] : filtered;
+  return intents.includes(QUICKIE_INTENT) ? ["SeriousRelationship"] : filtered;
 }
 
 export function applyQuickieIntentAfterPayment(
@@ -48,11 +47,7 @@ export function applyQuickieIntentAfterPayment(
 
   let intents = [...profile.intents];
   if (!intents.includes(QUICKIE_INTENT)) {
-    if (intents.length >= MAX_INTENT_SELECTIONS) {
-      intents = [...intents.slice(0, MAX_INTENT_SELECTIONS - 1), QUICKIE_INTENT];
-    } else {
-      intents = [...intents, QUICKIE_INTENT];
-    }
+    intents = [...intents, QUICKIE_INTENT];
   }
 
   const next = normalizeDatingProfile({
@@ -76,7 +71,6 @@ export function handleQuickieIntentTap(
   currentIntents: IntentTag[]
 ): "deselect" | "select" | "require_payment" | "blocked" {
   if (currentIntents.includes(QUICKIE_INTENT)) return "deselect";
-  if (currentIntents.length >= MAX_INTENT_SELECTIONS) return "blocked";
   if (isQuickiePassActive()) return "select";
   return "require_payment";
 }

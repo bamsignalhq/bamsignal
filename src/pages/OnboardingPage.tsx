@@ -1,19 +1,24 @@
-import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
+import { BuildProfileLaterCard } from "../components/profile/BuildProfileLaterCard";
 import { Preloader } from "../components/Preloader";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
-import { INTENT_OPTIONS, MAX_INTENT_SELECTIONS, toggleIntentSelection, INTENT_LIMIT_MESSAGE } from "../constants/intents";
-import { MIN_PROFILE_PHOTOS, PHOTO_UPLOAD_FAIL } from "../constants/photos";
-import { MIN_PROFILE_INTERESTS } from "../constants/interestCategories";
+import { WhatBringsYouHerePicker } from "../components/relationshipIntent/WhatBringsYouHerePicker";
+import { relationshipIntentsFrom } from "../constants/relationshipIntent";
+import { hasMinimumRelationshipIntents } from "../utils/relationshipIntent";
+import { isFastConnectionInterested } from "../utils/fastConnectionState";
+import { isQuickiePassActive } from "../utils/quickie";
+import { PHOTO_UPLOAD_FAIL } from "../constants/photos";
+import { ONBOARDING_REQUIRED_PHOTOS } from "../utils/buildProfileLater";
 import { CONTACT_LEAK_BLOCK_MESSAGE, validateDisplayName, validateProfileContactLeaks, validateUserText } from "../utils/contactGuard";
 import { STORAGE_KEYS } from "../constants/limits";
-import { InterestPicker } from "../components/InterestPicker";
+import { MoreAboutMePicker } from "../components/moreAboutMe/MoreAboutMePicker";
+import { MORE_ABOUT_ME_HEADLINE, MORE_ABOUT_ME_SUBTEXT } from "../constants/moreAboutMe";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import type {
   DatingProfile,
   Gender,
-  IntentTag,
   UserProfile
 } from "../types";
 import { USER_MESSAGES } from "../constants/userMessages";
@@ -34,8 +39,6 @@ import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { clearOnboardingDrafts, looksLikeSavedOnboardingProgress } from "../utils/onboardingStatus";
 import { resolveMemberIdentity } from "../utils/authIdentity";
 import { writeJson, readJson } from "../utils/storage";
-import { isQuickiePassActive, QUICKIE_INTENT } from "../utils/quickie";
-import { isFastConnectionInterested } from "../utils/fastConnectionState";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { isSignupPhotoCountable } from "../utils/photoMeta";
 import { flowLog } from "../utils/flowLog";
@@ -52,9 +55,10 @@ function countSignupPhotos(profile: Pick<DatingProfile, "photos" | "photoMeta">)
   ).length;
 }
 
-const STEPS = ["Basic info", "About you", "Photos", "Preferences"] as const;
+const REQUIRED_STEPS = ["Basic info", "Photo & what brings you here"] as const;
+const OPTIONAL_STEPS = ["About you", "More photos", "Preferences"] as const;
+type OnboardingPhase = "required" | "ready" | "optional";
 const GENDERS: Gender[] = ["Man", "Woman", "Non-binary"];
-const MAX_INTENTS = MAX_INTENT_SELECTIONS;
 const MIN_ONBOARDING_AGE = 17;
 const MAX_ONBOARDING_AGE = 75;
 const ONBOARDING_AGES = Array.from(
@@ -64,22 +68,32 @@ const ONBOARDING_AGES = Array.from(
 
 const STEP_TITLES = [
   "Welcome to BamSignal",
-  "About you",
+  "What brings you here?",
+  "Tell people more about you",
   SUCCESS_COPY.photoHeader,
   "Your preferences"
 ] as const;
 
+function stepTitleIndex(phase: OnboardingPhase, step: number, optionalStep: number): number {
+  if (phase === "required") return step;
+  if (optionalStep === 0) return 2;
+  if (optionalStep === 1) return 3;
+  return 4;
+}
+
 function OnboardingStepHead({
   stepIndex,
+  totalSteps,
   subtitle
 }: {
   stepIndex: number;
+  totalSteps: number;
   subtitle?: string;
 }) {
   return (
     <header className="onboarding-step-head">
       <p className="onboarding-step-eyebrow">
-        Step {stepIndex + 1} of {STEPS.length}
+        Step {stepIndex + 1} of {totalSteps}
       </p>
       <h2 className="onboarding-step-title">{STEP_TITLES[stepIndex]}</h2>
       {subtitle ? <p className="onboarding-step-lede">{subtitle}</p> : null}
@@ -95,13 +109,14 @@ type OnboardingPageProps = {
 
 export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPageProps) {
   const [gateReady, setGateReady] = useState(false);
+  const [phase, setPhase] = useState<OnboardingPhase>("required");
   const [step, setStep] = useState(() => {
     const saved = readJson<number>(STORAGE_KEYS.onboardingStep, 0);
-    return Number.isFinite(saved) ? Math.min(Math.max(0, saved), STEPS.length - 1) : 0;
+    return Number.isFinite(saved) ? Math.min(Math.max(0, saved), REQUIRED_STEPS.length - 1) : 0;
   });
+  const [optionalStep, setOptionalStep] = useState(0);
   const [modMessage, setModMessage] = useState("");
   const modMessageTimerRef = useRef<number | undefined>(undefined);
-  const [showWelcome, setShowWelcome] = useState(false);
 
   const showModMessage = (msg: string) => {
     if (modMessageTimerRef.current !== undefined) clearTimeout(modMessageTimerRef.current);
@@ -150,7 +165,12 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   const [ageMin, setAgeMin] = useState(22);
   const [ageMax, setAgeMax] = useState(35);
 
-  const progress = ((step + 1) / STEPS.length) * 100;
+  const progress =
+    phase === "required"
+      ? ((step + 1) / REQUIRED_STEPS.length) * 100
+      : phase === "optional"
+        ? ((optionalStep + 1) / OPTIONAL_STEPS.length) * 100
+        : 100;
 
   useEffect(() => {
     let cancelled = false;
@@ -188,11 +208,12 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   }, []);
 
   useEffect(() => {
+    if (phase !== "required") return;
     flowLog("onboarding_step", { step });
     if (!writeJson(STORAGE_KEYS.onboardingStep, step)) {
       showModMessage(USER_MESSAGES.progressSaveFailed);
     }
-  }, [step]);
+  }, [phase, step]);
 
   useEffect(() => {
     if (profile.onboardingComplete) return;
@@ -207,7 +228,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       showModMessage(nameError);
       return;
     }
-    const bioError = validateUserText(profile.bio);
+    const bioError = profile.bio.trim() ? validateUserText(profile.bio) : null;
     if (bioError) {
       showModMessage(bioError);
       return;
@@ -273,10 +294,11 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     localStorage.setItem(STORAGE_KEYS.firstSignalPromptAt, String(Date.now()));
     trackEvent("profile_completed", { city: final.city, state: final.state ?? "" });
     markFirstDayStep("profile_complete");
-    setShowWelcome(true);
+    onComplete();
   };
 
   const canContinue = () => {
+    if (phase === "optional") return true;
     if (step === 0) {
       return (
         user.name.trim().length >= 2 &&
@@ -287,84 +309,84 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       );
     }
     if (step === 1) {
-      return (
-        profile.bio.trim().length >= 8 &&
-        profile.intents.length >= 1 &&
-        (profile.interests?.length ?? 0) >= MIN_PROFILE_INTERESTS
-      );
+      return countSignupPhotos(profile) >= ONBOARDING_REQUIRED_PHOTOS && hasMinimumRelationshipIntents(profile.intents);
     }
-    if (step === 2) return countSignupPhotos(profile) >= MIN_PROFILE_PHOTOS;
-    if (step === STEPS.length - 1) return Boolean(profile.lookingFor);
     return true;
   };
 
   const next = () => {
-    if (step === 0) {
+    if (phase === "required" && step === 0) {
       const nameError = validateDisplayName(user.name);
       if (nameError) {
         showModMessage(nameError);
         return;
       }
     }
-    if (step === 1) {
-      const bioError = validateUserText(profile.bio);
-      if (bioError) {
-        showModMessage(bioError);
+    if (phase === "required" && step === 1) {
+      if (countSignupPhotos(profile) >= ONBOARDING_REQUIRED_PHOTOS) {
+        trackEvent("photo_uploaded");
+      }
+      setPhase("ready");
+      return;
+    }
+    if (phase === "optional") {
+      if (optionalStep === 0 && profile.bio.trim()) {
+        const bioError = validateUserText(profile.bio);
+        if (bioError) {
+          showModMessage(bioError);
+          return;
+        }
+        const profileLeak = validateProfileContactLeaks(profile);
+        if (profileLeak.blocked) {
+          showModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
+          return;
+        }
+      }
+      if (optionalStep >= OPTIONAL_STEPS.length - 1) {
+        void saveAndFinish();
         return;
       }
-      const profileLeak = validateProfileContactLeaks(profile);
-      if (profileLeak.blocked) {
-        showModMessage(CONTACT_LEAK_BLOCK_MESSAGE);
-        return;
-      }
+      setOptionalStep((value) => value + 1);
+      return;
     }
-    if (step === 2 && countSignupPhotos(profile) >= MIN_PROFILE_PHOTOS) {
-      trackEvent("photo_uploaded");
-    }
-    if (step === STEPS.length - 1) {
+    setStep((s) => Math.min(s + 1, REQUIRED_STEPS.length - 1));
+  };
+
+  const skipOptional = () => {
+    if (optionalStep >= OPTIONAL_STEPS.length - 1) {
       void saveAndFinish();
       return;
     }
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    setOptionalStep((value) => value + 1);
   };
 
-  const back = () => setStep((s) => Math.max(s - 1, 0));
-
-  const toggleIntent = (intent: IntentTag) => {
-    setProfile((p) => {
-      const result = toggleIntentSelection(p.intents, intent);
-      if (result.blocked) {
-        showModMessage(result.blockedReason || INTENT_LIMIT_MESSAGE);
-        return p;
+  const back = () => {
+    if (phase === "optional") {
+      if (optionalStep > 0) {
+        setOptionalStep((value) => value - 1);
+        return;
       }
-      return { ...p, intents: result.next };
-    });
-  };
-
-  const handleIntentSelection = (intent: IntentTag) => {
-    if (intent === QUICKIE_INTENT && !isQuickiePassActive()) {
-      setProfile((current) => ({
-        ...current,
-        fastConnectionInterested: !isFastConnectionInterested(current)
-      }));
+      setPhase("ready");
       return;
     }
-    toggleIntent(intent);
+    if (phase === "ready") {
+      setPhase("required");
+      setStep(1);
+      return;
+    }
+    setStep((s) => Math.max(s - 1, 0));
   };
 
-  if (showWelcome) {
+  if (phase === "ready") {
     return (
-      <div className="page onboarding-page onboarding-welcome-screen">
-        <div className="onboarding-welcome-card">
-          <div className="onboarding-welcome-icon" aria-hidden>
-            <Heart size={48} />
-          </div>
-          <h1>{SUCCESS_COPY.welcomeTitle(user.name)}</h1>
-          <p>{SUCCESS_COPY.welcomeBody(user.name)}</p>
-          <button type="button" className="btn-primary btn-full btn-auth" onClick={onComplete}>
-            Go to my home
-          </button>
-        </div>
+      <div className="page onboarding-page onboarding-ready-screen">
+        <BuildProfileLaterCard
+          onStartDiscovering={() => void saveAndFinish()}
+          onContinueBuilding={() => {
+            setPhase("optional");
+            setOptionalStep(0);
+          }}
+        />
       </div>
     );
   }
@@ -385,19 +407,23 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         </p>
       )}
       <header className="onboarding-header">
-        {step > 0 && (
+        {(phase === "required" && step > 0) || phase === "optional" ? (
           <button type="button" className="onboarding-back" onClick={back} aria-label="Back">
             <ChevronLeft size={20} />
           </button>
-        )}
+        ) : null}
         <div className="onboarding-progress">
           <div className="onboarding-progress__bar" style={{ width: `${progress}%` }} />
         </div>
       </header>
 
-      {step === 0 && (
+      {phase === "required" && step === 0 && (
         <section className="onboarding-step onboarding-step--location">
-          <OnboardingStepHead stepIndex={0} subtitle="Meet people who match your vibe." />
+          <OnboardingStepHead
+            stepIndex={stepTitleIndex(phase, step, optionalStep)}
+            totalSteps={REQUIRED_STEPS.length}
+            subtitle="Meet people who match your vibe."
+          />
           <div className="onboarding-location-fields">
             <label>
               Full name
@@ -461,11 +487,78 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         </section>
       )}
 
-      {step === 1 && (
+      {phase === "required" && step === 1 && (
         <section className="onboarding-step">
-          <OnboardingStepHead stepIndex={1} subtitle="A clear bio helps the right people find you." />
-          <label>
-            Bio
+          <OnboardingStepHead
+            stepIndex={stepTitleIndex(phase, step, optionalStep)}
+            totalSteps={REQUIRED_STEPS.length}
+            subtitle="Add a clear photo and share what you're open to."
+          />
+          <PhotoUploadGrid
+            photos={profile.photos}
+            mainPhotoUrl={profile.mainPhotoUrl}
+            photoMeta={profile.photoMeta}
+            signupMode
+            onChange={(photos, nextPhotoMeta, nextMainPhotoUrl) => {
+              const next = normalizeDatingProfile({
+                ...profile,
+                photos,
+                photoMeta: nextPhotoMeta,
+                mainPhotoUrl: nextMainPhotoUrl,
+                coverPhoto: undefined,
+                coverPhotoExplicit: false
+              });
+              if (!writeJson(STORAGE_KEYS.datingProfile, { ...next, onboardingComplete: false })) {
+                showModMessage(PHOTO_UPLOAD_FAIL);
+                return;
+              }
+              setProfile(next);
+            }}
+            onModerationMessage={showModMessage}
+          />
+          <WhatBringsYouHerePicker
+            value={profile.intents}
+            onChange={(intents) => setProfile({ ...profile, intents })}
+            onLimitMessage={showModMessage}
+          />
+          {!isQuickiePassActive() ? (
+            <fieldset className="intent-fieldset">
+              <legend>Fast Connection · optional</legend>
+              <div className="intent-tags selectable welcome-intent-grid">
+                <button
+                  type="button"
+                  className={`intent-tag intent-tag--large intent-tag--quickie ${
+                    isFastConnectionInterested(profile) ? "selected" : ""
+                  }`}
+                  onClick={() =>
+                    setProfile((current) => ({
+                      ...current,
+                      fastConnectionInterested: !isFastConnectionInterested(current)
+                    }))
+                  }
+                >
+                  <span className="intent-tag__emoji">⚡</span>
+                  Fast Connection
+                </button>
+              </div>
+            </fieldset>
+          ) : null}
+        </section>
+      )}
+
+      {phase === "optional" && optionalStep === 0 && (
+        <section className="onboarding-step">
+          <OnboardingStepHead
+            stepIndex={stepTitleIndex(phase, step, optionalStep)}
+            totalSteps={OPTIONAL_STEPS.length}
+            subtitle={`${MORE_ABOUT_ME_SUBTEXT} Optional.`}
+          />
+          <MoreAboutMePicker
+            selected={profile.interests}
+            onChange={(interests) => setProfile({ ...profile, interests, interestsTouched: true })}
+          />
+          <label className="onboarding-about-field">
+            About me
             <textarea
               value={profile.bio}
               onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
@@ -473,44 +566,16 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
               rows={4}
             />
           </label>
-          <fieldset className="intent-fieldset">
-            <legend>Intent · select up to {MAX_INTENTS}</legend>
-            <div className="intent-tags selectable welcome-intent-grid">
-              {INTENT_OPTIONS.map((opt) => {
-                const selected =
-                  opt.id === QUICKIE_INTENT && !isQuickiePassActive()
-                    ? isFastConnectionInterested(profile)
-                    : profile.intents.includes(opt.id);
-                const disabled =
-                  opt.id === QUICKIE_INTENT && !isQuickiePassActive()
-                    ? false
-                    : !selected && profile.intents.length >= MAX_INTENTS;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    className={`intent-tag intent-tag--large ${selected ? "selected" : ""} ${opt.id === "Quickie" ? "intent-tag--quickie" : ""}`}
-                    disabled={disabled}
-                    onClick={() => handleIntentSelection(opt.id)}
-                  >
-                    <span className="intent-tag__emoji">{opt.emoji}</span>
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-          <InterestPicker
-            variant="onboarding"
-            selected={profile.interests}
-            onChange={(interests) => setProfile({ ...profile, interests, interestsTouched: true })}
-          />
         </section>
       )}
 
-      {step === 2 && (
+      {phase === "optional" && optionalStep === 1 && (
         <section className="onboarding-step">
-          <OnboardingStepHead stepIndex={2} />
+          <OnboardingStepHead
+            stepIndex={stepTitleIndex(phase, step, optionalStep)}
+            totalSteps={OPTIONAL_STEPS.length}
+            subtitle="Optional — more photos help people connect with you."
+          />
           <PhotoUploadGrid
             photos={profile.photos}
             mainPhotoUrl={profile.mainPhotoUrl}
@@ -536,9 +601,13 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         </section>
       )}
 
-      {step === 3 && (
+      {phase === "optional" && optionalStep === 2 && (
         <section className="onboarding-step onboarding-step--prefs">
-          <OnboardingStepHead stepIndex={3} />
+          <OnboardingStepHead
+            stepIndex={stepTitleIndex(phase, step, optionalStep)}
+            totalSteps={OPTIONAL_STEPS.length}
+            subtitle="Optional — fine-tune who you see."
+          />
           <MatchPreferenceFields
             className="onboarding-pref-block"
             lookingFor={profile.lookingFor}
@@ -578,10 +647,19 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         </section>
       )}
 
-      <footer className="onboarding-footer">
+      <footer className={`onboarding-footer${phase === "optional" ? " onboarding-footer--split" : ""}`}>
+        {phase === "optional" ? (
+          <button type="button" className="btn-secondary btn-full btn-auth" onClick={skipOptional}>
+            Skip for now
+          </button>
+        ) : null}
         <button type="button" className="btn-primary btn-full btn-auth" onClick={next} disabled={!canContinue()}>
-          {step === STEPS.length - 1 ? "Finish" : "Continue"}
-          {step < STEPS.length - 1 && <ChevronRight size={18} />}
+          {phase === "optional" && optionalStep >= OPTIONAL_STEPS.length - 1
+            ? "Start Discovering"
+            : phase === "required" && step >= REQUIRED_STEPS.length - 1
+              ? "Continue"
+              : "Continue"}
+          {phase === "required" && step < REQUIRED_STEPS.length - 1 && <ChevronRight size={18} />}
         </button>
       </footer>
     </div>

@@ -592,7 +592,8 @@ assertCheck(
     voiceIntroUploadSource.includes("/api/member/voice?action=upload") &&
     voiceIntroStorageSource.includes("VOICE_INTROS_BUCKET") &&
     serverAppSource.includes('"/api/member/voice"') &&
-    profilePageSource.includes("voiceIntroUrl") &&
+    profilePageSource.includes("getVoiceVibeUrl") &&
+    profilePageSource.includes("VoiceVibeWaveformCard") &&
     userMessagesSource.includes("voiceIntroSaveFailed"),
   "voice intro must record, upload to storage, and persist on profile"
 );

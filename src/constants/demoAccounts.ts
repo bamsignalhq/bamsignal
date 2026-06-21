@@ -44,7 +44,7 @@ export function seedDemoMemberProfile(): void {
     city: "Umuahia",
     bio: "Product designer in Lekki. Weekend rooftops, cinema dates, and good conversation.",
     lookingFor: "Men",
-    intents: ["Relationship"],
+    intents: ["SeriousRelationship"],
     interests: ["Music", "Travel", "Food", "Movies"],
     verified: true,
     premium: false,

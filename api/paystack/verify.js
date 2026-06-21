@@ -25,6 +25,11 @@ import {
   logThresholdedAlert,
   observabilityContext
 } from "../../server/services/observability.js";
+import { requireMemberAuth } from "../../server/services/memberAuth.js";
+import {
+  PAYMENT_INITIALIZE_RATE_LIMITED_MESSAGE,
+  enforcePaymentInitializeThrottle
+} from "../../server/services/paymentInitializeThrottle.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -168,10 +173,10 @@ function buildVerifySuccessResponse(result) {
   };
 }
 
-async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fallbackReturnPath) {
-  const email = String(body.email || "").trim().toLowerCase();
-  const phone = normalizePhone(body.phone);
-  const name = String(body.name || "").trim();
+async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fallbackReturnPath, memberAuth) {
+  const email = String(memberAuth?.identity?.email || memberAuth?.email || "").trim().toLowerCase();
+  const phone = normalizePhone(memberAuth?.identity?.phone || memberAuth?.phone || "");
+  const name = String(memberAuth?.identity?.name || body.name || "").trim();
   const city = String(body.city || "Lagos").trim();
   const intent = await resolveInitializeIntent(action, body);
 
@@ -195,7 +200,7 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
   try {
     await recordPurchaseIntent({
       reference,
-      userId: body.userId || body.user_id || null,
+      userId: memberAuth?.authUserId || memberAuth?.memberId || null,
       intent,
       source: action
     });
@@ -271,11 +276,31 @@ export default async function handler(req, res) {
       return res.status(405).json({ ok: false, error: "Method not allowed" });
     }
 
+    const body = parseBody(req);
+    const action = String(req.query.action || "").trim();
+    const isInitializeAction =
+      action === "initialize" || action === "initialize-boost" || action === "initialize-quickie";
+
+    let memberAuth = null;
+    if (isInitializeAction) {
+      memberAuth = await requireMemberAuth(req, body);
+      if (!memberAuth.ok) {
+        return res.status(memberAuth.status || 401).json({ ok: false, error: "not_authorized" });
+      }
+
+      const throttle = await enforcePaymentInitializeThrottle({ req, action, memberAuth });
+      if (!throttle.ok) {
+        return res.status(throttle.status || 429).json({
+          ok: false,
+          error: throttle.error || PAYMENT_INITIALIZE_RATE_LIMITED_MESSAGE
+        });
+      }
+    }
+
     if (!paystackConfigured()) {
       return res.status(503).json({ ok: false, error: "PAYSTACK_SECRET_KEY is not configured." });
     }
 
-    const body = parseBody(req);
     const useNativeCallback =
       body.platform === "native" ||
       body.platform === "android" ||
@@ -284,16 +309,16 @@ export default async function handler(req, res) {
       ? config.paystackAndroidCallbackUrl || config.paystackCallbackUrl
       : config.paystackCallbackUrl;
 
-    if (req.query.action === "initialize") {
-      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize", "/home");
+    if (action === "initialize") {
+      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize", "/home", memberAuth);
     }
 
-    if (req.query.action === "initialize-boost") {
-      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize-boost", "/profile");
+    if (action === "initialize-boost") {
+      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize-boost", "/profile", memberAuth);
     }
 
-    if (req.query.action === "initialize-quickie") {
-      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize-quickie", "/home");
+    if (action === "initialize-quickie") {
+      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize-quickie", "/home", memberAuth);
     }
 
     const reference = String(body.reference || body.trxref || "").trim();

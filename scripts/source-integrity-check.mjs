@@ -59,6 +59,10 @@ const paystackVerifyApiSource = readSrc("api/paystack/verify.js");
 const viewSecurityApiSource = readSrc("api/diagnostics/view-security.js");
 const functionSecurityApiSource = readSrc("api/diagnostics/function-security.js");
 const paystackVerifySource = readFileSync(join(rootPath, "api/paystack/verify.js"), "utf8");
+const paymentInitializeThrottleSource = readFileSync(
+  join(rootPath, "server/services/paymentInitializeThrottle.js"),
+  "utf8"
+);
 const paystackWebhookHandlerSource = readFileSync(
   join(rootPath, "server/services/paystackWebhookHandler.js"),
   "utf8"
@@ -626,6 +630,22 @@ assertCheck(
     !paymentsSource.includes("amount: plan.price") &&
     !paymentsSource.includes("dailyFastSignals"),
   "payment pricing and entitlements must be server authoritative"
+);
+assertCheck(
+  paystackVerifySource.includes("requireMemberAuth(req, body)") &&
+    paystackVerifySource.includes("enforcePaymentInitializeThrottle") &&
+    paystackVerifySource.includes("PAYMENT_INITIALIZE_RATE_LIMITED_MESSAGE") &&
+    paystackVerifySource.indexOf("requireMemberAuth(req, body)") <
+      paystackVerifySource.indexOf("if (!paystackConfigured())") &&
+    paymentInitializeThrottleSource.includes("payment_initialize_rate_events") &&
+    paymentInitializeThrottleSource.includes("PAYMENT_INITIALIZE_MAX_REQUESTS = 5") &&
+    paymentInitializeThrottleSource.includes("PAYMENT_INITIALIZE_WINDOW_MS = 60 * 1000") &&
+    paymentInitializeThrottleSource.includes("PAYMENT_INITIALIZE_BURST_MAX_REQUESTS") &&
+    paymentInitializeThrottleSource.includes("checkMemoryMemberThrottle") &&
+    paymentInitializeThrottleSource.includes("payment_initialize_rate_limited") &&
+    paymentsSource.includes("memberApiHeaders") &&
+    paymentsSource.includes("headers: await memberApiHeaders()"),
+  "Paystack initialize must require member auth, throttle by member/client identity, fail closed to memory, and log rate limits"
 );
 assertCheck(
   paymentDbSource.includes("requireDatabaseReadyForPayments") &&

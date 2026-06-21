@@ -28,6 +28,7 @@ import { readResponseJson } from "../utils/httpJson";
 import { activateQuickiePass } from "../utils/quickie";
 import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
 import { fetchSubscriptionCatalog } from "./subscriptionCatalog";
+import { memberApiHeaders } from "../utils/memberApiAuth";
 
 export { isPremiumActive, refreshPremiumStatus };
 export { clearPaymentSession } from "../utils/paymentState";
@@ -147,7 +148,7 @@ async function postInitialize(url: string, body: Record<string, unknown>): Promi
   const started = typeof performance !== "undefined" ? performance.now() : 0;
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: await memberApiHeaders(),
     body: JSON.stringify(body)
   });
   const payload = await readResponseJson<InitPayload & { error?: string }>(response);

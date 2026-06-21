@@ -53,6 +53,7 @@ const identityExposureSource = readSrc("server/services/identityExposure.js");
 const identityApiSource = readSrc("api/auth/identity.js");
 const loginSecurityApiSource = readSrc("api/auth/login-security.js");
 const hardSetupApiSource = readSrc("api/hard/setup.js");
+const consoleSetupAccessSource = readSrc("server/services/consoleSetupAccess.js");
 const adminBootstrapApiSource = readSrc("api/admin/bootstrap.js");
 const adminBootstrapAccessSource = readSrc("server/services/adminBootstrapAccess.js");
 const adminAuthServerSource = readSrc("server/adminAuth.js");
@@ -826,9 +827,23 @@ assertCheck(
     loginSecurityApiSource.includes("requireMemberAuth(req, body)") &&
     diagnosticsAccessSource.includes("logDiagnosticsAccessDenied") &&
     adminAuthServerSource.includes("logAdminStatusHidden") &&
-    hardSetupApiSource.includes("hasSetupSecret") &&
+    hardSetupApiSource.includes("validateSetupHeader") &&
+    hardSetupApiSource.includes("hasForbiddenSetupSecretChannel") &&
+    hardSetupApiSource.includes("requireLegacySetupEnabled") &&
+    !hardSetupApiSource.includes("hasSetupSecret") &&
     !memberAuthSource.includes('"check-username"'),
   "identity and admin status exposure must stay minimized for public callers"
+);
+assertCheck(
+  consoleSetupAccessSource.includes("LEGACY_SETUP_SECRET") &&
+    consoleSetupAccessSource.includes("LEGACY_SETUP_ENABLED") &&
+    consoleSetupAccessSource.includes("x-setup-secret") &&
+    !consoleSetupAccessSource.includes("CRON_SECRET") &&
+    hardSetupApiSource.includes("sendLegacySetupAccessDenied") &&
+    !hardSetupApiSource.includes("req.query.secret") &&
+    !hardSetupApiSource.includes("body.setupSecret") &&
+    !hardSetupApiSource.includes("x-bamsignal-secret"),
+  "legacy setup endpoint must stay locked to dedicated header secret and enable flag"
 );
 assertCheck(
   adminBootstrapAccessSource.includes("ADMIN_BOOTSTRAP_SECRET") &&

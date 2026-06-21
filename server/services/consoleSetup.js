@@ -10,16 +10,9 @@ export async function needsConsoleSetup() {
   return !(await hasConsoleOperator());
 }
 
-export async function createConsoleOperator({ email, password, confirmPassword, setupSecret } = {}) {
-  const cronSecret = String(process.env.CRON_SECRET || "").trim();
-  if (!cronSecret) {
-    return { ok: false, status: 503, error: "Server setup is not configured yet." };
-  }
-  if (String(setupSecret || "").trim() !== cronSecret) {
-    return { ok: false, status: 403, error: "Invalid setup secret." };
-  }
+export async function createConsoleOperator({ email, password, confirmPassword } = {}) {
   if (!(await needsConsoleSetup())) {
-    return { ok: false, status: 409, error: "Command Center access already exists." };
+    return { ok: false, status: 404, error: "not_found" };
   }
 
   const normalizedEmail = String(email || "").trim().toLowerCase();
@@ -42,7 +35,7 @@ export async function createConsoleOperator({ email, password, confirmPassword, 
     role: "operator"
   });
   if (!result.ok) {
-    return { ...result, status: 500 };
+    return { ok: false, status: 500, error: "Request failed." };
   }
 
   return { ok: true, status: 200, email: result.email, userId: result.userId, created: result.created };

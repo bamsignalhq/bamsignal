@@ -1,18 +1,13 @@
 import { createConsoleOperator, needsConsoleSetup } from "../../server/services/consoleSetup.js";
+import {
+  hasForbiddenSetupSecretChannel,
+  logLegacySetupDenied,
+  requireLegacySetupEnabled,
+  sendLegacySetupAccessDenied,
+  validateSetupHeader
+} from "../../server/services/consoleSetupAccess.js";
 import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 import { logAdminStatusHidden } from "../../server/services/identityExposure.js";
-
-function hasSetupSecret(req) {
-  const allowed = String(process.env.CRON_SECRET || "").trim();
-  if (!allowed) return false;
-  const provided = String(
-    req.headers["x-bamsignal-secret"] ||
-      req.query.secret ||
-      parseBody(req)?.setupSecret ||
-      ""
-  ).trim();
-  return Boolean(provided && provided === allowed);
-}
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -27,6 +22,16 @@ function parseBody(req) {
 }
 
 export default async function handler(req, res) {
+  const enabled = requireLegacySetupEnabled();
+  if (!enabled.ok) {
+    return sendLegacySetupAccessDenied(res, enabled);
+  }
+
+  if (hasForbiddenSetupSecretChannel(req)) {
+    logLegacySetupDenied(req, { reason: "forbidden_secret_channel" });
+    return sendLegacySetupAccessDenied(res);
+  }
+
   const action = String(req.query.action || "status").toLowerCase();
 
   if (action === "status") {
@@ -35,7 +40,8 @@ export default async function handler(req, res) {
       return res.status(405).json({ ok: false, error: "Method not allowed" });
     }
     try {
-      if (!hasSetupSecret(req)) {
+      const access = validateSetupHeader(req);
+      if (!access.ok) {
         logAdminStatusHidden({ endpoint: "hard/setup", action: "status" });
         return res.status(200).json({ ok: true });
       }
@@ -48,7 +54,7 @@ export default async function handler(req, res) {
         event: "console_setup_failed",
         error,
         status: 500,
-        message: "Could not check setup status.",
+        message: "Request failed.",
         context: { action: "status" }
       });
     }
@@ -60,16 +66,24 @@ export default async function handler(req, res) {
       return res.status(405).json({ ok: false, error: "Method not allowed" });
     }
 
+    const access = validateSetupHeader(req);
+    if (!access.ok) {
+      logLegacySetupDenied(req, { reason: access.reason || "invalid_or_missing_secret" });
+      return sendLegacySetupAccessDenied(res);
+    }
+
     const body = parseBody(req);
     try {
       const result = await createConsoleOperator({
         email: body.email,
         password: body.password,
-        confirmPassword: body.confirmPassword,
-        setupSecret: body.setupSecret
+        confirmPassword: body.confirmPassword
       });
       if (!result.ok) {
-        return res.status(result.status || 500).json({ ok: false, error: result.error || "Setup failed." });
+        if (result.status === 400) {
+          return res.status(400).json({ ok: false, error: result.error || "Request failed." });
+        }
+        return sendLegacySetupAccessDenied(res, { status: result.status || 404 });
       }
       return res.status(200).json({
         ok: true,
@@ -83,11 +97,11 @@ export default async function handler(req, res) {
         event: "console_setup_failed",
         error,
         status: 500,
-        message: "Setup failed.",
+        message: "Request failed.",
         context: { action: "create" }
       });
     }
   }
 
-  return res.status(400).json({ ok: false, error: "Unknown action." });
+  return res.status(404).json({ ok: false, error: "not_found" });
 }

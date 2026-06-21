@@ -21,10 +21,14 @@ export async function createConsoleAccess(input: {
   setupSecret: string;
 }): Promise<SetupCreateResult> {
   try {
+    const { setupSecret, ...body } = input;
     const response = await fetch(apiUrl("/api/hard/setup?action=create"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input)
+      headers: {
+        "Content-Type": "application/json",
+        "x-setup-secret": setupSecret
+      },
+      body: JSON.stringify(body)
     });
     const payload = await readResponseJson<SetupCreateResult>(response);
     if (!response.ok || !payload?.ok) {

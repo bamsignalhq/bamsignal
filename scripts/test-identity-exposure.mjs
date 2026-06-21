@@ -92,7 +92,7 @@ assert(
 
 assert(
   hardSetupSource.includes("logAdminStatusHidden") &&
-    hardSetupSource.includes("hasSetupSecret"),
+    hardSetupSource.includes("validateSetupHeader"),
   "console setup status must hide needsSetup without setup secret"
 );
 

@@ -4,9 +4,15 @@ export const SIGNAL_CONCIERGE_LANDING_HEADLINE = "Signal Concierge™";
 export const SIGNAL_CONCIERGE_LANDING_SUBTEXT =
   "Human-led matchmaking for people seeking meaningful relationships and, in time, marriage.";
 
-export const SIGNAL_CONCIERGE_PRIVATE_HEADLINE = "Private by design.";
-export const SIGNAL_CONCIERGE_PRIVATE_BODY =
-  "Members are introduced confidentially and never displayed publicly.";
+export const SIGNAL_CONCIERGE_HERO_TAG = "Private by design";
+
+export const SIGNAL_CONCIERGE_CONFIDENTIALITY_HEADLINE = "Private by design";
+export const SIGNAL_CONCIERGE_CONFIDENTIALITY_BODY =
+  "Members are introduced confidentially and are never displayed publicly.";
+export const SIGNAL_CONCIERGE_CONFIDENTIALITY_NOTE = "Introductions happen only with consent.";
+
+export const SIGNAL_CONCIERGE_PRIVATE_HEADLINE = SIGNAL_CONCIERGE_CONFIDENTIALITY_HEADLINE;
+export const SIGNAL_CONCIERGE_PRIVATE_BODY = SIGNAL_CONCIERGE_CONFIDENTIALITY_BODY;
 
 export const SIGNAL_CONCIERGE_CTA_PRIMARY = "Schedule Consultation";
 export const SIGNAL_CONCIERGE_CTA_SECONDARY = "Learn More";
@@ -21,11 +27,23 @@ export const SIGNAL_CONCIERGE_PAYMENT_NOTE =
   "Payment is only requested once you're comfortable moving forward.";
 export const SIGNAL_CONCIERGE_MAYBE_LATER = "Maybe Later";
 
+export const SIGNAL_CONCIERGE_NEXT_STEP_HEADLINE = "Ready to finally meet your match?";
+export const SIGNAL_CONCIERGE_NEXT_STEP_SUBTEXT =
+  "Tell us a little about yourself.\n\nIf we're the right fit for each other, your consultant will be in touch.";
+
+export const SIGNAL_CONCIERGE_PROCESS = [
+  { id: "consultation", step: 1, title: "Consultation", detail: "30–45 minutes" },
+  { id: "review", step: 2, title: "Compatibility Review", detail: "Values, goals and lifestyle." },
+  { id: "search", step: 3, title: "Private Search", detail: "No browsing.\nNo swiping." },
+  { id: "introductions", step: 4, title: "Introductions", detail: "Only when both parties agree." }
+] as const;
+
 export type SignalConciergeTierId = "essential" | "signature" | "legacy" | "global";
 
 export type SignalConciergeTier = {
   id: SignalConciergeTierId;
   name: string;
+  landingName: string;
   tagline: string;
   priceLabel: string;
   priceKobo: number;
@@ -37,6 +55,7 @@ export const SIGNAL_CONCIERGE_TIERS: SignalConciergeTier[] = [
   {
     id: "essential",
     name: "Signal Concierge Essential™",
+    landingName: "Essential™",
     tagline: "Thoughtfully Guided",
     priceLabel: "₦100,000",
     priceKobo: 10_000_000,
@@ -53,6 +72,7 @@ export const SIGNAL_CONCIERGE_TIERS: SignalConciergeTier[] = [
   {
     id: "signature",
     name: "Signal Concierge Signature™",
+    landingName: "Signature™",
     tagline: "Personally Curated",
     priceLabel: "₦300,000",
     priceKobo: 30_000_000,
@@ -68,6 +88,7 @@ export const SIGNAL_CONCIERGE_TIERS: SignalConciergeTier[] = [
   {
     id: "legacy",
     name: "Signal Concierge Legacy™",
+    landingName: "Legacy™",
     tagline: "White-Glove Matchmaking",
     priceLabel: "₦600,000",
     priceKobo: 60_000_000,
@@ -83,6 +104,7 @@ export const SIGNAL_CONCIERGE_TIERS: SignalConciergeTier[] = [
   {
     id: "global",
     name: "Signal Concierge Global™",
+    landingName: "Global™",
     tagline: "Worldwide Introductions",
     priceLabel: "₦1,000,000",
     priceKobo: 100_000_000,
@@ -106,7 +128,7 @@ export const SIGNAL_CONCIERGE_PROMISES = [
   {
     id: "private",
     title: "Private by Default",
-    body: "Your information is never displayed publicly. Introductions happen only with consent."
+    body: "Your information is never displayed publicly."
   },
   {
     id: "human",

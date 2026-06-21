@@ -16,8 +16,7 @@ export function SignalConciergeLandingPage(props: SignalConciergeLandingPageProp
       <SignalConciergeLanding
         onScheduleConsultation={goConsultation}
         onLearnMore={() => {
-          const tiers = document.getElementById("sc-tiers-title");
-          tiers?.scrollIntoView({ behavior: "smooth", block: "start" });
+          document.getElementById("sc-process-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
         }}
         onSelectTier={goApply}
       />

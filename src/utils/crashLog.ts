@@ -35,10 +35,16 @@ export function logAppCrash(error: Error, componentStack?: string | null): void 
 }
 
 export function logRouteCrash(routeName: string, error: Error, componentStack?: string | null): void {
-  console.error("[route-crash]", {
+  const payload = {
     routeName,
     message: error.message,
     stack: error.stack || componentStack || "",
     ...getCrashMetadata()
-  });
+  };
+  console.error("[route-crash]", payload);
+  try {
+    sessionStorage.setItem("bamsignal:last-crash", JSON.stringify(payload));
+  } catch {
+    /* ignore */
+  }
 }

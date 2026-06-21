@@ -577,7 +577,10 @@ export function App() {
       return;
     }
 
-    void finishRestore();
+    setMemberHydrating(true);
+    void finishRestore().finally(() => {
+      setMemberHydrating(false);
+    });
   }, [applyGoToAppResult]);
 
   useEffect(() => {
@@ -1304,18 +1307,25 @@ export function App() {
         const onMemberSurface =
           requiresMemberRestoreBlocking(window.location.pathname, isNative) ||
           !isPublicWebRoute();
-        void goToApp().then((sessionResult) => {
-          if (!sessionResult.ok) return;
-          if (onMemberSurface) {
-            setProfileComplete(sessionResult.route === "home");
-            if (sessionResult.route === "onboarding" && !isOnboardingPath()) {
-              navigateToPath("/onboarding", true);
-            } else if (sessionResult.route === "home" && isOnboardingPath()) {
-              navigateToPath("/home", true);
+        if (onMemberSurface && isMemberAppPath()) {
+          setMemberHydrating(true);
+        }
+        void goToApp()
+          .then((sessionResult) => {
+            if (!sessionResult.ok) return;
+            if (onMemberSurface) {
+              setProfileComplete(sessionResult.route === "home");
+              if (sessionResult.route === "onboarding" && !isOnboardingPath()) {
+                navigateToPath("/onboarding", true);
+              } else if (sessionResult.route === "home" && isOnboardingPath()) {
+                navigateToPath("/home", true);
+              }
             }
-          }
-          if (sessionResult.route === "home") clearOnboardingDrafts();
-        });
+            if (sessionResult.route === "home") clearOnboardingDrafts();
+          })
+          .finally(() => {
+            setMemberHydrating(false);
+          });
         await refreshPremiumStatus(profile);
         syncPremiumState();
         return;

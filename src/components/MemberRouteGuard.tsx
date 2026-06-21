@@ -31,7 +31,11 @@ export function evaluateMemberRouteGuard(input: MemberRouteGuardInput): MemberRo
   const memberPath = parseMemberPath(path);
   const onMemberSurface = isMemberAppPath(path);
 
-  if (input.authLoading || (input.isAuthed && input.profileComplete === null && onMemberSurface)) {
+  if (
+    input.authLoading ||
+    input.memberHydrating ||
+    (input.isAuthed && input.profileComplete === null && onMemberSurface)
+  ) {
     return { phase: "loading", memberPath, memberTab: null };
   }
 

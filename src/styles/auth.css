@@ -79,6 +79,7 @@
 .auth-card--fintech > .auth-brand,
 .auth-card--fintech > .auth-title,
 .auth-card--fintech > .auth-sub,
+.auth-card--fintech > .auth-login-main,
 .auth-card--fintech > .auth-fields,
 .auth-card--fintech > .auth-links,
 .auth-card--fintech > .auth-switch,
@@ -650,6 +651,92 @@
 [data-theme="dark"] .auth-message--success,
 .app.dark .auth-message--success {
   color: #86efac;
+}
+
+/* Mobile login — full-height premium layout (standalone route only) */
+@media (max-width: 480px) {
+  .auth-page--login:not(.auth-page--embedded) {
+    min-height: 100dvh;
+    height: 100dvh;
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-shell {
+    max-width: none;
+    min-height: 100%;
+    height: 100%;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-shell__glow {
+    inset: -10% -20% auto;
+    height: 280px;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-card--fintech {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    height: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: none;
+    padding-bottom: 0;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-brand {
+    padding-top: max(calc(env(safe-area-inset-top, 0px) + 24px), 28px);
+    margin-bottom: 28px;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-title {
+    margin-bottom: 10px;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-sub {
+    margin-bottom: 0;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-login-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 22px;
+    min-height: 0;
+    padding-top: 32px;
+    padding-bottom: 12px;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-login-main .auth-fields {
+    margin-bottom: 0;
+    gap: 16px;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-login-main .btn-auth {
+    min-height: 58px;
+    font-size: 1.06rem;
+    border-radius: 18px;
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-links--stack {
+    margin-top: auto;
+    gap: 16px;
+    padding-top: 28px;
+    padding-bottom: max(28px, calc(env(safe-area-inset-bottom, 0px) + 16px));
+  }
+
+  .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-message {
+    margin-top: 0;
+    margin-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @media (max-width: 380px) {

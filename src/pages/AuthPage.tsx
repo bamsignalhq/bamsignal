@@ -848,7 +848,9 @@ export function AuthPage({
   };
 
   return (
-    <main className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""}`.trim()}>
+    <main
+      className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""} ${mode === "login" ? "auth-page--login" : ""}`.trim()}
+    >
       <div className="auth-shell">
         <div className="auth-shell__glow" aria-hidden />
         <div className="auth-card auth-card--fintech">
@@ -866,32 +868,34 @@ export function AuthPage({
             <>
               <h1 className="auth-title">Welcome back</h1>
               <p className="auth-sub">Good to have you back ❤️</p>
-              <div className="auth-fields">
-                <AuthField
-                  label="Username"
-                  value={loginForm.username}
-                  onChange={(value) => {
-                    setLoginForm({ ...loginForm, username: formatUsernameInput(value.trim()) });
-                  }}
-                  autoComplete="username"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  maxLength={120}
-                  className="auth-field--centered auth-field--login"
-                />
-                <AuthField
-                  label="PIN"
-                  value={loginForm.password}
-                  onChange={(password) => setLoginForm({ ...loginForm, password: pinDigits(password) })}
-                  pin
-                  maxLength={6}
-                  autoComplete="current-password"
-                  className="auth-field--centered auth-field--login"
-                />
+              <div className="auth-login-main">
+                <div className="auth-fields">
+                  <AuthField
+                    label="Username"
+                    value={loginForm.username}
+                    onChange={(value) => {
+                      setLoginForm({ ...loginForm, username: formatUsernameInput(value.trim()) });
+                    }}
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    maxLength={120}
+                    className="auth-field--centered auth-field--login"
+                  />
+                  <AuthField
+                    label="PIN"
+                    value={loginForm.password}
+                    onChange={(password) => setLoginForm({ ...loginForm, password: pinDigits(password) })}
+                    pin
+                    maxLength={6}
+                    autoComplete="current-password"
+                    className="auth-field--centered auth-field--login"
+                  />
+                </div>
+                <button type="button" className="btn-primary btn-full btn-auth" onClick={signIn} disabled={busy === "login"}>
+                  {busy === "login" ? <Loader2 className="spin" size={20} /> : "Login"}
+                </button>
               </div>
-              <button type="button" className="btn-primary btn-full btn-auth" onClick={signIn} disabled={busy === "login"}>
-                {busy === "login" ? <Loader2 className="spin" size={20} /> : "Login"}
-              </button>
               <div className="auth-links auth-links--stack">
                 <button type="button" className="auth-link-secondary" onClick={() => onModeChange("reset")}>
                   Forgot PIN?

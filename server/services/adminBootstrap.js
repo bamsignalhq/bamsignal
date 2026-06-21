@@ -21,10 +21,15 @@ export async function bootstrapOpsAdmin({
     return { ok: false, error: "Valid admin email is required." };
   }
 
-  const headers = supabaseServiceHeaders();
-  if (!headers?.Authorization) {
+  const config = supabaseServiceHeaders();
+  if (!config?.serviceKey) {
     return { ok: false, error: "SUPABASE_SERVICE_ROLE_KEY is required to bootstrap admin login." };
   }
+
+  const headers = {
+    apikey: config.serviceKey,
+    Authorization: `Bearer ${config.serviceKey}`
+  };
 
   const finalPassword = String(password || process.env.ADMIN_BOOTSTRAP_PASSWORD || "").trim() || randomPassword();
   const generated = !String(password || process.env.ADMIN_BOOTSTRAP_PASSWORD || "").trim();
@@ -90,7 +95,6 @@ export async function bootstrapOpsAdmin({
     email: normalizedEmail,
     userId,
     created,
-    password: generated ? finalPassword : undefined,
     generated,
     dbAdmin: adminRow
   };

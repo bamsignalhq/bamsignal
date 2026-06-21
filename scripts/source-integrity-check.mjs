@@ -51,6 +51,8 @@ const identityExposureSource = readSrc("server/services/identityExposure.js");
 const identityApiSource = readSrc("api/auth/identity.js");
 const loginSecurityApiSource = readSrc("api/auth/login-security.js");
 const hardSetupApiSource = readSrc("api/hard/setup.js");
+const adminBootstrapApiSource = readSrc("api/admin/bootstrap.js");
+const adminBootstrapAccessSource = readSrc("server/services/adminBootstrapAccess.js");
 const adminAuthServerSource = readSrc("server/adminAuth.js");
 const observabilitySource = readSrc("server/services/observability.js");
 const paystackVerifyApiSource = readSrc("api/paystack/verify.js");
@@ -684,6 +686,18 @@ assertCheck(
     hardSetupApiSource.includes("hasSetupSecret") &&
     !memberAuthSource.includes('"check-username"'),
   "identity and admin status exposure must stay minimized for public callers"
+);
+assertCheck(
+  adminBootstrapAccessSource.includes("ADMIN_BOOTSTRAP_SECRET") &&
+    adminBootstrapAccessSource.includes("ADMIN_BOOTSTRAP_ENABLED") &&
+    adminBootstrapAccessSource.includes("x-admin-bootstrap-secret") &&
+    !adminBootstrapAccessSource.includes("CRON_SECRET") &&
+    !adminBootstrapAccessSource.includes("DIAGNOSTICS_SECRET") &&
+    adminBootstrapApiSource.includes("requireAdminBootstrapAccess(req)") &&
+    !adminBootstrapApiSource.includes("req.query.secret") &&
+    !adminBootstrapApiSource.includes("body.secret") &&
+    !adminBootstrapApiSource.includes("result.password"),
+  "admin bootstrap endpoint must stay locked to dedicated header secret and enable flag"
 );
 assertCheck(
   observabilitySource.includes("requestContextMiddleware") &&

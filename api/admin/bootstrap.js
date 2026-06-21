@@ -1,4 +1,9 @@
 import { bootstrapOpsAdmin } from "../../server/services/adminBootstrap.js";
+import {
+  logAdminBootstrapSuccess,
+  requireAdminBootstrapAccess,
+  sendAdminBootstrapAccessDenied
+} from "../../server/services/adminBootstrapAccess.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -18,13 +23,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const allowedSecrets = [process.env.CRON_SECRET, process.env.DIAGNOSTICS_SECRET].filter(Boolean);
-  const body = parseBody(req);
-  const provided =
-    req.headers["x-bamsignal-secret"] || req.query.secret || body.secret || req.headers.authorization?.replace(/^Bearer /i, "");
-  if (!provided || !allowedSecrets.includes(provided)) {
-    return res.status(401).json({ ok: false, error: "Bootstrap secret required." });
+  const access = requireAdminBootstrapAccess(req);
+  if (!access.ok) {
+    return sendAdminBootstrapAccessDenied(res, access);
   }
+
+  const body = parseBody(req);
 
   try {
     const result = await bootstrapOpsAdmin({
@@ -32,22 +36,21 @@ export default async function handler(req, res) {
       password: body.password || process.env.ADMIN_BOOTSTRAP_PASSWORD
     });
     if (!result.ok) {
-      return res.status(500).json(result);
+      return res.status(500).json({ ok: false, error: result.error || "Bootstrap failed." });
     }
-    return res.status(200).json({
-      ok: true,
+
+    logAdminBootstrapSuccess(req, {
       email: result.email,
       userId: result.userId,
-      created: result.created,
-      dbAdmin: result.dbAdmin,
-      password: result.password,
-      generated: result.generated,
-      message: result.generated
-        ? "Admin user ready. Copy the password now — it will not be shown again."
-        : "Admin user password updated."
+      created: result.created
+    });
+
+    return res.status(200).json({
+      ok: true,
+      message: result.created ? "Admin user ready." : "Admin user updated."
     });
   } catch (error) {
-    console.error("[bamsignal] admin bootstrap error:", error);
-    return res.status(500).json({ ok: false, error: error.message || "Bootstrap failed." });
+    console.error("[bamsignal] admin bootstrap error:", error instanceof Error ? error.message : "Bootstrap failed.");
+    return res.status(500).json({ ok: false, error: "Bootstrap failed." });
   }
 }

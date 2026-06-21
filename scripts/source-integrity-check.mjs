@@ -261,14 +261,18 @@ assertCheck(
 assertCheck(
   pinLoginApiSource.includes("pin_login_failed") &&
     pinLoginApiSource.includes("pin_login_locked") &&
-    pinLoginApiSource.includes("pin_login_success"),
-  "PIN login API must log success, failure, and lock events"
+    pinLoginApiSource.includes("pin_login_success") &&
+    pinLoginApiSource.includes("buildAuthAuditContext") &&
+    pinLoginApiSource.includes("logObservabilityEvent"),
+  "PIN login API must log success, failure, and lock events with redacted identifiers"
 );
 assertCheck(
   pinResetApiSource.includes("pin_reset_failed") &&
     pinResetApiSource.includes("pin_reset_locked") &&
-    pinResetApiSource.includes("pin_reset_success"),
-  "PIN reset API must log success, failure, and lock events"
+    pinResetApiSource.includes("pin_reset_success") &&
+    pinResetApiSource.includes("buildAuthAuditContext") &&
+    pinResetApiSource.includes("logObservabilityEvent"),
+  "PIN reset API must log success, failure, and lock events with redacted identifiers"
 );
 assertCheck(
   pinLoginApiSource.includes("INVALID_LOGIN_MESSAGE") &&
@@ -379,8 +383,10 @@ assertCheck(
     adminConsentServerSource.includes("admin_action_pin_failed") &&
     adminConsentServerSource.includes("admin_action_pin_locked") &&
     adminConsentServerSource.includes("admin_action_pin_success") &&
+    adminConsentServerSource.includes("buildAdminAuditContext") &&
+    adminConsentServerSource.includes("logObservabilityEvent") &&
     adminConsentServerSource.includes("INVALID_ADMIN_ACTION_PIN_MESSAGE"),
-  "admin consent must throttle action PIN with generic audit events"
+  "admin consent must throttle action PIN with redacted audit events"
 );
 assertCheck(
   adminConsentApiSource.includes("createConsentFromPin(req, body.pin)") &&
@@ -776,6 +782,13 @@ assertCheck(
     readSrc("server/services/signupOtp.js").includes("createBoundedMemoryStore") &&
     readSrc("server/services/pinReset.js").includes("createBoundedMemoryStore"),
   "auth and OTP memory fallback stores must use bounded caps and periodic cleanup"
+);
+assertCheck(
+  existsSync(join(rootPath, "server/services/logRedaction.js")) &&
+    readSrc("server/services/logRedaction.js").includes("maskEmailForLog") &&
+    readSrc("server/services/pinLogin.js").includes("sanitizeAuthDebugLog") &&
+    readSrc("server/services/loginResolve.js").includes("sanitizeAuthDebugLog"),
+  "auth and admin logs must redact identifiers before emission"
 );
 
 console.log("source integrity ok");

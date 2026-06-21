@@ -12,6 +12,7 @@ import {
   createBoundedMemoryStore,
   isOtpMemoryEntryExpired
 } from "./boundedMemoryStore.js";
+import { logObservabilityEvent } from "./observability.js";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
@@ -121,8 +122,11 @@ async function sendResendEmail({ to, subject, html, text }) {
   });
 
   if (!response.ok) {
-    const detail = await response.text();
-    console.error("[bamsignal] PIN reset email failed:", detail.slice(0, 240));
+    logObservabilityEvent(
+      "pin_reset_email_failed",
+      { status: response.status, reason: "provider_error" },
+      "error"
+    );
     throw new PinResetError(
       502,
       "We couldn't send the code right now. Wait a minute and try again, or check your spam folder.",

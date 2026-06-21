@@ -4,6 +4,8 @@ import {
   recordPinResetFailure,
   recordPinResetSuccess
 } from "../../server/services/pinAuthThrottle.js";
+import { buildAuthAuditContext } from "../../server/services/logRedaction.js";
+import { logObservabilityEvent, observabilityContext } from "../../server/services/observability.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -40,10 +42,13 @@ export default async function handler(req, res) {
       const email = String(body.email || "").trim();
       const throttle = await checkPinResetThrottle(req, email);
       if (throttle.locked) {
-        console.info("pin_reset_locked", {
-          email,
-          lockedUntil: throttle.lockedUntil || null
-        });
+        logObservabilityEvent(
+          "pin_reset_locked",
+          observabilityContext(
+            req,
+            buildAuthAuditContext({ email, lockedUntil: throttle.lockedUntil || null })
+          )
+        );
         return res.status(429).json({
           ok: false,
           error: lockError
@@ -57,12 +62,18 @@ export default async function handler(req, res) {
       });
       if (!result?.ok) {
         const record = await recordPinResetFailure(req, email);
-        console.info("pin_reset_failed", {
-          email,
-          attempts: record.attempts,
-          locked: record.locked,
-          lockedUntil: record.lockedUntil || null
-        });
+        logObservabilityEvent(
+          "pin_reset_failed",
+          observabilityContext(
+            req,
+            buildAuthAuditContext({
+              email,
+              attempts: record.attempts,
+              locked: record.locked,
+              lockedUntil: record.lockedUntil || null
+            })
+          )
+        );
         return res.status(400).json({
           ok: false,
           error: INVALID_RESET_MESSAGE
@@ -70,9 +81,10 @@ export default async function handler(req, res) {
       }
 
       await recordPinResetSuccess(email);
-      console.info("pin_reset_success", {
-        email
-      });
+      logObservabilityEvent(
+        "pin_reset_success",
+        observabilityContext(req, buildAuthAuditContext({ email }))
+      );
       return res.status(200).json(result);
     }
 
@@ -85,7 +97,7 @@ export default async function handler(req, res) {
         error: INVALID_RESET_MESSAGE
       });
     }
-    console.error("[bamsignal] pin-reset error:", error);
+    console.error("[bamsignal] pin-reset error:", error instanceof Error ? error.message : "pin_reset_error");
     return res.status(500).json({ ok: false, error: "PIN reset failed." });
   }
 }

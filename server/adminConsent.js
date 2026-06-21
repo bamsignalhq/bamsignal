@@ -10,6 +10,8 @@ import {
   recordAdminActionPinFailure,
   recordAdminActionPinSuccess
 } from "./services/adminActionPinThrottle.js";
+import { buildAdminAuditContext } from "./services/logRedaction.js";
+import { logObservabilityEvent, observabilityContext } from "./services/observability.js";
 
 const CONSENT_TTL_MS = 15 * 60 * 1000;
 const PIN_SETTING_KEY = "admin_action_pin_hash";
@@ -62,10 +64,10 @@ export async function attemptAdminActionPin(req, pin) {
     return { ok: false, status: 503, error: throttle.error || ADMIN_SECURITY_UNAVAILABLE_MESSAGE };
   }
   if (!throttle.ok || throttle.locked) {
-    console.info("admin_action_pin_locked", {
-      email,
-      lockedUntil: throttle.lockedUntil || null
-    });
+    logObservabilityEvent(
+      "admin_action_pin_locked",
+      observabilityContext(req, buildAdminAuditContext({ email, lockedUntil: throttle.lockedUntil || null }))
+    );
     return { ok: false, status: 429, error: ADMIN_ACTION_PIN_LOCKED_MESSAGE };
   }
 
@@ -75,24 +77,30 @@ export async function attemptAdminActionPin(req, pin) {
     if (record.failClosed) {
       return { ok: false, status: 503, error: record.error || ADMIN_SECURITY_UNAVAILABLE_MESSAGE };
     }
-    console.info("admin_action_pin_failed", {
-      email,
-      attempts: record.attempts,
-      locked: record.locked,
-      lockedUntil: record.lockedUntil || null
-    });
+    logObservabilityEvent(
+      "admin_action_pin_failed",
+      observabilityContext(
+        req,
+        buildAdminAuditContext({
+          email,
+          attempts: record.attempts,
+          locked: record.locked,
+          lockedUntil: record.lockedUntil || null
+        })
+      )
+    );
     if (record.locked) {
-      console.info("admin_action_pin_locked", {
-        email,
-        lockedUntil: record.lockedUntil || null
-      });
+      logObservabilityEvent(
+        "admin_action_pin_locked",
+        observabilityContext(req, buildAdminAuditContext({ email, lockedUntil: record.lockedUntil || null }))
+      );
       return { ok: false, status: 429, error: ADMIN_ACTION_PIN_LOCKED_MESSAGE };
     }
     return { ok: false, status: 403, error: INVALID_ADMIN_ACTION_PIN_MESSAGE };
   }
 
   await recordAdminActionPinSuccess(email);
-  console.info("admin_action_pin_success", { email });
+  logObservabilityEvent("admin_action_pin_success", observabilityContext(req, buildAdminAuditContext({ email })));
   return { ok: true, email };
 }
 

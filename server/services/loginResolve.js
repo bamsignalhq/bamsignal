@@ -1,13 +1,14 @@
 import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query, upsertAppUserIdentity } from "../db.js";
 import { ensureMemberProfilesTable } from "../cityHome.js";
 import { normalizeSignupUsername, phoneDigitKeys } from "./signupIdentity.js";
+import { sanitizeAuthDebugLog } from "./logRedaction.js";
 
 export function normalizeLoginUsername(raw = "") {
   return normalizeSignupUsername(String(raw || "").trim().replace(/^@+/, ""));
 }
 
 function pinLoginLog(label, value) {
-  console.info(`[pin-login] ${label}`, value);
+  console.info(`[pin-login] ${label}`, sanitizeAuthDebugLog(value));
 }
 
 function emailFromUserKey(userKey = "") {

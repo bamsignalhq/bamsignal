@@ -13,6 +13,7 @@ import {
   logIdentityExposureBlocked,
   sendGenericServiceUnavailable
 } from "../../server/services/identityExposure.js";
+import { logObservabilityEvent, observabilityContext } from "../../server/services/observability.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -97,7 +98,14 @@ export default async function handler(req, res) {
     if (error instanceof Login2faError) {
       return res.status(error.status || 400).json({ ok: false, error: error.message, code: error.code });
     }
-    console.error("[bamsignal] login-security error:", error);
+    logObservabilityEvent(
+      "login_security_failed",
+      observabilityContext(req, {
+        action,
+        code: error instanceof Error ? error.code || null : null
+      }),
+      "error"
+    );
     return res.status(500).json({ ok: false, error: "Login security request failed." });
   }
 }

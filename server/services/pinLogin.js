@@ -4,13 +4,14 @@ import { normalizeSignupPhone, normalizeSignupUsername } from "./signupIdentity.
 import { normalizeLoginUsername, resolveLoginAccount } from "./loginResolve.js";
 import { resolveSupabaseUrl } from "../supabaseEnv.js";
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
+import { sanitizeAuthDebugLog } from "./logRedaction.js";
 
 export const INVALID_LOGIN_MESSAGE = "Invalid username or PIN.";
 const DEFAULT_REPAIR_CITY = "Lagos";
 const DEFAULT_REPAIR_STATE = "Lagos";
 
 function pinLoginLog(label, value) {
-  console.info(`[pin-login] ${label}`, value);
+  console.info(`[pin-login] ${label}`, sanitizeAuthDebugLog(value));
 }
 
 function resolveAnonKey() {

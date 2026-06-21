@@ -4,6 +4,7 @@ import {
   requireAdminBootstrapAccess,
   sendAdminBootstrapAccessDenied
 } from "../../server/services/adminBootstrapAccess.js";
+import { buildAdminAuditContext } from "../../server/services/logRedaction.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -39,11 +40,14 @@ export default async function handler(req, res) {
       return res.status(500).json({ ok: false, error: result.error || "Bootstrap failed." });
     }
 
-    logAdminBootstrapSuccess(req, {
-      email: result.email,
-      userId: result.userId,
-      created: result.created
-    });
+    logAdminBootstrapSuccess(
+      req,
+      buildAdminAuditContext({
+        email: result.email,
+        userId: result.userId,
+        created: result.created
+      })
+    );
 
     return res.status(200).json({
       ok: true,

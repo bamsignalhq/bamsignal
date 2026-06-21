@@ -5,6 +5,8 @@ import {
   recordPinLoginSuccess
 } from "../../server/services/pinAuthThrottle.js";
 import { normalizeLoginUsername } from "../../server/services/loginResolve.js";
+import { buildAuthAuditContext } from "../../server/services/logRedaction.js";
+import { logObservabilityEvent, observabilityContext } from "../../server/services/observability.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -37,10 +39,13 @@ export default async function handler(req, res) {
 
     const throttle = await checkPinLoginThrottle(req, username);
     if (throttle.locked) {
-      console.info("pin_login_locked", {
-        username,
-        lockedUntil: throttle.lockedUntil || null
-      });
+      logObservabilityEvent(
+        "pin_login_locked",
+        observabilityContext(
+          req,
+          buildAuthAuditContext({ username, lockedUntil: throttle.lockedUntil || null })
+        )
+      );
       return res.status(429).json({
         ok: false,
         error: lockError
@@ -50,12 +55,18 @@ export default async function handler(req, res) {
     const result = await loginWithUsernameAndPin(username, pin);
     if (!result.ok) {
       const record = await recordPinLoginFailure(req, username);
-      console.info("pin_login_failed", {
-        username,
-        attempts: record.attempts,
-        locked: record.locked,
-        lockedUntil: record.lockedUntil || null
-      });
+      logObservabilityEvent(
+        "pin_login_failed",
+        observabilityContext(
+          req,
+          buildAuthAuditContext({
+            username,
+            attempts: record.attempts,
+            locked: record.locked,
+            lockedUntil: record.lockedUntil || null
+          })
+        )
+      );
       return res.status(401).json({
         ok: false,
         error: INVALID_LOGIN_MESSAGE
@@ -63,9 +74,10 @@ export default async function handler(req, res) {
     }
 
     await recordPinLoginSuccess(username);
-    console.info("pin_login_success", {
-      username
-    });
+    logObservabilityEvent(
+      "pin_login_success",
+      observabilityContext(req, buildAuthAuditContext({ username }))
+    );
 
     return res.status(200).json({
       ok: true,

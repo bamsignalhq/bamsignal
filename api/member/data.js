@@ -20,6 +20,7 @@ import {
   logAlertableEvent,
   observabilityContext
 } from "../../server/services/observability.js";
+import { sendLoggedApiError } from "../../server/services/apiErrorResponse.js";
 import { upsertMemberProfile } from "../../server/cityHome.js";
 import {
   acceptIncomingSignal,
@@ -489,7 +490,16 @@ export default async function handler(req, res) {
         return res.status(row ? 200 : 503).json({ ok: Boolean(row), message: row });
       } catch (error) {
         if (error?.code === "CONTACT_LEAK_BLOCKED") {
-          return res.status(400).json({ ok: false, error: error.message });
+          return sendLoggedApiError({
+            req,
+            res,
+            event: "member_data_blocked",
+            error,
+            status: 400,
+            message: "Message blocked for safety.",
+            context: { action, code: error.code },
+            level: "warn"
+          });
         }
         throw error;
       }
@@ -506,7 +516,16 @@ export default async function handler(req, res) {
         return res.status(row ? 200 : 503).json({ ok: Boolean(row), report: row });
       } catch (error) {
         if (error?.code === "CONTACT_LEAK_BLOCKED") {
-          return res.status(400).json({ ok: false, error: error.message });
+          return sendLoggedApiError({
+            req,
+            res,
+            event: "member_data_blocked",
+            error,
+            status: 400,
+            message: "Report blocked for safety.",
+            context: { action, code: error.code },
+            level: "warn"
+          });
         }
         throw error;
       }
@@ -841,17 +860,15 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ ok: false, error: "Unknown action." });
   } catch (error) {
-    if (action === "profile") {
-      logAlertableEvent(
-        "profile_save_failed",
-        observabilityContext(req, {
-          action,
-          error: error?.message || String(error),
-          code: error?.code || null
-        })
-      );
-    }
-    return res.status(500).json({ ok: false, error: error.message || "Member data request failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: action === "profile" ? "profile_save_failed" : "member_data_failed",
+      error,
+      status: 500,
+      message: "Member data request failed.",
+      context: { action }
+    });
   }
 }
 

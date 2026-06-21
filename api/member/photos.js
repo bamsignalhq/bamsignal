@@ -19,6 +19,11 @@ import {
   logThresholdedAlert,
   observabilityContext
 } from "../../server/services/observability.js";
+import {
+  ensureApiRequestContext,
+  sendApiError,
+  sendLoggedApiError
+} from "../../server/services/apiErrorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -34,6 +39,14 @@ function parseBody(req) {
 
 function unauthorized(res, auth) {
   return res.status(auth?.status || 401).json({ ok: false, error: auth?.error || "not_authorized" });
+}
+
+function photoStorageClientMessage(error) {
+  const status = Number(error?.status || 500);
+  if (status === 403) return "Photo request is not authorized.";
+  if (status === 503) return "Photo storage is temporarily unavailable.";
+  if (status >= 500) return "Photo request failed.";
+  return "Photo request could not be completed.";
 }
 
 export default async function handler(req, res) {
@@ -53,14 +66,18 @@ export default async function handler(req, res) {
 
     const needsStorage = action === "upload" || action === "delete" || action === "finalize";
     if (needsStorage && !isPhotoStorageConfigured()) {
+      const { requestId } = ensureApiRequestContext(req, res);
       logThresholdedAlert(
         "photo_storage_unavailable",
         observabilityContext(req, { action })
       );
-      return res.status(503).json({
-        ok: false,
-        error: "Photo storage is not configured.",
-        storageUnavailable: true
+      return sendApiError(res, {
+        status: 503,
+        message: "Photo storage is temporarily unavailable.",
+        requestId,
+        body: {
+          storageUnavailable: true
+        }
       });
     }
 
@@ -189,15 +206,25 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: "Unknown action." });
   } catch (error) {
     if (error instanceof PhotoStorageError) {
-      return res.status(error.status).json({ ok: false, error: error.message });
+      return sendLoggedApiError({
+        req,
+        res,
+        event: "photo_upload_failed",
+        error,
+        status: error.status || 400,
+        message: photoStorageClientMessage(error),
+        context: { action },
+        level: Number(error.status || 500) >= 500 ? "error" : "warn"
+      });
     }
-    logThresholdedAlert(
-      "photo_upload_failed",
-      observabilityContext(req, {
-        action,
-        error: error?.message || String(error)
-      })
-    );
-    return res.status(500).json({ ok: false, error: "Photo request failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "photo_upload_failed",
+      error,
+      status: 500,
+      message: "Photo request failed.",
+      context: { action }
+    });
   }
 }

@@ -7,6 +7,7 @@ import {
 import { normalizeLoginUsername } from "../../server/services/loginResolve.js";
 import { buildAuthAuditContext } from "../../server/services/logRedaction.js";
 import { logObservabilityEvent, observabilityContext } from "../../server/services/observability.js";
+import { sendLoggedApiError } from "../../server/services/apiErrorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -85,6 +86,17 @@ export default async function handler(req, res) {
       session: result.session
     });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "Login failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "pin_login_error",
+      error,
+      status: 500,
+      message: "Login failed.",
+      context: {
+        action: "pin_login",
+        ...buildAuthAuditContext({ username })
+      }
+    });
   }
 }

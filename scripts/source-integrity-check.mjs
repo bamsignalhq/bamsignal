@@ -43,6 +43,7 @@ const memberApiAuthSource = readSrc("src/utils/memberApiAuth.ts");
 const pinLoginApiSource = readSrc("api/auth/pin-login.js");
 const pinResetApiSource = readSrc("api/auth/pin-reset.js");
 const pinAuthThrottleSource = readSrc("server/services/pinAuthThrottle.js");
+const apiErrorResponseSource = readSrc("server/services/apiErrorResponse.js");
 const photoReviewSharedSource = readSrc("shared/photoReview.mjs");
 const cityHomeSource = readSrc("server/cityHome.js");
 const memberSocialSource = readSrc("server/memberSocial.js");
@@ -285,6 +286,22 @@ assertCheck(
   "PIN login API must return generic invalid message"
 );
 assertCheck(
+  apiErrorResponseSource.includes("ensureApiRequestContext") &&
+    apiErrorResponseSource.includes("REQUEST_ID_HEADER") &&
+    apiErrorResponseSource.includes("logSanitizedApiError") &&
+    pinLoginApiSource.includes("sendLoggedApiError") &&
+    pinLoginApiSource.includes('message: "Login failed."') &&
+    memberDataApiSource.includes("sendLoggedApiError") &&
+    memberDataApiSource.includes('message: "Member data request failed."') &&
+    memberDataApiSource.includes('message: "Message blocked for safety."') &&
+    memberPhotosApiSource.includes("sendLoggedApiError") &&
+    memberPhotosApiSource.includes("photoStorageClientMessage") &&
+    !pinLoginApiSource.includes("error.message ||") &&
+    !memberDataApiSource.includes("error: error.message") &&
+    !memberPhotosApiSource.includes("error: error.message"),
+  "auth/member/photo APIs must not return raw error.message and must include request IDs"
+);
+assertCheck(
   pinResetApiSource.includes("INVALID_RESET_MESSAGE"),
   "PIN reset API must return generic invalid reset message"
 );
@@ -476,6 +493,17 @@ assertCheck(
     signupIdentitySource.includes("Please use a real email address to continue.") &&
     authPageSource.includes("DISPOSABLE_EMAIL_MESSAGE"),
   "signup must block disposable emails on server and client before OTP"
+);
+assertCheck(
+  signupOtpSource.includes("signup_provisioning_attempts") &&
+    signupOtpSource.includes("verifySignupOtpForProvisioning") &&
+    signupOtpSource.includes("cleanupCreatedSupabaseAuthUser") &&
+    signupOtpSource.includes("auth_cleanup_pending") &&
+    signupOtpSource.includes("authUserWasCreatedByProvisioning") &&
+    signupOtpSource.includes("!localProvisioned") &&
+    signupOtpSource.includes("provisioning_resume") &&
+    existsSync(join(rootPath, "supabase/migrations/202606211430_signup_provisioning_recovery.sql")),
+  "signup provisioning must be resumable and clean up newly-created orphan auth users"
 );
 assertCheck(
   !complianceUtilSource.includes("onboardingComplete") &&

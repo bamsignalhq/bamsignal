@@ -3,8 +3,6 @@ import { verifySupabaseBearerUser } from "../supabaseEnv.js";
 import { resolveIdentityFromUserId } from "./onboardingRepair.js";
 
 export const PUBLIC_MEMBER_DATA_ACTIONS = new Set([
-  "resolve-username",
-  "resolve-login",
   "profile-by-id",
   "subscription-catalog"
 ]);

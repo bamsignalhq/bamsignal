@@ -93,21 +93,6 @@ export default async function handler(req, res) {
   const action = String(req.query.action || "").trim();
 
   try {
-    if (action === "resolve-username" || action === "resolve-login") {
-      if (!requireDatabase(res)) return;
-      const { resolveLoginUsername } = await import("../../server/services/pinLogin.js");
-      const username = String(body.username || body.identifier || "").trim();
-      if (!username) {
-        return res.status(400).json({ ok: false, error: "Username is required." });
-      }
-      const resolved = await resolveLoginUsername(username);
-      if (!resolved.email) {
-        logIdentityExposureBlocked({ endpoint: "resolve-login", reason: "unresolved" });
-        return res.status(401).json({ ok: false, error: GENERIC_NOT_AUTHORIZED });
-      }
-      return res.status(200).json({ ok: true, email: resolved.email });
-    }
-
     if (action === "profile-by-id") {
       if (!requireDatabase(res)) return;
       if (!(await enforceRate(req, res, {}, "profile-view"))) return;

@@ -410,26 +410,6 @@ async function repairLoginIdentityAfterSuccess(account, email, session) {
   }
 }
 
-/** Resolve username to the Supabase auth email used for PIN login. */
-export async function resolveLoginUsername(rawUsername = "") {
-  pinLoginLog("raw username received", String(rawUsername || "").trim());
-  const account = await resolveLoginAccount(rawUsername);
-  pinLoginLog("normalized username", account.username || "(empty)");
-  pinLoginLog("user found", account.usernameFound);
-  pinLoginLog("profile found", account.profileExists);
-  return {
-    email: account.email,
-    username: account.username,
-    matched: account.usernameFound,
-    profileExists: account.profileExists
-  };
-}
-
-/** @deprecated Use resolveLoginUsername — username-only login. */
-export async function resolveLoginIdentifier(rawIdentifier = "") {
-  return resolveLoginUsername(rawIdentifier);
-}
-
 /** Verify PIN via Supabase password grant (never logs the PIN). */
 export async function verifyLoginPassword(email, password) {
   const normalizedEmail = String(email || "").trim().toLowerCase();

@@ -101,6 +101,7 @@ const premiumStatusSource = readSrc("src/services/premiumStatus.ts");
 const bootFlagsSource = readSrc("src/utils/bootFlags.ts");
 const blockedEmailSource = readSrc("shared/blockedEmailDomains.mjs");
 const signupOtpSource = readSrc("server/services/signupOtp.js");
+const signupProvisioningSource = readSrc("server/services/signupProvisioning.js");
 const signupIdentitySource = readSrc("server/services/signupIdentity.js");
 const photoUploadGridSource = readSrc("src/components/PhotoUploadGrid.tsx");
 const profilePhotoUploadSource = readSrc("src/utils/profilePhotoUpload.ts");
@@ -500,13 +501,16 @@ assertCheck(
   "signup must block disposable emails on server and client before OTP"
 );
 assertCheck(
-  signupOtpSource.includes("signup_provisioning_attempts") &&
-    signupOtpSource.includes("verifySignupOtpForProvisioning") &&
-    signupOtpSource.includes("cleanupCreatedSupabaseAuthUser") &&
-    signupOtpSource.includes("auth_cleanup_pending") &&
-    signupOtpSource.includes("authUserWasCreatedByProvisioning") &&
-    signupOtpSource.includes("!localProvisioned") &&
-    signupOtpSource.includes("provisioning_resume") &&
+  signupOtpSource.includes('from "./signupProvisioning.js"') &&
+    signupOtpSource.includes("runSignupProvisioning") &&
+    signupProvisioningSource.includes("signup_provisioning_attempts") &&
+    signupProvisioningSource.includes("export async function beginProvisioning") &&
+    signupProvisioningSource.includes("export async function resumeProvisioning") &&
+    signupProvisioningSource.includes("export async function completeProvisioning") &&
+    signupProvisioningSource.includes("export async function cleanupProvisioning") &&
+    signupProvisioningSource.includes("auth_cleanup_pending") &&
+    signupProvisioningSource.includes("shouldCleanupOrphanAuthUser") &&
+    signupProvisioningSource.includes("provisioning_resume") &&
     existsSync(join(rootPath, "supabase/migrations/202606211430_signup_provisioning_recovery.sql")),
   "signup provisioning must be resumable and clean up newly-created orphan auth users"
 );

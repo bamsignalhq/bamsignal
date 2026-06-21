@@ -55,10 +55,11 @@ assert(
   "admin consent must surface fail-closed security errors"
 );
 assert(
-  memoryThrottleSource.includes("memberStore") &&
+  memoryThrottleSource.includes("createBoundedMemoryStore") &&
+    memoryThrottleSource.includes("memberStore") &&
     memoryThrottleSource.includes("throttle_db_unavailable") &&
     memoryThrottleSource.includes("logObservabilityEvent"),
-  "memory throttle fallback must stay process-local with observability logs"
+  "memory throttle fallback must stay bounded with observability logs"
 );
 
 resetMemoryMemberThrottleStore();

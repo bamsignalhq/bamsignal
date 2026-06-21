@@ -19,6 +19,10 @@ import { findMemberProfileByUserKey, upsertMemberProfile } from "../cityHome.js"
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
 import { loadEmailBranding, buildSignupVerificationEmailBody, wrapEmailLayoutAsync } from "./emailBranding.js";
 import { verifyLoginPassword } from "./pinLogin.js";
+import {
+  createBoundedMemoryStore,
+  isOtpMemoryEntryExpired
+} from "./boundedMemoryStore.js";
 
 dotenv.config();
 
@@ -29,8 +33,9 @@ const DEFAULT_SIGNUP_CITY = "Lagos";
 const DEFAULT_SIGNUP_STATE = "Lagos";
 const SIGNUP_USER_MESSAGE = "We couldn't complete your signup. Please try again.";
 
-/** @type {Map<string, { hash: string; expires: number; attempts: number; lastSent: number }>} */
-const memoryStore = new Map();
+const memoryStore = createBoundedMemoryStore("signup_otp", {
+  isExpired: isOtpMemoryEntryExpired
+});
 
 export class SignupOtpError extends Error {
   constructor(status, message, code = null) {

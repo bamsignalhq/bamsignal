@@ -8,13 +8,18 @@ import {
 } from "./emailBranding.js";
 import { normalizeSignupEmail, normalizeSignupUsername } from "./signupIdentity.js";
 import { repairUserPin } from "./pinLogin.js";
+import {
+  createBoundedMemoryStore,
+  isOtpMemoryEntryExpired
+} from "./boundedMemoryStore.js";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_VERIFY_ATTEMPTS = 8;
 
-/** @type {Map<string, { hash: string; expires: number; attempts: number; lastSent: number }>} */
-const memoryStore = new Map();
+const memoryStore = createBoundedMemoryStore("pin_reset_otp", {
+  isExpired: isOtpMemoryEntryExpired
+});
 
 export class PinResetError extends Error {
   constructor(status, message, code = null) {

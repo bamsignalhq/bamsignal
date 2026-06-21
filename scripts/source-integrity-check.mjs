@@ -768,5 +768,14 @@ assertCheck(
     readSrc("src/App.tsx").includes("MAX_COMPLIANCE_SYNC_ATTEMPTS"),
   "stability guards must keep bounded retries and recovery reload caps"
 );
+assertCheck(
+  existsSync(join(rootPath, "server/services/boundedMemoryStore.js")) &&
+    readSrc("server/services/boundedMemoryStore.js").includes("MEMORY_STORE_MAX_ENTRIES") &&
+    readSrc("server/services/boundedMemoryStore.js").includes("runMemoryStoreCleanup") &&
+    readSrc("server/services/memoryThrottle.js").includes("createBoundedMemoryStore") &&
+    readSrc("server/services/signupOtp.js").includes("createBoundedMemoryStore") &&
+    readSrc("server/services/pinReset.js").includes("createBoundedMemoryStore"),
+  "auth and OTP memory fallback stores must use bounded caps and periodic cleanup"
+);
 
 console.log("source integrity ok");

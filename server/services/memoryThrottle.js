@@ -3,9 +3,14 @@
  * Not a primary store — used only during outages.
  */
 import { logObservabilityEvent } from "./observability.js";
+import {
+  createBoundedMemoryStore,
+  isThrottleMemoryEntryExpired
+} from "./boundedMemoryStore.js";
 
-/** @type {Map<string, { attempts: number; firstAttemptAt: number; lockedUntil: number | null }>} */
-const memberStore = new Map();
+const memberStore = createBoundedMemoryStore("member_auth_throttle", {
+  isExpired: isThrottleMemoryEntryExpired
+});
 
 const loggedDbUnavailable = new Set();
 

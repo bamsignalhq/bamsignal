@@ -10,10 +10,6 @@ import { HOME_FEED_PROFILE_COUNT } from "../../constants/homeFeedAds";
 import type { HomeFeedAdsSettings } from "../../constants/homeFeedAds";
 import { sendSignalRemote } from "../../services/memberData";
 import type { DatingProfile, DiscoverProfile, UserProfile } from "../../types";
-import {
-  computeCompatibilityPercent,
-  getProfileMatchReasons
-} from "../../utils/compatibility";
 import { buildHomeFeedGridItems, injectSignalPassPromos } from "../../utils/homeFeed";
 import { blockAndReportUser, blockUser } from "../../utils/safety";
 import { evaluateSignalGate, recordSignalUsage } from "../../utils/signalLimits";
@@ -236,8 +232,6 @@ export function DiscoverGridFeed({
           profile={detailProfile}
           open={Boolean(detailProfile)}
           onClose={() => setDetailProfile(null)}
-          matchReasons={getProfileMatchReasons(viewer, detailProfile)}
-          compatibilityPercent={computeCompatibilityPercent(viewer, detailProfile)}
           verification={detailVerification}
           viewer={user}
           isPremium={isPremium}

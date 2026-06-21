@@ -153,8 +153,6 @@ function SceneDiscover() {
       <ProfileCard
         profile={STORE_DISCOVER_PROFILE}
         verification={verification}
-        compatibilityPercent={88}
-        matchReasons={["Shared interests", "Same city", "Verified profile"]}
         onSendSignal={() => undefined}
         onIgnore={() => undefined}
         onViewProfile={() => undefined}

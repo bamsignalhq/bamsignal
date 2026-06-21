@@ -18,10 +18,6 @@ import { DiscoverFilters } from "../components/DiscoverFilters";
 import { ReportBlockModal } from "../components/ReportBlockModal";
 import type { DiscoverProfile, Match, MatchPreferences, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
-import {
-  computeCompatibilityPercent,
-  getProfileMatchReasons
-} from "../utils/compatibility";
 import { recordDiscoveryImpression } from "../utils/launchSeed";
 import { buildDensityAwareDeck } from "../utils/cityDensity";
 import { markFirstDayStep } from "../utils/firstDayJourney";
@@ -321,8 +317,6 @@ export function DiscoverPage({
     );
   };
 
-  const compatibility = current ? computeCompatibilityPercent(viewer, current) : 0;
-  const matchReasons = current ? getProfileMatchReasons(viewer, current) : [];
   const verification = current
     ? getVerificationTier({ ...defaultDatingProfile(), verified: current.verified }, false, true)
     : getVerificationTier(defaultDatingProfile(), false, true);
@@ -398,8 +392,6 @@ export function DiscoverPage({
           profile={current}
           open={profileOpen}
           onClose={() => setProfileOpen(false)}
-          matchReasons={matchReasons}
-          compatibilityPercent={compatibility}
           verification={verification.tier ? verification : undefined}
           onSendSignal={handleSendSignal}
           onPass={handleIgnore}

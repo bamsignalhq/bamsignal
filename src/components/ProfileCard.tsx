@@ -9,8 +9,6 @@ import { VerificationBadge } from "./VerificationBadge";
 
 type ProfileCardProps = {
   profile: DiscoverProfile;
-  compatibilityPercent?: number;
-  matchReasons?: string[];
   verification?: VerificationInfo;
   onIgnore?: () => void;
   onSendSignal?: () => void;

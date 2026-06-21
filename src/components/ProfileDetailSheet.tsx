@@ -1,5 +1,5 @@
-import { ChevronLeft, ChevronRight, Heart, MoreHorizontal, UserPlus, X } from "lucide-react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Heart, MoreHorizontal, UserPlus, X } from "lucide-react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { BRAND } from "../constants/copy";
 import { profileIntentLabel } from "../constants/intents";
 import type { DiscoverProfile } from "../types";
@@ -7,13 +7,12 @@ import type { VerificationInfo } from "../utils/verification";
 import { ShowcaseImage } from "./ShowcaseImage";
 import { VerificationBadge } from "./VerificationBadge";
 import { LazyVoiceIntro } from "./lazyProfileUi";
-import { WhyThisProfile } from "./WhyThisProfile";
 import { ProfileInterestsPreview } from "./profile/ProfileInterestsPreview";
 import { ProfileDetailsList } from "./profile/ProfileDetailsList";
-import { ProfileCompatibilityBars } from "./profile/ProfileCompatibilityBars";
+import { CompatibilityReasonsCard } from "./profile/CompatibilityReasonsCard";
 import { hasFilledProfileDetails } from "../utils/profileDetails";
 import { getDatingProfile } from "../utils/profile";
-import { getProfileDimensionScores } from "../utils/compatibility";
+import { buildCompatibilityReasons } from "../utils/buildCompatibilityReasons";
 import { DEFAULT_PROFILE_COVER } from "../constants/photos";
 import { safePhotos } from "../utils/safeProfile";
 import { likeProfile, followProfile, hasLikedProfile, hasFollowedProfile } from "../utils/profileSocial";
@@ -24,9 +23,6 @@ type ProfileDetailSheetProps = {
   profile: DiscoverProfile;
   open: boolean;
   onClose: () => void;
-  matchReasons: string[];
-  compatibilityPercent?: number;
-  compatibilitySubtitle?: string;
   verification?: VerificationInfo;
   onSendSignal?: () => void;
   onPass?: () => void;
@@ -43,8 +39,6 @@ export function ProfileDetailSheet({
   profile,
   open,
   onClose,
-  matchReasons,
-  compatibilityPercent,
   verification,
   onSendSignal,
   onPass,
@@ -65,7 +59,10 @@ export function ProfileDetailSheet({
   const gallery = safePhotos(profile.photos?.length ? profile.photos : [profile.photo]);
   const heroPhoto = gallery[photoIndex] ?? gallery[0] ?? DEFAULT_PROFILE_COVER;
   const viewerProfile = getDatingProfile();
-  const compatibilityDimensions = getProfileDimensionScores(viewerProfile, profile);
+  const compatibilityReasons = useMemo(
+    () => buildCompatibilityReasons(viewerProfile, profile),
+    [viewerProfile, profile]
+  );
 
   const goPhoto = (dir: -1 | 1) => {
     if (gallery.length <= 1) return;
@@ -181,6 +178,8 @@ export function ProfileDetailSheet({
             </button>
           </div>
 
+          <CompatibilityReasonsCard reasons={compatibilityReasons} />
+
           <section className="profile-detail-sheet__card profile-detail-sheet__card--bio">
             {profile.bio?.trim() ? (
               <>
@@ -223,21 +222,6 @@ export function ProfileDetailSheet({
             </section>
           )}
 
-          {matchReasons.length > 0 && (
-            <section className="profile-detail-sheet__card profile-detail-sheet__card--why">
-              <WhyThisProfile reasons={matchReasons} />
-            </section>
-          )}
-
-          <section className="profile-detail-sheet__card">
-            <h3>Compatibility</h3>
-            {compatibilityPercent != null ? (
-              <p className="profile-detail-sheet__compat-line">
-                <strong>{compatibilityPercent}%</strong> match
-              </p>
-            ) : null}
-            <ProfileCompatibilityBars dimensions={compatibilityDimensions} />
-          </section>
         </div>
 
         {(onSendSignal || onPass) && (

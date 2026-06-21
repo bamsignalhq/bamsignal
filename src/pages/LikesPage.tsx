@@ -14,10 +14,6 @@ import { SignalsStoriesRow } from "../components/signals/SignalsStoriesRow";
 import { fetchDiscoverProfiles, fetchMemberProfileById, getCachedMemberProfile } from "../services/discoverProfiles";
 import { acceptSignalRemote, declineSignalRemote, fetchIncomingSignalsRemote, sendSignalRemote } from "../services/memberData";
 import type { DiscoverProfile, LikeEntry, UserProfile } from "../types";
-import {
-  computeCompatibilityPercent,
-  getProfileMatchReasons
-} from "../utils/compatibility";
 import { blockAndReportUser, blockUser, filterBlockedByProfileId } from "../utils/safety";
 import { trackEvent } from "../utils/analytics";
 import { notifySignalAccepted } from "../utils/notifyHelpers";
@@ -352,8 +348,6 @@ export function LikesPage({
           profile={detailProfile}
           open={Boolean(detailProfile)}
           onClose={() => setDetailProfile(null)}
-          matchReasons={getProfileMatchReasons(viewer, detailProfile)}
-          compatibilityPercent={computeCompatibilityPercent(viewer, detailProfile)}
           verification={detailVerification?.tier ? detailVerification : undefined}
           viewer={user}
           isPremium={isPremium}

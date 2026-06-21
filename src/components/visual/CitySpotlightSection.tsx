@@ -143,7 +143,6 @@ export function CitySpotlightSection({ onGuestAction }: CitySpotlightSectionProp
           profile={selected}
           open
           onClose={() => setSelected(null)}
-          matchReasons={[`Spotlight in ${city.name}`]}
           onSendSignal={sendSignal}
         />
       ) : null}

@@ -13,10 +13,6 @@ import { fetchDiscoverProfiles, searchMemberProfiles } from "../../services/disc
 import { sendSignalRemote } from "../../services/memberData";
 import type { DatingProfile, DiscoverProfile, MatchPreferences, ReportRecord, UserProfile } from "../../types";
 import type { HomeAdvancedFilters } from "../../types";
-import {
-  computeCompatibilityPercent,
-  getProfileMatchReasons
-} from "../../utils/compatibility";
 import { isSampleHomeProfile, padHomeFeedWithSamples } from "../../utils/homeFeedSamples";
 import { getMemberCity } from "../../utils/memberCity";
 import { buildHomeFeedGridItems, filterProfilesByName, injectSignalPassPromos } from "../../utils/homeFeed";
@@ -381,8 +377,6 @@ export function HomeSignalsFeed({
           profile={detailProfile}
           open={Boolean(detailProfile)}
           onClose={() => setDetailProfile(null)}
-          matchReasons={getProfileMatchReasons(viewer, detailProfile)}
-          compatibilityPercent={computeCompatibilityPercent(viewer, detailProfile)}
           verification={detailVerification}
           viewer={user}
           isPremium={isPremium}

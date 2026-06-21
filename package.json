@@ -22,6 +22,7 @@
     "test:photo-verification": "node scripts/test-photo-verification.mjs",
     "test:photo-safety": "node scripts/test-photo-safety.mjs",
     "test:interested-in-defaults": "node scripts/test-interested-in-defaults.mjs",
+    "test:build-compatibility-reasons": "node scripts/test-build-compatibility-reasons.mjs",
     "test:photo-upload-payload": "node scripts/test-photo-upload-payload.mjs",
     "test:server-import": "node scripts/smoke-server-import.mjs",
     "test:member-data-auth": "node scripts/test-member-data-auth.mjs",

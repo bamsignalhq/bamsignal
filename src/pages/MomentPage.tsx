@@ -151,7 +151,6 @@ export function MomentPage({ momentId, onSignup }: MomentPageProps) {
           profile={selected}
           open
           onClose={() => setSelected(null)}
-          matchReasons={[`Into ${displayTitle}`, `Based in ${selected.city}`]}
           onSendSignal={() => {
             setSelected(null);
             onSignup();

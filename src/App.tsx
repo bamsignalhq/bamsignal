@@ -26,7 +26,6 @@ import {
   LazyPremiumPage,
   LazyPublicMarketingRoutes,
   LazySafetyCenterPage,
-  LazySignalConciergeRoutePage,
   LazyVisitorsPage
 } from "./app/lazyRoutes";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
@@ -129,7 +128,6 @@ import {
 } from "./constants/routes";
 import { getLegalPath, type LegalPath } from "./constants/footer";
 import { getSeoRoute, type SeoRoute } from "./constants/seoRoutes";
-import { getSignalConciergeRoute } from "./constants/signalConciergeRoutes";
 import { getNigeriaRoute, type NigeriaRoute } from "./constants/nigeriaRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail, resolveMemberIdentity } from "./utils/authIdentity";
@@ -1764,21 +1762,6 @@ export function App() {
       <div className={`app ${theme}`}>
         <Preloader exiting={bootExit} />
       </div>
-    );
-  }
-
-  const signalConciergeRoute = getSignalConciergeRoute(currentPathname);
-  if (signalConciergeRoute && !isNative) {
-    return (
-      <Suspense fallback={<LazyRouteFallback subtitle="Loading Signal Concierge…" />}>
-        <LazySignalConciergeRoutePage
-          route={signalConciergeRoute}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          onLogoClick={goHome}
-          onLogin={() => openAuth("login")}
-        />
-      </Suspense>
     );
   }
 

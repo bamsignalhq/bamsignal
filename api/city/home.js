@@ -1,5 +1,6 @@
 import { getDatabaseStatus } from "../../server/db.js";
 import { listCityHomeProfiles } from "../../server/cityHome.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -23,6 +24,14 @@ export default async function handler(req, res) {
     const profiles = await listCityHomeProfiles(city, limit);
     return res.status(200).json({ ok: true, database, city, profiles });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "City home request failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "city_home_failed",
+      error,
+      status: 500,
+      message: "City home request failed.",
+      context: { limit }
+    });
   }
 }

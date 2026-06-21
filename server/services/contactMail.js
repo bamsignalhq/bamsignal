@@ -7,6 +7,11 @@ import {
   loadEmailBranding,
   wrapEmailLayoutAsync
 } from "./emailBranding.js";
+import {
+  ensureApiRequestContext,
+  logError,
+  safeClientMessage
+} from "./errorResponse.js";
 
 dotenv.config();
 
@@ -168,17 +173,29 @@ export async function handleContactNodeRequest(req, res) {
     return sendContactJson(res, 200, result);
   } catch (error) {
     if (error instanceof ContactError) {
+      const { requestId } = ensureApiRequestContext(req, res);
+      if (Number(error.status || 500) >= 500) {
+        logError(
+          req,
+          "contact_form_failed",
+          error.detail ? new Error(String(error.detail)) : error,
+          { status: error.status },
+          "error"
+        );
+      }
       return sendContactJson(res, error.status, {
         ok: false,
-        error: error.message,
-        detail: error.detail
+        error: safeClientMessage(error?.message, "Request failed."),
+        requestId
       });
     }
 
-    console.error("[bamsignal] contact form error:", error);
+    const { requestId } = ensureApiRequestContext(req, res);
+    logError(req, "contact_form_failed", error, {}, "error");
     return sendContactJson(res, 500, {
       ok: false,
-      error: "We're unable to send your message right now. Please try again shortly."
+      error: "We're unable to send your message right now. Please try again shortly.",
+      requestId
     });
   }
 }

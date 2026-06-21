@@ -30,8 +30,9 @@ assert(
     paystackClientSource.includes("logPaymentProviderError") &&
     paystackClientSource.includes("payment_provider_error") &&
     paystackClientSource.includes("upstreamMessage") &&
+    paystackClientSource.includes("sanitizeApiErrorForLog") &&
     !paystackClientSource.includes("error: error.message || fallback"),
-  "paystack client must map provider failures to generic client messages while retaining upstream detail"
+  "paystack client must map provider failures to generic client messages and sanitized diagnostics"
 );
 
 assert(
@@ -87,7 +88,9 @@ console.warn = originalWarn;
 const serialized = JSON.stringify(logs);
 assert(serialized.includes("payment_provider_error"), "provider failures must log payment_provider_error");
 assert(serialized.includes("payment_initialize_failed"), "initialize failures must log payment_initialize_failed");
-assert(serialized.includes("Invalid key"), "server logs must retain provider diagnostic detail");
+assert(serialized.includes("provider_error"), "server logs must retain sanitized provider category");
+assert(!serialized.includes("Invalid key"), "server logs must not retain raw provider diagnostic detail");
+assert(!serialized.includes("status\":false"), "server logs must not retain provider payload bodies");
 assert(serialized.includes("bs_test_ref"), "server logs must retain payment reference");
 
 console.log("payment provider error tests ok");

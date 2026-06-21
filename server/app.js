@@ -14,6 +14,7 @@ import {
   observabilityContext,
   requestContextMiddleware
 } from "./services/observability.js";
+import { sanitizeApiErrorForLog } from "./services/errorResponse.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
 import { mountHandler } from "./mountHandler.js";
@@ -182,12 +183,14 @@ export function createApp(options = {}) {
   }
 
   app.use((error, req, res, _next) => {
+    const sanitized = sanitizeApiErrorForLog(error);
     logAlertableEvent(
       "unhandled_request_error",
       observabilityContext(req, {
         path: req.path,
         method: req.method,
-        error: error?.message || String(error)
+        error: sanitized.message,
+        errorCategory: sanitized.category
       })
     );
     if (!res.headersSent) {

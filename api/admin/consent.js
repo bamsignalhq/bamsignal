@@ -5,6 +5,7 @@ import {
   rotateAdminActionPin,
   setInitialAdminActionPin
 } from "../../server/adminConsent.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -71,7 +72,14 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ ok: false, error: "Unknown consent action." });
   } catch (error) {
-    console.error("[bamsignal] admin consent error:", error);
-    return res.status(500).json({ ok: false, error: error.message || "Consent request failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "admin_consent_failed",
+      error,
+      status: 500,
+      message: "Consent request failed.",
+      context: { action }
+    });
   }
 }

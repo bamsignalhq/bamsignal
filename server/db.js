@@ -1,6 +1,7 @@
 import pg from "pg";
 import { config } from "./config.js";
 import { logRetryExhausted, logThresholdedAlert } from "./services/observability.js";
+import { sanitizeApiErrorForLog } from "./services/errorResponse.js";
 
 const { Pool } = pg;
 
@@ -15,13 +16,20 @@ export const pool = config.databaseUrl
 let dbConnectionStatus = config.databaseUrl ? "disconnected" : "dry-run";
 let dbConnectionError = null;
 
+function databaseErrorSummary(error, fallback = "Database unavailable") {
+  const sanitized = sanitizeApiErrorForLog(error);
+  return sanitized.category === "application_error" ? sanitized.message : fallback;
+}
+
 if (pool) {
   pool.on("error", (error) => {
+    const sanitized = sanitizeApiErrorForLog(error);
     dbConnectionStatus = "disconnected";
-    dbConnectionError = error.message;
+    dbConnectionError = databaseErrorSummary(error, "Database pool error");
     logThresholdedAlert("db_unavailable", {
       reason: "pool_error",
-      error: error.message || "Database pool error"
+      error: sanitized.message,
+      errorCategory: sanitized.category
     });
   });
 }
@@ -231,11 +239,13 @@ export async function initDatabase() {
     console.log("[bamsignal] Database connected successfully");
     return { ok: true };
   } catch (error) {
+    const sanitized = sanitizeApiErrorForLog(error);
     dbConnectionStatus = "disconnected";
-    dbConnectionError = error.message || "Database connection failed";
+    dbConnectionError = databaseErrorSummary(error, "Database connection failed");
     logThresholdedAlert("db_unavailable", {
       reason: "init_failed",
-      error: dbConnectionError
+      error: sanitized.message,
+      errorCategory: sanitized.category
     });
     console.warn("[bamsignal] Server will continue without database persistence.");
     return { ok: false, reason: dbConnectionError };
@@ -250,7 +260,7 @@ export async function pingDatabase() {
     return true;
   } catch (error) {
     dbConnectionStatus = "disconnected";
-    dbConnectionError = error.message || "Database ping failed";
+    dbConnectionError = databaseErrorSummary(error, "Database ping failed");
     return false;
   }
 }

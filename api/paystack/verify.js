@@ -27,6 +27,7 @@ import {
   logObservabilityEvent,
   observabilityContext
 } from "../../server/services/observability.js";
+import { sanitizeApiErrorForLog } from "../../server/services/errorResponse.js";
 import { requireMemberAuth } from "../../server/services/memberAuth.js";
 import {
   PAYMENT_INITIALIZE_RATE_LIMITED_MESSAGE,
@@ -97,12 +98,14 @@ async function logPaymentReturnRedirect(req, { reference, returnPath, productTyp
       source: "verify_response"
     });
   } catch (error) {
+    const sanitized = sanitizeApiErrorForLog(error);
     logObservabilityEvent(
       "payment_audit_failed",
       observabilityContext(req, {
         scope: "payment_return_redirect",
         reference,
-        error: error?.message || String(error)
+        error: sanitized.message,
+        errorCategory: sanitized.category
       }),
       "warn"
     );

@@ -2,6 +2,26 @@ import {
   confirmWhatsappVerification,
   WhatsappVerificationError
 } from "../../../server/services/whatsappVerification.js";
+import {
+  clientError,
+  ensureApiRequestContext,
+  sendLoggedApiError
+} from "../../../server/services/errorResponse.js";
+
+const WHATSAPP_CONFIRM_MESSAGES = new Set([
+  "Enter a valid Nigerian phone number.",
+  "Request a new code and try again.",
+  "That code has expired. Request a new one.",
+  "Too many attempts. Request a new code.",
+  "We couldn't verify that code. Check it and try again."
+]);
+
+function whatsappConfirmMessage(error) {
+  const message = String(error?.message || "");
+  return WHATSAPP_CONFIRM_MESSAGES.has(message)
+    ? message
+    : "We couldn't verify that code. Check it and try again.";
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -29,12 +49,21 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     if (error instanceof WhatsappVerificationError) {
-      return res.status(error.status).json({ ok: false, error: error.message });
+      const { requestId } = ensureApiRequestContext(req, res);
+      return clientError(res, {
+        status: error.status,
+        message: whatsappConfirmMessage(error),
+        requestId
+      });
     }
-    console.error("[bamsignal] whatsapp confirm error:", error);
-    return res.status(500).json({
-      ok: false,
-      error: "We couldn't verify that code. Check it and try again."
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "whatsapp_verification_failed",
+      error,
+      status: 500,
+      message: "We couldn't verify that code. Check it and try again.",
+      context: { action: "confirm" }
     });
   }
 }

@@ -6,6 +6,11 @@ import {
 } from "../../server/services/pinAuthThrottle.js";
 import { buildAuthAuditContext } from "../../server/services/logRedaction.js";
 import { logObservabilityEvent, observabilityContext } from "../../server/services/observability.js";
+import {
+  clientError,
+  ensureApiRequestContext,
+  sendLoggedApiError
+} from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -91,13 +96,29 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: "Unknown action. Use send or complete." });
   } catch (error) {
     if (error instanceof PinResetError) {
-      console.error("[bamsignal] pin-reset error:", error.code || "pin_reset_error");
-      return res.status(error.status || 400).json({
-        ok: false,
-        error: INVALID_RESET_MESSAGE
+      logObservabilityEvent(
+        "pin_reset_error",
+        observabilityContext(req, {
+          action,
+          code: error.code || "pin_reset_error"
+        }),
+        "warn"
+      );
+      const { requestId } = ensureApiRequestContext(req, res);
+      return clientError(res, {
+        status: error.status || 400,
+        message: INVALID_RESET_MESSAGE,
+        requestId
       });
     }
-    console.error("[bamsignal] pin-reset error:", error instanceof Error ? error.message : "pin_reset_error");
-    return res.status(500).json({ ok: false, error: "PIN reset failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "pin_reset_error",
+      error,
+      status: 500,
+      message: "PIN reset failed.",
+      context: { action }
+    });
   }
 }

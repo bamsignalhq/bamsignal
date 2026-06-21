@@ -9,6 +9,7 @@ import {
   setCityHomeHidden,
   upsertAdminCityPlacement
 } from "../../server/cityHome.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -97,6 +98,14 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ ok: false, error: "Unknown action." });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "City home admin request failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "admin_city_home_failed",
+      error,
+      status: 500,
+      message: "City home admin request failed.",
+      context: { action: String(req.query.action || "") || "unknown" }
+    });
   }
 }

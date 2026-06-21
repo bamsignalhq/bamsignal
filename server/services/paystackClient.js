@@ -6,6 +6,7 @@ import {
   logThresholdedAlert,
   observabilityContext
 } from "./observability.js";
+import { sanitizeApiErrorForLog } from "./errorResponse.js";
 
 dns.setDefaultResultOrder("ipv4first");
 
@@ -71,12 +72,12 @@ export async function resolvePaystackHost() {
         family: "mixed",
         addresses,
         latencyMs: Date.now() - started,
-        ipv4Error: ipv4Error.message
+        ipv4Error: "DNS resolution failed"
       };
     } catch (error) {
       return {
         ok: false,
-        error: error.message || "DNS resolution failed",
+        error: "DNS resolution failed",
         latencyMs: Date.now() - started
       };
     }
@@ -134,7 +135,7 @@ export async function paystackFetch(path, options = {}) {
           });
         }
 
-        throw new PaystackClientError(error?.message || "Paystack network request failed.", {
+        throw new PaystackClientError("Paystack network request failed.", {
           code: "network_error",
           status: 503,
           cause: error
@@ -177,7 +178,7 @@ export async function probePaystackConnectivity() {
   } catch (error) {
     result.head = {
       ok: false,
-      error: error.message || "HEAD request failed"
+      error: "HEAD request failed"
     };
   }
 
@@ -207,7 +208,7 @@ export async function probePaystackConnectivity() {
   } catch (error) {
     result.initializeProbe = {
       ok: false,
-      error: error.message,
+      error: "Initialize probe failed",
       code: error.code || "initialize_probe_failed"
     };
   }
@@ -228,7 +229,7 @@ export async function probePaystackConnectivity() {
   } catch (error) {
     result.verifyProbe = {
       ok: false,
-      error: error.message,
+      error: "Verify probe failed",
       code: error.code || "verify_probe_failed"
     };
   }
@@ -258,18 +259,21 @@ function sanitizeProviderPayload(payload) {
 }
 
 function providerErrorDetail(error, extra = {}) {
+  const sanitized = sanitizeApiErrorForLog(error);
   if (error instanceof PaystackClientError) {
     return {
       code: error.code || null,
       upstreamStatus: error.upstreamStatus || null,
-      providerMessage: error.upstreamMessage || error.message || null,
-      providerBody: error.upstreamBody || null,
+      providerMessage: sanitized.message,
+      providerBody: error.upstreamBody ? "[redacted_provider_payload]" : null,
+      errorCategory: sanitized.category,
       ...extra
     };
   }
   return {
     code: error?.code || null,
-    message: error instanceof Error ? error.message : String(error || "unknown"),
+    message: sanitized.message,
+    errorCategory: sanitized.category,
     ...extra
   };
 }

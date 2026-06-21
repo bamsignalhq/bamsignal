@@ -5,6 +5,7 @@ import {
   isFirebaseConfigured,
   resolveFirebaseServiceAccount
 } from "./firebaseEnv.js";
+import { sanitizeApiErrorForLog } from "./services/errorResponse.js";
 
 let app = null;
 let initError = null;
@@ -27,10 +28,8 @@ function getFirebaseApp() {
     return app;
   } catch (error) {
     initError = error;
-    console.warn(
-      "[bamsignal] Firebase admin disabled:",
-      error instanceof Error ? error.message : String(error)
-    );
+    const sanitized = sanitizeApiErrorForLog(error);
+    console.warn("[bamsignal] Firebase admin disabled:", sanitized.message);
     return null;
   }
 }
@@ -49,11 +48,7 @@ export function getFirebaseHealth() {
 
   const probe = {
     initialized: Boolean(app),
-    error: initError
-      ? initError instanceof Error
-        ? initError.message.slice(0, 160)
-        : String(initError).slice(0, 160)
-      : envTrace.error
+    error: initError ? sanitizeApiErrorForLog(initError).message : envTrace.error
   };
 
   return {

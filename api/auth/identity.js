@@ -21,6 +21,7 @@ import {
   logIdentityExposureBlocked,
   sendGenericNotAvailable
 } from "../../server/services/identityExposure.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 function normalizePhone(value = "") {
   const digits = String(value).replace(/\D/g, "");
@@ -292,6 +293,14 @@ export default async function handler(req, res) {
     logIdentityExposureBlocked({ endpoint: "identity", action: "exists-check" });
     return sendGenericNotAvailable(res);
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "Identity check failed" });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "identity_request_failed",
+      error,
+      status: 500,
+      message: "Identity check failed.",
+      context: { action: String(req.query.action || "") || "unknown" }
+    });
   }
 }

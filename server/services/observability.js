@@ -47,6 +47,17 @@ const EMAIL_PATTERN = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
 const JWT_PATTERN = /^eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
 const PAYSTACK_SK_PATTERN = /sk_(?:test|live)_[a-zA-Z0-9]+/g;
 const BEARER_PATTERN = /Bearer\s+[a-zA-Z0-9._~+/=-]+/gi;
+const STACK_TRACE_PATTERN = /(?:^|\n)\s*at\s+.+:\d+:\d+|\bError:\s.*\n\s*at\s+/i;
+const DATABASE_DETAIL_PATTERN =
+  /\b(?:sql|select|insert|update|delete|alter|drop|create|truncate|from|where|join|constraint|violates|duplicate key|relation|syntax error|postgres|postgrest|pgrst|sqlstate|23505|42p01)\b/i;
+const PROVIDER_DETAIL_PATTERN =
+  /\b(?:paystack|sendchamp|upstream|payload|gateway_response|authorization_url|access_code|sk_(?:test|live)_)\b/i;
+const STORAGE_DETAIL_PATTERN =
+  /\b(?:supabase|storage\/v1|bucket|object path|signed url|profile[-_]?photos|photo[-_]?uploads|voice[-_]?intro|cover[-_]?photos)\b/i;
+const FILE_PATH_PATTERN =
+  /(?:\/[A-Za-z0-9._-]+){2,}|[A-Za-z]:\\[^\s]+|(?:profile|photo|photos|voice|avatar|storage)[A-Za-z0-9/_ .-]+\.(?:jpg|jpeg|png|webp|mp3|m4a|wav)/i;
+const SAFE_ERROR_CATEGORY_PATTERN =
+  /^(?:application_error|database_error|provider_error|storage_error|stack_trace|stack_trace_redacted|path_detail|path_detail_redacted)$/;
 
 export function createRequestId() {
   return crypto.randomUUID();
@@ -91,7 +102,12 @@ function redactString(value) {
   let out = value.replace(PAYSTACK_SK_PATTERN, "[redacted_paystack_secret]");
   out = out.replace(BEARER_PATTERN, "Bearer [redacted]");
   out = out.replace(EMAIL_PATTERN, "[redacted_email]");
+  if (SAFE_ERROR_CATEGORY_PATTERN.test(out.trim())) return out;
   if (JWT_PATTERN.test(out.trim())) return "[redacted_jwt]";
+  if (STACK_TRACE_PATTERN.test(out)) return "[redacted_stack_trace]";
+  if (DATABASE_DETAIL_PATTERN.test(out)) return "[redacted_database_detail]";
+  if (STORAGE_DETAIL_PATTERN.test(out) || FILE_PATH_PATTERN.test(out)) return "[redacted_storage_detail]";
+  if (PROVIDER_DETAIL_PATTERN.test(out)) return "[redacted_provider_detail]";
   return out;
 }
 
@@ -99,6 +115,10 @@ export function sanitizeLogContext(context = {}) {
   const safe = {};
   for (const [key, value] of Object.entries(context)) {
     if (value === undefined) continue;
+    if (key === "event") {
+      safe[key] = value;
+      continue;
+    }
     if (SENSITIVE_KEY_PATTERN.test(key)) {
       safe[key] = "[redacted]";
       continue;

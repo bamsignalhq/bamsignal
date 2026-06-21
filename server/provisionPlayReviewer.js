@@ -3,6 +3,7 @@ import { createConfirmedSupabaseUser } from "./services/signupOtp.js";
 import { supabaseServiceHeaders } from "./supabaseEnv.js";
 import { isDatabaseReady, query, upsertAppUserIdentity } from "./db.js";
 import { upsertMemberProfile } from "./cityHome.js";
+import { sanitizeApiErrorForLog } from "./services/errorResponse.js";
 
 export const PLAY_REVIEWER = {
   email: "reviewer@bamsignal.com",
@@ -75,7 +76,7 @@ async function resetReviewerAuthUser(email) {
     } catch (error) {
       const message = String(error?.message || error);
       if (!/does not exist|undefined table/i.test(message)) {
-        console.warn("[bamsignal] play reviewer auth cleanup:", message);
+        console.warn("[bamsignal] play reviewer auth cleanup:", sanitizeApiErrorForLog(error).message);
       }
     }
   }
@@ -223,7 +224,7 @@ async function ensureAuthUserViaAdmin({ email, password, name, username, phone, 
       try {
         await resetReviewerAuthUser(email);
       } catch (error) {
-        console.warn("[bamsignal] play reviewer SQL auth reset:", error?.message || error);
+        console.warn("[bamsignal] play reviewer SQL auth reset:", sanitizeApiErrorForLog(error).message);
       }
     }
 

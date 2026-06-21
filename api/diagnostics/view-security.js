@@ -6,6 +6,7 @@ import {
   requireDiagnosticsAccess,
   sendDiagnosticsAccessDenied
 } from "../../server/services/diagnosticsAccess.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 export default async function handler(req, res) {
   const access = await requireDiagnosticsAccess(req);
@@ -18,7 +19,15 @@ export default async function handler(req, res) {
       const views = await securityInvokerViewStatus();
       return res.status(200).json({ ok: true, views });
     } catch (error) {
-      return res.status(500).json({ ok: false, error: error.message || "View security check failed." });
+      return sendLoggedApiError({
+        req,
+        res,
+        event: "diagnostics_view_security_failed",
+        error,
+        status: 500,
+        message: "View security check failed.",
+        context: { action: "status" }
+      });
     }
   }
 
@@ -28,7 +37,15 @@ export default async function handler(req, res) {
       const views = await securityInvokerViewStatus();
       return res.status(200).json({ ok: result.ok, fixed: result.fixed, views });
     } catch (error) {
-      return res.status(500).json({ ok: false, error: error.message || "View security fix failed." });
+      return sendLoggedApiError({
+        req,
+        res,
+        event: "diagnostics_view_security_failed",
+        error,
+        status: 500,
+        message: "View security fix failed.",
+        context: { action: "fix" }
+      });
     }
   }
 

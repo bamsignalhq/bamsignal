@@ -1,5 +1,6 @@
 import { requireAdmin } from "../../server/adminAuth.js";
 import { getCitySpotlightAnalytics } from "../../server/cityHome.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -15,6 +16,14 @@ export default async function handler(req, res) {
     const analytics = await getCitySpotlightAnalytics({ days });
     return res.status(200).json({ ok: true, analytics });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "Spotlight analytics failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "admin_city_spotlight_failed",
+      error,
+      status: 500,
+      message: "Spotlight analytics failed.",
+      context: { days }
+    });
   }
 }

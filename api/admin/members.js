@@ -9,6 +9,7 @@ import {
   fetchMemberAuditTrailAdmin,
   fetchMemberComplianceAdmin
 } from "../../server/services/memberCompliance.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -129,7 +130,14 @@ export default async function handler(req, res) {
       error: "Unknown action. Use search, purge, compliance, audit-trail, repair-onboarding, or reset-pin."
     });
   } catch (error) {
-    console.error("[bamsignal] admin members error:", error);
-    return res.status(500).json({ ok: false, error: error.message || "Admin member request failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "admin_members_failed",
+      error,
+      status: 500,
+      message: "Admin member request failed.",
+      context: { action }
+    });
   }
 }

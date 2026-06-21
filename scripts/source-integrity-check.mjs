@@ -44,6 +44,7 @@ const pinLoginApiSource = readSrc("api/auth/pin-login.js");
 const pinResetApiSource = readSrc("api/auth/pin-reset.js");
 const pinAuthThrottleSource = readSrc("server/services/pinAuthThrottle.js");
 const apiErrorResponseSource = readSrc("server/services/apiErrorResponse.js");
+const errorResponseSource = readSrc("server/services/errorResponse.js");
 const photoReviewSharedSource = readSrc("shared/photoReview.mjs");
 const cityHomeSource = readSrc("server/cityHome.js");
 const memberSocialSource = readSrc("server/memberSocial.js");
@@ -289,6 +290,10 @@ assertCheck(
   apiErrorResponseSource.includes("ensureApiRequestContext") &&
     apiErrorResponseSource.includes("REQUEST_ID_HEADER") &&
     apiErrorResponseSource.includes("logSanitizedApiError") &&
+    apiErrorResponseSource.includes("safeClientMessage") &&
+    errorResponseSource.includes("createRequestId") &&
+    errorResponseSource.includes("clientError") &&
+    errorResponseSource.includes("logError") &&
     pinLoginApiSource.includes("sendLoggedApiError") &&
     pinLoginApiSource.includes('message: "Login failed."') &&
     memberDataApiSource.includes("sendLoggedApiError") &&

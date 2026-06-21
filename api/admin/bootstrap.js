@@ -4,6 +4,7 @@ import {
   requireAdminBootstrapAccess,
   sendAdminBootstrapAccessDenied
 } from "../../server/services/adminBootstrapAccess.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 import { buildAdminAuditContext } from "../../server/services/logRedaction.js";
 
 function parseBody(req) {
@@ -37,7 +38,14 @@ export default async function handler(req, res) {
       password: body.password || process.env.ADMIN_BOOTSTRAP_PASSWORD
     });
     if (!result.ok) {
-      return res.status(500).json({ ok: false, error: result.error || "Bootstrap failed." });
+      return sendLoggedApiError({
+        req,
+        res,
+        event: "admin_bootstrap_failed",
+        error: new Error(String(result.error || "bootstrap_failed")),
+        status: 500,
+        message: "Bootstrap failed."
+      });
     }
 
     logAdminBootstrapSuccess(
@@ -54,7 +62,13 @@ export default async function handler(req, res) {
       message: result.created ? "Admin user ready." : "Admin user updated."
     });
   } catch (error) {
-    console.error("[bamsignal] admin bootstrap error:", error instanceof Error ? error.message : "Bootstrap failed.");
-    return res.status(500).json({ ok: false, error: "Bootstrap failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "admin_bootstrap_failed",
+      error,
+      status: 500,
+      message: "Bootstrap failed."
+    });
   }
 }

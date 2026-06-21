@@ -7,6 +7,7 @@ import {
   liftShadowBan,
   listShadowBannedUsers
 } from "../../server/services/moderation.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -182,7 +183,14 @@ export default async function handler(req, res) {
         "Unknown action. Use list-shadow-banned, lift-shadow-ban, shadow-ban, list-flags, list-contact-leaks, list-photo-reviews, approve-photo-review, reject-photo-review, hide-photo-review, restore-photo-review, or delete-photo-review."
     });
   } catch (error) {
-    console.error("[bamsignal] admin moderation error:", error);
-    return res.status(500).json({ ok: false, error: error.message || "Moderation request failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "admin_moderation_failed",
+      error,
+      status: 500,
+      message: "Moderation request failed.",
+      context: { action }
+    });
   }
 }

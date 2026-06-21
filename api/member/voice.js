@@ -5,10 +5,7 @@ import {
   uploadVoiceIntroObject,
   VoiceIntroStorageError
 } from "../../server/services/voiceIntroStorage.js";
-import {
-  logAlertableEvent,
-  observabilityContext
-} from "../../server/services/observability.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -46,14 +43,15 @@ export default async function handler(req, res) {
     }
 
     if (!isVoiceIntroStorageConfigured()) {
-      logAlertableEvent(
-        "photo_storage_unavailable",
-        observabilityContext(req, { action, resource: "voice_intro" })
-      );
-      return res.status(503).json({
-        ok: false,
-        error: "Voice intro storage is not configured.",
-        storageUnavailable: true
+      return sendLoggedApiError({
+        req,
+        res,
+        event: "photo_storage_unavailable",
+        error: new Error("voice intro storage unavailable"),
+        status: 503,
+        message: "Voice intro upload failed.",
+        context: { action, resource: "voice_intro" },
+        body: { storageUnavailable: true }
       });
     }
 
@@ -71,15 +69,24 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     if (error instanceof VoiceIntroStorageError) {
-      return res.status(error.status || 400).json({ ok: false, error: error.message });
+      return sendLoggedApiError({
+        req,
+        res,
+        event: "voice_intro_failed",
+        error,
+        status: error.status || 400,
+        message: "Voice intro upload failed.",
+        context: { action }
+      });
     }
-    logAlertableEvent(
-      "voice_intro_failed",
-      observabilityContext(req, {
-        action,
-        error: error?.message || String(error)
-      })
-    );
-    return res.status(500).json({ ok: false, error: "Voice intro upload failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "voice_intro_failed",
+      error,
+      status: 500,
+      message: "Voice intro upload failed.",
+      context: { action }
+    });
   }
 }

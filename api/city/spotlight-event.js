@@ -1,5 +1,6 @@
 import { getDatabaseStatus } from "../../server/db.js";
 import { recordCitySpotlightEvent } from "../../server/cityHome.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 const ALLOWED = new Set(["view", "click", "profile_open", "signal"]);
 
@@ -37,6 +38,14 @@ export default async function handler(req, res) {
     });
     return res.status(200).json({ ok: true, recorded: true });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || "Could not record spotlight event." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "city_spotlight_event_failed",
+      error,
+      status: 500,
+      message: "Could not record spotlight event.",
+      context: { eventType }
+    });
   }
 }

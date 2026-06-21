@@ -3,6 +3,7 @@ import {
   requireDiagnosticsAccess,
   sendDiagnosticsAccessDenied
 } from "../../server/services/diagnosticsAccess.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -24,12 +25,18 @@ export default async function handler(req, res) {
       paystack: probe
     });
   } catch (error) {
-    console.error("[paystack-diagnostics] probe failed:", error);
-    return res.status(200).json({
-      ok: false,
-      service: "bamsignal",
-      checkedAt: new Date().toISOString(),
-      error: error.message || "Diagnostics probe failed."
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "paystack_diagnostics_failed",
+      error,
+      status: 200,
+      message: "Diagnostics probe failed.",
+      context: { service: "paystack" },
+      body: {
+        service: "bamsignal",
+        checkedAt: new Date().toISOString()
+      }
     });
   }
 }

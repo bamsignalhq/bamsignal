@@ -2,6 +2,12 @@ import { verifySignupOtp, SignupOtpError } from "../../server/services/signupOtp
 import { PLAY_REVIEWER, provisionPlayReviewerAccount } from "../../server/provisionPlayReviewer.js";
 import { isSignupEmailConfigured } from "../../server/supabaseEnv.js";
 import { getDatabaseStatus } from "../../server/db.js";
+import {
+  clientError,
+  ensureApiRequestContext,
+  safeClientMessage,
+  sendLoggedApiError
+} from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -67,9 +73,20 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     if (error instanceof SignupOtpError) {
-      return res.status(error.status).json({ ok: false, error: error.message });
+      const { requestId } = ensureApiRequestContext(req, res);
+      return clientError(res, {
+        status: error.status,
+        message: safeClientMessage(error?.message, "Setup failed."),
+        requestId
+      });
     }
-    console.error("[bamsignal] play-reviewer-finish failed:", error);
-    return res.status(500).json({ ok: false, error: error.message || "Setup failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "play_reviewer_setup_failed",
+      error,
+      status: 500,
+      message: "Setup failed."
+    });
   }
 }

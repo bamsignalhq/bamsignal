@@ -16,6 +16,7 @@ import {
   paymentHttpStatusForError
 } from "./paymentDb.js";
 import { logAlertableEvent, logThresholdedAlert, observabilityContext } from "./observability.js";
+import { sanitizeApiErrorForLog } from "./errorResponse.js";
 
 export const PAYSTACK_WEBHOOK_CANONICAL_PATH = "/api/paystack/webhook";
 
@@ -134,12 +135,17 @@ export async function handlePaystackWebhookRequest({
     { observability: { requestId, correlationId } },
     { ledgerSource }
   );
+  const errorBody = (message) => ({
+    ok: false,
+    error: message,
+    ...(requestId ? { requestId } : {})
+  });
 
   if (String(method || "").toUpperCase() !== "POST") {
     return {
       status: 405,
       headers: { Allow: "POST" },
-      body: { ok: false, error: "Method not allowed" }
+      body: errorBody("Method not allowed")
     };
   }
 
@@ -151,7 +157,7 @@ export async function handlePaystackWebhookRequest({
     });
     return {
       status: 401,
-      body: { ok: false, error: "Invalid Paystack signature" }
+      body: errorBody("Invalid Paystack signature")
     };
   }
 
@@ -168,7 +174,7 @@ export async function handlePaystackWebhookRequest({
     if (result?.processing) {
       return {
         status: 503,
-        body: { ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE }
+        body: errorBody(PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE)
       };
     }
     if (!result?.ok) {
@@ -181,12 +187,12 @@ export async function handlePaystackWebhookRequest({
       logThresholdedAlert("payment_webhook_failed", {
         ...logContext,
         event: event.event,
-        reason: result?.error || "fulfillment_failed",
+        reason: "fulfillment_failed",
         status: result?.status || 422
       });
       return {
         status: result?.status || 422,
-        body: { ok: false, error: result?.error || "Unable to fulfill purchase." }
+        body: errorBody("Unable to fulfill purchase.")
       };
     }
 
@@ -203,17 +209,18 @@ export async function handlePaystackWebhookRequest({
       });
       return {
         status: 503,
-        body: { ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE }
+        body: errorBody(PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE)
       };
     }
+    const sanitized = sanitizeApiErrorForLog(error);
     logThresholdedAlert("payment_webhook_failed", {
       ...logContext,
-      reason: error?.message || "webhook_error",
-      code: error?.code || null
+      reason: sanitized.category,
+      code: sanitized.code
     });
     return {
       status: paymentHttpStatusForError(error),
-      body: { ok: false, error: error.message || "Paystack webhook failed" }
+      body: errorBody("Paystack webhook failed")
     };
   }
 }

@@ -11,6 +11,7 @@ import {
   logObservabilityEvent,
   observabilityContext
 } from "./observability.js";
+import { sanitizeApiErrorForLog } from "./errorResponse.js";
 
 const ENDPOINT = "payment_initialize";
 
@@ -277,12 +278,14 @@ export async function enforcePaymentInitializeThrottle({ req, action, memberAuth
     }
     return result;
   } catch (error) {
+    const sanitized = sanitizeApiErrorForLog(error);
     logObservabilityEvent(
       "throttle_db_unavailable",
       observabilityContext(req, {
         action: ENDPOINT,
         scope: "payment",
-        reason: error?.message || "payment_initialize_throttle_failed"
+        reason: sanitized.category,
+        error: sanitized.message
       }),
       "warn"
     );

@@ -1,4 +1,5 @@
 import { createConsoleOperator, needsConsoleSetup } from "../../server/services/consoleSetup.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 import { logAdminStatusHidden } from "../../server/services/identityExposure.js";
 
 function hasSetupSecret(req) {
@@ -41,8 +42,15 @@ export default async function handler(req, res) {
       const needsSetup = await needsConsoleSetup();
       return res.status(200).json({ ok: true, needsSetup });
     } catch (error) {
-      console.error("[bamsignal] console setup status error:", error);
-      return res.status(500).json({ ok: false, error: "Could not check setup status." });
+      return sendLoggedApiError({
+        req,
+        res,
+        event: "console_setup_failed",
+        error,
+        status: 500,
+        message: "Could not check setup status.",
+        context: { action: "status" }
+      });
     }
   }
 
@@ -69,8 +77,15 @@ export default async function handler(req, res) {
         created: result.created
       });
     } catch (error) {
-      console.error("[bamsignal] console setup create error:", error);
-      return res.status(500).json({ ok: false, error: error.message || "Setup failed." });
+      return sendLoggedApiError({
+        req,
+        res,
+        event: "console_setup_failed",
+        error,
+        status: 500,
+        message: "Setup failed.",
+        context: { action: "create" }
+      });
     }
   }
 

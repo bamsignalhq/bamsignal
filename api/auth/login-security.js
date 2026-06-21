@@ -13,7 +13,12 @@ import {
   logIdentityExposureBlocked,
   sendGenericServiceUnavailable
 } from "../../server/services/identityExposure.js";
-import { logObservabilityEvent, observabilityContext } from "../../server/services/observability.js";
+import {
+  clientError,
+  ensureApiRequestContext,
+  safeClientMessage,
+  sendLoggedApiError
+} from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -96,16 +101,25 @@ export default async function handler(req, res) {
     return res.status(400).json({ ok: false, error: "Unknown action." });
   } catch (error) {
     if (error instanceof Login2faError) {
-      return res.status(error.status || 400).json({ ok: false, error: error.message, code: error.code });
+      const { requestId } = ensureApiRequestContext(req, res);
+      return clientError(res, {
+        status: error.status || 400,
+        message: safeClientMessage(error?.message, "Login security request failed."),
+        requestId,
+        body: { code: error.code }
+      });
     }
-    logObservabilityEvent(
-      "login_security_failed",
-      observabilityContext(req, {
+    return sendLoggedApiError({
+      req,
+      res,
+      event: "login_security_failed",
+      error,
+      status: 500,
+      message: "Login security request failed.",
+      context: {
         action,
         code: error instanceof Error ? error.code || null : null
-      }),
-      "error"
-    );
-    return res.status(500).json({ ok: false, error: "Login security request failed." });
+      }
+    });
   }
 }

@@ -75,6 +75,9 @@ export async function ensureCityHomePlacementsTable() {
   await query(
     "create unique index if not exists city_home_placements_profile_type_idx on city_home_placements (profile_id, placement_type) where active = true and placement_type = 'auto'"
   );
+  await query(
+    "create unique index if not exists city_home_placements_paystack_reference_unique_idx on city_home_placements (paystack_reference) where paystack_reference is not null and paystack_reference <> ''"
+  );
 }
 
 export async function ensureCitySpotlightEventsTable() {
@@ -463,6 +466,7 @@ export async function activateCitySpotlightPlacement({
   paystackReference
 }) {
   if (!isDatabaseReady()) return null;
+  await ensureCityHomeTables();
   const userKey = normalizeUserKey({ email, phone });
   if (!userKey) return null;
 
@@ -485,24 +489,36 @@ export async function activateCitySpotlightPlacement({
     if (dup.rows[0]) return dup.rows[0];
   }
 
-  await query(
-    `update city_home_placements
-     set active = false, updated_at = now()
-     where profile_id = $1 and placement_type = 'spotlight' and active = true`,
-    [row.id]
-  );
-
   const result = await query(
     `insert into city_home_placements (
        city, profile_id, placement_type, sort_order, expires_at, paystack_reference, created_by, active
      )
      values ($1, $2, 'spotlight', 0, $3, $4, 'city_spotlight', true)
+     on conflict (paystack_reference)
+       where paystack_reference is not null and paystack_reference <> ''
+       do nothing
      returning *`,
     [targetCity, row.id, expiresAt, paystackReference || null]
   );
 
   const placement = result.rows[0] || null;
+  if (!placement && paystackReference) {
+    const existing = await query(
+      "select * from city_home_placements where paystack_reference = $1 limit 1",
+      [paystackReference]
+    );
+    return existing.rows[0] || null;
+  }
   if (placement) {
+    await query(
+      `update city_home_placements
+       set active = false, updated_at = now()
+       where profile_id = $1
+         and placement_type = 'spotlight'
+         and active = true
+         and id <> $2`,
+      [row.id, placement.id]
+    );
     await recordCitySpotlightEvent({
       eventType: "purchase",
       city: targetCity,
@@ -608,6 +624,7 @@ export async function activateCityBoostPlacement({
   paystackReference
 }) {
   if (!isDatabaseReady()) return null;
+  await ensureCityHomeTables();
   const userKey = normalizeUserKey({ email, phone });
   if (!userKey) return null;
 
@@ -630,22 +647,37 @@ export async function activateCityBoostPlacement({
     if (dup.rows[0]) return dup.rows[0];
   }
 
-  await query(
-    `update city_home_placements
-     set active = false, updated_at = now()
-     where profile_id = $1 and placement_type = 'boost' and active = true`,
-    [row.id]
-  );
-
   const result = await query(
     `insert into city_home_placements (
        city, profile_id, placement_type, sort_order, expires_at, paystack_reference, created_by, active
      )
      values ($1, $2, 'boost', 10, $3, $4, 'city_boost', true)
+     on conflict (paystack_reference)
+       where paystack_reference is not null and paystack_reference <> ''
+       do nothing
      returning *`,
     [targetCity, row.id, expiresAt, paystackReference || null]
   );
-  return result.rows[0] || null;
+  const placement = result.rows[0] || null;
+  if (!placement && paystackReference) {
+    const existing = await query(
+      "select * from city_home_placements where paystack_reference = $1 limit 1",
+      [paystackReference]
+    );
+    return existing.rows[0] || null;
+  }
+  if (placement) {
+    await query(
+      `update city_home_placements
+       set active = false, updated_at = now()
+       where profile_id = $1
+         and placement_type = 'boost'
+         and active = true
+         and id <> $2`,
+      [row.id, placement.id]
+    );
+  }
+  return placement;
 }
 
 export async function findMemberProfileByUserKey(email, phone) {

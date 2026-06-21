@@ -73,6 +73,11 @@ const paymentCatalogSource = readFileSync(join(rootPath, "server/services/paymen
 const paymentFortressSource = readFileSync(join(rootPath, "server/services/paymentFortress.js"), "utf8");
 const paymentDbSource = readFileSync(join(rootPath, "server/services/paymentDb.js"), "utf8");
 const paymentFulfillmentsSource = readFileSync(join(rootPath, "server/services/paymentFulfillments.js"), "utf8");
+const paymentRuntimeSchemaSource = readFileSync(join(rootPath, "server/db.js"), "utf8");
+const paymentFulfillmentRaceMigrationSource = readFileSync(
+  join(rootPath, "supabase/migrations/202606211300_payment_fulfillment_processing.sql"),
+  "utf8"
+);
 const paystackDiagnosticsApiSource = readSrc("api/diagnostics/paystack-connectivity.js");
 const memberPhotosApiSource = readSrc("api/member/photos.js");
 const photoUploadAttributionSource = readSrc("server/services/photoUploadAttribution.js");
@@ -686,6 +691,25 @@ assertCheck(
     !paystackVerifySource.includes("await notifyPurchaseEmail") &&
     paymentFortressSource.includes("sendPurchaseConfirmationEmail"),
   "payment fulfillment must fail closed when persistence is unavailable"
+);
+assertCheck(
+  paymentFulfillmentsSource.includes("claimPaymentFulfillmentProcessing") &&
+    paymentFulfillmentsSource.includes("status = 'processing'") &&
+    paymentFulfillmentsSource.includes("processing_started_at < now() -") &&
+    paymentFortressSource.includes("fulfillmentAlreadyInProgress") &&
+    paymentFortressSource.includes("processingClaim.claimed") &&
+    paystackVerifySource.includes("result.processing") &&
+    paystackVerifySource.includes("status(503)") &&
+    paystackWebhookHandlerSource.includes("result?.processing") &&
+    paystackWebhookHandlerSource.includes("status: 503") &&
+    cityHomeSource.includes("on conflict (paystack_reference)") &&
+    paymentRuntimeSchemaSource.includes("payment_fulfillments_reference_unique_idx") &&
+    paymentRuntimeSchemaSource.includes("app_users_paystack_reference_unique_idx") &&
+    cityHomeSource.includes("city_home_placements_paystack_reference_unique_idx") &&
+    paymentFulfillmentRaceMigrationSource.includes("payment_fulfillments_reference_unique_idx") &&
+    paymentFulfillmentRaceMigrationSource.includes("app_users_paystack_reference_unique_idx") &&
+    paymentFulfillmentRaceMigrationSource.includes("city_home_placements_paystack_reference_unique_idx"),
+  "payment fulfillment must atomically claim processing and enforce unique Paystack references"
 );
 assertCheck(
   paystackWebhookHandlerSource.includes("/api/paystack/webhook") &&

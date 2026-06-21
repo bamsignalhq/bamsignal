@@ -87,6 +87,7 @@ export async function ensurePaymentFulfillmentsTable() {
       amount_kobo bigint,
       currency text,
       status text not null default 'pending',
+      processing_started_at timestamptz,
       fulfilled_at timestamptz,
       email_sent_at timestamptz,
       raw_payload jsonb not null default '{}'::jsonb,
@@ -94,6 +95,10 @@ export async function ensurePaymentFulfillmentsTable() {
       updated_at timestamptz not null default now()
     )
   `);
+  await query("alter table payment_fulfillments add column if not exists processing_started_at timestamptz");
+  await query(
+    "create unique index if not exists payment_fulfillments_reference_unique_idx on payment_fulfillments (paystack_reference)"
+  );
   await query(
     "create index if not exists payment_fulfillments_user_id_idx on payment_fulfillments (user_id, created_at desc)"
   );
@@ -304,6 +309,9 @@ export async function ensureAppUsersTable() {
   await query("create unique index if not exists app_users_user_key_idx on app_users (user_key) where user_key is not null");
   await query("create unique index if not exists app_users_email_unique_idx on app_users (lower(email)) where email is not null and email <> ''");
   await query("create unique index if not exists app_users_phone_unique_idx on app_users (phone) where phone is not null and phone <> ''");
+  await query(
+    "create unique index if not exists app_users_paystack_reference_unique_idx on app_users (paystack_reference) where paystack_reference is not null and paystack_reference <> ''"
+  );
 }
 
 export async function ensurePlatformSettingsTable() {

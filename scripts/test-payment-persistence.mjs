@@ -6,7 +6,10 @@ import {
   paymentHttpStatusForError,
   requireDatabaseReadyForPayments
 } from "../server/services/paymentDb.js";
-import { claimPaymentFulfillment } from "../server/services/paymentFulfillments.js";
+import {
+  claimPaymentFulfillment,
+  claimPaymentFulfillmentProcessing
+} from "../server/services/paymentFulfillments.js";
 
 let failed = 0;
 
@@ -37,6 +40,19 @@ try {
   claimRejected = isPaymentDatabaseError(error);
 }
 assert(claimRejected, "ledger claim fails closed when DB unavailable");
+
+let processingClaimRejected = false;
+try {
+  await claimPaymentFulfillmentProcessing({
+    reference: "bs_test_processing",
+    productType: "premium",
+    productId: "monthly",
+    amountKobo: 399900
+  });
+} catch (error) {
+  processingClaimRejected = isPaymentDatabaseError(error);
+}
+assert(processingClaimRejected, "processing claim fails closed when DB unavailable");
 
 assert(
   paymentHttpStatusForError(new PaymentDatabaseError()) === 503,

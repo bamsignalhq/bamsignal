@@ -110,6 +110,7 @@ function buildWebhookSuccessBody(event, result) {
   return {
     ok: true,
     idempotent: Boolean(result.idempotent),
+    processing: Boolean(result.processing),
     event: event.event,
     productType: result.productType,
     productId: result.productId,
@@ -164,6 +165,12 @@ export async function handlePaystackWebhookRequest({
     }
 
     const result = await fulfillPaystackWebhookEvent(event, { ledgerSource });
+    if (result?.processing) {
+      return {
+        status: 503,
+        body: { ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE }
+      };
+    }
     if (!result?.ok) {
       if (result?.status === 422 && /amount/i.test(String(result.error || ""))) {
         return {

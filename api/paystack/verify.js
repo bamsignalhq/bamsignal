@@ -371,6 +371,10 @@ export default async function handler(req, res) {
         ledgerSource: "verify"
       });
 
+      if (result.processing) {
+        return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
+      }
+
       if (!result.ok) {
         return res.status(result.status || 422).json({ ok: false, error: result.error });
       }

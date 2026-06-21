@@ -5,7 +5,8 @@ import {
   requireDatabaseReadyForPayments
 } from "./paymentDb.js";
 
-const VALID_STATUSES = new Set(["pending", "fulfilled", "failed", "ignored"]);
+const VALID_STATUSES = new Set(["pending", "processing", "fulfilled", "failed", "ignored"]);
+export const PAYMENT_FULFILLMENT_PROCESSING_TIMEOUT_MINUTES = 15;
 
 export async function ensurePaymentFulfillmentsSchema() {
   requireDatabaseReadyForPayments();
@@ -70,6 +71,76 @@ export async function getPaymentFulfillment(reference) {
   return result.rows[0] || null;
 }
 
+export async function claimPaymentFulfillmentProcessing({
+  reference,
+  userId = null,
+  productType,
+  productId = null,
+  amountKobo = null,
+  currency = null,
+  rawPayload = {},
+  staleAfterMinutes = PAYMENT_FULFILLMENT_PROCESSING_TIMEOUT_MINUTES
+}) {
+  const paystackReference = String(reference || "").trim();
+  if (!paystackReference) {
+    throw new PaymentDatabaseError("Payment reference is required.", "payment_persistence_failed");
+  }
+
+  await claimPaymentFulfillment({
+    reference: paystackReference,
+    userId,
+    productType,
+    productId,
+    amountKobo,
+    currency,
+    rawPayload
+  });
+
+  const result = await paymentQuery(
+    `update payment_fulfillments
+     set status = 'processing',
+         processing_started_at = now(),
+         user_id = coalesce(payment_fulfillments.user_id, $2),
+         product_type = coalesce(payment_fulfillments.product_type, $3),
+         product_id = coalesce(payment_fulfillments.product_id, $4),
+         amount_kobo = coalesce(payment_fulfillments.amount_kobo, $5),
+         currency = coalesce(payment_fulfillments.currency, $6),
+         raw_payload = payment_fulfillments.raw_payload || $7::jsonb,
+         updated_at = now()
+     where paystack_reference = $1
+       and (
+         status = 'pending'
+         or (
+           status = 'processing'
+           and (
+             processing_started_at is null
+             or processing_started_at < now() - ($8::text || ' minutes')::interval
+           )
+         )
+       )
+     returning *`,
+    [
+      paystackReference,
+      userId,
+      String(productType || "").trim(),
+      productId,
+      Number.isFinite(Number(amountKobo)) ? Number(amountKobo) : null,
+      currency ? String(currency).trim() : null,
+      JSON.stringify(rawPayload && typeof rawPayload === "object" ? rawPayload : {}),
+      Math.max(1, Math.round(Number(staleAfterMinutes) || PAYMENT_FULFILLMENT_PROCESSING_TIMEOUT_MINUTES))
+    ]
+  );
+
+  if (result.rows[0]) {
+    return { claimed: true, row: assertPaymentPersistenceRow(result.rows[0]) };
+  }
+
+  return {
+    claimed: false,
+    row: await getPaymentFulfillment(paystackReference)
+  };
+}
+
 export async function markPaymentFulfillmentStatus(reference, status, patch = {}) {
   const paystackReference = String(reference || "").trim();
   if (!paystackReference) {
@@ -82,6 +153,10 @@ export async function markPaymentFulfillmentStatus(reference, status, patch = {}
   const result = await paymentQuery(
     `update payment_fulfillments
      set status = $2,
+         processing_started_at = case
+           when $2 = 'processing' then coalesce(processing_started_at, now())
+           else null
+         end,
          fulfilled_at = case when $3::boolean then coalesce(fulfilled_at, now()) else fulfilled_at end,
          user_id = coalesce($4, user_id),
          product_type = coalesce($5, product_type),

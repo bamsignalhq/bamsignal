@@ -19,6 +19,7 @@ import {
 } from "./paymentDb.js";
 import {
   claimPaymentFulfillment,
+  claimPaymentFulfillmentProcessing,
   getPaymentFulfillment,
   markPaymentFulfillmentStatus
 } from "./paymentFulfillments.js";
@@ -273,6 +274,31 @@ function cityBoostError(boostId) {
     : "Complete onboarding in your city before buying a City Boost.";
 }
 
+function fulfillmentAlreadyInProgress(row, returnPath, sourcePage) {
+  return {
+    ok: false,
+    idempotent: true,
+    processing: true,
+    status: 503,
+    error: "Payment fulfillment is already processing.",
+    productType: row?.product_type || null,
+    productId: row?.product_id || null,
+    returnPath,
+    sourcePage
+  };
+}
+
+function fulfillmentAlreadyComplete(row, returnPath, sourcePage) {
+  return {
+    ok: true,
+    idempotent: true,
+    productType: row.product_type,
+    productId: row.product_id,
+    returnPath,
+    sourcePage
+  };
+}
+
 export async function completePaymentFulfillment({
   reference,
   transaction,
@@ -287,7 +313,7 @@ export async function completePaymentFulfillment({
 }) {
   requireDatabaseReadyForPayments();
 
-  await claimPaymentFulfillment({
+  const processingClaim = await claimPaymentFulfillmentProcessing({
     reference,
     userId: metadata.user_id || metadata.userId || null,
     productType: metadata.product_type || "premium",
@@ -300,20 +326,36 @@ export async function completePaymentFulfillment({
     }
   });
 
-  const existingFulfillment = await getPaymentFulfillment(reference);
-  if (existingFulfillment?.status === "fulfilled") {
+  if (!processingClaim.claimed) {
+    const existingFulfillment = processingClaim.row || (await getPaymentFulfillment(reference));
+    if (existingFulfillment?.status === "fulfilled") {
+      return fulfillmentAlreadyComplete(existingFulfillment, returnPath, sourcePage);
+    }
+    if (existingFulfillment?.status === "processing") {
+      return fulfillmentAlreadyInProgress(existingFulfillment, returnPath, sourcePage);
+    }
     return {
-      ok: true,
-      idempotent: true,
-      productType: existingFulfillment.product_type,
-      productId: existingFulfillment.product_id,
-      returnPath,
-      sourcePage
+      ok: false,
+      status: existingFulfillment?.status === "failed" ? 422 : 409,
+      error:
+        existingFulfillment?.status === "failed"
+          ? "Payment could not be fulfilled."
+          : "Payment fulfillment is not available for this reference."
     };
   }
 
   const amountCheck = await assertVerifiedPurchaseAmount(reference, transaction, metadata);
   if (!amountCheck.ok) {
+    await markPaymentFulfillmentStatus(reference, "failed", {
+      productType: amountCheck.intent?.productType || metadata.product_type || null,
+      productId: amountCheck.intent?.productId || metadata.product_id || null,
+      amountKobo: Number(transaction?.amount || 0),
+      currency: String(transaction?.currency || "").trim() || null,
+      rawPayload: {
+        error: amountCheck.amountCheck?.reason || amountCheck.error || "payment_verification_failed",
+        amountCheck
+      }
+    });
     return {
       ok: false,
       status: 422,
@@ -333,6 +375,17 @@ export async function completePaymentFulfillment({
   });
 
   if (!activation.ok) {
+    await markPaymentFulfillmentStatus(reference, "failed", {
+      productType: intent.productType,
+      productId: intent.productId,
+      amountKobo: Number(transaction?.amount || 0),
+      currency: String(transaction?.currency || "").trim() || null,
+      rawPayload: {
+        purchaseIntent: intent,
+        activation,
+        error: activation.requiresCity ? "requires_city" : "activation_failed"
+      }
+    });
     if (activation.requiresCity) {
       return { ok: false, status: 422, error: cityBoostError(activation.boostId) };
     }

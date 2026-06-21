@@ -101,6 +101,8 @@ const profileMergeSource = readSrc("server/utils/profileMerge.js");
 const profilePatchSharedSource = readSrc("shared/profilePatch.mjs");
 const androidReleaseSource = readSrc("scripts/build-android-release.mjs");
 const androidVerifySource = readSrc("scripts/verify-android-assets.mjs");
+const androidManifestSource = readSrc("android/app/src/main/AndroidManifest.xml");
+const androidAssetlinksSource = readSrc("public/.well-known/assetlinks.json");
 const goToAppSource = readSrc("src/services/goToApp.ts");
 const openAppCacheSource = readSrc("src/utils/openAppOnboardingCache.ts");
 const adminActionPinThrottleSource = readSrc("server/services/adminActionPinThrottle.js");
@@ -403,6 +405,20 @@ assertCheck(
     androidVerifySource.includes("swHash") &&
     androidVerifySource.includes("ANDROID_ASSET_FIX_HINT"),
   "android asset verifier must compare refs, hashes, build marker, and service worker cache"
+);
+assertCheck(
+  androidManifestSource.includes('android:autoVerify="true"') &&
+    androidManifestSource.includes('android:host="bamsignal.com"') &&
+    androidManifestSource.includes('android:pathPrefix="/payment/success"') &&
+    androidManifestSource.includes('android:host="payment-success"') &&
+    androidManifestSource.includes('android:scheme="@string/custom_url_scheme"'),
+  "Android manifest must keep verified HTTPS app links and custom scheme callbacks"
+);
+assertCheck(
+  androidAssetlinksSource.includes('"package_name": "com.bamsignal.com"') &&
+    androidAssetlinksSource.includes("sha256_cert_fingerprints") &&
+    androidAssetlinksSource.includes("delegate_permission/common.handle_all_urls"),
+  "assetlinks.json must associate com.bamsignal.com with release signing fingerprint"
 );
 assertCheck(
   goToAppSource.includes("fetchOnboardingStatusWithTimeout") &&

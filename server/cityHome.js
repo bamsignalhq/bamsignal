@@ -4,6 +4,7 @@ import {
   normalizeUserKey,
   query
 } from "./db.js";
+import { assertSchemaTable } from "./services/schemaVerification.js";
 import { publicPhotosFromProfile } from "./services/photoReview.js";
 
 /** Lower rank = shown first on city home */
@@ -19,92 +20,22 @@ export const PLACEMENT_RANK = {
 export const CITY_HOME_PLACEMENT_TYPES = ["spotlight", "featured", "hot", "boost", "admin", "auto"];
 
 export async function ensureMemberProfilesTable() {
-  await query(`
-    create table if not exists app_member_profiles (
-      id uuid primary key default gen_random_uuid(),
-      user_key text unique not null,
-      email text,
-      phone text,
-      name text,
-      username text,
-      city text not null,
-      state text,
-      profile jsonb not null default '{}'::jsonb,
-      discoverable boolean not null default true,
-      city_home_hidden boolean not null default false,
-      onboarding_complete boolean not null default false,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists app_member_profiles_city_idx on app_member_profiles (city, onboarding_complete, discoverable)"
-  );
-  await query(
-    `create unique index if not exists app_member_profiles_email_lower_idx
-     on app_member_profiles (lower(email))
-     where email is not null and email <> ''`
-  );
-  await query(
-    `create unique index if not exists app_member_profiles_username_lower_idx
-     on app_member_profiles (lower(username))
-     where username is not null and username <> ''`
-  );
+  return assertSchemaTable("app_member_profiles");
 }
 
 export async function ensureCityHomePlacementsTable() {
-  await query(`
-    create table if not exists city_home_placements (
-      id uuid primary key default gen_random_uuid(),
-      city text not null,
-      profile_id uuid not null references app_member_profiles(id) on delete cascade,
-      placement_type text not null default 'auto',
-      sort_order integer not null default 0,
-      starts_at timestamptz not null default now(),
-      expires_at timestamptz,
-      paystack_reference text,
-      created_by text,
-      active boolean not null default true,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists city_home_placements_city_idx on city_home_placements (city, active, placement_type)"
-  );
-  await query(
-    "create unique index if not exists city_home_placements_profile_type_idx on city_home_placements (profile_id, placement_type) where active = true and placement_type = 'auto'"
-  );
-  await query(
-    "create unique index if not exists city_home_placements_paystack_reference_unique_idx on city_home_placements (paystack_reference) where paystack_reference is not null and paystack_reference <> ''"
-  );
+  return assertSchemaTable("city_home_placements");
 }
 
 export async function ensureCitySpotlightEventsTable() {
-  await query(`
-    create table if not exists city_spotlight_events (
-      id uuid primary key default gen_random_uuid(),
-      event_type text not null,
-      city text not null,
-      profile_id uuid,
-      viewer_key text,
-      meta jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists city_spotlight_events_type_idx on city_spotlight_events (event_type, created_at desc)"
-  );
-  await query(
-    "create index if not exists city_spotlight_events_city_idx on city_spotlight_events (city, created_at desc)"
-  );
+  return assertSchemaTable("city_spotlight_events");
 }
 
 export async function ensureCityHomeTables() {
   if (!isDatabaseReady()) return;
-  await ensureMemberProfilesTable();
-  await ensureCityHomePlacementsTable();
-  await ensureCitySpotlightEventsTable();
+  await assertSchemaTable("app_member_profiles");
+  await assertSchemaTable("city_home_placements");
+  await assertSchemaTable("city_spotlight_events");
 }
 
 function profilePayload(row) {

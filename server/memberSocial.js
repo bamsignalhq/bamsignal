@@ -23,66 +23,12 @@ import {
   upsertAppUserIdentity
 } from "./db.js";
 import { discoverVisibilitySql, ensureMemberTrustSchema } from "./memberTrust.js";
+import { assertSchemaReady } from "./services/schemaVerification.js";
 import { publicPhotosFromProfile } from "./services/photoReview.js";
 
 export async function ensureSocialSchema() {
   if (!isDatabaseReady()) return;
-
-  const { ensureModerationSchema } = await import("./services/moderation.js");
-  await ensureModerationSchema();
-
-  await query("alter table app_signals add column if not exists status text not null default 'pending'");
-  await query(
-    "create index if not exists app_signals_target_status_idx on app_signals (target_profile_id, status, created_at desc)"
-  );
-  await query("alter table app_users add column if not exists referred_by_user_key text");
-  await query("alter table app_users add column if not exists onboarding_completed_at timestamptz");
-
-  await query(`
-    create table if not exists app_referral_events (
-      id uuid primary key default gen_random_uuid(),
-      referrer_user_key text not null,
-      referred_user_key text not null,
-      referral_code text not null,
-      reward_days integer not null default 0,
-      created_at timestamptz not null default now(),
-      unique (referred_user_key)
-    )
-  `);
-  await query(`
-    create table if not exists app_profile_likes (
-      id uuid primary key default gen_random_uuid(),
-      actor_profile_id uuid not null,
-      target_profile_id uuid not null,
-      photo_index integer not null default 0,
-      created_at timestamptz not null default now(),
-      unique (actor_profile_id, target_profile_id)
-    )
-  `);
-  await query(`
-    create table if not exists app_profile_follows (
-      id uuid primary key default gen_random_uuid(),
-      actor_profile_id uuid not null,
-      target_profile_id uuid not null,
-      created_at timestamptz not null default now(),
-      unique (actor_profile_id, target_profile_id)
-    )
-  `);
-  await query(`
-    create table if not exists saved_profiles (
-      id uuid primary key default gen_random_uuid(),
-      member_id uuid not null,
-      saved_member_id uuid not null,
-      created_at timestamptz not null default now(),
-      unique (member_id, saved_member_id)
-    )
-  `);
-  await query(
-    "create index if not exists saved_profiles_member_id_idx on saved_profiles (member_id, created_at desc)"
-  );
-  await query(
-    "create index if not exists saved_profiles_saved_member_id_idx on saved_profiles (saved_member_id)"
-  );
+  await assertSchemaReady();
 }
 
 function generateReferralCode(name = "") {

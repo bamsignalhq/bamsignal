@@ -7,6 +7,7 @@ import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query } from ".
 import { findMemberProfileByUserKey } from "../cityHome.js";
 import { discoverVisibilitySql, ensureMemberTrustSchema } from "../memberTrust.js";
 import { publicPhotosFromProfile } from "./photoReview.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 export const FAST_CONNECTION_DAILY_SIGNALS = 30;
 const RESET_MS = 24 * 60 * 60 * 1000;
@@ -46,15 +47,7 @@ function passWindowFromUntil(expiresAt, passDays = PASS_DAYS_DEFAULT) {
 
 export async function ensureFastConnectionSchema() {
   if (!isDatabaseReady()) return;
-  await query(`
-    create table if not exists app_fast_connection_daily (
-      user_key text primary key,
-      used_today integer not null default 0,
-      daily_limit integer not null default ${FAST_CONNECTION_DAILY_SIGNALS},
-      reset_at timestamptz not null,
-      updated_at timestamptz not null default now()
-    )
-  `);
+  await assertSchemaTable("app_fast_connection_daily");
 }
 
 function fastConnectionEligibilitySql() {

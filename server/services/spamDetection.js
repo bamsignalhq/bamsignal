@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { isDatabaseReady, normalizeUserKey, query } from "../db.js";
 import { createModerationFlag } from "../memberTrust.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 const SPAM_PATTERNS = [
   /hi dear/i,
@@ -19,18 +20,7 @@ function hashMessage(text = "") {
 
 export async function ensureSpamDetectionSchema() {
   if (!isDatabaseReady()) return;
-  await query(`
-    create table if not exists spam_message_fingerprints (
-      id uuid primary key default gen_random_uuid(),
-      user_key text not null,
-      message_hash text not null,
-      recipient_profile_id uuid,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists spam_fingerprints_user_hash_idx on spam_message_fingerprints (user_key, message_hash, created_at desc)"
-  );
+  await assertSchemaTable("spam_message_fingerprints");
 }
 
 function patternSeverity(text) {

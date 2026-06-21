@@ -1,29 +1,10 @@
 import { query, isDatabaseReady } from "../db.js";
 import { paymentQuery, requireDatabaseReadyForPayments } from "./paymentDb.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 export async function ensurePaymentEventsTable() {
   if (!isDatabaseReady()) return;
-
-  await query(`
-    create table if not exists payment_events (
-      id uuid primary key default gen_random_uuid(),
-      paystack_reference text not null unique,
-      user_id text,
-      user_email text,
-      product_type text not null default 'premium',
-      product_id text,
-      amount_kobo bigint,
-      return_path text,
-      verified_at timestamptz,
-      email_sent_at timestamptz,
-      audit_log jsonb not null default '[]'::jsonb,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists payment_events_user_email_idx on payment_events (lower(user_email), created_at desc)"
-  );
+  await assertSchemaTable("payment_events");
 }
 
 export async function appendPaymentAudit(reference, event, detail = {}) {

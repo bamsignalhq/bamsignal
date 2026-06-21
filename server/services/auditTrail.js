@@ -1,30 +1,9 @@
 import { isDatabaseReady, query } from "../db.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 export async function ensureAuditTrailSchema() {
   if (!isDatabaseReady()) return;
-
-  await query(`
-    create table if not exists platform_audit_log (
-      id uuid primary key default gen_random_uuid(),
-      action text not null,
-      target_user_id uuid,
-      target_user_key text,
-      operator_id text,
-      operator_email text,
-      details jsonb not null default '{}'::jsonb,
-      ip text,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists platform_audit_action_idx on platform_audit_log (action, created_at desc)"
-  );
-  await query(
-    "create index if not exists platform_audit_operator_idx on platform_audit_log (operator_email, created_at desc)"
-  );
-  await query(
-    "create index if not exists platform_audit_target_idx on platform_audit_log (target_user_key, created_at desc)"
-  );
+  await assertSchemaTable("platform_audit_log");
 }
 
 export async function writePlatformAudit({

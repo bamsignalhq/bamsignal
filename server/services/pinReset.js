@@ -13,6 +13,7 @@ import {
   isOtpMemoryEntryExpired
 } from "./boundedMemoryStore.js";
 import { logObservabilityEvent } from "./observability.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
@@ -40,16 +41,7 @@ function generateCode() {
 }
 
 async function ensurePinResetTable() {
-  await query(`
-    create table if not exists pin_reset_codes (
-      email text primary key,
-      code_hash text not null,
-      attempts int not null default 0,
-      last_sent_at timestamptz not null default now(),
-      expires_at timestamptz not null,
-      created_at timestamptz not null default now()
-    )
-  `);
+  await assertSchemaTable("pin_reset_codes");
 }
 
 async function readStored(email) {

@@ -1,4 +1,5 @@
 import { query } from "../db.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 import {
   confirmWhatsAppVerificationOtp,
   sendWhatsAppVerificationOtp,
@@ -23,22 +24,7 @@ export class WhatsappVerificationError extends Error {
 }
 
 async function ensureWhatsappVerificationTable() {
-  await query(`
-    create table if not exists whatsapp_verification_codes (
-      phone text primary key,
-      verification_reference text not null,
-      attempts int not null default 0,
-      last_sent_at timestamptz not null default now(),
-      expires_at timestamptz not null,
-      delivery_status text not null default 'sent',
-      user_email text,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    `alter table whatsapp_verification_codes add column if not exists delivery_status text not null default 'sent'`
-  );
-  await query(`alter table whatsapp_verification_codes add column if not exists user_email text`);
+  await assertSchemaTable("whatsapp_verification_codes");
 }
 
 async function readStored(phone) {
@@ -165,9 +151,7 @@ export async function confirmWhatsappVerification(rawPhone, code, { email } = {}
 }
 
 export async function markPhoneVerified(localPhone, { email } = {}) {
-  await query("alter table app_users add column if not exists phone_verified boolean not null default false");
-  await query("alter table app_users add column if not exists phone_verified_at timestamptz");
-  await query("alter table app_users add column if not exists verified_phone text");
+  await assertSchemaTable("app_users");
 
   await query(
     `update app_users
@@ -220,7 +204,7 @@ export async function handleWhatsappVerificationWebhook(body = {}) {
 }
 
 export async function getPhoneVerifiedStatus({ email, phone }) {
-  await query("alter table app_users add column if not exists phone_verified boolean not null default false");
+  await assertSchemaTable("app_users");
   const localPhone = phone ? normalizeNigerianPhoneLocal(phone) : "";
   const { rows } = await query(
     `select phone_verified, phone, verified_phone from app_users

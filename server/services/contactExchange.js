@@ -3,6 +3,7 @@ import { findMemberProfileByUserKey } from "../cityHome.js";
 import { isDatabaseReady, normalizeUserKey, query } from "../db.js";
 import { createModerationFlag } from "../memberTrust.js";
 import { getSubscriptionCatalog } from "./subscriptionCatalog.js";
+import { assertSchemaReady } from "./schemaVerification.js";
 
 export const EXCHANGE_STATUSES = ["pending", "accepted", "declined", "completed", "cancelled", "expired"];
 export const REQUEST_EXPIRY_DAYS = 7;
@@ -13,50 +14,7 @@ function hashMeta(value = "") {
 
 export async function ensureContactExchangeSchema() {
   if (!isDatabaseReady()) return;
-
-  await query(`
-    create table if not exists contact_exchange_requests (
-      id uuid primary key default gen_random_uuid(),
-      match_id text not null,
-      requester_user_key text not null,
-      requester_profile_id uuid,
-      recipient_user_key text not null,
-      recipient_profile_id uuid,
-      status text not null default 'pending',
-      requested_at timestamptz not null default now(),
-      responded_at timestamptz,
-      completed_at timestamptz,
-      shared_contacts jsonb not null default '{}'::jsonb,
-      metadata jsonb not null default '{}'::jsonb,
-      updated_at timestamptz not null default now()
-    )
-  `);
-
-  await query(
-    "create index if not exists contact_exchange_match_idx on contact_exchange_requests (match_id, updated_at desc)"
-  );
-  await query(
-    "create index if not exists contact_exchange_requester_idx on contact_exchange_requests (requester_user_key, status, completed_at desc)"
-  );
-  await query(
-    "create index if not exists contact_exchange_recipient_idx on contact_exchange_requests (recipient_user_key, status, updated_at desc)"
-  );
-
-  await query(`
-    create table if not exists contact_exchange_events (
-      id uuid primary key default gen_random_uuid(),
-      match_id text not null,
-      user_key text not null,
-      profile_id uuid,
-      event_type text not null,
-      field text,
-      text_hash text,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists contact_exchange_events_created_idx on contact_exchange_events (created_at desc)"
-  );
+  await assertSchemaReady();
 }
 
 async function logExchangeEvent({ matchId, userKey, profileId, eventType, field = null, text = null }) {

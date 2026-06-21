@@ -75,7 +75,12 @@ const paymentCatalogSource = readFileSync(join(rootPath, "server/services/paymen
 const paymentFortressSource = readFileSync(join(rootPath, "server/services/paymentFortress.js"), "utf8");
 const paymentDbSource = readFileSync(join(rootPath, "server/services/paymentDb.js"), "utf8");
 const paymentFulfillmentsSource = readFileSync(join(rootPath, "server/services/paymentFulfillments.js"), "utf8");
-const paymentRuntimeSchemaSource = readFileSync(join(rootPath, "server/db.js"), "utf8");
+const paymentRuntimeSchemaSource = readFileSync(
+  join(rootPath, "migrations/0002_baseline_bamsignal_schema.sql"),
+  "utf8"
+);
+const schemaVerificationSource = readSrc("server/services/schemaVerification.js");
+const dbStartupSource = readSrc("server/db.js");
 const paymentFulfillmentRaceMigrationSource = readFileSync(
   join(rootPath, "supabase/migrations/202606211300_payment_fulfillment_processing.sql"),
   "utf8"
@@ -503,6 +508,7 @@ assertCheck(
 assertCheck(
   signupOtpSource.includes('from "./signupProvisioning.js"') &&
     signupOtpSource.includes("runSignupProvisioning") &&
+    signupProvisioningSource.includes("assertSchemaTable") &&
     signupProvisioningSource.includes("signup_provisioning_attempts") &&
     signupProvisioningSource.includes("export async function beginProvisioning") &&
     signupProvisioningSource.includes("export async function resumeProvisioning") &&
@@ -511,8 +517,20 @@ assertCheck(
     signupProvisioningSource.includes("auth_cleanup_pending") &&
     signupProvisioningSource.includes("shouldCleanupOrphanAuthUser") &&
     signupProvisioningSource.includes("provisioning_resume") &&
+    existsSync(join(rootPath, "migrations/0002_baseline_bamsignal_schema.sql")) &&
     existsSync(join(rootPath, "supabase/migrations/202606211430_signup_provisioning_recovery.sql")),
   "signup provisioning must be resumable and clean up newly-created orphan auth users"
+);
+assertCheck(
+  schemaVerificationSource.includes("export async function checkSchema") &&
+    schemaVerificationSource.includes("REQUIRED_SCHEMA_TABLES") &&
+    dbStartupSource.includes("checkSchema({ force: true })") &&
+    !dbStartupSource.includes("create table if not exists") &&
+    !dbStartupSource.includes("alter table") &&
+    existsSync(join(rootPath, "migrations/0001_schema_migrations.sql")) &&
+    existsSync(join(rootPath, "migrations/0002_baseline_bamsignal_schema.sql")) &&
+    existsSync(join(rootPath, "server/migrationRunner.js")),
+  "startup must verify migrated schema and never mutate database DDL at runtime"
 );
 assertCheck(
   !complianceUtilSource.includes("onboardingComplete") &&
@@ -742,7 +760,7 @@ assertCheck(
     cityHomeSource.includes("on conflict (paystack_reference)") &&
     paymentRuntimeSchemaSource.includes("payment_fulfillments_reference_unique_idx") &&
     paymentRuntimeSchemaSource.includes("app_users_paystack_reference_unique_idx") &&
-    cityHomeSource.includes("city_home_placements_paystack_reference_unique_idx") &&
+    paymentRuntimeSchemaSource.includes("city_home_placements_paystack_reference_unique_idx") &&
     paymentFulfillmentRaceMigrationSource.includes("payment_fulfillments_reference_unique_idx") &&
     paymentFulfillmentRaceMigrationSource.includes("app_users_paystack_reference_unique_idx") &&
     paymentFulfillmentRaceMigrationSource.includes("city_home_placements_paystack_reference_unique_idx"),

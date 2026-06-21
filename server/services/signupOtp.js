@@ -28,6 +28,7 @@ import {
   SignupProvisioningError
 } from "./signupProvisioning.js";
 import { query } from "../db.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 dotenv.config();
 
@@ -76,16 +77,7 @@ function mapProvisioningError(error) {
 }
 
 async function ensureEmailVerificationTable() {
-  await query(`
-    create table if not exists email_verification_codes (
-      email text primary key,
-      code_hash text not null,
-      attempts int not null default 0,
-      last_sent_at timestamptz not null default now(),
-      expires_at timestamptz not null,
-      created_at timestamptz not null default now()
-    )
-  `);
+  await assertSchemaTable("email_verification_codes");
 }
 
 async function readStored(email) {

@@ -1,5 +1,6 @@
 import { isDatabaseReady, normalizeUserKey, query } from "../db.js";
 import { ensureMemberProfilesTable, findMemberProfileByUserKey } from "../cityHome.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 export const TERMS_VERSION = "2026-06-18";
 export const PRIVACY_VERSION = "2026-06-18";
@@ -21,22 +22,7 @@ const VALID_ACK_TYPES = new Set(Object.keys(VERSION_BY_TYPE));
 export async function ensureComplianceSchema() {
   if (!isDatabaseReady()) return;
   await ensureMemberProfilesTable();
-  await query(`
-    create table if not exists user_compliance_acknowledgements (
-      id uuid primary key default gen_random_uuid(),
-      profile_id uuid references app_member_profiles(id) on delete cascade,
-      user_key text not null,
-      ack_type text not null,
-      version text not null,
-      accepted_at timestamptz not null default now(),
-      ip text,
-      user_agent text,
-      metadata jsonb not null default '{}'::jsonb
-    )
-  `);
-  await query(
-    "create index if not exists user_compliance_user_key_idx on user_compliance_acknowledgements (user_key, ack_type, accepted_at desc)"
-  );
+  await assertSchemaTable("user_compliance_acknowledgements");
 }
 
 function normalizeAckTypes(acks = []) {

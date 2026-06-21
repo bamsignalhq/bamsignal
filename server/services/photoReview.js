@@ -14,41 +14,12 @@ import {
   isUnhealthyPhotoSubmission,
   recordPhotoViolation
 } from "./moderation.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 export async function ensurePhotoReviewSchema() {
   if (!isDatabaseReady()) return;
   await ensureMemberProfilesTable();
-
-  await query(`
-    create table if not exists photo_reviews (
-      id uuid primary key default gen_random_uuid(),
-      profile_id uuid references app_member_profiles(id) on delete cascade,
-      auth_user_id uuid,
-      user_key text,
-      member_name text,
-      photo_url text not null,
-      photo_type text not null,
-      photo_review_status text not null default 'pending_review',
-      photo_risk_flags jsonb not null default '[]'::jsonb,
-      reject_reason text,
-      reviewed_at timestamptz,
-      reviewed_by text,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "alter table photo_reviews add column if not exists auth_user_id uuid"
-  );
-  await query(
-    "create index if not exists photo_reviews_status_idx on photo_reviews (photo_review_status, created_at desc)"
-  );
-  await query(
-    "create index if not exists photo_reviews_auth_user_idx on photo_reviews (auth_user_id)"
-  );
-  await query(
-    "create unique index if not exists photo_reviews_url_idx on photo_reviews (photo_url)"
-  );
+  await assertSchemaTable("photo_reviews");
 }
 
 function mapReviewRow(row) {

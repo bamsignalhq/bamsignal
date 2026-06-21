@@ -2,6 +2,14 @@ import pg from "pg";
 import { config } from "./config.js";
 import { logRetryExhausted, logThresholdedAlert } from "./services/observability.js";
 import { sanitizeApiErrorForLog } from "./services/errorResponse.js";
+import {
+  assertSchemaReady,
+  assertSchemaTable,
+  checkSchema,
+  resetSchemaVerificationCache
+} from "./services/schemaVerification.js";
+
+export { checkSchema } from "./services/schemaVerification.js";
 
 const { Pool } = pg;
 
@@ -68,160 +76,35 @@ export function normalizeUserKey({ email, phone } = {}) {
 }
 
 export async function ensureSubscriptionEventsTable() {
-  if (!pool) return;
-
-  await query(`
-    create table if not exists subscription_events (
-      id uuid primary key default gen_random_uuid(),
-      provider text not null default 'paystack',
-      event_type text not null,
-      user_email text,
-      user_id text,
-      payload jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now()
-    )
-  `);
+  return assertSchemaTable("subscription_events");
 }
 
 export async function ensurePaymentFulfillmentsTable() {
-  if (!pool) return;
-  await query(`
-    create table if not exists payment_fulfillments (
-      id uuid primary key default gen_random_uuid(),
-      paystack_reference text not null unique,
-      user_id text,
-      product_type text not null,
-      product_id text,
-      amount_kobo bigint,
-      currency text,
-      status text not null default 'pending',
-      processing_started_at timestamptz,
-      fulfilled_at timestamptz,
-      email_sent_at timestamptz,
-      raw_payload jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    )
-  `);
-  await query("alter table payment_fulfillments add column if not exists processing_started_at timestamptz");
-  await query(
-    "create unique index if not exists payment_fulfillments_reference_unique_idx on payment_fulfillments (paystack_reference)"
-  );
-  await query(
-    "create index if not exists payment_fulfillments_user_id_idx on payment_fulfillments (user_id, created_at desc)"
-  );
-  await query(
-    "create index if not exists payment_fulfillments_product_idx on payment_fulfillments (product_type, product_id, created_at desc)"
-  );
+  return assertSchemaTable("payment_fulfillments");
 }
 
 export async function ensureAppSignalsTable() {
-  if (!pool) return;
-
-  await query(`
-    create table if not exists app_signals (
-      id uuid primary key default gen_random_uuid(),
-      user_key text not null,
-      sender_email text,
-      sender_phone text,
-      target_profile_id text not null,
-      signal_type text not null default 'signal',
-      payload jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query("create index if not exists app_signals_user_key_idx on app_signals (user_key, created_at desc)");
+  return assertSchemaTable("app_signals");
 }
 
 export async function ensureAppMatchesTable() {
-  if (!pool) return;
-
-  await query(`
-    create table if not exists app_matches (
-      id text not null,
-      user_key text not null,
-      owner_email text,
-      owner_phone text,
-      profile_id text not null,
-      payload jsonb not null default '{}'::jsonb,
-      matched_at timestamptz not null default now(),
-      primary key (id, user_key)
-    )
-  `);
+  return assertSchemaTable("app_matches");
 }
 
 export async function ensureAppMessagesTable() {
-  if (!pool) return;
-
-  await query(`
-    create table if not exists app_messages (
-      id text not null,
-      thread_id text not null,
-      user_key text not null,
-      owner_email text,
-      owner_phone text,
-      from_side text not null,
-      body text not null,
-      payload jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now(),
-      primary key (id, user_key)
-    )
-  `);
-  await query(
-    "create index if not exists app_messages_thread_idx on app_messages (user_key, thread_id, created_at)"
-  );
+  return assertSchemaTable("app_messages");
 }
 
 export async function ensureAppChatThreadsTable() {
-  if (!pool) return;
-
-  await query(`
-    create table if not exists app_chat_threads (
-      match_id text not null,
-      user_key text not null,
-      owner_email text,
-      owner_phone text,
-      meta jsonb not null default '{}'::jsonb,
-      updated_at timestamptz not null default now(),
-      primary key (match_id, user_key)
-    )
-  `);
+  return assertSchemaTable("app_chat_threads");
 }
 
 export async function ensureAppReportsTable() {
-  if (!pool) return;
-
-  await query(`
-    create table if not exists app_reports (
-      id uuid primary key default gen_random_uuid(),
-      user_key text not null,
-      reporter_email text,
-      reporter_phone text,
-      profile_id text not null,
-      reason text not null,
-      details text,
-      payload jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query("create index if not exists app_reports_profile_idx on app_reports (profile_id, created_at desc)");
+  return assertSchemaTable("app_reports");
 }
 
 export async function ensureAllTables() {
-  await ensureAppUsersTable();
-  await ensurePlatformSettingsTable();
-  await ensureAdminUsersTable();
-  await ensureSubscriptionEventsTable();
-  await ensurePaymentFulfillmentsTable();
-  await ensureAppSignalsTable();
-  await ensureAppMatchesTable();
-  await ensureAppMessagesTable();
-  await ensureAppChatThreadsTable();
-  await ensureAppReportsTable();
-  const { ensureCityHomeTables } = await import("./cityHome.js");
-  await ensureCityHomeTables();
-  const { ensureModerationSchema } = await import("./services/moderation.js");
-  await ensureModerationSchema();
+  return assertSchemaReady();
 }
 
 export async function initDatabase() {
@@ -235,9 +118,20 @@ export async function initDatabase() {
     await pool.query("select 1 as ok");
     dbConnectionStatus = "connected";
     dbConnectionError = null;
-    await ensureAllTables();
+    resetSchemaVerificationCache();
+    const schema = await checkSchema({ force: true });
+    if (!schema.ok && !schema.skipped) {
+      dbConnectionStatus = "disconnected";
+      dbConnectionError = schema.message;
+      logThresholdedAlert("schema_incomplete", {
+        reason: "schema_not_migrated",
+        missing: schema.missing
+      });
+      console.warn(`[bamsignal] ${schema.message}`);
+      return { ok: false, reason: schema.message, missing: schema.missing };
+    }
     console.log("[bamsignal] Database connected successfully");
-    return { ok: true };
+    return { ok: true, schemaVerified: schema.ok && !schema.skipped };
   } catch (error) {
     const sanitized = sanitizeApiErrorForLog(error);
     dbConnectionStatus = "disconnected";
@@ -286,54 +180,11 @@ export async function withDbRetry(task, attempts = 3, context = {}) {
 }
 
 export async function ensureAppUsersTable() {
-  if (!pool) return;
-
-  await query(`
-    create table if not exists app_users (
-      id uuid primary key default gen_random_uuid(),
-      email text unique,
-      phone text unique,
-      name text,
-      referral_code text,
-      is_premium boolean not null default false,
-      premium_until timestamptz,
-      telegram_vip_invite_link text,
-      telegram_user_id text,
-      paystack_reference text,
-      referral_points integer not null default 0,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    )
-  `);
-
-  await query("alter table app_users add column if not exists is_premium boolean not null default false");
-  await query("alter table app_users add column if not exists premium_until timestamptz");
-  await query("alter table app_users add column if not exists telegram_vip_invite_link text");
-  await query("alter table app_users add column if not exists telegram_user_id text");
-  await query("alter table app_users add column if not exists paystack_reference text");
-  await query("alter table app_users add column if not exists referral_points integer not null default 0");
-  await query("alter table app_users add column if not exists user_key text");
-  await query("alter table app_users add column if not exists phone_verified boolean not null default false");
-  await query("alter table app_users add column if not exists phone_verified_at timestamptz");
-  await query("alter table app_users add column if not exists fast_connection_pass_until timestamptz");
-  await query("create unique index if not exists app_users_user_key_idx on app_users (user_key) where user_key is not null");
-  await query("create unique index if not exists app_users_email_unique_idx on app_users (lower(email)) where email is not null and email <> ''");
-  await query("create unique index if not exists app_users_phone_unique_idx on app_users (phone) where phone is not null and phone <> ''");
-  await query(
-    "create unique index if not exists app_users_paystack_reference_unique_idx on app_users (paystack_reference) where paystack_reference is not null and paystack_reference <> ''"
-  );
+  return assertSchemaTable("app_users");
 }
 
 export async function ensurePlatformSettingsTable() {
-  if (!pool) return;
-
-  await query(`
-    create table if not exists platform_settings (
-      key text primary key,
-      value jsonb not null default '{}'::jsonb,
-      updated_at timestamptz not null default now()
-    )
-  `);
+  return assertSchemaTable("platform_settings");
 }
 
 export async function getPlatformSetting(key, fallback = null) {
@@ -360,17 +211,7 @@ export async function setPlatformSetting(key, value) {
 }
 
 export async function ensureAdminUsersTable() {
-  if (!pool) return;
-
-  await query(`
-    create table if not exists admin_users (
-      email text primary key,
-      role text not null default 'admin',
-      active boolean not null default true,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    )
-  `);
+  return assertSchemaTable("admin_users");
 }
 
 export async function isPlatformAdminEmail(email) {

@@ -9,6 +9,7 @@ import {
   VULGAR_CONTENT_BLOCK_MESSAGE
 } from "../../shared/contactGuardCore.mjs";
 import { createModerationFlag } from "../memberTrust.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 export { CONTACT_LEAK_BLOCK_MESSAGE, VULGAR_CONTENT_BLOCK_MESSAGE };
 
@@ -18,19 +19,7 @@ export function hashContactLeakText(text = "") {
 
 export async function ensureContactLeakSchema() {
   if (!isDatabaseReady()) return;
-  await query(`
-    create table if not exists contact_leak_attempts (
-      id uuid primary key default gen_random_uuid(),
-      user_key text not null,
-      profile_id uuid,
-      field text not null,
-      text_hash text not null,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists contact_leak_attempts_created_idx on contact_leak_attempts (created_at desc)"
-  );
+  await assertSchemaTable("contact_leak_attempts");
 }
 
 export async function logContactLeakAttempt({

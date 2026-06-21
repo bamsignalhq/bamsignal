@@ -12,6 +12,7 @@ import {
   observabilityContext
 } from "./observability.js";
 import { sanitizeApiErrorForLog } from "./errorResponse.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 const ENDPOINT = "payment_initialize";
 
@@ -41,27 +42,7 @@ function paymentClientFingerprint(req) {
 
 export async function ensurePaymentInitializeThrottleTable() {
   if (!isDatabaseReady()) return;
-  await query(`
-    create table if not exists payment_initialize_rate_events (
-      id uuid primary key default gen_random_uuid(),
-      endpoint text not null,
-      initialize_action text not null,
-      member_id text not null,
-      ip text,
-      user_agent_hash text,
-      client_hash text,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists payment_initialize_rate_member_idx on payment_initialize_rate_events (endpoint, member_id, created_at desc)"
-  );
-  await query(
-    "create index if not exists payment_initialize_rate_ip_idx on payment_initialize_rate_events (endpoint, ip, created_at desc)"
-  );
-  await query(
-    "create index if not exists payment_initialize_rate_client_idx on payment_initialize_rate_events (endpoint, client_hash, created_at desc)"
-  );
+  await assertSchemaTable("payment_initialize_rate_events");
 }
 
 async function countRecentEvents({ memberId, ip, clientHash, sinceIso }) {

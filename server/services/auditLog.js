@@ -1,30 +1,9 @@
 import { isDatabaseReady, query } from "../db.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 export async function ensureAuditLogsSchema() {
   if (!isDatabaseReady()) return;
-
-  await query(`
-    create table if not exists audit_logs (
-      id uuid primary key default gen_random_uuid(),
-      user_id uuid,
-      target_user_id uuid,
-      operator_id text,
-      action text not null,
-      details jsonb not null default '{}'::jsonb,
-      ip text,
-      user_agent text,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists audit_logs_user_idx on audit_logs (user_id, created_at desc)"
-  );
-  await query(
-    "create index if not exists audit_logs_target_idx on audit_logs (target_user_id, created_at desc)"
-  );
-  await query(
-    "create index if not exists audit_logs_action_idx on audit_logs (action, created_at desc)"
-  );
+  await assertSchemaTable("audit_logs");
 }
 
 export async function writeAuditLog({

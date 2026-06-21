@@ -1,41 +1,13 @@
 import { isDatabaseReady, query } from "../db.js";
 import { ensureMemberProfilesTable } from "../cityHome.js";
+import { assertSchemaReady } from "./schemaVerification.js";
 
 const MODERATION_ROLES = new Set(["admin", "operator", "moderator"]);
 
 export async function ensureModerationSchema() {
   if (!isDatabaseReady()) return;
   await ensureMemberProfilesTable();
-
-  await query(
-    "alter table app_member_profiles add column if not exists shadow_banned boolean not null default false"
-  );
-  await query("alter table app_member_profiles add column if not exists shadow_ban_reason text");
-  await query("alter table app_member_profiles add column if not exists shadow_banned_at timestamptz");
-  await query("alter table app_member_profiles add column if not exists shadow_banned_by text");
-  await query("alter table app_member_profiles add column if not exists shadow_ban_lifted_at timestamptz");
-  await query("alter table app_member_profiles add column if not exists shadow_ban_lifted_by text");
-  await query("alter table app_member_profiles add column if not exists shadow_ban_lift_reason text");
-  await query("alter table app_member_profiles add column if not exists moderation_notes text");
-
-  await query(`
-    create table if not exists moderation_audit_log (
-      id uuid primary key default gen_random_uuid(),
-      action text not null,
-      target_profile_id uuid,
-      target_user_key text,
-      operator_email text not null,
-      reason text,
-      payload jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists moderation_audit_target_idx on moderation_audit_log (target_profile_id, created_at desc)"
-  );
-  await query(
-    "create index if not exists moderation_audit_action_idx on moderation_audit_log (action, created_at desc)"
-  );
+  await assertSchemaReady();
 }
 
 function mapShadowBannedRow(row) {
@@ -233,12 +205,6 @@ export const PHOTO_VIOLATION_SHADOW_BAN_THRESHOLD = 3;
 export async function ensurePhotoViolationSchema() {
   if (!isDatabaseReady()) return;
   await ensureModerationSchema();
-  await query(
-    "alter table app_member_profiles add column if not exists photo_violation_count int not null default 0"
-  );
-  await query(
-    "alter table app_member_profiles add column if not exists last_photo_violation_at timestamptz"
-  );
 }
 
 export function isUnhealthyPhotoSubmission({ photoReviewStatus } = {}) {

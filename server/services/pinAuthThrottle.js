@@ -8,6 +8,7 @@ import {
   logThrottleDbUnavailable,
   recordMemoryMemberThrottleFailure
 } from "./memoryThrottle.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 const WINDOW_MS = 15 * 60 * 1000;
 const LOCK_MS = 15 * 60 * 1000;
@@ -15,22 +16,7 @@ const MAX_ATTEMPTS = 5;
 
 export async function ensurePinAuthAttemptsTable() {
   if (!isDatabaseReady()) return;
-  await query(`
-    create table if not exists pin_auth_attempts (
-      id uuid primary key default gen_random_uuid(),
-      action text not null,
-      identifier text not null,
-      ip text,
-      user_agent_hash text,
-      attempt_count integer not null default 0,
-      first_attempt_at timestamptz not null default now(),
-      last_attempt_at timestamptz not null default now(),
-      locked_until timestamptz
-    )
-  `);
-  await query(
-    "create index if not exists pin_auth_attempts_lookup_idx on pin_auth_attempts (action, identifier, ip, user_agent_hash)"
-  );
+  await assertSchemaTable("pin_auth_attempts");
 }
 
 function hashUserAgent(userAgent = "") {

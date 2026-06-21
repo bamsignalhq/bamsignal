@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { isDatabaseReady, normalizeUserKey, query } from "../db.js";
 import { createModerationFlag } from "../memberTrust.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 const LIMITS = {
   search: { windowMs: 60_000, max: 30 },
@@ -11,18 +12,7 @@ const LIMITS = {
 
 export async function ensureRateLimitSchema() {
   if (!isDatabaseReady()) return;
-  await query(`
-    create table if not exists api_rate_events (
-      id uuid primary key default gen_random_uuid(),
-      endpoint text not null,
-      user_key text,
-      ip text,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists api_rate_events_lookup_idx on api_rate_events (endpoint, user_key, ip, created_at desc)"
-  );
+  await assertSchemaTable("api_rate_events");
 }
 
 function clientIp(req) {

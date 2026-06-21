@@ -10,6 +10,7 @@ import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query, upsertAp
 import { findMemberProfileByUserKey, upsertMemberProfile } from "../cityHome.js";
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
 import { verifyLoginPassword } from "./pinLogin.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 export const SIGNUP_USER_MESSAGE = "We couldn't complete your signup. Please try again.";
 export const SIGNUP_PROVISIONING_TTL_MS = 30 * 60 * 1000;
@@ -92,28 +93,7 @@ async function ensureSignupProvisioningTable() {
     throw new SignupProvisioningError(503, SIGNUP_USER_MESSAGE, "database_disconnected");
   }
 
-  await query(`
-    create table if not exists signup_provisioning_attempts (
-      email text primary key,
-      user_key text,
-      phone text,
-      username text,
-      name text,
-      code_hash text not null,
-      status text not null default 'otp_verified',
-      auth_user_id text,
-      auth_user_created boolean not null default false,
-      attempts int not null default 1,
-      last_error_code text,
-      payload jsonb not null default '{}'::jsonb,
-      expires_at timestamptz not null,
-      created_at timestamptz not null default now(),
-      updated_at timestamptz not null default now()
-    )
-  `);
-  await query(
-    "create index if not exists signup_provisioning_attempts_status_idx on signup_provisioning_attempts (status, expires_at)"
-  );
+  await assertSchemaTable("signup_provisioning_attempts");
 }
 
 export async function readSignupProvisioningAttempt(email) {

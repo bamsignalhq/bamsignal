@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { findMemberProfileByUserKey } from "../cityHome.js";
 import { isDatabaseReady, query } from "../db.js";
 import { ensureMemberTrustSchema } from "../memberTrust.js";
+import { assertSchemaReady } from "./schemaVerification.js";
 import { loadEmailBranding, buildLoginVerificationEmailBody, wrapEmailLayoutAsync } from "./emailBranding.js";
 import { writeAuditLog } from "./auditLog.js";
 import {
@@ -29,32 +30,7 @@ export class Login2faError extends Error {
 export async function ensureAccountSecuritySchema() {
   if (!isDatabaseReady()) return;
   await ensureMemberTrustSchema();
-
-  await query(
-    "alter table app_member_profiles add column if not exists two_factor_enabled boolean not null default false"
-  );
-  await query("alter table app_member_profiles add column if not exists two_factor_method text");
-  await query(
-    "alter table app_member_profiles add column if not exists trusted_devices jsonb not null default '[]'::jsonb"
-  );
-  await query("alter table app_member_profiles add column if not exists last_2fa_at timestamptz");
-  await query(
-    "alter table app_member_profiles add column if not exists two_factor_updated_at timestamptz"
-  );
-
-  await query(`
-    create table if not exists login_2fa_codes (
-      user_key text primary key,
-      code_hash text,
-      method text not null,
-      verification_reference text,
-      attempts int not null default 0,
-      last_sent_at timestamptz not null default now(),
-      expires_at timestamptz not null,
-      device_id text,
-      ip text
-    )
-  `);
+  await assertSchemaReady();
 }
 
 function hashCode(code) {

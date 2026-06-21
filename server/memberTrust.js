@@ -1,5 +1,6 @@
 import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query } from "./db.js";
 import { ensureMemberProfilesTable, findMemberProfileByUserKey } from "./cityHome.js";
+import { assertSchemaReady } from "./services/schemaVerification.js";
 
 const USERNAME_CHANGE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 const DELETE_GRACE_DAYS = 30;
@@ -7,74 +8,7 @@ const DELETE_GRACE_DAYS = 30;
 export async function ensureMemberTrustSchema() {
   if (!isDatabaseReady()) return;
   await ensureMemberProfilesTable();
-
-  await query(
-    "alter table app_member_profiles add column if not exists username_last_changed_at timestamptz"
-  );
-  await query(
-    "alter table app_member_profiles add column if not exists username_change_count integer not null default 0"
-  );
-  await query(
-    "alter table app_member_profiles add column if not exists account_status text not null default 'active'"
-  );
-  await query("alter table app_member_profiles add column if not exists account_deleted_at timestamptz");
-  await query(
-    "alter table app_member_profiles add column if not exists account_delete_scheduled_for timestamptz"
-  );
-  await query("alter table app_member_profiles add column if not exists profile_paused_at timestamptz");
-  await query("alter table app_member_profiles add column if not exists profile_pause_reason text");
-
-  await query(`
-    create table if not exists connection_notes (
-      id uuid primary key default gen_random_uuid(),
-      owner_profile_id uuid not null,
-      target_profile_id uuid not null,
-      note text not null default '',
-      updated_at timestamptz not null default now(),
-      unique (owner_profile_id, target_profile_id)
-    )
-  `);
-
-  await query(`
-    create table if not exists moderation_flags (
-      id uuid primary key default gen_random_uuid(),
-      user_key text not null,
-      profile_id uuid,
-      reason text not null,
-      severity text not null default 'medium',
-      metadata jsonb not null default '{}'::jsonb,
-      created_at timestamptz not null default now(),
-      resolved_at timestamptz,
-      resolved_by text
-    )
-  `);
-  await query(
-    "create index if not exists moderation_flags_open_idx on moderation_flags (resolved_at, created_at desc)"
-  );
-
-  await query(`
-    create table if not exists success_stories (
-      id uuid primary key default gen_random_uuid(),
-      user_key text not null,
-      profile_id uuid,
-      story text not null,
-      anonymous boolean not null default true,
-      approved boolean not null default false,
-      created_at timestamptz not null default now()
-    )
-  `);
-
-  await query(`
-    create table if not exists member_introductions (
-      id uuid primary key default gen_random_uuid(),
-      introducer_profile_id uuid not null,
-      target_profile_id uuid not null,
-      recipient_profile_id uuid not null,
-      note text,
-      status text not null default 'pending',
-      created_at timestamptz not null default now()
-    )
-  `);
+  await assertSchemaReady();
 }
 
 export function normalizeMemberUsername(value = "") {

@@ -1,29 +1,10 @@
-import { query, normalizeUserKey } from "../db.js";
+import { query, normalizeUserKey, isDatabaseReady } from "../db.js";
 import { normalizeNigerianPhoneLocal } from "../utils/nigerianPhone.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 export async function ensureVerificationSubmissionsTable() {
-  await query(`
-    create table if not exists verification_submissions (
-      id uuid primary key default gen_random_uuid(),
-      user_key text not null,
-      email text,
-      phone text,
-      user_name text,
-      profile_photo text,
-      verification_selfie text,
-      phone_verified boolean not null default false,
-      status text not null default 'pending',
-      reject_reason text,
-      submitted_at timestamptz not null default now(),
-      reviewed_at timestamptz
-    )
-  `);
-  await query(
-    `create index if not exists verification_submissions_status_idx on verification_submissions (status, submitted_at desc)`
-  );
-  await query(
-    `create index if not exists verification_submissions_user_key_idx on verification_submissions (user_key)`
-  );
+  if (!isDatabaseReady()) return;
+  await assertSchemaTable("verification_submissions");
 }
 
 export async function submitVerificationSelfie({

@@ -23,6 +23,7 @@ function read(relativePath) {
 
 const signupOtpSource = read("server/services/signupOtp.js");
 const signupProvisioningSource = read("server/services/signupProvisioning.js");
+const baselineMigrationSource = read("migrations/0002_baseline_bamsignal_schema.sql");
 const migrationSource = read("supabase/migrations/202606211430_signup_provisioning_recovery.sql");
 
 assert(
@@ -79,11 +80,12 @@ assert(
 );
 
 assert(
-  migrationSource.includes("create table if not exists public.signup_provisioning_attempts") &&
-    migrationSource.includes("code_hash text not null") &&
-    migrationSource.includes("auth_user_created boolean not null default false") &&
-    migrationSource.includes("signup_provisioning_attempts_status_idx"),
-  "signup provisioning recovery migration must create state table and status index"
+  baselineMigrationSource.includes("create table if not exists signup_provisioning_attempts") &&
+    baselineMigrationSource.includes("code_hash text not null") &&
+    baselineMigrationSource.includes("auth_user_created boolean not null default false") &&
+    baselineMigrationSource.includes("signup_provisioning_attempts_status_idx") &&
+    !signupProvisioningSource.includes("create table if not exists"),
+  "signup provisioning schema must live in migrations, not runtime startup"
 );
 
 const now = Date.now();

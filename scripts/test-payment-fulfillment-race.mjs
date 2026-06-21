@@ -24,6 +24,7 @@ const paystackVerifySource = readProjectFile("api/paystack/verify.js");
 const paystackWebhookHandlerSource = readProjectFile("server/services/paystackWebhookHandler.js");
 const cityHomeSource = readProjectFile("server/cityHome.js");
 const dbSource = readProjectFile("server/db.js");
+const baselineMigrationSource = readProjectFile("migrations/0002_baseline_bamsignal_schema.sql");
 const migrationSource = readProjectFile(
   "supabase/migrations/202606211300_payment_fulfillment_processing.sql"
 );
@@ -75,10 +76,15 @@ assert(
 );
 
 assert(
-  dbSource.includes("payment_fulfillments_reference_unique_idx") &&
-    dbSource.includes("app_users_paystack_reference_unique_idx") &&
-    cityHomeSource.includes("city_home_placements_paystack_reference_unique_idx"),
-  "runtime schema helpers must enforce unique payment references across fulfillment and entitlement tables"
+  !dbSource.includes("create table if not exists") &&
+    dbSource.includes("checkSchema({ force: true })"),
+  "database startup must verify schema without runtime DDL"
+);
+assert(
+  baselineMigrationSource.includes("payment_fulfillments_reference_unique_idx") &&
+    baselineMigrationSource.includes("app_users_paystack_reference_unique_idx") &&
+    baselineMigrationSource.includes("city_home_placements_paystack_reference_unique_idx"),
+  "schema migrations must enforce unique payment references across fulfillment and entitlement tables"
 );
 assert(
   migrationSource.includes("payment_fulfillments_reference_unique_idx") &&
@@ -88,10 +94,10 @@ assert(
 );
 
 assert(
-  cityHomeSource.includes("city_home_placements_paystack_reference_unique_idx") &&
-    cityHomeSource.includes("on conflict (paystack_reference)") &&
+  cityHomeSource.includes("on conflict (paystack_reference)") &&
     cityHomeSource.includes("id <>") &&
-    cityHomeSource.includes("await ensureCityHomeTables();"),
+    cityHomeSource.includes("await ensureCityHomeTables();") &&
+    baselineMigrationSource.includes("city_home_placements_paystack_reference_unique_idx"),
   "paid city placements must be idempotent by Paystack reference and keep existing placements active"
 );
 

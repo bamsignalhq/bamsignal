@@ -30,6 +30,7 @@ export function SignalConciergeApplicationPage(props: SignalConciergeApplication
       <SignalConciergeApplicationWizard
         onSubmitted={() => go("status")}
         onScheduleConsultation={() => requestGate(() => go("consultation"))}
+        onResumeLater={() => navigateToPath(signalConciergePathForRoute("landing"))}
       />
       {modal}
     </SignalConciergePageShell>

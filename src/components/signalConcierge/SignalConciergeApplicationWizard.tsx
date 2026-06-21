@@ -1,47 +1,59 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   SIGNAL_CONCIERGE_CONSULTATION_CHANNELS,
-  SIGNAL_CONCIERGE_CTA_PRIMARY
+  SIGNAL_CONCIERGE_CTA_PRIMARY,
+  SIGNAL_CONCIERGE_MAX_VIDEO_SECONDS,
+  SIGNAL_CONCIERGE_MAX_VOICE_SECONDS,
+  SIGNAL_CONCIERGE_MEDIA_PRIVACY_NOTE,
+  SIGNAL_CONCIERGE_RESUME_LATER_LABEL,
+  SIGNAL_CONCIERGE_SAVE_PROGRESS_CONFIRMATION,
+  SIGNAL_CONCIERGE_SAVE_PROGRESS_LABEL,
+  SIGNAL_CONCIERGE_VIDEO_PRIVACY_PROMISE,
+  SIGNAL_CONCIERGE_WIZARD_STEPS
 } from "../../constants/signalConcierge";
 import type { SignalConciergeApplicationDraft } from "../../types/signalConcierge";
 import {
   getSupportedVoiceMimeType,
   isVoiceRecordingSupported,
-  MAX_VOICE_SECONDS,
-  micPermissionMessage,
-  MIN_VOICE_SECONDS
+  micPermissionMessage
 } from "../../utils/voiceRecording";
+import { submitSignalConciergeApplication } from "../../utils/signalConciergeStorage";
+import { ApplicationProgressBar } from "./ApplicationProgressBar";
 import {
-  mergeSignalConciergeDraft,
-  readSignalConciergeDraft,
-  submitSignalConciergeApplication
-} from "../../utils/signalConciergeStorage";
+  defaultAboutYou,
+  defaultConsultationPreferences,
+  defaultIdentity,
+  defaultRelationshipGoals,
+  defaultStory,
+  defaultValuesLifestyle,
+  loadApplicationProgress,
+  normalizeApplicationDraft,
+  saveApplicationProgress,
+  validateApplicationForSubmit,
+  validateWizardStep
+} from "./ApplicationSaveProgress";
+import { ApplicationReviewPage, ApplicationSuccessPage } from "./ApplicationReviewPage";
+import { ApplicationStepCard } from "./ApplicationStepCard";
 
-const WIZARD_STEPS = [
-  "About You",
-  "Relationship Goals",
-  "Values & Lifestyle",
-  "More About You",
-  "Voice Vibe",
-  "Video Introduction",
-  "Identity Verification",
-  "Consultation Preference"
-] as const;
-
-const MAX_VIDEO_SECONDS = 60;
+type WizardView = "wizard" | "review" | "success";
 
 type SignalConciergeApplicationWizardProps = {
   onSubmitted: () => void;
-  onScheduleConsultation: () => void;
+  onScheduleConsultation?: () => void;
+  onResumeLater?: () => void;
 };
 
 export function SignalConciergeApplicationWizard({
   onSubmitted,
-  onScheduleConsultation
+  onScheduleConsultation,
+  onResumeLater
 }: SignalConciergeApplicationWizardProps) {
-  const [step, setStep] = useState(() => readSignalConciergeDraft().wizardStep ?? 0);
-  const [draft, setDraft] = useState<SignalConciergeApplicationDraft>(() => readSignalConciergeDraft());
+  const initial = loadApplicationProgress();
+  const [view, setView] = useState<WizardView>("wizard");
+  const [step, setStep] = useState(() => initial.wizardStep ?? 0);
+  const [draft, setDraft] = useState<SignalConciergeApplicationDraft>(() => initial);
   const [message, setMessage] = useState("");
+  const [saveNotice, setSaveNotice] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const voiceChunksRef = useRef<Blob[]>([]);
@@ -52,8 +64,8 @@ export function SignalConciergeApplicationWizard({
   const videoStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
-    mergeSignalConciergeDraft({ wizardStep: step });
-  }, [step]);
+    saveApplicationProgress(draft, step);
+  }, [draft, step]);
 
   useEffect(() => {
     return () => {
@@ -61,15 +73,70 @@ export function SignalConciergeApplicationWizard({
     };
   }, []);
 
-  const progress = useMemo(() => ((step + 1) / WIZARD_STEPS.length) * 100, [step]);
-
   const patchDraft = (patch: SignalConciergeApplicationDraft) => {
-    const next = mergeSignalConciergeDraft({ ...patch, wizardStep: step });
+    const next = normalizeApplicationDraft({ ...draft, ...patch });
     setDraft(next);
+    setSaveNotice("");
   };
 
-  const nextStep = () => setStep((current) => Math.min(current + 1, WIZARD_STEPS.length - 1));
-  const prevStep = () => setStep((current) => Math.max(current - 1, 0));
+  const about = draft.aboutYou ?? defaultAboutYou();
+  const goals = draft.relationshipGoals ?? defaultRelationshipGoals();
+  const values = draft.valuesLifestyle ?? defaultValuesLifestyle();
+  const story = draft.story ?? defaultStory();
+  const identity = draft.identity ?? defaultIdentity();
+  const consultation = draft.consultationPreferences ?? defaultConsultationPreferences();
+
+  const goNext = () => {
+    const error = validateWizardStep(step, draft);
+    if (error) {
+      setMessage(error);
+      return;
+    }
+    setMessage("");
+    if (step >= SIGNAL_CONCIERGE_WIZARD_STEPS.length - 1) {
+      setView("review");
+      return;
+    }
+    setStep((current) => current + 1);
+  };
+
+  const goBack = () => {
+    setMessage("");
+    if (view === "review") {
+      setView("wizard");
+      setStep(SIGNAL_CONCIERGE_WIZARD_STEPS.length - 1);
+      return;
+    }
+    setStep((current) => Math.max(current - 1, 0));
+  };
+
+  const handleSaveProgress = () => {
+    saveApplicationProgress(draft, step);
+    setSaveNotice(SIGNAL_CONCIERGE_SAVE_PROGRESS_CONFIRMATION);
+    setMessage("");
+  };
+
+  const handleResumeLater = () => {
+    handleSaveProgress();
+    onResumeLater?.();
+  };
+
+  const handleSubmit = () => {
+    const error = validateApplicationForSubmit(draft);
+    if (error) {
+      setMessage(error);
+      return;
+    }
+    const normalized = normalizeApplicationDraft(draft);
+    submitSignalConciergeApplication({
+      ...normalized,
+      status: "applied",
+      consultationPreference: normalized.consultationPreferences?.preferredChannel,
+      wizardStep: 0
+    });
+    setView("success");
+    setMessage("");
+  };
 
   const startVoiceRecording = async () => {
     if (!isVoiceRecordingSupported()) {
@@ -103,7 +170,7 @@ export function SignalConciergeApplicationWizard({
       setMessage("");
       window.setTimeout(() => {
         if (recorder.state === "recording") recorder.stop();
-      }, MAX_VOICE_SECONDS * 1000);
+      }, SIGNAL_CONCIERGE_MAX_VOICE_SECONDS * 1000);
     } catch (error) {
       setMessage(micPermissionMessage(error) ?? "Microphone access is required.");
     }
@@ -135,7 +202,7 @@ export function SignalConciergeApplicationWizard({
         patchDraft({
           videoIntro: {
             url,
-            duration: MAX_VIDEO_SECONDS,
+            duration: SIGNAL_CONCIERGE_MAX_VIDEO_SECONDS,
             completed: true
           }
         });
@@ -146,7 +213,7 @@ export function SignalConciergeApplicationWizard({
       setRecordingVideo(true);
       window.setTimeout(() => {
         if (recorder.state === "recording") recorder.stop();
-      }, MAX_VIDEO_SECONDS * 1000);
+      }, SIGNAL_CONCIERGE_MAX_VIDEO_SECONDS * 1000);
     } catch {
       setMessage("Camera access is required for your video introduction.");
     }
@@ -158,203 +225,133 @@ export function SignalConciergeApplicationWizard({
     }
   };
 
-  const handleSubmit = () => {
-    if (!draft.voiceVibe?.completed) {
-      setMessage("Voice Vibe is required.");
-      setStep(4);
-      return;
-    }
-    if (!draft.videoIntro?.completed) {
-      setMessage("Video introduction is required.");
-      setStep(5);
-      return;
-    }
-    submitSignalConciergeApplication({
-      ...draft,
-      status: "applied",
-      wizardStep: 0
-    });
-    onSubmitted();
-  };
+  if (view === "success") {
+    return (
+      <div className="sc-application-wizard">
+        <ApplicationSuccessPage onViewStatus={onSubmitted} />
+      </div>
+    );
+  }
 
-  const about = draft.aboutYou ?? {
-    name: "",
-    age: "",
-    gender: "",
-    city: "",
-    occupation: "",
-    education: "",
-    religion: "",
-    maritalStatus: "",
-    children: ""
-  };
-  const goals = draft.relationshipGoals ?? {
-    marriageTimeline: "",
-    dealBreakers: "",
-    partnerPreferences: "",
-    familyGoals: ""
-  };
-  const values = draft.valuesLifestyle ?? {
-    faithImportance: "",
-    smoking: "",
-    drinking: "",
-    fitness: "",
-    travel: "",
-    loveLanguage: "",
-    threeWords: ""
-  };
-  const story = draft.story ?? {
-    longFormStory: "",
-    whatMakesYouUnique: "",
-    whatYouHopeToBuild: ""
-  };
-  const identity = draft.identity ?? { governmentIdNote: "", selfieVerified: false };
-
-  return (
-    <div className="signal-concierge-wizard">
-      <div className="signal-concierge-wizard__progress">
-        <p className="signal-concierge-wizard__step-label">
-          Step {step + 1} of {WIZARD_STEPS.length} · {WIZARD_STEPS[step]}
-        </p>
-        <div className="signal-concierge-wizard__bar" aria-hidden>
-          <span style={{ width: `${progress}%` }} />
+  if (view === "review") {
+    return (
+      <div className="sc-application-wizard">
+        <ApplicationReviewPage
+          draft={draft}
+          message={message}
+          onEditSection={(editStep) => {
+            setView("wizard");
+            setStep(editStep);
+            setMessage("");
+          }}
+          onSubmit={handleSubmit}
+        />
+        <div className="sc-application-wizard__nav">
+          <button type="button" className="signal-concierge-btn signal-concierge-btn--ghost" onClick={goBack}>
+            Back
+          </button>
         </div>
       </div>
+    );
+  }
+
+  const stepMeta = SIGNAL_CONCIERGE_WIZARD_STEPS[step];
+
+  return (
+    <div className="sc-application-wizard">
+      <ApplicationProgressBar currentStep={step + 1} stepTitle={stepMeta.title} />
+
+      {saveNotice ? (
+        <p className="sc-application-wizard__notice" role="status">
+          {saveNotice}
+        </p>
+      ) : null}
 
       {message ? (
-        <p className="signal-concierge-section__sub" role="status">
+        <p className="sc-application-wizard__message" role="alert">
           {message}
         </p>
       ) : null}
 
-      <div className="signal-concierge-form signal-concierge-glass">
+      <ApplicationStepCard
+        title={stepMeta.title}
+        subtitle={stepMeta.subtitle}
+        privacyNote={
+          step === 4 || step === 5 ? SIGNAL_CONCIERGE_MEDIA_PRIVACY_NOTE : undefined
+        }
+      >
         {step === 0 ? (
-          <>
+          <div className="sc-app-form">
             <label>
               Name
-              <input
-                value={about.name}
-                onChange={(event) =>
-                  patchDraft({ aboutYou: { ...about, name: event.target.value } })
-                }
-              />
+              <input value={about.name} onChange={(e) => patchDraft({ aboutYou: { ...about, name: e.target.value } })} />
             </label>
             <label>
               Age
-              <input
-                value={about.age}
-                onChange={(event) => patchDraft({ aboutYou: { ...about, age: event.target.value } })}
-              />
+              <input value={about.age} onChange={(e) => patchDraft({ aboutYou: { ...about, age: e.target.value } })} />
             </label>
             <label>
               Gender
-              <input
-                value={about.gender}
-                onChange={(event) =>
-                  patchDraft({ aboutYou: { ...about, gender: event.target.value } })
-                }
-              />
+              <input value={about.gender} onChange={(e) => patchDraft({ aboutYou: { ...about, gender: e.target.value } })} />
             </label>
             <label>
               City
-              <input
-                value={about.city}
-                onChange={(event) => patchDraft({ aboutYou: { ...about, city: event.target.value } })}
-              />
+              <input value={about.city} onChange={(e) => patchDraft({ aboutYou: { ...about, city: e.target.value } })} />
             </label>
             <label>
               Occupation
-              <input
-                value={about.occupation}
-                onChange={(event) =>
-                  patchDraft({ aboutYou: { ...about, occupation: event.target.value } })
-                }
-              />
+              <input value={about.occupation} onChange={(e) => patchDraft({ aboutYou: { ...about, occupation: e.target.value } })} />
             </label>
             <label>
               Education
-              <input
-                value={about.education}
-                onChange={(event) =>
-                  patchDraft({ aboutYou: { ...about, education: event.target.value } })
-                }
-              />
+              <input value={about.education} onChange={(e) => patchDraft({ aboutYou: { ...about, education: e.target.value } })} />
             </label>
             <label>
               Religion
-              <input
-                value={about.religion}
-                onChange={(event) =>
-                  patchDraft({ aboutYou: { ...about, religion: event.target.value } })
-                }
-              />
+              <input value={about.religion} onChange={(e) => patchDraft({ aboutYou: { ...about, religion: e.target.value } })} />
             </label>
             <label>
               Marital status
-              <input
-                value={about.maritalStatus}
-                onChange={(event) =>
-                  patchDraft({ aboutYou: { ...about, maritalStatus: event.target.value } })
-                }
-              />
+              <input value={about.maritalStatus} onChange={(e) => patchDraft({ aboutYou: { ...about, maritalStatus: e.target.value } })} />
             </label>
             <label>
               Children
-              <input
-                value={about.children}
-                onChange={(event) =>
-                  patchDraft({ aboutYou: { ...about, children: event.target.value } })
-                }
-              />
+              <input value={about.children} onChange={(e) => patchDraft({ aboutYou: { ...about, children: e.target.value } })} />
             </label>
-          </>
+          </div>
         ) : null}
 
         {step === 1 ? (
-          <>
+          <div className="sc-app-form">
+            <label>
+              What are you hoping to find?
+              <textarea value={goals.whatHopingToFind} onChange={(e) => patchDraft({ relationshipGoals: { ...goals, whatHopingToFind: e.target.value } })} />
+            </label>
             <label>
               Timeline for marriage
-              <textarea
-                value={goals.marriageTimeline}
-                onChange={(event) =>
-                  patchDraft({ relationshipGoals: { ...goals, marriageTimeline: event.target.value } })
-                }
-              />
+              <textarea value={goals.marriageTimeline} onChange={(e) => patchDraft({ relationshipGoals: { ...goals, marriageTimeline: e.target.value } })} />
+            </label>
+            <label>
+              Children preference
+              <textarea value={goals.childrenPreference} onChange={(e) => patchDraft({ relationshipGoals: { ...goals, childrenPreference: e.target.value } })} />
+            </label>
+            <label>
+              Partner age range
+              <input value={goals.partnerAgeRange} onChange={(e) => patchDraft({ relationshipGoals: { ...goals, partnerAgeRange: e.target.value } })} />
+            </label>
+            <label>
+              Partner location
+              <input value={goals.partnerLocation} onChange={(e) => patchDraft({ relationshipGoals: { ...goals, partnerLocation: e.target.value } })} />
             </label>
             <label>
               Deal breakers
-              <textarea
-                value={goals.dealBreakers}
-                onChange={(event) =>
-                  patchDraft({ relationshipGoals: { ...goals, dealBreakers: event.target.value } })
-                }
-              />
+              <textarea value={goals.dealBreakers} onChange={(e) => patchDraft({ relationshipGoals: { ...goals, dealBreakers: e.target.value } })} />
             </label>
-            <label>
-              Partner preferences
-              <textarea
-                value={goals.partnerPreferences}
-                onChange={(event) =>
-                  patchDraft({
-                    relationshipGoals: { ...goals, partnerPreferences: event.target.value }
-                  })
-                }
-              />
-            </label>
-            <label>
-              Family goals
-              <textarea
-                value={goals.familyGoals}
-                onChange={(event) =>
-                  patchDraft({ relationshipGoals: { ...goals, familyGoals: event.target.value } })
-                }
-              />
-            </label>
-          </>
+          </div>
         ) : null}
 
         {step === 2 ? (
-          <>
+          <div className="sc-app-form">
             {(
               [
                 ["faithImportance", "Faith importance"],
@@ -370,58 +367,40 @@ export function SignalConciergeApplicationWizard({
                 {label}
                 <input
                   value={values[key]}
-                  onChange={(event) =>
-                    patchDraft({
-                      valuesLifestyle: { ...values, [key]: event.target.value }
-                    })
-                  }
+                  onChange={(e) => patchDraft({ valuesLifestyle: { ...values, [key]: e.target.value } })}
                 />
               </label>
             ))}
-          </>
+          </div>
         ) : null}
 
         {step === 3 ? (
-          <>
-            <label>
-              Long-form story
-              <textarea
-                value={story.longFormStory}
-                onChange={(event) =>
-                  patchDraft({ story: { ...story, longFormStory: event.target.value } })
-                }
-              />
-            </label>
+          <div className="sc-app-form">
             <label>
               What makes you unique?
-              <textarea
-                value={story.whatMakesYouUnique}
-                onChange={(event) =>
-                  patchDraft({ story: { ...story, whatMakesYouUnique: event.target.value } })
-                }
-              />
+              <textarea value={story.whatMakesYouUnique} onChange={(e) => patchDraft({ story: { ...story, whatMakesYouUnique: e.target.value } })} />
             </label>
             <label>
               What are you hoping to build?
-              <textarea
-                value={story.whatYouHopeToBuild}
-                onChange={(event) =>
-                  patchDraft({ story: { ...story, whatYouHopeToBuild: event.target.value } })
-                }
-              />
+              <textarea value={story.whatYouHopeToBuild} onChange={(e) => patchDraft({ story: { ...story, whatYouHopeToBuild: e.target.value } })} />
             </label>
-          </>
+            <label>
+              Describe your ideal relationship.
+              <textarea value={story.idealRelationship} onChange={(e) => patchDraft({ story: { ...story, idealRelationship: e.target.value } })} />
+            </label>
+            <label>
+              What do you value most?
+              <textarea value={story.whatYouValueMost} onChange={(e) => patchDraft({ story: { ...story, whatYouValueMost: e.target.value } })} />
+            </label>
+          </div>
         ) : null}
 
         {step === 4 ? (
-          <div className="signal-concierge-media-card">
-            <p className="signal-concierge-section__sub">
-              Voice Vibe is required. Share a warm introduction in your own voice ({MIN_VOICE_SECONDS}–
-              {MAX_VOICE_SECONDS} seconds).
+          <div className="sc-app-media">
+            <p className="sc-app-media__hint">
+              Required. Maximum {SIGNAL_CONCIERGE_MAX_VOICE_SECONDS} seconds. Share a warm introduction in your own voice.
             </p>
-            {draft.voiceVibe?.url ? (
-              <audio controls src={draft.voiceVibe.url} />
-            ) : null}
+            {draft.voiceVibe?.url ? <audio controls src={draft.voiceVibe.url} className="sc-app-media__player" /> : null}
             <button
               type="button"
               className="signal-concierge-btn signal-concierge-btn--primary"
@@ -433,121 +412,111 @@ export function SignalConciergeApplicationWizard({
         ) : null}
 
         {step === 5 ? (
-          <div className="signal-concierge-media-card">
-            <p className="signal-concierge-section__sub">
-              Video introduction is required. Maximum {MAX_VIDEO_SECONDS} seconds.
+          <div className="sc-app-media">
+            <p className="sc-app-media__hint">
+              Required. Maximum {SIGNAL_CONCIERGE_MAX_VIDEO_SECONDS} seconds. {SIGNAL_CONCIERGE_VIDEO_PRIVACY_PROMISE}
             </p>
-            <video ref={videoPreviewRef} muted playsInline />
-            {draft.videoIntro?.url ? <video controls src={draft.videoIntro.url} /> : null}
+            <video ref={videoPreviewRef} muted playsInline className="sc-app-media__preview" />
+            {draft.videoIntro?.url ? <video controls src={draft.videoIntro.url} className="sc-app-media__player" /> : null}
             <button
               type="button"
               className="signal-concierge-btn signal-concierge-btn--primary"
               onClick={() => (recordingVideo ? stopVideoRecording() : void startVideoRecording())}
             >
-              {recordingVideo
-                ? "Stop recording"
-                : draft.videoIntro?.completed
-                  ? "Re-record video"
-                  : "Record video introduction"}
+              {recordingVideo ? "Stop recording" : draft.videoIntro?.completed ? "Re-record video" : "Record video introduction"}
             </button>
           </div>
         ) : null}
 
         {step === 6 ? (
-          <>
+          <div className="sc-app-form">
             <label>
-              Government ID (reference note)
-              <input
-                value={identity.governmentIdNote}
-                onChange={(event) =>
-                  patchDraft({
-                    identity: { ...identity, governmentIdNote: event.target.value }
-                  })
-                }
-              />
+              Government ID
+              <input value={identity.governmentIdNote} onChange={(e) => patchDraft({ identity: { ...identity, governmentIdNote: e.target.value } })} />
             </label>
-            <label>
+            <label className="sc-app-form__checkbox">
               <input
                 type="checkbox"
                 checked={identity.selfieVerified}
-                onChange={(event) =>
-                  patchDraft({
-                    identity: { ...identity, selfieVerified: event.target.checked }
-                  })
-                }
-              />{" "}
-              Selfie verification completed
+                onChange={(e) => patchDraft({ identity: { ...identity, selfieVerified: e.target.checked } })}
+              />
+              <span>Selfie verification completed</span>
             </label>
             <label>
               LinkedIn (optional)
-              <input
-                value={identity.linkedIn ?? ""}
-                onChange={(event) =>
-                  patchDraft({ identity: { ...identity, linkedIn: event.target.value } })
-                }
-              />
+              <input value={identity.linkedIn ?? ""} onChange={(e) => patchDraft({ identity: { ...identity, linkedIn: e.target.value } })} />
             </label>
             <label>
               Instagram (optional)
-              <input
-                value={identity.instagram ?? ""}
-                onChange={(event) =>
-                  patchDraft({ identity: { ...identity, instagram: event.target.value } })
-                }
-              />
+              <input value={identity.instagram ?? ""} onChange={(e) => patchDraft({ identity: { ...identity, instagram: e.target.value } })} />
             </label>
-          </>
+          </div>
         ) : null}
 
         {step === 7 ? (
-          <div className="signal-concierge-channel-grid">
-            {SIGNAL_CONCIERGE_CONSULTATION_CHANNELS.map((channel) => {
-              const selected = draft.consultationPreference === channel.id;
-              return (
-                <button
-                  key={channel.id}
-                  type="button"
-                  className={`signal-concierge-channel${selected ? " signal-concierge-channel--selected" : ""}`}
-                  onClick={() => patchDraft({ consultationPreference: channel.id })}
-                >
-                  <span>{channel.label}</span>
-                  {selected ? <span aria-hidden>✓</span> : null}
-                </button>
-              );
-            })}
+          <div className="sc-app-form">
+            <p className="sc-app-form__group-label">Preferred communication</p>
+            <div className="signal-concierge-channel-grid">
+              {SIGNAL_CONCIERGE_CONSULTATION_CHANNELS.map((channel) => {
+                const selected = consultation.preferredChannel === channel.id;
+                return (
+                  <button
+                    key={channel.id}
+                    type="button"
+                    className={`signal-concierge-channel${selected ? " signal-concierge-channel--selected" : ""}`}
+                    onClick={() =>
+                      patchDraft({
+                        consultationPreferences: { ...consultation, preferredChannel: channel.id },
+                        consultationPreference: channel.id
+                      })
+                    }
+                  >
+                    <span>{channel.label}</span>
+                    {selected ? <span aria-hidden>✓</span> : null}
+                  </button>
+                );
+              })}
+            </div>
+            <label>
+              Preferred days
+              <input value={consultation.preferredDays} onChange={(e) => patchDraft({ consultationPreferences: { ...consultation, preferredDays: e.target.value } })} />
+            </label>
+            <label>
+              Preferred time range
+              <input value={consultation.preferredTimeRange} onChange={(e) => patchDraft({ consultationPreferences: { ...consultation, preferredTimeRange: e.target.value } })} />
+            </label>
+            <label>
+              Additional notes
+              <textarea value={consultation.additionalNotes} onChange={(e) => patchDraft({ consultationPreferences: { ...consultation, additionalNotes: e.target.value } })} />
+            </label>
           </div>
         ) : null}
-      </div>
+      </ApplicationStepCard>
 
-      <div className="signal-concierge-wizard__nav">
-        <button
-          type="button"
-          className="signal-concierge-btn signal-concierge-btn--ghost"
-          onClick={prevStep}
-          disabled={step === 0}
-        >
+      <div className="sc-application-wizard__nav">
+        <button type="button" className="signal-concierge-btn signal-concierge-btn--ghost" onClick={goBack} disabled={step === 0}>
           Back
         </button>
-        {step < WIZARD_STEPS.length - 1 ? (
-          <button type="button" className="signal-concierge-btn signal-concierge-btn--primary" onClick={nextStep}>
-            Continue
+        <div className="sc-application-wizard__nav-main">
+          <button type="button" className="signal-concierge-btn signal-concierge-btn--ghost" onClick={handleSaveProgress}>
+            {SIGNAL_CONCIERGE_SAVE_PROGRESS_LABEL}
           </button>
-        ) : (
-          <button type="button" className="signal-concierge-btn signal-concierge-btn--primary" onClick={handleSubmit}>
-            Submit application
+          <button type="button" className="signal-concierge-btn signal-concierge-btn--ghost" onClick={handleResumeLater}>
+            {SIGNAL_CONCIERGE_RESUME_LATER_LABEL}
           </button>
-        )}
+          <button type="button" className="signal-concierge-btn signal-concierge-btn--primary" onClick={goNext}>
+            {step === SIGNAL_CONCIERGE_WIZARD_STEPS.length - 1 ? "Review application" : "Next"}
+          </button>
+        </div>
       </div>
 
-      <section className="signal-concierge-section" style={{ textAlign: "center" }}>
-        <button
-          type="button"
-          className="signal-concierge-btn signal-concierge-btn--ghost"
-          onClick={onScheduleConsultation}
-        >
-          {SIGNAL_CONCIERGE_CTA_PRIMARY}
-        </button>
-      </section>
+      {onScheduleConsultation ? (
+        <section className="sc-application-wizard__footer">
+          <button type="button" className="signal-concierge-btn signal-concierge-btn--ghost" onClick={onScheduleConsultation}>
+            {SIGNAL_CONCIERGE_CTA_PRIMARY}
+          </button>
+        </section>
+      ) : null}
     </div>
   );
 }

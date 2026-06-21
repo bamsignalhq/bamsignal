@@ -37,6 +37,22 @@ export function submitSignalConciergeApplication(
     voiceVibe: { ...base.voiceVibe, ...draft.voiceVibe },
     videoIntro: { ...base.videoIntro, ...draft.videoIntro },
     identity: { ...base.identity, ...draft.identity },
+    consultationPreferences: {
+      preferredDays: "",
+      preferredTimeRange: "",
+      additionalNotes: "",
+      ...base.consultationPreferences,
+      ...draft.consultationPreferences,
+      preferredChannel:
+        draft.consultationPreferences?.preferredChannel ??
+        draft.consultationPreference ??
+        base.consultationPreferences?.preferredChannel ??
+        base.consultationPreference
+    },
+    consultationPreference:
+      draft.consultationPreferences?.preferredChannel ??
+      draft.consultationPreference ??
+      base.consultationPreference,
     status: draft.status ?? base.status ?? "applied",
     updatedAt: new Date().toISOString()
   };

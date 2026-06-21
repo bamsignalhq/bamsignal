@@ -56,6 +56,37 @@ export const SIGNAL_CONCIERGE_PROCESS = [
   { id: "introductions", step: 4, title: "Introductions", detail: "Only when both parties agree." }
 ] as const;
 
+export const SIGNAL_CONCIERGE_WIZARD_STEP_COUNT = 8;
+
+export const SIGNAL_CONCIERGE_WIZARD_STEPS = [
+  { id: "about", title: "About You", subtitle: "Tell us about yourself" },
+  { id: "goals", title: "Relationship Goals", subtitle: "Relationship goals" },
+  { id: "values", title: "Values & Lifestyle", subtitle: "Values and lifestyle" },
+  { id: "story", title: "More About You", subtitle: "More about you" },
+  { id: "voice", title: "Voice Vibe", subtitle: "Share your voice" },
+  { id: "video", title: "Video Introduction", subtitle: "A short video introduction" },
+  { id: "identity", title: "Identity Verification", subtitle: "Verify your identity" },
+  { id: "consultation", title: "Consultation Preferences", subtitle: "Consultation preferences" }
+] as const;
+
+export const SIGNAL_CONCIERGE_MAX_VOICE_SECONDS = 60;
+export const SIGNAL_CONCIERGE_MAX_VIDEO_SECONDS = 60;
+
+export const SIGNAL_CONCIERGE_MEDIA_PRIVACY_NOTE =
+  "Visible only to consultants. Never public. Only consultants can access your voice and video.";
+
+export const SIGNAL_CONCIERGE_VIDEO_PRIVACY_PROMISE =
+  "Visible only to consultants. Never public.";
+
+export const SIGNAL_CONCIERGE_APPLICATION_REVIEW_TITLE = "Review Your Application";
+export const SIGNAL_CONCIERGE_APPLICATION_SUCCESS_TITLE = "Application Received 💜";
+export const SIGNAL_CONCIERGE_APPLICATION_SUCCESS_BODY =
+  "Thank you for trusting us.\n\nOur team will carefully review your application and be in touch with next steps.";
+
+export const SIGNAL_CONCIERGE_SAVE_PROGRESS_LABEL = "Save progress";
+export const SIGNAL_CONCIERGE_RESUME_LATER_LABEL = "Resume later";
+export const SIGNAL_CONCIERGE_SAVE_PROGRESS_CONFIRMATION = "Your progress has been saved. You can return anytime.";
+
 export type SignalConciergeTierId = "essential" | "signature" | "legacy" | "global";
 
 export type SignalConciergeTier = {

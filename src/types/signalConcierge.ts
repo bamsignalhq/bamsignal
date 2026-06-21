@@ -17,10 +17,16 @@ export type SignalConciergeAboutYou = {
 };
 
 export type SignalConciergeRelationshipGoals = {
+  whatHopingToFind?: string;
   marriageTimeline: string;
+  childrenPreference?: string;
+  partnerAgeRange?: string;
+  partnerLocation?: string;
   dealBreakers: string;
-  partnerPreferences: string;
-  familyGoals: string;
+  /** @deprecated use whatHopingToFind */
+  partnerPreferences?: string;
+  /** @deprecated use childrenPreference */
+  familyGoals?: string;
 };
 
 export type SignalConciergeValuesLifestyle = {
@@ -34,9 +40,12 @@ export type SignalConciergeValuesLifestyle = {
 };
 
 export type SignalConciergeStory = {
-  longFormStory: string;
   whatMakesYouUnique: string;
   whatYouHopeToBuild: string;
+  idealRelationship?: string;
+  whatYouValueMost?: string;
+  /** @deprecated legacy draft field */
+  longFormStory?: string;
 };
 
 export type SignalConciergeVoiceVibe = {
@@ -50,6 +59,13 @@ export type SignalConciergeVideoIntro = {
   url?: string;
   duration?: number;
   completed: boolean;
+};
+
+export type SignalConciergeConsultationPreferences = {
+  preferredChannel?: SignalConciergeConsultationChannel;
+  preferredDays: string;
+  preferredTimeRange: string;
+  additionalNotes: string;
 };
 
 export type SignalConciergeIdentity = {
@@ -73,12 +89,14 @@ export type SignalConciergeApplication = {
   videoIntro: SignalConciergeVideoIntro;
   identity: SignalConciergeIdentity;
   consultationPreference?: SignalConciergeConsultationChannel;
+  consultationPreferences?: SignalConciergeConsultationPreferences;
   consultationScheduledAt?: string;
   invitationCode?: string;
 };
 
 export type SignalConciergeApplicationDraft = Partial<SignalConciergeApplication> & {
   wizardStep?: number;
+  savedAt?: string;
 };
 
 /** Future consultant dashboard models — not implemented. */
@@ -178,10 +196,12 @@ export function emptySignalConciergeApplication(): SignalConciergeApplication {
       children: ""
     },
     relationshipGoals: {
+      whatHopingToFind: "",
       marriageTimeline: "",
-      dealBreakers: "",
-      partnerPreferences: "",
-      familyGoals: ""
+      childrenPreference: "",
+      partnerAgeRange: "",
+      partnerLocation: "",
+      dealBreakers: ""
     },
     valuesLifestyle: {
       faithImportance: "",
@@ -193,9 +213,10 @@ export function emptySignalConciergeApplication(): SignalConciergeApplication {
       threeWords: ""
     },
     story: {
-      longFormStory: "",
       whatMakesYouUnique: "",
-      whatYouHopeToBuild: ""
+      whatYouHopeToBuild: "",
+      idealRelationship: "",
+      whatYouValueMost: ""
     },
     voiceVibe: { completed: false },
     videoIntro: { completed: false },

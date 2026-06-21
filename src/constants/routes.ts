@@ -103,6 +103,7 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   if (getMomentSlug(path)) return true;
   if (isSeoRoute(path)) return true;
   if (isNigeriaSeoRoute(path)) return true;
+  if (path === "/signal-concierge" || path.startsWith("/signal-concierge/")) return true;
   if (path === "/") return true;
   return false;
 }
@@ -143,8 +144,9 @@ export function requiresMemberRestoreBlocking(
   pathname = window.location.pathname,
   isNative = false
 ): boolean {
-  if (isNative) return true;
   const path = normalizePath(pathname);
+  if (isPublicWebRoute(path)) return false;
+  if (isNative) return true;
   return MEMBER_APP_PATHS.some((memberPath) => path === memberPath || path.startsWith(`${memberPath}/`));
 }
 

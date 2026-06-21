@@ -854,15 +854,17 @@ export function AuthPage({
       <div className="auth-shell">
         <div className="auth-shell__glow" aria-hidden />
         <div className="auth-card auth-card--fintech">
-          <div className="auth-brand">
-            {onLogoClick ? (
-              <button type="button" className="auth-brand-btn" onClick={onLogoClick} aria-label="Back to BamSignal home">
+          {mode !== "signup" && (
+            <div className="auth-brand">
+              {onLogoClick ? (
+                <button type="button" className="auth-brand-btn" onClick={onLogoClick} aria-label="Back to BamSignal home">
+                  <AppLogo size="lg" />
+                </button>
+              ) : (
                 <AppLogo size="lg" />
-              </button>
-            ) : (
-              <AppLogo size="lg" />
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {mode === "login" && (
             <>
@@ -910,8 +912,24 @@ export function AuthPage({
 
           {mode === "signup" && (
             <>
-              <h1 className="auth-title">Create your account</h1>
-              <p className="auth-sub">Let&apos;s get you started — it only takes a minute.</p>
+              <div className="auth-signup-header">
+                <div className="auth-brand auth-brand--compact">
+                  {onLogoClick ? (
+                    <button
+                      type="button"
+                      className="auth-brand-btn"
+                      onClick={onLogoClick}
+                      aria-label="Back to BamSignal home"
+                    >
+                      <AppLogo size="md" />
+                    </button>
+                  ) : (
+                    <AppLogo size="md" />
+                  )}
+                </div>
+                <h1 className="auth-title">Create your account</h1>
+                <p className="auth-sub auth-sub--compact">Let&apos;s get you started — it only takes a minute.</p>
+              </div>
               <div className="auth-signup-body">
                 <div className="auth-fields">
                   <AuthField

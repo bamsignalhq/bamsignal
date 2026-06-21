@@ -26,6 +26,7 @@ import {
   LazyPremiumPage,
   LazyPublicMarketingRoutes,
   LazySafetyCenterPage,
+  LazySignalConciergeRoutePage,
   LazyVisitorsPage
 } from "./app/lazyRoutes";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
@@ -128,6 +129,7 @@ import {
 } from "./constants/routes";
 import { getLegalPath, type LegalPath } from "./constants/footer";
 import { getSeoRoute, type SeoRoute } from "./constants/seoRoutes";
+import { getSignalConciergeRoute } from "./constants/signalConciergeRoutes";
 import { getNigeriaRoute, type NigeriaRoute } from "./constants/nigeriaRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail, resolveMemberIdentity } from "./utils/authIdentity";
@@ -252,6 +254,7 @@ export function App() {
   const logoutInProgressRef = useRef(false);
 
   const currentPathname = typeof window !== "undefined" ? normalizePath(window.location.pathname) : "/";
+  const activeAuthPath = getAuthPath(currentPathname) ?? authPath;
   const isPublicSurface =
     !isNative && isPublicWebRoute(currentPathname) && !paystackCallbackActive;
   const isGuest = !isAuthed;
@@ -404,7 +407,7 @@ export function App() {
   }, [authLoading, memberHydrating, isAuthed, profileComplete, memberPathname]);
 
   useEffect(() => {
-    if (!isNative && isPublicWebRoute()) {
+    if (isPublicWebRoute()) {
       setBooting(false);
       return;
     }
@@ -1153,24 +1156,69 @@ export function App() {
     };
 
     const restoreFromSession = async (
-      session: { user: { email?: string | null; user_metadata?: Record<string, unknown> } } | null,
+      session: {
+        user: {
+          id?: string;
+          email?: string | null;
+          user_metadata?: Record<string, unknown>;
+        };
+      } | null,
       options?: { blocking?: boolean }
     ) => {
       if (!session?.user || sessionRestored) return;
 
       sessionRestored = true;
       const blocking = options?.blocking ?? shouldBlockBoot;
+      const profile = profileFromSessionUser(session.user);
+      const authUserId = String(session.user.id || "").trim();
 
-      if (blocking || shouldBlockBoot) {
+      if (!blocking) {
+        await applyRestoredSession(profile, { blocking: false });
+        return;
+      }
+
+      flowLog("session_restore_start", { blocking: true });
+      repairMemberCaches();
+      const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+      const merged = resolveMemberIdentity({
+        ...profile,
+        phone: stored.phone || profile.phone,
+        phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
+      });
+      setUser(merged);
+      setIsAuthed(true);
+      recordStreakActivity();
+      checkPremiumTrialExpiry();
+
+      const localComplete =
+        (authUserId && readOpenAppOnboardingCache(authUserId)) ||
+        normalizeOnboardingStatus(getDatingProfile()).markedComplete;
+      setProfileComplete(localComplete);
+
+      setMemberHydrating(true);
+      try {
         const validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
         if (!validated.ok) {
           setIsAuthed(false);
           setProfileComplete(false);
           return;
         }
+        const appSession = await goToApp({
+          loginEmail: merged.email || undefined,
+          validatedAuth: validated
+        });
+        if (!appSession.ok) {
+          setIsAuthed(false);
+          setProfileComplete(false);
+          return;
+        }
+        applyGoToAppResult(appSession, { blocking: false, source: "session_restore" });
+        setProfileComplete(appSession.route === "home");
+        hydrateMemberAppInBackground(merged, { loginEmail: merged.email || undefined });
+        flowLog("session_restore_done");
+      } finally {
+        setMemberHydrating(false);
       }
-
-      await applyRestoredSession(profileFromSessionUser(session.user), { blocking });
     };
 
     const finishPublicBootstrap = (
@@ -1192,7 +1240,8 @@ export function App() {
           finishPublicBootstrap(session);
           return;
         }
-        void restoreFromSession(session, { blocking: true }).finally(finishBootstrap);
+        finishBootstrap();
+        void restoreFromSession(session, { blocking: true });
       })
       .catch(() => {
         if (!cancelled) finishBootstrap();
@@ -1208,8 +1257,10 @@ export function App() {
           finishPublicBootstrap(session);
           return;
         }
-        await restoreFromSession(session, { blocking: true });
         finishBootstrap();
+        if (session?.user) {
+          await restoreFromSession(session, { blocking: true });
+        }
         return;
       }
 
@@ -1301,7 +1352,9 @@ export function App() {
   }, [applyRestoredSession, isNative, syncPremiumState]);
 
   useEffect(() => {
-    if (authLoading || memberHydrating || !isAuthed || !authPath) return;
+    if (authLoading || memberHydrating || !isAuthed) return;
+    const routeAuthPath = getAuthPath();
+    if (!routeAuthPath) return;
     let cancelled = false;
     void goToApp({ loginEmail: user.email }).then((result) => {
       if (cancelled || !result.ok) return;
@@ -1314,12 +1367,11 @@ export function App() {
       setUser(result.user);
       setProfileComplete(!needsOnboarding);
       navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
-      setAuthPath(null);
     });
     return () => {
       cancelled = true;
     };
-  }, [authLoading, memberHydrating, isAuthed, authPath, user.email]);
+  }, [authLoading, memberHydrating, isAuthed, memberPathname, user.email]);
 
   const reloadApp = useCallback(() => {
     window.location.reload();
@@ -1612,6 +1664,19 @@ export function App() {
     );
   }
 
+  if (activeAuthPath && !paystackCallbackActive) {
+    return (
+      <div className={`app ${theme}`}>
+        <LoveAuthRoutePage
+          path={activeAuthPath}
+          onAuthenticated={handleAuthenticated}
+          message={authMessage}
+          onMessage={setAuthMessage}
+        />
+      </div>
+    );
+  }
+
   const memberRouteGuard = isMemberAppPath(currentPathname)
     ? evaluateMemberRouteGuard({
         authLoading,
@@ -1622,8 +1687,7 @@ export function App() {
       })
     : null;
 
-  const onPublicWebRoute =
-    !isNative && isPublicWebRoute(currentPathname) && !paystackCallbackActive;
+  const onPublicWebRoute = isPublicWebRoute(currentPathname) && !paystackCallbackActive;
 
   const shouldBlockForAuthRestore =
     !onPublicWebRoute &&
@@ -1674,16 +1738,18 @@ export function App() {
     );
   }
 
-  if (authPath) {
+  const signalConciergeRoute = getSignalConciergeRoute(currentPathname);
+  if (signalConciergeRoute && !isNative) {
     return (
-      <div className={`app ${theme}`}>
-        <LoveAuthRoutePage
-          path={authPath}
-          onAuthenticated={handleAuthenticated}
-          message={authMessage}
-          onMessage={setAuthMessage}
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading Signal Concierge…" />}>
+        <LazySignalConciergeRoutePage
+          route={signalConciergeRoute}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onLogoClick={goHome}
+          onLogin={() => openAuth("login")}
         />
-      </div>
+      </Suspense>
     );
   }
 
@@ -1737,7 +1803,7 @@ export function App() {
     );
   }
 
-  if (shouldShowPublicNotFound(window.location.pathname, isNative) && !authPath) {
+  if (shouldShowPublicNotFound(window.location.pathname, isNative) && !activeAuthPath) {
     return (
       <Suspense fallback={<LazyRouteFallback />}>
         <LazyPublicMarketingRoutes
@@ -1840,7 +1906,7 @@ export function App() {
       <div
         className="platform-shell"
       >
-        {!isOnboardingRoute && !showComplianceGate && (
+        {!isOnboardingRoute && !showComplianceGate && !activeAuthPath && (
           <TopNav
             theme={theme}
             onToggleTheme={toggleTheme}
@@ -2127,7 +2193,7 @@ export function App() {
         <ComplianceGateModal user={user} onComplete={() => setComplianceTick((tick) => tick + 1)} />
       )}
 
-      {!isOnboardingRoute && !showComplianceGate && (
+      {!isOnboardingRoute && !showComplianceGate && !activeAuthPath && (
         <BottomNav
           active={tab}
           onNavigate={navigateTab}

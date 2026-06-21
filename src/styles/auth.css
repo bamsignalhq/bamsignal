@@ -158,6 +158,20 @@
   font-size: 0.84rem;
 }
 
+.auth-sub--compact {
+  margin-bottom: 0;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.auth-brand--compact {
+  margin-bottom: 10px;
+}
+
+.auth-signup-header {
+  flex-shrink: 0;
+}
+
 .auth-fields {
   display: flex;
   flex-direction: column;
@@ -660,8 +674,73 @@
 
 /* Mobile auth — full-height premium layout (standalone route only) */
 @media (max-width: 480px) {
+  .auth-page--signup:not(.auth-page--embedded) {
+    min-height: 100dvh;
+    height: auto;
+    padding: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .auth-page--signup:not(.auth-page--embedded) .auth-shell,
+  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech {
+    max-width: none;
+    min-height: auto;
+    height: auto;
+    padding: 0;
+    display: block;
+  }
+
+  .auth-page--signup:not(.auth-page--embedded) .auth-shell__glow {
+    inset: -10% -20% auto;
+    height: 220px;
+  }
+
+  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: none;
+    padding-bottom: 0;
+  }
+
+  .auth-signup-header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding-top: max(calc(env(safe-area-inset-top, 0px) + 12px), 16px);
+    padding-left: 22px;
+    padding-right: 22px;
+    padding-bottom: 10px;
+    background: color-mix(in srgb, var(--card) 94%, transparent);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  }
+
+  .auth-signup-header .auth-title {
+    margin-bottom: 4px;
+    font-size: clamp(1.35rem, 4.8vw, 1.55rem);
+  }
+
+  .auth-page--signup:not(.auth-page--embedded) .auth-signup-body {
+    flex: none;
+    min-height: auto;
+    overflow-y: visible;
+    overscroll-behavior: auto;
+    padding-top: 8px;
+    padding-bottom: 12px;
+  }
+
+  .auth-page--signup:not(.auth-page--embedded) .auth-signup-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
+
   .auth-page--login:not(.auth-page--embedded),
-  .auth-page--signup:not(.auth-page--embedded),
   .auth-page--reset:not(.auth-page--embedded) {
     min-height: 100dvh;
     height: 100dvh;
@@ -671,7 +750,6 @@
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-shell,
-  .auth-page--signup:not(.auth-page--embedded) .auth-shell,
   .auth-page--reset:not(.auth-page--embedded) .auth-shell {
     max-width: none;
     min-height: 100%;
@@ -682,14 +760,12 @@
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-shell__glow,
-  .auth-page--signup:not(.auth-page--embedded) .auth-shell__glow,
   .auth-page--reset:not(.auth-page--embedded) .auth-shell__glow {
     inset: -10% -20% auto;
     height: 280px;
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-card--fintech,
-  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech,
   .auth-page--reset:not(.auth-page--embedded) .auth-card--fintech {
     flex: 1;
     display: flex;
@@ -705,20 +781,17 @@
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-brand,
-  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-brand,
   .auth-page--reset:not(.auth-page--embedded) .auth-card--fintech > .auth-brand {
     padding-top: max(calc(env(safe-area-inset-top, 0px) + 24px), 28px);
     margin-bottom: 24px;
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-title,
-  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-title,
   .auth-page--reset:not(.auth-page--embedded) .auth-card--fintech > .auth-title {
     margin-bottom: 10px;
   }
 
   .auth-page--login:not(.auth-page--embedded) .auth-card--fintech > .auth-sub,
-  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-sub,
   .auth-page--reset:not(.auth-page--embedded) .auth-card--fintech > .auth-sub {
     margin-bottom: 0;
   }
@@ -757,20 +830,6 @@
     margin-bottom: max(16px, env(safe-area-inset-bottom, 0px));
   }
 
-  .auth-page--signup:not(.auth-page--embedded) .auth-card--fintech > .auth-sub {
-    margin-bottom: 16px;
-  }
-
-  .auth-page--signup:not(.auth-page--embedded) .auth-signup-body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    padding-top: 4px;
-    padding-bottom: 12px;
-  }
-
   .auth-page--signup:not(.auth-page--embedded) .auth-signup-body .auth-fields {
     gap: 14px;
     margin-bottom: 16px;
@@ -806,6 +865,7 @@
     padding-bottom: max(28px, calc(env(safe-area-inset-bottom, 0px) + 16px));
     border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
     background: color-mix(in srgb, var(--card) 96%, transparent);
+    backdrop-filter: blur(12px);
   }
 
   .auth-page--signup:not(.auth-page--embedded) .auth-signup-footer .btn-auth {

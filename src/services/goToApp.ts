@@ -123,6 +123,7 @@ export async function goToApp(options?: {
   forceOnboarding?: boolean;
   referralCode?: string | null;
   loginEmail?: string | null;
+  validatedAuth?: { ok: true; user: UserProfile; authUserId: string };
 }): Promise<GoToAppResult> {
   if (goToAppInFlight) {
     return goToAppInFlight;
@@ -138,12 +139,15 @@ async function runGoToApp(options?: {
   forceOnboarding?: boolean;
   referralCode?: string | null;
   loginEmail?: string | null;
+  validatedAuth?: { ok: true; user: UserProfile; authUserId: string };
 }): Promise<GoToAppResult> {
   if (!supabase) {
     return { ok: false, route: "login" };
   }
 
-  const validated = await validateServerSessionWithTimeout(OPEN_APP_STATUS_TIMEOUT_MS);
+  const validated =
+    options?.validatedAuth ??
+    (await validateServerSessionWithTimeout(OPEN_APP_STATUS_TIMEOUT_MS));
   if (!validated.ok) {
     return { ok: false, route: "login" };
   }

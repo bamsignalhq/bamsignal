@@ -6,3 +6,6 @@ npm run test:server-import
 
 echo "Running source integrity check..."
 npm run test:source-integrity
+
+echo "Running fortress integrity suite..."
+npm run test:fortress

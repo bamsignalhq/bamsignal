@@ -58,7 +58,10 @@ assertCheck(
   packageJson.scripts["test:source-integrity"] === "node scripts/source-integrity-check.mjs" &&
     packageJson.scripts["test:server-import"] === "node scripts/smoke-server-import.mjs" &&
     packageJson.scripts["test:all-integrity"] ===
-      "npm run test:source-integrity && npm run test:server-import",
+      "npm run test:source-integrity && npm run test:server-import" &&
+    typeof packageJson.scripts["test:fortress"] === "string" &&
+    packageJson.scripts["test:fortress"].startsWith("node scripts/test-") &&
+    !packageJson.scripts["test:fortress"].includes("source-integrity-check.mjs"),
   "package scripts must keep source integrity and runtime smoke independent"
 );
 

@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { SignalConciergeBeforeContinueModal } from "./SignalConciergeBeforeContinueModal";
+import { useSignalConciergeBeforeContinue } from "./SignalConciergeBeforeContinueModal";
 import { SignalConciergeConfidentiality } from "./SignalConciergeConfidentiality";
 import { SignalConciergeHero } from "./SignalConciergeHero";
 import { SignalConciergeNextStep } from "./SignalConciergeNextStep";
@@ -19,9 +18,13 @@ export function SignalConciergeLandingPage({
   onLearnMore,
   onSelectTier
 }: SignalConciergeLandingPageProps) {
-  const [modalOpen, setModalOpen] = useState(false);
+  const { requestGate, modal } = useSignalConciergeBeforeContinue();
 
-  const openConsultationFlow = () => setModalOpen(true);
+  const openConsultationFlow = () => requestGate(onScheduleConsultation);
+  const openApplyFlow = (tierId: SignalConciergeTierId) => {
+    if (!onSelectTier) return;
+    requestGate(() => onSelectTier(tierId));
+  };
 
   return (
     <div className="sc-landing">
@@ -29,23 +32,14 @@ export function SignalConciergeLandingPage({
       <SignalConciergeConfidentiality />
       <SignalConciergePromises />
       <SignalConciergeProcess />
-      <SignalConciergeTierCards onSelectTier={onSelectTier} />
+      <SignalConciergeTierCards onSelectTier={onSelectTier ? openApplyFlow : undefined} />
       <SignalConciergeNextStep
         onScheduleConsultation={openConsultationFlow}
         onMaybeLater={() => {
-          const hero = document.getElementById("sc-hero-title");
-          hero?.scrollIntoView({ behavior: "smooth", block: "start" });
+          document.getElementById("sc-hero-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
         }}
       />
-
-      <SignalConciergeBeforeContinueModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onContinue={() => {
-          setModalOpen(false);
-          onScheduleConsultation();
-        }}
-      />
+      {modal}
     </div>
   );
 }

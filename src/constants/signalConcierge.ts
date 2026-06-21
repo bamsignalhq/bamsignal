@@ -20,12 +20,30 @@ export const SIGNAL_CONCIERGE_CTA_SECONDARY = "Learn More";
 export const SIGNAL_CONCIERGE_BEFORE_CONTINUE_TITLE = "Before You Continue";
 export const SIGNAL_CONCIERGE_BEFORE_CONTINUE_BODY =
   "Signal Concierge is a confidential, human-led matchmaking service.\n\nA consultation helps us understand your goals and determine whether we're the right fit for each other.";
-export const SIGNAL_CONCIERGE_CONSULTATION_FEE_LABEL = "Consultation fee:";
+export const SIGNAL_CONCIERGE_CONSULTATION_FEE_HEADLINE = "Consultation Fee";
+export const SIGNAL_CONCIERGE_CONSULTATION_FEE_LABEL = SIGNAL_CONCIERGE_CONSULTATION_FEE_HEADLINE;
 export const SIGNAL_CONCIERGE_CONSULTATION_FEE_AMOUNT = "₦100,000";
 export const SIGNAL_CONCIERGE_MEMBERSHIP_FROM = "Membership plans begin from ₦100,000.";
 export const SIGNAL_CONCIERGE_PAYMENT_NOTE =
   "Payment is only requested once you're comfortable moving forward.";
+export const SIGNAL_CONCIERGE_NO_OBLIGATION_NOTE =
+  "There is no obligation to continue after your consultation.";
 export const SIGNAL_CONCIERGE_MAYBE_LATER = "Maybe Later";
+
+export const SIGNAL_CONCIERGE_EXPECTATIONS_TITLE = "What to expect";
+export const SIGNAL_CONCIERGE_EXPECTATIONS = [
+  "A private conversation",
+  "Questions are welcome",
+  "No pressure",
+  "No obligation",
+  "Human guidance"
+] as const;
+
+export const SIGNAL_CONCIERGE_CONSULTATION_TIMING = "30–45 minutes";
+
+export const SIGNAL_CONCIERGE_NO_PRESSURE_HEADLINE = "Take your time";
+export const SIGNAL_CONCIERGE_NO_PRESSURE_BODY =
+  "Finding the right person is important.\n\nWe're happy to answer your questions and help you decide whether Signal Concierge is right for you.";
 
 export const SIGNAL_CONCIERGE_NEXT_STEP_HEADLINE = "Ready to finally meet your match?";
 export const SIGNAL_CONCIERGE_NEXT_STEP_SUBTEXT =

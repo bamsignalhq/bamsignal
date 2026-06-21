@@ -629,19 +629,193 @@
   z-index: 80;
   display: grid;
   place-items: center;
-  padding: 18px;
-  background: rgba(4, 2, 12, 0.72);
-  backdrop-filter: blur(8px);
-  animation: sc-fade-in 0.25s ease;
+  padding: 16px;
+  background: rgba(4, 2, 12, 0.78);
+  backdrop-filter: blur(10px);
+  animation: sc-fade-in 0.3s ease;
 }
 
 .signal-concierge-modal {
   width: min(100%, 460px);
+  max-height: min(92vh, 900px);
+  overflow: auto;
   padding: 22px;
   border-radius: 22px;
   border: 1px solid var(--sc-border);
   background: linear-gradient(180deg, rgba(24, 16, 44, 0.96), rgba(12, 10, 24, 0.98));
   box-shadow: var(--sc-shadow);
+  animation: sc-gate-scale-in 0.32s ease;
+}
+
+.sc-gate-modal {
+  width: min(100%, 640px);
+  padding: clamp(20px, 4vw, 28px);
+}
+
+.sc-gate-modal__header {
+  margin-bottom: 18px;
+}
+
+.sc-gate-modal__title {
+  margin: 0 0 12px;
+  font-size: clamp(1.2rem, 3.5vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sc-gate-modal__intro {
+  margin: 0;
+  color: var(--sc-muted);
+  line-height: 1.65;
+  white-space: pre-line;
+  font-size: 0.94rem;
+}
+
+.sc-gate-modal__cards {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 720px) {
+  .sc-gate-modal__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sc-gate-card--no-pressure {
+    grid-column: 1 / -1;
+  }
+}
+
+.sc-gate-card {
+  padding: clamp(16px, 3vw, 20px);
+  transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
+  animation: sc-fade-in 0.45s ease both;
+}
+
+.sc-gate-card:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.sc-gate-card:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.sc-gate-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(212, 175, 106, 0.28);
+  box-shadow: 0 16px 36px rgba(122, 77, 243, 0.12);
+}
+
+.sc-gate-card__title {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--sc-gold);
+}
+
+.sc-gate-card__amount {
+  margin: 0 0 8px;
+  font-size: clamp(1.35rem, 4vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sc-gate-card__sub,
+.sc-gate-card__body {
+  margin: 0;
+  color: var(--sc-muted);
+  line-height: 1.55;
+  font-size: 0.9rem;
+  white-space: pre-line;
+}
+
+.sc-gate-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.sc-gate-card__list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--sc-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.sc-gate-card__check {
+  flex: 0 0 auto;
+  color: var(--sc-gold);
+  font-weight: 700;
+}
+
+.sc-gate-card__timing {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(168, 130, 255, 0.14);
+}
+
+.sc-gate-card__timing-label {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sc-gold);
+}
+
+.sc-gate-card__timing-value {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.sc-gate-card__channels {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sc-gate-card__channels li {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 106, 0.22);
+  background: rgba(212, 175, 106, 0.08);
+  color: var(--sc-text);
+  font-size: 0.76rem;
+}
+
+.sc-gate-modal__notes {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(168, 130, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sc-gate-modal__notes p {
+  margin: 0;
+  color: var(--sc-muted);
+  line-height: 1.55;
+  font-size: 0.88rem;
+}
+
+.sc-gate-modal__notes p + p {
+  margin-top: 8px;
+}
+
+.sc-gate-modal__actions {
+  position: sticky;
+  bottom: 0;
+  margin-top: 18px;
+  padding-top: 4px;
+  background: linear-gradient(180deg, transparent, rgba(12, 10, 24, 0.92) 24%);
 }
 
 .signal-concierge-modal h2 {
@@ -793,6 +967,17 @@
   background: #000;
 }
 
+@keyframes sc-gate-scale-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes sc-fade-in {
   from {
     opacity: 0;
@@ -846,7 +1031,9 @@ html[data-theme="light"] .platform-root--signal-concierge .signal-concierge-btn-
   .sc-process__step,
   .sc-tier-card,
   .sc-hero__glow,
-  .sc-next-step__glow {
+  .sc-next-step__glow,
+  .sc-gate-card,
+  .signal-concierge-modal {
     animation: none;
     transition: none;
   }

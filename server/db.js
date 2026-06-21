@@ -1,6 +1,6 @@
 import pg from "pg";
 import { config } from "./config.js";
-import { logAlertableEvent } from "./services/observability.js";
+import { logRetryExhausted, logThresholdedAlert } from "./services/observability.js";
 
 const { Pool } = pg;
 
@@ -19,7 +19,7 @@ if (pool) {
   pool.on("error", (error) => {
     dbConnectionStatus = "disconnected";
     dbConnectionError = error.message;
-    logAlertableEvent("db_unavailable", {
+    logThresholdedAlert("db_unavailable", {
       reason: "pool_error",
       error: error.message || "Database pool error"
     });
@@ -228,7 +228,7 @@ export async function initDatabase() {
   } catch (error) {
     dbConnectionStatus = "disconnected";
     dbConnectionError = error.message || "Database connection failed";
-    logAlertableEvent("db_unavailable", {
+    logThresholdedAlert("db_unavailable", {
       reason: "init_failed",
       error: dbConnectionError
     });
@@ -250,7 +250,7 @@ export async function pingDatabase() {
   }
 }
 
-export async function withDbRetry(task, attempts = 3) {
+export async function withDbRetry(task, attempts = 3, context = {}) {
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
@@ -262,6 +262,11 @@ export async function withDbRetry(task, attempts = 3) {
       }
     }
   }
+  logRetryExhausted("database", {
+    attempts,
+    operation: context.operation || null,
+    error: lastError instanceof Error ? lastError.message : String(lastError || "unknown")
+  });
   throw lastError;
 }
 

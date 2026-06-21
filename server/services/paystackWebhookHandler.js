@@ -15,7 +15,7 @@ import {
   isPaymentDatabaseError,
   paymentHttpStatusForError
 } from "./paymentDb.js";
-import { logAlertableEvent, observabilityContext } from "./observability.js";
+import { logAlertableEvent, logThresholdedAlert, observabilityContext } from "./observability.js";
 
 export const PAYSTACK_WEBHOOK_CANONICAL_PATH = "/api/paystack/webhook";
 
@@ -144,7 +144,7 @@ export async function handlePaystackWebhookRequest({
 
   const bodyBuffer = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody || "");
   if (!verifyPaystackWebhookSignature(bodyBuffer, signature, secretKey)) {
-    logAlertableEvent("payment_webhook_failed", {
+    logThresholdedAlert("payment_webhook_failed", {
       ...logContext,
       reason: "invalid_signature"
     });
@@ -171,7 +171,7 @@ export async function handlePaystackWebhookRequest({
           body: { ok: true, ignored: true, reason: "amount_mismatch" }
         };
       }
-      logAlertableEvent("payment_webhook_failed", {
+      logThresholdedAlert("payment_webhook_failed", {
         ...logContext,
         event: event.event,
         reason: result?.error || "fulfillment_failed",
@@ -189,7 +189,7 @@ export async function handlePaystackWebhookRequest({
     };
   } catch (error) {
     if (isPaymentDatabaseError(error)) {
-      logAlertableEvent("payment_webhook_failed", {
+      logThresholdedAlert("payment_webhook_failed", {
         ...logContext,
         reason: "persistence_unavailable",
         code: error?.code || null
@@ -199,7 +199,7 @@ export async function handlePaystackWebhookRequest({
         body: { ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE }
       };
     }
-    logAlertableEvent("payment_webhook_failed", {
+    logThresholdedAlert("payment_webhook_failed", {
       ...logContext,
       reason: error?.message || "webhook_error",
       code: error?.code || null

@@ -9,6 +9,7 @@ import {
   logAlertableEvent,
   logObservabilityEvent,
   logReadyCheckFailed,
+  logThresholdedAlert,
   sanitizeLogContext
 } from "../server/services/observability.js";
 
@@ -69,6 +70,17 @@ const secondReady = logReadyCheckFailed({ ready: false, source: "test" });
 assert(firstReady?.event === "ready_check_failed", "ready failures must emit alertable events");
 assert(secondReady === null, "ready failure logs must be rate limited");
 
+const firstPaymentAlert = logThresholdedAlert("payment_verify_failed", {
+  scope: "observability_test",
+  reference: "bs_obs_test"
+});
+const secondPaymentAlert = logThresholdedAlert("payment_verify_failed", {
+  scope: "observability_test",
+  reference: "bs_obs_test"
+});
+assert(firstPaymentAlert?.event === "payment_verify_failed", "thresholded payment alerts must emit once");
+assert(secondPaymentAlert === null, "thresholded payment alerts must dedupe");
+
 const appSource = read("server/app.js");
 const observabilitySource = read("server/services/observability.js");
 const paystackVerifySource = read("api/paystack/verify.js");
@@ -83,8 +95,10 @@ assert(
   observabilitySource.includes("requestContextMiddleware") &&
     observabilitySource.includes("sanitizeLogContext") &&
     observabilitySource.includes("payment_verify_failed") &&
-    observabilitySource.includes("background_task_failed"),
-  "observability service must expose middleware, redaction, and standard events"
+    observabilitySource.includes("background_task_failed") &&
+    observabilitySource.includes("logThresholdedAlert") &&
+    observabilitySource.includes("logRetryExhausted"),
+  "observability service must expose middleware, redaction, thresholds, and standard events"
 );
 assert(
   appSource.includes("requestContextMiddleware") &&

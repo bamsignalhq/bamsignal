@@ -710,5 +710,12 @@ assertCheck(
     appSource.includes("LazyAdminConsoleRoot"),
   "admin console must stay out of the App.tsx main bundle"
 );
+assertCheck(
+  existsSync(join(rootPath, "server/services/retryPolicy.js")) &&
+    readSrc("server/services/observability.js").includes("logThresholdedAlert") &&
+    readSrc("src/utils/serviceWorker.ts").includes("MAX_RECOVERY_RELOADS") &&
+    readSrc("src/App.tsx").includes("MAX_COMPLIANCE_SYNC_ATTEMPTS"),
+  "stability guards must keep bounded retries and recovery reload caps"
+);
 
 console.log("source integrity ok");

@@ -19,6 +19,7 @@ export function useFlowWatchdog(
   useEffect(() => {
     if (!active) {
       setStuck(false);
+      clearFlowState();
       return;
     }
 
@@ -32,6 +33,7 @@ export function useFlowWatchdog(
 
     return () => {
       window.clearInterval(timer);
+      clearFlowState();
     };
   }, [active, flowName, route, userId]);
 

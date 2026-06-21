@@ -22,14 +22,18 @@ export function LivingScene({ onGetStarted, onExplore }: LivingSceneProps) {
   const [ripple, setRipple] = useState(0);
 
   useEffect(() => {
+    let fadeTimer: number | null = null;
     const activityTimer = window.setInterval(() => {
       setActivityVisible(false);
-      window.setTimeout(() => {
+      fadeTimer = window.setTimeout(() => {
         setActivityIndex((i) => (i + 1) % HERO_ACTIVITIES.length);
         setActivityVisible(true);
       }, 400);
     }, 3200);
-    return () => window.clearInterval(activityTimer);
+    return () => {
+      window.clearInterval(activityTimer);
+      if (fadeTimer !== null) window.clearTimeout(fadeTimer);
+    };
   }, []);
 
   useEffect(() => {

@@ -10,7 +10,8 @@ import {
   loadEmailBranding,
   wrapEmailLayoutAsync
 } from "./emailBranding.js";
-import { logAlertableEvent, logObservabilityEvent } from "./observability.js";
+import { logAlertableEvent, logObservabilityEvent, logThresholdedAlert } from "./observability.js";
+import { isRetryableHttpStatus, isRetryableNetworkError, withBoundedRetry } from "./retryPolicy.js";
 
 const SUPPORT_EMAIL = "support@bamsignal.com";
 
@@ -98,17 +99,35 @@ async function sendResendPurchaseEmail({ to, subject, html, text, reference = nu
     process.env.SIGNUP_EMAIL_FROM?.trim() ||
     "BamSignal <support@bamsignal.com>";
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
+  const response = await withBoundedRetry(
+    async () => {
+      const result = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ from, to, subject, html, text })
+      });
+
+      if (!result.ok && isRetryableHttpStatus(result.status)) {
+        const error = new Error(`resend_status_${result.status}`);
+        error.status = result.status;
+        throw error;
+      }
+
+      return result;
     },
-    body: JSON.stringify({ from, to, subject, html, text })
-  });
+    {
+      service: "resend",
+      attempts: 3,
+      shouldRetry: (error) => isRetryableNetworkError(error) || isRetryableHttpStatus(error?.status),
+      context: { channel: "purchase_confirmation", reference }
+    }
+  );
 
   if (!response.ok) {
-    logAlertableEvent("email_send_failed", {
+    logThresholdedAlert("email_send_failed", {
       channel: "purchase_confirmation",
       reference,
       status: response.status,

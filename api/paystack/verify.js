@@ -21,8 +21,8 @@ import {
   paymentHttpStatusForError
 } from "../../server/services/paymentDb.js";
 import {
-  logAlertableEvent,
   logObservabilityEvent,
+  logThresholdedAlert,
   observabilityContext
 } from "../../server/services/observability.js";
 
@@ -81,7 +81,7 @@ function paymentReturnFrom(metadata = {}, body = {}, fallback = "/home") {
 }
 
 function logPaystackFailure(req, scope, error, extra = {}) {
-  logAlertableEvent(
+  logThresholdedAlert(
     "payment_verify_failed",
     observabilityContext(req, {
       scope,

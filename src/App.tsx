@@ -284,10 +284,25 @@ export function App() {
   useEffect(() => {
     if (!isAuthed || !complianceSyncPending) return;
     let cancelled = false;
+    let attempts = 0;
+    const MAX_COMPLIANCE_SYNC_ATTEMPTS = 12;
     const retry = () => {
+      if (cancelled || attempts >= MAX_COMPLIANCE_SYNC_ATTEMPTS) return;
+      attempts += 1;
       void retryPendingComplianceSync(user).then((ok) => {
-        if (cancelled || !ok) return;
-        setComplianceTick((tick) => tick + 1);
+        if (cancelled) return;
+        if (ok) {
+          setComplianceTick((tick) => tick + 1);
+          return;
+        }
+        if (attempts >= MAX_COMPLIANCE_SYNC_ATTEMPTS) {
+          if (import.meta.env.DEV) {
+            console.warn("[bamsignal] retry_exhausted", {
+              service: "compliance_sync",
+              attempts
+            });
+          }
+        }
       });
     };
     retry();

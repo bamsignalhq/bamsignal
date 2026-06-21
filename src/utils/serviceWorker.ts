@@ -10,6 +10,8 @@ import { clearAppUpdatePending, markAppUpdatePending } from "./bootFlags";
 const BUILD_KEY = "bamsignal:build-id";
 const BUILD_RELOAD_KEY = "bamsignal:build-reload";
 const CHUNK_RELOAD_KEY = "bamsignal:chunk-reload";
+const RECOVERY_RELOAD_COUNT_KEY = "bamsignal:recovery-reload-count";
+const MAX_RECOVERY_RELOADS = 2;
 
 export function notifyConnectionRefreshed(): void {
   try {
@@ -30,7 +32,23 @@ export function notifyConnectionRefreshed(): void {
   window.setTimeout(() => toast.remove(), 4000);
 }
 
+function canRecoveryReload(): boolean {
+  try {
+    const count = Number(sessionStorage.getItem(RECOVERY_RELOAD_COUNT_KEY) || 0);
+    if (count >= MAX_RECOVERY_RELOADS) return false;
+    sessionStorage.setItem(RECOVERY_RELOAD_COUNT_KEY, String(count + 1));
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 function silentRecoveryReload(): void {
+  if (!canRecoveryReload()) {
+    clearAppUpdatePending();
+    notifyConnectionRefreshed();
+    return;
+  }
   markAppUpdatePending();
   void clearBamSignalVolatileCache().finally(() => {
     const url = new URL(window.location.href);

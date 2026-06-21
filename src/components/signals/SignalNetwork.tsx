@@ -35,14 +35,18 @@ export function SignalNetwork({ onGetStarted, onExplore }: SignalNetworkProps) {
   const [emit, setEmit] = useState(0);
 
   useEffect(() => {
+    let fadeTimer: number | null = null;
     const t = window.setInterval(() => {
       setActivityVisible(false);
-      window.setTimeout(() => {
+      fadeTimer = window.setTimeout(() => {
         setActivityIndex((i) => (i + 1) % HERO_ACTIVITIES.length);
         setActivityVisible(true);
       }, 380);
     }, 3000);
-    return () => window.clearInterval(t);
+    return () => {
+      window.clearInterval(t);
+      if (fadeTimer !== null) window.clearTimeout(fadeTimer);
+    };
   }, []);
 
   useEffect(() => {

@@ -16,7 +16,7 @@ import {
   resolvePhotoUploadOwner
 } from "../../server/services/photoUploadAttribution.js";
 import {
-  logAlertableEvent,
+  logThresholdedAlert,
   observabilityContext
 } from "../../server/services/observability.js";
 
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
 
     const needsStorage = action === "upload" || action === "delete" || action === "finalize";
     if (needsStorage && !isPhotoStorageConfigured()) {
-      logAlertableEvent(
+      logThresholdedAlert(
         "photo_storage_unavailable",
         observabilityContext(req, { action })
       );
@@ -191,7 +191,7 @@ export default async function handler(req, res) {
     if (error instanceof PhotoStorageError) {
       return res.status(error.status).json({ ok: false, error: error.message });
     }
-    logAlertableEvent(
+    logThresholdedAlert(
       "photo_upload_failed",
       observabilityContext(req, {
         action,

@@ -1,5 +1,6 @@
 import dns from "node:dns";
 import { config } from "../config.js";
+import { isRetryableNetworkError, withBoundedRetry } from "./retryPolicy.js";
 
 dns.setDefaultResultOrder("ipv4first");
 
@@ -69,51 +70,64 @@ export async function paystackFetch(path, options = {}) {
   }
 
   const url = path.startsWith("http") ? path : `${PAYSTACK_API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs || DEFAULT_TIMEOUT_MS);
+  const retryEnabled = options.retry !== false;
+  const attempts = retryEnabled ? 3 : 1;
 
-  const headers = {
-    Authorization: `Bearer ${config.paystackSecretKey}`,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    ...(options.headers || {})
-  };
+  return withBoundedRetry(
+    async () => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), options.timeoutMs || DEFAULT_TIMEOUT_MS);
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      signal: controller.signal
-    });
+      const headers = {
+        Authorization: `Bearer ${config.paystackSecretKey}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        ...(options.headers || {})
+      };
 
-    const text = await response.text();
-    let payload = null;
-    if (text) {
       try {
-        payload = JSON.parse(text);
-      } catch {
-        payload = { raw: text.slice(0, 240) };
+        const response = await fetch(url, {
+          ...options,
+          headers,
+          signal: controller.signal
+        });
+
+        const text = await response.text();
+        let payload = null;
+        if (text) {
+          try {
+            payload = JSON.parse(text);
+          } catch {
+            payload = { raw: text.slice(0, 240) };
+          }
+        }
+
+        return { response, payload, url };
+      } catch (error) {
+        if (error?.name === "AbortError") {
+          throw new PaystackClientError("Paystack request timed out.", {
+            code: "timeout",
+            status: 503,
+            cause: error
+          });
+        }
+
+        throw new PaystackClientError(error?.message || "Paystack network request failed.", {
+          code: "network_error",
+          status: 503,
+          cause: error
+        });
+      } finally {
+        clearTimeout(timer);
       }
+    },
+    {
+      service: "paystack",
+      attempts,
+      shouldRetry: (error) => isRetryableNetworkError(error),
+      context: { path: String(path).slice(0, 120) }
     }
-
-    return { response, payload, url };
-  } catch (error) {
-    if (error?.name === "AbortError") {
-      throw new PaystackClientError("Paystack request timed out.", {
-        code: "timeout",
-        status: 503,
-        cause: error
-      });
-    }
-
-    throw new PaystackClientError(error?.message || "Paystack network request failed.", {
-      code: "network_error",
-      status: 503,
-      cause: error
-    });
-  } finally {
-    clearTimeout(timer);
-  }
+  );
 }
 
 export async function probePaystackConnectivity() {
@@ -154,6 +168,7 @@ export async function probePaystackConnectivity() {
     const initializeStarted = Date.now();
     const { response, payload } = await paystackFetch("/transaction/initialize", {
       method: "POST",
+      retry: false,
       body: JSON.stringify({
         email: "connectivity-probe@bamsignal.com",
         amount: 10000,
@@ -178,7 +193,8 @@ export async function probePaystackConnectivity() {
   try {
     const verifyStarted = Date.now();
     const { response, payload } = await paystackFetch("/transaction/verify/connectivity_probe_ref", {
-      method: "GET"
+      method: "GET",
+      retry: false
     });
     result.verifyProbe = {
       ok: response.ok,

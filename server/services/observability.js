@@ -16,8 +16,28 @@ const ALERTABLE_EVENTS = new Set([
   "throttle_db_unavailable",
   "ready_check_failed",
   "background_task_failed",
+  "retry_exhausted",
   "unhandled_request_error"
 ]);
+
+/** Minimum interval between repeated alert logs for the same event key. */
+const ALERT_THRESHOLDS_MS = {
+  payment_verify_failed: 2 * 60 * 1000,
+  payment_webhook_failed: 2 * 60 * 1000,
+  email_send_failed: 5 * 60 * 1000,
+  photo_upload_failed: 3 * 60 * 1000,
+  photo_storage_unavailable: 5 * 60 * 1000,
+  voice_intro_failed: 3 * 60 * 1000,
+  profile_save_failed: 3 * 60 * 1000,
+  db_unavailable: 5 * 60 * 1000,
+  throttle_db_unavailable: 5 * 60 * 1000,
+  ready_check_failed: 5 * 60 * 1000,
+  background_task_failed: 3 * 60 * 1000,
+  retry_exhausted: 5 * 60 * 1000,
+  unhandled_request_error: 2 * 60 * 1000
+};
+
+const alertLastEmittedAt = new Map();
 
 const SENSITIVE_KEY_PATTERN =
   /(?:password|pin|otp|token|secret|authorization|bearer|jwt|api[_-]?key|cookie|session|signature|email|phone)/i;
@@ -128,8 +148,50 @@ export function logAlertableEvent(event, context = {}) {
   return logObservabilityEvent(event, context, "error");
 }
 
+function alertDedupeKey(event, context = {}) {
+  return [
+    event,
+    context.scope,
+    context.task,
+    context.service,
+    context.channel,
+    context.action,
+    context.reason,
+    context.reference
+  ]
+    .filter(Boolean)
+    .join(":");
+}
+
+/** Emit alertable events at most once per threshold window per dedupe key. */
+export function logThresholdedAlert(event, context = {}) {
+  const thresholdMs = ALERT_THRESHOLDS_MS[event] ?? 3 * 60 * 1000;
+  const key = alertDedupeKey(event, context);
+  const now = Date.now();
+  const last = alertLastEmittedAt.get(key) || 0;
+  if (now - last < thresholdMs) return null;
+  alertLastEmittedAt.set(key, now);
+  return logAlertableEvent(event, context);
+}
+
+export function logRetryExhausted(service, context = {}) {
+  return logThresholdedAlert("retry_exhausted", { service, ...context });
+}
+
+export function logTimerCleanup(name, context = {}) {
+  return logObservabilityEvent("timer_cleanup", { name, ...context }, "info");
+}
+
+export function logListenerCleanup(name, context = {}) {
+  return logObservabilityEvent("listener_cleanup", { name, ...context }, "info");
+}
+
+export function logWebsocketClosed(context = {}) {
+  return logObservabilityEvent("websocket_closed", context, "info");
+}
+
 export function logBackgroundTaskFailure(taskName, error, context = {}) {
-  return logAlertableEvent("background_task_failed", {
+  return logThresholdedAlert("background_task_failed", {
     task: taskName,
     error: error instanceof Error ? error.message : String(error || "unknown"),
     code: error?.code || null,
@@ -137,13 +199,7 @@ export function logBackgroundTaskFailure(taskName, error, context = {}) {
   });
 }
 
-let lastReadyFailureLogAt = 0;
-const READY_FAILURE_LOG_INTERVAL_MS = 5 * 60 * 1000;
-
 /** Rate-limited alert when readiness checks fail. */
 export function logReadyCheckFailed(context = {}) {
-  const now = Date.now();
-  if (now - lastReadyFailureLogAt < READY_FAILURE_LOG_INTERVAL_MS) return null;
-  lastReadyFailureLogAt = now;
-  return logAlertableEvent("ready_check_failed", context);
+  return logThresholdedAlert("ready_check_failed", context);
 }

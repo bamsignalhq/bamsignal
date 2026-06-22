@@ -149,6 +149,15 @@ export function BamSignalInstitutePage() {
           >
             Fellows
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() =>
+              navigateToPath(bamSignalInstitutePathForRoute("africanRelationshipCurriculum"))
+            }
+          >
+            Curriculum
+          </button>
         </div>
       </header>
 

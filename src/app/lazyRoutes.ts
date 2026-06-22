@@ -266,6 +266,14 @@ export const LazyBamSignalInstituteFellowsPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteAfricanRelationshipCurriculumPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteAfricanRelationshipCurriculumPage").then(
+    (module) => ({
+      default: module.BamSignalInstituteAfricanRelationshipCurriculumPage
+    })
+  )
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

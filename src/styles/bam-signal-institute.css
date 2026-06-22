@@ -2979,3 +2979,148 @@
   color: rgba(255, 255, 255, 0.58);
   line-height: 1.45;
 }
+
+/* African Relationship Curriculum™ */
+.arcur-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.arcur-page__hero {
+  padding: 28px 24px;
+}
+
+.arcur-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.arcur-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.arcur-page__prepared,
+.arcur-page__future {
+  padding: 22px 24px;
+}
+
+.arcur-page__prepared h2,
+.arcur-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.arcur-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.arcur-page__prepared-list,
+.arcur-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.arcur-page__prepared-list li,
+.arcur-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.arcur-page__prepared-list li span,
+.arcur-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.arcur-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.arcur-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.arcur-culture-module,
+.arcur-faith-module,
+.arcur-diaspora-module {
+  padding: 18px 20px;
+}
+
+.arcur-culture-module__head,
+.arcur-faith-module__head,
+.arcur-diaspora-module__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.arcur-culture-module__head h3,
+.arcur-faith-module__head h3,
+.arcur-diaspora-module__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.arcur-culture-module__badge,
+.arcur-faith-module__badge,
+.arcur-diaspora-module__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.arcur-culture-module__labels,
+.arcur-faith-module__labels,
+.arcur-diaspora-module__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.arcur-culture-module__description,
+.arcur-faith-module__description,
+.arcur-diaspora-module__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.arcur-culture-module__status,
+.arcur-faith-module__status,
+.arcur-diaspora-module__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

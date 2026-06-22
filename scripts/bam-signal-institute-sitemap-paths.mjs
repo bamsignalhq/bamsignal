@@ -18,7 +18,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/premarital-journey",
   "/institute/bamsignal-library",
   "/institute/relationship-certificates",
-  "/institute/bamsignal-fellows"
+  "/institute/bamsignal-fellows",
+  "/institute/african-relationship-curriculum"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

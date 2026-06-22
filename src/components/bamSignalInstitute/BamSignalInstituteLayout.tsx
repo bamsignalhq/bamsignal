@@ -148,6 +148,13 @@ export function BamSignalInstituteLayout({
               >
                 Fellows
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("africanRelationshipCurriculum")}
+              >
+                Curriculum
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

@@ -214,6 +214,18 @@ export const LazyBamSignalInstituteAfricanRelationshipArchivePage = lazy(() =>
   )
 );
 
+export const LazyBamSignalInstituteAcademyPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteAcademyPage").then((module) => ({
+    default: module.BamSignalInstituteAcademyPage
+  }))
+);
+
+export const LazyBamSignalInstituteAcademyProgramsPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteAcademyProgramsPage").then((module) => ({
+    default: module.BamSignalInstituteAcademyProgramsPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

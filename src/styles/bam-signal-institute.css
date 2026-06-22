@@ -1752,3 +1752,201 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* BamSignal Academy™ */
+.bsa-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.bsa-page__hero {
+  padding: 28px 24px;
+}
+
+.bsa-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.bsa-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bsa-page__prepared,
+.bsa-page__future {
+  padding: 22px 24px;
+}
+
+.bsa-page__prepared h2,
+.bsa-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.bsa-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.bsa-page__prepared-list,
+.bsa-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.bsa-page__prepared-list li,
+.bsa-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.bsa-page__prepared-list li span,
+.bsa-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bsa-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.bsa-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.bsa-course-card,
+.bsa-path-card,
+.bsa-timeline {
+  padding: 18px 20px;
+}
+
+.bsa-course-card__head,
+.bsa-path-card__head,
+.bsa-timeline__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.bsa-course-card__head h3,
+.bsa-path-card__head h3,
+.bsa-timeline__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.bsa-course-card__badge,
+.bsa-path-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.bsa-course-card__labels,
+.bsa-path-card__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.bsa-course-card__description,
+.bsa-path-card__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.bsa-path-card__programs {
+  margin: 0 0 10px;
+  padding: 0 0 0 16px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+  line-height: 1.5;
+}
+
+.bsa-course-card__status,
+.bsa-path-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.bsa-timeline__head p {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.bsa-timeline__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+
+.bsa-timeline__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.bsa-timeline__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.85);
+  box-shadow: 0 0 0 3px rgba(212, 175, 106, 0.18);
+}
+
+.bsa-timeline__note {
+  margin: 4px 0 6px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bsa-timeline__item time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.bsa-timeline__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}

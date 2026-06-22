@@ -99,6 +99,13 @@ export function BamSignalInstituteLayout({
               >
                 African Archive
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("bamSignalAcademy")}
+              >
+                Academy
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

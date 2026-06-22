@@ -2,6 +2,7 @@ import { CONCIERGE_MEMBER_OWNERSHIP } from "../constants/conciergeMemberOwnershi
 import type { ConciergeMemberRecord, ConciergeTimelineEvent } from "../types/conciergeConsultant";
 import { ensureMemberJourneyId } from "./conciergeJourneyRegistry";
 import { normalizeJourneyArchive } from "./conciergeJourneyArchive";
+import { getSuccessStoryConsent } from "./conciergeSuccessStoryConsentStore";
 
 export function stampTimelineJourneyId(
   events: ConciergeTimelineEvent[],
@@ -20,6 +21,9 @@ export function normalizeConciergeMember(member: ConciergeMemberRecord): Concier
   return normalizeJourneyArchive({
     ...member,
     journeyId,
+    successStoryConsent:
+      member.successStoryConsent ??
+      (journeyId ? getSuccessStoryConsent(journeyId) ?? undefined : undefined),
     ownership: CONCIERGE_MEMBER_OWNERSHIP,
     currentConsultantId,
     assignedConsultantId: currentConsultantId,

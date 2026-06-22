@@ -55,6 +55,11 @@ export function assertNoArchiveDeletion(
   if (previous.journeyArchive && !next.journeyArchive) {
     throw new Error("Archive integrity violation: journeyArchive cannot be removed");
   }
+  if (previous.successStoryConsent && next.successStoryConsent) {
+    if (next.successStoryConsent.history.length < previous.successStoryConsent.history.length) {
+      throw new Error("Archive integrity violation: successStoryConsent history cannot shrink");
+    }
+  }
   if (previous.journeyId && next.journeyId && previous.journeyId !== next.journeyId) {
     throw new Error("Archive integrity violation: journeyId cannot change");
   }

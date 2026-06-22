@@ -12,6 +12,8 @@ import { SIGNAL_CONCIERGE_STATUS_LABELS } from "../constants/signalConcierge";
 import { normalizeConciergeMember, stampTimelineJourneyId } from "./conciergeMemberStewardship";
 import { ensureMemberJourneyId } from "./conciergeJourneyRegistry";
 import { bootstrapJourneyRegistry } from "./conciergeJourneyRegistry";
+import { bootstrapSuccessStoryConsentSeeds } from "./conciergeSuccessStoryConsentStore";
+import { CONCIERGE_SUCCESS_STORY_CONSENT_SEED } from "../data/conciergeSuccessStoryConsentSeed";
 import { assertNoArchiveDeletion, registerArchivedMember } from "./conciergeJourneyArchive";
 import { isValidJourneyId, normalizeJourneyId } from "../constants/journeyId";
 import { marriageYearFromMember } from "./conciergeJourneyArchive";
@@ -32,6 +34,7 @@ function ensureJourneyRegistrySeeded(): void {
       assignedAt: member.createdAt
     }))
   );
+  bootstrapSuccessStoryConsentSeeds(CONCIERGE_SUCCESS_STORY_CONSENT_SEED);
 }
 
 function loadStore(): ConciergeConsultantStore {

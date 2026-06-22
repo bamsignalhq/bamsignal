@@ -60,6 +60,12 @@ export const LazySignalConciergeFaqPage = lazy(() =>
   }))
 );
 
+export const LazyShareYourStoryPage = lazy(() =>
+  import("../pages/signal-concierge/ShareYourStoryPage").then((module) => ({
+    default: module.ShareYourStoryPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

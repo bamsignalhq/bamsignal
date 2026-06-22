@@ -709,6 +709,7 @@ const RAW_CONCIERGE_SEED = [
         id: "intro_legacy_1",
         memberId: "sc_member_adaeze",
         introducedWithName: "Emeka O.",
+        introducedWithId: "sc_member_emeka_o",
         consultantId: CONSULTANT_ID,
         date: "2028-05-20T10:00:00.000Z",
         outcome: "married",

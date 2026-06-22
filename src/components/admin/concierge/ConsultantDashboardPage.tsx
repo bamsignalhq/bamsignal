@@ -24,9 +24,10 @@ import { ConsultantSearchBar } from "./ConsultantSearchBar";
 import { IntroductionEnginePanel } from "./IntroductionEnginePanel";
 import { ConsultantDirectoryPage } from "./ConsultantDirectoryPage";
 import { JourneyArchivePage } from "./JourneyArchivePage";
+import { SuccessStoryConsentAdminPage } from "./SuccessStoryConsentAdminPage";
 import { useAdminToast } from "../AdminToast";
 
-type ConsultantView = "members" | "introductions" | "consultants" | "archive";
+type ConsultantView = "members" | "introductions" | "consultants" | "archive" | "stories";
 
 type DashboardInsight = {
   id: string;
@@ -269,8 +270,17 @@ export function ConsultantDashboardPage() {
           >
             Archive
           </button>
+          <button
+            type="button"
+            className={`concierge-consultant-dashboard__tab${view === "stories" ? " is-active" : ""}`}
+            onClick={() => setView("stories")}
+          >
+            Stories
+          </button>
         </div>
       </header>
+
+      {view === "stories" ? <SuccessStoryConsentAdminPage /> : null}
 
       {view === "archive" ? <JourneyArchivePage /> : null}
 

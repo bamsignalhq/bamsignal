@@ -2007,3 +2007,46 @@
   }
 }
 
+.success-story-consent-admin__body {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+}
+
+.success-story-consent-admin__list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.success-story-consent-admin__row {
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: inherit;
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.success-story-consent-admin__row.is-active {
+  border-color: rgba(212, 175, 106, 0.45);
+}
+
+.success-story-consent-admin__row span {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 960px) {
+  .success-story-consent-admin__body {
+    grid-template-columns: 1fr;
+  }
+}
+

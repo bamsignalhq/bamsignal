@@ -29,6 +29,7 @@ import {
   LazySignalConciergeApplicationPage,
   LazySignalConciergeConsultationPage,
   LazySignalConciergeFaqPage,
+  LazyShareYourStoryPage,
   LazySignalConciergeLandingPage,
   LazySignalConciergePrivacyPage,
   LazySignalConciergeStatusPage,
@@ -1995,6 +1996,8 @@ export function App() {
           <LazySignalConciergeStatusPage {...signalConciergeShellProps} />
         ) : signalConciergeRoute === "consultation" ? (
           <LazySignalConciergeConsultationPage {...signalConciergeShellProps} />
+        ) : signalConciergeRoute === "shareStory" ? (
+          <LazyShareYourStoryPage {...signalConciergeShellProps} />
         ) : signalConciergeRoute === "privacy" ? (
           <LazySignalConciergePrivacyPage {...signalConciergeShellProps} />
         ) : (

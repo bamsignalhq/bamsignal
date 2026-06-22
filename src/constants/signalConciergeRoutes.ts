@@ -7,6 +7,7 @@ export const SIGNAL_CONCIERGE_ROUTES = {
   apply: `${SIGNAL_CONCIERGE_BASE_PATH}/apply`,
   status: `${SIGNAL_CONCIERGE_BASE_PATH}/status`,
   consultation: `${SIGNAL_CONCIERGE_BASE_PATH}/consultation`,
+  shareStory: `${SIGNAL_CONCIERGE_BASE_PATH}/share-your-story`,
   privacy: `${SIGNAL_CONCIERGE_BASE_PATH}/privacy`,
   faq: `${SIGNAL_CONCIERGE_BASE_PATH}/faq`
 } as const;
@@ -24,7 +25,12 @@ const PATH_TO_ROUTE = Object.fromEntries(
 ) as Record<string, SignalConciergeRoute>;
 
 const SIGNAL_CONCIERGE_PUBLIC_ROUTE_SET = new Set<SignalConciergeRoute>(["landing", "faq", "privacy"]);
-const SIGNAL_CONCIERGE_AUTH_ROUTE_SET = new Set<SignalConciergeRoute>(["apply", "status", "consultation"]);
+const SIGNAL_CONCIERGE_AUTH_ROUTE_SET = new Set<SignalConciergeRoute>([
+  "apply",
+  "status",
+  "consultation",
+  "shareStory"
+]);
 
 export function isSignalConciergeRoute(pathname = window.location.pathname): boolean {
   const path = normalizePath(pathname);

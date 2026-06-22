@@ -12,6 +12,7 @@ import type {
 import type { SignalConciergeApplication } from "./signalConcierge";
 import type { ConciergeMemberConsultantSummary, ConciergeProfessionalChannel } from "./conciergeConsultantDirectory";
 import type { JourneyArchiveMetadata } from "../constants/conciergeJourneyArchive";
+import type { SuccessStoryConsentRecord } from "./conciergeSuccessStoryConsent";
 import { CONCIERGE_MEMBER_OWNERSHIP } from "../constants/conciergeMemberOwnership";
 
 export type ConciergeMemberOwnership = typeof CONCIERGE_MEMBER_OWNERSHIP;
@@ -111,6 +112,8 @@ export type ConciergeMemberRecord = SignalConciergeApplication & {
   consultantSummary?: ConciergeMemberConsultantSummary;
   /** Permanent relationship archive metadata — journeys are never deleted. */
   journeyArchive?: JourneyArchiveMetadata;
+  /** Success story sharing consent — dual approval required before publication. */
+  successStoryConsent?: SuccessStoryConsentRecord;
 };
 
 export type ConciergeMemberFilters = {

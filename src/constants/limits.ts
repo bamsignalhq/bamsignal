@@ -85,5 +85,6 @@ export const STORAGE_KEYS = {
   signalConciergeDraft: "bamsignal-signal-concierge-draft",
   signalConciergeGatePassed: "bamsignal-signal-concierge-gate-passed",
   conciergeJourneyRegistry: "bamsignal-concierge-journey-registry",
-  conciergeJourneyArchive: "bamsignal-concierge-journey-archive"
+  conciergeJourneyArchive: "bamsignal-concierge-journey-archive",
+  conciergeSuccessStoryConsent: "bamsignal-concierge-success-story-consent"
 } as const;

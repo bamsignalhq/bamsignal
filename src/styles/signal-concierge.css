@@ -1392,3 +1392,197 @@ html[data-theme="light"] .platform-root--signal-concierge .signal-concierge-btn-
     transition: none;
   }
 }
+
+/* Success story consent */
+.success-story-consent-page {
+  display: grid;
+  gap: 16px;
+}
+
+.success-story-consent-page__head {
+  padding: 22px;
+  display: grid;
+  gap: 8px;
+}
+
+.success-story-consent-page__kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sc-gold);
+}
+
+.success-story-consent-page__celebrate {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.92rem;
+}
+
+.success-story-consent-page__journey-id {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.success-story-consent-card,
+.consent-summary-card {
+  padding: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.success-story-consent-card__privacy,
+.consent-summary-card__note {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.5;
+}
+
+.success-story-consent-card__dual {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--sc-gold);
+}
+
+.success-story-consent-card__levels {
+  display: grid;
+  gap: 10px;
+}
+
+.success-story-consent-card__level {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(168, 130, 255, 0.16);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+}
+
+.success-story-consent-card__level.is-active {
+  border-color: rgba(212, 175, 106, 0.45);
+  background: var(--sc-gold-soft);
+}
+
+.success-story-consent-card__level span {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}
+
+.success-story-consent-card__permissions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.success-story-consent-card__permissions label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.success-story-consent-card__permissions select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--sc-border);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--sc-text);
+}
+
+.success-story-consent-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.consent-summary-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.consent-summary-card__grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 0;
+}
+
+.consent-summary-card__grid dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.consent-summary-card__grid dd {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.story-visibility-badge {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid rgba(212, 175, 106, 0.35);
+  background: rgba(212, 175, 106, 0.1);
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.story-visibility-badge--publishable {
+  border-color: rgba(110, 231, 183, 0.35);
+  background: rgba(110, 231, 183, 0.1);
+  color: rgba(167, 243, 208, 0.95);
+}
+
+.consent-history-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.consent-history-timeline__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 10px;
+}
+
+.consent-history-timeline__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.85);
+}
+
+.consent-history-timeline__item--withdrawn .consent-history-timeline__dot {
+  background: rgba(248, 113, 113, 0.85);
+}
+
+.consent-history-timeline__label {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.consent-history-timeline__who,
+.consent-history-timeline__detail,
+.consent-history-timeline__time {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.success-story-consent__empty {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.86rem;
+}

@@ -403,6 +403,13 @@ export function BamSignalInstitutePage() {
           >
             Institute
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("centuryRoom"))}
+          >
+            Century Room
+          </button>
         </div>
       </header>
 

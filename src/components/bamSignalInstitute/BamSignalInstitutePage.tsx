@@ -65,6 +65,13 @@ export function BamSignalInstitutePage() {
           >
             BamSignal Insights
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("researchPartnerships"))}
+          >
+            Research Partnerships
+          </button>
         </div>
       </header>
 

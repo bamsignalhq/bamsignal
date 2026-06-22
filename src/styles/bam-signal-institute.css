@@ -4162,3 +4162,144 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* Wedding Network™ */
+.wdn-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.wdn-page__hero {
+  padding: 28px 24px;
+}
+
+.wdn-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.wdn-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.wdn-page__prepared,
+.wdn-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.wdn-page__prepared h2 {
+  margin: 0 0 6px;
+}
+
+.wdn-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.wdn-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.wdn-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.wdn-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.wdn-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.wdn-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.wdn-category-card,
+.wdn-planner-card {
+  padding: 18px 20px;
+}
+
+.wdn-category-card__head,
+.wdn-planner-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.wdn-category-card__head h3,
+.wdn-planner-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.wdn-category-card__badge,
+.wdn-planner-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.wdn-category-card__labels,
+.wdn-planner-card__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.wdn-category-card__description,
+.wdn-planner-card__focus {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.wdn-planner-card__category,
+.wdn-planner-card__title {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.wdn-category-card__status,
+.wdn-planner-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

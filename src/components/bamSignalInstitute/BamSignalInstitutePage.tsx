@@ -200,6 +200,13 @@ export function BamSignalInstitutePage() {
           >
             Diaspora
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("weddingNetwork"))}
+          >
+            Wedding
+          </button>
         </div>
       </header>
 

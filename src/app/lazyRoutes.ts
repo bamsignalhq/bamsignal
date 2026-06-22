@@ -314,6 +314,12 @@ export const LazyBamSignalInstituteDiasporaServicesPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteWeddingNetworkPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteWeddingNetworkPage").then((module) => ({
+    default: module.BamSignalInstituteWeddingNetworkPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

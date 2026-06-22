@@ -13,6 +13,7 @@ import {
 import type { RouteAuditAreaId, RouteHealthStatusId } from "../constants/routeAudit";
 import { ROUTE_AUDIT_ADMIN_PATH } from "../constants/routeAudit";
 import { PERMISSIONS_AUDIT_ADMIN_PATH } from "../constants/permissionsAudit";
+import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "../constants/journeyIntegrityAudit";
 import {
   AUTH_LOGIN_PATH,
   AUTH_SIGNUP_ALIASES,
@@ -143,7 +144,8 @@ export function buildRouteInventory(): RouteInventoryEntry[] {
     entry("admin-operations-center", OPERATIONS_CENTER_PATH, "admin", "Operations Center", "operations-center"),
     entry("admin-journey-intelligence", JOURNEY_INTELLIGENCE_PATH, "admin", "Journey Intelligence", "journey-intelligence"),
     entry("admin-route-audit", ROUTE_AUDIT_ADMIN_PATH, "admin", "Route audit", "route-audit"),
-    entry("admin-permissions-audit", PERMISSIONS_AUDIT_ADMIN_PATH, "admin", "Permissions audit", "permissions-audit")
+    entry("admin-permissions-audit", PERMISSIONS_AUDIT_ADMIN_PATH, "admin", "Permissions audit", "permissions-audit"),
+    entry("admin-journey-audit", JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH, "admin", "Journey integrity audit", "journey-audit")
   );
 
   inventory.push(

@@ -61,6 +61,7 @@
     "test:route-audit": "node scripts/test-route-audit.mjs",
     "test:database-audit": "node scripts/test-database-audit.mjs",
     "test:permissions-audit": "node scripts/test-permissions-audit.mjs",
+    "test:journey-audit": "node scripts/test-journey-audit.mjs",
     "test:consultant-performance-scorecard": "node scripts/test-consultant-performance-scorecard.mjs",
     "test:introduction-engine": "node scripts/test-introduction-engine.mjs",
     "test:relationship-follow-up": "node scripts/test-relationship-follow-up.mjs",

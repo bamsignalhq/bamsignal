@@ -10,6 +10,7 @@ import {
 } from "../../../constants/permissionsAudit";
 import { AUDIT_CENTER_ADMIN_PATH } from "../../../constants/auditCenterAdmin";
 import { DATABASE_AUDIT_ADMIN_PATH } from "../../../constants/databaseAudit";
+import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "../../../constants/journeyIntegrityAudit";
 import { ROUTE_AUDIT_ADMIN_PATH } from "../../../constants/routeAudit";
 import { navigateToPath } from "../../../constants/routes";
 import { buildPermissionsAuditReport } from "../../../utils/securityAuditReport";
@@ -144,6 +145,10 @@ export function PermissionsAuditPage() {
           {" · "}
           <button type="button" className="concierge-consultant-btn" onClick={() => navigateToPath(DATABASE_AUDIT_ADMIN_PATH)}>
             Database
+          </button>
+          {" · "}
+          <button type="button" className="concierge-consultant-btn" onClick={() => navigateToPath(JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH)}>
+            Journeys
           </button>
         </p>
       </footer>

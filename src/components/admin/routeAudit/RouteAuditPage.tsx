@@ -11,6 +11,7 @@ import {
 import { AUDIT_CENTER_ADMIN_PATH } from "../../../constants/auditCenterAdmin";
 import { DATABASE_AUDIT_ADMIN_PATH } from "../../../constants/databaseAudit";
 import { PERMISSIONS_AUDIT_ADMIN_PATH } from "../../../constants/permissionsAudit";
+import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "../../../constants/journeyIntegrityAudit";
 import { navigateToPath } from "../../../constants/routes";
 import { buildRouteHealthReport } from "../../../utils/routeHealthReport";
 import { NavigationMapCard } from "./NavigationMapCard";
@@ -192,6 +193,14 @@ export function RouteAuditPage() {
             onClick={() => navigateToPath(PERMISSIONS_AUDIT_ADMIN_PATH)}
           >
             Permissions audit
+          </button>
+          {" · "}
+          <button
+            type="button"
+            className="concierge-consultant-btn"
+            onClick={() => navigateToPath(JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH)}
+          >
+            Journey audit
           </button>
         </p>
         <p>Duplicates detected: {report.duplicates.length}</p>

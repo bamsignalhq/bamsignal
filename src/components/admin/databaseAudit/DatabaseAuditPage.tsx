@@ -11,6 +11,7 @@ import {
 import { AUDIT_CENTER_ADMIN_PATH } from "../../../constants/auditCenterAdmin";
 import { ROUTE_AUDIT_ADMIN_PATH } from "../../../constants/routeAudit";
 import { PERMISSIONS_AUDIT_ADMIN_PATH } from "../../../constants/permissionsAudit";
+import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "../../../constants/journeyIntegrityAudit";
 import { navigateToPath } from "../../../constants/routes";
 import { buildMigrationGapReport } from "../../../utils/migrationGapReport";
 import { DatabaseHealthCard } from "./DatabaseHealthCard";
@@ -149,6 +150,10 @@ export function DatabaseAuditPage() {
           {" · "}
           <button type="button" className="concierge-consultant-btn" onClick={() => navigateToPath(PERMISSIONS_AUDIT_ADMIN_PATH)}>
             Permissions audit
+          </button>
+          {" · "}
+          <button type="button" className="concierge-consultant-btn" onClick={() => navigateToPath(JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH)}>
+            Journey audit
           </button>
         </p>
         <p>Unused baseline tables flagged: {report.unusedTables.length}</p>

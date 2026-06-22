@@ -1,0 +1,248 @@
+.journey-integrity-audit-page {
+  display: grid;
+  gap: 18px;
+}
+
+.journey-integrity-audit-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.journey-integrity-audit-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.journey-integrity-audit-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.journey-integrity-audit-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.journey-integrity-search-field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.84rem;
+}
+
+.journey-integrity-search-field input,
+.journey-integrity-search-field select {
+  min-width: 180px;
+}
+
+.journey-integrity-audit-page__stages p {
+  margin: 0 0 8px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.journey-integrity-audit-page__stage-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.journey-integrity-audit-page__stage-chip {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.journey-integrity-audit-page__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.journey-integrity-audit-page__column {
+  display: grid;
+  gap: 14px;
+}
+
+.journey-health-card__head h3,
+.journey-integrity-card__head h3,
+.journey-dependency-card__head h3,
+.timeline-integrity-card__head h3,
+.journey-repair-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.journey-health-card__head p,
+.journey-integrity-card__head p,
+.journey-dependency-card__head p,
+.timeline-integrity-card__head p,
+.journey-repair-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.journey-health-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.journey-health-card__chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.journey-health-card__chip p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.journey-health-card__chip--partial,
+.journey-audit-badge--partial {
+  border-color: rgba(255, 200, 120, 0.35);
+}
+
+.journey-health-card__chip--broken,
+.journey-audit-badge--broken {
+  border-color: rgba(255, 140, 120, 0.35);
+}
+
+.journey-health-card__chip--critical,
+.journey-audit-badge--critical {
+  border-color: rgba(255, 90, 90, 0.45);
+}
+
+.journey-audit-badge {
+  border: 1px solid rgba(120, 220, 160, 0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.journey-integrity-card__list,
+.journey-dependency-card__list,
+.journey-repair-card__list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.journey-integrity-card__row,
+.journey-dependency-card__row,
+.journey-repair-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.journey-integrity-card__row p,
+.journey-dependency-card__row p,
+.journey-repair-card__row p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.journey-integrity-card__row small,
+.journey-dependency-card__row small,
+.journey-repair-card__row small {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.timeline-integrity-card__grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.timeline-integrity-card__journey h4 {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+}
+
+.timeline-integrity-card__journey ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.timeline-integrity-card__stage {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.8rem;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.journey-repair-card__priority {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.journey-repair-card__priority--high {
+  color: #ff9b9b;
+}
+
+.journey-repair-card__priority--medium {
+  color: #ffd28a;
+}
+
+.journey-repair-card__priority--low {
+  color: #9be7b8;
+}
+
+.journey-integrity-audit-page__issues h3 {
+  margin: 0 0 10px;
+}
+
+.journey-integrity-audit-page__issues ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.journey-integrity-audit-page__issue {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.journey-integrity-audit-page__issue p {
+  margin: 4px 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.journey-integrity-audit-page__issue small {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.journey-integrity-audit-page__foot {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.journey-integrity-audit-page__foot p {
+  margin: 0 0 6px;
+}

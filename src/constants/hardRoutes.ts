@@ -4,6 +4,7 @@ import { AUDIT_CENTER_ADMIN_PATH } from "./auditCenterAdmin";
 import { ROUTE_AUDIT_ADMIN_PATH } from "./routeAudit";
 import { DATABASE_AUDIT_ADMIN_PATH } from "./databaseAudit";
 import { PERMISSIONS_AUDIT_ADMIN_PATH } from "./permissionsAudit";
+import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "./journeyIntegrityAudit";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
   OPERATIONS_CENTER_PATH
@@ -13,7 +14,7 @@ import {
 } from "./journeyIntelligence";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
-export type AuditAdminView = "compliance" | "routes" | "database" | "security";
+export type AuditAdminView = "compliance" | "routes" | "database" | "security" | "journeys";
 
 const TAB_SLUGS: Record<HardTab, string> = {
   command: "command",
@@ -92,6 +93,9 @@ export function hardPathForConciergeView(view: ConciergeAdminView): string {
 
 export function parseAuditAdminViewFromPath(pathname = window.location.pathname): AuditAdminView {
   const path = normalizePath(pathname);
+  if (path === JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH || path.startsWith(`${JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH}/`)) {
+    return "journeys";
+  }
   if (path === PERMISSIONS_AUDIT_ADMIN_PATH || path.startsWith(`${PERMISSIONS_AUDIT_ADMIN_PATH}/`)) {
     return "security";
   }
@@ -105,6 +109,7 @@ export function parseAuditAdminViewFromPath(pathname = window.location.pathname)
 }
 
 export function hardPathForAuditView(view: AuditAdminView): string {
+  if (view === "journeys") return JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH;
   if (view === "security") return PERMISSIONS_AUDIT_ADMIN_PATH;
   if (view === "database") return DATABASE_AUDIT_ADMIN_PATH;
   if (view === "routes") return ROUTE_AUDIT_ADMIN_PATH;

@@ -9,6 +9,7 @@ import {
   type PermissionVerifyAreaId
 } from "../constants/permissionsAudit";
 import { DATABASE_AUDIT_ADMIN_PATH } from "../constants/databaseAudit";
+import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "../constants/journeyIntegrityAudit";
 import { ROUTE_AUDIT_ADMIN_PATH } from "../constants/routeAudit";
 import { AUDIT_CENTER_ADMIN_PATH } from "../constants/auditCenterAdmin";
 import {
@@ -248,7 +249,8 @@ const ROLE_MANIFEST: RoleManifest[] = [
       AUDIT_CENTER_ADMIN_PATH,
       ROUTE_AUDIT_ADMIN_PATH,
       DATABASE_AUDIT_ADMIN_PATH,
-      PERMISSIONS_AUDIT_ADMIN_PATH
+      PERMISSIONS_AUDIT_ADMIN_PATH,
+      JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH
     ],
     apis: ["/api/auth/identity?action=admin-session", "CRON_SECRET bypass"],
     dashboards: [hardPathForTab("command")],
@@ -275,7 +277,8 @@ const SENSITIVE_ADMIN_ROUTES: { path: string; intendedRoles: PermissionRoleId[];
   { path: hardPathForTab("executive"), intendedRoles: ["executive", "super-admin", "admin"], tab: "executive" },
   { path: PERMISSIONS_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin"], tab: "audit" },
   { path: DATABASE_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin"], tab: "audit" },
-  { path: ROUTE_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin"], tab: "audit" }
+  { path: ROUTE_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin"], tab: "audit" },
+  { path: JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin"], tab: "audit" }
 ];
 
 export function buildPermissionMatrix(): PermissionMatrixCell[] {

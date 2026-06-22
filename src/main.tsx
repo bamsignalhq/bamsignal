@@ -62,6 +62,7 @@ import "./styles/executive-dashboard.css";
 import "./styles/route-audit.css";
 import "./styles/database-audit.css";
 import "./styles/permissions-audit.css";
+import "./styles/journey-integrity-audit.css";
 import "./styles/seo.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";

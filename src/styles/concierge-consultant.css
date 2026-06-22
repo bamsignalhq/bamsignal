@@ -2056,6 +2056,218 @@
   margin-bottom: 16px;
 }
 
+/* Consultant Performance Scorecard */
+.consultant-performance-page__body {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 16px;
+}
+
+.consultant-performance-page__list {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.consultant-performance-page__list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.consultant-performance-page__row {
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: inherit;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.consultant-performance-page__row.is-active {
+  border-color: rgba(212, 175, 106, 0.45);
+}
+
+.consultant-performance-page__row span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: capitalize;
+}
+
+.consultant-performance-page__detail {
+  display: grid;
+  gap: 16px;
+}
+
+.consultant-performance-page__columns {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.consultant-score-card__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 106, 0.85);
+}
+
+.consultant-score-card__lede,
+.relationship-metrics-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.consultant-score-card__grid,
+.relationship-metrics-card__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  margin: 0;
+}
+
+.consultant-score-card__grid div,
+.relationship-metrics-card__grid div {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 6px;
+}
+
+.consultant-score-card__grid dt,
+.relationship-metrics-card__grid dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.consultant-score-card__grid dd,
+.relationship-metrics-card__grid dd {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.consultant-score-card__quality--excellent {
+  color: rgba(120, 220, 160, 0.95);
+}
+
+.consultant-score-card__quality--good {
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.consultant-score-card__quality--needs-attention {
+  color: rgba(255, 170, 120, 0.95);
+}
+
+.consultant-achievements-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.consultant-achievements-card__item {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 8px;
+}
+
+.consultant-achievements-card__item--earned {
+  border-color: rgba(212, 175, 106, 0.35);
+  background: rgba(212, 175, 106, 0.06);
+}
+
+.consultant-achievements-card__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.consultant-achievements-card__badge {
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(212, 175, 106, 0.15);
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.consultant-achievements-card__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.consultant-achievements-card__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgba(212, 175, 106, 0.75);
+}
+
+.consultant-achievements-card__progress {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.consultant-achievements-card__future {
+  margin: 0;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.45;
+}
+
+.consultant-performance-trends__list,
+.consultant-performance-outcomes ul,
+.consultant-performance-strengths ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.consultant-performance-trends__list li,
+.consultant-performance-outcomes li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.consultant-performance-strengths li {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 106, 0.22);
+  background: rgba(212, 175, 106, 0.06);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 960px) {
+  .consultant-performance-page__body {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 960px) {
   .success-story-consent-admin__body {
     grid-template-columns: 1fr;

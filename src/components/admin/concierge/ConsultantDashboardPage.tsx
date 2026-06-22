@@ -26,9 +26,10 @@ import { ConsultantDirectoryPage } from "./ConsultantDirectoryPage";
 import { JourneyArchivePage } from "./JourneyArchivePage";
 import { RelationshipLegacyIndexPage } from "./RelationshipLegacyIndexPage";
 import { SuccessStoryConsentAdminPage } from "./SuccessStoryConsentAdminPage";
+import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
 import { useAdminToast } from "../AdminToast";
 
-type ConsultantView = "members" | "introductions" | "consultants" | "archive" | "legacy" | "stories";
+type ConsultantView = "members" | "introductions" | "consultants" | "performance" | "archive" | "legacy" | "stories";
 
 type DashboardInsight = {
   id: string;
@@ -266,6 +267,13 @@ export function ConsultantDashboardPage() {
           </button>
           <button
             type="button"
+            className={`concierge-consultant-dashboard__tab${view === "performance" ? " is-active" : ""}`}
+            onClick={() => setView("performance")}
+          >
+            Performance
+          </button>
+          <button
+            type="button"
             className={`concierge-consultant-dashboard__tab${view === "archive" ? " is-active" : ""}`}
             onClick={() => setView("archive")}
           >
@@ -289,6 +297,8 @@ export function ConsultantDashboardPage() {
       </header>
 
       {view === "stories" ? <SuccessStoryConsentAdminPage /> : null}
+
+      {view === "performance" ? <ConsultantPerformancePage /> : null}
 
       {view === "legacy" ? <RelationshipLegacyIndexPage /> : null}
 

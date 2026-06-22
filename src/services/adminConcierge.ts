@@ -97,6 +97,33 @@ export async function fetchAdminConciergeConsultants() {
   return { ok: true, consultants: listConciergeConsultants() };
 }
 
+export async function fetchAdminConciergeConsultantPerformance(consultantId: string) {
+  const {
+    getConciergeConsultant,
+    listConciergeConsultantActivity,
+    listConciergeConsultantMeetings,
+    listMembersForConsultant
+  } = await import("../utils/conciergeConsultantDirectoryStore");
+  const { buildConsultantPerformanceScorecard } = await import(
+    "../utils/consultantPerformanceScorecardLogic"
+  );
+  syncLocalConciergeApplication();
+  const consultant = getConciergeConsultant(consultantId);
+  const members = listMembersForConsultant(consultantId);
+  const activity = listConciergeConsultantActivity(consultantId);
+  const meetings = listConciergeConsultantMeetings(consultantId);
+  const scorecard = consultant
+    ? buildConsultantPerformanceScorecard({
+        consultantId,
+        consultantName: consultant.name,
+        members,
+        activity,
+        meetings
+      })
+    : null;
+  return { ok: Boolean(consultant), scorecard };
+}
+
 export async function fetchAdminConciergeConsultantPortfolio(consultantId: string) {
   const {
     getConciergeConsultant,

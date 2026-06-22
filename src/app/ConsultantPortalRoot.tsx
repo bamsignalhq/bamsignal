@@ -22,7 +22,8 @@ import {
   ConsultantFollowUpsWorkspace,
   ConsultantIntroductionsWorkspace,
   ConsultantMembersWorkspace,
-  ConsultantPortfolioWorkspace
+  ConsultantPortfolioWorkspace,
+  ConsultantRegionsWorkspace
 } from "../pages/consultant/ConsultantWorkspacePages";
 
 type ConsultantPortalRootProps = {
@@ -105,6 +106,8 @@ export function ConsultantPortalRoot({ theme, onToggleTheme }: ConsultantPortalR
               ) : (
                 <ConsultantCrmWorkspace />
               )
+            ) : activeRoute === "regions" ? (
+              <ConsultantRegionsWorkspace />
             ) : activeRoute === "members" ? (
               <ConsultantMembersWorkspace consultantId={consultant.consultantId} />
             ) : activeRoute === "introductions" ? (

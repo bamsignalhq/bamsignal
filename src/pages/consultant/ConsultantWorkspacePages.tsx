@@ -1,3 +1,4 @@
+import { RegionalTeamPage } from "../../components/consultant/RegionalTeamPage";
 import { ConsultantCapabilityGate } from "../../components/consultant/ConsultantCapabilityGate";
 import { ConsultantWorkspacePage } from "../../components/consultant/ConsultantWorkspacePage";
 import { ConsultantPortfolioPage } from "../../components/admin/concierge/ConsultantPortfolioPage";
@@ -49,6 +50,14 @@ export function ConsultantMembersWorkspace({ consultantId }: ConsultantMembersWo
           </ul>
         )}
       </div>
+    </ConsultantCapabilityGate>
+  );
+}
+
+export function ConsultantRegionsWorkspace() {
+  return (
+    <ConsultantCapabilityGate capability="view-portfolio" title="Regional Teams">
+      <RegionalTeamPage />
     </ConsultantCapabilityGate>
   );
 }

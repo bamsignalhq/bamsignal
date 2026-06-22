@@ -299,6 +299,10 @@
   .consultant-crm__sections {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .regional-teams-page__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .consultant-crm {
@@ -487,4 +491,230 @@
 .consultant-crm-future strong {
   color: var(--sc-text);
   font-size: 0.86rem;
+}
+
+/* Regional Consultant Teams */
+.regional-teams-page {
+  display: grid;
+  gap: 18px;
+}
+
+.regional-teams-page__head h2 {
+  margin: 4px 0 8px;
+}
+
+.regional-teams-page__head p {
+  margin: 0;
+  color: var(--sc-muted);
+}
+
+.regional-teams-page__eyebrow {
+  margin: 0;
+  color: var(--sc-gold);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.regional-teams-page__updated {
+  display: block;
+  margin-top: 8px;
+  color: var(--sc-muted);
+  font-size: 0.78rem;
+}
+
+.regional-teams-page__regions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.regional-teams-page__region-chip {
+  border: 1px solid rgba(168, 130, 255, 0.2);
+  background: rgba(7, 5, 15, 0.45);
+  color: var(--sc-muted);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.regional-teams-page__region-chip em {
+  font-style: normal;
+  color: var(--sc-gold);
+  font-weight: 700;
+}
+
+.regional-teams-page__region-chip--active {
+  border-color: rgba(212, 175, 106, 0.35);
+  background: linear-gradient(90deg, rgba(122, 77, 243, 0.22), rgba(212, 175, 106, 0.12));
+  color: var(--sc-text);
+}
+
+.regional-teams-page__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.regional-teams-page__grid .regional-team-card {
+  grid-column: 1 / -1;
+}
+
+.regional-lead-card__body {
+  display: grid;
+  gap: 10px;
+}
+
+.regional-lead-card__identity {
+  display: grid;
+  gap: 4px;
+}
+
+.regional-lead-card__identity span {
+  color: var(--sc-gold);
+  font-size: 0.82rem;
+}
+
+.regional-lead-card__identity small {
+  color: var(--sc-muted);
+  font-size: 0.78rem;
+}
+
+.regional-lead-card__stats {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.regional-lead-card__stats dt {
+  font-size: 0.78rem;
+  color: var(--sc-muted);
+}
+
+.regional-lead-card__stats dd {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--sc-gold);
+}
+
+.regional-metrics-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.regional-metrics-card__grid div {
+  border: 1px solid rgba(168, 130, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.regional-metrics-card__grid dt {
+  font-size: 0.78rem;
+  color: var(--sc-muted);
+}
+
+.regional-metrics-card__grid dd {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sc-gold);
+}
+
+.regional-team-card__roster,
+.regional-teams-page__role-list,
+.regional-teams-future ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.regional-team-card__roster li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.regional-team-card__identity {
+  display: grid;
+  gap: 2px;
+}
+
+.regional-team-card__identity span {
+  color: var(--sc-muted);
+  font-size: 0.8rem;
+}
+
+.regional-team-card__status {
+  font-style: normal;
+  font-size: 0.76rem;
+  text-transform: capitalize;
+  color: var(--sc-muted);
+}
+
+.regional-team-card__status--active {
+  color: #9dffb8;
+}
+
+.regional-teams-page__role-list li {
+  display: grid;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(168, 130, 255, 0.08);
+}
+
+.regional-teams-page__role-list span {
+  color: var(--sc-muted);
+  font-size: 0.82rem;
+}
+
+.regional-teams-future {
+  border: 1px dashed rgba(168, 130, 255, 0.2);
+  border-radius: var(--sc-radius);
+  padding: 14px 16px;
+  color: var(--sc-muted);
+}
+
+.regional-teams-future__label {
+  margin: 0 0 10px;
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sc-gold);
+}
+
+.regional-teams-future li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0;
+}
+
+.regional-teams-future strong {
+  color: var(--sc-text);
+  font-size: 0.86rem;
+}
+
+@media (max-width: 860px) {
+  .regional-teams-page__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .regional-metrics-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

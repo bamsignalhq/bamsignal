@@ -30,6 +30,7 @@ import { LegacyFamilyPage } from "./legacyFamilies/LegacyFamilyPage";
 import { FoundersWallPage } from "./foundersWall/FoundersWallPage";
 import { LoveThroughYearsPage } from "./loveThroughYears/LoveThroughYearsPage";
 import { SuccessStoryPage } from "./SuccessStoryPage";
+import { RegionalTeamPage } from "../../consultant/RegionalTeamPage";
 import { JourneyAnalyticsPage } from "./JourneyAnalyticsPage";
 import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
 import { OperationsPage } from "./OperationsPage";
@@ -38,7 +39,7 @@ import { useAdminToast } from "../AdminToast";
 import { getApplicationReviewSummaryForMember } from "../../../utils/ApplicationApprovalEngine";
 import { ApprovalStatusBadge } from "./ApprovalStatusBadge";
 
-type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "analytics" | "operations" | "consultations" | "archive" | "legacy" | "families" | "years" | "founders" | "stories";
+type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "analytics" | "regions" | "operations" | "consultations" | "archive" | "legacy" | "families" | "years" | "founders" | "stories";
 
 type DashboardInsight = {
   id: string;
@@ -283,6 +284,13 @@ export function ConsultantDashboardPage() {
           </button>
           <button
             type="button"
+            className={`concierge-consultant-dashboard__tab${view === "regions" ? " is-active" : ""}`}
+            onClick={() => setView("regions")}
+          >
+            Regional Teams
+          </button>
+          <button
+            type="button"
             className={`concierge-consultant-dashboard__tab${view === "analytics" ? " is-active" : ""}`}
             onClick={() => setView("analytics")}
           >
@@ -355,6 +363,8 @@ export function ConsultantDashboardPage() {
       </header>
 
       {view === "stories" ? <SuccessStoryPage /> : null}
+
+      {view === "regions" ? <RegionalTeamPage /> : null}
 
       {view === "analytics" ? <JourneyAnalyticsPage /> : null}
 

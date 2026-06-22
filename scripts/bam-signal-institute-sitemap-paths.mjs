@@ -49,7 +49,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/legacy-garden",
   "/institute/relationship-connect-house",
   "/institute/ballroom",
-  "/institute/house-membership"
+  "/institute/house-membership",
+  "/institute/house-residencies"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

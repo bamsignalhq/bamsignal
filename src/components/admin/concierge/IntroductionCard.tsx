@@ -2,20 +2,19 @@ import { useState } from "react";
 import {
   INTRODUCTION_FOLLOW_UP_INTERVALS,
   INTRODUCTION_INTERNAL_FLAGS,
-  INTRODUCTION_OUTCOME_LABELS,
   INTRODUCTION_STATUS_LABELS,
   type IntroductionFollowUpInterval,
-  type IntroductionOutcome,
   type IntroductionStatus
 } from "../../../constants/conciergeIntroduction";
+import { INTRODUCTION_ID_LABEL } from "../../../constants/introductionId";
 import type { IntroductionRecord } from "../../../types/conciergeIntroduction";
 import {
   advanceIntroductionStatus,
   getIntroductionPreviewForMember,
+  getIntroductionRevealForMember,
   getMemberDisplayName,
   recordIntroductionMemberApproval,
-  scheduleIntroductionFollowUp,
-  setIntroductionOutcome
+  scheduleIntroductionFollowUp
 } from "../../../utils/IntroductionEngine";
 import { getConciergeMember } from "../../../utils/conciergeConsultantStore";
 import { IntroductionFeedbackCard } from "./IntroductionFeedbackCard";
@@ -33,6 +32,8 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
   const memberB = getConciergeMember(record.memberBId);
   const previewForA = getIntroductionPreviewForMember(record, record.memberAId);
   const previewForB = getIntroductionPreviewForMember(record, record.memberBId);
+  const revealForA = getIntroductionRevealForMember(record, record.memberAId);
+  const revealForB = getIntroductionRevealForMember(record, record.memberBId);
 
   const handleAdvance = (status: IntroductionStatus) => {
     const result = advanceIntroductionStatus(record.id, status);
@@ -50,29 +51,37 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
     onUpdated();
   };
 
-  const handleOutcome = (outcome: IntroductionOutcome) => {
-    setIntroductionOutcome(record.id, outcome);
-    onUpdated();
-  };
-
   return (
     <article className="introduction-card concierge-consultant-card--glass">
       <header className="introduction-card__head">
         <div>
+          <p className="introduction-card__id">
+            {INTRODUCTION_ID_LABEL}: <strong>{record.introductionId}</strong>
+          </p>
           <h3>
             {getMemberDisplayName(record.memberAId)} & {getMemberDisplayName(record.memberBId)}
           </h3>
           <p>{INTRODUCTION_STATUS_LABELS[record.status]}</p>
         </div>
         <div className="introduction-card__meta">
-          {record.successProbability != null ? (
-            <span className="introduction-card__probability">{record.successProbability}% journey fit</span>
+          {record.compatibilityScore != null ? (
+            <span className="introduction-card__score">
+              Compatibility {record.compatibilityScore}
+            </span>
           ) : null}
-          {record.outcome ? (
-            <span className="introduction-card__outcome">{INTRODUCTION_OUTCOME_LABELS[record.outcome]}</span>
+          {record.consultantName ? (
+            <span className="introduction-card__consultant">{record.consultantName}</span>
           ) : null}
+          <time dateTime={record.createdAt} className="introduction-card__created">
+            {new Date(record.createdAt).toLocaleDateString()}
+          </time>
         </div>
       </header>
+
+      <div className="introduction-card__journeys">
+        <span>Journey A: {record.journeyAId ?? "—"}</span>
+        <span>Journey B: {record.journeyBId ?? "—"}</span>
+      </div>
 
       {record.internalFlags.length ? (
         <div className="introduction-card__flags">
@@ -96,10 +105,10 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
       <div className="introduction-card__consent">
         <div className="introduction-card__consent-col">
           <h4>{memberA?.aboutYou.name ?? "Member A"}</h4>
-          <p>{record.memberAApproved === true ? "Approved" : record.memberAApproved === false ? "Declined" : "Pending"}</p>
+          <p>{record.memberAApproved === true ? "Accepted" : record.memberAApproved === false ? "Declined" : "Pending"}</p>
           <div className="introduction-card__consent-actions">
             <button type="button" className="concierge-consultant-btn" onClick={() => handleApproval(record.memberAId, true)}>
-              Approve
+              Present
             </button>
             <button type="button" className="concierge-consultant-btn" onClick={() => handleApproval(record.memberAId, false)}>
               Decline
@@ -116,15 +125,17 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
               {previewForA.trustedMember ? <span>Trusted Member</span> : null}
               <em>{previewForA.consultantNote}</em>
             </div>
-          ) : null}
+          ) : (
+            <p className="introduction-card__preview-placeholder">Preview locked until mutual acceptance.</p>
+          )}
         </div>
 
         <div className="introduction-card__consent-col">
           <h4>{memberB?.aboutYou.name ?? "Member B"}</h4>
-          <p>{record.memberBApproved === true ? "Approved" : record.memberBApproved === false ? "Declined" : "Pending"}</p>
+          <p>{record.memberBApproved === true ? "Accepted" : record.memberBApproved === false ? "Declined" : "Pending"}</p>
           <div className="introduction-card__consent-actions">
             <button type="button" className="concierge-consultant-btn" onClick={() => handleApproval(record.memberBId, true)}>
-              Approve
+              Present
             </button>
             <button type="button" className="concierge-consultant-btn" onClick={() => handleApproval(record.memberBId, false)}>
               Decline
@@ -141,11 +152,13 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
               {previewForB.trustedMember ? <span>Trusted Member</span> : null}
               <em>{previewForB.consultantNote}</em>
             </div>
-          ) : null}
+          ) : (
+            <p className="introduction-card__preview-placeholder">Preview locked until mutual acceptance.</p>
+          )}
         </div>
       </div>
 
-      {record.bothConsented ? (
+      {record.bothConsented && (revealForA || revealForB) ? (
         <section className="introduction-card__section introduction-card__reveal">
           <h4>After both accept</h4>
           <p>Photos, Voice Vibe, video introduction, and contact bridge may be shared.</p>
@@ -162,21 +175,21 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
         </section>
       ) : (
         <p className="introduction-card__consent-rule">
-          No introduction may proceed without both members agreeing.
+          Neither member sees the other until both agree.
         </p>
       )}
 
       <section className="introduction-card__actions">
-        <button type="button" className="concierge-consultant-btn" onClick={() => handleAdvance("consultant-review")}>
-          Consultant review
+        <button type="button" className="concierge-consultant-btn" onClick={() => handleAdvance("pending-review")}>
+          Internal review
         </button>
         <button
           type="button"
           className="concierge-consultant-btn"
           disabled={!record.bothConsented}
-          onClick={() => handleAdvance("conversation-started")}
+          onClick={() => handleAdvance("active-conversation")}
         >
-          Conversation started
+          Active conversation
         </button>
         <label className="introduction-card__follow-up">
           Follow-up
@@ -194,20 +207,9 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
         <button type="button" className="concierge-consultant-btn" onClick={handleFollowUp}>
           Schedule follow-up
         </button>
-        <label className="introduction-card__outcome-select">
-          Outcome
-          <select
-            value={record.outcome ?? ""}
-            onChange={(event) => handleOutcome(event.target.value as IntroductionOutcome)}
-          >
-            <option value="">Select outcome</option>
-            {Object.entries(INTRODUCTION_OUTCOME_LABELS).map(([id, label]) => (
-              <option key={id} value={id}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <button type="button" className="concierge-consultant-btn" onClick={() => handleAdvance("paused")}>
+          Pause
+        </button>
         <button type="button" className="concierge-consultant-btn" onClick={() => handleAdvance("closed")}>
           Close introduction
         </button>

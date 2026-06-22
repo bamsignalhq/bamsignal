@@ -21,7 +21,7 @@ import { EMPTY_CONCIERGE_FILTERS } from "../../../types/conciergeConsultant";
 import type { ConciergeMemberFilters } from "../../../types/conciergeConsultant";
 import { ConciergeMemberProfilePage } from "./ConciergeMemberProfilePage";
 import { ConsultantSearchBar } from "./ConsultantSearchBar";
-import { IntroductionEnginePanel } from "./IntroductionEnginePanel";
+import { IntroductionEnginePage } from "./IntroductionEnginePage";
 import { ConsultantDirectoryPage } from "./ConsultantDirectoryPage";
 import { JourneyArchivePage } from "./JourneyArchivePage";
 import { RelationshipLegacyIndexPage } from "./RelationshipLegacyIndexPage";
@@ -304,7 +304,7 @@ export function ConsultantDashboardPage() {
 
       {view === "archive" ? <JourneyArchivePage /> : null}
 
-      {view === "introductions" ? <IntroductionEnginePanel /> : null}
+      {view === "introductions" ? <IntroductionEnginePage /> : null}
 
       {view === "consultants" ? (
         <ConsultantDirectoryPage

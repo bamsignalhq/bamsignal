@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { INTRODUCTION_FEEDBACK_CATEGORIES, type IntroductionFeedbackCategory } from "../../../constants/conciergeIntroduction";
 import type { IntroductionFeedbackEntry } from "../../../types/conciergeIntroduction";
 import { addIntroductionFeedback } from "../../../utils/IntroductionEngine";
 
@@ -14,6 +15,7 @@ export function IntroductionFeedbackCard({
   onUpdated
 }: IntroductionFeedbackCardProps) {
   const [body, setBody] = useState("");
+  const [category, setCategory] = useState<IntroductionFeedbackCategory>("positive");
   const [followUpNotes, setFollowUpNotes] = useState("");
 
   const handleSubmit = () => {
@@ -21,6 +23,7 @@ export function IntroductionFeedbackCard({
     addIntroductionFeedback(recordId, {
       author: "consultant",
       body: body.trim(),
+      category,
       followUpNotes: followUpNotes.trim() || undefined
     });
     setBody("");
@@ -32,10 +35,20 @@ export function IntroductionFeedbackCard({
     <section className="introduction-feedback concierge-consultant-card">
       <header className="concierge-consultant-card__head">
         <h3>Feedback</h3>
-        <p>Private consultant notes on this introduction journey.</p>
+        <p>Private consultant notes on this Introduction journey.</p>
       </header>
 
       <div className="introduction-feedback__form">
+        <label>
+          Category
+          <select value={category} onChange={(event) => setCategory(event.target.value as IntroductionFeedbackCategory)}>
+            {INTRODUCTION_FEEDBACK_CATEGORIES.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
@@ -56,6 +69,12 @@ export function IntroductionFeedbackCard({
         <ul className="introduction-feedback__list">
           {feedback.map((entry) => (
             <li key={entry.id}>
+              {entry.category ? (
+                <span className="introduction-feedback__category">
+                  {INTRODUCTION_FEEDBACK_CATEGORIES.find((item) => item.id === entry.category)?.label ??
+                    entry.category}
+                </span>
+              ) : null}
               <p>{entry.body}</p>
               {entry.followUpNotes ? <p className="introduction-feedback__follow-up">{entry.followUpNotes}</p> : null}
               <time dateTime={entry.at}>{new Date(entry.at).toLocaleString()}</time>

@@ -1,3 +1,4 @@
+import { INTRODUCTION_ID_LABEL } from "../../../constants/introductionId";
 import {
   INTRODUCTION_OUTCOME_LABELS,
   INTRODUCTION_STATUS_LABELS
@@ -25,6 +26,7 @@ export function PendingIntroductionsTable({
       <table>
         <thead>
           <tr>
+            <th>{INTRODUCTION_ID_LABEL}</th>
             <th>Members</th>
             <th>Status</th>
             <th>Consent</th>
@@ -38,6 +40,7 @@ export function PendingIntroductionsTable({
               key={record.id}
               className={selectedId === record.id ? "introduction-pending-table__row--active" : ""}
             >
+              <td className="introduction-pending-table__id">{record.introductionId}</td>
               <td>
                 <button type="button" className="introduction-pending-table__link" onClick={() => onSelect(record.id)}>
                   {getMemberDisplayName(record.memberAId)} & {getMemberDisplayName(record.memberBId)}

@@ -1,7 +1,9 @@
 import type {
+  IntroductionFeedbackCategory,
   IntroductionFollowUpInterval,
   IntroductionInternalFlag,
   IntroductionOutcome,
+  IntroductionPipelinePhaseId,
   IntroductionStatus
 } from "../constants/conciergeIntroduction";
 import type { SignalConciergeTierId } from "../constants/signalConcierge";
@@ -11,6 +13,7 @@ export type IntroductionFeedbackEntry = {
   at: string;
   author: "consultant" | "member-a" | "member-b";
   body: string;
+  category?: IntroductionFeedbackCategory;
   followUpNotes?: string;
 };
 
@@ -20,31 +23,60 @@ export type IntroductionHistoryEntry = {
   label: string;
   detail?: string;
   outcome?: IntroductionOutcome;
+  pipelinePhase?: IntroductionPipelinePhaseId;
+};
+
+export type IntroductionCompatibilitySnapshot = {
+  score: number;
+  faith: string;
+  lifestyle: string;
+  marriageTimeline: string;
+  familyValues: string;
+  childrenPreference: string;
+  location: string;
+  relocationOpenness: string;
+  communicationStyle: string;
+  loveLanguage: string;
+  dealBreakers: string;
 };
 
 export type IntroductionRecord = {
+  /** Internal record key */
   id: string;
+  /** Permanent — BS-IN-YYYY-#### */
+  introductionId: string;
   memberAId: string;
   memberBId: string;
+  journeyAId?: string;
+  journeyBId?: string;
   consultantId: string;
+  consultantName?: string;
   tier?: SignalConciergeTierId;
   createdAt: string;
   updatedAt: string;
   status: IntroductionStatus;
+  pipelinePhase: IntroductionPipelinePhaseId;
   notes: string;
+  /** Private match notes — consultants only */
+  matchNotes: string[];
   consultantMessage: string;
   memberAPreviewNote: string;
   memberBPreviewNote: string;
   memberAApproved: boolean | null;
   memberBApproved: boolean | null;
+  memberAPresentedAt?: string;
+  memberBPresentedAt?: string;
   followUpDate?: string;
   followUpInterval?: IntroductionFollowUpInterval;
-  successProbability?: number;
+  compatibilityScore?: number;
+  compatibility?: IntroductionCompatibilitySnapshot;
   internalFlags: IntroductionInternalFlag[];
   outcome?: IntroductionOutcome;
   feedback: IntroductionFeedbackEntry[];
   history: IntroductionHistoryEntry[];
   bothConsented: boolean;
+  /** @deprecated use compatibilityScore */
+  successProbability?: number;
 };
 
 export type MemberIntroductionPreview = {
@@ -73,9 +105,11 @@ export type CreateIntroductionInput = {
   consultantId?: string;
   tier?: SignalConciergeTierId;
   notes?: string;
+  matchNotes?: string[];
   consultantMessage?: string;
   memberAPreviewNote?: string;
   memberBPreviewNote?: string;
   internalFlags?: IntroductionInternalFlag[];
-  successProbability?: number;
+  compatibilityScore?: number;
+  compatibility?: Partial<IntroductionCompatibilitySnapshot>;
 };

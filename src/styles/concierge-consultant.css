@@ -393,6 +393,307 @@
   color: rgba(255, 255, 255, 0.95);
 }
 
+.introduction-engine__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+  flex-wrap: wrap;
+}
+
+.introduction-engine__tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.introduction-engine__tabs .concierge-consultant-btn.is-active {
+  border-color: rgba(212, 175, 106, 0.45);
+  background: rgba(212, 175, 106, 0.12);
+}
+
+.introduction-engine__detail {
+  display: grid;
+  gap: 16px;
+}
+
+.introduction-engine__detail-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.introduction-engine__match-notes {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.introduction-engine__match-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.introduction-engine__match-list li {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.1);
+  font-size: 0.84rem;
+}
+
+.introduction-card__id {
+  margin: 0 0 6px;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.9);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.introduction-card__journeys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.introduction-card__score,
+.introduction-card__consultant,
+.introduction-card__created {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  border: 1px solid rgba(168, 130, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.introduction-card__preview-placeholder {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+  font-style: italic;
+}
+
+.introduction-timeline__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 4px;
+  display: grid;
+  gap: 0;
+}
+
+.introduction-timeline {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.introduction-timeline__item {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 12px;
+  padding-bottom: 14px;
+  position: relative;
+  opacity: 0.45;
+}
+
+.introduction-timeline__item--reached {
+  opacity: 1;
+}
+
+.introduction-timeline__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(212, 175, 106, 0.35), rgba(168, 130, 255, 0.08));
+}
+
+.introduction-timeline__dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(168, 130, 255, 0.5);
+  box-shadow: 0 0 0 4px rgba(168, 130, 255, 0.08);
+}
+
+.introduction-timeline__item--reached .introduction-timeline__dot {
+  background: rgba(212, 175, 106, 0.95);
+  box-shadow: 0 0 0 4px rgba(212, 175, 106, 0.12);
+}
+
+.introduction-timeline__label {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.introduction-compatibility {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.introduction-compatibility__score {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+}
+
+.introduction-compatibility__grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 0;
+}
+
+.introduction-compatibility__grid dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.introduction-compatibility__grid dd {
+  margin: 4px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.introduction-compatibility__private {
+  margin: 0 0 8px;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.introduction-compatibility__notes h4 {
+  margin: 16px 0 4px;
+  font-size: 0.86rem;
+}
+
+.introduction-compatibility__notes ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.introduction-compatibility__notes li {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.84rem;
+}
+
+.introduction-outcome {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.introduction-outcome__current {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+}
+
+.introduction-outcome__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.introduction-outcome__chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 130, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.introduction-outcome__chip.is-active {
+  border-color: rgba(212, 175, 106, 0.45);
+  background: rgba(212, 175, 106, 0.12);
+}
+
+.introduction-history-page {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.introduction-history-page__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.introduction-history-page__row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.introduction-history-page__row.is-active {
+  border-color: rgba(212, 175, 106, 0.45);
+}
+
+.introduction-history-page__id {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.74rem;
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.introduction-history-page__journeys,
+.introduction-history-page__status,
+.introduction-history-page__highlights {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.introduction-history-page__id-note {
+  margin: 12px 0 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.introduction-pending-table__id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.introduction-feedback__form select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(168, 130, 255, 0.2);
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.introduction-feedback__category {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(168, 130, 255, 0.2);
+  color: rgba(255, 255, 255, 0.62);
+}
+
 .introduction-engine {
   display: grid;
   gap: 16px;

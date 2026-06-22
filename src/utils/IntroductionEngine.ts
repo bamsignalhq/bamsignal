@@ -2,6 +2,8 @@ import {
   CONSULTANT_INTRO_NOTE_EXAMPLE,
   CONSULTANT_INTRO_SUGGESTED_MESSAGE,
   INTRODUCTION_FOLLOW_UP_INTERVALS,
+  INTRODUCTION_OUTCOME_LABELS,
+  INTRODUCTION_STATUS_LABELS,
   type IntroductionFollowUpInterval,
   type IntroductionOutcome,
   type IntroductionStatus
@@ -10,7 +12,6 @@ import type { ConciergeMemberRecord } from "../types/conciergeConsultant";
 import type {
   CreateIntroductionInput,
   IntroductionFeedbackEntry,
-  IntroductionHistoryEntry,
   IntroductionRecord,
   MemberIntroductionPreview,
   MemberIntroductionReveal
@@ -21,6 +22,16 @@ import {
   listIntroductionRecords,
   saveIntroductionRecord
 } from "./conciergeIntroductionStore";
+import { assignIntroductionId, registerExistingIntroductionId } from "./introductionIdRegistry";
+import {
+  assertNoDuplicateIntroduction,
+  buildCompatibilityFromMembers,
+  bothMembersConsented,
+  canRevealCounterpart,
+  normalizeIntroductionRecord,
+  pushIntroductionHistory
+} from "./introductionEngineLogic";
+import { getConciergeConsultant } from "./conciergeConsultantDirectoryStore";
 
 const DEFAULT_CONSULTANT_ID = "consultant_ada";
 
@@ -38,32 +49,18 @@ function relationshipGoalsSummary(member: ConciergeMemberRecord): string {
   return parts.join(" · ") || "Meaningful relationship";
 }
 
-function pushHistory(
-  record: IntroductionRecord,
-  label: string,
-  detail?: string,
-  outcome?: IntroductionOutcome
-): IntroductionHistoryEntry {
-  const entry: IntroductionHistoryEntry = {
-    id: `ih_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
-    at: new Date().toISOString(),
-    label,
-    detail,
-    outcome
-  };
-  record.history.unshift(entry);
-  return entry;
-}
-
-export function bothMembersConsented(record: IntroductionRecord): boolean {
-  return record.memberAApproved === true && record.memberBApproved === true;
-}
+export { bothMembersConsented, canRevealCounterpart };
 
 export function canAdvanceIntroduction(record: IntroductionRecord, next: IntroductionStatus): boolean {
-  if (next === "introduction-scheduled" || next === "conversation-started") {
-    return bothMembersConsented(record);
-  }
-  if (next === "member-b-approval" && record.memberAApproved !== true) {
+  const mutualRequired: IntroductionStatus[] = [
+    "accepted",
+    "active-conversation",
+    "exclusive",
+    "relationship",
+    "engaged",
+    "married"
+  ];
+  if (mutualRequired.includes(next) && !bothMembersConsented(record)) {
     return false;
   }
   return true;
@@ -105,6 +102,8 @@ export function getIntroductionPreviewForMember(
   record: IntroductionRecord,
   viewingMemberId: string
 ): MemberIntroductionPreview | null {
+  if (!canMemberSeeCounterpart(record, viewingMemberId)) return null;
+
   const counterpartId =
     viewingMemberId === record.memberAId
       ? record.memberBId
@@ -126,7 +125,8 @@ export function getIntroductionRevealForMember(
   record: IntroductionRecord,
   viewingMemberId: string
 ): MemberIntroductionReveal | null {
-  if (!record.bothConsented) return null;
+  if (!canRevealCounterpart(record) || !canMemberSeeCounterpart(record, viewingMemberId)) return null;
+
   const counterpartId =
     viewingMemberId === record.memberAId
       ? record.memberBId
@@ -144,13 +144,17 @@ export function getIntroductionRevealForMember(
   return buildMemberIntroductionReveal(counterpart, note, record.status !== "closed");
 }
 
+function canMemberSeeCounterpart(record: IntroductionRecord, viewingMemberId: string): boolean {
+  if (!bothMembersConsented(record)) return false;
+  return viewingMemberId === record.memberAId || viewingMemberId === record.memberBId;
+}
+
 export function listPendingIntroductions(): IntroductionRecord[] {
   const pendingStatuses = new Set<IntroductionStatus>([
-    "candidate",
-    "consultant-review",
-    "member-a-approval",
-    "member-b-approval",
-    "introduction-scheduled"
+    "pending-review",
+    "presented",
+    "awaiting-response",
+    "accepted"
   ]);
   return listIntroductionRecords().filter((record) => pendingStatuses.has(record.status));
 }
@@ -173,29 +177,55 @@ export function createIntroductionCandidate(input: CreateIntroductionInput): Int
   const memberB = getConciergeMember(input.memberBId);
   if (!memberA || !memberB) return null;
 
+  const existing = listIntroductionRecords();
+  try {
+    assertNoDuplicateIntroduction(existing, input.memberAId, input.memberBId);
+  } catch {
+    return null;
+  }
+
   const now = new Date().toISOString();
-  const record: IntroductionRecord = {
-    id: `intro_${Date.now().toString(36)}`,
+  const consultantId = input.consultantId ?? DEFAULT_CONSULTANT_ID;
+  const consultant = getConciergeConsultant(consultantId);
+  const compatibility = input.compatibility
+    ? { ...buildCompatibilityFromMembers(memberA, memberB), ...input.compatibility }
+    : buildCompatibilityFromMembers(memberA, memberB);
+  const recordId = `intro_${Date.now().toString(36)}`;
+  const introductionId = assignIntroductionId({ recordId, createdAt: now });
+
+  const record: IntroductionRecord = normalizeIntroductionRecord({
+    id: recordId,
+    introductionId,
     memberAId: input.memberAId,
     memberBId: input.memberBId,
-    consultantId: input.consultantId ?? DEFAULT_CONSULTANT_ID,
+    journeyAId: memberA.journeyId,
+    journeyBId: memberB.journeyId,
+    consultantId,
+    consultantName: consultant?.name,
     tier: input.tier ?? memberA.preferredTier ?? memberB.preferredTier,
     createdAt: now,
     updatedAt: now,
-    status: "candidate",
+    status: "pending-review",
+    pipelinePhase: "candidate-identified",
     notes: input.notes ?? "",
+    matchNotes: input.matchNotes ?? [],
     consultantMessage: input.consultantMessage ?? CONSULTANT_INTRO_SUGGESTED_MESSAGE,
     memberAPreviewNote: input.memberAPreviewNote ?? CONSULTANT_INTRO_NOTE_EXAMPLE,
     memberBPreviewNote: input.memberBPreviewNote ?? CONSULTANT_INTRO_NOTE_EXAMPLE,
     memberAApproved: null,
     memberBApproved: null,
-    successProbability: input.successProbability,
+    compatibilityScore: input.compatibilityScore ?? compatibility.score,
+    compatibility,
     internalFlags: input.internalFlags ?? [],
     feedback: [],
     history: [],
     bothConsented: false
-  };
-  pushHistory(record, "Candidate identified");
+  });
+
+  pushIntroductionHistory(record, {
+    label: "Candidate Identified",
+    pipelinePhase: "candidate-identified"
+  });
   return saveIntroductionRecord(record);
 }
 
@@ -210,24 +240,38 @@ export function advanceIntroductionStatus(
   }
 
   record.status = nextStatus;
-  pushHistory(record, INTRODUCTION_STATUS_LABELS_INTERNAL[nextStatus] ?? nextStatus);
-  if (nextStatus === "conversation-started" && !record.outcome) {
-    record.outcome = "conversation-ongoing";
+  pushIntroductionHistory(record, {
+    label: INTRODUCTION_STATUS_LABELS[nextStatus],
+    pipelinePhase: mapStatusToPipelinePhase(nextStatus)
+  });
+
+  if (nextStatus === "active-conversation" && !record.outcome) {
+    record.outcome = "still-talking";
   }
   return { ok: true, record: saveIntroductionRecord(record) };
 }
 
-const INTRODUCTION_STATUS_LABELS_INTERNAL: Record<IntroductionStatus, string> = {
-  candidate: "Candidate identified",
-  "consultant-review": "Consultant review",
-  "member-a-approval": "Awaiting Member A approval",
-  "member-b-approval": "Awaiting Member B approval",
-  "introduction-scheduled": "Introduction scheduled",
-  "conversation-started": "Conversation started",
-  "follow-up": "Follow-up scheduled",
-  successful: "Journey marked successful",
-  closed: "Introduction closed"
-};
+function mapStatusToPipelinePhase(status: IntroductionStatus) {
+  switch (status) {
+    case "pending-review":
+      return "internal-review" as const;
+    case "presented":
+      return "member-a-presented" as const;
+    case "awaiting-response":
+      return "member-b-presented" as const;
+    case "accepted":
+      return "mutual-acceptance" as const;
+    case "active-conversation":
+      return "introduction-made" as const;
+    case "exclusive":
+    case "relationship":
+    case "engaged":
+    case "married":
+      return "outcome-recorded" as const;
+    default:
+      return undefined;
+  }
+}
 
 export function recordIntroductionMemberApproval(
   id: string,
@@ -237,34 +281,49 @@ export function recordIntroductionMemberApproval(
   const record = getIntroductionRecord(id);
   if (!record) return { ok: false, reason: "Introduction not found." };
 
-  if (memberId === record.memberAId) record.memberAApproved = approved;
-  else if (memberId === record.memberBId) record.memberBApproved = approved;
-  else return { ok: false, reason: "Member is not part of this introduction." };
-
-  const label = approved ? "Approval received" : "Declined";
-  pushHistory(record, label, memberId === record.memberAId ? "Member A" : "Member B");
+  const now = new Date().toISOString();
+  if (memberId === record.memberAId) {
+    record.memberAApproved = approved;
+    if (approved) record.memberAPresentedAt = now;
+  } else if (memberId === record.memberBId) {
+    record.memberBApproved = approved;
+    if (approved) record.memberBPresentedAt = now;
+  } else {
+    return { ok: false, reason: "Member is not part of this introduction." };
+  }
 
   if (!approved) {
-    record.status = "closed";
+    record.status = "declined";
     record.outcome = "not-a-fit";
     record.bothConsented = false;
+    pushIntroductionHistory(record, { label: "Declined", detail: memberId === record.memberAId ? "Member A" : "Member B" });
     return { ok: true, record: saveIntroductionRecord(record) };
   }
 
+  pushIntroductionHistory(record, {
+    label: "Presented",
+    detail: memberId === record.memberAId ? "Member A" : "Member B",
+    pipelinePhase: memberId === record.memberAId ? "member-a-presented" : "member-b-presented"
+  });
+
   if (record.memberAApproved === true && record.memberBApproved === null) {
-    record.status = "member-b-approval";
+    record.status = "awaiting-response";
   } else if (record.memberAApproved === true && record.memberBApproved === true) {
     record.bothConsented = true;
-    if (
-      record.status === "member-a-approval" ||
-      record.status === "member-b-approval" ||
-      record.status === "consultant-review"
-    ) {
-      record.status = "introduction-scheduled";
-      pushHistory(record, "Introduction scheduled", "Mutual consent confirmed");
-    }
+    record.status = "accepted";
+    pushIntroductionHistory(record, {
+      label: "Accepted",
+      detail: "Mutual acceptance confirmed",
+      pipelinePhase: "mutual-acceptance"
+    });
+    pushIntroductionHistory(record, {
+      label: "Introduction Made",
+      pipelinePhase: "introduction-made"
+    });
+    record.status = "active-conversation";
+    record.outcome = "still-talking";
   } else if (record.memberAApproved === null && record.memberBApproved === true) {
-    record.status = "member-a-approval";
+    record.status = "presented";
   }
 
   return { ok: true, record: saveIntroductionRecord(record) };
@@ -282,7 +341,17 @@ export function addIntroductionFeedback(
     at: new Date().toISOString()
   };
   record.feedback.unshift(feedback);
-  pushHistory(record, "Feedback received", feedback.body.slice(0, 80));
+  pushIntroductionHistory(record, { label: "Feedback recorded", detail: feedback.body.slice(0, 80) });
+  return saveIntroductionRecord(record);
+}
+
+export function updateIntroductionMatchNotes(
+  id: string,
+  matchNotes: string[]
+): IntroductionRecord | null {
+  const record = getIntroductionRecord(id);
+  if (!record) return null;
+  record.matchNotes = matchNotes;
   return saveIntroductionRecord(record);
 }
 
@@ -300,8 +369,7 @@ export function scheduleIntroductionFollowUp(
 
   record.followUpInterval = interval;
   record.followUpDate = followUpDate.toISOString();
-  record.status = "follow-up";
-  pushHistory(record, "Follow-up scheduled", config.label);
+  pushIntroductionHistory(record, { label: "Follow-Up", detail: config.label, pipelinePhase: "follow-up" });
   return saveIntroductionRecord(record);
 }
 
@@ -312,13 +380,22 @@ export function setIntroductionOutcome(
   const record = getIntroductionRecord(id);
   if (!record) return null;
   record.outcome = outcome;
-  if (outcome === "married" || outcome === "engaged" || outcome === "relationship") {
-    record.status = "successful";
-  }
-  if (outcome === "not-a-fit" || outcome === "no-response") {
+
+  if (outcome === "married") record.status = "married";
+  else if (outcome === "engaged") record.status = "engaged";
+  else if (outcome === "relationship") record.status = "relationship";
+  else if (outcome === "exclusive") record.status = "exclusive";
+  else if (outcome === "not-a-fit" || outcome === "no-response" || outcome === "no-chemistry") {
     record.status = "closed";
+  } else if (outcome === "still-talking") {
+    record.status = "active-conversation";
   }
-  pushHistory(record, "Journey update", outcome, outcome);
+
+  pushIntroductionHistory(record, {
+    label: INTRODUCTION_OUTCOME_LABELS[outcome],
+    outcome,
+    pipelinePhase: "outcome-recorded"
+  });
   return saveIntroductionRecord(record);
 }
 

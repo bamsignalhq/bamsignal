@@ -1,4 +1,4 @@
-import { TRUST_SCORE_LABEL } from "../../../constants/trustScoreInstitute";
+import { TRUST_JOURNEY_LABEL, TRUST_SCORE_LABEL } from "../../../constants/trustScoreInstitute";
 import type { TrustTimelineCardViewModel } from "../../../utils/trustScoreInstituteLogic";
 
 type TrustTimelineCardProps = {
@@ -14,8 +14,12 @@ export function TrustTimelineCard({ timeline }: TrustTimelineCardProps) {
     <section className="tscr-timeline-card institute-glass">
       <header className="tscr-timeline-card__head">
         <h3>{TRUST_SCORE_LABEL}</h3>
-        <p>{timeline.levelTitle}</p>
+        <p>
+          {timeline.trustJourneyLabel}: {timeline.levelTitle}
+        </p>
       </header>
+
+      <p className="tscr-timeline-card__journey-label">{TRUST_JOURNEY_LABEL}</p>
 
       {sorted.length ? (
         <ol className="tscr-timeline-card__list">
@@ -34,7 +38,7 @@ export function TrustTimelineCard({ timeline }: TrustTimelineCardProps) {
         </ol>
       ) : (
         <p className="tscr-timeline-card__empty">
-          Trust timelines will appear as professionals earn standing over time.
+          {TRUST_JOURNEY_LABEL} timelines will appear as professionals earn standing over time.
         </p>
       )}
 

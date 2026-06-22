@@ -1,8 +1,10 @@
 import {
   GROWING_TOGETHER_LABEL,
+  PROFESSIONAL_CONTRIBUTIONS_LABEL,
   PROFESSIONAL_TRUST_BADGE_LABEL,
   RELATIONSHIP_WISDOM_LABEL,
-  TRUST_SCORE_NO_LEADERBOARD_COPY
+  TRUST_SCORE_NO_LEADERBOARD_COPY,
+  YEARS_ACTIVE_LABEL
 } from "../../../constants/trustScoreInstitute";
 import type { ProfessionalTrustBadgeViewModel } from "../../../utils/trustScoreInstituteLogic";
 
@@ -23,6 +25,16 @@ export function ProfessionalTrustBadge({ badge }: ProfessionalTrustBadgeProps) {
       </p>
       <p className="tscr-badge-card__level">{badge.levelTitle}</p>
       <p className="tscr-badge-card__title">{badge.title}</p>
+      <dl className="tscr-badge-card__display">
+        <div>
+          <dt>{YEARS_ACTIVE_LABEL}</dt>
+          <dd>{badge.yearsActive}</dd>
+        </div>
+        <div>
+          <dt>{PROFESSIONAL_CONTRIBUTIONS_LABEL}</dt>
+          <dd>{badge.contributions}</dd>
+        </div>
+      </dl>
       <p className="tscr-badge-card__focus">{badge.focus}</p>
       <p className="tscr-badge-card__status">{badge.statusLabel}</p>
     </article>

@@ -49,6 +49,7 @@
     "test:careers": "node scripts/test-careers.mjs",
     "test:support-center": "node scripts/test-support-center.mjs",
     "test:audit-center": "node scripts/test-audit-center.mjs",
+    "test:document-center": "node scripts/test-document-center.mjs",
     "test:consultant-performance-scorecard": "node scripts/test-consultant-performance-scorecard.mjs",
     "test:introduction-engine": "node scripts/test-introduction-engine.mjs",
     "test:relationship-follow-up": "node scripts/test-relationship-follow-up.mjs",

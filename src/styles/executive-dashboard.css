@@ -1,0 +1,243 @@
+.executive-dashboard-page {
+  display: grid;
+  gap: 18px;
+}
+
+.executive-dashboard-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.executive-dashboard-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.executive-dashboard-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 68ch;
+}
+
+.executive-dashboard-page__views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.executive-view-chip {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.82);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.executive-view-chip--active {
+  border-color: rgba(120, 200, 255, 0.5);
+  background: rgba(120, 200, 255, 0.12);
+}
+
+.executive-dashboard-page__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.executive-metric-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.executive-metric-card__label {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.executive-metric-card__value {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.executive-metric-card__trend {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: rgba(120, 220, 160, 0.9);
+}
+
+.executive-dashboard-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.executive-dashboard-page__column {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.institution-health-card__head h3,
+.growth-trend-card__head h3,
+.legacy-growth-card__head h3,
+.research-insight-card__head h3,
+.community-overview-card__head h3,
+.strategic-focus-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.institution-health-card__head p,
+.growth-trend-card__head p,
+.legacy-growth-card__head p,
+.research-insight-card__head p,
+.community-overview-card__head p,
+.strategic-focus-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.institution-health-card__score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.institution-health-card__score strong {
+  font-size: 2rem;
+}
+
+.institution-health-card__highlights {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.growth-trend-card__table {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.growth-trend-card__row {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(3, 1fr);
+  gap: 8px;
+  font-size: 0.84rem;
+}
+
+.growth-trend-card__row--head {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.78rem;
+}
+
+.legacy-growth-card__metrics,
+.community-overview-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 8px;
+}
+
+.legacy-growth-card__metrics article p,
+.community-overview-card__metrics article p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.legacy-growth-card__trend,
+.community-overview-card__reach,
+.research-insight-card__ref {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.research-insight-card h4 {
+  margin: 10px 0 6px;
+}
+
+.strategic-focus-card__areas {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.strategic-focus-card__area {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.strategic-focus-card__area h4 {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+
+.strategic-focus-card__area p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.strategic-focus-card__area--healthy {
+  border-color: rgba(120, 200, 255, 0.25);
+}
+
+.strategic-focus-card__area--growing {
+  border-color: rgba(120, 220, 160, 0.25);
+}
+
+.strategic-focus-card__area--attention {
+  border-color: rgba(255, 200, 120, 0.35);
+}
+
+.strategic-focus-card__area--strong {
+  border-color: rgba(180, 140, 255, 0.35);
+}
+
+.strategic-focus-card__priorities h4 {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+}
+
+.strategic-focus-card__priorities ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.executive-dashboard-page__future {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 6px;
+}
+
+.executive-dashboard-page__future h3 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+@media (max-width: 900px) {
+  .executive-dashboard-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .growth-trend-card__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

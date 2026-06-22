@@ -58,6 +58,7 @@ import "./styles/consultant-academy.css";
 import "./styles/consultant-quality.css";
 import "./styles/finance-operations.css";
 import "./styles/internal-messaging.css";
+import "./styles/executive-dashboard.css";
 import "./styles/seo.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";

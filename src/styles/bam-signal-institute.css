@@ -4807,3 +4807,229 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* Trust Milestones™ */
+.tms-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tms-page__hero {
+  padding: 28px 24px;
+}
+
+.tms-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.tms-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.tms-page__copy-rules,
+.tms-page__prepared,
+.tms-page__reserved-note,
+.tms-page__future-ready {
+  padding: 22px 24px;
+}
+
+.tms-page__copy-rules h2,
+.tms-page__prepared h2,
+.tms-page__future-ready h2 {
+  margin: 0 0 6px;
+}
+
+.tms-page__copy-rules p,
+.tms-page__prepared > p,
+.tms-page__future-ready > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.tms-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.tms-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.tms-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.tms-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.tms-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.tms-milestone-card,
+.tms-contributor-card {
+  padding: 18px 20px;
+}
+
+.tms-milestone-card__head,
+.tms-contributor-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tms-milestone-card__head h3,
+.tms-contributor-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tms-milestone-card__badge,
+.tms-contributor-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.tms-milestone-card__labels,
+.tms-contributor-card__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.tms-milestone-card__journey,
+.tms-contributor-card__honor,
+.tms-contributor-card__title {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.tms-milestone-card__description,
+.tms-contributor-card__focus {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.tms-milestone-card__status,
+.tms-contributor-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.tms-journey-timeline {
+  padding: 20px 22px;
+}
+
+.tms-journey-timeline__head {
+  margin-bottom: 14px;
+}
+
+.tms-journey-timeline__head h3 {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tms-journey-timeline__head p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tms-journey-timeline__label {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tms-journey-timeline__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tms-journey-timeline__item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.tms-journey-timeline__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: rgba(168, 130, 255, 0.7);
+}
+
+.tms-journey-timeline__note {
+  margin: 4px 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.tms-journey-timeline__item time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.tms-journey-timeline__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}
+
+.tms-journey-timeline__status {
+  margin: 14px 0 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

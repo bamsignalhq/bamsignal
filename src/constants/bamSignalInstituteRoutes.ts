@@ -31,7 +31,8 @@ export const BAMSIGNAL_INSTITUTE_ROUTES = {
   diasporaServices: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/diaspora-services`,
   weddingNetwork: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/wedding-network`,
   lifePartners: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/life-partners`,
-  trustScore: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/trust-score`
+  trustScore: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/trust-score`,
+  trustMilestones: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/trust-milestones`
 } as const;
 
 export type BamSignalInstituteRoute = keyof typeof BAMSIGNAL_INSTITUTE_ROUTES;

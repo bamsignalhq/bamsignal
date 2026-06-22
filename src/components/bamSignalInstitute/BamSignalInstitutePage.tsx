@@ -221,6 +221,13 @@ export function BamSignalInstitutePage() {
           >
             Trust Score
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("trustMilestones"))}
+          >
+            Milestones
+          </button>
         </div>
       </header>
 

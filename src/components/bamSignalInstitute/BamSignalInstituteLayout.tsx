@@ -218,6 +218,13 @@ export function BamSignalInstituteLayout({
               >
                 Trust Score
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("trustMilestones")}
+              >
+                Milestones
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

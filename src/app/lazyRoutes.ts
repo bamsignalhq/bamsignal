@@ -332,6 +332,12 @@ export const LazyBamSignalInstituteTrustScorePage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteTrustMilestonesPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteTrustMilestonesPage").then((module) => ({
+    default: module.BamSignalInstituteTrustMilestonesPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

@@ -6038,6 +6038,142 @@
   }
 }
 
+/* Operations Center */
+.operations-center-page {
+  display: grid;
+  gap: 18px;
+}
+
+.operations-center-page__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.operations-center-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.operations-center-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  max-width: 72ch;
+}
+
+.operations-center-page__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.operations-center-page__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.operations-center-metric {
+  padding: 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.operations-center-metric strong {
+  font-size: 1.35rem;
+}
+
+.operations-center-metric span {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.operations-center-metric p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.operations-center-page__body {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.operations-center-overview__grid {
+  display: grid;
+  gap: 8px;
+}
+
+.operations-center-overview__item {
+  text-align: left;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  cursor: pointer;
+}
+
+.operations-center-overview__item.is-active {
+  border-color: rgba(120, 190, 255, 0.45);
+  background: rgba(120, 190, 255, 0.08);
+}
+
+.operations-center-overview__item strong {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.operations-center-overview__item span {
+  display: block;
+  font-size: 0.85rem;
+}
+
+.operations-center-overview__item p {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.operations-center-page__detail {
+  display: grid;
+  gap: 12px;
+}
+
+.operations-center-panel__block + .operations-center-panel__block {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.operations-center-panel__block h4 {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+}
+
+.operations-center-notification__actions {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.operations-center-page__foot {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 900px) {
+  .operations-center-page__head {
+    flex-direction: column;
+  }
+
+  .operations-center-page__body {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Consultation Scheduler */
 .concierge-consultations-page {
   display: grid;

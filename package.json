@@ -28,6 +28,7 @@
     "test:payments": "node scripts/test-consultation-payments.mjs && node scripts/test-payment-catalog.mjs && node scripts/test-payment-webhook.mjs",
     "test:scheduling": "node scripts/test-consultation-scheduling.mjs",
     "test:meetings": "node scripts/test-consultation-meetings.mjs",
+    "test:operations-center": "node scripts/test-operations-center.mjs",
     "test:member-data-auth": "node scripts/test-member-data-auth.mjs",
     "test:diagnostics-access": "node scripts/test-diagnostics-access.mjs",
     "test:photo-upload-attribution": "node scripts/test-photo-upload-attribution.mjs",

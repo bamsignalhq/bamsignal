@@ -34,7 +34,7 @@ import {
 } from "../utils/cityAnalytics";
 import { getLaunchLeads } from "../utils/launchLeads";
 import { readJson } from "../utils/storage";
-import { hardPathForTab, parseHardTabFromPath } from "../constants/hardRoutes";
+import { hardPathForTab, parseConciergeAdminViewFromPath, parseHardTabFromPath } from "../constants/hardRoutes";
 import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
 import { DEMO_USER } from "../constants/demoAccounts";
 import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
@@ -87,6 +87,7 @@ import {
   type AdminMemberSummary
 } from "../services/adminMembers";
 import { ConsultantDashboardPage } from "../components/admin/concierge/ConsultantDashboardPage";
+import { OperationsCenterPage } from "../components/admin/concierge/OperationsCenterPage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
 import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
 import { AdminTerminalEmpty } from "../components/admin/AdminTerminalEmpty";
@@ -111,6 +112,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const { pushToast } = useAdminToast();
   const { ensureConsent } = useAdminConsent();
   const [tab, setTab] = useState<HardTab>(() => restoreHardRouteOnLoad());
+  const [conciergeView, setConciergeView] = useState(() => parseConciergeAdminViewFromPath());
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [dockOpen, setDockOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
@@ -305,6 +307,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
     const onPop = () => {
       const fromUrl = parseHardTabFromPath();
       if (fromUrl) setTab(fromUrl);
+      setConciergeView(parseConciergeAdminViewFromPath());
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -2033,7 +2036,8 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
         </>
       )}
 
-      {tab === "concierge" && <ConsultantDashboardPage />}
+      {tab === "concierge" && conciergeView === "operations-center" ? <OperationsCenterPage /> : null}
+      {tab === "concierge" && conciergeView === "dashboard" ? <ConsultantDashboardPage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

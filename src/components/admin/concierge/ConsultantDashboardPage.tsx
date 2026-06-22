@@ -36,6 +36,8 @@ import { JourneyAnalyticsPage } from "./JourneyAnalyticsPage";
 import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
 import { OperationsPage } from "./OperationsPage";
 import { ConsultationsPage } from "./ConsultationsPage";
+import { OPERATIONS_CENTER_NAV_LABEL, OPERATIONS_CENTER_PATH } from "../../../constants/operationsCenter";
+import { navigateToPath } from "../../../constants/routes";
 import { useAdminToast } from "../AdminToast";
 import { getApplicationReviewSummaryForMember } from "../../../utils/ApplicationApprovalEngine";
 import { ApprovalStatusBadge } from "./ApprovalStatusBadge";
@@ -313,10 +315,17 @@ export function ConsultantDashboardPage() {
           </button>
           <button
             type="button"
+            className="concierge-consultant-dashboard__tab"
+            onClick={() => navigateToPath(OPERATIONS_CENTER_PATH)}
+          >
+            {OPERATIONS_CENTER_NAV_LABEL}
+          </button>
+          <button
+            type="button"
             className={`concierge-consultant-dashboard__tab${view === "operations" ? " is-active" : ""}`}
             onClick={() => setView("operations")}
           >
-            Operations
+            Operations Engine
           </button>
           <button
             type="button"

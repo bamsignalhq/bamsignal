@@ -1,5 +1,11 @@
 import type { HardTab } from "../components/admin/adminConsoleNav";
 import { normalizePath } from "./routes";
+import {
+  CONCIERGE_ADMIN_DASHBOARD_PATH,
+  OPERATIONS_CENTER_PATH
+} from "./operationsCenter";
+
+export type ConciergeAdminView = "dashboard" | "operations-center";
 
 const TAB_SLUGS: Record<HardTab, string> = {
   command: "command",
@@ -32,10 +38,30 @@ export function hardPathForTab(tab: HardTab): string {
 export function parseHardTabFromPath(pathname = window.location.pathname): HardTab | null {
   const path = normalizePath(pathname);
   if (path === "/hard" || path === "/hard/command") return "command";
+  if (
+    path === CONCIERGE_ADMIN_DASHBOARD_PATH ||
+    path.startsWith(CONCIERGE_ADMIN_DASHBOARD_PATH + "/")
+  ) {
+    return "concierge";
+  }
 
   const match = path.match(/^\/hard\/([^/]+)$/);
   if (!match) return null;
   return SLUG_TO_TAB[match[1]] ?? null;
+}
+
+export function parseConciergeAdminViewFromPath(
+  pathname = window.location.pathname
+): ConciergeAdminView {
+  const path = normalizePath(pathname);
+  if (path === OPERATIONS_CENTER_PATH || path.startsWith(OPERATIONS_CENTER_PATH + "/")) {
+    return "operations-center";
+  }
+  return "dashboard";
+}
+
+export function hardPathForConciergeView(view: ConciergeAdminView): string {
+  return view === "operations-center" ? OPERATIONS_CENTER_PATH : CONCIERGE_ADMIN_DASHBOARD_PATH;
 }
 
 export function isHardHubPath(pathname = window.location.pathname): boolean {

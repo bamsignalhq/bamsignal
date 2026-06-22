@@ -256,6 +256,13 @@ export function BamSignalInstitutePage() {
           >
             Honors
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("legacyEndowment"))}
+          >
+            Endowment
+          </button>
         </div>
       </header>
 

@@ -504,6 +504,42 @@ export const LazyBamSignalInstituteCenturyRoomPage = lazy(() =>
   }))
 );
 
+export const LazyCareersLandingPage = lazy(() =>
+  import("../pages/careers/CareersLandingPage").then((module) => ({
+    default: module.CareersLandingPage
+  }))
+);
+
+export const LazyCareersOpenRolesPage = lazy(() =>
+  import("../pages/careers/CareersOpenRolesPage").then((module) => ({
+    default: module.CareersOpenRolesPage
+  }))
+);
+
+export const LazyCareersCulturePage = lazy(() =>
+  import("../pages/careers/CareersCulturePage").then((module) => ({
+    default: module.CareersCulturePage
+  }))
+);
+
+export const LazyCareersOurValuesPage = lazy(() =>
+  import("../pages/careers/CareersOurValuesPage").then((module) => ({
+    default: module.CareersOurValuesPage
+  }))
+);
+
+export const LazyCareersHiringProcessPage = lazy(() =>
+  import("../pages/careers/CareersHiringProcessPage").then((module) => ({
+    default: module.CareersHiringProcessPage
+  }))
+);
+
+export const LazyCareersRolePage = lazy(() =>
+  import("../pages/careers/CareersRolePage").then((module) => ({
+    default: module.CareersRolePage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

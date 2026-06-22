@@ -103,7 +103,13 @@ import {
   LazySignalEventsDiasporaCorridorsPage,
   LazySignalEventsDiasporaPage,
   LazySignalEventsHubPage,
-  LazyVisitorsPage
+  LazyVisitorsPage,
+  LazyCareersLandingPage,
+  LazyCareersOpenRolesPage,
+  LazyCareersCulturePage,
+  LazyCareersOurValuesPage,
+  LazyCareersHiringProcessPage,
+  LazyCareersRolePage
 } from "./app/lazyRoutes";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
 import { PaymentLoadingOverlay } from "./components/PaymentLoadingOverlay";
@@ -242,6 +248,12 @@ import {
   isUnknownBamSignalInstituteSubroute,
   type BamSignalInstituteRoute
 } from "./constants/bamSignalInstituteRoutes";
+import {
+  CAREERS_ROUTES,
+  getCareersRoute,
+  isUnknownCareersSubroute,
+  type CareersRoute
+} from "./constants/careersRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail, resolveMemberIdentity } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
@@ -330,6 +342,7 @@ export function App() {
     useState<BamSignalFoundationRoute | null>(() => getBamSignalFoundationRoute());
   const [bamSignalInstituteRoute, setBamSignalInstituteRoute] =
     useState<BamSignalInstituteRoute | null>(() => getBamSignalInstituteRoute());
+  const [careersRoute, setCareersRoute] = useState<CareersRoute | null>(() => getCareersRoute());
   const [authPath, setAuthPath] = useState<AuthPath | null>(() => getAuthPath());
   const [blogSlug, setBlogSlug] = useState<string | null>(() => getBlogSlug());
   const [momentSlug, setMomentSlug] = useState<string | null>(() => getMomentSlug());
@@ -509,6 +522,7 @@ export function App() {
       setSignalEventsRoute(getSignalEventsRoute());
       setBamSignalFoundationRoute(getBamSignalFoundationRoute());
       setBamSignalInstituteRoute(getBamSignalInstituteRoute());
+      setCareersRoute(getCareersRoute());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());
       setMomentSlug(getMomentSlug());
@@ -567,6 +581,11 @@ export function App() {
   useLayoutEffect(() => {
     if (!isUnknownBamSignalInstituteSubroute(memberPathname)) return;
     navigateToPath(BAMSIGNAL_INSTITUTE_ROUTES.landing, true);
+  }, [memberPathname]);
+
+  useLayoutEffect(() => {
+    if (!isUnknownCareersSubroute(memberPathname)) return;
+    navigateToPath(CAREERS_ROUTES.landing, true);
   }, [memberPathname]);
 
   useLayoutEffect(() => {
@@ -2341,6 +2360,35 @@ export function App() {
           <LazyBamSignalInstituteCenturyRoomPage {...instituteShellProps} />
         ) : (
           <LazyBamSignalInstituteLandingPage {...instituteShellProps} />
+        )}
+      </Suspense>
+    );
+  }
+
+  if (careersRoute) {
+    const careersShellProps = {
+      theme,
+      onToggleTheme: toggleTheme,
+      onLogoClick: goHome,
+      onLogin: isAuthed ? undefined : () => openAuth("login")
+    };
+
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading careers…" />}>
+        {careersRoute.kind === "hub" && careersRoute.route === "landing" ? (
+          <LazyCareersLandingPage {...careersShellProps} />
+        ) : careersRoute.kind === "hub" && careersRoute.route === "openRoles" ? (
+          <LazyCareersOpenRolesPage {...careersShellProps} />
+        ) : careersRoute.kind === "hub" && careersRoute.route === "culture" ? (
+          <LazyCareersCulturePage {...careersShellProps} />
+        ) : careersRoute.kind === "hub" && careersRoute.route === "ourValues" ? (
+          <LazyCareersOurValuesPage {...careersShellProps} />
+        ) : careersRoute.kind === "hub" && careersRoute.route === "hiringProcess" ? (
+          <LazyCareersHiringProcessPage {...careersShellProps} />
+        ) : careersRoute.kind === "role" ? (
+          <LazyCareersRolePage {...careersShellProps} roleSlug={careersRoute.roleSlug} />
+        ) : (
+          <LazyCareersLandingPage {...careersShellProps} />
         )}
       </Suspense>
     );

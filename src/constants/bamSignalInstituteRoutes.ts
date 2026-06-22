@@ -33,7 +33,8 @@ export const BAMSIGNAL_INSTITUTE_ROUTES = {
   lifePartners: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/life-partners`,
   trustScore: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/trust-score`,
   trustMilestones: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/trust-milestones`,
-  legacyProfessionals: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/legacy-professionals`
+  legacyProfessionals: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/legacy-professionals`,
+  relationshipConnect: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/relationship-connect`
 } as const;
 
 export type BamSignalInstituteRoute = keyof typeof BAMSIGNAL_INSTITUTE_ROUTES;

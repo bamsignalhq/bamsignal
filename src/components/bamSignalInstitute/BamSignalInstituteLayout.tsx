@@ -232,6 +232,13 @@ export function BamSignalInstituteLayout({
               >
                 Legacy Pros
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("relationshipConnect")}
+              >
+                Connect
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

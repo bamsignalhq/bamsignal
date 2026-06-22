@@ -235,6 +235,13 @@ export function BamSignalInstitutePage() {
           >
             Legacy Pros
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("relationshipConnect"))}
+          >
+            Connect
+          </button>
         </div>
       </header>
 

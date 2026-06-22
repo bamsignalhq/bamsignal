@@ -5267,3 +5267,175 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* BamSignal Relationship Connect™ */
+.rconn-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.rconn-page__hero {
+  padding: 28px 24px;
+}
+
+.rconn-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.rconn-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.rconn-page__copy-rules,
+.rconn-page__prepared,
+.rconn-page__reserved-note,
+.rconn-page__future-cities,
+.rconn-page__guests-summary {
+  padding: 22px 24px;
+}
+
+.rconn-page__copy-rules h2,
+.rconn-page__prepared h2,
+.rconn-page__future-cities h2,
+.rconn-page__guests-summary h2 {
+  margin: 0 0 6px;
+}
+
+.rconn-page__copy-rules p,
+.rconn-page__prepared > p,
+.rconn-page__future-cities > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.rconn-page__prepared-list,
+.rconn-page__city-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.rconn-page__prepared-list li,
+.rconn-page__city-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.rconn-page__prepared-list li span,
+.rconn-page__city-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.rconn-page__city-list {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.rconn-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.rconn-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.rconn-conference-card,
+.rconn-experience-card,
+.rconn-speaker-card,
+.rconn-artist-card,
+.rconn-workshop-card,
+.rconn-networking-card {
+  padding: 18px 20px;
+}
+
+.rconn-conference-card__head,
+.rconn-experience-card__head,
+.rconn-speaker-card__head,
+.rconn-artist-card__head,
+.rconn-workshop-card__head,
+.rconn-networking-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.rconn-conference-card__head h3,
+.rconn-experience-card__head h3,
+.rconn-speaker-card__head h3,
+.rconn-artist-card__head h3,
+.rconn-workshop-card__head h3,
+.rconn-networking-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.rconn-conference-card__badge,
+.rconn-experience-card__badge,
+.rconn-speaker-card__badge,
+.rconn-artist-card__badge,
+.rconn-workshop-card__badge,
+.rconn-networking-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.rconn-conference-card__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.rconn-conference-card__description,
+.rconn-experience-card__description,
+.rconn-speaker-card__description,
+.rconn-artist-card__description,
+.rconn-workshop-card__description,
+.rconn-networking-card__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.rconn-conference-card__status,
+.rconn-experience-card__status,
+.rconn-speaker-card__status,
+.rconn-artist-card__status,
+.rconn-workshop-card__status,
+.rconn-networking-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

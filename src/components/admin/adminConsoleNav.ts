@@ -14,7 +14,8 @@ export type HardTab =
   | "ads"
   | "leads"
   | "concierge"
-  | "talent";
+  | "talent"
+  | "support";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -56,6 +57,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "talent",
         label: "Talent",
         keywords: ["talent", "careers", "recruiting", "hiring", "candidates"]
+      },
+      {
+        id: "support",
+        label: "Support",
+        keywords: ["support", "tickets", "help", "customer", "escalation"]
       },
       {
         id: "verifications",
@@ -108,7 +114,8 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   ads: "Home Ads",
   leads: "Leads",
   concierge: "Signal Concierge",
-  talent: "Talent"
+  talent: "Talent",
+  support: "Support"
 };
 
 export const ADMIN_TAB_TITLES = HARD_TAB_TITLES;

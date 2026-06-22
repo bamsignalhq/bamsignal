@@ -7,6 +7,7 @@ import { getSignalEventsIndexablePaths } from "./signal-events-sitemap-paths.mjs
 import { getBamSignalFoundationIndexablePaths } from "./bam-signal-foundation-sitemap-paths.mjs";
 import { getBamSignalInstituteIndexablePaths } from "./bam-signal-institute-sitemap-paths.mjs";
 import { getCareersIndexablePaths } from "./careers-sitemap-paths.mjs";
+import { getSupportCenterIndexablePaths } from "./support-center-sitemap-paths.mjs";
 import { sitemapPriorityFor, sitemapChangefreqFor } from "./sitemap-priority.mjs";
 
 const SITE = "https://bamsignal.com";
@@ -31,7 +32,8 @@ const signalEventsPaths = getSignalEventsIndexablePaths();
 const foundationPaths = getBamSignalFoundationIndexablePaths();
 const institutePaths = getBamSignalInstituteIndexablePaths();
 const careersPaths = getCareersIndexablePaths();
-const staticPaths = ["", "/blog", "/signal-concierge", ...signalEventsPaths, ...foundationPaths, ...institutePaths, ...careersPaths, ...LEGAL_STATIC_PATHS, ...SEO_HUB_PATHS, ...SEO_DETAIL_PATHS, ...nigeriaPaths];
+const supportCenterPaths = getSupportCenterIndexablePaths();
+const staticPaths = ["", "/blog", "/signal-concierge", ...signalEventsPaths, ...foundationPaths, ...institutePaths, ...careersPaths, ...supportCenterPaths, ...LEGAL_STATIC_PATHS, ...SEO_HUB_PATHS, ...SEO_DETAIL_PATHS, ...nigeriaPaths];
 const lastmod = new Date().toISOString().slice(0, 10);
 const urls = [...staticPaths, ...blogSlugs];
 

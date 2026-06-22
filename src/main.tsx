@@ -50,6 +50,7 @@ import "./styles/signal-events.css";
 import "./styles/bam-signal-foundation.css";
 import "./styles/bam-signal-institute.css";
 import "./styles/careers.css";
+import "./styles/support-center.css";
 import "./styles/seo.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";

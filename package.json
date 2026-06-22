@@ -46,6 +46,7 @@
     "test:journey-milestones": "node scripts/test-journey-milestones.mjs",
     "test:relationship-legacy-index": "node scripts/test-relationship-legacy-index.mjs",
     "test:careers": "node scripts/test-careers.mjs",
+    "test:support-center": "node scripts/test-support-center.mjs",
     "test:consultant-performance-scorecard": "node scripts/test-consultant-performance-scorecard.mjs",
     "test:introduction-engine": "node scripts/test-introduction-engine.mjs",
     "test:relationship-follow-up": "node scripts/test-relationship-follow-up.mjs",

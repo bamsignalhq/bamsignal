@@ -242,30 +242,6 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
       }
     ]
   },
-  "/contact": {
-    eyebrow: "Support",
-    title: "Contact us",
-    lede: "Questions about your account, safety, billing, or feedback — our team reads every message.",
-    heroImage: SHOWCASE.suyaChill,
-    heroAlt: "Friends chatting over suya",
-    highlights: [
-      { label: "Response time", value: "Few hours" },
-      { label: "Support hours", value: "Weekdays" },
-      { label: "Reach us", value: "Email" }
-    ],
-    sections: [
-      {
-        heading: "Before you write",
-        body:
-          "For faster help, include your username and a short description of the issue. Safety reports can also be submitted in-app from any profile or chat."
-      },
-      {
-        heading: "Other ways to reach us",
-        body:
-          "Write to support@bamsignal.com from the email on your account — we aim to respond within a few hours on weekdays."
-      }
-    ]
-  },
   "/delete-account": {
     eyebrow: "Account",
     title: "Delete your BamSignal account",

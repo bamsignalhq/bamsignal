@@ -21,7 +21,6 @@ export const LEGAL_PATHS = [
   "/safety-policy",
   "/privacy",
   "/terms",
-  "/contact",
   "/delete-account"
 ] as const;
 

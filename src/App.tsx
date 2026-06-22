@@ -110,7 +110,11 @@ import {
   LazyCareersCulturePage,
   LazyCareersOurValuesPage,
   LazyCareersHiringProcessPage,
-  LazyCareersRolePage
+  LazyCareersRolePage,
+  LazySupportCenterLandingPage,
+  LazySupportContactPage,
+  LazySupportTicketsPage,
+  LazySupportKnowledgeBasePage
 } from "./app/lazyRoutes";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
 import { PaymentLoadingOverlay } from "./components/PaymentLoadingOverlay";
@@ -255,6 +259,7 @@ import {
   isUnknownCareersSubroute,
   type CareersRoute
 } from "./constants/careersRoutes";
+import { getSupportCenterRoute, type SupportCenterRoute } from "./constants/supportCenterRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail, resolveMemberIdentity } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
@@ -344,6 +349,9 @@ export function App() {
   const [bamSignalInstituteRoute, setBamSignalInstituteRoute] =
     useState<BamSignalInstituteRoute | null>(() => getBamSignalInstituteRoute());
   const [careersRoute, setCareersRoute] = useState<CareersRoute | null>(() => getCareersRoute());
+  const [supportCenterRoute, setSupportCenterRoute] = useState<SupportCenterRoute | null>(() =>
+    getSupportCenterRoute()
+  );
   const [authPath, setAuthPath] = useState<AuthPath | null>(() => getAuthPath());
   const [blogSlug, setBlogSlug] = useState<string | null>(() => getBlogSlug());
   const [momentSlug, setMomentSlug] = useState<string | null>(() => getMomentSlug());
@@ -524,6 +532,7 @@ export function App() {
       setBamSignalFoundationRoute(getBamSignalFoundationRoute());
       setBamSignalInstituteRoute(getBamSignalInstituteRoute());
       setCareersRoute(getCareersRoute());
+      setSupportCenterRoute(getSupportCenterRoute());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());
       setMomentSlug(getMomentSlug());
@@ -2105,6 +2114,29 @@ export function App() {
           onSignup={() => openAuth("signup", "discover")}
           nigeriaRoute={nigeriaRoute}
         />
+      </Suspense>
+    );
+  }
+
+  if (supportCenterRoute) {
+    const supportShellProps = {
+      theme,
+      onToggleTheme: toggleTheme,
+      onLogoClick: goHome,
+      onLogin: isAuthed ? undefined : () => openAuth("login")
+    };
+
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading support…" />}>
+        {supportCenterRoute === "help" ? (
+          <LazySupportCenterLandingPage {...supportShellProps} />
+        ) : supportCenterRoute === "contact" ? (
+          <LazySupportContactPage {...supportShellProps} />
+        ) : supportCenterRoute === "tickets" ? (
+          <LazySupportTicketsPage {...supportShellProps} />
+        ) : (
+          <LazySupportKnowledgeBasePage {...supportShellProps} />
+        )}
       </Suspense>
     );
   }

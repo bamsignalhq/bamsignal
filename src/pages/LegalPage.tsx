@@ -1,6 +1,5 @@
 import {
   Heart,
-  Mail,
   MapPin,
   Scale,
   Shield,
@@ -9,12 +8,9 @@ import {
   UserX
 } from "lucide-react";
 import type { LegalPath } from "../constants/footer";
-import { getContactHighlights } from "../constants/growthStats";
-import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "../constants/support";
-import { ContactForm } from "../components/ContactForm";
-import { GrowthStatsStrip } from "../components/GrowthStatsStrip";
 import { Link } from "../components/Link";
 import { ShowcaseImage } from "../components/ShowcaseImage";
+import { GrowthStatsStrip } from "../components/GrowthStatsStrip";
 import { AUTH_SIGNUP_PATH } from "../constants/routes";
 import { LEGAL_PAGES } from "../data/legalPages";
 import type { StatHighlight } from "../constants/growthStats";
@@ -28,7 +24,6 @@ const PAGE_ICONS: Record<LegalPath, typeof Heart> = {
   "/safety-policy": Shield,
   "/privacy": ShieldCheck,
   "/terms": Scale,
-  "/contact": Mail,
   "/delete-account": UserX
 };
 
@@ -61,16 +56,15 @@ function HighlightCell({
 export function LegalPage({ path }: LegalPageProps) {
   const page = LEGAL_PAGES[path];
   const Icon = PAGE_ICONS[path];
-  const isContact = path === "/contact";
   const isAbout = path === "/about";
   const isPrivacy = path === "/privacy";
   const isTerms = path === "/terms";
-  const useRowLayout = isContact || isAbout || isPrivacy || isTerms;
-  const highlights = isContact ? getContactHighlights() : isAbout ? null : page.highlights;
+  const useRowLayout = isAbout || isPrivacy || isTerms;
+  const highlights = isAbout ? null : page.highlights;
 
   return (
     <div
-      className={`info-page${isContact ? " info-page--contact" : ""}${isAbout ? " info-page--about" : ""}${isPrivacy ? " info-page--privacy" : ""}${isTerms ? " info-page--terms" : ""}`}
+      className={`info-page${isAbout ? " info-page--about" : ""}${isPrivacy ? " info-page--privacy" : ""}${isTerms ? " info-page--terms" : ""}`}
     >
       <header className="info-hero">
         <ShowcaseImage src={page.heroImage} alt={page.heroAlt} loading="eager" className="info-hero__image" />
@@ -114,29 +108,6 @@ export function LegalPage({ path }: LegalPageProps) {
         </div>
       )}
 
-      {isContact ? (
-        <div className="info-contact-layout">
-          <div className="info-contact-form-wrap">
-            <h2 className="info-section-title">Send a message</h2>
-            <ContactForm />
-          </div>
-          <aside className="info-contact-aside">
-            <div className="info-card">
-              <Mail size={20} aria-hidden />
-              <h3>Email directly</h3>
-              <p>
-                <a href={SUPPORT_MAILTO}>{SUPPORT_EMAIL}</a>
-              </p>
-            </div>
-            <div className="info-card">
-              <Shield size={20} aria-hidden />
-              <h3>Safety reports</h3>
-              <p>Use in-app report on any profile or chat for urgent safety issues.</p>
-            </div>
-          </aside>
-        </div>
-      ) : null}
-
       <div className="info-sections">
         {page.sections.map((section) => (
           <section
@@ -163,8 +134,7 @@ export function LegalPage({ path }: LegalPageProps) {
         ))}
       </div>
 
-      {!isContact && (
-        <footer className="info-footer-cta">
+      <footer className="info-footer-cta">
           <div className="info-footer-cta__icon">
             {path === "/about" ? <Users size={22} aria-hidden /> : <MapPin size={22} aria-hidden />}
           </div>
@@ -180,7 +150,6 @@ export function LegalPage({ path }: LegalPageProps) {
             {path === "/about" ? "Create free profile" : "Contact support"}
           </Link>
         </footer>
-      )}
     </div>
   );
 }

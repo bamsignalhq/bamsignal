@@ -24,6 +24,8 @@ export function getSeoRoute(pathname = window.location.pathname): SeoRoute | nul
 
   for (const hubPath of SEO_HUB_PATHS) {
     if (path === hubPath) {
+      // /help hub is Customer Support Center™ — SEO articles remain at /help/{slug}
+      if (hubPath === "/help") continue;
       return { hubId: HUB_PATH_TO_ID[hubPath], slug: null };
     }
     if (path.startsWith(`${hubPath}/`)) {

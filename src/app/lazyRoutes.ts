@@ -546,6 +546,30 @@ export const LazyCareersRolePage = lazy(() =>
   }))
 );
 
+export const LazySupportCenterLandingPage = lazy(() =>
+  import("../pages/support-center/SupportCenterLandingPage").then((module) => ({
+    default: module.SupportCenterLandingPage
+  }))
+);
+
+export const LazySupportContactPage = lazy(() =>
+  import("../pages/support-center/SupportContactPage").then((module) => ({
+    default: module.SupportContactPage
+  }))
+);
+
+export const LazySupportTicketsPage = lazy(() =>
+  import("../pages/support-center/SupportTicketsPage").then((module) => ({
+    default: module.SupportTicketsPage
+  }))
+);
+
+export const LazySupportKnowledgeBasePage = lazy(() =>
+  import("../pages/support-center/SupportKnowledgeBasePage").then((module) => ({
+    default: module.SupportKnowledgeBasePage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

@@ -8,6 +8,7 @@ import { isBamSignalFoundationRoute } from "./bamSignalFoundationRoutes";
 import { isBamSignalInstituteRoute } from "./bamSignalInstituteRoutes";
 import { isConsultantRoute } from "./consultantRoutes";
 import { isCareersRoute } from "./careersRoutes";
+import { isSupportCenterRoute } from "./supportCenterRoutes";
 
 export const AUTH_LOGIN_PATH = "/love/login";
 export const AUTH_SIGNUP_PATH = "/love/sign";
@@ -115,6 +116,7 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   if (isBamSignalFoundationRoute(path)) return true;
   if (isBamSignalInstituteRoute(path)) return true;
   if (isCareersRoute(path)) return true;
+  if (isSupportCenterRoute(path)) return true;
   if (path === "/") return true;
   return false;
 }

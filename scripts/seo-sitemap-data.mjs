@@ -1,7 +1,6 @@
 /** Shared SEO sitemap paths — keep in sync with src/content/seo/*.ts */
 export const SEO_HUB_PATHS = [
   "/cities",
-  "/help",
   "/safety",
   "/features",
   "/premium",
@@ -117,7 +116,6 @@ export const LEGAL_STATIC_PATHS = [
   "/safety-policy",
   "/privacy",
   "/terms",
-  "/contact",
   "/delete-account"
 ];
 

@@ -5,8 +5,8 @@ import {
   SUCCESS_STORY_CONSENT_TITLE,
   SUCCESS_STORY_TELL_YOUR_STORY
 } from "../../constants/conciergeSuccessStoryConsent";
-import type { SuccessStoryConsentRecord } from "../../types/conciergeSuccessStoryConsent";
-import type { SuccessStoryConsentPermissions } from "../../types/conciergeSuccessStoryConsent";
+import type { SuccessStoryConsentRecord, SuccessStoryConsentPermissions } from "../../types/conciergeSuccessStoryConsent";
+import type { JourneyStoryProfile } from "../../types/JourneyStoryType";
 import {
   approveSuccessStoryConsentParty,
   ensureSuccessStoryConsent,
@@ -18,6 +18,9 @@ import { getConciergeMember } from "../../utils/conciergeConsultantStore";
 import { ConsentHistoryTimeline } from "./ConsentHistoryTimeline";
 import { ConsentSummaryCard } from "./ConsentSummaryCard";
 import { SuccessStoryConsentCard } from "./SuccessStoryConsentCard";
+import { StoryCategoryCard } from "./StoryCategoryCard";
+import { assignStoryCategory, ensureJourneyStoryProfile } from "../../utils/journeyStoryCategories";
+import type { JourneyStoryCategoryId } from "../../constants/journeyStoryCategories";
 
 type SuccessStoryConsentPageProps = {
   /** Admin read-only mode */
@@ -33,6 +36,7 @@ export function SuccessStoryConsentPage({
   memberId: memberIdProp
 }: SuccessStoryConsentPageProps) {
   const [consent, setConsent] = useState<SuccessStoryConsentRecord | null>(null);
+  const [storyProfile, setStoryProfile] = useState<JourneyStoryProfile | null>(null);
   const [memberId, setMemberId] = useState(memberIdProp ?? "");
   const [memberName, setMemberName] = useState("");
 
@@ -58,6 +62,7 @@ export function SuccessStoryConsentPage({
       memberBName: partnerName
     });
     setConsent(record);
+    setStoryProfile(ensureJourneyStoryProfile(journeyId));
     setMemberId(member.id);
     setMemberName(member.aboutYou.name);
   }, [journeyIdProp, memberIdProp]);
@@ -90,6 +95,15 @@ export function SuccessStoryConsentPage({
     if (next) setConsent(next);
   };
 
+  const handleToggleCategory = (categoryId: JourneyStoryCategoryId) => {
+    if (!consent || readOnly) return;
+    const next = assignStoryCategory(consent.journeyId, {
+      categoryId,
+      assignedBy: memberName
+    });
+    setStoryProfile(next);
+  };
+
   if (!consent) {
     return (
       <section className="success-story-consent-page signal-concierge-glass">
@@ -112,6 +126,14 @@ export function SuccessStoryConsentPage({
       </header>
 
       <ConsentSummaryCard consent={consent} />
+
+      {storyProfile ? (
+        <StoryCategoryCard
+          profile={storyProfile}
+          readOnly={readOnly}
+          onToggleCategory={handleToggleCategory}
+        />
+      ) : null}
 
       <SuccessStoryConsentCard
         consent={consent}

@@ -59,6 +59,11 @@ export function assertNoArchiveDeletion(
     if (next.successStoryConsent.history.length < previous.successStoryConsent.history.length) {
       throw new Error("Archive integrity violation: successStoryConsent history cannot shrink");
     }
+    const prevCategories = previous.successStoryConsent.storyProfile?.categories ?? [];
+    const nextCategories = next.successStoryConsent.storyProfile?.categories ?? [];
+    if (nextCategories.length < prevCategories.length) {
+      throw new Error("Archive integrity violation: story categories cannot shrink");
+    }
   }
   if (previous.journeyId && next.journeyId && previous.journeyId !== next.journeyId) {
     throw new Error("Archive integrity violation: journeyId cannot change");

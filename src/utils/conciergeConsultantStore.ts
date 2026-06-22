@@ -14,6 +14,8 @@ import { ensureMemberJourneyId } from "./conciergeJourneyRegistry";
 import { bootstrapJourneyRegistry } from "./conciergeJourneyRegistry";
 import { bootstrapSuccessStoryConsentSeeds } from "./conciergeSuccessStoryConsentStore";
 import { CONCIERGE_SUCCESS_STORY_CONSENT_SEED } from "../data/conciergeSuccessStoryConsentSeed";
+import { bootstrapJourneyStoryProfileSeeds } from "./journeyStoryCategories";
+import { CONCIERGE_JOURNEY_STORY_PROFILE_SEED } from "../data/conciergeJourneyStoryProfileSeed";
 import { assertNoArchiveDeletion, registerArchivedMember } from "./conciergeJourneyArchive";
 import { isValidJourneyId, normalizeJourneyId } from "../constants/journeyId";
 import { marriageYearFromMember } from "./conciergeJourneyArchive";
@@ -35,6 +37,7 @@ function ensureJourneyRegistrySeeded(): void {
     }))
   );
   bootstrapSuccessStoryConsentSeeds(CONCIERGE_SUCCESS_STORY_CONSENT_SEED);
+  bootstrapJourneyStoryProfileSeeds(CONCIERGE_JOURNEY_STORY_PROFILE_SEED);
 }
 
 function loadStore(): ConciergeConsultantStore {

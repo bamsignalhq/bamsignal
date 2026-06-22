@@ -29,6 +29,8 @@ import { LegacyArchiveCard } from "./LegacyArchiveCard";
 import { RelationshipStatusBadge } from "./RelationshipStatusBadge";
 import { ConsentSummaryCard } from "../../signalConcierge/ConsentSummaryCard";
 import { ConsentHistoryTimeline } from "../../signalConcierge/ConsentHistoryTimeline";
+import { StoryCategoryCard } from "../../signalConcierge/StoryCategoryCard";
+import { ensureJourneyStoryProfile } from "../../../utils/journeyStoryCategories";
 
 type ConciergeMemberProfilePageProps = {
   member: ConciergeMemberRecord;
@@ -252,6 +254,15 @@ export function ConciergeMemberProfilePage({
       {member.successStoryConsent ? (
         <>
           <ConsentSummaryCard consent={member.successStoryConsent} className="consent-summary-card--admin" />
+          {member.journeyId ? (
+            <StoryCategoryCard
+              profile={
+                member.successStoryConsent.storyProfile ??
+                ensureJourneyStoryProfile(member.journeyId)
+              }
+              readOnly
+            />
+          ) : null}
           <section className="concierge-consultant-card concierge-consultant-card--glass cc-reveal">
             <header className="concierge-consultant-card__head">
               <h3>Success story consent history</h3>

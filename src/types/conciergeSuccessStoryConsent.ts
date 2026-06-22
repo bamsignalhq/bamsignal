@@ -45,6 +45,8 @@ export type SuccessStoryConsentRecord = {
   withdrawn: boolean;
   withdrawnAt?: string;
   history: SuccessStoryConsentHistoryEntry[];
+  storyCategories?: import("../types/JourneyStoryType").JourneyStoryCategoryEntry[];
+  storyProfile?: import("../types/JourneyStoryType").JourneyStoryProfile;
   createdAt: string;
   updatedAt: string;
 };

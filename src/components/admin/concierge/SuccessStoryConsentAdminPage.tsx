@@ -7,7 +7,9 @@ import { listSuccessStoryConsents } from "../../../utils/conciergeSuccessStoryCo
 import { canPublishSuccessStory } from "../../../utils/successStoryConsentLogic";
 import { ConsentHistoryTimeline } from "../../signalConcierge/ConsentHistoryTimeline";
 import { ConsentSummaryCard } from "../../signalConcierge/ConsentSummaryCard";
+import { StoryCategoryCard } from "../../signalConcierge/StoryCategoryCard";
 import { StoryVisibilityBadge } from "../../signalConcierge/StoryVisibilityBadge";
+import { ensureJourneyStoryProfile } from "../../../utils/journeyStoryCategories";
 
 export function SuccessStoryConsentAdminPage() {
   const consents = listSuccessStoryConsents();
@@ -55,6 +57,12 @@ export function SuccessStoryConsentAdminPage() {
           {selected ? (
             <>
               <ConsentSummaryCard consent={selected} className="consent-summary-card--admin" />
+              <StoryCategoryCard
+                profile={
+                  selected.storyProfile ?? ensureJourneyStoryProfile(selected.journeyId)
+                }
+                readOnly
+              />
               <section className="concierge-consultant-card concierge-consultant-card--glass cc-reveal">
                 <header className="concierge-consultant-card__head">
                   <h3>Consent history</h3>

@@ -78,6 +78,13 @@ export function BamSignalInstituteLayout({
               >
                 Relationship Index
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("bamSignalObservatory")}
+              >
+                Observatory
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

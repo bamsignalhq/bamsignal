@@ -10,7 +10,8 @@ export const BAMSIGNAL_INSTITUTE_ROUTES = {
   relationshipLab: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/relationship-lab`,
   bamSignalInsights: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/bamsignal-insights`,
   researchPartnerships: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/research-partnerships`,
-  relationshipIndex: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/relationship-index`
+  relationshipIndex: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/relationship-index`,
+  bamSignalObservatory: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/bamsignal-observatory`
 } as const;
 
 export type BamSignalInstituteRoute = keyof typeof BAMSIGNAL_INSTITUTE_ROUTES;

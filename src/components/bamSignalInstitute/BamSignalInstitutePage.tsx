@@ -79,6 +79,13 @@ export function BamSignalInstitutePage() {
           >
             Relationship Index
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("bamSignalObservatory"))}
+          >
+            Observatory
+          </button>
         </div>
       </header>
 

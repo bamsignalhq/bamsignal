@@ -18,6 +18,7 @@ import {
   resolveConciergeConsultantEntry
 } from "../utils/consultantSession";
 import {
+  ConsultantAssistWorkspace,
   ConsultantCrmWorkspace,
   ConsultantFollowUpsWorkspace,
   ConsultantIntroductionsWorkspace,
@@ -106,6 +107,8 @@ export function ConsultantPortalRoot({ theme, onToggleTheme }: ConsultantPortalR
               ) : (
                 <ConsultantCrmWorkspace />
               )
+            ) : activeRoute === "assist" ? (
+              <ConsultantAssistWorkspace />
             ) : activeRoute === "regions" ? (
               <ConsultantRegionsWorkspace />
             ) : activeRoute === "members" ? (

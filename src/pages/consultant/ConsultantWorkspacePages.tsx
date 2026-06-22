@@ -1,3 +1,4 @@
+import { AIAssistedConsultantWorkspacePage } from "../../components/consultant/AIAssistedConsultantWorkspacePage";
 import { RegionalTeamPage } from "../../components/consultant/RegionalTeamPage";
 import { ConsultantCapabilityGate } from "../../components/consultant/ConsultantCapabilityGate";
 import { ConsultantWorkspacePage } from "../../components/consultant/ConsultantWorkspacePage";
@@ -50,6 +51,17 @@ export function ConsultantMembersWorkspace({ consultantId }: ConsultantMembersWo
           </ul>
         )}
       </div>
+    </ConsultantCapabilityGate>
+  );
+}
+
+export function ConsultantAssistWorkspace() {
+  const consultant = getCurrentConsultant();
+  if (!consultant) return null;
+
+  return (
+    <ConsultantCapabilityGate capability="view-portfolio" title="AI Assist">
+      <AIAssistedConsultantWorkspacePage consultantId={consultant.consultantId} />
     </ConsultantCapabilityGate>
   );
 }

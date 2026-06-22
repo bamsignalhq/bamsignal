@@ -1,4 +1,4 @@
-import { Briefcase, ClipboardList, Globe2, HeartHandshake, LayoutDashboard, Users } from "lucide-react";
+import { Briefcase, ClipboardList, Globe2, HeartHandshake, LayoutDashboard, Sparkles, Users } from "lucide-react";
 import type { ConsultantCapability } from "../../constants/consultantPermissions";
 import { CONSULTANT_CRM_BRAND } from "../../constants/consultantCrm";
 import { CONSULTANT_ROUTES, type ConsultantWorkspaceRoute } from "../../constants/consultantRoutes";
@@ -25,6 +25,13 @@ const NAV_ITEMS: NavItem[] = [
     path: CONSULTANT_ROUTES.regions,
     label: "Regions",
     icon: Globe2,
+    capability: "view-portfolio"
+  },
+  {
+    route: "assist",
+    path: CONSULTANT_ROUTES.assist,
+    label: "AI Assist",
+    icon: Sparkles,
     capability: "view-portfolio"
   },
   {

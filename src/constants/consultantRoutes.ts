@@ -8,6 +8,7 @@ export const CONSULTANT_ROUTES = {
   login: CONSULTANT_LOGIN_PATH,
   crm: `${CONSULTANT_BASE_PATH}/crm`,
   regions: `${CONSULTANT_BASE_PATH}/regions`,
+  assist: `${CONSULTANT_BASE_PATH}/assist`,
   portfolio: `${CONSULTANT_BASE_PATH}/portfolio`,
   members: `${CONSULTANT_BASE_PATH}/members`,
   introductions: `${CONSULTANT_BASE_PATH}/introductions`,
@@ -18,6 +19,7 @@ export type ConsultantWorkspaceRoute =
   | "home"
   | "crm"
   | "regions"
+  | "assist"
   | "portfolio"
   | "members"
   | "introductions"
@@ -31,6 +33,7 @@ const CONSULTANT_WORKSPACE_ROUTE_SET = new Set<ConsultantWorkspaceRoute>([
   "home",
   "crm",
   "regions",
+  "assist",
   "portfolio",
   "members",
   "introductions",

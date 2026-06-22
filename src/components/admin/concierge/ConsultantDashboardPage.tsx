@@ -30,6 +30,7 @@ import { LegacyFamilyPage } from "./legacyFamilies/LegacyFamilyPage";
 import { FoundersWallPage } from "./foundersWall/FoundersWallPage";
 import { LoveThroughYearsPage } from "./loveThroughYears/LoveThroughYearsPage";
 import { SuccessStoryPage } from "./SuccessStoryPage";
+import { AIAssistedConsultantWorkspacePage } from "../../consultant/AIAssistedConsultantWorkspacePage";
 import { RegionalTeamPage } from "../../consultant/RegionalTeamPage";
 import { JourneyAnalyticsPage } from "./JourneyAnalyticsPage";
 import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
@@ -39,7 +40,7 @@ import { useAdminToast } from "../AdminToast";
 import { getApplicationReviewSummaryForMember } from "../../../utils/ApplicationApprovalEngine";
 import { ApprovalStatusBadge } from "./ApprovalStatusBadge";
 
-type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "analytics" | "regions" | "operations" | "consultations" | "archive" | "legacy" | "families" | "years" | "founders" | "stories";
+type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "analytics" | "regions" | "assist" | "operations" | "consultations" | "archive" | "legacy" | "families" | "years" | "founders" | "stories";
 
 type DashboardInsight = {
   id: string;
@@ -284,6 +285,13 @@ export function ConsultantDashboardPage() {
           </button>
           <button
             type="button"
+            className={`concierge-consultant-dashboard__tab${view === "assist" ? " is-active" : ""}`}
+            onClick={() => setView("assist")}
+          >
+            AI Assist
+          </button>
+          <button
+            type="button"
             className={`concierge-consultant-dashboard__tab${view === "regions" ? " is-active" : ""}`}
             onClick={() => setView("regions")}
           >
@@ -363,6 +371,8 @@ export function ConsultantDashboardPage() {
       </header>
 
       {view === "stories" ? <SuccessStoryPage /> : null}
+
+      {view === "assist" ? <AIAssistedConsultantWorkspacePage mode="admin" /> : null}
 
       {view === "regions" ? <RegionalTeamPage /> : null}
 

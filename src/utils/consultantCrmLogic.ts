@@ -30,6 +30,8 @@ import {
   portfolioSuccessStories
 } from "./conciergeConsultantMetrics";
 import { listMeetingNotesForMember } from "./MeetingNotesEngine";
+import { CONSULTATION_EVENT_STATUS_LABELS } from "../constants/consultationScheduling";
+import { listSchedulingEventsByStatus } from "./ConsultationSchedulingEngine";
 import { listConsultationPayments } from "./ConsultationPaymentEngine";
 
 const PENDING_APPLICATION_STATUSES = new Set(["submitted", "under-review", "additional-information"]);
@@ -258,13 +260,36 @@ function buildSectionRows(input: {
   });
 
   const pendingConsults = portfolioPendingConsultations(members);
-  counts.consultations = pendingConsults.length;
-  rows.consultations = pendingConsults.map((member) => ({
-    id: member.id,
-    primary: memberName(member),
-    secondary: member.status,
-    meta: meetings.find((meeting) => meeting.memberId === member.id)?.scheduledAt
-  }));
+  const schedulingEvents = listSchedulingEventsByStatus([
+    "scheduled",
+    "confirmed",
+    "completed",
+    "rescheduled",
+    "no-show",
+    "cancelled"
+  ]);
+  const memberIds = new Set(members.map((member) => member.id));
+  const consultantSchedulingEvents = schedulingEvents.filter((event) => memberIds.has(event.memberId));
+  const upcomingScheduling = consultantSchedulingEvents.filter(
+    (event) =>
+      (event.status === "scheduled" || event.status === "confirmed") &&
+      new Date(event.scheduledAt).getTime() >= Date.now()
+  );
+
+  counts.consultations = upcomingScheduling.length || pendingConsults.length;
+  rows.consultations = consultantSchedulingEvents.length
+    ? consultantSchedulingEvents.map((event) => ({
+        id: event.id,
+        primary: event.memberName,
+        secondary: `${event.meetingId} · ${event.journeyId ?? "—"}`,
+        meta: `${CONSULTATION_EVENT_STATUS_LABELS[event.status]} · ${event.scheduledAt.slice(0, 10)}`
+      }))
+    : pendingConsults.map((member) => ({
+        id: member.id,
+        primary: memberName(member),
+        secondary: member.status,
+        meta: meetings.find((meeting) => meeting.memberId === member.id)?.scheduledAt
+      }));
 
   const openPayments = payments.filter((payment) => OPEN_PAYMENT_STATUSES.has(payment.status));
   counts.payments = openPayments.length;

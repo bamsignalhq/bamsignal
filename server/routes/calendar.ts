@@ -1,3 +1,5 @@
-export const CALENDAR_API_PATH = "/api/calendar";
-
-export type CalendarApiAction = "availability" | "book" | "oauth-callback";
+/** @deprecated Use consultationScheduling.ts */
+export {
+  CONSULTATION_SCHEDULING_API_PATH as CALENDAR_API_PATH,
+  type ConsultationSchedulingAction as CalendarApiAction
+} from "./consultationScheduling";

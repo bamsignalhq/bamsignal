@@ -4,6 +4,7 @@ export type ConsultationMeetingStatus =
   | "scheduled"
   | "confirmed"
   | "completed"
+  | "no-show"
   | "cancelled"
   | "rescheduled";
 

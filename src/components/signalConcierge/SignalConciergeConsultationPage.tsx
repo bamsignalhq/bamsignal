@@ -39,7 +39,8 @@ import {
 } from "../../services/conciergeWhatsapp";
 import { AvailabilityCard } from "./AvailabilityCard";
 import { CalendarCard } from "./CalendarCard";
-import { CalendarTimelineCard } from "./CalendarTimelineCard";
+import { ConsultationBookingCard } from "./ConsultationBookingCard";
+import { ConsultationTimelineCard } from "./ConsultationTimelineCard";
 import { PaymentFailureCard } from "./PaymentFailureCard";
 import { PaymentPendingCard } from "./PaymentPendingCard";
 import { PaymentSuccessCard } from "./PaymentSuccessCard";
@@ -286,7 +287,7 @@ export function SignalConciergeConsultationPage({
               <MeetingAccessCard record={activeMeetingLink} />
             </>
           ) : null}
-          {upcomingEvent ? <CalendarTimelineCard timeline={upcomingEvent.timeline} /> : null}
+          {upcomingEvent ? <ConsultationTimelineCard timeline={upcomingEvent.timeline} /> : null}
 
           <div className="signal-concierge-channel-grid">
             {SIGNAL_CONCIERGE_CONSULTATION_CHANNELS.filter((channel) => channel.id !== "whatsapp").map((channel) => {
@@ -321,22 +322,17 @@ export function SignalConciergeConsultationPage({
             <p className="signal-concierge-section__sub">Loading consultant availability…</p>
           )}
 
-          {bookingError ? <PaymentFailureCard message={bookingError} onRetry={() => void schedule()} /> : null}
 
           {!upcomingEvent ? (
-            <div className="signal-concierge-hero__actions">
-              <button
-                type="button"
-                className="signal-concierge-btn signal-concierge-btn--primary"
-                onClick={() => void schedule()}
-                disabled={booking || !selectedSlotId}
-              >
-                {booking ? "Booking consultation…" : SIGNAL_CONCIERGE_CTA_PRIMARY}
-              </button>
-              <button type="button" className="signal-concierge-btn signal-concierge-btn--ghost" onClick={onApply}>
-                Update application
-              </button>
-            </div>
+            <ConsultationBookingCard
+              booking={booking}
+              selectedSlotId={selectedSlotId}
+              primaryLabel={SIGNAL_CONCIERGE_CTA_PRIMARY}
+              onBook={() => void schedule()}
+              onSecondary={onApply}
+              error={bookingError || undefined}
+              onRetry={() => void schedule()}
+            />
           ) : null}
         </>
       )}

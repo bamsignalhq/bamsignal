@@ -22,6 +22,7 @@ export const CONSULTATION_MEETING_STATUSES: ConsultationMeetingStatus[] = [
   "scheduled",
   "confirmed",
   "completed",
+  "no-show",
   "cancelled",
   "rescheduled"
 ];
@@ -30,6 +31,7 @@ export const CONSULTATION_STATUS_LABELS: Record<ConsultationMeetingStatus, strin
   scheduled: "Scheduled",
   confirmed: "Confirmed",
   completed: "Completed",
+  "no-show": "No-show",
   cancelled: "Cancelled",
   rescheduled: "Rescheduled"
 };

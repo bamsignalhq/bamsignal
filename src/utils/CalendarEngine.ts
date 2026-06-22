@@ -2,6 +2,7 @@ import {
   CALENDAR_DEFAULT_DURATION_MINUTES,
   CALENDAR_DEFAULT_TIMEZONE
 } from "../constants/calendar";
+import { getConsultantAvailabilityConfig } from "./consultationSchedulingAvailabilityStore";
 import { STORAGE_KEYS } from "../constants/limits";
 import type {
   CalendarAvailability,
@@ -70,11 +71,17 @@ export function syncCalendarAvailabilityFromConsultants(): CalendarAvailability[
   const availability: Record<string, CalendarAvailability> = {};
 
   for (const consultant of consultants) {
+    const config = getConsultantAvailabilityConfig(consultant.id);
     availability[consultant.id] = buildDefaultAvailabilitySlots({
       consultantId: consultant.id,
       consultantName: consultant.name,
-      timezone: CALENDAR_DEFAULT_TIMEZONE,
-      bookedStartsAt: bookedStartsForConsultant(consultant.id)
+      timezone: config.timezone,
+      bookedStartsAt: bookedStartsForConsultant(consultant.id),
+      availableDays: config.availableDays,
+      availableHours: config.availableHours,
+      blackoutPeriods: config.blackoutPeriods,
+      durationMinutes: config.durationMinutes,
+      horizonDays: config.horizonDays
     });
   }
 
@@ -163,6 +170,7 @@ export function recordConsultationEvent(input: {
     availabilityLoadedAt: now,
     slotSelectedAt: now,
     eventCreatedAt: input.googleEventId ? now : undefined,
+    consultationConfirmedAt: input.googleEventId ? now : undefined,
     consultantInvitedAt: input.googleEventId ? now : undefined,
     memberInvitedAt: input.googleEventId ? now : undefined
   });

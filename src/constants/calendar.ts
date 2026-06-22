@@ -9,6 +9,9 @@ export const CALENDAR_EVENT_STATUS_LABELS: Record<ConsultationEventStatus, strin
   draft: "Draft",
   scheduled: "Scheduled",
   confirmed: "Confirmed",
+  completed: "Completed",
+  "no-show": "No-show",
+  rescheduled: "Rescheduled",
   cancelled: "Cancelled"
 };
 
@@ -31,6 +34,11 @@ export const CALENDAR_TIMELINE_STEPS: {
     kind: "event-created",
     label: "Calendar Event Created",
     detail: "Consultation event created on Google Calendar."
+  },
+  {
+    kind: "consultation-confirmed",
+    label: "Consultation Confirmed",
+    detail: "Member and consultant received calendar invitations."
   },
   {
     kind: "consultant-invited",

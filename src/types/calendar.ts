@@ -1,6 +1,13 @@
 import type { ConsultationChannel } from "./consultationScheduler";
 
-export type ConsultationEventStatus = "draft" | "scheduled" | "confirmed" | "cancelled";
+export type ConsultationEventStatus =
+  | "draft"
+  | "scheduled"
+  | "confirmed"
+  | "completed"
+  | "no-show"
+  | "rescheduled"
+  | "cancelled";
 
 export type CalendarParticipantRole = "member" | "consultant" | "organizer";
 
@@ -30,6 +37,9 @@ export type CalendarAvailability = {
   consultantId: string;
   consultantName: string;
   timezone: string;
+  availableDays?: number[];
+  availableHours?: number[];
+  blackoutPeriods?: { startsAt: string; endsAt: string; reason?: string }[];
   slots: CalendarSlot[];
   updatedAt: string;
 };
@@ -38,6 +48,10 @@ export type CalendarTimelineKind =
   | "availability-loaded"
   | "slot-selected"
   | "event-created"
+  | "consultation-confirmed"
+  | "consultation-completed"
+  | "consultation-rescheduled"
+  | "consultation-cancelled"
   | "consultant-invited"
   | "member-invited";
 

@@ -54,22 +54,34 @@ export function buildStandardCalendarTimeline(
     availabilityLoadedAt?: string;
     slotSelectedAt?: string;
     eventCreatedAt?: string;
+    consultationConfirmedAt?: string;
     consultantInvitedAt?: string;
     memberInvitedAt?: string;
+    consultationCompletedAt?: string;
+    consultationRescheduledAt?: string;
+    consultationCancelledAt?: string;
   } = {}
 ): CalendarTimelineEntry[] {
   const mapping: Partial<Record<CalendarTimelineKind, string | undefined>> = {
     "availability-loaded": timestamps.availabilityLoadedAt,
     "slot-selected": timestamps.slotSelectedAt,
     "event-created": timestamps.eventCreatedAt,
+    "consultation-confirmed":
+      timestamps.consultationConfirmedAt ?? timestamps.consultantInvitedAt ?? timestamps.memberInvitedAt,
     "consultant-invited": timestamps.consultantInvitedAt,
-    "member-invited": timestamps.memberInvitedAt
+    "member-invited": timestamps.memberInvitedAt,
+    "consultation-completed": timestamps.consultationCompletedAt,
+    "consultation-rescheduled": timestamps.consultationRescheduledAt,
+    "consultation-cancelled": timestamps.consultationCancelledAt
   };
 
   let timeline: CalendarTimelineEntry[] = [];
   for (const step of CALENDAR_TIMELINE_STEPS) {
     const at = mapping[step.kind];
     if (!at) continue;
+    if (step.kind === "consultant-invited" || step.kind === "member-invited") {
+      if (mapping["consultation-confirmed"]) continue;
+    }
     timeline = appendCalendarTimelineEntry(
       timeline,
       createCalendarTimelineEntry({
@@ -117,26 +129,47 @@ export function buildDefaultAvailabilitySlots(input: {
   consultantName: string;
   timezone: string;
   bookedStartsAt?: Set<string>;
+  availableDays?: number[];
+  availableHours?: number[];
+  blackoutPeriods?: { startsAt: string; endsAt: string; reason?: string }[];
+  durationMinutes?: number;
+  horizonDays?: number;
   now?: Date;
 }): CalendarAvailability {
   const now = input.now ?? new Date();
   const booked = input.bookedStartsAt ?? new Set<string>();
+  const days = input.availableDays?.length ? input.availableDays : [1, 2, 3, 4, 5];
+  const hours = input.availableHours?.length ? input.availableHours : [10, 14, 16];
+  const durationMinutes = input.durationMinutes ?? CALENDAR_DEFAULT_DURATION_MINUTES;
+  const horizonDays = input.horizonDays ?? 7;
+  const blackoutPeriods = input.blackoutPeriods ?? [];
   const slots: CalendarSlot[] = [];
 
-  for (let day = 0; day < 7; day += 1) {
-    for (const hour of [10, 14, 16]) {
-      const date = new Date(now);
-      date.setDate(date.getDate() + day);
-      date.setHours(hour, 0, 0, 0);
-      const startsAt = date.toISOString();
-      const endsAt = new Date(date.getTime() + CALENDAR_DEFAULT_DURATION_MINUTES * 60_000).toISOString();
+  for (let day = 0; day < horizonDays; day += 1) {
+    const date = new Date(now);
+    date.setDate(date.getDate() + day);
+    if (!days.includes(date.getDay())) continue;
+
+    for (const hour of hours) {
+      const slotDate = new Date(date);
+      slotDate.setHours(hour, 0, 0, 0);
+      const startsAt = slotDate.toISOString();
+      const endsAt = new Date(slotDate.getTime() + durationMinutes * 60_000).toISOString();
       if (new Date(startsAt).getTime() < now.getTime()) continue;
+      const blackedOut = blackoutPeriods.some((period) => {
+        const from = Date.parse(period.startsAt);
+        const to = Date.parse(period.endsAt);
+        const startMs = Date.parse(startsAt);
+        return !Number.isNaN(from) && !Number.isNaN(to) && startMs >= from && startMs < to;
+      });
+      if (blackedOut) continue;
+
       slots.push({
         id: `cal_slot_${input.consultantId}_${day}_${hour}`,
         consultantId: input.consultantId,
         startsAt,
         endsAt,
-        durationMinutes: CALENDAR_DEFAULT_DURATION_MINUTES,
+        durationMinutes,
         available: !booked.has(startsAt)
       });
     }
@@ -146,6 +179,9 @@ export function buildDefaultAvailabilitySlots(input: {
     consultantId: input.consultantId,
     consultantName: input.consultantName,
     timezone: input.timezone,
+    availableDays: days,
+    availableHours: hours,
+    blackoutPeriods,
     slots,
     updatedAt: new Date().toISOString()
   };

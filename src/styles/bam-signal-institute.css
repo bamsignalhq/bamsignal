@@ -9537,6 +9537,277 @@
   color: rgba(212, 175, 106, 0.78);
 }
 
+/* Stewardship Council™ */
+.stc-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.stc-page__hero {
+  padding: 28px 24px;
+}
+
+.stc-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.stc-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.stc-page__prepared,
+.stc-page__future,
+.stc-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.stc-page__prepared h2,
+.stc-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.stc-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.stc-page__prepared-list,
+.stc-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.stc-page__prepared-list {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.stc-page__prepared-list li,
+.stc-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.16);
+}
+
+.stc-page__prepared-list li span,
+.stc-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.stc-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.stc-page__split {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.stc-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.stc-card__head h2,
+.stc-card__head h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.stc-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.64);
+  line-height: 1.45;
+}
+
+.stc-card__empty {
+  margin: 12px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.stc-role-card,
+.stc-member-card {
+  padding: 18px 20px;
+}
+
+.stc-role-card__head,
+.stc-member-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.stc-role-card__head h3,
+.stc-member-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.stc-role-card__badge,
+.stc-member-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(212, 175, 106, 0.14);
+  color: rgba(224, 180, 120, 0.98);
+  border: 1px solid rgba(212, 175, 106, 0.3);
+  white-space: nowrap;
+}
+
+.stc-role-card__order {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.stc-role-card__description,
+.stc-member-card__note {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.stc-role-card__status,
+.stc-member-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.92);
+}
+
+.stc-oath-card,
+.stc-timeline-card,
+.stc-responsibilities-card {
+  padding: 20px 22px;
+}
+
+.stc-oath-card__list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.stc-oath-card__list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.12);
+}
+
+.stc-oath-card__list li span {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.stc-timeline-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.stc-timeline-card__list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.stc-timeline-card__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.stc-timeline-card__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.9);
+}
+
+.stc-timeline-card__note {
+  margin: 4px 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.4;
+}
+
+.stc-timeline-card__item time {
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.78);
+}
+
+.stc-responsibilities-card__list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.stc-responsibilities-card__list li {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.12);
+}
+
+.stc-responsibilities-card__list li p {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.stc-responsibilities-card__role {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.stc-responsibilities-card__list small {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
 /* Century Room™ */
 .croom-page {
   display: flex;

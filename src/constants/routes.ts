@@ -6,6 +6,7 @@ import { isSignalConciergeRoute } from "./signalConciergeRoutes";
 import { isSignalEventsRoute } from "./signalEventsRoutes";
 import { isBamSignalFoundationRoute } from "./bamSignalFoundationRoutes";
 import { isBamSignalInstituteRoute } from "./bamSignalInstituteRoutes";
+import { isCenturyRoute } from "./centuryRoutes";
 import { isConsultantRoute } from "./consultantRoutes";
 import { isCareersRoute } from "./careersRoutes";
 import { isSupportCenterRoute } from "./supportCenterRoutes";
@@ -115,6 +116,7 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   if (isSignalEventsRoute(path)) return true;
   if (isBamSignalFoundationRoute(path)) return true;
   if (isBamSignalInstituteRoute(path)) return true;
+  if (isCenturyRoute(path)) return true;
   if (isCareersRoute(path)) return true;
   if (isSupportCenterRoute(path)) return true;
   if (path === "/") return true;

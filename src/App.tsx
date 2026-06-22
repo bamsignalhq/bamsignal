@@ -61,6 +61,7 @@ import {
   LazyBamSignalInstituteHouseInstitutePage,
   LazyBamSignalInstituteCenturyRoomPage,
   LazyBamSignalInstituteGovernancePage,
+  LazyCenturyStewardshipCouncilPage,
   LazyBamSignalInstituteLegacyProfessionalsPage,
   LazyBamSignalInstituteTrustMilestonesPage,
   LazyBamSignalInstituteTrustScorePage,
@@ -255,6 +256,12 @@ import {
   type BamSignalInstituteRoute
 } from "./constants/bamSignalInstituteRoutes";
 import {
+  CENTURY_ROUTES,
+  getCenturyRoute,
+  isUnknownCenturySubroute,
+  type CenturyRoute
+} from "./constants/centuryRoutes";
+import {
   CAREERS_ROUTES,
   getCareersRoute,
   isUnknownCareersSubroute,
@@ -349,6 +356,7 @@ export function App() {
     useState<BamSignalFoundationRoute | null>(() => getBamSignalFoundationRoute());
   const [bamSignalInstituteRoute, setBamSignalInstituteRoute] =
     useState<BamSignalInstituteRoute | null>(() => getBamSignalInstituteRoute());
+  const [centuryRoute, setCenturyRoute] = useState<CenturyRoute | null>(() => getCenturyRoute());
   const [careersRoute, setCareersRoute] = useState<CareersRoute | null>(() => getCareersRoute());
   const [supportCenterRoute, setSupportCenterRoute] = useState<SupportCenterRoute | null>(() =>
     getSupportCenterRoute()
@@ -532,6 +540,7 @@ export function App() {
       setSignalEventsRoute(getSignalEventsRoute());
       setBamSignalFoundationRoute(getBamSignalFoundationRoute());
       setBamSignalInstituteRoute(getBamSignalInstituteRoute());
+      setCenturyRoute(getCenturyRoute());
       setCareersRoute(getCareersRoute());
       setSupportCenterRoute(getSupportCenterRoute());
       setAuthPath(getAuthPath());
@@ -592,6 +601,11 @@ export function App() {
   useLayoutEffect(() => {
     if (!isUnknownBamSignalInstituteSubroute(memberPathname)) return;
     navigateToPath(BAMSIGNAL_INSTITUTE_ROUTES.landing, true);
+  }, [memberPathname]);
+
+  useLayoutEffect(() => {
+    if (!isUnknownCenturySubroute(memberPathname)) return;
+    navigateToPath(CENTURY_ROUTES.stewardshipCouncil, true);
   }, [memberPathname]);
 
   useLayoutEffect(() => {
@@ -2268,6 +2282,21 @@ export function App() {
         ) : (
           <LazyBamSignalFoundationStoriesPage {...foundationShellProps} />
         )}
+      </Suspense>
+    );
+  }
+
+  if (centuryRoute) {
+    const centuryShellProps = {
+      theme,
+      onToggleTheme: toggleTheme,
+      onLogoClick: goHome,
+      onLogin: isAuthed ? undefined : () => openAuth("login")
+    };
+
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading Stewardship Council…" />}>
+        <LazyCenturyStewardshipCouncilPage {...centuryShellProps} />
       </Suspense>
     );
   }

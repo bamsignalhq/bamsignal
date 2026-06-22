@@ -452,6 +452,12 @@ export const LazyBamSignalInstituteRelationshipConnectHousePage = lazy(() =>
   )
 );
 
+export const LazyBamSignalInstituteBallroomPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteBallroomPage").then((module) => ({
+    default: module.BamSignalInstituteBallroomPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

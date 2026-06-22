@@ -50,7 +50,8 @@ export const BAMSIGNAL_INSTITUTE_ROUTES = {
   bamSignalStudio: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/bamsignal-studio`,
   legacyHall: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/legacy-hall`,
   legacyGarden: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/legacy-garden`,
-  relationshipConnectHouse: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/relationship-connect-house`
+  relationshipConnectHouse: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/relationship-connect-house`,
+  ballroom: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/ballroom`
 } as const;
 
 export type BamSignalInstituteRoute = keyof typeof BAMSIGNAL_INSTITUTE_ROUTES;

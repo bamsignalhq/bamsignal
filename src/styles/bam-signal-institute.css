@@ -1401,3 +1401,181 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* Hall of Legacy™ */
+.hol-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hol-page__hero {
+  padding: 28px 24px;
+}
+
+.hol-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.hol-page__purpose,
+.hol-page__privacy,
+.hol-page__consent {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.hol-page__privacy,
+.hol-page__consent {
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.hol-page__prepared,
+.hol-page__future {
+  padding: 22px 24px;
+}
+
+.hol-page__prepared h2,
+.hol-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.hol-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.hol-page__prepared-list,
+.hol-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.hol-page__prepared-list li,
+.hol-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.hol-page__prepared-list li span,
+.hol-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.hol-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.hol-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.hol-legacy-card,
+.hol-golden-card,
+.hol-founders-card,
+.hol-diaspora-card {
+  padding: 18px 20px;
+}
+
+.hol-legacy-card__head,
+.hol-golden-card__head,
+.hol-founders-card__head,
+.hol-diaspora-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.hol-legacy-card__head h3,
+.hol-golden-card__head h3,
+.hol-founders-card__head h3,
+.hol-diaspora-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.hol-legacy-card__badge,
+.hol-golden-card__badge,
+.hol-founders-card__badge,
+.hol-diaspora-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.hol-legacy-card__labels,
+.hol-golden-card__labels,
+.hol-founders-card__labels,
+.hol-diaspora-card__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.hol-legacy-card__category,
+.hol-golden-card__category,
+.hol-founders-card__category,
+.hol-diaspora-card__category {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.hol-legacy-card__summary,
+.hol-golden-card__summary,
+.hol-founders-card__summary,
+.hol-diaspora-card__summary {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.hol-legacy-card__privacy,
+.hol-golden-card__privacy,
+.hol-founders-card__privacy,
+.hol-diaspora-card__privacy {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.hol-legacy-card__status,
+.hol-golden-card__status,
+.hol-founders-card__status,
+.hol-diaspora-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

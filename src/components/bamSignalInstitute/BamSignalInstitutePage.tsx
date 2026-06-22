@@ -86,6 +86,13 @@ export function BamSignalInstitutePage() {
           >
             Observatory
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("hallOfLegacy"))}
+          >
+            Hall of Legacy
+          </button>
         </div>
       </header>
 

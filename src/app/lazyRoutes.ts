@@ -200,6 +200,12 @@ export const LazyBamSignalInstituteObservatoryPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteHallOfLegacyPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteHallOfLegacyPage").then((module) => ({
+    default: module.BamSignalInstituteHallOfLegacyPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

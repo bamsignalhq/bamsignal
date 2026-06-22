@@ -5,6 +5,7 @@ import {
 } from "../../../constants/auditCenterAdmin";
 import { ROUTE_AUDIT_ADMIN_PATH } from "../../../constants/routeAudit";
 import { DATABASE_AUDIT_ADMIN_PATH } from "../../../constants/databaseAudit";
+import { PERMISSIONS_AUDIT_ADMIN_PATH } from "../../../constants/permissionsAudit";
 import { navigateToPath } from "../../../constants/routes";
 import type { AuditFilterState } from "../../../types/auditCenter";
 import { buildAuditComplianceBundle } from "../../../utils/auditCenterEngine";
@@ -91,6 +92,16 @@ export function AuditComplianceCenterPage() {
             onClick={() => navigateToPath(DATABASE_AUDIT_ADMIN_PATH)}
           >
             {DATABASE_AUDIT_ADMIN_PATH}
+          </button>
+        </p>
+        <p>
+          Permissions audit:{" "}
+          <button
+            type="button"
+            className="concierge-consultant-btn"
+            onClick={() => navigateToPath(PERMISSIONS_AUDIT_ADMIN_PATH)}
+          >
+            {PERMISSIONS_AUDIT_ADMIN_PATH}
           </button>
         </p>
         <p>Active filters: {bundle.activeFilters.length ? bundle.activeFilters.join(", ") : "none"}</p>

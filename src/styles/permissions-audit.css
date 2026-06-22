@@ -1,0 +1,168 @@
+.permissions-audit-page {
+  display: grid;
+  gap: 18px;
+}
+
+.permissions-audit-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.permissions-audit-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.permissions-audit-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 68ch;
+}
+
+.permissions-audit-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.permissions-audit-search-field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.84rem;
+}
+
+.permissions-audit-search-field input,
+.permissions-audit-search-field select {
+  min-width: 180px;
+}
+
+.permission-health-card__head h3,
+.permission-matrix-card__head h3,
+.role-access-card__head h3,
+.route-access-card__head h3,
+.security-issue-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.permission-health-card__head p,
+.permission-matrix-card__head p,
+.role-access-card__head p,
+.route-access-card__head p,
+.security-issue-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.permission-health-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.permission-health-card__chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.permission-health-card__chip p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.permission-health-card__chip--warning {
+  border-color: rgba(255, 200, 120, 0.35);
+}
+
+.permission-health-card__chip--critical {
+  border-color: rgba(255, 140, 140, 0.35);
+}
+
+.permission-matrix-card__table,
+.route-access-card__table {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  overflow-x: auto;
+}
+
+.permission-matrix-card__row {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(8, minmax(72px, 1fr));
+  gap: 6px;
+  font-size: 0.76rem;
+}
+
+.route-access-card__row {
+  display: grid;
+  grid-template-columns: 1.2fr 1.4fr 0.6fr 0.7fr;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.permission-matrix-card__row--head,
+.route-access-card__row--head {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.74rem;
+}
+
+.permissions-audit-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 14px;
+}
+
+.permissions-audit-page__column {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.role-access-card__list,
+.security-issue-card__list {
+  margin: 12px 0 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.role-access-card__item-head,
+.security-issue-card__item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.role-access-card__note,
+.security-issue-card__kind,
+.security-issue-card__paths {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.permissions-audit-page__foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .permissions-audit-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .permission-matrix-card__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

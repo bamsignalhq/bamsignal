@@ -12,6 +12,7 @@ import {
 } from "../constants/operationsCenter";
 import type { RouteAuditAreaId, RouteHealthStatusId } from "../constants/routeAudit";
 import { ROUTE_AUDIT_ADMIN_PATH } from "../constants/routeAudit";
+import { PERMISSIONS_AUDIT_ADMIN_PATH } from "../constants/permissionsAudit";
 import {
   AUTH_LOGIN_PATH,
   AUTH_SIGNUP_ALIASES,
@@ -141,7 +142,8 @@ export function buildRouteInventory(): RouteInventoryEntry[] {
     entry("admin-concierge-dashboard", CONCIERGE_ADMIN_DASHBOARD_PATH, "admin", "Concierge dashboard", "operations-center"),
     entry("admin-operations-center", OPERATIONS_CENTER_PATH, "admin", "Operations Center", "operations-center"),
     entry("admin-journey-intelligence", JOURNEY_INTELLIGENCE_PATH, "admin", "Journey Intelligence", "journey-intelligence"),
-    entry("admin-route-audit", ROUTE_AUDIT_ADMIN_PATH, "admin", "Route audit", "route-audit")
+    entry("admin-route-audit", ROUTE_AUDIT_ADMIN_PATH, "admin", "Route audit", "route-audit"),
+    entry("admin-permissions-audit", PERMISSIONS_AUDIT_ADMIN_PATH, "admin", "Permissions audit", "permissions-audit")
   );
 
   inventory.push(

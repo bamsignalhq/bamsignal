@@ -10,6 +10,7 @@ import {
 } from "../../../constants/routeAudit";
 import { AUDIT_CENTER_ADMIN_PATH } from "../../../constants/auditCenterAdmin";
 import { DATABASE_AUDIT_ADMIN_PATH } from "../../../constants/databaseAudit";
+import { PERMISSIONS_AUDIT_ADMIN_PATH } from "../../../constants/permissionsAudit";
 import { navigateToPath } from "../../../constants/routes";
 import { buildRouteHealthReport } from "../../../utils/routeHealthReport";
 import { NavigationMapCard } from "./NavigationMapCard";
@@ -183,6 +184,14 @@ export function RouteAuditPage() {
             onClick={() => navigateToPath(DATABASE_AUDIT_ADMIN_PATH)}
           >
             Database audit
+          </button>
+          {" · "}
+          <button
+            type="button"
+            className="concierge-consultant-btn"
+            onClick={() => navigateToPath(PERMISSIONS_AUDIT_ADMIN_PATH)}
+          >
+            Permissions audit
           </button>
         </p>
         <p>Duplicates detected: {report.duplicates.length}</p>

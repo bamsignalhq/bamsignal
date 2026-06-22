@@ -60,6 +60,7 @@
     "test:executive-dashboard": "node scripts/test-executive-dashboard.mjs",
     "test:route-audit": "node scripts/test-route-audit.mjs",
     "test:database-audit": "node scripts/test-database-audit.mjs",
+    "test:permissions-audit": "node scripts/test-permissions-audit.mjs",
     "test:consultant-performance-scorecard": "node scripts/test-consultant-performance-scorecard.mjs",
     "test:introduction-engine": "node scripts/test-introduction-engine.mjs",
     "test:relationship-follow-up": "node scripts/test-relationship-follow-up.mjs",

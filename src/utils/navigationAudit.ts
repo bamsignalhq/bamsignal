@@ -9,6 +9,7 @@ import { JOURNEY_INTELLIGENCE_PATH } from "../constants/journeyIntelligence";
 import type { RouteAuditAreaId } from "../constants/routeAudit";
 import { ROUTE_AUDIT_ADMIN_PATH } from "../constants/routeAudit";
 import { DATABASE_AUDIT_ADMIN_PATH } from "../constants/databaseAudit";
+import { PERMISSIONS_AUDIT_ADMIN_PATH } from "../constants/permissionsAudit";
 import type { NavigationMapEntry, NavigationSimplificationOpportunity } from "../types/routeAudit";
 
 const NESTED_ADMIN_PATHS: { path: string; label: string; parentTab: HardTab }[] = [
@@ -16,7 +17,8 @@ const NESTED_ADMIN_PATHS: { path: string; label: string; parentTab: HardTab }[] 
   { path: OPERATIONS_CENTER_PATH, label: "Operations Center", parentTab: "concierge" },
   { path: JOURNEY_INTELLIGENCE_PATH, label: "Journey Intelligence", parentTab: "concierge" },
   { path: ROUTE_AUDIT_ADMIN_PATH, label: "Route & Navigation Audit", parentTab: "audit" },
-  { path: DATABASE_AUDIT_ADMIN_PATH, label: "Database Audit Center", parentTab: "audit" }
+  { path: DATABASE_AUDIT_ADMIN_PATH, label: "Database Audit Center", parentTab: "audit" },
+  { path: PERMISSIONS_AUDIT_ADMIN_PATH, label: "Permissions Audit", parentTab: "audit" }
 ];
 
 const OVERLAP_GROUPS: { title: string; paths: string[]; summary: string }[] = [

@@ -18,6 +18,7 @@ import { JourneyOwnershipCard } from "./JourneyOwnershipCard";
 import { MemberAssignmentSection } from "./MemberAssignmentSection";
 import { MemberConsultationPaymentSection } from "./MemberConsultationPaymentSection";
 import { MemberNotificationSection } from "./MemberNotificationSection";
+import { MemberMeetingNotesSection } from "./MemberMeetingNotesSection";
 import { JourneyTransitionCard } from "./JourneyTransitionCard";
 import { TransitionSummaryCard } from "./TransitionSummaryCard";
 import { listIntroductionsForMember } from "../../../utils/IntroductionEngine";
@@ -250,6 +251,8 @@ export function ConciergeMemberProfilePage({
       <MemberConsultationPaymentSection member={member} />
 
       <MemberNotificationSection member={member} />
+
+      <MemberMeetingNotesSection member={member} />
 
       <div className="concierge-member-profile__columns">
         <JourneyTransitionCard

@@ -30,6 +30,7 @@ import { LegacyFamilyPage } from "./legacyFamilies/LegacyFamilyPage";
 import { FoundersWallPage } from "./foundersWall/FoundersWallPage";
 import { LoveThroughYearsPage } from "./loveThroughYears/LoveThroughYearsPage";
 import { SuccessStoryPage } from "./SuccessStoryPage";
+import { JourneyAnalyticsPage } from "./JourneyAnalyticsPage";
 import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
 import { OperationsPage } from "./OperationsPage";
 import { ConsultationsPage } from "./ConsultationsPage";
@@ -37,7 +38,7 @@ import { useAdminToast } from "../AdminToast";
 import { getApplicationReviewSummaryForMember } from "../../../utils/ApplicationApprovalEngine";
 import { ApprovalStatusBadge } from "./ApprovalStatusBadge";
 
-type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "operations" | "consultations" | "archive" | "legacy" | "families" | "years" | "founders" | "stories";
+type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "analytics" | "operations" | "consultations" | "archive" | "legacy" | "families" | "years" | "founders" | "stories";
 
 type DashboardInsight = {
   id: string;
@@ -282,6 +283,13 @@ export function ConsultantDashboardPage() {
           </button>
           <button
             type="button"
+            className={`concierge-consultant-dashboard__tab${view === "analytics" ? " is-active" : ""}`}
+            onClick={() => setView("analytics")}
+          >
+            Journey Analytics
+          </button>
+          <button
+            type="button"
             className={`concierge-consultant-dashboard__tab${view === "performance" ? " is-active" : ""}`}
             onClick={() => setView("performance")}
           >
@@ -347,6 +355,8 @@ export function ConsultantDashboardPage() {
       </header>
 
       {view === "stories" ? <SuccessStoryPage /> : null}
+
+      {view === "analytics" ? <JourneyAnalyticsPage /> : null}
 
       {view === "performance" ? <ConsultantPerformancePage /> : null}
 

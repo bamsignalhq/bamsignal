@@ -2808,6 +2808,212 @@
   .consultant-performance-page__body {
     grid-template-columns: 1fr;
   }
+
+  .journey-analytics-page__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Journey Analytics */
+.journey-analytics-page {
+  display: grid;
+  gap: 18px;
+}
+
+.journey-analytics-page__head h2 {
+  margin: 4px 0 8px;
+}
+
+.journey-analytics-page__head p {
+  margin: 0;
+  color: var(--sc-muted);
+}
+
+.journey-analytics-page__eyebrow {
+  margin: 0;
+  color: var(--sc-gold);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.journey-analytics-page__updated {
+  display: block;
+  margin-top: 8px;
+  color: var(--sc-muted);
+  font-size: 0.78rem;
+}
+
+.journey-analytics-page__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.journey-analytics-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.journey-analytics-metrics__item {
+  border: 1px solid rgba(168, 130, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.journey-analytics-metrics__item dt {
+  font-size: 0.8rem;
+  color: var(--sc-muted);
+}
+
+.journey-analytics-metrics__item dd {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--sc-gold);
+}
+
+.journey-analytics-metrics__item small {
+  color: var(--sc-muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.journey-analytics-trends,
+.journey-analytics-outcomes,
+.journey-analytics-growth,
+.journey-analytics-future ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.journey-analytics-trends li {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.journey-analytics-trends__label {
+  font-size: 0.8rem;
+  color: var(--sc-muted);
+}
+
+.journey-analytics-trends__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(168, 130, 255, 0.12);
+  overflow: hidden;
+}
+
+.journey-analytics-trends__bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7a4df3, #d4af6a);
+}
+
+.journey-analytics-outcomes li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.journey-analytics-outcomes__copy p {
+  margin: 4px 0 0;
+  color: var(--sc-muted);
+  font-size: 0.8rem;
+}
+
+.journey-analytics-outcomes__count {
+  min-width: 2rem;
+  text-align: right;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--sc-gold);
+}
+
+.journey-analytics-growth li {
+  border: 1px solid rgba(168, 130, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.journey-analytics-growth__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.journey-analytics-growth__head span {
+  color: var(--sc-muted);
+  font-size: 0.8rem;
+}
+
+.journey-analytics-growth__head em {
+  font-style: normal;
+  opacity: 0.8;
+}
+
+.journey-analytics-growth li p {
+  margin: 0;
+  color: var(--sc-muted);
+  font-size: 0.82rem;
+}
+
+.journey-analytics-growth__item--up {
+  border-color: rgba(120, 220, 160, 0.28);
+}
+
+.journey-analytics-growth__item--down {
+  border-color: rgba(255, 180, 120, 0.28);
+}
+
+.journey-analytics-future {
+  border: 1px dashed rgba(168, 130, 255, 0.2);
+  border-radius: var(--sc-radius);
+  padding: 14px 16px;
+  color: var(--sc-muted);
+}
+
+.journey-analytics-future__label {
+  margin: 0 0 10px;
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sc-gold);
+}
+
+.journey-analytics-future li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0;
+}
+
+.journey-analytics-future strong {
+  color: var(--sc-text);
+  font-size: 0.86rem;
+}
+
+@media (max-width: 960px) {
+  .journey-analytics-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 960px) {

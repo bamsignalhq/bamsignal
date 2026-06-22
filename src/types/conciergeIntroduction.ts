@@ -1,4 +1,5 @@
 import type {
+  IntroductionConfidenceLevel,
   IntroductionFeedbackCategory,
   IntroductionFollowUpInterval,
   IntroductionInternalFlag,
@@ -27,23 +28,23 @@ export type IntroductionHistoryEntry = {
 };
 
 export type IntroductionCompatibilitySnapshot = {
-  score: number;
   faith: string;
   lifestyle: string;
   marriageTimeline: string;
   familyValues: string;
   childrenPreference: string;
-  location: string;
-  relocationOpenness: string;
   communicationStyle: string;
   loveLanguage: string;
+  careerCompatibility: string;
+  location: string;
+  relocationOpenness: string;
   dealBreakers: string;
+  /** @deprecated internal only — never show members */
+  score?: number;
 };
 
 export type IntroductionRecord = {
-  /** Internal record key */
   id: string;
-  /** Permanent — BS-IN-YYYY-#### */
   introductionId: string;
   memberAId: string;
   memberBId: string;
@@ -57,8 +58,11 @@ export type IntroductionRecord = {
   status: IntroductionStatus;
   pipelinePhase: IntroductionPipelinePhaseId;
   notes: string;
-  /** Private match notes — consultants only */
   matchNotes: string[];
+  /** Member-visible warm reasons */
+  connectionReasons: string[];
+  compatibilitySummary?: string;
+  confidenceLevel?: IntroductionConfidenceLevel;
   consultantMessage: string;
   memberAPreviewNote: string;
   memberBPreviewNote: string;
@@ -68,14 +72,17 @@ export type IntroductionRecord = {
   memberBPresentedAt?: string;
   followUpDate?: string;
   followUpInterval?: IntroductionFollowUpInterval;
-  compatibilityScore?: number;
   compatibility?: IntroductionCompatibilitySnapshot;
   internalFlags: IntroductionInternalFlag[];
   outcome?: IntroductionOutcome;
   feedback: IntroductionFeedbackEntry[];
   history: IntroductionHistoryEntry[];
   bothConsented: boolean;
-  /** @deprecated use compatibilityScore */
+  /** Internal candidate — consultants only until presented */
+  isInternalCandidate?: boolean;
+  /** @deprecated use confidenceLevel */
+  compatibilityScore?: number;
+  /** @deprecated use confidenceLevel */
   successProbability?: number;
 };
 
@@ -88,6 +95,7 @@ export type MemberIntroductionPreview = {
   trustedMember: boolean;
   relationshipGoalsSummary: string;
   consultantNote: string;
+  connectionReasons: string[];
 };
 
 export type MemberIntroductionReveal = MemberIntroductionPreview & {
@@ -106,10 +114,19 @@ export type CreateIntroductionInput = {
   tier?: SignalConciergeTierId;
   notes?: string;
   matchNotes?: string[];
+  connectionReasons?: string[];
+  confidenceLevel?: IntroductionConfidenceLevel;
   consultantMessage?: string;
   memberAPreviewNote?: string;
   memberBPreviewNote?: string;
   internalFlags?: IntroductionInternalFlag[];
-  compatibilityScore?: number;
   compatibility?: Partial<IntroductionCompatibilitySnapshot>;
+};
+
+export type MemberCooldownSnapshot = {
+  memberId: string;
+  activeCount: number;
+  maxActive: number;
+  blocked: boolean;
+  activeIntroductionIds: string[];
 };

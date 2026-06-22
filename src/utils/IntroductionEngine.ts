@@ -4,6 +4,7 @@ import {
   INTRODUCTION_FOLLOW_UP_INTERVALS,
   INTRODUCTION_OUTCOME_LABELS,
   INTRODUCTION_STATUS_LABELS,
+  type IntroductionConfidenceLevel,
   type IntroductionFollowUpInterval,
   type IntroductionOutcome,
   type IntroductionStatus
@@ -24,12 +25,18 @@ import {
 } from "./conciergeIntroductionStore";
 import { assignIntroductionId, registerExistingIntroductionId } from "./introductionIdRegistry";
 import {
+  assertIntroductionCooldown,
   assertNoDuplicateIntroduction,
   buildCompatibilityFromMembers,
+  buildCompatibilitySummary,
+  buildConnectionReasonsFromMembers,
   bothMembersConsented,
   canRevealCounterpart,
+  filterMemberVisibleIntroductions,
+  getMemberCooldownSnapshot,
   normalizeIntroductionRecord,
-  pushIntroductionHistory
+  pushIntroductionHistory,
+  suggestConfidenceLevel
 } from "./introductionEngineLogic";
 import { getConciergeConsultant } from "./conciergeConsultantDirectoryStore";
 
@@ -49,7 +56,7 @@ function relationshipGoalsSummary(member: ConciergeMemberRecord): string {
   return parts.join(" · ") || "Meaningful relationship";
 }
 
-export { bothMembersConsented, canRevealCounterpart };
+export { bothMembersConsented, canRevealCounterpart, filterMemberVisibleIntroductions, getMemberCooldownSnapshot };
 
 export function canAdvanceIntroduction(record: IntroductionRecord, next: IntroductionStatus): boolean {
   const mutualRequired: IntroductionStatus[] = [
@@ -68,7 +75,8 @@ export function canAdvanceIntroduction(record: IntroductionRecord, next: Introdu
 
 export function buildMemberIntroductionPreview(
   member: ConciergeMemberRecord,
-  consultantNote: string
+  consultantNote: string,
+  connectionReasons: string[] = []
 ): MemberIntroductionPreview {
   return {
     firstName: firstName(member.aboutYou.name),
@@ -78,17 +86,19 @@ export function buildMemberIntroductionPreview(
     voiceVibeAvailable: member.voiceVibe.completed,
     trustedMember: member.trustedMember,
     relationshipGoalsSummary: relationshipGoalsSummary(member),
-    consultantNote: consultantNote || CONSULTANT_INTRO_NOTE_EXAMPLE
+    consultantNote: consultantNote || CONSULTANT_INTRO_NOTE_EXAMPLE,
+    connectionReasons
   };
 }
 
 export function buildMemberIntroductionReveal(
   member: ConciergeMemberRecord,
   consultantNote: string,
-  contactBridgeReady: boolean
+  contactBridgeReady: boolean,
+  connectionReasons: string[] = []
 ): MemberIntroductionReveal {
   return {
-    ...buildMemberIntroductionPreview(member, consultantNote),
+    ...buildMemberIntroductionPreview(member, consultantNote, connectionReasons),
     photos: member.photos,
     voiceVibeUrl: member.voiceVibe.url,
     voiceVibeDuration: member.voiceVibe.duration,
@@ -118,7 +128,7 @@ export function getIntroductionPreviewForMember(
   const note =
     viewingMemberId === record.memberAId ? record.memberBPreviewNote : record.memberAPreviewNote;
 
-  return buildMemberIntroductionPreview(counterpart, note);
+  return buildMemberIntroductionPreview(counterpart, note, record.connectionReasons);
 }
 
 export function getIntroductionRevealForMember(
@@ -141,7 +151,7 @@ export function getIntroductionRevealForMember(
   const note =
     viewingMemberId === record.memberAId ? record.memberBPreviewNote : record.memberAPreviewNote;
 
-  return buildMemberIntroductionReveal(counterpart, note, record.status !== "closed");
+  return buildMemberIntroductionReveal(counterpart, note, record.status !== "closed", record.connectionReasons);
 }
 
 function canMemberSeeCounterpart(record: IntroductionRecord, viewingMemberId: string): boolean {
@@ -152,6 +162,7 @@ function canMemberSeeCounterpart(record: IntroductionRecord, viewingMemberId: st
 export function listPendingIntroductions(): IntroductionRecord[] {
   const pendingStatuses = new Set<IntroductionStatus>([
     "pending-review",
+    "compatibility-review",
     "presented",
     "awaiting-response",
     "accepted"
@@ -180,6 +191,7 @@ export function createIntroductionCandidate(input: CreateIntroductionInput): Int
   const existing = listIntroductionRecords();
   try {
     assertNoDuplicateIntroduction(existing, input.memberAId, input.memberBId);
+    assertIntroductionCooldown(existing, input.memberAId, input.memberBId);
   } catch {
     return null;
   }
@@ -190,6 +202,10 @@ export function createIntroductionCandidate(input: CreateIntroductionInput): Int
   const compatibility = input.compatibility
     ? { ...buildCompatibilityFromMembers(memberA, memberB), ...input.compatibility }
     : buildCompatibilityFromMembers(memberA, memberB);
+  const connectionReasons =
+    input.connectionReasons ?? buildConnectionReasonsFromMembers(memberA, memberB);
+  const confidenceLevel =
+    input.confidenceLevel ?? suggestConfidenceLevel(memberA, memberB);
   const recordId = `intro_${Date.now().toString(36)}`;
   const introductionId = assignIntroductionId({ recordId, createdAt: now });
 
@@ -209,17 +225,20 @@ export function createIntroductionCandidate(input: CreateIntroductionInput): Int
     pipelinePhase: "candidate-identified",
     notes: input.notes ?? "",
     matchNotes: input.matchNotes ?? [],
+    connectionReasons,
+    compatibilitySummary: buildCompatibilitySummary(compatibility),
+    confidenceLevel,
     consultantMessage: input.consultantMessage ?? CONSULTANT_INTRO_SUGGESTED_MESSAGE,
     memberAPreviewNote: input.memberAPreviewNote ?? CONSULTANT_INTRO_NOTE_EXAMPLE,
     memberBPreviewNote: input.memberBPreviewNote ?? CONSULTANT_INTRO_NOTE_EXAMPLE,
     memberAApproved: null,
     memberBApproved: null,
-    compatibilityScore: input.compatibilityScore ?? compatibility.score,
     compatibility,
     internalFlags: input.internalFlags ?? [],
     feedback: [],
     history: [],
-    bothConsented: false
+    bothConsented: false,
+    isInternalCandidate: true
   });
 
   pushIntroductionHistory(record, {
@@ -255,6 +274,8 @@ function mapStatusToPipelinePhase(status: IntroductionStatus) {
   switch (status) {
     case "pending-review":
       return "internal-review" as const;
+    case "compatibility-review":
+      return "compatibility-review" as const;
     case "presented":
       return "member-a-presented" as const;
     case "awaiting-response":
@@ -305,6 +326,7 @@ export function recordIntroductionMemberApproval(
     detail: memberId === record.memberAId ? "Member A" : "Member B",
     pipelinePhase: memberId === record.memberAId ? "member-a-presented" : "member-b-presented"
   });
+  record.isInternalCandidate = false;
 
   if (record.memberAApproved === true && record.memberBApproved === null) {
     record.status = "awaiting-response";
@@ -355,6 +377,34 @@ export function updateIntroductionMatchNotes(
   return saveIntroductionRecord(record);
 }
 
+export function updateIntroductionConfidence(
+  id: string,
+  confidenceLevel: IntroductionConfidenceLevel
+): IntroductionRecord | null {
+  const record = getIntroductionRecord(id);
+  if (!record) return null;
+  record.confidenceLevel = confidenceLevel;
+  return saveIntroductionRecord(record);
+}
+
+export function updateIntroductionConnectionReasons(
+  id: string,
+  connectionReasons: string[]
+): IntroductionRecord | null {
+  const record = getIntroductionRecord(id);
+  if (!record) return null;
+  record.connectionReasons = connectionReasons;
+  return saveIntroductionRecord(record);
+}
+
+export function getIntroductionCooldownForMembers(memberAId: string, memberBId: string) {
+  const records = listIntroductionRecords();
+  return {
+    memberA: getMemberCooldownSnapshot(records, memberAId),
+    memberB: getMemberCooldownSnapshot(records, memberBId)
+  };
+}
+
 export function scheduleIntroductionFollowUp(
   id: string,
   interval: IntroductionFollowUpInterval
@@ -385,7 +435,7 @@ export function setIntroductionOutcome(
   else if (outcome === "engaged") record.status = "engaged";
   else if (outcome === "relationship") record.status = "relationship";
   else if (outcome === "exclusive") record.status = "exclusive";
-  else if (outcome === "not-a-fit" || outcome === "no-response" || outcome === "no-chemistry") {
+  else if (outcome === "not-a-fit" || outcome === "no-response" || outcome === "no-chemistry" || outcome === "timing-issue") {
     record.status = "closed";
   } else if (outcome === "still-talking") {
     record.status = "active-conversation";

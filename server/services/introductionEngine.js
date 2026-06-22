@@ -6,6 +6,23 @@ import {
   registerExistingIntroductionId
 } from "./introductionId.js";
 
+export const INTRODUCTION_COOLDOWN_MAX_ACTIVE = 2;
+
+export const ACTIVE_INTRODUCTION_STATUSES = new Set([
+  "pending-review",
+  "compatibility-review",
+  "presented",
+  "awaiting-response",
+  "accepted",
+  "active-conversation",
+  "exclusive",
+  "relationship",
+  "engaged",
+  "paused"
+]);
+
+export const INTERNAL_CANDIDATE_STATUSES = new Set(["pending-review", "compatibility-review"]);
+
 export const CLOSED_INTRODUCTION_STATUSES = new Set(["declined", "closed", "married"]);
 
 export const LEGACY_INTRODUCTION_STATUS_MAP = {
@@ -26,6 +43,70 @@ export function normalizeIntroductionStatus(status) {
 
 export function pairKey(memberAId, memberBId) {
   return [memberAId, memberBId].sort().join("::");
+}
+
+export function isIntroductionActive(record) {
+  return ACTIVE_INTRODUCTION_STATUSES.has(record.status);
+}
+
+export function countActiveIntroductionsForMember(records, memberId, excludeId) {
+  return records.filter((record) => {
+    if (excludeId && record.id === excludeId) return false;
+    if (!isIntroductionActive(record)) return false;
+    return record.memberAId === memberId || record.memberBId === memberId;
+  }).length;
+}
+
+export function getMemberCooldownSnapshot(records, memberId) {
+  const active = records.filter(
+    (record) =>
+      isIntroductionActive(record) &&
+      (record.memberAId === memberId || record.memberBId === memberId)
+  );
+  const activeCount = active.length;
+  return {
+    memberId,
+    activeCount,
+    maxActive: INTRODUCTION_COOLDOWN_MAX_ACTIVE,
+    blocked: activeCount >= INTRODUCTION_COOLDOWN_MAX_ACTIVE,
+    activeIntroductionIds: active.map((record) => record.introductionId)
+  };
+}
+
+export function assertIntroductionCooldown(records, memberAId, memberBId) {
+  const cooldownA = getMemberCooldownSnapshot(records, memberAId);
+  const cooldownB = getMemberCooldownSnapshot(records, memberBId);
+  if (cooldownA.blocked) {
+    throw new Error(
+      `Introduction cooldown: ${memberAId} has ${cooldownA.activeCount} active introductions (max ${INTRODUCTION_COOLDOWN_MAX_ACTIVE})`
+    );
+  }
+  if (cooldownB.blocked) {
+    throw new Error(
+      `Introduction cooldown: ${memberBId} has ${cooldownB.activeCount} active introductions (max ${INTRODUCTION_COOLDOWN_MAX_ACTIVE})`
+    );
+  }
+}
+
+export function isInternalCandidateRecord(record) {
+  return Boolean(
+    record.isInternalCandidate ||
+      (INTERNAL_CANDIDATE_STATUSES.has(record.status) &&
+        record.memberAApproved == null &&
+        record.memberBApproved == null)
+  );
+}
+
+export function isMemberVisibleIntroduction(record, memberId) {
+  if (record.memberAId !== memberId && record.memberBId !== memberId) return false;
+  if (isInternalCandidateRecord(record)) return false;
+  if (memberId === record.memberAId && record.memberAApproved !== null) return true;
+  if (memberId === record.memberBId && record.memberBApproved !== null) return true;
+  return record.bothConsented;
+}
+
+export function filterMemberVisibleIntroductions(records, memberId) {
+  return records.filter((record) => isMemberVisibleIntroduction(record, memberId));
 }
 
 export function findDuplicateIntroduction(records, memberAId, memberBId, excludeId) {
@@ -105,6 +186,7 @@ export function recordIntroductionMemberApproval(record, memberId, approved) {
     detail: memberId === record.memberAId ? "Member A" : "Member B",
     pipelinePhase: memberId === record.memberAId ? "member-a-presented" : "member-b-presented"
   });
+  record.isInternalCandidate = false;
 
   if (record.memberAApproved === true && record.memberBApproved === true) {
     record.bothConsented = true;

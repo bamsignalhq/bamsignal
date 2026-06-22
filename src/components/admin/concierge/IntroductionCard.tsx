@@ -2,11 +2,9 @@ import { useState } from "react";
 import {
   INTRODUCTION_FOLLOW_UP_INTERVALS,
   INTRODUCTION_INTERNAL_FLAGS,
-  INTRODUCTION_STATUS_LABELS,
   type IntroductionFollowUpInterval,
   type IntroductionStatus
 } from "../../../constants/conciergeIntroduction";
-import { INTRODUCTION_ID_LABEL } from "../../../constants/introductionId";
 import type { IntroductionRecord } from "../../../types/conciergeIntroduction";
 import {
   advanceIntroductionStatus,
@@ -18,6 +16,7 @@ import {
 } from "../../../utils/IntroductionEngine";
 import { getConciergeMember } from "../../../utils/conciergeConsultantStore";
 import { IntroductionFeedbackCard } from "./IntroductionFeedbackCard";
+import { IntroductionHeader } from "./IntroductionHeader";
 
 type IntroductionCardProps = {
   record: IntroductionRecord;
@@ -53,35 +52,7 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
 
   return (
     <article className="introduction-card concierge-consultant-card--glass">
-      <header className="introduction-card__head">
-        <div>
-          <p className="introduction-card__id">
-            {INTRODUCTION_ID_LABEL}: <strong>{record.introductionId}</strong>
-          </p>
-          <h3>
-            {getMemberDisplayName(record.memberAId)} & {getMemberDisplayName(record.memberBId)}
-          </h3>
-          <p>{INTRODUCTION_STATUS_LABELS[record.status]}</p>
-        </div>
-        <div className="introduction-card__meta">
-          {record.compatibilityScore != null ? (
-            <span className="introduction-card__score">
-              Compatibility {record.compatibilityScore}
-            </span>
-          ) : null}
-          {record.consultantName ? (
-            <span className="introduction-card__consultant">{record.consultantName}</span>
-          ) : null}
-          <time dateTime={record.createdAt} className="introduction-card__created">
-            {new Date(record.createdAt).toLocaleDateString()}
-          </time>
-        </div>
-      </header>
-
-      <div className="introduction-card__journeys">
-        <span>Journey A: {record.journeyAId ?? "—"}</span>
-        <span>Journey B: {record.journeyBId ?? "—"}</span>
-      </div>
+      <IntroductionHeader record={record} />
 
       {record.internalFlags.length ? (
         <div className="introduction-card__flags">
@@ -121,8 +92,13 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
                 {previewForA.age} · {previewForA.city} · {previewForA.occupation}
               </span>
               <span>{previewForA.relationshipGoalsSummary}</span>
-              {previewForA.voiceVibeAvailable ? <span>Voice Vibe available</span> : null}
-              {previewForA.trustedMember ? <span>Trusted Member</span> : null}
+              {previewForA.connectionReasons.length ? (
+                <ul className="introduction-card__reasons">
+                  {previewForA.connectionReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              ) : null}
               <em>{previewForA.consultantNote}</em>
             </div>
           ) : (
@@ -148,8 +124,13 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
                 {previewForB.age} · {previewForB.city} · {previewForB.occupation}
               </span>
               <span>{previewForB.relationshipGoalsSummary}</span>
-              {previewForB.voiceVibeAvailable ? <span>Voice Vibe available</span> : null}
-              {previewForB.trustedMember ? <span>Trusted Member</span> : null}
+              {previewForB.connectionReasons.length ? (
+                <ul className="introduction-card__reasons">
+                  {previewForB.connectionReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              ) : null}
               <em>{previewForB.consultantNote}</em>
             </div>
           ) : (
@@ -183,6 +164,9 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
         <button type="button" className="concierge-consultant-btn" onClick={() => handleAdvance("pending-review")}>
           Internal review
         </button>
+        <button type="button" className="concierge-consultant-btn" onClick={() => handleAdvance("compatibility-review")}>
+          Compatibility review
+        </button>
         <button
           type="button"
           className="concierge-consultant-btn"
@@ -215,11 +199,7 @@ export function IntroductionCard({ record, onUpdated }: IntroductionCardProps) {
         </button>
       </section>
 
-      <IntroductionFeedbackCard
-        recordId={record.id}
-        feedback={record.feedback}
-        onUpdated={onUpdated}
-      />
+      <IntroductionFeedbackCard recordId={record.id} feedback={record.feedback} onUpdated={onUpdated} />
     </article>
   );
 }

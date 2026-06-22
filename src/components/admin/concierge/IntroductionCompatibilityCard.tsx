@@ -8,14 +8,15 @@ type IntroductionCompatibilityCardProps = {
 const FIELDS: { key: keyof NonNullable<IntroductionRecord["compatibility"]>; label: string }[] = [
   { key: "faith", label: "Faith" },
   { key: "lifestyle", label: "Lifestyle" },
-  { key: "marriageTimeline", label: "Marriage timeline" },
-  { key: "familyValues", label: "Family values" },
-  { key: "childrenPreference", label: "Children preference" },
+  { key: "marriageTimeline", label: "Marriage Timeline" },
+  { key: "familyValues", label: "Family Values" },
+  { key: "childrenPreference", label: "Children Preference" },
+  { key: "communicationStyle", label: "Communication Style" },
+  { key: "loveLanguage", label: "Love Language" },
+  { key: "careerCompatibility", label: "Career Compatibility" },
   { key: "location", label: "Location" },
-  { key: "relocationOpenness", label: "Relocation openness" },
-  { key: "communicationStyle", label: "Communication style" },
-  { key: "loveLanguage", label: "Love language" },
-  { key: "dealBreakers", label: "Deal breakers" }
+  { key: "relocationOpenness", label: "Relocation Openness" },
+  { key: "dealBreakers", label: "Deal Breakers" }
 ];
 
 export function IntroductionCompatibilityCard({ record }: IntroductionCompatibilityCardProps) {
@@ -28,10 +29,8 @@ export function IntroductionCompatibilityCard({ record }: IntroductionCompatibil
         <p>Shared Values review — consultants only.</p>
       </header>
 
-      {record.compatibilityScore != null ? (
-        <p className="introduction-compatibility__score">
-          Compatibility score: <strong>{record.compatibilityScore}</strong>
-        </p>
+      {record.compatibilitySummary ? (
+        <p className="introduction-compatibility__summary">{record.compatibilitySummary}</p>
       ) : null}
 
       {compatibility ? (
@@ -46,18 +45,6 @@ export function IntroductionCompatibilityCard({ record }: IntroductionCompatibil
       ) : (
         <p className="concierge-consultant__empty">Compatibility review pending.</p>
       )}
-
-      {record.matchNotes.length ? (
-        <div className="introduction-compatibility__notes">
-          <h4>Match notes</h4>
-          <p className="introduction-compatibility__private">Private — consultants only.</p>
-          <ul>
-            {record.matchNotes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
     </section>
   );
 }

@@ -17,6 +17,20 @@ function daysFromNow(days: number): string {
   return date.toISOString();
 }
 
+const compatibilityBase = {
+  faith: "Christian / Christian",
+  lifestyle: "Active · Active",
+  marriageTimeline: "Within 2 years / Within 2 years",
+  familyValues: "Very important · Very important",
+  childrenPreference: "Want children / Want children",
+  careerCompatibility: "Marketing Manager / Software Engineer",
+  location: "Lagos / Lagos",
+  relocationOpenness: "Same city preference",
+  communicationStyle: "Direct / Thoughtful",
+  loveLanguage: "Quality time · Acts of service",
+  dealBreakers: "Dishonesty · Lack of faith"
+};
+
 export const CONCIERGE_INTRODUCTION_SEED: IntroductionRecord[] = [
   {
     id: "intro_engine_amaka_chidi",
@@ -35,9 +49,17 @@ export const CONCIERGE_INTRODUCTION_SEED: IntroductionRecord[] = [
     notes: "Strong values alignment. Both prefer Lagos-based courtship with faith at the center.",
     matchNotes: [
       "Strong values alignment.",
-      "Family-oriented.",
-      "Good communication styles."
+      "Both family-oriented.",
+      "Strong communication styles."
     ],
+    connectionReasons: [
+      "Both value faith.",
+      "Both are family-oriented.",
+      "Similar marriage goals.",
+      "Enjoy meaningful conversations."
+    ],
+    compatibilitySummary: "Shared faith, family values, marriage timeline alignment.",
+    confidenceLevel: "strong-fit",
     consultantMessage:
       "I'd love to introduce you to someone I believe you may enjoy getting to know.\n\nWould you be open to learning more?",
     memberAPreviewNote: CONSULTANT_PREVIEW,
@@ -48,67 +70,27 @@ export const CONCIERGE_INTRODUCTION_SEED: IntroductionRecord[] = [
     memberBPresentedAt: daysAgo(4),
     followUpDate: daysFromNow(6),
     followUpInterval: "7-days",
-    compatibilityScore: 82,
-    compatibility: {
-      score: 82,
-      faith: "Christian / Christian",
-      lifestyle: "Active · Active",
-      marriageTimeline: "Within 2 years / Within 2 years",
-      familyValues: "Very important · Very important",
-      childrenPreference: "Want children / Want children",
-      location: "Lagos / Lagos",
-      relocationOpenness: "Same city preference",
-      communicationStyle: "Direct / Thoughtful",
-      loveLanguage: "Quality time · Acts of service",
-      dealBreakers: "Dishonesty · Lack of faith"
-    },
+    compatibility: compatibilityBase,
     internalFlags: ["high-priority", "family-involvement"],
     outcome: "still-talking",
     bothConsented: true,
+    isInternalCandidate: false,
     feedback: [
       {
         id: "fb_1",
         at: daysAgo(2),
         author: "consultant",
         body: "Both members responded warmly after the introduction.",
-        category: "positive",
+        category: "strong-alignment",
         followUpNotes: "Schedule a gentle 7-day check-in."
       }
     ],
     history: [
-      {
-        id: "ih_1",
-        at: daysAgo(6),
-        label: "Candidate Identified",
-        pipelinePhase: "candidate-identified"
-      },
-      {
-        id: "ih_2",
-        at: daysAgo(5),
-        label: "Presented",
-        detail: "Member A",
-        pipelinePhase: "member-a-presented"
-      },
-      {
-        id: "ih_3",
-        at: daysAgo(4),
-        label: "Presented",
-        detail: "Member B",
-        pipelinePhase: "member-b-presented"
-      },
-      {
-        id: "ih_4",
-        at: daysAgo(4),
-        label: "Accepted",
-        detail: "Mutual acceptance confirmed",
-        pipelinePhase: "mutual-acceptance"
-      },
-      {
-        id: "ih_5",
-        at: daysAgo(3),
-        label: "Introduction Made",
-        pipelinePhase: "introduction-made"
-      }
+      { id: "ih_1", at: daysAgo(6), label: "Candidate Identified", pipelinePhase: "candidate-identified" },
+      { id: "ih_2", at: daysAgo(5), label: "Presented", detail: "Member A", pipelinePhase: "member-a-presented" },
+      { id: "ih_3", at: daysAgo(4), label: "Presented", detail: "Member B", pipelinePhase: "member-b-presented" },
+      { id: "ih_4", at: daysAgo(4), label: "Accepted", detail: "Mutual acceptance confirmed", pipelinePhase: "mutual-acceptance" },
+      { id: "ih_5", at: daysAgo(3), label: "Introduction Made", pipelinePhase: "introduction-made" }
     ]
   },
   {
@@ -126,7 +108,15 @@ export const CONCIERGE_INTRODUCTION_SEED: IntroductionRecord[] = [
     status: "awaiting-response",
     pipelinePhase: "member-b-presented",
     notes: "Cross-border consideration. Proceed only if both are open to diaspora planning.",
-    matchNotes: ["Both open to relocation.", "Strong values alignment."],
+    matchNotes: ["Open to relocation.", "Strong values alignment.", "Good long-term outlook."],
+    connectionReasons: [
+      "Both value faith.",
+      "Open to relocation.",
+      "Love travelling.",
+      "Strong communication styles."
+    ],
+    compatibilitySummary: "Shared faith with cross-border relocation review.",
+    confidenceLevel: "promising",
     consultantMessage:
       "I'd love to introduce you to someone I believe you may enjoy getting to know.\n\nWould you be open to learning more?",
     memberAPreviewNote: CONSULTANT_PREVIEW,
@@ -136,43 +126,22 @@ export const CONCIERGE_INTRODUCTION_SEED: IntroductionRecord[] = [
     memberAPresentedAt: daysAgo(1),
     followUpDate: daysFromNow(4),
     followUpInterval: "7-days",
-    compatibilityScore: 64,
     compatibility: {
-      score: 64,
-      faith: "Christian / Christian",
+      ...compatibilityBase,
       lifestyle: "Moderate · Active",
       marriageTimeline: "Within 3 years / Within 2 years",
-      familyValues: "Important · Very important",
-      childrenPreference: "Open / Want children",
+      careerCompatibility: "Finance Analyst / Product Designer",
       location: "London / Lagos",
-      relocationOpenness: "Open to relocation",
-      communicationStyle: "Thoughtful / Direct",
-      loveLanguage: "Words of affirmation · Quality time",
-      dealBreakers: "Infidelity · Disrespect"
+      relocationOpenness: "Open to relocation"
     },
     internalFlags: ["diaspora", "relocation"],
     bothConsented: false,
+    isInternalCandidate: false,
     feedback: [],
     history: [
-      {
-        id: "ih_6",
-        at: daysAgo(3),
-        label: "Candidate Identified",
-        pipelinePhase: "candidate-identified"
-      },
-      {
-        id: "ih_7",
-        at: daysAgo(2),
-        label: "Compatibility Review",
-        pipelinePhase: "compatibility-review"
-      },
-      {
-        id: "ih_8",
-        at: daysAgo(1),
-        label: "Presented",
-        detail: "Member A",
-        pipelinePhase: "member-a-presented"
-      }
+      { id: "ih_6", at: daysAgo(3), label: "Candidate Identified", pipelinePhase: "candidate-identified" },
+      { id: "ih_7", at: daysAgo(2), label: "Compatibility Review", pipelinePhase: "compatibility-review" },
+      { id: "ih_8", at: daysAgo(1), label: "Presented", detail: "Member A", pipelinePhase: "member-a-presented" }
     ]
   },
   {
@@ -187,40 +156,34 @@ export const CONCIERGE_INTRODUCTION_SEED: IntroductionRecord[] = [
     tier: "essential",
     createdAt: daysAgo(1),
     updatedAt: daysAgo(1),
-    status: "pending-review",
-    pipelinePhase: "internal-review",
+    status: "compatibility-review",
+    pipelinePhase: "compatibility-review",
     notes: "Early candidate. Await video completion before member outreach.",
-    matchNotes: ["Good communication styles."],
+    matchNotes: ["Strong communication styles."],
+    connectionReasons: ["Similar marriage goals.", "Enjoy meaningful conversations."],
+    compatibilitySummary: "Thoughtful Journey Match under consultant review.",
+    confidenceLevel: "worth-exploring",
     consultantMessage:
       "I'd love to introduce you to someone I believe you may enjoy getting to know.\n\nWould you be open to learning more?",
     memberAPreviewNote: CONSULTANT_PREVIEW,
     memberBPreviewNote: CONSULTANT_PREVIEW,
     memberAApproved: null,
     memberBApproved: null,
-    compatibilityScore: 48,
     compatibility: {
-      score: 48,
-      faith: "Christian / Christian",
+      ...compatibilityBase,
       lifestyle: "Moderate · Active",
       marriageTimeline: "Flexible / Within 2 years",
-      familyValues: "Important · Very important",
-      childrenPreference: "Undecided / Want children",
+      careerCompatibility: "Teacher / Product Designer",
       location: "Abuja / Lagos",
       relocationOpenness: "Cross-city — review relocation openness",
-      communicationStyle: "Reserved / Direct",
-      loveLanguage: "Acts of service · Quality time",
-      dealBreakers: "Dishonesty · Lack of ambition"
+      communicationStyle: "Reserved / Direct"
     },
     internalFlags: ["sensitive-case"],
     bothConsented: false,
+    isInternalCandidate: true,
     feedback: [],
     history: [
-      {
-        id: "ih_9",
-        at: daysAgo(1),
-        label: "Candidate Identified",
-        pipelinePhase: "candidate-identified"
-      }
+      { id: "ih_9", at: daysAgo(1), label: "Candidate Identified", pipelinePhase: "candidate-identified" }
     ]
   }
 ];

@@ -3,12 +3,17 @@
  */
 import {
   allocateIntroductionId,
+  assertIntroductionCooldown,
   assertIntroductionHistoryIntegrity,
   assertNoDuplicateIntroduction,
   bootstrapIntroductionRegistry,
   bothMembersConsented,
   canRevealCounterpart,
+  filterMemberVisibleIntroductions,
   findDuplicateIntroduction,
+  getMemberCooldownSnapshot,
+  isInternalCandidateRecord,
+  isMemberVisibleIntroduction,
   pushIntroductionHistory,
   recordIntroductionMemberApproval
 } from "../server/services/introductionEngine.js";
@@ -21,6 +26,7 @@ function assert(condition, message) {
 const memberA = "sc_member_amaka";
 const memberB = "sc_member_chidi";
 const memberC = "sc_member_zara";
+const memberD = "sc_member_tunde";
 
 const seed = [
   {
@@ -33,6 +39,7 @@ const seed = [
     memberAApproved: true,
     memberBApproved: true,
     bothConsented: true,
+    isInternalCandidate: false,
     history: [{ id: "h1", at: "2026-01-10T00:00:00.000Z", label: "Candidate Identified" }]
   },
   {
@@ -45,6 +52,19 @@ const seed = [
     memberAApproved: false,
     memberBApproved: null,
     bothConsented: false,
+    history: []
+  },
+  {
+    id: "intro_internal",
+    introductionId: "BS-IN-2026-0003",
+    memberAId: memberD,
+    memberBId: memberC,
+    createdAt: "2026-01-14T00:00:00.000Z",
+    status: "compatibility-review",
+    memberAApproved: null,
+    memberBApproved: null,
+    bothConsented: false,
+    isInternalCandidate: true,
     history: []
   }
 ];
@@ -71,10 +91,10 @@ assert(duplicateBlocked, "assertNoDuplicateIntroduction throws on active duplica
 let registry = bootstrapIntroductionRegistry(seed);
 const first = allocateIntroductionId(registry, "intro_new_1", "2026-06-01T00:00:00.000Z");
 registry = first.state;
-assert(first.introductionId === formatIntroductionId(2026, 3), "allocates next sequential ID");
+assert(first.introductionId === formatIntroductionId(2026, 4), "allocates next sequential ID");
 
 const second = allocateIntroductionId(registry, "intro_new_2", "2026-06-02T00:00:00.000Z");
-assert(second.introductionId === formatIntroductionId(2026, 4), "never reuses introduction IDs");
+assert(second.introductionId === formatIntroductionId(2026, 5), "never reuses introduction IDs");
 
 let idCollision = false;
 try {
@@ -82,9 +102,9 @@ try {
     ...second.state,
     byIntroductionId: {
       ...second.state.byIntroductionId,
-      [formatIntroductionId(2026, 5)]: "existing"
+      [formatIntroductionId(2026, 6)]: "existing"
     },
-    yearSequence: { ...second.state.yearSequence, 2026: 4 }
+    yearSequence: { ...second.state.yearSequence, 2026: 5 }
   };
   allocateIntroductionId(tampered, "intro_collision", "2026-06-04T00:00:00.000Z");
 } catch (error) {
@@ -94,7 +114,10 @@ assert(idCollision, "prevents duplicate ID allocation");
 
 // Timeline integrity
 const previous = { ...seed[0], history: [...seed[0].history] };
-const next = { ...seed[0], history: [...seed[0].history, { id: "h2", at: "2026-01-11T00:00:00.000Z", label: "Presented" }] };
+const next = {
+  ...seed[0],
+  history: [...seed[0].history, { id: "h2", at: "2026-01-11T00:00:00.000Z", label: "Presented" }]
+};
 assertIntroductionHistoryIntegrity(previous, next);
 
 let historyShrinkBlocked = false;
@@ -153,5 +176,67 @@ pushIntroductionHistory(historyRecord, { label: "Presented", pipelinePhase: "mem
 pushIntroductionHistory(historyRecord, { label: "Accepted", pipelinePhase: "mutual-acceptance" });
 assert(historyRecord.history.length === 2, "history entries persist in order");
 assert(historyRecord.pipelinePhase === "mutual-acceptance", "pipeline phase updates with history");
+
+// Cooldown enforcement
+const cooldownSeed = [
+  {
+    id: "c1",
+    introductionId: "BS-IN-2026-0101",
+    memberAId: memberD,
+    memberBId: memberA,
+    status: "active-conversation",
+    memberAApproved: true,
+    memberBApproved: true
+  },
+  {
+    id: "c2",
+    introductionId: "BS-IN-2026-0102",
+    memberAId: memberD,
+    memberBId: memberB,
+    status: "awaiting-response",
+    memberAApproved: true,
+    memberBApproved: null
+  }
+];
+const cooldownSnapshot = getMemberCooldownSnapshot(cooldownSeed, memberD);
+assert(cooldownSnapshot.activeCount === 2, "counts active introductions per member");
+assert(cooldownSnapshot.blocked, "blocks when max active reached");
+
+let cooldownBlocked = false;
+try {
+  assertIntroductionCooldown(cooldownSeed, memberD, memberC);
+} catch (error) {
+  cooldownBlocked = error instanceof Error && error.message.includes("Introduction cooldown");
+}
+assert(cooldownBlocked, "assertIntroductionCooldown throws when member at limit");
+
+// Private candidate pools
+const internalOnly = {
+  id: "intro_internal",
+  introductionId: "BS-IN-2026-0003",
+  memberAId: memberD,
+  memberBId: memberC,
+  status: "compatibility-review",
+  memberAApproved: null,
+  memberBApproved: null,
+  isInternalCandidate: true
+};
+assert(isInternalCandidateRecord(internalOnly), "internal candidate flagged");
+assert(!isMemberVisibleIntroduction(internalOnly, memberC), "member cannot see internal candidate pool");
+assert(!isMemberVisibleIntroduction(internalOnly, memberD), "member cannot see unrevealed internal review");
+
+const afterPresented = {
+  ...internalOnly,
+  status: "presented",
+  memberAApproved: true,
+  memberBApproved: null,
+  isInternalCandidate: false
+};
+assert(isMemberVisibleIntroduction(afterPresented, memberD), "member sees introduction once presented");
+
+const memberView = filterMemberVisibleIntroductions([internalOnly, afterPresented, seed[0]], memberD);
+assert(memberView.length === 1, "members only see presented introductions");
+assert(memberView[0].memberAApproved === true, "presented introduction visible to member");
+assert(!filterMemberVisibleIntroductions([internalOnly], memberC).length, "internal pool hidden from member view");
 
 console.log("test-introduction-engine: all assertions passed");

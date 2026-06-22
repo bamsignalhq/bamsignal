@@ -1,3 +1,4 @@
+import { confidenceLabel } from "../../../constants/conciergeIntroduction";
 import { INTRODUCTION_ID_LABEL } from "../../../constants/introductionId";
 import {
   INTRODUCTION_OUTCOME_LABELS,
@@ -29,6 +30,7 @@ export function PendingIntroductionsTable({
             <th>{INTRODUCTION_ID_LABEL}</th>
             <th>Members</th>
             <th>Status</th>
+            <th>Confidence</th>
             <th>Consent</th>
             <th>Follow-up</th>
             <th>Outcome</th>
@@ -47,6 +49,15 @@ export function PendingIntroductionsTable({
                 </button>
               </td>
               <td>{INTRODUCTION_STATUS_LABELS[record.status]}</td>
+              <td>
+                {record.confidenceLevel ? (
+                  <span className={`introduction-confidence-badge introduction-confidence-badge--${record.confidenceLevel}`}>
+                    {confidenceLabel(record.confidenceLevel)}
+                  </span>
+                ) : (
+                  "—"
+                )}
+              </td>
               <td>
                 {record.memberAApproved === true ? "A ✓" : "A …"} ·{" "}
                 {record.memberBApproved === true ? "B ✓" : "B …"}

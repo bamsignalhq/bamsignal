@@ -1,22 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  INTRODUCTION_ENGINE_TITLE,
-  MATCH_NOTE_EXAMPLES
-} from "../../../constants/conciergeIntroduction";
+import { INTRODUCTION_ENGINE_TITLE } from "../../../constants/conciergeIntroduction";
 import type { IntroductionRecord } from "../../../types/conciergeIntroduction";
 import {
   createIntroductionCandidate,
+  getIntroductionCooldownForMembers,
   listIntroductionHistory,
-  listPendingIntroductions,
-  updateIntroductionMatchNotes
+  listPendingIntroductions
 } from "../../../utils/IntroductionEngine";
 import { listConciergeMembers } from "../../../utils/conciergeConsultantStore";
 import { IntroductionCard } from "./IntroductionCard";
 import { IntroductionCompatibilityCard } from "./IntroductionCompatibilityCard";
+import { IntroductionConfidenceCard } from "./IntroductionConfidenceCard";
+import { IntroductionCooldownCard } from "./IntroductionCooldownCard";
 import { IntroductionHistoryPage } from "./IntroductionHistoryPage";
+import { IntroductionNotesCard } from "./IntroductionNotesCard";
 import { IntroductionOutcomeCard } from "./IntroductionOutcomeCard";
 import { IntroductionTimeline } from "./IntroductionTimeline";
 import { PendingIntroductionsTable } from "./PendingIntroductionsTable";
+import { PrivateIntroductionCard } from "./PrivateIntroductionCard";
+import { WhyWeThinkYouWillConnectCard } from "./WhyWeThinkYouWillConnectCard";
 import { useAdminToast } from "../AdminToast";
 
 type IntroductionEngineView = "workspace" | "history";
@@ -41,29 +43,30 @@ export function IntroductionEnginePage() {
 
   const pending = useMemo(() => listPendingIntroductions(), [records]);
   const selected = records.find((record) => record.id === selectedId) ?? null;
+  const createCooldown = useMemo(() => {
+    if (!memberAId || !memberBId) return null;
+    return getIntroductionCooldownForMembers(memberAId, memberBId);
+  }, [memberAId, memberBId, records]);
 
   const handleCreate = () => {
     if (!memberAId || !memberBId) {
       pushToast("Select two members.");
       return;
     }
-    const created = createIntroductionCandidate({ memberAId, memberBId });
-    if (!created) {
-      pushToast("Could not create introduction — duplicate pair or invalid members.");
+    if (createCooldown?.memberA.blocked || createCooldown?.memberB.blocked) {
+      pushToast("Introduction cooldown — a member already has two active introductions.");
       return;
     }
-    pushToast(`Introduction ${created.introductionId} created.`);
+    const created = createIntroductionCandidate({ memberAId, memberBId });
+    if (!created) {
+      pushToast("Could not create introduction — duplicate pair, cooldown, or invalid members.");
+      return;
+    }
+    pushToast(`Thoughtful Introduction ${created.introductionId} created.`);
     setMemberAId("");
     setMemberBId("");
     setSelectedId(created.id);
     setView("workspace");
-    refresh();
-  };
-
-  const handleAddMatchNote = (note: string) => {
-    if (!selected) return;
-    const next = [...selected.matchNotes, note];
-    updateIntroductionMatchNotes(selected.id, next);
     refresh();
   };
 
@@ -72,7 +75,7 @@ export function IntroductionEnginePage() {
       <header className="introduction-engine__head">
         <div>
           <h2>{INTRODUCTION_ENGINE_TITLE}</h2>
-          <p>Consultant-guided introductions with mutual consent at every step.</p>
+          <p>Human, private, intentional introductions — never algorithmic.</p>
         </div>
         <div className="introduction-engine__tabs">
           <button
@@ -103,8 +106,10 @@ export function IntroductionEnginePage() {
         />
       ) : (
         <>
+          <PrivateIntroductionCard records={records} />
+
           <section className="introduction-engine__create concierge-consultant-card--glass">
-            <h3>Create Introduction</h3>
+            <h3>Create Thoughtful Introduction</h3>
             <div className="introduction-engine__create-grid">
               <label>
                 Journey A
@@ -132,15 +137,14 @@ export function IntroductionEnginePage() {
                 Create candidate
               </button>
             </div>
+            {memberAId && memberBId ? (
+              <IntroductionCooldownCard memberAId={memberAId} memberBId={memberBId} />
+            ) : null}
           </section>
 
           <section className="introduction-engine__pending concierge-consultant-card--glass">
             <h3>Pending introductions</h3>
-            <PendingIntroductionsTable
-              records={pending}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
+            <PendingIntroductionsTable records={pending} selectedId={selectedId} onSelect={setSelectedId} />
           </section>
 
           {selected ? (
@@ -149,33 +153,12 @@ export function IntroductionEnginePage() {
               <div className="introduction-engine__detail-grid">
                 <IntroductionTimeline record={selected} />
                 <IntroductionCompatibilityCard record={selected} />
+                <IntroductionConfidenceCard record={selected} onUpdated={refresh} />
+                <WhyWeThinkYouWillConnectCard record={selected} onUpdated={refresh} />
                 <IntroductionOutcomeCard record={selected} onUpdated={refresh} />
+                <IntroductionNotesCard record={selected} onUpdated={refresh} />
+                <IntroductionCooldownCard record={selected} />
               </div>
-              <section className="introduction-engine__match-notes concierge-consultant-card--glass">
-                <h3>Match notes</h3>
-                <p className="introduction-compatibility__private">Private — consultants only.</p>
-                <div className="concierge-private-notes__examples">
-                  {MATCH_NOTE_EXAMPLES.map((note) => (
-                    <button
-                      key={note}
-                      type="button"
-                      className="concierge-private-notes__chip"
-                      onClick={() => handleAddMatchNote(note)}
-                    >
-                      {note}
-                    </button>
-                  ))}
-                </div>
-                {selected.matchNotes.length ? (
-                  <ul className="introduction-engine__match-list">
-                    {selected.matchNotes.map((note) => (
-                      <li key={note}>{note}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="concierge-consultant__empty">No match notes yet.</p>
-                )}
-              </section>
             </div>
           ) : null}
         </>

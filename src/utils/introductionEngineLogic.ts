@@ -1,8 +1,13 @@
 import {
+  ACTIVE_INTRODUCTION_STATUSES,
   CLOSED_INTRODUCTION_STATUSES,
+  CONNECTION_REASON_EXAMPLES,
+  INTRODUCTION_COOLDOWN_MAX_ACTIVE,
   INTRODUCTION_PIPELINE_PHASES,
+  INTERNAL_CANDIDATE_STATUSES,
   LEGACY_INTRODUCTION_OUTCOME_MAP,
   LEGACY_INTRODUCTION_STATUS_MAP,
+  type IntroductionConfidenceLevel,
   type IntroductionPipelinePhaseId,
   type IntroductionStatus
 } from "../constants/conciergeIntroduction";
@@ -10,7 +15,8 @@ import type { ConciergeMemberRecord } from "../types/conciergeConsultant";
 import type {
   IntroductionCompatibilitySnapshot,
   IntroductionHistoryEntry,
-  IntroductionRecord
+  IntroductionRecord,
+  MemberCooldownSnapshot
 } from "../types/conciergeIntroduction";
 
 export function normalizeIntroductionStatus(status: string): IntroductionStatus {
@@ -25,16 +31,37 @@ export function normalizeIntroductionOutcome(outcome?: string) {
   return LEGACY_INTRODUCTION_OUTCOME_MAP[outcome] ?? outcome;
 }
 
+function deriveConfidenceFromLegacy(record: IntroductionRecord): IntroductionConfidenceLevel | undefined {
+  if (record.confidenceLevel) return record.confidenceLevel;
+  const raw = record.compatibilityScore ?? record.successProbability;
+  if (raw == null) return undefined;
+  if (raw >= 80) return "strong-fit";
+  if (raw >= 70) return "promising";
+  if (raw >= 55) return "worth-exploring";
+  return "requires-conversation";
+}
+
 export function normalizeIntroductionRecord(record: IntroductionRecord): IntroductionRecord {
   const status = normalizeIntroductionStatus(record.status);
-  const compatibilityScore = record.compatibilityScore ?? record.successProbability;
+  const confidenceLevel = deriveConfidenceFromLegacy(record);
+  const isInternalCandidate =
+    record.isInternalCandidate ??
+    (INTERNAL_CANDIDATE_STATUSES.has(status) &&
+      record.memberAApproved == null &&
+      record.memberBApproved == null);
+
   return {
     ...record,
     status,
     outcome: normalizeIntroductionOutcome(record.outcome),
     matchNotes: record.matchNotes ?? [],
+    connectionReasons: record.connectionReasons ?? [],
+    confidenceLevel,
+    isInternalCandidate,
     pipelinePhase: record.pipelinePhase ?? "candidate-identified",
-    compatibilityScore,
+    compatibility: record.compatibility
+      ? { ...record.compatibility, score: undefined }
+      : record.compatibility,
     history: (record.history ?? []).map((entry) => ({
       ...entry,
       outcome: normalizeIntroductionOutcome(entry.outcome)
@@ -44,6 +71,85 @@ export function normalizeIntroductionRecord(record: IntroductionRecord): Introdu
 
 export function pairKey(memberAId: string, memberBId: string): string {
   return [memberAId, memberBId].sort().join("::");
+}
+
+export function isIntroductionActive(record: IntroductionRecord): boolean {
+  return ACTIVE_INTRODUCTION_STATUSES.has(record.status);
+}
+
+export function countActiveIntroductionsForMember(
+  records: IntroductionRecord[],
+  memberId: string,
+  excludeId?: string
+): number {
+  return records.filter((record) => {
+    if (excludeId && record.id === excludeId) return false;
+    if (!isIntroductionActive(record)) return false;
+    return record.memberAId === memberId || record.memberBId === memberId;
+  }).length;
+}
+
+export function getMemberCooldownSnapshot(
+  records: IntroductionRecord[],
+  memberId: string
+): MemberCooldownSnapshot {
+  const active = records.filter(
+    (record) =>
+      isIntroductionActive(record) &&
+      (record.memberAId === memberId || record.memberBId === memberId)
+  );
+  const activeCount = active.length;
+  return {
+    memberId,
+    activeCount,
+    maxActive: INTRODUCTION_COOLDOWN_MAX_ACTIVE,
+    blocked: activeCount >= INTRODUCTION_COOLDOWN_MAX_ACTIVE,
+    activeIntroductionIds: active.map((record) => record.introductionId)
+  };
+}
+
+export function assertIntroductionCooldown(
+  records: IntroductionRecord[],
+  memberAId: string,
+  memberBId: string
+): void {
+  const cooldownA = getMemberCooldownSnapshot(records, memberAId);
+  const cooldownB = getMemberCooldownSnapshot(records, memberBId);
+  if (cooldownA.blocked) {
+    throw new Error(
+      `Introduction cooldown: ${memberAId} has ${cooldownA.activeCount} active introductions (max ${INTRODUCTION_COOLDOWN_MAX_ACTIVE})`
+    );
+  }
+  if (cooldownB.blocked) {
+    throw new Error(
+      `Introduction cooldown: ${memberBId} has ${cooldownB.activeCount} active introductions (max ${INTRODUCTION_COOLDOWN_MAX_ACTIVE})`
+    );
+  }
+}
+
+export function isInternalCandidateRecord(record: IntroductionRecord): boolean {
+  return Boolean(
+    record.isInternalCandidate ||
+      (INTERNAL_CANDIDATE_STATUSES.has(record.status) &&
+        record.memberAApproved == null &&
+        record.memberBApproved == null)
+  );
+}
+
+/** Members only see introductions presented to them — never internal pools. */
+export function isMemberVisibleIntroduction(record: IntroductionRecord, memberId: string): boolean {
+  if (record.memberAId !== memberId && record.memberBId !== memberId) return false;
+  if (isInternalCandidateRecord(record)) return false;
+  if (memberId === record.memberAId && record.memberAApproved !== null) return true;
+  if (memberId === record.memberBId && record.memberBApproved !== null) return true;
+  return record.bothConsented;
+}
+
+export function filterMemberVisibleIntroductions(
+  records: IntroductionRecord[],
+  memberId: string
+): IntroductionRecord[] {
+  return records.filter((record) => isMemberVisibleIntroduction(record, memberId));
 }
 
 export function findDuplicateIntroduction(
@@ -88,24 +194,81 @@ export function assertIntroductionHistoryIntegrity(
   }
 }
 
+export function buildConnectionReasonsFromMembers(
+  memberA: ConciergeMemberRecord,
+  memberB: ConciergeMemberRecord
+): string[] {
+  const reasons: string[] = [];
+  if (memberA.aboutYou.religion && memberA.aboutYou.religion === memberB.aboutYou.religion) {
+    reasons.push("Both value faith.");
+  }
+  if (
+    memberA.valuesLifestyle.faithImportance === memberB.valuesLifestyle.faithImportance ||
+    memberA.relationshipGoals.familyGoals
+  ) {
+    reasons.push("Both are family-oriented.");
+  }
+  if (memberA.relationshipGoals.marriageTimeline === memberB.relationshipGoals.marriageTimeline) {
+    reasons.push("Similar marriage goals.");
+  }
+  if (memberA.valuesLifestyle.loveLanguage || memberB.valuesLifestyle.loveLanguage) {
+    reasons.push("Strong communication styles.");
+  }
+  if (memberA.aboutYou.city !== memberB.aboutYou.city) {
+    reasons.push("Open to relocation.");
+  }
+  if (memberA.valuesLifestyle.travel || memberB.valuesLifestyle.travel) {
+    reasons.push("Love travelling.");
+  }
+  reasons.push("Enjoy meaningful conversations.");
+  return [...new Set(reasons)].slice(0, 5);
+}
+
+export function buildCompatibilitySummary(snapshot: IntroductionCompatibilitySnapshot): string {
+  const parts = [
+    snapshot.faith.includes("/") && snapshot.faith.split("/")[0].trim() === snapshot.faith.split("/")[1]?.trim()
+      ? "Shared faith"
+      : null,
+    snapshot.familyValues ? "family values" : null,
+    snapshot.marriageTimeline ? "marriage timeline alignment" : null
+  ].filter(Boolean);
+  if (!parts.length) return "Thoughtful Journey Match under consultant review.";
+  return `Shared ${parts.join(", ")}.`;
+}
+
 export function buildCompatibilityFromMembers(
   memberA: ConciergeMemberRecord,
   memberB: ConciergeMemberRecord
 ): IntroductionCompatibilitySnapshot {
-  const score = estimateCompatibilityScore(memberA, memberB);
   return {
-    score,
     faith: `${memberA.aboutYou.religion} / ${memberB.aboutYou.religion}`,
     lifestyle: `${memberA.valuesLifestyle.fitness} · ${memberB.valuesLifestyle.fitness}`,
     marriageTimeline: `${memberA.relationshipGoals.marriageTimeline} / ${memberB.relationshipGoals.marriageTimeline}`,
     familyValues: `${memberA.valuesLifestyle.faithImportance} · ${memberB.valuesLifestyle.faithImportance}`,
     childrenPreference: `${memberA.aboutYou.children} / ${memberB.aboutYou.children}`,
+    careerCompatibility: `${memberA.aboutYou.occupation} / ${memberB.aboutYou.occupation}`,
     location: `${memberA.aboutYou.city} / ${memberB.aboutYou.city}`,
     relocationOpenness: inferRelocationOpenness(memberA, memberB),
     communicationStyle: `${memberA.valuesLifestyle.loveLanguage} / ${memberB.valuesLifestyle.loveLanguage}`,
     loveLanguage: `${memberA.valuesLifestyle.loveLanguage} · ${memberB.valuesLifestyle.loveLanguage}`,
     dealBreakers: `${memberA.relationshipGoals.dealBreakers} · ${memberB.relationshipGoals.dealBreakers}`
   };
+}
+
+export function suggestConfidenceLevel(
+  memberA: ConciergeMemberRecord,
+  memberB: ConciergeMemberRecord
+): IntroductionConfidenceLevel {
+  let signals = 0;
+  if (memberA.aboutYou.religion === memberB.aboutYou.religion) signals += 2;
+  if (memberA.valuesLifestyle.faithImportance === memberB.valuesLifestyle.faithImportance) signals += 1;
+  if (memberA.relationshipGoals.marriageTimeline === memberB.relationshipGoals.marriageTimeline) signals += 1;
+  if (memberA.aboutYou.city === memberB.aboutYou.city) signals += 1;
+  if (memberA.trustedMember && memberB.trustedMember) signals += 1;
+  if (signals >= 5) return "strong-fit";
+  if (signals >= 3) return "promising";
+  if (signals >= 2) return "worth-exploring";
+  return "requires-conversation";
 }
 
 function inferRelocationOpenness(memberA: ConciergeMemberRecord, memberB: ConciergeMemberRecord): string {
@@ -119,15 +282,6 @@ function inferRelocationOpenness(memberA: ConciergeMemberRecord, memberB: Concie
     return "Cross-city — review relocation openness";
   }
   return "Same city preference";
-}
-
-function estimateCompatibilityScore(memberA: ConciergeMemberRecord, memberB: ConciergeMemberRecord): number {
-  let score = 62;
-  if (memberA.aboutYou.religion === memberB.aboutYou.religion) score += 12;
-  if (memberA.valuesLifestyle.faithImportance === memberB.valuesLifestyle.faithImportance) score += 8;
-  if (memberA.aboutYou.city === memberB.aboutYou.city) score += 6;
-  if (memberA.trustedMember && memberB.trustedMember) score += 4;
-  return Math.min(98, score);
 }
 
 export type PipelinePhaseView = {
@@ -145,7 +299,9 @@ export function derivePipelinePhases(record: IntroductionRecord): PipelinePhaseV
       !["pending-review"].includes(record.status) ||
       record.history.length > 1,
     "compatibility-review":
-      historyPhases.has("compatibility-review") || Boolean(record.compatibility || record.compatibilityScore),
+      historyPhases.has("compatibility-review") ||
+      record.status === "compatibility-review" ||
+      Boolean(record.compatibility),
     approved:
       historyPhases.has("approved") ||
       record.history.some((item) => item.label.toLowerCase().includes("approved")),
@@ -205,3 +361,5 @@ export function bothMembersConsented(record: IntroductionRecord): boolean {
 export function canRevealCounterpart(record: IntroductionRecord): boolean {
   return bothMembersConsented(record);
 }
+
+export { CONNECTION_REASON_EXAMPLES };

@@ -3731,3 +3731,209 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* Relationship Legacy Quotes™ — architecture */
+.relationship-legacy-quotes {
+  display: grid;
+  gap: 16px;
+}
+
+.legacy-quote-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.legacy-quote-card__labels {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.legacy-quote-card__private,
+.legacy-quote-card__consent {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.legacy-quote-card__private {
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.legacy-quote-card__consent {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.legacy-quote-card__examples h4,
+.legacy-quote-card__consent-levels h4,
+.legacy-quote-card__future h4 {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+}
+
+.legacy-quote-card__examples ul {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.legacy-quote-card__examples li {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.legacy-quote-card__examples blockquote {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.84);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.legacy-quote-card__consent-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.legacy-quote-card__consent-list li {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.legacy-quote-card__consent-list p {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}
+
+.legacy-quote-card__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.legacy-quote-card__future li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.legacy-quote-card__future strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.legacy-quote-card__future span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.legacy-quote-card__reserved {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.45;
+}
+
+.legacy-quote-timeline-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.legacy-quote-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.legacy-quote-timeline__item {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.legacy-quote-timeline__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.legacy-quote-timeline__head time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.legacy-quote-timeline__quote {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.legacy-quote-timeline__quote p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.55;
+  font-style: italic;
+}
+
+.legacy-quote-timeline__quote p::before {
+  content: "\201C";
+}
+
+.legacy-quote-timeline__quote p::after {
+  content: "\201D";
+}
+
+.legacy-quote-timeline__by {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.relationship-quote-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 130, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.relationship-quote-badge--private {
+  border-color: rgba(168, 130, 255, 0.28);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.relationship-quote-badge--consent {
+  border-color: rgba(212, 175, 106, 0.35);
+  background: rgba(212, 175, 106, 0.08);
+  color: rgba(212, 175, 106, 0.92);
+}
+
+.relationship-quote-badge--granted {
+  border-color: rgba(212, 175, 106, 0.5);
+  background: rgba(212, 175, 106, 0.14);
+}
+

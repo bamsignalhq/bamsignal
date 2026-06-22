@@ -4,9 +4,9 @@ import type { ConciergeMemberRecord } from "../../../types/conciergeConsultant";
 import { buildMemberAssignmentBundle } from "../../../utils/consultantAssignmentEngine";
 import { getMemberStewardName } from "../../../utils/conciergeMemberStewardship";
 import { AssignmentHealthBadge } from "./AssignmentHealthBadge";
+import { AssignmentRecommendationCard } from "./AssignmentRecommendationCard";
 import { AssignmentReasonCard } from "./AssignmentReasonCard";
-import { ConsultantRecommendationCard } from "./ConsultantRecommendationCard";
-import { WorkloadCard } from "./WorkloadCard";
+import { ConsultantWorkloadCard } from "./ConsultantWorkloadCard";
 
 type MemberAssignmentSectionProps = {
   member: ConciergeMemberRecord;
@@ -65,12 +65,12 @@ export function MemberAssignmentSection({ member }: MemberAssignmentSectionProps
       </div>
 
       <div className="member-assignment__cards">
-        <ConsultantRecommendationCard recommendation={bundle.recommendation} />
+        <AssignmentRecommendationCard recommendation={bundle.recommendation} />
         <AssignmentReasonCard reason={bundle.summary.reason} />
         {bundle.currentStewardWorkload ? (
-          <WorkloadCard workload={bundle.currentStewardWorkload} title="Current steward workload" />
+          <ConsultantWorkloadCard workload={bundle.currentStewardWorkload} title="Current steward workload" />
         ) : (
-          <WorkloadCard workload={bundle.recommendation.workload} title="Recommended steward workload" />
+          <ConsultantWorkloadCard workload={bundle.recommendation.workload} title="Recommended steward workload" />
         )}
       </div>
     </section>

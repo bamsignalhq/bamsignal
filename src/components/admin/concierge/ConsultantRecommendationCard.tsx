@@ -1,12 +1,13 @@
 import { ASSIGNMENT_CONFIDENCE_LABELS } from "../../../constants/consultantAssignment";
 import { CONCIERGE_CONSULTANT_ROLE_LABELS } from "../../../constants/conciergeConsultantRoles";
 import type { ConsultantRecommendation } from "../../../types/consultantAssignment";
-import { AssignmentHealthBadge } from "./AssignmentHealthBadge";
+import { ConsultantCapacityBadge } from "./ConsultantCapacityBadge";
 
 type ConsultantRecommendationCardProps = {
   recommendation: ConsultantRecommendation;
 };
 
+/** @deprecated prefer AssignmentRecommendationCard */
 export function ConsultantRecommendationCard({ recommendation }: ConsultantRecommendationCardProps) {
   return (
     <section className="consultant-recommendation concierge-consultant-card--glass cc-reveal">
@@ -16,6 +17,7 @@ export function ConsultantRecommendationCard({ recommendation }: ConsultantRecom
       </header>
       <div className="consultant-recommendation__name">
         <strong>{recommendation.consultantName}</strong>
+        <ConsultantCapacityBadge level={recommendation.level} workload={recommendation.workload.health} />
         <span className={`consultant-recommendation__confidence consultant-recommendation__confidence--${recommendation.confidence}`}>
           {ASSIGNMENT_CONFIDENCE_LABELS[recommendation.confidence]}
         </span>
@@ -26,11 +28,11 @@ export function ConsultantRecommendationCard({ recommendation }: ConsultantRecom
           <strong>{CONCIERGE_CONSULTANT_ROLE_LABELS[recommendation.primaryRole]}</strong>
         </div>
         <div>
-          <span>Workload</span>
-          <AssignmentHealthBadge health={recommendation.workload.health} />
+          <span>Workload score</span>
+          <strong>{recommendation.workload.workloadScore}</strong>
         </div>
       </div>
-      <p className="consultant-recommendation__workload">{recommendation.workload.summary}</p>
+      <p className="consultant-recommendation__workload">{recommendation.narrative || recommendation.workload.summary}</p>
     </section>
   );
 }

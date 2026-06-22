@@ -2,7 +2,7 @@ import type { ConsultationEventStatus } from "./consultationScheduling";
 import type { ConsultationPaymentStatus } from "./consultationPayment";
 import type { EmailDeliveryStatus } from "./conciergeEmail";
 import type { WhatsappDeliveryStatus } from "./conciergeWhatsapp";
-import type { AssignmentConfidence } from "./consultantAssignment";
+import type { AssignmentConfidence, RecommendationLevel } from "./consultantAssignment";
 import type { WorkloadHealth } from "./consultantAssignment";
 
 export type OperationsCenterSectionId =
@@ -98,6 +98,7 @@ export type OperationsCenterAssignmentRow = {
   currentStewardName?: string;
   recommendedConsultantName?: string;
   confidence?: AssignmentConfidence;
+  level?: RecommendationLevel;
   reason?: string;
 };
 
@@ -105,9 +106,15 @@ export type OperationsCenterWorkloadRow = {
   consultantId: string;
   consultantName: string;
   health: WorkloadHealth;
+  capacityLevel: RecommendationLevel;
   activeMembers: number;
+  pendingConsultations: number;
+  introductionsInProgress: number;
   pendingFollowUps: number;
   upcomingMeetings: number;
+  responseTimeHours: number | null;
+  regionLabel: string;
+  workloadScore: number;
   summary: string;
 };
 

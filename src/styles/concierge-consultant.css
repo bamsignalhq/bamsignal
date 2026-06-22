@@ -6578,6 +6578,140 @@
   }
 }
 
+/* Consultant Assignment Engine™ */
+.consultant-capacity-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.consultant-capacity-badge--highly-recommended {
+  color: #d7ffe8;
+  background: rgba(72, 201, 135, 0.18);
+}
+
+.consultant-capacity-badge--recommended {
+  color: #d9ecff;
+  background: rgba(96, 165, 250, 0.18);
+}
+
+.consultant-capacity-badge--available {
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.consultant-capacity-badge--limited-capacity {
+  color: #ffe7c2;
+  background: rgba(251, 191, 36, 0.16);
+}
+
+.consultant-capacity-badge--unavailable {
+  color: #ffd5d5;
+  background: rgba(248, 113, 113, 0.16);
+}
+
+.consultant-workload-card__header,
+.assignment-recommendation__name,
+.assignment-decision__grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.consultant-workload-card__badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.consultant-workload-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.consultant-workload-card__metrics dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.consultant-workload-card__metrics dd {
+  margin: 2px 0 0;
+  font-size: 0.86rem;
+}
+
+.consultant-workload-card--compact .consultant-workload-card__metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.assignment-recommendation__factors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.assignment-recommendation__factors li {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.assignment-recommendation__narrative,
+.consultant-workload-card__summary {
+  margin: 0 0 12px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.84rem;
+}
+
+.assignment-decision__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+.assignment-decision__confirm {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+  font-size: 0.84rem;
+}
+
+.operations-center-assignments__workloads {
+  display: grid;
+  gap: 10px;
+}
+
+.operations-center-assignments__workload-row {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.operations-center-assignments__workload-row span {
+  display: block;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.operations-center-assignments__picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 /* Consultation Payment Engine™ */
 .member-consultation-payment {
   display: grid;

@@ -6,37 +6,46 @@ import {
 } from "../constants/consultantAssignment";
 import { CONCIERGE_CONSULTANT_ROLE_LABELS } from "../constants/conciergeConsultantRoles";
 import { SIGNAL_CONCIERGE_STATUS_LABELS } from "../constants/signalConcierge";
-import type { ConciergeConsultantRecord } from "../types/conciergeConsultantDirectory";
 import type { ConciergeMemberRecord } from "../types/conciergeConsultant";
-import type { ConciergeConsultantRoleId } from "../constants/conciergeConsultantRoles";
 import type {
-  AssignmentConfidence,
+  AssignmentDecision,
   AssignmentMemberType,
   AssignmentReason,
   AssignmentSummary,
   ConsultantAssignmentRule,
-  ConsultantRecommendation,
-  WorkloadHealth,
-  WorkloadProfile
+  ConsultantRecommendation
 } from "../types/consultantAssignment";
-import {
-  listConciergeConsultantMeetings,
-  listConciergeConsultants
-} from "./conciergeConsultantDirectoryStore";
-import { listMembersForConsultant } from "./conciergeConsultantDirectoryStore";
+import { assignMemberToConsultant, listConciergeConsultants } from "./conciergeConsultantDirectoryStore";
+import { listConciergeMembers } from "./conciergeConsultantStore";
 import { getMemberStewardName } from "./conciergeMemberStewardship";
+import {
+  buildAssignmentRecommendation,
+  listRecommendationsForMember,
+  rankConsultantRecommendations,
+  recommendConsultantForMember as pickRecommendation
+} from "./consultantRecommendationEngine";
+import {
+  buildWorkloadProfile,
+  listConsultantWorkloadProfiles
+} from "./consultantWorkloadEngine";
 
-const ACTIVE_MEMBER_STATUSES = new Set<ConciergeMemberRecord["status"]>([
-  "accepted",
-  "active-search",
-  "introductions-in-progress",
-  "relationship",
-  "matched",
-  "exclusive",
-  "engaged",
-  "consultation-scheduled",
-  "under-review"
-]);
+export {
+  buildWorkloadProfile,
+  deriveCapacityLevel,
+  deriveWorkloadHealth,
+  listConsultantWorkloadProfiles,
+  memberMatchesConsultantRegion,
+  specializationLabels
+} from "./consultantWorkloadEngine";
+
+export {
+  buildAssignmentRecommendation,
+  buildMatchFactors,
+  listRecommendationsForMember,
+  rankConsultantRecommendations,
+  recommendationLevelLabel,
+  scoreConsultantForMember
+} from "./consultantRecommendationEngine";
 
 const COMPATIBILITY_REVIEW_STATUSES = new Set<ConciergeMemberRecord["status"]>([
   "applied",
@@ -116,133 +125,11 @@ export function buildAssignmentReason(member: ConciergeMemberRecord): Assignment
   };
 }
 
-function deriveWorkloadHealth(
-  consultant: ConciergeConsultantRecord,
-  activeMembers: number,
-  workloadScore: number
-): WorkloadHealth {
-  if (consultant.status !== "active") return "paused";
-  if (activeMembers >= 8 || workloadScore >= 12) return "full";
-  if (activeMembers >= 5 || workloadScore >= 8) return "busy";
-  return "healthy";
-}
-
-function workloadSummary(health: WorkloadHealth, activeMembers: number): string {
-  const label = WORKLOAD_HEALTH_LABELS[health];
-  if (health === "healthy") {
-    return `${label} — ${activeMembers} active member${activeMembers === 1 ? "" : "s"} in portfolio.`;
-  }
-  if (health === "busy") {
-    return `${label} — portfolio active with ${activeMembers} members.`;
-  }
-  if (health === "full") {
-    return `${label} — near capacity with ${activeMembers} active members.`;
-  }
-  return `${label} — consultant not available for new stewardship.`;
-}
-
-export function buildWorkloadProfile(consultant: ConciergeConsultantRecord): WorkloadProfile {
-  const members = listMembersForConsultant(consultant.id);
-  const meetings = listConciergeConsultantMeetings(consultant.id);
-  const activeMembers = members.filter((member) => ACTIVE_MEMBER_STATUSES.has(member.status)).length;
-  const pendingFollowUps = members
-    .flatMap((member) => member.followUpTasks)
-    .filter((task) => !task.completed).length;
-  const upcomingMeetings = meetings.filter(
-    (meeting) => new Date(meeting.scheduledAt).getTime() >= Date.now()
-  ).length;
-  const workloadScore = activeMembers + pendingFollowUps + upcomingMeetings;
-  const health = deriveWorkloadHealth(consultant, activeMembers, workloadScore);
-
-  return {
-    consultantId: consultant.id,
-    consultantName: consultant.name,
-    health,
-    activeMembers,
-    pendingFollowUps,
-    upcomingMeetings,
-    summary: workloadSummary(health, activeMembers)
-  };
-}
-
-function consultantMatchesRole(
-  consultant: ConciergeConsultantRecord,
-  role: ConciergeConsultantRoleId
-): boolean {
-  return consultant.primaryRole === role || consultant.roles.includes(role);
-}
-
-function tierFocusMatch(consultant: ConciergeConsultantRecord, member: ConciergeMemberRecord): boolean {
-  if (!member.preferredTier) return false;
-  return consultant.tierFocus.includes(member.preferredTier);
-}
-
-function deriveConfidence(
-  consultant: ConciergeConsultantRecord,
-  member: ConciergeMemberRecord,
-  targetRole: ConciergeConsultantRoleId,
-  workload: WorkloadProfile
-): AssignmentConfidence {
-  const roleMatch = consultantMatchesRole(consultant, targetRole);
-  const tierMatch = tierFocusMatch(consultant, member);
-
-  if (!roleMatch) return "available-fit";
-  if (workload.health === "full" || workload.health === "paused") return "available-fit";
-  if (roleMatch && tierMatch && workload.health === "healthy") return "strong-fit";
-  if (roleMatch && (tierMatch || workload.health === "healthy")) return "good-fit";
-  return "good-fit";
-}
-
-function scoreConsultant(
-  consultant: ConciergeConsultantRecord,
-  member: ConciergeMemberRecord,
-  targetRole: ConciergeConsultantRoleId
-): number {
-  const workload = buildWorkloadProfile(consultant);
-  let score = 0;
-  if (consultantMatchesRole(consultant, targetRole)) score += 40;
-  if (consultant.primaryRole === targetRole) score += 20;
-  if (tierFocusMatch(consultant, member)) score += 15;
-  if (workload.health === "healthy") score += 20;
-  else if (workload.health === "busy") score += 10;
-  else if (workload.health === "full") score += 2;
-  return score;
-}
-
-function pickRecommendedConsultant(
-  member: ConciergeMemberRecord,
-  targetRole: ConciergeConsultantRoleId
-): ConciergeConsultantRecord | null {
-  const consultants = listConciergeConsultants().filter((consultant) => consultant.status === "active");
-  if (!consultants.length) return null;
-
-  const ranked = [...consultants].sort(
-    (a, b) => scoreConsultant(b, member, targetRole) - scoreConsultant(a, member, targetRole)
-  );
-
-  const roleMatch = ranked.find((consultant) => consultantMatchesRole(consultant, targetRole));
-  return roleMatch ?? ranked[0] ?? null;
-}
-
 export function recommendConsultantForMember(
   member: ConciergeMemberRecord
 ): ConsultantRecommendation | null {
   const reason = buildAssignmentReason(member);
-  const targetRole = ASSIGNMENT_RULE_TARGET_ROLE[reason.code];
-  const consultant = pickRecommendedConsultant(member, targetRole);
-  if (!consultant) return null;
-
-  const workload = buildWorkloadProfile(consultant);
-  const confidence = deriveConfidence(consultant, member, targetRole, workload);
-
-  return {
-    consultantId: consultant.id,
-    consultantName: consultant.name,
-    primaryRole: consultant.primaryRole,
-    confidence,
-    reason,
-    workload
-  };
+  return pickRecommendation(member, reason);
 }
 
 export function buildAssignmentSummary(member: ConciergeMemberRecord): AssignmentSummary | null {
@@ -270,9 +157,11 @@ export function buildAssignmentSummary(member: ConciergeMemberRecord): Assignmen
     recommendedConsultantId: recommendation.consultantId,
     recommendedConsultantName: recommendation.consultantName,
     confidence: recommendation.confidence,
+    level: recommendation.level,
     reason: recommendation.reason,
     workloadHealth: recommendation.workload.health,
-    narrative: `${ASSIGNMENT_CONFIDENCE_LABELS[recommendation.confidence]} — ${recommendation.reason.detail}${
+    matchFactors: recommendation.matchFactors,
+    narrative: `${ASSIGNMENT_CONFIDENCE_LABELS[recommendation.confidence]} — ${recommendation.narrative}${
       currentWorkload ? ` Current steward workload: ${WORKLOAD_HEALTH_LABELS[currentWorkload.health]}.` : ""
     }`
   };
@@ -280,10 +169,13 @@ export function buildAssignmentSummary(member: ConciergeMemberRecord): Assignmen
 
 export function buildMemberAssignmentBundle(member: ConciergeMemberRecord): {
   recommendation: ConsultantRecommendation | null;
+  recommendations: ConsultantRecommendation[];
   summary: AssignmentSummary | null;
-  currentStewardWorkload: WorkloadProfile | null;
+  currentStewardWorkload: ReturnType<typeof buildWorkloadProfile> | null;
 } {
-  const recommendation = recommendConsultantForMember(member);
+  const reason = buildAssignmentReason(member);
+  const recommendation = pickRecommendation(member, reason);
+  const recommendations = listRecommendationsForMember(member, reason);
   const summary = buildAssignmentSummary(member);
   const stewardId = member.currentConsultantId ?? member.assignedConsultantId;
   const steward = stewardId
@@ -292,7 +184,56 @@ export function buildMemberAssignmentBundle(member: ConciergeMemberRecord): {
 
   return {
     recommendation,
+    recommendations,
     summary,
     currentStewardWorkload: steward ? buildWorkloadProfile(steward) : null
+  };
+}
+
+export function listUnassignedMembersForAssignment(): ConciergeMemberRecord[] {
+  return listConciergeMembers().filter(
+    (member) => !member.currentConsultantId && !member.assignedConsultantId
+  );
+}
+
+export function prepareAssignmentDecision(member: ConciergeMemberRecord): AssignmentDecision | null {
+  const recommendation = recommendConsultantForMember(member);
+  if (!recommendation) return null;
+
+  return {
+    memberId: member.id,
+    memberName: member.aboutYou.name,
+    journeyId: member.journeyId,
+    consultantId: recommendation.consultantId,
+    consultantName: recommendation.consultantName,
+    level: recommendation.level,
+    requiresAdminConfirm: true,
+    narrative: recommendation.narrative,
+    recommendation
+  };
+}
+
+/**
+ * Admin-confirmed assignment only — never call without explicit operator confirmation.
+ */
+export function confirmAssignmentDecision(
+  decision: AssignmentDecision,
+  actorName = "Operations Center"
+): ConciergeMemberRecord | null {
+  if (!decision.requiresAdminConfirm) return null;
+  return assignMemberToConsultant(decision.memberId, decision.consultantId, {
+    id: "admin_ops",
+    name: actorName,
+    role: "admin"
+  });
+}
+
+export function buildAssignmentEngineSnapshot() {
+  return {
+    workloads: listConsultantWorkloadProfiles(),
+    unassignedCount: listUnassignedMembersForAssignment().length,
+    recommendations: listUnassignedMembersForAssignment()
+      .map((member) => prepareAssignmentDecision(member))
+      .filter((decision): decision is AssignmentDecision => Boolean(decision))
   };
 }

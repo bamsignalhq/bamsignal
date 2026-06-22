@@ -36,6 +36,10 @@ export function OperationsCenterPage() {
     setRefreshKey((value) => value + 1);
   }, []);
 
+  const handleAssignmentConfirmed = useCallback(() => {
+    setRefreshKey((value) => value + 1);
+  }, []);
+
   return (
     <div className="operations-center-page">
       <header className="operations-center-page__head">
@@ -82,7 +86,9 @@ export function OperationsCenterPage() {
           {activeSection === "consultations" ? <OperationsConsultationCard bundle={bundle} /> : null}
           {activeSection === "payments" ? <OperationsPaymentCard bundle={bundle} /> : null}
           {activeSection === "scheduling" ? <OperationsCalendarCard bundle={bundle} /> : null}
-          {activeSection === "assignment-queue" ? <AssignmentQueueCard bundle={bundle} /> : null}
+          {activeSection === "assignment-queue" ? (
+            <AssignmentQueueCard bundle={bundle} onAssignmentConfirmed={handleAssignmentConfirmed} />
+          ) : null}
           {activeSection === "notifications" ? (
             <OperationsNotificationCard bundle={bundle} onRetry={handleRetry} />
           ) : null}

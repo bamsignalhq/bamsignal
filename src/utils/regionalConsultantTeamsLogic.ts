@@ -101,6 +101,12 @@ function resolveConsultantRegion(consultant: ConciergeConsultantRecord): Regiona
   return REGIONAL_CONSULTANT_REGION_ASSIGNMENTS[consultant.id] ?? inferConsultantRegion(consultant);
 }
 
+export function resolveConsultantRegionForAssignment(
+  consultant: ConciergeConsultantRecord
+): RegionalTeamId {
+  return resolveConsultantRegion(consultant);
+}
+
 function inferConsultantRegion(consultant: ConciergeConsultantRecord): RegionalTeamId {
   if (consultant.primaryRole === "diaspora-consultant") return "uk";
   if (consultant.primaryRole === "family-values-advisor") return "nigeria";

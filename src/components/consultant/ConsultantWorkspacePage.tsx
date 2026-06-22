@@ -20,6 +20,9 @@ import {
   openPaymentRowsForMembers,
   resolveCrmViewSection
 } from "../../utils/consultantCrmLogic";
+import { listConciergeConsultants } from "../../utils/conciergeConsultantDirectoryStore";
+import { buildWorkloadProfile } from "../../utils/consultantWorkloadEngine";
+import { ConsultantWorkloadCard } from "../admin/concierge/ConsultantWorkloadCard";
 import { ConsultantActivityCard } from "./ConsultantActivityCard";
 import { ConsultantAgendaCard } from "./ConsultantAgendaCard";
 import { ConsultantPipelineCard } from "./ConsultantPipelineCard";
@@ -93,6 +96,11 @@ export function ConsultantWorkspacePage({ consultantId }: ConsultantWorkspacePag
     [bundle, activeSection, activeView, members, consultantId, introductions]
   );
 
+  const consultantWorkload = useMemo(() => {
+    const consultant = listConciergeConsultants().find((item) => item.id === consultantId);
+    return consultant ? buildWorkloadProfile(consultant) : null;
+  }, [consultantId, bundle.sectionCounts.members]);
+
   const handleViewSelect = (viewId: ConsultantCrmViewId) => {
     setActiveView((current) => (current === viewId ? null : viewId));
     setActiveSection(VIEW_TO_SECTION[viewId]);
@@ -137,6 +145,9 @@ export function ConsultantWorkspacePage({ consultantId }: ConsultantWorkspacePag
       </div>
 
       <div className="consultant-crm__cards">
+        {consultantWorkload ? (
+          <ConsultantWorkloadCard workload={consultantWorkload} title="My capacity" />
+        ) : null}
         <ConsultantPipelineCard stages={bundle.pipeline} onStageSelect={handlePipelineSelect} />
         <ConsultantTasksCard tasks={bundle.tasks} />
         <ConsultantAgendaCard agenda={bundle.agenda} />

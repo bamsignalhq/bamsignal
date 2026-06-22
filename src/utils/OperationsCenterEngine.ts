@@ -35,10 +35,9 @@ import type {
 import { getApplicationReviewSummaryForMember } from "./ApplicationApprovalEngine";
 import {
   buildAssignmentSummary,
-  buildWorkloadProfile,
+  listConsultantWorkloadProfiles,
   recommendConsultantForMember
 } from "./consultantAssignmentEngine";
-import { listConciergeConsultants } from "./conciergeConsultantDirectoryStore";
 import { listConciergeMembers } from "./conciergeConsultantStore";
 import {
   listOpenConsultationSlots,
@@ -366,25 +365,29 @@ function buildAssignmentQueue(members: ConciergeMemberRecord[]): OperationsCente
           recommendedConsultantName:
             summary?.recommendedConsultantName ?? recommendation?.consultantName,
           confidence: summary?.confidence ?? recommendation?.confidence,
+          level: summary?.level ?? recommendation?.level,
           reason: summary?.reason.label ?? recommendation?.reason.label
         });
       }
     }
   }
 
-  const workloadOverview: OperationsCenterWorkloadRow[] = listConciergeConsultants().map(
-    (consultant) => {
-      const workload = buildWorkloadProfile(consultant);
-      return {
-        consultantId: consultant.id,
-        consultantName: consultant.name,
-        health: workload.health,
-        activeMembers: workload.activeMembers,
-        pendingFollowUps: workload.pendingFollowUps,
-        upcomingMeetings: workload.upcomingMeetings,
-        summary: workload.summary
-      };
-    }
+  const workloadOverview: OperationsCenterWorkloadRow[] = listConsultantWorkloadProfiles().map(
+    (workload) => ({
+      consultantId: workload.consultantId,
+      consultantName: workload.consultantName,
+      health: workload.health,
+      capacityLevel: workload.capacityLevel,
+      activeMembers: workload.activeMembers,
+      pendingConsultations: workload.pendingConsultations,
+      introductionsInProgress: workload.introductionsInProgress,
+      pendingFollowUps: workload.pendingFollowUps,
+      upcomingMeetings: workload.upcomingMeetings,
+      responseTimeHours: workload.responseTimeHours,
+      regionLabel: workload.regionLabel,
+      workloadScore: workload.workloadScore,
+      summary: workload.summary
+    })
   );
 
   return {

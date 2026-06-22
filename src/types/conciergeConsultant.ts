@@ -114,6 +114,8 @@ export type ConciergeMemberRecord = SignalConciergeApplication & {
   journeyArchive?: JourneyArchiveMetadata;
   /** Success story sharing consent — dual approval required before publication. */
   successStoryConsent?: SuccessStoryConsentRecord;
+  /** Permanent anniversary milestone timeline — part of Journey Archive. */
+  journeyMilestoneTimeline?: import("./journeyMilestone").JourneyMilestoneTimeline;
 };
 
 export type ConciergeMemberFilters = {

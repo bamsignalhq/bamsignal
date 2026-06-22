@@ -21,6 +21,9 @@ import { SuccessStoryConsentCard } from "./SuccessStoryConsentCard";
 import { StoryCategoryCard } from "./StoryCategoryCard";
 import { assignStoryCategory, ensureJourneyStoryProfile } from "../../utils/journeyStoryCategories";
 import type { JourneyStoryCategoryId } from "../../constants/journeyStoryCategories";
+import { AnniversaryTimelineCard } from "./AnniversaryTimelineCard";
+import { ensureJourneyMilestoneTimeline } from "../../utils/journeyMilestoneStore";
+import type { JourneyMilestoneTimeline } from "../../types/journeyMilestone";
 
 type SuccessStoryConsentPageProps = {
   /** Admin read-only mode */
@@ -37,6 +40,7 @@ export function SuccessStoryConsentPage({
 }: SuccessStoryConsentPageProps) {
   const [consent, setConsent] = useState<SuccessStoryConsentRecord | null>(null);
   const [storyProfile, setStoryProfile] = useState<JourneyStoryProfile | null>(null);
+  const [milestoneTimeline, setMilestoneTimeline] = useState<JourneyMilestoneTimeline | null>(null);
   const [memberId, setMemberId] = useState(memberIdProp ?? "");
   const [memberName, setMemberName] = useState("");
 
@@ -63,6 +67,7 @@ export function SuccessStoryConsentPage({
     });
     setConsent(record);
     setStoryProfile(ensureJourneyStoryProfile(journeyId));
+    setMilestoneTimeline(ensureJourneyMilestoneTimeline(journeyId));
     setMemberId(member.id);
     setMemberName(member.aboutYou.name);
   }, [journeyIdProp, memberIdProp]);
@@ -133,6 +138,10 @@ export function SuccessStoryConsentPage({
           readOnly={readOnly}
           onToggleCategory={handleToggleCategory}
         />
+      ) : null}
+
+      {milestoneTimeline ? (
+        <AnniversaryTimelineCard timeline={milestoneTimeline} readOnly celebrate />
       ) : null}
 
       <SuccessStoryConsentCard

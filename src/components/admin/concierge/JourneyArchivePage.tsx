@@ -16,6 +16,8 @@ import { ArchiveTimeline } from "./ArchiveTimeline";
 import { JourneyArchiveCard, JourneyArchiveCardHeader } from "./JourneyArchiveCard";
 import { LegacyArchiveCard } from "./LegacyArchiveCard";
 import { JourneyHistoryCard } from "./JourneyHistoryCard";
+import { AnniversaryTimelineCard } from "../../signalConcierge/AnniversaryTimelineCard";
+import { ensureJourneyMilestoneTimeline } from "../../../utils/journeyMilestoneStore";
 
 export function JourneyArchivePage() {
   const [filters, setFilters] = useState<JourneyArchiveFilters>(EMPTY_JOURNEY_ARCHIVE_FILTERS);
@@ -151,6 +153,15 @@ export function JourneyArchivePage() {
           {selectedMember ? (
             <>
               <LegacyArchiveCard member={selectedMember} />
+              {selectedMember.journeyId ? (
+                <AnniversaryTimelineCard
+                  timeline={
+                    selectedMember.journeyMilestoneTimeline ??
+                    ensureJourneyMilestoneTimeline(selectedMember.journeyId)
+                  }
+                  recordedBy="BamSignal Admin"
+                />
+              ) : null}
               <section className="concierge-consultant-card concierge-consultant-card--glass cc-reveal">
                 <header className="concierge-consultant-card__head">
                   <h3>{JOURNEY_HISTORY_LABEL}</h3>

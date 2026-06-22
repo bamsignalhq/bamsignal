@@ -31,6 +31,8 @@ import { ConsentSummaryCard } from "../../signalConcierge/ConsentSummaryCard";
 import { ConsentHistoryTimeline } from "../../signalConcierge/ConsentHistoryTimeline";
 import { StoryCategoryCard } from "../../signalConcierge/StoryCategoryCard";
 import { ensureJourneyStoryProfile } from "../../../utils/journeyStoryCategories";
+import { AnniversaryTimelineCard } from "../../signalConcierge/AnniversaryTimelineCard";
+import { ensureJourneyMilestoneTimeline } from "../../../utils/journeyMilestoneStore";
 
 type ConciergeMemberProfilePageProps = {
   member: ConciergeMemberRecord;
@@ -246,6 +248,15 @@ export function ConciergeMemberProfilePage({
       <TransitionSummaryCard summary={continuitySummary} />
 
       <JourneyContinuityTimeline events={continuityEvents} />
+
+      {member.journeyId ? (
+        <AnniversaryTimelineCard
+          timeline={
+            member.journeyMilestoneTimeline ?? ensureJourneyMilestoneTimeline(member.journeyId)
+          }
+          recordedBy="BamSignal Admin"
+        />
+      ) : null}
 
       <ConsultantSummaryCard summary={member.consultantSummary} />
 

@@ -65,6 +65,17 @@ export function assertNoArchiveDeletion(
       throw new Error("Archive integrity violation: story categories cannot shrink");
     }
   }
+  if (previous.journeyMilestoneTimeline && next.journeyMilestoneTimeline) {
+    if (
+      next.journeyMilestoneTimeline.milestones.length <
+      previous.journeyMilestoneTimeline.milestones.length
+    ) {
+      throw new Error("Archive integrity violation: journey milestones cannot shrink");
+    }
+  }
+  if (previous.journeyMilestoneTimeline && !next.journeyMilestoneTimeline) {
+    throw new Error("Archive integrity violation: journeyMilestoneTimeline cannot be removed");
+  }
   if (previous.journeyId && next.journeyId && previous.journeyId !== next.journeyId) {
     throw new Error("Archive integrity violation: journeyId cannot change");
   }

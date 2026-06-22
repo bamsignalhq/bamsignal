@@ -4,6 +4,7 @@ import { ensureMemberJourneyId } from "./conciergeJourneyRegistry";
 import { normalizeJourneyArchive } from "./conciergeJourneyArchive";
 import { getSuccessStoryConsent } from "./conciergeSuccessStoryConsentStore";
 import { attachStoryProfileToConsent, getJourneyStoryProfile } from "./journeyStoryCategories";
+import { getJourneyMilestoneTimeline } from "./journeyMilestoneStore";
 
 export function stampTimelineJourneyId(
   events: ConciergeTimelineEvent[],
@@ -43,7 +44,10 @@ export function normalizeConciergeMember(member: ConciergeMemberRecord): Concier
     assignedAt: member.assignedAt ?? member.createdAt,
     stewardshipHistory: member.stewardshipHistory ?? [],
     communicationJournal: member.communicationJournal ?? [],
-    timeline: stampTimelineJourneyId(member.timeline ?? [], journeyId)
+    timeline: stampTimelineJourneyId(member.timeline ?? [], journeyId),
+    journeyMilestoneTimeline:
+      member.journeyMilestoneTimeline ??
+      (journeyId ? getJourneyMilestoneTimeline(journeyId) ?? undefined : undefined)
   });
 }
 

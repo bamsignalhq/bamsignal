@@ -1668,3 +1668,195 @@ html[data-theme="light"] .platform-root--signal-concierge .signal-concierge-btn-
   font-size: 1rem;
   line-height: 1;
 }
+
+/* Journey milestone timeline — warm, celebratory */
+.anniversary-timeline-card {
+  display: grid;
+  gap: 18px;
+}
+
+.anniversary-timeline-card--celebrate {
+  border-color: rgba(212, 175, 106, 0.32);
+  background: linear-gradient(165deg, rgba(212, 175, 106, 0.06), rgba(168, 130, 255, 0.04));
+}
+
+.anniversary-timeline-card__eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 106, 0.85);
+}
+
+.anniversary-timeline-card__head h3 {
+  margin: 0 0 6px;
+  font-size: 1.2rem;
+}
+
+.anniversary-timeline-card__lede {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.5;
+}
+
+.journey-milestone-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.journey-milestone-timeline--celebrate .journey-milestone-timeline__node {
+  border-color: rgba(212, 175, 106, 0.28);
+  background: rgba(212, 175, 106, 0.06);
+}
+
+.journey-milestone-timeline__item {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.journey-milestone-timeline__node {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
+
+.journey-milestone-timeline__year {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.journey-milestone-timeline__note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}
+
+.journey-milestone-timeline__connector {
+  font-size: 1.1rem;
+  color: rgba(212, 175, 106, 0.55);
+  line-height: 1;
+}
+
+.journey-milestone-timeline__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.journey-milestone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 175, 106, 0.3);
+  background: rgba(212, 175, 106, 0.1);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.journey-milestone-badge--compact {
+  padding: 4px 10px;
+  font-size: 0.74rem;
+}
+
+.journey-milestone-badge__emoji {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.journey-milestone-year {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.relationship-milestone-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 8px;
+}
+
+.relationship-milestone-card--celebrate {
+  border-color: rgba(212, 175, 106, 0.28);
+}
+
+.relationship-milestone-card__badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.relationship-milestone-card__note,
+.relationship-milestone-card__cheer {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.relationship-milestone-admin {
+  display: grid;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.relationship-milestone-admin h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.relationship-milestone-admin > p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.relationship-milestone-admin__grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.relationship-milestone-admin label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.relationship-milestone-admin__note {
+  grid-column: 1 / -1;
+}
+
+.relationship-milestone-admin select,
+.relationship-milestone-admin input,
+.relationship-milestone-admin textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  font: inherit;
+}
+

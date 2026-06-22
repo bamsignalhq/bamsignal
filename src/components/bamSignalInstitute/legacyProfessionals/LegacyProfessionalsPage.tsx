@@ -16,6 +16,8 @@ import {
   UNDERSTANDING_RELATIONSHIPS_LABEL
 } from "../../../constants/legacyProfessionals";
 import { getLegacyProfessionalsBundle } from "../../../utils/LegacyProfessionalsEngine";
+import { LegacyContributionCard } from "./LegacyContributionCard";
+import { LegacyProfessionalBadge } from "./LegacyProfessionalBadge";
 import { LegacyProfessionalCard } from "./LegacyProfessionalCard";
 import { LegacyRoleCard } from "./LegacyRoleCard";
 import { ProfessionalJourneyCard } from "./ProfessionalJourneyCard";
@@ -89,6 +91,30 @@ export function LegacyProfessionalsPage() {
         <div className="lgpr-page__grid">
           {bundle.journeys.map((journey) => (
             <ProfessionalJourneyCard key={journey.id} journey={journey} />
+          ))}
+        </div>
+      </section>
+
+      <section className="lgpr-page__section">
+        <header className="bi-section-head">
+          <h2>Legacy professional badges</h2>
+          <p>Hall of Trust honour — prepared, not veteran pins or employee badges.</p>
+        </header>
+        <div className="lgpr-page__grid">
+          {bundle.badges.map((badge) => (
+            <LegacyProfessionalBadge key={badge.id} badge={badge} />
+          ))}
+        </div>
+      </section>
+
+      <section className="lgpr-page__section">
+        <header className="bi-section-head">
+          <h2>Legacy contributions</h2>
+          <p>Multi-decade contributions — Lifetime Steward standing, not senior employment.</p>
+        </header>
+        <div className="lgpr-page__grid">
+          {bundle.contributions.map((contribution) => (
+            <LegacyContributionCard key={contribution.id} contribution={contribution} />
           ))}
         </div>
       </section>

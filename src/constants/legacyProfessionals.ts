@@ -14,11 +14,15 @@ export const LEGACY_ROLE_LABEL = "Legacy Role";
 export const PROFESSIONAL_JOURNEY_LABEL = "Professional Journey";
 export const TRUSTED_ADVISOR_LABEL = "Trusted Advisor";
 export const LIFETIME_STEWARD_LABEL = "Lifetime Steward";
+export const HALL_OF_TRUST_LABEL = "Hall of Trust";
+export const LEGACY_PROFESSIONAL_BADGE_LABEL = "Legacy Professional Badge";
+export const LEGACY_CONTRIBUTION_LABEL = "Legacy Contribution";
 
 export const LEGACY_PROFESSIONALS_GOOD_COPY = [
   "Legacy Professional",
   "Trusted Advisor",
-  "Lifetime Steward"
+  "Lifetime Steward",
+  "Hall of Trust"
 ] as const;
 
 export const LEGACY_PROFESSIONALS_FORBIDDEN_COPY = ["Senior Employee", "Veteran"] as const;
@@ -30,14 +34,15 @@ export const LEGACY_PROFESSIONALS_PURPOSE_COPY =
 export const LEGACY_PROFESSIONALS_RESERVED_COPY =
   "Architecture prepared. Legacy professional profiles, roles, and journeys are not enabled yet.";
 export const LEGACY_PROFESSIONALS_FUTURE_READY_COPY =
-  "Future-ready capabilities documented only — legacy awards, professional fellowships, and hall of trust are not implemented.";
+  "Future-ready capabilities documented only — legacy awards, professional fellowships, Hall of Trust, and lifetime stewardship are not implemented.";
 
 export { GROWING_TOGETHER_LABEL, LEARNING_LABEL, RELATIONSHIP_WISDOM_LABEL, UNDERSTANDING_RELATIONSHIPS_LABEL };
 
 export type FutureReadyLegacyProfessionalCapabilityId =
   | "legacy-awards"
   | "professional-fellowships"
-  | "hall-of-trust";
+  | "hall-of-trust"
+  | "lifetime-stewardship";
 
 export type FutureReadyLegacyProfessionalCapabilityDefinition = {
   id: FutureReadyLegacyProfessionalCapabilityId;
@@ -59,8 +64,13 @@ export const FUTURE_READY_LEGACY_PROFESSIONAL_CAPABILITIES: FutureReadyLegacyPro
     },
     {
       id: "hall-of-trust",
-      title: "Hall of trust",
-      description: "Hall of trust — architecture reserved, not implemented."
+      title: "Hall of Trust",
+      description: "Hall of Trust — architecture reserved, not implemented."
+    },
+    {
+      id: "lifetime-stewardship",
+      title: "Lifetime stewardship",
+      description: "Lifetime stewardship — architecture reserved, not implemented."
     }
   ];
 
@@ -180,6 +190,72 @@ export const PREPARED_PROFESSIONAL_JOURNEYS: PreparedProfessionalJourneyDefiniti
       }
     ]
   }));
+
+export type PreparedLegacyProfessionalBadgeId =
+  | "lgpr_badge_coaches"
+  | "lgpr_badge_mentors"
+  | "lgpr_badge_advisors"
+  | "lgpr_badge_family"
+  | "lgpr_badge_diaspora";
+
+export type PreparedLegacyProfessionalBadgeDefinition = {
+  id: PreparedLegacyProfessionalBadgeId;
+  title: string;
+  description: string;
+  roleId: PreparedLegacyRoleId;
+  honorLabel: string;
+};
+
+export const PREPARED_LEGACY_PROFESSIONAL_BADGES: PreparedLegacyProfessionalBadgeDefinition[] =
+  PREPARED_LEGACY_ROLES.map((role) => {
+    const badgeIdByRole: Record<PreparedLegacyRoleId, PreparedLegacyProfessionalBadgeId> = {
+      "legacy-coaches": "lgpr_badge_coaches",
+      "legacy-mentors": "lgpr_badge_mentors",
+      "legacy-advisors": "lgpr_badge_advisors",
+      "legacy-family-specialists": "lgpr_badge_family",
+      "legacy-diaspora-experts": "lgpr_badge_diaspora"
+    };
+    return {
+      id: badgeIdByRole[role.id],
+      title: `${role.title} badge`,
+      description: `${role.title} — ${HALL_OF_TRUST_LABEL} honour reserved, not a veteran pin.`,
+      roleId: role.id,
+      honorLabel: HALL_OF_TRUST_LABEL
+    };
+  });
+
+export type PreparedLegacyContributionId =
+  | "lgpr_contribution_coaches"
+  | "lgpr_contribution_mentors"
+  | "lgpr_contribution_advisors"
+  | "lgpr_contribution_family"
+  | "lgpr_contribution_diaspora";
+
+export type PreparedLegacyContributionDefinition = {
+  id: PreparedLegacyContributionId;
+  title: string;
+  summary: string;
+  roleId: PreparedLegacyRoleId;
+  stewardLabel: string;
+};
+
+export const PREPARED_LEGACY_CONTRIBUTIONS: PreparedLegacyContributionDefinition[] =
+  PREPARED_LEGACY_ROLES.map((role) => {
+    const contributionIdByRole: Record<PreparedLegacyRoleId, PreparedLegacyContributionId> = {
+      "legacy-coaches": "lgpr_contribution_coaches",
+      "legacy-mentors": "lgpr_contribution_mentors",
+      "legacy-advisors": "lgpr_contribution_advisors",
+      "legacy-family-specialists": "lgpr_contribution_family",
+      "legacy-diaspora-experts": "lgpr_contribution_diaspora"
+    };
+    return {
+      id: contributionIdByRole[role.id],
+      title: `${role.title} contribution`,
+      summary: `Multi-decade ${role.title.toLowerCase()} contribution — ${LIFETIME_STEWARD_LABEL} honour, not senior employment.`,
+      roleId: role.id,
+      stewardLabel: LIFETIME_STEWARD_LABEL
+    };
+  });
 
 export function getPreparedLegacyRole(roleId: PreparedLegacyRoleId): PreparedLegacyRoleDefinition | undefined {
   return PREPARED_LEGACY_ROLES.find((role) => role.id === roleId);

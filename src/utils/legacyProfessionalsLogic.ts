@@ -1,4 +1,8 @@
 import type {
+  PreparedLegacyContributionDefinition,
+  PreparedLegacyContributionId,
+  PreparedLegacyProfessionalBadgeDefinition,
+  PreparedLegacyProfessionalBadgeId,
   PreparedLegacyProfessionalDefinition,
   PreparedLegacyProfessionalId,
   PreparedLegacyRoleDefinition,
@@ -7,6 +11,8 @@ import type {
   PreparedProfessionalJourneyId
 } from "../constants/legacyProfessionals";
 import {
+  PREPARED_LEGACY_CONTRIBUTIONS,
+  PREPARED_LEGACY_PROFESSIONAL_BADGES,
   PREPARED_LEGACY_PROFESSIONALS,
   PREPARED_LEGACY_ROLES,
   PREPARED_PROFESSIONAL_JOURNEYS,
@@ -37,6 +43,24 @@ export type ProfessionalJourneyViewModel = {
   roleTitle: string;
   journeyLabel: string;
   entries: PreparedProfessionalJourneyDefinition["entries"];
+  statusLabel: string;
+};
+
+export type LegacyProfessionalBadgeViewModel = {
+  id: PreparedLegacyProfessionalBadgeId;
+  title: string;
+  description: string;
+  roleTitle: string;
+  honorLabel: string;
+  statusLabel: string;
+};
+
+export type LegacyContributionViewModel = {
+  id: PreparedLegacyContributionId;
+  title: string;
+  summary: string;
+  roleTitle: string;
+  stewardLabel: string;
   statusLabel: string;
 };
 
@@ -81,6 +105,34 @@ export function buildProfessionalJourneyViewModel(
   };
 }
 
+export function buildLegacyProfessionalBadgeViewModel(
+  badge: PreparedLegacyProfessionalBadgeDefinition
+): LegacyProfessionalBadgeViewModel {
+  const role = PREPARED_LEGACY_ROLES.find((item) => item.id === badge.roleId);
+  return {
+    id: badge.id,
+    title: badge.title,
+    description: badge.description,
+    roleTitle: role?.title ?? badge.roleId,
+    honorLabel: badge.honorLabel,
+    statusLabel: ARCHITECTURE_STATUS
+  };
+}
+
+export function buildLegacyContributionViewModel(
+  contribution: PreparedLegacyContributionDefinition
+): LegacyContributionViewModel {
+  const role = PREPARED_LEGACY_ROLES.find((item) => item.id === contribution.roleId);
+  return {
+    id: contribution.id,
+    title: contribution.title,
+    summary: contribution.summary,
+    roleTitle: role?.title ?? contribution.roleId,
+    stewardLabel: contribution.stewardLabel,
+    statusLabel: ARCHITECTURE_STATUS
+  };
+}
+
 export function listArchitectureLegacyRoles(): LegacyRoleViewModel[] {
   return [...PREPARED_LEGACY_ROLES.map(buildLegacyRoleViewModel)].sort((a, b) =>
     a.title.localeCompare(b.title)
@@ -95,6 +147,18 @@ export function listArchitectureLegacyProfessionals(): LegacyProfessionalViewMod
 
 export function listArchitectureProfessionalJourneys(): ProfessionalJourneyViewModel[] {
   return [...PREPARED_PROFESSIONAL_JOURNEYS.map(buildProfessionalJourneyViewModel)].sort((a, b) =>
+    a.roleTitle.localeCompare(b.roleTitle)
+  );
+}
+
+export function listArchitectureLegacyProfessionalBadges(): LegacyProfessionalBadgeViewModel[] {
+  return [...PREPARED_LEGACY_PROFESSIONAL_BADGES.map(buildLegacyProfessionalBadgeViewModel)].sort((a, b) =>
+    a.roleTitle.localeCompare(b.roleTitle)
+  );
+}
+
+export function listArchitectureLegacyContributions(): LegacyContributionViewModel[] {
+  return [...PREPARED_LEGACY_CONTRIBUTIONS.map(buildLegacyContributionViewModel)].sort((a, b) =>
     a.roleTitle.localeCompare(b.roleTitle)
   );
 }

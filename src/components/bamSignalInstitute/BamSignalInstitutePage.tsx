@@ -270,6 +270,13 @@ export function BamSignalInstitutePage() {
           >
             Museum
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("legacyChair"))}
+          >
+            Chair
+          </button>
         </div>
       </header>
 

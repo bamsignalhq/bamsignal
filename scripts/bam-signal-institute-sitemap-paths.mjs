@@ -35,7 +35,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/bamsignal-summit",
   "/institute/bamsignal-honors",
   "/institute/legacy-endowment",
-  "/institute/bamsignal-museum"
+  "/institute/bamsignal-museum",
+  "/institute/legacy-chair"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

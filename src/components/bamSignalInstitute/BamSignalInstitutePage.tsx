@@ -193,6 +193,13 @@ export function BamSignalInstitutePage() {
           >
             Faith Network
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("diasporaServices"))}
+          >
+            Diaspora
+          </button>
         </div>
       </header>
 

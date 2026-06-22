@@ -86,6 +86,7 @@ import {
   type AdminMemberCompliance,
   type AdminMemberSummary
 } from "../services/adminMembers";
+import { ConsultantDashboardPage } from "../components/admin/concierge/ConsultantDashboardPage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
 import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
 import { AdminTerminalEmpty } from "../components/admin/AdminTerminalEmpty";
@@ -2031,6 +2032,8 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
           ) : null}
         </>
       )}
+
+      {tab === "concierge" && <ConsultantDashboardPage />}
         </main>
         <AdminCommandDock
           activeTab={tab}

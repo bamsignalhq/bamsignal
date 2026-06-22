@@ -2,6 +2,7 @@ import {
   SIGNAL_CONCIERGE_STATUS_LABELS,
   SIGNAL_CONCIERGE_TIERS
 } from "../../constants/signalConcierge";
+import { JourneyIdCard } from "./JourneyIdCard";
 import { readSignalConciergeApplication } from "../../utils/signalConciergeStorage";
 
 type SignalConciergeStatusPageProps = {
@@ -43,6 +44,7 @@ export function SignalConciergeStatusPage({
   return (
     <section className="signal-concierge-status signal-concierge-glass">
       <h1 className="signal-concierge-section__title">Application Status</h1>
+      {application.journeyId ? <JourneyIdCard journeyId={application.journeyId} /> : null}
       <span className="signal-concierge-status__badge">
         {SIGNAL_CONCIERGE_STATUS_LABELS[application.status]}
       </span>

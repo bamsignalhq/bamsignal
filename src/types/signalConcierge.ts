@@ -77,6 +77,8 @@ export type SignalConciergeIdentity = {
 
 export type SignalConciergeApplication = {
   id: string;
+  /** Permanent — assigned once at application start, never changed. */
+  journeyId?: string;
   createdAt: string;
   updatedAt: string;
   status: SignalConciergeStatus;

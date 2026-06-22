@@ -1201,6 +1201,86 @@
   font-weight: 700;
 }
 
+.journey-id-card {
+  padding: 18px;
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--sc-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.journey-id-card__brand {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sc-gold);
+}
+
+.journey-id-card__label {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.journey-id-card__value {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.journey-id-card__note {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.45;
+}
+
+.journey-header {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.journey-header__brand {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sc-gold);
+}
+
+.journey-header__title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.journey-header__subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.86rem;
+}
+
+.journey-header__id {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.journey-header__id span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.journey-header__id strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
 .signal-concierge-consultation {
   padding: 22px;
   display: grid;

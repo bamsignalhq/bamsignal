@@ -199,6 +199,7 @@ export type SignalConciergeStatus =
   | "waitlisted"
   | "active-search"
   | "introductions-in-progress"
+  | "relationship"
   | "matched"
   | "paused"
   | "closed";
@@ -211,6 +212,7 @@ export const SIGNAL_CONCIERGE_STATUS_LABELS: Record<SignalConciergeStatus, strin
   waitlisted: "Waitlisted",
   "active-search": "Active Search",
   "introductions-in-progress": "Introductions In Progress",
+  relationship: "Relationship",
   matched: "Matched",
   paused: "Paused",
   closed: "Closed"

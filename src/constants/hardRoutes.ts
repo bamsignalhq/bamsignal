@@ -15,7 +15,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   content: "content",
   email: "email",
   ads: "home-ads",
-  leads: "leads"
+  leads: "leads",
+  concierge: "concierge"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(

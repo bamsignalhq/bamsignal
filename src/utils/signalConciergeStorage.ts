@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import type { SignalConciergeApplication, SignalConciergeApplicationDraft } from "../types/signalConcierge";
 import { emptySignalConciergeApplication } from "../types/signalConcierge";
+import { ensureMemberJourneyId } from "./conciergeJourneyRegistry";
 import { readJson, writeJson } from "./storage";
 
 export function readSignalConciergeApplication(): SignalConciergeApplication | null {
@@ -27,9 +28,13 @@ export function submitSignalConciergeApplication(
   draft: SignalConciergeApplicationDraft
 ): SignalConciergeApplication {
   const base = readSignalConciergeApplication() ?? emptySignalConciergeApplication();
+  const journeyId =
+    base.journeyId ??
+    ensureMemberJourneyId(base.id, base.createdAt, draft.journeyId);
   const application: SignalConciergeApplication = {
     ...base,
     ...draft,
+    journeyId,
     aboutYou: { ...base.aboutYou, ...draft.aboutYou },
     relationshipGoals: { ...base.relationshipGoals, ...draft.relationshipGoals },
     valuesLifestyle: { ...base.valuesLifestyle, ...draft.valuesLifestyle },

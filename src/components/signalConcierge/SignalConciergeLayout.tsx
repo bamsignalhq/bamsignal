@@ -11,6 +11,7 @@ type SignalConciergeLayoutProps = {
   onLogoClick: () => void;
   onLogin?: () => void;
   onStatus?: () => void;
+  onDashboard?: () => void;
 };
 
 export function SignalConciergeLayout({
@@ -19,7 +20,8 @@ export function SignalConciergeLayout({
   onToggleTheme,
   onLogoClick,
   onLogin,
-  onStatus
+  onStatus,
+  onDashboard
 }: SignalConciergeLayoutProps) {
   return (
     <div className={`app ${theme} platform-root platform-root--signal-concierge`}>
@@ -39,6 +41,11 @@ export function SignalConciergeLayout({
               >
                 {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
               </button>
+              {onDashboard ? (
+                <button type="button" className="signal-concierge-header__link" onClick={onDashboard}>
+                  Journey dashboard
+                </button>
+              ) : null}
               {onStatus ? (
                 <button type="button" className="signal-concierge-header__link" onClick={onStatus}>
                   Application status

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { MEMBER_DASHBOARD_BRAND } from "../../constants/memberDashboard";
+import { MEMBER_DASHBOARD_BRAND, MEMBER_JOURNEY_DASHBOARD_PATH } from "../../constants/memberDashboard";
+import { navigateToPath } from "../../constants/routes";
 import { getConciergeMember } from "../../utils/conciergeConsultantStore";
 import { buildMemberDashboardBundle } from "../../utils/memberDashboardLogic";
 import { readSignalConciergeApplication } from "../../utils/signalConciergeStorage";
@@ -94,6 +95,13 @@ export function SignalConciergeStatusPage({
       </div>
 
       <div className="member-dashboard__actions signal-concierge-hero__actions">
+        <button
+          type="button"
+          className="signal-concierge-btn signal-concierge-btn--primary"
+          onClick={() => navigateToPath(MEMBER_JOURNEY_DASHBOARD_PATH)}
+        >
+          Open journey dashboard
+        </button>
         <button type="button" className="signal-concierge-btn signal-concierge-btn--ghost" onClick={onApply}>
           Update application
         </button>

@@ -6,6 +6,7 @@ export const SIGNAL_CONCIERGE_ROUTES = {
   landing: SIGNAL_CONCIERGE_BASE_PATH,
   apply: `${SIGNAL_CONCIERGE_BASE_PATH}/apply`,
   status: `${SIGNAL_CONCIERGE_BASE_PATH}/status`,
+  dashboard: `${SIGNAL_CONCIERGE_BASE_PATH}/dashboard`,
   consultation: `${SIGNAL_CONCIERGE_BASE_PATH}/consultation`,
   shareStory: `${SIGNAL_CONCIERGE_BASE_PATH}/share-your-story`,
   privacy: `${SIGNAL_CONCIERGE_BASE_PATH}/privacy`,
@@ -17,6 +18,7 @@ export type SignalConciergeRoute = keyof typeof SIGNAL_CONCIERGE_ROUTES;
 export const SIGNAL_CONCIERGE_APPLY_PATH = SIGNAL_CONCIERGE_ROUTES.apply;
 export const SIGNAL_CONCIERGE_CONSULTATION_PATH = SIGNAL_CONCIERGE_ROUTES.consultation;
 export const SIGNAL_CONCIERGE_STATUS_PATH = SIGNAL_CONCIERGE_ROUTES.status;
+export const SIGNAL_CONCIERGE_DASHBOARD_PATH = SIGNAL_CONCIERGE_ROUTES.dashboard;
 export const SIGNAL_CONCIERGE_PRIVACY_PATH = SIGNAL_CONCIERGE_ROUTES.privacy;
 export const SIGNAL_CONCIERGE_FAQ_PATH = SIGNAL_CONCIERGE_ROUTES.faq;
 
@@ -28,6 +30,7 @@ const SIGNAL_CONCIERGE_PUBLIC_ROUTE_SET = new Set<SignalConciergeRoute>(["landin
 const SIGNAL_CONCIERGE_AUTH_ROUTE_SET = new Set<SignalConciergeRoute>([
   "apply",
   "status",
+  "dashboard",
   "consultation",
   "shareStory"
 ]);

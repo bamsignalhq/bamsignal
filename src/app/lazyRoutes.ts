@@ -46,6 +46,12 @@ export const LazySignalConciergeStatusPage = lazy(() =>
   }))
 );
 
+export const LazySignalConciergeDashboardPage = lazy(() =>
+  import("../pages/signal-concierge/SignalConciergeDashboardPage").then((module) => ({
+    default: module.SignalConciergeDashboardPage
+  }))
+);
+
 export const LazySignalConciergeConsultationPage = lazy(() =>
   import("../pages/signal-concierge/SignalConciergeConsultationPage").then((module) => ({
     default: module.SignalConciergeConsultationPage

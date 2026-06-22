@@ -1,25 +1,37 @@
 import {
   MEMBER_DASHBOARD_PRIVACY_COPY,
+  MEMBER_JOURNEY_ID_LABEL,
   MEMBER_JOURNEY_HEALTH_LABELS,
   MEMBER_JOURNEY_STAGE_LABELS
 } from "../constants/memberDashboard";
+import { SUCCESS_STORY_VISIBILITY_LABELS } from "../constants/conciergeSuccessStoryConsent";
+import { JOURNEY_STORY_CATEGORY_LABELS } from "../constants/journeyStoryCategories";
+import { CONCIERGE_INTRO_OUTCOME_LABELS } from "../constants/conciergeConsultant";
 import { JOURNEY_MILESTONE_LABELS } from "../constants/journeyMilestones";
 import {
   SIGNAL_CONCIERGE_CONSULTATION_CHANNELS,
   SIGNAL_CONCIERGE_STATUS_LABELS,
+  SIGNAL_CONCIERGE_TIERS,
   type SignalConciergeStatus
 } from "../constants/signalConcierge";
+import type { ConciergeIntroductionOutcome } from "../constants/conciergeConsultant";
 import type { ConciergeMemberRecord } from "../types/conciergeConsultant";
 import type { SignalConciergeApplication } from "../types/signalConcierge";
 import type {
   AssignedConsultantSummary,
   IntroductionSummary,
+  MemberConsultantDetail,
   MemberDashboardBundle,
   MemberDashboardOverview,
+  MemberIntroductionBuckets,
+  MemberIntroductionItem,
   MemberJourneyHealth,
   MemberJourneyStage,
   MemberNotificationSummary,
+  MemberRelationshipJourney,
+  MemberSuccessStorySummary,
   MemberTimelineEntry,
+  MemberUpcomingItem,
   RecentMeetingSummary,
   RelationshipMilestoneSummary,
   UpcomingMeetingSummary
@@ -79,21 +91,34 @@ function channelLabel(channel?: string): string {
   return match?.label ?? "Private consultation";
 }
 
+function tierLabel(application: SignalConciergeApplication, member?: ConciergeMemberRecord | null): string | undefined {
+  const tierId = member?.preferredTier ?? application.preferredTier;
+  if (!tierId) return undefined;
+  return SIGNAL_CONCIERGE_TIERS.find((tier) => tier.id === tierId)?.landingName ?? tierId;
+}
+
 export function buildMemberDashboardOverview(
   application: SignalConciergeApplication,
   member?: ConciergeMemberRecord | null
 ): MemberDashboardOverview {
   const currentStage = deriveJourneyStage(application.status);
   const health = deriveJourneyHealth(application, member);
+  const journeyId = application.journeyId ?? member?.journeyId;
+  const consultantName = member ? getMemberStewardName(member) ?? undefined : undefined;
 
   return {
     memberName: application.aboutYou.name,
-    journeyId: application.journeyId,
+    journeyId,
+    statusLabel: SIGNAL_CONCIERGE_STATUS_LABELS[application.status],
+    consultantName,
+    tierLabel: tierLabel(application, member),
+    dateJoined: application.createdAt,
+    lastUpdate: application.updatedAt,
     currentStage,
     stageLabel: MEMBER_JOURNEY_STAGE_LABELS[currentStage],
     health,
     healthLabel: MEMBER_JOURNEY_HEALTH_LABELS[health],
-    narrative: `${MEMBER_DASHBOARD_PRIVACY_COPY} You are in the ${MEMBER_JOURNEY_STAGE_LABELS[currentStage]} stage.`
+    narrative: `${MEMBER_DASHBOARD_PRIVACY_COPY} ${MEMBER_JOURNEY_ID_LABEL}: ${journeyId ?? "pending"}.`
   };
 }
 
@@ -274,38 +299,55 @@ export function buildMemberTimeline(
   application: SignalConciergeApplication,
   member?: ConciergeMemberRecord | null
 ): MemberTimelineEntry[] {
+  const journeyId = application.journeyId ?? member?.journeyId;
   const timeline: MemberTimelineEntry[] = [
     {
       id: "tl_submitted",
-      label: "Application submitted",
+      label: "Application received",
       detail: "Your private journey began.",
-      at: application.createdAt
+      at: application.createdAt,
+      journeyId
     }
   ];
 
   if (application.consultationScheduledAt) {
     timeline.push({
-      id: "tl_consultation",
+      id: "tl_consultation_scheduled",
       label: "Consultation scheduled",
-      at: application.consultationScheduledAt
+      at: application.consultationScheduledAt,
+      journeyId
     });
   }
+
+  const TIMELINE_LABELS: Partial<Record<string, string>> = {
+    "application-received": "Application received",
+    "consultation-completed": "Consultation completed",
+    accepted: "Approved",
+    introduction: "Introduction",
+    "relationship-update": "Relationship milestone",
+    archived: "Archive event",
+    engagement: "Relationship milestone",
+    marriage: "Relationship milestone",
+    "success-story": "Success story recorded"
+  };
 
   for (const event of member?.timeline ?? []) {
     timeline.push({
       id: event.id,
-      label: event.label,
+      label: TIMELINE_LABELS[event.type] ?? event.label,
       detail: event.detail,
-      at: event.at
+      at: event.at,
+      journeyId: event.journeyId ?? journeyId
     });
   }
 
-  if (application.status !== "applied") {
+  if (application.status === "accepted" || application.status === "active-search") {
     timeline.push({
-      id: "tl_current",
-      label: SIGNAL_CONCIERGE_STATUS_LABELS[application.status],
-      detail: "Current journey stage.",
-      at: application.updatedAt
+      id: "tl_approved",
+      label: "Approved",
+      detail: "Welcome to your private concierge journey.",
+      at: application.updatedAt,
+      journeyId
     });
   }
 
@@ -320,16 +362,243 @@ export function buildMemberTimeline(
     .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 }
 
+const INTRO_PENDING_OUTCOMES = new Set<ConciergeIntroductionOutcome>(["no-response", "paused"]);
+const INTRO_DECLINED_OUTCOMES = new Set<ConciergeIntroductionOutcome>([
+  "member-declined",
+  "match-declined",
+  "not-a-fit"
+]);
+const INTRO_ACCEPTED_OUTCOMES = new Set<ConciergeIntroductionOutcome>([
+  "mutual-interest",
+  "still-talking",
+  "ongoing",
+  "friendship",
+  "relationship",
+  "exclusive"
+]);
+const INTRO_COMPLETED_OUTCOMES = new Set<ConciergeIntroductionOutcome>([
+  "engaged",
+  "married",
+  "completed"
+]);
+
+function toIntroductionItem(
+  intro: ConciergeMemberRecord["introductions"][number],
+  journeyId?: string
+): MemberIntroductionItem {
+  return {
+    id: intro.id,
+    label: intro.introducedWithName,
+    detail: intro.notes || CONCIERGE_INTRO_OUTCOME_LABELS[intro.outcome],
+    at: intro.date,
+    journeyId
+  };
+}
+
+export function buildMemberIntroductionBuckets(
+  member?: ConciergeMemberRecord | null
+): MemberIntroductionBuckets {
+  const journeyId = member?.journeyId;
+  const introductions = member?.introductions ?? [];
+  const pending: MemberIntroductionItem[] = [];
+  const accepted: MemberIntroductionItem[] = [];
+  const declined: MemberIntroductionItem[] = [];
+  const completed: MemberIntroductionItem[] = [];
+
+  for (const intro of introductions) {
+    const item = toIntroductionItem(intro, journeyId);
+    if (INTRO_DECLINED_OUTCOMES.has(intro.outcome)) {
+      declined.push(item);
+    } else if (INTRO_COMPLETED_OUTCOMES.has(intro.outcome)) {
+      completed.push(item);
+    } else if (INTRO_ACCEPTED_OUTCOMES.has(intro.outcome)) {
+      accepted.push(item);
+    } else if (INTRO_PENDING_OUTCOMES.has(intro.outcome)) {
+      pending.push(item);
+    } else {
+      pending.push(item);
+    }
+  }
+
+  const history = [...introductions]
+    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+    .map((intro) => toIntroductionItem(intro, journeyId));
+
+  return { pending, accepted, declined, completed, history };
+}
+
+export function buildMemberConsultantDetail(
+  application: SignalConciergeApplication,
+  member?: ConciergeMemberRecord | null,
+  upcomingMeeting?: UpcomingMeetingSummary
+): MemberConsultantDetail {
+  const name = member ? getMemberStewardName(member) ?? undefined : undefined;
+  const journeyId = application.journeyId ?? member?.journeyId;
+  const summary =
+    member?.consultantSummary?.lines.join(" · ") ??
+    (name
+      ? `${name} is your private journey steward — human-led, never algorithmic.`
+      : "Your steward will be introduced privately as your journey continues.");
+
+  return {
+    name,
+    role: "Journey steward",
+    availability: name
+      ? "Available for scheduled consultations and private follow-ups."
+      : "A steward will be assigned after your application is welcomed.",
+    messageSummary: summary,
+    upcomingMeetingLabel: upcomingMeeting?.label,
+    upcomingMeetingAt: upcomingMeeting?.scheduledAt,
+    journeyId
+  };
+}
+
+export function buildMemberUpcomingItems(
+  application: SignalConciergeApplication,
+  member?: ConciergeMemberRecord | null,
+  upcomingMeeting?: UpcomingMeetingSummary
+): MemberUpcomingItem[] {
+  const journeyId = application.journeyId ?? member?.journeyId;
+  const items: MemberUpcomingItem[] = [];
+
+  if (upcomingMeeting) {
+    items.push({
+      id: "upcoming_consultation",
+      kind: "consultation",
+      label: upcomingMeeting.label,
+      detail: upcomingMeeting.detail,
+      scheduledAt: upcomingMeeting.scheduledAt,
+      journeyId
+    });
+  }
+
+  for (const meeting of buildRecentMeetings(application, member)) {
+    if (new Date(meeting.at).getTime() >= Date.now()) {
+      items.push({
+        id: `upcoming_meeting_${meeting.id}`,
+        kind: "meeting",
+        label: meeting.label,
+        detail: meeting.detail,
+        scheduledAt: meeting.at,
+        journeyId
+      });
+    }
+  }
+
+  for (const task of member?.followUpTasks ?? []) {
+    if (task.completed) continue;
+    items.push({
+      id: task.id,
+      kind: "scheduled-call",
+      label: "Scheduled follow-up",
+      detail: task.title,
+      scheduledAt: task.dueAt,
+      journeyId
+    });
+  }
+
+  for (const intro of member?.introductions ?? []) {
+    if (intro.outcome === "no-response" || intro.outcome === "mutual-interest") {
+      items.push({
+        id: `intro_response_${intro.id}`,
+        kind: "introduction-response",
+        label: "Introduction awaiting response",
+        detail: `Confidential introduction with ${intro.introducedWithName}.`,
+        scheduledAt: intro.date,
+        journeyId
+      });
+    }
+  }
+
+  return items.sort((a, b) => Date.parse(a.scheduledAt) - Date.parse(b.scheduledAt));
+}
+
+export function buildMemberRelationshipJourney(
+  application: SignalConciergeApplication,
+  member?: ConciergeMemberRecord | null
+): MemberRelationshipJourney {
+  const milestones =
+    member?.journeyMilestoneTimeline?.milestones.map((milestone) => ({
+      id: milestone.id,
+      label: JOURNEY_MILESTONE_LABELS[milestone.id],
+      at: milestone.milestoneAt,
+      detail: milestone.note
+    })) ?? [];
+
+  const checkIns =
+    member?.followUpTasks
+      .filter((task) => !task.completed)
+      .map((task) => ({
+        id: task.id,
+        label: task.title,
+        at: task.dueAt,
+        detail: task.type
+      })) ?? [];
+
+  const celebrations = (member?.timeline ?? [])
+    .filter((event) => event.type === "engagement" || event.type === "marriage" || event.type === "success-story")
+    .map((event) => ({
+      id: event.id,
+      label: event.label,
+      at: event.at,
+      detail: event.detail
+    }));
+
+  const anniversaries = milestones
+    .filter((milestone) => milestone.label.toLowerCase().includes("anniversary"))
+    .map((milestone) => ({
+      id: milestone.id,
+      label: milestone.label,
+      at: milestone.at,
+      detail: milestone.detail
+    }));
+
+  return {
+    currentStage: SIGNAL_CONCIERGE_STATUS_LABELS[application.status],
+    milestones,
+    checkIns,
+    celebrations,
+    anniversaries
+  };
+}
+
+export function buildMemberSuccessStorySummary(
+  member?: ConciergeMemberRecord | null
+): MemberSuccessStorySummary | undefined {
+  const consent = member?.successStoryConsent;
+  const journeyId = member?.journeyId;
+  if (!consent || !journeyId) return undefined;
+
+  const categories =
+    consent.storyCategories?.map((category) => JOURNEY_STORY_CATEGORY_LABELS[category.id]) ?? [];
+  const bothApproved = consent.partyApprovals.memberA.approved && consent.partyApprovals.memberB.approved;
+
+  return {
+    journeyId,
+    consentStatus: bothApproved ? "Dual consent recorded" : "Awaiting dual consent",
+    categories: categories.length ? categories : ["Categories pending steward review"],
+    publicationPermission: SUCCESS_STORY_VISIBILITY_LABELS[consent.visibility],
+    detail: "Success stories are never published without dual approval and steward review."
+  };
+}
+
 export function buildMemberDashboardBundle(
   application: SignalConciergeApplication,
   member?: ConciergeMemberRecord | null
 ): MemberDashboardBundle {
+  const upcomingMeeting = buildUpcomingMeeting(application, member);
+
   return {
     overview: buildMemberDashboardOverview(application, member),
     consultant: buildAssignedConsultantSummary(application, member),
-    upcomingMeeting: buildUpcomingMeeting(application, member),
+    consultantDetail: buildMemberConsultantDetail(application, member, upcomingMeeting),
+    upcoming: buildMemberUpcomingItems(application, member, upcomingMeeting),
+    upcomingMeeting,
     recentMeetings: buildRecentMeetings(application, member),
     introductions: buildIntroductionSummary(member),
+    introductionsDetail: buildMemberIntroductionBuckets(member),
+    relationshipJourney: buildMemberRelationshipJourney(application, member),
+    successStory: buildMemberSuccessStorySummary(member),
     milestones: buildRelationshipMilestoneSummary(application, member),
     notifications: buildMemberNotifications(application),
     timeline: buildMemberTimeline(application, member)

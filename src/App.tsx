@@ -34,6 +34,7 @@ import {
   LazySignalConciergeLandingPage,
   LazySignalConciergePrivacyPage,
   LazySignalConciergeStatusPage,
+  LazySignalConciergeDashboardPage,
   LazyBamSignalInstituteRelationshipConnectPage,
   LazyBamSignalInstituteBamSignalSummitPage,
   LazyBamSignalInstituteBamSignalHonorsPage,
@@ -2162,6 +2163,8 @@ export function App() {
           <LazySignalConciergeApplicationPage {...signalConciergeShellProps} />
         ) : signalConciergeRoute === "status" ? (
           <LazySignalConciergeStatusPage {...signalConciergeShellProps} />
+        ) : signalConciergeRoute === "dashboard" ? (
+          <LazySignalConciergeDashboardPage {...signalConciergeShellProps} />
         ) : signalConciergeRoute === "consultation" ? (
           <LazySignalConciergeConsultationPage {...signalConciergeShellProps} />
         ) : signalConciergeRoute === "shareStory" ? (

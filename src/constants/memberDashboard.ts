@@ -1,6 +1,15 @@
 import type { MemberJourneyHealth, MemberJourneyStage } from "../types/memberDashboard";
 
 export const MEMBER_DASHBOARD_BRAND = "Member Dashboard 2.0™";
+export const MEMBER_JOURNEY_DASHBOARD_BRAND = "Member Journey Dashboard™";
+export const MEMBER_JOURNEY_DASHBOARD_PATH = "/signal-concierge/dashboard";
+export const MEMBER_JOURNEY_DASHBOARD_TAGLINE =
+  "Your entire Signal Concierge journey in one private destination — journey-centric, never social-app noise.";
+
+export const MEMBER_JOURNEY_READ_ONLY_COPY =
+  "Read-only journey view. Your steward remains the operational owner of your concierge experience.";
+
+export const MEMBER_JOURNEY_ID_LABEL = "Journey ID";
 
 export const MEMBER_DASHBOARD_PRIVACY_COPY =
   "Your journey is private, elegant, and centered on you — never public.";

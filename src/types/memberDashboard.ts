@@ -9,9 +9,29 @@ export type MemberJourneyStage =
 
 export type MemberJourneyHealth = "steady" | "active" | "celebration" | "paused";
 
+export type MemberUpcomingKind =
+  | "consultation"
+  | "meeting"
+  | "scheduled-call"
+  | "introduction-response";
+
+export type MemberUpcomingItem = {
+  id: string;
+  kind: MemberUpcomingKind;
+  label: string;
+  detail: string;
+  scheduledAt: string;
+  journeyId?: string;
+};
+
 export type MemberDashboardOverview = {
   memberName: string;
   journeyId?: string;
+  statusLabel: string;
+  consultantName?: string;
+  tierLabel?: string;
+  dateJoined: string;
+  lastUpdate: string;
   currentStage: MemberJourneyStage;
   stageLabel: string;
   health: MemberJourneyHealth;
@@ -22,6 +42,48 @@ export type MemberDashboardOverview = {
 export type AssignedConsultantSummary = {
   name?: string;
   message: string;
+};
+
+export type MemberConsultantDetail = {
+  name?: string;
+  role: string;
+  availability: string;
+  messageSummary: string;
+  upcomingMeetingLabel?: string;
+  upcomingMeetingAt?: string;
+  journeyId?: string;
+};
+
+export type MemberIntroductionItem = {
+  id: string;
+  label: string;
+  detail: string;
+  at: string;
+  journeyId?: string;
+};
+
+export type MemberIntroductionBuckets = {
+  pending: MemberIntroductionItem[];
+  accepted: MemberIntroductionItem[];
+  declined: MemberIntroductionItem[];
+  completed: MemberIntroductionItem[];
+  history: MemberIntroductionItem[];
+};
+
+export type MemberRelationshipJourney = {
+  currentStage: string;
+  milestones: Array<{ id: string; label: string; at: string; detail?: string }>;
+  checkIns: Array<{ id: string; label: string; at: string; detail?: string }>;
+  celebrations: Array<{ id: string; label: string; at: string; detail?: string }>;
+  anniversaries: Array<{ id: string; label: string; at: string; detail?: string }>;
+};
+
+export type MemberSuccessStorySummary = {
+  journeyId: string;
+  consentStatus: string;
+  categories: string[];
+  publicationPermission: string;
+  detail: string;
 };
 
 export type UpcomingMeetingSummary = {
@@ -63,14 +125,20 @@ export type MemberTimelineEntry = {
   label: string;
   detail?: string;
   at: string;
+  journeyId?: string;
 };
 
 export type MemberDashboardBundle = {
   overview: MemberDashboardOverview;
   consultant: AssignedConsultantSummary;
+  consultantDetail: MemberConsultantDetail;
+  upcoming: MemberUpcomingItem[];
   upcomingMeeting?: UpcomingMeetingSummary;
   recentMeetings: RecentMeetingSummary[];
   introductions: IntroductionSummary;
+  introductionsDetail: MemberIntroductionBuckets;
+  relationshipJourney: MemberRelationshipJourney;
+  successStory?: MemberSuccessStorySummary;
   milestones: RelationshipMilestoneSummary;
   notifications: MemberNotificationSummary[];
   timeline: MemberTimelineEntry[];

@@ -13,6 +13,7 @@ export type SignalConciergePageShellProps = {
   onLogoClick: () => void;
   onLogin?: () => void;
   showStatusLink?: boolean;
+  showDashboardLink?: boolean;
 };
 
 export function SignalConciergePageShell({
@@ -21,7 +22,8 @@ export function SignalConciergePageShell({
   onToggleTheme,
   onLogoClick,
   onLogin,
-  showStatusLink = false
+  showStatusLink = false,
+  showDashboardLink = false
 }: SignalConciergePageShellProps) {
   const go = (route: SignalConciergeRoute) => navigateToPath(signalConciergePathForRoute(route));
 
@@ -32,6 +34,7 @@ export function SignalConciergePageShell({
       onLogoClick={onLogoClick}
       onLogin={onLogin}
       onStatus={showStatusLink ? () => go("status") : undefined}
+      onDashboard={showDashboardLink ? () => go("dashboard") : showStatusLink ? () => go("dashboard") : undefined}
     >
       {children}
     </SignalConciergeLayout>

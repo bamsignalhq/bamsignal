@@ -25,7 +25,7 @@ import { IntroductionEnginePage } from "./IntroductionEnginePage";
 import { RelationshipFollowUpPage } from "./RelationshipFollowUpPage";
 import { ConsultantDirectoryPage } from "./ConsultantDirectoryPage";
 import { JourneyArchivePage } from "./JourneyArchivePage";
-import { RelationshipLegacyIndexPage } from "./RelationshipLegacyIndexPage";
+import { LegacyExperiencePage } from "./LegacyExperiencePage";
 import { SuccessStoryPage } from "./SuccessStoryPage";
 import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
 import { useAdminToast } from "../AdminToast";
@@ -292,7 +292,7 @@ export function ConsultantDashboardPage() {
             className={`concierge-consultant-dashboard__tab${view === "legacy" ? " is-active" : ""}`}
             onClick={() => setView("legacy")}
           >
-            Legacy Index
+            Legacy Experience
           </button>
           <button
             type="button"
@@ -308,7 +308,7 @@ export function ConsultantDashboardPage() {
 
       {view === "performance" ? <ConsultantPerformancePage /> : null}
 
-      {view === "legacy" ? <RelationshipLegacyIndexPage /> : null}
+      {view === "legacy" ? <LegacyExperiencePage /> : null}
 
       {view === "archive" ? <JourneyArchivePage /> : null}
 

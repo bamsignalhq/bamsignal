@@ -4611,3 +4611,233 @@
   color: rgba(255, 180, 165, 0.95);
 }
 
+/* Relationship Legacy Experience™ */
+.legacy-experience-page {
+  display: grid;
+  gap: 16px;
+}
+
+.legacy-experience-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.legacy-experience-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.legacy-experience-page__body {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 16px;
+}
+
+.legacy-experience-page__list {
+  padding: 16px;
+  border-radius: 14px;
+  align-self: start;
+}
+
+.legacy-experience-page__list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.legacy-experience-page__row {
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+}
+
+.legacy-experience-page__row.is-active {
+  border-color: rgba(212, 175, 106, 0.38);
+  background: rgba(212, 175, 106, 0.08);
+}
+
+.legacy-experience-page__row strong {
+  font-size: 0.86rem;
+}
+
+.legacy-experience-page__row span {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.legacy-experience-page__grid {
+  display: grid;
+  gap: 16px;
+}
+
+.legacy-status-card,
+.legacy-experience-family-card,
+.legacy-experience-milestone-card,
+.legacy-timeline-page__summary,
+.legacy-timeline-page__quotes {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.legacy-status-card__labels {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.legacy-status-card__current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+}
+
+.legacy-status-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.legacy-status-card__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.legacy-status-card__item.is-active {
+  border-color: rgba(212, 175, 106, 0.38);
+  background: rgba(212, 175, 106, 0.08);
+}
+
+.legacy-timeline-page {
+  display: grid;
+  gap: 16px;
+}
+
+.legacy-timeline-page__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.legacy-timeline-page__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.legacy-timeline-page__item.is-reached {
+  border-color: rgba(212, 175, 106, 0.28);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.legacy-timeline-page__label {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.legacy-timeline-page__value {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.legacy-timeline-page__pending {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.legacy-experience-family-card__privacy {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.legacy-experience-family-card__journey {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+}
+
+.legacy-experience-family-card__grid {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.legacy-experience-family-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.84rem;
+}
+
+.legacy-experience-family-card__status {
+  margin-bottom: 12px;
+}
+
+.legacy-experience-family-card__form-grid {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.legacy-experience-milestone-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.legacy-experience-milestone-card__list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+}
+
+.legacy-experience-milestone-card__list strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.legacy-experience-milestone-card__list span {
+  font-size: 0.74rem;
+  color: rgba(212, 175, 106, 0.9);
+}
+
+@media (max-width: 900px) {
+  .legacy-experience-page__body {
+    grid-template-columns: 1fr;
+  }
+}
+

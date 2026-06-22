@@ -4,12 +4,25 @@ export type MeetingLinkChannel = "zoom" | "google-meet" | "phone";
 
 export type MeetingLinkProvider = "zoom" | "google-meet" | "phone";
 
+export type MeetingInfrastructureStatus =
+  | "scheduled"
+  | "ready"
+  | "in-progress"
+  | "completed"
+  | "cancelled";
+
 export type MeetingLinkTimelineKind =
   | "calendar-event-linked"
   | "link-generated"
   | "link-stored"
   | "consultant-notified"
-  | "member-notified";
+  | "member-notified"
+  | "meeting-created"
+  | "meeting-link-generated"
+  | "meeting-invite-sent"
+  | "meeting-started"
+  | "meeting-completed"
+  | "meeting-cancelled";
 
 export type MeetingLinkTimelineEntry = {
   id: string;
@@ -42,6 +55,8 @@ export type MeetingLinkRecord = {
   access: MeetingLinkAccess;
   participants: CalendarParticipant[];
   timeline: MeetingLinkTimelineEntry[];
+  status: MeetingInfrastructureStatus;
+  scheduledAt?: string;
   createdAt: string;
   updatedAt: string;
 };

@@ -38,16 +38,26 @@ function saveStore(store: MeetingLinkStore): void {
   writeJson(STORE_KEY, { ...store, updatedAt: new Date().toISOString() });
 }
 
+function normalizeMeetingRecord(record: MeetingLinkRecord): MeetingLinkRecord {
+  return {
+    ...record,
+    status: record.status ?? "ready",
+    participants: record.participants ?? []
+  };
+}
+
 export function getMeetingLinkForMeeting(meetingId: string): MeetingLinkRecord | null {
   const store = loadStore();
   const recordId = store.byMeetingId[meetingId];
-  return recordId ? store.records[recordId] ?? null : null;
+  const record = recordId ? store.records[recordId] ?? null : null;
+  return record ? normalizeMeetingRecord(record) : null;
 }
 
 export function getMeetingLinkForMember(memberId: string): MeetingLinkRecord | null {
   const store = loadStore();
   const recordId = store.byMemberId[memberId];
-  return recordId ? store.records[recordId] ?? null : null;
+  const record = recordId ? store.records[recordId] ?? null : null;
+  return record ? normalizeMeetingRecord(record) : null;
 }
 
 export function listMeetingLinks(): MeetingLinkRecord[] {
@@ -70,6 +80,7 @@ export function recordMeetingLink(input: {
   access: MeetingLinkAccess;
   participants?: CalendarParticipant[];
   calendarEventLinkedAt?: string;
+  scheduledAt?: string;
 }): MeetingLinkRecord {
   const store = loadStore();
   const now = new Date().toISOString();
@@ -86,11 +97,10 @@ export function recordMeetingLink(input: {
   );
 
   const timeline = buildMeetingLinkTimeline({
+    meetingCreatedAt: now,
     calendarEventLinkedAt: input.calendarEventLinkedAt ?? (input.consultationEventId ? now : undefined),
     linkGeneratedAt: now,
-    linkStoredAt: now,
-    consultantNotifiedAt: now,
-    memberNotifiedAt: now
+    linkStoredAt: now
   });
 
   const record: MeetingLinkRecord = {
@@ -108,6 +118,8 @@ export function recordMeetingLink(input: {
     access: input.access,
     participants,
     timeline,
+    status: "ready",
+    scheduledAt: input.scheduledAt,
     createdAt: now,
     updatedAt: now
   };

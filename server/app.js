@@ -27,7 +27,7 @@ import playReviewerFinishHandler from "../api/auth/play-reviewer-finish.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
 import consultationPaymentsHandler from "./routes/consultationPayments.js";
 import consultationSchedulingHandler from "./routes/consultationScheduling.js";
-import meetingLinkHandler from "./routes/meetingLink.js";
+import meetingInfrastructureHandler from "./routes/meetingInfrastructure.js";
 import conciergeEmailHandler from "./routes/conciergeEmail.js";
 import conciergeWhatsappHandler from "./routes/conciergeWhatsapp.js";
 import conciergePersistenceHandler from "./routes/conciergePersistence.js";
@@ -143,7 +143,8 @@ export function createApp(options = {}) {
   mountHandler(app, "get", "/api/consultation-scheduling", consultationSchedulingHandler);
   mountHandler(app, "post", "/api/calendar", consultationSchedulingHandler);
   mountHandler(app, "get", "/api/calendar", consultationSchedulingHandler);
-  mountHandler(app, "post", "/api/meeting-link", meetingLinkHandler);
+  mountHandler(app, "post", "/api/meeting-infrastructure", meetingInfrastructureHandler);
+  mountHandler(app, "post", "/api/meeting-link", meetingInfrastructureHandler);
   mountHandler(app, "post", "/api/concierge-email", conciergeEmailHandler);
   mountHandler(app, "post", "/api/concierge-whatsapp", conciergeWhatsappHandler);
   mountHandler(app, "post", "/api/concierge-persistence", conciergePersistenceHandler);

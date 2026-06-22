@@ -11,7 +11,7 @@ import {
   listOpenConsultationSlots,
   syncSchedulingAvailability
 } from "../utils/ConsultationSchedulingEngine";
-import { generateMeetingLinkForEvent } from "./meetingLink";
+import { generateMeetingInfrastructureForEvent } from "./meetingInfrastructure";
 import { resolveConsultationPaymentMember } from "./consultationPayment";
 import { apiUrl, supabase } from "./supabase";
 import { memberApiHeaders } from "../utils/memberApiAuth";
@@ -134,7 +134,7 @@ export async function bookConsultationSchedulingSlotRemote(input: {
 
   const consultant = listConciergeConsultants().find((item) => item.id === input.consultantId);
   if (consultant) {
-    const linkResult = await generateMeetingLinkForEvent({
+    const linkResult = await generateMeetingInfrastructureForEvent({
       application: input.application,
       event: event as import("../types/calendar").ConsultationEvent,
       member,

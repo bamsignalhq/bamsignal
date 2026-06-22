@@ -26,6 +26,7 @@ import {
 } from "../../services/consultationPayment";
 import { getUpcomingConsultationEventForMember } from "../../utils/CalendarEngine";
 import { getMeetingLinkForMember } from "../../utils/MeetingLinkEngine";
+import { markMeetingInfrastructureInvitesSent } from "../../services/meetingInfrastructure";
 import {
   mergeSignalConciergeDraft,
   readSignalConciergeApplication,
@@ -47,6 +48,7 @@ import { PaymentSuccessCard } from "./PaymentSuccessCard";
 import { UpcomingConsultationCard } from "./UpcomingConsultationCard";
 import { MeetingLinkCard } from "./MeetingLinkCard";
 import { MeetingAccessCard } from "./MeetingAccessCard";
+import { MeetingTimelineCard } from "./MeetingTimelineCard";
 
 type SignalConciergeConsultationPageProps = {
   onScheduled: () => void;
@@ -219,6 +221,10 @@ export function SignalConciergeConsultationPage({
       memberEmail,
       consultantName: consultant.name,
       meetingLink: result.meetingLink
+    }).then(() => {
+      if (result.event?.meetingId) {
+        markMeetingInfrastructureInvitesSent(result.event.meetingId);
+      }
     });
     void getAuthenticatedMemberPhone().then((memberPhone) =>
       sendConsultationReminderWhatsapp({
@@ -285,6 +291,7 @@ export function SignalConciergeConsultationPage({
             <>
               <MeetingLinkCard record={activeMeetingLink} />
               <MeetingAccessCard record={activeMeetingLink} />
+              <MeetingTimelineCard timeline={activeMeetingLink.timeline} />
             </>
           ) : null}
           {upcomingEvent ? <ConsultationTimelineCard timeline={upcomingEvent.timeline} /> : null}

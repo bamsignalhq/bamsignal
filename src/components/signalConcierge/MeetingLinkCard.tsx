@@ -1,6 +1,7 @@
 import { MEETING_LINK_CHANNEL_LABELS } from "../../constants/meetingLink";
 import { meetingAccessLabel } from "../../utils/meetingLinkLogic";
 import type { MeetingLinkRecord } from "../../types/meetingLink";
+import { MeetingStatusBadge } from "./MeetingStatusBadge";
 import { MeetingChannelBadge } from "./MeetingChannelBadge";
 
 type MeetingLinkCardProps = {
@@ -22,6 +23,12 @@ export function MeetingLinkCard({ record }: MeetingLinkCardProps) {
         <div>
           <dt>Channel</dt>
           <dd>{MEETING_LINK_CHANNEL_LABELS[record.channel]}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <MeetingStatusBadge status={record.status} />
+          </dd>
         </div>
       </dl>
       <p className="meeting-link-card__access">{meetingAccessLabel(record.channel, record.access)}</p>

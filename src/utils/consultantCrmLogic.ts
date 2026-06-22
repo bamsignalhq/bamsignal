@@ -31,7 +31,11 @@ import {
 } from "./conciergeConsultantMetrics";
 import { listMeetingNotesForMember } from "./MeetingNotesEngine";
 import { CONSULTATION_EVENT_STATUS_LABELS } from "../constants/consultationScheduling";
+import { MEETING_LINK_CHANNEL_LABELS } from "../constants/meetingLink";
+import { MEETING_STATUS_LABELS } from "../constants/meetingInfrastructure";
 import { listSchedulingEventsByStatus } from "./ConsultationSchedulingEngine";
+import { listMeetingInfrastructureRecords } from "./MeetingInfrastructureEngine";
+import { meetingAccessLabel } from "./meetingLinkLogic";
 import { listConsultationPayments } from "./ConsultationPaymentEngine";
 
 const PENDING_APPLICATION_STATUSES = new Set(["submitted", "under-review", "additional-information"]);
@@ -276,20 +280,29 @@ function buildSectionRows(input: {
       new Date(event.scheduledAt).getTime() >= Date.now()
   );
 
-  counts.consultations = upcomingScheduling.length || pendingConsults.length;
-  rows.consultations = consultantSchedulingEvents.length
-    ? consultantSchedulingEvents.map((event) => ({
-        id: event.id,
-        primary: event.memberName,
-        secondary: `${event.meetingId} · ${event.journeyId ?? "—"}`,
-        meta: `${CONSULTATION_EVENT_STATUS_LABELS[event.status]} · ${event.scheduledAt.slice(0, 10)}`
+  const meetingRecords = listMeetingInfrastructureRecords().filter((record) => memberIds.has(record.memberId));
+
+  counts.consultations = meetingRecords.length || upcomingScheduling.length || pendingConsults.length;
+  rows.consultations = meetingRecords.length
+    ? meetingRecords.map((record) => ({
+        id: record.id,
+        primary: record.memberName,
+        secondary: `${MEETING_LINK_CHANNEL_LABELS[record.channel]} · ${meetingAccessLabel(record.channel, record.access).slice(0, 48)}`,
+        meta: `${MEETING_STATUS_LABELS[record.status]} · ${record.participants.length} participants · ${(record.scheduledAt ?? record.createdAt).slice(0, 10)}`
       }))
-    : pendingConsults.map((member) => ({
-        id: member.id,
-        primary: memberName(member),
-        secondary: member.status,
-        meta: meetings.find((meeting) => meeting.memberId === member.id)?.scheduledAt
-      }));
+    : consultantSchedulingEvents.length
+      ? consultantSchedulingEvents.map((event) => ({
+          id: event.id,
+          primary: event.memberName,
+          secondary: `${event.meetingId} · ${event.journeyId ?? "—"}`,
+          meta: `${CONSULTATION_EVENT_STATUS_LABELS[event.status]} · ${event.scheduledAt.slice(0, 10)}`
+        }))
+      : pendingConsults.map((member) => ({
+          id: member.id,
+          primary: memberName(member),
+          secondary: member.status,
+          meta: meetings.find((meeting) => meeting.memberId === member.id)?.scheduledAt
+        }));
 
   const openPayments = payments.filter((payment) => OPEN_PAYMENT_STATUSES.has(payment.status));
   counts.payments = openPayments.length;

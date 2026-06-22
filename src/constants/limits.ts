@@ -106,5 +106,7 @@ export const STORAGE_KEYS = {
   conciergeApplicationApprovalStore: "bamsignal-concierge-application-approval-store",
   conciergeApplicationApprovalRegistry: "bamsignal-concierge-application-approval-registry",
   conciergeEmailStore: "bamsignal-concierge-email-store",
-  conciergeEmailRegistry: "bamsignal-concierge-email-registry"
+  conciergeEmailRegistry: "bamsignal-concierge-email-registry",
+  conciergeWhatsappStore: "bamsignal-concierge-whatsapp-store",
+  conciergeWhatsappRegistry: "bamsignal-concierge-whatsapp-registry"
 } as const;

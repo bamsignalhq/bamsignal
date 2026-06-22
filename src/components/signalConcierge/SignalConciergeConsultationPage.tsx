@@ -33,6 +33,10 @@ import {
   submitSignalConciergeApplication
 } from "../../utils/signalConciergeStorage";
 import { sendConsultationScheduledEmail } from "../../services/conciergeEmail";
+import {
+  getAuthenticatedMemberPhone,
+  sendConsultationReminderWhatsapp
+} from "../../services/conciergeWhatsapp";
 import { AvailabilityCard } from "./AvailabilityCard";
 import { CalendarCard } from "./CalendarCard";
 import { CalendarTimelineCard } from "./CalendarTimelineCard";
@@ -215,6 +219,14 @@ export function SignalConciergeConsultationPage({
       consultantName: consultant.name,
       meetingLink: result.meetingLink
     });
+    void getAuthenticatedMemberPhone().then((memberPhone) =>
+      sendConsultationReminderWhatsapp({
+        application,
+        event: result.event!,
+        memberPhone,
+        consultantName: consultant.name
+      })
+    );
     refreshPayment();
     onScheduled();
   };

@@ -1,5 +1,6 @@
 import { CALENDAR_DEFAULT_TIMEZONE } from "../constants/calendar";
 import type { CalendarAvailability, CalendarSlot, ConsultationEvent } from "../types/calendar";
+import type { MeetingLinkRecord } from "../types/meetingLink";
 import type { ConciergeMemberRecord } from "../types/conciergeConsultant";
 import type { SignalConciergeApplication } from "../types/signalConcierge";
 import { listConciergeConsultants } from "../utils/conciergeConsultantDirectoryStore";
@@ -8,6 +9,7 @@ import {
   listAvailableCalendarSlots,
   syncCalendarAvailabilityFromConsultants
 } from "../utils/CalendarEngine";
+import { generateMeetingLinkForEvent } from "./meetingLink";
 import { resolveConsultationPaymentMember } from "./consultationPayment";
 import { apiUrl, supabase } from "./supabase";
 import { memberApiHeaders } from "../utils/memberApiAuth";
@@ -74,12 +76,13 @@ export async function bookConsultationCalendarSlot(input: {
   slot: CalendarSlot;
   meetingId?: string;
   journeyId?: string;
-}): Promise<{ ok: boolean; event?: ConsultationEvent; error?: string }> {
+}): Promise<{ ok: boolean; event?: ConsultationEvent; meetingLink?: MeetingLinkRecord; error?: string }> {
   const member = input.member ?? resolveConsultationPaymentMember(input.application);
-  const channel =
+  const rawChannel =
     input.application.consultationPreferences?.preferredChannel ??
     input.application.consultationPreference ??
     "google-meet";
+  const channel = rawChannel === "whatsapp" ? "google-meet" : rawChannel;
 
   const response = await fetch(apiUrl("/api/calendar?action=book"), {
     method: "POST",
@@ -94,7 +97,7 @@ export async function bookConsultationCalendarSlot(input: {
       startsAt: input.slot.startsAt,
       endsAt: input.slot.endsAt,
       timezone: CALENDAR_DEFAULT_TIMEZONE,
-      channel: channel === "whatsapp" ? "whatsapp-voice" : channel,
+      channel,
       meetingId: input.meetingId,
       journeyId: input.journeyId ?? member.journeyId
     })
@@ -118,6 +121,21 @@ export async function bookConsultationCalendarSlot(input: {
 
   if (!event) {
     return { ok: false, error: "Unable to save consultation event locally." };
+  }
+
+  const consultant = listConciergeConsultants().find((item) => item.id === input.consultantId);
+  if (consultant) {
+    const linkResult = await generateMeetingLinkForEvent({
+      application: input.application,
+      event,
+      member,
+      consultant,
+      memberEmail: String(input.memberEmail || "").trim()
+    });
+    if (!linkResult.ok) {
+      return { ok: false, error: linkResult.error || "Consultation booked, but meeting link could not be generated." };
+    }
+    return { ok: true, event, meetingLink: linkResult.record };
   }
 
   return { ok: true, event };

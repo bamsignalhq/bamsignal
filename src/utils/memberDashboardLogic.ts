@@ -27,6 +27,7 @@ import type {
 import { getMemberStewardName } from "./conciergeMemberStewardship";
 import { listConsultationMeetings } from "./consultationScheduler";
 import { getUpcomingConsultationEventForMember } from "./CalendarEngine";
+import { getMeetingLinkForMember } from "./MeetingLinkEngine";
 
 const STAGE_BY_STATUS: Record<SignalConciergeStatus, MemberJourneyStage> = {
   applied: "application",
@@ -122,12 +123,15 @@ export function buildUpcomingMeeting(
   member?: ConciergeMemberRecord | null
 ): UpcomingMeetingSummary | undefined {
   const calendarEvent = getUpcomingConsultationEventForMember(application.id);
+  const meetingLink = getMeetingLinkForMember(application.id);
   if (calendarEvent) {
     return {
       scheduledAt: calendarEvent.scheduledAt,
-      channelLabel: calendarEvent.channel.replace("-", " "),
+      channelLabel: meetingLink?.channel.replace("-", " ") ?? calendarEvent.channel.replace("-", " "),
       label: "Upcoming consultation",
-      detail: "Your private consultation — calendar invitations sent to you and your steward."
+      detail: meetingLink?.access.joinUrl
+        ? "Your private consultation link is ready — details shared only with you."
+        : "Your private consultation — calendar invitations sent to you and your steward."
     };
   }
 

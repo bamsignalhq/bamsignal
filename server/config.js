@@ -48,6 +48,17 @@ export const config = {
     redirectUri: process.env.GOOGLE_REDIRECT_URI?.trim() || "",
     calendarRefreshToken: process.env.GOOGLE_CALENDAR_REFRESH_TOKEN?.trim() || "",
     calendarId: process.env.GOOGLE_CALENDAR_ID?.trim() || "primary"
+  },
+  zoom: {
+    clientId: process.env.ZOOM_CLIENT_ID?.trim() || "",
+    clientSecret: process.env.ZOOM_CLIENT_SECRET?.trim() || "",
+    accountId: process.env.ZOOM_ACCOUNT_ID?.trim() || ""
+  },
+  googleMeet: {
+    clientId: process.env.GOOGLE_MEET_CLIENT_ID?.trim() || "",
+    clientSecret: process.env.GOOGLE_MEET_CLIENT_SECRET?.trim() || "",
+    refreshToken: process.env.GOOGLE_MEET_REFRESH_TOKEN?.trim() || "",
+    calendarId: process.env.GOOGLE_MEET_CALENDAR_ID?.trim() || "primary"
   }
 };
 
@@ -63,6 +74,14 @@ if (!config.paystackSecretKey) {
 
 if (!config.google.clientId || !config.google.clientSecret || !config.google.redirectUri) {
   console.warn("[bamsignal] Google Calendar OAuth env is incomplete. Calendar booking will return service-unavailable errors.");
+}
+
+if (!config.zoom.clientId || !config.zoom.clientSecret) {
+  console.warn("[bamsignal] Zoom meeting env is incomplete. Zoom meeting links will return service-unavailable errors.");
+}
+
+if (!config.googleMeet.clientId || !config.googleMeet.clientSecret) {
+  console.warn("[bamsignal] Google Meet env is incomplete. Standalone Meet links will return service-unavailable errors.");
 }
 
 logSignupEmailEnvTrace();

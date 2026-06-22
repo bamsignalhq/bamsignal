@@ -1,11 +1,14 @@
 import { CALENDAR_EVENT_STATUS_LABELS } from "../../constants/calendar";
 import type { ConsultationEvent } from "../../types/calendar";
+import type { MeetingLinkRecord } from "../../types/meetingLink";
+import { MeetingChannelBadge } from "./MeetingChannelBadge";
 
 type UpcomingConsultationCardProps = {
   event?: ConsultationEvent | null;
+  meetingLink?: MeetingLinkRecord | null;
 };
 
-export function UpcomingConsultationCard({ event }: UpcomingConsultationCardProps) {
+export function UpcomingConsultationCard({ event, meetingLink }: UpcomingConsultationCardProps) {
   return (
     <section className="upcoming-consultation-card signal-concierge-glass sc-reveal">
       <header className="upcoming-consultation-card__head">
@@ -25,6 +28,11 @@ export function UpcomingConsultationCard({ event }: UpcomingConsultationCardProp
               })}
             </time>
           </p>
+          {meetingLink ? (
+            <div className="upcoming-consultation-card__channel">
+              <MeetingChannelBadge channel={meetingLink.channel} />
+            </div>
+          ) : null}
           <dl className="upcoming-consultation-card__meta">
             <div>
               <dt>Steward</dt>

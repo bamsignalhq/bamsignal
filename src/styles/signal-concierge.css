@@ -1458,6 +1458,93 @@
   color: var(--sc-muted);
 }
 
+.meeting-link-card,
+.meeting-access-card {
+  padding: 18px;
+  border-radius: 16px;
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.16);
+}
+
+.meeting-link-card__head,
+.meeting-access-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meeting-link-card__head h3,
+.meeting-access-card__head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.meeting-link-card__meta {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.meeting-link-card__meta div {
+  display: grid;
+  gap: 2px;
+}
+
+.meeting-link-card__meta dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.meeting-link-card__meta dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92rem;
+}
+
+.meeting-link-card__access,
+.meeting-access-card__detail,
+.meeting-access-card__note,
+.meeting-access-card__password {
+  margin: 0;
+  color: var(--sc-muted);
+  line-height: 1.5;
+}
+
+.meeting-channel-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(168, 130, 255, 0.25);
+  background: rgba(168, 130, 255, 0.12);
+}
+
+.meeting-channel-badge--zoom {
+  border-color: rgba(45, 140, 255, 0.35);
+  background: rgba(45, 140, 255, 0.12);
+}
+
+.meeting-channel-badge--google-meet {
+  border-color: rgba(52, 168, 83, 0.35);
+  background: rgba(52, 168, 83, 0.12);
+}
+
+.meeting-channel-badge--phone {
+  border-color: rgba(255, 196, 108, 0.35);
+  background: rgba(255, 196, 108, 0.12);
+}
+
+.upcoming-consultation-card__channel {
+  margin-top: 4px;
+}
+
 .signal-concierge-channel-grid {
   display: grid;
   gap: 10px;

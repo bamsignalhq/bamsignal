@@ -95,6 +95,7 @@ export const STORAGE_KEYS = {
   conciergeOperationsStore: "bamsignal-concierge-operations-store",
   conciergeConsultationScheduler: "bamsignal-concierge-consultation-scheduler",
   conciergeCalendarStore: "bamsignal-concierge-calendar-store",
+  conciergeMeetingLinkStore: "bamsignal-concierge-meeting-link-store",
   conciergeConsultationMeetingRegistry: "bamsignal-concierge-consultation-meeting-registry",
   conciergeConsultationPaymentStore: "bamsignal-concierge-consultation-payment-store",
   conciergeConsultationPaymentRegistry: "bamsignal-concierge-consultation-payment-registry",

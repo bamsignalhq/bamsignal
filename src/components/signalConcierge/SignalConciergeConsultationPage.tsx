@@ -9,6 +9,7 @@ import {
 import { CONSULTATION_PAYMENT_MEMBERSHIP_NOTE } from "../../constants/consultationPayment";
 import type { SignalConciergeConsultationChannel } from "../../constants/signalConcierge";
 import type { CalendarAvailability, ConsultationEvent } from "../../types/calendar";
+import type { MeetingLinkRecord } from "../../types/meetingLink";
 import {
   bookConsultationCalendarSlot,
   fetchConsultantAvailability,
@@ -24,6 +25,7 @@ import {
   type ConsultationPaymentPhase
 } from "../../services/consultationPayment";
 import { getUpcomingConsultationEventForMember } from "../../utils/CalendarEngine";
+import { getMeetingLinkForMember } from "../../utils/MeetingLinkEngine";
 import {
   mergeSignalConciergeDraft,
   readSignalConciergeApplication,
@@ -37,6 +39,8 @@ import { PaymentFailureCard } from "./PaymentFailureCard";
 import { PaymentPendingCard } from "./PaymentPendingCard";
 import { PaymentSuccessCard } from "./PaymentSuccessCard";
 import { UpcomingConsultationCard } from "./UpcomingConsultationCard";
+import { MeetingLinkCard } from "./MeetingLinkCard";
+import { MeetingAccessCard } from "./MeetingAccessCard";
 
 type SignalConciergeConsultationPageProps = {
   onScheduled: () => void;
@@ -62,6 +66,7 @@ export function SignalConciergeConsultationPage({
   const [bookingError, setBookingError] = useState("");
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [bookedEvent, setBookedEvent] = useState<ConsultationEvent | null>(null);
+  const [meetingLink, setMeetingLink] = useState<MeetingLinkRecord | null>(null);
   const [availabilityReady, setAvailabilityReady] = useState(false);
   const [tick, setTick] = useState(0);
 
@@ -84,6 +89,11 @@ export function SignalConciergeConsultationPage({
     if (!application) return bookedEvent;
     return bookedEvent ?? getUpcomingConsultationEventForMember(application.id);
   }, [application, bookedEvent, tick]);
+
+  const activeMeetingLink = useMemo(() => {
+    if (!application) return meetingLink;
+    return meetingLink ?? getMeetingLinkForMember(application.id);
+  }, [application, meetingLink, tick]);
 
   const refreshPayment = useCallback(() => setTick((value) => value + 1), []);
 
@@ -186,6 +196,7 @@ export function SignalConciergeConsultationPage({
     }
 
     setBookedEvent(result.event);
+    if (result.meetingLink) setMeetingLink(result.meetingLink);
     const next = mergeSignalConciergeDraft({
       consultationPreference: selected,
       status: "consultation-scheduled",
@@ -248,11 +259,17 @@ export function SignalConciergeConsultationPage({
         </div>
       ) : (
         <>
-          <UpcomingConsultationCard event={upcomingEvent} />
+          <UpcomingConsultationCard event={upcomingEvent} meetingLink={activeMeetingLink} />
+          {activeMeetingLink ? (
+            <>
+              <MeetingLinkCard record={activeMeetingLink} />
+              <MeetingAccessCard record={activeMeetingLink} />
+            </>
+          ) : null}
           {upcomingEvent ? <CalendarTimelineCard timeline={upcomingEvent.timeline} /> : null}
 
           <div className="signal-concierge-channel-grid">
-            {SIGNAL_CONCIERGE_CONSULTATION_CHANNELS.map((channel) => {
+            {SIGNAL_CONCIERGE_CONSULTATION_CHANNELS.filter((channel) => channel.id !== "whatsapp").map((channel) => {
               const active = selected === channel.id;
               return (
                 <button

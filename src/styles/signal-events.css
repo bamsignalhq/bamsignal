@@ -1089,3 +1089,235 @@
   color: rgba(255, 255, 255, 0.58);
   line-height: 1.45;
 }
+
+/* Legacy Cities™ */
+.lc-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.lc-page__hero {
+  padding: 28px 24px;
+}
+
+.lc-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.lc-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.lc-page__levels,
+.lc-page__prepared,
+.lc-page__future {
+  padding: 22px 24px;
+}
+
+.lc-page__levels h2,
+.lc-page__prepared h2,
+.lc-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.lc-page__levels > p,
+.lc-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.lc-page__level-list,
+.lc-page__prepared-list,
+.lc-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.lc-page__level-list li,
+.lc-page__prepared-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.12);
+}
+
+.lc-page__level-list li span,
+.lc-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.lc-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lc-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.lc-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lc-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.lc-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.lc-city-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(168, 130, 255, 0.15);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.25);
+}
+
+.lc-city-badge--primary,
+.lc-city-badge--premium-community,
+.lc-city-badge--legacy-community {
+  background: rgba(212, 175, 106, 0.18);
+  border-color: rgba(212, 175, 106, 0.35);
+}
+
+.lc-city-card,
+.lc-city-timeline {
+  padding: 20px 22px;
+}
+
+.lc-city-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.lc-city-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.lc-city-card__labels {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.lc-city-card__description {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.lc-city-card__display {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.lc-city-card__row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lc-city-card__row dt {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.lc-city-card__row dd {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.lc-city-timeline__head h3 {
+  margin: 0 0 4px;
+}
+
+.lc-city-timeline__head p {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.lc-city-timeline__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+
+.lc-city-timeline__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.lc-city-timeline__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.85);
+  box-shadow: 0 0 0 3px rgba(212, 175, 106, 0.18);
+}
+
+.lc-city-timeline__note {
+  margin: 4px 0 6px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.lc-city-timeline__item time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.lc-city-timeline__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}

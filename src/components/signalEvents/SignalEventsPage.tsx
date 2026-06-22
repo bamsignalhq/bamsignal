@@ -64,6 +64,13 @@ export function SignalEventsPage() {
           >
             Corridor Stories
           </button>
+          <button
+            type="button"
+            className="se-hub-page__btn"
+            onClick={() => navigateToPath(signalEventsPathForHub("legacyCities"))}
+          >
+            Legacy Cities
+          </button>
         </div>
       </header>
 

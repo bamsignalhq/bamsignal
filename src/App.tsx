@@ -36,6 +36,7 @@ import {
   LazySignalEventsCityPage,
   LazySignalEventsCommunitiesPage,
   LazySignalEventsCommunityJourneyPage,
+  LazySignalEventsLegacyCitiesPage,
   LazySignalEventsCorridorStoriesPage,
   LazySignalEventsDiasporaCorridorsPage,
   LazySignalEventsDiasporaPage,
@@ -2051,6 +2052,8 @@ export function App() {
           <LazySignalEventsDiasporaCorridorsPage {...signalEventsShellProps} />
         ) : signalEventsRoute.kind === "hub" && signalEventsRoute.route === "corridorStories" ? (
           <LazySignalEventsCorridorStoriesPage {...signalEventsShellProps} />
+        ) : signalEventsRoute.kind === "hub" && signalEventsRoute.route === "legacyCities" ? (
+          <LazySignalEventsLegacyCitiesPage {...signalEventsShellProps} />
         ) : signalEventsRoute.kind === "city" ? (
           <LazySignalEventsCityPage
             {...signalEventsShellProps}

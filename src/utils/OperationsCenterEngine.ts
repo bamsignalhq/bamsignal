@@ -27,11 +27,11 @@ import type {
   OperationsCenterIntroductionRow,
   OperationsCenterMeetingLinkRow,
   OperationsCenterMetric,
-  OperationsCenterNotificationRow,
   OperationsCenterPaymentRow,
   OperationsCenterSchedulingRow,
   OperationsCenterWorkloadRow
 } from "../types/operationsCenter";
+import type { NotificationOpsRecord } from "../types/notificationOperations";
 import { getApplicationReviewSummaryForMember } from "./ApplicationApprovalEngine";
 import { listConsultationReviewSummaries } from "./consultationReviewEngine";
 import {
@@ -47,17 +47,16 @@ import {
   syncSchedulingAvailability
 } from "./ConsultationSchedulingEngine";
 import { listConsultationPayments } from "./ConsultationPaymentEngine";
-import { listConciergeEmailRecords, markConciergeEmailStatus } from "./EmailNotificationEngine";
+import {
+  buildNotificationOperationsBundle,
+  retryNotificationOpsRecord
+} from "./notificationOperationsEngine";
 import { listIntroductionRecords } from "./conciergeIntroductionStore";
 import { meetingAccessLabel } from "./meetingLinkLogic";
 import { listMeetingInfrastructureRecords } from "./MeetingInfrastructureEngine";
 import { listRelationshipFollowUpRecords } from "./relationshipFollowUpStore";
 import { getRelationshipSupportQueue } from "./RelationshipHealthAlertsEngine";
 import { listRelationshipLegacyIndexRecords } from "./relationshipLegacyIndexStore";
-import { latestEmailStatus } from "./emailNotificationLogic";
-import { latestWhatsappStatus } from "./whatsappNotificationLogic";
-import { listConciergeWhatsappRecords, applyWhatsappSendResult } from "./WhatsappNotificationEngine";
-import { appendWhatsappTimelineEntry } from "./whatsappNotificationLogic";
 
 const PENDING_APPLICATION_STATUSES = new Set(["submitted", "under-review", "additional-information"]);
 const ACTIVE_INTRO_STATUSES = new Set([
@@ -408,43 +407,7 @@ function buildAssignmentQueue(members: ConciergeMemberRecord[]): OperationsCente
 }
 
 function buildNotifications(): OperationsCenterBundle["notifications"] {
-  const emailQueue: OperationsCenterNotificationRow[] = [];
-  const whatsappQueue: OperationsCenterNotificationRow[] = [];
-  const failedDeliveries: OperationsCenterNotificationRow[] = [];
-
-  for (const record of listConciergeEmailRecords()) {
-    const status = latestEmailStatus(record.timeline);
-    const row: OperationsCenterNotificationRow = {
-      id: record.id,
-      channel: "email",
-      memberName: record.memberName,
-      journeyId: record.journeyId,
-      templateLabel: record.templateId,
-      status,
-      updatedAt: record.updatedAt,
-      preview: record.preview
-    };
-    if (status === "queued") emailQueue.push(row);
-    if (status === "failed") failedDeliveries.push(row);
-  }
-
-  for (const record of listConciergeWhatsappRecords()) {
-    const status = latestWhatsappStatus(record.timeline);
-    const row: OperationsCenterNotificationRow = {
-      id: record.id,
-      channel: "whatsapp",
-      memberName: record.memberName,
-      journeyId: record.journeyId,
-      templateLabel: record.templateId,
-      status,
-      updatedAt: record.updatedAt,
-      preview: record.preview
-    };
-    if (status === "queued") whatsappQueue.push(row);
-    if (status === "failed") failedDeliveries.push(row);
-  }
-
-  return { emailQueue, whatsappQueue, failedDeliveries };
+  return buildNotificationOperationsBundle();
 }
 
 function buildIntroductions(members: ConciergeMemberRecord[]): OperationsCenterBundle["introductions"] {
@@ -516,18 +479,7 @@ export function buildOperationsCenterBundle(): OperationsCenterBundle {
 }
 
 export function retryOperationsCenterNotification(
-  row: OperationsCenterNotificationRow
-): OperationsCenterNotificationRow | null {
-  if (row.channel === "email") {
-    const updated = markConciergeEmailStatus(row.id, "queued", "Retry queued from Operations Center™");
-    if (!updated) return null;
-    return { ...row, status: "queued", updatedAt: updated.updatedAt };
-  }
-
-  const existing = listConciergeWhatsappRecords().find((record) => record.id === row.id);
-  if (!existing) return null;
-  const timeline = appendWhatsappTimelineEntry(existing.timeline, "queued", new Date().toISOString(), "Retry queued from Operations Center™");
-  const updated = applyWhatsappSendResult({ recordId: row.id, timeline });
-  if (!updated) return null;
-  return { ...row, status: "queued", updatedAt: updated.updatedAt };
+  row: NotificationOpsRecord
+): NotificationOpsRecord | null {
+  return retryNotificationOpsRecord(row);
 }

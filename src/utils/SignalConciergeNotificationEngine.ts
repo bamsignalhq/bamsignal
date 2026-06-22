@@ -212,6 +212,11 @@ export function listNotificationsForMember(memberId: string): NotificationEvent[
     .sort((a, b) => Date.parse(b.queuedAt) - Date.parse(a.queuedAt));
 }
 
+export function listAllConciergeNotificationEvents(): NotificationEvent[] {
+  const store = loadStore();
+  return Object.values(store.events).sort((a, b) => Date.parse(b.queuedAt) - Date.parse(a.queuedAt));
+}
+
 export function updateNotificationStatus(
   eventId: string,
   status: NotificationDeliveryStatus

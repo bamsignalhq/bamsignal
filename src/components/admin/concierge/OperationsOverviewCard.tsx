@@ -25,11 +25,7 @@ function sectionCount(bundle: OperationsCenterBundle, section: OperationsCenterS
         bundle.assignmentQueue.pendingReview.length
       );
     case "notifications":
-      return (
-        bundle.notifications.emailQueue.length +
-        bundle.notifications.whatsappQueue.length +
-        bundle.notifications.failedDeliveries.length
-      );
+      return bundle.notifications.queue.length + bundle.notifications.failed.length;
     case "introductions":
       return Object.values(bundle.introductions).reduce((sum, rows) => sum + rows.length, 0);
     case "follow-up":

@@ -21,7 +21,7 @@ export const OPERATIONS_CENTER_SECTIONS: {
   { id: "payments", label: "Payments", hint: "Consultation fee lifecycle from Paystack." },
   { id: "scheduling", label: "Scheduling", hint: "Calendar, slots, and meeting infrastructure." },
   { id: "assignment-queue", label: "Assignment Queue", hint: "Unassigned journeys and consultant workload." },
-  { id: "notifications", label: "Notifications", hint: "Email Engine™ and WhatsApp Engine™ delivery queues." },
+  { id: "notifications", label: "Notifications", hint: "Notification Operations Center™ — delivery queues and metrics." },
   { id: "introductions", label: "Introductions", hint: "Introduction Engine™ review and consent pipeline." },
   { id: "follow-up", label: "Relationship Follow-up", hint: "Active relationship stewardship and escalations." }
 ];

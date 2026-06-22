@@ -1,7 +1,6 @@
 import type { ConsultationEventStatus } from "./consultationScheduling";
 import type { ConsultationPaymentStatus } from "./consultationPayment";
-import type { EmailDeliveryStatus } from "./conciergeEmail";
-import type { WhatsappDeliveryStatus } from "./conciergeWhatsapp";
+import type { NotificationOperationsBundle } from "./notificationOperations";
 import type { AssignmentConfidence, RecommendationLevel } from "./consultantAssignment";
 import type { WorkloadHealth } from "./consultantAssignment";
 
@@ -127,7 +126,7 @@ export type OperationsCenterNotificationRow = {
   memberName: string;
   journeyId?: string;
   templateLabel: string;
-  status: EmailDeliveryStatus | WhatsappDeliveryStatus;
+  status: string;
   updatedAt: string;
   preview: string;
 };
@@ -170,11 +169,7 @@ export type OperationsCenterBundle = {
     workloadOverview: OperationsCenterWorkloadRow[];
     recommendations: OperationsCenterAssignmentRow[];
   };
-  notifications: {
-    emailQueue: OperationsCenterNotificationRow[];
-    whatsappQueue: OperationsCenterNotificationRow[];
-    failedDeliveries: OperationsCenterNotificationRow[];
-  };
+  notifications: NotificationOperationsBundle;
   introductions: Record<OperationsCenterIntroductionBucket, OperationsCenterIntroductionRow[]>;
   followUps: Record<OperationsCenterFollowUpBucket, OperationsCenterFollowUpRow[]>;
 };

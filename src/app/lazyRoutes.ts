@@ -114,6 +114,12 @@ export const LazySignalEventsLegacyCitiesPage = lazy(() =>
   }))
 );
 
+export const LazySignalEventsCityAmbassadorsPage = lazy(() =>
+  import("../pages/signal-events/SignalEventsCityAmbassadorsPage").then((module) => ({
+    default: module.SignalEventsCityAmbassadorsPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

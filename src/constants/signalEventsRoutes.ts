@@ -10,7 +10,8 @@ export const SIGNAL_EVENTS_ROUTES = {
   communityJourney: `${SIGNAL_EVENTS_BASE_PATH}/community-journey`,
   diasporaCorridors: `${SIGNAL_EVENTS_BASE_PATH}/diaspora-corridors`,
   corridorStories: `${SIGNAL_EVENTS_BASE_PATH}/corridor-stories`,
-  legacyCities: `${SIGNAL_EVENTS_BASE_PATH}/legacy-cities`
+  legacyCities: `${SIGNAL_EVENTS_BASE_PATH}/legacy-cities`,
+  cityAmbassadors: `${SIGNAL_EVENTS_BASE_PATH}/city-ambassadors`
 } as const;
 
 export type SignalEventsHubRoute = keyof typeof SIGNAL_EVENTS_ROUTES;

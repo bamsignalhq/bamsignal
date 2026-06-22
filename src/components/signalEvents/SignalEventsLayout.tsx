@@ -70,6 +70,13 @@ export function SignalEventsLayout({
               >
                 Legacy Cities
               </button>
+              <button
+                type="button"
+                className="signal-events-header__link"
+                onClick={() => go("cityAmbassadors")}
+              >
+                City Ambassadors
+              </button>
             </nav>
             <div className="signal-events-header__actions">
               <button

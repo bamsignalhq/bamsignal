@@ -71,6 +71,13 @@ export function SignalEventsPage() {
           >
             Legacy Cities
           </button>
+          <button
+            type="button"
+            className="se-hub-page__btn"
+            onClick={() => navigateToPath(signalEventsPathForHub("cityAmbassadors"))}
+          >
+            City Ambassadors
+          </button>
         </div>
       </header>
 

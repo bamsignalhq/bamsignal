@@ -344,6 +344,13 @@ export function BamSignalInstituteLayout({
               >
                 Garden
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("relationshipConnectHouse")}
+              >
+                Connect House
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

@@ -286,3 +286,203 @@
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.48);
 }
+
+/* Annual Relationship Report™ */
+.arr-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.arr-page__hero {
+  padding: 28px 24px;
+}
+
+.arr-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.arr-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.arr-page__static {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: rgba(168, 130, 255, 0.9);
+  line-height: 1.45;
+}
+
+.arr-page__prepared,
+.arr-page__future {
+  padding: 22px 24px;
+}
+
+.arr-page__prepared h2,
+.arr-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.arr-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.arr-page__prepared-list,
+.arr-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.arr-page__prepared-list li,
+.arr-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.arr-page__prepared-list li span,
+.arr-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.arr-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.arr-page__grid--categories {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.arr-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.arr-report-card,
+.arr-category-card,
+.arr-timeline-card {
+  padding: 18px 20px;
+}
+
+.arr-report-card__head,
+.arr-category-card__head,
+.arr-timeline-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.arr-report-card__head h3,
+.arr-category-card__head h3,
+.arr-timeline-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.arr-report-card__year,
+.arr-category-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(212, 175, 106, 0.18);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(212, 175, 106, 0.35);
+  white-space: nowrap;
+}
+
+.arr-report-card__labels,
+.arr-report-card__category {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.arr-report-card__description,
+.arr-category-card__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.arr-report-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.arr-timeline-card__head p {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.arr-timeline-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+
+.arr-timeline-card__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.arr-timeline-card__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.85);
+  box-shadow: 0 0 0 3px rgba(212, 175, 106, 0.18);
+}
+
+.arr-timeline-card__note {
+  margin: 4px 0 6px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.arr-timeline-card__item time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.arr-timeline-card__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}

@@ -330,6 +330,13 @@ export function BamSignalInstituteLayout({
               >
                 Studio
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("legacyHall")}
+              >
+                Legacy Hall
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

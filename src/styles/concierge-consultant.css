@@ -4841,3 +4841,228 @@
   }
 }
 
+/* Anniversary Celebration Experience™ */
+.anniversary-celebration-experience {
+  display: grid;
+  gap: 16px;
+}
+
+.anniversary-celebration-experience__head h2 {
+  margin: 0 0 6px;
+}
+
+.anniversary-celebration-experience__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.anniversary-celebration-experience__overview,
+.anniversary-celebration-experience__timeline-card,
+.anniversary-memory-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.anniversary-celebration-experience__labels {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.anniversary-celebration-experience__fulfillment {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.anniversary-celebration-experience__milestones h3,
+.anniversary-celebration-experience__future h3 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+}
+
+.anniversary-celebration-experience__grid {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.milestone-celebration-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.milestone-celebration-card--highlighted {
+  border-color: rgba(212, 175, 106, 0.38);
+  background: rgba(212, 175, 106, 0.08);
+}
+
+.milestone-celebration-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.milestone-celebration-card__head strong {
+  font-size: 0.88rem;
+}
+
+.milestone-celebration-card__status {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(212, 175, 106, 0.85);
+}
+
+.milestone-celebration-card__display {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.milestone-celebration-card__body {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}
+
+.anniversary-celebration-experience__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.anniversary-celebration-experience__future li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.anniversary-celebration-experience__future strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.anniversary-celebration-experience__future span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.anniversary-celebration-experience__reserved {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.45;
+}
+
+.anniversary-memory-card__quote {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 3px solid rgba(212, 175, 106, 0.55);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.anniversary-memory-card__label {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.anniversary-memory-card__quote p {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.5;
+}
+
+.anniversary-memory-card__quote footer {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.celebration-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 4px;
+  display: grid;
+  gap: 0;
+}
+
+.celebration-timeline__item {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 12px;
+  padding-bottom: 16px;
+  position: relative;
+}
+
+.celebration-timeline__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(212, 175, 106, 0.4), rgba(168, 130, 255, 0.08));
+}
+
+.celebration-timeline__dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(212, 175, 106, 0.95);
+  box-shadow: 0 0 0 4px rgba(212, 175, 106, 0.12);
+}
+
+.celebration-timeline__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.celebration-timeline__row strong {
+  font-size: 0.86rem;
+}
+
+.celebration-timeline__year {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.celebration-timeline__status {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.celebration-timeline__note {
+  margin: 0 0 4px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.celebration-timeline__item time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+

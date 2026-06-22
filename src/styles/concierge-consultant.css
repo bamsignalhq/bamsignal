@@ -6230,3 +6230,213 @@
   }
 }
 
+/* Consultation Payment Engine™ */
+.member-consultation-payment {
+  display: grid;
+  gap: 16px;
+}
+
+.member-consultation-payment__section-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.member-consultation-payment__section-head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.member-consultation-payment__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.consultation-payment-card__amount {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 175, 106, 0.28);
+  background: rgba(212, 175, 106, 0.08);
+}
+
+.consultation-payment-card__amount span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.consultation-payment-card__amount strong {
+  font-size: 1.35rem;
+  color: #d4af6a;
+}
+
+.consultation-payment-card__grid,
+.payment-receipt__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 12px 0 0;
+}
+
+.consultation-payment-card__grid dt,
+.payment-receipt__grid dt {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.consultation-payment-card__grid dd,
+.payment-receipt__grid dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.consultation-payment-card__payment-id,
+.payment-receipt__payment-id,
+.payment-receipt__journey-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.consultation-payment-card__note,
+.consultation-payment-card__narrative,
+.payment-receipt__narrative {
+  margin: 12px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.5;
+}
+
+.payment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.payment-status-badge--pending {
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.payment-status-badge--initialized {
+  color: #a882ff;
+  border-color: rgba(168, 130, 255, 0.35);
+  background: rgba(168, 130, 255, 0.1);
+}
+
+.payment-status-badge--paid {
+  color: #8fd4a8;
+  border-color: rgba(143, 212, 168, 0.35);
+  background: rgba(143, 212, 168, 0.1);
+}
+
+.payment-status-badge--failed {
+  color: #f0a07a;
+  border-color: rgba(240, 160, 122, 0.35);
+  background: rgba(240, 160, 122, 0.1);
+}
+
+.payment-status-badge--refunded {
+  color: #d4af6a;
+  border-color: rgba(212, 175, 106, 0.35);
+  background: rgba(212, 175, 106, 0.1);
+}
+
+.payment-status-badge--cancelled {
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.payment-timeline__pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.payment-timeline__step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  opacity: 0.45;
+}
+
+.payment-timeline__step--reached,
+.payment-timeline__step--active {
+  opacity: 1;
+}
+
+.payment-timeline__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(168, 130, 255, 0.45);
+}
+
+.payment-timeline__step--active .payment-timeline__dot {
+  background: #d4af6a;
+  box-shadow: 0 0 0 4px rgba(212, 175, 106, 0.18);
+}
+
+.payment-timeline__step strong {
+  display: block;
+  font-size: 0.86rem;
+}
+
+.payment-timeline__step span {
+  display: block;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.payment-timeline__step time {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.payment-timeline__terminal {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(240, 160, 122, 0.25);
+  background: rgba(240, 160, 122, 0.08);
+  display: grid;
+  gap: 4px;
+}
+
+.payment-receipt__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.payment-receipt__header span {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.payment-receipt__header strong {
+  font-size: 1.2rem;
+  color: #d4af6a;
+}
+

@@ -1,0 +1,371 @@
+.consultant-academy-page {
+  display: grid;
+  gap: 18px;
+}
+
+.consultant-academy-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.consultant-academy-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.consultant-academy-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 68ch;
+}
+
+.consultant-academy-page__tracks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.consultant-academy-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.consultant-academy-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 14px;
+}
+
+.consultant-academy-page__roster,
+.consultant-academy-page__detail {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.consultant-academy-page__roster h3,
+.consultant-academy-page__modules h3 {
+  margin: 0;
+}
+
+.consultant-academy-page__module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.consultant-academy-page__empty {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.9rem;
+}
+
+.consultant-academy-page__future {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 6px;
+}
+
+.consultant-academy-page__future h3 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.consultant-academy-page__future ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.academy-track-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+}
+
+.academy-track-card.is-active {
+  border-color: rgba(160, 200, 255, 0.55);
+  background: rgba(120, 170, 255, 0.08);
+}
+
+.academy-track-card__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.58);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.academy-track-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.academy-track-card p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.academy-track-card span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.learning-progress-card,
+.certification-card,
+.assessment-card,
+.academy-timeline-card {
+  padding: 14px;
+}
+
+.learning-progress-card__head,
+.certification-card__head,
+.assessment-card__head,
+.academy-timeline-card__head {
+  margin-bottom: 12px;
+}
+
+.learning-progress-card__head h3,
+.certification-card__head h3,
+.assessment-card__head h3,
+.academy-timeline-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.learning-progress-card__head p,
+.assessment-card__head p,
+.academy-timeline-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.learning-progress-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.academy-metric-chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.academy-metric-chip p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.academy-metric-chip strong {
+  font-size: 1.1rem;
+}
+
+.academy-search-field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.84rem;
+  min-width: 160px;
+}
+
+.academy-search-field input,
+.academy-search-field select {
+  width: 100%;
+}
+
+.consultant-academy-roster-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  width: 100%;
+  text-align: left;
+}
+
+.consultant-academy-roster-card.is-selected {
+  border-color: rgba(160, 200, 255, 0.55);
+  background: rgba(120, 170, 255, 0.08);
+}
+
+.consultant-academy-roster-card span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.training-module-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.training-module-card--completed {
+  border-color: rgba(140, 255, 180, 0.25);
+}
+
+.training-module-card--in-progress {
+  border-color: rgba(140, 200, 255, 0.25);
+}
+
+.training-module-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.training-module-card h4 {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.training-module-card__status {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.58);
+  text-transform: capitalize;
+}
+
+.training-module-card__meta {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+}
+
+.training-module-card__meta div {
+  display: grid;
+  gap: 2px;
+}
+
+.training-module-card__meta dt {
+  margin: 0;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.training-module-card__meta dd {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.certification-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.certification-card__grid div {
+  display: grid;
+  gap: 2px;
+}
+
+.certification-card__grid dt {
+  margin: 0;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.certification-card__grid dd {
+  margin: 0;
+}
+
+.certification-card__level {
+  font-size: 0.84rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.certification-card__level--master-steward {
+  color: rgba(255, 220, 140, 0.98);
+  border-color: rgba(255, 200, 100, 0.4);
+}
+
+.assessment-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.assessment-card__list li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+  font-size: 0.84rem;
+}
+
+.assessment-card__pass {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.assessment-card__fail {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.assessment-card__empty,
+.academy-timeline-card__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.academy-timeline-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.academy-timeline-card__list li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.academy-timeline-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.academy-timeline-card__list p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+@media (max-width: 900px) {
+  .consultant-academy-page__body {
+    grid-template-columns: 1fr;
+  }
+}

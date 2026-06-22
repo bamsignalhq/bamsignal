@@ -1,0 +1,223 @@
+.audit-center-page {
+  display: grid;
+  gap: 18px;
+}
+
+.audit-center-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.audit-center-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.audit-center-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 68ch;
+}
+
+.audit-center-page__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.audit-center-page__detail {
+  grid-column: 1 / -1;
+}
+
+.audit-center-page__empty {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.9rem;
+}
+
+.audit-center-page__foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 4px;
+}
+
+.audit-compliance-overview,
+.audit-filter-card,
+.audit-summary-card,
+.audit-timeline-card {
+  padding: 14px;
+}
+
+.audit-compliance-overview__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.audit-metric-chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.audit-metric-chip p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.audit-metric-chip strong {
+  font-size: 1.15rem;
+}
+
+.audit-compliance-overview__rules h4 {
+  margin: 0 0 6px;
+  font-size: 0.86rem;
+}
+
+.audit-compliance-overview__rules ul {
+  margin: 0;
+  padding-left: 18px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.84rem;
+}
+
+.audit-filter-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.audit-filter-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.audit-filter-field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.audit-filter-field input,
+.audit-filter-field select {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.84rem;
+}
+
+.audit-filter-card__hint {
+  margin: 12px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.audit-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.86rem;
+}
+
+.audit-event-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  text-align: left;
+  color: inherit;
+}
+
+.audit-event-card--button {
+  width: 100%;
+  cursor: pointer;
+}
+
+.audit-event-card.is-selected {
+  border-color: rgba(180, 140, 255, 0.5);
+}
+
+.audit-event-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.audit-event-card__action {
+  margin: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(180, 140, 255, 0.9);
+}
+
+.audit-event-card__result {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.audit-event-card__result--failed {
+  border-color: rgba(255, 120, 120, 0.45);
+  color: #ffb4b4;
+}
+
+.audit-event-card h3 {
+  margin: 8px 0;
+  font-size: 0.95rem;
+}
+
+.audit-event-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.audit-event-card__grid dt {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.audit-event-card__grid dd {
+  margin: 2px 0 0;
+}
+
+.audit-event-card__meta {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.audit-timeline-card__empty,
+.audit-summary-card__empty {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.86rem;
+}
+
+@media (max-width: 900px) {
+  .audit-center-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-event-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

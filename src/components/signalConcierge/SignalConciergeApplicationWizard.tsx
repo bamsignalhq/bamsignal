@@ -18,6 +18,8 @@ import {
   micPermissionMessage
 } from "../../utils/voiceRecording";
 import { submitSignalConciergeApplication } from "../../utils/signalConciergeStorage";
+import { sendApplicationReceivedEmail } from "../../services/conciergeEmail";
+import { getAuthenticatedMemberEmail } from "../../services/calendar";
 import { ApplicationProgressBar } from "./ApplicationProgressBar";
 import {
   defaultAboutYou,
@@ -128,12 +130,15 @@ export function SignalConciergeApplicationWizard({
       return;
     }
     const normalized = normalizeApplicationDraft(draft);
-    submitSignalConciergeApplication({
+    const application = submitSignalConciergeApplication({
       ...normalized,
       status: "applied",
       consultationPreference: normalized.consultationPreferences?.preferredChannel,
       wizardStep: 0
     });
+    void getAuthenticatedMemberEmail().then((memberEmail) =>
+      sendApplicationReceivedEmail({ application, memberEmail })
+    );
     setView("success");
     setMessage("");
   };

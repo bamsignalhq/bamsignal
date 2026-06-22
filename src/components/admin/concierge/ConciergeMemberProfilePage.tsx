@@ -18,6 +18,7 @@ import { JourneyOwnershipCard } from "./JourneyOwnershipCard";
 import { MemberAssignmentSection } from "./MemberAssignmentSection";
 import { MemberConsultationPaymentSection } from "./MemberConsultationPaymentSection";
 import { MemberNotificationSection } from "./MemberNotificationSection";
+import { MemberEmailSection } from "./MemberEmailSection";
 import { MemberMeetingNotesSection } from "./MemberMeetingNotesSection";
 import { MemberApplicationApprovalSection } from "./MemberApplicationApprovalSection";
 import { JourneyTransitionCard } from "./JourneyTransitionCard";
@@ -254,6 +255,8 @@ export function ConciergeMemberProfilePage({
       <MemberConsultationPaymentSection member={member} />
 
       <MemberNotificationSection member={member} />
+
+      <MemberEmailSection member={member} />
 
       <MemberMeetingNotesSection member={member} />
 

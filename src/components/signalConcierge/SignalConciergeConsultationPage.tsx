@@ -32,6 +32,7 @@ import {
   readSignalConciergeDraft,
   submitSignalConciergeApplication
 } from "../../utils/signalConciergeStorage";
+import { sendConsultationScheduledEmail } from "../../services/conciergeEmail";
 import { AvailabilityCard } from "./AvailabilityCard";
 import { CalendarCard } from "./CalendarCard";
 import { CalendarTimelineCard } from "./CalendarTimelineCard";
@@ -206,6 +207,13 @@ export function SignalConciergeConsultationPage({
       ...next,
       status: "consultation-scheduled",
       consultationScheduledAt: result.event.scheduledAt
+    });
+    void sendConsultationScheduledEmail({
+      application,
+      event: result.event,
+      memberEmail,
+      consultantName: consultant.name,
+      meetingLink: result.meetingLink
     });
     refreshPayment();
     onScheduled();

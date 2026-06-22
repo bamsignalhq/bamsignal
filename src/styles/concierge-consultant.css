@@ -6712,6 +6712,228 @@
   }
 }
 
+/* Signal Concierge Email Engine™ */
+.member-emails {
+  display: grid;
+  gap: 16px;
+}
+
+.member-emails__section-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.member-emails__section-head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.member-emails__overview {
+  padding: 16px;
+}
+
+.member-emails__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.member-emails__grid dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.member-emails__grid dd {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}
+
+.member-emails__narrative {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.member-emails__cards {
+  display: grid;
+  gap: 16px;
+}
+
+.member-emails__recent-title {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.member-emails__recent-list {
+  display: grid;
+  gap: 12px;
+}
+
+.email-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.email-status-badge--queued {
+  background: rgba(255, 193, 7, 0.14);
+  color: #ffd666;
+}
+
+.email-status-badge--sent {
+  background: rgba(33, 150, 243, 0.14);
+  color: #90caf9;
+}
+
+.email-status-badge--delivered {
+  background: rgba(76, 175, 80, 0.14);
+  color: #a5d6a7;
+}
+
+.email-status-badge--failed {
+  background: rgba(244, 67, 54, 0.14);
+  color: #ef9a9a;
+}
+
+.email-history__empty {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.email-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.email-history__item {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.email-history__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.email-history__id {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.email-history__subject {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.84rem;
+}
+
+.email-history__preview {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.email-history__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.email-preview {
+  padding: 16px;
+}
+
+.email-preview__title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.email-preview__title-row h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.email-preview__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.email-preview__subject {
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.email-preview__copy {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.email-preview__timeline {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.email-preview__timeline-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.email-preview__detail {
+  color: rgba(239, 154, 154, 0.9);
+}
+
+.email-preview__future {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.email-preview__future-note {
+  margin: 4px 0 0;
+}
+
+@media (max-width: 720px) {
+  .member-emails__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Meeting Notes System™ */
 .member-meeting-notes {
   display: grid;

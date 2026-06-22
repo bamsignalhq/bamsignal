@@ -5066,3 +5066,189 @@
   color: rgba(255, 255, 255, 0.48);
 }
 
+/* Legacy Families™ architecture */
+.legacy-families-page {
+  display: grid;
+  gap: 16px;
+}
+
+.legacy-families-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.legacy-families-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.legacy-families-page__privacy {
+  margin-top: 8px !important;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.legacy-families-page__picker {
+  padding: 12px 16px;
+  border-radius: 12px;
+}
+
+.legacy-families-page__picker label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.legacy-families-page__picker select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(168, 130, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.legacy-families-page__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+}
+
+.legacy-families-page__grid {
+  display: grid;
+  gap: 16px;
+}
+
+.legacy-children-card,
+.family-growth-card,
+.legacy-families-timeline-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.legacy-children-card__privacy {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.legacy-children-card__count,
+.legacy-children-card__country {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.84rem;
+}
+
+.legacy-children-card__count strong,
+.legacy-children-card__country strong {
+  font-size: 1rem;
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.family-growth-card__list,
+.legacy-families-timeline-card__display,
+.legacy-families-timeline-card__milestones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.family-growth-card__item,
+.legacy-families-timeline-card__display-item,
+.legacy-families-timeline-card__milestone-item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.family-growth-card__dot,
+.legacy-families-timeline-card__dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: rgba(168, 130, 255, 0.55);
+}
+
+.legacy-families-timeline-card__display-item.is-reached .legacy-families-timeline-card__dot {
+  background: rgba(212, 175, 106, 0.9);
+}
+
+.family-growth-card__country {
+  margin: 2px 0 4px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.family-growth-card__item time,
+.legacy-families-timeline-card__milestone-item time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.legacy-families-timeline-card__label {
+  display: block;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 2px;
+}
+
+.legacy-families-timeline-card__value {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.legacy-families-timeline-card__pending {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.38);
+  font-style: italic;
+}
+
+.legacy-families-timeline-card__milestones-head {
+  margin: 18px 0 10px;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.legacy-families-timeline-card__note {
+  margin: 2px 0 4px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.legacy-families-timeline-card__reserved {
+  margin: 16px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.45;
+}
+
+.legacy-family-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(168, 130, 255, 0.15);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.25);
+}
+
+.legacy-family-status-badge--primary {
+  background: rgba(212, 175, 106, 0.18);
+  border-color: rgba(212, 175, 106, 0.35);
+}
+

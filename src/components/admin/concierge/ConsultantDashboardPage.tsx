@@ -27,12 +27,13 @@ import { ConsultantDirectoryPage } from "./ConsultantDirectoryPage";
 import { JourneyArchivePage } from "./JourneyArchivePage";
 import { LegacyExperiencePage } from "./LegacyExperiencePage";
 import { LegacyFamilyPage } from "./legacyFamilies/LegacyFamilyPage";
+import { FoundersWallPage } from "./foundersWall/FoundersWallPage";
 import { LoveThroughYearsPage } from "./loveThroughYears/LoveThroughYearsPage";
 import { SuccessStoryPage } from "./SuccessStoryPage";
 import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
 import { useAdminToast } from "../AdminToast";
 
-type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "archive" | "legacy" | "families" | "years" | "stories";
+type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "archive" | "legacy" | "families" | "years" | "founders" | "stories";
 
 type DashboardInsight = {
   id: string;
@@ -312,6 +313,13 @@ export function ConsultantDashboardPage() {
           </button>
           <button
             type="button"
+            className={`concierge-consultant-dashboard__tab${view === "founders" ? " is-active" : ""}`}
+            onClick={() => setView("founders")}
+          >
+            Founders Wall
+          </button>
+          <button
+            type="button"
             className={`concierge-consultant-dashboard__tab${view === "stories" ? " is-active" : ""}`}
             onClick={() => setView("stories")}
           >
@@ -327,6 +335,8 @@ export function ConsultantDashboardPage() {
       {view === "families" ? <LegacyFamilyPage /> : null}
 
       {view === "years" ? <LoveThroughYearsPage /> : null}
+
+      {view === "founders" ? <FoundersWallPage /> : null}
 
       {view === "legacy" ? <LegacyExperiencePage /> : null}
 

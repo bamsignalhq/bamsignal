@@ -4,6 +4,8 @@ import { isSeoRoute } from "./seoRoutes";
 import { isNigeriaSeoRoute } from "./nigeriaRoutes";
 import { isSignalConciergeRoute } from "./signalConciergeRoutes";
 import { isSignalEventsRoute } from "./signalEventsRoutes";
+import { isBamSignalFoundationRoute } from "./bamSignalFoundationRoutes";
+import { isBamSignalInstituteRoute } from "./bamSignalInstituteRoutes";
 
 export const AUTH_LOGIN_PATH = "/love/login";
 export const AUTH_SIGNUP_PATH = "/love/sign";
@@ -107,6 +109,8 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   if (isNigeriaSeoRoute(path)) return true;
   if (isSignalConciergeRoute(path)) return true;
   if (isSignalEventsRoute(path)) return true;
+  if (isBamSignalFoundationRoute(path)) return true;
+  if (isBamSignalInstituteRoute(path)) return true;
   if (path === "/") return true;
   return false;
 }

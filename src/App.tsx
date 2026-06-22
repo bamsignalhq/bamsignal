@@ -33,6 +33,12 @@ import {
   LazySignalConciergeLandingPage,
   LazySignalConciergePrivacyPage,
   LazySignalConciergeStatusPage,
+  LazyBamSignalInstituteAnnualInsightsPage,
+  LazyBamSignalInstituteLandingPage,
+  LazyBamSignalInstituteProgramsPage,
+  LazyBamSignalFoundationLandingPage,
+  LazyBamSignalFoundationProgramsPage,
+  LazyBamSignalFoundationStoriesPage,
   LazySignalEventsCityPage,
   LazySignalEventsCommunitiesPage,
   LazySignalEventsCommunityJourneyPage,
@@ -159,6 +165,18 @@ import {
   SIGNAL_EVENTS_ROUTES,
   type SignalEventsRoute
 } from "./constants/signalEventsRoutes";
+import {
+  BAMSIGNAL_FOUNDATION_ROUTES,
+  getBamSignalFoundationRoute,
+  isUnknownBamSignalFoundationSubroute,
+  type BamSignalFoundationRoute
+} from "./constants/bamSignalFoundationRoutes";
+import {
+  BAMSIGNAL_INSTITUTE_ROUTES,
+  getBamSignalInstituteRoute,
+  isUnknownBamSignalInstituteSubroute,
+  type BamSignalInstituteRoute
+} from "./constants/bamSignalInstituteRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail, resolveMemberIdentity } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
@@ -243,6 +261,10 @@ export function App() {
   const [signalEventsRoute, setSignalEventsRoute] = useState<SignalEventsRoute | null>(() =>
     getSignalEventsRoute()
   );
+  const [bamSignalFoundationRoute, setBamSignalFoundationRoute] =
+    useState<BamSignalFoundationRoute | null>(() => getBamSignalFoundationRoute());
+  const [bamSignalInstituteRoute, setBamSignalInstituteRoute] =
+    useState<BamSignalInstituteRoute | null>(() => getBamSignalInstituteRoute());
   const [authPath, setAuthPath] = useState<AuthPath | null>(() => getAuthPath());
   const [blogSlug, setBlogSlug] = useState<string | null>(() => getBlogSlug());
   const [momentSlug, setMomentSlug] = useState<string | null>(() => getMomentSlug());
@@ -420,6 +442,8 @@ export function App() {
       setNigeriaRoute(getNigeriaRoute());
       setSignalConciergeRoute(getSignalConciergeRoute());
       setSignalEventsRoute(getSignalEventsRoute());
+      setBamSignalFoundationRoute(getBamSignalFoundationRoute());
+      setBamSignalInstituteRoute(getBamSignalInstituteRoute());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());
       setMomentSlug(getMomentSlug());
@@ -451,6 +475,16 @@ export function App() {
   useLayoutEffect(() => {
     if (!isUnknownSignalEventsSubroute(memberPathname)) return;
     navigateToPath(SIGNAL_EVENTS_ROUTES.landing, true);
+  }, [memberPathname]);
+
+  useLayoutEffect(() => {
+    if (!isUnknownBamSignalFoundationSubroute(memberPathname)) return;
+    navigateToPath(BAMSIGNAL_FOUNDATION_ROUTES.landing, true);
+  }, [memberPathname]);
+
+  useLayoutEffect(() => {
+    if (!isUnknownBamSignalInstituteSubroute(memberPathname)) return;
+    navigateToPath(BAMSIGNAL_INSTITUTE_ROUTES.landing, true);
   }, [memberPathname]);
 
   useLayoutEffect(() => {
@@ -2067,6 +2101,48 @@ export function App() {
           />
         ) : (
           <LazySignalEventsHubPage {...signalEventsShellProps} />
+        )}
+      </Suspense>
+    );
+  }
+
+  if (bamSignalFoundationRoute) {
+    const foundationShellProps = {
+      theme,
+      onToggleTheme: toggleTheme,
+      onLogoClick: goHome,
+      onLogin: isAuthed ? undefined : () => openAuth("login")
+    };
+
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading BamSignal Foundation…" />}>
+        {bamSignalFoundationRoute === "landing" ? (
+          <LazyBamSignalFoundationLandingPage {...foundationShellProps} />
+        ) : bamSignalFoundationRoute === "programs" ? (
+          <LazyBamSignalFoundationProgramsPage {...foundationShellProps} />
+        ) : (
+          <LazyBamSignalFoundationStoriesPage {...foundationShellProps} />
+        )}
+      </Suspense>
+    );
+  }
+
+  if (bamSignalInstituteRoute) {
+    const instituteShellProps = {
+      theme,
+      onToggleTheme: toggleTheme,
+      onLogoClick: goHome,
+      onLogin: isAuthed ? undefined : () => openAuth("login")
+    };
+
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading BamSignal Institute…" />}>
+        {bamSignalInstituteRoute === "landing" ? (
+          <LazyBamSignalInstituteLandingPage {...instituteShellProps} />
+        ) : bamSignalInstituteRoute === "programs" ? (
+          <LazyBamSignalInstituteProgramsPage {...instituteShellProps} />
+        ) : (
+          <LazyBamSignalInstituteAnnualInsightsPage {...instituteShellProps} />
         )}
       </Suspense>
     );

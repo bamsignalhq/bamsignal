@@ -126,6 +126,42 @@ export const LazySignalEventsGlobalRelationshipMapPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalFoundationLandingPage = lazy(() =>
+  import("../pages/bam-signal-foundation/BamSignalFoundationLandingPage").then((module) => ({
+    default: module.BamSignalFoundationLandingPage
+  }))
+);
+
+export const LazyBamSignalFoundationProgramsPage = lazy(() =>
+  import("../pages/bam-signal-foundation/BamSignalFoundationProgramsPage").then((module) => ({
+    default: module.BamSignalFoundationProgramsPage
+  }))
+);
+
+export const LazyBamSignalFoundationStoriesPage = lazy(() =>
+  import("../pages/bam-signal-foundation/BamSignalFoundationStoriesPage").then((module) => ({
+    default: module.BamSignalFoundationStoriesPage
+  }))
+);
+
+export const LazyBamSignalInstituteLandingPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteLandingPage").then((module) => ({
+    default: module.BamSignalInstituteLandingPage
+  }))
+);
+
+export const LazyBamSignalInstituteProgramsPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteProgramsPage").then((module) => ({
+    default: module.BamSignalInstituteProgramsPage
+  }))
+);
+
+export const LazyBamSignalInstituteAnnualInsightsPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteAnnualInsightsPage").then((module) => ({
+    default: module.BamSignalInstituteAnnualInsightsPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

@@ -54,6 +54,7 @@
     "test:audit-center": "node scripts/test-audit-center.mjs",
     "test:document-center": "node scripts/test-document-center.mjs",
     "test:safety-center": "node scripts/test-safety-center.mjs",
+    "test:consultant-quality": "node scripts/test-consultant-quality.mjs",
     "test:consultant-performance-scorecard": "node scripts/test-consultant-performance-scorecard.mjs",
     "test:introduction-engine": "node scripts/test-introduction-engine.mjs",
     "test:relationship-follow-up": "node scripts/test-relationship-follow-up.mjs",

@@ -88,6 +88,8 @@ import {
 } from "../services/adminMembers";
 import { ConsultantDashboardPage } from "../components/admin/concierge/ConsultantDashboardPage";
 import { OperationsCenterPage } from "../components/admin/concierge/OperationsCenterPage";
+import { TalentRecruitingPage } from "../components/admin/talent/TalentRecruitingPage";
+import { JourneyIntelligencePage } from "../components/admin/concierge/JourneyIntelligencePage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
 import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
 import { AdminTerminalEmpty } from "../components/admin/AdminTerminalEmpty";
@@ -2037,7 +2039,11 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       )}
 
       {tab === "concierge" && conciergeView === "operations-center" ? <OperationsCenterPage /> : null}
+      {tab === "concierge" && conciergeView === "journey-intelligence" ? (
+        <JourneyIntelligencePage />
+      ) : null}
       {tab === "concierge" && conciergeView === "dashboard" ? <ConsultantDashboardPage /> : null}
+      {tab === "talent" ? <TalentRecruitingPage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

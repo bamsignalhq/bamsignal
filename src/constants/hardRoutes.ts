@@ -4,8 +4,11 @@ import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
   OPERATIONS_CENTER_PATH
 } from "./operationsCenter";
+import {
+  JOURNEY_INTELLIGENCE_PATH
+} from "./journeyIntelligence";
 
-export type ConciergeAdminView = "dashboard" | "operations-center";
+export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
 
 const TAB_SLUGS: Record<HardTab, string> = {
   command: "command",
@@ -22,7 +25,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   email: "email",
   ads: "home-ads",
   leads: "leads",
-  concierge: "concierge"
+  concierge: "concierge",
+  talent: "talent"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(
@@ -57,11 +61,16 @@ export function parseConciergeAdminViewFromPath(
   if (path === OPERATIONS_CENTER_PATH || path.startsWith(OPERATIONS_CENTER_PATH + "/")) {
     return "operations-center";
   }
+  if (path === JOURNEY_INTELLIGENCE_PATH || path.startsWith(JOURNEY_INTELLIGENCE_PATH + "/")) {
+    return "journey-intelligence";
+  }
   return "dashboard";
 }
 
 export function hardPathForConciergeView(view: ConciergeAdminView): string {
-  return view === "operations-center" ? OPERATIONS_CENTER_PATH : CONCIERGE_ADMIN_DASHBOARD_PATH;
+  if (view === "operations-center") return OPERATIONS_CENTER_PATH;
+  if (view === "journey-intelligence") return JOURNEY_INTELLIGENCE_PATH;
+  return CONCIERGE_ADMIN_DASHBOARD_PATH;
 }
 
 export function isHardHubPath(pathname = window.location.pathname): boolean {

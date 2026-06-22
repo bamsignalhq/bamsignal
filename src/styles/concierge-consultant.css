@@ -8448,3 +8448,245 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+/* Journey Intelligence Dashboard™ */
+.journey-intelligence-page {
+  display: grid;
+  gap: 18px;
+}
+
+.journey-intelligence-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.journey-intelligence-page__head h2 {
+  margin: 4px 0 0;
+}
+
+.journey-intelligence-page__head p {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.88rem;
+}
+
+.journey-intelligence-page__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(168, 130, 255, 0.85);
+}
+
+.journey-intelligence-page__updated {
+  display: block;
+  margin-top: 10px;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.journey-intelligence-page__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.journey-intelligence-page__grid {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 960px) {
+  .journey-intelligence-page__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .journey-metric-card {
+    grid-column: 1 / -1;
+  }
+}
+
+.journey-intelligence-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.journey-intelligence-metrics__item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.journey-intelligence-metrics__item dt {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.journey-intelligence-metrics__item dd {
+  margin: 6px 0 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.journey-intelligence-metrics__item small {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.4;
+}
+
+.consultant-insights-card__list,
+.legacy-growth-card__list,
+.regional-insights-card__block ul {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.consultant-insights-card__list li,
+.legacy-growth-card__list li {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.consultant-insights-card__head {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.consultant-insights-card__head span {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.consultant-insights-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.consultant-insights-card__metrics dt {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.consultant-insights-card__metrics dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.regional-insights-card__grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+@media (min-width: 720px) {
+  .regional-insights-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.regional-insights-card__block h4 {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+}
+
+.regional-insights-card__block li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.regional-insights-card__block li small {
+  display: block;
+  width: 100%;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.legacy-growth-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.legacy-growth-card__head span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.legacy-growth-card__head em {
+  font-style: normal;
+  font-size: 0.72rem;
+  color: #a882ff;
+}
+
+.legacy-growth-card__item--up {
+  border-color: rgba(125, 255, 176, 0.2);
+}
+
+.legacy-growth-card__item--down {
+  border-color: rgba(255, 159, 138, 0.2);
+}
+
+.legacy-growth-card__list p {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.journey-intelligence-future {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.journey-intelligence-future__label {
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.journey-intelligence-future ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.journey-intelligence-future li {
+  display: grid;
+  gap: 4px;
+}
+
+.journey-intelligence-future strong {
+  font-size: 0.86rem;
+}
+
+.journey-intelligence-future span {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+

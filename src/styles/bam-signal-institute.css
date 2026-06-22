@@ -5519,3 +5519,164 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* BamSignal Summit™ */
+.bsmt-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.bsmt-page__hero {
+  padding: 28px 24px;
+}
+
+.bsmt-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.bsmt-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bsmt-page__copy-rules,
+.bsmt-page__prepared,
+.bsmt-page__reserved-note,
+.bsmt-page__future-ready {
+  padding: 22px 24px;
+}
+
+.bsmt-page__copy-rules h2,
+.bsmt-page__prepared h2,
+.bsmt-page__future-ready h2 {
+  margin: 0 0 6px;
+}
+
+.bsmt-page__copy-rules p,
+.bsmt-page__prepared > p,
+.bsmt-page__future-ready > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.bsmt-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.bsmt-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.bsmt-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bsmt-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.bsmt-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.bsmt-theme-card,
+.bsmt-experience-card,
+.bsmt-speaker-card,
+.bsmt-agenda-card {
+  padding: 18px 20px;
+}
+
+.bsmt-theme-card__head,
+.bsmt-experience-card__head,
+.bsmt-speaker-card__head,
+.bsmt-agenda-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.bsmt-theme-card__head h3,
+.bsmt-experience-card__head h3,
+.bsmt-speaker-card__head h3,
+.bsmt-agenda-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.bsmt-theme-card__badge,
+.bsmt-experience-card__badge,
+.bsmt-speaker-card__badge,
+.bsmt-agenda-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.bsmt-theme-card__description,
+.bsmt-experience-card__description,
+.bsmt-speaker-card__description,
+.bsmt-agenda-card__summary {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.bsmt-agenda-card__theme,
+.bsmt-agenda-card__experience {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.bsmt-theme-card__forbidden,
+.bsmt-experience-card__forbidden,
+.bsmt-speaker-card__forbidden,
+.bsmt-agenda-card__forbidden {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.4;
+}
+
+.bsmt-theme-card__status,
+.bsmt-experience-card__status,
+.bsmt-speaker-card__status,
+.bsmt-agenda-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

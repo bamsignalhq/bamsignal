@@ -242,6 +242,13 @@ export function BamSignalInstitutePage() {
           >
             Connect
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("bamSignalSummit"))}
+          >
+            Summit
+          </button>
         </div>
       </header>
 

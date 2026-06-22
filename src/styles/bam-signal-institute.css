@@ -6578,3 +6578,200 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* The BamSignal House™ */
+.bsho-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.bsho-page__hero {
+  padding: 28px 24px;
+}
+
+.bsho-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.bsho-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bsho-page__prepared,
+.bsho-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.bsho-page__prepared h2 {
+  margin: 0 0 6px;
+}
+
+.bsho-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.bsho-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.bsho-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.bsho-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bsho-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.bsho-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.bsho-location-card,
+.bsho-experience-card,
+.bsho-timeline-card,
+.bsho-principle-card {
+  padding: 18px 20px;
+}
+
+.bsho-location-card__head,
+.bsho-experience-card__head,
+.bsho-timeline-card__head,
+.bsho-principle-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.bsho-location-card__head h3,
+.bsho-experience-card__head h3,
+.bsho-timeline-card__head h3,
+.bsho-principle-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.bsho-location-card__badge,
+.bsho-experience-card__badge,
+.bsho-timeline-card__badge,
+.bsho-principle-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.bsho-timeline-card__house {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.bsho-location-card__description,
+.bsho-experience-card__description,
+.bsho-timeline-card__summary,
+.bsho-principle-card__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.bsho-timeline-card__list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bsho-timeline-card__item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.bsho-timeline-card__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: rgba(168, 130, 255, 0.7);
+}
+
+.bsho-timeline-card__note {
+  margin: 4px 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bsho-timeline-card__item time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.bsho-timeline-card__empty {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}
+
+.bsho-location-card__forbidden,
+.bsho-experience-card__forbidden,
+.bsho-principle-card__forbidden {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.4;
+}
+
+.bsho-location-card__status,
+.bsho-experience-card__status,
+.bsho-timeline-card__status,
+.bsho-principle-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

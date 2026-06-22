@@ -37,7 +37,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/legacy-endowment",
   "/institute/bamsignal-museum",
   "/institute/legacy-chair",
-  "/institute/century-vision"
+  "/institute/century-vision",
+  "/institute/bamsignal-house"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

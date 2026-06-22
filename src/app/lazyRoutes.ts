@@ -360,6 +360,12 @@ export const LazyBamSignalInstituteBamSignalSummitPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteBamSignalHonorsPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteBamSignalHonorsPage").then((module) => ({
+    default: module.BamSignalInstituteBamSignalHonorsPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

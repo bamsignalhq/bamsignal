@@ -5680,3 +5680,202 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* BamSignal Honors™ */
+.bshn-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.bshn-page__hero {
+  padding: 28px 24px;
+}
+
+.bshn-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.bshn-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bshn-page__copy-rules,
+.bshn-page__prepared,
+.bshn-page__reserved-note,
+.bshn-page__future-ready {
+  padding: 22px 24px;
+}
+
+.bshn-page__copy-rules h2,
+.bshn-page__prepared h2,
+.bshn-page__future-ready h2 {
+  margin: 0 0 6px;
+}
+
+.bshn-page__copy-rules p,
+.bshn-page__prepared > p,
+.bshn-page__future-ready > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.bshn-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.bshn-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.bshn-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bshn-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.bshn-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.bshn-category-card,
+.bshn-award-card,
+.bshn-timeline-card {
+  padding: 18px 20px;
+}
+
+.bshn-category-card__head,
+.bshn-award-card__head,
+.bshn-timeline-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.bshn-category-card__head h3,
+.bshn-award-card__head h3,
+.bshn-timeline-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.bshn-category-card__badge,
+.bshn-award-card__badge,
+.bshn-timeline-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.bshn-category-card__description,
+.bshn-award-card__description,
+.bshn-timeline-card__summary {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.bshn-award-card__legacy,
+.bshn-timeline-card__legacy,
+.bshn-award-card__category,
+.bshn-timeline-card__category {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.bshn-timeline-card__list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bshn-timeline-card__item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.bshn-timeline-card__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: rgba(168, 130, 255, 0.7);
+}
+
+.bshn-timeline-card__note {
+  margin: 4px 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bshn-timeline-card__item time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.bshn-timeline-card__empty {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}
+
+.bshn-category-card__forbidden,
+.bshn-award-card__forbidden,
+.bshn-timeline-card__forbidden {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.4;
+}
+
+.bshn-category-card__status,
+.bshn-award-card__status,
+.bshn-timeline-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

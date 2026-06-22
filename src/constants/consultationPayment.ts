@@ -10,6 +10,11 @@ import type {
 
 export const CONSULTATION_PAYMENT_ENGINE_BRAND = "Consultation Payment Engine™";
 
+/** Production Paystack consultation payment API. */
+export const CONSULTATION_PAYMENTS_API_PATH = "/api/consultation-payments";
+/** @deprecated Use CONSULTATION_PAYMENTS_API_PATH */
+export const CONSULTATION_PAYMENT_API_PATH = "/api/consultation-payment";
+
 /** Permanent Payment IDs — BS-PAY-YYYY-#### */
 export const CONSULTATION_PAYMENT_ID_PREFIX = "BS-PAY";
 export const CONSULTATION_PAYMENT_ID_PATTERN = /^BS-PAY-\d{4}-\d{4}$/;
@@ -56,7 +61,7 @@ export const CONSULTATION_PAYMENT_TIMELINE_STEPS: {
   label: string;
   detail: string;
 }[] = [
-  { kind: "created", label: "Created", detail: "Consultation payment record opened." },
+  { kind: "payment-created", label: "Payment Created", detail: "Consultation payment record opened." },
   {
     kind: "payment-initialized",
     label: "Payment Initialized",
@@ -68,9 +73,9 @@ export const CONSULTATION_PAYMENT_TIMELINE_STEPS: {
     detail: "Consultation fee received — permanent record."
   },
   {
-    kind: "consultation-eligible",
-    label: "Consultation Eligible",
-    detail: "Member may proceed to their private consultation."
+    kind: "consultation-unlocked",
+    label: "Consultation Unlocked",
+    detail: "Scheduling unlocked — member may proceed to their private consultation."
   }
 ];
 
@@ -106,7 +111,8 @@ export const CONSULTATION_PAYMENT_FUTURE_GATEWAYS: {
 export const CONSULTATION_PAYMENT_FUTURE_CAPABILITIES = [
   { id: "international-currencies" as const, label: "International currencies" },
   { id: "discount-codes" as const, label: "Discount codes" },
-  { id: "scholarships" as const, label: "Scholarships" }
+  { id: "scholarships" as const, label: "Scholarships" },
+  { id: "corporate-sponsorships" as const, label: "Corporate sponsorships" }
 ];
 
 /**
@@ -119,7 +125,8 @@ export const CONSULTATION_PAYMENT_FUTURE_ARCHITECTURE = {
   stripe: "International consultation fee collection with currency conversion.",
   internationalCurrencies: "Store amount + display currency alongside NGN ledger.",
   discountCodes: "Apply reductions without mutating permanent payment IDs.",
-  scholarships: "Waive or partially cover consultation fee with audit trail."
+  scholarships: "Waive or partially cover consultation fee with audit trail.",
+  corporateSponsorships: "Employer-sponsored consultation fees with sponsor audit trail."
 } as const;
 
 export function formatConsultationPaymentId(year: number, sequence: number): string {

@@ -8,9 +8,11 @@ export type ConsultationPaymentStatus =
 
 export type PaymentTimelineKind =
   | "created"
+  | "payment-created"
   | "payment-initialized"
   | "payment-completed"
   | "consultation-eligible"
+  | "consultation-unlocked"
   | "payment-failed"
   | "payment-refunded"
   | "payment-cancelled";

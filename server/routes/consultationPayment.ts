@@ -1,5 +1,7 @@
-/** Signal Concierge™ consultation payment routes — mounted at POST /api/consultation-payment */
-
-export const CONSULTATION_PAYMENT_API_PATH = "/api/consultation-payment";
+/** @deprecated Use consultationPayments.ts — retained for backward compatibility. */
+export {
+  CONSULTATION_PAYMENTS_API_PATH as CONSULTATION_PAYMENT_API_PATH,
+  type ConsultationPaymentAction
+} from "./consultationPayments";
 
 export type ConsultationPaymentAction = "initialize" | "verify";

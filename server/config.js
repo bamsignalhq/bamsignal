@@ -20,7 +20,15 @@ export const config = {
   host: process.env.HOST || "0.0.0.0",
   databaseUrl: process.env.DATABASE_URL?.trim() || "",
   publicAppUrl: process.env.PUBLIC_APP_URL || "https://bamsignal.com",
+  paystackPublicKey:
+    process.env.PAYSTACK_PUBLIC_KEY?.trim() ||
+    process.env.VITE_PAYSTACK_PUBLIC_KEY?.trim() ||
+    "",
   paystackSecretKey: process.env.PAYSTACK_SECRET_KEY?.trim() || "",
+  paystackWebhookSecret:
+    process.env.PAYSTACK_WEBHOOK_SECRET?.trim() ||
+    process.env.PAYSTACK_SECRET_KEY?.trim() ||
+    "",
   paystackCallbackUrl:
     process.env.PAYSTACK_CALLBACK_URL ||
     `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/payment/success`,

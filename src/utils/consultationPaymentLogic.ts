@@ -51,6 +51,18 @@ const CONSULTATION_ELIGIBLE_STATUSES = new Set<SignalConciergeStatus>([
   "legacy-archive"
 ]);
 
+const TIMELINE_KIND_ALIASES: Partial<Record<PaymentTimelineKind, PaymentTimelineKind[]>> = {
+  "payment-created": ["created"],
+  "consultation-unlocked": ["consultation-eligible"]
+};
+
+function timelineKindExists(timeline: PaymentTimelineEntry[], kind: PaymentTimelineKind): boolean {
+  const aliases = TIMELINE_KIND_ALIASES[kind] ?? [];
+  return timeline.some(
+    (item) => item.kind === kind || aliases.includes(item.kind as PaymentTimelineKind)
+  );
+}
+
 function timelineEntryId(kind: PaymentTimelineKind, at: string): string {
   return `pay_tl_${kind}_${Date.parse(at)}`;
 }
@@ -75,7 +87,7 @@ export function appendTimelineEntry(
   timeline: PaymentTimelineEntry[],
   entry: PaymentTimelineEntry
 ): PaymentTimelineEntry[] {
-  if (timeline.some((item) => item.kind === entry.kind)) return timeline;
+  if (timelineKindExists(timeline, entry.kind)) return timeline;
   return [...timeline, entry];
 }
 
@@ -100,7 +112,7 @@ export function buildStandardTimelineProgress(
 ): PaymentTimelineEntry[] {
   let timeline: PaymentTimelineEntry[] = [
     createTimelineEntry({
-      kind: "created",
+      kind: "payment-created",
       label: CONSULTATION_PAYMENT_TIMELINE_STEPS[0].label,
       detail: CONSULTATION_PAYMENT_TIMELINE_STEPS[0].detail,
       at: createdAt
@@ -114,7 +126,7 @@ export function buildStandardTimelineProgress(
     if (kind === "payment-completed") {
       return status === "paid" || status === "refunded";
     }
-    if (kind === "consultation-eligible") {
+    if (kind === "consultation-unlocked") {
       return status === "paid" && Boolean(timestamps.consultationEligibleAt);
     }
     return false;

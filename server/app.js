@@ -25,7 +25,7 @@ import emailCodeHandler from "../api/auth/email-code.js";
 import loginSecurityHandler from "../api/auth/login-security.js";
 import playReviewerFinishHandler from "../api/auth/play-reviewer-finish.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
-import consultationPaymentHandler from "./routes/consultationPayment.js";
+import consultationPaymentsHandler from "./routes/consultationPayments.js";
 import calendarHandler from "./routes/calendar.js";
 import meetingLinkHandler from "./routes/meetingLink.js";
 import conciergeEmailHandler from "./routes/conciergeEmail.js";
@@ -137,7 +137,8 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/member/photos", memberPhotosHandler);
   mountHandler(app, "post", "/api/member/voice", memberVoiceHandler);
   mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);
-  mountHandler(app, "post", "/api/consultation-payment", consultationPaymentHandler);
+  mountHandler(app, "post", "/api/consultation-payments", consultationPaymentsHandler);
+  mountHandler(app, "post", "/api/consultation-payment", consultationPaymentsHandler);
   mountHandler(app, "post", "/api/calendar", calendarHandler);
   mountHandler(app, "get", "/api/calendar", calendarHandler);
   mountHandler(app, "post", "/api/meeting-link", meetingLinkHandler);

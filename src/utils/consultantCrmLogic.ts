@@ -268,11 +268,11 @@ function buildSectionRows(input: {
 
   const openPayments = payments.filter((payment) => OPEN_PAYMENT_STATUSES.has(payment.status));
   counts.payments = openPayments.length;
-  rows.payments = openPayments.map((payment) => ({
+  rows.payments = payments.map((payment) => ({
     id: payment.id,
     primary: payment.memberName,
-    secondary: CONSULTATION_PAYMENT_STATUS_LABELS[payment.status],
-    meta: payment.paymentId
+    secondary: `${payment.paymentId} · ${payment.journeyId ?? "—"} · ${payment.amountLabel}`,
+    meta: `${CONSULTATION_PAYMENT_STATUS_LABELS[payment.status]} · ${payment.updatedAt.slice(0, 10)}`
   }));
 
   const pendingIntros = pendingIntroductionRecords(consultantId, introductions, members);

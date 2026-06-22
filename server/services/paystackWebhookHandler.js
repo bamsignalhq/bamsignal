@@ -55,7 +55,11 @@ function normalizeReturnPath(value) {
     : "/home";
 }
 
-export function verifyPaystackWebhookSignature(rawBody, signature, secretKey = config.paystackSecretKey) {
+export function verifyPaystackWebhookSignature(
+  rawBody,
+  signature,
+  secretKey = config.paystackWebhookSecret || config.paystackSecretKey
+) {
   if (!secretKey || !signature) return false;
   const body = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody || "");
   const hash = crypto.createHmac("sha512", secretKey).update(body).digest("hex");

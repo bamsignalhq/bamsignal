@@ -15,6 +15,7 @@ import { FollowUpTasksCard } from "./FollowUpTasksCard";
 import { IntroductionHistoryCard } from "./IntroductionHistoryCard";
 import { JourneyContinuityTimeline } from "./JourneyContinuityTimeline";
 import { JourneyOwnershipCard } from "./JourneyOwnershipCard";
+import { MemberAssignmentSection } from "./MemberAssignmentSection";
 import { JourneyTransitionCard } from "./JourneyTransitionCard";
 import { TransitionSummaryCard } from "./TransitionSummaryCard";
 import { listIntroductionsForMember } from "../../../utils/IntroductionEngine";
@@ -240,6 +241,11 @@ export function ConciergeMemberProfilePage({
         {member.journeyId ? <JourneyIdCard journeyId={member.journeyId} /> : null}
         <LegacyArchiveCard member={member} />
         <JourneyOwnershipCard member={member} />
+      </div>
+
+      <MemberAssignmentSection member={member} />
+
+      <div className="concierge-member-profile__columns">
         <JourneyTransitionCard
           member={member}
           consultants={consultants}

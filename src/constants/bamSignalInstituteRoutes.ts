@@ -15,7 +15,8 @@ export const BAMSIGNAL_INSTITUTE_ROUTES = {
   hallOfLegacy: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/hall-of-legacy`,
   africanRelationshipArchive: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/african-relationship-archive`,
   bamSignalAcademy: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/bamsignal-academy`,
-  academyPrograms: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/bamsignal-academy/programs`
+  academyPrograms: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/bamsignal-academy/programs`,
+  learningPaths: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/learning-paths`
 } as const;
 
 export type BamSignalInstituteRoute = keyof typeof BAMSIGNAL_INSTITUTE_ROUTES;

@@ -12,7 +12,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/hall-of-legacy",
   "/institute/african-relationship-archive",
   "/institute/bamsignal-academy",
-  "/institute/bamsignal-academy/programs"
+  "/institute/bamsignal-academy/programs",
+  "/institute/learning-paths"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

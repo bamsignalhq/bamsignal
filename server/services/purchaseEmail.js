@@ -30,6 +30,7 @@ function formatPurchaseDate(date = new Date()) {
 
 function productDisplayName(productType, productId) {
   const id = String(productId || "").trim();
+  if (productType === "consultation-fee") return "Signal Concierge consultation fee";
   if (productType === "premium") return "Signal Pass";
   if (productType === "quickie") return "Fast Connection Pass";
   if (productType === "boost") {
@@ -53,6 +54,7 @@ function productDisplayName(productType, productId) {
 
 function purchaseEmailSubject(productType, productId) {
   const id = String(productId || "").trim();
+  if (productType === "consultation-fee") return "Your consultation fee is confirmed";
   if (productType === "premium") return "Your Signal Pass is active ❤️";
   if (productType === "quickie") return "Your Fast Connection Pass is active ❤️";
   if (productType === "boost") {
@@ -65,6 +67,9 @@ function purchaseEmailSubject(productType, productId) {
 
 function nextStepsCopy(productType, productId) {
   const id = String(productId || "").trim();
+  if (productType === "consultation-fee") {
+    return "Your consultation fee is received. You may now schedule your private Signal Concierge consultation when you are ready.";
+  }
   if (productType === "premium") {
     return "Your Signal Pass benefits are now active — unlimited signals, premium filters, and more.";
   }

@@ -218,7 +218,10 @@ export function initializeConsultationPayment(memberId: string): ConsultationPay
   return next;
 }
 
-export function completeConsultationPayment(memberId: string): ConsultationPayment | null {
+export function completeConsultationPayment(
+  memberId: string,
+  paystackReference?: string
+): ConsultationPayment | null {
   const store = loadStore();
   const recordId = paymentRecordId(memberId);
   const existing = store.payments[recordId];
@@ -232,6 +235,10 @@ export function completeConsultationPayment(memberId: string): ConsultationPayme
       updatedAt: new Date().toISOString()
     };
     next = withConsultationPaymentStatus(next, "paid", next.paidAt);
+  }
+
+  if (paystackReference) {
+    next = { ...next, paystackReference };
   }
 
   const receipt = buildPaymentReceipt(next);

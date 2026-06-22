@@ -59,6 +59,7 @@ export type ConsultationPayment = {
   refundedAt?: string;
   cancelledAt?: string;
   consultationEligibleAt?: string;
+  paystackReference?: string;
 };
 
 export type PaymentSummary = {

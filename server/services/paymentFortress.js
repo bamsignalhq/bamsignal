@@ -6,6 +6,7 @@ import {
   FAST_CONNECTION_DEFAULT_PLAN_ID,
   boostExpiresAtFromIntent,
   fastConnectionUntilFromIntent,
+  isConsultationFeeProductType,
   isFastConnectionProductType,
   premiumUntilFromIntent,
   resolveBoostProduct,
@@ -124,6 +125,12 @@ export function buildPaystackPurchaseMetadata({
     if (city) metadata.city = String(city).trim();
   }
 
+  if (isConsultationFeeProductType(intent.productType)) {
+    metadata.payment_id = intent.productId;
+    metadata.consultation_fee = true;
+    metadata.fee_kind = "consultation-fee";
+  }
+
   return metadata;
 }
 
@@ -141,6 +148,19 @@ export async function fulfillVerifiedPurchase({
   }
 
   requireDatabaseReadyForPayments();
+
+  if (isConsultationFeeProductType(intent.productType)) {
+    return {
+      ok: true,
+      productType: intent.productType,
+      productId: intent.productId,
+      memberId: String(transaction?.metadata?.member_id || transaction?.metadata?.memberId || "").trim() || null,
+      paymentId: intent.productId,
+      journeyId:
+        String(transaction?.metadata?.journey_id || transaction?.metadata?.journeyId || "").trim() || null,
+      consultationEligible: true
+    };
+  }
 
   if (isFastConnectionProductType(intent.productType)) {
     const passUntil = fastConnectionUntilFromIntent(intent);

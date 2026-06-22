@@ -26,6 +26,10 @@ export const FAST_CONNECTION_PRODUCT_IDS = new Set([
 export const FAST_CONNECTION_DEFAULT_PLAN_ID = "weekly";
 export const FAST_CONNECTION_DAILY_SIGNALS = 30;
 
+export const CONSULTATION_FEE_PRODUCT_TYPE = "consultation-fee";
+export const CONSULTATION_FEE_PRODUCT_ID = "signal-concierge-consultation";
+export const CONSULTATION_FEE_AMOUNT_KOBO = 10_000_000;
+
 const PREMIUM_PLAN_ALIASES = new Map([
   ["premium_weekly", "weekly"],
   ["premium_monthly", "monthly"],
@@ -54,6 +58,24 @@ export function normalizePremiumPlanId(planId = "monthly") {
 export function isFastConnectionProductType(productType) {
   const value = String(productType || "").trim().toLowerCase();
   return value === "quickie" || value === "fast_connection";
+}
+
+export function isConsultationFeeProductType(productType) {
+  return String(productType || "").trim().toLowerCase() === CONSULTATION_FEE_PRODUCT_TYPE;
+}
+
+export function resolveConsultationFeeProduct(paymentId = CONSULTATION_FEE_PRODUCT_ID) {
+  const id = String(paymentId || CONSULTATION_FEE_PRODUCT_ID).trim();
+  return {
+    productType: CONSULTATION_FEE_PRODUCT_TYPE,
+    productId: id,
+    amountKobo: CONSULTATION_FEE_AMOUNT_KOBO,
+    days: null,
+    durationHours: null,
+    dailyFastSignals: null,
+    boostId: null,
+    planName: "Signal Concierge consultation fee"
+  };
 }
 
 export async function resolvePremiumPlan(planId = "monthly") {
@@ -123,6 +145,10 @@ export async function resolvePaymentProduct({
 
   if (isFastConnectionProductType(type) || FAST_CONNECTION_PRODUCT_IDS.has(id)) {
     return resolveFastConnectionProduct(planId || FAST_CONNECTION_DEFAULT_PLAN_ID);
+  }
+
+  if (isConsultationFeeProductType(type)) {
+    return resolveConsultationFeeProduct(id);
   }
 
   return resolvePremiumPlan(id || "monthly");

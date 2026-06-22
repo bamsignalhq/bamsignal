@@ -45,7 +45,10 @@ function normalizeReturnPath(value) {
     "/subscription",
     "/discover",
     "/chats",
-    "/signals"
+    "/signals",
+    "/signal-concierge/consultation",
+    "/signal-concierge/status",
+    "/signal-concierge/apply"
   ];
   return allowed.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))
     ? raw.replace(/\/$/, "")

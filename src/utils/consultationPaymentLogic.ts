@@ -195,7 +195,7 @@ export function buildPaymentReceipt(payment: ConsultationPayment): PaymentReceip
     amountKobo: payment.amountKobo,
     currency: payment.currency,
     status: payment.status,
-    reference: payment.paymentId,
+    reference: payment.paystackReference || payment.paymentId,
     narrative
   };
 }

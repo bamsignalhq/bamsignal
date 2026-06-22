@@ -3567,3 +3567,167 @@
   color: rgba(212, 175, 106, 0.95);
 }
 
+/* Couple Happiness Notes™ */
+.couple-happiness-notes {
+  display: grid;
+  gap: 16px;
+}
+
+.couple-happiness-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.couple-happiness-card__labels {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.couple-happiness-card__privacy,
+.couple-happiness-card__manual {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.couple-happiness-card__privacy {
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.couple-happiness-card__input {
+  width: 100%;
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.9);
+  font: inherit;
+  resize: vertical;
+}
+
+.couple-happiness-card__future h4 {
+  margin: 16px 0 10px;
+  font-size: 0.88rem;
+}
+
+.couple-happiness-card__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.couple-happiness-card__future li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.couple-happiness-card__future strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.couple-happiness-card__future span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.couple-happiness-card__reserved {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.45;
+}
+
+.couple-happiness-timeline-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.couple-happiness-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.couple-happiness-timeline__item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.couple-happiness-timeline__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.couple-happiness-timeline__source {
+  font-size: 0.72rem;
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.couple-happiness-timeline__head time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.couple-happiness-timeline__body {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.86);
+  line-height: 1.5;
+}
+
+.couple-happiness-timeline__by {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.relationship-memory-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.relationship-memory-card__privacy {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.relationship-memory-card__quote {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 3px solid rgba(212, 175, 106, 0.55);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.relationship-memory-card__quote p {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.55;
+}
+
+.relationship-memory-card__quote footer {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+

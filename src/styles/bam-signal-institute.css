@@ -6775,3 +6775,148 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* House Experiences™ */
+.hexp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hexp-page__hero {
+  padding: 28px 24px;
+}
+
+.hexp-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.hexp-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.hexp-page__prepared,
+.hexp-page__future-ready,
+.hexp-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.hexp-page__prepared h2,
+.hexp-page__future-ready h2 {
+  margin: 0 0 6px;
+}
+
+.hexp-page__prepared > p,
+.hexp-page__future-ready > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.hexp-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.hexp-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.hexp-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.hexp-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.hexp-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.hexp-experience-card,
+.hexp-dining-card,
+.hexp-celebration-card {
+  padding: 18px 20px;
+}
+
+.hexp-experience-card__head,
+.hexp-dining-card__head,
+.hexp-celebration-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.hexp-experience-card__head h3,
+.hexp-dining-card__head h3,
+.hexp-celebration-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.hexp-experience-card__badge,
+.hexp-dining-card__badge,
+.hexp-celebration-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.hexp-experience-card__description,
+.hexp-dining-card__description,
+.hexp-celebration-card__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.hexp-experience-card__forbidden,
+.hexp-dining-card__forbidden,
+.hexp-celebration-card__forbidden {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.4;
+}
+
+.hexp-experience-card__status,
+.hexp-dining-card__status,
+.hexp-celebration-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

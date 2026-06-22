@@ -7,7 +7,8 @@ export const SIGNAL_EVENTS_HUB_PATHS = [
   "/events/diaspora-corridors",
   "/events/corridor-stories",
   "/events/legacy-cities",
-  "/events/city-ambassadors"
+  "/events/city-ambassadors",
+  "/events/global-relationship-map"
 ];
 
 export const SIGNAL_EVENTS_FEATURED_CITY_SLUGS = [

@@ -78,6 +78,13 @@ export function SignalEventsPage() {
           >
             City Ambassadors
           </button>
+          <button
+            type="button"
+            className="se-hub-page__btn"
+            onClick={() => navigateToPath(signalEventsPathForHub("globalRelationshipMap"))}
+          >
+            Global Relationship Map
+          </button>
         </div>
       </header>
 

@@ -1569,3 +1569,183 @@
   color: rgba(255, 255, 255, 0.58);
   line-height: 1.45;
 }
+
+/* Global Relationship Map™ */
+.grm-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.grm-page__hero {
+  padding: 28px 24px;
+}
+
+.grm-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.grm-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.grm-page__static {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.grm-page__layers,
+.grm-page__future {
+  padding: 22px 24px;
+}
+
+.grm-page__layers h2,
+.grm-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.grm-page__layers > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.grm-page__layer-list,
+.grm-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.grm-page__layer-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.12);
+}
+
+.grm-page__layer-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.grm-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.grm-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grm-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.grm-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.grm-map-card,
+.grm-corridor-card {
+  padding: 18px 20px;
+}
+
+.grm-map-card__head,
+.grm-corridor-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.grm-map-card__head h3,
+.grm-corridor-card__head h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.grm-map-card__badge,
+.grm-corridor-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.15);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.25);
+  white-space: nowrap;
+}
+
+.grm-map-card__badge--legacy-cities,
+.grm-map-card__badge--founders-cities,
+.grm-corridor-card__badge {
+  background: rgba(212, 175, 106, 0.18);
+  border-color: rgba(212, 175, 106, 0.35);
+}
+
+.grm-map-card__subtitle,
+.grm-corridor-card__labels {
+  margin: 0 0 12px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.64);
+  line-height: 1.45;
+}
+
+.grm-corridor-card__labels {
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.grm-map-card__display,
+.grm-corridor-card__display {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.grm-map-card__row,
+.grm-corridor-card__row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.grm-map-card__row dt,
+.grm-corridor-card__row dt {
+  margin: 0;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.grm-map-card__row dd,
+.grm-corridor-card__row dd {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.78);
+}

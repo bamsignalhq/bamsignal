@@ -67,6 +67,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://bamsignal.com/events/global-relationship-map</loc>
+    <lastmod>2026-06-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://bamsignal.com/events/lagos</loc>
     <lastmod>2026-06-22</lastmod>
     <changefreq>monthly</changefreq>

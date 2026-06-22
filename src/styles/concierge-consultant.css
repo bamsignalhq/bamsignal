@@ -3317,3 +3317,150 @@
   color: rgba(212, 175, 106, 0.85);
 }
 
+/* Family Milestones™ — architecture only */
+.family-milestones {
+  display: grid;
+  gap: 16px;
+}
+
+.family-milestone-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.family-milestone-card__labels {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.family-milestone-card__events h4,
+.family-milestone-card__future h4 {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+}
+
+.family-milestone-card__event-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.family-milestone-card__event-list li {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.family-milestone-card__event-list p {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.family-milestone-card__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.family-milestone-card__future li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.family-milestone-card__future strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.family-milestone-card__future span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.family-milestone-card__reserved {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.45;
+}
+
+.family-milestone-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 130, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.family-milestone-badge--primary {
+  border-color: rgba(212, 175, 106, 0.42);
+  background: rgba(212, 175, 106, 0.12);
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.family-timeline-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.family-timeline-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 4px;
+  display: grid;
+  gap: 0;
+}
+
+.family-timeline-card__item {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 12px;
+  padding-bottom: 16px;
+  position: relative;
+}
+
+.family-timeline-card__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(212, 175, 106, 0.4), rgba(168, 130, 255, 0.08));
+}
+
+.family-timeline-card__dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(212, 175, 106, 0.95);
+  box-shadow: 0 0 0 4px rgba(212, 175, 106, 0.12);
+}
+
+.family-timeline-card__note {
+  margin: 6px 0 4px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.45;
+}
+
+.family-timeline-card__item time {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+

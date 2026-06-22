@@ -534,6 +534,12 @@ export const LazyCenturyKnowledgeBasePage = lazy(() =>
   }))
 );
 
+export const LazyCenturyHouseOSPage = lazy(() =>
+  import("../pages/century/CenturyHouseOSPage").then((module) => ({
+    default: module.CenturyHouseOSPage
+  }))
+);
+
 export const LazyCareersLandingPage = lazy(() =>
   import("../pages/careers/CareersLandingPage").then((module) => ({
     default: module.CareersLandingPage

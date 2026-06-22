@@ -10304,6 +10304,270 @@
   color: rgba(212, 175, 106, 0.78);
 }
 
+/* House Operating System™ */
+.hos-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hos-page__hero {
+  padding: 28px 24px;
+}
+
+.hos-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.hos-page__forbidden {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.52);
+  font-style: italic;
+}
+
+.hos-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.hos-page__prepared,
+.hos-page__future,
+.hos-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.hos-page__prepared h2,
+.hos-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.hos-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.hos-page__prepared-list,
+.hos-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.hos-page__prepared-list {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.hos-page__prepared-list li,
+.hos-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.16);
+}
+
+.hos-page__prepared-list li span,
+.hos-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.hos-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.hos-page__split {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.hos-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.hos-card__head h2,
+.hos-card__head h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.hos-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.64);
+  line-height: 1.45;
+}
+
+.hos-system-card,
+.hos-map-card,
+.hos-principles-card,
+.hos-vision-card {
+  padding: 18px 20px;
+}
+
+.hos-system-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.hos-system-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.hos-system-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(212, 175, 106, 0.14);
+  color: rgba(224, 180, 120, 0.98);
+  border: 1px solid rgba(212, 175, 106, 0.3);
+  white-space: nowrap;
+}
+
+.hos-system-card__order {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.hos-system-card__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.hos-system-card__status {
+  margin: 0;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.78);
+}
+
+.hos-map-card__list,
+.hos-principles-card__list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hos-map-card__list li,
+.hos-principles-card__list li {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.14);
+}
+
+.hos-map-card__list li > div,
+.hos-principles-card__list li > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.hos-map-card__system {
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.hos-map-card__layer {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hos-map-card__list li p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.hos-principles-card__list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.hos-principles-card__list li small {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.74rem;
+  color: rgba(212, 175, 106, 0.78);
+}
+
+.hos-vision-card__copy {
+  display: grid;
+  gap: 16px;
+  margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.hos-vision-card__label {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.hos-vision-card__copy ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hos-vision-card__copy li {
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.72);
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.14);
+}
+
+.hos-vision-card__forbidden li {
+  color: rgba(255, 255, 255, 0.48);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 /* Century Room™ */
 .croom-page {
   display: flex;

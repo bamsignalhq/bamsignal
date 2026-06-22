@@ -1,5 +1,6 @@
 /** Century™ indexable landing paths */
 export const CENTURY_HUB_PATHS = [
+  "/century/house-os",
   "/century/stewardship-council",
   "/century/trust",
   "/century/knowledge"

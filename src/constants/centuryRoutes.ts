@@ -3,6 +3,7 @@ import { normalizePath } from "./routes";
 export const CENTURY_BASE_PATH = "/century";
 
 export const CENTURY_ROUTES = {
+  houseOs: `${CENTURY_BASE_PATH}/house-os`,
   stewardshipCouncil: `${CENTURY_BASE_PATH}/stewardship-council`,
   trust: `${CENTURY_BASE_PATH}/trust`,
   knowledge: `${CENTURY_BASE_PATH}/knowledge`

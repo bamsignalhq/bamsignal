@@ -3464,3 +3464,106 @@
   color: rgba(255, 255, 255, 0.52);
 }
 
+/* Relationship Anniversary Engine™ — architecture */
+.relationship-anniversary-timeline-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.relationship-anniversary-timeline-card__permanence {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.relationship-anniversary-timeline-card__list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.relationship-anniversary-timeline-card__item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.relationship-anniversary-timeline-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.relationship-anniversary-timeline-card__year {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(212, 175, 106, 0.95);
+  letter-spacing: 0.02em;
+}
+
+.relationship-anniversary-timeline-card__note {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.relationship-anniversary-timeline-card__future h4 {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+}
+
+.relationship-anniversary-timeline-card__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.relationship-anniversary-timeline-card__future li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.relationship-anniversary-timeline-card__future strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.relationship-anniversary-timeline-card__future span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.relationship-anniversary-timeline-card__reserved {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.45;
+}
+
+.anniversary-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 130, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.anniversary-badge--primary {
+  border-color: rgba(212, 175, 106, 0.42);
+  background: rgba(212, 175, 106, 0.12);
+  color: rgba(212, 175, 106, 0.95);
+}
+

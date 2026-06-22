@@ -522,6 +522,12 @@ export const LazyCenturyStewardshipCouncilPage = lazy(() =>
   }))
 );
 
+export const LazyCenturyTrustRoutePage = lazy(() =>
+  import("../pages/century/CenturyTrustRoutePage").then((module) => ({
+    default: module.CenturyTrustRoutePage
+  }))
+);
+
 export const LazyCareersLandingPage = lazy(() =>
   import("../pages/careers/CareersLandingPage").then((module) => ({
     default: module.CareersLandingPage

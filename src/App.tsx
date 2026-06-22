@@ -62,6 +62,7 @@ import {
   LazyBamSignalInstituteCenturyRoomPage,
   LazyBamSignalInstituteGovernancePage,
   LazyCenturyStewardshipCouncilPage,
+  LazyCenturyTrustRoutePage,
   LazyBamSignalInstituteLegacyProfessionalsPage,
   LazyBamSignalInstituteTrustMilestonesPage,
   LazyBamSignalInstituteTrustScorePage,
@@ -2295,8 +2296,12 @@ export function App() {
     };
 
     return (
-      <Suspense fallback={<LazyRouteFallback subtitle="Loading Stewardship Council…" />}>
-        <LazyCenturyStewardshipCouncilPage {...centuryShellProps} />
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading Century…" />}>
+        {centuryRoute === "trust" ? (
+          <LazyCenturyTrustRoutePage {...centuryShellProps} />
+        ) : (
+          <LazyCenturyStewardshipCouncilPage {...centuryShellProps} />
+        )}
       </Suspense>
     );
   }

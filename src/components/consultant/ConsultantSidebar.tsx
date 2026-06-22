@@ -1,5 +1,6 @@
 import { Briefcase, ClipboardList, HeartHandshake, LayoutDashboard, Users } from "lucide-react";
 import type { ConsultantCapability } from "../../constants/consultantPermissions";
+import { CONSULTANT_CRM_BRAND } from "../../constants/consultantCrm";
 import { CONSULTANT_ROUTES, type ConsultantWorkspaceRoute } from "../../constants/consultantRoutes";
 import { hasConsultantCapability } from "../../utils/consultantSession";
 
@@ -13,9 +14,9 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    route: "portfolio",
-    path: CONSULTANT_ROUTES.portfolio,
-    label: "Portfolio",
+    route: "crm",
+    path: CONSULTANT_ROUTES.crm,
+    label: "Workspace",
     icon: LayoutDashboard,
     capability: "view-portfolio"
   },
@@ -61,12 +62,14 @@ export function ConsultantSidebar({ activeRoute, onNavigate }: ConsultantSidebar
     <aside className="consultant-sidebar" aria-label="Consultant workspace">
       <div className="consultant-sidebar__brand">
         <Briefcase size={18} aria-hidden />
-        <span>Consultant Portal</span>
+        <span>{CONSULTANT_CRM_BRAND}</span>
       </div>
       <nav className="consultant-sidebar__nav">
         {visibleItems.map((item) => {
           const Icon = item.icon;
-          const active = activeRoute === item.route;
+          const active =
+            activeRoute === item.route ||
+            (item.route === "crm" && (activeRoute === "home" || activeRoute === "portfolio"));
           return (
             <button
               key={item.route}

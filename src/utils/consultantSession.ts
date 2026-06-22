@@ -93,16 +93,16 @@ export function getConsultantCapabilities(): ConsultantCapability[] {
  */
 export function resolveConciergeConsultantEntry(session: ConsultantSession | null): {
   route: string;
-  view: "portfolio" | "members" | "introductions" | "followups" | "applications";
+  view: "crm" | "portfolio" | "members" | "introductions" | "followups" | "applications";
 } {
   if (!session) {
-    return { route: CONSULTANT_LOGIN_PATH, view: "portfolio" };
+    return { route: CONSULTANT_LOGIN_PATH, view: "crm" };
   }
 
   const caps = capabilitiesForRoles(session.roles);
 
   if (caps.includes("view-portfolio")) {
-    return { route: CONSULTANT_ROUTES.portfolio, view: "portfolio" };
+    return { route: CONSULTANT_ROUTES.crm, view: "crm" };
   }
   if (caps.includes("view-members") || caps.includes("legacy-members") || caps.includes("global-members")) {
     return { route: CONSULTANT_ROUTES.members, view: "members" };
@@ -120,5 +120,5 @@ export function resolveConciergeConsultantEntry(session: ConsultantSession | nul
     return { route: CONSULTANT_ROUTES.members, view: "members" };
   }
 
-  return { route: CONSULTANT_ROUTES.portfolio, view: "portfolio" };
+  return { route: CONSULTANT_ROUTES.crm, view: "crm" };
 }

@@ -18,6 +18,7 @@ import {
   resolveConciergeConsultantEntry
 } from "../utils/consultantSession";
 import {
+  ConsultantCrmWorkspace,
   ConsultantFollowUpsWorkspace,
   ConsultantIntroductionsWorkspace,
   ConsultantMembersWorkspace,
@@ -31,8 +32,9 @@ type ConsultantPortalRootProps = {
 
 function resolveActiveRoute(pathname = window.location.pathname): ConsultantWorkspaceRoute {
   const route = getConsultantRoute(pathname);
+  if (route === "home") return "crm";
   if (isConsultantWorkspaceRoute(route)) return route;
-  return "portfolio";
+  return "crm";
 }
 
 export function ConsultantPortalRoot({ theme, onToggleTheme }: ConsultantPortalRootProps) {
@@ -97,8 +99,12 @@ export function ConsultantPortalRoot({ theme, onToggleTheme }: ConsultantPortalR
             onNavigate={handleNavigate}
             onLogout={handleLogout}
           >
-            {activeRoute === "portfolio" || activeRoute === "home" ? (
-              <ConsultantPortfolioWorkspace />
+            {activeRoute === "crm" || activeRoute === "home" || activeRoute === "portfolio" ? (
+              activeRoute === "portfolio" ? (
+                <ConsultantPortfolioWorkspace />
+              ) : (
+                <ConsultantCrmWorkspace />
+              )
             ) : activeRoute === "members" ? (
               <ConsultantMembersWorkspace consultantId={consultant.consultantId} />
             ) : activeRoute === "introductions" ? (

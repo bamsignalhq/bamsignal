@@ -6,13 +6,20 @@ export const CONSULTANT_LOGIN_PATH = `${CONSULTANT_BASE_PATH}/login`;
 export const CONSULTANT_ROUTES = {
   home: CONSULTANT_BASE_PATH,
   login: CONSULTANT_LOGIN_PATH,
+  crm: `${CONSULTANT_BASE_PATH}/crm`,
   portfolio: `${CONSULTANT_BASE_PATH}/portfolio`,
   members: `${CONSULTANT_BASE_PATH}/members`,
   introductions: `${CONSULTANT_BASE_PATH}/introductions`,
   followups: `${CONSULTANT_BASE_PATH}/followups`
 } as const;
 
-export type ConsultantWorkspaceRoute = "home" | "portfolio" | "members" | "introductions" | "followups";
+export type ConsultantWorkspaceRoute =
+  | "home"
+  | "crm"
+  | "portfolio"
+  | "members"
+  | "introductions"
+  | "followups";
 
 const PATH_TO_ROUTE = Object.fromEntries(
   Object.entries(CONSULTANT_ROUTES).map(([route, path]) => [path, route])
@@ -20,6 +27,7 @@ const PATH_TO_ROUTE = Object.fromEntries(
 
 const CONSULTANT_WORKSPACE_ROUTE_SET = new Set<ConsultantWorkspaceRoute>([
   "home",
+  "crm",
   "portfolio",
   "members",
   "introductions",

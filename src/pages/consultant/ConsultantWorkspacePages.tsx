@@ -1,4 +1,5 @@
 import { ConsultantCapabilityGate } from "../../components/consultant/ConsultantCapabilityGate";
+import { ConsultantWorkspacePage } from "../../components/consultant/ConsultantWorkspacePage";
 import { ConsultantPortfolioPage } from "../../components/admin/concierge/ConsultantPortfolioPage";
 import { IntroductionEnginePage } from "../../components/admin/concierge/IntroductionEnginePage";
 import { RelationshipFollowUpPage } from "../../components/admin/concierge/RelationshipFollowUpPage";
@@ -48,6 +49,17 @@ export function ConsultantMembersWorkspace({ consultantId }: ConsultantMembersWo
           </ul>
         )}
       </div>
+    </ConsultantCapabilityGate>
+  );
+}
+
+export function ConsultantCrmWorkspace() {
+  const consultant = getCurrentConsultant();
+  if (!consultant) return null;
+
+  return (
+    <ConsultantCapabilityGate capability="view-portfolio" title="Workspace">
+      <ConsultantWorkspacePage consultantId={consultant.consultantId} />
     </ConsultantCapabilityGate>
   );
 }

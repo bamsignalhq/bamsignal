@@ -3937,3 +3937,184 @@
   background: rgba(212, 175, 106, 0.14);
 }
 
+/* Surprise & Delight™ — architecture only (no gifting) */
+.surprise-and-delight {
+  display: grid;
+  gap: 16px;
+}
+
+.celebration-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.celebration-card__labels {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.celebration-card__architecture {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.celebration-card__prepared h4,
+.celebration-card__future h4 {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+}
+
+.celebration-card__event-grid {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.surprise-event-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.surprise-event-card--highlighted {
+  border-color: rgba(212, 175, 106, 0.38);
+  background: rgba(212, 175, 106, 0.08);
+}
+
+.surprise-event-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.surprise-event-card__badge {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.surprise-event-card__status {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(212, 175, 106, 0.85);
+}
+
+.surprise-event-card__body {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.celebration-card__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.celebration-card__future li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.celebration-card__future strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.celebration-card__future span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.celebration-card__reserved {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.45;
+}
+
+.legacy-celebration-timeline-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.legacy-celebration-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 4px;
+  display: grid;
+  gap: 0;
+}
+
+.legacy-celebration-timeline__item {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 12px;
+  padding-bottom: 16px;
+  position: relative;
+}
+
+.legacy-celebration-timeline__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(212, 175, 106, 0.4), rgba(168, 130, 255, 0.08));
+}
+
+.legacy-celebration-timeline__dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(212, 175, 106, 0.95);
+  box-shadow: 0 0 0 4px rgba(212, 175, 106, 0.12);
+}
+
+.legacy-celebration-timeline__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.legacy-celebration-timeline__row strong {
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.legacy-celebration-timeline__status {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(212, 175, 106, 0.8);
+}
+
+.legacy-celebration-timeline__note {
+  margin: 6px 0 4px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.legacy-celebration-timeline__item time {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+

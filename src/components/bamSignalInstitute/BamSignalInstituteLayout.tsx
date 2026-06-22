@@ -127,6 +127,13 @@ export function BamSignalInstituteLayout({
               >
                 Premarital Journey
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("bamSignalLibrary")}
+              >
+                Library
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

@@ -15,7 +15,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/bamsignal-academy/programs",
   "/institute/learning-paths",
   "/institute/relationship-masterclasses",
-  "/institute/premarital-journey"
+  "/institute/premarital-journey",
+  "/institute/bamsignal-library"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

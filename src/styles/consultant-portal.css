@@ -1,0 +1,294 @@
+.platform-root--consultant {
+  --consultant-sidebar-width: 220px;
+}
+
+.consultant-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.consultant-shell__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--consultant-sidebar-width) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.consultant-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(16px);
+  background: rgba(7, 5, 15, 0.82);
+  border-bottom: 1px solid rgba(168, 130, 255, 0.14);
+}
+
+.consultant-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+}
+
+.consultant-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.consultant-header__brand-copy {
+  color: var(--sc-muted);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.consultant-header__profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.consultant-header__identity {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.consultant-header__identity strong {
+  font-size: 0.9rem;
+}
+
+.consultant-header__identity span {
+  color: var(--sc-muted);
+  font-size: 0.76rem;
+}
+
+.consultant-header__icon-btn,
+.consultant-header__logout {
+  border: 1px solid rgba(212, 175, 106, 0.24);
+  background: rgba(42, 24, 74, 0.42);
+  color: var(--sc-text);
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+}
+
+.consultant-sidebar {
+  border-right: 1px solid rgba(168, 130, 255, 0.12);
+  background: rgba(13, 21, 48, 0.55);
+  padding: 18px 12px;
+}
+
+.consultant-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 16px;
+  color: var(--sc-gold);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.consultant-sidebar__nav {
+  display: grid;
+  gap: 6px;
+}
+
+.consultant-sidebar__link {
+  border: 0;
+  background: transparent;
+  color: var(--sc-muted);
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.consultant-sidebar__link:hover {
+  background: rgba(122, 77, 243, 0.12);
+  color: var(--sc-text);
+}
+
+.consultant-sidebar__link--active {
+  background: linear-gradient(90deg, rgba(122, 77, 243, 0.22), rgba(212, 175, 106, 0.12));
+  color: var(--sc-text);
+  border: 1px solid rgba(212, 175, 106, 0.22);
+}
+
+.consultant-main {
+  min-width: 0;
+  padding: 22px 20px 48px;
+}
+
+.consultant-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 18px;
+}
+
+.consultant-login__card {
+  width: min(100%, 440px);
+  border-radius: var(--sc-radius);
+  border: 1px solid var(--sc-border);
+  background: var(--sc-bg-elevated);
+  box-shadow: var(--sc-shadow);
+  padding: 28px 24px;
+}
+
+.consultant-login__brand {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.consultant-login__eyebrow {
+  margin: 12px 0 4px;
+  color: var(--sc-gold);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.consultant-login__brand h1 {
+  margin: 0 0 8px;
+  font-size: 1.45rem;
+}
+
+.consultant-login__brand p:last-child {
+  margin: 0;
+  color: var(--sc-muted);
+  font-size: 0.9rem;
+}
+
+.consultant-login__form {
+  display: grid;
+  gap: 14px;
+}
+
+.consultant-login__form label {
+  display: grid;
+  gap: 6px;
+}
+
+.consultant-login__form label span {
+  font-size: 0.82rem;
+  color: var(--sc-muted);
+}
+
+.consultant-login__form input {
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.2);
+  background: rgba(7, 5, 15, 0.55);
+  color: var(--sc-text);
+  padding: 12px 14px;
+}
+
+.consultant-login__message {
+  margin: 0;
+  color: #ffb4b4;
+  font-size: 0.84rem;
+}
+
+.consultant-login__submit {
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7a4df3, #d4af6a);
+  color: #120a24;
+  font-weight: 700;
+  padding: 12px 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.consultant-login__submit:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.consultant-login__spinner {
+  animation: consultant-spin 0.8s linear infinite;
+}
+
+.consultant-login__hint {
+  margin: 18px 0 0;
+  color: var(--sc-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.consultant-login__hint code {
+  color: var(--sc-gold);
+}
+
+.consultant-guard,
+.consultant-capability-gate,
+.consultant-workspace__head {
+  color: var(--sc-text);
+}
+
+.consultant-capability-gate,
+.consultant-workspace {
+  display: grid;
+  gap: 16px;
+}
+
+.consultant-workspace__head h2 {
+  margin: 0;
+}
+
+.consultant-workspace__head p {
+  margin: 0;
+  color: var(--sc-muted);
+}
+
+.consultant-workspace__member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+@keyframes consultant-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 860px) {
+  .consultant-shell__body {
+    grid-template-columns: 1fr;
+  }
+
+  .consultant-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(168, 130, 255, 0.12);
+  }
+
+  .consultant-sidebar__nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .consultant-header__brand-copy {
+    display: none;
+  }
+}

@@ -20,6 +20,7 @@ import { TrustedMemberPage } from "./pages/TrustedMemberPage";
 import { LazyRouteFallback } from "./app/LazyRouteFallback";
 import {
   LazyAdminConsoleRoot,
+  LazyConsultantPortalRoot,
   LazyFastConnectionPage,
   LazyLegalPage,
   LazyMomentPage,
@@ -212,6 +213,17 @@ import {
   SIGNAL_CONCIERGE_ROUTES,
   type SignalConciergeRoute
 } from "./constants/signalConciergeRoutes";
+import {
+  CONSULTANT_ROUTES,
+  getConsultantRoute,
+  isConsultantRoute,
+  isUnknownConsultantSubroute
+} from "./constants/consultantRoutes";
+import {
+  getCurrentConsultant,
+  isConsultantLoggedIn,
+  resolveConciergeConsultantEntry
+} from "./utils/consultantSession";
 import {
   getSignalEventsRoute,
   isUnknownSignalEventsSubroute,
@@ -523,6 +535,23 @@ export function App() {
   useLayoutEffect(() => {
     if (!isUnknownSignalConciergeSubroute(memberPathname)) return;
     navigateToPath(SIGNAL_CONCIERGE_ROUTES.landing, true);
+  }, [memberPathname]);
+
+  useLayoutEffect(() => {
+    if (!isUnknownConsultantSubroute(memberPathname)) return;
+    navigateToPath(CONSULTANT_ROUTES.home, true);
+  }, [memberPathname]);
+
+  useLayoutEffect(() => {
+    if (!isConsultantRoute(memberPathname)) return;
+    const route = getConsultantRoute(memberPathname);
+    if (route !== "home") return;
+    if (!isConsultantLoggedIn()) {
+      navigateToPath(CONSULTANT_ROUTES.login, true);
+      return;
+    }
+    const entry = resolveConciergeConsultantEntry(getCurrentConsultant());
+    navigateToPath(entry.route, true);
   }, [memberPathname]);
 
   useLayoutEffect(() => {
@@ -1883,6 +1912,14 @@ export function App() {
       <div className={`app ${theme}`}>
         <PaymentReturnScreen phase={paymentReturnPhase === "idle" ? "verifying" : paymentReturnPhase} />
       </div>
+    );
+  }
+
+  if (isConsultantRoute(currentPathname)) {
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading consultant portal…" />}>
+        <LazyConsultantPortalRoot theme={theme} onToggleTheme={toggleTheme} />
+      </Suspense>
     );
   }
 

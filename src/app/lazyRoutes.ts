@@ -4,6 +4,10 @@ export const LazyAdminConsoleRoot = lazy(() =>
   import("./AdminConsoleRoot").then((module) => ({ default: module.AdminConsoleRoot }))
 );
 
+export const LazyConsultantPortalRoot = lazy(() =>
+  import("./ConsultantPortalRoot").then((module) => ({ default: module.ConsultantPortalRoot }))
+);
+
 export const LazyPublicMarketingRoutes = lazy(() =>
   import("./PublicMarketingRoutes").then((module) => ({ default: module.PublicMarketingRoutes }))
 );

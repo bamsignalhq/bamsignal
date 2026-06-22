@@ -45,6 +45,7 @@ import "./styles/common-ground.css";
 import "./styles/smart-conversation.css";
 import "./styles/saved-profiles.css";
 import "./styles/signal-concierge.css";
+import "./styles/consultant-portal.css";
 import "./styles/signal-events.css";
 import "./styles/bam-signal-foundation.css";
 import "./styles/bam-signal-institute.css";

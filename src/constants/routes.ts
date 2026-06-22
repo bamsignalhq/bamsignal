@@ -6,6 +6,7 @@ import { isSignalConciergeRoute } from "./signalConciergeRoutes";
 import { isSignalEventsRoute } from "./signalEventsRoutes";
 import { isBamSignalFoundationRoute } from "./bamSignalFoundationRoutes";
 import { isBamSignalInstituteRoute } from "./bamSignalInstituteRoutes";
+import { isConsultantRoute } from "./consultantRoutes";
 
 export const AUTH_LOGIN_PATH = "/love/login";
 export const AUTH_SIGNUP_PATH = "/love/sign";
@@ -99,6 +100,7 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   const path = normalizePath(pathname);
   if (isPaymentReturnPath(path)) return false;
   if (isHardRoute(path)) return false;
+  if (isConsultantRoute(path)) return true;
   if (getAuthPath(path)) return true;
   if (AUTH_SIGNUP_ALIASES.includes(path as (typeof AUTH_SIGNUP_ALIASES)[number])) return true;
   if (path === "/love") return true;
@@ -124,6 +126,7 @@ export function shouldShowPublicNotFound(
   if (path === "/") return false;
   if (isPublicWebRoute(path)) return false;
   if (isHardRoute(path)) return false;
+  if (isConsultantRoute(path)) return false;
   if (getAuthPath(path)) return false;
   if (AUTH_SIGNUP_ALIASES.includes(path as (typeof AUTH_SIGNUP_ALIASES)[number])) return false;
   if (requiresMemberRestoreBlocking(path, isNative)) return false;

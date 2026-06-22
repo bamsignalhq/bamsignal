@@ -63,4 +63,4 @@ export const CONCIERGE_DIRECTORY_SUBTITLE =
 export const CONCIERGE_ANTI_POACHING_COPY =
   "Consultants guide members — they never own them. BamSignal retains member relationships.";
 
-export const CONCIERGE_CONSULTANT_HOME_ROUTE = "/signal-concierge/consultant/portfolio";
+export const CONCIERGE_CONSULTANT_HOME_ROUTE = "/consultant/portfolio";

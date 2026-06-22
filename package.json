@@ -34,6 +34,7 @@
     "test:notification-operations": "node scripts/test-notification-operations.mjs",
     "test:journey-intelligence": "node scripts/test-journey-intelligence.mjs",
     "test:regional-teams": "node scripts/test-regional-teams.mjs",
+    "test:house-pipeline": "node scripts/test-house-pipeline.mjs",
     "test:performance-reviews": "node scripts/test-performance-reviews.mjs",
     "test:ai-workspace": "node scripts/test-ai-workspace.mjs",
     "test:member-dashboard": "node scripts/test-member-dashboard.mjs",

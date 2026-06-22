@@ -9060,6 +9060,231 @@
   color: rgba(212, 175, 106, 0.92);
 }
 
+.hins-page__future {
+  padding: 22px 24px;
+}
+
+.hins-page__future h2 {
+  margin: 0 0 10px;
+}
+
+.hins-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.hins-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.16);
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.hins-page__future li span {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+/* House Institute Data Pipeline™ */
+.hidp-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.hidp-page__split {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.hidp-card,
+.hidp-trend-card,
+.hidp-insight-card,
+.hidp-legacy-card,
+.hidp-feed-card {
+  padding: 20px 22px;
+}
+
+.hidp-card__head h2,
+.hidp-trend-card__head h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.hidp-card__head p,
+.hidp-trend-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.64);
+  line-height: 1.45;
+}
+
+.hidp-card__updated {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.78);
+}
+
+.hidp-card__empty {
+  margin: 12px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hidp-pipeline-list,
+.hidp-trend-card__list,
+.hidp-insight-card__list,
+.hidp-legacy-card__list,
+.hidp-feed-card__list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.hidp-pipeline-list li,
+.hidp-trend-card__list li,
+.hidp-feed-card__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.12);
+}
+
+.hidp-pipeline-list li div,
+.hidp-trend-card__list li div,
+.hidp-feed-card__list li div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hidp-pipeline-list li span,
+.hidp-trend-card__list li span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hidp-pipeline-list__count,
+.hidp-trend-card__count {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(224, 180, 120, 0.98);
+}
+
+.hidp-trend-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(212, 175, 106, 0.12);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.hidp-insight-card__list li {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.12);
+}
+
+.hidp-insight-card__list li p {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.hidp-insight-card__metric {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+.hidp-insight-card__metric dt {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.hidp-insight-card__metric dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(224, 180, 120, 0.98);
+}
+
+.hidp-legacy-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.hidp-legacy-card__metrics div {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.12);
+}
+
+.hidp-legacy-card__metrics dt {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.hidp-legacy-card__metrics dd {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(224, 180, 120, 0.98);
+}
+
+.hidp-legacy-card__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.82rem;
+}
+
+.hidp-feed-card__list li p {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.4;
+}
+
+.hidp-feed-card__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.82);
+  white-space: nowrap;
+}
+
 /* Century Room™ */
 .croom-page {
   display: flex;

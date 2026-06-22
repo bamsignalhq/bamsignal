@@ -18,6 +18,7 @@ import { JourneyTrendCard } from "./JourneyTrendCard";
 import { LegacyGrowthCard } from "./LegacyGrowthCard";
 import { RegionalInsightsCard } from "./RegionalInsightsCard";
 import { RegionalTeamsOverviewCard } from "./RegionalTeamsOverviewCard";
+import { HouseInstitutePipelineBridgeCard } from "./HouseInstitutePipelineBridgeCard";
 
 function emptyBundle(): JourneyIntelligenceBundle {
   return buildJourneyIntelligenceBundle({ members: [], introductions: [] });
@@ -83,6 +84,7 @@ export function JourneyIntelligencePage() {
         <ConsultantInsightsCard consultants={bundle.consultants} />
         <RegionalInsightsCard regional={bundle.regional} />
         <RegionalTeamsOverviewCard regionalTeams={bundle.regionalTeams} />
+        <HouseInstitutePipelineBridgeCard pipeline={bundle.housePipeline} />
         <LegacyGrowthCard growth={bundle.legacyGrowth} />
       </div>
 

@@ -12,6 +12,7 @@ import {
 import { listConciergeMembers } from "./conciergeConsultantStore";
 import { listIntroductionRecords } from "./conciergeIntroductionStore";
 import { buildRegionalConsultantTeamsBundle } from "./regionalConsultantEngine";
+import { buildHouseInstituteDataPipelineBundle } from "./houseInstituteDataPipelineLogic";
 
 export { JOURNEY_INTELLIGENCE_BRAND };
 
@@ -28,6 +29,7 @@ export function buildJourneyIntelligenceBundle(input?: {
     consultants: buildConsultantInsights(members),
     regional: buildRegionalInsights(members),
     regionalTeams: buildRegionalConsultantTeamsBundle({ members }),
+    housePipeline: buildHouseInstituteDataPipelineBundle({ members, introductions }),
     trends: analytics.trends,
     legacyGrowth: buildLegacyGrowthSignals(members),
     updatedAt: new Date().toISOString()

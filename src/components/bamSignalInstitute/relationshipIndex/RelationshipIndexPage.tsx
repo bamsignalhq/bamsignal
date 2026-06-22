@@ -13,12 +13,15 @@ import {
   UNDERSTANDING_RELATIONSHIPS_LABEL
 } from "../../../constants/relationshipIndex";
 import { getRelationshipIndexBundle } from "../../../utils/RelationshipIndexEngine";
+import { getHouseInstituteDataPipelineBundle } from "../../../utils/houseInstituteDataPipelineEngine";
 import { CommunityIndexCard } from "./CommunityIndexCard";
 import { IndexCard } from "./IndexCard";
 import { IndexTimelineCard } from "./IndexTimelineCard";
+import { InstitutionInsightCard } from "../houseInstitute/dataPipeline/InstitutionInsightCard";
 
 export function RelationshipIndexPage() {
   const bundle = useMemo(() => getRelationshipIndexBundle(), []);
+  const pipeline = useMemo(() => getHouseInstituteDataPipelineBundle(), []);
 
   return (
     <div className="rix-page">
@@ -74,6 +77,14 @@ export function RelationshipIndexPage() {
       {bundle.indices.map((index) => (
         <IndexTimelineCard key={`${index.id}-timeline`} title={index.title} entries={index.timeline} />
       ))}
+
+      <section className="rix-page__section">
+        <InstitutionInsightCard
+          insights={pipeline.institutionInsights}
+          title="House Institute bridge"
+          description="Anonymous journey outcomes informing Relationship Index research."
+        />
+      </section>
 
       <section className="rix-page__future institute-glass">
         <h2>Future ready</h2>

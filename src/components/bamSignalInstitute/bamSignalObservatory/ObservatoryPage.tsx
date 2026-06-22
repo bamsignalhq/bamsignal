@@ -13,15 +13,18 @@ import {
   UNDERSTANDING_RELATIONSHIPS_LABEL
 } from "../../../constants/bamSignalObservatory";
 import { getBamSignalObservatoryBundle } from "../../../utils/BamSignalObservatoryEngine";
+import { getHouseInstituteDataPipelineBundle } from "../../../utils/houseInstituteDataPipelineEngine";
 import { AnnualReportsCard } from "./AnnualReportsCard";
 import { CommunityGrowthCard } from "./CommunityGrowthCard";
 import { DiasporaCorridorCard } from "./DiasporaCorridorCard";
 import { LegacyFamiliesCard } from "./LegacyFamiliesCard";
 import { RelationshipDashboardCard } from "./RelationshipDashboardCard";
 import { TrendCard } from "./TrendCard";
+import { ObservatoryFeedCard } from "../houseInstitute/dataPipeline/ObservatoryFeedCard";
 
 export function ObservatoryPage() {
   const bundle = useMemo(() => getBamSignalObservatoryBundle(), []);
+  const pipeline = useMemo(() => getHouseInstituteDataPipelineBundle(), []);
 
   return (
     <div className="bso-page">
@@ -68,6 +71,13 @@ export function ObservatoryPage() {
           ) : null}
           {bundle.annualReports ? <AnnualReportsCard section={bundle.annualReports} /> : null}
         </div>
+      </section>
+
+      <section className="bso-page__section">
+        <ObservatoryFeedCard
+          feed={pipeline.observatoryFeed}
+          description="Live anonymous aggregates from the House Institute Data Pipeline™."
+        />
       </section>
 
       <section className="bso-page__future institute-glass">

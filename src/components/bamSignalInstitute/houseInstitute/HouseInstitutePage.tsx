@@ -13,11 +13,14 @@ import {
   UNDERSTANDING_RELATIONSHIPS_LABEL
 } from "../../../constants/houseInstitute";
 import { getHouseInstituteBundle } from "../../../utils/HouseInstituteEngine";
+import { getHouseInstituteDataPipelineBundle } from "../../../utils/houseInstituteDataPipelineEngine";
 import { PublicationCard } from "./PublicationCard";
 import { ResearchCard } from "./ResearchCard";
+import { HouseInstituteDataPipelineSection } from "./dataPipeline/HouseInstituteDataPipelineSection";
 
 export function HouseInstitutePage() {
   const bundle = useMemo(() => getHouseInstituteBundle(), []);
+  const pipeline = useMemo(() => getHouseInstituteDataPipelineBundle(), []);
 
   return (
     <div className="hins-page">
@@ -72,6 +75,8 @@ export function HouseInstitutePage() {
       <section className="hins-page__reserved-note institute-glass">
         <p>{HOUSE_INSTITUTE_RESERVED_COPY}</p>
       </section>
+
+      <HouseInstituteDataPipelineSection pipeline={pipeline} />
     </div>
   );
 }

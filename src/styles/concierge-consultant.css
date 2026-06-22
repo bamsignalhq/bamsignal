@@ -8875,3 +8875,43 @@
   color: rgba(255, 255, 255, 0.62);
 }
 
+.hidp-bridge-card__sources,
+.hidp-bridge-card__insights {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.hidp-bridge-card__sources li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.84rem;
+}
+
+.hidp-bridge-card__sources strong {
+  color: rgba(224, 180, 120, 0.98);
+}
+
+.hidp-bridge-card__insights li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(212, 175, 106, 0.1);
+}
+
+.hidp-bridge-card__insights span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.4;
+}
+

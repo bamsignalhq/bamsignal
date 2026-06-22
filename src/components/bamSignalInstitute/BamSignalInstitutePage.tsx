@@ -340,6 +340,13 @@ export function BamSignalInstitutePage() {
           >
             Legacy Hall
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("legacyGarden"))}
+          >
+            Garden
+          </button>
         </div>
       </header>
 

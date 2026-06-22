@@ -7775,3 +7775,138 @@
   font-size: 0.8rem;
   color: rgba(212, 175, 106, 0.92);
 }
+
+/* Legacy Garden™ */
+.lgdn-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.lgdn-page__hero {
+  padding: 28px 24px;
+}
+
+.lgdn-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.lgdn-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.lgdn-page__prepared,
+.lgdn-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.lgdn-page__prepared h2 {
+  margin: 0 0 6px;
+}
+
+.lgdn-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.lgdn-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.lgdn-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(120, 160, 110, 0.06);
+  border: 1px solid rgba(140, 180, 130, 0.18);
+}
+
+.lgdn-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.lgdn-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.lgdn-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.lgdn-experience-card,
+.lgdn-tree-card {
+  padding: 18px 20px;
+}
+
+.lgdn-experience-card__head,
+.lgdn-tree-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.lgdn-experience-card__head h3,
+.lgdn-tree-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.lgdn-experience-card__badge,
+.lgdn-tree-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(140, 180, 130, 0.14);
+  color: rgba(180, 220, 170, 0.95);
+  border: 1px solid rgba(140, 180, 130, 0.28);
+  white-space: nowrap;
+}
+
+.lgdn-experience-card__description,
+.lgdn-tree-card__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.lgdn-experience-card__forbidden,
+.lgdn-tree-card__forbidden {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.4;
+}
+
+.lgdn-experience-card__status,
+.lgdn-tree-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(140, 180, 130, 0.92);
+}

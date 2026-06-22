@@ -565,57 +565,242 @@
   grid-column: 1 / -1;
 }
 
-.regional-lead-card__body {
+.regional-lead-card__body,
+.regional-director-card__body {
   display: grid;
   gap: 10px;
 }
 
-.regional-lead-card__identity {
+.regional-lead-card__identity,
+.regional-director-card__identity {
   display: grid;
   gap: 4px;
 }
 
-.regional-lead-card__identity span {
+.regional-lead-card__identity span,
+.regional-director-card__identity span {
   color: var(--sc-gold);
   font-size: 0.82rem;
 }
 
-.regional-lead-card__identity small {
+.regional-lead-card__identity small,
+.regional-director-card__identity small {
   color: var(--sc-muted);
   font-size: 0.78rem;
 }
 
-.regional-lead-card__stats {
+.regional-lead-card__stats,
+.regional-director-card__stats {
   margin: 0;
   display: grid;
   gap: 8px;
 }
 
-.regional-lead-card__stats dt {
+.regional-lead-card__stats dt,
+.regional-director-card__stats dt {
   font-size: 0.78rem;
   color: var(--sc-muted);
 }
 
-.regional-lead-card__stats dd {
+.regional-lead-card__stats dd,
+.regional-director-card__stats dd {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--sc-gold);
 }
 
-.regional-metrics-card__grid {
+.regional-metrics-card__grid,
+.regional-workload-card__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin: 0;
 }
 
-.regional-metrics-card__grid div {
+.regional-metrics-card__grid div,
+.regional-workload-card__grid div {
   border: 1px solid rgba(168, 130, 255, 0.12);
   border-radius: 12px;
   padding: 10px 12px;
   display: grid;
   gap: 4px;
+}
+
+.regional-metrics-card__grid dt,
+.regional-workload-card__grid dt {
+  font-size: 0.78rem;
+  color: var(--sc-muted);
+}
+
+.regional-metrics-card__grid dd,
+.regional-workload-card__grid dd {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sc-gold);
+}
+
+.regional-team-card__status--director {
+  color: var(--sc-gold);
+}
+
+.regional-coverage-card__list,
+.regional-assignment-card__list,
+.regional-consultant-workload__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.regional-coverage-card__list li,
+.regional-assignment-card__list li,
+.regional-consultant-workload__list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.regional-assignment-card__identity,
+.regional-consultant-workload__list li > div {
+  display: grid;
+  gap: 2px;
+}
+
+.regional-assignment-card__identity span,
+.regional-consultant-workload__list li span {
+  color: var(--sc-muted);
+  font-size: 0.8rem;
+}
+
+.regional-assignment-card__identity small {
+  color: var(--sc-muted);
+  font-size: 0.76rem;
+}
+
+.regional-assignment-card__list em {
+  font-style: normal;
+  color: var(--sc-gold);
+  font-size: 0.78rem;
+}
+
+.regional-consultant-workload__health {
+  font-style: normal;
+  font-size: 0.76rem;
+  text-transform: capitalize;
+}
+
+.regional-consultant-workload__health--healthy {
+  color: #9dffb8;
+}
+
+.regional-consultant-workload__health--busy,
+.regional-consultant-workload__health--full {
+  color: #ffd28a;
+}
+
+.regional-consultant-workload__health--paused {
+  color: var(--sc-muted);
+}
+
+.consultant-regional-team-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.consultant-regional-team-card__grid div {
+  border: 1px solid rgba(168, 130, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.consultant-regional-team-card__grid dt {
+  font-size: 0.78rem;
+  color: var(--sc-muted);
+}
+
+.consultant-regional-team-card__grid dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--sc-gold);
+}
+
+.regional-teams-overview-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.regional-teams-overview-card__list li {
+  border: 1px solid rgba(168, 130, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.regional-teams-overview-card__list span {
+  color: var(--sc-muted);
+  font-size: 0.8rem;
+}
+
+.regional-teams-overview-card__list dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.regional-teams-overview-card__list dt {
+  font-size: 0.72rem;
+  color: var(--sc-muted);
+}
+
+.regional-teams-overview-card__list dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--sc-gold);
+}
+
+.operations-regional-teams__table-wrap {
+  overflow-x: auto;
+}
+
+.operations-regional-teams__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.operations-regional-teams__table th,
+.operations-regional-teams__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(168, 130, 255, 0.1);
+  text-align: left;
+  vertical-align: top;
+}
+
+.operations-regional-teams__table th {
+  color: var(--sc-muted);
+  font-weight: 600;
+}
+
+.operations-regional-teams__table small {
+  display: block;
+  color: var(--sc-muted);
+  font-size: 0.72rem;
 }
 
 .regional-metrics-card__grid dt {

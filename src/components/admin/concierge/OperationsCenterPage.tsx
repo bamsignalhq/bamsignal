@@ -21,6 +21,7 @@ import { OperationsMetricCard } from "./OperationsMetricCard";
 import { OperationsNotificationCard } from "./OperationsNotificationCard";
 import { OperationsOverviewCard } from "./OperationsOverviewCard";
 import { OperationsPaymentCard } from "./OperationsPaymentCard";
+import { OperationsRegionalTeamsCard } from "./OperationsRegionalTeamsCard";
 
 export function OperationsCenterPage() {
   const [activeSection, setActiveSection] = useState<OperationsCenterSectionId>("consultations");
@@ -94,6 +95,7 @@ export function OperationsCenterPage() {
           ) : null}
           {activeSection === "introductions" ? <OperationsIntroductionCard bundle={bundle} /> : null}
           {activeSection === "follow-up" ? <OperationsFollowUpCard bundle={bundle} /> : null}
+          {activeSection === "regional-teams" ? <OperationsRegionalTeamsCard bundle={bundle} /> : null}
         </div>
       </div>
 

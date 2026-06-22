@@ -3,29 +3,52 @@ import {
   REGIONAL_CONSULTANT_TEAMS_BRAND,
   REGIONAL_CONSULTANT_TEAMS_FUTURE_MODULES,
   REGIONAL_CONSULTANT_TEAM_REGIONS,
-  REGIONAL_TEAM_ROLE_DEFINITIONS,
   REGIONAL_CONSULTANT_TEAMS_TAGLINE,
+  REGIONAL_TEAM_ROLE_DEFINITIONS,
   type RegionalTeamId
 } from "../../constants/regionalConsultantTeams";
 import { EMPTY_CONCIERGE_FILTERS } from "../../types/conciergeConsultant";
 import { fetchAdminConciergeConsultants, fetchAdminConciergeMembers } from "../../services/adminConcierge";
-import type { RegionalConsultantTeamsBundle } from "../../types/regionalConsultantTeams";
-import {
-  buildRegionalConsultantTeamsBundle,
-  getRegionalTeamSnapshot
-} from "../../utils/regionalConsultantTeamsLogic";
-import { RegionalLeadCard } from "./RegionalLeadCard";
-import { RegionalMetricsCard } from "./RegionalMetricsCard";
+import type { RegionalConsultantTeamsBundle, RegionalTeamWorkloadRow } from "../../types/regionalConsultantTeams";
+import { buildRegionalConsultantTeamsBundle } from "../../utils/regionalConsultantEngine";
+import { getRegionalTeamSnapshot } from "../../utils/regionalConsultantLogic";
+import { RegionalAssignmentCard } from "./RegionalAssignmentCard";
+import { RegionalCoverageCard } from "./RegionalCoverageCard";
+import { RegionalDirectorCard } from "./RegionalDirectorCard";
 import { RegionalTeamCard } from "./RegionalTeamCard";
+import { RegionalWorkloadCard } from "./RegionalWorkloadCard";
 
 function emptyBundle(): RegionalConsultantTeamsBundle {
   return buildRegionalConsultantTeamsBundle({ consultants: [], members: [] });
 }
 
+function RegionalConsultantWorkloadList({ rows }: { rows: RegionalTeamWorkloadRow[] }) {
+  if (rows.length === 0) {
+    return <p className="concierge-consultant__empty">No consultant workload in this region yet.</p>;
+  }
+
+  return (
+    <ul className="regional-consultant-workload__list">
+      {rows.map((row) => (
+        <li key={row.consultantId}>
+          <div>
+            <strong>{row.name}</strong>
+            <span>{row.roleLabel}</span>
+          </div>
+          <p>{row.summary}</p>
+          <em className={`regional-consultant-workload__health regional-consultant-workload__health--${row.health}`}>
+            {row.health}
+          </em>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function RegionalTeamPage() {
   const [loading, setLoading] = useState(true);
   const [bundle, setBundle] = useState<RegionalConsultantTeamsBundle>(emptyBundle);
-  const [activeRegion, setActiveRegion] = useState<RegionalTeamId>("nigeria");
+  const [activeRegion, setActiveRegion] = useState<RegionalTeamId>("lagos");
 
   const loadTeams = useCallback(async () => {
     setLoading(true);
@@ -85,7 +108,7 @@ export function RegionalTeamPage() {
               onClick={() => setActiveRegion(region.id)}
             >
               <span>{region.label}</span>
-              <em>{team?.consultants.length ?? 0}</em>
+              <em>{team?.metrics.consultants ?? 0}</em>
             </button>
           );
         })}
@@ -93,9 +116,18 @@ export function RegionalTeamPage() {
 
       {snapshot ? (
         <div className="regional-teams-page__grid">
-          <RegionalLeadCard lead={snapshot.lead} regionLabel={snapshot.regionLabel} />
-          <RegionalMetricsCard regionLabel={snapshot.regionLabel} metrics={snapshot.metrics} />
+          <RegionalDirectorCard director={snapshot.director} regionLabel={snapshot.regionLabel} />
+          <RegionalWorkloadCard regionLabel={snapshot.regionLabel} metrics={snapshot.metrics} />
           <RegionalTeamCard regionLabel={snapshot.regionLabel} consultants={snapshot.consultants} />
+          <section className="regional-consultant-workload concierge-consultant-card concierge-consultant-card--glass cc-reveal">
+            <header className="concierge-consultant-card__head">
+              <h3>Consultant Workload</h3>
+              <p>Active caseload across {snapshot.regionLabel}.</p>
+            </header>
+            <RegionalConsultantWorkloadList rows={snapshot.workload} />
+          </section>
+          <RegionalCoverageCard regionLabel={snapshot.regionLabel} coverage={snapshot.coverage} />
+          <RegionalAssignmentCard regionLabel={snapshot.regionLabel} assignments={snapshot.assignments} />
         </div>
       ) : null}
 

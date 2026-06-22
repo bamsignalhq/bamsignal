@@ -16,10 +16,14 @@ import type {
   ConsultantCrmActivityItem,
   ConsultantCrmBundle,
   ConsultantCrmPipelineStage,
+  ConsultantCrmRegionalTeam,
   ConsultantCrmSectionRow,
   ConsultantCrmTask
 } from "../types/consultantCrm";
 import { getApplicationReviewSummaryForMember } from "./ApplicationApprovalEngine";
+import { listConciergeConsultants } from "./conciergeConsultantDirectoryStore";
+import { buildRegionalConsultantTeamsBundle } from "./regionalConsultantEngine";
+import { getRegionalTeamSnapshotForConsultant } from "./regionalConsultantLogic";
 import { listArchiveEligibleMembers } from "./conciergeJourneyArchive";
 import {
   portfolioAssignedMembers,
@@ -395,6 +399,22 @@ function buildSectionRows(input: {
   return { counts, rows };
 }
 
+function buildRegionalTeamContext(consultantId: string): ConsultantCrmRegionalTeam | undefined {
+  const consultant = listConciergeConsultants().find((entry) => entry.id === consultantId);
+  if (!consultant) return undefined;
+
+  const snapshot = getRegionalTeamSnapshotForConsultant(buildRegionalConsultantTeamsBundle(), consultant);
+  if (!snapshot) return undefined;
+
+  return {
+    regionId: snapshot.regionId,
+    regionLabel: snapshot.regionLabel,
+    directorName: snapshot.director?.name,
+    teamSize: snapshot.consultants.length,
+    metrics: snapshot.metrics
+  };
+}
+
 export function buildConsultantCrmBundle(input: {
   consultantId: string;
   members: ConciergeMemberRecord[];
@@ -412,7 +432,8 @@ export function buildConsultantCrmBundle(input: {
     agenda: buildAgenda(meetings),
     activity: buildActivity(activity),
     sectionCounts: counts,
-    sectionRows: rows
+    sectionRows: rows,
+    regionalTeam: buildRegionalTeamContext(input.consultantId)
   };
 }
 

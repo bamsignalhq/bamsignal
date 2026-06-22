@@ -26,6 +26,7 @@ import { ConsultantWorkloadCard } from "../admin/concierge/ConsultantWorkloadCar
 import { ConsultantActivityCard } from "./ConsultantActivityCard";
 import { ConsultantAgendaCard } from "./ConsultantAgendaCard";
 import { ConsultantPipelineCard } from "./ConsultantPipelineCard";
+import { ConsultantRegionalTeamCard } from "./ConsultantRegionalTeamCard";
 import { ConsultantTasksCard } from "./ConsultantTasksCard";
 
 type ConsultantWorkspacePageProps = {
@@ -148,6 +149,7 @@ export function ConsultantWorkspacePage({ consultantId }: ConsultantWorkspacePag
         {consultantWorkload ? (
           <ConsultantWorkloadCard workload={consultantWorkload} title="My capacity" />
         ) : null}
+        <ConsultantRegionalTeamCard regionalTeam={bundle.regionalTeam} />
         <ConsultantPipelineCard stages={bundle.pipeline} onStageSelect={handlePipelineSelect} />
         <ConsultantTasksCard tasks={bundle.tasks} />
         <ConsultantAgendaCard agenda={bundle.agenda} />

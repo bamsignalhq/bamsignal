@@ -6,10 +6,10 @@ export type RegionalTeamMember = {
   email: string;
   status: string;
   teamRole: RegionalTeamRoleId;
-  isLead: boolean;
+  isDirector: boolean;
 };
 
-export type RegionalTeamLead = {
+export type RegionalTeamDirector = {
   consultantId: string;
   name: string;
   email: string;
@@ -19,21 +19,55 @@ export type RegionalTeamLead = {
   narrative: string;
 };
 
+/** @deprecated Use RegionalTeamDirector */
+export type RegionalTeamLead = RegionalTeamDirector;
+
 export type RegionalTeamMetrics = {
-  activeMembers: number;
-  openApplications: number;
-  consultations: number;
+  members: number;
+  consultants: number;
   introductions: number;
   relationships: number;
+  engagements: number;
+  marriages: number;
+  legacyFamilies: number;
+};
+
+export type RegionalTeamWorkloadRow = {
+  consultantId: string;
+  name: string;
+  roleLabel: string;
+  activeMembers: number;
+  openIntroductions: number;
+  health: string;
+  summary: string;
+};
+
+export type RegionalCoverageRow = {
+  id: string;
+  label: string;
+  memberCount: number;
+};
+
+export type RegionalAssignmentRow = {
+  id: string;
+  memberName: string;
+  journeyId?: string;
+  status: string;
+  city: string;
+  recommendedConsultant?: string;
+  detail: string;
 };
 
 export type RegionalTeamSnapshot = {
   regionId: RegionalTeamId;
   regionLabel: string;
   timezone: string;
-  lead: RegionalTeamLead | null;
+  director: RegionalTeamDirector | null;
   consultants: RegionalTeamMember[];
   metrics: RegionalTeamMetrics;
+  workload: RegionalTeamWorkloadRow[];
+  coverage: RegionalCoverageRow[];
+  assignments: RegionalAssignmentRow[];
 };
 
 export type RegionalConsultantTeamsBundle = {

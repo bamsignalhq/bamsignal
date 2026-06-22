@@ -11,6 +11,7 @@ import {
 } from "./journeyIntelligenceLogic";
 import { listConciergeMembers } from "./conciergeConsultantStore";
 import { listIntroductionRecords } from "./conciergeIntroductionStore";
+import { buildRegionalConsultantTeamsBundle } from "./regionalConsultantEngine";
 
 export { JOURNEY_INTELLIGENCE_BRAND };
 
@@ -26,6 +27,7 @@ export function buildJourneyIntelligenceBundle(input?: {
     metrics: buildJourneyIntelligenceMetrics(members, introductions),
     consultants: buildConsultantInsights(members),
     regional: buildRegionalInsights(members),
+    regionalTeams: buildRegionalConsultantTeamsBundle({ members }),
     trends: analytics.trends,
     legacyGrowth: buildLegacyGrowthSignals(members),
     updatedAt: new Date().toISOString()

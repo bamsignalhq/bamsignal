@@ -3,28 +3,35 @@ export const REGIONAL_CONSULTANT_TEAMS_TAGLINE =
   "Steward journeys by region — BamSignal members belong to the platform, consultants lead locally.";
 
 export const REGIONAL_CONSULTANT_TEAM_REGIONS = [
-  { id: "nigeria", label: "Nigeria", timezone: "WAT" },
-  { id: "west-africa", label: "West Africa", timezone: "WAT / GMT" },
+  { id: "lagos", label: "Lagos", timezone: "WAT" },
+  { id: "abuja", label: "Abuja", timezone: "WAT" },
+  { id: "port-harcourt", label: "Port Harcourt", timezone: "WAT" },
+  { id: "south-east", label: "South East", timezone: "WAT" },
+  { id: "northern-nigeria", label: "Northern Nigeria", timezone: "WAT" },
   { id: "uk", label: "UK", timezone: "GMT / BST" },
   { id: "canada", label: "Canada", timezone: "EST / PST" },
   { id: "usa", label: "USA", timezone: "EST / CST / PST" },
-  { id: "middle-east", label: "Middle East", timezone: "GST / AST" },
-  { id: "europe", label: "Europe", timezone: "CET / GMT" },
-  { id: "australia", label: "Australia", timezone: "AEST / AEDT" }
+  { id: "uae", label: "UAE", timezone: "GST" },
+  { id: "global", label: "Global", timezone: "UTC" }
 ] as const;
 
 export type RegionalTeamId = (typeof REGIONAL_CONSULTANT_TEAM_REGIONS)[number]["id"];
 
 export const REGIONAL_TEAM_ROLE_DEFINITIONS = [
   {
-    id: "regional-lead",
-    label: "Regional Lead",
-    description: "Coordinates stewards, handoffs, and regional continuity."
+    id: "regional-director",
+    label: "Regional Director",
+    description: "Leads the regional team, handoffs, and institutional continuity."
   },
   {
     id: "senior-matchmaker",
     label: "Senior Matchmaker",
     description: "Leads Legacy and Global introductions with senior oversight."
+  },
+  {
+    id: "consultant",
+    label: "Consultant",
+    description: "Guides members through the full concierge journey."
   },
   {
     id: "compatibility-specialist",
@@ -51,18 +58,32 @@ export const REGIONAL_TEAM_ROLE_LABELS: Record<RegionalTeamRoleId, string> = Obj
 
 /** Primary region assignment for seeded consultants — expandable via directory later. */
 export const REGIONAL_CONSULTANT_REGION_ASSIGNMENTS: Record<string, RegionalTeamId> = {
-  consultant_ada: "nigeria",
-  consultant_emeka: "nigeria",
-  consultant_fatima: "nigeria",
+  consultant_ada: "lagos",
+  consultant_emeka: "abuja",
+  consultant_fatima: "northern-nigeria",
   consultant_james: "uk",
-  consultant_sola: "west-africa"
+  consultant_sola: "global"
 };
 
-/** Consultants designated as regional leads per region. */
-export const REGIONAL_TEAM_LEAD_ASSIGNMENTS: Partial<Record<RegionalTeamId, string>> = {
-  nigeria: "consultant_ada",
-  uk: "consultant_james"
+/** Regional directors per region. */
+export const REGIONAL_TEAM_DIRECTOR_ASSIGNMENTS: Partial<Record<RegionalTeamId, string>> = {
+  lagos: "consultant_ada",
+  uk: "consultant_james",
+  global: "consultant_sola"
 };
+
+/** @deprecated Use REGIONAL_TEAM_DIRECTOR_ASSIGNMENTS */
+export const REGIONAL_TEAM_LEAD_ASSIGNMENTS = REGIONAL_TEAM_DIRECTOR_ASSIGNMENTS;
+
+export const REGIONAL_TEAM_METRIC_LABELS = {
+  members: "Members",
+  consultants: "Consultants",
+  introductions: "Introductions",
+  relationships: "Relationships",
+  engagements: "Engagements",
+  marriages: "Marriages",
+  legacyFamilies: "Legacy Families"
+} as const;
 
 /** Documented future modules — not implemented in this release. */
 export const REGIONAL_CONSULTANT_TEAMS_FUTURE_MODULES = [
@@ -82,11 +103,3 @@ export const REGIONAL_CONSULTANT_TEAMS_FUTURE_MODULES = [
     description: "Faith-aligned consultant lanes with opt-in routing."
   }
 ] as const;
-
-export const REGIONAL_TEAM_METRIC_LABELS = {
-  activeMembers: "Active members",
-  openApplications: "Open applications",
-  consultations: "Consultations",
-  introductions: "Introductions in progress",
-  relationships: "Relationships"
-} as const;

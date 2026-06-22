@@ -30,6 +30,8 @@ function sectionCount(bundle: OperationsCenterBundle, section: OperationsCenterS
       return Object.values(bundle.introductions).reduce((sum, rows) => sum + rows.length, 0);
     case "follow-up":
       return Object.values(bundle.followUps).reduce((sum, rows) => sum + rows.length, 0);
+    case "regional-teams":
+      return bundle.regionalTeams.teams.reduce((sum, team) => sum + team.assignments.length, 0);
     default:
       return 0;
   }

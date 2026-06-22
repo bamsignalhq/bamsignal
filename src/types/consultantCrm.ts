@@ -1,4 +1,6 @@
 import type { ConsultantCrmSectionId } from "../constants/consultantCrm";
+import type { RegionalTeamId } from "../constants/regionalConsultantTeams";
+import type { RegionalTeamMetrics } from "./regionalConsultantTeams";
 
 export type ConsultantCrmPipelineStage = {
   id: string;
@@ -40,6 +42,14 @@ export type ConsultantCrmSectionRow = {
   meta?: string;
 };
 
+export type ConsultantCrmRegionalTeam = {
+  regionId: RegionalTeamId;
+  regionLabel: string;
+  directorName?: string;
+  teamSize: number;
+  metrics: RegionalTeamMetrics;
+};
+
 export type ConsultantCrmBundle = {
   pipeline: ConsultantCrmPipelineStage[];
   tasks: ConsultantCrmTask[];
@@ -47,4 +57,5 @@ export type ConsultantCrmBundle = {
   activity: ConsultantCrmActivityItem[];
   sectionCounts: Record<ConsultantCrmSectionId, number>;
   sectionRows: Record<ConsultantCrmSectionId, ConsultantCrmSectionRow[]>;
+  regionalTeam?: ConsultantCrmRegionalTeam;
 };

@@ -23,8 +23,12 @@ export function RegionalTeamCard({ regionLabel, consultants }: RegionalTeamCardP
                 <strong>{consultant.name}</strong>
                 <span>{REGIONAL_TEAM_ROLE_LABELS[consultant.teamRole]}</span>
               </div>
-              <em className={`regional-team-card__status regional-team-card__status--${consultant.status}`}>
-                {consultant.status}
+              <em
+                className={`regional-team-card__status regional-team-card__status--${consultant.status}${
+                  consultant.isDirector ? " regional-team-card__status--director" : ""
+                }`}
+              >
+                {consultant.isDirector ? "director" : consultant.status}
               </em>
             </li>
           ))}

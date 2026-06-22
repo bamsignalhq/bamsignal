@@ -57,6 +57,7 @@ import { listMeetingInfrastructureRecords } from "./MeetingInfrastructureEngine"
 import { listRelationshipFollowUpRecords } from "./relationshipFollowUpStore";
 import { getRelationshipSupportQueue } from "./RelationshipHealthAlertsEngine";
 import { listRelationshipLegacyIndexRecords } from "./relationshipLegacyIndexStore";
+import { buildRegionalConsultantTeamsBundle } from "./regionalConsultantEngine";
 
 const PENDING_APPLICATION_STATUSES = new Set(["submitted", "under-review", "additional-information"]);
 const ACTIVE_INTRO_STATUSES = new Set([
@@ -474,7 +475,8 @@ export function buildOperationsCenterBundle(): OperationsCenterBundle {
     assignmentQueue: buildAssignmentQueue(members),
     notifications: buildNotifications(),
     introductions: buildIntroductions(members),
-    followUps: buildFollowUps(members)
+    followUps: buildFollowUps(members),
+    regionalTeams: buildRegionalConsultantTeamsBundle({ members })
   };
 }
 

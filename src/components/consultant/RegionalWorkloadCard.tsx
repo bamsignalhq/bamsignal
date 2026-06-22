@@ -1,21 +1,21 @@
 import { REGIONAL_TEAM_METRIC_LABELS } from "../../constants/regionalConsultantTeams";
 import type { RegionalTeamMetrics } from "../../types/regionalConsultantTeams";
 
-type RegionalMetricsCardProps = {
+type RegionalWorkloadCardProps = {
   regionLabel: string;
   metrics: RegionalTeamMetrics;
 };
 
-export function RegionalMetricsCard({ regionLabel, metrics }: RegionalMetricsCardProps) {
+export function RegionalWorkloadCard({ regionLabel, metrics }: RegionalWorkloadCardProps) {
   const entries = Object.entries(REGIONAL_TEAM_METRIC_LABELS) as [keyof RegionalTeamMetrics, string][];
 
   return (
-    <section className="regional-metrics-card concierge-consultant-card concierge-consultant-card--glass cc-reveal">
+    <section className="regional-workload-card concierge-consultant-card concierge-consultant-card--glass cc-reveal">
       <header className="concierge-consultant-card__head">
         <h3>{regionLabel} Metrics</h3>
-        <p>Journey health in this region — never revenue or sales targets.</p>
+        <p>Regional journey health — members, relationships, and legacy families.</p>
       </header>
-      <dl className="regional-metrics-card__grid">
+      <dl className="regional-workload-card__grid">
         {entries.map(([key, label]) => (
           <div key={key}>
             <dt>{label}</dt>

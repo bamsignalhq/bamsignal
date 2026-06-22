@@ -1,5 +1,6 @@
 import type { JourneyIntelligenceMetricId } from "../constants/journeyIntelligence";
 import type { JourneyAnalyticsGrowthSignal, JourneyAnalyticsTrendPoint } from "./journeyAnalytics";
+import type { RegionalConsultantTeamsBundle } from "./regionalConsultantTeams";
 
 export type JourneyIntelligenceMetric = {
   id: JourneyIntelligenceMetricId;
@@ -47,6 +48,7 @@ export type JourneyIntelligenceBundle = {
   metrics: JourneyIntelligenceMetric[];
   consultants: JourneyIntelligenceConsultantInsight[];
   regional: JourneyIntelligenceRegionalInsights;
+  regionalTeams: RegionalConsultantTeamsBundle;
   trends: JourneyAnalyticsTrendPoint[];
   legacyGrowth: JourneyIntelligenceLegacyGrowthSignal[];
   updatedAt: string;

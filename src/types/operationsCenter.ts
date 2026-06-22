@@ -1,6 +1,7 @@
 import type { ConsultationEventStatus } from "./consultationScheduling";
 import type { ConsultationPaymentStatus } from "./consultationPayment";
 import type { NotificationOperationsBundle } from "./notificationOperations";
+import type { RegionalConsultantTeamsBundle } from "./regionalConsultantTeams";
 import type { AssignmentConfidence, RecommendationLevel } from "./consultantAssignment";
 import type { WorkloadHealth } from "./consultantAssignment";
 
@@ -11,7 +12,8 @@ export type OperationsCenterSectionId =
   | "assignment-queue"
   | "notifications"
   | "introductions"
-  | "follow-up";
+  | "follow-up"
+  | "regional-teams";
 
 export type OperationsCenterMetricId =
   | "applications"
@@ -172,4 +174,5 @@ export type OperationsCenterBundle = {
   notifications: NotificationOperationsBundle;
   introductions: Record<OperationsCenterIntroductionBucket, OperationsCenterIntroductionRow[]>;
   followUps: Record<OperationsCenterFollowUpBucket, OperationsCenterFollowUpRow[]>;
+  regionalTeams: RegionalConsultantTeamsBundle;
 };

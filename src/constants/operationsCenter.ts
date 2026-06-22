@@ -23,7 +23,12 @@ export const OPERATIONS_CENTER_SECTIONS: {
   { id: "assignment-queue", label: "Assignment Queue", hint: "Unassigned journeys and consultant workload." },
   { id: "notifications", label: "Notifications", hint: "Notification Operations Center™ — delivery queues and metrics." },
   { id: "introductions", label: "Introductions", hint: "Introduction Engine™ review and consent pipeline." },
-  { id: "follow-up", label: "Relationship Follow-up", hint: "Active relationship stewardship and escalations." }
+  { id: "follow-up", label: "Relationship Follow-up", hint: "Active relationship stewardship and escalations." },
+  {
+    id: "regional-teams",
+    label: "Regional Teams",
+    hint: "Regional Consultant Teams™ — directors, coverage, and assignments."
+  }
 ];
 
 export const OPERATIONS_CENTER_METRICS: {

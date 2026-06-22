@@ -158,6 +158,13 @@ export function BamSignalInstitutePage() {
           >
             Curriculum
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("bamSignalTrust"))}
+          >
+            Trust
+          </button>
         </div>
       </header>
 

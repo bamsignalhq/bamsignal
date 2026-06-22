@@ -274,6 +274,12 @@ export const LazyBamSignalInstituteAfricanRelationshipCurriculumPage = lazy(() =
   )
 );
 
+export const LazyBamSignalInstituteTrustPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteTrustPage").then((module) => ({
+    default: module.BamSignalInstituteTrustPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

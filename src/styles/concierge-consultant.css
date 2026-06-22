@@ -5640,3 +5640,195 @@
   gap: 6px;
 }
 
+/* Signal Concierge Operations Engine */
+.concierge-operations-page {
+  display: grid;
+  gap: 18px;
+}
+
+.concierge-operations-page__head h3 {
+  margin: 0 0 6px;
+}
+
+.concierge-operations-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.concierge-operations-page__body {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.4fr);
+  gap: 16px;
+}
+
+.concierge-operations-page__list {
+  padding: 16px;
+}
+
+.concierge-operations-page__list h4 {
+  margin: 0 0 12px;
+}
+
+.concierge-operations-page__list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.concierge-operations-page__cards {
+  display: grid;
+  gap: 14px;
+}
+
+.operations-stage-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid rgba(168, 130, 255, 0.24);
+  background: rgba(122, 77, 243, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.operations-stage-badge--primary {
+  border-color: rgba(212, 175, 106, 0.35);
+  background: rgba(212, 175, 106, 0.14);
+  color: #f4e6c8;
+}
+
+.operations-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.operations-summary__grid div {
+  display: grid;
+  gap: 4px;
+}
+
+.operations-summary__grid dt {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.operations-summary__grid dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.operations-health__grid {
+  display: grid;
+  gap: 8px;
+}
+
+.operations-health__badge {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.operations-health__badge.is-active {
+  border-color: rgba(212, 175, 106, 0.35);
+  background: rgba(212, 175, 106, 0.1);
+}
+
+.operations-health__badge strong {
+  font-size: 0.86rem;
+}
+
+.operations-health__badge span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.operations-health__current {
+  margin: 12px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.operations-timeline__pipeline {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.operations-timeline__pipeline-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.45;
+}
+
+.operations-timeline__pipeline-item--reached,
+.operations-timeline__pipeline-item--active {
+  opacity: 1;
+}
+
+.operations-timeline__pipeline-dot,
+.operations-timeline__entry-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(168, 130, 255, 0.45);
+  flex-shrink: 0;
+}
+
+.operations-timeline__pipeline-item--active .operations-timeline__pipeline-dot {
+  background: #d4af6a;
+  box-shadow: 0 0 0 4px rgba(212, 175, 106, 0.18);
+}
+
+.operations-timeline__entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.operations-timeline__entry {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 10px;
+}
+
+.operations-timeline__entry strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.operations-timeline__entry p,
+.operations-timeline__entry time,
+.operations-timeline__actor {
+  display: block;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+@media (max-width: 900px) {
+  .concierge-operations-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-summary__grid {
+    grid-template-columns: 1fr;
+  }
+}
+

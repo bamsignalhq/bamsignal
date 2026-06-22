@@ -1,0 +1,5 @@
+/** Love Through The Years™ architecture preview journey. */
+
+export const LOVE_THROUGH_YEARS_ARCHITECTURE_JOURNEY_ID = "BS-JR-2028-0045";
+
+export const LOVE_THROUGH_YEARS_ARCHITECTURE_JOURNEY_IDS = [LOVE_THROUGH_YEARS_ARCHITECTURE_JOURNEY_ID];

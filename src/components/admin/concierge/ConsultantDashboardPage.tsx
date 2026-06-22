@@ -26,7 +26,7 @@ import { RelationshipFollowUpPage } from "./RelationshipFollowUpPage";
 import { ConsultantDirectoryPage } from "./ConsultantDirectoryPage";
 import { JourneyArchivePage } from "./JourneyArchivePage";
 import { RelationshipLegacyIndexPage } from "./RelationshipLegacyIndexPage";
-import { SuccessStoryConsentAdminPage } from "./SuccessStoryConsentAdminPage";
+import { SuccessStoryPage } from "./SuccessStoryPage";
 import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
 import { useAdminToast } from "../AdminToast";
 
@@ -304,7 +304,7 @@ export function ConsultantDashboardPage() {
         </div>
       </header>
 
-      {view === "stories" ? <SuccessStoryConsentAdminPage /> : null}
+      {view === "stories" ? <SuccessStoryPage /> : null}
 
       {view === "performance" ? <ConsultantPerformancePage /> : null}
 

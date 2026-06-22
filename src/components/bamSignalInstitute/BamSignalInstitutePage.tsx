@@ -165,6 +165,13 @@ export function BamSignalInstitutePage() {
           >
             Trust
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("verifiedProfessionals"))}
+          >
+            Verified
+          </button>
         </div>
       </header>
 

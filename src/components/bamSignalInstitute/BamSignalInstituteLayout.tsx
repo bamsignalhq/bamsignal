@@ -162,6 +162,13 @@ export function BamSignalInstituteLayout({
               >
                 Trust
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("verifiedProfessionals")}
+              >
+                Verified
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

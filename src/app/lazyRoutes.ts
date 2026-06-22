@@ -280,6 +280,14 @@ export const LazyBamSignalInstituteTrustPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteVerifiedProfessionalsPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteVerifiedProfessionalsPage").then(
+    (module) => ({
+      default: module.BamSignalInstituteVerifiedProfessionalsPage
+    })
+  )
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

@@ -44,7 +44,8 @@ export const BAMSIGNAL_INSTITUTE_ROUTES = {
   bamSignalHouse: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/bamsignal-house`,
   houseExperiences: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/house-experiences`,
   greatRoom: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/great-room`,
-  houseLibrary: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/house-library`
+  houseLibrary: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/house-library`,
+  reflectionRoom: `${BAMSIGNAL_INSTITUTE_BASE_PATH}/reflection-room`
 } as const;
 
 export type BamSignalInstituteRoute = keyof typeof BAMSIGNAL_INSTITUTE_ROUTES;

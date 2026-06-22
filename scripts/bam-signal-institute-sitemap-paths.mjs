@@ -41,7 +41,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/bamsignal-house",
   "/institute/house-experiences",
   "/institute/great-room",
-  "/institute/house-library"
+  "/institute/house-library",
+  "/institute/reflection-room"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

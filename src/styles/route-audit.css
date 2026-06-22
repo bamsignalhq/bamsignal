@@ -1,0 +1,194 @@
+.route-audit-page {
+  display: grid;
+  gap: 18px;
+}
+
+.route-audit-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.route-audit-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.route-audit-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 68ch;
+}
+
+.route-audit-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.route-audit-search-field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.84rem;
+}
+
+.route-audit-search-field input,
+.route-audit-search-field select {
+  min-width: 180px;
+}
+
+.route-health-card__head h3,
+.navigation-map-card__head h3,
+.orphan-route-card__head h3,
+.redirect-recommendation-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.route-health-card__head p,
+.navigation-map-card__head p,
+.orphan-route-card__head p,
+.redirect-recommendation-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.route-health-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.route-health-card__chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.route-health-card__chip p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.route-health-card__chip--duplicate {
+  border-color: rgba(255, 200, 120, 0.35);
+}
+
+.route-health-card__chip--deprecated,
+.route-health-card__chip--orphaned {
+  border-color: rgba(255, 140, 140, 0.35);
+}
+
+.route-health-card__chip--needs-redirect {
+  border-color: rgba(120, 200, 255, 0.35);
+}
+
+.route-audit-page__inventory header h3 {
+  margin: 0 0 4px;
+}
+
+.route-audit-page__inventory header p {
+  margin: 0 0 10px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.route-audit-page__inventory-table,
+.navigation-map-card__table {
+  display: grid;
+  gap: 6px;
+}
+
+.route-audit-page__inventory-row,
+.navigation-map-card__row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 0.9fr 1fr;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.navigation-map-card__row {
+  grid-template-columns: 1fr 1.2fr 1.4fr 0.7fr;
+}
+
+.route-audit-page__inventory-row--head,
+.navigation-map-card__row--head {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.76rem;
+}
+
+.route-audit-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 14px;
+}
+
+.route-audit-page__column {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.orphan-route-card__list,
+.redirect-recommendation-card__list,
+.route-audit-page__simplify ul {
+  margin: 12px 0 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.orphan-route-card__item-head,
+.redirect-recommendation-card__paths {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.orphan-route-card__item-head span,
+.redirect-recommendation-card__priority {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.redirect-recommendation-card__priority--high {
+  color: rgba(255, 160, 120, 0.95);
+}
+
+.route-audit-page__simplify-paths {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.route-audit-page__foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 4px;
+}
+
+.orphan-route-card__empty,
+.redirect-recommendation-card__empty {
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 900px) {
+  .route-audit-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .route-audit-page__inventory-row,
+  .navigation-map-card__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -34,7 +34,7 @@ import {
 } from "../utils/cityAnalytics";
 import { getLaunchLeads } from "../utils/launchLeads";
 import { readJson } from "../utils/storage";
-import { hardPathForTab, parseConciergeAdminViewFromPath, parseHardTabFromPath } from "../constants/hardRoutes";
+import { hardPathForTab, parseAuditAdminViewFromPath, parseConciergeAdminViewFromPath, parseHardTabFromPath } from "../constants/hardRoutes";
 import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
 import { DEMO_USER } from "../constants/demoAccounts";
 import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
@@ -91,6 +91,7 @@ import { OperationsCenterPage } from "../components/admin/concierge/OperationsCe
 import { TalentRecruitingPage } from "../components/admin/talent/TalentRecruitingPage";
 import { SupportCenterAdminPage } from "../components/admin/support/SupportCenterAdminPage";
 import { AuditComplianceCenterPage } from "../components/admin/audit/AuditComplianceCenterPage";
+import { RouteAuditPage } from "../components/admin/routeAudit/RouteAuditPage";
 import { DocumentCenterPage } from "../components/admin/documents/DocumentCenterPage";
 import { SafetyCenterPage } from "../components/admin/safety/SafetyCenterPage";
 import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
@@ -124,6 +125,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const { ensureConsent } = useAdminConsent();
   const [tab, setTab] = useState<HardTab>(() => restoreHardRouteOnLoad());
   const [conciergeView, setConciergeView] = useState(() => parseConciergeAdminViewFromPath());
+  const [auditView, setAuditView] = useState(() => parseAuditAdminViewFromPath());
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [dockOpen, setDockOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
@@ -319,6 +321,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       const fromUrl = parseHardTabFromPath();
       if (fromUrl) setTab(fromUrl);
       setConciergeView(parseConciergeAdminViewFromPath());
+      setAuditView(parseAuditAdminViewFromPath());
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -2054,7 +2057,8 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "concierge" && conciergeView === "dashboard" ? <ConsultantDashboardPage /> : null}
       {tab === "talent" ? <TalentRecruitingPage /> : null}
       {tab === "support" ? <SupportCenterAdminPage /> : null}
-      {tab === "audit" ? <AuditComplianceCenterPage /> : null}
+      {tab === "audit" && auditView === "routes" ? <RouteAuditPage /> : null}
+      {tab === "audit" && auditView === "compliance" ? <AuditComplianceCenterPage /> : null}
       {tab === "documents" ? <DocumentCenterPage /> : null}
       {tab === "safety" ? <SafetyCenterPage /> : null}
       {tab === "academy" ? <ConsultantAcademyPage /> : null}

@@ -3,6 +3,8 @@ import {
   AUDIT_CENTER_ADMIN_BRAND,
   AUDIT_CENTER_ADMIN_PATH
 } from "../../../constants/auditCenterAdmin";
+import { ROUTE_AUDIT_ADMIN_PATH } from "../../../constants/routeAudit";
+import { navigateToPath } from "../../../constants/routes";
 import type { AuditFilterState } from "../../../types/auditCenter";
 import { buildAuditComplianceBundle } from "../../../utils/auditCenterEngine";
 import { emptyAuditFilters } from "../../../utils/auditCenterLogic";
@@ -70,6 +72,16 @@ export function AuditComplianceCenterPage() {
 
       <footer className="audit-center-page__foot">
         <p>Admin path: {AUDIT_CENTER_ADMIN_PATH}</p>
+        <p>
+          Route audit:{" "}
+          <button
+            type="button"
+            className="concierge-consultant-btn"
+            onClick={() => navigateToPath(ROUTE_AUDIT_ADMIN_PATH)}
+          >
+            {ROUTE_AUDIT_ADMIN_PATH}
+          </button>
+        </p>
         <p>Active filters: {bundle.activeFilters.length ? bundle.activeFilters.join(", ") : "none"}</p>
       </footer>
     </div>

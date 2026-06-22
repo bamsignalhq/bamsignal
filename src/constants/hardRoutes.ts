@@ -1,5 +1,7 @@
 import type { HardTab } from "../components/admin/adminConsoleNav";
 import { normalizePath } from "./routes";
+import { AUDIT_CENTER_ADMIN_PATH } from "./auditCenterAdmin";
+import { ROUTE_AUDIT_ADMIN_PATH } from "./routeAudit";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
   OPERATIONS_CENTER_PATH
@@ -9,6 +11,7 @@ import {
 } from "./journeyIntelligence";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
+export type AuditAdminView = "compliance" | "routes";
 
 const TAB_SLUGS: Record<HardTab, string> = {
   command: "command",
@@ -57,6 +60,9 @@ export function parseHardTabFromPath(pathname = window.location.pathname): HardT
   ) {
     return "concierge";
   }
+  if (path === AUDIT_CENTER_ADMIN_PATH || path.startsWith(`${AUDIT_CENTER_ADMIN_PATH}/`)) {
+    return "audit";
+  }
 
   const match = path.match(/^\/hard\/([^/]+)$/);
   if (!match) return null;
@@ -80,6 +86,19 @@ export function hardPathForConciergeView(view: ConciergeAdminView): string {
   if (view === "operations-center") return OPERATIONS_CENTER_PATH;
   if (view === "journey-intelligence") return JOURNEY_INTELLIGENCE_PATH;
   return CONCIERGE_ADMIN_DASHBOARD_PATH;
+}
+
+export function parseAuditAdminViewFromPath(pathname = window.location.pathname): AuditAdminView {
+  const path = normalizePath(pathname);
+  if (path === ROUTE_AUDIT_ADMIN_PATH || path.startsWith(`${ROUTE_AUDIT_ADMIN_PATH}/`)) {
+    return "routes";
+  }
+  return "compliance";
+}
+
+export function hardPathForAuditView(view: AuditAdminView): string {
+  if (view === "routes") return ROUTE_AUDIT_ADMIN_PATH;
+  return AUDIT_CENTER_ADMIN_PATH;
 }
 
 export function isHardHubPath(pathname = window.location.pathname): boolean {

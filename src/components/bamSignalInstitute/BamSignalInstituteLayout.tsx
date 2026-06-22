@@ -92,6 +92,13 @@ export function BamSignalInstituteLayout({
               >
                 Hall of Legacy
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("africanRelationshipArchive")}
+              >
+                African Archive
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

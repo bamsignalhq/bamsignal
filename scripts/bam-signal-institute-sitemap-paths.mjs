@@ -9,7 +9,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/research-partnerships",
   "/institute/relationship-index",
   "/institute/bamsignal-observatory",
-  "/institute/hall-of-legacy"
+  "/institute/hall-of-legacy",
+  "/institute/african-relationship-archive"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

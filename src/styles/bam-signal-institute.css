@@ -1579,3 +1579,176 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* African Relationship Archive™ */
+.ara-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ara-page__hero {
+  padding: 28px 24px;
+}
+
+.ara-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.ara-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.ara-page__prepared,
+.ara-page__future {
+  padding: 22px 24px;
+}
+
+.ara-page__prepared h2,
+.ara-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.ara-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.ara-page__prepared-list,
+.ara-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.ara-page__prepared-list li,
+.ara-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.ara-page__prepared-list li span,
+.ara-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.ara-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.ara-page__grid--regions {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.ara-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.ara-category-card,
+.ara-culture-card,
+.ara-tradition-card,
+.ara-diaspora-card,
+.ara-faith-card {
+  padding: 18px 20px;
+}
+
+.ara-category-card__head,
+.ara-culture-card__head,
+.ara-tradition-card__head,
+.ara-diaspora-card__head,
+.ara-faith-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ara-category-card__head h3,
+.ara-culture-card__head h3,
+.ara-tradition-card__head h3,
+.ara-diaspora-card__head h3,
+.ara-faith-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ara-category-card__badge,
+.ara-culture-card__badge,
+.ara-tradition-card__badge,
+.ara-diaspora-card__badge,
+.ara-faith-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.ara-category-card__labels,
+.ara-culture-card__labels,
+.ara-tradition-card__labels,
+.ara-diaspora-card__labels,
+.ara-faith-card__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.ara-culture-card__meta,
+.ara-tradition-card__meta,
+.ara-diaspora-card__meta,
+.ara-faith-card__meta,
+.ara-category-card__description {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+  line-height: 1.45;
+}
+
+.ara-culture-card__summary,
+.ara-tradition-card__summary,
+.ara-diaspora-card__summary,
+.ara-faith-card__summary {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.ara-category-card__status,
+.ara-culture-card__status,
+.ara-tradition-card__status,
+.ara-diaspora-card__status,
+.ara-faith-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

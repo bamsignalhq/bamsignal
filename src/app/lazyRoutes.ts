@@ -206,6 +206,14 @@ export const LazyBamSignalInstituteHallOfLegacyPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteAfricanRelationshipArchivePage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteAfricanRelationshipArchivePage").then(
+    (module) => ({
+      default: module.BamSignalInstituteAfricanRelationshipArchivePage
+    })
+  )
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

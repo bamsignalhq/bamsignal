@@ -26,7 +26,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/family-advisors",
   "/institute/faith-network",
   "/institute/diaspora-services",
-  "/institute/wedding-network"
+  "/institute/wedding-network",
+  "/institute/life-partners"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

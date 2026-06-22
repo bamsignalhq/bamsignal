@@ -320,6 +320,12 @@ export const LazyBamSignalInstituteWeddingNetworkPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteLifePartnersPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteLifePartnersPage").then((module) => ({
+    default: module.BamSignalInstituteLifePartnersPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

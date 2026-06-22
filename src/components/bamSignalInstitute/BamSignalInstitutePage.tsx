@@ -207,6 +207,13 @@ export function BamSignalInstitutePage() {
           >
             Wedding
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("lifePartners"))}
+          >
+            Life Partners
+          </button>
         </div>
       </header>
 

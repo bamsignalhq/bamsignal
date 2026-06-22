@@ -33,6 +33,7 @@ import {
   LazySignalConciergeLandingPage,
   LazySignalConciergePrivacyPage,
   LazySignalConciergeStatusPage,
+  LazyBamSignalInstituteRelationshipIndexPage,
   LazyBamSignalInstituteResearchPartnershipsPage,
   LazyBamSignalInstituteInsightsPage,
   LazyBamSignalInstituteRelationshipLabPage,
@@ -2155,6 +2156,8 @@ export function App() {
           <LazyBamSignalInstituteInsightsPage {...instituteShellProps} />
         ) : bamSignalInstituteRoute === "researchPartnerships" ? (
           <LazyBamSignalInstituteResearchPartnershipsPage {...instituteShellProps} />
+        ) : bamSignalInstituteRoute === "relationshipIndex" ? (
+          <LazyBamSignalInstituteRelationshipIndexPage {...instituteShellProps} />
         ) : (
           <LazyBamSignalInstituteLandingPage {...instituteShellProps} />
         )}

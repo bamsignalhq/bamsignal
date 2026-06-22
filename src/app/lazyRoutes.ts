@@ -408,6 +408,12 @@ export const LazyBamSignalInstituteGreatRoomPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteHouseLibraryPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteHouseLibraryPage").then((module) => ({
+    default: module.BamSignalInstituteHouseLibraryPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

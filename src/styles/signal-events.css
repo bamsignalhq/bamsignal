@@ -807,3 +807,285 @@
   color: rgba(212, 175, 106, 0.82);
   line-height: 1.45;
 }
+
+/* Corridor Stories™ */
+.cs-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cs-page__hero {
+  padding: 28px 24px;
+}
+
+.cs-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.cs-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.cs-page__categories {
+  padding: 22px 24px;
+}
+
+.cs-page__categories h2 {
+  margin: 0 0 6px;
+}
+
+.cs-page__categories > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.cs-page__category-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.cs-page__category-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.14);
+}
+
+.cs-page__category-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.cs-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.cs-page__future {
+  padding: 22px 24px;
+}
+
+.cs-page__future h2 {
+  margin: 0 0 12px;
+}
+
+.cs-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.cs-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.cs-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.cs-consent-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.cs-consent-badge--private {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cs-consent-badge--consent {
+  background: rgba(212, 175, 106, 0.12);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(212, 175, 106, 0.28);
+}
+
+.cs-consent-badge--granted {
+  background: rgba(212, 175, 106, 0.2);
+}
+
+.cs-category-card {
+  padding: 22px 24px;
+}
+
+.cs-category-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.cs-category-card__head p {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.cs-category-card__consent {
+  margin: 12px 0 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.cs-category-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.cs-category-card__list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.12);
+}
+
+.cs-category-card__list li p {
+  margin: 4px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.cs-story-card {
+  padding: 20px 22px;
+}
+
+.cs-story-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cs-story-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.cs-story-card__route {
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.cs-story-card__labels {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.cs-story-card__body {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-left: 3px solid rgba(212, 175, 106, 0.45);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.cs-story-card__private {
+  margin: 0 0 12px;
+  font-size: 0.84rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.cs-story-card time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.cs-story-timeline {
+  padding: 22px 24px;
+}
+
+.cs-story-timeline__head h3 {
+  margin: 0 0 4px;
+}
+
+.cs-story-timeline__head p {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.cs-story-timeline__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 14px;
+}
+
+.cs-story-timeline__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.cs-story-timeline__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.85);
+  box-shadow: 0 0 0 3px rgba(212, 175, 106, 0.18);
+}
+
+.cs-story-timeline__note {
+  margin: 4px 0 6px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.cs-story-timeline__item time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.cs-story-timeline__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}

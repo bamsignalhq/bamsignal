@@ -57,6 +57,13 @@ export function SignalEventsPage() {
           >
             Community Journey
           </button>
+          <button
+            type="button"
+            className="se-hub-page__btn"
+            onClick={() => navigateToPath(signalEventsPathForHub("corridorStories"))}
+          >
+            Corridor Stories
+          </button>
         </div>
       </header>
 

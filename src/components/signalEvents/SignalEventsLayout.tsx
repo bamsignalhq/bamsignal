@@ -56,6 +56,13 @@ export function SignalEventsLayout({
               >
                 Community Journey
               </button>
+              <button
+                type="button"
+                className="signal-events-header__link"
+                onClick={() => go("corridorStories")}
+              >
+                Corridor Stories
+              </button>
             </nav>
             <div className="signal-events-header__actions">
               <button

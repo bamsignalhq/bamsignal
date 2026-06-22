@@ -102,6 +102,12 @@ export const LazySignalEventsDiasporaCorridorsPage = lazy(() =>
   }))
 );
 
+export const LazySignalEventsCorridorStoriesPage = lazy(() =>
+  import("../pages/signal-events/SignalEventsCorridorStoriesPage").then((module) => ({
+    default: module.SignalEventsCorridorStoriesPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

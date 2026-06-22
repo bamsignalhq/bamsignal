@@ -3126,3 +3126,194 @@
   }
 }
 
+/* Relationship Support™ — architecture only */
+.relationship-support {
+  display: grid;
+  gap: 16px;
+}
+
+.relationship-support-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.relationship-support-card__labels {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.relationship-support-card__mapped {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 175, 106, 0.28);
+  background: rgba(212, 175, 106, 0.06);
+}
+
+.relationship-support-card__mapped-label {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.52);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.relationship-support-card__roles h4,
+.relationship-support-card__future h4 {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+}
+
+.relationship-support-card__role-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.relationship-support-card__role-list li {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.relationship-support-card__role-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.relationship-support-card__focus {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.relationship-support-card__role-list p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.relationship-support-card__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.relationship-support-card__future li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.relationship-support-card__future strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.relationship-support-card__future span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.relationship-support-card__reserved {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.45;
+}
+
+.relationship-advisor-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 130, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.relationship-advisor-badge--primary {
+  border-color: rgba(212, 175, 106, 0.42);
+  background: rgba(212, 175, 106, 0.12);
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.relationship-support-timeline {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.relationship-support-timeline__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 4px;
+  display: grid;
+  gap: 0;
+}
+
+.relationship-support-timeline__item {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 12px;
+  padding-bottom: 14px;
+  position: relative;
+  opacity: 0.45;
+}
+
+.relationship-support-timeline__item--active {
+  opacity: 1;
+}
+
+.relationship-support-timeline__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, rgba(212, 175, 106, 0.35), rgba(168, 130, 255, 0.08));
+}
+
+.relationship-support-timeline__dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(168, 130, 255, 0.5);
+}
+
+.relationship-support-timeline__item--active .relationship-support-timeline__dot {
+  background: rgba(212, 175, 106, 0.95);
+}
+
+.relationship-support-timeline__label {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.relationship-support-timeline__reserved,
+.relationship-support-timeline__ready {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.relationship-support-timeline__ready {
+  color: rgba(212, 175, 106, 0.85);
+}
+

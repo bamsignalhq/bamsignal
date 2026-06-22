@@ -326,6 +326,13 @@ export function BamSignalInstitutePage() {
           >
             Family Table
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("bamSignalStudio"))}
+          >
+            Studio
+          </button>
         </div>
       </header>
 

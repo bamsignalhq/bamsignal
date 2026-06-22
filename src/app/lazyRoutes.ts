@@ -66,6 +66,30 @@ export const LazyShareYourStoryPage = lazy(() =>
   }))
 );
 
+export const LazySignalEventsHubPage = lazy(() =>
+  import("../pages/signal-events/SignalEventsHubPage").then((module) => ({
+    default: module.SignalEventsHubPage
+  }))
+);
+
+export const LazySignalEventsCityPage = lazy(() =>
+  import("../pages/signal-events/SignalEventsCityPage").then((module) => ({
+    default: module.SignalEventsCityPage
+  }))
+);
+
+export const LazySignalEventsCommunitiesPage = lazy(() =>
+  import("../pages/signal-events/SignalEventsCommunitiesPage").then((module) => ({
+    default: module.SignalEventsCommunitiesPage
+  }))
+);
+
+export const LazySignalEventsDiasporaPage = lazy(() =>
+  import("../pages/signal-events/SignalEventsDiasporaPage").then((module) => ({
+    default: module.SignalEventsDiasporaPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

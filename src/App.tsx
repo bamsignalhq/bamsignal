@@ -33,6 +33,10 @@ import {
   LazySignalConciergeLandingPage,
   LazySignalConciergePrivacyPage,
   LazySignalConciergeStatusPage,
+  LazySignalEventsCityPage,
+  LazySignalEventsCommunitiesPage,
+  LazySignalEventsDiasporaPage,
+  LazySignalEventsHubPage,
   LazyVisitorsPage
 } from "./app/lazyRoutes";
 import { PaymentRecoveryBanner, PaymentSuccessToast } from "./components/PaymentRecoveryBanner";
@@ -143,6 +147,12 @@ import {
   SIGNAL_CONCIERGE_ROUTES,
   type SignalConciergeRoute
 } from "./constants/signalConciergeRoutes";
+import {
+  getSignalEventsRoute,
+  isUnknownSignalEventsSubroute,
+  SIGNAL_EVENTS_ROUTES,
+  type SignalEventsRoute
+} from "./constants/signalEventsRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail, resolveMemberIdentity } from "./utils/authIdentity";
 import { clearMemberSessionCaches } from "./utils/authSession";
@@ -223,6 +233,9 @@ export function App() {
   const [nigeriaRoute, setNigeriaRoute] = useState<NigeriaRoute | null>(() => getNigeriaRoute());
   const [signalConciergeRoute, setSignalConciergeRoute] = useState<SignalConciergeRoute | null>(() =>
     getSignalConciergeRoute()
+  );
+  const [signalEventsRoute, setSignalEventsRoute] = useState<SignalEventsRoute | null>(() =>
+    getSignalEventsRoute()
   );
   const [authPath, setAuthPath] = useState<AuthPath | null>(() => getAuthPath());
   const [blogSlug, setBlogSlug] = useState<string | null>(() => getBlogSlug());
@@ -400,6 +413,7 @@ export function App() {
       setSeoRoute(getSeoRoute());
       setNigeriaRoute(getNigeriaRoute());
       setSignalConciergeRoute(getSignalConciergeRoute());
+      setSignalEventsRoute(getSignalEventsRoute());
       setAuthPath(getAuthPath());
       setBlogSlug(getBlogSlug());
       setMomentSlug(getMomentSlug());
@@ -426,6 +440,11 @@ export function App() {
   useLayoutEffect(() => {
     if (!isUnknownSignalConciergeSubroute(memberPathname)) return;
     navigateToPath(SIGNAL_CONCIERGE_ROUTES.landing, true);
+  }, [memberPathname]);
+
+  useLayoutEffect(() => {
+    if (!isUnknownSignalEventsSubroute(memberPathname)) return;
+    navigateToPath(SIGNAL_EVENTS_ROUTES.landing, true);
   }, [memberPathname]);
 
   useLayoutEffect(() => {
@@ -2002,6 +2021,34 @@ export function App() {
           <LazySignalConciergePrivacyPage {...signalConciergeShellProps} />
         ) : (
           <LazySignalConciergeFaqPage {...signalConciergeShellProps} />
+        )}
+      </Suspense>
+    );
+  }
+
+  if (signalEventsRoute) {
+    const signalEventsShellProps = {
+      theme,
+      onToggleTheme: toggleTheme,
+      onLogoClick: goHome,
+      onLogin: isAuthed ? undefined : () => openAuth("login")
+    };
+
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading Signal Events…" />}>
+        {signalEventsRoute.kind === "hub" && signalEventsRoute.route === "landing" ? (
+          <LazySignalEventsHubPage {...signalEventsShellProps} />
+        ) : signalEventsRoute.kind === "hub" && signalEventsRoute.route === "communities" ? (
+          <LazySignalEventsCommunitiesPage {...signalEventsShellProps} />
+        ) : signalEventsRoute.kind === "hub" && signalEventsRoute.route === "diaspora" ? (
+          <LazySignalEventsDiasporaPage {...signalEventsShellProps} />
+        ) : signalEventsRoute.kind === "city" ? (
+          <LazySignalEventsCityPage
+            {...signalEventsShellProps}
+            citySlug={signalEventsRoute.citySlug}
+          />
+        ) : (
+          <LazySignalEventsHubPage {...signalEventsShellProps} />
         )}
       </Suspense>
     );

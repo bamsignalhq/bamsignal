@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LEGAL_STATIC_PATHS, ROBOTS_TXT, SEO_DETAIL_PATHS, SEO_HUB_PATHS } from "./seo-sitemap-data.mjs";
 import { getNigeriaIndexablePaths } from "./nigeria-sitemap-paths.mjs";
+import { getSignalEventsIndexablePaths } from "./signal-events-sitemap-paths.mjs";
 import { sitemapPriorityFor, sitemapChangefreqFor } from "./sitemap-priority.mjs";
 
 const SITE = "https://bamsignal.com";
@@ -23,7 +24,8 @@ const blogSlugs = [
 ];
 
 const nigeriaPaths = getNigeriaIndexablePaths();
-const staticPaths = ["", "/blog", "/signal-concierge", ...LEGAL_STATIC_PATHS, ...SEO_HUB_PATHS, ...SEO_DETAIL_PATHS, ...nigeriaPaths];
+const signalEventsPaths = getSignalEventsIndexablePaths();
+const staticPaths = ["", "/blog", "/signal-concierge", ...signalEventsPaths, ...LEGAL_STATIC_PATHS, ...SEO_HUB_PATHS, ...SEO_DETAIL_PATHS, ...nigeriaPaths];
 const lastmod = new Date().toISOString().slice(0, 10);
 const urls = [...staticPaths, ...blogSlugs];
 

@@ -1,0 +1,322 @@
+.platform-root--signal-events {
+  --se-bg: #07050f;
+  --se-bg-elevated: rgba(18, 12, 36, 0.78);
+  --se-purple: #2a184a;
+  --se-purple-soft: rgba(122, 77, 243, 0.16);
+  --se-gold: #d4af6a;
+  --se-gold-soft: rgba(212, 175, 106, 0.18);
+  --se-text: rgba(255, 255, 255, 0.94);
+  --se-muted: rgba(255, 255, 255, 0.68);
+  --se-border: rgba(212, 175, 106, 0.22);
+  --se-radius: 20px;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(122, 77, 243, 0.2), transparent 55%),
+    radial-gradient(900px 500px at 90% 0%, rgba(212, 175, 106, 0.1), transparent 50%),
+    linear-gradient(180deg, #07050f 0%, #0b1024 48%, #07050f 100%);
+  color: var(--se-text);
+  min-height: 100vh;
+}
+
+.signal-events-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.signal-events-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(16px);
+  background: rgba(7, 5, 15, 0.82);
+  border-bottom: 1px solid rgba(168, 130, 255, 0.14);
+}
+
+.signal-events-header__inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.signal-events-header__brand,
+.signal-events-header__link,
+.signal-events-header__icon {
+  border: 0;
+  background: transparent;
+  color: var(--se-muted);
+  cursor: pointer;
+}
+
+.signal-events-header__brand {
+  color: var(--se-text);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.signal-events-header__nav,
+.signal-events-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.signal-events-header__link {
+  font-size: 0.84rem;
+}
+
+.signal-events-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 18px 64px;
+}
+
+.signal-events-glass {
+  background: var(--se-bg-elevated);
+  border: 1px solid var(--se-border);
+  border-radius: var(--se-radius);
+  box-shadow: 0 24px 60px rgba(4, 2, 12, 0.35);
+}
+
+.se-hub-page,
+.se-city-page,
+.se-communities-page,
+.se-diaspora-page {
+  display: grid;
+  gap: 24px;
+}
+
+.se-hub-page__hero,
+.se-city-page__hero {
+  padding: 28px 24px;
+}
+
+.se-hub-page__eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: var(--se-gold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.se-hub-page__hero h1,
+.se-city-page__hero h1,
+.se-communities-page__head h1,
+.se-diaspora-page__head h1 {
+  margin: 0 0 10px;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+}
+
+.se-hub-page__hero p,
+.se-city-page__hero p {
+  margin: 0;
+  color: var(--se-muted);
+  line-height: 1.5;
+}
+
+.se-hub-page__labels {
+  margin-top: 10px !important;
+  color: var(--se-gold) !important;
+  font-size: 0.88rem;
+}
+
+.se-hub-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.se-hub-page__btn {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--se-text);
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+
+.se-hub-page__btn--primary {
+  background: linear-gradient(135deg, rgba(122, 77, 243, 0.35), rgba(212, 175, 106, 0.22));
+  border-color: rgba(212, 175, 106, 0.35);
+}
+
+.se-section-head h2 {
+  margin: 0 0 6px;
+}
+
+.se-section-head p {
+  margin: 0;
+  color: var(--se-muted);
+}
+
+.se-hub-page__grid {
+  display: grid;
+  gap: 14px;
+}
+
+.se-hub-page__grid--cities {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.se-hub-page__grid--categories {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.se-event-category-card,
+.se-event-card,
+.se-city-community-card,
+.se-upcoming-events-card {
+  padding: 16px;
+}
+
+.se-event-category-card h3,
+.se-event-card h3,
+.se-city-community-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.se-event-category-card p,
+.se-event-card__note,
+.se-city-community-card__region,
+.se-city-community-card__diaspora,
+.se-city-community-card__upcoming {
+  margin: 0;
+  color: var(--se-muted);
+  line-height: 1.45;
+  font-size: 0.86rem;
+}
+
+.se-event-card__head,
+.se-city-community-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.se-event-card__type {
+  font-size: 0.76rem;
+  color: var(--se-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.se-event-card__status,
+.se-city-status {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.se-city-status--active-community,
+.se-city-status--premium-community,
+.se-city-status--legacy-community {
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.se-event-card__city {
+  margin: 0 0 8px;
+  font-size: 0.84rem;
+  color: var(--se-muted);
+}
+
+.se-event-card time,
+.se-upcoming-events-card__empty {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.se-upcoming-events-card__head {
+  margin-bottom: 14px;
+}
+
+.se-upcoming-events-card__head h2 {
+  margin: 0 0 6px;
+}
+
+.se-upcoming-events-card__grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.se-city-community-card__cta {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 175, 106, 0.28);
+  background: rgba(212, 175, 106, 0.08);
+  color: var(--se-text);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.se-city-page__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: 0.84rem;
+  color: var(--se-muted);
+}
+
+.se-city-page__missing {
+  padding: 24px;
+}
+
+.se-city-page__reserved,
+.se-hub-page__reserved {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.45;
+}
+
+.se-hub-page__future {
+  padding: 20px;
+}
+
+.se-hub-page__future h2 {
+  margin: 0 0 12px;
+}
+
+.se-hub-page__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.se-hub-page__future li {
+  display: grid;
+  gap: 2px;
+  font-size: 0.84rem;
+}
+
+.se-hub-page__future li span {
+  color: var(--se-muted);
+}
+
+.se-communities-page__region h2,
+.se-diaspora-page__head h1 {
+  margin: 0 0 12px;
+}
+
+@media (max-width: 720px) {
+  .signal-events-header__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

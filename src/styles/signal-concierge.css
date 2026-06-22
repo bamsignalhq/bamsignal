@@ -2167,4 +2167,395 @@ html[data-theme="light"] .platform-root--signal-concierge .signal-concierge-btn-
   }
 }
 
+/* Legacy Families™ — milestone-only family metadata */
+.legacy-family-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(212, 175, 106, 0.28);
+  background: linear-gradient(165deg, rgba(212, 175, 106, 0.06), rgba(168, 130, 255, 0.04));
+}
+
+.legacy-family-card__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 106, 0.9);
+  font-weight: 600;
+}
+
+.legacy-family-card__privacy {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.45;
+}
+
+.legacy-family-card__journey-id {
+  display: grid;
+  gap: 4px;
+}
+
+.legacy-family-card__journey-id span {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.legacy-family-card__journey-id strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.95rem;
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.legacy-family-card__milestones {
+  display: grid;
+  gap: 8px;
+}
+
+.legacy-family-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.legacy-family-card__label {
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.legacy-family-card__value {
+  font-size: 1.05rem;
+  color: rgba(212, 175, 106, 0.92);
+}
+
+.legacy-family-card__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.legacy-family-card__admin {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.legacy-family-card__admin h4 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.legacy-family-card__admin > p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.legacy-family-card__admin-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.legacy-family-card__admin label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.legacy-family-card__admin input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  font: inherit;
+}
+
+.legacy-status-badge--legacy-family {
+  border-color: rgba(168, 130, 255, 0.35);
+  background: rgba(168, 130, 255, 0.1);
+}
+
+/* Member Dashboard 2.0™ */
+.member-dashboard {
+  display: grid;
+  gap: 18px;
+}
+
+.member-dashboard__header {
+  border-radius: var(--sc-radius);
+  border: 1px solid var(--sc-border);
+}
+
+.member-dashboard__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.member-dashboard__actions {
+  margin-top: 4px;
+}
+
+.member-dashboard-card {
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+  border-radius: var(--sc-radius);
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(13, 21, 48, 0.42);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--sc-shadow);
+}
+
+.member-dashboard-card__head h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.member-dashboard-card__head p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--sc-muted);
+}
+
+.journey-overview-card__brand {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sc-gold);
+}
+
+.journey-overview-card__head h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.journey-overview-card__narrative {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: var(--sc-muted);
+  line-height: 1.5;
+}
+
+.journey-overview-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.journey-overview-card__grid dt {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.journey-overview-card__grid dd {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.journey-overview-card__journey-id dd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  color: var(--sc-gold);
+}
+
+.journey-overview-card__stage,
+.journey-overview-card__health {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.journey-overview-card__stage {
+  color: #a882ff;
+  border-color: rgba(168, 130, 255, 0.35);
+  background: rgba(168, 130, 255, 0.1);
+}
+
+.journey-overview-card__health--steady {
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.journey-overview-card__health--active {
+  color: #d4af6a;
+  border-color: rgba(212, 175, 106, 0.35);
+  background: rgba(212, 175, 106, 0.1);
+}
+
+.journey-overview-card__health--celebration {
+  color: #8fd4a8;
+  border-color: rgba(143, 212, 168, 0.35);
+  background: rgba(143, 212, 168, 0.1);
+}
+
+.journey-overview-card__health--paused {
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.assigned-consultant-card__name {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--sc-gold);
+}
+
+.assigned-consultant-card__pending {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--sc-muted);
+}
+
+.assigned-consultant-card__message,
+.upcoming-meeting-card__detail,
+.introduction-summary-card__detail,
+.relationship-milestone-summary-card__detail {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--sc-muted);
+  line-height: 1.5;
+}
+
+.upcoming-meeting-card__label,
+.introduction-summary-card__count,
+.relationship-milestone-summary-card__count {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.upcoming-meeting-card__time {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--sc-gold);
+}
+
+.upcoming-meeting-card__channel {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.upcoming-meeting-card__empty,
+.member-notification-card__empty,
+.member-timeline-card__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--sc-muted);
+}
+
+.recent-meetings-card__list,
+.member-notification-card__list,
+.member-timeline-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.recent-meetings-card__list li,
+.member-notification-card__list li {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.recent-meetings-card__list strong,
+.member-notification-card__list strong {
+  font-size: 0.86rem;
+}
+
+.recent-meetings-card__list span,
+.member-notification-card__list span {
+  font-size: 0.8rem;
+  color: var(--sc-muted);
+}
+
+.recent-meetings-card__list time,
+.member-notification-card__list time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.member-timeline-card__list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+}
+
+.member-timeline-card__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--sc-gold);
+  box-shadow: 0 0 0 4px rgba(212, 175, 106, 0.15);
+}
+
+.member-timeline-card__list strong {
+  display: block;
+  font-size: 0.86rem;
+}
+
+.member-timeline-card__list span {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--sc-muted);
+  margin-top: 2px;
+}
+
+.member-timeline-card__list time {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.relationship-milestone-summary-card__latest {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--sc-gold);
+}
+
+.relationship-milestone-summary-card__date {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 720px) {
+  .member-dashboard__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 

@@ -1,9 +1,16 @@
-import {
-  SIGNAL_CONCIERGE_STATUS_LABELS,
-  SIGNAL_CONCIERGE_TIERS
-} from "../../constants/signalConcierge";
-import { JourneyIdCard } from "./JourneyIdCard";
+import { useMemo } from "react";
+import { MEMBER_DASHBOARD_BRAND } from "../../constants/memberDashboard";
+import { getConciergeMember } from "../../utils/conciergeConsultantStore";
+import { buildMemberDashboardBundle } from "../../utils/memberDashboardLogic";
 import { readSignalConciergeApplication } from "../../utils/signalConciergeStorage";
+import { AssignedConsultantCard } from "./AssignedConsultantCard";
+import { IntroductionSummaryCard } from "./IntroductionSummaryCard";
+import { JourneyHeader } from "./JourneyHeader";
+import { JourneyOverviewCard } from "./JourneyOverviewCard";
+import { MemberNotificationCard } from "./MemberNotificationCard";
+import { MemberTimelineCard } from "./MemberTimelineCard";
+import { RelationshipMilestoneSummaryCard } from "./RelationshipMilestoneSummaryCard";
+import { UpcomingMeetingCard } from "./UpcomingMeetingCard";
 
 type SignalConciergeStatusPageProps = {
   onApply: () => void;
@@ -16,10 +23,19 @@ export function SignalConciergeStatusPage({
 }: SignalConciergeStatusPageProps) {
   const application = readSignalConciergeApplication();
 
-  if (!application) {
+  const bundle = useMemo(() => {
+    if (!application) return null;
+    const member = getConciergeMember(application.id);
+    return buildMemberDashboardBundle(application, member);
+  }, [application]);
+
+  if (!application || !bundle) {
     return (
-      <section className="signal-concierge-status signal-concierge-glass">
-        <h1 className="signal-concierge-section__title">Application Status</h1>
+      <section className="signal-concierge-status signal-concierge-glass sc-reveal">
+        <JourneyHeader
+          title="Your journey"
+          subtitle="Begin your private Signal Concierge journey."
+        />
         <p className="signal-concierge-section__sub">
           You have not started a Signal Concierge application yet.
         </p>
@@ -39,32 +55,45 @@ export function SignalConciergeStatusPage({
     );
   }
 
-  const tier = SIGNAL_CONCIERGE_TIERS.find((item) => item.id === application.preferredTier);
-
   return (
-    <section className="signal-concierge-status signal-concierge-glass">
-      <h1 className="signal-concierge-section__title">Application Status</h1>
-      {application.journeyId ? <JourneyIdCard journeyId={application.journeyId} /> : null}
-      <span className="signal-concierge-status__badge">
-        {SIGNAL_CONCIERGE_STATUS_LABELS[application.status]}
-      </span>
-      <p className="signal-concierge-section__sub">
-        Submitted {new Date(application.updatedAt).toLocaleString()}
-      </p>
-      {tier ? (
-        <p className="signal-concierge-section__sub">
-          Preferred tier: {tier.name} ({tier.tagline})
-        </p>
-      ) : null}
-      {application.consultationPreference ? (
-        <p className="signal-concierge-section__sub">
-          Consultation preference: {application.consultationPreference.replace("-", " ")}
-        </p>
-      ) : null}
-      <p className="signal-concierge-section__sub">
-        Your profile remains private and outside public BamSignal surfaces.
-      </p>
-      <div className="signal-concierge-hero__actions">
+    <div className="member-dashboard sc-reveal">
+      <JourneyHeader
+        journeyId={bundle.overview.journeyId}
+        title="Your journey"
+        subtitle={`${MEMBER_DASHBOARD_BRAND} — private, warm, and journey-centered.`}
+        className="member-dashboard__header signal-concierge-glass"
+      />
+
+      <div className="member-dashboard__grid">
+        <JourneyOverviewCard overview={bundle.overview} />
+        <AssignedConsultantCard consultant={bundle.consultant} />
+        <UpcomingMeetingCard meeting={bundle.upcomingMeeting} />
+
+        {bundle.recentMeetings.length > 0 ? (
+          <section className="member-dashboard-card recent-meetings-card signal-concierge-glass sc-reveal">
+            <header className="member-dashboard-card__head">
+              <h3>Recent meetings</h3>
+              <p>Private conversations with your steward.</p>
+            </header>
+            <ul className="recent-meetings-card__list">
+              {bundle.recentMeetings.map((meeting) => (
+                <li key={meeting.id}>
+                  <strong>{meeting.label}</strong>
+                  <span>{meeting.detail}</span>
+                  <time dateTime={meeting.at}>{new Date(meeting.at).toLocaleString()}</time>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <IntroductionSummaryCard introductions={bundle.introductions} />
+        <RelationshipMilestoneSummaryCard milestones={bundle.milestones} />
+        <MemberNotificationCard notifications={bundle.notifications} />
+        <MemberTimelineCard timeline={bundle.timeline} />
+      </div>
+
+      <div className="member-dashboard__actions signal-concierge-hero__actions">
         <button type="button" className="signal-concierge-btn signal-concierge-btn--ghost" onClick={onApply}>
           Update application
         </button>
@@ -76,6 +105,6 @@ export function SignalConciergeStatusPage({
           Schedule consultation
         </button>
       </div>
-    </section>
+    </div>
   );
 }

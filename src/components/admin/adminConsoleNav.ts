@@ -23,7 +23,8 @@ export type HardTab =
   | "quality"
   | "finance"
   | "messages"
-  | "executive";
+  | "executive"
+  | "launch";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -112,6 +113,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         keywords: ["executive", "strategic", "founder", "board", "institution", "legacy", "growth"]
       },
       {
+        id: "launch",
+        label: "Launch Readiness",
+        keywords: ["launch", "readiness", "go-live", "institutional", "audit", "blocked", "critical"]
+      },
+      {
         id: "verifications",
         label: "Verification",
         keywords: ["verify", "verification", "selfie", "kyc"],
@@ -171,7 +177,8 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   quality: "Quality",
   finance: "Finance",
   messages: "Messages",
-  executive: "Executive"
+  executive: "Executive",
+  launch: "Launch Readiness"
 };
 
 export const ADMIN_TAB_TITLES = HARD_TAB_TITLES;

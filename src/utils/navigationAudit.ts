@@ -11,6 +11,7 @@ import { ROUTE_AUDIT_ADMIN_PATH } from "../constants/routeAudit";
 import { DATABASE_AUDIT_ADMIN_PATH } from "../constants/databaseAudit";
 import { PERMISSIONS_AUDIT_ADMIN_PATH } from "../constants/permissionsAudit";
 import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "../constants/journeyIntegrityAudit";
+import { LAUNCH_READINESS_ADMIN_PATH } from "../constants/launchReadiness";
 import type { NavigationMapEntry, NavigationSimplificationOpportunity } from "../types/routeAudit";
 
 const NESTED_ADMIN_PATHS: { path: string; label: string; parentTab: HardTab }[] = [
@@ -20,7 +21,8 @@ const NESTED_ADMIN_PATHS: { path: string; label: string; parentTab: HardTab }[] 
   { path: ROUTE_AUDIT_ADMIN_PATH, label: "Route & Navigation Audit", parentTab: "audit" },
   { path: DATABASE_AUDIT_ADMIN_PATH, label: "Database Audit Center", parentTab: "audit" },
   { path: PERMISSIONS_AUDIT_ADMIN_PATH, label: "Permissions Audit", parentTab: "audit" },
-  { path: JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH, label: "Journey Integrity Audit", parentTab: "audit" }
+  { path: JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH, label: "Journey Integrity Audit", parentTab: "audit" },
+  { path: LAUNCH_READINESS_ADMIN_PATH, label: "Launch Readiness Command Center", parentTab: "launch" }
 ];
 
 const OVERLAP_GROUPS: { title: string; paths: string[]; summary: string }[] = [

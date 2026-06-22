@@ -5,6 +5,7 @@ import { ROUTE_AUDIT_ADMIN_PATH } from "./routeAudit";
 import { DATABASE_AUDIT_ADMIN_PATH } from "./databaseAudit";
 import { PERMISSIONS_AUDIT_ADMIN_PATH } from "./permissionsAudit";
 import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "./journeyIntegrityAudit";
+import { LAUNCH_READINESS_ADMIN_PATH } from "./launchReadiness";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
   OPERATIONS_CENTER_PATH
@@ -41,7 +42,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   quality: "quality",
   finance: "finance",
   messages: "messages",
-  executive: "executive"
+  executive: "executive",
+  launch: "launch"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(
@@ -65,6 +67,9 @@ export function parseHardTabFromPath(pathname = window.location.pathname): HardT
   }
   if (path === AUDIT_CENTER_ADMIN_PATH || path.startsWith(`${AUDIT_CENTER_ADMIN_PATH}/`)) {
     return "audit";
+  }
+  if (path === LAUNCH_READINESS_ADMIN_PATH || path.startsWith(`${LAUNCH_READINESS_ADMIN_PATH}/`)) {
+    return "launch";
   }
 
   const match = path.match(/^\/hard\/([^/]+)$/);

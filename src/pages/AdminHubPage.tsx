@@ -95,6 +95,7 @@ import { RouteAuditPage } from "../components/admin/routeAudit/RouteAuditPage";
 import { DatabaseAuditPage } from "../components/admin/databaseAudit/DatabaseAuditPage";
 import { PermissionsAuditPage } from "../components/admin/permissionsAudit/PermissionsAuditPage";
 import { JourneyIntegrityAuditPage } from "../components/admin/journeyAudit/JourneyIntegrityAuditPage";
+import { LaunchReadinessCommandCenterPage } from "../components/admin/launchReadiness/LaunchReadinessCommandCenterPage";
 import { DocumentCenterPage } from "../components/admin/documents/DocumentCenterPage";
 import { SafetyCenterPage } from "../components/admin/safety/SafetyCenterPage";
 import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
@@ -2072,6 +2073,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "finance" ? <FinanceOperationsPage /> : null}
       {tab === "messages" ? <InternalMessagingPage /> : null}
       {tab === "executive" ? <ExecutiveDashboardPage /> : null}
+      {tab === "launch" ? <LaunchReadinessCommandCenterPage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

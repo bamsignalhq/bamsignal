@@ -471,3 +471,12 @@ export function executeConsultantExitProtocol(input: {
     journeysTransitioned
   };
 }
+
+export function replaceConciergeConsultantsCache(consultants: ConciergeConsultantRecord[]): void {
+  const store = loadDirectoryStore();
+  saveDirectoryStore({
+    ...store,
+    consultants,
+    updatedAt: new Date().toISOString()
+  });
+}

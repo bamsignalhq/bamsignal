@@ -24,6 +24,7 @@ import { assertNoArchiveDeletion, registerArchivedMember } from "./conciergeJour
 import { isValidJourneyId, normalizeJourneyId } from "../constants/journeyId";
 import { marriageYearFromMember } from "./conciergeJourneyArchive";
 import { readJson, writeJson } from "./storage";
+import { syncConciergeMemberToSupabase } from "../services/conciergeSupabase";
 
 const ADMIN_STORE_KEY = "bamsignal-concierge-consultant-store";
 
@@ -101,7 +102,9 @@ export function updateConciergeMember(
   assertNoArchiveDeletion(previous, next);
   store.members[index] = next;
   saveStore(store);
-  return normalizeConciergeMember(next);
+  const saved = normalizeConciergeMember(next);
+  void syncConciergeMemberToSupabase(saved);
+  return saved;
 }
 
 export function addConciergePrivateNote(
@@ -275,4 +278,11 @@ export function syncLocalConciergeApplication(): void {
   });
   store.members.unshift(record);
   saveStore(store);
+}
+
+export function replaceConciergeMembersCache(members: ConciergeMemberRecord[]): void {
+  writeJson(ADMIN_STORE_KEY, {
+    members: members.map((member) => normalizeConciergeMember(member)),
+    updatedAt: new Date().toISOString()
+  });
 }

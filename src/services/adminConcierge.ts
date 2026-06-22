@@ -22,6 +22,7 @@ import {
 } from "../utils/relationshipLegacyIndexLogic";
 import { getRelationshipLegacyIndexMap } from "../utils/relationshipLegacyIndexStore";
 import { getJourneyStoryProfile } from "../utils/journeyStoryCategories";
+import { ensureConciergePersistenceHydrated } from "./conciergeSupabase";
 
 export type AdminConciergeMembersResult = {
   ok: boolean;
@@ -31,6 +32,7 @@ export type AdminConciergeMembersResult = {
 export async function fetchAdminConciergeMembers(
   filters: ConciergeMemberFilters
 ): Promise<AdminConciergeMembersResult> {
+  await ensureConciergePersistenceHydrated();
   syncLocalConciergeApplication();
   const members = filterConciergeMembers(listConciergeMembers(), filters);
   return { ok: true, members };
@@ -39,6 +41,7 @@ export async function fetchAdminConciergeMembers(
 export async function fetchAdminConciergeArchiveMembers(
   filters: JourneyArchiveFilters
 ): Promise<AdminConciergeMembersResult> {
+  await ensureConciergePersistenceHydrated();
   syncLocalConciergeApplication();
   const members = filterMembersForArchiveSearch(listArchiveEligibleMembers(listConciergeMembers()), filters);
   return { ok: true, members };
@@ -47,6 +50,7 @@ export async function fetchAdminConciergeArchiveMembers(
 export async function fetchAdminConciergeLegacyIndexMembers(
   filters: LegacyIndexFilters
 ): Promise<AdminConciergeMembersResult> {
+  await ensureConciergePersistenceHydrated();
   syncLocalConciergeApplication();
   const allMembers = listConciergeMembers().filter(isLegacyIndexEligible);
   const indexByJourneyId = getRelationshipLegacyIndexMap();
@@ -72,6 +76,7 @@ export async function fetchAdminConciergeLegacyIndexMembers(
 export async function fetchAdminConciergeMember(
   memberId: string
 ): Promise<{ ok: boolean; member: ConciergeMemberRecord | null }> {
+  await ensureConciergePersistenceHydrated();
   syncLocalConciergeApplication();
   return { ok: true, member: getConciergeMember(memberId) };
 }

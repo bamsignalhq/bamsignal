@@ -1353,6 +1353,111 @@
   background: rgba(255, 120, 120, 0.08);
 }
 
+.calendar-card,
+.availability-card,
+.upcoming-consultation-card,
+.calendar-timeline-card {
+  padding: 18px;
+  border-radius: 16px;
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.16);
+}
+
+.calendar-card__head h3,
+.availability-card__head h3,
+.upcoming-consultation-card__head h3,
+.calendar-timeline-card__head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.calendar-card__head p,
+.availability-card__head p,
+.upcoming-consultation-card__head p,
+.calendar-timeline-card__head p {
+  margin: 0;
+  color: var(--sc-muted);
+  line-height: 1.5;
+}
+
+.calendar-card__slots,
+.calendar-timeline-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.calendar-card__slot,
+.calendar-card__slot-button {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--sc-text);
+}
+
+.calendar-card__slot-button {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+
+.calendar-card__slot-button--selected {
+  border-color: rgba(168, 130, 255, 0.55);
+  background: rgba(168, 130, 255, 0.12);
+}
+
+.availability-card__grid,
+.upcoming-consultation-card__meta {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.availability-card__grid div,
+.upcoming-consultation-card__meta div {
+  display: grid;
+  gap: 2px;
+}
+
+.availability-card__grid dt,
+.upcoming-consultation-card__meta dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.availability-card__grid dd,
+.upcoming-consultation-card__meta dd {
+  margin: 0;
+}
+
+.upcoming-consultation-card__time {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.calendar-timeline-card__list li {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.calendar-card__empty,
+.upcoming-consultation-card__empty,
+.calendar-timeline-card__empty {
+  margin: 0;
+  color: var(--sc-muted);
+}
+
 .signal-concierge-channel-grid {
   display: grid;
   gap: 10px;

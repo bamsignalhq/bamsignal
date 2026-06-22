@@ -26,6 +26,7 @@ import type {
 } from "../types/memberDashboard";
 import { getMemberStewardName } from "./conciergeMemberStewardship";
 import { listConsultationMeetings } from "./consultationScheduler";
+import { getUpcomingConsultationEventForMember } from "./CalendarEngine";
 
 const STAGE_BY_STATUS: Record<SignalConciergeStatus, MemberJourneyStage> = {
   applied: "application",
@@ -120,6 +121,16 @@ export function buildUpcomingMeeting(
   application: SignalConciergeApplication,
   member?: ConciergeMemberRecord | null
 ): UpcomingMeetingSummary | undefined {
+  const calendarEvent = getUpcomingConsultationEventForMember(application.id);
+  if (calendarEvent) {
+    return {
+      scheduledAt: calendarEvent.scheduledAt,
+      channelLabel: calendarEvent.channel.replace("-", " "),
+      label: "Upcoming consultation",
+      detail: "Your private consultation — calendar invitations sent to you and your steward."
+    };
+  }
+
   const meetings = listConsultationMeetings()
     .filter((meeting) => meeting.memberId === application.id)
     .filter((meeting) => new Date(meeting.scheduledAt).getTime() >= Date.now())

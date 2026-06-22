@@ -26,6 +26,7 @@ import loginSecurityHandler from "../api/auth/login-security.js";
 import playReviewerFinishHandler from "../api/auth/play-reviewer-finish.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
 import consultationPaymentHandler from "./routes/consultationPayment.js";
+import calendarHandler from "./routes/calendar.js";
 import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivity.js";
 import viewSecurityHandler from "../api/diagnostics/view-security.js";
 import functionSecurityHandler from "../api/diagnostics/function-security.js";
@@ -133,6 +134,8 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/member/voice", memberVoiceHandler);
   mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);
   mountHandler(app, "post", "/api/consultation-payment", consultationPaymentHandler);
+  mountHandler(app, "post", "/api/calendar", calendarHandler);
+  mountHandler(app, "get", "/api/calendar", calendarHandler);
   mountHandler(app, "get", "/api/diagnostics/paystack-connectivity", paystackConnectivityHandler);
   mountHandler(app, "get", "/api/diagnostics/view-security", viewSecurityHandler);
   mountHandler(app, "post", "/api/diagnostics/view-security", viewSecurityHandler);

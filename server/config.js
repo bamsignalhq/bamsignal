@@ -41,6 +41,13 @@ export const config = {
     sender: process.env.SENDCHAMP_SENDER?.trim() || "",
     whatsappSender: process.env.SENDCHAMP_WHATSAPP_SENDER?.trim() || "",
     baseUrl: process.env.SENDCHAMP_BASE_URL?.trim() || "https://api.sendchamp.com/api/v1"
+  },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID?.trim() || "",
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET?.trim() || "",
+    redirectUri: process.env.GOOGLE_REDIRECT_URI?.trim() || "",
+    calendarRefreshToken: process.env.GOOGLE_CALENDAR_REFRESH_TOKEN?.trim() || "",
+    calendarId: process.env.GOOGLE_CALENDAR_ID?.trim() || "primary"
   }
 };
 
@@ -52,6 +59,10 @@ if (!config.paystackSecretKey) {
   console.warn("[bamsignal] PAYSTACK_SECRET_KEY is not set. Payment endpoints will return service-unavailable errors.");
 } else if (!/^sk_(test|live)_/.test(config.paystackSecretKey)) {
   console.warn("[bamsignal] PAYSTACK_SECRET_KEY format looks invalid (expected sk_test_ or sk_live_ prefix).");
+}
+
+if (!config.google.clientId || !config.google.clientSecret || !config.google.redirectUri) {
+  console.warn("[bamsignal] Google Calendar OAuth env is incomplete. Calendar booking will return service-unavailable errors.");
 }
 
 logSignupEmailEnvTrace();

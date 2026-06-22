@@ -1,4 +1,5 @@
 import { CONSULTATION_CHANNEL_LABELS } from "../../../constants/consultationScheduler";
+import { CALENDAR_ENGINE_BRAND } from "../../../constants/calendar";
 import type { ConsultationAvailability, ConsultationMeeting } from "../../../types/consultationScheduler";
 
 type ConsultationCalendarCardProps = {
@@ -20,7 +21,7 @@ export function ConsultationCalendarCard({ availability, meetings }: Consultatio
     <section className="consultation-calendar concierge-consultant-card--glass cc-reveal">
       <header className="concierge-consultant-card__head">
         <h3>Consultation Calendar</h3>
-        <p>Availability architecture — external calendar sync not enabled.</p>
+        <p>{CALENDAR_ENGINE_BRAND} — Google Calendar sync for consultant availability and invitations.</p>
       </header>
 
       {dayKeys.length ? (

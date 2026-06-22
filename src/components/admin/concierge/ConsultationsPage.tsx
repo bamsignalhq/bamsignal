@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CONSULTATION_SCHEDULER_BRAND } from "../../../constants/consultationScheduler";
+import { CALENDAR_ENGINE_BRAND } from "../../../constants/calendar";
 import {
   getConsultationMeeting,
   listConsultationAvailability,
@@ -7,6 +8,14 @@ import {
   listUpcomingConsultations,
   syncConsultationMeetingsFromSources
 } from "../../../utils/consultationScheduler";
+import {
+  listConsultationEvents,
+  syncCalendarAvailabilityFromConsultants
+} from "../../../utils/CalendarEngine";
+import { AvailabilityCard } from "../../signalConcierge/AvailabilityCard";
+import { CalendarCard } from "../../signalConcierge/CalendarCard";
+import { CalendarTimelineCard } from "../../signalConcierge/CalendarTimelineCard";
+import { UpcomingConsultationCard } from "../../signalConcierge/UpcomingConsultationCard";
 import { ConsultationCalendarCard } from "./ConsultationCalendarCard";
 import { MeetingDetailsCard } from "./MeetingDetailsCard";
 import { UpcomingConsultationsCard } from "./UpcomingConsultationsCard";
@@ -17,6 +26,7 @@ export function ConsultationsPage() {
 
   useEffect(() => {
     syncConsultationMeetingsFromSources();
+    syncCalendarAvailabilityFromConsultants();
     setReady(true);
   }, []);
 
@@ -24,6 +34,9 @@ export function ConsultationsPage() {
   const past = useMemo(() => (ready ? listPastConsultations() : []), [ready]);
   const allMeetings = useMemo(() => [...upcoming, ...past], [upcoming, past]);
   const availability = useMemo(() => (ready ? listConsultationAvailability() : []), [ready]);
+  const calendarEvents = useMemo(() => (ready ? listConsultationEvents() : []), [ready]);
+  const primaryAvailability = availability[0] ?? null;
+  const primaryCalendarEvent = calendarEvents[0] ?? null;
 
   const selected = useMemo(() => {
     if (!ready) return null;
@@ -40,9 +53,20 @@ export function ConsultationsPage() {
       <header className="concierge-consultations-page__head">
         <div>
           <h3>{CONSULTATION_SCHEDULER_BRAND}</h3>
-          <p>Structured consultation management before live operations.</p>
+          <p>
+            {CALENDAR_ENGINE_BRAND} — consultant availability, Google Calendar events, and private invitations.
+          </p>
         </div>
       </header>
+
+      {primaryAvailability ? (
+        <div className="concierge-consultations-page__calendar-grid">
+          <AvailabilityCard availability={primaryAvailability} />
+          <CalendarCard availability={primaryAvailability} />
+          <UpcomingConsultationCard event={primaryCalendarEvent} />
+          {primaryCalendarEvent ? <CalendarTimelineCard timeline={primaryCalendarEvent.timeline} /> : null}
+        </div>
+      ) : null}
 
       <div className="concierge-consultations-page__grid">
         <ConsultationCalendarCard availability={availability} meetings={allMeetings} />

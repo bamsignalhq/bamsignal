@@ -386,6 +386,13 @@ export function BamSignalInstituteLayout({
               >
                 Museum
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("houseAcademy")}
+              >
+                Academy
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

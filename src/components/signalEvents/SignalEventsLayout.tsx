@@ -45,6 +45,13 @@ export function SignalEventsLayout({
               <button
                 type="button"
                 className="signal-events-header__link"
+                onClick={() => go("diasporaCorridors")}
+              >
+                Corridors
+              </button>
+              <button
+                type="button"
+                className="signal-events-header__link"
                 onClick={() => go("communityJourney")}
               >
                 Community Journey

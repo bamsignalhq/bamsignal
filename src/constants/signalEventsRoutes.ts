@@ -7,7 +7,8 @@ export const SIGNAL_EVENTS_ROUTES = {
   landing: SIGNAL_EVENTS_BASE_PATH,
   communities: `${SIGNAL_EVENTS_BASE_PATH}/communities`,
   diaspora: `${SIGNAL_EVENTS_BASE_PATH}/diaspora`,
-  communityJourney: `${SIGNAL_EVENTS_BASE_PATH}/community-journey`
+  communityJourney: `${SIGNAL_EVENTS_BASE_PATH}/community-journey`,
+  diasporaCorridors: `${SIGNAL_EVENTS_BASE_PATH}/diaspora-corridors`
 } as const;
 
 export type SignalEventsHubRoute = keyof typeof SIGNAL_EVENTS_ROUTES;

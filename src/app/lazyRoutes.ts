@@ -96,6 +96,12 @@ export const LazySignalEventsCommunityJourneyPage = lazy(() =>
   }))
 );
 
+export const LazySignalEventsDiasporaCorridorsPage = lazy(() =>
+  import("../pages/signal-events/SignalEventsDiasporaCorridorsPage").then((module) => ({
+    default: module.SignalEventsDiasporaCorridorsPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

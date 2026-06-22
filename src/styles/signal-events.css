@@ -563,3 +563,247 @@
   font-size: 0.84rem;
   color: var(--se-muted);
 }
+
+/* Diaspora Corridors™ */
+.dc-page {
+  display: grid;
+  gap: 24px;
+}
+
+.dc-page__hero {
+  padding: 28px 24px;
+}
+
+.dc-page__labels {
+  margin-top: 10px !important;
+  font-size: 0.88rem;
+  color: var(--se-gold) !important;
+}
+
+.dc-page__purpose {
+  margin-top: 8px !important;
+  font-size: 0.84rem;
+  color: var(--se-muted) !important;
+}
+
+.dc-page__statuses,
+.dc-page__future-corridors,
+.dc-page__future {
+  padding: 20px;
+}
+
+.dc-page__statuses h2,
+.dc-page__future-corridors h2,
+.dc-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.dc-page__statuses > p,
+.dc-page__future-corridors > p {
+  margin: 0 0 14px;
+  color: var(--se-muted);
+  font-size: 0.86rem;
+}
+
+.dc-page__status-list,
+.dc-page__future ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.dc-page__status-list li {
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+}
+
+.dc-page__status-list li span {
+  color: var(--se-muted);
+  line-height: 1.45;
+}
+
+.dc-page__grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.dc-page__detail {
+  display: grid;
+  gap: 14px;
+}
+
+.dc-page__future-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: var(--se-muted);
+}
+
+.dc-page__future li {
+  display: grid;
+  gap: 2px;
+  font-size: 0.84rem;
+}
+
+.dc-page__future li span {
+  color: var(--se-muted);
+}
+
+.dc-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.dc-corridor-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(168, 130, 255, 0.15);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.25);
+}
+
+.dc-corridor-badge--primary,
+.dc-corridor-badge--premium,
+.dc-corridor-badge--legacy,
+.dc-corridor-badge--active {
+  background: rgba(212, 175, 106, 0.18);
+  border-color: rgba(212, 175, 106, 0.35);
+}
+
+.dc-corridor-card,
+.dc-corridor-timeline,
+.dc-corridor-success-card {
+  padding: 16px;
+}
+
+.dc-corridor-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.dc-corridor-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.dc-corridor-card__labels {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  color: var(--se-gold);
+}
+
+.dc-corridor-card__display {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.dc-corridor-card__row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.84rem;
+}
+
+.dc-corridor-card__row dt {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.dc-corridor-card__row dd {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.dc-corridor-timeline__head h3 {
+  margin: 0 0 6px;
+}
+
+.dc-corridor-timeline__head p {
+  margin: 0 0 14px;
+  color: var(--se-muted);
+  font-size: 0.86rem;
+}
+
+.dc-corridor-timeline__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.dc-corridor-timeline__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.dc-corridor-timeline__dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.9);
+}
+
+.dc-corridor-timeline__note {
+  margin: 4px 0;
+  font-size: 0.82rem;
+  color: var(--se-muted);
+  line-height: 1.45;
+}
+
+.dc-corridor-timeline__item time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.dc-corridor-timeline__empty {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--se-muted);
+}
+
+.dc-corridor-success-card__head h3 {
+  margin: 0 0 6px;
+}
+
+.dc-corridor-success-card__head p {
+  margin: 0 0 14px;
+  color: var(--se-muted);
+  font-size: 0.86rem;
+}
+
+.dc-corridor-success-card__stats {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.86rem;
+}
+
+.dc-corridor-success-card__private {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}

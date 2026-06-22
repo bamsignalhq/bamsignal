@@ -13,7 +13,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/african-relationship-archive",
   "/institute/bamsignal-academy",
   "/institute/bamsignal-academy/programs",
-  "/institute/learning-paths"
+  "/institute/learning-paths",
+  "/institute/relationship-masterclasses"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

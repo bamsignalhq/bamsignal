@@ -232,6 +232,14 @@ export const LazyBamSignalInstituteLearningPathsPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteRelationshipMasterclassesPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteRelationshipMasterclassesPage").then(
+    (module) => ({
+      default: module.BamSignalInstituteRelationshipMasterclassesPage
+    })
+  )
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

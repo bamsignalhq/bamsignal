@@ -252,6 +252,8 @@ export function App() {
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
   const [paymentReturnPhase, setPaymentReturnPhase] = useState<"idle" | "verifying" | "success" | "failed">("idle");
   const [openAppLoading, setOpenAppLoading] = useState(false);
+  const [memberSessionReady, setMemberSessionReady] = useState(false);
+  const [memberSessionEpoch, setMemberSessionEpoch] = useState(0);
   const [paystackCallbackActive, setPaystackCallbackActive] = useState(
     () => isPaymentReturnPath() || hasPaystackCallbackInUrl()
   );
@@ -292,8 +294,10 @@ export function App() {
   const memberAccessReady =
     isAuthed &&
     memberAppEntered &&
+    memberSessionReady &&
     !authLoading &&
     !memberHydrating &&
+    !openAppLoading &&
     !isPublicSurface &&
     profileComplete === true &&
     !showComplianceGate;
@@ -301,7 +305,11 @@ export function App() {
     isAuthed &&
     isMemberAppPath(currentPathname) &&
     !activeAuthPath &&
-    (authLoading || memberHydrating || profileComplete === null);
+    (authLoading ||
+      memberHydrating ||
+      openAppLoading ||
+      !memberSessionReady ||
+      profileComplete === null);
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -367,6 +375,7 @@ export function App() {
       setMemberAppEntered(true);
       setIsAuthed(true);
       setUser(safeUserProfile(stored));
+      clearMemberSessionReady();
     }
     if (normalizePath(window.location.pathname) !== normalizePath(nextPath)) {
       navigateToPath(nextPath, true);
@@ -434,6 +443,7 @@ export function App() {
     const guard = evaluateMemberRouteGuard({
       authLoading,
       memberHydrating,
+      memberSessionReady,
       isAuthed,
       profileComplete,
       pathname
@@ -449,7 +459,7 @@ export function App() {
       }
       navigateToPath(guard.redirectTo, true);
     }
-  }, [authLoading, memberHydrating, isAuthed, profileComplete, memberPathname]);
+  }, [authLoading, memberHydrating, memberSessionReady, isAuthed, profileComplete, memberPathname]);
 
   useEffect(() => {
     if (isPublicWebRoute()) {
@@ -518,6 +528,15 @@ export function App() {
     setIsPremium(isPremiumActive());
   }, []);
 
+  const markMemberSessionReady = useCallback(() => {
+    setMemberSessionReady(true);
+    setMemberSessionEpoch((epoch) => epoch + 1);
+  }, []);
+
+  const clearMemberSessionReady = useCallback(() => {
+    setMemberSessionReady(false);
+  }, []);
+
   const applyGoToAppResult = useCallback(
     (
       session: Extract<Awaited<ReturnType<typeof goToApp>>, { ok: true }>,
@@ -555,13 +574,15 @@ export function App() {
       }
       void refreshPremiumStatus(session.user).then(() => syncPremiumState());
       flowLog("session_restore_done");
+      markMemberSessionReady();
     },
-    [memberAppEntered, syncPremiumState]
+    [markMemberSessionReady, memberAppEntered, syncPremiumState]
   );
 
   const applyRestoredSession = useCallback(async (profile: UserProfile, options?: { blocking?: boolean }) => {
     const blocking = options?.blocking ?? true;
     flowLog("session_restore_start", { blocking });
+    clearMemberSessionReady();
     if (blocking) {
       setMemberHydrating(true);
     }
@@ -582,6 +603,7 @@ export function App() {
       if (!session.ok) {
         setIsAuthed(false);
         setProfileComplete(false);
+        clearMemberSessionReady();
         return;
       }
       applyGoToAppResult(session, { blocking, source: "session_restore" });
@@ -601,7 +623,7 @@ export function App() {
     void finishRestore().finally(() => {
       setMemberHydrating(false);
     });
-  }, [applyGoToAppResult]);
+  }, [applyGoToAppResult, clearMemberSessionReady]);
 
   useEffect(() => {
     if (memberAccessReady) recordDailyActive();
@@ -935,6 +957,7 @@ export function App() {
     if (openAppLoading) return;
 
     setOpenAppLoading(true);
+    clearMemberSessionReady();
     clearOpenAppPendingState();
     markOpenAppPending();
 
@@ -956,6 +979,7 @@ export function App() {
         setMemberAppEntered(false);
         setIsAuthed(false);
         setProfileComplete(false);
+        clearMemberSessionReady();
         setAuthPath(AUTH_SIGNUP_PATH);
         navigateToPath(AUTH_SIGNUP_PATH, true);
         return;
@@ -966,6 +990,7 @@ export function App() {
       setMemberAppEntered(true);
       setAuthMessage("");
       setProfileComplete(result.route === "home");
+      markMemberSessionReady();
 
       if (result.route === "home") {
         clearOnboardingDrafts();
@@ -1026,7 +1051,7 @@ export function App() {
       applyOpenAppResult(result);
       releaseOpenApp();
     });
-  }, [openAppLoading]);
+  }, [clearMemberSessionReady, markMemberSessionReady, openAppLoading]);
 
   useEffect(() => {
     if (!paystackCallbackActive || authLoading) return;
@@ -1054,6 +1079,16 @@ export function App() {
         if (stored.email || stored.phone) {
           setUser(safeUserProfile(stored));
           setIsAuthed(true);
+          clearMemberSessionReady();
+          setMemberHydrating(true);
+          void goToApp({ loginEmail: stored.email || undefined })
+            .then((result) => {
+              if (!result.ok) return;
+              applyGoToAppResult(result, { blocking: false, source: "payment_return_recover" });
+            })
+            .finally(() => {
+              setMemberHydrating(false);
+            });
         }
       }
       if (cancelled) return;
@@ -1069,12 +1104,13 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [paystackCallbackActive, authLoading, applyRestoredSession, openAuth, processPaymentReturn]);
+  }, [applyGoToAppResult, paystackCallbackActive, authLoading, applyRestoredSession, openAuth, processPaymentReturn]);
 
   const handleAuthenticated = useCallback(
     async (profile: UserProfile, meta?: AuthMeta) => {
       setMemberAppEntered(true);
       setMemberHydrating(true);
+      clearMemberSessionReady();
       const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
       const withPhone = resolveMemberIdentity({
         ...profile,
@@ -1120,6 +1156,7 @@ export function App() {
       });
       if (!appResult.ok) {
         setMemberHydrating(false);
+        clearMemberSessionReady();
         setAuthPath(AUTH_SIGNUP_PATH);
         navigateToPath(AUTH_SIGNUP_PATH, true);
         return;
@@ -1145,6 +1182,7 @@ export function App() {
         setAuthPath(null);
       }
       setProfileComplete(!needsOnboarding);
+      markMemberSessionReady();
       if (needsOnboarding) {
         setPendingTab(null);
         flowLog("onboarding_start");
@@ -1176,7 +1214,7 @@ export function App() {
         loginEmail: meta?.loginEmail || withPhone.email
       });
     },
-    [pendingTab]
+    [clearMemberSessionReady, markMemberSessionReady, pendingTab]
   );
 
   useEffect(() => {
@@ -1240,22 +1278,19 @@ export function App() {
         phone: stored.phone || profile.phone,
         phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
       });
+      setMemberHydrating(true);
+      clearMemberSessionReady();
       setUser(merged);
       setIsAuthed(true);
       recordStreakActivity();
       checkPremiumTrialExpiry();
 
-      const localComplete =
-        (authUserId && readOpenAppOnboardingCache(authUserId)) ||
-        normalizeOnboardingStatus(getDatingProfile()).markedComplete;
-      setProfileComplete(localComplete);
-
-      setMemberHydrating(true);
       try {
         const validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
         if (!validated.ok) {
           setIsAuthed(false);
           setProfileComplete(false);
+          clearMemberSessionReady();
           return;
         }
         const appSession = await goToApp({
@@ -1265,6 +1300,7 @@ export function App() {
         if (!appSession.ok) {
           setIsAuthed(false);
           setProfileComplete(false);
+          clearMemberSessionReady();
           return;
         }
         applyGoToAppResult(appSession, { blocking: false, source: "session_restore" });
@@ -1335,13 +1371,18 @@ export function App() {
           requiresMemberRestoreBlocking(window.location.pathname, isNative) ||
           !isPublicWebRoute();
         if (onMemberSurface && isMemberAppPath()) {
+          clearMemberSessionReady();
           setMemberHydrating(true);
         }
         void goToApp()
           .then((sessionResult) => {
-            if (!sessionResult.ok) return;
+            if (!sessionResult.ok) {
+              clearMemberSessionReady();
+              return;
+            }
             if (onMemberSurface) {
               setProfileComplete(sessionResult.route === "home");
+              markMemberSessionReady();
               if (sessionResult.route === "onboarding" && !isOnboardingPath()) {
                 navigateToPath("/onboarding", true);
               } else if (sessionResult.route === "home" && isOnboardingPath()) {
@@ -1382,22 +1423,41 @@ export function App() {
             setIsAuthed(false);
             setMemberAppEntered(isNative);
             setProfileComplete(false);
+            clearMemberSessionReady();
             setIsPremium(false);
             setUser({ name: "", email: "", phone: "" });
             setTab("home");
             return;
           }
+          clearMemberSessionReady();
+          setMemberHydrating(true);
           setIsAuthed(true);
           setUser((prev) => ({
             ...stored,
             phone: prev.phone || stored.phone,
             phoneVerified: Boolean(prev.phoneVerified ?? stored.phoneVerified)
           }));
+          void goToApp({ loginEmail: stored.email || undefined })
+            .then((result) => {
+              if (!result.ok) {
+                clearMemberSessionCaches();
+                setIsAuthed(false);
+                setProfileComplete(false);
+                clearMemberSessionReady();
+                setUser({ name: "", email: "", phone: "" });
+                return;
+              }
+              applyGoToAppResult(result, { blocking: false, source: "signed_out_recover" });
+            })
+            .finally(() => {
+              setMemberHydrating(false);
+            });
           return;
         }
         clearMemberSessionCaches();
         setIsAuthed(false);
         setProfileComplete(false);
+        clearMemberSessionReady();
         setIsPremium(false);
         setUser({ name: "", email: "", phone: "" });
         setTab("home");
@@ -1411,7 +1471,7 @@ export function App() {
       subscription.unsubscribe();
       window.clearTimeout(fallback);
     };
-  }, [applyRestoredSession, isNative, syncPremiumState]);
+  }, [applyGoToAppResult, applyRestoredSession, clearMemberSessionReady, isNative, markMemberSessionReady, syncPremiumState]);
 
   useEffect(() => {
     if (authLoading || memberHydrating || !isAuthed) return;
@@ -1428,12 +1488,13 @@ export function App() {
       });
       setUser(result.user);
       setProfileComplete(!needsOnboarding);
+      markMemberSessionReady();
       navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
     });
     return () => {
       cancelled = true;
     };
-  }, [authLoading, memberHydrating, isAuthed, memberPathname, user.email]);
+  }, [authLoading, memberHydrating, memberSessionReady, isAuthed, memberPathname, user.email, markMemberSessionReady]);
 
   const reloadApp = useCallback(() => {
     window.location.reload();
@@ -1442,6 +1503,7 @@ export function App() {
   const finishOnboarding = useCallback(() => {
     setMemberAppEntered(true);
     setProfileComplete(true);
+    markMemberSessionReady();
     clearOnboardingDrafts();
     setTab("home");
     navigateToPath("/home", true);
@@ -1452,13 +1514,14 @@ export function App() {
         notifyPremiumActivated();
       }
     });
-  }, [syncPremiumState, user]);
+  }, [markMemberSessionReady, syncPremiumState, user]);
 
   const resetLoggedOutState = useCallback(() => {
     clearMemberSessionCaches();
     setIsAuthed(false);
     setMemberAppEntered(isNative);
     setProfileComplete(false);
+    clearMemberSessionReady();
     setIsPremium(false);
     setPaymentLoading(false);
     setPricingOpen(false);
@@ -1469,7 +1532,7 @@ export function App() {
     navigateToPath("/");
     setAuthPath(null);
     setLegalPath(null);
-  }, [isNative]);
+  }, [clearMemberSessionReady, isNative]);
 
   const handleLogout = useCallback(() => {
     logoutInProgressRef.current = true;
@@ -1743,6 +1806,7 @@ export function App() {
     ? evaluateMemberRouteGuard({
         authLoading,
         memberHydrating,
+        memberSessionReady,
         isAuthed,
         profileComplete,
         pathname: currentPathname
@@ -2087,8 +2151,13 @@ export function App() {
               subtitle={memberHydrating ? "Restoring your account…" : "Restoring your session…"}
             />
           )}
-          {isAuthed && memberAppEntered && isOnboardingRoute && profileComplete === false && (
-            <MemberRouteBoundary name="onboarding">
+          {isAuthed &&
+            memberAppEntered &&
+            memberSessionReady &&
+            !memberHydrating &&
+            isOnboardingRoute &&
+            profileComplete === false && (
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="onboarding">
               <OnboardingPage user={user} onUserChange={setUser} onComplete={finishOnboarding} />
             </MemberRouteBoundary>
           )}
@@ -2134,7 +2203,7 @@ export function App() {
             </Suspense>
           )}
           {memberAccessReady && !memberOverlay && tab === "home" && currentPathname === "/home" && (
-            <MemberRouteBoundary name="home">
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="home">
               <HomePage
                 user={user}
                 userName={user.name}
@@ -2146,7 +2215,7 @@ export function App() {
             </MemberRouteBoundary>
           )}
           {memberAccessReady && !memberOverlay && currentPathname === "/fast-connection" && (
-            <MemberRouteBoundary name="fast-connection">
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="fast-connection">
               <Suspense fallback={<LazyRouteFallback subtitle="Loading Fast Connection…" />}>
                 <LazyFastConnectionPage
                   user={user}
@@ -2168,7 +2237,7 @@ export function App() {
             </PublicRouteBoundary>
           )}
           {memberAccessReady && tab === "discover" && (
-            <MemberRouteBoundary name="discover">
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="discover">
               <DiscoverPage
                 isPremium={isPremium}
                 plans={plans}
@@ -2185,7 +2254,7 @@ export function App() {
             <GuestGate tab="likes" onJoin={() => openAuth("signup", "likes")} onLogin={() => openAuth("login", "likes")} />
           )}
           {memberAccessReady && tab === "likes" && (
-            <MemberRouteBoundary name="likes">
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="likes">
               <LikesPage
                 isPremium={isPremium}
                 onUpgrade={startPremiumCheckout}
@@ -2204,7 +2273,7 @@ export function App() {
             <GuestGate tab="chats" onJoin={() => openAuth("signup", "chats")} onLogin={() => openAuth("login", "chats")} />
           )}
           {memberAccessReady && tab === "chats" && (
-            <MemberRouteBoundary name="chats">
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="chats">
               <ChatsPage
                 isPremium={isPremium}
                 plans={plans}
@@ -2226,12 +2295,12 @@ export function App() {
             <GuestGate tab="me" onJoin={() => openAuth("signup", "me")} onLogin={() => openAuth("login", "me")} />
           )}
           {memberAccessReady && tab === "me" && currentPathname === "/saved-profiles" && (
-            <MemberRouteBoundary name="saved-profiles">
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="saved-profiles">
               <SavedProfilesPage onBack={() => navigateToPath("/profile")} />
             </MemberRouteBoundary>
           )}
           {memberAccessReady && tab === "me" && currentPathname === "/voice-vibe" && (
-            <MemberRouteBoundary name="voice-vibe">
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="voice-vibe">
               <VoiceVibePage
                 user={user}
                 profile={getDatingProfile()}
@@ -2244,7 +2313,7 @@ export function App() {
             </MemberRouteBoundary>
           )}
           {memberAccessReady && tab === "me" && currentPathname === "/trusted-member" && (
-            <MemberRouteBoundary name="trusted-member">
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="trusted-member">
               <TrustedMemberPage
                 user={user}
                 profile={getDatingProfile()}
@@ -2258,7 +2327,7 @@ export function App() {
             </MemberRouteBoundary>
           )}
           {memberAccessReady && tab === "me" && currentPathname !== "/voice-vibe" && currentPathname !== "/trusted-member" && currentPathname !== "/saved-profiles" && (
-            <MemberRouteBoundary name="profile">
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="profile">
               <ProfilePage
                 user={user}
                 isPremium={isPremium}

@@ -13,6 +13,7 @@ import type { NavTab } from "../types";
 export type MemberRouteGuardInput = {
   authLoading: boolean;
   memberHydrating: boolean;
+  memberSessionReady?: boolean;
   isAuthed: boolean;
   profileComplete: boolean | null;
   pathname?: string;
@@ -34,6 +35,7 @@ export function evaluateMemberRouteGuard(input: MemberRouteGuardInput): MemberRo
   if (
     input.authLoading ||
     input.memberHydrating ||
+    (input.isAuthed && onMemberSurface && input.memberSessionReady === false) ||
     (input.isAuthed && input.profileComplete === null && onMemberSurface)
   ) {
     return { phase: "loading", memberPath, memberTab: null };

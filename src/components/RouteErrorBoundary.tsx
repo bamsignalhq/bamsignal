@@ -47,8 +47,11 @@ export function PublicRouteBoundary(props: Omit<RouteErrorBoundaryProps, "fallba
   return <RouteErrorBoundary {...props} fallbackTitle="This page needs a moment" />;
 }
 
-export function MemberRouteBoundary(props: RouteErrorBoundaryProps) {
-  return <RouteErrorBoundary {...props} />;
+export function MemberRouteBoundary({
+  sessionKey,
+  ...props
+}: RouteErrorBoundaryProps & { sessionKey?: number }) {
+  return <RouteErrorBoundary key={sessionKey} {...props} />;
 }
 
 export function AdminRouteBoundary(props: RouteErrorBoundaryProps) {

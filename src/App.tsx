@@ -60,6 +60,7 @@ import {
   LazyBamSignalInstituteHouseAcademyPage,
   LazyBamSignalInstituteHouseInstitutePage,
   LazyBamSignalInstituteCenturyRoomPage,
+  LazyBamSignalInstituteGovernancePage,
   LazyBamSignalInstituteLegacyProfessionalsPage,
   LazyBamSignalInstituteTrustMilestonesPage,
   LazyBamSignalInstituteTrustScorePage,
@@ -2393,6 +2394,8 @@ export function App() {
           <LazyBamSignalInstituteHouseInstitutePage {...instituteShellProps} />
         ) : bamSignalInstituteRoute === "centuryRoom" ? (
           <LazyBamSignalInstituteCenturyRoomPage {...instituteShellProps} />
+        ) : bamSignalInstituteRoute === "governance" ? (
+          <LazyBamSignalInstituteGovernancePage {...instituteShellProps} />
         ) : (
           <LazyBamSignalInstituteLandingPage {...instituteShellProps} />
         )}

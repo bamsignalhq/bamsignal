@@ -410,6 +410,13 @@ export function BamSignalInstitutePage() {
           >
             Century Room
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("governance"))}
+          >
+            Governance
+          </button>
         </div>
       </header>
 

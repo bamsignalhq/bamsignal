@@ -9285,6 +9285,258 @@
   white-space: nowrap;
 }
 
+/* BamSignal Governance Framework™ */
+.govf-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.govf-page__hero {
+  padding: 28px 24px;
+}
+
+.govf-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.govf-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.govf-page__prepared,
+.govf-page__future,
+.govf-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.govf-page__prepared h2,
+.govf-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.govf-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.govf-page__prepared-list,
+.govf-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.govf-page__prepared-list {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.govf-page__prepared-list li,
+.govf-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.16);
+}
+
+.govf-page__prepared-list li span,
+.govf-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.govf-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.govf-page__split {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.govf-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.govf-card__head h2,
+.govf-card__head h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.govf-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.64);
+  line-height: 1.45;
+}
+
+.govf-card__empty {
+  margin: 12px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.govf-pillar-card {
+  padding: 18px 20px;
+}
+
+.govf-pillar-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.govf-pillar-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.govf-pillar-card__badge,
+.govf-commitment-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(212, 175, 106, 0.14);
+  color: rgba(224, 180, 120, 0.98);
+  border: 1px solid rgba(212, 175, 106, 0.3);
+  white-space: nowrap;
+}
+
+.govf-pillar-card__order {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.govf-pillar-card__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.govf-pillar-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.92);
+}
+
+.govf-principles-card,
+.govf-commitment-card,
+.govf-timeline-card {
+  padding: 20px 22px;
+}
+
+.govf-principles-card__list,
+.govf-commitment-card__list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.govf-principles-card__list li,
+.govf-commitment-card__list li {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.12);
+}
+
+.govf-principles-card__list li div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.govf-principles-card__list li span,
+.govf-commitment-card__list li p {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.govf-principles-card__list small,
+.govf-commitment-card__list small {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.govf-commitment-card__list li header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.govf-timeline-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.govf-timeline-card__list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.govf-timeline-card__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.govf-timeline-card__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.9);
+}
+
+.govf-timeline-card__note {
+  margin: 4px 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.4;
+}
+
+.govf-timeline-card__item time {
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.78);
+}
+
 /* Century Room™ */
 .croom-page {
   display: flex;

@@ -505,6 +505,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://bamsignal.com/institute/governance</loc>
+    <lastmod>2026-06-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://bamsignal.com/careers</loc>
     <lastmod>2026-06-22</lastmod>
     <changefreq>monthly</changefreq>

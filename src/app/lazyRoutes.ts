@@ -510,6 +510,12 @@ export const LazyBamSignalInstituteCenturyRoomPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteGovernancePage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteGovernancePage").then((module) => ({
+    default: module.BamSignalInstituteGovernancePage
+  }))
+);
+
 export const LazyCareersLandingPage = lazy(() =>
   import("../pages/careers/CareersLandingPage").then((module) => ({
     default: module.CareersLandingPage

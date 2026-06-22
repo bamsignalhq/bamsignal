@@ -176,6 +176,12 @@ export const LazyBamSignalInstituteRelationshipLabPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteInsightsPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteInsightsPage").then((module) => ({
+    default: module.BamSignalInstituteInsightsPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

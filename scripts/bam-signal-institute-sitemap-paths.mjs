@@ -4,7 +4,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/programs",
   "/institute/annual-insights",
   "/institute/annual-relationship-reports",
-  "/institute/relationship-lab"
+  "/institute/relationship-lab",
+  "/institute/bamsignal-insights"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

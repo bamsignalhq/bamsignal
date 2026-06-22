@@ -679,3 +679,164 @@
   color: rgba(255, 255, 255, 0.58);
   line-height: 1.45;
 }
+
+/* BamSignal Insights™ */
+.bsi-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.bsi-page__hero {
+  padding: 28px 24px;
+}
+
+.bsi-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.bsi-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bsi-page__prepared,
+.bsi-page__future {
+  padding: 22px 24px;
+}
+
+.bsi-page__prepared h2,
+.bsi-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.bsi-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.bsi-page__prepared-list,
+.bsi-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.bsi-page__prepared-list li,
+.bsi-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.bsi-page__prepared-list li span,
+.bsi-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bsi-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.bsi-page__reserved {
+  margin: 14px 0 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.bsi-article-card,
+.bsi-podcast-card,
+.bsi-interview-card,
+.bsi-expert-card {
+  padding: 18px 20px;
+}
+
+.bsi-article-card__head,
+.bsi-podcast-card__head,
+.bsi-interview-card__head,
+.bsi-expert-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.bsi-article-card__head h3,
+.bsi-podcast-card__head h3,
+.bsi-interview-card__head h3,
+.bsi-expert-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.bsi-article-card__badge,
+.bsi-podcast-card__badge,
+.bsi-interview-card__badge,
+.bsi-expert-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.bsi-article-card__labels,
+.bsi-podcast-card__labels,
+.bsi-interview-card__labels,
+.bsi-expert-card__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.bsi-article-card__category,
+.bsi-podcast-card__episodes,
+.bsi-interview-card__guest,
+.bsi-expert-card__title {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.bsi-article-card__summary,
+.bsi-podcast-card__summary,
+.bsi-interview-card__summary,
+.bsi-expert-card__focus {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.bsi-article-card__status,
+.bsi-podcast-card__status,
+.bsi-interview-card__status,
+.bsi-expert-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

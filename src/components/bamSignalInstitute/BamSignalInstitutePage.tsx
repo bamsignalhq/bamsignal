@@ -58,6 +58,13 @@ export function BamSignalInstitutePage() {
           >
             Relationship Lab
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("bamSignalInsights"))}
+          >
+            BamSignal Insights
+          </button>
         </div>
       </header>
 

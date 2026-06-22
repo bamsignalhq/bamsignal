@@ -1,5 +1,10 @@
 /** Signal Events™ indexable landing paths — keep in sync with globalCityNetwork.ts */
-export const SIGNAL_EVENTS_HUB_PATHS = ["/events", "/events/communities", "/events/diaspora"];
+export const SIGNAL_EVENTS_HUB_PATHS = [
+  "/events",
+  "/events/communities",
+  "/events/diaspora",
+  "/events/community-journey"
+];
 
 export const SIGNAL_EVENTS_FEATURED_CITY_SLUGS = [
   "lagos",

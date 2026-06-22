@@ -43,6 +43,13 @@ export function SignalEventsPage() {
           >
             Diaspora cities
           </button>
+          <button
+            type="button"
+            className="se-hub-page__btn"
+            onClick={() => navigateToPath(signalEventsPathForHub("communityJourney"))}
+          >
+            Community Journey
+          </button>
         </div>
       </header>
 

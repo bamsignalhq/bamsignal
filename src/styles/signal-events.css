@@ -320,3 +320,246 @@
     align-items: flex-start;
   }
 }
+
+/* Global Community Rankings™ — maturity architecture */
+.gcr-page {
+  display: grid;
+  gap: 24px;
+}
+
+.gcr-page__hero {
+  padding: 28px 24px;
+}
+
+.gcr-page__labels {
+  margin-top: 10px !important;
+  font-size: 0.88rem;
+  color: var(--se-gold) !important;
+}
+
+.gcr-page__purpose {
+  margin-top: 8px !important;
+  font-size: 0.84rem;
+  color: var(--se-muted) !important;
+}
+
+.gcr-page__levels {
+  padding: 20px;
+}
+
+.gcr-page__levels h2 {
+  margin: 0 0 6px;
+}
+
+.gcr-page__levels > p {
+  margin: 0 0 14px;
+  color: var(--se-muted);
+  font-size: 0.86rem;
+}
+
+.gcr-page__level-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.gcr-page__level-list li {
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+}
+
+.gcr-page__level-list li span {
+  color: var(--se-muted);
+  line-height: 1.45;
+}
+
+.gcr-page__grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.gcr-page__detail {
+  display: grid;
+  gap: 14px;
+}
+
+.gcr-page__future {
+  padding: 20px;
+}
+
+.gcr-page__future h2 {
+  margin: 0 0 12px;
+}
+
+.gcr-page__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.gcr-page__future li {
+  display: grid;
+  gap: 2px;
+  font-size: 0.84rem;
+}
+
+.gcr-page__future li span {
+  color: var(--se-muted);
+}
+
+.gcr-page__reserved {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.gcr-community-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(168, 130, 255, 0.15);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.25);
+}
+
+.gcr-community-badge--primary,
+.gcr-community-badge--premium-community,
+.gcr-community-badge--legacy-community {
+  background: rgba(212, 175, 106, 0.18);
+  border-color: rgba(212, 175, 106, 0.35);
+}
+
+.gcr-community-status-card,
+.gcr-community-growth-card,
+.gcr-community-milestone-timeline {
+  padding: 16px;
+}
+
+.gcr-community-status-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.gcr-community-status-card__head h3 {
+  margin: 0;
+}
+
+.gcr-community-status-card__labels {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: var(--se-gold);
+}
+
+.gcr-community-status-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: var(--se-muted);
+  margin-bottom: 10px;
+}
+
+.gcr-community-status-card__summary {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--se-muted);
+}
+
+.gcr-community-growth-card__head h3 {
+  margin: 0 0 6px;
+}
+
+.gcr-community-growth-card__head p {
+  margin: 0 0 14px;
+  color: var(--se-muted);
+  font-size: 0.86rem;
+}
+
+.gcr-community-growth-card__list,
+.gcr-community-milestone-timeline__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.gcr-community-growth-card__item,
+.gcr-community-milestone-timeline__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.gcr-community-growth-card__dot,
+.gcr-community-milestone-timeline__dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: rgba(168, 130, 255, 0.35);
+}
+
+.gcr-community-growth-card__item.is-reached .gcr-community-growth-card__dot,
+.gcr-community-milestone-timeline__dot {
+  background: rgba(212, 175, 106, 0.9);
+}
+
+.gcr-community-growth-card__item p {
+  margin: 4px 0;
+  font-size: 0.82rem;
+  color: var(--se-muted);
+  line-height: 1.45;
+}
+
+.gcr-community-growth-card__state {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.gcr-community-growth-card__item.is-reached .gcr-community-growth-card__state {
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.gcr-community-milestone-timeline__head h3 {
+  margin: 0 0 6px;
+}
+
+.gcr-community-milestone-timeline__head p {
+  margin: 0 0 14px;
+  color: var(--se-muted);
+  font-size: 0.86rem;
+}
+
+.gcr-community-milestone-timeline__note {
+  margin: 4px 0;
+  font-size: 0.82rem;
+  color: var(--se-muted);
+}
+
+.gcr-community-milestone-timeline__item time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.gcr-community-milestone-timeline__empty {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--se-muted);
+}

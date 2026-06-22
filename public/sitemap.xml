@@ -379,6 +379,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://bamsignal.com/institute/bamsignal-museum</loc>
+    <lastmod>2026-06-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://bamsignal.com/about</loc>
     <lastmod>2026-06-22</lastmod>
     <changefreq>monthly</changefreq>

@@ -6042,3 +6042,210 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* BamSignal Museum™ */
+.bsmu-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.bsmu-page__hero {
+  padding: 28px 24px;
+}
+
+.bsmu-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.bsmu-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.bsmu-page__copy-rules,
+.bsmu-page__prepared,
+.bsmu-page__reserved-note,
+.bsmu-page__future-ready {
+  padding: 22px 24px;
+}
+
+.bsmu-page__copy-rules h2,
+.bsmu-page__prepared h2,
+.bsmu-page__future-ready h2 {
+  margin: 0 0 6px;
+}
+
+.bsmu-page__copy-rules p,
+.bsmu-page__prepared > p,
+.bsmu-page__future-ready > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.bsmu-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.bsmu-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.bsmu-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bsmu-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.bsmu-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.bsmu-exhibit-card,
+.bsmu-story-card,
+.bsmu-timeline-card {
+  padding: 18px 20px;
+}
+
+.bsmu-exhibit-card__head,
+.bsmu-story-card__head,
+.bsmu-timeline-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.bsmu-exhibit-card__head h3,
+.bsmu-story-card__head h3,
+.bsmu-timeline-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.bsmu-exhibit-card__badge,
+.bsmu-story-card__badge,
+.bsmu-timeline-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.bsmu-exhibit-card__labels,
+.bsmu-story-card__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.bsmu-exhibit-card__preservation,
+.bsmu-story-card__preservation,
+.bsmu-timeline-card__preserving,
+.bsmu-timeline-card__preservation {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.bsmu-exhibit-card__description,
+.bsmu-story-card__summary,
+.bsmu-timeline-card__summary {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.bsmu-timeline-card__list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bsmu-timeline-card__item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.bsmu-timeline-card__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: rgba(168, 130, 255, 0.7);
+}
+
+.bsmu-timeline-card__note {
+  margin: 4px 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.bsmu-timeline-card__item time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.bsmu-timeline-card__empty {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}
+
+.bsmu-exhibit-card__forbidden,
+.bsmu-story-card__forbidden,
+.bsmu-timeline-card__forbidden {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.4;
+}
+
+.bsmu-exhibit-card__status,
+.bsmu-story-card__status,
+.bsmu-timeline-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

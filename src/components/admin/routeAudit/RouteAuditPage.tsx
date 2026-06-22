@@ -9,6 +9,7 @@ import {
   type RouteHealthStatusId
 } from "../../../constants/routeAudit";
 import { AUDIT_CENTER_ADMIN_PATH } from "../../../constants/auditCenterAdmin";
+import { DATABASE_AUDIT_ADMIN_PATH } from "../../../constants/databaseAudit";
 import { navigateToPath } from "../../../constants/routes";
 import { buildRouteHealthReport } from "../../../utils/routeHealthReport";
 import { NavigationMapCard } from "./NavigationMapCard";
@@ -174,6 +175,14 @@ export function RouteAuditPage() {
             onClick={() => navigateToPath(AUDIT_CENTER_ADMIN_PATH)}
           >
             {AUDIT_CENTER_ADMIN_PATH}
+          </button>
+          {" · "}
+          <button
+            type="button"
+            className="concierge-consultant-btn"
+            onClick={() => navigateToPath(DATABASE_AUDIT_ADMIN_PATH)}
+          >
+            Database audit
           </button>
         </p>
         <p>Duplicates detected: {report.duplicates.length}</p>

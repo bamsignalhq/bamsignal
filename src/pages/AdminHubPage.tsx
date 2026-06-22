@@ -92,6 +92,7 @@ import { TalentRecruitingPage } from "../components/admin/talent/TalentRecruitin
 import { SupportCenterAdminPage } from "../components/admin/support/SupportCenterAdminPage";
 import { AuditComplianceCenterPage } from "../components/admin/audit/AuditComplianceCenterPage";
 import { RouteAuditPage } from "../components/admin/routeAudit/RouteAuditPage";
+import { DatabaseAuditPage } from "../components/admin/databaseAudit/DatabaseAuditPage";
 import { DocumentCenterPage } from "../components/admin/documents/DocumentCenterPage";
 import { SafetyCenterPage } from "../components/admin/safety/SafetyCenterPage";
 import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
@@ -2057,6 +2058,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "concierge" && conciergeView === "dashboard" ? <ConsultantDashboardPage /> : null}
       {tab === "talent" ? <TalentRecruitingPage /> : null}
       {tab === "support" ? <SupportCenterAdminPage /> : null}
+      {tab === "audit" && auditView === "database" ? <DatabaseAuditPage /> : null}
       {tab === "audit" && auditView === "routes" ? <RouteAuditPage /> : null}
       {tab === "audit" && auditView === "compliance" ? <AuditComplianceCenterPage /> : null}
       {tab === "documents" ? <DocumentCenterPage /> : null}

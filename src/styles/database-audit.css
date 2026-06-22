@@ -1,0 +1,173 @@
+.database-audit-page {
+  display: grid;
+  gap: 18px;
+}
+
+.database-audit-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.database-audit-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.database-audit-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 68ch;
+}
+
+.database-audit-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.database-audit-search-field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.84rem;
+}
+
+.database-audit-search-field input,
+.database-audit-search-field select {
+  min-width: 180px;
+}
+
+.database-health-card__head h3,
+.migration-status-card__head h3,
+.table-integrity-card__head h3,
+.dependency-card__head h3,
+.database-recommendation-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.database-health-card__head p,
+.migration-status-card__head p,
+.table-integrity-card__head p,
+.dependency-card__head p,
+.database-recommendation-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.database-health-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.database-health-card__chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.database-health-card__chip p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.database-health-card__chip--partial {
+  border-color: rgba(255, 200, 120, 0.35);
+}
+
+.database-health-card__chip--legacy-dependency,
+.database-health-card__chip--missing {
+  border-color: rgba(255, 140, 140, 0.35);
+}
+
+.database-health-card__chip--needs-migration {
+  border-color: rgba(120, 200, 255, 0.35);
+}
+
+.migration-status-card__table {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.migration-status-card__row {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 0.7fr 0.8fr;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.migration-status-card__row--head {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.76rem;
+}
+
+.database-audit-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 14px;
+}
+
+.database-audit-page__column {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.table-integrity-card__list,
+.dependency-card__list,
+.database-recommendation-card__list {
+  margin: 12px 0 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.table-integrity-card__item-head,
+.dependency-card__item-head,
+.database-recommendation-card__item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.table-integrity-card__meta,
+.dependency-card__note {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.database-recommendation-card__priority--high {
+  color: rgba(255, 160, 120, 0.95);
+}
+
+.database-audit-page__foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 6px;
+}
+
+.table-integrity-card__empty {
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+@media (max-width: 900px) {
+  .database-audit-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .migration-status-card__row {
+    grid-template-columns: 1fr 1fr;
+  }
+}

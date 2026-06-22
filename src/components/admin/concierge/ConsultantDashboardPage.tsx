@@ -22,6 +22,7 @@ import type { ConciergeMemberFilters } from "../../../types/conciergeConsultant"
 import { ConciergeMemberProfilePage } from "./ConciergeMemberProfilePage";
 import { ConsultantSearchBar } from "./ConsultantSearchBar";
 import { IntroductionEnginePage } from "./IntroductionEnginePage";
+import { RelationshipFollowUpPage } from "./RelationshipFollowUpPage";
 import { ConsultantDirectoryPage } from "./ConsultantDirectoryPage";
 import { JourneyArchivePage } from "./JourneyArchivePage";
 import { RelationshipLegacyIndexPage } from "./RelationshipLegacyIndexPage";
@@ -29,7 +30,7 @@ import { SuccessStoryConsentAdminPage } from "./SuccessStoryConsentAdminPage";
 import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
 import { useAdminToast } from "../AdminToast";
 
-type ConsultantView = "members" | "introductions" | "consultants" | "performance" | "archive" | "legacy" | "stories";
+type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "archive" | "legacy" | "stories";
 
 type DashboardInsight = {
   id: string;
@@ -267,6 +268,13 @@ export function ConsultantDashboardPage() {
           </button>
           <button
             type="button"
+            className={`concierge-consultant-dashboard__tab${view === "follow-up" ? " is-active" : ""}`}
+            onClick={() => setView("follow-up")}
+          >
+            Follow-Up
+          </button>
+          <button
+            type="button"
             className={`concierge-consultant-dashboard__tab${view === "performance" ? " is-active" : ""}`}
             onClick={() => setView("performance")}
           >
@@ -305,6 +313,8 @@ export function ConsultantDashboardPage() {
       {view === "archive" ? <JourneyArchivePage /> : null}
 
       {view === "introductions" ? <IntroductionEnginePage /> : null}
+
+      {view === "follow-up" ? <RelationshipFollowUpPage /> : null}
 
       {view === "consultants" ? (
         <ConsultantDirectoryPage

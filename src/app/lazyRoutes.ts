@@ -260,6 +260,12 @@ export const LazyBamSignalInstituteRelationshipCertificatesPage = lazy(() =>
   )
 );
 
+export const LazyBamSignalInstituteFellowsPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteFellowsPage").then((module) => ({
+    default: module.BamSignalInstituteFellowsPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

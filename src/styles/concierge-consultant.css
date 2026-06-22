@@ -4118,3 +4118,219 @@
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* Relationship Health Alerts™ */
+.relationship-support-queue {
+  display: grid;
+  gap: 16px;
+}
+
+.relationship-support-queue__list-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.relationship-support-queue__purpose {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.relationship-support-queue__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.relationship-support-queue__item {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 130, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+}
+
+.relationship-support-queue__item.is-active {
+  border-color: rgba(212, 175, 106, 0.38);
+  background: rgba(212, 175, 106, 0.08);
+}
+
+.relationship-support-queue__couple {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.relationship-support-queue__item time {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.relationship-health-alert-card {
+  padding: 16px;
+  border-radius: 14px;
+}
+
+.relationship-health-alert-card__labels {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.relationship-health-alert-card__purpose,
+.relationship-health-alert-card__visibility {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.relationship-health-alert-card__purpose {
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.relationship-health-alert-card__visibility {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.relationship-health-alert-card__headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.relationship-health-alert-card__status {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.relationship-health-alert-card__couple {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.relationship-health-alert-card__definition,
+.relationship-health-alert-card__note {
+  margin: 0 0 10px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.relationship-health-alert-card__note {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid rgba(168, 130, 255, 0.35);
+}
+
+.relationship-health-alert-card__meta {
+  margin: 0 0 14px;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.relationship-health-alert-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.relationship-health-alert-card__future h4 {
+  margin: 0 0 10px;
+  font-size: 0.88rem;
+}
+
+.relationship-health-alert-card__future ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.relationship-health-alert-card__future li {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(168, 130, 255, 0.18);
+}
+
+.relationship-health-alert-card__future strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.relationship-health-alert-card__future span {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.relationship-health-alert-card__reserved {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.45;
+}
+
+.health-alert-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.health-alert-badge__type {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 130, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.health-alert-badge--primary .health-alert-badge__type {
+  border-color: rgba(212, 175, 106, 0.42);
+  background: rgba(212, 175, 106, 0.12);
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.health-alert-badge__severity {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.health-alert-badge__severity--low {
+  border: 1px solid rgba(168, 130, 255, 0.25);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.health-alert-badge__severity--moderate {
+  border: 1px solid rgba(212, 175, 106, 0.35);
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.health-alert-badge__severity--high {
+  border: 1px solid rgba(255, 140, 120, 0.35);
+  background: rgba(255, 140, 120, 0.1);
+  color: rgba(255, 180, 165, 0.95);
+}
+

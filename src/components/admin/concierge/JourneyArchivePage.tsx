@@ -18,6 +18,8 @@ import { LegacyArchiveCard } from "./LegacyArchiveCard";
 import { JourneyHistoryCard } from "./JourneyHistoryCard";
 import { AnniversaryTimelineCard } from "../../signalConcierge/AnniversaryTimelineCard";
 import { ensureJourneyMilestoneTimeline } from "../../../utils/journeyMilestoneStore";
+import { RelationshipLegacyIndexCard } from "../../signalConcierge/RelationshipLegacyIndexCard";
+import { buildLegacyProfileForMember } from "../../../utils/relationshipLegacyIndexProfile";
 
 export function JourneyArchivePage() {
   const [filters, setFilters] = useState<JourneyArchiveFilters>(EMPTY_JOURNEY_ARCHIVE_FILTERS);
@@ -152,6 +154,12 @@ export function JourneyArchivePage() {
         <div className="journey-archive-page__detail">
           {selectedMember ? (
             <>
+              {(() => {
+                const legacyProfile = buildLegacyProfileForMember(selectedMember);
+                return legacyProfile ? (
+                  <RelationshipLegacyIndexCard profile={legacyProfile} />
+                ) : null;
+              })()}
               <LegacyArchiveCard member={selectedMember} />
               {selectedMember.journeyId ? (
                 <AnniversaryTimelineCard

@@ -33,6 +33,8 @@ import { StoryCategoryCard } from "../../signalConcierge/StoryCategoryCard";
 import { ensureJourneyStoryProfile } from "../../../utils/journeyStoryCategories";
 import { AnniversaryTimelineCard } from "../../signalConcierge/AnniversaryTimelineCard";
 import { ensureJourneyMilestoneTimeline } from "../../../utils/journeyMilestoneStore";
+import { RelationshipLegacyIndexCard } from "../../signalConcierge/RelationshipLegacyIndexCard";
+import { buildLegacyProfileForMember } from "../../../utils/relationshipLegacyIndexProfile";
 
 type ConciergeMemberProfilePageProps = {
   member: ConciergeMemberRecord;
@@ -248,6 +250,11 @@ export function ConciergeMemberProfilePage({
       <TransitionSummaryCard summary={continuitySummary} />
 
       <JourneyContinuityTimeline events={continuityEvents} />
+
+      {(() => {
+        const legacyProfile = buildLegacyProfileForMember(member);
+        return legacyProfile ? <RelationshipLegacyIndexCard profile={legacyProfile} /> : null;
+      })()}
 
       {member.journeyId ? (
         <AnniversaryTimelineCard

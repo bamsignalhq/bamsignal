@@ -76,6 +76,25 @@ export function assertNoArchiveDeletion(
   if (previous.journeyMilestoneTimeline && !next.journeyMilestoneTimeline) {
     throw new Error("Archive integrity violation: journeyMilestoneTimeline cannot be removed");
   }
+  if (previous.relationshipLegacyIndex && next.relationshipLegacyIndex) {
+    if (previous.relationshipLegacyIndex.journeyId !== next.relationshipLegacyIndex.journeyId) {
+      throw new Error("Archive integrity violation: legacy index journeyId cannot change");
+    }
+    if (
+      previous.relationshipLegacyIndex.registeredAt !== next.relationshipLegacyIndex.registeredAt
+    ) {
+      throw new Error("Archive integrity violation: legacy index registeredAt cannot be overwritten");
+    }
+    if (
+      next.relationshipLegacyIndex.statusHistory.length <
+      previous.relationshipLegacyIndex.statusHistory.length
+    ) {
+      throw new Error("Archive integrity violation: legacy index status history cannot shrink");
+    }
+  }
+  if (previous.relationshipLegacyIndex && !next.relationshipLegacyIndex) {
+    throw new Error("Archive integrity violation: relationshipLegacyIndex cannot be removed");
+  }
   if (previous.journeyId && next.journeyId && previous.journeyId !== next.journeyId) {
     throw new Error("Archive integrity violation: journeyId cannot change");
   }

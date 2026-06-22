@@ -24,10 +24,11 @@ import { ConsultantSearchBar } from "./ConsultantSearchBar";
 import { IntroductionEnginePanel } from "./IntroductionEnginePanel";
 import { ConsultantDirectoryPage } from "./ConsultantDirectoryPage";
 import { JourneyArchivePage } from "./JourneyArchivePage";
+import { RelationshipLegacyIndexPage } from "./RelationshipLegacyIndexPage";
 import { SuccessStoryConsentAdminPage } from "./SuccessStoryConsentAdminPage";
 import { useAdminToast } from "../AdminToast";
 
-type ConsultantView = "members" | "introductions" | "consultants" | "archive" | "stories";
+type ConsultantView = "members" | "introductions" | "consultants" | "archive" | "legacy" | "stories";
 
 type DashboardInsight = {
   id: string;
@@ -272,6 +273,13 @@ export function ConsultantDashboardPage() {
           </button>
           <button
             type="button"
+            className={`concierge-consultant-dashboard__tab${view === "legacy" ? " is-active" : ""}`}
+            onClick={() => setView("legacy")}
+          >
+            Legacy Index
+          </button>
+          <button
+            type="button"
             className={`concierge-consultant-dashboard__tab${view === "stories" ? " is-active" : ""}`}
             onClick={() => setView("stories")}
           >
@@ -281,6 +289,8 @@ export function ConsultantDashboardPage() {
       </header>
 
       {view === "stories" ? <SuccessStoryConsentAdminPage /> : null}
+
+      {view === "legacy" ? <RelationshipLegacyIndexPage /> : null}
 
       {view === "archive" ? <JourneyArchivePage /> : null}
 

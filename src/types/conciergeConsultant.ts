@@ -116,6 +116,8 @@ export type ConciergeMemberRecord = SignalConciergeApplication & {
   successStoryConsent?: SuccessStoryConsentRecord;
   /** Permanent anniversary milestone timeline — part of Journey Archive. */
   journeyMilestoneTimeline?: import("./journeyMilestone").JourneyMilestoneTimeline;
+  /** Relationship Legacy Index™ — permanent archive identity. */
+  relationshipLegacyIndex?: import("./relationshipLegacyIndex").RelationshipLegacyIndexRecord;
 };
 
 export type ConciergeMemberFilters = {

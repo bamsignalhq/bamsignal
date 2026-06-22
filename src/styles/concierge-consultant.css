@@ -2044,6 +2044,18 @@
   color: rgba(255, 255, 255, 0.55);
 }
 
+.relationship-legacy-index-page__search {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.relationship-legacy-index-page__head {
+  margin-bottom: 16px;
+}
+
 @media (max-width: 960px) {
   .success-story-consent-admin__body {
     grid-template-columns: 1fr;

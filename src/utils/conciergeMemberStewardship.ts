@@ -5,6 +5,7 @@ import { normalizeJourneyArchive } from "./conciergeJourneyArchive";
 import { getSuccessStoryConsent } from "./conciergeSuccessStoryConsentStore";
 import { attachStoryProfileToConsent, getJourneyStoryProfile } from "./journeyStoryCategories";
 import { getJourneyMilestoneTimeline } from "./journeyMilestoneStore";
+import { getRelationshipLegacyIndex } from "./relationshipLegacyIndexStore";
 
 export function stampTimelineJourneyId(
   events: ConciergeTimelineEvent[],
@@ -47,7 +48,10 @@ export function normalizeConciergeMember(member: ConciergeMemberRecord): Concier
     timeline: stampTimelineJourneyId(member.timeline ?? [], journeyId),
     journeyMilestoneTimeline:
       member.journeyMilestoneTimeline ??
-      (journeyId ? getJourneyMilestoneTimeline(journeyId) ?? undefined : undefined)
+      (journeyId ? getJourneyMilestoneTimeline(journeyId) ?? undefined : undefined),
+    relationshipLegacyIndex:
+      member.relationshipLegacyIndex ??
+      (journeyId ? getRelationshipLegacyIndex(journeyId) ?? undefined : undefined)
   });
 }
 

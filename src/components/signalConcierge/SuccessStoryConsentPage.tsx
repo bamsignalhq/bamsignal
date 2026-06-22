@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   SUCCESS_STORY_CELEBRATE,
   SUCCESS_STORY_CONSENT_SUBCOPY,
@@ -23,7 +23,10 @@ import { assignStoryCategory, ensureJourneyStoryProfile } from "../../utils/jour
 import type { JourneyStoryCategoryId } from "../../constants/journeyStoryCategories";
 import { AnniversaryTimelineCard } from "./AnniversaryTimelineCard";
 import { ensureJourneyMilestoneTimeline } from "../../utils/journeyMilestoneStore";
+import { RelationshipLegacyIndexCard } from "./RelationshipLegacyIndexCard";
+import { buildLegacyProfileForMember } from "../../utils/relationshipLegacyIndexProfile";
 import type { JourneyMilestoneTimeline } from "../../types/journeyMilestone";
+import type { ConciergeMemberRecord } from "../../types/conciergeConsultant";
 
 type SuccessStoryConsentPageProps = {
   /** Admin read-only mode */
@@ -41,6 +44,7 @@ export function SuccessStoryConsentPage({
   const [consent, setConsent] = useState<SuccessStoryConsentRecord | null>(null);
   const [storyProfile, setStoryProfile] = useState<JourneyStoryProfile | null>(null);
   const [milestoneTimeline, setMilestoneTimeline] = useState<JourneyMilestoneTimeline | null>(null);
+  const [member, setMember] = useState<ConciergeMemberRecord | null>(null);
   const [memberId, setMemberId] = useState(memberIdProp ?? "");
   const [memberName, setMemberName] = useState("");
 
@@ -51,6 +55,7 @@ export function SuccessStoryConsentPage({
     const journeyId = journeyIdProp ?? member?.journeyId ?? application?.journeyId;
     if (!journeyId || !member) {
       setConsent(null);
+      setMember(null);
       return;
     }
 
@@ -68,6 +73,7 @@ export function SuccessStoryConsentPage({
     setConsent(record);
     setStoryProfile(ensureJourneyStoryProfile(journeyId));
     setMilestoneTimeline(ensureJourneyMilestoneTimeline(journeyId));
+    setMember(member);
     setMemberId(member.id);
     setMemberName(member.aboutYou.name);
   }, [journeyIdProp, memberIdProp]);
@@ -109,6 +115,11 @@ export function SuccessStoryConsentPage({
     setStoryProfile(next);
   };
 
+  const legacyProfile = useMemo(
+    () => (member ? buildLegacyProfileForMember(member) : null),
+    [member]
+  );
+
   if (!consent) {
     return (
       <section className="success-story-consent-page signal-concierge-glass">
@@ -143,6 +154,8 @@ export function SuccessStoryConsentPage({
       {milestoneTimeline ? (
         <AnniversaryTimelineCard timeline={milestoneTimeline} readOnly celebrate />
       ) : null}
+
+      {legacyProfile ? <RelationshipLegacyIndexCard profile={legacyProfile} celebrate /> : null}
 
       <SuccessStoryConsentCard
         consent={consent}

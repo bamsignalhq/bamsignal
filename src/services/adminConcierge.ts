@@ -11,10 +11,17 @@ import {
   updateConciergeMember
 } from "../utils/conciergeConsultantStore";
 import type { JourneyArchiveFilters } from "../constants/conciergeJourneyArchive";
+import type { LegacyIndexFilters } from "../constants/relationshipLegacyIndex";
 import {
   filterMembersForArchiveSearch,
   listArchiveEligibleMembers
 } from "../utils/conciergeJourneyArchive";
+import {
+  filterLegacyIndexMembers,
+  isLegacyIndexEligible
+} from "../utils/relationshipLegacyIndexLogic";
+import { getRelationshipLegacyIndexMap } from "../utils/relationshipLegacyIndexStore";
+import { getJourneyStoryProfile } from "../utils/journeyStoryCategories";
 
 export type AdminConciergeMembersResult = {
   ok: boolean;
@@ -34,6 +41,31 @@ export async function fetchAdminConciergeArchiveMembers(
 ): Promise<AdminConciergeMembersResult> {
   syncLocalConciergeApplication();
   const members = filterMembersForArchiveSearch(listArchiveEligibleMembers(listConciergeMembers()), filters);
+  return { ok: true, members };
+}
+
+export async function fetchAdminConciergeLegacyIndexMembers(
+  filters: LegacyIndexFilters
+): Promise<AdminConciergeMembersResult> {
+  syncLocalConciergeApplication();
+  const allMembers = listConciergeMembers().filter(isLegacyIndexEligible);
+  const indexByJourneyId = getRelationshipLegacyIndexMap();
+  const storyCategoriesByJourneyId = Object.fromEntries(
+    allMembers
+      .filter((member) => member.journeyId)
+      .map((member) => [
+        member.journeyId!,
+        getJourneyStoryProfile(member.journeyId!)?.categories ??
+          member.successStoryConsent?.storyCategories ??
+          []
+      ])
+  );
+  const members = filterLegacyIndexMembers(
+    allMembers,
+    filters,
+    indexByJourneyId,
+    storyCategoriesByJourneyId
+  );
   return { ok: true, members };
 }
 

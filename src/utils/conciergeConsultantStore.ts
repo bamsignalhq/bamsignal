@@ -18,6 +18,8 @@ import { bootstrapJourneyStoryProfileSeeds } from "./journeyStoryCategories";
 import { CONCIERGE_JOURNEY_STORY_PROFILE_SEED } from "../data/conciergeJourneyStoryProfileSeed";
 import { bootstrapJourneyMilestoneSeeds } from "./journeyMilestoneStore";
 import { CONCIERGE_JOURNEY_MILESTONE_SEED } from "../data/conciergeJourneyMilestoneSeed";
+import { bootstrapRelationshipLegacyIndexSeeds } from "./relationshipLegacyIndexStore";
+import { CONCIERGE_RELATIONSHIP_LEGACY_INDEX_SEED } from "../data/conciergeRelationshipLegacyIndexSeed";
 import { assertNoArchiveDeletion, registerArchivedMember } from "./conciergeJourneyArchive";
 import { isValidJourneyId, normalizeJourneyId } from "../constants/journeyId";
 import { marriageYearFromMember } from "./conciergeJourneyArchive";
@@ -41,6 +43,7 @@ function ensureJourneyRegistrySeeded(): void {
   bootstrapSuccessStoryConsentSeeds(CONCIERGE_SUCCESS_STORY_CONSENT_SEED);
   bootstrapJourneyStoryProfileSeeds(CONCIERGE_JOURNEY_STORY_PROFILE_SEED);
   bootstrapJourneyMilestoneSeeds(CONCIERGE_JOURNEY_MILESTONE_SEED);
+  bootstrapRelationshipLegacyIndexSeeds(CONCIERGE_RELATIONSHIP_LEGACY_INDEX_SEED);
 }
 
 function loadStore(): ConciergeConsultantStore {

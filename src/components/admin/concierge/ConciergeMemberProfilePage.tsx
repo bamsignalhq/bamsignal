@@ -19,6 +19,7 @@ import { MemberAssignmentSection } from "./MemberAssignmentSection";
 import { MemberConsultationPaymentSection } from "./MemberConsultationPaymentSection";
 import { MemberNotificationSection } from "./MemberNotificationSection";
 import { MemberMeetingNotesSection } from "./MemberMeetingNotesSection";
+import { MemberApplicationApprovalSection } from "./MemberApplicationApprovalSection";
 import { JourneyTransitionCard } from "./JourneyTransitionCard";
 import { TransitionSummaryCard } from "./TransitionSummaryCard";
 import { listIntroductionsForMember } from "../../../utils/IntroductionEngine";
@@ -247,6 +248,8 @@ export function ConciergeMemberProfilePage({
       </div>
 
       <MemberAssignmentSection member={member} />
+
+      <MemberApplicationApprovalSection member={member} />
 
       <MemberConsultationPaymentSection member={member} />
 

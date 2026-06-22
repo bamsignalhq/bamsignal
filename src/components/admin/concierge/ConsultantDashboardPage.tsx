@@ -34,6 +34,8 @@ import { ConsultantPerformancePage } from "./ConsultantPerformancePage";
 import { OperationsPage } from "./OperationsPage";
 import { ConsultationsPage } from "./ConsultationsPage";
 import { useAdminToast } from "../AdminToast";
+import { getApplicationReviewSummaryForMember } from "../../../utils/ApplicationApprovalEngine";
+import { ApprovalStatusBadge } from "./ApprovalStatusBadge";
 
 type ConsultantView = "members" | "introductions" | "follow-up" | "consultants" | "performance" | "operations" | "consultations" | "archive" | "legacy" | "families" | "years" | "founders" | "stories";
 
@@ -422,7 +424,9 @@ export function ConsultantDashboardPage() {
                 <p className="concierge-consultant__empty">No members match these filters.</p>
               ) : null}
               <ul>
-                {members.map((member) => (
+                {members.map((member) => {
+                  const approvalSummary = getApplicationReviewSummaryForMember(member);
+                  return (
                   <li key={member.id}>
                     <button
                       type="button"
@@ -436,6 +440,12 @@ export function ConsultantDashboardPage() {
                         <span>
                           {member.journeyId ? `${member.journeyId} · ` : ""}
                           {member.aboutYou.city} · {SIGNAL_CONCIERGE_STATUS_LABELS[member.status]}
+                        </span>
+                        <span className="concierge-consultant-member-row__approval">
+                          <ApprovalStatusBadge status={approvalSummary.status} />
+                          {approvalSummary.assignedReviewerName
+                            ? ` · ${approvalSummary.assignedReviewerName}`
+                            : ""}
                         </span>
                       </div>
                       {member.flags.length ? (
@@ -453,7 +463,8 @@ export function ConsultantDashboardPage() {
                       ) : null}
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </aside>
 

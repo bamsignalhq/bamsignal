@@ -372,6 +372,13 @@ export function BamSignalInstituteLayout({
               >
                 Residencies
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("houseFoundation")}
+              >
+                Foundation
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

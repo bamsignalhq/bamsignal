@@ -375,6 +375,13 @@ export function BamSignalInstitutePage() {
           >
             Residencies
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("houseFoundation"))}
+          >
+            Foundation
+          </button>
         </div>
       </header>
 

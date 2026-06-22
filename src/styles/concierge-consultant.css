@@ -2804,12 +2804,197 @@
   font-size: 0.84rem;
 }
 
+/* Consultant Performance Reviews™ */
+.consultant-performance-reviews__eyebrow {
+  margin: 0 0 6px;
+  color: var(--sc-gold, #d4af6a);
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.consultant-performance-reviews__periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.consultant-performance-reviews__period-chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: inherit;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.consultant-performance-reviews__period-chip--active {
+  border-color: rgba(212, 175, 106, 0.45);
+  background: rgba(212, 175, 106, 0.08);
+}
+
+.performance-review-card__body {
+  display: grid;
+  gap: 10px;
+}
+
+.performance-review-card__rating {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.performance-review-card__rating strong {
+  font-size: 1.2rem;
+  color: var(--sc-gold, #d4af6a);
+}
+
+.performance-review-card__date {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.performance-review-card__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.performance-review-card__meta dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.performance-review-card__meta dd {
+  margin: 0;
+  font-size: 0.86rem;
+}
+
+.review-summary-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.review-category-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.review-category-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.review-category-card__head h4 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.review-category-card__head span {
+  font-size: 0.76rem;
+  color: var(--sc-gold, #d4af6a);
+}
+
+.review-category-card__evidence {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.growth-plan-card__list,
+.achievement-timeline-card__list,
+.achievement-timeline-card__progress {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.growth-plan-card__list li,
+.achievement-timeline-card__progress li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.growth-plan-card__list span,
+.achievement-timeline-card__progress em {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-style: normal;
+}
+
+.achievement-timeline-card__list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.achievement-timeline-card__marker {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--sc-gold, #d4af6a);
+}
+
+.achievement-timeline-card__list time {
+  display: block;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.consultant-performance-reviews-future {
+  border: 1px dashed rgba(212, 175, 106, 0.25);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.consultant-performance-reviews-future__label {
+  margin: 0 0 10px;
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sc-gold, #d4af6a);
+}
+
+.consultant-performance-reviews-future li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0;
+}
+
+.consultant-performance-reviews-future span {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
 @media (max-width: 960px) {
   .consultant-performance-page__body {
     grid-template-columns: 1fr;
   }
 
-  .journey-analytics-page__grid {
+  .journey-analytics-page__grid,
+  .review-summary-card__grid,
+  .performance-review-card__meta {
     grid-template-columns: 1fr;
   }
 }

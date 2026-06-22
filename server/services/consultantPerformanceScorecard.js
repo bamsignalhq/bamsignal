@@ -2,13 +2,20 @@
 
 const CONSULTANT_ACHIEVEMENT_DEFINITIONS = [
   { id: "consultations-100", label: "100 Consultations", target: 100, metricKey: "consultationsCompleted" },
-  { id: "introductions-50", label: "50 Introductions", target: 50, metricKey: "introductionsMade" },
+  { id: "consultations-1000", label: "1000 Consultations", target: 1000, metricKey: "consultationsCompleted" },
   { id: "relationships-10", label: "10 Relationships", target: 10, metricKey: "relationshipsFormed" },
-  { id: "engagements-5", label: "5 Engagements", target: 5, metricKey: "engagements" },
-  { id: "first-marriage", label: "First Marriage", target: 1, metricKey: "marriages" },
+  { id: "relationships-25", label: "25 Relationships", target: 25, metricKey: "relationshipsFormed" },
+  { id: "engagements-10", label: "10 Engagements", target: 10, metricKey: "engagements" },
   { id: "marriages-25", label: "25 Marriages", target: 25, metricKey: "marriages" },
-  { id: "legacy-matchmaker", label: "Legacy Matchmaker", target: 1, metricKey: "legacyArchives" }
+  { id: "legacy-matchmaker", label: "Legacy Matchmaker", target: 1, metricKey: "legacyArchives" },
+  { id: "institution-builder", label: "Institution Builder", target: 1, metricKey: "institutionBuilder" }
 ];
+
+export function computeInstitutionBuilderScore(metrics) {
+  if (metrics.legacyArchives >= 2 && metrics.marriages >= 5) return 1;
+  if (metrics.marriages >= 10 && metrics.consultationsCompleted >= 500) return 1;
+  return 0;
+}
 
 export const RELATIONSHIP_METRIC_LABELS = {
   consultationsCompleted: "Consultations completed",
@@ -159,8 +166,12 @@ export function computeConsultantHealth({ members, meetings, relationshipMetrics
 }
 
 export function computeConsultantAchievements(metrics) {
+  const extended = {
+    ...metrics,
+    institutionBuilder: computeInstitutionBuilderScore(metrics)
+  };
   return CONSULTANT_ACHIEVEMENT_DEFINITIONS.map((definition) => {
-    const progress = metrics[definition.metricKey] ?? 0;
+    const progress = extended[definition.metricKey] ?? 0;
     return {
       id: definition.id,
       label: definition.label,

@@ -126,7 +126,7 @@ export async function fetchAdminConciergeConsultantPerformance(consultantId: str
         meetings
       })
     : null;
-  return { ok: Boolean(consultant), scorecard };
+  return { ok: Boolean(consultant), scorecard, members, activity, meetings };
 }
 
 export async function fetchAdminConciergeConsultantPortfolio(consultantId: string) {

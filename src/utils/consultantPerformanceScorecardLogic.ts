@@ -171,11 +171,30 @@ export function computeConsultantHealth(input: {
   };
 }
 
+export function computeInstitutionBuilderScore(metrics: ConsultantRelationshipMetrics): number {
+  if (metrics.legacyArchives >= 2 && metrics.marriages >= 5) return 1;
+  if (metrics.marriages >= 10 && metrics.consultationsCompleted >= 500) return 1;
+  return 0;
+}
+
+function achievementMetrics(
+  metrics: ConsultantRelationshipMetrics
+): ConsultantPerformanceMetricKeys & { institutionBuilder: number } {
+  return {
+    ...metrics,
+    institutionBuilder: computeInstitutionBuilderScore(metrics)
+  };
+}
+
 export function computeConsultantAchievements(
-  metrics: ConsultantPerformanceMetricKeys & { legacyArchives: number }
+  metrics: ConsultantRelationshipMetrics
 ): ConsultantAchievement[] {
+  const extended = achievementMetrics(metrics);
   return CONSULTANT_ACHIEVEMENT_DEFINITIONS.map((definition) => {
-    const progress = metrics[definition.metricKey] ?? 0;
+    const progress =
+      definition.metricKey === "institutionBuilder"
+        ? extended.institutionBuilder
+        : extended[definition.metricKey];
     return {
       id: definition.id,
       label: definition.label,

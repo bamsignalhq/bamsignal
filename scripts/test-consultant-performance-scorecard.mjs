@@ -64,10 +64,10 @@ const quality = deriveResponseQuality({
 assert(quality === "excellent", "response quality derived");
 
 const achievements = computeConsultantAchievements(metrics);
-const firstMarriage = achievements.find((item) => item.id === "first-marriage");
 const legacyMatchmaker = achievements.find((item) => item.id === "legacy-matchmaker");
-assert(firstMarriage?.earned, "First Marriage achievement");
+const marriages25 = achievements.find((item) => item.id === "marriages-25");
 assert(legacyMatchmaker?.earned, "Legacy Matchmaker achievement");
+assert(!marriages25?.earned, "25 Marriages not yet earned in fixture");
 
 const scorecard = buildConsultantPerformanceScorecard({
   consultantId: "consultant_ada",
@@ -78,7 +78,7 @@ const scorecard = buildConsultantPerformanceScorecard({
 });
 assert(scorecard.consultantName === "Ada Okafor", "scorecard binds consultant");
 assert(scorecard.health.activeMembers >= 1, "consultant health active members");
-assert(scorecard.achievements.length === 7, "seven achievements defined");
+assert(scorecard.achievements.length === 8, "eight achievements defined");
 assert(assertScorecardExcludesSalesMetrics(scorecard), "no sales metrics in scorecard");
 
 const forbidden = JSON.stringify(scorecard).toLowerCase();

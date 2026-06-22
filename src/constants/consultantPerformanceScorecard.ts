@@ -15,18 +15,19 @@ export const SCORECARD_SUBCOPY =
 
 export type ConsultantAchievementId =
   | "consultations-100"
-  | "introductions-50"
+  | "consultations-1000"
   | "relationships-10"
-  | "engagements-5"
-  | "first-marriage"
+  | "relationships-25"
+  | "engagements-10"
   | "marriages-25"
-  | "legacy-matchmaker";
+  | "legacy-matchmaker"
+  | "institution-builder";
 
 export type ConsultantAchievementDefinition = {
   id: ConsultantAchievementId;
   label: string;
   target: number;
-  metricKey: keyof ConsultantPerformanceMetricKeys;
+  metricKey: keyof ConsultantPerformanceMetricKeys | "institutionBuilder";
 };
 
 export type ConsultantPerformanceMetricKeys = {
@@ -43,12 +44,13 @@ export type ConsultantPerformanceMetricKeys = {
 
 export const CONSULTANT_ACHIEVEMENT_DEFINITIONS: ConsultantAchievementDefinition[] = [
   { id: "consultations-100", label: "100 Consultations", target: 100, metricKey: "consultationsCompleted" },
-  { id: "introductions-50", label: "50 Introductions", target: 50, metricKey: "introductionsMade" },
+  { id: "consultations-1000", label: "1000 Consultations", target: 1000, metricKey: "consultationsCompleted" },
   { id: "relationships-10", label: "10 Relationships", target: 10, metricKey: "relationshipsFormed" },
-  { id: "engagements-5", label: "5 Engagements", target: 5, metricKey: "engagements" },
-  { id: "first-marriage", label: "First Marriage", target: 1, metricKey: "marriages" },
+  { id: "relationships-25", label: "25 Relationships", target: 25, metricKey: "relationshipsFormed" },
+  { id: "engagements-10", label: "10 Engagements", target: 10, metricKey: "engagements" },
   { id: "marriages-25", label: "25 Marriages", target: 25, metricKey: "marriages" },
-  { id: "legacy-matchmaker", label: "Legacy Matchmaker", target: 1, metricKey: "legacyArchives" }
+  { id: "legacy-matchmaker", label: "Legacy Matchmaker", target: 1, metricKey: "legacyArchives" },
+  { id: "institution-builder", label: "Institution Builder", target: 1, metricKey: "institutionBuilder" }
 ];
 
 export const RELATIONSHIP_METRIC_LABELS: Record<keyof ConsultantPerformanceMetricKeys, string> = {

@@ -528,6 +528,12 @@ export const LazyCenturyTrustRoutePage = lazy(() =>
   }))
 );
 
+export const LazyCenturyKnowledgeBasePage = lazy(() =>
+  import("../pages/century/CenturyKnowledgeBasePage").then((module) => ({
+    default: module.CenturyKnowledgeBasePage
+  }))
+);
+
 export const LazyCareersLandingPage = lazy(() =>
   import("../pages/careers/CareersLandingPage").then((module) => ({
     default: module.CareersLandingPage

@@ -63,6 +63,7 @@ import {
   LazyBamSignalInstituteGovernancePage,
   LazyCenturyStewardshipCouncilPage,
   LazyCenturyTrustRoutePage,
+  LazyCenturyKnowledgeBasePage,
   LazyBamSignalInstituteLegacyProfessionalsPage,
   LazyBamSignalInstituteTrustMilestonesPage,
   LazyBamSignalInstituteTrustScorePage,
@@ -2297,7 +2298,9 @@ export function App() {
 
     return (
       <Suspense fallback={<LazyRouteFallback subtitle="Loading Century…" />}>
-        {centuryRoute === "trust" ? (
+        {centuryRoute === "knowledge" ? (
+          <LazyCenturyKnowledgeBasePage {...centuryShellProps} />
+        ) : centuryRoute === "trust" ? (
           <LazyCenturyTrustRoutePage {...centuryShellProps} />
         ) : (
           <LazyCenturyStewardshipCouncilPage {...centuryShellProps} />

@@ -10069,6 +10069,241 @@
   color: rgba(212, 175, 106, 0.78);
 }
 
+/* Institutional Knowledge Base™ */
+.ikb-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ikb-page__hero {
+  padding: 28px 24px;
+}
+
+.ikb-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.ikb-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.ikb-page__prepared,
+.ikb-page__future,
+.ikb-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.ikb-page__prepared h2,
+.ikb-page__future h2 {
+  margin: 0 0 6px;
+}
+
+.ikb-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.ikb-page__prepared-list,
+.ikb-page__future ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.ikb-page__prepared-list {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.ikb-page__prepared-list li,
+.ikb-page__future li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.16);
+}
+
+.ikb-page__prepared-list li span,
+.ikb-page__future li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.ikb-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.ikb-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.ikb-card__head h2,
+.ikb-card__head h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.ikb-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.64);
+  line-height: 1.45;
+}
+
+.ikb-card__empty {
+  margin: 12px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ikb-category-card,
+.ikb-article-card {
+  padding: 18px 20px;
+}
+
+.ikb-category-card__head,
+.ikb-article-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ikb-category-card__head h3,
+.ikb-article-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ikb-category-card__badge,
+.ikb-article-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(212, 175, 106, 0.14);
+  color: rgba(224, 180, 120, 0.98);
+  border: 1px solid rgba(212, 175, 106, 0.3);
+  white-space: nowrap;
+}
+
+.ikb-article-card__category {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.ikb-category-card__order {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.82);
+}
+
+.ikb-category-card__description,
+.ikb-article-card__summary {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.ikb-category-card__meta {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ikb-category-card__status,
+.ikb-article-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.92);
+}
+
+.ikb-memory-card,
+.ikb-timeline-card {
+  padding: 20px 22px;
+}
+
+.ikb-memory-card__purposes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ikb-memory-card__purposes li {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  background: rgba(212, 175, 106, 0.12);
+  border: 1px solid rgba(212, 175, 106, 0.24);
+  color: rgba(224, 180, 120, 0.98);
+}
+
+.ikb-timeline-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.ikb-timeline-card__list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.ikb-timeline-card__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.ikb-timeline-card__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.9);
+}
+
+.ikb-timeline-card__note {
+  margin: 4px 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.4;
+}
+
+.ikb-timeline-card__item time {
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.78);
+}
+
 /* Century Room™ */
 .croom-page {
   display: flex;

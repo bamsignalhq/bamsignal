@@ -4,7 +4,8 @@ export const CENTURY_BASE_PATH = "/century";
 
 export const CENTURY_ROUTES = {
   stewardshipCouncil: `${CENTURY_BASE_PATH}/stewardship-council`,
-  trust: `${CENTURY_BASE_PATH}/trust`
+  trust: `${CENTURY_BASE_PATH}/trust`,
+  knowledge: `${CENTURY_BASE_PATH}/knowledge`
 } as const;
 
 export type CenturyRoute = keyof typeof CENTURY_ROUTES;

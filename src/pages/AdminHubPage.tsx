@@ -96,6 +96,7 @@ import { SafetyCenterPage } from "../components/admin/safety/SafetyCenterPage";
 import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
 import { ConsultantQualityPage } from "../components/admin/quality/ConsultantQualityPage";
 import { FinanceOperationsPage } from "../components/admin/finance/FinanceOperationsPage";
+import { InternalMessagingPage } from "../components/admin/messages/InternalMessagingPage";
 import { JourneyIntelligencePage } from "../components/admin/concierge/JourneyIntelligencePage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
 import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
@@ -2058,6 +2059,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "academy" ? <ConsultantAcademyPage /> : null}
       {tab === "quality" ? <ConsultantQualityPage /> : null}
       {tab === "finance" ? <FinanceOperationsPage /> : null}
+      {tab === "messages" ? <InternalMessagingPage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

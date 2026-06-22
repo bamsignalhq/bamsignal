@@ -6384,3 +6384,197 @@
   font-size: 0.8rem;
   color: rgba(168, 130, 255, 0.9);
 }
+
+/* Century Vision™ */
+.cvis-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.cvis-page__hero {
+  padding: 28px 24px;
+}
+
+.cvis-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.cvis-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.cvis-page__copy-rules,
+.cvis-page__prepared,
+.cvis-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.cvis-page__copy-rules h2,
+.cvis-page__prepared h2 {
+  margin: 0 0 6px;
+}
+
+.cvis-page__copy-rules p,
+.cvis-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.cvis-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.cvis-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.cvis-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.cvis-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.cvis-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.cvis-principle-card,
+.cvis-values-card,
+.cvis-timeline-card {
+  padding: 18px 20px;
+}
+
+.cvis-principle-card__head,
+.cvis-values-card__head,
+.cvis-timeline-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.cvis-principle-card__head h3,
+.cvis-values-card__head h3,
+.cvis-timeline-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.cvis-principle-card__badge,
+.cvis-values-card__badge,
+.cvis-timeline-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.cvis-principle-card__institution,
+.cvis-timeline-card__document {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.cvis-principle-card__description,
+.cvis-values-card__summary,
+.cvis-timeline-card__summary {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.cvis-timeline-card__list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cvis-timeline-card__item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.cvis-timeline-card__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: rgba(168, 130, 255, 0.7);
+}
+
+.cvis-timeline-card__note {
+  margin: 4px 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.cvis-timeline-card__item time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.cvis-timeline-card__empty {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.45;
+}
+
+.cvis-principle-card__forbidden,
+.cvis-values-card__forbidden,
+.cvis-timeline-card__forbidden {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.4;
+}
+
+.cvis-principle-card__status,
+.cvis-values-card__status,
+.cvis-timeline-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

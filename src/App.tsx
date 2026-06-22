@@ -39,6 +39,7 @@ import {
   LazyBamSignalInstituteLegacyEndowmentPage,
   LazyBamSignalInstituteBamSignalMuseumPage,
   LazyBamSignalInstituteLegacyChairPage,
+  LazyBamSignalInstituteCenturyVisionPage,
   LazyBamSignalInstituteLegacyProfessionalsPage,
   LazyBamSignalInstituteTrustMilestonesPage,
   LazyBamSignalInstituteTrustScorePage,
@@ -2245,6 +2246,8 @@ export function App() {
           <LazyBamSignalInstituteBamSignalMuseumPage {...instituteShellProps} />
         ) : bamSignalInstituteRoute === "legacyChair" ? (
           <LazyBamSignalInstituteLegacyChairPage {...instituteShellProps} />
+        ) : bamSignalInstituteRoute === "centuryVision" ? (
+          <LazyBamSignalInstituteCenturyVisionPage {...instituteShellProps} />
         ) : (
           <LazyBamSignalInstituteLandingPage {...instituteShellProps} />
         )}

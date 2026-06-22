@@ -277,6 +277,13 @@ export function BamSignalInstitutePage() {
           >
             Chair
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("centuryVision"))}
+          >
+            Vision
+          </button>
         </div>
       </header>
 

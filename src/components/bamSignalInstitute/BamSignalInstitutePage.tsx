@@ -228,6 +228,13 @@ export function BamSignalInstitutePage() {
           >
             Milestones
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("legacyProfessionals"))}
+          >
+            Legacy Pros
+          </button>
         </div>
       </header>
 

@@ -225,6 +225,13 @@ export function BamSignalInstituteLayout({
               >
                 Milestones
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("legacyProfessionals")}
+              >
+                Legacy Pros
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

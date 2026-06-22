@@ -338,6 +338,14 @@ export const LazyBamSignalInstituteTrustMilestonesPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteLegacyProfessionalsPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteLegacyProfessionalsPage").then(
+    (module) => ({
+      default: module.BamSignalInstituteLegacyProfessionalsPage
+    })
+  )
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

@@ -29,7 +29,8 @@ export const BAMSIGNAL_INSTITUTE_HUB_PATHS = [
   "/institute/wedding-network",
   "/institute/life-partners",
   "/institute/trust-score",
-  "/institute/trust-milestones"
+  "/institute/trust-milestones",
+  "/institute/legacy-professionals"
 ];
 
 export function getBamSignalInstituteIndexablePaths() {

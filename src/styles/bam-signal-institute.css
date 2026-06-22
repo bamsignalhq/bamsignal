@@ -3878,3 +3878,144 @@
   color: rgba(255, 255, 255, 0.58);
   line-height: 1.45;
 }
+
+/* Faith Network™ */
+.fnw-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.fnw-page__hero {
+  padding: 28px 24px;
+}
+
+.fnw-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.fnw-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.fnw-page__prepared,
+.fnw-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.fnw-page__prepared h2 {
+  margin: 0 0 6px;
+}
+
+.fnw-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.fnw-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.fnw-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(168, 130, 255, 0.12);
+}
+
+.fnw-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.fnw-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.fnw-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.fnw-category-card,
+.fnw-leader-card {
+  padding: 18px 20px;
+}
+
+.fnw-category-card__head,
+.fnw-leader-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.fnw-category-card__head h3,
+.fnw-leader-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.fnw-category-card__badge,
+.fnw-leader-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(168, 130, 255, 0.16);
+  color: rgba(212, 175, 106, 0.95);
+  border: 1px solid rgba(168, 130, 255, 0.28);
+  white-space: nowrap;
+}
+
+.fnw-category-card__labels,
+.fnw-leader-card__labels {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.88);
+  line-height: 1.4;
+}
+
+.fnw-category-card__description,
+.fnw-leader-card__focus {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.fnw-leader-card__category,
+.fnw-leader-card__title {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(168, 130, 255, 0.9);
+}
+
+.fnw-category-card__status,
+.fnw-leader-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(168, 130, 255, 0.9);
+}

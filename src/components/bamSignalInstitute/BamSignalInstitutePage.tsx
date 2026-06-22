@@ -186,6 +186,13 @@ export function BamSignalInstitutePage() {
           >
             Family Advisors
           </button>
+          <button
+            type="button"
+            className="bi-page__btn"
+            onClick={() => navigateToPath(bamSignalInstitutePathForRoute("faithNetwork"))}
+          >
+            Faith Network
+          </button>
         </div>
       </header>
 

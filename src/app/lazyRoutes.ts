@@ -302,6 +302,12 @@ export const LazyBamSignalInstituteFamilyAdvisorsPage = lazy(() =>
   }))
 );
 
+export const LazyBamSignalInstituteFaithNetworkPage = lazy(() =>
+  import("../pages/bam-signal-institute/BamSignalInstituteFaithNetworkPage").then((module) => ({
+    default: module.BamSignalInstituteFaithNetworkPage
+  }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

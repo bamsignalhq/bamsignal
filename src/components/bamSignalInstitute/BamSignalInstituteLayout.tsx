@@ -183,6 +183,13 @@ export function BamSignalInstituteLayout({
               >
                 Family Advisors
               </button>
+              <button
+                type="button"
+                className="institute-header__link"
+                onClick={() => go("faithNetwork")}
+              >
+                Faith Network
+              </button>
             </nav>
             <div className="institute-header__actions">
               <button

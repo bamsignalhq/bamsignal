@@ -1827,3 +1827,183 @@
   background: rgba(0, 0, 0, 0.25);
   color: rgba(255, 255, 255, 0.92);
 }
+
+/* Relationship archive */
+.relationship-status-badge {
+  display: inline-flex;
+  align-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(212, 175, 106, 0.35);
+  background: rgba(212, 175, 106, 0.1);
+  color: rgba(212, 175, 106, 0.95);
+}
+
+.relationship-status-badge--legacy-archive {
+  border-color: rgba(167, 139, 250, 0.45);
+  background: rgba(167, 139, 250, 0.12);
+  color: rgba(216, 201, 255, 0.95);
+}
+
+.relationship-status-badge--married,
+.relationship-status-badge--engaged {
+  border-color: rgba(110, 231, 183, 0.35);
+  background: rgba(110, 231, 183, 0.1);
+  color: rgba(167, 243, 208, 0.95);
+}
+
+.journey-archive-page {
+  display: grid;
+  gap: 16px;
+}
+
+.journey-archive-page__head h2 {
+  margin: 0 0 4px;
+}
+
+.journey-archive-page__body {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+}
+
+.journey-archive-page__cards {
+  display: grid;
+  gap: 10px;
+}
+
+.journey-archive-card {
+  width: 100%;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.journey-archive-card--selected {
+  border-color: rgba(212, 175, 106, 0.55);
+  box-shadow: 0 0 0 1px rgba(212, 175, 106, 0.2);
+}
+
+.journey-archive-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+
+.journey-archive-card__head strong {
+  display: block;
+}
+
+.journey-archive-card__head span {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.journey-archive-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.journey-archive-card__privacy,
+.legacy-archive-card__privacy {
+  margin: 10px 0 0;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.legacy-archive-card__milestones {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+}
+
+.legacy-archive-card__milestones div {
+  display: grid;
+  gap: 2px;
+}
+
+.legacy-archive-card__milestones dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.legacy-archive-card__milestones dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92rem;
+}
+
+.legacy-archive-card__badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.legacy-archive-card__ownership {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.archive-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.archive-timeline__item {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 10px;
+  position: relative;
+}
+
+.archive-timeline__dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: rgba(212, 175, 106, 0.85);
+}
+
+.archive-timeline__label {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.archive-timeline__journey-id {
+  margin: 4px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+  color: rgba(212, 175, 106, 0.9);
+}
+
+.archive-timeline__detail,
+.archive-timeline__time {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+@media (max-width: 960px) {
+  .journey-archive-page__body {
+    grid-template-columns: 1fr;
+  }
+}
+

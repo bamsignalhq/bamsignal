@@ -25,6 +25,8 @@ import {
 } from "../../../utils/conciergeJourneyContinuity";
 import { PrivateNotesCard } from "./PrivateNotesCard";
 import { JourneyIdCard } from "../../signalConcierge/JourneyIdCard";
+import { LegacyArchiveCard } from "./LegacyArchiveCard";
+import { RelationshipStatusBadge } from "./RelationshipStatusBadge";
 
 type ConciergeMemberProfilePageProps = {
   member: ConciergeMemberRecord;
@@ -89,6 +91,9 @@ export function ConciergeMemberProfilePage({
           <p className="concierge-member-profile__tier">
             {tier ? `${tier.name} · ${tier.tagline}` : "Tier pending"}
           </p>
+          {member.journeyArchive ? (
+            <RelationshipStatusBadge status={member.journeyArchive.relationshipStatus} />
+          ) : null}
         </div>
         <div className="concierge-member-profile__status-wrap">
           <label>
@@ -225,6 +230,7 @@ export function ConciergeMemberProfilePage({
 
       <div className="concierge-member-profile__columns">
         {member.journeyId ? <JourneyIdCard journeyId={member.journeyId} /> : null}
+        <LegacyArchiveCard member={member} />
         <JourneyOwnershipCard member={member} />
         <JourneyTransitionCard
           member={member}

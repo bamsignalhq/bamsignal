@@ -9,8 +9,12 @@ export const CONCIERGE_PIPELINE: SignalConciergeStatus[] = [
   "introductions-in-progress",
   "relationship",
   "matched",
+  "exclusive",
+  "engaged",
+  "married",
   "paused",
-  "closed"
+  "closed",
+  "legacy-archive"
 ];
 
 export const CONCIERGE_DASHBOARD_TITLE = "Signal Concierge™";
@@ -73,6 +77,9 @@ export type ConciergeTimelineEventType =
   | "follow-up-call"
   | "feedback-received"
   | "relationship-update"
+  | "engagement"
+  | "marriage"
+  | "archived"
   | "success-story";
 
 export const CONCIERGE_TIMELINE_EVENT_LABELS: Record<ConciergeTimelineEventType, string> = {
@@ -84,6 +91,9 @@ export const CONCIERGE_TIMELINE_EVENT_LABELS: Record<ConciergeTimelineEventType,
   "follow-up-call": "Follow-up",
   "feedback-received": "Feedback",
   "relationship-update": "Relationship update",
+  engagement: "Engagement",
+  marriage: "Marriage",
+  archived: "Archived",
   "success-story": "Success story"
 };
 

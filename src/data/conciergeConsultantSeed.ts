@@ -556,6 +556,166 @@ const RAW_CONCIERGE_SEED = [
         note: "Schedule first consultation."
       }
     ]
+  },
+  {
+    id: "sc_member_adaeze",
+    journeyId: "BS-JR-2028-0045",
+    createdAt: "2028-01-10T10:00:00.000Z",
+    updatedAt: "2031-06-15T10:00:00.000Z",
+    status: "legacy-archive",
+    preferredTier: "signature",
+    consultationPreference: "zoom",
+    aboutYou: {
+      name: "Adaeze M.",
+      age: "33",
+      gender: "Woman",
+      city: "Abuja",
+      occupation: "Healthcare administrator",
+      education: "MPH",
+      religion: "Christian",
+      maritalStatus: "Married",
+      children: "Has children"
+    },
+    relationshipGoals: {
+      marriageTimeline: "Completed",
+      dealBreakers: "N/A — married",
+      partnerPreferences: "Faith-aligned partner",
+      familyGoals: "Marriage and family completed through Signal Concierge"
+    },
+    valuesLifestyle: {
+      faithImportance: "Central",
+      smoking: "No",
+      drinking: "No",
+      fitness: "Walking and yoga",
+      travel: "Family travel",
+      loveLanguage: "Acts of service",
+      threeWords: "Grateful, grounded, joyful"
+    },
+    story: {
+      whatMakesYouUnique: "Built a calm marriage with intentional communication.",
+      whatYouHopeToBuild: "Legacy Archive — journey honored."
+    },
+    voiceVibe: { completed: true, duration: 30, url: "" },
+    videoIntro: { completed: true, duration: 55, url: "" },
+    identity: { governmentIdNote: "Verified", selfieVerified: true },
+    photos: ["/images/placeholders/profile-3.jpg"],
+    trustedMember: true,
+    assignedConsultantId: CONSULTANT_ID,
+    assignedConsultantName: CONSULTANT_NAME,
+    currentConsultantId: CONSULTANT_ID,
+    assignedBy: "BamSignal Admin",
+    assignedAt: "2028-01-12T10:00:00.000Z",
+    ownership: "bamsignal",
+    stewardshipHistory: [],
+    communicationJournal: [
+      {
+        id: "comm_legacy_1",
+        memberId: "sc_member_adaeze",
+        consultantId: CONSULTANT_ID,
+        consultantName: CONSULTANT_NAME,
+        date: "2028-03-01T14:00:00.000Z",
+        durationMinutes: 50,
+        platform: "zoom",
+        participants: ["Adaeze M.", "Ada Okafor"],
+        summary: "Final archive consultation — journey complete.",
+        outcome: "Legacy Archive",
+        loggedAt: "2028-03-01T15:00:00.000Z",
+        loggedBy: CONSULTANT_NAME
+      }
+    ],
+    flags: [],
+    privateNotes: [
+      {
+        id: "note_legacy_1",
+        memberId: "sc_member_adaeze",
+        consultantId: CONSULTANT_ID,
+        body: "Beautiful journey — preserve for future success story reference.",
+        createdAt: "2031-06-10T10:00:00.000Z"
+      }
+    ],
+    journeyArchive: {
+      relationshipStatus: "legacy-archive",
+      relationshipFormedAt: "2028-06-01T00:00:00.000Z",
+      marriedAt: "2030-04-18T00:00:00.000Z",
+      archivedAt: "2031-06-15T00:00:00.000Z",
+      isLegacyArchive: true,
+      futureMilestones: {
+        enabled: false,
+        kinds: ["anniversary-recognition", "success-story", "marriage-milestone"]
+      }
+    },
+    timeline: [
+      {
+        id: "tl_legacy_1",
+        memberId: "sc_member_adaeze",
+        journeyId: "BS-JR-2028-0045",
+        type: "application-received",
+        label: "Application received",
+        at: "2028-01-10T10:00:00.000Z"
+      },
+      {
+        id: "tl_legacy_2",
+        memberId: "sc_member_adaeze",
+        journeyId: "BS-JR-2028-0045",
+        type: "consultation-completed",
+        label: "Consultation completed",
+        at: "2028-02-01T10:00:00.000Z"
+      },
+      {
+        id: "tl_legacy_3",
+        memberId: "sc_member_adaeze",
+        journeyId: "BS-JR-2028-0045",
+        type: "introduction",
+        label: "Introduction #1",
+        at: "2028-05-20T10:00:00.000Z"
+      },
+      {
+        id: "tl_legacy_4",
+        memberId: "sc_member_adaeze",
+        journeyId: "BS-JR-2028-0045",
+        type: "relationship-update",
+        label: "Relationship update",
+        at: "2028-06-01T00:00:00.000Z",
+        detail: "Relationship formed."
+      },
+      {
+        id: "tl_legacy_5",
+        memberId: "sc_member_adaeze",
+        journeyId: "BS-JR-2028-0045",
+        type: "engagement",
+        label: "Engagement",
+        at: "2029-11-01T00:00:00.000Z"
+      },
+      {
+        id: "tl_legacy_6",
+        memberId: "sc_member_adaeze",
+        journeyId: "BS-JR-2028-0045",
+        type: "marriage",
+        label: "Marriage",
+        at: "2030-04-18T00:00:00.000Z"
+      },
+      {
+        id: "tl_legacy_7",
+        memberId: "sc_member_adaeze",
+        journeyId: "BS-JR-2028-0045",
+        type: "archived",
+        label: "Archived",
+        at: "2031-06-15T00:00:00.000Z",
+        detail: "Moved to Legacy Archive — journey honored."
+      }
+    ],
+    introductions: [
+      {
+        id: "intro_legacy_1",
+        memberId: "sc_member_adaeze",
+        introducedWithName: "Emeka O.",
+        consultantId: CONSULTANT_ID,
+        date: "2028-05-20T10:00:00.000Z",
+        outcome: "married",
+        notes: "Successful introduction — marriage followed."
+      }
+    ],
+    followUpTasks: []
   }
 ];
 

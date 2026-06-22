@@ -10,6 +10,11 @@ import {
   syncLocalConciergeApplication,
   updateConciergeMember
 } from "../utils/conciergeConsultantStore";
+import type { JourneyArchiveFilters } from "../constants/conciergeJourneyArchive";
+import {
+  filterMembersForArchiveSearch,
+  listArchiveEligibleMembers
+} from "../utils/conciergeJourneyArchive";
 
 export type AdminConciergeMembersResult = {
   ok: boolean;
@@ -21,6 +26,14 @@ export async function fetchAdminConciergeMembers(
 ): Promise<AdminConciergeMembersResult> {
   syncLocalConciergeApplication();
   const members = filterConciergeMembers(listConciergeMembers(), filters);
+  return { ok: true, members };
+}
+
+export async function fetchAdminConciergeArchiveMembers(
+  filters: JourneyArchiveFilters
+): Promise<AdminConciergeMembersResult> {
+  syncLocalConciergeApplication();
+  const members = filterMembersForArchiveSearch(listArchiveEligibleMembers(listConciergeMembers()), filters);
   return { ok: true, members };
 }
 

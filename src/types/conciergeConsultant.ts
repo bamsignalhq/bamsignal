@@ -11,6 +11,7 @@ import type {
 } from "../constants/conciergeConsultant";
 import type { SignalConciergeApplication } from "./signalConcierge";
 import type { ConciergeMemberConsultantSummary, ConciergeProfessionalChannel } from "./conciergeConsultantDirectory";
+import type { JourneyArchiveMetadata } from "../constants/conciergeJourneyArchive";
 import { CONCIERGE_MEMBER_OWNERSHIP } from "../constants/conciergeMemberOwnership";
 
 export type ConciergeMemberOwnership = typeof CONCIERGE_MEMBER_OWNERSHIP;
@@ -108,6 +109,8 @@ export type ConciergeMemberRecord = SignalConciergeApplication & {
   followUpTasks: ConciergeFollowUpTask[];
   /** Manual consultant summary — persists across steward transitions. Future AI-ready. */
   consultantSummary?: ConciergeMemberConsultantSummary;
+  /** Permanent relationship archive metadata — journeys are never deleted. */
+  journeyArchive?: JourneyArchiveMetadata;
 };
 
 export type ConciergeMemberFilters = {
@@ -123,6 +126,8 @@ export type ConciergeMemberFilters = {
   relationshipGoal: string;
   relocation: boolean;
   diaspora: boolean;
+  archiveStatus: import("../constants/conciergeJourneyArchive").RelationshipJourneyStatus | "all";
+  marriageYear: string;
 };
 
 export const EMPTY_CONCIERGE_FILTERS: ConciergeMemberFilters = {
@@ -137,7 +142,9 @@ export const EMPTY_CONCIERGE_FILTERS: ConciergeMemberFilters = {
   childrenPreference: "",
   relationshipGoal: "",
   relocation: false,
-  diaspora: false
+  diaspora: false,
+  archiveStatus: "all",
+  marriageYear: ""
 };
 
 export type ConciergeMemberSummary = Pick<

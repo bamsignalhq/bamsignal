@@ -1,6 +1,7 @@
 import { CONCIERGE_MEMBER_OWNERSHIP } from "../constants/conciergeMemberOwnership";
 import type { ConciergeMemberRecord, ConciergeTimelineEvent } from "../types/conciergeConsultant";
 import { ensureMemberJourneyId } from "./conciergeJourneyRegistry";
+import { normalizeJourneyArchive } from "./conciergeJourneyArchive";
 
 export function stampTimelineJourneyId(
   events: ConciergeTimelineEvent[],
@@ -16,7 +17,7 @@ export function normalizeConciergeMember(member: ConciergeMemberRecord): Concier
   const journeyId = ensureMemberJourneyId(member.id, member.createdAt, member.journeyId);
   const currentConsultantId = member.currentConsultantId ?? member.assignedConsultantId;
   const currentConsultantName = member.assignedConsultantName;
-  return {
+  return normalizeJourneyArchive({
     ...member,
     journeyId,
     ownership: CONCIERGE_MEMBER_OWNERSHIP,
@@ -28,7 +29,7 @@ export function normalizeConciergeMember(member: ConciergeMemberRecord): Concier
     stewardshipHistory: member.stewardshipHistory ?? [],
     communicationJournal: member.communicationJournal ?? [],
     timeline: stampTimelineJourneyId(member.timeline ?? [], journeyId)
-  };
+  });
 }
 
 export function getMemberStewardName(member: ConciergeMemberRecord): string | undefined {

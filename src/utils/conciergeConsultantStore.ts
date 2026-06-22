@@ -12,7 +12,9 @@ import { SIGNAL_CONCIERGE_STATUS_LABELS } from "../constants/signalConcierge";
 import { normalizeConciergeMember, stampTimelineJourneyId } from "./conciergeMemberStewardship";
 import { ensureMemberJourneyId } from "./conciergeJourneyRegistry";
 import { bootstrapJourneyRegistry } from "./conciergeJourneyRegistry";
+import { assertNoArchiveDeletion, registerArchivedMember } from "./conciergeJourneyArchive";
 import { isValidJourneyId, normalizeJourneyId } from "../constants/journeyId";
+import { marriageYearFromMember } from "./conciergeJourneyArchive";
 import { readJson, writeJson } from "./storage";
 
 const ADMIN_STORE_KEY = "bamsignal-concierge-consultant-store";
@@ -36,13 +38,23 @@ function loadStore(): ConciergeConsultantStore {
   ensureJourneyRegistrySeeded();
   const stored = readJson<ConciergeConsultantStore | null>(ADMIN_STORE_KEY, null);
   if (stored?.members?.length) {
-    return {
-      ...stored,
-      members: stored.members.map((member) => normalizeConciergeMember(member))
-    };
+    const members = stored.members.map((member) => {
+      const normalized = normalizeConciergeMember(member);
+      if (normalized.journeyArchive?.isLegacyArchive) {
+        registerArchivedMember(normalized.id);
+      }
+      return normalized;
+    });
+    return { ...stored, members };
   }
   const initial: ConciergeConsultantStore = {
-    members: CONCIERGE_CONSULTANT_SEED.map((member) => normalizeConciergeMember(member)),
+    members: CONCIERGE_CONSULTANT_SEED.map((member) => {
+      const normalized = normalizeConciergeMember(member);
+      if (normalized.journeyArchive?.isLegacyArchive) {
+        registerArchivedMember(normalized.id);
+      }
+      return normalized;
+    }),
     updatedAt: new Date().toISOString()
   };
   writeJson(ADMIN_STORE_KEY, initial);
@@ -68,11 +80,13 @@ export function updateConciergeMember(
   const store = loadStore();
   const index = store.members.findIndex((member) => member.id === memberId);
   if (index < 0) return null;
+  const previous = store.members[index];
   const next = {
-    ...store.members[index],
+    ...previous,
     ...patch,
     updatedAt: new Date().toISOString()
   };
+  assertNoArchiveDeletion(previous, next);
   store.members[index] = next;
   saveStore(store);
   return normalizeConciergeMember(next);
@@ -145,6 +159,14 @@ export function filterConciergeMembers(
     const age = Number(member.aboutYou.age);
     if (ageMin !== null && !Number.isNaN(age) && age < ageMin) return false;
     if (ageMax !== null && !Number.isNaN(age) && age > ageMax) return false;
+    if (filters.archiveStatus !== "all") {
+      const relationshipStatus = member.journeyArchive?.relationshipStatus;
+      if (relationshipStatus !== filters.archiveStatus) return false;
+    }
+    if (filters.marriageYear) {
+      const year = marriageYearFromMember(member);
+      if (!year || String(year) !== filters.marriageYear.trim()) return false;
+    }
     if (!query) return true;
     const normalizedQuery = isValidJourneyId(query) ? normalizeJourneyId(query) : query;
     const haystack = [

@@ -1,5 +1,6 @@
 import { SIGNAL_CONCIERGE_TIERS } from "../../../constants/signalConcierge";
 import { SIGNAL_CONCIERGE_STATUS_LABELS } from "../../../constants/signalConcierge";
+import { RELATIONSHIP_JOURNEY_STATUS_LABELS } from "../../../constants/conciergeJourneyArchive";
 import type { ConciergeMemberFilters } from "../../../types/conciergeConsultant";
 import { CONCIERGE_MEMBER_FLAGS } from "../../../constants/conciergeConsultant";
 
@@ -41,6 +42,31 @@ export function ConsultantSearchBar({ filters, onChange }: ConsultantSearchBarPr
           value={filters.consultant}
           onChange={(event) => patch({ consultant: event.target.value })}
           placeholder="Consultant name"
+        />
+      </label>
+      <label>
+        Archive status
+        <select
+          value={filters.archiveStatus}
+          onChange={(event) =>
+            patch({ archiveStatus: event.target.value as ConciergeMemberFilters["archiveStatus"] })
+          }
+        >
+          <option value="all">All relationship statuses</option>
+          {Object.entries(RELATIONSHIP_JOURNEY_STATUS_LABELS).map(([id, label]) => (
+            <option key={id} value={id}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Marriage year
+        <input
+          inputMode="numeric"
+          value={filters.marriageYear}
+          onChange={(event) => patch({ marriageYear: event.target.value })}
+          placeholder="e.g. 2030"
         />
       </label>
       <label>

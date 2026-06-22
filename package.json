@@ -31,6 +31,7 @@
     "test:open-app-onboarding": "node scripts/test-open-app-onboarding.mjs",
     "test:admin-action-pin-throttle": "node scripts/test-admin-action-pin-throttle.mjs",
     "test:journey-id": "node scripts/test-journey-id.mjs",
+    "test:journey-archive": "node scripts/test-journey-archive.mjs",
     "migrate": "node scripts/run-migrations.mjs",
     "test:source-integrity": "node scripts/source-integrity-check.mjs",
     "test:fortress": "node scripts/test-payment-catalog.mjs && node scripts/test-payment-persistence.mjs && node scripts/test-payment-fulfillment-race.mjs && node scripts/test-payment-webhook.mjs && node scripts/test-payment-initialize-throttle.mjs && node scripts/test-payment-provider-errors.mjs && node scripts/test-raw-error-hardening.mjs && node scripts/test-signup-provisioning-recovery.mjs && node scripts/test-schema-verification.mjs && node scripts/test-rate-limit-retention.mjs && node scripts/test-photo-moderation-authority.mjs && node scripts/test-profile-patch-races.mjs && node scripts/test-readiness-health.mjs && node scripts/test-auth-throttle-outage.mjs && node scripts/test-memory-store.mjs && node scripts/test-log-redaction.mjs && node scripts/test-identity-exposure.mjs && node scripts/test-admin-bootstrap.mjs && node scripts/test-legacy-setup-hardening.mjs && node scripts/test-android-app-links.mjs && node scripts/test-observability.mjs && node scripts/test-runbooks.mjs && node scripts/test-bundle-performance.mjs && node scripts/test-stability.mjs",

@@ -201,8 +201,12 @@ export type SignalConciergeStatus =
   | "introductions-in-progress"
   | "relationship"
   | "matched"
+  | "exclusive"
+  | "engaged"
+  | "married"
   | "paused"
-  | "closed";
+  | "closed"
+  | "legacy-archive";
 
 export const SIGNAL_CONCIERGE_STATUS_LABELS: Record<SignalConciergeStatus, string> = {
   applied: "Applied",
@@ -214,8 +218,12 @@ export const SIGNAL_CONCIERGE_STATUS_LABELS: Record<SignalConciergeStatus, strin
   "introductions-in-progress": "Introductions In Progress",
   relationship: "Relationship",
   matched: "Matched",
+  exclusive: "Exclusive",
+  engaged: "Engaged",
+  married: "Married",
   paused: "Paused",
-  closed: "Closed"
+  closed: "Closed",
+  "legacy-archive": "Legacy Archive"
 };
 
 export type SignalConciergeConsultationChannel = "whatsapp" | "phone" | "google-meet" | "zoom";

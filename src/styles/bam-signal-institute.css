@@ -8630,3 +8630,146 @@
   font-size: 0.8rem;
   color: rgba(212, 175, 106, 0.92);
 }
+
+/* House Museum™ */
+.hmsm-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hmsm-page__hero {
+  padding: 28px 24px;
+}
+
+.hmsm-page__labels {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(212, 175, 106, 0.88);
+}
+
+.hmsm-page__purpose {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.hmsm-page__prepared,
+.hmsm-page__reserved-note {
+  padding: 22px 24px;
+}
+
+.hmsm-page__prepared h2 {
+  margin: 0 0 6px;
+}
+
+.hmsm-page__prepared > p {
+  margin: 0 0 14px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.hmsm-page__prepared-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.hmsm-page__prepared-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 106, 0.16);
+}
+
+.hmsm-page__prepared-list li span {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.hmsm-page__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.hmsm-page__reserved-note p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(212, 175, 106, 0.82);
+  line-height: 1.45;
+}
+
+.hmsm-exhibit-card,
+.hmsm-archive-card {
+  padding: 18px 20px;
+}
+
+.hmsm-exhibit-card__head,
+.hmsm-archive-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.hmsm-exhibit-card__head h3,
+.hmsm-archive-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.hmsm-exhibit-card__badge,
+.hmsm-archive-card__badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  background: rgba(212, 175, 106, 0.14);
+  color: rgba(224, 180, 120, 0.98);
+  border: 1px solid rgba(212, 175, 106, 0.3);
+  white-space: nowrap;
+}
+
+.hmsm-exhibit-card__order,
+.hmsm-archive-card__order {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: rgba(212, 175, 106, 0.82);
+  letter-spacing: 0.02em;
+}
+
+.hmsm-exhibit-card__description,
+.hmsm-archive-card__description {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+  line-height: 1.45;
+}
+
+.hmsm-exhibit-card__forbidden,
+.hmsm-archive-card__forbidden {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.4;
+}
+
+.hmsm-exhibit-card__status,
+.hmsm-archive-card__status {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(212, 175, 106, 0.92);
+}

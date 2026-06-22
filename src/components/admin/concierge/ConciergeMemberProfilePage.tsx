@@ -21,6 +21,7 @@ import { MemberNotificationSection } from "./MemberNotificationSection";
 import { MemberEmailSection } from "./MemberEmailSection";
 import { MemberWhatsappSection } from "./MemberWhatsappSection";
 import { MemberMeetingNotesSection } from "./MemberMeetingNotesSection";
+import { MemberConsultationReviewSection } from "./MemberConsultationReviewSection";
 import { MemberApplicationApprovalSection } from "./MemberApplicationApprovalSection";
 import { JourneyTransitionCard } from "./JourneyTransitionCard";
 import { TransitionSummaryCard } from "./TransitionSummaryCard";
@@ -260,6 +261,8 @@ export function ConciergeMemberProfilePage({
       <MemberEmailSection member={member} />
 
       <MemberWhatsappSection member={member} />
+
+      <MemberConsultationReviewSection member={member} />
 
       <MemberMeetingNotesSection member={member} />
 

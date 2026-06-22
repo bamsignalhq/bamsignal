@@ -33,6 +33,7 @@ import type {
   OperationsCenterWorkloadRow
 } from "../types/operationsCenter";
 import { getApplicationReviewSummaryForMember } from "./ApplicationApprovalEngine";
+import { listConsultationReviewSummaries } from "./consultationReviewEngine";
 import {
   buildAssignmentSummary,
   listConsultantWorkloadProfiles,
@@ -197,7 +198,12 @@ function buildMetrics(members: ConciergeMemberRecord[]): OperationsCenterMetric[
 
 function buildConsultations(): OperationsCenterBundle["consultations"] {
   const buckets = emptyConsultationBuckets();
+  const reviewByMemberId = new Map(
+    listConsultationReviewSummaries().map((summary) => [summary.memberId, summary])
+  );
+
   for (const event of listSchedulingEvents()) {
+    const review = reviewByMemberId.get(event.memberId);
     const row: OperationsCenterConsultationRow = {
       id: event.id,
       memberName: event.memberName,
@@ -208,7 +214,10 @@ function buildConsultations(): OperationsCenterBundle["consultations"] {
       channel:
         CONCIERGE_PROFESSIONAL_CHANNEL_LABELS[
           event.channel as keyof typeof CONCIERGE_PROFESSIONAL_CHANNEL_LABELS
-        ] ?? event.channel
+        ] ?? event.channel,
+      reviewId: review?.reviewId,
+      outcomeLabel: review?.outcomeLabel,
+      recommendationLabel: review?.recommendationLabel
     };
     const bucket = consultationBucketForStatus(event.status, event.scheduledAt);
     buckets[bucket].push(row);

@@ -122,6 +122,8 @@ export function OperationsConsultationCard({ bundle }: { bundle: OperationsCente
                       {row.consultantName} · {row.channel}
                     </span>
                     <span>{CONSULTATION_EVENT_STATUS_LABELS[row.status]}</span>
+                    {row.outcomeLabel ? <span>Review: {row.outcomeLabel}</span> : null}
+                    {row.recommendationLabel ? <span>{row.recommendationLabel}</span> : null}
                   </div>
                   <time dateTime={row.scheduledAt}>{new Date(row.scheduledAt).toLocaleString()}</time>
                 </li>

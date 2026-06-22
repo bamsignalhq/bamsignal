@@ -61,6 +61,9 @@ export type OperationsCenterConsultationRow = {
   scheduledAt: string;
   status: ConsultationEventStatus;
   channel: string;
+  reviewId?: string;
+  outcomeLabel?: string;
+  recommendationLabel?: string;
 };
 
 export type OperationsCenterPaymentRow = {

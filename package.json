@@ -30,6 +30,7 @@
     "test:meetings": "node scripts/test-consultation-meetings.mjs",
     "test:operations-center": "node scripts/test-operations-center.mjs",
     "test:assignment-engine": "node scripts/test-assignment-engine.mjs",
+    "test:consultation-review": "node scripts/test-consultation-review.mjs",
     "test:member-data-auth": "node scripts/test-member-data-auth.mjs",
     "test:diagnostics-access": "node scripts/test-diagnostics-access.mjs",
     "test:photo-upload-attribution": "node scripts/test-photo-upload-attribution.mjs",

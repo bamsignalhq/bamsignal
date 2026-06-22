@@ -8121,3 +8121,164 @@
   color: rgba(255, 255, 255, 0.55);
 }
 
+/* Consultation Review Engine™ */
+.member-consultation-review {
+  display: grid;
+  gap: 16px;
+}
+
+.member-consultation-review__section-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.member-consultation-review__section-head p {
+  margin: 6px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.member-consultation-review__cards {
+  display: grid;
+  gap: 14px;
+}
+
+.consultation-outcome-card__badge-wrap {
+  margin-top: 8px;
+}
+
+.consultation-outcome-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.consultation-outcome-card__badge--approved {
+  color: #7dffb0;
+  border-color: rgba(125, 255, 176, 0.35);
+  background: rgba(125, 255, 176, 0.08);
+}
+
+.consultation-outcome-card__badge--requires-review {
+  color: #ffd27d;
+  border-color: rgba(255, 210, 125, 0.35);
+  background: rgba(255, 210, 125, 0.08);
+}
+
+.consultation-outcome-card__badge--not-a-fit-yet {
+  color: #ff9f8a;
+  border-color: rgba(255, 159, 138, 0.35);
+  background: rgba(255, 159, 138, 0.08);
+}
+
+.consultation-outcome-card__badge--follow-up-required {
+  color: #8ec8ff;
+  border-color: rgba(142, 200, 255, 0.35);
+  background: rgba(142, 200, 255, 0.08);
+}
+
+.consultation-outcome-card__badge--paused {
+  color: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.consultation-outcome-card__meta,
+.consultation-summary-card__grid,
+.consultation-notes-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 12px 0 0;
+}
+
+.consultation-outcome-card__meta dt,
+.consultation-summary-card__grid dt,
+.consultation-notes-card__grid dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.consultation-outcome-card__meta dd,
+.consultation-summary-card__grid dd,
+.consultation-notes-card__grid dd {
+  margin: 4px 0 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.86);
+  line-height: 1.45;
+}
+
+.consultation-notes-card__grid dd {
+  white-space: pre-wrap;
+}
+
+.consultation-recommendation-card__label {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.consultation-recommendation-card__label strong {
+  font-size: 0.92rem;
+}
+
+.consultation-recommendation-card__label span,
+.consultation-recommendation-card__time {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.consultation-recommendation-card__detail {
+  margin: 10px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.consultation-history-card__reviews,
+.consultation-history-card__timeline {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.consultation-history-card__reviews li,
+.consultation-history-card__timeline li {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.consultation-history-card__timeline li {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 10px;
+}
+
+.consultation-history-card__dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #a882ff;
+  box-shadow: 0 0 0 4px rgba(168, 130, 255, 0.15);
+}
+
+.consultation-history-card__timeline time,
+.consultation-history-card__reviews time {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+

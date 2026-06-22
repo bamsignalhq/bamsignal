@@ -56,6 +56,7 @@ import "./styles/document-center.css";
 import "./styles/safety-center.css";
 import "./styles/consultant-academy.css";
 import "./styles/consultant-quality.css";
+import "./styles/finance-operations.css";
 import "./styles/seo.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";

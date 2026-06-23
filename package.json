@@ -32,6 +32,7 @@
     "test:assignment-engine": "node scripts/test-assignment-engine.mjs",
     "test:consultation-review": "node scripts/test-consultation-review.mjs",
     "test:notification-operations": "node scripts/test-notification-operations.mjs",
+    "test:notification-center": "node scripts/test-notification-center.mjs",
     "test:journey-intelligence": "node scripts/test-journey-intelligence.mjs",
     "test:regional-teams": "node scripts/test-regional-teams.mjs",
     "test:house-pipeline": "node scripts/test-house-pipeline.mjs",

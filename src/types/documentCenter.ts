@@ -1,4 +1,9 @@
-import type { DocumentCategoryId, DocumentStatusId } from "../constants/documentCenter";
+import type {
+  DocumentCategoryId,
+  DocumentMetricId,
+  DocumentPermissionId,
+  DocumentStatusId
+} from "../constants/documentCenter";
 
 export type DocumentVersionEntry = {
   version: string;
@@ -25,6 +30,9 @@ export type DocumentRecord = {
   createdAt: string;
   updatedAt: string;
   summary: string;
+  body: string;
+  viewCount: number;
+  permissions: DocumentPermissionId[];
   versionHistory: DocumentVersionEntry[];
   approval: DocumentApproval | null;
 };
@@ -36,9 +44,19 @@ export type DocumentSearchFilters = {
   owner: string;
 };
 
+export type DocumentMetric = {
+  id: DocumentMetricId;
+  label: string;
+  value: string;
+  numericValue?: number;
+};
+
 export type DocumentCenterBundle = {
   generatedAt: string;
+  metrics: DocumentMetric[];
   documents: DocumentRecord[];
   categoryCounts: Record<DocumentCategoryId, number>;
+  recentUpdates: DocumentRecord[];
+  mostViewed: DocumentRecord[];
   selectedDocument: DocumentRecord | null;
 };

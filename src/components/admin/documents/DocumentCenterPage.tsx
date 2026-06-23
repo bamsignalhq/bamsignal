@@ -7,11 +7,12 @@ import {
 import type { DocumentCategoryId } from "../../../constants/documentCenter";
 import { buildDocumentCenterBundle } from "../../../utils/documentCenterEngine";
 import { emptyDocumentFilters } from "../../../utils/documentCenterLogic";
-import { DocumentApprovalCard } from "./DocumentApprovalCard";
 import { DocumentCard } from "./DocumentCard";
 import { DocumentCategoryCard } from "./DocumentCategoryCard";
-import { DocumentSearchCard } from "./DocumentSearchCard";
+import { DocumentSearchBar } from "./DocumentSearchBar";
 import { DocumentVersionCard } from "./DocumentVersionCard";
+import { DocumentViewer } from "./DocumentViewer";
+import { KnowledgeOverviewCard } from "./KnowledgeOverviewCard";
 
 export function DocumentCenterPage() {
   const [filters, setFilters] = useState(() => emptyDocumentFilters());
@@ -44,8 +45,9 @@ export function DocumentCenterPage() {
         <div>
           <h2>{DOCUMENT_CENTER_ADMIN_BRAND}</h2>
           <p>
-            Institutional document repository for policies, procedures, consultant guides, training,
-            operations, research, legal, templates, meeting frameworks, and culture.
+            Permanent home for institutional knowledge — policies, training, consultant guides,
+            operations manuals, research reports, contracts, templates, compliance, and safety
+            procedures.
           </p>
         </div>
         <button
@@ -56,6 +58,12 @@ export function DocumentCenterPage() {
           Refresh
         </button>
       </header>
+
+      <KnowledgeOverviewCard
+        metrics={bundle.metrics}
+        recentUpdates={bundle.recentUpdates}
+        mostViewed={bundle.mostViewed}
+      />
 
       <section className="document-center-page__categories" aria-label="Document categories">
         {DOCUMENT_CATEGORIES.map((category) => (
@@ -70,7 +78,7 @@ export function DocumentCenterPage() {
         ))}
       </section>
 
-      <DocumentSearchCard
+      <DocumentSearchBar
         filters={filters}
         onChange={setFilters}
         onReset={handleReset}
@@ -97,33 +105,14 @@ export function DocumentCenterPage() {
         <div className="document-center-page__detail">
           {selectedDocument ? (
             <>
-              <DocumentCard document={selectedDocument} />
-              <DocumentApprovalCard
-                status={selectedDocument.status}
-                approval={selectedDocument.approval}
-                owner={selectedDocument.owner}
-              />
+              <DocumentViewer document={selectedDocument} />
               <DocumentVersionCard
                 versions={selectedDocument.versionHistory}
                 currentVersion={selectedDocument.version}
               />
-              <dl className="document-center-page__metadata">
-                <div>
-                  <dt>Created</dt>
-                  <dd>{new Date(selectedDocument.createdAt).toLocaleString()}</dd>
-                </div>
-                <div>
-                  <dt>Updated</dt>
-                  <dd>{new Date(selectedDocument.updatedAt).toLocaleString()}</dd>
-                </div>
-                <div>
-                  <dt>Slug</dt>
-                  <dd>{selectedDocument.slug}</dd>
-                </div>
-              </dl>
             </>
           ) : (
-            <p className="document-center-page__empty">Select a document to view metadata and version history.</p>
+            <p className="document-center-page__empty">Select a document to view content and version history.</p>
           )}
         </div>
       </div>

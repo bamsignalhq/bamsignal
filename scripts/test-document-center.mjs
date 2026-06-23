@@ -20,33 +20,39 @@ assert(adminSource.includes('DOCUMENT_CENTER_ADMIN_PATH = "/hard/documents"'), "
 const constantsSource = readFileSync(join(rootPath, "src/constants/documentCenter.ts"), "utf8");
 assert(constantsSource.includes("Document Center™"), "document center brand");
 assert(constantsSource.includes("consultant-guides"), "consultant guides category");
-assert(constantsSource.includes("meeting-frameworks"), "meeting frameworks category");
+assert(constantsSource.includes("operations-manuals"), "operations manuals category");
+assert(constantsSource.includes("safety-procedures"), "safety procedures category");
+assert(constantsSource.includes("DOCUMENT_PERMISSIONS"), "document permissions");
+assert(constantsSource.includes('"approve"'), "approve permission");
+assert(constantsSource.includes("pending-review"), "pending review metric");
 assert(constantsSource.includes("DOCUMENT_CENTER_FUTURE_KINDS"), "future kinds documented");
-assert(constantsSource.includes("Document signatures"), "document signatures future item");
-assert(constantsSource.includes("AI search"), "ai search future item");
-assert(constantsSource.includes("Knowledge retrieval"), "knowledge retrieval future item");
+assert(constantsSource.includes("ai-knowledge-assistant"), "ai knowledge assistant future item");
+assert(constantsSource.includes("version-diffing"), "version diffing future item");
 
 const hardRoutesSource = readFileSync(join(rootPath, "src/constants/hardRoutes.ts"), "utf8");
 assert(hardRoutesSource.includes("documents"), "hard routes include documents tab");
 
 const engineSource = readFileSync(join(rootPath, "src/utils/documentCenterEngine.ts"), "utf8");
 assert(engineSource.includes("buildDocumentCenterBundle"), "document center engine exists");
+assert(engineSource.includes("recentUpdates"), "recent updates in bundle");
 
 const logicSource = readFileSync(join(rootPath, "src/utils/documentCenterLogic.ts"), "utf8");
 assert(logicSource.includes("filterDocuments"), "document filter logic");
 assert(logicSource.includes("countDocumentsByCategory"), "category counts");
+assert(logicSource.includes("buildDocumentMetrics"), "document metrics");
 
 const seedSource = readFileSync(join(rootPath, "src/data/documentCenterSeed.ts"), "utf8");
 assert(seedSource.includes("versionHistory"), "seed includes version history");
 assert(seedSource.includes("approval"), "seed includes approval metadata");
+assert(seedSource.includes("viewCount"), "seed includes view counts");
 
 const adminComponents = [
-  "DocumentCard.tsx",
+  "DocumentCenterPage.tsx",
   "DocumentCategoryCard.tsx",
+  "DocumentViewer.tsx",
+  "DocumentSearchBar.tsx",
   "DocumentVersionCard.tsx",
-  "DocumentApprovalCard.tsx",
-  "DocumentSearchCard.tsx",
-  "DocumentCenterPage.tsx"
+  "KnowledgeOverviewCard.tsx"
 ];
 
 for (const file of adminComponents) {

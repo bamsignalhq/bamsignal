@@ -35,6 +35,10 @@ export function DocumentCard({ document, selected = false, onSelect }: DocumentC
           <dd>{document.owner}</dd>
         </div>
         <div>
+          <dt>Views</dt>
+          <dd>{document.viewCount}</dd>
+        </div>
+        <div>
           <dt>Updated</dt>
           <dd>{new Date(document.updatedAt).toLocaleDateString()}</dd>
         </div>

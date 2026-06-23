@@ -1,20 +1,27 @@
-/** Document Center™ — institutional document repository. */
+/** Document Center™ — institutional knowledge management. */
 
 export const DOCUMENT_CENTER_BRAND = "Document Center™";
 
 export type DocumentCategoryId =
   | "policies"
-  | "procedures"
-  | "consultant-guides"
   | "training"
-  | "operations"
-  | "research"
-  | "legal"
+  | "consultant-guides"
+  | "operations-manuals"
+  | "research-reports"
+  | "contracts"
   | "templates"
-  | "meeting-frameworks"
-  | "culture";
+  | "compliance"
+  | "safety-procedures";
 
 export type DocumentStatusId = "draft" | "review" | "approved" | "archived";
+
+export type DocumentPermissionId = "view" | "edit" | "approve" | "archive";
+
+export type DocumentMetricId =
+  | "documents"
+  | "recent-updates"
+  | "most-viewed"
+  | "pending-review";
 
 export const DOCUMENT_CATEGORIES: {
   id: DocumentCategoryId;
@@ -22,15 +29,14 @@ export const DOCUMENT_CATEGORIES: {
   hint: string;
 }[] = [
   { id: "policies", label: "Policies", hint: "Institution-wide policy documents." },
-  { id: "procedures", label: "Procedures", hint: "Standard operating procedures." },
-  { id: "consultant-guides", label: "Consultant Guides", hint: "Signal Concierge consultant playbooks." },
   { id: "training", label: "Training", hint: "Onboarding and skills training." },
-  { id: "operations", label: "Operations", hint: "Operations center runbooks." },
-  { id: "research", label: "Research", hint: "Institute research and insights." },
-  { id: "legal", label: "Legal", hint: "Legal and compliance documents." },
+  { id: "consultant-guides", label: "Consultant Guides", hint: "Signal Concierge consultant playbooks." },
+  { id: "operations-manuals", label: "Operations Manuals", hint: "SOPs, runbooks, and operational procedures." },
+  { id: "research-reports", label: "Research Reports", hint: "Institute research and insights." },
+  { id: "contracts", label: "Contracts", hint: "Vendor, consultant, and institutional agreements." },
   { id: "templates", label: "Templates", hint: "Reusable document templates." },
-  { id: "meeting-frameworks", label: "Meeting Frameworks", hint: "Consultation and introduction frameworks." },
-  { id: "culture", label: "Culture", hint: "Values, culture, and institutional principles." }
+  { id: "compliance", label: "Compliance", hint: "Audit, legal, and regulatory documentation." },
+  { id: "safety-procedures", label: "Safety Procedures", hint: "Crisis and safety institutional procedures." }
 ];
 
 export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategoryId, string> = Object.fromEntries(
@@ -51,11 +57,35 @@ export const DOCUMENT_STATUS_LABELS: Record<DocumentStatusId, string> = Object.f
   DOCUMENT_STATUSES.map((item) => [item.id, item.label])
 ) as Record<DocumentStatusId, string>;
 
+export const DOCUMENT_PERMISSIONS: {
+  id: DocumentPermissionId;
+  label: string;
+}[] = [
+  { id: "view", label: "View" },
+  { id: "edit", label: "Edit" },
+  { id: "approve", label: "Approve" },
+  { id: "archive", label: "Archive" }
+];
+
+export const DOCUMENT_PERMISSION_LABELS: Record<DocumentPermissionId, string> = Object.fromEntries(
+  DOCUMENT_PERMISSIONS.map((item) => [item.id, item.label])
+) as Record<DocumentPermissionId, string>;
+
+export const DOCUMENT_CENTER_METRICS: {
+  id: DocumentMetricId;
+  label: string;
+}[] = [
+  { id: "documents", label: "Documents" },
+  { id: "recent-updates", label: "Recent Updates" },
+  { id: "most-viewed", label: "Most Viewed" },
+  { id: "pending-review", label: "Pending Review" }
+];
+
 /**
  * Future-ready document capabilities — documented only, not implemented.
  */
 export const DOCUMENT_CENTER_FUTURE_KINDS = [
-  { id: "document-signatures", label: "Document signatures" },
-  { id: "ai-search", label: "AI search" },
-  { id: "knowledge-retrieval", label: "Knowledge retrieval" }
+  { id: "knowledge-search", label: "Knowledge search" },
+  { id: "ai-knowledge-assistant", label: "AI knowledge assistant" },
+  { id: "version-diffing", label: "Version diffing" }
 ] as const;

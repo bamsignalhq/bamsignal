@@ -7,17 +7,17 @@ import {
 import type { DocumentSearchFilters } from "../../../types/documentCenter";
 import type { DocumentCategoryId, DocumentStatusId } from "../../../constants/documentCenter";
 
-type DocumentSearchCardProps = {
+type DocumentSearchBarProps = {
   filters: DocumentSearchFilters;
   onChange: (filters: DocumentSearchFilters) => void;
   onReset: () => void;
   resultCount: number;
 };
 
-export function DocumentSearchCard({ filters, onChange, onReset, resultCount }: DocumentSearchCardProps) {
+export function DocumentSearchBar({ filters, onChange, onReset, resultCount }: DocumentSearchBarProps) {
   return (
-    <section className="document-search-card concierge-consultant-card--glass cc-reveal">
-      <header className="document-search-card__head">
+    <section className="document-search-bar concierge-consultant-card--glass cc-reveal" aria-label="Document search">
+      <header className="document-search-bar__head">
         <h3>Search & filter</h3>
         <button type="button" className="concierge-consultant-btn" onClick={onReset}>
           Reset
@@ -34,7 +34,7 @@ export function DocumentSearchCard({ filters, onChange, onReset, resultCount }: 
         />
       </label>
 
-      <div className="document-search-card__grid">
+      <div className="document-search-bar__grid">
         <label className="document-search-field">
           <span>Category</span>
           <select
@@ -80,7 +80,7 @@ export function DocumentSearchCard({ filters, onChange, onReset, resultCount }: 
         </label>
       </div>
 
-      <p className="document-search-card__count">{resultCount} documents match</p>
+      <p className="document-search-bar__count">{resultCount} documents match</p>
     </section>
   );
 }

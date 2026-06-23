@@ -1,0 +1,237 @@
+.remediation-board-page {
+  display: grid;
+  gap: 18px;
+}
+
+.remediation-board-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.remediation-board-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.remediation-board-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.remediation-board-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.remediation-board-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.remediation-board-filter {
+  display: grid;
+  gap: 4px;
+  font-size: 0.84rem;
+}
+
+.remediation-board-filter select {
+  min-width: 180px;
+}
+
+.remediation-board-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 14px;
+}
+
+.remediation-board-page__column {
+  display: grid;
+  gap: 14px;
+}
+
+.remediation-board-page__foot,
+.remediation-summary-card__foot {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.remediation-board-page__empty {
+  color: rgba(255, 255, 255, 0.62);
+  margin: 0;
+}
+
+.remediation-summary-card__head h3,
+.risk-overview-card__head h3,
+.remediation-findings-list__head h3 {
+  margin: 0 0 4px;
+}
+
+.remediation-summary-card__head p,
+.risk-overview-card__head p,
+.remediation-findings-list__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.remediation-summary-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.remediation-metric-chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.remediation-metric-chip p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.remediation-metric-chip strong {
+  font-size: 1.35rem;
+}
+
+.remediation-metric-chip--critical {
+  border-color: rgba(255, 92, 92, 0.45);
+}
+
+.remediation-metric-chip--blocker {
+  border-color: rgba(255, 168, 76, 0.45);
+}
+
+.remediation-metric-chip--resolved {
+  border-color: rgba(92, 214, 154, 0.35);
+}
+
+.remediation-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.remediation-badge--p0 {
+  background: rgba(255, 92, 92, 0.18);
+  color: #ffb4b4;
+}
+
+.remediation-badge--p1 {
+  background: rgba(255, 168, 76, 0.18);
+  color: #ffd2a1;
+}
+
+.remediation-badge--p2 {
+  background: rgba(120, 180, 255, 0.16);
+  color: #b8d4ff;
+}
+
+.remediation-findings-list__grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.remediation-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.remediation-card--resolved {
+  opacity: 0.72;
+}
+
+.remediation-card--deferred {
+  opacity: 0.82;
+}
+
+.remediation-card__head h4 {
+  margin: 8px 0 0;
+  font-size: 1rem;
+}
+
+.remediation-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.remediation-card__blocker {
+  font-size: 0.72rem;
+  color: #ffb4b4;
+  border: 1px solid rgba(255, 92, 92, 0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.remediation-card__detail {
+  margin: 10px 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.88rem;
+}
+
+.remediation-card__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.remediation-card__meta dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2px;
+}
+
+.remediation-card__meta dd {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.remediation-card__status-select {
+  width: 100%;
+}
+
+.remediation-card__foot {
+  margin-top: 12px;
+}
+
+.risk-overview-card__table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.risk-overview-card__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.risk-overview-card__table th,
+.risk-overview-card__table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 6px;
+  text-align: left;
+}
+
+@media (max-width: 960px) {
+  .remediation-board-page__body {
+    grid-template-columns: 1fr;
+  }
+}

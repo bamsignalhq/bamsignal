@@ -9,6 +9,7 @@ import { DATABASE_AUDIT_ADMIN_PATH } from "./databaseAudit";
 import { PERMISSIONS_AUDIT_ADMIN_PATH } from "./permissionsAudit";
 import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "./journeyIntegrityAudit";
 import { LAUNCH_READINESS_ADMIN_PATH } from "./launchReadiness";
+import { REMEDIATION_BOARD_ADMIN_PATH } from "./remediationBoardAdmin";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
   OPERATIONS_CENTER_PATH
@@ -49,7 +50,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   finance: "finance",
   messages: "messages",
   executive: "executive",
-  launch: "launch"
+  launch: "launch",
+  remediation: "remediation"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(
@@ -76,6 +78,9 @@ export function parseHardTabFromPath(pathname = window.location.pathname): HardT
   }
   if (path === LAUNCH_READINESS_ADMIN_PATH || path.startsWith(`${LAUNCH_READINESS_ADMIN_PATH}/`)) {
     return "launch";
+  }
+  if (path === REMEDIATION_BOARD_ADMIN_PATH || path.startsWith(`${REMEDIATION_BOARD_ADMIN_PATH}/`)) {
+    return "remediation";
   }
   if (path === INSTITUTIONAL_COMPLIANCE_ADMIN_PATH || path.startsWith(`${INSTITUTIONAL_COMPLIANCE_ADMIN_PATH}/`)) {
     return "compliance";

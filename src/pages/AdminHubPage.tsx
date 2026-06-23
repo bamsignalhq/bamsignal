@@ -99,6 +99,7 @@ import { DatabaseAuditPage } from "../components/admin/databaseAudit/DatabaseAud
 import { PermissionsAuditPage } from "../components/admin/permissionsAudit/PermissionsAuditPage";
 import { JourneyIntegrityAuditPage } from "../components/admin/journeyAudit/JourneyIntegrityAuditPage";
 import { LaunchReadinessCommandCenterPage } from "../components/admin/launchReadiness/LaunchReadinessCommandCenterPage";
+import { RemediationBoardPage } from "../components/admin/remediationBoard/RemediationBoardPage";
 import { DocumentCenterPage } from "../components/admin/documents/DocumentCenterPage";
 import { SafetyCenterPage } from "../components/admin/safety/SafetyCenterPage";
 import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
@@ -2082,6 +2083,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "messages" ? <InternalMessagingPage /> : null}
       {tab === "executive" ? <ExecutiveDashboardPage /> : null}
       {tab === "launch" ? <LaunchReadinessCommandCenterPage /> : null}
+      {tab === "remediation" ? <RemediationBoardPage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

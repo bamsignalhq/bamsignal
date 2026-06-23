@@ -52,6 +52,7 @@ import "./styles/bam-signal-institute.css";
 import "./styles/careers.css";
 import "./styles/support-center.css";
 import "./styles/audit-center.css";
+import "./styles/institutional-compliance.css";
 import "./styles/document-center.css";
 import "./styles/safety-center.css";
 import "./styles/consultant-academy.css";

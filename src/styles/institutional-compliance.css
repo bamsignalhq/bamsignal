@@ -1,0 +1,194 @@
+.institutional-compliance-page {
+  display: grid;
+  gap: 18px;
+}
+
+.institutional-compliance-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.institutional-compliance-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.institutional-compliance-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.institutional-compliance-page__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.institutional-compliance-page__detail {
+  display: grid;
+  gap: 12px;
+}
+
+.institutional-compliance-page__empty {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.9rem;
+}
+
+.institutional-compliance-page__future ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.institutional-compliance-page__foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 4px;
+}
+
+.institutional-compliance-overview,
+.institutional-compliance-search,
+.institutional-audit-timeline,
+.institutional-audit-actor-card,
+.institutional-audit-target-card,
+.institutional-compliance-page__future {
+  padding: 14px;
+}
+
+.institutional-compliance-overview__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.institutional-audit-metric-chip {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.institutional-audit-metric-chip p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.institutional-audit-metric-chip strong {
+  font-size: 1.1rem;
+}
+
+.institutional-compliance-overview__rules ul,
+.institutional-compliance-search__foot {
+  margin: 0;
+}
+
+.institutional-compliance-search__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.institutional-compliance-search__grid label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.institutional-compliance-search__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.institutional-audit-timeline__list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.institutional-audit-event-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.institutional-audit-event-card--button {
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.institutional-audit-event-card.is-selected {
+  border-color: rgba(120, 190, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(120, 190, 255, 0.2);
+}
+
+.institutional-audit-event-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.institutional-audit-event-card__action {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.institutional-audit-event-card__severity,
+.institutional-audit-event-card__result {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.institutional-audit-event-card__severity--critical,
+.institutional-audit-event-card__result--failed {
+  border-color: rgba(255, 120, 120, 0.45);
+  color: #ffb4b4;
+}
+
+.institutional-audit-event-card__grid,
+.institutional-audit-actor-card__grid,
+.institutional-audit-target-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 10px 0 0;
+}
+
+.institutional-audit-event-card__grid dt,
+.institutional-audit-actor-card__grid dt,
+.institutional-audit-target-card__grid dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.institutional-audit-event-card__grid dd,
+.institutional-audit-actor-card__grid dd,
+.institutional-audit-target-card__grid dd {
+  margin: 2px 0 0;
+}
+
+@media (max-width: 900px) {
+  .institutional-compliance-page__body {
+    grid-template-columns: 1fr;
+  }
+}

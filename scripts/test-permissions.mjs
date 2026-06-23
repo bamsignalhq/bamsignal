@@ -85,6 +85,7 @@ const hardRoutes = [
   "/hard/audit/database",
   "/hard/audit/security",
   "/hard/audit/journeys",
+  "/hard/compliance",
   "/hard/documents",
   "/hard/safety",
   "/hard/academy",

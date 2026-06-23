@@ -90,6 +90,7 @@ import { ConsultantDashboardPage } from "../components/admin/concierge/Consultan
 import { OperationsCenterPage } from "../components/admin/concierge/OperationsCenterPage";
 import { TalentRecruitingPage } from "../components/admin/talent/TalentRecruitingPage";
 import { SupportCenterAdminPage } from "../components/admin/support/SupportCenterAdminPage";
+import { InstitutionalComplianceCenterPage } from "../components/admin/compliance/InstitutionalComplianceCenterPage";
 import { AuditComplianceCenterPage } from "../components/admin/audit/AuditComplianceCenterPage";
 import { RouteAuditPage } from "../components/admin/routeAudit/RouteAuditPage";
 import { DatabaseAuditPage } from "../components/admin/databaseAudit/DatabaseAuditPage";
@@ -2068,6 +2069,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "audit" && auditView === "routes" ? <RouteAuditPage /> : null}
       {tab === "audit" && auditView === "journeys" ? <JourneyIntegrityAuditPage /> : null}
       {tab === "audit" && auditView === "compliance" ? <AuditComplianceCenterPage /> : null}
+      {tab === "compliance" ? <InstitutionalComplianceCenterPage /> : null}
       {tab === "documents" ? <DocumentCenterPage /> : null}
       {tab === "safety" ? <SafetyCenterPage /> : null}
       {tab === "academy" ? <ConsultantAcademyPage /> : null}

@@ -1,7 +1,8 @@
 import type {
   MessageChannelId,
   MessagePriorityId,
-  MessageTypeId
+  MessageTypeId,
+  MessagingMetricId
 } from "../constants/internalMessaging";
 
 export type InternalMessageRecord = {
@@ -14,8 +15,11 @@ export type InternalMessageRecord = {
   body: string;
   author: string;
   recipient: string | null;
+  departmentRoute: string;
   createdAt: string;
   read: boolean;
+  readAt: string | null;
+  readBy: string | null;
   acknowledged: boolean;
   acknowledgedAt: string | null;
   acknowledgedBy: string | null;
@@ -35,8 +39,16 @@ export type MessageChannelSummary = {
   unreadCount: number;
 };
 
+export type MessagingMetric = {
+  id: MessagingMetricId;
+  label: string;
+  value: string;
+  numericValue?: number;
+};
+
 export type InternalMessagingBundle = {
   generatedAt: string;
+  metrics: MessagingMetric[];
   channels: MessageChannelSummary[];
   messages: InternalMessageRecord[];
   selectedMessage: InternalMessageRecord | null;

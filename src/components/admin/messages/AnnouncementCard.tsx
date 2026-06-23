@@ -32,6 +32,10 @@ export function AnnouncementCard({ message, selected = false, onSelect }: Announ
           <dd>{MESSAGE_TYPE_LABELS[message.typeId]}</dd>
         </div>
         <div>
+          <dt>Department</dt>
+          <dd>{message.departmentRoute}</dd>
+        </div>
+        <div>
           <dt>Author</dt>
           <dd>{message.author}</dd>
         </div>

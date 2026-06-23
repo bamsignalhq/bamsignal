@@ -5,19 +5,19 @@ import {
 } from "../../../constants/internalMessaging";
 import type { InternalMessageRecord } from "../../../types/internalMessaging";
 
-type MessageTimelineCardProps = {
+type MessageThreadCardProps = {
   message: InternalMessageRecord;
 };
 
-export function MessageTimelineCard({ message }: MessageTimelineCardProps) {
+export function MessageThreadCard({ message }: MessageThreadCardProps) {
   return (
-    <section className="message-timeline-card concierge-consultant-card--glass cc-reveal">
-      <header className="message-timeline-card__head">
-        <h3>Message detail</h3>
+    <section className="message-thread-card concierge-consultant-card--glass cc-reveal" aria-label="Message thread">
+      <header className="message-thread-card__head">
+        <h3>Message thread</h3>
         <p>{message.messageRef}</p>
       </header>
 
-      <dl className="message-timeline-card__grid">
+      <dl className="message-thread-card__grid">
         <div>
           <dt>Channel</dt>
           <dd>{MESSAGE_CHANNEL_LABELS[message.channelId]}</dd>
@@ -28,7 +28,15 @@ export function MessageTimelineCard({ message }: MessageTimelineCardProps) {
         </div>
         <div>
           <dt>Priority</dt>
-          <dd>{MESSAGE_PRIORITY_LABELS[message.priority]}</dd>
+          <dd>
+            <span className={`message-thread-card__priority message-thread-card__priority--${message.priority}`}>
+              {MESSAGE_PRIORITY_LABELS[message.priority]}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt>Department route</dt>
+          <dd>{message.departmentRoute}</dd>
         </div>
         <div>
           <dt>Author</dt>
@@ -45,8 +53,12 @@ export function MessageTimelineCard({ message }: MessageTimelineCardProps) {
           <dd>{new Date(message.createdAt).toLocaleString()}</dd>
         </div>
         <div>
-          <dt>Read status</dt>
-          <dd>{message.read ? "Read" : "Unread"}</dd>
+          <dt>Read receipt</dt>
+          <dd>
+            {message.read && message.readBy
+              ? `Read by ${message.readBy} at ${new Date(message.readAt ?? "").toLocaleString()}`
+              : "Unread"}
+          </dd>
         </div>
         <div>
           <dt>Acknowledgement</dt>
@@ -58,7 +70,7 @@ export function MessageTimelineCard({ message }: MessageTimelineCardProps) {
         </div>
       </dl>
 
-      <div className="message-timeline-card__body">
+      <div className="message-thread-card__body">
         <h4>{message.subject}</h4>
         <p>{message.body}</p>
       </div>

@@ -6,14 +6,12 @@ type HandoffCardProps = {
 };
 
 export function HandoffCard({ messages }: HandoffCardProps) {
-  const handoffs = messages.filter(
-    (message) => message.typeId === "handoff" || message.typeId === "assignment"
-  );
+  const handoffs = messages.filter((message) => message.typeId === "handoff");
 
   return (
     <section className="handoff-card concierge-consultant-card--glass cc-reveal">
       <header className="handoff-card__head">
-        <h3>Handoffs & assignments</h3>
+        <h3>Handoffs</h3>
         <p>Operational handoffs between consultants and operations.</p>
       </header>
 

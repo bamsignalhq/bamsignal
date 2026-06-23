@@ -16,38 +16,44 @@ function assert(condition, message) {
 
 const adminSource = readFileSync(join(rootPath, "src/constants/internalMessagingAdmin.ts"), "utf8");
 assert(adminSource.includes('INTERNAL_MESSAGING_ADMIN_PATH = "/hard/messages"'), "admin messages route");
+assert(adminSource.includes("Internal Messaging Center™"), "messaging center brand");
 
 const constantsSource = readFileSync(join(rootPath, "src/constants/internalMessaging.ts"), "utf8");
-assert(constantsSource.includes("Internal Messaging™"), "messaging brand");
+assert(constantsSource.includes("Internal Messaging Center™"), "messaging brand");
 assert(constantsSource.includes("announcements"), "announcements channel");
 assert(constantsSource.includes("handoff"), "handoff message type");
-assert(constantsSource.includes("INTERNAL_MESSAGING_RULES"), "messaging rules documented");
-assert(constantsSource.includes("No member chat"), "no member chat rule");
+assert(constantsSource.includes("INTERNAL_MESSAGING_FEATURES"), "messaging features documented");
+assert(constantsSource.includes("read-receipts"), "read receipts feature");
+assert(constantsSource.includes("department-routing"), "department routing feature");
 assert(constantsSource.includes("INTERNAL_MESSAGING_FUTURE_KINDS"), "future kinds documented");
-assert(constantsSource.includes("Push notifications"), "push notifications future item");
+assert(constantsSource.includes("mobile-notifications"), "mobile notifications future item");
+assert(constantsSource.includes("department-chat"), "department chat future item");
+assert(constantsSource.includes("MESSAGING_CENTER_METRICS"), "messaging metrics");
 
 const hardRoutesSource = readFileSync(join(rootPath, "src/constants/hardRoutes.ts"), "utf8");
 assert(hardRoutesSource.includes("messages"), "hard routes include messages tab");
 
 const engineSource = readFileSync(join(rootPath, "src/utils/internalMessagingEngine.ts"), "utf8");
 assert(engineSource.includes("buildInternalMessagingBundle"), "messaging engine exists");
+assert(engineSource.includes("buildMessagingMetrics"), "messaging metrics in bundle");
 
 const logicSource = readFileSync(join(rootPath, "src/utils/internalMessagingLogic.ts"), "utf8");
 assert(logicSource.includes("countUnread"), "unread count logic");
 assert(logicSource.includes("buildChannelSummaries"), "channel summaries");
+assert(logicSource.includes("countEscalations"), "escalations metric");
 
 const seedSource = readFileSync(join(rootPath, "src/data/internalMessagingSeed.ts"), "utf8");
-assert(seedSource.includes("acknowledged"), "seed includes acknowledgement");
+assert(seedSource.includes("readBy"), "seed includes read receipts");
+assert(seedSource.includes("departmentRoute"), "seed includes department routing");
 assert(seedSource.includes("escalation"), "seed includes escalation");
 
 const adminComponents = [
-  "MessageChannelCard.tsx",
+  "ChannelCard.tsx",
   "AnnouncementCard.tsx",
   "EscalationCard.tsx",
   "HandoffCard.tsx",
-  "MessageTimelineCard.tsx",
-  "UnreadBadge.tsx",
-  "InternalMessagingPage.tsx"
+  "MessageThreadCard.tsx",
+  "MessagingDashboardPage.tsx"
 ];
 
 for (const file of adminComponents) {
@@ -56,7 +62,7 @@ for (const file of adminComponents) {
 }
 
 const adminHubSource = readFileSync(join(rootPath, "src/pages/AdminHubPage.tsx"), "utf8");
-assert(adminHubSource.includes("InternalMessagingPage"), "admin hub mounts internal messaging");
+assert(adminHubSource.includes("MessagingDashboardPage"), "admin hub mounts messaging dashboard");
 
 const navSource = readFileSync(join(rootPath, "src/components/admin/adminConsoleNav.ts"), "utf8");
 assert(navSource.includes('"messages"'), "admin nav includes messages tab");

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import {
+  INTERNAL_MESSAGING_FEATURES,
   INTERNAL_MESSAGING_FUTURE_KINDS,
-  INTERNAL_MESSAGING_RULES,
   MESSAGE_CHANNELS,
   MESSAGE_TYPES,
   MESSAGE_TYPE_LABELS
@@ -14,13 +14,13 @@ import type { MessageChannelId, MessageTypeId } from "../../../constants/interna
 import { buildInternalMessagingBundle } from "../../../utils/internalMessagingEngine";
 import { emptyMessagingFilters } from "../../../utils/internalMessagingLogic";
 import { AnnouncementCard } from "./AnnouncementCard";
+import { ChannelCard } from "./ChannelCard";
 import { EscalationCard } from "./EscalationCard";
 import { HandoffCard } from "./HandoffCard";
-import { MessageChannelCard } from "./MessageChannelCard";
-import { MessageTimelineCard } from "./MessageTimelineCard";
+import { MessageThreadCard } from "./MessageThreadCard";
 import { UnreadBadge } from "./UnreadBadge";
 
-export function InternalMessagingPage() {
+export function MessagingDashboardPage() {
   const [filters, setFilters] = useState(() => emptyMessagingFilters());
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -46,18 +46,16 @@ export function InternalMessagingPage() {
   }, []);
 
   return (
-    <div className="internal-messaging-page">
+    <div className="internal-messaging-page messaging-dashboard-page">
       <header className="internal-messaging-page__head">
         <div>
           <h2>
             {INTERNAL_MESSAGING_ADMIN_BRAND}
-            {bundle.totalUnread > 0 ? (
-              <UnreadBadge count={bundle.totalUnread} />
-            ) : null}
+            {bundle.totalUnread > 0 ? <UnreadBadge count={bundle.totalUnread} /> : null}
           </h2>
           <p>
-            Institutional operational communication — not social chat. Channels for operations,
-            consultants, research, leadership, safety, support, and announcements.
+            Institutional communication infrastructure — operations, consultants, support, research,
+            leadership, and announcements. Not external tools. Information stays inside BamSignal.
           </p>
         </div>
         <button
@@ -69,10 +67,20 @@ export function InternalMessagingPage() {
         </button>
       </header>
 
-      <section className="internal-messaging-page__rules">
+      <section className="messaging-dashboard-page__metrics" aria-label="Messaging metrics">
+        {bundle.metrics.map((metric) => (
+          <article key={metric.id} className="messaging-metric-chip">
+            <p>{metric.label}</p>
+            <strong>{metric.value}</strong>
+          </article>
+        ))}
+      </section>
+
+      <section className="internal-messaging-page__features">
+        <h3>Features</h3>
         <ul>
-          {INTERNAL_MESSAGING_RULES.map((rule) => (
-            <li key={rule}>{rule}</li>
+          {INTERNAL_MESSAGING_FEATURES.map((feature) => (
+            <li key={feature.id}>{feature.label}</li>
           ))}
         </ul>
       </section>
@@ -81,7 +89,7 @@ export function InternalMessagingPage() {
         {MESSAGE_CHANNELS.map((channel) => {
           const summary = bundle.channels.find((item) => item.channelId === channel.id);
           return (
-            <MessageChannelCard
+            <ChannelCard
               key={channel.id}
               channelId={channel.id}
               hint={channel.hint}
@@ -160,10 +168,10 @@ export function InternalMessagingPage() {
 
         <div className="internal-messaging-page__detail">
           {selectedMessage ? (
-            <MessageTimelineCard message={selectedMessage} />
+            <MessageThreadCard message={selectedMessage} />
           ) : (
             <p className="internal-messaging-page__empty">
-              Select a message to view read status, priority, and acknowledgement.
+              Select a message to view thread, read receipt, priority, and department routing.
             </p>
           )}
         </div>

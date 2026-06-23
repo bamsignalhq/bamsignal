@@ -107,7 +107,7 @@ import { SafetyDashboardPage } from "../components/admin/safety/SafetyDashboardP
 import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
 import { ConsultantQualityPage } from "../components/admin/quality/ConsultantQualityPage";
 import { FinanceOperationsPage } from "../components/admin/finance/FinanceOperationsPage";
-import { InternalMessagingPage } from "../components/admin/messages/InternalMessagingPage";
+import { MessagingDashboardPage } from "../components/admin/messages/MessagingDashboardPage";
 import { ExecutiveDashboardPage } from "../components/admin/executive/ExecutiveDashboardPage";
 import { JourneyIntelligencePage } from "../components/admin/concierge/JourneyIntelligencePage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
@@ -2082,7 +2082,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "academy" ? <ConsultantAcademyPage /> : null}
       {tab === "quality" ? <ConsultantQualityPage /> : null}
       {tab === "finance" ? <FinanceOperationsPage /> : null}
-      {tab === "messages" ? <InternalMessagingPage /> : null}
+      {tab === "messages" ? <MessagingDashboardPage /> : null}
       {tab === "executive" ? <ExecutiveDashboardPage /> : null}
       {tab === "launch" ? <LaunchReadinessCommandCenterPage /> : null}
       {tab === "remediation" ? <RemediationBoardPage /> : null}

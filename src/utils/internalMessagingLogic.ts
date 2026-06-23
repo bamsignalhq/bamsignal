@@ -1,14 +1,24 @@
-import { MESSAGE_CHANNELS } from "../constants/internalMessaging";
+import { MESSAGE_CHANNELS, MESSAGING_CENTER_METRICS } from "../constants/internalMessaging";
 import { INTERNAL_MESSAGING_SEED } from "../data/internalMessagingSeed";
 import type {
   InternalMessageRecord,
   InternalMessagingFilterState,
-  MessageChannelSummary
+  MessageChannelSummary,
+  MessagingMetric
 } from "../types/internalMessaging";
 import type { MessageChannelId, MessageTypeId } from "../constants/internalMessaging";
 
+function normalizeMessage(message: InternalMessageRecord): InternalMessageRecord {
+  return {
+    ...message,
+    departmentRoute: message.departmentRoute ?? "Operations",
+    readAt: message.readAt ?? null,
+    readBy: message.readBy ?? null
+  };
+}
+
 export function listInternalMessages(): InternalMessageRecord[] {
-  return [...INTERNAL_MESSAGING_SEED];
+  return INTERNAL_MESSAGING_SEED.map(normalizeMessage);
 }
 
 export function sortMessagesByDate(messages: InternalMessageRecord[]): InternalMessageRecord[] {
@@ -42,7 +52,8 @@ export function filterInternalMessages(
       message.subject,
       message.body,
       message.author,
-      message.recipient ?? ""
+      message.recipient ?? "",
+      message.departmentRoute
     ]
       .join(" ")
       .toLowerCase();
@@ -76,6 +87,30 @@ export function messagesByType(
   typeId: MessageTypeId
 ): InternalMessageRecord[] {
   return messages.filter((message) => message.typeId === typeId);
+}
+
+export function countEscalations(messages: InternalMessageRecord[]): number {
+  return messages.filter((message) => message.typeId === "escalation" || message.typeId === "alert").length;
+}
+
+export function countAnnouncements(messages: InternalMessageRecord[]): number {
+  return messages.filter((message) => message.typeId === "announcement").length;
+}
+
+export function buildMessagingMetrics(messages: InternalMessageRecord[]): MessagingMetric[] {
+  const values: Record<string, string> = {
+    messages: String(messages.length),
+    unread: String(countUnread(messages)),
+    escalations: String(countEscalations(messages)),
+    announcements: String(countAnnouncements(messages))
+  };
+
+  return MESSAGING_CENTER_METRICS.map((metric) => ({
+    id: metric.id,
+    label: metric.label,
+    value: values[metric.id] ?? "0",
+    numericValue: Number(values[metric.id]) || undefined
+  }));
 }
 
 export function emptyMessagingFilters(): InternalMessagingFilterState {

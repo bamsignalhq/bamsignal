@@ -2,7 +2,7 @@ import { MESSAGE_CHANNEL_LABELS } from "../../../constants/internalMessaging";
 import type { MessageChannelId } from "../../../constants/internalMessaging";
 import { UnreadBadge } from "./UnreadBadge";
 
-type MessageChannelCardProps = {
+type ChannelCardProps = {
   channelId: MessageChannelId;
   hint: string;
   messageCount: number;
@@ -11,22 +11,22 @@ type MessageChannelCardProps = {
   onSelect?: () => void;
 };
 
-export function MessageChannelCard({
+export function ChannelCard({
   channelId,
   hint,
   messageCount,
   unreadCount,
   active = false,
   onSelect
-}: MessageChannelCardProps) {
+}: ChannelCardProps) {
   return (
     <button
       type="button"
-      className={`message-channel-card${active ? " is-active" : ""}`}
+      className={`channel-card message-channel-card${active ? " is-active" : ""}`}
       onClick={onSelect}
     >
-      <div className="message-channel-card__head">
-        <p className="message-channel-card__eyebrow">Channel</p>
+      <div className="channel-card__head message-channel-card__head">
+        <p className="channel-card__eyebrow message-channel-card__eyebrow">Channel</p>
         {unreadCount > 0 ? <UnreadBadge count={unreadCount} /> : null}
       </div>
       <h3>{MESSAGE_CHANNEL_LABELS[channelId]}</h3>

@@ -1,5 +1,6 @@
 import type { HardTab } from "../components/admin/adminConsoleNav";
 import { normalizePath } from "./routes";
+import { SYSTEM_HEALTH_ADMIN_PATH } from "./systemHealthAdmin";
 import { INSTITUTIONAL_COMPLIANCE_ADMIN_PATH } from "./institutionalComplianceAdmin";
 import { AUDIT_CENTER_ADMIN_PATH } from "./auditCenterAdmin";
 import { ROUTE_AUDIT_ADMIN_PATH } from "./routeAudit";
@@ -38,6 +39,7 @@ const TAB_SLUGS: Record<HardTab, string> = {
   support: "support",
   audit: "audit",
   compliance: "compliance",
+  systemhealth: "system-health",
   documents: "documents",
   safety: "safety",
   academy: "academy",
@@ -75,6 +77,9 @@ export function parseHardTabFromPath(pathname = window.location.pathname): HardT
   }
   if (path === INSTITUTIONAL_COMPLIANCE_ADMIN_PATH || path.startsWith(`${INSTITUTIONAL_COMPLIANCE_ADMIN_PATH}/`)) {
     return "compliance";
+  }
+  if (path === SYSTEM_HEALTH_ADMIN_PATH || path.startsWith(`${SYSTEM_HEALTH_ADMIN_PATH}/`)) {
+    return "systemhealth";
   }
 
   const match = path.match(/^\/hard\/([^/]+)$/);

@@ -2,6 +2,7 @@ import type { AuditAdminView, ConciergeAdminView } from "./hardRoutes";
 import { hardPathForTab } from "./hardRoutes";
 import type { HardTab } from "../components/admin/adminConsoleNav";
 import { normalizePath } from "./routes";
+import { SYSTEM_HEALTH_ADMIN_PATH } from "./systemHealthAdmin";
 import { INSTITUTIONAL_COMPLIANCE_ADMIN_PATH } from "./institutionalComplianceAdmin";
 import { AUDIT_CENTER_ADMIN_PATH } from "./auditCenterAdmin";
 import { ROUTE_AUDIT_ADMIN_PATH } from "./routeAudit";
@@ -149,6 +150,7 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   support: "ManageSupport",
   audit: "ViewArchives",
   compliance: "ViewArchives",
+  systemhealth: "ManageOperations",
   documents: "ManageDocuments",
   safety: "ManageSafety",
   academy: "ManageConsultants",
@@ -196,6 +198,7 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   "/hard/support": HARD_TAB_PERMISSIONS.support,
   [AUDIT_CENTER_ADMIN_PATH]: AUDIT_VIEW_PERMISSIONS.compliance,
   [INSTITUTIONAL_COMPLIANCE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.compliance,
+  [SYSTEM_HEALTH_ADMIN_PATH]: HARD_TAB_PERMISSIONS.systemhealth,
   [ROUTE_AUDIT_ADMIN_PATH]: AUDIT_VIEW_PERMISSIONS.routes,
   [DATABASE_AUDIT_ADMIN_PATH]: AUDIT_VIEW_PERMISSIONS.database,
   [PERMISSIONS_AUDIT_ADMIN_PATH]: AUDIT_VIEW_PERMISSIONS.security,
@@ -237,6 +240,7 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/audit/security",
   "/hard/audit/journeys",
   "/hard/compliance",
+  "/hard/system-health",
   "/hard/documents",
   "/hard/safety",
   "/hard/academy",

@@ -1,0 +1,232 @@
+.system-health-page {
+  display: grid;
+  gap: 18px;
+}
+
+.system-health-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.system-health-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.system-health-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.system-health-page__services {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.system-health-page__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.system-health-page__detail,
+.system-health-page__future,
+.system-health-summary,
+.dependency-status-card,
+.system-health-incident-timeline,
+.service-health-card {
+  padding: 14px;
+}
+
+.system-health-page__future ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.system-health-page__foot,
+.system-health-summary__foot {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 4px;
+}
+
+.system-health-page__empty {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.system-health-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.system-health-badge--healthy {
+  border-color: rgba(120, 220, 160, 0.45);
+  color: #b8f0cb;
+}
+
+.system-health-badge--degraded {
+  border-color: rgba(255, 200, 120, 0.45);
+  color: #ffd9a1;
+}
+
+.system-health-badge--offline,
+.system-health-badge--maintenance {
+  border-color: rgba(255, 120, 120, 0.45);
+  color: #ffb4b4;
+}
+
+.system-health-summary__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.system-health-metric-chip {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.system-health-metric-chip p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.service-health-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  text-align: left;
+}
+
+.service-health-card--button {
+  width: 100%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.service-health-card.is-selected {
+  border-color: rgba(120, 190, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(120, 190, 255, 0.2);
+}
+
+.service-health-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.service-health-card__category {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.service-health-card__head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.service-health-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.service-health-card__metrics dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.service-health-card__metrics dd {
+  margin: 2px 0 0;
+}
+
+.service-health-card__note,
+.service-health-card__critical,
+.dependency-status-card__deps,
+.system-health-incident-timeline__service,
+.system-health-incident-timeline__recovery {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.service-health-card__critical {
+  color: #ffb4b4;
+}
+
+.dependency-status-card__list,
+.system-health-incident-timeline__list {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dependency-status-card__row,
+.system-health-incident-timeline__item {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+
+.dependency-status-card__main h4,
+.system-health-incident-timeline__body h4 {
+  margin: 0 0 6px;
+}
+
+.dependency-status-card__main p,
+.system-health-incident-timeline__body p {
+  margin: 0 0 6px;
+}
+
+.system-health-incident-timeline__marker {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 6px;
+  background: rgba(120, 220, 160, 0.9);
+  flex-shrink: 0;
+}
+
+.system-health-incident-timeline__item--degraded .system-health-incident-timeline__marker {
+  background: rgba(255, 200, 120, 0.95);
+}
+
+.system-health-incident-timeline__item--offline .system-health-incident-timeline__marker,
+.system-health-incident-timeline__item--maintenance .system-health-incident-timeline__marker {
+  background: rgba(255, 120, 120, 0.95);
+}
+
+.system-health-incident-timeline__meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .system-health-page__body {
+    grid-template-columns: 1fr;
+  }
+}

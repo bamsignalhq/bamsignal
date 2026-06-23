@@ -107,6 +107,7 @@ import { JourneyIntelligencePage } from "../components/admin/concierge/JourneyIn
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
 import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
 import { AdminTerminalEmpty } from "../components/admin/AdminTerminalEmpty";
+import { RequirePermission } from "../components/admin/RequirePermission";
 import { useAdminToast } from "../components/admin/AdminToast";
 import { AdminSecurityPanel, useAdminConsent } from "../components/admin/AdminConsentProvider";
 import { AdminAuthPage } from "./AdminAuthPage";
@@ -453,6 +454,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   ];
 
   return (
+    <RequirePermission>
     <div className="admin-console">
       <AdminConsoleTopBar
         onLogout={() => void handleLogout()}
@@ -2088,5 +2090,6 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
         />
       </div>
     </div>
+    </RequirePermission>
   );
 }

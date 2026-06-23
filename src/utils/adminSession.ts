@@ -1,4 +1,5 @@
 import { DEMO_ADMIN } from "../constants/demoAccounts";
+import { normalizeOperatorRole, type Role } from "../constants/permissions";
 import type { HardTab } from "../components/admin/adminConsoleNav";
 import { hardPathForTab, parseHardTabFromPath } from "../constants/hardRoutes";
 import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
@@ -39,6 +40,7 @@ const STALE_ADMIN_BROWSER_KEYS = [
 const DEV_DEMO_FLAG = "bamsignal_dev_demo_hard";
 
 let validatedOperatorEmail: string | null = null;
+let validatedOperatorRole: Role | null = null;
 
 export type HardSessionRecord = {
   email: string;
@@ -77,6 +79,7 @@ export function clearStaleAdminBrowserState(options?: { keepLastRoute?: boolean 
   sessionStorage.removeItem("commandCenterState");
   sessionStorage.removeItem(DEV_DEMO_FLAG);
   validatedOperatorEmail = null;
+  validatedOperatorRole = null;
   if (!options?.keepLastRoute) {
     localStorage.removeItem(HARD_STORAGE.lastRoute);
     localStorage.removeItem(LEGACY_STORAGE.lastRoute);
@@ -86,6 +89,12 @@ export function clearStaleAdminBrowserState(options?: { keepLastRoute?: boolean 
 export function getHardSessionEmail(): string | null {
   if (validatedOperatorEmail) return validatedOperatorEmail;
   if (isDevDemoHardSession()) return DEMO_ADMIN.email.toLowerCase();
+  return null;
+}
+
+export function getOperatorRole(): Role | null {
+  if (validatedOperatorRole) return validatedOperatorRole;
+  if (isDevDemoHardSession()) return "Admin";
   return null;
 }
 
@@ -151,9 +160,16 @@ export async function restoreMemberSessionAfterHardLogout(): Promise<boolean> {
 /** @deprecated */
 export const restoreMemberSessionAfterAdminLogout = restoreMemberSessionAfterHardLogout;
 
-export async function verifyAdminSession(accessToken?: string): Promise<boolean> {
-  if (isDevDemoHardSession()) return true;
-  if (!accessToken) return false;
+export type HardSessionVerifyResult = {
+  ok: boolean;
+  role: Role | null;
+};
+
+export async function verifyAdminSession(accessToken?: string): Promise<HardSessionVerifyResult> {
+  if (isDevDemoHardSession()) {
+    return { ok: true, role: "Admin" };
+  }
+  if (!accessToken) return { ok: false, role: null };
   try {
     const response = await fetch(apiUrl("/api/auth/identity?action=admin-session"), {
       method: "POST",
@@ -164,11 +180,12 @@ export async function verifyAdminSession(accessToken?: string): Promise<boolean>
       body: "{}",
       cache: "no-store"
     });
-    if (!response.ok) return false;
-    const payload = await readResponseJson<{ ok?: boolean }>(response);
-    return payload?.ok !== false;
+    if (!response.ok) return { ok: false, role: null };
+    const payload = await readResponseJson<{ ok?: boolean; role?: string }>(response);
+    if (payload?.ok === false) return { ok: false, role: null };
+    return { ok: true, role: normalizeOperatorRole(payload?.role) };
   } catch {
-    return false;
+    return { ok: false, role: null };
   }
 }
 
@@ -179,8 +196,16 @@ export async function persistHardSession(email: string, accessToken?: string): P
     sessionStorage.setItem(DEV_DEMO_FLAG, "1");
   }
   validatedOperatorEmail = email.trim().toLowerCase();
+  if (accessToken) {
+    const verification = await verifyAdminSession(accessToken);
+    validatedOperatorRole = verification.role ?? "Admin";
+  } else if (isDevDemoHardSession()) {
+    validatedOperatorRole = "Admin";
+  } else {
+    validatedOperatorRole = "Admin";
+  }
   saveHardLastRoute(hardPathForTab("command"));
-  logAdminAudit("admin_login_success");
+  logAdminAudit("admin_login_success", { role: validatedOperatorRole });
 }
 
 /** @deprecated */
@@ -284,6 +309,7 @@ export const isDevDemoAdminSession = isDevDemoHardSession;
 export async function validateHardSession(): Promise<boolean> {
   if (isDevDemoHardSession()) {
     validatedOperatorEmail = DEMO_ADMIN.email.toLowerCase();
+    validatedOperatorRole = "Admin";
     logAdminAudit("admin_restore_success", { mode: "dev_demo" });
     return true;
   }
@@ -306,8 +332,8 @@ export async function validateHardSession(): Promise<boolean> {
     return false;
   }
 
-  const ok = await verifyAdminSession(token);
-  if (!ok) {
+  const verification = await verifyAdminSession(token);
+  if (!verification.ok) {
     clearStaleAdminBrowserState({ keepLastRoute: true });
     await supabase.auth.signOut().catch(() => undefined);
     logAdminAudit("admin_restore_denied", { reason: "server_rejected" });
@@ -315,7 +341,8 @@ export async function validateHardSession(): Promise<boolean> {
   }
 
   validatedOperatorEmail = email;
-  logAdminAudit("admin_restore_success");
+  validatedOperatorRole = verification.role ?? "Admin";
+  logAdminAudit("admin_restore_success", { role: validatedOperatorRole });
   return true;
 }
 

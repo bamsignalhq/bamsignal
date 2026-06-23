@@ -70,9 +70,9 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
   useEffect(() => {
     supabase?.auth.getSession().then(async ({ data }) => {
       const token = data.session?.access_token;
-      const ok = await verifyAdminSession(token);
-      setAuthorized(ok);
-      if (!ok) setMessage("Console access required.");
+      const verification = await verifyAdminSession(token);
+      setAuthorized(verification.ok);
+      if (!verification.ok) setMessage("Console access required.");
     });
   }, []);
 

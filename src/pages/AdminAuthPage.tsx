@@ -98,8 +98,8 @@ export function AdminAuthPage({
           setMessage("Invalid credentials.");
           return;
         }
-        const ok = await verifyAdminSession(token);
-        if (!ok) {
+        const verification = await verifyAdminSession(token);
+        if (!verification.ok) {
           await supabase.auth.signOut();
           setMessage("This account does not have console access.");
           return;
@@ -166,8 +166,8 @@ export function AdminAuthPage({
         setMode("login");
         return;
       }
-      const ok = await verifyAdminSession(token);
-      if (!ok) {
+      const verification = await verifyAdminSession(token);
+      if (!verification.ok) {
         await supabase.auth.signOut();
         setMessage("Account created but console access was not granted. Contact support.");
         setMode("login");
@@ -230,7 +230,7 @@ export function AdminAuthPage({
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
       const sessionEmail = data.session?.user?.email?.toLowerCase() || email.trim().toLowerCase();
-      if (token && (await verifyAdminSession(token))) {
+      if (token && (await verifyAdminSession(token)).ok) {
         await finishAuthed(sessionEmail, token);
         return;
       }

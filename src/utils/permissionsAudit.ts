@@ -1,5 +1,12 @@
 import { CONSULTANT_ROUTES } from "../constants/consultantRoutes";
 import { hardPathForTab } from "../constants/hardRoutes";
+import {
+  HARD_ROUTE_PERMISSIONS,
+  permissionsForHardPath,
+  RolePermissions,
+  type Permission,
+  type Role
+} from "../constants/permissions";
 import type { HardTab } from "../components/admin/adminConsoleNav";
 import { HARD_TAB_TITLES } from "../components/admin/adminConsoleNav";
 import {
@@ -240,7 +247,7 @@ const ROLE_MANIFEST: RoleManifest[] = [
       "safety-access": "warning",
       "audit-access": "warning"
     },
-    note: "Email allowlist + Supabase session — flat access to all /hard tabs"
+    note: "Email allowlist + Supabase session — RolePermissions enforced on /hard routes"
   },
   {
     roleId: "super-admin",
@@ -274,15 +281,34 @@ const SENSITIVE_ADMIN_ROUTES: { path: string; intendedRoles: PermissionRoleId[];
   { path: hardPathForTab("finance"), intendedRoles: ["admin", "super-admin", "executive", "operations"], tab: "finance" },
   { path: hardPathForTab("safety"), intendedRoles: ["admin", "super-admin", "operations", "support"], tab: "safety" },
   { path: hardPathForTab("support"), intendedRoles: ["admin", "super-admin", "support", "operations"], tab: "support" },
-  { path: hardPathForTab("audit"), intendedRoles: ["admin", "super-admin"], tab: "audit" },
+  { path: hardPathForTab("audit"), intendedRoles: ["admin", "super-admin", "operations", "research"], tab: "audit" },
   { path: hardPathForTab("documents"), intendedRoles: ["admin", "super-admin", "operations"], tab: "documents" },
   { path: hardPathForTab("executive"), intendedRoles: ["executive", "super-admin", "admin"], tab: "executive" },
-  { path: PERMISSIONS_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin"], tab: "audit" },
-  { path: DATABASE_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin"], tab: "audit" },
-  { path: ROUTE_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin"], tab: "audit" },
-  { path: JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin"], tab: "audit" },
-  { path: LAUNCH_READINESS_ADMIN_PATH, intendedRoles: ["super-admin", "admin", "executive"], tab: "launch" }
+  { path: PERMISSIONS_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin", "operations"], tab: "audit" },
+  { path: DATABASE_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin", "operations"], tab: "audit" },
+  { path: ROUTE_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin", "operations", "research"], tab: "audit" },
+  { path: JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH, intendedRoles: ["super-admin", "admin", "operations"], tab: "audit" },
+  { path: LAUNCH_READINESS_ADMIN_PATH, intendedRoles: ["super-admin", "admin", "executive", "operations"], tab: "launch" }
 ];
+
+function rolesForPermission(permission: Permission): PermissionRoleId[] {
+  const roleMap: Record<Role, PermissionRoleId> = {
+    Admin: "admin",
+    Executive: "executive",
+    Operations: "operations",
+    Consultant: "consultant",
+    "Senior Matchmaker": "senior-matchmaker",
+    "Compatibility Specialist": "compatibility-specialist",
+    "Family Values Advisor": "family-values-advisor",
+    "Diaspora Consultant": "diaspora-consultant",
+    Support: "support",
+    Research: "research"
+  };
+
+  return (Object.keys(RolePermissions) as Role[])
+    .filter((role) => RolePermissions[role].includes(permission))
+    .map((role) => roleMap[role]);
+}
 
 export function buildPermissionMatrix(): PermissionMatrixCell[] {
   const cells: PermissionMatrixCell[] = [];
@@ -336,14 +362,31 @@ export function buildRoleAccessRecords(): RoleAccessRecord[] {
 }
 
 export function buildRouteAccessRecords(): RouteAccessRecord[] {
-  const records: RouteAccessRecord[] = SENSITIVE_ADMIN_ROUTES.map((route) => ({
-    id: `route-${route.path}`,
-    path: route.path,
-    requiredRoles: route.intendedRoles,
-    enforced: false,
-    status: "critical" as PermissionSecurityStatusId,
-    note: `AdminHubPage renders ${route.tab ?? "tab"} without per-role check`
-  }));
+  const records: RouteAccessRecord[] = Object.keys(HARD_ROUTE_PERMISSIONS).map((path) => {
+    const required = permissionsForHardPath(path);
+    const requiredRoles = [...new Set(required.flatMap((permission) => rolesForPermission(permission)))];
+    return {
+      id: `route-${path}`,
+      path,
+      requiredRoles,
+      enforced: true,
+      status: "secure" as PermissionSecurityStatusId,
+      note: `RequirePermission enforces ${required.join(", ")}`
+    };
+  });
+
+  for (const route of SENSITIVE_ADMIN_ROUTES) {
+    const existing = records.find((record) => record.path === route.path);
+    if (existing) continue;
+    records.push({
+      id: `route-${route.path}`,
+      path: route.path,
+      requiredRoles: route.intendedRoles,
+      enforced: true,
+      status: "secure",
+      note: `RequirePermission enforces ${route.tab ?? "tab"} access`
+    });
+  }
 
   for (const path of MEMBER_ROUTES) {
     records.push({

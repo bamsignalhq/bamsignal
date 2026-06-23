@@ -850,3 +850,49 @@ html.admin-mode .bottom-nav {
   align-items: center;
 }
 
+.admin-permission-denied {
+  padding: 24px 16px;
+}
+
+.admin-permission-denied__card {
+  margin-top: 16px;
+  max-width: 520px;
+}
+
+.admin-permission-denied__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.admin-permission-denied__copy {
+  margin: 0 0 12px;
+  color: var(--bs-text-muted, #9aa3b2);
+}
+
+.admin-permission-denied__meta {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.admin-permission-denied__meta dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bs-text-muted, #9aa3b2);
+}
+
+.admin-permission-denied__meta dd {
+  margin: 2px 0 0;
+}
+
+.admin-permission-gate h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.admin-permission-gate p {
+  margin: 0;
+  color: var(--bs-text-muted, #9aa3b2);
+}
+

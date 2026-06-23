@@ -216,13 +216,19 @@ export async function ensureAdminUsersTable() {
 
 export async function isPlatformAdminEmail(email) {
   if (!pool || !email) return false;
+  const record = await getPlatformAdminByEmail(email);
+  return Boolean(record?.active);
+}
+
+export async function getPlatformAdminByEmail(email) {
+  if (!pool || !email) return null;
   await ensureAdminUsersTable();
 
   const result = await query(
-    "select 1 from admin_users where lower(email) = lower($1) and active = true limit 1",
+    "select email, role, active, created_at, updated_at from admin_users where lower(email) = lower($1) limit 1",
     [email]
   );
-  return result.rowCount > 0;
+  return result.rows[0] || null;
 }
 
 export async function listPlatformAdmins() {

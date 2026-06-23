@@ -13,6 +13,7 @@ import {
   buildRoleAccessRecords,
   buildRouteAccessRecords
 } from "./permissionsAudit";
+import { listEnforcedHardRoutes } from "../constants/permissions";
 
 function buildSecurityIssues(): SecurityIssue[] {
   return [
@@ -29,12 +30,12 @@ function buildSecurityIssues(): SecurityIssue[] {
     {
       id: "issue-flat-admin-tabs",
       kind: "unprotected-route",
-      title: "All /hard tabs share one admin gate",
+      title: "Per-route permission enforcement active",
       summary:
-        "AdminHubPage validates operator session once — finance, safety, audit, and executive tabs have no per-role enforcement.",
-      status: "critical",
+        "RequirePermission gates every /hard workspace route using RolePermissions from permissions.ts. Verify server APIs still enforce operator role independently.",
+      status: "warning",
       affectedRoles: ["admin", "operations", "support", "research", "executive"],
-      affectedPaths: ["/hard/finance", "/hard/safety", "/hard/audit", "/hard/executive"]
+      affectedPaths: listEnforcedHardRoutes()
     },
     {
       id: "issue-consultant-local-pin",
@@ -69,10 +70,10 @@ function buildSecurityIssues(): SecurityIssue[] {
     {
       id: "issue-no-super-admin-rbac",
       kind: "access-inconsistency",
-      title: "admin_users.role not used for tab RBAC",
+      title: "admin_users.role drives client RBAC",
       summary:
-        "Postgres admin_users has role column but client console does not branch on super-admin vs admin for sensitive tabs.",
-      status: "critical",
+        "admin-session returns operator role from admin_users; RequirePermission enforces RolePermissions on sensitive /hard routes.",
+      status: "warning",
       affectedRoles: ["admin", "super-admin"],
       affectedPaths: ["/hard/audit/security", "/hard/audit/database"]
     },

@@ -5,6 +5,7 @@ import {
   listPlatformAdmins,
   setPlatformSetting,
   upsertAppUserIdentity,
+  getPlatformAdminByEmail,
   upsertPlatformAdmin
 } from "../../server/db.js";
 import { normalizeEmailBranding } from "../../server/services/emailBranding.js";
@@ -98,10 +99,15 @@ export default async function handler(req, res) {
 
     if (req.query.action === "admin-session") {
       if (await requireAdmin(req, res)) {
+        let operatorRole = "admin";
         try {
           const { getAdminEmailFromRequest } = await import("../../server/adminConsent.js");
           const operatorEmail = await getAdminEmailFromRequest(req);
           if (operatorEmail) {
+            const adminRecord = await getPlatformAdminByEmail(operatorEmail);
+            if (adminRecord?.role) {
+              operatorRole = String(adminRecord.role);
+            }
             const { writeAuditLog } = await import("../../server/services/auditLog.js");
             const forwarded = req.headers["x-forwarded-for"];
             const ip =
@@ -111,7 +117,7 @@ export default async function handler(req, res) {
             await writeAuditLog({
               operatorId: operatorEmail,
               action: "operator_login",
-              details: {},
+              details: { role: operatorRole },
               ip,
               userAgent: String(req.headers["user-agent"] || "").slice(0, 512) || null
             });
@@ -119,7 +125,7 @@ export default async function handler(req, res) {
         } catch {
           /* best effort */
         }
-        return res.status(200).json({ ok: true });
+        return res.status(200).json({ ok: true, role: operatorRole });
       }
       return;
     }

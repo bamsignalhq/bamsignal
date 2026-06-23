@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { hardPathForTab } from "../../constants/hardRoutes";
+import { roleCanAccessPath } from "../../constants/permissions";
+import { getOperatorRole } from "../../utils/adminSession";
 import { AdminHealthPanel } from "./AdminHealthPanel";
 import { AdminTerminalEmpty } from "./AdminTerminalEmpty";
 import {
@@ -119,7 +122,19 @@ export function AdminCommandDock({
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileOpen, onMobileClose]);
 
-  const sections = useMemo(() => filterAdminNavSections(search), [search]);
+  const sections = useMemo(() => {
+    const role = getOperatorRole();
+    const filtered = filterAdminNavSections(search)
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+          if (!role) return false;
+          return roleCanAccessPath(role, hardPathForTab(item.id));
+        })
+      }))
+      .filter((section) => section.items.length > 0);
+    return filtered;
+  }, [search]);
 
   const toggleSection = (id: string) => {
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));

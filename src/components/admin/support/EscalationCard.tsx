@@ -1,4 +1,4 @@
-import { SUPPORT_TICKET_CATEGORY_LABELS, SUPPORT_TICKET_PRIORITY_LABELS } from "../../../constants/supportCenter";
+import { SUPPORT_TICKET_PRIORITY_LABELS, SUPPORT_TICKET_TYPE_LABELS } from "../../../constants/supportCenter";
 import type { SupportTicketRecord } from "../../../types/supportCenter";
 import { TicketStatusBadge } from "../../supportCenter/TicketStatusBadge";
 
@@ -31,7 +31,7 @@ export function EscalationCard({ tickets, selectedTicketId, onSelectTicket }: Es
               </div>
               <span>{ticket.subject}</span>
               <span>
-                {SUPPORT_TICKET_CATEGORY_LABELS[ticket.categoryId]} ·{" "}
+                {SUPPORT_TICKET_TYPE_LABELS[ticket.typeId ?? ticket.categoryId ?? "general-questions"]} ·{" "}
                 {SUPPORT_TICKET_PRIORITY_LABELS[ticket.priority]}
               </span>
             </button>

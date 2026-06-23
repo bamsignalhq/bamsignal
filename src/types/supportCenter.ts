@@ -1,17 +1,31 @@
 import type {
-  SupportTicketCategoryId,
   SupportTicketPriorityId,
   SupportTicketStatusId,
+  SupportTicketTypeId,
   SupportMetricId
 } from "../constants/supportCenter";
+
+/** @deprecated Use SupportTicketTypeId */
+export type SupportTicketCategoryId = SupportTicketTypeId;
+
+export type TicketTimelineEvent = {
+  id: string;
+  at: string;
+  label: string;
+  detail: string;
+  actor: string;
+};
 
 export type SupportTicketRecord = {
   id: string;
   ticketNumber: string;
   subject: string;
-  categoryId: SupportTicketCategoryId;
+  typeId: SupportTicketTypeId;
+  /** @deprecated Use typeId */
+  categoryId?: SupportTicketTypeId;
   status: SupportTicketStatusId;
   priority: SupportTicketPriorityId;
+  escalated: boolean;
   memberUsername: string;
   description: string;
   createdAt: string;
@@ -20,6 +34,8 @@ export type SupportTicketRecord = {
   resolvedAt: string | null;
   assignedTo: string;
   note: string;
+  timeline: TicketTimelineEvent[];
+  satisfactionScore: number | null;
 };
 
 export type KnowledgeBaseArticle = {
@@ -27,7 +43,9 @@ export type KnowledgeBaseArticle = {
   slug: string;
   title: string;
   summary: string;
-  categoryId: SupportTicketCategoryId;
+  typeId: SupportTicketTypeId;
+  /** @deprecated Use typeId */
+  categoryId?: SupportTicketTypeId;
   href?: string;
 };
 
@@ -49,5 +67,6 @@ export type SupportCenterBundle = {
   metrics: SupportMetricValue[];
   queue: SupportQueueBucket[];
   escalations: SupportTicketRecord[];
+  resolutions: SupportTicketRecord[];
   selectedTicket: SupportTicketRecord | null;
 };

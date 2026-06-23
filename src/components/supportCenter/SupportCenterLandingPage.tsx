@@ -1,9 +1,9 @@
-import { SUPPORT_CENTER_TITLE, SUPPORT_TICKET_CATEGORIES } from "../../constants/supportCenter";
+import { SUPPORT_CENTER_TITLE, SUPPORT_TICKET_TYPES } from "../../constants/supportCenter";
 import { navigateToPath } from "../../constants/routes";
 import { supportCenterPathForRoute } from "../../constants/supportCenterRoutes";
 import { listKnowledgeBaseArticles } from "../../utils/supportCenterLogic";
+import { HelpCategoryCard } from "./HelpCategoryCard";
 import { KnowledgeBaseCard } from "./KnowledgeBaseCard";
-import { SupportCategoryCard } from "./SupportCategoryCard";
 
 export function SupportCenterLandingPage() {
   const articles = listKnowledgeBaseArticles().slice(0, 4);
@@ -12,10 +12,10 @@ export function SupportCenterLandingPage() {
     <div className="support-center-page support-center-landing">
       <section className="support-center-hero cc-reveal">
         <p className="support-center-hero__eyebrow">{SUPPORT_CENTER_TITLE}</p>
-        <h1>Operational support with a clear home</h1>
+        <h1>Help center for members</h1>
         <p>
-          Account, payments, consultations, scheduling, introductions, technical issues, and safety —
-          tracked with priorities, statuses, and response metrics.
+          Technical support, billing, consultation issues, account recovery, profile issues, safety
+          reports, general questions, and feedback — with a clear path to contact support.
         </p>
         <div className="support-center-hero__actions">
           <button
@@ -36,10 +36,10 @@ export function SupportCenterLandingPage() {
       </section>
 
       <section className="support-center-section cc-reveal">
-        <h2>Ticket categories</h2>
+        <h2>How can we help?</h2>
         <div className="support-category-grid">
-          {SUPPORT_TICKET_CATEGORIES.map((category) => (
-            <SupportCategoryCard key={category.id} categoryId={category.id} hint={category.hint} />
+          {SUPPORT_TICKET_TYPES.map((type) => (
+            <HelpCategoryCard key={type.id} typeId={type.id} hint={type.hint} />
           ))}
         </div>
       </section>

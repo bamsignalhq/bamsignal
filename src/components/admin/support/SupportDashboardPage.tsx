@@ -1,21 +1,22 @@
 import { useCallback, useMemo, useState } from "react";
-import { SUPPORT_CENTER_FUTURE_KINDS } from "../../../constants/supportCenter";
+import { SUPPORT_CENTER_FUTURE_KINDS, SUPPORT_TICKET_STATUSES } from "../../../constants/supportCenter";
 import {
   SUPPORT_CENTER_ADMIN_BRAND,
   SUPPORT_CENTER_ADMIN_PATH
 } from "../../../constants/supportCenterAdmin";
-import { SUPPORT_TICKET_STATUSES } from "../../../constants/supportCenter";
 import type { SupportTicketStatusId } from "../../../constants/supportCenter";
 import { navigateToPath } from "../../../constants/routes";
 import {
   buildSupportCenterBundle,
   updateSupportTicketStatus
 } from "../../../utils/supportCenterEngine";
+import { buildTicketTimeline } from "../../../utils/supportCenterLogic";
 import { SupportTicketCard } from "../../supportCenter/SupportTicketCard";
 import { EscalationCard } from "./EscalationCard";
-import { SupportQueueCard } from "./SupportQueueCard";
+import { TicketQueuePage } from "./TicketQueuePage";
+import { TicketTimeline } from "./TicketTimeline";
 
-export function SupportCenterAdminPage() {
+export function SupportDashboardPage() {
   const [activeStatus, setActiveStatus] = useState<SupportTicketStatusId>("open");
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -28,6 +29,11 @@ export function SupportCenterAdminPage() {
   const selectedTicket =
     bundle.queue.flatMap((bucket) => bucket.tickets).find((ticket) => ticket.id === selectedTicketId) ??
     bundle.selectedTicket;
+
+  const timeline = useMemo(
+    () => (selectedTicket ? buildTicketTimeline(selectedTicket) : []),
+    [selectedTicket]
+  );
 
   const handleMoveStatus = useCallback(
     (status: SupportTicketStatusId) => {
@@ -45,8 +51,9 @@ export function SupportCenterAdminPage() {
         <div>
           <h2>{SUPPORT_CENTER_ADMIN_BRAND}</h2>
           <p>
-            Internal support CRM for member and concierge operational issues — tickets, escalations,
-            and response metrics.
+            Dedicated member support ecosystem — technical issues, billing, complaints, account
+            recovery, concierge concerns, and operational requests. Strategic queue visibility, not
+            day-to-day ops noise.
           </p>
         </div>
         <div className="support-center-admin-page__actions">
@@ -80,7 +87,7 @@ export function SupportCenterAdminPage() {
       </section>
 
       <div className="support-center-admin-page__body">
-        <SupportQueueCard
+        <TicketQueuePage
           queue={bundle.queue}
           activeStatus={activeStatus}
           onSelectStatus={setActiveStatus}
@@ -106,6 +113,7 @@ export function SupportCenterAdminPage() {
                 ))}
               </div>
               {selectedTicket.note ? <p className="support-center-admin-page__note">{selectedTicket.note}</p> : null}
+              <TicketTimeline events={timeline} />
             </>
           ) : (
             <p className="support-center-admin-page__empty">Select a ticket to review.</p>
@@ -118,6 +126,27 @@ export function SupportCenterAdminPage() {
           onSelectTicket={setSelectedTicketId}
         />
       </div>
+
+      <section className="support-resolutions-section cc-reveal" aria-label="Resolutions">
+        <header className="support-resolutions-section__head">
+          <h3>Resolutions</h3>
+          <p>Recently resolved and closed tickets.</p>
+        </header>
+        {bundle.resolutions.length ? (
+          <div className="support-resolutions-section__list">
+            {bundle.resolutions.map((ticket) => (
+              <SupportTicketCard
+                key={ticket.id}
+                ticket={ticket}
+                selected={selectedTicketId === ticket.id}
+                onSelect={() => setSelectedTicketId(ticket.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="support-resolutions-section__empty">No resolved tickets yet.</p>
+        )}
+      </section>
 
       <footer className="support-center-admin-page__future">
         <h3>Future-ready</h3>

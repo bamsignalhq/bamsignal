@@ -2,7 +2,7 @@ import { SUPPORT_TICKET_STATUS_LABELS } from "../../../constants/supportCenter";
 import type { SupportTicketStatusId } from "../../../constants/supportCenter";
 import type { SupportQueueBucket } from "../../../types/supportCenter";
 
-type SupportQueueCardProps = {
+type TicketQueuePageProps = {
   queue: SupportQueueBucket[];
   activeStatus: SupportTicketStatusId;
   onSelectStatus: (status: SupportTicketStatusId) => void;
@@ -10,23 +10,23 @@ type SupportQueueCardProps = {
   selectedTicketId: string | null;
 };
 
-export function SupportQueueCard({
+export function TicketQueuePage({
   queue,
   activeStatus,
   onSelectStatus,
   onSelectTicket,
   selectedTicketId
-}: SupportQueueCardProps) {
+}: TicketQueuePageProps) {
   const activeBucket = queue.find((bucket) => bucket.status === activeStatus);
 
   return (
-    <section className="support-queue-card concierge-consultant-card--glass cc-reveal">
-      <header className="support-queue-card__head">
-        <h3>Support queue</h3>
-        <p>Tickets by status across all categories.</p>
+    <section className="ticket-queue-page concierge-consultant-card--glass cc-reveal" aria-label="Ticket queue">
+      <header className="ticket-queue-page__head">
+        <h3>Ticket queue</h3>
+        <p>Open, pending, in progress, and waiting tickets across all types.</p>
       </header>
 
-      <div className="support-queue-card__statuses">
+      <div className="ticket-queue-page__statuses">
         {queue.map((bucket) => (
           <button
             key={bucket.status}
@@ -40,7 +40,7 @@ export function SupportQueueCard({
         ))}
       </div>
 
-      <div className="support-queue-card__list">
+      <div className="ticket-queue-page__list">
         {activeBucket?.tickets.length ? (
           activeBucket.tickets.map((ticket) => (
             <button
@@ -55,7 +55,7 @@ export function SupportQueueCard({
             </button>
           ))
         ) : (
-          <p className="support-queue-card__empty">No tickets in this status.</p>
+          <p className="ticket-queue-page__empty">No tickets in this status.</p>
         )}
       </div>
     </section>

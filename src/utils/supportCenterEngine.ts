@@ -3,6 +3,7 @@ import { SUPPORT_TICKETS_SEED } from "../data/supportCenterSeed";
 import type { SupportCenterBundle, SupportTicketRecord } from "../types/supportCenter";
 import type { SupportTicketStatusId } from "../constants/supportCenter";
 import {
+  averageMemberSatisfaction,
   averageResolutionTimeHours,
   averageResponseTimeHours,
   buildQueueBuckets,
@@ -16,16 +17,26 @@ import {
 } from "./supportCenterLogic";
 import { readJson, writeJson } from "./storage";
 
-const STORAGE_KEY = "bamsignal.supportCenter.v1";
+const STORAGE_KEY = "bamsignal.supportCenter.v2";
 
 type SupportCenterState = {
   tickets: SupportTicketRecord[];
   updatedAt: string;
 };
 
+function normalizeTicket(ticket: SupportTicketRecord): SupportTicketRecord {
+  return {
+    ...ticket,
+    typeId: ticket.typeId ?? ticket.categoryId ?? "general-questions",
+    escalated: Boolean(ticket.escalated),
+    timeline: ticket.timeline ?? [],
+    satisfactionScore: ticket.satisfactionScore ?? null
+  };
+}
+
 function defaultState(): SupportCenterState {
   return {
-    tickets: [...SUPPORT_TICKETS_SEED],
+    tickets: SUPPORT_TICKETS_SEED.map(normalizeTicket),
     updatedAt: new Date().toISOString()
   };
 }
@@ -33,7 +44,10 @@ function defaultState(): SupportCenterState {
 function loadState(): SupportCenterState {
   const stored = readJson<SupportCenterState>(STORAGE_KEY, defaultState());
   if (!stored?.tickets?.length) return defaultState();
-  return stored;
+  return {
+    ...stored,
+    tickets: stored.tickets.map(normalizeTicket)
+  };
 }
 
 function saveState(state: SupportCenterState): void {
@@ -66,14 +80,15 @@ export function buildSupportCenterBundle(selectedTicketId?: string | null): Supp
   const resolved = filterResolvedTickets(tickets);
   const avgResponse = averageResponseTimeHours(tickets);
   const avgResolution = averageResolutionTimeHours(tickets);
+  const avgSatisfaction = averageMemberSatisfaction(resolved);
 
   const metricValues: Record<string, string> = {
     "open-tickets": String(openTickets.length),
-    escalated: String(escalated.length),
-    resolved: String(resolved.length),
     "average-response-time": avgResponse === null ? "—" : formatDurationHours(avgResponse * 60 * 60 * 1000),
-    "average-resolution-time":
-      avgResolution === null ? "—" : formatDurationHours(avgResolution * 60 * 60 * 1000)
+    "resolution-time":
+      avgResolution === null ? "—" : formatDurationHours(avgResolution * 60 * 60 * 1000),
+    escalations: String(escalated.length),
+    "member-satisfaction": avgSatisfaction === null ? "—" : `${avgSatisfaction.toFixed(1)} / 5`
   };
 
   const metrics = SUPPORT_CENTER_METRICS.map((metric) => ({
@@ -83,10 +98,10 @@ export function buildSupportCenterBundle(selectedTicketId?: string | null): Supp
     numericValue:
       metric.id === "open-tickets"
         ? openTickets.length
-        : metric.id === "escalated"
+        : metric.id === "escalations"
           ? escalated.length
-          : metric.id === "resolved"
-            ? resolved.length
+          : metric.id === "member-satisfaction"
+            ? avgSatisfaction ?? undefined
             : undefined
   }));
 
@@ -95,6 +110,7 @@ export function buildSupportCenterBundle(selectedTicketId?: string | null): Supp
     metrics,
     queue: buildQueueBuckets(tickets),
     escalations: sortTicketsByUpdatedAt(escalated),
+    resolutions: sortTicketsByUpdatedAt(resolved),
     selectedTicket: findTicketById(tickets, selectedTicketId ?? null)
   };
 }

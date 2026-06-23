@@ -1,4 +1,4 @@
-import { SUPPORT_TICKET_CATEGORY_LABELS } from "../../constants/supportCenter";
+import { SUPPORT_TICKET_TYPE_LABELS } from "../../constants/supportCenter";
 import { navigateToPath } from "../../constants/routes";
 import type { KnowledgeBaseArticle } from "../../types/supportCenter";
 
@@ -17,7 +17,9 @@ export function KnowledgeBaseCard({ article }: KnowledgeBaseCardProps) {
 
   return (
     <article className="support-kb-card cc-reveal">
-      <p className="support-kb-card__category">{SUPPORT_TICKET_CATEGORY_LABELS[article.categoryId]}</p>
+      <p className="support-kb-card__category">
+        {SUPPORT_TICKET_TYPE_LABELS[article.typeId ?? article.categoryId ?? "general-questions" as keyof typeof SUPPORT_TICKET_TYPE_LABELS]}
+      </p>
       <h3>{article.title}</h3>
       <p>{article.summary}</p>
       <button type="button" className="support-center-btn support-center-btn--ghost" onClick={open}>

@@ -22,9 +22,12 @@ assert(routesSource.includes('knowledgeBase: "/knowledge-base"'), "knowledge bas
 
 const constantsSource = readFileSync(join(rootPath, "src/constants/supportCenter.ts"), "utf8");
 assert(constantsSource.includes("Customer Support Center™"), "support center brand");
-assert(constantsSource.includes("safety-concerns"), "safety category");
+assert(constantsSource.includes("technical-support"), "technical support ticket type");
+assert(constantsSource.includes("account-recovery"), "account recovery ticket type");
+assert(constantsSource.includes("waiting-for-member"), "waiting for member status");
+assert(constantsSource.includes("member-satisfaction"), "member satisfaction metric");
 assert(constantsSource.includes("SUPPORT_CENTER_FUTURE_KINDS"), "future-ready documented");
-assert(constantsSource.includes("live-chat"), "live chat documented only");
+assert(constantsSource.includes("ai-support-assistant"), "ai support assistant documented only");
 
 const adminSource = readFileSync(join(rootPath, "src/constants/supportCenterAdmin.ts"), "utf8");
 assert(adminSource.includes('SUPPORT_CENTER_ADMIN_PATH = "/hard/support"'), "admin support route");
@@ -41,11 +44,16 @@ assert(seoRoutesSource.includes('hubPath === "/help"'), "seo defers /help hub to
 const engineSource = readFileSync(join(rootPath, "src/utils/supportCenterEngine.ts"), "utf8");
 assert(engineSource.includes("buildSupportCenterBundle"), "support center engine exists");
 assert(engineSource.includes("average-response-time"), "response time metrics");
+assert(engineSource.includes("member-satisfaction"), "member satisfaction metric");
 assert(engineSource.includes("updateSupportTicketStatus"), "ticket status updates");
+
+const logicSource = readFileSync(join(rootPath, "src/utils/supportCenterLogic.ts"), "utf8");
+assert(logicSource.includes("buildTicketTimeline"), "ticket timeline logic");
 
 const publicComponents = [
   "SupportTicketCard.tsx",
-  "SupportCategoryCard.tsx",
+  "HelpCategoryCard.tsx",
+  "KnowledgeBasePage.tsx",
   "KnowledgeBaseCard.tsx",
   "TicketStatusBadge.tsx",
   "SupportCenterLandingPage.tsx"
@@ -56,15 +64,26 @@ for (const file of publicComponents) {
   assert(source.length > 0, `${file} exists`);
 }
 
-const adminComponents = ["SupportQueueCard.tsx", "EscalationCard.tsx", "SupportCenterAdminPage.tsx"];
+const adminComponents = [
+  "SupportDashboardPage.tsx",
+  "TicketQueuePage.tsx",
+  "TicketTimeline.tsx",
+  "EscalationCard.tsx"
+];
 
 for (const file of adminComponents) {
   const source = readFileSync(join(rootPath, "src/components/admin/support", file), "utf8");
   assert(source.length > 0, `${file} exists`);
 }
 
+const adminHubSource = readFileSync(join(rootPath, "src/pages/AdminHubPage.tsx"), "utf8");
+assert(adminHubSource.includes("SupportDashboardPage"), "admin hub mounts support dashboard");
+
 const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:support-center"), "package.json defines test:support-center");
+
+const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
+assert(mainSource.includes("support-center.css"), "support styles imported");
 
 if (failed) process.exit(1);
 console.log("support center tests ok");

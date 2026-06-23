@@ -1,7 +1,4 @@
-import {
-  SUPPORT_TICKET_CATEGORY_LABELS,
-  SUPPORT_TICKET_PRIORITY_LABELS
-} from "../../constants/supportCenter";
+import { SUPPORT_TICKET_PRIORITY_LABELS, SUPPORT_TICKET_TYPE_LABELS } from "../../constants/supportCenter";
 import type { SupportTicketRecord } from "../../types/supportCenter";
 import { TicketStatusBadge } from "./TicketStatusBadge";
 
@@ -22,8 +19,8 @@ export function SupportTicketCard({ ticket, selected = false, onSelect }: Suppor
       <p>{ticket.description}</p>
       <dl className="support-ticket-card__meta">
         <div>
-          <dt>Category</dt>
-          <dd>{SUPPORT_TICKET_CATEGORY_LABELS[ticket.categoryId]}</dd>
+          <dt>Type</dt>
+          <dd>{SUPPORT_TICKET_TYPE_LABELS[ticket.typeId ?? ticket.categoryId ?? "general-questions"]}</dd>
         </div>
         <div>
           <dt>Priority</dt>

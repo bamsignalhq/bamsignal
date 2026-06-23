@@ -1,0 +1,230 @@
+.data-integrity-page {
+  display: grid;
+  gap: 18px;
+}
+
+.data-integrity-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.data-integrity-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.data-integrity-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.data-integrity-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.data-integrity-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.data-integrity-filter {
+  display: grid;
+  gap: 4px;
+  font-size: 0.84rem;
+}
+
+.data-integrity-filter select {
+  min-width: 180px;
+}
+
+.data-integrity-page__checks-head h3 {
+  margin: 0 0 4px;
+}
+
+.data-integrity-page__checks-head p {
+  margin: 0 0 12px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.data-integrity-page__checks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.data-integrity-page__empty,
+.data-integrity-page__foot {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.84rem;
+}
+
+.integrity-summary-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.integrity-summary-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.integrity-summary-card__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 14px 0;
+}
+
+.integrity-summary-card__hero strong {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.integrity-summary-card__hero span {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.integrity-summary-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.integrity-summary-metric {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.integrity-summary-metric p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.integrity-summary-metric strong {
+  font-size: 1.2rem;
+}
+
+.integrity-summary-metric--healthy {
+  border-color: rgba(92, 214, 154, 0.35);
+}
+
+.integrity-summary-metric--warning {
+  border-color: rgba(255, 168, 76, 0.35);
+}
+
+.integrity-summary-metric--critical,
+.integrity-summary-metric--issues {
+  border-color: rgba(255, 92, 92, 0.35);
+}
+
+.integrity-summary-card__foot {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.integrity-status-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.integrity-status-badge--healthy {
+  background: rgba(92, 214, 154, 0.16);
+  color: #9ef0c8;
+}
+
+.integrity-status-badge--warning {
+  background: rgba(255, 168, 76, 0.16);
+  color: #ffd2a1;
+}
+
+.integrity-status-badge--critical {
+  background: rgba(255, 92, 92, 0.18);
+  color: #ffb4b4;
+}
+
+.integrity-issue-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.integrity-issue-card--healthy {
+  border-color: rgba(92, 214, 154, 0.2);
+}
+
+.integrity-issue-card--warning {
+  border-color: rgba(255, 168, 76, 0.25);
+}
+
+.integrity-issue-card--critical {
+  border-color: rgba(255, 92, 92, 0.3);
+}
+
+.integrity-issue-card__head h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.integrity-issue-card__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.integrity-issue-card__head p {
+  margin: 0 0 4px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.integrity-issue-card__head small {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+.integrity-issue-card__list {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.integrity-issue-card__item {
+  display: grid;
+  gap: 2px;
+}
+
+.integrity-issue-card__item strong {
+  font-size: 0.84rem;
+}
+
+.integrity-issue-card__item span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.integrity-issue-card__item--critical strong {
+  color: #ffb4b4;
+}
+
+.integrity-issue-card__ok {
+  margin: 10px 0 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}

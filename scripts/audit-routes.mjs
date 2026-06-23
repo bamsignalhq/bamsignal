@@ -284,7 +284,8 @@ const nestedAdminPaths = [
   "/hard/audit/journeys",
   "/hard/launch",
   "/hard/remediation",
-  "/hard/readiness"
+  "/hard/readiness",
+  "/hard/data-integrity"
 ];
 
 for (const path of nestedAdminPaths) {
@@ -347,7 +348,8 @@ const unlinkedNested = [
   { path: "/hard/audit/journeys", label: "Journey Integrity Audit" },
   { path: "/hard/launch", label: "Launch Readiness" },
   { path: "/hard/remediation", label: "Remediation Board" },
-  { path: "/hard/readiness", label: "Readiness Report" }
+  { path: "/hard/readiness", label: "Readiness Report" },
+  { path: "/hard/data-integrity", label: "Data Integrity" }
 ];
 
 const missingNavigation = unlinkedNested.filter((entry) => !resolvedNavPaths.has(entry.path));

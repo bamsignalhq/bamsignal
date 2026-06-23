@@ -57,6 +57,7 @@
     "test:system-health": "node scripts/test-system-health.mjs",
     "test:remediation-board": "node scripts/test-remediation-board.mjs",
     "test:institutional-readiness": "node scripts/test-institutional-readiness.mjs",
+    "test:data-integrity": "node scripts/test-data-integrity.mjs",
     "test:document-center": "node scripts/test-document-center.mjs",
     "test:safety-center": "node scripts/test-safety-center.mjs",
     "test:consultant-quality": "node scripts/test-consultant-quality.mjs",

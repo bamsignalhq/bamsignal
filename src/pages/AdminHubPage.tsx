@@ -101,8 +101,9 @@ import { JourneyIntegrityAuditPage } from "../components/admin/journeyAudit/Jour
 import { LaunchReadinessCommandCenterPage } from "../components/admin/launchReadiness/LaunchReadinessCommandCenterPage";
 import { RemediationBoardPage } from "../components/admin/remediationBoard/RemediationBoardPage";
 import { ReadinessPage } from "../components/admin/institutionalReadiness/ReadinessPage";
+import { IntegrityDashboard } from "../components/admin/dataIntegrity/IntegrityDashboard";
 import { DocumentCenterPage } from "../components/admin/documents/DocumentCenterPage";
-import { SafetyCenterPage } from "../components/admin/safety/SafetyCenterPage";
+import { SafetyDashboardPage } from "../components/admin/safety/SafetyDashboardPage";
 import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
 import { ConsultantQualityPage } from "../components/admin/quality/ConsultantQualityPage";
 import { FinanceOperationsPage } from "../components/admin/finance/FinanceOperationsPage";
@@ -2077,7 +2078,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "systemhealth" ? <SystemHealthPage /> : null}
       {tab === "notifications" ? <NotificationQueuePage /> : null}
       {tab === "documents" ? <DocumentCenterPage /> : null}
-      {tab === "safety" ? <SafetyCenterPage /> : null}
+      {tab === "safety" ? <SafetyDashboardPage /> : null}
       {tab === "academy" ? <ConsultantAcademyPage /> : null}
       {tab === "quality" ? <ConsultantQualityPage /> : null}
       {tab === "finance" ? <FinanceOperationsPage /> : null}
@@ -2086,6 +2087,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "launch" ? <LaunchReadinessCommandCenterPage /> : null}
       {tab === "remediation" ? <RemediationBoardPage /> : null}
       {tab === "readiness" ? <ReadinessPage /> : null}
+      {tab === "dataintegrity" ? <IntegrityDashboard /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

@@ -62,6 +62,7 @@
     "test:route-audit": "node scripts/test-route-audit.mjs",
     "audit:routes": "node scripts/audit-routes.mjs && npm run test:route-audit",
     "test:database-audit": "node scripts/test-database-audit.mjs",
+    "audit:persistence": "node scripts/audit-persistence.mjs && npm run test:database-audit",
     "test:permissions-audit": "node scripts/test-permissions-audit.mjs",
     "test:permissions": "node scripts/test-permissions.mjs",
     "audit:permissions": "node scripts/audit-permissions.mjs && npm run test:permissions-audit && npm run test:permissions",

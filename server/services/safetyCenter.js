@@ -1,10 +1,12 @@
 /**
- * Crisis & Safety Center™ — immutable incident integrity (server-side).
+ * Crisis & Safety Center™ — immutable case integrity (server-side).
  */
 
-const IMMUTABLE_INCIDENT_FIELDS = [
+const IMMUTABLE_CASE_FIELDS = [
   "id",
+  "caseRef",
   "incidentRef",
+  "caseTypeId",
   "categoryId",
   "severity",
   "reportedAt",
@@ -35,18 +37,18 @@ export function assertSafetyTimelineAppendOnly(previous, next) {
 
 export function assertSafetyIncidentImmutable(previous, next) {
   if (next.length < previous.length) {
-    throw new Error("Safety integrity violation: incidents cannot be deleted");
+    throw new Error("Safety integrity violation: cases cannot be deleted");
   }
 
   for (let index = 0; index < previous.length; index += 1) {
     const prior = previous[index];
     const current = next[index];
     if (prior.id !== current.id) {
-      throw new Error("Safety integrity violation: incident identity cannot change");
+      throw new Error("Safety integrity violation: case identity cannot change");
     }
 
-    for (const field of IMMUTABLE_INCIDENT_FIELDS) {
-      if (prior[field] !== current[field]) {
+    for (const field of IMMUTABLE_CASE_FIELDS) {
+      if (prior[field] !== undefined && current[field] !== undefined && prior[field] !== current[field]) {
         throw new Error(`Safety integrity violation: ${field} is immutable`);
       }
     }
@@ -67,6 +69,10 @@ export function appendSafetyTimelineEntry(incident, input) {
     ...incident,
     timeline: nextTimeline,
     status: input.toStatus ?? incident.status,
-    investigator: input.investigator ?? incident.investigator
+    investigator: input.investigator ?? incident.investigator,
+    actionsTaken:
+      input.actionId && !(incident.actionsTaken ?? []).includes(input.actionId)
+        ? [...(incident.actionsTaken ?? []), input.actionId]
+        : incident.actionsTaken ?? []
   };
 }

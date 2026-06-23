@@ -1,10 +1,14 @@
 import type {
-  SafetyCategoryId,
+  SafetyActionId,
+  SafetyCaseTypeId,
   SafetyMetricId,
   SafetySeverityId,
   SafetyStatusId,
   SafetyWorkflowId
 } from "../constants/safetyCenter";
+
+/** @deprecated Use SafetyCaseTypeId */
+export type SafetyCategoryId = SafetyCaseTypeId;
 
 export type SafetyTimelineEntry = {
   id: string;
@@ -14,12 +18,17 @@ export type SafetyTimelineEntry = {
   note: string;
   fromStatus: SafetyStatusId | null;
   toStatus: SafetyStatusId | null;
+  actionId?: SafetyActionId;
 };
 
-export type SafetyIncidentRecord = {
+export type SafetyCaseRecord = {
   id: string;
-  incidentRef: string;
-  categoryId: SafetyCategoryId;
+  caseRef: string;
+  /** @deprecated Use caseRef */
+  incidentRef?: string;
+  caseTypeId: SafetyCaseTypeId;
+  /** @deprecated Use caseTypeId */
+  categoryId?: SafetyCaseTypeId;
   severity: SafetySeverityId;
   status: SafetyStatusId;
   reportedAt: string;
@@ -28,12 +37,24 @@ export type SafetyIncidentRecord = {
   subjectLabel: string;
   investigator: string | null;
   summary: string;
+  actionsTaken: SafetyActionId[];
   timeline: SafetyTimelineEntry[];
+};
+
+/** @deprecated Use SafetyCaseRecord */
+export type SafetyIncidentRecord = SafetyCaseRecord;
+
+export type SafetyRiskAssessment = {
+  score: number;
+  label: string;
+  factors: string[];
 };
 
 export type SafetyFilterState = {
   query: string;
-  categoryId: SafetyCategoryId | "all";
+  caseTypeId: SafetyCaseTypeId | "all";
+  /** @deprecated Use caseTypeId */
+  categoryId?: SafetyCaseTypeId | "all";
   severity: SafetySeverityId | "all";
   status: SafetyStatusId | "all";
 };
@@ -48,6 +69,9 @@ export type SafetyMetric = {
 export type SafetyCenterBundle = {
   generatedAt: string;
   metrics: SafetyMetric[];
-  queue: SafetyIncidentRecord[];
-  selectedIncident: SafetyIncidentRecord | null;
+  queue: SafetyCaseRecord[];
+  escalations: SafetyCaseRecord[];
+  selectedCase: SafetyCaseRecord | null;
+  /** @deprecated Use selectedCase */
+  selectedIncident?: SafetyCaseRecord | null;
 };

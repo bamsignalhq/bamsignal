@@ -24,12 +24,16 @@ assert(adminSource.includes('SAFETY_CENTER_ADMIN_PATH = "/hard/safety"'), "admin
 
 const constantsSource = readFileSync(join(rootPath, "src/constants/safetyCenter.ts"), "utf8");
 assert(constantsSource.includes("Crisis & Safety Center™"), "safety center brand");
-assert(constantsSource.includes("emergency-escalation"), "emergency escalation category");
-assert(constantsSource.includes("consultant-misconduct"), "consultant misconduct category");
+assert(constantsSource.includes("emergency-escalation"), "emergency escalation case type");
+assert(constantsSource.includes("blackmail"), "blackmail case type");
+assert(constantsSource.includes("scam-reports"), "scam reports case type");
+assert(constantsSource.includes("action-required"), "action required status");
+assert(constantsSource.includes("law-enforcement-referral"), "law enforcement referral action");
 assert(constantsSource.includes("SAFETY_IMMUTABLE_RULES"), "immutable rules documented");
 assert(constantsSource.includes("No hard deletes"), "no hard deletes rule");
 assert(constantsSource.includes("SAFETY_CENTER_FUTURE_KINDS"), "future kinds documented");
-assert(constantsSource.includes("Trust scores"), "trust scores future item");
+assert(constantsSource.includes("safety-specialists"), "safety specialists future item");
+assert(constantsSource.includes("legal-escalation"), "legal escalation future item");
 
 const hardRoutesSource = readFileSync(join(rootPath, "src/constants/hardRoutes.ts"), "utf8");
 assert(hardRoutesSource.includes("safety"), "hard routes include safety tab");
@@ -40,21 +44,23 @@ assert(!engineSource.includes("deleteSafety"), "no delete API");
 
 const logicSource = readFileSync(join(rootPath, "src/utils/safetyCenterLogic.ts"), "utf8");
 assert(logicSource.includes("assertSafetyIncidentImmutable"), "immutable integrity check");
-assert(logicSource.includes("open-incidents"), "open incidents metric");
-assert(logicSource.includes("critical-incidents"), "critical incidents metric");
-assert(logicSource.includes("repeat-reports"), "repeat reports metric");
+assert(logicSource.includes("open-cases"), "open cases metric");
+assert(logicSource.includes("high-risk-cases"), "high risk cases metric");
+assert(logicSource.includes("repeat-offenders"), "repeat offenders metric");
+assert(logicSource.includes("assessCaseRisk"), "risk assessment logic");
 
 const seedSource = readFileSync(join(rootPath, "src/data/safetyCenterSeed.ts"), "utf8");
 assert(seedSource.includes("timeline"), "seed includes timeline");
-assert(seedSource.includes("harassment"), "seed includes harassment incident");
+assert(seedSource.includes("harassment"), "seed includes harassment case");
 
 const adminComponents = [
-  "SafetyIncidentCard.tsx",
-  "IncidentTimelineCard.tsx",
+  "SafetyCaseCard.tsx",
+  "IncidentTimeline.tsx",
+  "RiskAssessmentCard.tsx",
+  "SafetyActionCard.tsx",
+  "EscalationQueue.tsx",
   "SafetySeverityBadge.tsx",
-  "EscalationWorkflowCard.tsx",
-  "SafetyQueueCard.tsx",
-  "SafetyCenterPage.tsx"
+  "SafetyDashboardPage.tsx"
 ];
 
 for (const file of adminComponents) {
@@ -63,7 +69,7 @@ for (const file of adminComponents) {
 }
 
 const adminHubSource = readFileSync(join(rootPath, "src/pages/AdminHubPage.tsx"), "utf8");
-assert(adminHubSource.includes("SafetyCenterPage"), "admin hub mounts safety center");
+assert(adminHubSource.includes("SafetyDashboardPage"), "admin hub mounts safety dashboard");
 
 const navSource = readFileSync(join(rootPath, "src/components/admin/adminConsoleNav.ts"), "utf8");
 assert(navSource.includes('"safety"'), "admin nav includes safety tab");
@@ -76,8 +82,8 @@ assert(mainSource.includes("safety-center.css"), "safety center styles imported"
 
 const incident = {
   id: "safety_test_001",
-  incidentRef: "INC-TEST-001",
-  categoryId: "threats",
+  caseRef: "CASE-TEST-001",
+  caseTypeId: "threats",
   severity: "critical",
   status: "reported",
   reportedAt: "2026-06-22T00:00:00.000Z",
@@ -85,7 +91,8 @@ const incident = {
   subjectRef: "member_test",
   subjectLabel: "Test Member",
   investigator: null,
-  summary: "Test incident",
+  summary: "Test case",
+  actionsTaken: [],
   timeline: [
     {
       id: "safety_tl_0001",
@@ -100,14 +107,14 @@ const incident = {
 };
 
 const updated = appendSafetyTimelineEntry(incident, {
-  workflow: "escalate",
+  workflow: "require-action",
   actor: "ops@bamsignal.com",
   note: "Escalated for review",
   fromStatus: "reported",
-  toStatus: "escalated"
+  toStatus: "action-required"
 });
 assert(updated.timeline.length === 2, "append adds timeline entry");
-assert(updated.status === "escalated", "status updated via workflow");
+assert(updated.status === "action-required", "status updated via workflow");
 
 let threw = false;
 try {
@@ -123,7 +130,7 @@ try {
 } catch {
   threw = true;
 }
-assert(threw, "incident delete rejected");
+assert(threw, "case delete rejected");
 
 threw = false;
 try {

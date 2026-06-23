@@ -56,7 +56,14 @@
   padding-left: 1.1rem;
 }
 
-.safety-incident-card {
+.safety-center-page__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.safety-incident-card,
+.safety-case-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 12px;
@@ -65,7 +72,8 @@
   gap: 8px;
 }
 
-.safety-incident-card--button {
+.safety-incident-card--button,
+.safety-case-card--button {
   width: 100%;
   text-align: left;
   cursor: pointer;
@@ -73,7 +81,8 @@
   font: inherit;
 }
 
-.safety-incident-card--button.is-selected {
+.safety-incident-card--button.is-selected,
+.safety-case-card--button.is-selected {
   border-color: rgba(255, 140, 140, 0.55);
   background: rgba(255, 100, 100, 0.08);
 }
@@ -303,4 +312,87 @@
   .safety-center-page__body {
     grid-template-columns: 1fr;
   }
+}
+
+.risk-assessment-card,
+.safety-action-card,
+.escalation-queue,
+.incident-timeline {
+  padding: 14px;
+}
+
+.risk-assessment-card__score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.risk-assessment-card__score strong {
+  font-size: 1.6rem;
+}
+
+.risk-assessment-card__factors {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.86rem;
+}
+
+.safety-action-card__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.safety-action-chip {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.safety-action-chip.is-taken {
+  background: rgba(255, 140, 140, 0.12);
+  border-color: rgba(255, 140, 140, 0.35);
+}
+
+.escalation-queue {
+  grid-column: 1 / -1;
+}
+
+.escalation-queue__row {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+}
+
+.escalation-queue__row.is-selected {
+  border-color: rgba(255, 140, 140, 0.45);
+}
+
+.escalation-queue__row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.incident-timeline__action {
+  font-size: 0.8rem;
+  color: rgba(255, 180, 140, 0.85);
 }

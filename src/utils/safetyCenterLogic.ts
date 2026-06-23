@@ -1,51 +1,75 @@
 import { SAFETY_METRICS } from "../constants/safetyCenter";
-import { SAFETY_INCIDENTS_SEED } from "../data/safetyCenterSeed";
+import { SAFETY_CASES_SEED } from "../data/safetyCenterSeed";
 import type {
+  SafetyCaseRecord,
   SafetyFilterState,
-  SafetyIncidentRecord,
+  SafetyRiskAssessment,
   SafetyTimelineEntry
 } from "../types/safetyCenter";
-import type { SafetyCategoryId, SafetySeverityId, SafetyStatusId } from "../constants/safetyCenter";
+import type { SafetyCaseTypeId, SafetySeverityId, SafetyStatusId } from "../constants/safetyCenter";
 
 const CLOSED_STATUSES: SafetyStatusId[] = ["resolved", "closed"];
 
-export function listSafetyIncidents(): SafetyIncidentRecord[] {
-  return [...SAFETY_INCIDENTS_SEED];
+function caseTypeId(record: SafetyCaseRecord): SafetyCaseTypeId {
+  return record.caseTypeId ?? record.categoryId ?? "harassment";
 }
 
-export function sortIncidentsByReportedAt(incidents: SafetyIncidentRecord[]): SafetyIncidentRecord[] {
-  return [...incidents].sort(
+function caseRef(record: SafetyCaseRecord): string {
+  return record.caseRef ?? record.incidentRef ?? record.id;
+}
+
+function normalizeCase(record: SafetyCaseRecord): SafetyCaseRecord {
+  return {
+    ...record,
+    caseRef: caseRef(record),
+    caseTypeId: caseTypeId(record),
+    actionsTaken: record.actionsTaken ?? []
+  };
+}
+
+export function listSafetyCases(): SafetyCaseRecord[] {
+  return SAFETY_CASES_SEED.map(normalizeCase);
+}
+
+/** @deprecated Use listSafetyCases */
+export function listSafetyIncidents(): SafetyCaseRecord[] {
+  return listSafetyCases();
+}
+
+export function sortCasesByReportedAt(cases: SafetyCaseRecord[]): SafetyCaseRecord[] {
+  return [...cases].sort(
     (left, right) => new Date(right.reportedAt).getTime() - new Date(left.reportedAt).getTime()
   );
 }
 
-export function findIncidentById(
-  incidents: SafetyIncidentRecord[],
-  incidentId: string | null
-): SafetyIncidentRecord | null {
-  if (!incidentId) return null;
-  return incidents.find((incident) => incident.id === incidentId) ?? null;
+export function findCaseById(cases: SafetyCaseRecord[], caseId: string | null): SafetyCaseRecord | null {
+  if (!caseId) return null;
+  return cases.find((record) => record.id === caseId) ?? null;
 }
 
-export function filterSafetyIncidents(
-  incidents: SafetyIncidentRecord[],
-  filters: SafetyFilterState
-): SafetyIncidentRecord[] {
-  const query = filters.query.trim().toLowerCase();
+/** @deprecated Use findCaseById */
+export function findIncidentById(cases: SafetyCaseRecord[], incidentId: string | null): SafetyCaseRecord | null {
+  return findCaseById(cases, incidentId);
+}
 
-  return incidents.filter((incident) => {
-    if (filters.categoryId !== "all" && incident.categoryId !== filters.categoryId) return false;
-    if (filters.severity !== "all" && incident.severity !== filters.severity) return false;
-    if (filters.status !== "all" && incident.status !== filters.status) return false;
+export function filterSafetyCases(cases: SafetyCaseRecord[], filters: SafetyFilterState): SafetyCaseRecord[] {
+  const query = filters.query.trim().toLowerCase();
+  const typeFilter = filters.caseTypeId ?? filters.categoryId ?? "all";
+
+  return cases.filter((record) => {
+    const typeId = caseTypeId(record);
+    if (typeFilter !== "all" && typeId !== typeFilter) return false;
+    if (filters.severity !== "all" && record.severity !== filters.severity) return false;
+    if (filters.status !== "all" && record.status !== filters.status) return false;
     if (!query) return true;
 
     const haystack = [
-      incident.incidentRef,
-      incident.summary,
-      incident.subjectLabel,
-      incident.subjectRef,
-      incident.reportedBy,
-      incident.investigator ?? ""
+      caseRef(record),
+      record.summary,
+      record.subjectLabel,
+      record.subjectRef,
+      record.reportedBy,
+      record.investigator ?? ""
     ]
       .join(" ")
       .toLowerCase();
@@ -54,44 +78,57 @@ export function filterSafetyIncidents(
   });
 }
 
-export function isOpenIncident(incident: SafetyIncidentRecord): boolean {
-  return !CLOSED_STATUSES.includes(incident.status);
+/** @deprecated Use filterSafetyCases */
+export function filterSafetyIncidents(cases: SafetyCaseRecord[], filters: SafetyFilterState): SafetyCaseRecord[] {
+  return filterSafetyCases(cases, filters);
 }
 
-export function countOpenIncidents(incidents: SafetyIncidentRecord[]): number {
-  return incidents.filter(isOpenIncident).length;
+export function isOpenCase(record: SafetyCaseRecord): boolean {
+  return !CLOSED_STATUSES.includes(record.status);
 }
 
-export function countCriticalIncidents(incidents: SafetyIncidentRecord[]): number {
-  return incidents.filter(
-    (incident) => incident.severity === "critical" && isOpenIncident(incident)
+/** @deprecated Use isOpenCase */
+export function isOpenIncident(record: SafetyCaseRecord): boolean {
+  return isOpenCase(record);
+}
+
+export function countOpenCases(cases: SafetyCaseRecord[]): number {
+  return cases.filter(isOpenCase).length;
+}
+
+export function countHighRiskCases(cases: SafetyCaseRecord[]): number {
+  return cases.filter(
+    (record) =>
+      isOpenCase(record) &&
+      (record.severity === "high" || record.severity === "critical" || record.status === "action-required")
   ).length;
 }
 
-export function countEscalations(incidents: SafetyIncidentRecord[]): number {
-  return incidents.filter((incident) => incident.status === "escalated").length;
+export function filterEscalationQueue(cases: SafetyCaseRecord[]): SafetyCaseRecord[] {
+  return cases.filter(
+    (record) =>
+      isOpenCase(record) &&
+      (record.status === "action-required" || record.severity === "critical")
+  );
 }
 
-export function countRepeatReports(incidents: SafetyIncidentRecord[]): number {
+export function countRepeatOffenders(cases: SafetyCaseRecord[]): number {
   const subjectCounts = new Map<string, number>();
-  for (const incident of incidents) {
-    subjectCounts.set(incident.subjectRef, (subjectCounts.get(incident.subjectRef) ?? 0) + 1);
+  for (const record of cases) {
+    subjectCounts.set(record.subjectRef, (subjectCounts.get(record.subjectRef) ?? 0) + 1);
   }
   return [...subjectCounts.values()].filter((count) => count > 1).length;
 }
 
-export function averageResolutionTimeHours(incidents: SafetyIncidentRecord[]): number | null {
-  const resolved = incidents.filter((incident) => {
-    return incident.timeline.some((entry) => entry.toStatus === "resolved");
-  });
-
+export function averageResolutionTimeHours(cases: SafetyCaseRecord[]): number | null {
+  const resolved = cases.filter((record) => record.timeline.some((entry) => entry.toStatus === "resolved"));
   if (!resolved.length) return null;
 
   let totalHours = 0;
-  for (const incident of resolved) {
-    const resolvedEntry = incident.timeline.find((entry) => entry.toStatus === "resolved");
+  for (const record of resolved) {
+    const resolvedEntry = record.timeline.find((entry) => entry.toStatus === "resolved");
     if (!resolvedEntry) continue;
-    const reported = new Date(incident.reportedAt).getTime();
+    const reported = new Date(record.reportedAt).getTime();
     const resolvedAt = new Date(resolvedEntry.timestamp).getTime();
     totalHours += (resolvedAt - reported) / (1000 * 60 * 60);
   }
@@ -99,14 +136,13 @@ export function averageResolutionTimeHours(incidents: SafetyIncidentRecord[]): n
   return Math.round(totalHours / resolved.length);
 }
 
-export function buildSafetyMetrics(incidents: SafetyIncidentRecord[]) {
-  const resolutionHours = averageResolutionTimeHours(incidents);
+export function buildSafetyMetrics(cases: SafetyCaseRecord[]) {
+  const resolutionHours = averageResolutionTimeHours(cases);
   const values: Record<string, string> = {
-    "open-incidents": String(countOpenIncidents(incidents)),
-    "critical-incidents": String(countCriticalIncidents(incidents)),
-    "resolution-time": resolutionHours === null ? "—" : `${resolutionHours}h avg`,
-    escalations: String(countEscalations(incidents)),
-    "repeat-reports": String(countRepeatReports(incidents))
+    "open-cases": String(countOpenCases(cases)),
+    "average-resolution-time": resolutionHours === null ? "—" : `${resolutionHours}h avg`,
+    "high-risk-cases": String(countHighRiskCases(cases)),
+    "repeat-offenders": String(countRepeatOffenders(cases))
   };
 
   return SAFETY_METRICS.map((metric) => ({
@@ -117,18 +153,52 @@ export function buildSafetyMetrics(incidents: SafetyIncidentRecord[]) {
   }));
 }
 
+export function assessCaseRisk(record: SafetyCaseRecord, allCases: SafetyCaseRecord[]): SafetyRiskAssessment {
+  const factors: string[] = [];
+  let score = 0;
+
+  if (record.severity === "critical") {
+    score += 40;
+    factors.push("Critical severity");
+  } else if (record.severity === "high") {
+    score += 28;
+    factors.push("High severity");
+  } else if (record.severity === "medium") {
+    score += 14;
+  }
+
+  if (record.status === "action-required") {
+    score += 25;
+    factors.push("Action required");
+  }
+
+  const priorCases = allCases.filter(
+    (item) => item.subjectRef === record.subjectRef && item.id !== record.id
+  );
+  if (priorCases.length) {
+    score += 20;
+    factors.push("Repeat subject");
+  }
+
+  if (record.caseTypeId === "emergency-escalation" || record.caseTypeId === "threats") {
+    score += 15;
+    factors.push("High-priority case type");
+  }
+
+  const label = score >= 70 ? "Critical risk" : score >= 45 ? "Elevated risk" : score >= 25 ? "Moderate risk" : "Low risk";
+
+  return { score: Math.min(score, 100), label, factors };
+}
+
 export function emptySafetyFilters(): SafetyFilterState {
   return {
     query: "",
-    categoryId: "all",
+    caseTypeId: "all",
     severity: "all",
     status: "all"
   };
 }
 
-/**
- * Immutable incident integrity — incidents cannot be deleted and report fields cannot be rewritten.
- */
 export function assertSafetyTimelineAppendOnly(
   previous: SafetyTimelineEntry[],
   next: SafetyTimelineEntry[]
@@ -152,17 +222,17 @@ export function assertSafetyTimelineAppendOnly(
 }
 
 export function assertSafetyIncidentImmutable(
-  previous: SafetyIncidentRecord[],
-  next: SafetyIncidentRecord[]
+  previous: SafetyCaseRecord[],
+  next: SafetyCaseRecord[]
 ): void {
   if (next.length < previous.length) {
-    throw new Error("Safety integrity violation: incidents cannot be deleted");
+    throw new Error("Safety integrity violation: cases cannot be deleted");
   }
 
-  const immutableFields: (keyof SafetyIncidentRecord)[] = [
+  const immutableFields: (keyof SafetyCaseRecord)[] = [
     "id",
-    "incidentRef",
-    "categoryId",
+    "caseRef",
+    "caseTypeId",
     "severity",
     "reportedAt",
     "reportedBy",
@@ -172,10 +242,10 @@ export function assertSafetyIncidentImmutable(
   ];
 
   for (let index = 0; index < previous.length; index += 1) {
-    const prior = previous[index];
-    const current = next[index];
+    const prior = normalizeCase(previous[index]);
+    const current = normalizeCase(next[index]);
     if (prior.id !== current.id) {
-      throw new Error("Safety integrity violation: incident identity cannot change");
+      throw new Error("Safety integrity violation: case identity cannot change");
     }
 
     for (const field of immutableFields) {
@@ -193,26 +263,33 @@ export function createTimelineEntryId(sequence: number): string {
 }
 
 export function appendTimelineEntry(
-  incident: SafetyIncidentRecord,
+  record: SafetyCaseRecord,
   input: Omit<SafetyTimelineEntry, "id" | "timestamp"> & { investigator?: string | null }
-): SafetyIncidentRecord {
+): SafetyCaseRecord {
   const entry: SafetyTimelineEntry = {
-    id: createTimelineEntryId(incident.timeline.length + 1),
+    id: createTimelineEntryId(record.timeline.length + 1),
     timestamp: new Date().toISOString(),
     workflow: input.workflow,
     actor: input.actor,
     note: input.note,
     fromStatus: input.fromStatus,
-    toStatus: input.toStatus
+    toStatus: input.toStatus,
+    actionId: input.actionId
   };
 
-  const nextTimeline = [...incident.timeline, entry];
-  assertSafetyTimelineAppendOnly(incident.timeline, nextTimeline);
+  const nextTimeline = [...record.timeline, entry];
+  assertSafetyTimelineAppendOnly(record.timeline, nextTimeline);
+
+  const actionsTaken =
+    input.actionId && !record.actionsTaken.includes(input.actionId)
+      ? [...record.actionsTaken, input.actionId]
+      : record.actionsTaken;
 
   return {
-    ...incident,
+    ...normalizeCase(record),
     timeline: nextTimeline,
-    status: input.toStatus ?? incident.status,
-    investigator: input.investigator !== undefined ? input.investigator : incident.investigator
+    status: input.toStatus ?? record.status,
+    investigator: input.investigator !== undefined ? input.investigator : record.investigator,
+    actionsTaken
   };
 }

@@ -1,66 +1,81 @@
-/** Crisis & Safety Center™ — proactive safety infrastructure. */
+/** Crisis & Safety Center™ — institutional safety command center. Trust is the product. */
 
 export const SAFETY_CENTER_BRAND = "Crisis & Safety Center™";
 
 export const SAFETY_IMMUTABLE_RULES = [
-  "Safety incidents are immutable.",
+  "Safety cases are immutable.",
   "Full audit trail.",
   "No hard deletes."
 ] as const;
 
-export type SafetyCategoryId =
+export type SafetyCaseTypeId =
   | "harassment"
   | "fraud"
   | "catfishing"
-  | "identity-concerns"
-  | "abusive-conduct"
   | "threats"
-  | "payment-abuse"
-  | "consultant-misconduct"
+  | "identity-concerns"
+  | "abusive-behaviour"
+  | "blackmail"
+  | "scam-reports"
   | "emergency-escalation";
+
+/** @deprecated Use SafetyCaseTypeId */
+export type SafetyCategoryId = SafetyCaseTypeId;
 
 export type SafetySeverityId = "low" | "medium" | "high" | "critical";
 
 export type SafetyStatusId =
   | "reported"
-  | "under-review"
-  | "escalated"
+  | "investigating"
+  | "action-required"
   | "resolved"
   | "closed";
 
+export type SafetyActionId =
+  | "warning"
+  | "restriction"
+  | "suspension"
+  | "ban"
+  | "law-enforcement-referral";
+
 export type SafetyWorkflowId =
   | "report"
-  | "review"
-  | "escalate"
-  | "assign-investigator"
+  | "investigate"
+  | "require-action"
+  | "apply-action"
   | "resolve"
   | "close";
 
 export type SafetyMetricId =
-  | "open-incidents"
-  | "critical-incidents"
-  | "resolution-time"
-  | "escalations"
-  | "repeat-reports";
+  | "open-cases"
+  | "average-resolution-time"
+  | "high-risk-cases"
+  | "repeat-offenders";
 
-export const SAFETY_CATEGORIES: {
-  id: SafetyCategoryId;
+export const SAFETY_CASE_TYPES: {
+  id: SafetyCaseTypeId;
   label: string;
 }[] = [
   { id: "harassment", label: "Harassment" },
   { id: "fraud", label: "Fraud" },
   { id: "catfishing", label: "Catfishing" },
-  { id: "identity-concerns", label: "Identity Concerns" },
-  { id: "abusive-conduct", label: "Abusive Conduct" },
   { id: "threats", label: "Threats" },
-  { id: "payment-abuse", label: "Payment Abuse" },
-  { id: "consultant-misconduct", label: "Consultant Misconduct" },
+  { id: "identity-concerns", label: "Identity Concerns" },
+  { id: "abusive-behaviour", label: "Abusive Behaviour" },
+  { id: "blackmail", label: "Blackmail" },
+  { id: "scam-reports", label: "Scam Reports" },
   { id: "emergency-escalation", label: "Emergency Escalation" }
 ];
 
-export const SAFETY_CATEGORY_LABELS: Record<SafetyCategoryId, string> = Object.fromEntries(
-  SAFETY_CATEGORIES.map((item) => [item.id, item.label])
-) as Record<SafetyCategoryId, string>;
+/** @deprecated Use SAFETY_CASE_TYPES */
+export const SAFETY_CATEGORIES = SAFETY_CASE_TYPES;
+
+export const SAFETY_CASE_TYPE_LABELS: Record<SafetyCaseTypeId, string> = Object.fromEntries(
+  SAFETY_CASE_TYPES.map((item) => [item.id, item.label])
+) as Record<SafetyCaseTypeId, string>;
+
+/** @deprecated Use SAFETY_CASE_TYPE_LABELS */
+export const SAFETY_CATEGORY_LABELS = SAFETY_CASE_TYPE_LABELS;
 
 export const SAFETY_SEVERITIES: {
   id: SafetySeverityId;
@@ -81,8 +96,8 @@ export const SAFETY_STATUSES: {
   label: string;
 }[] = [
   { id: "reported", label: "Reported" },
-  { id: "under-review", label: "Under Review" },
-  { id: "escalated", label: "Escalated" },
+  { id: "investigating", label: "Investigating" },
+  { id: "action-required", label: "Action Required" },
   { id: "resolved", label: "Resolved" },
   { id: "closed", label: "Closed" }
 ];
@@ -91,15 +106,30 @@ export const SAFETY_STATUS_LABELS: Record<SafetyStatusId, string> = Object.fromE
   SAFETY_STATUSES.map((item) => [item.id, item.label])
 ) as Record<SafetyStatusId, string>;
 
+export const SAFETY_ACTIONS: {
+  id: SafetyActionId;
+  label: string;
+}[] = [
+  { id: "warning", label: "Warning" },
+  { id: "restriction", label: "Restriction" },
+  { id: "suspension", label: "Suspension" },
+  { id: "ban", label: "Ban" },
+  { id: "law-enforcement-referral", label: "Law Enforcement Referral" }
+];
+
+export const SAFETY_ACTION_LABELS: Record<SafetyActionId, string> = Object.fromEntries(
+  SAFETY_ACTIONS.map((item) => [item.id, item.label])
+) as Record<SafetyActionId, string>;
+
 export const SAFETY_WORKFLOWS: {
   id: SafetyWorkflowId;
   label: string;
   targetStatus: SafetyStatusId | null;
 }[] = [
   { id: "report", label: "Report", targetStatus: "reported" },
-  { id: "review", label: "Review", targetStatus: "under-review" },
-  { id: "escalate", label: "Escalate", targetStatus: "escalated" },
-  { id: "assign-investigator", label: "Assign investigator", targetStatus: null },
+  { id: "investigate", label: "Investigate", targetStatus: "investigating" },
+  { id: "require-action", label: "Require action", targetStatus: "action-required" },
+  { id: "apply-action", label: "Apply action", targetStatus: null },
   { id: "resolve", label: "Resolve", targetStatus: "resolved" },
   { id: "close", label: "Close", targetStatus: "closed" }
 ];
@@ -112,18 +142,17 @@ export const SAFETY_METRICS: {
   id: SafetyMetricId;
   label: string;
 }[] = [
-  { id: "open-incidents", label: "Open incidents" },
-  { id: "critical-incidents", label: "Critical incidents" },
-  { id: "resolution-time", label: "Resolution time" },
-  { id: "escalations", label: "Escalations" },
-  { id: "repeat-reports", label: "Repeat reports" }
+  { id: "open-cases", label: "Open Cases" },
+  { id: "average-resolution-time", label: "Average Resolution Time" },
+  { id: "high-risk-cases", label: "High Risk Cases" },
+  { id: "repeat-offenders", label: "Repeat Offenders" }
 ];
 
 /**
  * Future-ready safety capabilities — documented only, not implemented.
  */
 export const SAFETY_CENTER_FUTURE_KINDS = [
-  { id: "trust-scores", label: "Trust scores" },
+  { id: "safety-specialists", label: "Safety specialists" },
   { id: "emergency-hotline", label: "Emergency hotline" },
-  { id: "identity-investigations", label: "Identity investigations" }
+  { id: "legal-escalation", label: "Legal escalation" }
 ] as const;

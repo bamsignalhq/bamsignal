@@ -69,6 +69,7 @@
     "audit:permissions": "node scripts/audit-permissions.mjs && npm run test:permissions-audit && npm run test:permissions",
     "test:journey-audit": "node scripts/test-journey-audit.mjs",
     "audit:journeys": "node scripts/audit-journeys.mjs && npm run test:journey-audit && npm run test:journey-id && npm run test:journey-archive",
+    "audit:launch": "node scripts/audit-launch.mjs && npm run test:launch-readiness && npm run test:operations-center",
     "test:launch-readiness": "node scripts/test-launch-readiness.mjs",
     "test:consultant-performance-scorecard": "node scripts/test-consultant-performance-scorecard.mjs",
     "test:introduction-engine": "node scripts/test-introduction-engine.mjs",

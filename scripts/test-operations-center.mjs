@@ -39,7 +39,7 @@ const engineSource = readFileSync(join(rootPath, "src/utils/OperationsCenterEngi
 assert(engineSource.includes("buildOperationsCenterBundle"), "operations center aggregation engine exists");
 assert(engineSource.includes("listSchedulingEvents"), "aggregates scheduling engine");
 assert(engineSource.includes("listConsultationPayments"), "aggregates payment engine");
-assert(engineSource.includes("listConciergeEmailRecords"), "aggregates email engine");
+assert(engineSource.includes("buildNotificationOperationsBundle"), "aggregates email engine");
 assert(engineSource.includes("listIntroductionRecords"), "aggregates introduction engine");
 assert(engineSource.includes("listRelationshipFollowUpRecords"), "aggregates follow-up engine");
 assert(!engineSource.includes("writeJson"), "operations layer does not persist duplicate state");

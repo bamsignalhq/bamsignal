@@ -89,7 +89,7 @@ import {
 import { ConsultantDashboardPage } from "../components/admin/concierge/ConsultantDashboardPage";
 import { OperationsCenterPage } from "../components/admin/concierge/OperationsCenterPage";
 import { TalentRecruitingPage } from "../components/admin/talent/TalentRecruitingPage";
-import { SupportCenterAdminPage } from "../components/admin/support/SupportCenterAdminPage";
+import { SupportDashboardPage } from "../components/admin/support/SupportDashboardPage";
 import { NotificationQueuePage } from "../components/admin/notificationReliability/NotificationQueuePage";
 import { SystemHealthPage } from "../components/admin/systemHealth/SystemHealthPage";
 import { InstitutionalComplianceCenterPage } from "../components/admin/compliance/InstitutionalComplianceCenterPage";
@@ -100,6 +100,7 @@ import { PermissionsAuditPage } from "../components/admin/permissionsAudit/Permi
 import { JourneyIntegrityAuditPage } from "../components/admin/journeyAudit/JourneyIntegrityAuditPage";
 import { LaunchReadinessCommandCenterPage } from "../components/admin/launchReadiness/LaunchReadinessCommandCenterPage";
 import { RemediationBoardPage } from "../components/admin/remediationBoard/RemediationBoardPage";
+import { ReadinessPage } from "../components/admin/institutionalReadiness/ReadinessPage";
 import { DocumentCenterPage } from "../components/admin/documents/DocumentCenterPage";
 import { SafetyCenterPage } from "../components/admin/safety/SafetyCenterPage";
 import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
@@ -2066,7 +2067,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       ) : null}
       {tab === "concierge" && conciergeView === "dashboard" ? <ConsultantDashboardPage /> : null}
       {tab === "talent" ? <TalentRecruitingPage /> : null}
-      {tab === "support" ? <SupportCenterAdminPage /> : null}
+      {tab === "support" ? <SupportDashboardPage /> : null}
       {tab === "audit" && auditView === "security" ? <PermissionsAuditPage /> : null}
       {tab === "audit" && auditView === "database" ? <DatabaseAuditPage /> : null}
       {tab === "audit" && auditView === "routes" ? <RouteAuditPage /> : null}
@@ -2084,6 +2085,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "executive" ? <ExecutiveDashboardPage /> : null}
       {tab === "launch" ? <LaunchReadinessCommandCenterPage /> : null}
       {tab === "remediation" ? <RemediationBoardPage /> : null}
+      {tab === "readiness" ? <ReadinessPage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

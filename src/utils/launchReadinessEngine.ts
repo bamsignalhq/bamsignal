@@ -277,7 +277,7 @@ function evaluateConsultants(): LaunchReadinessCategory {
 
 function evaluateSupport(): LaunchReadinessCategory {
   const bundle = buildSupportCenterBundle();
-  const escalatedMetric = bundle.metrics.find((metric) => metric.id === "escalated");
+  const escalatedMetric = bundle.metrics.find((metric) => metric.id === "escalations");
   const openMetric = bundle.metrics.find((metric) => metric.id === "open-tickets");
   const escalatedCount = escalatedMetric?.numericValue ?? Number(escalatedMetric?.value ?? 0);
   const openCount = openMetric?.numericValue ?? Number(openMetric?.value ?? 0);

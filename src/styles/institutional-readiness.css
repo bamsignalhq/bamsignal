@@ -1,0 +1,260 @@
+.institutional-readiness-page {
+  display: grid;
+  gap: 18px;
+}
+
+.institutional-readiness-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.institutional-readiness-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.institutional-readiness-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.institutional-readiness-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.institutional-readiness-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+  gap: 14px;
+}
+
+.institutional-readiness-page__foot {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.readiness-score-card__head h3,
+.health-category-card__head h3,
+.launch-decision-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.readiness-score-card__head p,
+.health-category-card__head p,
+.launch-decision-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.readiness-score-card__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 14px 0;
+}
+
+.readiness-score-card__hero strong {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.readiness-score-card__hero span {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.readiness-score-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.readiness-score-metric {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.readiness-score-metric p {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.readiness-score-metric strong {
+  font-size: 1.2rem;
+}
+
+.readiness-score-metric--critical,
+.readiness-score-metric--blocker {
+  border-color: rgba(255, 92, 92, 0.4);
+}
+
+.readiness-score-metric--high {
+  border-color: rgba(255, 168, 76, 0.35);
+}
+
+.readiness-score-metric--resolved {
+  border-color: rgba(92, 214, 154, 0.35);
+}
+
+.health-category-card__list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.health-category-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.health-category-card__row h4 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+
+.health-category-card__row p {
+  margin: 0 0 4px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.health-category-card__row small {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+.health-category-card__actions {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  justify-items: end;
+}
+
+.health-status-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.health-status-badge--healthy {
+  background: rgba(92, 214, 154, 0.16);
+  color: #9ef0c8;
+}
+
+.health-status-badge--partial {
+  background: rgba(255, 168, 76, 0.16);
+  color: #ffd2a1;
+}
+
+.health-status-badge--critical {
+  background: rgba(255, 92, 92, 0.18);
+  color: #ffb4b4;
+}
+
+.launch-decision-card__verdict {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.launch-decision-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.launch-decision-badge--go {
+  background: rgba(92, 214, 154, 0.18);
+  color: #9ef0c8;
+}
+
+.launch-decision-badge--go_with_conditions {
+  background: rgba(120, 180, 255, 0.16);
+  color: #b8d4ff;
+}
+
+.launch-decision-badge--no_go_member_only,
+.launch-decision-badge--no_go {
+  background: rgba(255, 92, 92, 0.18);
+  color: #ffb4b4;
+}
+
+.launch-decision-card__detail {
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.88rem;
+}
+
+.launch-decision-card__risks {
+  display: grid;
+  gap: 12px;
+}
+
+.launch-decision-card__risk-group h4 {
+  margin: 0 0 6px;
+  font-size: 0.84rem;
+}
+
+.launch-decision-card__risk-group ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.launch-decision-card__risk-group li {
+  display: grid;
+  gap: 2px;
+}
+
+.launch-decision-card__risk-group li strong {
+  font-size: 0.84rem;
+}
+
+.launch-decision-card__risk-group li span,
+.launch-decision-card__risk-group p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.launch-decision-card__foot {
+  margin-top: 14px;
+}
+
+.readiness-score-card__foot {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 960px) {
+  .institutional-readiness-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .health-category-card__row {
+    flex-direction: column;
+  }
+
+  .health-category-card__actions {
+    justify-items: start;
+  }
+}

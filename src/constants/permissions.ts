@@ -12,6 +12,7 @@ import { PERMISSIONS_AUDIT_ADMIN_PATH } from "./permissionsAudit";
 import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "./journeyIntegrityAudit";
 import { LAUNCH_READINESS_ADMIN_PATH } from "./launchReadiness";
 import { REMEDIATION_BOARD_ADMIN_PATH } from "./remediationBoardAdmin";
+import { INSTITUTIONAL_READINESS_ADMIN_PATH } from "./institutionalReadinessAdmin";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
   OPERATIONS_CENTER_PATH
@@ -162,7 +163,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   messages: "ManageNotifications",
   executive: "ViewExecutiveDashboard",
   launch: "ManageOperations",
-  remediation: "ManageOperations"
+  remediation: "ManageOperations",
+  readiness: "ManageOperations"
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -216,7 +218,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   "/hard/messages": HARD_TAB_PERMISSIONS.messages,
   "/hard/executive": HARD_TAB_PERMISSIONS.executive,
   [LAUNCH_READINESS_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launch,
-  [REMEDIATION_BOARD_ADMIN_PATH]: HARD_TAB_PERMISSIONS.remediation
+  [REMEDIATION_BOARD_ADMIN_PATH]: HARD_TAB_PERMISSIONS.remediation,
+  [INSTITUTIONAL_READINESS_ADMIN_PATH]: HARD_TAB_PERMISSIONS.readiness
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -256,7 +259,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/messages",
   "/hard/executive",
   "/hard/launch",
-  "/hard/remediation"
+  "/hard/remediation",
+  "/hard/readiness"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

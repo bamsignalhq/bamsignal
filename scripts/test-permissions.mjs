@@ -96,7 +96,8 @@ const hardRoutes = [
   "/hard/messages",
   "/hard/executive",
   "/hard/launch",
-  "/hard/remediation"
+  "/hard/remediation",
+  "/hard/readiness"
 ];
 
 for (const path of hardRoutes) {

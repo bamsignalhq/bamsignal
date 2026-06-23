@@ -63,6 +63,7 @@
     "test:consultant-quality": "node scripts/test-consultant-quality.mjs",
     "test:finance-operations": "node scripts/test-finance-operations.mjs",
     "test:internal-messaging": "node scripts/test-internal-messaging.mjs",
+    "test:recovery-center": "node scripts/test-recovery-center.mjs",
     "test:executive-dashboard": "node scripts/test-executive-dashboard.mjs",
     "test:route-audit": "node scripts/test-route-audit.mjs",
     "audit:routes": "node scripts/audit-routes.mjs && npm run test:route-audit",

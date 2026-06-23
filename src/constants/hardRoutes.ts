@@ -55,7 +55,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   launch: "launch",
   remediation: "remediation",
   readiness: "readiness",
-  dataintegrity: "data-integrity"
+  dataintegrity: "data-integrity",
+  recovery: "recovery"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(

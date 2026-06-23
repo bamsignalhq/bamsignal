@@ -54,7 +54,8 @@ export const PERMISSIONS = [
   "ManageSafety",
   "ManageDocuments",
   "ManageCareers",
-  "ManageOperations"
+  "ManageOperations",
+  "ManageRecovery"
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -91,7 +92,8 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   ManageSafety: "Manage safety",
   ManageDocuments: "Manage documents",
   ManageCareers: "Manage careers",
-  ManageOperations: "Manage operations"
+  ManageOperations: "Manage operations",
+  ManageRecovery: "Manage recovery"
 };
 
 const ALL_PERMISSIONS: Permission[] = [...PERMISSIONS];
@@ -120,7 +122,8 @@ export const RolePermissions: Record<Role, readonly Permission[]> = {
     "ManageSafety",
     "ManageDocuments",
     "ManageSupport",
-    "ManageCareers"
+    "ManageCareers",
+    "ManageRecovery"
   ],
   Consultant: ["ViewMembers", "ManageIntroductions", "ManageFollowUps", "ManageScheduling"],
   "Senior Matchmaker": ["ViewMembers", "ManageIntroductions", "ManageFollowUps", "ViewArchives"],
@@ -166,7 +169,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   launch: "ManageOperations",
   remediation: "ManageOperations",
   readiness: "ManageOperations",
-  dataintegrity: "ManageOperations"
+  dataintegrity: "ManageOperations",
+  recovery: "ManageRecovery"
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {

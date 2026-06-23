@@ -108,6 +108,7 @@ import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAca
 import { ConsultantQualityPage } from "../components/admin/quality/ConsultantQualityPage";
 import { FinanceOperationsPage } from "../components/admin/finance/FinanceOperationsPage";
 import { MessagingDashboardPage } from "../components/admin/messages/MessagingDashboardPage";
+import { RecoveryDashboardPage } from "../components/admin/recovery/RecoveryDashboardPage";
 import { ExecutiveDashboardPage } from "../components/admin/executive/ExecutiveDashboardPage";
 import { JourneyIntelligencePage } from "../components/admin/concierge/JourneyIntelligencePage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
@@ -2088,6 +2089,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "remediation" ? <RemediationBoardPage /> : null}
       {tab === "readiness" ? <ReadinessPage /> : null}
       {tab === "dataintegrity" ? <IntegrityDashboard /> : null}
+      {tab === "recovery" ? <RecoveryDashboardPage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

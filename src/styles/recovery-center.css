@@ -1,0 +1,452 @@
+.recovery-center-page {
+  display: grid;
+  gap: 18px;
+}
+
+.recovery-center-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recovery-center-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.recovery-center-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 68ch;
+}
+
+.recovery-center-page__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.recovery-metric-chip {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.recovery-metric-chip p {
+  margin: 0 0 4px;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.recovery-metric-chip strong {
+  font-size: 0.95rem;
+}
+
+.recovery-center-page__policies h3,
+.recovery-center-page__plans h3,
+.recovery-center-page__incidents h3 {
+  margin: 0 0 10px;
+}
+
+.recovery-center-page__policies ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.recovery-center-page__areas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.recovery-center-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.recovery-search-field {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.recovery-search-field input,
+.recovery-search-field select {
+  min-width: 180px;
+}
+
+.recovery-center-page__plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.recovery-center-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 14px;
+}
+
+.recovery-center-page__incidents,
+.recovery-center-page__detail {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.recovery-center-page__empty {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.9rem;
+}
+
+.recovery-center-page__future {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 6px;
+}
+
+.recovery-center-page__future h3 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.recovery-center-page__future ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.backup-status-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+
+.backup-status-card--button {
+  width: 100%;
+  cursor: pointer;
+  color: inherit;
+}
+
+.backup-status-card.is-active {
+  border-color: rgba(120, 180, 255, 0.45);
+}
+
+.backup-status-card--warning {
+  border-color: rgba(255, 200, 120, 0.35);
+}
+
+.backup-status-card--failed {
+  border-color: rgba(255, 120, 120, 0.45);
+}
+
+.backup-status-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.backup-status-card__eyebrow {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.backup-status-card__status {
+  font-size: 0.76rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.backup-status-card__status--healthy {
+  color: rgba(140, 220, 160, 0.95);
+}
+
+.backup-status-card__status--warning {
+  color: rgba(255, 200, 120, 0.95);
+}
+
+.backup-status-card__status--failed {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.backup-status-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.backup-status-card__grid div {
+  display: grid;
+  gap: 2px;
+}
+
+.backup-status-card__grid dt {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.backup-status-card__grid dd {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.backup-status-card__verified {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(140, 220, 160, 0.9);
+}
+
+.backup-status-card__verified--missing {
+  color: rgba(255, 200, 120, 0.9);
+}
+
+.recovery-plan-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.recovery-plan-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.recovery-plan-card__head h3 {
+  margin: 4px 0 0;
+  font-size: 1rem;
+}
+
+.recovery-plan-card__eyebrow {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+  text-transform: uppercase;
+}
+
+.recovery-plan-card__status {
+  font-size: 0.76rem;
+  align-self: start;
+}
+
+.recovery-plan-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.recovery-plan-card__grid div {
+  display: grid;
+  gap: 2px;
+}
+
+.recovery-plan-card__grid dt {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.recovery-plan-card__grid dd {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.recovery-plan-card__steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.recovery-readiness-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.recovery-readiness-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.recovery-readiness-card__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+}
+
+.recovery-readiness-card__score {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.recovery-readiness-card__score strong {
+  font-size: 1.4rem;
+}
+
+.recovery-readiness-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.recovery-readiness-card__grid div {
+  display: grid;
+  gap: 2px;
+}
+
+.recovery-readiness-card__grid dt {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.recovery-readiness-card__grid dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.recovery-incident-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 6px;
+}
+
+.recovery-incident-card--button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.recovery-incident-card.is-active {
+  border-color: rgba(120, 180, 255, 0.45);
+}
+
+.recovery-incident-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.recovery-incident-card h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.recovery-incident-card p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.recovery-incident-card__meta {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.recovery-incident-detail {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.recovery-incident-detail h3 {
+  margin: 0 0 4px;
+}
+
+.recovery-incident-detail p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.88rem;
+}
+
+.recovery-incident-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.recovery-incident-detail__grid div {
+  display: grid;
+  gap: 2px;
+}
+
+.recovery-incident-detail__grid dt {
+  margin: 0;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.recovery-incident-detail__grid dd {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.incident-recovery-timeline__head h3 {
+  margin: 0 0 4px;
+}
+
+.incident-recovery-timeline__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+}
+
+.incident-recovery-timeline__list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.incident-recovery-timeline__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.incident-recovery-timeline__row strong {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.incident-recovery-timeline__empty {
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .recovery-center-page__body {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,123 @@
+@import "./institutional-page.css";
+
+.production-env-report-card__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.production-env-report-card__hero strong {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.production-env-report-card__hero > span:first-of-type {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.production-env-report-card__line {
+  margin: 0 0 6px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.86rem;
+}
+
+.production-env-report-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.production-env-report-card__metrics article {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.production-env-report-card__metrics span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.production-env-report-card__foot {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+  display: grid;
+  gap: 4px;
+}
+
+.production-env-checklist-card__item--passed {
+  border-left: 3px solid rgba(52, 211, 153, 0.6);
+}
+
+.production-env-checklist-card__item--failed {
+  border-left: 3px solid rgba(251, 191, 36, 0.6);
+}
+
+.production-env-checklist-card__badge--pass {
+  color: rgba(52, 211, 153, 0.95);
+  font-size: 0.76rem;
+}
+
+.production-env-checklist-card__badge--fail {
+  color: rgba(251, 191, 36, 0.95);
+  font-size: 0.76rem;
+}
+
+.production-env-checklist-card__integrations {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.production-env-checklist-card__integrations h4 {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.production-env-checklist-card__integrations ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.production-env-checklist-card__integrations li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.production-env-status {
+  text-transform: capitalize;
+  font-size: 0.76rem;
+}
+
+.production-env-status--ready {
+  color: rgba(52, 211, 153, 0.95);
+}
+
+.production-env-status--warning {
+  color: rgba(251, 191, 36, 0.95);
+}
+
+.production-env-status--critical {
+  color: rgba(248, 113, 113, 0.95);
+}
+
+.production-env-canonical {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 720px) {
+  .production-env-report-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

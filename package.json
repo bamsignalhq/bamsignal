@@ -82,6 +82,7 @@
     "test:performance": "node scripts/test-performance.mjs",
     "test:launch-certification": "node scripts/test-launch-certification.mjs",
     "test:enterprise-cleanup": "node scripts/test-enterprise-cleanup.mjs",
+    "test:production-environment": "node scripts/test-production-environment.mjs",
     "test:certification-suite": "node scripts/run-certification-test-suite.mjs",
     "test:reporting-center": "node scripts/test-reporting-center.mjs",
     "test:executive-dashboard": "node scripts/test-executive-dashboard.mjs",

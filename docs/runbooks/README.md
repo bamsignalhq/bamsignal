@@ -27,6 +27,8 @@ Formal release records, checklists, and templates: [docs/releases/](../releases/
 
 Production monitoring, SLOs, alerts, and observability: [docs/operations/monitoring/](../operations/monitoring/README.md)
 
+Environment configuration and secrets: [docs/operations/environment/](../operations/environment/README.md)
+
 ## Secrets
 
 All runbooks reference variable **names** from `.env.example` only. Store values in Coolify + password manager — never in git.

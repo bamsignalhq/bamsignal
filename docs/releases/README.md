@@ -81,6 +81,7 @@ Draft → Ready → Approved → Released → Archived
 | [../runbooks/deployment-recovery.md](../runbooks/deployment-recovery.md) | Coolify rollback and recovery |
 | [../runbooks/README.md](../runbooks/README.md) | Disaster recovery runbooks |
 | [../operations/monitoring/README.md](../operations/monitoring/README.md) | Production monitoring, SLOs, alerts |
+| [../operations/environment/README.md](../operations/environment/README.md) | Environment config and secrets management |
 | [.cursor/rules/deployment.mdc](../../.cursor/rules/deployment.mdc) | Deploy commands and env policy |
 
 ---

@@ -147,6 +147,7 @@ Review this framework **quarterly** or after any P1 incident.
 
 ## Related documentation
 
+- [Environment Configuration & Secrets](../environment/README.md)
 - [Disaster recovery runbooks](../runbooks/README.md)
 - [Release Management System](../releases/README.md)
 - [Deployment recovery](../runbooks/deployment-recovery.md)

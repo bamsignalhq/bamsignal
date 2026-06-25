@@ -12,6 +12,7 @@ const packageJson = JSON.parse(readFileSync(join(rootPath, "package.json"), "utf
 
 const skip = new Set([
   "test:certification-suite",
+  "test:founder-acceptance",
   "test:fortress",
   "test:all-integrity",
   "test:docker-integrity-stages"

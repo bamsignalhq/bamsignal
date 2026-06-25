@@ -1,0 +1,89 @@
+@import "./institutional-page.css";
+
+.fat-report-card__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.fat-report-card__hero strong {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.fat-report-card__line {
+  margin: 0 0 12px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.86rem;
+}
+
+.fat-report-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fat-report-card__metrics article {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.fat-checklist-card__item--passed {
+  border-left: 3px solid rgba(52, 211, 153, 0.6);
+}
+
+.fat-checklist-card__item--failed {
+  border-left: 3px solid rgba(251, 191, 36, 0.6);
+}
+
+.fat-checklist-card__badge--pass {
+  color: rgba(52, 211, 153, 0.95);
+  font-size: 0.76rem;
+}
+
+.fat-checklist-card__badge--fail {
+  color: rgba(251, 191, 36, 0.95);
+  font-size: 0.76rem;
+}
+
+.fat-checklist-card__personas {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fat-checklist-card__personas ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.fat-checklist-card__personas li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+
+.fat-status--passed {
+  color: rgba(52, 211, 153, 0.95);
+}
+
+.fat-status--warning {
+  color: rgba(251, 191, 36, 0.95);
+}
+
+.fat-status--critical {
+  color: rgba(248, 113, 113, 0.95);
+}
+
+@media (max-width: 720px) {
+  .fat-report-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -354,24 +354,14 @@ const unlinkedNested = [
 
 const missingNavigation = unlinkedNested.filter((entry) => !resolvedNavPaths.has(entry.path));
 
+function extractEnforcedHardRoutePaths(permissionsSource) {
+  const match = permissionsSource.match(/export const ENFORCED_HARD_ROUTE_PATHS = \[([\s\S]*?)\] as const/);
+  if (!match) return [];
+  return [...match[1].matchAll(/"(\/hard[^"]+)"/g)].map((entry) => entry[1]);
+}
+
 // --- Permission coverage ---
-const enforcedPaths = extractHardRoutePermissions(permissionsSource, [
-  read("src/constants/operationsCenter.ts"),
-  read("src/constants/auditCenterAdmin.ts"),
-  read("src/constants/routeAudit.ts"),
-  read("src/constants/databaseAudit.ts"),
-  read("src/constants/permissionsAudit.ts"),
-  read("src/constants/journeyIntegrityAudit.ts"),
-  read("src/constants/launchReadiness.ts"),
-  read("src/constants/journeyIntelligence.ts"),
-  read("src/constants/institutionalComplianceAdmin.ts"),
-  read("src/constants/systemHealthAdmin.ts"),
-  read("src/constants/notificationReliabilityAdmin.ts"),
-  read("src/constants/remediationBoardAdmin.ts"),
-  read("src/constants/institutionalReadinessAdmin.ts"),
-  read("src/constants/dataIntegrityAdmin.ts"),
-  read("src/constants/recoveryCenterAdmin.ts")
-]);
+const enforcedPaths = extractEnforcedHardRoutePaths(permissionsSource);
 const permissionGaps = hardTabPaths.filter((path) => !enforcedPaths.includes(path));
 
 // --- Lazy loading ---

@@ -1,15 +1,15 @@
 # Permission & Security Audit™
 
-Generated: 2026-06-25T02:01:36.333Z
+Generated: 2026-06-25T18:08:33.027Z
 
 ## Executive Summary
 
-Static RBAC verification across 10 institution roles, 38 enforced admin routes, and guard coverage for route, component, consultant, and API access.
+Static RBAC verification across 10 institution roles, 59 enforced admin routes, and guard coverage for route, component, consultant, and API access.
 
 **Role permission map:** 10 roles  
-**Enforced /hard routes:** 38  
-**Critical risks:** 2  
-**Warnings:** 6  
+**Enforced /hard routes:** 59  
+**Critical risks:** 1  
+**Warnings:** 7  
 **RequirePermission usages:** 1  
 **PermissionGate usages:** 0  
 **ConsultantCapabilityGate usages:** 1  
@@ -39,23 +39,23 @@ Rows = institution roles. Columns = verification areas (Secure / Warning / Criti
 
 | Role | Permissions | Sample |
 | --- | --- | --- |
-| Admin | 20 | ViewMembers, EditMembers, AssignConsultants, ManageConsultants, ManagePayments… |
-| Executive | 5 | ViewMembers, ViewFinance, ViewExecutiveDashboard, ViewArchives, ViewResearch |
-| Operations | 16 | ViewMembers, EditMembers, AssignConsultants, ManageConsultants, ManageScheduling… |
+| Admin | 42 | ViewMembers, EditMembers, DeleteMembers, AssignConsultants, TransferJourney… |
+| Executive | 6 | ViewMembers, ViewFinance, ViewExecutiveDashboard, ManageArchives, ViewResearch… |
+| Operations | 21 | ViewMembers, EditMembers, AssignConsultants, ManageOperations, ManageCrm… |
 | Consultant | 4 | ViewMembers, ManageIntroductions, ManageFollowUps, ManageScheduling |
-| Senior Matchmaker | 4 | ViewMembers, ManageIntroductions, ManageFollowUps, ViewArchives |
-| Compatibility Specialist | 2 | ViewMembers, ManageIntroductions |
-| Family Values Advisor | 2 | ViewMembers, ManageFollowUps |
-| Diaspora Consultant | 3 | ViewMembers, ManageIntroductions, ManageFollowUps |
-| Support | 3 | ViewMembers, ManageSupport, ManageNotifications |
-| Research | 3 | ViewMembers, ViewResearch, ViewArchives |
+| Senior Matchmaker | 0 |  |
+| Compatibility Specialist | 0 |  |
+| Family Values Advisor | 0 |  |
+| Diaspora Consultant | 0 |  |
+| Support | 21 | ViewMembers, ManageSupport, ManageNotifications, EditMembers, AssignConsultants… |
+| Research | 4 | ViewResearch, PublishResearch, ManageInstitute, ViewAuditLogs |
 
 
 ## Unauthorized Access Risks
 
 | Severity | Issue | Affected roles | Summary |
 | --- | --- | --- | --- |
-| CRITICAL | CRON_SECRET bypasses admin auth | API / super-admin | server/adminAuth.js requireAdmin accepts x-bamsignal-secret matching CRON_SECRET — grants full admin API access without operator session. |
+| WARNING | CRON_SECRET bypasses admin auth | API / super-admin | server/adminAuth.js requireAdmin accepts x-bamsignal-secret header matching CRON_SECRET — grants full admin API access without operator session. Query and body secret channels rejected. |
 | CRITICAL | Consultant portal uses shared local PIN | Consultant family | consultantSession.ts authenticates with a fixed demo PIN (2468) and localStorage — not per-consultant Supabase credentials. |
 | WARNING | Executive and Finance dashboards overlap | Executive, Admin, Operations | Executive Dashboard and Finance Operations both expose revenue — ViewFinance shared across Executive, Admin, and Operations roles. |
 | WARNING | Consultant capabilities not enforced on all routes | Senior Matchmaker, Diaspora Consultant, Family Values Advisor | ConsultantCapabilityGate covers workspace pages but route-level capability isolation for /consultant/members and /consultant/regions is partial. |
@@ -75,7 +75,7 @@ Rows = institution roles. Columns = verification areas (Secure / Warning / Criti
 
 ## Over-Permissioned Areas
 
-- Admin — 20 permissions (full ALL_PERMISSIONS)
+- Admin — 42 permissions (full ALL_PERMISSIONS)
 - Operations — ManageSafety, ManageDocuments, ManageSupport, ManageCareers without sub-role scoping
 - Executive — ViewFinance grants /hard/business access alongside executive dashboard
 - Consultant family — shared local PIN grants any directory consultant the same session model
@@ -106,7 +106,7 @@ Rows = institution roles. Columns = verification areas (Secure / Warning / Criti
 
 ## Route Access Registry
 
-All 38 paths in `ENFORCED_HARD_ROUTE_PATHS` are mapped in `HARD_ROUTE_PERMISSIONS` (23 literal keys, 15 const refs).
+All 59 paths in `ENFORCED_HARD_ROUTE_PATHS` are mapped in `HARD_ROUTE_PERMISSIONS` (22 literal keys, 37 const refs).
 
 RequirePermission resolves permissions via `permissionsForHardPath` — longest matching /hard path wins.
 

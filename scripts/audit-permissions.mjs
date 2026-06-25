@@ -105,6 +105,88 @@ function extractRolePermissions(source) {
   return roles;
 }
 
+function extractStringRecord(source, constName) {
+  const match = source.match(new RegExp(`export const ${constName}[\\s\\S]*?=\\s*\\{([\\s\\S]*?)\\n\\};`));
+  if (!match) return {};
+
+  const record = {};
+  const entryPattern = /(?:"([^"]+)"|([A-Za-z]+)):\s*"([^"]+)"/g;
+  let entryMatch;
+  while ((entryMatch = entryPattern.exec(match[1]))) {
+    record[entryMatch[1] ?? entryMatch[2]] = entryMatch[3];
+  }
+  return record;
+}
+
+function extractRoleDirectPermissions(seedSource) {
+  const match = seedSource.match(/const ROLE_DIRECT_PERMISSIONS[\s\S]*?=\s*\{([\s\S]*?)\n\};/);
+  if (!match) return {};
+
+  const record = {};
+  const entryPattern = /"([^"]+)":\s*\[([\s\S]*?)\]/g;
+  let entryMatch;
+  while ((entryMatch = entryPattern.exec(match[1]))) {
+    record[entryMatch[1]] = [...entryMatch[2].matchAll(/"([^"]+)"/g)].map((item) => item[1]);
+  }
+  return record;
+}
+
+function extractRoleParentMap(seedSource) {
+  const match = seedSource.match(/const ROLE_PARENT[\s\S]*?=\s*\{([\s\S]*?)\n\};/);
+  if (!match) return {};
+
+  const record = {};
+  const entryPattern = /"([^"]+)":\s*"([^"]+)"/g;
+  let entryMatch;
+  while ((entryMatch = entryPattern.exec(match[1]))) {
+    record[entryMatch[1]] = entryMatch[2];
+  }
+  return record;
+}
+
+function resolveInheritedGovernancePermissions(slug, directPermissions, roleParent) {
+  const inherited = new Set(directPermissions[slug] ?? []);
+  let parent = roleParent[slug];
+  const visited = new Set([slug]);
+  while (parent && !visited.has(parent)) {
+    visited.add(parent);
+    for (const permission of directPermissions[parent] ?? []) {
+      inherited.add(permission);
+    }
+    parent = roleParent[parent];
+  }
+  return [...inherited];
+}
+
+function buildRolePermissionsFromGovernance(governanceSource, seedSource) {
+  const legacyRoles = extractStringRecord(governanceSource, "LEGACY_ROLE_TO_GOVERNANCE_SLUG");
+  const legacyPermissions = extractStringRecord(governanceSource, "LEGACY_PERMISSION_TO_GOVERNANCE_SLUG");
+  const reversePermission = Object.fromEntries(
+    Object.entries(legacyPermissions).map(([legacy, slug]) => [slug, legacy])
+  );
+  const directPermissions = extractRoleDirectPermissions(seedSource);
+  const roleParent = extractRoleParentMap(seedSource);
+  const roles = new Map();
+
+  for (const [legacyRole, governanceSlug] of Object.entries(legacyRoles)) {
+    const slugs = resolveInheritedGovernancePermissions(governanceSlug, directPermissions, roleParent);
+    roles.set(
+      legacyRole,
+      slugs.map((slug) => reversePermission[slug]).filter(Boolean)
+    );
+  }
+
+  roles.set("Admin", Object.keys(legacyPermissions));
+  return roles;
+}
+
+function loadRolePermissions(permissionsSource, governanceSource, seedSource) {
+  const inline = extractRolePermissions(permissionsSource);
+  if (inline.size >= 10) return inline;
+  if (!permissionsSource.includes("buildLegacyRolePermissionMap")) return inline;
+  return buildRolePermissionsFromGovernance(governanceSource, seedSource);
+}
+
 function extractRoleManifestAreas(source) {
   const manifest = new Map();
   const roleBlocks = source.matchAll(
@@ -160,6 +242,8 @@ function statusEmoji(status) {
 
 // --- Load sources ---
 const permissionsSource = read("src/constants/permissions.ts");
+const governanceSource = read("src/constants/institutionalGovernance.ts");
+const governanceSeedSource = read("src/data/institutionalGovernanceSeed.ts");
 const permissionsAuditSource = read("src/utils/permissionsAudit.ts");
 const securityReportSource = read("src/utils/securityAuditReport.ts");
 const adminHubSource = read("src/pages/AdminHubPage.tsx");
@@ -175,7 +259,7 @@ const adminAuthSource = read("server/adminAuth.js");
 const identitySource = read("api/auth/identity.js");
 const adminSessionSource = read("src/utils/adminSession.ts");
 
-const rolePermissions = extractRolePermissions(permissionsSource);
+const rolePermissions = loadRolePermissions(permissionsSource, governanceSource, governanceSeedSource);
 const roleManifest = extractRoleManifestAreas(permissionsAuditSource);
 const enforcedRoutes = extractEnforcedHardRoutes(permissionsSource);
 const hardRouteKeys = extractHardRoutePermissionKeys(permissionsSource);

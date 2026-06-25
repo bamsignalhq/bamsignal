@@ -43,6 +43,7 @@ import {
   LazyEnterpriseCodebaseCleanupDashboard,
   LazyProductionEnvironmentDashboard,
   LazyLaunchInfrastructureDashboard,
+  LazyFounderAcceptanceDashboard,
   LazyReadinessPage,
   LazyRecoveryDashboardPage,
   LazyRemediationBoardPage,
@@ -2050,6 +2051,9 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       </AdminLazyTab>
       <AdminLazyTab active={tab === "launchinfrastructure"}>
         <LazyLaunchInfrastructureDashboard />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "founderacceptance"}>
+        <LazyFounderAcceptanceDashboard />
       </AdminLazyTab>
       <AdminLazyTab active={tab === "remediation"}>
         <LazyRemediationBoardPage />

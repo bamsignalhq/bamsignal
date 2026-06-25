@@ -1,22 +1,22 @@
 # Route & Navigation Integrity Audit™
 
-Generated: 2026-06-25T02:03:53.902Z
+Generated: 2026-06-25T18:08:32.093Z
 
 ## Executive Summary
 
 Static route inventory, navigation map cross-check, permission coverage, lazy-loading verification, and sitemap alignment for BamSignal web routes.
 
-**Inventory total:** 159 registered routes  
+**Inventory total:** 178 registered routes  
 **Duplicates:** 1 (1 intentional SEO/support overlap)  
 **Unlinked nested admin views:** 7  
 **Permission gaps:** 0  
 **Lazy exports:** 101  
-**Hardcoded route string files (warning):** 17  
+**Hardcoded route string files (warning):** 23  
 **Automated check failures:** 0
 
 ## Route Inventory
 
-- **admin**: 40 routes
+- **admin**: 59 routes
 - **century**: 4 routes
 - **concierge**: 7 routes
 - **consultant**: 7 routes
@@ -137,7 +137,7 @@ Member (`/home`, `/discover`, etc.) and admin (`/hard/*`) routes are intentional
 
 Route constants live under `src/constants/*Routes.ts` and are consumed by `src/utils/routeAudit.ts` inventory builders.
 
-Hardcoded route strings outside constants: **17 files** (acceptable in pages/components when paired with matchers — migrate opportunistically).
+Hardcoded route strings outside constants: **23 files** (acceptable in pages/components when paired with matchers — migrate opportunistically).
 
 ## Recommendations
 

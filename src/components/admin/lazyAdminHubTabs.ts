@@ -92,6 +92,11 @@ export const LazyLaunchInfrastructureDashboard = lazy(() =>
     default: module.LaunchInfrastructureDashboard
   }))
 );
+export const LazyFounderAcceptanceDashboard = lazy(() =>
+  import("./founderAcceptance/FounderAcceptanceDashboard").then((module) => ({
+    default: module.FounderAcceptanceDashboard
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

@@ -88,6 +88,7 @@ import "./styles/launch-certification.css";
 import "./styles/enterprise-codebase-cleanup.css";
 import "./styles/production-environment.css";
 import "./styles/launch-infrastructure.css";
+import "./styles/founder-acceptance.css";
 import "./styles/data-integrity.css";
 import "./styles/recovery-center.css";
 import "./styles/seo.css";

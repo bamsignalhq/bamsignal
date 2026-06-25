@@ -38,6 +38,7 @@ import { LAUNCH_CERTIFICATION_ADMIN_PATH } from "./launchCertificationAdmin";
 import { ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH } from "./enterpriseCodebaseCleanupAdmin";
 import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin";
 import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
+import { FOUNDER_ACCEPTANCE_ADMIN_PATH } from "./founderAcceptanceAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
 export type AuditAdminView = "compliance" | "routes" | "database" | "security" | "journeys";
@@ -93,7 +94,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   launchcertification: "launch-certification",
   enterprisecleanup: "enterprise-cleanup",
   productionenvironment: "production-environment",
-  launchinfrastructure: "launch-infrastructure"
+  launchinfrastructure: "launch-infrastructure",
+  founderacceptance: "founder-acceptance"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(

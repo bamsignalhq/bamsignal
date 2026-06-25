@@ -14,6 +14,8 @@ import { LAUNCH_READINESS_ADMIN_PATH } from "./launchReadiness";
 import { REMEDIATION_BOARD_ADMIN_PATH } from "./remediationBoardAdmin";
 import { INSTITUTIONAL_READINESS_ADMIN_PATH } from "./institutionalReadinessAdmin";
 import { DATA_INTEGRITY_ADMIN_PATH } from "./dataIntegrityAdmin";
+import { RECOVERY_CENTER_ADMIN_PATH } from "./recoveryCenterAdmin";
+import { WORKFORCE_MANAGEMENT_ADMIN_PATH } from "./workforceAdmin";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
   OPERATIONS_CENTER_PATH
@@ -170,7 +172,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   remediation: "ManageOperations",
   readiness: "ManageOperations",
   dataintegrity: "ManageOperations",
-  recovery: "ManageRecovery"
+  recovery: "ManageRecovery",
+  workforce: "ManageOperations"
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -226,7 +229,9 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [LAUNCH_READINESS_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launch,
   [REMEDIATION_BOARD_ADMIN_PATH]: HARD_TAB_PERMISSIONS.remediation,
   [INSTITUTIONAL_READINESS_ADMIN_PATH]: HARD_TAB_PERMISSIONS.readiness,
-  [DATA_INTEGRITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.dataintegrity
+  [DATA_INTEGRITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.dataintegrity,
+  [RECOVERY_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.recovery,
+  [WORKFORCE_MANAGEMENT_ADMIN_PATH]: HARD_TAB_PERMISSIONS.workforce
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -268,7 +273,9 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/launch",
   "/hard/remediation",
   "/hard/readiness",
-  "/hard/data-integrity"
+  "/hard/data-integrity",
+  "/hard/recovery",
+  "/hard/workforce"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

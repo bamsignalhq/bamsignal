@@ -62,6 +62,19 @@ export const CONCIERGE_SCHEMA_TABLES = [
   "concierge_relationship_health_alerts"
 ] as const;
 
+/** Tables from migrations/0005_workforce_management.sql */
+export const WORKFORCE_SCHEMA_TABLES = [
+  "workforce_profiles",
+  "workforce_availability",
+  "consultant_capacity",
+  "consultant_assignments",
+  "regional_assignments",
+  "leave_requests",
+  "workforce_transfers",
+  "workforce_metrics",
+  "staffing_forecasts"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -250,6 +263,88 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: [],
     constraints: [],
     defaultHealth: "healthy"
+  },
+  {
+    tableName: "workforce_profiles",
+    migrationRef: "0005_workforce_management.sql",
+    domainIds: ["consultants"],
+    inRequiredSchema: false,
+    indexes: ["workforce_profiles_consultant_id_idx", "workforce_profiles_region_id_idx"],
+    constraints: ["uuid primary key", "created_at", "updated_at", "created_by", "updated_by"],
+    defaultHealth: "needs-migration",
+    note: "Operational Capacity & Workforce Management™ profiles"
+  },
+  {
+    tableName: "workforce_availability",
+    migrationRef: "0005_workforce_management.sql",
+    domainIds: ["consultants"],
+    inRequiredSchema: false,
+    indexes: ["workforce_availability_profile_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "consultant_capacity",
+    migrationRef: "0005_workforce_management.sql",
+    domainIds: ["consultants"],
+    inRequiredSchema: false,
+    indexes: ["consultant_capacity_profile_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "consultant_assignments",
+    migrationRef: "0005_workforce_management.sql",
+    domainIds: ["consultants"],
+    inRequiredSchema: false,
+    indexes: ["consultant_assignments_profile_idx", "consultant_assignments_journey_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "regional_assignments",
+    migrationRef: "0005_workforce_management.sql",
+    domainIds: ["consultants"],
+    inRequiredSchema: false,
+    indexes: ["regional_assignments_primary_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "leave_requests",
+    migrationRef: "0005_workforce_management.sql",
+    domainIds: ["consultants"],
+    inRequiredSchema: false,
+    indexes: ["leave_requests_profile_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "workforce_transfers",
+    migrationRef: "0005_workforce_management.sql",
+    domainIds: ["consultants"],
+    inRequiredSchema: false,
+    indexes: ["workforce_transfers_from_idx", "workforce_transfers_to_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "workforce_metrics",
+    migrationRef: "0005_workforce_management.sql",
+    domainIds: ["consultants"],
+    inRequiredSchema: false,
+    indexes: ["workforce_metrics_key_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "staffing_forecasts",
+    migrationRef: "0005_workforce_management.sql",
+    domainIds: ["consultants"],
+    inRequiredSchema: false,
+    indexes: ["staffing_forecasts_region_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -302,6 +397,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "financeOperationsEngine.ts",
     expectedTable: "payment_fulfillments",
     note: "Finance ops layer mirrors Paystack — partial overlap with payment tables"
+  },
+  {
+    storageKey: "bamsignal.workforceManagement.v1",
+    domainId: "consultants",
+    engine: "workforceManagementEngine.ts",
+    expectedTable: "workforce_profiles",
+    note: "Workforce admin layer — dual-write to workforce_* tables via workforceManagement.js"
   },
   {
     storageKey: "bamsignal.auditCenter.v1",

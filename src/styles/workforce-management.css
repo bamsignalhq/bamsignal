@@ -1,0 +1,187 @@
+.workforce-management-page {
+  display: grid;
+  gap: 18px;
+}
+
+.workforce-management-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workforce-management-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.workforce-management-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.workforce-management-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.workforce-management-page__column {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.workforce-management-page__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+}
+
+.workforce-card {
+  padding: 14px;
+}
+
+.workforce-overview-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.workforce-metric {
+  display: grid;
+  gap: 4px;
+}
+
+.workforce-metric__label {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+.workforce-metric__value {
+  font-size: 1.35rem;
+}
+
+.workforce-metric__hint {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.78rem;
+}
+
+.workforce-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.workforce-pill--ok,
+.workforce-pill--available,
+.workforce-pill--approved,
+.workforce-pill--completed {
+  background: rgba(46, 204, 113, 0.18);
+}
+
+.workforce-pill--busy,
+.workforce-pill--near-capacity,
+.workforce-pill--pending {
+  background: rgba(241, 196, 15, 0.18);
+}
+
+.workforce-pill--at-capacity,
+.workforce-pill--overloaded {
+  background: rgba(231, 76, 60, 0.18);
+}
+
+.capacity-heatmap-card__list,
+.availability-calendar-card__list,
+.assignment-recommendation-card__list,
+.leave-management-card__list,
+.transfer-history-card__list,
+.consultant-workload-card__list,
+.staffing-forecast-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.capacity-heatmap-card__cell,
+.availability-calendar-card__list li,
+.assignment-recommendation-card__list li,
+.leave-management-card__list li,
+.transfer-history-card__list li,
+.consultant-workload-card__list li,
+.staffing-forecast-card__list li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.capacity-heatmap-card__meta,
+.consultant-workload-card__metrics,
+.staffing-forecast-card__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.82rem;
+}
+
+.regional-team-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.regional-team-card__region {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.regional-team-card__region ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.regional-team-card__future {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.85rem;
+}
+
+.assignment-recommendation-card__factors,
+.transfer-history-card__domains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.assignment-recommendation-card__factors li,
+.transfer-history-card__domains li {
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 960px) {
+  .workforce-management-page__body {
+    grid-template-columns: 1fr;
+  }
+}

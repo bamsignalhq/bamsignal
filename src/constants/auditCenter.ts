@@ -19,7 +19,9 @@ export type AuditActionId =
   | "archive-updates"
   | "permissions-updates"
   | "exports"
-  | "notifications";
+  | "notifications"
+  | "workforce-transfer"
+  | "workforce-leave";
 
 export type AuditEntityId =
   | "session"
@@ -58,7 +60,9 @@ export const AUDIT_TRACKED_ACTIONS: {
   { id: "archive-updates", label: "Archive updates", entity: "archive" },
   { id: "permissions-updates", label: "Permissions updates", entity: "permission" },
   { id: "exports", label: "Exports", entity: "export" },
-  { id: "notifications", label: "Notifications", entity: "notification" }
+  { id: "notifications", label: "Notifications", entity: "notification" },
+  { id: "workforce-transfer", label: "Workforce transfer", entity: "consultant" },
+  { id: "workforce-leave", label: "Workforce leave", entity: "consultant" }
 ];
 
 export const AUDIT_ACTION_LABELS: Record<AuditActionId, string> = Object.fromEntries(

@@ -31,7 +31,8 @@ export type HardTab =
   | "remediation"
   | "readiness"
   | "dataintegrity"
-  | "recovery";
+  | "recovery"
+  | "workforce";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -73,6 +74,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "talent",
         label: "Talent",
         keywords: ["talent", "careers", "recruiting", "hiring", "candidates"]
+      },
+      {
+        id: "workforce",
+        label: "Workforce",
+        keywords: ["workforce", "capacity", "staffing", "leave", "transfer", "availability"]
       },
       {
         id: "support",
@@ -227,7 +233,8 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",
-  recovery: "Recovery"
+  recovery: "Recovery",
+  workforce: "Workforce"
 };
 
 export const ADMIN_TAB_TITLES = HARD_TAB_TITLES;

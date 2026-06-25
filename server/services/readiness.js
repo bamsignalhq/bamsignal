@@ -1,5 +1,5 @@
 import { config } from "../config.js";
-import { getDatabaseStatus, pingDatabase } from "../db.js";
+import { checkSchema, getDatabaseError, getDatabaseStatus, pingDatabase } from "../db.js";
 import { getFirebaseHealth } from "../firebase.js";
 import { isSignupEmailConfigured, getSignupEmailHealthTrace } from "../supabaseEnv.js";
 import { getSendchampHealthTrace, isSendchampConfigured } from "./sendchamp.js";
@@ -51,11 +51,21 @@ export async function readinessPayload(options = {}) {
     };
   }
 
+  const schemaStatus = config.databaseUrl ? await checkSchema({ force: true }) : null;
+
   return {
     ok: ready,
     service: "bamsignal",
     ready,
     database: checks.database,
+    databaseError: getDatabaseError() || undefined,
+    schema: schemaStatus
+      ? {
+          ok: schemaStatus.ok,
+          reason: schemaStatus.reason,
+          missing: schemaStatus.missing?.length ? schemaStatus.missing : undefined
+        }
+      : undefined,
     paystack: checks.paystackReady,
     resend: Boolean(process.env.RESEND_API_KEY?.trim()),
     signupEmail: checks.signupEmailReady,

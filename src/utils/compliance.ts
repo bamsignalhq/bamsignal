@@ -1,5 +1,4 @@
 import {
-  ADULT_RISK_VERSION,
   OFFLINE_SAFETY_VERSION,
   PRIVACY_VERSION,
   SAFETY_PLEDGE_VERSION,
@@ -18,8 +17,7 @@ const ALL_GATE_ACK_TYPES: ComplianceAckType[] = [
   "privacy",
   "age_18",
   "safety_pledge",
-  "offline_safety",
-  "adult_risk"
+  "offline_safety"
 ];
 
 type ComplianceCheckOptions = { relaxed?: boolean };
@@ -135,22 +133,6 @@ export function hasSafetyPledge(
   );
 }
 
-export function hasAdultRiskAck(
-  compliance?: MemberCompliance,
-  options?: ComplianceCheckOptions
-): boolean {
-  if (!compliance) return false;
-  const relaxed = options?.relaxed;
-  if (relaxed) {
-    return Boolean(compliance.adultRiskAcknowledged && compliance.adultRiskAcknowledgedAt);
-  }
-  return Boolean(
-    compliance.adultRiskAcknowledged &&
-      versionMatches(compliance.adultRiskVersion, ADULT_RISK_VERSION, relaxed) &&
-      compliance.adultRiskAcknowledgedAt
-  );
-}
-
 export function hasOfflineSafetyAck(
   compliance?: MemberCompliance,
   options?: ComplianceCheckOptions
@@ -167,12 +149,7 @@ export function hasOfflineSafetyAck(
   );
 }
 
-export type ComplianceGatePhase =
-  | "none"
-  | "legal"
-  | "pledge"
-  | "offline_safety"
-  | "adult_risk";
+export type ComplianceGatePhase = "none" | "legal" | "pledge" | "offline_safety";
 
 export function complianceGatePhase(
   compliance?: MemberCompliance,
@@ -181,7 +158,6 @@ export function complianceGatePhase(
   if (!hasLegalCompliance(compliance, options)) return "legal";
   if (!hasSafetyPledge(compliance, options)) return "pledge";
   if (!hasOfflineSafetyAck(compliance, options)) return "offline_safety";
-  if (!hasAdultRiskAck(compliance, options)) return "adult_risk";
   return "none";
 }
 
@@ -191,13 +167,9 @@ export function isComplianceComplete(compliance?: MemberCompliance): boolean {
 }
 
 export function complianceVersionBundle(): string {
-  return [
-    TERMS_VERSION,
-    PRIVACY_VERSION,
-    SAFETY_PLEDGE_VERSION,
-    OFFLINE_SAFETY_VERSION,
-    ADULT_RISK_VERSION
-  ].join("|");
+  return [TERMS_VERSION, PRIVACY_VERSION, SAFETY_PLEDGE_VERSION, OFFLINE_SAFETY_VERSION].join(
+    "|"
+  );
 }
 
 export function resolveComplianceUserKeys(
@@ -445,11 +417,6 @@ export function buildCompliancePatch(
     next.safetyPledgeAccepted = true;
     next.safetyPledgeAcceptedAt = now;
     next.safetyPledgeVersion = SAFETY_PLEDGE_VERSION;
-  }
-  if (ackTypes.includes("adult_risk")) {
-    next.adultRiskAcknowledged = true;
-    next.adultRiskAcknowledgedAt = now;
-    next.adultRiskVersion = ADULT_RISK_VERSION;
   }
   if (ackTypes.includes("offline_safety")) {
     next.offlineSafetyAcknowledged = true;

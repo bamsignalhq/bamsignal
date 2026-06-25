@@ -6,7 +6,6 @@ export type FlowName =
   | "signup_otp"
   | "onboarding"
   | "compliance_pledge"
-  | "adult_risk_modal"
   | "offline_safety_modal"
   | "payment_initializing"
   | "profile_hydrate"
@@ -25,7 +24,6 @@ export const FLOW_TIMEOUT_MS: Record<FlowName, number> = {
   signup_otp: 120_000,
   onboarding: 180_000,
   compliance_pledge: 90_000,
-  adult_risk_modal: 90_000,
   offline_safety_modal: 90_000,
   payment_initializing: 30_000,
   profile_hydrate: 20_000,

@@ -34,8 +34,9 @@ assert(
 assert(
   readinessSource.includes("isSignupEmailConfigured") &&
     readinessSource.includes("isPhotoStorageConfigured") &&
-    readinessSource.includes("config.paystackSecretKey"),
-  "readiness must check database, Paystack, signup email, and photo storage"
+    readinessSource.includes("config.paystackSecretKey") &&
+    readinessSource.includes("checkSchema"),
+  "readiness must check database, Paystack, signup email, photo storage, and expose schema in detailed mode"
 );
 
 const live = livenessPayload();

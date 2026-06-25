@@ -26,7 +26,7 @@ const SAFETY_RELATED: Record<string, SeoLinkItem[]> = {
     { href: "/safety/blocking-users", label: "Blocking users" }
   ],
   "avoid-romance-scams": [
-    { href: "/safety/never-send-money", label: "Never send money" },
+    { href: "/safety/never-send-money", label: "Money pressure from matches" },
     { href: "/safety/reporting-abuse", label: "Reporting abuse" }
   ],
   "reporting-abuse": [

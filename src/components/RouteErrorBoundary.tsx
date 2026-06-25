@@ -34,6 +34,11 @@ export class RouteErrorBoundary extends React.Component<RouteErrorBoundaryProps,
         <div className="route-error-fallback__card card">
           <h2>{this.props.fallbackTitle || "This section needs a moment"}</h2>
           <p>We saved your session. Try reloading this section.</p>
+          {import.meta.env.DEV && this.state.error?.message ? (
+            <p className="route-error-fallback__detail" role="note">
+              {this.state.error.message}
+            </p>
+          ) : null}
           <button type="button" className="btn-primary" onClick={this.retry}>
             Try again
           </button>

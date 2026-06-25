@@ -104,4 +104,20 @@ assert(
   "migrations directory must include ledger and baseline schema files"
 );
 
+const productionSource = read("server/production.js");
+const startupMigrationsSource = read("server/startupMigrations.js");
+const dockerfileSource = read("Dockerfile");
+
+assert(
+  productionSource.includes("runStartupMigrations") &&
+    startupMigrationsSource.includes("runMigrations") &&
+    startupMigrationsSource.includes("RUN_MIGRATIONS_ON_STARTUP"),
+  "production startup must run SQL migrations before serving traffic"
+);
+
+assert(
+  dockerfileSource.includes("COPY migrations ./migrations"),
+  "Docker image must ship migrations/ for Coolify auto-migrate"
+);
+
 console.log("schema verification tests ok");

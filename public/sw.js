@@ -1,4 +1,4 @@
-const CACHE_NAME = "bamsignal-v1.0.13-16-mqtrms6w";
+const CACHE_NAME = "bamsignal-v1.0.13-16-mqtvzz73";
 const APP_SHELL = [
   "/manifest.webmanifest",
   "/favicon.webp",

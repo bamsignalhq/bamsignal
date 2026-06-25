@@ -51,8 +51,8 @@ export const SAFETY_CENTER_SECTIONS = [
     body: "Meet in public places and tell someone you trust."
   },
   {
-    title: "Never Send Money",
-    body: "BamSignal will never ask you to send money to another user."
+    title: "Report Solicitation",
+    body: "Report anyone pushing for transfers, airtime, gifts, or crypto."
   },
   {
     title: "Avoid OTP Fraud",

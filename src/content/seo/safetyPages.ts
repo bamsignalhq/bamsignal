@@ -59,7 +59,7 @@ export const SAFETY_PAGES = [
       {
         heading: "What to do",
         paragraphs: [
-          "Never send money, gift cards, or crypto to someone you have not met reliably in person.",
+          "Wire transfers, gift cards, and crypto requests before a real meet-up are reportable red flags.",
           "Report suspicious profiles and stop engaging if pressure increases."
         ]
       }
@@ -214,23 +214,23 @@ export const SAFETY_PAGES = [
   ),
   safetyPage(
     "never-send-money",
-    "Never send money",
-    "Never send money to matches | BamSignal safety",
-    "Why you should never send money to someone you met on a dating app — and what to do instead.",
-    "A genuine romantic interest will not ask you to wire money, buy airtime, or invest crypto early in knowing you.",
+    "Money pressure from matches",
+    "Money pressure from matches | BamSignal safety",
+    "How to spot financial pressure early and report it on BamSignal.",
+    "Real connections build trust before money comes up. Pressure for transfers is a reportable red flag.",
     [
       {
-        heading: "Common requests",
+        heading: "Common pressure patterns",
         paragraphs: [
           "Medical emergencies, visa fees, business opportunities, or \"proof of trust\" transfers.",
-          "Scammers exploit emotion — stay calm and say no."
+          "Fast emotional intensity paired with an urgent payment ask — report and disengage."
         ]
       },
       {
-        heading: "If you already sent money",
+        heading: "If money already moved",
         paragraphs: [
           "Contact your bank or payment provider immediately.",
-          "Report the profile on BamSignal and consider local authorities for significant losses."
+          "Report the profile on BamSignal and involve local authorities for significant losses."
         ]
       }
     ],
@@ -241,10 +241,10 @@ export const SAFETY_PAGES = [
       },
       {
         question: "What if they promise to pay me back?",
-        answer: "Still decline. Repayment stories are a common scam pattern."
+        answer: "Repayment stories are a common scam pattern. Report the profile and stop engaging."
       }
     ],
-    ["never send money dating", "dating app money scam", "romance fraud Nigeria"]
+    ["dating app money scam", "romance fraud Nigeria", "financial pressure dating"]
   ),
   safetyPage(
     "verification",

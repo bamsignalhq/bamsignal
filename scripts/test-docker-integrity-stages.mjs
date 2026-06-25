@@ -35,9 +35,10 @@ assertCheck(
 
 assertCheck(
   runnerSection.includes("node scripts/smoke-server-import.mjs") &&
+    runnerSection.includes("COPY migrations ./migrations") &&
     !runnerSection.includes("test:source-integrity") &&
     !runnerSection.match(/COPY[^\n]*\ssrc\b/),
-  "Docker runner stage must use runtime smoke only and must not copy src/"
+  "Docker runner stage must copy migrations/, use runtime smoke only, and must not copy src/"
 );
 
 assertCheck(

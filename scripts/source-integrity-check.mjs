@@ -227,6 +227,15 @@ assertCheck(
     appSource.includes("expireStaleOpenAppState"),
   "Open App must fail safe and clear stale opening state"
 );
+const applyGoToAppBlock =
+  appSource.match(/const applyGoToAppResult = useCallback\([\s\S]*?\n  \);/)?.[0] || "";
+assertCheck(
+  appSource.includes("scheduleMemberBundleHydration") &&
+    appSource.includes("memberAccessReady") &&
+    applyGoToAppBlock.length > 0 &&
+    !applyGoToAppBlock.includes("markMemberSessionReady"),
+  "member dashboards must hydrate the session bundle before memberSessionReady"
+);
 assertCheck(
   appSource.includes("isMemberAppPath(currentPathname)") &&
     appSource.includes("pathname: currentPathname"),

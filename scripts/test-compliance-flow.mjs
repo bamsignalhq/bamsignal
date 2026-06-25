@@ -26,10 +26,7 @@ const complete = isServerComplianceComplete({
   safetyPledgeAcceptedAt: "2026-06-18T00:00:00.000Z",
   offlineSafetyAcknowledged: true,
   offlineSafetyVersion: "2026-06-18",
-  offlineSafetyAcknowledgedAt: "2026-06-18T00:00:00.000Z",
-  adultRiskAcknowledged: true,
-  adultRiskVersion: "2026-06-18",
-  adultRiskAcknowledgedAt: "2026-06-18T00:00:00.000Z"
+  offlineSafetyAcknowledgedAt: "2026-06-18T00:00:00.000Z"
 });
 assert(complete, "server compliance complete check");
 

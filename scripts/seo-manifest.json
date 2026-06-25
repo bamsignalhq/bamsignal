@@ -224,7 +224,7 @@
       "title": "How to avoid romance scams | BamSignal safety",
       "description": "Calm, practical signs of romance scams and how to protect yourself when dating online in Nigeria.",
       "intro": "Most people on dating apps are genuine — but scams exist. Knowing common patterns helps you stay clear-headed.",
-      "wordCount": 126,
+      "wordCount": 125,
       "faqCount": 2,
       "indexable": true,
       "source": "/Users/stanlex/Documents/bamsignal/src/content/seo/safetyPages.ts"
@@ -280,11 +280,11 @@
     {
       "canonicalPath": "/safety/never-send-money",
       "slug": "never-send-money",
-      "h1": "Never send money",
-      "title": "Never send money to matches | BamSignal safety",
-      "description": "Why you should never send money to someone you met on a dating app — and what to do instead.",
-      "intro": "A genuine romantic interest will not ask you to wire money, buy airtime, or invest crypto early in knowing you.",
-      "wordCount": 118,
+      "h1": "Money pressure from matches",
+      "title": "Money pressure from matches | BamSignal safety",
+      "description": "How to spot financial pressure early and report it on BamSignal.",
+      "intro": "Real connections build trust before money comes up. Pressure for transfers is a reportable red flag.",
+      "wordCount": 121,
       "faqCount": 2,
       "indexable": true,
       "source": "/Users/stanlex/Documents/bamsignal/src/content/seo/safetyPages.ts"

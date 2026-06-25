@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { SignupLegalCheckboxes, isSignupLegalComplete } from "./SignupLegalCheckboxes";
 import {
-  ADULT_RISK_COPY,
   COMPLIANCE_SAVE_FAIL,
   OFFLINE_SAFETY_COPY,
   SAFETY_PLEDGE_RULES
@@ -33,8 +32,6 @@ function ackTypesForPhase(phase: ReturnType<typeof complianceGatePhase>): Compli
       return ["safety_pledge"];
     case "offline_safety":
       return ["offline_safety"];
-    case "adult_risk":
-      return ["adult_risk"];
     default:
       return [];
   }
@@ -60,7 +57,7 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
       ? isSignupLegalComplete(legalAccepted)
       : phase === "pledge"
         ? pledgeAccepted
-        : phase === "offline_safety" || phase === "adult_risk";
+        : phase === "offline_safety";
 
   const saveStep = async () => {
     if (busy || !canContinue) return;
@@ -96,21 +93,14 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
         ? "Community pledge"
         : phase === "offline_safety"
           ? OFFLINE_SAFETY_COPY.title
-          : ADULT_RISK_COPY.title;
+          : "";
 
   const kicker =
     phase === "pledge"
       ? "Keep BamSignal Safe"
-      : phase === "adult_risk"
-        ? "Scam awareness"
-        : "Quick Safety Check";
+      : "Quick Safety Check";
 
-  const ctaLabel =
-    phase === "offline_safety"
-      ? OFFLINE_SAFETY_COPY.cta
-      : phase === "adult_risk"
-        ? ADULT_RISK_COPY.cta
-        : "Continue";
+  const ctaLabel = phase === "offline_safety" ? OFFLINE_SAFETY_COPY.cta : "Continue";
 
   return (
     <div className="compliance-gate" role="dialog" aria-modal="true" aria-labelledby="compliance-gate-title">
@@ -159,19 +149,6 @@ export function ComplianceGateModal({ user, onComplete }: ComplianceGateModalPro
                 <li key={rule}>{rule}</li>
               ))}
             </ul>
-          </>
-        ) : null}
-
-        {phase === "adult_risk" ? (
-          <>
-            <p className="compliance-gate__lede">{ADULT_RISK_COPY.body}</p>
-            {ADULT_RISK_COPY.bullets?.length ? (
-              <ul className="compliance-gate__rules">
-                {ADULT_RISK_COPY.bullets.map((rule) => (
-                  <li key={rule}>{rule}</li>
-                ))}
-              </ul>
-            ) : null}
           </>
         ) : null}
 

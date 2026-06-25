@@ -30,6 +30,12 @@ assertSmoke(
   productionSource.includes('from "./app.js"') && productionSource.includes("createApp({ distDir })"),
   "server/production.js must delegate app creation to server/app.js"
 );
+assertSmoke(
+  productionSource.includes("runStartupMigrations") &&
+    productionSource.includes("await initDatabase()") &&
+    productionSource.indexOf("await initDatabase()") < productionSource.indexOf("app.listen"),
+  "production startup must migrate and connect database before accepting traffic"
+);
 
 const requiredRouteMounts = [
   { method: "post", route: "/api/auth/pin-login" },

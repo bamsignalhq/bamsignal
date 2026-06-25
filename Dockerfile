@@ -69,13 +69,14 @@ COPY api ./api
 COPY public ./public
 COPY shared ./shared
 COPY scripts ./scripts
+COPY migrations ./migrations
 # Import smoke test — must pass without runtime secrets (dry-run DB, optional services).
 RUN node scripts/smoke-server-import.mjs
 
 EXPOSE 3000
 
-# Readiness probe — fails when DATABASE_URL, Paystack, signup email, or photo storage are unavailable.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+# Readiness probe — allow first-boot SQL migrations before marking unhealthy.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 CMD ["node", "server/production.js"]

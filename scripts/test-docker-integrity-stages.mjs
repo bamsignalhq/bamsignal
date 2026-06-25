@@ -27,10 +27,12 @@ const runnerSection = dockerfileSource.split("FROM node:20-slim AS runner")[1] |
 
 assertCheck(
   builderSection.includes("RUN npm run build") &&
-    builderSection.includes("RUN npm run test:source-integrity") &&
-    builderSection.indexOf("RUN npm run test:source-integrity") >
-      builderSection.indexOf("RUN npm run build"),
-  "Docker builder stage must run source integrity immediately after npm run build"
+    builderSection.includes("RUN npm run test:source-integrity:web") &&
+    builderSection.indexOf("RUN npm run test:source-integrity:web") >
+      builderSection.indexOf("RUN npm run build") &&
+    !builderSection.includes("RUN npm run test:source-integrity\n") &&
+    !builderSection.match(/RUN npm run test:source-integrity[^:]/),
+  "Docker builder stage must run web-only source integrity immediately after npm run build"
 );
 
 assertCheck(
@@ -50,13 +52,20 @@ assertCheck(
 
 assertCheck(
   sourceIntegritySource.includes('if (!existsSync(srcRoot))') &&
-    sourceIntegritySource.includes("source integrity skipped"),
-  "source integrity must skip gracefully when src/ is missing"
+    sourceIntegritySource.includes("source integrity skipped") &&
+    sourceIntegritySource.includes("runWebIntegrityChecks") &&
+    sourceIntegritySource.includes("runAndroidIntegrityChecks") &&
+    sourceIntegritySource.includes("Android project not detected. Skipping Android integrity checks."),
+  "source integrity must skip gracefully when src/ is missing and skip android when absent"
 );
 
 const packageJson = JSON.parse(packageSource);
 assertCheck(
-  packageJson.scripts["test:source-integrity"] === "node scripts/source-integrity-check.mjs" &&
+  packageJson.scripts["test:source-integrity:web"] ===
+    "node scripts/source-integrity-check.mjs --web" &&
+    packageJson.scripts["test:source-integrity:android"] ===
+      "node scripts/source-integrity-check.mjs --android" &&
+    packageJson.scripts["test:source-integrity"] === "node scripts/source-integrity-check.mjs" &&
     packageJson.scripts["test:server-import"] === "node scripts/smoke-server-import.mjs" &&
     packageJson.scripts["test:all-integrity"] ===
       "npm run test:source-integrity && npm run test:server-import" &&

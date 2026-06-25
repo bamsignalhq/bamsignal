@@ -47,7 +47,7 @@ ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
     VITE_ENABLE_IMAGE_MODERATION=$VITE_ENABLE_IMAGE_MODERATION
 
 RUN npm run build
-RUN npm run test:source-integrity
+RUN npm run test:source-integrity:web
 RUN test -f dist/index.html
 
 FROM node:20-slim AS runner

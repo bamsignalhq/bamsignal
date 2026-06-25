@@ -10,6 +10,7 @@ import {
 import { isPremiumTrialActive } from "../utils/premiumTrial";
 import { activateQuickiePass, clearQuickiePass, getQuickiePassUntil, syncFastConnectionPassFromServer } from "../utils/quickie";
 import { pruneExpiredBoosts } from "../utils/activeBoosts";
+import { dedupeInflight } from "../utils/inflightPromise";
 import { apiUrl } from "./supabase";
 
 type PremiumSnapshot = {
@@ -86,36 +87,39 @@ function applyEntitlementsPayload(payload?: {
 export async function refreshPremiumStatus(
   user: Pick<UserProfile, "email" | "phone">
 ): Promise<PremiumSnapshot> {
-  try {
-    const response = await fetch(apiUrl("/api/member/data?action=status"), {
-      method: "POST",
-      headers: await memberApiHeaders(),
-      body: JSON.stringify({ email: user.email, phone: user.phone })
-    });
-    const payload = await readResponseJson<{
-      ok?: boolean;
-      premium?: PremiumSnapshot;
-      entitlements?: {
-        signalPass?: PremiumSnapshot;
-        fastConnectionPass?: { active?: boolean; expiresAt?: string | null };
-      };
-    }>(response);
-    if (response.ok && payload?.ok) {
-      applyEntitlementsPayload(payload);
-      return getPremiumSnapshot();
+  const cacheKey = `premium-status:${user.email || ""}:${user.phone || ""}`;
+  return dedupeInflight(cacheKey, async () => {
+    try {
+      const response = await fetch(apiUrl("/api/member/data?action=status"), {
+        method: "POST",
+        headers: await memberApiHeaders(),
+        body: JSON.stringify({ email: user.email, phone: user.phone })
+      });
+      const payload = await readResponseJson<{
+        ok?: boolean;
+        premium?: PremiumSnapshot;
+        entitlements?: {
+          signalPass?: PremiumSnapshot;
+          fastConnectionPass?: { active?: boolean; expiresAt?: string | null };
+        };
+      }>(response);
+      if (response.ok && payload?.ok) {
+        applyEntitlementsPayload(payload);
+        return getPremiumSnapshot();
+      }
+    } catch {
+      // keep last snapshot
     }
-  } catch {
-    // keep last snapshot
-  }
 
-  pruneExpiredBoosts();
-  const resolved = resolveSignalPassSnapshot({
-    premiumUntil: snapshot.premiumUntil,
-    isPremium: snapshot.isPremium,
-    includeTrial: false
+    pruneExpiredBoosts();
+    const resolved = resolveSignalPassSnapshot({
+      premiumUntil: snapshot.premiumUntil,
+      isPremium: snapshot.isPremium,
+      includeTrial: false
+    });
+    snapshot = { isPremium: resolved.active, premiumUntil: resolved.expiresAt };
+    return getPremiumSnapshot();
   });
-  snapshot = { isPremium: resolved.active, premiumUntil: resolved.expiresAt };
-  return getPremiumSnapshot();
 }
 
 export async function refreshMemberEntitlements(

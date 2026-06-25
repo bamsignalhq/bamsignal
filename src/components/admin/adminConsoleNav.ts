@@ -44,7 +44,8 @@ export type HardTab =
   | "performance"
   | "workflows"
   | "securitydashboard"
-  | "uxconsistency";
+  | "uxconsistency"
+  | "performanceoptimization";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -136,6 +137,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "uxconsistency",
         label: "UX Audit",
         keywords: ["ux", "design", "consistency", "typography", "spacing", "buttons", "cards", "theme"]
+      },
+      {
+        id: "performanceoptimization",
+        label: "Perf Optimize",
+        keywords: ["performance", "bundle", "lazy", "cache", "lighthouse", "speed", "optimization"]
       },
       {
         id: "compliance",
@@ -308,6 +314,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   performance: "Performance",
   workflows: "Workflows",
   uxconsistency: "UX Audit",
+  performanceoptimization: "Perf Optimize",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

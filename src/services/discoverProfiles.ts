@@ -2,6 +2,7 @@ import type { DiscoverProfile, MemberSearchFilters, UserProfile } from "../types
 import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import { safeDiscoverProfile } from "../utils/safeProfile";
+import { dedupeInflight } from "../utils/inflightPromise";
 import { apiUrl } from "./supabase";
 
 const profileCache = new Map<string, DiscoverProfile>();
@@ -35,25 +36,31 @@ export async function fetchDiscoverProfiles(
 ): Promise<DiscoverProfile[]> {
   if (!city.trim()) return [];
 
-  try {
-    const response = await fetch(apiUrl("/api/member/data?action=discover"), {
-      method: "POST",
-      headers: await memberApiHeaders(),
-      body: JSON.stringify({
-        email: user.email,
-        phone: user.phone,
-        city,
-        excludeProfileIds
-      })
-    });
-    const payload = await readResponseJson<{ ok?: boolean; profiles?: DiscoverProfile[] }>(response);
-    if (!response.ok || !payload?.ok || !Array.isArray(payload.profiles)) return [];
-    const profiles = sanitizeProfiles(payload.profiles);
-    cacheDiscoverProfiles(profiles);
-    return profiles;
-  } catch {
-    return [];
-  }
+  const identity = `${user.email || ""}:${user.phone || ""}`;
+  const excludeKey = excludeProfileIds.slice().sort().join(",");
+  const cacheKey = `discover:${identity}:${city}:${excludeKey}`;
+
+  return dedupeInflight(cacheKey, async () => {
+    try {
+      const response = await fetch(apiUrl("/api/member/data?action=discover"), {
+        method: "POST",
+        headers: await memberApiHeaders(),
+        body: JSON.stringify({
+          email: user.email,
+          phone: user.phone,
+          city,
+          excludeProfileIds
+        })
+      });
+      const payload = await readResponseJson<{ ok?: boolean; profiles?: DiscoverProfile[] }>(response);
+      if (!response.ok || !payload?.ok || !Array.isArray(payload.profiles)) return [];
+      const profiles = sanitizeProfiles(payload.profiles);
+      cacheDiscoverProfiles(profiles);
+      return profiles;
+    } catch {
+      return [];
+    }
+  });
 }
 
 export async function searchMemberProfiles(

@@ -21,6 +21,7 @@ export type HardTab =
   | "systemhealth"
   | "notifications"
   | "documents"
+  | "policies"
   | "safety"
   | "academy"
   | "quality"
@@ -114,8 +115,13 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       },
       {
         id: "documents",
-        label: "Documents",
-        keywords: ["documents", "policies", "procedures", "training", "repository", "templates"]
+        label: "Document Center",
+        keywords: ["documents", "document-center", "policies", "procedures", "training", "repository", "templates", "knowledge"]
+      },
+      {
+        id: "policies",
+        label: "Policies",
+        keywords: ["policies", "acknowledgement", "policy", "compliance", "governance"]
       },
       {
         id: "safety",
@@ -234,7 +240,8 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   compliance: "Compliance",
   systemhealth: "System Health",
   notifications: "Notifications",
-  documents: "Documents",
+  documents: "Document Center",
+  policies: "Policies",
   safety: "Safety",
   academy: "Academy",
   quality: "Quality",

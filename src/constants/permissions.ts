@@ -18,6 +18,8 @@ import { RECOVERY_CENTER_ADMIN_PATH } from "./recoveryCenterAdmin";
 import { INSTITUTIONAL_GOVERNANCE_ADMIN_PATH } from "./institutionalGovernanceAdmin";
 import { WORKFORCE_MANAGEMENT_ADMIN_PATH } from "./workforceAdmin";
 import { BUSINESS_CONTINUITY_ADMIN_PATH } from "./businessContinuityAdmin";
+import { DOCUMENT_CENTER_ADMIN_PATH } from "./documentCenterAdmin";
+import { INSTITUTIONAL_POLICIES_ADMIN_PATH } from "./institutionalPoliciesAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
@@ -175,6 +177,7 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   systemhealth: "ManageOperations",
   notifications: "ManageNotifications",
   documents: "ManageDocuments",
+  policies: "ManageDocuments",
   safety: "ManageSafety",
   academy: "ManageConsultants",
   quality: "ManageConsultants",
@@ -235,6 +238,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [PERMISSIONS_AUDIT_ADMIN_PATH]: AUDIT_VIEW_PERMISSIONS.security,
   [JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH]: AUDIT_VIEW_PERMISSIONS.journeys,
   "/hard/documents": HARD_TAB_PERMISSIONS.documents,
+  [DOCUMENT_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.documents,
+  [INSTITUTIONAL_POLICIES_ADMIN_PATH]: HARD_TAB_PERMISSIONS.policies,
   "/hard/safety": HARD_TAB_PERMISSIONS.safety,
   "/hard/academy": HARD_TAB_PERMISSIONS.academy,
   "/hard/quality": HARD_TAB_PERMISSIONS.quality,
@@ -281,6 +286,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/system-health",
   "/hard/notifications",
   "/hard/documents",
+  "/hard/document-center",
+  "/hard/policies",
   "/hard/safety",
   "/hard/academy",
   "/hard/quality",

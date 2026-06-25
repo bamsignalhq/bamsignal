@@ -21,6 +21,8 @@ import {
 } from "./journeyIntelligence";
 import { WORKFORCE_MANAGEMENT_ADMIN_PATH } from "./workforceAdmin";
 import { BUSINESS_CONTINUITY_ADMIN_PATH } from "./businessContinuityAdmin";
+import { INSTITUTIONAL_POLICIES_ADMIN_PATH } from "./institutionalPoliciesAdmin";
+import { DOCUMENT_CENTER_ADMIN_PATH } from "./documentCenterAdmin";
 import { INSTITUTIONAL_GOVERNANCE_ADMIN_PATH } from "./institutionalGovernanceAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
@@ -48,7 +50,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   compliance: "compliance",
   systemhealth: "system-health",
   notifications: "notifications",
-  documents: "documents",
+  documents: "document-center",
+  policies: "policies",
   safety: "safety",
   academy: "academy",
   quality: "quality",
@@ -107,6 +110,17 @@ export function parseHardTabFromPath(pathname = window.location.pathname): HardT
   }
   if (path === NOTIFICATION_RELIABILITY_ADMIN_PATH || path.startsWith(`${NOTIFICATION_RELIABILITY_ADMIN_PATH}/`)) {
     return "notifications";
+  }
+  if (
+    path === DOCUMENT_CENTER_ADMIN_PATH ||
+    path.startsWith(`${DOCUMENT_CENTER_ADMIN_PATH}/`) ||
+    path === "/hard/documents" ||
+    path.startsWith("/hard/documents/")
+  ) {
+    return "documents";
+  }
+  if (path === INSTITUTIONAL_POLICIES_ADMIN_PATH || path.startsWith(`${INSTITUTIONAL_POLICIES_ADMIN_PATH}/`)) {
+    return "policies";
   }
 
   const match = path.match(/^\/hard\/([^/]+)$/);

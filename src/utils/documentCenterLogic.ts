@@ -10,7 +10,9 @@ function normalizeDocument(document: DocumentRecord): DocumentRecord {
     ...document,
     body: document.body ?? document.summary,
     viewCount: document.viewCount ?? 0,
-    permissions: document.permissions ?? ["view"]
+    permissions: document.permissions ?? ["view"],
+    tags: document.tags ?? [],
+    relatedDocumentIds: document.relatedDocumentIds ?? []
   };
 }
 
@@ -40,9 +42,20 @@ export function filterDocuments(documents: DocumentRecord[], filters: DocumentSe
     if (filters.categoryId !== "all" && document.categoryId !== filters.categoryId) return false;
     if (filters.status !== "all" && document.status !== filters.status) return false;
     if (filters.owner && !document.owner.toLowerCase().includes(filters.owner.toLowerCase())) return false;
+    if (filters.tag && !(document.tags ?? []).some((tag) => tag.toLowerCase().includes(filters.tag.toLowerCase()))) {
+      return false;
+    }
     if (!query) return true;
 
-    const haystack = [document.title, document.summary, document.body, document.author, document.owner, document.slug]
+    const haystack = [
+      document.title,
+      document.summary,
+      document.body,
+      document.author,
+      document.owner,
+      document.slug,
+      ...(document.tags ?? [])
+    ]
       .join(" ")
       .toLowerCase();
 
@@ -75,16 +88,22 @@ export function listMostViewed(documents: DocumentRecord[], limit = 3): Document
   return sortDocumentsByViewCount(documents).slice(0, limit);
 }
 
-export function buildDocumentMetrics(documents: DocumentRecord[]): DocumentMetric[] {
+export function buildDocumentMetrics(
+  documents: DocumentRecord[],
+  knowledgeCount = 0,
+  pendingAcknowledgements = 0
+): DocumentMetric[] {
   const recentUpdates = listRecentUpdates(documents);
   const mostViewed = listMostViewed(documents, 1)[0];
   const pendingReview = countByStatus(documents, "review");
 
   const values: Record<string, string> = {
     documents: String(documents.length),
+    "knowledge-articles": String(knowledgeCount),
     "recent-updates": String(recentUpdates.length),
     "most-viewed": mostViewed ? `${mostViewed.title} (${mostViewed.viewCount})` : "—",
-    "pending-review": String(pendingReview)
+    "pending-review": String(pendingReview),
+    "pending-acknowledgements": String(pendingAcknowledgements)
   };
 
   return DOCUMENT_CENTER_METRICS.map((metric) => ({
@@ -94,13 +113,17 @@ export function buildDocumentMetrics(documents: DocumentRecord[]): DocumentMetri
     numericValue:
       metric.id === "documents"
         ? documents.length
-        : metric.id === "recent-updates"
-          ? recentUpdates.length
-          : metric.id === "pending-review"
-            ? pendingReview
-            : metric.id === "most-viewed"
-              ? mostViewed?.viewCount
-              : undefined
+        : metric.id === "knowledge-articles"
+          ? knowledgeCount
+          : metric.id === "recent-updates"
+            ? recentUpdates.length
+            : metric.id === "pending-review"
+              ? pendingReview
+              : metric.id === "pending-acknowledgements"
+                ? pendingAcknowledgements
+                : metric.id === "most-viewed"
+                  ? mostViewed?.viewCount
+                  : undefined
   }));
 }
 
@@ -109,6 +132,64 @@ export function emptyDocumentFilters(): DocumentSearchFilters {
     query: "",
     categoryId: "all",
     status: "all",
-    owner: ""
+    owner: "",
+    tag: ""
   };
+}
+
+export function listPolicyDocuments(documents: DocumentRecord[]): DocumentRecord[] {
+  return documents.filter((document) => document.categoryId === "policies");
+}
+
+export function listPendingAcknowledgements(
+  acknowledgements: import("../types/documentCenter").DocumentAcknowledgementRecord[]
+): import("../types/documentCenter").DocumentAcknowledgementRecord[] {
+  return acknowledgements.filter((item) => item.readAt && !item.acknowledgedAt);
+}
+
+export function searchKnowledgeArticles(
+  articles: import("../types/documentCenter").KnowledgeArticleRecord[],
+  queryText = ""
+) {
+  const query = queryText.trim().toLowerCase();
+  if (!query) return articles;
+  return articles.filter((article) => {
+    const haystack = [article.title, article.bodyMarkdown, article.slug, ...article.tags]
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(query);
+  });
+}
+
+export function recordAcknowledgement(
+  acknowledgements: import("../types/documentCenter").DocumentAcknowledgementRecord[],
+  input: {
+    documentId: string;
+    employeeEmail: string;
+    version: string;
+    readAt?: string;
+    acknowledgedAt?: string;
+  }
+) {
+  const existing = acknowledgements.find(
+    (item) =>
+      item.documentId === input.documentId &&
+      item.employeeEmail === input.employeeEmail &&
+      item.version === input.version
+  );
+  if (existing?.acknowledgedAt) {
+    return { acknowledgements, created: false };
+  }
+  const record = {
+    id: existing?.id ?? `ack_${Date.now()}`,
+    documentId: input.documentId,
+    employeeEmail: input.employeeEmail,
+    version: input.version,
+    readAt: input.readAt ?? existing?.readAt ?? new Date().toISOString(),
+    acknowledgedAt: input.acknowledgedAt ?? new Date().toISOString()
+  };
+  const next = existing
+    ? acknowledgements.map((item) => (item.id === existing.id ? record : item))
+    : [...acknowledgements, record];
+  return { acknowledgements: next, created: !existing };
 }

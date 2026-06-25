@@ -2,6 +2,14 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  DOCUMENT_CENTER_DB_TABLES,
+  getDocumentCenterDatabaseTableManifest,
+  recordAcknowledgement,
+  searchKnowledgeArticles,
+  validateDocumentPublish,
+  canAccessDocumentCenter
+} from "../server/services/documentCenter.js";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -15,65 +23,126 @@ function assert(condition, message) {
 }
 
 const adminSource = readFileSync(join(rootPath, "src/constants/documentCenterAdmin.ts"), "utf8");
-assert(adminSource.includes('DOCUMENT_CENTER_ADMIN_PATH = "/hard/documents"'), "admin documents route");
+assert(adminSource.includes('DOCUMENT_CENTER_ADMIN_PATH = "/hard/document-center"'), "document center route");
+assert(adminSource.includes("Institutional Policy & Documentation Center™"), "institutional brand");
+
+const policiesAdminSource = readFileSync(
+  join(rootPath, "src/constants/institutionalPoliciesAdmin.ts"),
+  "utf8"
+);
+assert(policiesAdminSource.includes('INSTITUTIONAL_POLICIES_ADMIN_PATH = "/hard/policies"'), "policies route");
 
 const constantsSource = readFileSync(join(rootPath, "src/constants/documentCenter.ts"), "utf8");
-assert(constantsSource.includes("Document Center™"), "document center brand");
-assert(constantsSource.includes("consultant-guides"), "consultant guides category");
-assert(constantsSource.includes("operations-manuals"), "operations manuals category");
-assert(constantsSource.includes("safety-procedures"), "safety procedures category");
-assert(constantsSource.includes("DOCUMENT_PERMISSIONS"), "document permissions");
-assert(constantsSource.includes('"approve"'), "approve permission");
-assert(constantsSource.includes("pending-review"), "pending review metric");
-assert(constantsSource.includes("DOCUMENT_CENTER_FUTURE_KINDS"), "future kinds documented");
-assert(constantsSource.includes("ai-knowledge-assistant"), "ai knowledge assistant future item");
-assert(constantsSource.includes("version-diffing"), "version diffing future item");
+assert(constantsSource.includes("operating-procedures"), "operating procedures category");
+assert(constantsSource.includes("support-guides"), "support guides category");
+assert(constantsSource.includes("finance-manuals"), "finance manuals category");
+assert(constantsSource.includes("journey-frameworks"), "journey frameworks category");
+assert(constantsSource.includes("incident-response"), "incident response category");
+assert(constantsSource.includes("published"), "published status");
+assert(constantsSource.includes("DOCUMENT_CENTER_DB_TABLES"), "db tables constant");
+assert(constantsSource.includes("knowledge_articles"), "knowledge_articles table");
+assert(constantsSource.includes("document_acknowledgements"), "acknowledgements table");
+assert(constantsSource.includes("DOCUMENT_AUDIT_ACTIONS"), "audit actions");
 
-const hardRoutesSource = readFileSync(join(rootPath, "src/constants/hardRoutes.ts"), "utf8");
-assert(hardRoutesSource.includes("documents"), "hard routes include documents tab");
+const migrationSource = readFileSync(
+  join(rootPath, "supabase/migrations/202606252000_document_center.sql"),
+  "utf8"
+);
+assert(migrationSource.includes("uuid primary key"), "uuid primary keys");
+assert(migrationSource.includes("documents"), "documents migration");
+assert(migrationSource.includes("document_versions"), "document_versions migration");
+assert(migrationSource.includes("policy_versions"), "policy_versions migration");
+assert(migrationSource.includes("knowledge_articles"), "knowledge_articles migration");
+
+const permissionsSource = readFileSync(join(rootPath, "src/constants/permissions.ts"), "utf8");
+assert(permissionsSource.includes("/hard/document-center"), "document center permission");
+assert(permissionsSource.includes("/hard/policies"), "policies permission");
 
 const engineSource = readFileSync(join(rootPath, "src/utils/documentCenterEngine.ts"), "utf8");
-assert(engineSource.includes("buildDocumentCenterBundle"), "document center engine exists");
-assert(engineSource.includes("recentUpdates"), "recent updates in bundle");
+assert(engineSource.includes("buildDocumentCenterBundle"), "document center engine");
+assert(engineSource.includes("buildInstitutionalPoliciesBundle"), "policies bundle");
+assert(engineSource.includes("knowledgeArticles"), "knowledge articles in bundle");
+
+const storeSource = readFileSync(join(rootPath, "src/utils/documentCenterStore.ts"), "utf8");
+assert(storeSource.includes("appendAuditCenterEvent"), "document audit logging");
+assert(storeSource.includes("publishDocument"), "publish workflow");
+assert(storeSource.includes("acknowledgeDocument"), "acknowledgement workflow");
 
 const logicSource = readFileSync(join(rootPath, "src/utils/documentCenterLogic.ts"), "utf8");
-assert(logicSource.includes("filterDocuments"), "document filter logic");
-assert(logicSource.includes("countDocumentsByCategory"), "category counts");
-assert(logicSource.includes("buildDocumentMetrics"), "document metrics");
+assert(logicSource.includes("searchKnowledgeArticles"), "knowledge search");
+assert(logicSource.includes("recordAcknowledgement"), "acknowledgement logic");
+assert(logicSource.includes("pending-acknowledgements"), "pending acknowledgement metric");
 
 const seedSource = readFileSync(join(rootPath, "src/data/documentCenterSeed.ts"), "utf8");
-assert(seedSource.includes("versionHistory"), "seed includes version history");
-assert(seedSource.includes("approval"), "seed includes approval metadata");
-assert(seedSource.includes("viewCount"), "seed includes view counts");
+assert(seedSource.includes("KNOWLEDGE_ARTICLE_SEED"), "knowledge article seed");
+assert(seedSource.includes("bodyMarkdown"), "markdown support");
+assert(seedSource.includes("attachments"), "attachment support");
+assert(seedSource.includes("DOCUMENT_ACKNOWLEDGEMENT_SEED"), "acknowledgement seed");
+assert(seedSource.includes("POLICY_VERSION_SEED"), "policy version seed");
 
 const adminComponents = [
+  "DocumentLibraryCard.tsx",
+  "KnowledgeBaseCard.tsx",
+  "PolicyCard.tsx",
+  "VersionHistoryCard.tsx",
+  "AcknowledgementCard.tsx",
+  "CategoryExplorerCard.tsx",
+  "SearchCard.tsx",
   "DocumentCenterPage.tsx",
-  "DocumentCategoryCard.tsx",
-  "DocumentViewer.tsx",
-  "DocumentSearchBar.tsx",
-  "DocumentVersionCard.tsx",
-  "KnowledgeOverviewCard.tsx"
+  "InstitutionalPoliciesPage.tsx"
 ];
 
 for (const file of adminComponents) {
-  const source = readFileSync(join(rootPath, "src/components/admin/documents", file), "utf8");
-  assert(source.length > 0, `${file} exists`);
+  try {
+    readFileSync(join(rootPath, "src/components/admin/documents", file), "utf8");
+  } catch {
+    assert(false, `missing component ${file}`);
+  }
 }
 
-const adminHubSource = readFileSync(join(rootPath, "src/pages/AdminHubPage.tsx"), "utf8");
-assert(adminHubSource.includes("DocumentCenterPage"), "admin hub mounts document center");
+const hubSource = readFileSync(join(rootPath, "src/pages/AdminHubPage.tsx"), "utf8");
+assert(hubSource.includes("DocumentCenterPage"), "admin hub mounts document center");
+assert(hubSource.includes("InstitutionalPoliciesPage"), "admin hub mounts policies");
 
 const navSource = readFileSync(join(rootPath, "src/components/admin/adminConsoleNav.ts"), "utf8");
-assert(navSource.includes('"documents"'), "admin nav includes documents tab");
+assert(navSource.includes('"policies"'), "policies nav tab");
 
-const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
-assert(packageSource.includes("test:document-center"), "package.json defines test:document-center");
+assert(DOCUMENT_CENTER_DB_TABLES.length === 6, "six document tables");
+assert(getDocumentCenterDatabaseTableManifest().length === 6, "database manifest");
 
-const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("document-center.css"), "document center styles imported");
+assert(canAccessDocumentCenter(["ManageDocuments"]), "manage documents can access");
+assert(!canAccessDocumentCenter(["ManageConsultants"]), "consultants cannot access");
+
+const publishCheck = validateDocumentPublish({
+  title: "Test",
+  version: "1.0",
+  status: "review"
+});
+assert(publishCheck.ok, "review document can publish path validate");
+
+const articles = searchKnowledgeArticles(
+  [
+    {
+      title: "PIN reset",
+      bodyMarkdown: "Forgot PIN flow",
+      slug: "pin-reset",
+      tags: ["support"]
+    }
+  ],
+  "pin"
+);
+assert(articles.length === 1, "knowledge search works");
+
+const ack = recordAcknowledgement([], {
+  documentId: "doc_001",
+  employeeEmail: "test@bamsignal.com",
+  version: "1.0"
+});
+assert(ack.acknowledgements.length === 1, "acknowledgement recorded");
+assert(ack.acknowledgements[0].acknowledgedAt, "acknowledgement timestamp");
 
 if (failed) {
-  console.error(`\n${failed} assertion(s) failed.`);
+  console.error(`\n${failed} document center test(s) failed.`);
   process.exit(1);
 }
 

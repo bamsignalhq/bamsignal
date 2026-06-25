@@ -9,7 +9,7 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
     version: "2.1",
     author: "Ada Okafor",
     owner: "Operations",
-    status: "approved",
+    status: "published",
     createdAt: "2025-11-01T09:00:00.000Z",
     updatedAt: "2026-05-15T14:00:00.000Z",
     summary: "Member data handling, consultant obligations, and breach escalation.",
@@ -31,11 +31,11 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
     id: "doc_002",
     slug: "consultation-scheduling-manual",
     title: "Consultation Scheduling Manual",
-    categoryId: "operations-manuals",
+    categoryId: "operating-procedures",
     version: "1.4",
     author: "Fatima Bello",
     owner: "Operations",
-    status: "approved",
+    status: "published",
     createdAt: "2026-01-10T08:00:00.000Z",
     updatedAt: "2026-06-01T11:00:00.000Z",
     summary: "Calendar slots, Paystack payment gate, and meeting link handoff.",
@@ -81,7 +81,7 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
     version: "1.2",
     author: "Amaka Nwosu",
     owner: "Talent",
-    status: "approved",
+    status: "published",
     createdAt: "2026-02-15T10:00:00.000Z",
     updatedAt: "2026-06-20T10:00:00.000Z",
     summary: "30-day onboarding curriculum for new Signal Concierge consultants.",
@@ -102,7 +102,7 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
     id: "doc_005",
     slug: "operations-center-runbook",
     title: "Operations Center Runbook",
-    categoryId: "operations-manuals",
+    categoryId: "operating-procedures",
     version: "1.0",
     author: "Chidi Emeka",
     owner: "Operations",
@@ -122,11 +122,11 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
     id: "doc_006",
     slug: "relationship-index-methodology",
     title: "Relationship Index Methodology",
-    categoryId: "research-reports",
+    categoryId: "research-manuals",
     version: "1.1",
     author: "Tunde Adebayo",
     owner: "Institute",
-    status: "approved",
+    status: "published",
     createdAt: "2026-03-01T00:00:00.000Z",
     updatedAt: "2026-04-15T00:00:00.000Z",
     summary: "Research framework for BamSignal Relationship Index™ reporting.",
@@ -147,11 +147,11 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
     id: "doc_007",
     slug: "consultant-services-contract-template",
     title: "Consultant Services Contract Template",
-    categoryId: "contracts",
+    categoryId: "legal",
     version: "2.0",
     author: "Legal",
     owner: "Legal",
-    status: "approved",
+    status: "published",
     createdAt: "2025-08-01T00:00:00.000Z",
     updatedAt: "2026-03-10T00:00:00.000Z",
     summary: "Standard consultant engagement contract for Signal Concierge network.",
@@ -172,11 +172,11 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
     id: "doc_008",
     slug: "introduction-email-template",
     title: "Introduction Email Template",
-    categoryId: "templates",
+    categoryId: "meeting-templates",
     version: "2.0",
     author: "Fatima Bello",
     owner: "Signal Concierge",
-    status: "approved",
+    status: "published",
     createdAt: "2026-01-20T00:00:00.000Z",
     updatedAt: "2026-06-05T00:00:00.000Z",
     summary: "Standard introduction presentation template for member consent flow.",
@@ -197,11 +197,11 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
     id: "doc_009",
     slug: "data-retention-compliance-memo",
     title: "Data Retention Compliance Memo",
-    categoryId: "compliance",
+    categoryId: "legal",
     version: "1.0",
     author: "Legal",
     owner: "Compliance",
-    status: "approved",
+    status: "published",
     createdAt: "2025-08-01T00:00:00.000Z",
     updatedAt: "2025-08-01T00:00:00.000Z",
     summary: "Retention periods for member data, payments, and audit logs.",
@@ -221,11 +221,11 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
     id: "doc_010",
     slug: "crisis-safety-response-procedure",
     title: "Crisis & Safety Response Procedure",
-    categoryId: "safety-procedures",
+    categoryId: "incident-response",
     version: "1.2",
     author: "Ngozi Adeyemi",
     owner: "Trust & Safety",
-    status: "approved",
+    status: "published",
     createdAt: "2026-01-15T00:00:00.000Z",
     updatedAt: "2026-06-12T00:00:00.000Z",
     summary: "Institutional procedure for harassment, threats, and emergency escalation.",
@@ -261,5 +261,117 @@ export const DOCUMENT_CENTER_SEED: DocumentRecord[] = [
       { version: "1.3", updatedAt: "2026-06-19T00:00:00.000Z", author: "Ada Okafor", note: "Payment gate note added." }
     ],
     approval: null
+  }
+];
+
+const NOW = "2026-06-24T12:00:00.000Z";
+
+export const KNOWLEDGE_ARTICLE_SEED = [
+  {
+    id: "kb_001",
+    slug: "reset-member-pin",
+    title: "How to guide a member through PIN reset",
+    categoryId: "support-guides" as const,
+    status: "published" as const,
+    currentVersion: "1.2",
+    bodyMarkdown:
+      "## PIN reset support\n\n1. Confirm member identity via username.\n2. Direct to **Forgot PIN** on login.\n3. Verify email or phone OTP.\n4. Never collect PIN over chat.\n\n> Escalate to operations if OTP fails twice.",
+    attachments: [
+      {
+        id: "att_001",
+        filename: "pin-reset-checklist.pdf",
+        mimeType: "application/pdf",
+        url: "/docs/attachments/pin-reset-checklist.pdf"
+      }
+    ],
+    tags: ["support", "authentication", "pin"],
+    publishedAt: "2026-05-01T00:00:00.000Z",
+    updatedAt: NOW,
+    versionHistory: [
+      { version: "1.0", updatedAt: "2026-03-01T00:00:00.000Z", author: "Support", note: "Initial article." },
+      { version: "1.2", updatedAt: NOW, author: "Support", note: "OTP escalation note." }
+    ]
+  },
+  {
+    id: "kb_002",
+    slug: "paystack-payment-troubleshooting",
+    title: "Paystack payment troubleshooting",
+    categoryId: "finance-manuals" as const,
+    status: "published" as const,
+    currentVersion: "1.0",
+    bodyMarkdown:
+      "## Common payment failures\n\n- **Insufficient funds** — ask member to retry with another card.\n- **Abandoned checkout** — preserve `paymentReturnPath`.\n- **Webhook delay** — check Finance Operations Center reconciliation.",
+    attachments: [],
+    tags: ["paystack", "payments", "finance"],
+    publishedAt: "2026-04-10T00:00:00.000Z",
+    updatedAt: NOW,
+    versionHistory: [
+      { version: "1.0", updatedAt: "2026-04-10T00:00:00.000Z", author: "Finance", note: "Published." }
+    ]
+  },
+  {
+    id: "kb_003",
+    slug: "introduction-consent-window",
+    title: "Introduction consent window FAQ",
+    categoryId: "consultant-guides" as const,
+    status: "review" as const,
+    currentVersion: "2.0",
+    bodyMarkdown:
+      "Members have **72 hours** to respond to introductions unless extended by consultant with ops approval.",
+    attachments: [],
+    tags: ["introductions", "consent", "concierge"],
+    updatedAt: NOW,
+    versionHistory: [
+      { version: "2.0", updatedAt: NOW, author: "Ada Okafor", note: "Draft update." }
+    ]
+  }
+];
+
+export const POLICY_VERSION_SEED = [
+  {
+    id: "pv_001",
+    policySlug: "signal-concierge-confidentiality-policy",
+    version: "2.1",
+    title: "Signal Concierge Confidentiality Policy",
+    body: "This policy governs how Signal Concierge consultants handle member information.",
+    approvedBy: "Ngozi Adeyemi",
+    approvedAt: "2026-05-16T09:00:00.000Z",
+    publishedAt: "2026-05-16T10:00:00.000Z"
+  },
+  {
+    id: "pv_002",
+    policySlug: "signal-concierge-confidentiality-policy",
+    version: "2.0",
+    title: "Signal Concierge Confidentiality Policy",
+    body: "Prior version with diaspora corridor addendum.",
+    approvedBy: "Chidi Emeka",
+    approvedAt: "2026-03-02T00:00:00.000Z",
+    publishedAt: "2026-03-02T00:00:00.000Z"
+  }
+];
+
+export const DOCUMENT_ACKNOWLEDGEMENT_SEED = [
+  {
+    id: "ack_001",
+    documentId: "doc_001",
+    employeeEmail: "ada@bamsignal.com",
+    version: "2.1",
+    readAt: "2026-05-17T09:00:00.000Z",
+    acknowledgedAt: "2026-05-17T09:05:00.000Z"
+  },
+  {
+    id: "ack_002",
+    documentId: "doc_001",
+    employeeEmail: "chidi@bamsignal.com",
+    version: "2.1",
+    readAt: "2026-05-18T10:00:00.000Z",
+    acknowledgedAt: "2026-05-18T10:02:00.000Z"
+  },
+  {
+    id: "ack_003",
+    documentId: "doc_010",
+    employeeEmail: "fatima@bamsignal.com",
+    version: "1.2",
+    readAt: "2026-06-14T08:00:00.000Z"
   }
 ];

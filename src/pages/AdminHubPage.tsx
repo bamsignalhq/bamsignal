@@ -103,6 +103,7 @@ import { RemediationBoardPage } from "../components/admin/remediationBoard/Remed
 import { ReadinessPage } from "../components/admin/institutionalReadiness/ReadinessPage";
 import { IntegrityDashboard } from "../components/admin/dataIntegrity/IntegrityDashboard";
 import { DocumentCenterPage } from "../components/admin/documents/DocumentCenterPage";
+import { InstitutionalPoliciesPage } from "../components/admin/documents/InstitutionalPoliciesPage";
 import { SafetyDashboardPage } from "../components/admin/safety/SafetyDashboardPage";
 import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
 import { ConsultantQualityPage } from "../components/admin/quality/ConsultantQualityPage";
@@ -2082,6 +2083,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "systemhealth" ? <SystemHealthPage /> : null}
       {tab === "notifications" ? <NotificationQueuePage /> : null}
       {tab === "documents" ? <DocumentCenterPage /> : null}
+      {tab === "policies" ? <InstitutionalPoliciesPage /> : null}
       {tab === "safety" ? <SafetyDashboardPage /> : null}
       {tab === "academy" ? <ConsultantAcademyPage /> : null}
       {tab === "quality" ? <ConsultantQualityPage /> : null}

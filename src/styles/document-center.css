@@ -343,6 +343,150 @@
   }
 }
 
+.document-center-page__column {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.document-card {
+  padding: 14px;
+}
+
+.document-library-card__list,
+.knowledge-base-card__list,
+.policy-card__list,
+.acknowledgement-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.document-library-card__item {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.document-library-card__item.is-selected {
+  border-color: rgba(180, 220, 160, 0.55);
+  background: rgba(140, 200, 120, 0.08);
+}
+
+.document-status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.document-status--published {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.document-status--review {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.document-status--draft {
+  color: rgba(180, 200, 255, 0.95);
+}
+
+.document-status--archived {
+  color: rgba(200, 200, 200, 0.8);
+}
+
+.category-explorer-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.category-explorer-card__chip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  cursor: pointer;
+}
+
+.category-explorer-card__chip.is-active {
+  border-color: rgba(180, 220, 160, 0.55);
+}
+
+.search-card__fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.knowledge-base-card__preview {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.68);
+  background: rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.document-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.document-tag {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.version-history-card__list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.version-history-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.82rem;
+}
+
+.acknowledgement-card__meta,
+.knowledge-base-card__meta,
+.policy-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
 .knowledge-overview-card__metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

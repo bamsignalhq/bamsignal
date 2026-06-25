@@ -56,6 +56,30 @@ export function DocumentViewer({ document }: DocumentViewerProps) {
         </div>
       </dl>
 
+      {document.tags?.length ? (
+        <div className="document-viewer__tags">
+          <h4>Tags</h4>
+          <div className="document-tags">
+            {document.tags.map((tag) => (
+              <span key={tag} className="document-tag">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {document.relatedDocumentIds?.length ? (
+        <div className="document-viewer__related">
+          <h4>Related documents</h4>
+          <ul>
+            {document.relatedDocumentIds.map((relatedId) => (
+              <li key={relatedId}>{relatedId}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="document-viewer__permissions">
         <h4>Permissions</h4>
         <ul>

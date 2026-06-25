@@ -1,5 +1,8 @@
-import { DOCUMENT_CENTER_SEED } from "../data/documentCenterSeed";
-import type { DocumentCenterBundle, DocumentRecord, DocumentSearchFilters } from "../types/documentCenter";
+import type {
+  DocumentCenterBundle,
+  DocumentSearchFilters,
+  InstitutionalPoliciesBundle
+} from "../types/documentCenter";
 import {
   buildDocumentMetrics,
   countDocumentsByCategory,
@@ -7,61 +10,64 @@ import {
   filterDocuments,
   findDocumentById,
   listMostViewed,
+  listPendingAcknowledgements,
+  listPolicyDocuments,
   listRecentUpdates,
+  searchKnowledgeArticles,
   sortDocumentsByUpdatedAt
 } from "./documentCenterLogic";
-import { readJson, writeJson } from "./storage";
+import {
+  listDocumentAcknowledgements,
+  listDocumentCenterRecords,
+  listKnowledgeArticles,
+  listPolicyVersions
+} from "./documentCenterStore";
 
-const STORAGE_KEY = "bamsignal.documentCenter.v2";
-
-type DocumentCenterState = {
-  documents: DocumentRecord[];
-  updatedAt: string;
-};
-
-function normalizeDocument(document: DocumentRecord): DocumentRecord {
-  return {
-    ...document,
-    body: document.body ?? document.summary,
-    viewCount: document.viewCount ?? 0,
-    permissions: document.permissions ?? ["view"]
-  };
-}
-
-function defaultState(): DocumentCenterState {
-  return {
-    documents: DOCUMENT_CENTER_SEED.map(normalizeDocument),
-    updatedAt: new Date().toISOString()
-  };
-}
-
-function loadState(): DocumentCenterState {
-  const stored = readJson<DocumentCenterState>(STORAGE_KEY, defaultState());
-  if (!stored?.documents?.length) return defaultState();
-  return {
-    ...stored,
-    documents: stored.documents.map(normalizeDocument)
-  };
-}
-
-export function listDocumentCenterRecords(): DocumentRecord[] {
-  return loadState().documents;
-}
+export { emptyDocumentFilters, listDocumentCenterRecords };
 
 export function buildDocumentCenterBundle(
   filters: DocumentSearchFilters = emptyDocumentFilters(),
   selectedDocumentId?: string | null
 ): DocumentCenterBundle {
   const allDocuments = listDocumentCenterRecords();
+  const knowledgeArticles = searchKnowledgeArticles(
+    listKnowledgeArticles(),
+    filters.query
+  );
+  const acknowledgements = listDocumentAcknowledgements();
+  const pendingAcknowledgements = listPendingAcknowledgements(acknowledgements);
   const documents = sortDocumentsByUpdatedAt(filterDocuments(allDocuments, filters));
 
   return {
     generatedAt: new Date().toISOString(),
-    metrics: buildDocumentMetrics(allDocuments),
+    metrics: buildDocumentMetrics(
+      allDocuments,
+      knowledgeArticles.length,
+      pendingAcknowledgements.length
+    ),
     documents,
+    knowledgeArticles,
+    policyVersions: listPolicyVersions(),
+    acknowledgements,
     categoryCounts: countDocumentsByCategory(allDocuments),
     recentUpdates: listRecentUpdates(allDocuments),
     mostViewed: listMostViewed(allDocuments),
+    pendingAcknowledgements,
     selectedDocument: findDocumentById(documents, selectedDocumentId ?? null)
+  };
+}
+
+export function buildInstitutionalPoliciesBundle(): InstitutionalPoliciesBundle {
+  const allDocuments = listDocumentCenterRecords();
+  const policies = listPolicyDocuments(allDocuments);
+  const acknowledgements = listDocumentAcknowledgements();
+  const pendingAcknowledgements = listPendingAcknowledgements(acknowledgements);
+
+  return {
+    generatedAt: new Date().toISOString(),
+    policies,
+    policyVersions: listPolicyVersions(),
+    acknowledgements,
+    pendingAcknowledgements
   };
 }

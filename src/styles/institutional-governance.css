@@ -1,0 +1,129 @@
+.institutional-governance-page {
+  display: grid;
+  gap: 18px;
+}
+
+.institutional-governance-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.institutional-governance-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.institutional-governance-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.institutional-governance-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.institutional-governance-page__column {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.institutional-governance-page__future {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.85rem;
+  display: grid;
+  gap: 6px;
+}
+
+.governance-card {
+  padding: 14px;
+}
+
+.governance-overview-card__grid,
+.institution-health-card__grid,
+.governance-metrics-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.governance-metric {
+  display: grid;
+  gap: 4px;
+}
+
+.governance-metric__label {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+.governance-metric__value {
+  font-size: 1.25rem;
+}
+
+.governance-pill {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.governance-pill--active {
+  background: rgba(46, 204, 113, 0.18);
+}
+
+.governance-pill--expired,
+.governance-pill--revoked {
+  background: rgba(231, 76, 60, 0.18);
+}
+
+.authority-matrix-card__list,
+.role-management-card__list,
+.permission-explorer-card__list,
+.approval-queue-card__list,
+.delegation-card__list,
+.decision-register-card__list,
+.policy-acknowledgement-card__policies,
+.policy-acknowledgement-card__acks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.authority-matrix-card__list li,
+.role-management-card__list li,
+.permission-explorer-card__list li,
+.approval-queue-card__list li,
+.delegation-card__list li,
+.decision-register-card__list li,
+.policy-acknowledgement-card__policies li,
+.policy-acknowledgement-card__acks li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+  font-size: 0.88rem;
+}
+
+.authority-matrix-card__scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+@media (max-width: 960px) {
+  .institutional-governance-page__body {
+    grid-template-columns: 1fr;
+  }
+}

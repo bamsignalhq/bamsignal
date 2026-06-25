@@ -1,4 +1,5 @@
 import { requireAdmin } from "../adminAuth.js";
+import { requireGovernancePermission } from "../middleware/governanceAuthorization.js";
 import { getDatabaseStatus } from "../db.js";
 import {
   appendConciergeTimelineEntry,
@@ -100,6 +101,7 @@ export default async function conciergePersistenceHandler(req, res) {
     }
 
     if (action === "upsert-member") {
+      if (!(await requireGovernancePermission(req, res, "EditMembers"))) return;
       const member = body.member;
       if (!member || typeof member !== "object") {
         return res.status(400).json({ ok: false, error: "Member payload is required." });

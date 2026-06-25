@@ -110,6 +110,7 @@ import { FinanceOperationsPage } from "../components/admin/finance/FinanceOperat
 import { MessagingDashboardPage } from "../components/admin/messages/MessagingDashboardPage";
 import { RecoveryDashboardPage } from "../components/admin/recovery/RecoveryDashboardPage";
 import { ExecutiveDashboardPage } from "../components/admin/executive/ExecutiveDashboardPage";
+import { InstitutionalGovernancePage } from "../components/admin/governance/InstitutionalGovernancePage";
 import { WorkforceManagementPage } from "../components/admin/workforce/WorkforceManagementPage";
 import { JourneyIntelligencePage } from "../components/admin/concierge/JourneyIntelligencePage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
@@ -2092,6 +2093,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "dataintegrity" ? <IntegrityDashboard /> : null}
       {tab === "recovery" ? <RecoveryDashboardPage /> : null}
       {tab === "workforce" ? <WorkforceManagementPage /> : null}
+      {tab === "governance" ? <InstitutionalGovernancePage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

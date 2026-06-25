@@ -15,7 +15,9 @@ import { REMEDIATION_BOARD_ADMIN_PATH } from "./remediationBoardAdmin";
 import { INSTITUTIONAL_READINESS_ADMIN_PATH } from "./institutionalReadinessAdmin";
 import { DATA_INTEGRITY_ADMIN_PATH } from "./dataIntegrityAdmin";
 import { RECOVERY_CENTER_ADMIN_PATH } from "./recoveryCenterAdmin";
+import { INSTITUTIONAL_GOVERNANCE_ADMIN_PATH } from "./institutionalGovernanceAdmin";
 import { WORKFORCE_MANAGEMENT_ADMIN_PATH } from "./workforceAdmin";
+import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
   OPERATIONS_CENTER_PATH
@@ -40,9 +42,14 @@ export type Role = (typeof ROLES)[number];
 export const PERMISSIONS = [
   "ViewMembers",
   "EditMembers",
+  "DeleteMembers",
   "AssignConsultants",
+  "TransferJourney",
+  "ApproveJourney",
   "ManageConsultants",
   "ManagePayments",
+  "ApproveRefund",
+  "IssueRefund",
   "ManageScheduling",
   "ManageNotifications",
   "ManageIntroductions",
@@ -50,13 +57,30 @@ export const PERMISSIONS = [
   "ViewArchives",
   "ManageArchives",
   "ViewFinance",
+  "ManageFinance",
   "ViewResearch",
+  "PublishResearch",
   "ViewExecutiveDashboard",
+  "ManageGovernance",
   "ManageSupport",
   "ManageSafety",
   "ManageDocuments",
+  "ManagePolicies",
   "ManageCareers",
   "ManageOperations",
+  "ManageCrm",
+  "ManageEvents",
+  "ManageInstitute",
+  "ManageCommunity",
+  "ManageMessaging",
+  "ManageConsultantQa",
+  "ManageExecutiveReports",
+  "ManageLegacy",
+  "ManageSuccessStories",
+  "ManageCompliance",
+  "ViewAuditLogs",
+  "ExportReports",
+  "SystemAdministration",
   "ManageRecovery"
 ] as const;
 
@@ -78,9 +102,14 @@ export const ROLE_LABELS: Record<Role, string> = {
 export const PERMISSION_LABELS: Record<Permission, string> = {
   ViewMembers: "View members",
   EditMembers: "Edit members",
+  DeleteMembers: "Delete members",
   AssignConsultants: "Assign consultants",
+  TransferJourney: "Transfer journey",
+  ApproveJourney: "Approve journey",
   ManageConsultants: "Manage consultants",
   ManagePayments: "Manage payments",
+  ApproveRefund: "Approve refund",
+  IssueRefund: "Issue refund",
   ManageScheduling: "Manage scheduling",
   ManageNotifications: "Manage notifications",
   ManageIntroductions: "Manage introductions",
@@ -88,53 +117,36 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   ViewArchives: "View archives",
   ManageArchives: "Manage archives",
   ViewFinance: "View finance",
+  ManageFinance: "Manage finance",
   ViewResearch: "View research",
+  PublishResearch: "Publish research",
   ViewExecutiveDashboard: "View executive dashboard",
+  ManageGovernance: "Manage governance",
   ManageSupport: "Manage support",
   ManageSafety: "Manage safety",
   ManageDocuments: "Manage documents",
+  ManagePolicies: "Manage policies",
   ManageCareers: "Manage careers",
   ManageOperations: "Manage operations",
+  ManageCrm: "Manage CRM",
+  ManageEvents: "Manage events",
+  ManageInstitute: "Manage institute",
+  ManageCommunity: "Manage community",
+  ManageMessaging: "Manage messaging",
+  ManageConsultantQa: "Manage consultant QA",
+  ManageExecutiveReports: "Manage executive reports",
+  ManageLegacy: "Manage legacy",
+  ManageSuccessStories: "Manage success stories",
+  ManageCompliance: "Manage compliance",
+  ViewAuditLogs: "View audit logs",
+  ExportReports: "Export reports",
+  SystemAdministration: "System administration",
   ManageRecovery: "Manage recovery"
 };
 
 const ALL_PERMISSIONS: Permission[] = [...PERMISSIONS];
 
-export const RolePermissions: Record<Role, readonly Permission[]> = {
-  Admin: ALL_PERMISSIONS,
-  Executive: [
-    "ViewMembers",
-    "ViewFinance",
-    "ViewExecutiveDashboard",
-    "ViewArchives",
-    "ViewResearch"
-  ],
-  Operations: [
-    "ViewMembers",
-    "EditMembers",
-    "AssignConsultants",
-    "ManageConsultants",
-    "ManageScheduling",
-    "ManageNotifications",
-    "ManageIntroductions",
-    "ManageFollowUps",
-    "ViewArchives",
-    "ManageArchives",
-    "ManageOperations",
-    "ManageSafety",
-    "ManageDocuments",
-    "ManageSupport",
-    "ManageCareers",
-    "ManageRecovery"
-  ],
-  Consultant: ["ViewMembers", "ManageIntroductions", "ManageFollowUps", "ManageScheduling"],
-  "Senior Matchmaker": ["ViewMembers", "ManageIntroductions", "ManageFollowUps", "ViewArchives"],
-  "Compatibility Specialist": ["ViewMembers", "ManageIntroductions"],
-  "Family Values Advisor": ["ViewMembers", "ManageFollowUps"],
-  "Diaspora Consultant": ["ViewMembers", "ManageIntroductions", "ManageFollowUps"],
-  Support: ["ViewMembers", "ManageSupport", "ManageNotifications"],
-  Research: ["ViewMembers", "ViewResearch", "ViewArchives"]
-};
+export const RolePermissions: Record<Role, readonly Permission[]> = buildLegacyRolePermissionMap();
 
 /** @deprecated use RolePermissions */
 export const ROLE_PERMISSIONS = RolePermissions;
@@ -173,7 +185,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   readiness: "ManageOperations",
   dataintegrity: "ManageOperations",
   recovery: "ManageRecovery",
-  workforce: "ManageOperations"
+  workforce: "ManageOperations",
+  governance: "ManageGovernance"
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -231,7 +244,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [INSTITUTIONAL_READINESS_ADMIN_PATH]: HARD_TAB_PERMISSIONS.readiness,
   [DATA_INTEGRITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.dataintegrity,
   [RECOVERY_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.recovery,
-  [WORKFORCE_MANAGEMENT_ADMIN_PATH]: HARD_TAB_PERMISSIONS.workforce
+  [WORKFORCE_MANAGEMENT_ADMIN_PATH]: HARD_TAB_PERMISSIONS.workforce,
+  [INSTITUTIONAL_GOVERNANCE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.governance
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -275,7 +289,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/readiness",
   "/hard/data-integrity",
   "/hard/recovery",
-  "/hard/workforce"
+  "/hard/workforce",
+  "/hard/governance"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

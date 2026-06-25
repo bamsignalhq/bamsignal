@@ -75,6 +75,22 @@ export const WORKFORCE_SCHEMA_TABLES = [
   "staffing_forecasts"
 ] as const;
 
+/** Tables from migrations/0006_institutional_governance.sql */
+export const GOVERNANCE_SCHEMA_TABLES = [
+  "governance_roles",
+  "governance_permissions",
+  "governance_role_permissions",
+  "governance_assignments",
+  "approval_requests",
+  "approval_steps",
+  "approval_history",
+  "delegations",
+  "executive_decisions",
+  "policy_acknowledgements",
+  "authority_matrix",
+  "institutional_policies"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -345,6 +361,70 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["staffing_forecasts_region_idx"],
     constraints: ["uuid primary key"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "governance_roles",
+    migrationRef: "0006_institutional_governance.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["governance_roles_parent_idx"],
+    constraints: ["uuid primary key", "slug unique"],
+    defaultHealth: "needs-migration",
+    note: "Institutional Governance System™ — constitutional authority layer"
+  },
+  {
+    tableName: "governance_permissions",
+    migrationRef: "0006_institutional_governance.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["governance_permissions_module_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "governance_assignments",
+    migrationRef: "0006_institutional_governance.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["governance_assignments_email_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "approval_requests",
+    migrationRef: "0006_institutional_governance.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["approval_requests_status_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "delegations",
+    migrationRef: "0006_institutional_governance.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["delegations_delegate_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "executive_decisions",
+    migrationRef: "0006_institutional_governance.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: [],
+    constraints: ["uuid primary key", "decision_ref unique", "append only"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "institutional_policies",
+    migrationRef: "0006_institutional_governance.sql",
+    domainIds: ["documents"],
+    inRequiredSchema: false,
+    indexes: [],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -404,6 +484,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "workforceManagementEngine.ts",
     expectedTable: "workforce_profiles",
     note: "Workforce admin layer — dual-write to workforce_* tables via workforceManagement.js"
+  },
+  {
+    storageKey: "bamsignal.institutionalGovernance.v1",
+    domainId: "qa",
+    engine: "governanceEngine.ts",
+    expectedTable: "governance_roles",
+    note: "Institutional Governance System™ — constitutional permission source of truth"
   },
   {
     storageKey: "bamsignal.auditCenter.v1",

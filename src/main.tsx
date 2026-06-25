@@ -63,6 +63,7 @@ import "./styles/finance-operations.css";
 import "./styles/internal-messaging.css";
 import "./styles/executive-dashboard.css";
 import "./styles/workforce-management.css";
+import "./styles/institutional-governance.css";
 import "./styles/route-audit.css";
 import "./styles/database-audit.css";
 import "./styles/permissions-audit.css";

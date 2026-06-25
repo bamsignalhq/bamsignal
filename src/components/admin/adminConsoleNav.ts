@@ -32,7 +32,8 @@ export type HardTab =
   | "readiness"
   | "dataintegrity"
   | "recovery"
-  | "workforce";
+  | "workforce"
+  | "governance";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -84,6 +85,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "support",
         label: "Support",
         keywords: ["support", "tickets", "help", "customer", "escalation"]
+      },
+      {
+        id: "governance",
+        label: "Governance",
+        keywords: ["governance", "authority", "permissions", "roles", "approval", "delegation", "policy"]
       },
       {
         id: "audit",
@@ -234,7 +240,8 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",
   recovery: "Recovery",
-  workforce: "Workforce"
+  workforce: "Workforce",
+  governance: "Governance"
 };
 
 export const ADMIN_TAB_TITLES = HARD_TAB_TITLES;

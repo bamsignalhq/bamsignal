@@ -31,6 +31,7 @@ import { PRODUCTION_SECURITY_ADMIN_PATH } from "./productionSecurityAdmin";
 import { UX_CONSISTENCY_ADMIN_PATH } from "./uxConsistencyAdmin";
 import { PRODUCTION_PERFORMANCE_ADMIN_PATH } from "./productionPerformanceAdmin";
 import { LAUNCH_CERTIFICATION_ADMIN_PATH } from "./launchCertificationAdmin";
+import { ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH } from "./enterpriseCodebaseCleanupAdmin";
 import { REPORTING_CENTER_ADMIN_PATH } from "./reportingCenterAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
@@ -214,7 +215,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   securitydashboard: ["ManageOperations", "ManageSafety", "SystemAdministration"],
   uxconsistency: "ManageOperations",
   performanceoptimization: "ManageOperations",
-  launchcertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"]
+  launchcertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
+  enterprisecleanup: "ManageOperations"
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -287,7 +289,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [PRODUCTION_SECURITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.securitydashboard,
   [UX_CONSISTENCY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.uxconsistency,
   [PRODUCTION_PERFORMANCE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.performanceoptimization,
-  [LAUNCH_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchcertification
+  [LAUNCH_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchcertification,
+  [ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH]: HARD_TAB_PERMISSIONS.enterprisecleanup
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -346,7 +349,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/security-dashboard",
   "/hard/ux-consistency",
   "/hard/performance-optimization",
-  "/hard/launch-certification"
+  "/hard/launch-certification",
+  "/hard/enterprise-cleanup"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

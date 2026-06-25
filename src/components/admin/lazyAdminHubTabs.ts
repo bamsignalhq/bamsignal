@@ -77,6 +77,11 @@ export const LazyLaunchCertificationDashboard = lazy(() =>
     default: module.LaunchCertificationDashboard
   }))
 );
+export const LazyEnterpriseCodebaseCleanupDashboard = lazy(() =>
+  import("./enterpriseCodebaseCleanup/EnterpriseCodebaseCleanupDashboard").then((module) => ({
+    default: module.EnterpriseCodebaseCleanupDashboard
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

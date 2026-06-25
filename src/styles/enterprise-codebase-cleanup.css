@@ -1,0 +1,99 @@
+@import "./institutional-page.css";
+
+.engineering-health-report-card__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.engineering-health-report-card__hero strong {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.engineering-health-report-card__hero > span:first-of-type {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.engineering-health-report-card__line {
+  margin: 0 0 6px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.86rem;
+}
+
+.engineering-health-report-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.engineering-health-report-card__metrics article {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.engineering-health-report-card__metrics span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.engineering-health-report-card__foot {
+  margin-top: 12px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.enterprise-cleanup-checklist-card__item--passed {
+  border-left: 3px solid rgba(52, 211, 153, 0.6);
+}
+
+.enterprise-cleanup-checklist-card__item--failed {
+  border-left: 3px solid rgba(251, 191, 36, 0.6);
+}
+
+.enterprise-cleanup-checklist-card__badge--pass {
+  color: rgba(52, 211, 153, 0.95);
+  font-size: 0.76rem;
+}
+
+.enterprise-cleanup-checklist-card__badge--fail {
+  color: rgba(251, 191, 36, 0.95);
+  font-size: 0.76rem;
+}
+
+.enterprise-cleanup-checklist-card__domains {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.enterprise-cleanup-checklist-card__domains h4 {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.enterprise-cleanup-checklist-card__domains ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.enterprise-cleanup-checklist-card__domains li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+@media (max-width: 720px) {
+  .engineering-health-report-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

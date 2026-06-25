@@ -1,0 +1,240 @@
+.business-continuity-page {
+  display: grid;
+  gap: 18px;
+}
+
+.business-continuity-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.business-continuity-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.business-continuity-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.business-continuity-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.business-continuity-page__column {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.business-continuity-page__future {
+  display: grid;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+}
+
+.business-continuity-page__future h4 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.continuity-card {
+  padding: 14px;
+}
+
+.continuity-overview-card__grid,
+.continuity-backup-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.continuity-metric {
+  display: grid;
+  gap: 4px;
+}
+
+.continuity-metric__label {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+.continuity-metric__value {
+  font-size: 1.2rem;
+}
+
+.continuity-metric__hint {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.78rem;
+}
+
+.continuity-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.continuity-pill--healthy {
+  background: rgba(52, 211, 153, 0.18);
+  color: #6ee7b7;
+}
+
+.continuity-pill--degraded {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fcd34d;
+}
+
+.continuity-pill--partial-outage {
+  background: rgba(251, 146, 60, 0.18);
+  color: #fdba74;
+}
+
+.continuity-pill--major-outage {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
+}
+
+.continuity-pill--maintenance {
+  background: rgba(96, 165, 250, 0.18);
+  color: #93c5fd;
+}
+
+.continuity-provider-list,
+.continuity-playbook-list,
+.continuity-exercise-list,
+.continuity-incident-list,
+.continuity-risk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.continuity-provider,
+.continuity-playbook,
+.continuity-exercise,
+.continuity-incident,
+.continuity-risk {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.continuity-provider__meta,
+.continuity-playbook__meta,
+.continuity-exercise__meta,
+.continuity-incident__meta,
+.continuity-incident__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.8rem;
+}
+
+.continuity-provider span,
+.continuity-playbook span,
+.continuity-exercise span {
+  display: block;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.78rem;
+}
+
+.continuity-timeline {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.continuity-timeline time {
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 8px;
+}
+
+.continuity-incident__resolution,
+.continuity-incident__postmortem,
+.continuity-exercise__findings {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.continuity-snapshot-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.continuity-snapshot-services,
+.continuity-deps-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.continuity-deps-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.continuity-snapshot-footer {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.continuity-risk__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.continuity-risk__score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.continuity-risk__bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.continuity-risk__bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--score, 0) * 1%);
+  background: linear-gradient(90deg, #34d399, #60a5fa);
+}
+
+@media (max-width: 960px) {
+  .business-continuity-page__body,
+  .continuity-snapshot-grid {
+    grid-template-columns: 1fr;
+  }
+}

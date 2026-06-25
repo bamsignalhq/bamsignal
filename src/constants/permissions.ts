@@ -17,6 +17,7 @@ import { DATA_INTEGRITY_ADMIN_PATH } from "./dataIntegrityAdmin";
 import { RECOVERY_CENTER_ADMIN_PATH } from "./recoveryCenterAdmin";
 import { INSTITUTIONAL_GOVERNANCE_ADMIN_PATH } from "./institutionalGovernanceAdmin";
 import { WORKFORCE_MANAGEMENT_ADMIN_PATH } from "./workforceAdmin";
+import { BUSINESS_CONTINUITY_ADMIN_PATH } from "./businessContinuityAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
@@ -186,7 +187,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   dataintegrity: "ManageOperations",
   recovery: "ManageRecovery",
   workforce: "ManageOperations",
-  governance: "ManageGovernance"
+  governance: "ManageGovernance",
+  businesscontinuity: "ManageOperations"
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -245,7 +247,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [DATA_INTEGRITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.dataintegrity,
   [RECOVERY_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.recovery,
   [WORKFORCE_MANAGEMENT_ADMIN_PATH]: HARD_TAB_PERMISSIONS.workforce,
-  [INSTITUTIONAL_GOVERNANCE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.governance
+  [INSTITUTIONAL_GOVERNANCE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.governance,
+  [BUSINESS_CONTINUITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.businesscontinuity
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -290,7 +293,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/data-integrity",
   "/hard/recovery",
   "/hard/workforce",
-  "/hard/governance"
+  "/hard/governance",
+  "/hard/business-continuity"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

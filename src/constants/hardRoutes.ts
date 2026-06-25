@@ -20,6 +20,7 @@ import {
   JOURNEY_INTELLIGENCE_PATH
 } from "./journeyIntelligence";
 import { WORKFORCE_MANAGEMENT_ADMIN_PATH } from "./workforceAdmin";
+import { BUSINESS_CONTINUITY_ADMIN_PATH } from "./businessContinuityAdmin";
 import { INSTITUTIONAL_GOVERNANCE_ADMIN_PATH } from "./institutionalGovernanceAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
@@ -60,7 +61,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   dataintegrity: "data-integrity",
   recovery: "recovery",
   workforce: "workforce",
-  governance: "governance"
+  governance: "governance",
+  businesscontinuity: "business-continuity"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(

@@ -91,6 +91,16 @@ export const GOVERNANCE_SCHEMA_TABLES = [
   "institutional_policies"
 ] as const;
 
+/** Tables from migrations/0007_business_continuity.sql */
+export const BUSINESS_CONTINUITY_SCHEMA_TABLES = [
+  "incident_reports",
+  "recovery_plans",
+  "backup_jobs",
+  "system_health_snapshots",
+  "provider_status",
+  "continuity_exercises"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -425,6 +435,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: [],
     constraints: ["uuid primary key"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "incident_reports",
+    migrationRef: "0007_business_continuity.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["incident_reports_status_idx"],
+    constraints: ["uuid primary key", "incident_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Business Continuity & DR Center™ — incident tracking"
+  },
+  {
+    tableName: "recovery_plans",
+    migrationRef: "0007_business_continuity.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["recovery_plans_domain_idx"],
+    constraints: ["uuid primary key", "slug unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "backup_jobs",
+    migrationRef: "0007_business_continuity.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["backup_jobs_area_idx"],
+    constraints: ["uuid primary key", "job_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "system_health_snapshots",
+    migrationRef: "0007_business_continuity.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["system_health_snapshots_at_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "provider_status",
+    migrationRef: "0007_business_continuity.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["provider_status_provider_idx"],
+    constraints: ["uuid primary key", "provider_id unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "continuity_exercises",
+    migrationRef: "0007_business_continuity.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["continuity_exercises_scheduled_idx"],
+    constraints: ["uuid primary key", "exercise_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -491,6 +556,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "governanceEngine.ts",
     expectedTable: "governance_roles",
     note: "Institutional Governance System™ — constitutional permission source of truth"
+  },
+  {
+    storageKey: "bamsignal.businessContinuity.v1",
+    domainId: "qa",
+    engine: "businessContinuityEngine.ts",
+    expectedTable: "incident_reports",
+    note: "Business Continuity & DR Center™ — dual-write to continuity tables via businessContinuity.js"
   },
   {
     storageKey: "bamsignal.auditCenter.v1",

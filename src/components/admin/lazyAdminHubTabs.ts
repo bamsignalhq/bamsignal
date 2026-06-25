@@ -87,6 +87,11 @@ export const LazyProductionEnvironmentDashboard = lazy(() =>
     default: module.ProductionEnvironmentDashboard
   }))
 );
+export const LazyLaunchInfrastructureDashboard = lazy(() =>
+  import("./launchInfrastructure/LaunchInfrastructureDashboard").then((module) => ({
+    default: module.LaunchInfrastructureDashboard
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

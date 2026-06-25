@@ -33,6 +33,7 @@ import { PRODUCTION_PERFORMANCE_ADMIN_PATH } from "./productionPerformanceAdmin"
 import { LAUNCH_CERTIFICATION_ADMIN_PATH } from "./launchCertificationAdmin";
 import { ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH } from "./enterpriseCodebaseCleanupAdmin";
 import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin";
+import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
 import { REPORTING_CENTER_ADMIN_PATH } from "./reportingCenterAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
@@ -218,7 +219,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   performanceoptimization: "ManageOperations",
   launchcertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
   enterprisecleanup: "ManageOperations",
-  productionenvironment: "ManageOperations"
+  productionenvironment: "ManageOperations",
+  launchinfrastructure: "ManageOperations"
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -293,7 +295,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [PRODUCTION_PERFORMANCE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.performanceoptimization,
   [LAUNCH_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchcertification,
   [ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH]: HARD_TAB_PERMISSIONS.enterprisecleanup,
-  [PRODUCTION_ENVIRONMENT_ADMIN_PATH]: HARD_TAB_PERMISSIONS.productionenvironment
+  [PRODUCTION_ENVIRONMENT_ADMIN_PATH]: HARD_TAB_PERMISSIONS.productionenvironment,
+  [LAUNCH_INFRASTRUCTURE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchinfrastructure
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -354,7 +357,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/performance-optimization",
   "/hard/launch-certification",
   "/hard/enterprise-cleanup",
-  "/hard/production-environment"
+  "/hard/production-environment",
+  "/hard/launch-infrastructure"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

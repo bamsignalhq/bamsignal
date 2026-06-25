@@ -191,6 +191,17 @@ export function createApp(options = {}) {
     }
   });
 
+  app.get("/.well-known/apple-app-site-association", (_req, res, next) => {
+    if (!distDir) return next();
+    const aasaPath = path.join(distDir, ".well-known", "apple-app-site-association");
+    try {
+      if (!fs.existsSync(aasaPath)) return next();
+      res.type("application/json").send(fs.readFileSync(aasaPath, "utf8"));
+    } catch (error) {
+      next(error);
+    }
+  });
+
   if (distDir) {
     app.use(
       express.static(distDir, {

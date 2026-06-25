@@ -22,6 +22,7 @@ BamSignal is a React + Vite social discovery platform for Nigeria — discover p
 | [MONITORING.md](./MONITORING.md) | Health checks and observability |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Developer workflow |
 | [PRODUCTION_ENVIRONMENT_REPORT.md](./PRODUCTION_ENVIRONMENT_REPORT.md) | Env integrations — ready / warning / critical |
+| [LAUNCH_INFRASTRUCTURE_REPORT.md](./LAUNCH_INFRASTRUCTURE_REPORT.md) | Deployment artifacts — Docker, SEO, PWA, deep links |
 
 ## Run locally
 

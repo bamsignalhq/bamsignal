@@ -1,7 +1,9 @@
 {
   "name": "BamSignal",
   "short_name": "BamSignal",
-  "start_url": ".",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#1a0a2e",
   "theme_color": "#e91e8c",

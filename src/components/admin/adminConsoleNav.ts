@@ -48,7 +48,8 @@ export type HardTab =
   | "performanceoptimization"
   | "launchcertification"
   | "enterprisecleanup"
-  | "productionenvironment";
+  | "productionenvironment"
+  | "launchinfrastructure";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -160,6 +161,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "productionenvironment",
         label: "Env Audit",
         keywords: ["environment", "env", "secrets", "supabase", "paystack", "resend", "integration", "coolify"]
+      },
+      {
+        id: "launchinfrastructure",
+        label: "Launch Infra",
+        keywords: ["infrastructure", "docker", "sitemap", "robots", "pwa", "app-links", "assetlinks", "seo", "manifest"]
       },
       {
         id: "compliance",
@@ -336,6 +342,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   launchcertification: "Launch Cert",
   enterprisecleanup: "Code Cleanup",
   productionenvironment: "Env Audit",
+  launchinfrastructure: "Launch Infra",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

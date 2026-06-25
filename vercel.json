@@ -1,4 +1,5 @@
 {
+  "_comment": "LEGACY — production deploys via Coolify/Docker only. See DEPLOYMENT.md.",
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",

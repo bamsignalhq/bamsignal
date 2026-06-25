@@ -73,7 +73,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { id: "overview", label: "Metrics", keywords: ["metrics", "overview", "stats", "analytics"] },
       { id: "business", label: "Business", keywords: ["business", "revenue", "funnel"] },
       { id: "users", label: "Users", keywords: ["users", "members", "delete", "purge"] },
-      { id: "reports", label: "Reports", keywords: ["reports", "moderation", "flagged"], badgeKey: "reports" },
+      { id: "reports", label: "Reports", keywords: ["reports", "institutional", "export", "scheduled", "executive"], badgeKey: "reports" },
       { id: "leads", label: "Leads", keywords: ["leads", "waitlist"], badgeKey: "leads" },
       {
         id: "concierge",

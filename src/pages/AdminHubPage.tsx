@@ -37,19 +37,17 @@ import { readJson } from "../utils/storage";
 import { hardPathForTab, parseAuditAdminViewFromPath, parseConciergeAdminViewFromPath, parseHardTabFromPath } from "../constants/hardRoutes";
 import { HARD_AUTH_PATH, navigateToPath, normalizePath } from "../constants/routes";
 import { DEMO_USER } from "../constants/demoAccounts";
-import { filterModerationQueue, getModerationQueue, moderationStats, type ReportFilter } from "../utils/moderationQueue";
+import { getModerationQueue, moderationStats } from "../utils/moderationQueue";
 import { AdminShadowBannedSection } from "../components/admin/AdminShadowBannedSection";
 import {
   approvePhotoReviewAdmin,
   deletePhotoReviewAdmin,
-  fetchAdminReports,
   fetchContactLeakAttempts,
   fetchPhotoReviews,
   fetchHiddenPhotoReviews,
   hidePhotoReviewAdmin,
   restorePhotoReviewAdmin,
   shadowBanAdmin,
-  type AdminReportRow,
   type ContactLeakAttempt,
   type PhotoReviewItem
 } from "../services/adminModeration";
@@ -74,7 +72,6 @@ import {
 import { getTrustAnalyticsSummary } from "../utils/trustAnalytics";
 import { getPhotoRejectionMetrics, totalPhotoRejectionsToday } from "../utils/photoRejectionMetrics";
 import { riskFlagLabel, photoReviewLabel } from "../utils/photoMeta";
-import { reportReasonLabel } from "../constants/safety";
 import { fetchEmailBranding, saveEmailBrandingAdmin } from "../services/emailBranding";
 import {
   fetchAdminMemberAuditTrail,
@@ -102,6 +99,7 @@ import { LaunchReadinessCommandCenterPage } from "../components/admin/launchRead
 import { LaunchControlCenterPage } from "../components/admin/launchControl/LaunchControlCenterPage";
 import { PerformanceCenterPage } from "../components/admin/performance/PerformanceCenterPage";
 import { WorkflowEnginePage } from "../components/admin/workflows/WorkflowEnginePage";
+import { ReportingCenterPage } from "../components/admin/reporting/ReportingCenterPage";
 import { RemediationBoardPage } from "../components/admin/remediationBoard/RemediationBoardPage";
 import { ReadinessPage } from "../components/admin/institutionalReadiness/ReadinessPage";
 import { IntegrityDashboard } from "../components/admin/dataIntegrity/IntegrityDashboard";
@@ -161,9 +159,6 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
   const [localVerifications] = useState(getPendingVerifications());
   const [leads, setLeads] = useState(getLaunchLeads());
   const [moderation, setModeration] = useState(getModerationQueue());
-  const [adminReports, setAdminReports] = useState<AdminReportRow[]>([]);
-  const [adminReportsLoading, setAdminReportsLoading] = useState(false);
-  const [reportFilter, setReportFilter] = useState<ReportFilter>("all");
   const [verificationFilter, setVerificationFilter] = useState<"pending" | "approved" | "rejected">("pending");
   const modStats = moderationStats();
   const verifyStats = verificationStats();
@@ -228,29 +223,6 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
     await exitHardSession();
     navigateToPath(HARD_AUTH_PATH);
     onLogout();
-  };
-
-  const shadowBanFromReport = async (profileId: string, reason: string) => {
-    if (!(await ensureConsent("Confirm shadow ban for this member."))) {
-      pushToast("Console PIN required.");
-      return;
-    }
-    const result = await shadowBanAdmin(
-      profileId,
-      `Shadow ban after report: ${reportReasonLabel(reason as import("../types").ReportReason)}`
-    );
-    if (!result.ok) {
-      pushToast(result.error);
-      return;
-    }
-    shadowBanId(profileId);
-    setModeration(getModerationQueue());
-    setAdminReports((rows) =>
-      rows.map((row) =>
-        row.profileId === profileId ? { ...row, shadowBanned: true, status: "action_taken" as const } : row
-      )
-    );
-    pushToast("Member shadow banned.");
   };
 
   const loadVerifications = useCallback(async () => {
@@ -318,20 +290,6 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
     void fetchSpamSuspectsAdmin(20).then((result) => {
       if (result?.ok && result.suspects) setSpamSuspects(result.suspects);
     });
-  }, [tab, authorized]);
-
-  useEffect(() => {
-    if (tab !== "reports" || !authorized) return;
-    setAdminReportsLoading(true);
-    void fetchAdminReports(200)
-      .then((result) => {
-        if (result.ok) {
-          setAdminReports(result.reports);
-          return;
-        }
-        setModeration(getModerationQueue());
-      })
-      .finally(() => setAdminReportsLoading(false));
   }, [tab, authorized]);
 
   useEffect(() => {
@@ -1356,98 +1314,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
         </>
       )}
 
-      {tab === "reports" && (
-        <section className="card admin-command-panel">
-          <h3>Reports</h3>
-          <p className="match-prefs-note">
-            {adminReports.length
-              ? `${adminReports.length} server reports loaded`
-              : `${modStats.totalReports} local · ${modStats.pendingReview} pending · ${modStats.resolved} reviewed · ${modStats.actionTaken} action taken`}
-          </p>
-          <div className="admin-filter-row">
-            {(["all", "pending", "reviewed", "action_taken"] as const).map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                className={reportFilter === filter ? "active" : ""}
-                onClick={() => setReportFilter(filter)}
-              >
-                {filter.replace(/_/g, " ")}
-              </button>
-            ))}
-          </div>
-          {adminReportsLoading && <AdminTerminalEmpty>Loading reports…</AdminTerminalEmpty>}
-          {!adminReportsLoading &&
-            (adminReports.length
-              ? adminReports.filter((row) => reportFilter === "all" || row.status === reportFilter)
-              : filterModerationQueue(moderation, reportFilter)
-            ).length === 0 && <AdminTerminalEmpty>No reports pending.</AdminTerminalEmpty>}
-          {adminReports.length > 0
-            ? adminReports
-                .filter((row) => reportFilter === "all" || row.status === reportFilter)
-                .map((row) => (
-                  <article
-                    key={row.id}
-                    className={`card admin-moderation-row ${row.reportCount >= 3 ? "admin-moderation-row--hot" : ""}`}
-                  >
-                    <div className="admin-moderation-row__main">
-                      <strong>{row.reportedName}</strong>
-                      <span>
-                        {row.reportedCity} · {reportReasonLabel(row.reason as import("../types").ReportReason)} ·{" "}
-                        {row.reportCount} report{row.reportCount === 1 ? "" : "s"} · {row.status.replace(/_/g, " ")}
-                        {row.blocked ? " · blocked" : ""}
-                        {row.shadowBanned ? " · shadow banned" : ""}
-                      </span>
-                      <small>
-                        Reporter: {row.reporterEmail || row.reporterPhone || "—"}
-                        {row.note ? ` · Note: ${row.note}` : ""}
-                      </small>
-                      <time>{new Date(row.at).toLocaleString()}</time>
-                    </div>
-                    <div className="admin-moderation-row__actions">
-                      <button
-                        type="button"
-                        className="btn-secondary btn-sm"
-                        onClick={() => handleTabChange("command")}
-                      >
-                        Review
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-secondary btn-sm"
-                        disabled={row.shadowBanned}
-                        onClick={() => void shadowBanFromReport(row.profileId, row.reason)}
-                      >
-                        Shadow ban
-                      </button>
-                    </div>
-                  </article>
-                ))
-            : filterModerationQueue(moderation, reportFilter).map((entry) => (
-              <article
-                key={entry.profileId}
-                className={`card admin-moderation-row ${entry.reportCount >= 3 ? "admin-moderation-row--hot" : ""}`}
-              >
-                <div className="admin-moderation-row__main">
-                  <strong>{entry.name}</strong>
-                  <span>
-                    {entry.city} · {entry.reportCount} report{entry.reportCount === 1 ? "" : "s"} · {entry.status.replace(/_/g, " ")}
-                    {entry.shadowBanned ? " · shadow banned" : ""}
-                  </span>
-                  {entry.lastReportAt && (
-                    <time>{new Date(entry.lastReportAt).toLocaleString()}</time>
-                  )}
-                  {entry.lastReason && <small>Reason: {reportReasonLabel(entry.lastReason as import("../types").ReportReason)}</small>}
-                </div>
-                <div className="admin-moderation-row__actions">
-                  <button type="button" className="btn-secondary btn-sm" onClick={() => handleTabChange("command")}>
-                    Review in Command Center
-                  </button>
-                </div>
-              </article>
-            ))}
-        </section>
-      )}
+      {tab === "reports" ? <ReportingCenterPage /> : null}
 
       {tab === "cities" && (
         <>

@@ -72,6 +72,7 @@ import "./styles/api-platform.css";
 import "./styles/launch-control-center.css";
 import "./styles/performance-center.css";
 import "./styles/workflow-engine.css";
+import "./styles/reporting-center.css";
 import "./styles/route-audit.css";
 import "./styles/database-audit.css";
 import "./styles/permissions-audit.css";

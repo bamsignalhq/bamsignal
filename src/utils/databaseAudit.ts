@@ -211,6 +211,16 @@ export const WORKFLOW_ENGINE_SCHEMA_TABLES = [
   "workflow_automation_snapshots"
 ] as const;
 
+/** Tables from migrations/0019_reporting_center.sql */
+export const REPORTING_CENTER_SCHEMA_TABLES = [
+  "reporting_catalog_entries",
+  "reporting_schedules",
+  "reporting_export_history",
+  "reporting_filter_presets",
+  "reporting_run_history",
+  "reporting_snapshots"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -1196,6 +1206,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["workflow_automation_snapshots_created_idx"],
     constraints: ["uuid primary key", "snapshot_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "reporting_catalog_entries",
+    migrationRef: "0019_reporting_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["reporting_catalog_entries_category_idx"],
+    constraints: ["uuid primary key", "report_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Institutional Reporting Center™"
+  },
+  {
+    tableName: "reporting_schedules",
+    migrationRef: "0019_reporting_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["reporting_schedules_next_run_idx"],
+    constraints: ["uuid primary key", "schedule_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "reporting_export_history",
+    migrationRef: "0019_reporting_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["reporting_export_history_exported_idx"],
+    constraints: ["uuid primary key", "export_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "reporting_filter_presets",
+    migrationRef: "0019_reporting_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["reporting_filter_presets_category_idx"],
+    constraints: ["uuid primary key", "preset_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "reporting_run_history",
+    migrationRef: "0019_reporting_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["reporting_run_history_generated_idx"],
+    constraints: ["uuid primary key", "run_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "reporting_snapshots",
+    migrationRef: "0019_reporting_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["reporting_snapshots_created_idx"],
+    constraints: ["uuid primary key", "snapshot_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -1262,6 +1327,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "workflowEngineEngine.ts",
     expectedTable: "workflow_definitions",
     note: "Automation & Workflow Engine™ — dual-write via workflowEngine.js"
+  },
+  {
+    storageKey: "bamsignal.reportingCenter.v1",
+    domainId: "qa",
+    engine: "reportingCenterEngine.ts",
+    expectedTable: "reporting_catalog_entries",
+    note: "Institutional Reporting Center™ — dual-write via reportingCenter.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

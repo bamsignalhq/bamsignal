@@ -27,6 +27,7 @@ import { API_PLATFORM_ADMIN_PATH } from "./apiPlatformAdmin";
 import { LAUNCH_CONTROL_CENTER_ADMIN_PATH } from "./launchControlCenterAdmin";
 import { PERFORMANCE_CENTER_ADMIN_PATH } from "./performanceCenterAdmin";
 import { WORKFLOW_ENGINE_ADMIN_PATH } from "./workflowEngineAdmin";
+import { REPORTING_CENTER_ADMIN_PATH } from "./reportingCenterAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
@@ -166,7 +167,7 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   overview: "ManageOperations",
   business: "ViewFinance",
   users: "ViewMembers",
-  reports: "ManageSafety",
+  reports: ["ManageOperations", "ViewExecutiveDashboard", "ExportReports"],
   cities: "ManageOperations",
   discover: "ManageOperations",
   cityhome: "ManageOperations",
@@ -228,7 +229,7 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   "/hard/metrics": HARD_TAB_PERMISSIONS.overview,
   "/hard/business": HARD_TAB_PERMISSIONS.business,
   "/hard/users": HARD_TAB_PERMISSIONS.users,
-  "/hard/reports": HARD_TAB_PERMISSIONS.reports,
+  [REPORTING_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.reports,
   "/hard/cities": HARD_TAB_PERMISSIONS.cities,
   "/hard/discover": HARD_TAB_PERMISSIONS.discover,
   "/hard/city-home": HARD_TAB_PERMISSIONS.cityhome,

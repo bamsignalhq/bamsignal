@@ -99,6 +99,7 @@ import { DatabaseAuditPage } from "../components/admin/databaseAudit/DatabaseAud
 import { PermissionsAuditPage } from "../components/admin/permissionsAudit/PermissionsAuditPage";
 import { JourneyIntegrityAuditPage } from "../components/admin/journeyAudit/JourneyIntegrityAuditPage";
 import { LaunchReadinessCommandCenterPage } from "../components/admin/launchReadiness/LaunchReadinessCommandCenterPage";
+import { LaunchControlCenterPage } from "../components/admin/launchControl/LaunchControlCenterPage";
 import { RemediationBoardPage } from "../components/admin/remediationBoard/RemediationBoardPage";
 import { ReadinessPage } from "../components/admin/institutionalReadiness/ReadinessPage";
 import { IntegrityDashboard } from "../components/admin/dataIntegrity/IntegrityDashboard";
@@ -2095,6 +2096,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "messages" ? <MessagingDashboardPage /> : null}
       {tab === "executive" ? <ExecutiveDashboardPage /> : null}
       {tab === "launch" ? <LaunchReadinessCommandCenterPage /> : null}
+      {tab === "launchcontrol" ? <LaunchControlCenterPage /> : null}
       {tab === "remediation" ? <RemediationBoardPage /> : null}
       {tab === "readiness" ? <ReadinessPage /> : null}
       {tab === "dataintegrity" ? <IntegrityDashboard /> : null}

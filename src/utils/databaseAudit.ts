@@ -181,6 +181,16 @@ export const RECOVERY_CENTER_SCHEMA_TABLES = [
   "recovery_dependency_links"
 ] as const;
 
+/** Tables from migrations/0016_launch_control_center.sql */
+export const LAUNCH_CONTROL_CENTER_SCHEMA_TABLES = [
+  "launch_readiness_items",
+  "launch_checklist_entries",
+  "launch_blockers",
+  "launch_risks",
+  "launch_dependencies",
+  "launch_timeline_events"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -1001,6 +1011,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["recovery_dependency_links_critical_idx"],
     constraints: ["uuid primary key", "link_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "launch_readiness_items",
+    migrationRef: "0016_launch_control_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["launch_readiness_items_domain_idx"],
+    constraints: ["uuid primary key", "readiness_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Institutional Launch Control Center™"
+  },
+  {
+    tableName: "launch_checklist_entries",
+    migrationRef: "0016_launch_control_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["launch_checklist_entries_status_idx"],
+    constraints: ["uuid primary key", "checklist_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "launch_blockers",
+    migrationRef: "0016_launch_control_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["launch_blockers_status_idx"],
+    constraints: ["uuid primary key", "blocker_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "launch_risks",
+    migrationRef: "0016_launch_control_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["launch_risks_status_idx"],
+    constraints: ["uuid primary key", "risk_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "launch_dependencies",
+    migrationRef: "0016_launch_control_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["launch_dependencies_critical_idx"],
+    constraints: ["uuid primary key", "dependency_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "launch_timeline_events",
+    migrationRef: "0016_launch_control_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["launch_timeline_events_schedule_idx"],
+    constraints: ["uuid primary key", "event_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -1046,6 +1111,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "recoveryCenterEngine.ts",
     expectedTable: "recovery_backup_records",
     note: "Business Continuity & Disaster Recovery Center™ — dual-write via recoveryCenter.js"
+  },
+  {
+    storageKey: "bamsignal.launchControlCenter.v1",
+    domainId: "qa",
+    engine: "launchControlCenterEngine.ts",
+    expectedTable: "launch_readiness_items",
+    note: "Institutional Launch Control Center™ — dual-write via launchControlCenter.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

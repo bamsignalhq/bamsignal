@@ -28,6 +28,7 @@ import { CONFIGURATION_PLATFORM_ADMIN_PATH } from "./configurationPlatformAdmin"
 import { MONITORING_CENTER_ADMIN_PATH } from "./monitoringCenterAdmin";
 import { DATA_GOVERNANCE_CENTER_ADMIN_PATH } from "./dataGovernanceCenterAdmin";
 import { API_PLATFORM_ADMIN_PATH } from "./apiPlatformAdmin";
+import { LAUNCH_CONTROL_CENTER_ADMIN_PATH } from "./launchControlCenterAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
 export type AuditAdminView = "compliance" | "routes" | "database" | "security" | "journeys";
@@ -73,7 +74,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   configuration: "configuration",
   monitoring: "monitoring",
   datagovernance: "data-governance",
-  apiplatform: "api-platform"
+  apiplatform: "api-platform",
+  launchcontrol: "launch-control"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(
@@ -144,6 +146,12 @@ export function parseHardTabFromPath(pathname = window.location.pathname): HardT
   }
   if (path === API_PLATFORM_ADMIN_PATH || path.startsWith(`${API_PLATFORM_ADMIN_PATH}/`)) {
     return "apiplatform";
+  }
+  if (
+    path === LAUNCH_CONTROL_CENTER_ADMIN_PATH ||
+    path.startsWith(`${LAUNCH_CONTROL_CENTER_ADMIN_PATH}/`)
+  ) {
+    return "launchcontrol";
   }
 
   const match = path.match(/^\/hard\/([^/]+)$/);

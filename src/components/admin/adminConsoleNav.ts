@@ -39,7 +39,8 @@ export type HardTab =
   | "configuration"
   | "monitoring"
   | "datagovernance"
-  | "apiplatform";
+  | "apiplatform"
+  | "launchcontrol";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -178,6 +179,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         keywords: ["executive", "strategic", "founder", "board", "institution", "legacy", "growth"]
       },
       {
+        id: "launchcontrol",
+        label: "Launch Control",
+        keywords: ["launch", "control", "go-no-go", "readiness", "blockers", "timeline", "risks", "checklist"]
+      },
+      {
         id: "launch",
         label: "Launch Readiness",
         keywords: ["launch", "readiness", "go-live", "institutional", "audit", "blocked", "critical"]
@@ -273,6 +279,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   messages: "Messages",
   executive: "Executive",
   launch: "Launch Readiness",
+  launchcontrol: "Launch Control",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

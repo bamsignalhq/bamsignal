@@ -141,6 +141,16 @@ export const CONFIGURATION_PLATFORM_SCHEMA_TABLES = [
   "configuration_snapshots"
 ] as const;
 
+/** Tables from migrations/0012_monitoring_center.sql */
+export const MONITORING_CENTER_SCHEMA_TABLES = [
+  "monitoring_services",
+  "service_health_snapshots",
+  "monitoring_incidents",
+  "monitoring_alerts",
+  "maintenance_windows",
+  "metric_snapshots"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -741,6 +751,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["configuration_snapshots_created_idx"],
     constraints: ["uuid primary key", "snapshot_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "monitoring_services",
+    migrationRef: "0012_monitoring_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["monitoring_services_section_idx"],
+    constraints: ["uuid primary key", "service_id unique"],
+    defaultHealth: "needs-migration",
+    note: "Enterprise Monitoring & Incident Center™"
+  },
+  {
+    tableName: "service_health_snapshots",
+    migrationRef: "0012_monitoring_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["service_health_snapshots_service_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "monitoring_incidents",
+    migrationRef: "0012_monitoring_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["monitoring_incidents_status_idx"],
+    constraints: ["uuid primary key", "incident_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "monitoring_alerts",
+    migrationRef: "0012_monitoring_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["monitoring_alerts_status_idx"],
+    constraints: ["uuid primary key", "alert_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "maintenance_windows",
+    migrationRef: "0012_monitoring_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["maintenance_windows_schedule_idx"],
+    constraints: ["uuid primary key", "window_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "metric_snapshots",
+    migrationRef: "0012_monitoring_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["metric_snapshots_key_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -758,6 +823,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "configurationPlatformEngine.ts",
     expectedTable: "configuration_entries",
     note: "Enterprise Configuration Platform™ — dual-write via configurationPlatform.js"
+  },
+  {
+    storageKey: "bamsignal.monitoringCenter.v1",
+    domainId: "qa",
+    engine: "monitoringCenterEngine.ts",
+    expectedTable: "monitoring_services",
+    note: "Enterprise Monitoring & Incident Center™ — dual-write via monitoringCenter.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

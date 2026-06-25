@@ -1,0 +1,243 @@
+.monitoring-center-page {
+  display: grid;
+  gap: 18px;
+}
+
+.monitoring-center-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.monitoring-center-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.monitoring-center-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.monitoring-center-page__sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.monitoring-center-page__section-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.monitoring-center-page__section-btn.is-active {
+  border-color: rgba(160, 230, 180, 0.55);
+  background: rgba(140, 200, 120, 0.1);
+}
+
+.monitoring-center-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.monitoring-center-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.monitoring-center-page__logs-note,
+.monitoring-center-page__future {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+}
+
+.monitoring-center-page__future {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.monitoring-center-page__future h4 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.monitoring-card {
+  padding: 14px;
+}
+
+.monitoring-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.monitoring-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.monitoring-card__empty {
+  margin: 12px 0 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.monitoring-status,
+.alert-severity,
+.incident-severity {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.monitoring-status--healthy {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.monitoring-status--degraded {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.monitoring-status--partial-outage,
+.monitoring-status--major-outage {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.monitoring-status--maintenance {
+  color: rgba(160, 200, 255, 0.95);
+}
+
+.system-health-card__overall {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 12px 0 8px;
+}
+
+.system-health-card__line {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.system-health-card__grid,
+.infrastructure-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.system-health-card__grid article,
+.infrastructure-card__grid article {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.system-health-card__grid span,
+.infrastructure-card__grid span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.service-health-card__list,
+.integration-health-card__list,
+.queue-health-card__list,
+.incident-timeline-card__list,
+.alert-feed-card__list,
+.maintenance-card__list,
+.infrastructure-card__metrics {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.service-health-card__list li,
+.integration-health-card__list li,
+.queue-health-card__list li,
+.incident-timeline-card__list li,
+.alert-feed-card__list li,
+.maintenance-card__list li,
+.infrastructure-card__metrics li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.service-health-card__row,
+.queue-health-card__row,
+.incident-timeline-card__row,
+.alert-feed-card__row,
+.maintenance-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.service-health-card__metrics,
+.queue-health-card__meta,
+.alert-feed-card__meta,
+.incident-timeline-card__meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.service-health-card__note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 220, 140, 0.9);
+}
+
+.incident-timeline-card__list h4 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.incident-timeline-card__timeline {
+  margin: 8px 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+}
+
+.alert-severity--critical,
+.incident-severity--critical {
+  color: rgba(255, 120, 120, 0.95);
+}
+
+.alert-severity--high,
+.incident-severity--high {
+  color: rgba(255, 180, 120, 0.95);
+}
+
+.infrastructure-card__captured {
+  margin: 12px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+@media (max-width: 900px) {
+  .monitoring-center-page__body {
+    grid-template-columns: 1fr;
+  }
+}

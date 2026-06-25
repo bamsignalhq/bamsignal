@@ -1,6 +1,26 @@
 # BamSignal
 
-BamSignal is a React + Vite dating app for Nigeria — discover profiles, send signals, chat, and manage premium plans. The web app ships with optional Capacitor shells for Android/iOS.
+BamSignal is a React + Vite social discovery platform for Nigeria — discover profiles, send signals, chat, and manage premium plans. Signal Concierge™ adds human-led matchmaking. The web app ships with optional Capacitor shells for Android/iOS.
+
+**Production:** https://bamsignal.com
+
+## Engineering documentation
+
+| Document | Description |
+|----------|-------------|
+| [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) | Platform boundaries, folder structure, data flow |
+| [DATABASE_ARCHITECTURE.md](./DATABASE_ARCHITECTURE.md) | Postgres schema and migrations |
+| [JOURNEY_ENGINE.md](./JOURNEY_ENGINE.md) | Signal Concierge journey lifecycle |
+| [OPERATIONS_CENTER.md](./OPERATIONS_CENTER.md) | Concierge operations pipeline |
+| [CRM_ARCHITECTURE.md](./CRM_ARCHITECTURE.md) | Member CRM model |
+| [CONSULTANT_WORKFLOW.md](./CONSULTANT_WORKFLOW.md) | Consultant end-to-end workflow |
+| [PERMISSIONS.md](./PERMISSIONS.md) | Roles and authorization |
+| [SECURITY.md](./SECURITY.md) | Hardening and secrets |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Coolify / Docker deploy |
+| [RUNBOOK.md](./RUNBOOK.md) | On-call procedures |
+| [BACKUP_RECOVERY.md](./BACKUP_RECOVERY.md) | Backup and restore |
+| [MONITORING.md](./MONITORING.md) | Health checks and observability |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Developer workflow |
 
 ## Run locally
 

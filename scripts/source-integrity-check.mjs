@@ -242,7 +242,7 @@ assertCheck(
     adminSessionSource.includes('/api/auth/identity?action=admin-session"') &&
     !adminSessionSource.includes("isAdminSessionActive()") &&
     adminSessionSource.includes("clearStaleAdminBrowserState") &&
-    adminSessionSource.includes('logAdminAudit("admin_restore_success")'),
+    adminSessionSource.includes('logAdminAudit("admin_restore_success"'),
   "admin session must be validated on the server, not localStorage"
 );
 assertCheck(

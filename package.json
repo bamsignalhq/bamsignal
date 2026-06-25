@@ -73,6 +73,7 @@
     "test:data-governance": "node scripts/test-data-governance.mjs",
     "test:api-platform": "node scripts/test-api-platform.mjs",
     "test:launch-control": "node scripts/test-launch-control.mjs",
+    "test:performance-center": "node scripts/test-performance-center.mjs",
     "test:executive-dashboard": "node scripts/test-executive-dashboard.mjs",
     "test:route-audit": "node scripts/test-route-audit.mjs",
     "audit:routes": "node scripts/audit-routes.mjs && npm run test:route-audit",

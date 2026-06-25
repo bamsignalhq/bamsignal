@@ -191,6 +191,16 @@ export const LAUNCH_CONTROL_CENTER_SCHEMA_TABLES = [
   "launch_timeline_events"
 ] as const;
 
+/** Tables from migrations/0017_performance_center.sql */
+export const PERFORMANCE_CENTER_SCHEMA_TABLES = [
+  "performance_metric_snapshots",
+  "performance_api_profiles",
+  "performance_database_profiles",
+  "performance_capacity_plans",
+  "performance_optimization_items",
+  "performance_growth_forecasts"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -1066,6 +1076,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["launch_timeline_events_schedule_idx"],
     constraints: ["uuid primary key", "event_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "performance_metric_snapshots",
+    migrationRef: "0017_performance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["performance_metric_snapshots_section_idx"],
+    constraints: ["uuid primary key", "metric_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Performance, Capacity & Scalability Center™"
+  },
+  {
+    tableName: "performance_api_profiles",
+    migrationRef: "0017_performance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["performance_api_profiles_p95_idx"],
+    constraints: ["uuid primary key", "endpoint_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "performance_database_profiles",
+    migrationRef: "0017_performance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["performance_database_profiles_status_idx"],
+    constraints: ["uuid primary key", "profile_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "performance_capacity_plans",
+    migrationRef: "0017_performance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["performance_capacity_plans_section_idx"],
+    constraints: ["uuid primary key", "plan_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "performance_optimization_items",
+    migrationRef: "0017_performance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["performance_optimization_items_status_idx"],
+    constraints: ["uuid primary key", "item_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "performance_growth_forecasts",
+    migrationRef: "0017_performance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["performance_growth_forecasts_period_idx"],
+    constraints: ["uuid primary key", "forecast_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -1118,6 +1183,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "launchControlCenterEngine.ts",
     expectedTable: "launch_readiness_items",
     note: "Institutional Launch Control Center™ — dual-write via launchControlCenter.js"
+  },
+  {
+    storageKey: "bamsignal.performanceCenter.v1",
+    domainId: "qa",
+    engine: "performanceCenterEngine.ts",
+    expectedTable: "performance_metric_snapshots",
+    note: "Performance, Capacity & Scalability Center™ — dual-write via performanceCenter.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

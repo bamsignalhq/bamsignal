@@ -25,6 +25,7 @@ import { MONITORING_CENTER_ADMIN_PATH } from "./monitoringCenterAdmin";
 import { DATA_GOVERNANCE_CENTER_ADMIN_PATH } from "./dataGovernanceCenterAdmin";
 import { API_PLATFORM_ADMIN_PATH } from "./apiPlatformAdmin";
 import { LAUNCH_CONTROL_CENTER_ADMIN_PATH } from "./launchControlCenterAdmin";
+import { PERFORMANCE_CENTER_ADMIN_PATH } from "./performanceCenterAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
@@ -201,7 +202,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   monitoring: "ManageOperations",
   datagovernance: "ManageGovernance",
   apiplatform: "SystemAdministration",
-  launchcontrol: "ManageOperations"
+  launchcontrol: "ManageOperations",
+  performance: "ManageOperations"
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -268,7 +270,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [MONITORING_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.monitoring,
   [DATA_GOVERNANCE_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.datagovernance,
   [API_PLATFORM_ADMIN_PATH]: HARD_TAB_PERMISSIONS.apiplatform,
-  [LAUNCH_CONTROL_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchcontrol
+  [LAUNCH_CONTROL_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchcontrol,
+  [PERFORMANCE_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.performance
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -321,7 +324,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/monitoring",
   "/hard/data-governance",
   "/hard/api-platform",
-  "/hard/launch-control"
+  "/hard/launch-control",
+  "/hard/performance"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

@@ -1,0 +1,280 @@
+.performance-center-page {
+  display: grid;
+  gap: 18px;
+}
+
+.performance-center-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.performance-center-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.performance-center-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.performance-center-page__sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.performance-center-page__section-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.performance-center-page__section-btn.is-active {
+  border-color: rgba(140, 190, 255, 0.55);
+  background: rgba(80, 140, 220, 0.12);
+}
+
+.performance-center-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.performance-center-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.performance-center-page__metrics-note,
+.performance-center-page__future {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+}
+
+.performance-center-page__future {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.performance-center-page__future h4 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.performance-center-card {
+  padding: 14px;
+}
+
+.performance-center-card__head h3 {
+  margin: 0 0 4px;
+  font-size: 0.98rem;
+}
+
+.performance-center-card__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+.performance-center-card__line {
+  margin: 10px 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.84rem;
+}
+
+.performance-center-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.performance-center-card__grid article {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.performance-center-card__grid span {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.76rem;
+}
+
+.performance-center-card__grid strong {
+  font-size: 0.95rem;
+}
+
+.performance-center-card__list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.performance-center-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.performance-center-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.78rem;
+}
+
+.performance-center-card__detail {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.8rem;
+}
+
+.performance-center-card__empty,
+.performance-center-card__footnote {
+  margin: 12px 0 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.8rem;
+}
+
+.performance-center-card__method {
+  display: inline-block;
+  min-width: 3.2rem;
+  color: rgba(140, 190, 255, 0.9);
+  font-size: 0.76rem;
+}
+
+.performance-center-card__badge {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.performance-center-card__badge--healthy {
+  border-color: rgba(120, 210, 150, 0.45);
+  color: rgba(160, 230, 180, 0.95);
+}
+
+.performance-center-card__badge--watch {
+  border-color: rgba(220, 190, 100, 0.45);
+  color: rgba(240, 210, 120, 0.95);
+}
+
+.performance-center-card__badge--strained {
+  border-color: rgba(240, 150, 90, 0.45);
+  color: rgba(255, 180, 120, 0.95);
+}
+
+.performance-center-card__badge--critical {
+  border-color: rgba(240, 100, 100, 0.45);
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.performance-center-card__impact {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.performance-center-card__impact--high {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.performance-center-card__impact--medium {
+  color: rgba(240, 210, 120, 0.95);
+}
+
+.performance-center-card__impact--low {
+  color: rgba(160, 230, 180, 0.95);
+}
+
+.performance-center-card__recommendations {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.performance-center-card__recommendations h4 {
+  margin: 0 0 6px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.performance-center-card__recommendations ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.8rem;
+  display: grid;
+  gap: 4px;
+}
+
+.performance-overview-card__score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.performance-overview-card__score span:first-child {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+.performance-overview-card__score strong {
+  font-size: 1.6rem;
+}
+
+.performance-overview-card__status {
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.performance-overview-card__status--healthy {
+  border-color: rgba(120, 210, 150, 0.45);
+  color: rgba(160, 230, 180, 0.95);
+}
+
+.performance-overview-card__status--watch {
+  border-color: rgba(220, 190, 100, 0.45);
+  color: rgba(240, 210, 120, 0.95);
+}
+
+.performance-overview-card__status--strained {
+  border-color: rgba(240, 150, 90, 0.45);
+  color: rgba(255, 180, 120, 0.95);
+}
+
+.performance-overview-card__status--critical {
+  border-color: rgba(240, 100, 100, 0.45);
+  color: rgba(255, 140, 140, 0.95);
+}
+
+@media (max-width: 960px) {
+  .performance-center-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-center-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

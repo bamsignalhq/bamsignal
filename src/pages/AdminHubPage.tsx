@@ -99,6 +99,7 @@ import { LaunchReadinessCommandCenterPage } from "../components/admin/launchRead
 import { LaunchControlCenterPage } from "../components/admin/launchControl/LaunchControlCenterPage";
 import { PerformanceCenterPage } from "../components/admin/performance/PerformanceCenterPage";
 import { WorkflowEnginePage } from "../components/admin/workflows/WorkflowEnginePage";
+import { SecurityDashboard } from "../components/admin/security/SecurityDashboard";
 import { ReportingCenterPage } from "../components/admin/reporting/ReportingCenterPage";
 import { RemediationBoardPage } from "../components/admin/remediationBoard/RemediationBoardPage";
 import { ReadinessPage } from "../components/admin/institutionalReadiness/ReadinessPage";
@@ -1968,6 +1969,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "launchcontrol" ? <LaunchControlCenterPage /> : null}
       {tab === "performance" ? <PerformanceCenterPage /> : null}
       {tab === "workflows" ? <WorkflowEnginePage /> : null}
+      {tab === "securitydashboard" ? <SecurityDashboard /> : null}
       {tab === "remediation" ? <RemediationBoardPage /> : null}
       {tab === "readiness" ? <ReadinessPage /> : null}
       {tab === "dataintegrity" ? <IntegrityDashboard /> : null}

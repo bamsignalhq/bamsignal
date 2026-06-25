@@ -1,0 +1,229 @@
+.production-security-page {
+  display: grid;
+  gap: 18px;
+}
+
+.production-security-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.production-security-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.production-security-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.production-security-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.production-security-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.production-security-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.production-security-page__foot {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.55);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.production-security-card {
+  padding: 14px;
+}
+
+.production-security-card__head h3 {
+  margin: 0 0 4px;
+  font-size: 0.98rem;
+}
+
+.production-security-card__head p {
+  margin: 0 0 10px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.production-security-card__line {
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.86rem;
+}
+
+.production-security-card__foot {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.production-security-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.production-security-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.production-security-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.78rem;
+}
+
+.production-security-card__list p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.production-security-card__fixes {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.security-health-report-card__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.security-health-report-card__hero strong {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.security-health-report-card__hero > span:first-of-type {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.security-health-report-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.security-health-report-card__metrics article {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.security-health-report-card__metrics span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.security-status-badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.security-status-badge--secure {
+  background: rgba(92, 214, 154, 0.16);
+  color: #9ef0c8;
+}
+
+.security-status-badge--warning {
+  background: rgba(255, 168, 76, 0.16);
+  color: #ffd2a1;
+}
+
+.security-status-badge--critical {
+  background: rgba(255, 92, 92, 0.18);
+  color: #ffb4b4;
+}
+
+.security-checklist-card__item--passed {
+  border-left: 3px solid rgba(92, 214, 154, 0.45);
+  padding-left: 8px;
+}
+
+.security-checklist-card__item--failed {
+  border-left: 3px solid rgba(255, 120, 120, 0.45);
+  padding-left: 8px;
+}
+
+.security-checklist-card__badge--pass {
+  color: #9ef0c8;
+  font-size: 0.72rem;
+}
+
+.security-checklist-card__badge--fail {
+  color: #ffb4b4;
+  font-size: 0.72rem;
+}
+
+.security-checklist-card__domains {
+  margin-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+
+.security-checklist-card__domains h4 {
+  margin: 0 0 8px;
+  font-size: 0.84rem;
+}
+
+.security-checklist-card__domains ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.security-checklist-card__domains li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+@media (max-width: 960px) {
+  .production-security-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .security-health-report-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

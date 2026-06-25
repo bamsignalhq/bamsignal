@@ -190,10 +190,10 @@ const securityIssues = [
     id: "issue-cron-secret-bypass",
     kind: "privilege-escalation",
     title: "CRON_SECRET bypasses admin auth",
-    status: "critical",
+    status: "warning",
     roles: "API / super-admin",
     summary:
-      "server/adminAuth.js requireAdmin accepts x-bamsignal-secret matching CRON_SECRET — grants full admin API access without operator session."
+      "server/adminAuth.js requireAdmin accepts x-bamsignal-secret header matching CRON_SECRET — grants full admin API access without operator session. Query and body secret channels rejected."
   },
   {
     id: "issue-consultant-local-pin",
@@ -282,6 +282,12 @@ assert(consultantSessionSource.includes("CONSULTANT_LOCAL_PIN"), "Consultant loc
 assert(consultantWorkspaceSource.includes("ConsultantCapabilityGate"), "Consultant workspace uses capability gates");
 assert(adminAuthSource.includes("requireAdmin"), "Server requireAdmin helper exists");
 assert(adminAuthSource.includes("CRON_SECRET"), "CRON_SECRET bypass documented in adminAuth");
+assert(
+  adminAuthSource.includes('req.headers["x-bamsignal-secret"]') &&
+    !adminAuthSource.includes("req.query.secret") &&
+    !adminAuthSource.includes("req.body?.secret"),
+  "CRON_SECRET accepted via header only"
+);
 assert(identitySource.includes("role: operatorRole"), "admin-session returns operator role");
 assert(adminSessionSource.includes("getOperatorRole"), "Client stores operator role");
 assert(operatorPermissionsSource.includes("operatorHasAnyPermission"), "Operator permission helpers exist");

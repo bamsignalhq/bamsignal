@@ -76,6 +76,7 @@
     "test:launch-control": "node scripts/test-launch-control.mjs",
     "test:performance-center": "node scripts/test-performance-center.mjs",
     "test:workflow-engine": "node scripts/test-workflow-engine.mjs",
+    "test:security": "node scripts/test-security.mjs",
     "test:reporting-center": "node scripts/test-reporting-center.mjs",
     "test:executive-dashboard": "node scripts/test-executive-dashboard.mjs",
     "test:route-audit": "node scripts/test-route-audit.mjs",

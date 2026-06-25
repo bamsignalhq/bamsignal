@@ -42,7 +42,8 @@ export type HardTab =
   | "apiplatform"
   | "launchcontrol"
   | "performance"
-  | "workflows";
+  | "workflows"
+  | "securitydashboard";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -124,6 +125,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "audit",
         label: "Audit",
         keywords: ["audit", "compliance", "trail", "permissions", "exports"]
+      },
+      {
+        id: "securitydashboard",
+        label: "Security",
+        keywords: ["security", "hardening", "headers", "csrf", "xss", "rls", "secrets", "auth"]
       },
       {
         id: "compliance",
@@ -279,6 +285,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   talent: "Talent",
   support: "Support",
   audit: "Audit",
+  securitydashboard: "Security",
   compliance: "Compliance",
   systemhealth: "System Health",
   notifications: "Notifications",

@@ -22,8 +22,8 @@ function buildSecurityIssues(): SecurityIssue[] {
       kind: "privilege-escalation",
       title: "CRON_SECRET bypasses admin auth",
       summary:
-        "server/adminAuth.js requireAdmin accepts x-bamsignal-secret matching CRON_SECRET — grants full admin API access without operator session.",
-      status: "critical",
+        "server/adminAuth.js requireAdmin accepts x-bamsignal-secret header matching CRON_SECRET — grants full admin API access without operator session. Query and body secret channels rejected.",
+      status: "warning",
       affectedRoles: ["super-admin"],
       affectedPaths: ["/api/concierge/persistence"]
     },

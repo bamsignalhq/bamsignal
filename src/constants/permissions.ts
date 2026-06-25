@@ -27,6 +27,7 @@ import { API_PLATFORM_ADMIN_PATH } from "./apiPlatformAdmin";
 import { LAUNCH_CONTROL_CENTER_ADMIN_PATH } from "./launchControlCenterAdmin";
 import { PERFORMANCE_CENTER_ADMIN_PATH } from "./performanceCenterAdmin";
 import { WORKFLOW_ENGINE_ADMIN_PATH } from "./workflowEngineAdmin";
+import { PRODUCTION_SECURITY_ADMIN_PATH } from "./productionSecurityAdmin";
 import { REPORTING_CENTER_ADMIN_PATH } from "./reportingCenterAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
@@ -206,7 +207,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   apiplatform: "SystemAdministration",
   launchcontrol: "ManageOperations",
   performance: "ManageOperations",
-  workflows: "ManageOperations"
+  workflows: "ManageOperations",
+  securitydashboard: ["ManageOperations", "ManageSafety", "SystemAdministration"]
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -275,7 +277,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [API_PLATFORM_ADMIN_PATH]: HARD_TAB_PERMISSIONS.apiplatform,
   [LAUNCH_CONTROL_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchcontrol,
   [PERFORMANCE_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.performance,
-  [WORKFLOW_ENGINE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.workflows
+  [WORKFLOW_ENGINE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.workflows,
+  [PRODUCTION_SECURITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.securitydashboard
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -330,7 +333,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/api-platform",
   "/hard/launch-control",
   "/hard/performance",
-  "/hard/workflows"
+  "/hard/workflows",
+  "/hard/security-dashboard"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

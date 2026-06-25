@@ -31,6 +31,7 @@ import { API_PLATFORM_ADMIN_PATH } from "./apiPlatformAdmin";
 import { LAUNCH_CONTROL_CENTER_ADMIN_PATH } from "./launchControlCenterAdmin";
 import { PERFORMANCE_CENTER_ADMIN_PATH } from "./performanceCenterAdmin";
 import { WORKFLOW_ENGINE_ADMIN_PATH } from "./workflowEngineAdmin";
+import { PRODUCTION_SECURITY_ADMIN_PATH } from "./productionSecurityAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
 export type AuditAdminView = "compliance" | "routes" | "database" | "security" | "journeys";
@@ -79,7 +80,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   apiplatform: "api-platform",
   launchcontrol: "launch-control",
   performance: "performance",
-  workflows: "workflows"
+  workflows: "workflows",
+  securitydashboard: "security-dashboard"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(

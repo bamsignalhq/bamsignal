@@ -3,6 +3,7 @@
  * Start the process via server/production.js only (Docker, Coolify, npm start).
  */
 import express from "express";
+import fs from "node:fs";
 import path from "node:path";
 import { corsMiddleware } from "./cors.js";
 import { PAYSTACK_WEBHOOK_MOUNT_PATHS } from "./services/paystackWebhookHandler.js";
@@ -15,6 +16,7 @@ import {
   requestContextMiddleware
 } from "./services/observability.js";
 import { sanitizeApiErrorForLog } from "./services/errorResponse.js";
+import { securityHeadersMiddleware } from "./services/securityHeaders.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
 import { mountHandler } from "./mountHandler.js";
@@ -60,6 +62,9 @@ import { buildSitemapXml, getRobotsTxt } from "./seoSitemap.js";
 export function createApp(options = {}) {
   const { distDir = null } = options;
   const app = express();
+  app.disable("x-powered-by");
+
+  app.use(securityHeadersMiddleware);
 
   app.use((req, res, next) => {
     const host = String(req.headers.host || "");
@@ -172,6 +177,18 @@ export function createApp(options = {}) {
 
   app.get("/robots.txt", (_req, res) => {
     res.type("text/plain").send(getRobotsTxt());
+  });
+
+  // Android App Links — express.static ignores dot-directories (.well-known) by default.
+  app.get("/.well-known/assetlinks.json", (_req, res, next) => {
+    if (!distDir) return next();
+    const assetlinksPath = path.join(distDir, ".well-known", "assetlinks.json");
+    try {
+      if (!fs.existsSync(assetlinksPath)) return next();
+      res.type("application/json").send(fs.readFileSync(assetlinksPath, "utf8"));
+    } catch (error) {
+      next(error);
+    }
   });
 
   if (distDir) {

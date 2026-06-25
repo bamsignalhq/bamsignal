@@ -1,42 +1,85 @@
-import type { FinanceRecord } from "../../../types/financeOperations";
+import { REPORT_PERIOD_LABELS } from "../../../constants/financeOperations";
+import type { FinanceMetric, FinancialReportRecord } from "../../../types/financeOperations";
+import { buildReportCsvContent } from "../../../utils/financeOperationsLogic";
 
 type RevenueCardProps = {
-  records: FinanceRecord[];
+  metrics: FinanceMetric[];
+  reports: FinancialReportRecord[];
 };
 
 function formatNgn(amount: number): string {
   return `₦${amount.toLocaleString("en-NG")}`;
 }
 
-export function RevenueCard({ records }: RevenueCardProps) {
-  const revenueRecords = records.filter(
-    (record) =>
-      (record.areaId === "revenue" || record.areaId === "consultation-fees") &&
-      (record.status === "paid" || record.status === "settled")
-  );
-  const total = revenueRecords.reduce((sum, record) => sum + record.amountNgn, 0);
+export function RevenueCard({ metrics, reports }: RevenueCardProps) {
+  const revenueToday = metrics.find((item) => item.id === "revenue-today")?.value ?? "₦0";
+  const revenueMonth = metrics.find((item) => item.id === "revenue-month")?.value ?? "₦0";
+  const consultations = metrics.find((item) => item.id === "consultations-paid")?.value ?? "0";
+
+  function handleExport(report: FinancialReportRecord, format: "csv" | "pdf") {
+    if (format === "pdf") {
+      window.alert(`PDF export documented for ${report.reportRef} — institutional finance review.`);
+      return;
+    }
+    const content = buildReportCsvContent(report);
+    const blob = new Blob([content], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${report.reportRef}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
-    <section className="revenue-card concierge-consultant-card--glass cc-reveal">
-      <header className="revenue-card__head">
+    <section className="finance-card revenue-card concierge-consultant-card--glass cc-reveal">
+      <header className="concierge-consultant-card__head">
         <h3>Revenue</h3>
-        <p>Total paid/settled: {formatNgn(total)}</p>
+        <p>
+          Consultation revenue and institutional reporting — today {revenueToday}, month {revenueMonth},{" "}
+          {consultations} consultations paid.
+        </p>
       </header>
 
-      {revenueRecords.length ? (
-        <ul className="revenue-card__list">
-          {revenueRecords.map((record) => (
-            <li key={record.id}>
-              <strong>{record.transactionRef}</strong>
-              <span>{formatNgn(record.amountNgn)}</span>
-              <span>{record.journeyRef ?? "—"}</span>
-              <p>{record.description}</p>
-            </li>
+      <div className="revenue-card__summary">
+        {metrics
+          .filter((item) => item.id.startsWith("revenue") || item.id === "consultations-paid")
+          .map((metric) => (
+            <article key={metric.id} className="finance-metric">
+              <span className="finance-metric__label">{metric.label}</span>
+              <strong className="finance-metric__value">{metric.value}</strong>
+            </article>
           ))}
-        </ul>
-      ) : (
-        <p className="revenue-card__empty">No revenue records in current view.</p>
-      )}
+      </div>
+
+      <h4>Reports</h4>
+      <ul className="finance-list finance-list--compact">
+        {reports.map((report) => (
+          <li key={report.id} className="finance-list__item">
+            <div>
+              <strong>{report.reportRef}</strong>
+              <span>{REPORT_PERIOD_LABELS[report.periodType]}</span>
+            </div>
+            <div className="finance-list__meta">
+              <span>Net {formatNgn(report.netPositionNgn)}</span>
+              <button
+                type="button"
+                className="concierge-consultant-btn concierge-consultant-btn--ghost"
+                onClick={() => handleExport(report, "csv")}
+              >
+                CSV
+              </button>
+              <button
+                type="button"
+                className="concierge-consultant-btn concierge-consultant-btn--ghost"
+                onClick={() => handleExport(report, "pdf")}
+              >
+                PDF
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

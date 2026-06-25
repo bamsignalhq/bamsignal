@@ -55,7 +55,8 @@
   font-size: 0.9rem;
 }
 
-.finance-operations-page__future {
+.finance-operations-page__future,
+.finance-operations-page__integrations {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding-top: 12px;
   color: rgba(255, 255, 255, 0.62);
@@ -64,7 +65,9 @@
   gap: 6px;
 }
 
-.finance-operations-page__future h3 {
+.finance-operations-page__future h3,
+.finance-operations-page__future h4,
+.finance-operations-page__integrations h4 {
   margin: 0;
   color: rgba(255, 255, 255, 0.82);
 }
@@ -305,4 +308,114 @@
   .finance-operations-page__body {
     grid-template-columns: 1fr;
   }
+}
+
+.finance-card {
+  padding: 14px;
+}
+
+.finance-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.finance-list--compact .finance-list__item {
+  padding: 8px;
+}
+
+.finance-list__item {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.84rem;
+}
+
+.finance-list__item span {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.78rem;
+}
+
+.finance-list__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.finance-metric {
+  display: grid;
+  gap: 4px;
+}
+
+.finance-metric__label {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+.finance-metric__value {
+  font-size: 1.2rem;
+}
+
+.finance-metric__hint {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.78rem;
+}
+
+.finance-metric--healthy .finance-metric__value {
+  color: #6ee7b7;
+}
+
+.finance-metric--warning .finance-metric__value {
+  color: #fcd34d;
+}
+
+.finance-metric--critical .finance-metric__value {
+  color: #fca5a5;
+}
+
+.financial-health-card__grid,
+.revenue-card__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.finance-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.finance-pill--balanced,
+.finance-pill--healthy,
+.finance-pill--high {
+  background: rgba(52, 211, 153, 0.18);
+  color: #6ee7b7;
+}
+
+.finance-pill--variance,
+.finance-pill--warning,
+.finance-pill--medium,
+.finance-pill--pending {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fcd34d;
+}
+
+.finance-pill--low {
+  background: rgba(96, 165, 250, 0.18);
+  color: #93c5fd;
+}
+
+.revenue-card h4 {
+  margin: 12px 0 8px;
+  font-size: 0.9rem;
 }

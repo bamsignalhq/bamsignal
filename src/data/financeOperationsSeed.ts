@@ -280,5 +280,241 @@ export const FINANCE_OPERATIONS_SEED: FinanceRecord[] = [
         auditRef: "audit_002"
       }
     ]
+  },
+  {
+    id: "finance_011",
+    transactionRef: "FIN-2026-01051",
+    areaId: "chargebacks",
+    status: "pending",
+    amountNgn: 150000,
+    memberRef: "sc_member_dispute",
+    consultantRef: null,
+    journeyRef: "BS-JR-2026-0030",
+    paystackReference: "pay_premium_dispute_01",
+    auditRef: "audit_005",
+    description: "Chargeback initiated — member dispute on premium subscription.",
+    createdAt: "2026-06-23T09:00:00.000Z",
+    chargebackFlag: true,
+    timeline: [
+      {
+        id: "finance_tl_0001",
+        actor: "system@paystack",
+        timestamp: "2026-06-23T09:00:00.000Z",
+        action: "chargeback-opened",
+        note: "Paystack chargeback notification received.",
+        auditRef: "audit_005"
+      }
+    ]
+  }
+];
+
+const NOW = "2026-06-24T10:00:00.000Z";
+
+export const REFUND_REQUEST_SEED = [
+  {
+    id: "fr100000-0000-4000-8000-000000000001",
+    refundRef: "REF-2026-0044",
+    transactionId: "finance_003",
+    requestedByEmail: "support@bamsignal.com",
+    amountNgn: 50000,
+    reason: "Duplicate consultation payment",
+    status: "processed" as const,
+    memberRef: "sc_member_chidi",
+    journeyRef: "BS-JR-2026-0035",
+    paystackReference: "pay_consult_77102",
+    createdAt: "2026-06-20T10:30:00.000Z",
+    updatedAt: "2026-06-20T11:15:00.000Z"
+  },
+  {
+    id: "fr100000-0000-4000-8000-000000000002",
+    refundRef: "REF-2026-0051",
+    transactionId: "finance_001",
+    requestedByEmail: "ops@bamsignal.com",
+    amountNgn: 75000,
+    reason: "Consultation cancelled within grace period",
+    status: "pending" as const,
+    memberRef: "sc_member_ngozi",
+    journeyRef: "BS-JR-2026-0042",
+    paystackReference: "pay_consult_88291",
+    createdAt: NOW,
+    updatedAt: NOW
+  }
+];
+
+export const REFUND_APPROVAL_SEED = [
+  {
+    id: "fa100000-0000-4000-8000-000000000001",
+    refundRequestId: "fr100000-0000-4000-8000-000000000001",
+    approverEmail: "finance@bamsignal.com",
+    decision: "approved" as const,
+    note: "Duplicate verified — approved for Paystack refund.",
+    decidedAt: "2026-06-20T11:00:00.000Z"
+  }
+];
+
+export const CONSULTANT_PAYOUT_SEED = [
+  {
+    id: "cp100000-0000-4000-8000-000000000001",
+    payoutRef: "PAY-2026-06-ADA",
+    consultantRef: "consultant_ada_okafor",
+    amountNgn: 125000,
+    status: "pending" as const,
+    periodLabel: "June 2026",
+    consultationsCount: 8,
+    scheduledAt: "2026-06-28T10:00:00.000Z",
+    auditRef: "audit_001"
+  },
+  {
+    id: "cp100000-0000-4000-8000-000000000002",
+    payoutRef: "PAY-2026-05-FAT",
+    consultantRef: "consultant_fatima_bello",
+    amountNgn: 98000,
+    status: "settled" as const,
+    periodLabel: "May 2026",
+    consultationsCount: 6,
+    paidAt: "2026-06-02T14:00:00.000Z",
+    auditRef: "audit_003"
+  }
+];
+
+export const OPERATING_EXPENSE_SEED = [
+  {
+    id: "ex100000-0000-4000-8000-000000000001",
+    expenseRef: "EXP-2026-0619-SMS",
+    category: "messaging",
+    amountNgn: 45000,
+    vendor: "Sendchamp",
+    status: "recorded",
+    incurredAt: "2026-06-19T16:00:00.000Z",
+    description: "SMS operational cost — June",
+    auditRef: "audit_004"
+  },
+  {
+    id: "ex100000-0000-4000-8000-000000000002",
+    expenseRef: "EXP-2026-0620-INFRA",
+    category: "infrastructure",
+    amountNgn: 180000,
+    vendor: "Coolify / hosting",
+    status: "recorded",
+    incurredAt: "2026-06-20T08:00:00.000Z",
+    description: "Server and database hosting — June",
+    auditRef: "audit_004"
+  }
+];
+
+export const FINANCIAL_REPORT_SEED = [
+  {
+    id: "rp100000-0000-4000-8000-000000000001",
+    reportRef: "RPT-DAILY-20260624",
+    periodType: "daily" as const,
+    periodStart: "2026-06-24T00:00:00.000Z",
+    periodEnd: "2026-06-24T23:59:59.000Z",
+    totalRevenueNgn: 150000,
+    totalExpensesNgn: 0,
+    totalRefundsNgn: 0,
+    netPositionNgn: 150000,
+    generatedAt: NOW,
+    exportFormats: ["csv", "pdf"]
+  },
+  {
+    id: "rp100000-0000-4000-8000-000000000002",
+    reportRef: "RPT-MONTHLY-202606",
+    periodType: "monthly" as const,
+    periodStart: "2026-06-01T00:00:00.000Z",
+    periodEnd: "2026-06-30T23:59:59.000Z",
+    totalRevenueNgn: 975000,
+    totalExpensesNgn: 225000,
+    totalRefundsNgn: 50000,
+    netPositionNgn: 700000,
+    generatedAt: NOW,
+    exportFormats: ["csv", "pdf"]
+  },
+  {
+    id: "rp100000-0000-4000-8000-000000000003",
+    reportRef: "RPT-QUARTERLY-2026Q2",
+    periodType: "quarterly" as const,
+    periodStart: "2026-04-01T00:00:00.000Z",
+    periodEnd: "2026-06-30T23:59:59.000Z",
+    totalRevenueNgn: 2850000,
+    totalExpensesNgn: 640000,
+    totalRefundsNgn: 120000,
+    netPositionNgn: 2090000,
+    generatedAt: NOW,
+    exportFormats: ["csv", "pdf"]
+  },
+  {
+    id: "rp100000-0000-4000-8000-000000000004",
+    reportRef: "RPT-YEARLY-2026",
+    periodType: "yearly" as const,
+    periodStart: "2026-01-01T00:00:00.000Z",
+    periodEnd: "2026-12-31T23:59:59.000Z",
+    totalRevenueNgn: 5200000,
+    totalExpensesNgn: 1100000,
+    totalRefundsNgn: 180000,
+    netPositionNgn: 3920000,
+    generatedAt: NOW,
+    exportFormats: ["csv", "pdf"]
+  },
+  {
+    id: "rp100000-0000-4000-8000-000000000005",
+    reportRef: "RPT-LIFETIME",
+    periodType: "lifetime" as const,
+    periodStart: "2024-01-01T00:00:00.000Z",
+    periodEnd: NOW,
+    totalRevenueNgn: 12400000,
+    totalExpensesNgn: 2800000,
+    totalRefundsNgn: 420000,
+    netPositionNgn: 9180000,
+    generatedAt: NOW,
+    exportFormats: ["csv", "pdf"]
+  }
+];
+
+export const RECONCILIATION_LOG_SEED = [
+  {
+    id: "rc100000-0000-4000-8000-000000000001",
+    reconciliationRef: "REC-DAILY-20260624",
+    reconciliationType: "daily" as const,
+    status: "balanced" as const,
+    paystackTotalNgn: 225000,
+    internalTotalNgn: 225000,
+    varianceNgn: 0,
+    reconciledAt: "2026-06-24T06:30:00.000Z",
+    notes: "Daily Paystack vs internal ledger — matched.",
+    auditRef: "audit_002"
+  },
+  {
+    id: "rc100000-0000-4000-8000-000000000002",
+    reconciliationRef: "REC-MONTHLY-202605",
+    reconciliationType: "monthly" as const,
+    status: "variance" as const,
+    paystackTotalNgn: 810000,
+    internalTotalNgn: 805000,
+    varianceNgn: 5000,
+    reconciledAt: "2026-06-01T08:00:00.000Z",
+    notes: "Minor settlement timing variance — documented.",
+    auditRef: "audit_003"
+  },
+  {
+    id: "rc100000-0000-4000-8000-000000000003",
+    reconciliationRef: "REC-QUARTERLY-2026Q1",
+    reconciliationType: "quarterly" as const,
+    status: "balanced" as const,
+    paystackTotalNgn: 2100000,
+    internalTotalNgn: 2100000,
+    varianceNgn: 0,
+    reconciledAt: "2026-04-02T10:00:00.000Z",
+    auditRef: "audit_004"
+  },
+  {
+    id: "rc100000-0000-4000-8000-000000000004",
+    reconciliationRef: "REC-ANNUAL-2025",
+    reconciliationType: "annual" as const,
+    status: "balanced" as const,
+    paystackTotalNgn: 4800000,
+    internalTotalNgn: 4800000,
+    varianceNgn: 0,
+    reconciledAt: "2026-01-05T09:00:00.000Z",
+    auditRef: "audit_004"
   }
 ];

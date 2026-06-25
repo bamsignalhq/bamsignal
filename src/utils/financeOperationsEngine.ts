@@ -1,38 +1,25 @@
-import { FINANCE_OPERATIONS_SEED } from "../data/financeOperationsSeed";
 import type { FinanceFilterState, FinanceOperationsBundle } from "../types/financeOperations";
 import {
+  buildFinanceForecast,
   buildFinanceMetrics,
+  buildFinancialHealthMetrics,
   emptyFinanceFilters,
   filterFinanceRecords,
   findRecordById,
-  listFinanceRecords,
+  mapRecordsToTransactions,
   sortRecordsByDate
 } from "./financeOperationsLogic";
-import { readJson } from "./storage";
+import {
+  listConsultantPayouts,
+  listFinanceOperationsRecords,
+  listFinancialReports,
+  listOperatingExpenses,
+  listReconciliationLogs,
+  listRefundApprovals,
+  listRefundRequests
+} from "./financeOperationsStore";
 
-const STORAGE_KEY = "bamsignal.financeOperations.v1";
-
-type FinanceOperationsState = {
-  records: typeof FINANCE_OPERATIONS_SEED;
-  updatedAt: string;
-};
-
-function defaultState(): FinanceOperationsState {
-  return {
-    records: [...FINANCE_OPERATIONS_SEED],
-    updatedAt: new Date().toISOString()
-  };
-}
-
-function loadState(): FinanceOperationsState {
-  const stored = readJson<FinanceOperationsState>(STORAGE_KEY, defaultState());
-  if (!stored?.records?.length) return defaultState();
-  return stored;
-}
-
-export function listFinanceOperationsRecords() {
-  return loadState().records;
-}
+export { emptyFinanceFilters, listFinanceOperationsRecords };
 
 export function buildFinanceOperationsBundle(
   filters: FinanceFilterState = emptyFinanceFilters(),
@@ -40,11 +27,27 @@ export function buildFinanceOperationsBundle(
 ): FinanceOperationsBundle {
   const allRecords = listFinanceOperationsRecords();
   const records = sortRecordsByDate(filterFinanceRecords(allRecords, filters));
+  const refundQueue = listRefundRequests();
+  const reconciliations = listReconciliationLogs();
 
   return {
     generatedAt: new Date().toISOString(),
     metrics: buildFinanceMetrics(allRecords),
+    financialHealth: buildFinancialHealthMetrics(
+      allRecords,
+      refundQueue.filter((item) => item.status === "pending").length,
+      reconciliations.filter((item) => item.status === "variance").length
+    ),
     records,
+    transactions: mapRecordsToTransactions(allRecords),
+    refundQueue,
+    refundApprovals: listRefundApprovals(),
+    expenses: listOperatingExpenses(),
+    payouts: listConsultantPayouts(),
+    reconciliations,
+    reports: listFinancialReports(),
+    forecast: buildFinanceForecast(allRecords),
+    chargebackCount: allRecords.filter((r) => r.areaId === "chargebacks" || r.chargebackFlag).length,
     selectedRecord: findRecordById(records, selectedRecordId ?? null)
   };
 }

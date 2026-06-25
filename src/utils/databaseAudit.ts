@@ -101,6 +101,17 @@ export const BUSINESS_CONTINUITY_SCHEMA_TABLES = [
   "continuity_exercises"
 ] as const;
 
+/** Tables from migrations/0008_finance_operations.sql */
+export const FINANCE_OPERATIONS_SCHEMA_TABLES = [
+  "financial_transactions",
+  "refund_requests",
+  "refund_approvals",
+  "consultant_payouts",
+  "operating_expenses",
+  "financial_reports",
+  "reconciliation_logs"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -490,6 +501,70 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["continuity_exercises_scheduled_idx"],
     constraints: ["uuid primary key", "exercise_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "financial_transactions",
+    migrationRef: "0008_finance_operations.sql",
+    domainIds: ["finance", "payments"],
+    inRequiredSchema: false,
+    indexes: ["financial_transactions_category_idx"],
+    constraints: ["uuid primary key", "transaction_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Finance Operations Center™ — institutional transaction ledger"
+  },
+  {
+    tableName: "refund_requests",
+    migrationRef: "0008_finance_operations.sql",
+    domainIds: ["finance"],
+    inRequiredSchema: false,
+    indexes: ["refund_requests_status_idx"],
+    constraints: ["uuid primary key", "refund_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "refund_approvals",
+    migrationRef: "0008_finance_operations.sql",
+    domainIds: ["finance"],
+    inRequiredSchema: false,
+    indexes: ["refund_approvals_request_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "consultant_payouts",
+    migrationRef: "0008_finance_operations.sql",
+    domainIds: ["finance", "consultants"],
+    inRequiredSchema: false,
+    indexes: ["consultant_payouts_status_idx"],
+    constraints: ["uuid primary key", "payout_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "operating_expenses",
+    migrationRef: "0008_finance_operations.sql",
+    domainIds: ["finance"],
+    inRequiredSchema: false,
+    indexes: ["operating_expenses_incurred_idx"],
+    constraints: ["uuid primary key", "expense_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "financial_reports",
+    migrationRef: "0008_finance_operations.sql",
+    domainIds: ["finance"],
+    inRequiredSchema: false,
+    indexes: ["financial_reports_period_idx"],
+    constraints: ["uuid primary key", "report_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "reconciliation_logs",
+    migrationRef: "0008_finance_operations.sql",
+    domainIds: ["finance", "payments"],
+    inRequiredSchema: false,
+    indexes: ["reconciliation_logs_type_idx"],
+    constraints: ["uuid primary key", "reconciliation_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -540,8 +615,8 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     storageKey: "bamsignal.financeOperations.v1",
     domainId: "finance",
     engine: "financeOperationsEngine.ts",
-    expectedTable: "payment_fulfillments",
-    note: "Finance ops layer mirrors Paystack — partial overlap with payment tables"
+    expectedTable: "financial_transactions",
+    note: "Finance Operations Center™ — institutional finance governance via financeOperations.js"
   },
   {
     storageKey: "bamsignal.workforceManagement.v1",

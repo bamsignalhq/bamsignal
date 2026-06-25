@@ -105,6 +105,181 @@ export function sumOutstandingPayouts(records: FinanceRecord[]): number {
     .reduce((sum, record) => sum + record.amountNgn, 0);
 }
 
+export function countChargebacks(records: FinanceRecord[]): number {
+  return records.filter(
+    (record) => record.areaId === "chargebacks" || record.chargebackFlag
+  ).length;
+}
+
+export function sumExpensesMonth(records: FinanceRecord[], now = new Date()): number {
+  const month = now.toISOString().slice(0, 7);
+  return records
+    .filter(
+      (record) =>
+        record.areaId === "operational-costs" &&
+        record.status === "paid" &&
+        isSameMonth(record.createdAt, month)
+    )
+    .reduce((sum, record) => sum + record.amountNgn, 0);
+}
+
+export function assertNotSelfRefundApproval(requestedByEmail: string, approverEmail: string): void {
+  const requester = requestedByEmail.trim().toLowerCase();
+  const approver = approverEmail.trim().toLowerCase();
+  if (!requester || !approver) {
+    throw new Error("Finance approval violation: requester and approver required");
+  }
+  if (requester === approver) {
+    throw new Error("Finance approval violation: cannot approve own refund request");
+  }
+}
+
+export function processRefundApproval(
+  request: import("../types/financeOperations").RefundRequestRecord,
+  approval: { approverEmail: string; decision: "approved" | "rejected"; note?: string; decidedAt?: string }
+) {
+  assertNotSelfRefundApproval(request.requestedByEmail, approval.approverEmail);
+  if (!["approved", "rejected"].includes(approval.decision)) {
+    throw new Error("Finance approval violation: invalid decision");
+  }
+  if (request.status !== "pending") {
+    throw new Error("Finance approval violation: refund not pending");
+  }
+  return {
+    request: {
+      ...request,
+      status: approval.decision === "approved" ? ("approved" as const) : ("rejected" as const),
+      updatedAt: new Date().toISOString()
+    },
+    approval: {
+      ...approval,
+      refundRequestId: request.id,
+      decidedAt: approval.decidedAt ?? new Date().toISOString()
+    }
+  };
+}
+
+export function mapRecordsToTransactions(
+  records: FinanceRecord[]
+): import("../types/financeOperations").FinancialTransactionRecord[] {
+  return records.map((record) => ({
+    id: record.id,
+    transactionRef: record.transactionRef,
+    category: record.areaId,
+    status: record.status,
+    amountNgn: record.amountNgn,
+    currency: "NGN",
+    memberRef: record.memberRef ?? undefined,
+    consultantRef: record.consultantRef ?? undefined,
+    journeyRef: record.journeyRef ?? undefined,
+    paystackReference: record.paystackReference ?? undefined,
+    chargebackFlag: Boolean(record.chargebackFlag),
+    auditRef: record.auditRef ?? undefined,
+    description: record.description,
+    recordedAt: record.createdAt,
+    createdAt: record.createdAt
+  }));
+}
+
+export function buildFinancialHealthMetrics(
+  records: FinanceRecord[],
+  pendingRefunds: number,
+  varianceReconciliations: number
+): import("../types/financeOperations").FinancialHealthMetric[] {
+  const failed = countFailedPayments(records);
+  const chargebacks = countChargebacks(records);
+  const outstanding = sumOutstandingPayouts(records);
+
+  return [
+    {
+      id: "ledger-integrity",
+      label: "Ledger integrity",
+      value: "Immutable",
+      tone: "healthy",
+      hint: "Append-only financial records"
+    },
+    {
+      id: "payment-failures",
+      label: "Payment failures",
+      value: String(failed),
+      tone: failed > 2 ? "warning" : "healthy"
+    },
+    {
+      id: "chargebacks",
+      label: "Open chargebacks",
+      value: String(chargebacks),
+      tone: chargebacks > 0 ? "warning" : "healthy"
+    },
+    {
+      id: "refund-queue",
+      label: "Pending refunds",
+      value: String(pendingRefunds),
+      tone: pendingRefunds > 0 ? "warning" : "healthy"
+    },
+    {
+      id: "reconciliation",
+      label: "Reconciliation variances",
+      value: String(varianceReconciliations),
+      tone: varianceReconciliations > 0 ? "warning" : "healthy"
+    },
+    {
+      id: "outstanding-payouts",
+      label: "Outstanding payouts",
+      value: formatNgn(outstanding),
+      tone: outstanding > 200000 ? "warning" : "healthy"
+    }
+  ];
+}
+
+export function buildFinanceForecast(
+  records: FinanceRecord[],
+  now = new Date()
+): import("../types/financeOperations").FinanceForecastItem[] {
+  const monthRevenue = sumRevenueMonth(records, now);
+  const monthExpenses = sumExpensesMonth(records, now);
+
+  return [
+    {
+      id: "revenue-next-month",
+      label: "Projected revenue (next month)",
+      projectedNgn: Math.round(monthRevenue * 1.08),
+      confidence: "medium",
+      horizon: "30 days"
+    },
+    {
+      id: "expenses-next-month",
+      label: "Projected expenses (next month)",
+      projectedNgn: Math.round(monthExpenses * 1.05),
+      confidence: "high",
+      horizon: "30 days"
+    },
+    {
+      id: "net-quarter",
+      label: "Projected net (quarter)",
+      projectedNgn: Math.round((monthRevenue - monthExpenses) * 3 * 1.06),
+      confidence: "low",
+      horizon: "90 days"
+    }
+  ];
+}
+
+export function buildReportCsvContent(
+  report: import("../types/financeOperations").FinancialReportRecord
+): string {
+  const header = "reportRef,periodType,periodStart,periodEnd,revenue,expenses,refunds,net";
+  const row = [
+    report.reportRef,
+    report.periodType,
+    report.periodStart,
+    report.periodEnd,
+    report.totalRevenueNgn,
+    report.totalExpensesNgn,
+    report.totalRefundsNgn,
+    report.netPositionNgn
+  ].join(",");
+  return `${header}\n${row}`;
+}
+
 export function buildFinanceMetrics(records: FinanceRecord[], now = new Date()) {
   const values: Record<string, string> = {
     "revenue-today": formatNgn(sumRevenueToday(records, now)),
@@ -112,7 +287,9 @@ export function buildFinanceMetrics(records: FinanceRecord[], now = new Date()) 
     "consultations-paid": String(countConsultationsPaid(records)),
     "refund-rate": computeRefundRate(records),
     "failed-payments": String(countFailedPayments(records)),
-    "outstanding-payouts": formatNgn(sumOutstandingPayouts(records))
+    "outstanding-payouts": formatNgn(sumOutstandingPayouts(records)),
+    chargebacks: String(countChargebacks(records)),
+    "expenses-month": formatNgn(sumExpensesMonth(records, now))
   };
 
   return FINANCE_METRICS.map((metric) => ({

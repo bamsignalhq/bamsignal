@@ -1,0 +1,227 @@
+.data-governance-center-page {
+  display: grid;
+  gap: 18px;
+}
+
+.data-governance-center-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.data-governance-center-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.data-governance-center-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.data-governance-center-page__areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.data-governance-center-page__area-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.data-governance-center-page__area-btn.is-active {
+  border-color: rgba(180, 200, 255, 0.55);
+  background: rgba(140, 160, 220, 0.1);
+}
+
+.data-governance-center-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.data-governance-center-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.data-governance-center-page__future {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.data-governance-center-page__future h4 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.data-governance-card {
+  padding: 14px;
+}
+
+.data-governance-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.data-governance-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.data-governance-card__line {
+  margin: 12px 0 8px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.data-governance-card__empty {
+  margin: 12px 0 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.data-governance-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.data-governance-card__grid article {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.data-governance-card__grid span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.data-governance-card__list,
+.compliance-card__regions,
+.consent-card__audit {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.data-governance-card__list li,
+.compliance-card__regions li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.data-governance-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.data-governance-card__meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.data-class {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.data-class--public {
+  color: rgba(180, 220, 255, 0.95);
+}
+
+.data-class--internal {
+  color: rgba(200, 200, 220, 0.95);
+}
+
+.data-class--confidential {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.data-class--highly-confidential,
+.data-class--restricted {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.privacy-request-card__status,
+.consent-card__status {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.privacy-request-card__status--pending,
+.consent-card__status--active {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.privacy-request-card__status--processing,
+.privacy-request-card__status--in-review {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.privacy-request-card__status--completed {
+  color: rgba(160, 200, 255, 0.95);
+}
+
+.consent-card__status--withdrawn {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.consent-card__audit {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  padding-left: 0;
+}
+
+.privacy-request-card__notes {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 220, 140, 0.9);
+}
+
+.retention-card__status.is-active {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.compliance-card__regions p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+@media (max-width: 900px) {
+  .data-governance-center-page__body {
+    grid-template-columns: 1fr;
+  }
+}

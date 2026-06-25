@@ -67,6 +67,7 @@ import "./styles/institutional-governance.css";
 import "./styles/business-continuity.css";
 import "./styles/configuration-platform.css";
 import "./styles/monitoring-center.css";
+import "./styles/data-governance-center.css";
 import "./styles/route-audit.css";
 import "./styles/database-audit.css";
 import "./styles/permissions-audit.css";

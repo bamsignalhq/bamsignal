@@ -151,6 +151,16 @@ export const MONITORING_CENTER_SCHEMA_TABLES = [
   "metric_snapshots"
 ] as const;
 
+/** Tables from migrations/0013_data_governance_center.sql */
+export const DATA_GOVERNANCE_CENTER_SCHEMA_TABLES = [
+  "data_inventory_items",
+  "retention_policies",
+  "privacy_requests",
+  "consent_records",
+  "regional_policies",
+  "sensitive_data_registers"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -806,6 +816,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["metric_snapshots_key_idx"],
     constraints: ["uuid primary key"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "data_inventory_items",
+    migrationRef: "0013_data_governance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["data_inventory_items_class_idx"],
+    constraints: ["uuid primary key", "inventory_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Data Governance, Privacy & Retention Center™"
+  },
+  {
+    tableName: "retention_policies",
+    migrationRef: "0013_data_governance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["retention_policies_category_idx"],
+    constraints: ["uuid primary key", "policy_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "privacy_requests",
+    migrationRef: "0013_data_governance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["privacy_requests_status_idx"],
+    constraints: ["uuid primary key", "request_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "consent_records",
+    migrationRef: "0013_data_governance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["consent_records_member_idx"],
+    constraints: ["uuid primary key", "consent_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "regional_policies",
+    migrationRef: "0013_data_governance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["regional_policies_region_idx"],
+    constraints: ["uuid primary key", "policy_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "sensitive_data_registers",
+    migrationRef: "0013_data_governance_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["sensitive_data_registers_class_idx"],
+    constraints: ["uuid primary key", "register_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -830,6 +895,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "monitoringCenterEngine.ts",
     expectedTable: "monitoring_services",
     note: "Enterprise Monitoring & Incident Center™ — dual-write via monitoringCenter.js"
+  },
+  {
+    storageKey: "bamsignal.dataGovernanceCenter.v1",
+    domainId: "qa",
+    engine: "dataGovernanceCenterEngine.ts",
+    expectedTable: "data_inventory_items",
+    note: "Data Governance, Privacy & Retention Center™ — dual-write via dataGovernanceCenter.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

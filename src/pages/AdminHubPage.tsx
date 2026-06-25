@@ -117,6 +117,7 @@ import { BusinessContinuityPage } from "../components/admin/businessContinuity/B
 import { ConfigurationPlatformPage } from "../components/admin/configuration/ConfigurationPlatformPage";
 import { MonitoringCenterPage } from "../components/admin/monitoring/MonitoringCenterPage";
 import { DataGovernanceCenterPage } from "../components/admin/dataGovernance/DataGovernanceCenterPage";
+import { ApiPlatformPage } from "../components/admin/apiPlatform/ApiPlatformPage";
 import { JourneyIntelligencePage } from "../components/admin/concierge/JourneyIntelligencePage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
 import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
@@ -2104,6 +2105,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "configuration" ? <ConfigurationPlatformPage /> : null}
       {tab === "monitoring" ? <MonitoringCenterPage /> : null}
       {tab === "datagovernance" ? <DataGovernanceCenterPage /> : null}
+      {tab === "apiplatform" ? <ApiPlatformPage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

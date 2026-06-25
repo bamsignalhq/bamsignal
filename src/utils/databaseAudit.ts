@@ -161,6 +161,16 @@ export const DATA_GOVERNANCE_CENTER_SCHEMA_TABLES = [
   "sensitive_data_registers"
 ] as const;
 
+/** Tables from migrations/0014_api_platform.sql */
+export const API_PLATFORM_SCHEMA_TABLES = [
+  "api_catalog_entries",
+  "api_clients",
+  "api_keys",
+  "api_webhooks",
+  "api_rate_limits",
+  "api_usage_snapshots"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -871,6 +881,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["sensitive_data_registers_class_idx"],
     constraints: ["uuid primary key", "register_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "api_catalog_entries",
+    migrationRef: "0014_api_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["api_catalog_entries_domain_idx"],
+    constraints: ["uuid primary key", "catalog_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Institutional API Platform™"
+  },
+  {
+    tableName: "api_clients",
+    migrationRef: "0014_api_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["api_clients_active_idx"],
+    constraints: ["uuid primary key", "client_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "api_keys",
+    migrationRef: "0014_api_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["api_keys_client_idx"],
+    constraints: ["uuid primary key", "key_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "api_webhooks",
+    migrationRef: "0014_api_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["api_webhooks_provider_idx"],
+    constraints: ["uuid primary key", "webhook_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "api_rate_limits",
+    migrationRef: "0014_api_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["api_rate_limits_active_idx"],
+    constraints: ["uuid primary key", "limit_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "api_usage_snapshots",
+    migrationRef: "0014_api_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["api_usage_snapshots_domain_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -902,6 +967,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "dataGovernanceCenterEngine.ts",
     expectedTable: "data_inventory_items",
     note: "Data Governance, Privacy & Retention Center™ — dual-write via dataGovernanceCenter.js"
+  },
+  {
+    storageKey: "bamsignal.apiPlatform.v1",
+    domainId: "qa",
+    engine: "apiPlatformEngine.ts",
+    expectedTable: "api_catalog_entries",
+    note: "Institutional API Platform™ — dual-write via apiPlatform.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

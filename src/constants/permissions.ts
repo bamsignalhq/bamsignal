@@ -23,6 +23,7 @@ import { INSTITUTIONAL_POLICIES_ADMIN_PATH } from "./institutionalPoliciesAdmin"
 import { CONFIGURATION_PLATFORM_ADMIN_PATH } from "./configurationPlatformAdmin";
 import { MONITORING_CENTER_ADMIN_PATH } from "./monitoringCenterAdmin";
 import { DATA_GOVERNANCE_CENTER_ADMIN_PATH } from "./dataGovernanceCenterAdmin";
+import { API_PLATFORM_ADMIN_PATH } from "./apiPlatformAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
   CONCIERGE_ADMIN_DASHBOARD_PATH,
@@ -197,7 +198,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   businesscontinuity: "ManageOperations",
   configuration: "SystemAdministration",
   monitoring: "ManageOperations",
-  datagovernance: "ManageGovernance"
+  datagovernance: "ManageGovernance",
+  apiplatform: "SystemAdministration"
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -262,7 +264,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [BUSINESS_CONTINUITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.businesscontinuity,
   [CONFIGURATION_PLATFORM_ADMIN_PATH]: HARD_TAB_PERMISSIONS.configuration,
   [MONITORING_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.monitoring,
-  [DATA_GOVERNANCE_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.datagovernance
+  [DATA_GOVERNANCE_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.datagovernance,
+  [API_PLATFORM_ADMIN_PATH]: HARD_TAB_PERMISSIONS.apiplatform
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -313,7 +316,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/business-continuity",
   "/hard/configuration",
   "/hard/monitoring",
-  "/hard/data-governance"
+  "/hard/data-governance",
+  "/hard/api-platform"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

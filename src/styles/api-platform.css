@@ -1,0 +1,202 @@
+.api-platform-page {
+  display: grid;
+  gap: 18px;
+}
+
+.api-platform-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.api-platform-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.api-platform-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.api-platform-page__sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.api-platform-page__section-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.api-platform-page__section-btn.is-active {
+  border-color: rgba(160, 200, 255, 0.55);
+  background: rgba(120, 160, 220, 0.1);
+}
+
+.api-platform-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.api-platform-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.api-platform-page__future {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.api-platform-page__future h4 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.api-platform-card {
+  padding: 14px;
+}
+
+.api-platform-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.api-platform-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.api-platform-card__line {
+  margin: 12px 0 8px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.api-platform-card__empty {
+  margin: 12px 0 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.api-platform-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.api-platform-card__grid article {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.api-platform-card__grid span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.api-platform-card__list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.api-platform-card__list li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.api-platform-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.api-platform-card__meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.api-catalog-card__method {
+  font-size: 0.76rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(140, 180, 255, 0.15);
+  margin-right: 6px;
+}
+
+.api-catalog-card__version {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.webhook-card__status.is-active,
+.rate-limit-card__status.is-active {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.integration-card__env--production {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.integration-card__env--staging {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.integration-card__env--development {
+  color: rgba(160, 200, 255, 0.95);
+}
+
+.security-card__status {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.security-card__status--active {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.security-card__status--rotating {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.security-card__status--expired,
+.security-card__status--revoked {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+@media (max-width: 900px) {
+  .api-platform-page__body {
+    grid-template-columns: 1fr;
+  }
+}

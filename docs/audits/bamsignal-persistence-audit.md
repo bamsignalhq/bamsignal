@@ -1,6 +1,6 @@
 # Supabase & Persistence Audit™
 
-Generated: 2026-06-23T00:21:47.902Z
+Generated: 2026-06-25T02:01:50.424Z
 
 ## Executive Summary
 
@@ -11,7 +11,7 @@ Static persistence audit across institutional domains, Postgres migrations, loca
 **Startup-verified tables:** 41  
 **Concierge tables not verified at startup:** 12  
 **Admin localStorage dependencies:** 15  
-**Additional institutional storage keys scanned:** 119  
+**Additional institutional storage keys scanned:** 120  
 **Mock/stub repositories:** 7  
 **Automated check failures:** 0
 

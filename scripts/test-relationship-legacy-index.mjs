@@ -3,11 +3,14 @@
  */
 import {
   assertLegacyIndexIntegrity,
+  assertLegacyFamilyIntegrity,
   createEmptyLegacyIndexRecord,
   deriveLegacyTimelinePhases,
   evolveLegacyStatus,
   filterAnniversaryMilestones,
   filterLegacyIndexEntries,
+  legacyFamilySearchCountry,
+  recordLegacyFamilyProfile,
   registerLegacyIndexEntry
 } from "../server/services/relationshipLegacyIndex.js";
 
@@ -95,9 +98,49 @@ const milestones = [
 const phases = deriveLegacyTimelinePhases({
   milestones,
   hasFamilyStory: true,
+  hasLegacyFamily: true,
   isLegacyArchive: true
 });
 assert(phases.filter((item) => item.reached).length === 7, "all legacy phases reached for seed journey");
+
+// Legacy Families™ — children count and current country only
+const withFamily = recordLegacyFamilyProfile(record, {
+  childrenCount: 2,
+  currentCountry: "Canada",
+  recordedBy: "Ada Okafor"
+});
+assert(withFamily.legacyStatus === "legacy-family", "family profile evolves to Legacy Family");
+assert(withFamily.legacyFamily.childrenCount === 2, "children count recorded");
+assert(withFamily.legacyFamily.currentCountry === "Canada", "current country recorded");
+assert(withFamily.legacyFamily.history.length === 1, "family history append-only");
+
+const familyGrowth = recordLegacyFamilyProfile(withFamily, {
+  childrenCount: 3,
+  currentCountry: "Canada",
+  recordedBy: "Ada Okafor"
+});
+assert(familyGrowth.legacyFamily.history.length === 2, "family history grows");
+
+threw = false;
+try {
+  recordLegacyFamilyProfile(familyGrowth, {
+    childrenCount: 2,
+    currentCountry: "Canada"
+  });
+} catch {
+  threw = true;
+}
+assert(threw, "children count cannot decrease");
+
+threw = false;
+try {
+  assertLegacyFamilyIntegrity(withFamily.legacyFamily, undefined);
+} catch {
+  threw = true;
+}
+assert(threw, "legacyFamily cannot be removed");
+
+assert(legacyFamilySearchCountry(withFamily) === "Canada", "search uses current country");
 
 const anniversaries = filterAnniversaryMilestones(milestones);
 assert(anniversaries.length === 3, "legacy profile shows anniversary milestones only");
@@ -109,8 +152,9 @@ const searchable = [
     memberName: "Adaeze M.",
     city: "Abuja",
     country: "Nigeria",
+    currentCountry: "Canada",
     consultant: "Ada Okafor",
-    legacyStatus: "active-legacy",
+    legacyStatus: "legacy-family",
     marriageYear: 2030,
     storyCategories: ["wedding-story", "diaspora-story", "family-story"]
   }
@@ -121,11 +165,11 @@ assert(byJourney.length === 1, "search by journey ID");
 const byCategory = filterLegacyIndexEntries(searchable, { storyCategory: "diaspora-story" });
 assert(byCategory.length === 1, "search by story category");
 
-const byStatus = filterLegacyIndexEntries(searchable, { legacyStatus: "active-legacy" });
+const byStatus = filterLegacyIndexEntries(searchable, { legacyStatus: "legacy-family" });
 assert(byStatus.length === 1, "search by legacy status");
 
-const byCountry = filterLegacyIndexEntries(searchable, { country: "Nigeria" });
-assert(byCountry.length === 1, "search by country");
+const byCountry = filterLegacyIndexEntries(searchable, { country: "Canada" });
+assert(byCountry.length === 1, "search by current country");
 
 assert(record.futureLegacy?.kinds?.includes("silver-anniversaries"), "future legacy kinds reserved");
 

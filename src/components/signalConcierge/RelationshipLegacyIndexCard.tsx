@@ -9,10 +9,12 @@ import { LegacyMilestoneCard } from "./LegacyMilestoneCard";
 import { LegacyStatusBadge } from "./LegacyStatusBadge";
 import { LegacyStoryCategoryCard } from "./LegacyStoryCategoryCard";
 import { LegacyTimelineCard } from "./LegacyTimelineCard";
+import { LegacyFamilyCard } from "./LegacyFamilyCard";
 
 type RelationshipLegacyIndexCardProps = {
   profile: LegacyProfileViewModel;
   celebrate?: boolean;
+  onRecordLegacyFamily?: (input: { childrenCount: number; currentCountry: string }) => void;
 };
 
 function LegacyDateRow({ label, year }: { label: string; year?: string }) {
@@ -27,7 +29,8 @@ function LegacyDateRow({ label, year }: { label: string; year?: string }) {
 
 export function RelationshipLegacyIndexCard({
   profile,
-  celebrate = false
+  celebrate = false,
+  onRecordLegacyFamily
 }: RelationshipLegacyIndexCardProps) {
   return (
     <section
@@ -52,9 +55,17 @@ export function RelationshipLegacyIndexCard({
 
       <div className="relationship-legacy-index-card__dates">
         <LegacyDateRow label="Met" year={profile.metYear} />
-        <LegacyDateRow label="Engaged" year={profile.engagedYear} />
+        {!profile.legacyFamily ? <LegacyDateRow label="Engaged" year={profile.engagedYear} /> : null}
         <LegacyDateRow label="Married" year={profile.marriedYear} />
       </div>
+
+      {profile.legacyFamily ? (
+        <LegacyFamilyCard
+          family={profile.legacyFamily}
+          readOnly={celebrate || !onRecordLegacyFamily}
+          onRecord={onRecordLegacyFamily}
+        />
+      ) : null}
 
       <div className="relationship-legacy-index-card__grid">
         <LegacyStoryCategoryCard categories={profile.storyCategories} celebrate={celebrate} />

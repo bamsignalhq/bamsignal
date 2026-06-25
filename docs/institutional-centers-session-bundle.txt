@@ -1,0 +1,233 @@
+BAMSIGNAL INSTITUTIONAL CENTERS — SESSION BUNDLE
+Generated: 2026-06-23
+====================================================
+
+TABLE OF CONTENTS
+1. Internal Messaging Center™
+2. Institutional Backup & Recovery Center™
+3. Prior centers (conversation arc)
+4. Established implementation pattern
+5. Test commands
+6. Commits
+
+====================================================
+1. INTERNAL MESSAGING CENTER™
+====================================================
+
+ROOT CAUSE
+Operational communication currently relies on external tools.
+Information can be lost.
+
+GOAL
+Create institutional communication infrastructure.
+
+ROUTE
+/hard/messages
+
+CHANNELS
+- Operations
+- Consultants
+- Support
+- Research
+- Leadership
+- Announcements
+
+MESSAGE TYPES
+- Announcement
+- Escalation
+- Handoff
+- Update
+- Alert
+
+COMPONENTS
+- MessagingDashboardPage
+- ChannelCard
+- MessageThreadCard
+- AnnouncementCard
+- EscalationCard
+- HandoffCard
+
+FEATURES
+- Unread Tracking
+- Priority Flags
+- Department Routing
+- Read Receipts
+
+METRICS
+- Messages
+- Unread
+- Escalations
+- Announcements
+
+FUTURE READY (document only)
+- Mobile Notifications
+- Voice Notes
+- Department Chat
+
+FILES CHANGED (commit 9454b52)
+- src/constants/internalMessaging.ts — brand, channels, types, metrics, features, future kinds
+- src/constants/internalMessagingAdmin.ts — admin route/brand
+- src/types/internalMessaging.ts — department routing, read receipts, metrics types
+- src/data/internalMessagingSeed.ts — seed data for new schema
+- src/utils/internalMessagingLogic.ts — metrics, escalations, announcements, unread logic
+- src/utils/internalMessagingEngine.ts — storage v2 + metrics bundle
+- MessagingDashboardPage.tsx — main dashboard (renamed from InternalMessagingPage)
+- ChannelCard.tsx — channel list (renamed from MessageChannelCard)
+- MessageThreadCard.tsx — thread detail (renamed from MessageTimelineCard)
+- AnnouncementCard.tsx, HandoffCard.tsx — updated for new filters/fields
+- src/pages/AdminHubPage.tsx — wires MessagingDashboardPage
+- src/styles/internal-messaging.css — metrics grid, thread card, features styles
+- scripts/test-internal-messaging.mjs — smoke test for new spec
+
+COMMANDS RUN
+- npm run build — passed
+- npm run test:server-import — passed
+- npm run test:internal-messaging — passed
+
+COMMIT
+9454b52 — Build internal messaging center
+
+====================================================
+2. INSTITUTIONAL BACKUP & RECOVERY CENTER™
+====================================================
+
+ROOT CAUSE
+No institution is complete without disaster recovery planning.
+
+GOAL
+Create resilience architecture.
+
+ROUTE
+/hard/recovery
+
+AREAS
+- Database Backups
+- Document Backups
+- Audit Backups
+- Archive Backups
+- Configuration Backups
+
+RECOVERY LEVELS
+- Minor Incident
+- Major Incident
+- Critical Incident
+- Disaster Recovery
+
+COMPONENTS
+- RecoveryDashboardPage
+- BackupStatusCard
+- RecoveryPlanCard
+- IncidentRecoveryTimeline
+- RecoveryReadinessCard
+
+METRICS
+- Last Backup
+- Backup Frequency
+- Recovery Readiness
+- Retention Status
+
+POLICIES (documented)
+- Backup Verification
+- Recovery Testing
+- Data Retention
+- Disaster Procedures
+
+FUTURE READY (document only)
+- Cross Region Recovery
+- Automated Failover
+- Cold Storage Archives
+
+FILES CHANGED (commit ebbba6e)
+Constants
+- src/constants/recoveryCenter.ts
+- src/constants/recoveryCenterAdmin.ts
+
+Types / seed
+- src/types/recoveryCenter.ts
+- src/data/recoveryCenterSeed.ts
+
+Logic / engine
+- src/utils/recoveryCenterLogic.ts
+- src/utils/recoveryCenterEngine.ts
+
+Components (src/components/admin/recovery/)
+- RecoveryDashboardPage.tsx
+- BackupStatusCard.tsx
+- RecoveryPlanCard.tsx
+- IncidentRecoveryTimeline.tsx
+- RecoveryReadinessCard.tsx
+
+Styles
+- src/styles/recovery-center.css
+
+Wiring
+- src/constants/hardRoutes.ts — recovery tab slug
+- src/constants/permissions.ts — ManageRecovery permission
+- src/components/admin/adminConsoleNav.ts — Recovery nav item
+- src/pages/AdminHubPage.tsx — mounts RecoveryDashboardPage
+- src/main.tsx — imports recovery-center.css
+
+Test
+- scripts/test-recovery-center.mjs
+- package.json — test:recovery-center script
+
+COMMANDS RUN
+- npm run build — passed
+- npm run test:server-import — passed
+- npm run test:recovery-center — passed
+
+COMMIT
+ebbba6e — Build institutional backup and recovery center
+
+====================================================
+3. PRIOR CENTERS (CONVERSATION ARC)
+====================================================
+
+| Feature                    | Commit  | Route              |
+|----------------------------|---------|--------------------|
+| Executive Dashboard        | 174b028 | /hard/executive    |
+| Customer Support Center    | 5026937 | /help, /contact, /tickets, /hard/support |
+| Crisis & Safety Center     | f8814fa | /hard/safety       |
+| Document Center            | 83c6f51 | /hard/documents    |
+| Internal Messaging Center  | 9454b52 | /hard/messages     |
+| Backup & Recovery Center   | ebbba6e | /hard/recovery     |
+
+====================================================
+4. ESTABLISHED IMPLEMENTATION PATTERN
+====================================================
+
+1. Constants + admin constants
+2. Types + seed
+3. Logic + engine (localStorage, versioned storage key on schema changes)
+4. Admin components folder
+5. CSS + main.tsx import
+6. Wire AdminHubPage, permissions, hard routes, adminConsoleNav
+7. scripts/test-<name>.mjs + package.json script
+8. Build + server-import + feature test → commit related files only
+
+Production rules observed:
+- Minimal scope — do not touch unrelated files
+- Member UI frozen; admin /hard work allowed
+- Stage only related files on commit
+- Leave unrelated dirty files unstaged (relationship legacy index, build artifacts, audit docs)
+
+====================================================
+5. TEST COMMANDS
+====================================================
+
+npm run build
+npm run test:server-import
+npm run test:internal-messaging
+npm run test:recovery-center
+
+====================================================
+6. UNSTAGED / UNRELATED (left out of commits)
+====================================================
+
+- Relationship Legacy Index changes
+- Build artifacts: public/sitemap.xml, public/sw.js, src/buildInfo.ts, scripts/seo-manifest.json
+- Audit/evaluation docs under docs/
+
+====================================================
+END OF BUNDLE
+====================================================

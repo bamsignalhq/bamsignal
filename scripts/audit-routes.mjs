@@ -363,7 +363,14 @@ const enforcedPaths = extractHardRoutePermissions(permissionsSource, [
   read("src/constants/permissionsAudit.ts"),
   read("src/constants/journeyIntegrityAudit.ts"),
   read("src/constants/launchReadiness.ts"),
-  read("src/constants/journeyIntelligence.ts")
+  read("src/constants/journeyIntelligence.ts"),
+  read("src/constants/institutionalComplianceAdmin.ts"),
+  read("src/constants/systemHealthAdmin.ts"),
+  read("src/constants/notificationReliabilityAdmin.ts"),
+  read("src/constants/remediationBoardAdmin.ts"),
+  read("src/constants/institutionalReadinessAdmin.ts"),
+  read("src/constants/dataIntegrityAdmin.ts"),
+  read("src/constants/recoveryCenterAdmin.ts")
 ]);
 const permissionGaps = hardTabPaths.filter((path) => !enforcedPaths.includes(path));
 

@@ -2,9 +2,11 @@ import type { LegacyStatusId } from "../constants/relationshipLegacyIndex";
 import type { RelationshipLegacyIndexRecord } from "../types/relationshipLegacyIndex";
 import {
   assertLegacyIndexIntegrity,
+  assertLegacyFamilyIntegrity,
   createEmptyLegacyIndexRecord,
   evolveLegacyStatus,
-  mergeLegacyIndexRecords
+  mergeLegacyIndexRecords,
+  recordLegacyFamilyProfile
 } from "./relationshipLegacyIndexLogic";
 import { STORAGE_KEYS } from "../constants/limits";
 import { readJson, writeJson } from "./storage";
@@ -32,6 +34,9 @@ function persistRecord(record: RelationshipLegacyIndexRecord): RelationshipLegac
   const existing = store.byJourneyId[record.journeyId];
   if (existing) {
     assertLegacyIndexIntegrity(existing, record);
+    if (existing.legacyFamily && record.legacyFamily) {
+      assertLegacyFamilyIntegrity(existing.legacyFamily, record.legacyFamily);
+    }
   }
   saveStore({
     ...store,
@@ -82,6 +87,15 @@ export function updateRelationshipLegacyStatus(
   const existing = getRelationshipLegacyIndex(journeyId);
   if (!existing) return null;
   return persistRecord(evolveLegacyStatus(existing, input));
+}
+
+export function recordRelationshipLegacyFamily(
+  journeyId: string,
+  input: { childrenCount: number; currentCountry: string; recordedBy?: string }
+): RelationshipLegacyIndexRecord | null {
+  const existing = getRelationshipLegacyIndex(journeyId);
+  if (!existing) return null;
+  return persistRecord(recordLegacyFamilyProfile(existing, input));
 }
 
 export function bootstrapRelationshipLegacyIndexSeeds(

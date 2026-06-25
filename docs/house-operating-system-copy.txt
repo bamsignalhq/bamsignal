@@ -1,0 +1,313 @@
+================================================================================
+HOUSE OPERATING SYSTEM™ — COMPLETE TEXT BUNDLE
+================================================================================
+Route: /century/house-os
+Commit: Build House Operating System architecture (555400c)
+Status: Architecture prepared — not operational yet
+
+================================================================================
+ORIGINAL BRIEF
+================================================================================
+
+Root cause
+Every major institutional system now exists.
+No layer exists above them.
+
+Goal
+Build House Operating System™
+The umbrella architecture for BamSignal.
+This is the top layer.
+
+Route
+/century/house-os
+
+Systems represented
+Signal Concierge™
+Operations Center™
+Journey Intelligence™
+House Institute™
+Events™
+Communities™
+Governance™
+Stewardship Council™
+Century Trust™
+Knowledge Base™
+
+Components
+HouseOSPage
+SystemOverviewCard
+InstitutionMapCard
+OperatingPrinciplesCard
+CenturyVisionCard
+
+Principles
+Families first
+Trust first
+Long-term thinking
+Stewardship
+Institution building
+Generational impact
+
+Copy
+The House
+The Institution
+The Next Century
+
+Avoid:
+Platform
+Startup
+Marketplace
+
+Future ready (document only — not implemented)
+Institution dashboard
+Strategic planning
+Annual stewardship review
+
+================================================================================
+PAGE HERO
+================================================================================
+
+Eyebrow: House OS
+
+Title: House Operating System™
+
+Subcopy:
+House Operating System™ — the top layer above Signal Concierge, Operations,
+Journey Intelligence, House Institute, Events, Communities, Governance,
+Stewardship, Trust, and Knowledge.
+
+Labels line:
+Understanding Relationships · The House · The Institution · The Next Century
+
+Forbidden line:
+Not Platform, Startup, Marketplace.
+
+Purpose:
+Every major institutional system now exists — House OS is the umbrella
+architecture that unifies them. Documented only, not dashboards or planning
+tools.
+
+================================================================================
+CENTURY VISION
+================================================================================
+
+Section title: Century vision
+
+Narrative:
+The House stands for dignified relationship discovery. The Institution endures
+beyond any single product. The Next Century is the horizon — House OS unifies
+every system beneath that vision.
+
+Use:
+- The House
+- The Institution
+- The Next Century
+
+Avoid:
+- Platform
+- Startup
+- Marketplace
+
+================================================================================
+HOUSE SYSTEMS
+================================================================================
+
+Section title: House systems
+
+Intro:
+10 institutional systems — umbrella architecture, not an operational dashboard.
+
+---
+
+1. Signal Concierge™
+   Human-first concierge journeys — applications through legacy families.
+
+2. Operations Center™
+   Institutional operations coordination — consultants, assignments, and
+   workflow memory.
+
+3. Journey Intelligence™
+   Executive journey insights — dignified aggregates for stewarded outcomes.
+
+4. House Institute™
+   Research, observatory, and relationship index at The BamSignal House™.
+
+5. Events™
+   Signal Events — communities, diaspora corridors, and relationship gatherings.
+
+6. Communities™
+   City and corridor communities — local dignity, never leaderboard culture.
+
+7. Governance™
+   BamSignal Governance Framework™ — stewardship pillars, not permissions or
+   voting.
+
+8. Stewardship Council™
+   Institutional custodians — council roles architecture, not authority systems.
+
+9. Century Trust™
+   Generational vision preservation — trust layers, not legal or financial
+   instruments.
+
+10. Knowledge Base™
+    Institutional Knowledge Base™ — central memory for lessons, principles, and
+    culture.
+
+================================================================================
+SYSTEM OVERVIEW
+================================================================================
+
+Section title: System overview
+
+Section intro:
+The top layer — every major BamSignal institution represented.
+
+Card badge label: House System
+Card status (all systems): Architecture prepared — not operational yet
+
+System 1 — Signal Concierge™
+Human-first concierge journeys — applications through legacy families.
+
+System 2 — Operations Center™
+Institutional operations coordination — consultants, assignments, and workflow
+memory.
+
+System 3 — Journey Intelligence™
+Executive journey insights — dignified aggregates for stewarded outcomes.
+
+System 4 — House Institute™
+Research, observatory, and relationship index at The BamSignal House™.
+
+System 5 — Events™
+Signal Events — communities, diaspora corridors, and relationship gatherings.
+
+System 6 — Communities™
+City and corridor communities — local dignity, never leaderboard culture.
+
+System 7 — Governance™
+BamSignal Governance Framework™ — stewardship pillars, not permissions or
+voting.
+
+System 8 — Stewardship Council™
+Institutional custodians — council roles architecture, not authority systems.
+
+System 9 — Century Trust™
+Generational vision preservation — trust layers, not legal or financial
+instruments.
+
+System 10 — Knowledge Base™
+Institutional Knowledge Base™ — central memory for lessons, principles, and
+culture.
+
+================================================================================
+INSTITUTION MAP
+================================================================================
+
+Section title: Institution Map
+
+Section intro:
+How House systems connect — umbrella view, not operational workflows.
+
+---
+
+1. Concierge journeys
+   System: Signal Concierge™
+   Layer: experience
+   Member-facing concierge — human-first, never marketplace dynamics.
+
+2. Operations layer
+   System: Operations Center™
+   Layer: operations
+   Consultant operations and assignments — institutional coordination.
+
+3. Journey intelligence
+   System: Journey Intelligence™
+   Layer: operations
+   Aggregate journey insights feeding House research and governance.
+
+4. House Institute
+   System: House Institute™
+   Layer: research
+   Research pipeline, observatory, and relationship index.
+
+5. Events & communities
+   System: Events™
+   Layer: experience
+   Events and communities — diaspora corridors and city dignity.
+
+6. Governance stack
+   System: Governance™
+   Layer: governance
+   Governance Framework, Stewardship Council, and institutional commitments.
+
+7. Century trust
+   System: Century Trust™
+   Layer: century
+   Trust layers preserving Century Room vision across generations.
+
+8. Institutional memory
+   System: Knowledge Base™
+   Layer: century
+   Knowledge Base — lessons, principles, decisions, and culture preserved.
+
+================================================================================
+OPERATING PRINCIPLES
+================================================================================
+
+Section title: Operating principles
+
+Section intro:
+House OS principles — families and trust first, always institution over
+platform.
+
+Status (all principles): Architecture prepared — not operational yet
+
+---
+
+1. Families first
+   Every system serves family dignity — outcomes over metrics.
+
+2. Trust first
+   Trust is institutional capital — guarded across all House systems.
+
+3. Long-term thinking
+   The Next Century horizon — never quarterly convenience over legacy.
+
+4. Stewardship
+   Custodians serve the mission — House OS coordinates stewardship, not
+   control.
+
+5. Institution building
+   The Institution endures beyond founders — systems documented as one House.
+
+6. Generational impact
+   Generational impact over growth theatre — architecture for generations
+   ahead.
+
+================================================================================
+FUTURE READY (DOCUMENT ONLY)
+================================================================================
+
+Section title: Future ready
+
+---
+
+Institution dashboard
+Unified House OS dashboard — documented, not implemented.
+
+Strategic planning
+Century strategic planning workflow — architecture reserved.
+
+Annual stewardship review
+Yearly stewardship review cycle — not enabled yet.
+
+================================================================================
+RESERVED NOTE (FOOTER)
+================================================================================
+
+Architecture prepared. Institution dashboard, strategic planning, and annual
+stewardship review are not enabled yet.
+
+================================================================================
+END OF BUNDLE
+================================================================================

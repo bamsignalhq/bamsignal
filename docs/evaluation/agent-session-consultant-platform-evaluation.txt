@@ -1,0 +1,648 @@
+BAMSIGNAL AGENT SESSION — FULL EVALUATION EXPORT
+================================================
+Generated: 2026-06-22
+Repository: /Users/stanlex/Documents/bamsignal
+Branch at end of session: main
+
+This document captures every user request, goal, root cause, deliverable,
+component, rule, route, file change, command run, test result, commit hash,
+and agent report from this Cursor agent conversation — for external evaluation.
+
+Prior context (from conversation handoff, completed before this session's
+first visible user message in the summarized thread):
+- Signal Concierge Email Engine™ — commit 321409a
+- WhatsApp Notification Engine™ — commit 8868647
+- Supabase Concierge Persistence — commit 10d3fca
+
+This session implemented four production features on top of that foundation.
+
+
+================================================================================
+USER REQUEST 1 — CONSULTANT CRM™
+================================================================================
+
+USER QUERY (verbatim intent):
+---
+Root cause: /hard is evolving into a relationship CRM. Consultants need a
+proper workspace.
+
+Goal: Build Consultant CRM™ — Production-ready.
+
+Sections: Members, Applications, Consultations, Payments, Introductions,
+Follow-Ups, Meeting Notes, Archives, Legacy, Stories, Performance
+
+Components: ConsultantWorkspacePage, ConsultantPipelineCard, ConsultantTasksCard,
+ConsultantAgendaCard, ConsultantActivityCard
+
+Views: My Members, My Meetings, Pending Applications, Pending Introductions,
+Follow-Ups, Health Alerts
+
+Future-ready (do not implement): Regional teams, Senior matchmakers, AI assistance
+
+Commands: npm run build, npm run test:server-import
+Commit: Build Consultant CRM
+---
+
+AGENT ROOT CAUSE:
+/hard (consultant portal) had only a thin portfolio shell — 4 sidebar links,
+no unified CRM. Consultants needed one workspace spanning members, pipeline,
+tasks, and sections.
+
+AGENT GOAL DELIVERED:
+Consultant CRM™ as production-ready consultant workspace hub.
+
+COMMIT:
+- Hash: 7695580
+- Message: Build Consultant CRM
+- Files: 14 changed, 1128 insertions(+), 13 deletions(-)
+
+FILES CREATED:
+- src/constants/consultantCrm.ts
+- src/types/consultantCrm.ts
+- src/utils/consultantCrmLogic.ts
+- src/components/consultant/ConsultantWorkspacePage.tsx
+- src/components/consultant/ConsultantPipelineCard.tsx
+- src/components/consultant/ConsultantTasksCard.tsx
+- src/components/consultant/ConsultantAgendaCard.tsx
+- src/components/consultant/ConsultantActivityCard.tsx
+
+FILES MODIFIED:
+- src/app/ConsultantPortalRoot.tsx
+- src/components/consultant/ConsultantSidebar.tsx
+- src/constants/consultantRoutes.ts
+- src/pages/consultant/ConsultantWorkspacePages.tsx
+- src/styles/consultant-portal.css
+- src/utils/consultantSession.ts
+
+CONSTANTS / BRAND:
+- CONSULTANT_CRM_BRAND = "Consultant CRM™"
+- CONSULTANT_CRM_TAGLINE = "Your relationship workspace"
+
+11 SECTIONS (consultantCrm.ts):
+1. members — Members
+2. applications — Applications
+3. consultations — Consultations
+4. payments — Payments
+5. introductions — Introductions
+6. follow-ups — Follow-Ups
+7. meeting-notes — Meeting Notes
+8. archives — Archives
+9. legacy — Legacy
+10. stories — Stories
+11. performance — Performance
+
+6 VIEWS (consultantCrm.ts):
+1. my-members — My Members
+2. my-meetings — My Meetings
+3. pending-applications — Pending Applications
+4. pending-introductions — Pending Introductions
+5. follow-ups — Follow-Ups
+6. health-alerts — Health Alerts
+
+FUTURE-READY MODULES (documented in UI, NOT implemented):
+- regional-teams — Shared caseloads and handoffs across city teams
+- senior-matchmakers — Escalation lane for complex introductions
+- ai-assistance — Drafting support for notes and follow-up plans
+
+PIPELINE STAGES (ConsultantPipelineCard):
+- applications — Awaiting review or decision
+- consultations — Scheduled or needs booking
+- active-search — Actively searching
+- introductions — Introductions in motion
+- follow-ups — Open consultant tasks
+- relationships — Matched or in relationship
+
+LOGIC (consultantCrmLogic.ts):
+- buildConsultantCrmBundle() — aggregates portfolio data
+- filterCrmSectionRows() — view/section filtering
+- openPaymentRowsForMembers() — open consultation payments
+- resolveCrmViewSection() — maps views to sections
+- Uses: fetchAdminConciergeConsultantPortfolio, listIntroductionRecords,
+  ApplicationApprovalEngine, MeetingNotesEngine, ConsultationPaymentEngine,
+  conciergeConsultantMetrics, conciergeJourneyArchive
+
+ROUTING:
+- New route: CONSULTANT_ROUTES.crm = /consultant/crm
+- Home (/consultant) resolves to CRM workspace
+- Post-login entry: resolveConciergeConsultantEntry() → /consultant/crm
+- Sidebar: "Workspace" replaces "Portfolio" as primary nav (portfolio kept at
+  /consultant/portfolio)
+- Wrapper: ConsultantCrmWorkspace in ConsultantWorkspacePages.tsx
+
+COMMANDS RUN:
+- npm run build — PASSED (existing chunk-size warnings only)
+- npm run test:server-import — PASSED (server ok)
+
+LEFT UNSTAGED (unrelated):
+- Relationship Legacy Index work
+- public/sw.js, src/buildInfo.ts
+- docs/audits/*
+
+
+================================================================================
+USER REQUEST 2 — JOURNEY ANALYTICS™
+================================================================================
+
+USER QUERY (verbatim intent):
+---
+Root cause: There is no relationship intelligence layer.
+
+Goal: Build Journey Analytics™ — Human-first. No sales dashboards.
+
+Metrics: Applications, Consultations, Approvals, Introductions, Relationships,
+Exclusive, Engagements, Marriages, Legacy Families
+
+Components: JourneyAnalyticsPage, JourneyMetricsCard, JourneyTrendCard,
+JourneyOutcomeCard, JourneyGrowthCard
+
+Future-ready (do not implement): Regional analytics, AI summaries,
+Global communities
+
+Commands: npm run build, npm run test:server-import
+Commit: Build Journey Analytics
+---
+
+AGENT ROOT CAUSE:
+No platform-wide relationship intelligence — only per-consultant scorecards,
+nothing aggregating journey outcomes across all members.
+
+AGENT GOAL DELIVERED:
+Journey Analytics™ — human-first relationship intelligence in admin concierge.
+
+COMMIT:
+- Hash: d5d52e2
+- Message: Build Journey Analytics
+- Files: 10 changed, 814 insertions(+), 1 deletion(-)
+
+FILES CREATED:
+- src/constants/journeyAnalytics.ts
+- src/types/journeyAnalytics.ts
+- src/utils/journeyAnalyticsLogic.ts
+- src/components/admin/concierge/JourneyAnalyticsPage.tsx
+- src/components/admin/concierge/JourneyMetricsCard.tsx
+- src/components/admin/concierge/JourneyTrendCard.tsx
+- src/components/admin/concierge/JourneyOutcomeCard.tsx
+- src/components/admin/concierge/JourneyGrowthCard.tsx
+
+FILES MODIFIED:
+- src/components/admin/concierge/ConsultantDashboardPage.tsx
+- src/styles/concierge-consultant.css
+
+CONSTANTS / BRAND:
+- JOURNEY_ANALYTICS_BRAND = "Journey Analytics™"
+- JOURNEY_ANALYTICS_TAGLINE = "Relationship intelligence across every Signal
+  Concierge journey — human-first, never sales."
+
+9 METRICS:
+1. applications — Members who began their journey
+2. consultations — Consultations completed with care
+3. approvals — Applications welcomed into the program
+4. introductions — Thoughtful introductions made
+5. relationships — Relationships that took root
+6. exclusive — Couples choosing exclusivity
+7. engagements — Engagements celebrated
+8. marriages — Marriages formed through the journey
+9. legacyFamilies — Families registered in the legacy index
+
+COMPONENTS:
+- JourneyMetricsCard — 9 metrics grid with hints
+- JourneyTrendCard — 6-month milestone rhythm (bar visualization)
+- JourneyOutcomeCard — Narrative outcomes (not sales funnels)
+- JourneyGrowthCard — 90-day vs prior-quarter signals
+
+FUTURE-READY (documented in UI, NOT implemented):
+- regional-analytics — City and diaspora corridor insights without leaderboards
+- ai-summaries — Narrative briefings for consultants — opt-in only
+- global-communities — Cross-community journey patterns and celebrations
+
+GUARDRAIL:
+- assertJourneyAnalyticsExcludesSalesMetrics() — blocks revenue/sales/conversion
+  terminology in bundle serialization
+
+FORBIDDEN TERMS (journeyAnalytics.ts):
+revenue, sales, conversion rate, lead value, top seller, pipeline value
+
+LOGIC (journeyAnalyticsLogic.ts):
+- buildJourneyAnalyticsBundle() from all members + introductions
+- buildTrends() — last 6 months from timeline events
+- buildOutcomes() — narrative journey stages
+- buildGrowth() — 90-day vs prior 90-day comparison
+
+ACCESS:
+- Admin Signal Concierge dashboard → tab "Journey Analytics"
+
+COMMANDS RUN:
+- npm run build — PASSED
+- npm run test:server-import — PASSED (server ok)
+
+
+================================================================================
+USER REQUEST 3 — REGIONAL CONSULTANT TEAMS™
+================================================================================
+
+USER QUERY (verbatim intent):
+---
+Root cause: Signal Concierge™ will eventually expand beyond a single consultant
+group.
+
+Goal: Build Regional Consultant Teams™ — Architecture + workspace.
+
+Regions: Nigeria, West Africa, UK, Canada, USA, Middle East, Europe, Australia
+
+Components: RegionalTeamPage, RegionalTeamCard, RegionalLeadCard,
+RegionalMetricsCard
+
+Roles: Regional Lead, Senior Matchmaker, Compatibility Specialist,
+Family Values Advisor, Diaspora Consultant
+
+Future-ready (do not implement): Local offices, City ambassadors, Faith network
+
+Commands: npm run build, npm run test:server-import
+Commit: Build regional consultant teams
+---
+
+AGENT ROOT CAUSE:
+Signal Concierge built around single consultant group with no regional
+architecture for scaling stewards across geographies.
+
+AGENT GOAL DELIVERED:
+Regional Consultant Teams™ — architecture constants + regional workspace.
+
+COMMIT:
+- Hash: 6e04802
+- Message: Build regional consultant teams
+- Files: 13 changed, 874 insertions(+), 3 deletions(-)
+
+FILES CREATED:
+- src/constants/regionalConsultantTeams.ts
+- src/types/regionalConsultantTeams.ts
+- src/utils/regionalConsultantTeamsLogic.ts
+- src/components/consultant/RegionalTeamPage.tsx
+- src/components/consultant/RegionalTeamCard.tsx
+- src/components/consultant/RegionalLeadCard.tsx
+- src/components/consultant/RegionalMetricsCard.tsx
+
+FILES MODIFIED:
+- src/app/ConsultantPortalRoot.tsx
+- src/components/consultant/ConsultantSidebar.tsx
+- src/constants/consultantRoutes.ts
+- src/pages/consultant/ConsultantWorkspacePages.tsx
+- src/components/admin/concierge/ConsultantDashboardPage.tsx
+- src/styles/consultant-portal.css
+
+CONSTANTS / BRAND:
+- REGIONAL_CONSULTANT_TEAMS_BRAND = "Regional Consultant Teams™"
+- REGIONAL_CONSULTANT_TEAMS_TAGLINE = "Steward journeys by region — BamSignal
+  members belong to the platform, consultants lead locally."
+
+8 REGIONS (with timezones):
+1. nigeria — Nigeria (WAT)
+2. west-africa — West Africa (WAT / GMT)
+3. uk — UK (GMT / BST)
+4. canada — Canada (EST / PST)
+5. usa — USA (EST / CST / PST)
+6. middle-east — Middle East (GST / AST)
+7. europe — Europe (CET / GMT)
+8. australia — Australia (AEST / AEDT)
+
+5 TEAM ROLES:
+1. regional-lead — Regional Lead
+2. senior-matchmaker — Senior Matchmaker
+3. compatibility-specialist — Compatibility Specialist
+4. family-values-advisor — Family Values Advisor
+5. diaspora-consultant — Diaspora Consultant
+
+SEEDED CONSULTANT REGION ASSIGNMENTS:
+- consultant_ada → nigeria
+- consultant_emeka → nigeria
+- consultant_fatima → nigeria
+- consultant_james → uk
+- consultant_sola → west-africa
+
+REGIONAL LEAD ASSIGNMENTS:
+- nigeria → consultant_ada (Ada Okafor)
+- uk → consultant_james (James Okonkwo)
+
+MEMBER REGION RESOLUTION (resolveMemberRegion):
+- City-based inference (Lagos, Abuja, London, Toronto, etc.)
+- preferredTier === "global" → uk fallback
+- Default → nigeria
+
+REGION METRICS (per region):
+- activeMembers
+- openApplications
+- consultations
+- introductions (in progress)
+- relationships
+
+FUTURE-READY (documented in UI, NOT implemented):
+- local-offices — Physical concierge desks in key cities
+- city-ambassadors — Community stewards aligned to city chapters
+- faith-network — Faith-aligned consultant lanes with opt-in routing
+
+ROUTING:
+- CONSULTANT_ROUTES.regions = /consultant/regions
+- Sidebar label: "Regions"
+- Admin tab: "Regional Teams"
+
+COMMANDS RUN:
+- npm run build — PASSED (fixed legacyStatus typo on RelationshipLegacyIndexRecord)
+- npm run test:server-import — PASSED (server ok)
+
+
+================================================================================
+USER REQUEST 4 — AI-ASSISTED CONSULTANT WORKSPACE™
+================================================================================
+
+USER QUERY (verbatim intent):
+---
+Root cause: Consultants need assistance without replacing human judgment.
+
+Goal: Build AI-Assisted Consultant Workspace™ — Human-led. AI-assisted.
+Never AI-driven.
+
+Components: AISummaryCard, AIInsightsCard, CompatibilityObservationsCard,
+SuggestedQuestionsCard, MeetingPreparationCard, JourneySummaryCard
+
+Capabilities: Meeting summaries, Application summaries, Compatibility
+observations, Follow-up suggestions, Relationship health observations,
+Timeline summaries
+
+Rules:
+- AI never approves applications.
+- AI never introduces members.
+- AI never overrides consultants.
+- Human consultant remains final authority.
+
+Future-ready (do not implement): Voice transcription, Multilingual support,
+Private models
+
+Commands: npm run build, npm run test:server-import
+Commit: Build AI-assisted consultant workspace
+---
+
+AGENT ROOT CAUSE:
+Consultants had no structured assistance layer — only manual summaries, with
+no draft support that preserves human authority.
+
+AGENT GOAL DELIVERED:
+AI-Assisted Consultant Workspace™ — rule-based drafts from existing member
+data (no external LLM API calls).
+
+COMMIT:
+- Hash: 742d454
+- Message: Build AI-assisted consultant workspace
+- Files: 16 changed, 1037 insertions(+), 2 deletions(-)
+
+FILES CREATED:
+- src/constants/aiAssistedConsultant.ts
+- src/types/aiAssistedConsultant.ts
+- src/utils/aiAssistedConsultantLogic.ts
+- src/components/consultant/AIAssistedConsultantWorkspacePage.tsx
+- src/components/consultant/AISummaryCard.tsx
+- src/components/consultant/AIInsightsCard.tsx
+- src/components/consultant/CompatibilityObservationsCard.tsx
+- src/components/consultant/SuggestedQuestionsCard.tsx
+- src/components/consultant/MeetingPreparationCard.tsx
+- src/components/consultant/JourneySummaryCard.tsx
+
+FILES MODIFIED:
+- src/app/ConsultantPortalRoot.tsx
+- src/components/consultant/ConsultantSidebar.tsx
+- src/constants/consultantRoutes.ts
+- src/pages/consultant/ConsultantWorkspacePages.tsx
+- src/components/admin/concierge/ConsultantDashboardPage.tsx
+- src/styles/consultant-portal.css
+
+CONSTANTS / BRAND:
+- AI_ASSISTED_CONSULTANT_BRAND = "AI-Assisted Consultant Workspace™"
+- AI_ASSISTED_CONSULTANT_TAGLINE = "Human-led. AI-assisted. Never AI-driven —
+  the consultant always decides."
+- AI_ASSISTED_AUTHORITY_COPY = "Human consultant remains final authority. AI
+  drafts are suggestions only."
+- AI_ASSISTED_DRAFT_LABEL = "AI draft — not final"
+- AI_ASSISTED_REVIEW_LABEL = "Consultant review required"
+
+6 CAPABILITIES:
+1. meeting-summaries
+2. application-summaries
+3. compatibility-observations
+4. follow-up-suggestions
+5. relationship-health
+6. timeline-summaries
+
+ENFORCED RULES (displayed in UI):
+1. AI never approves applications.
+2. AI never introduces members.
+3. AI never overrides consultants.
+4. Every draft requires consultant review before action.
+
+FORBIDDEN ACTIONS (constants, architecture):
+- approve-application
+- decline-application
+- create-introduction
+- override-consultant
+- send-member-message
+
+GUARDRAIL:
+- assertAIAssistedWorkspaceRespectsRules() — checks bundle for forbidden phrases
+  like "ai approved", "auto introduce"
+
+DRAFT GENERATION (aiAssistedConsultantLogic.ts):
+- buildAIAssistedMemberBundle() — per member
+- buildAIAssistedWorkspaceBundle() — workspace with member picker
+- Sources: application fields, communicationJournal, timeline, followUpTasks,
+  flags, introductions, meeting notes, ApplicationApprovalEngine
+- All draft items: requiresReview: true
+- Explicit copy: "AI does not score compatibility", "consultant decides
+  approval", "AI does not introduce"
+
+FUTURE-READY (documented in UI, NOT implemented):
+- voice-transcription — Transcribe consultations with steward approval
+- multilingual-support — Pidgin, Yoruba, Igbo, Hausa drafts — consultant-reviewed
+- private-models — On-premise inference for sensitive legacy journeys
+
+ROUTING:
+- CONSULTANT_ROUTES.assist = /consultant/assist
+- Sidebar label: "AI Assist" (Sparkles icon)
+- Consultant mode: portfolio members via consultantId
+- Admin mode: all members via mode="admin"
+
+COMMANDS RUN:
+- npm run build — PASSED (fixed whatYouHopeToBuild field name)
+- npm run test:server-import — PASSED (server ok)
+
+
+================================================================================
+USER REQUEST 5 — EVALUATION EXPORT (THIS FILE)
+================================================================================
+
+USER QUERY:
+"every detail make it into a text file and give me to use for evaluation,
+every bit of text on this agent i mean"
+
+DELIVERABLE:
+docs/evaluation/agent-session-consultant-platform-evaluation.txt (this file)
+
+
+================================================================================
+CONSULTANT PORTAL ROUTE MAP (END OF SESSION)
+================================================================================
+
+CONSULTANT_BASE_PATH = /consultant
+CONSULTANT_LOGIN_PATH = /consultant/login
+
+Routes:
+- /consultant              → home → CRM workspace
+- /consultant/crm          → Consultant CRM™ (ConsultantWorkspacePage)
+- /consultant/regions      → Regional Consultant Teams™ (RegionalTeamPage)
+- /consultant/assist       → AI-Assisted Consultant Workspace™
+- /consultant/portfolio    → Legacy ConsultantPortfolioPage
+- /consultant/members      → ConsultantMembersWorkspace
+- /consultant/introductions → ConsultantIntroductionsWorkspace
+- /consultant/followups    → ConsultantFollowUpsWorkspace
+
+Sidebar nav (capability-gated):
+1. Workspace (crm) — view-portfolio
+2. Regions — view-portfolio
+3. AI Assist — view-portfolio
+4. Members — view-members / legacy / global capabilities
+5. Introductions — manage-introductions
+6. Follow-Ups — manage-followups
+
+Sidebar brand text: Consultant CRM™
+
+
+================================================================================
+ADMIN CONCIERGE DASHBOARD TABS (END OF SESSION)
+================================================================================
+
+ConsultantDashboardPage views include (among others):
+- Members
+- Consultants
+- Introductions
+- Follow-Up
+- Journey Analytics      ← added this session
+- Performance
+- Regional Teams         ← added this session
+- AI Assist              ← added this session
+- Operations
+- Consultations
+- Archive
+- Legacy Experience
+- Legacy Families
+- Love Through The Years
+- Founders Wall
+- Stories
+
+
+================================================================================
+COMMIT SEQUENCE (THIS SESSION, NEWEST FIRST)
+================================================================================
+
+742d454  Build AI-assisted consultant workspace
+6e04802  Build regional consultant teams
+d5d52e2  Build Journey Analytics
+7695580  Build Consultant CRM
+
+Prior commits referenced in handoff:
+10d3fca  Migrate Signal Concierge persistence to Supabase
+8868647  Build WhatsApp notification engine
+321409a  Build Signal Concierge email engine
+
+
+================================================================================
+REQUIRED COMMANDS — ALL FOUR FEATURES
+================================================================================
+
+For each feature the agent ran:
+1. npm run build
+2. npm run test:server-import
+
+Results: ALL PASSED for all four features.
+
+Build warnings (pre-existing, not introduced by this session):
+- Large chunk size warnings (>500 kB)
+- Dynamic import warnings for conciergeConsultantMetrics.ts
+
+Server import smoke test notes:
+- DATABASE_URL not set locally → dry-run mode
+- GET /ready returns 503 without runtime secrets (expected locally)
+- Final line: "server ok"
+
+
+================================================================================
+FILES LEFT UNSTAGED THROUGHOUT SESSION (NOT PART OF THESE COMMITS)
+================================================================================
+
+Consistently left unstaged as unrelated work:
+- public/sw.js (build cache version sync)
+- src/buildInfo.ts (generated)
+- scripts/seo-manifest.json
+- scripts/test-relationship-legacy-index.mjs
+- server/services/relationshipLegacyIndex.js
+- src/components/admin/concierge/RelationshipLegacyIndexPage.tsx
+- src/components/signalConcierge/RelationshipLegacyIndexCard.tsx
+- src/constants/relationshipLegacyIndex.ts
+- src/data/conciergeRelationshipLegacyIndexSeed.ts
+- src/types/relationshipLegacyIndex.ts
+- src/utils/conciergeJourneyArchive.ts
+- src/utils/relationshipLegacyIndexLogic.ts
+- src/utils/relationshipLegacyIndexStore.ts
+- docs/audits/bamsignal-round-5-launch-audit.md (untracked)
+- docs/audits/bamsignal-round-5-production-readiness.md (untracked)
+
+
+================================================================================
+ARCHITECTURE PATTERNS USED (ALL FOUR FEATURES)
+================================================================================
+
+1. Constants file — brand, labels, future-ready modules, forbidden terms
+2. Types file — bundle/snapshot types
+3. Logic file in src/utils/ — deterministic aggregation from existing stores
+4. Card components — concierge-consultant-card--glass pattern
+5. Main page component — loads via fetchAdminConcierge* services
+6. Consultant portal route + sidebar + ConsultantWorkspacePages wrapper
+7. Admin ConsultantDashboardPage tab (where applicable)
+8. CSS in consultant-portal.css or concierge-consultant.css
+9. Future-ready panel — dashed border, documented not implemented
+10. No external LLM/API for AI feature — heuristic drafts from member data
+11. Human-first guardrails — no sales metrics, no AI authority over decisions
+12. npm run build + npm run test:server-import before each commit
+13. Stage only task-related files; leave unrelated dirty work unstaged
+
+
+================================================================================
+PRODUCTION RULES FOLLOWED (WORKSPACE .cursor/rules)
+================================================================================
+
+- Member UI freeze preserved (consultant/admin concierge only)
+- No duplicate auth/signup/payment systems
+- Smallest safe fix per task
+- Build + server-import tests run and reported
+- Unrelated files never staged
+- Commits only when user explicitly requested commit message
+- Report format: root cause, files changed, why, commands, test results,
+  commit hash, unstaged leftovers
+
+
+================================================================================
+EVALUATION CHECKLIST FOR REVIEWERS
+================================================================================
+
+[ ] Consultant CRM loads at /consultant/crm with 11 sections and 6 views
+[ ] Pipeline card click navigates to matching section
+[ ] Journey Analytics tab shows 9 metrics without sales language
+[ ] Regional Teams shows 8 regions with lead + roster + metrics
+[ ] AI Assist shows rules banner and draft labels on all cards
+[ ] AI Assist member picker works in consultant and admin modes
+[ ] Post-login consultant lands on /consultant/crm
+[ ] Portfolio still available at /consultant/portfolio
+[ ] All four commits present on main: 7695580, d5d52e2, 6e04802, 742d454
+[ ] npm run build passes on clean checkout of these commits
+[ ] npm run test:server-import passes
+
+
+================================================================================
+END OF EVALUATION EXPORT
+================================================================================

@@ -15,6 +15,7 @@ import type { ConciergeMemberRecord } from "../../../types/conciergeConsultant";
 import { RelationshipLegacyIndexCard } from "../../signalConcierge/RelationshipLegacyIndexCard";
 import { LegacyStatusBadge } from "../../signalConcierge/LegacyStatusBadge";
 import { buildLegacyProfileForMember } from "../../../utils/relationshipLegacyIndexProfile";
+import { recordRelationshipLegacyFamily } from "../../../utils/relationshipLegacyIndexStore";
 
 export function RelationshipLegacyIndexPage() {
   const [filters, setFilters] = useState<LegacyIndexFilters>(EMPTY_LEGACY_INDEX_FILTERS);
@@ -51,6 +52,18 @@ export function RelationshipLegacyIndexPage() {
 
   const patchFilters = (partial: Partial<LegacyIndexFilters>) =>
     setFilters((current) => ({ ...current, ...partial }));
+
+  const handleRecordLegacyFamily = (input: { childrenCount: number; currentCountry: string }) => {
+    if (!selectedMember?.journeyId) return;
+    recordRelationshipLegacyFamily(selectedMember.journeyId, {
+      ...input,
+      recordedBy: "BamSignal Admin"
+    });
+    void fetchAdminConciergeMember(selectedMember.id).then((result) => {
+      setSelectedMember(result.member);
+    });
+    void loadMembers();
+  };
 
   return (
     <div className="relationship-legacy-index-page">
@@ -172,7 +185,10 @@ export function RelationshipLegacyIndexPage() {
 
         <div className="relationship-legacy-index-page__detail">
           {selectedProfile ? (
-            <RelationshipLegacyIndexCard profile={selectedProfile} />
+            <RelationshipLegacyIndexCard
+              profile={selectedProfile}
+              onRecordLegacyFamily={handleRecordLegacyFamily}
+            />
           ) : (
             <div className="concierge-consultant-card concierge-consultant-card--glass relationship-legacy-index-page__placeholder cc-reveal">
               <h3>Select a legacy journey</h3>

@@ -1,6 +1,6 @@
 # Operations & Launch Readiness Audit™
 
-Generated: 2026-06-23T00:24:31.095Z
+Generated: 2026-06-25T02:04:09.154Z
 
 ## Executive Summary
 
@@ -117,7 +117,7 @@ Critical security and persistence blockers prevent safe 10,000-member institutio
 
 | Audit | Key finding |
 | --- | --- |
-| Routes (Audit 1) | 152 registered routes routes; 1 (1 intentional SEO/support overlap) |
+| Routes (Audit 1) | 159 registered routes routes; 1 (1 intentional SEO/support overlap) |
 | Permissions (Audit 2) | 2 critical; 6 warnings |
 | Journey Integrity (Audit 3) | 6; 0 duplicates |
 | Persistence (Audit 4) | 12 unverified concierge tables |

@@ -1,13 +1,13 @@
 # Permission & Security Audit™
 
-Generated: 2026-06-23T00:15:50.526Z
+Generated: 2026-06-25T02:01:36.333Z
 
 ## Executive Summary
 
-Static RBAC verification across 10 institution roles, 33 enforced admin routes, and guard coverage for route, component, consultant, and API access.
+Static RBAC verification across 10 institution roles, 38 enforced admin routes, and guard coverage for route, component, consultant, and API access.
 
 **Role permission map:** 10 roles  
-**Enforced /hard routes:** 33  
+**Enforced /hard routes:** 38  
 **Critical risks:** 2  
 **Warnings:** 6  
 **RequirePermission usages:** 1  
@@ -39,9 +39,9 @@ Rows = institution roles. Columns = verification areas (Secure / Warning / Criti
 
 | Role | Permissions | Sample |
 | --- | --- | --- |
-| Admin | 19 | ViewMembers, EditMembers, AssignConsultants, ManageConsultants, ManagePayments… |
+| Admin | 20 | ViewMembers, EditMembers, AssignConsultants, ManageConsultants, ManagePayments… |
 | Executive | 5 | ViewMembers, ViewFinance, ViewExecutiveDashboard, ViewArchives, ViewResearch |
-| Operations | 15 | ViewMembers, EditMembers, AssignConsultants, ManageConsultants, ManageScheduling… |
+| Operations | 16 | ViewMembers, EditMembers, AssignConsultants, ManageConsultants, ManageScheduling… |
 | Consultant | 4 | ViewMembers, ManageIntroductions, ManageFollowUps, ManageScheduling |
 | Senior Matchmaker | 4 | ViewMembers, ManageIntroductions, ManageFollowUps, ViewArchives |
 | Compatibility Specialist | 2 | ViewMembers, ManageIntroductions |
@@ -75,7 +75,7 @@ Rows = institution roles. Columns = verification areas (Secure / Warning / Criti
 
 ## Over-Permissioned Areas
 
-- Admin — 19 permissions (full ALL_PERMISSIONS)
+- Admin — 20 permissions (full ALL_PERMISSIONS)
 - Operations — ManageSafety, ManageDocuments, ManageSupport, ManageCareers without sub-role scoping
 - Executive — ViewFinance grants /hard/business access alongside executive dashboard
 - Consultant family — shared local PIN grants any directory consultant the same session model
@@ -106,7 +106,7 @@ Rows = institution roles. Columns = verification areas (Secure / Warning / Criti
 
 ## Route Access Registry
 
-All 33 paths in `ENFORCED_HARD_ROUTE_PATHS` are mapped in `HARD_ROUTE_PERMISSIONS` (23 literal keys, 10 const refs).
+All 38 paths in `ENFORCED_HARD_ROUTE_PATHS` are mapped in `HARD_ROUTE_PERMISSIONS` (23 literal keys, 15 const refs).
 
 RequirePermission resolves permissions via `permissionsForHardPath` — longest matching /hard path wins.
 

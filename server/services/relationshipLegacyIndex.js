@@ -82,11 +82,81 @@ export function evolveLegacyStatus(record, input) {
   };
 }
 
+export function assertLegacyFamilyIntegrity(previous, next) {
+  if (!previous) return;
+  if (!next) {
+    throw new Error("Legacy family violation: legacyFamily cannot be removed");
+  }
+  if (next.history.length < previous.history.length) {
+    throw new Error("Legacy family violation: family history cannot shrink");
+  }
+  if (next.childrenCount < previous.childrenCount) {
+    throw new Error("Legacy family violation: children count cannot decrease");
+  }
+}
+
+export function recordLegacyFamilyProfile(record, input) {
+  const childrenCount = Math.max(0, Math.floor(input.childrenCount));
+  const currentCountry = (input.currentCountry ?? "").trim();
+  if (!currentCountry) {
+    throw new Error("Legacy family violation: current country is required");
+  }
+
+  const previous = record.legacyFamily;
+  if (previous && childrenCount < previous.childrenCount) {
+    throw new Error("Legacy family violation: children count cannot decrease");
+  }
+
+  const now = new Date().toISOString();
+  const change = {
+    childrenCount,
+    currentCountry,
+    at: now,
+    by: input.recordedBy
+  };
+
+  const legacyFamily = {
+    childrenCount,
+    currentCountry,
+    recordedAt: previous?.recordedAt ?? now,
+    recordedBy: input.recordedBy ?? previous?.recordedBy,
+    history: [...(previous?.history ?? []), change],
+    futureFamily: previous?.futureFamily ?? {
+      enabled: false,
+      kinds: ["family-events", "legacy-celebrations", "child-milestones"]
+    }
+  };
+
+  if (previous) {
+    assertLegacyFamilyIntegrity(previous, legacyFamily);
+  }
+
+  let nextRecord = {
+    ...record,
+    legacyFamily,
+    updatedAt: now
+  };
+
+  if (childrenCount > 0 && record.legacyStatus !== "legacy-family") {
+    nextRecord = evolveLegacyStatus(nextRecord, {
+      legacyStatus: "legacy-family",
+      by: input.recordedBy
+    });
+    nextRecord = { ...nextRecord, legacyFamily };
+  }
+
+  return nextRecord;
+}
+
+export function legacyFamilySearchCountry(record) {
+  return record.legacyFamily?.currentCountry ?? record.country;
+}
+
 export function filterAnniversaryMilestones(milestones) {
   return (milestones ?? []).filter((item) => LEGACY_ANNIVERSARY_MILESTONE_IDS.has(item.id));
 }
 
-export function deriveLegacyTimelinePhases({ milestones, hasFamilyStory, isLegacyArchive }) {
+export function deriveLegacyTimelinePhases({ milestones, hasFamilyStory, hasLegacyFamily, isLegacyArchive }) {
   const milestoneIds = new Set((milestones ?? []).map((item) => item.id));
   const hasAnniversary = [...LEGACY_ANNIVERSARY_MILESTONE_IDS].some((id) => milestoneIds.has(id));
   const phases = [
@@ -95,7 +165,11 @@ export function deriveLegacyTimelinePhases({ milestones, hasFamilyStory, isLegac
     { id: "engagement", label: "Engagement", reached: milestoneIds.has("engaged") },
     { id: "marriage", label: "Marriage", reached: milestoneIds.has("married") },
     { id: "anniversaries", label: "Anniversaries", reached: hasAnniversary },
-    { id: "family-milestones", label: "Family Milestones", reached: Boolean(hasFamilyStory) },
+    {
+      id: "family-milestones",
+      label: "Family Milestones",
+      reached: Boolean(hasLegacyFamily || hasFamilyStory)
+    },
     { id: "legacy-archive", label: "Legacy Archive", reached: Boolean(isLegacyArchive) }
   ];
   return phases;
@@ -115,8 +189,9 @@ export function filterLegacyIndexEntries(entries, filters) {
     if (filters.city && !entry.city.toLowerCase().includes(filters.city.toLowerCase())) {
       return false;
     }
-    if (filters.country && !entry.country.toLowerCase().includes(filters.country.toLowerCase())) {
-      return false;
+    if (filters.country) {
+      const country = (entry.currentCountry ?? entry.country ?? "").toLowerCase();
+      if (!country.includes(filters.country.toLowerCase())) return false;
     }
     if (marriageYear && String(entry.marriageYear ?? "") !== marriageYear) return false;
     if (filters.storyCategory && filters.storyCategory !== "all") {

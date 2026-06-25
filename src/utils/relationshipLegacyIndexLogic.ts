@@ -1,4 +1,3 @@
-import type { JourneyStoryCategoryId } from "../constants/journeyStoryCategories";
 import {
   LEGACY_ANNIVERSARY_MILESTONE_IDS,
   LEGACY_TIMELINE_PHASES,
@@ -12,6 +11,8 @@ import type { ConciergeMemberRecord } from "../types/conciergeConsultant";
 import type { JourneyMilestoneEntry } from "../types/journeyMilestone";
 import type { JourneyStoryCategoryEntry } from "../types/JourneyStoryType";
 import type {
+  LegacyFamilyChange,
+  LegacyFamilyProfile,
   LegacyStatusChange,
   RelationshipLegacyIndexRecord
 } from "../types/relationshipLegacyIndex";
@@ -101,10 +102,111 @@ export function mergeLegacyIndexRecords(
       incoming.statusHistory.length > existing.statusHistory.length
         ? incoming.statusHistory
         : existing.statusHistory,
+    legacyFamily: mergeLegacyFamilyProfiles(existing.legacyFamily, incoming.legacyFamily),
     futureLegacy: existing.futureLegacy ?? incoming.futureLegacy
   };
   assertLegacyIndexIntegrity(existing, merged);
   return merged;
+}
+
+function mergeLegacyFamilyProfiles(
+  existing?: RelationshipLegacyIndexRecord["legacyFamily"],
+  incoming?: RelationshipLegacyIndexRecord["legacyFamily"]
+): RelationshipLegacyIndexRecord["legacyFamily"] {
+  if (!existing) return incoming;
+  if (!incoming) return existing;
+  const history =
+    incoming.history.length > existing.history.length ? incoming.history : existing.history;
+  return {
+    childrenCount: Math.max(existing.childrenCount, incoming.childrenCount),
+    currentCountry: incoming.currentCountry || existing.currentCountry,
+    recordedAt: incoming.recordedAt > existing.recordedAt ? incoming.recordedAt : existing.recordedAt,
+    recordedBy: incoming.recordedBy ?? existing.recordedBy,
+    history,
+    futureFamily: existing.futureFamily ?? incoming.futureFamily
+  };
+}
+
+export function assertLegacyFamilyIntegrity(
+  previous: RelationshipLegacyIndexRecord["legacyFamily"],
+  next: RelationshipLegacyIndexRecord["legacyFamily"]
+): void {
+  if (!previous) return;
+  if (!next) {
+    throw new Error("Legacy family violation: legacyFamily cannot be removed");
+  }
+  if (next.history.length < previous.history.length) {
+    throw new Error("Legacy family violation: family history cannot shrink");
+  }
+  if (next.childrenCount < previous.childrenCount) {
+    throw new Error("Legacy family violation: children count cannot decrease");
+  }
+}
+
+export function recordLegacyFamilyProfile(
+  record: RelationshipLegacyIndexRecord,
+  input: { childrenCount: number; currentCountry: string; recordedBy?: string }
+): RelationshipLegacyIndexRecord {
+  const childrenCount = Math.max(0, Math.floor(input.childrenCount));
+  const currentCountry = input.currentCountry.trim();
+  if (!currentCountry) {
+    throw new Error("Legacy family violation: current country is required");
+  }
+
+  const previous = record.legacyFamily;
+  if (previous && childrenCount < previous.childrenCount) {
+    throw new Error("Legacy family violation: children count cannot decrease");
+  }
+
+  const now = new Date().toISOString();
+  const change: LegacyFamilyChange = {
+    childrenCount,
+    currentCountry,
+    at: now,
+    by: input.recordedBy
+  };
+
+  const legacyFamily: LegacyFamilyProfile = {
+    childrenCount,
+    currentCountry,
+    recordedAt: previous?.recordedAt ?? now,
+    recordedBy: input.recordedBy ?? previous?.recordedBy,
+    history: [...(previous?.history ?? []), change],
+    futureFamily: previous?.futureFamily ?? {
+      enabled: false,
+      kinds: ["family-events", "legacy-celebrations", "child-milestones"]
+    }
+  };
+
+  if (previous) {
+    assertLegacyFamilyIntegrity(previous, legacyFamily);
+  }
+
+  let nextRecord: RelationshipLegacyIndexRecord = {
+    ...record,
+    legacyFamily,
+    updatedAt: now
+  };
+
+  if (childrenCount > 0 && record.legacyStatus !== "legacy-family") {
+    nextRecord = evolveLegacyStatus(nextRecord, {
+      legacyStatus: "legacy-family",
+      by: input.recordedBy
+    });
+    nextRecord = { ...nextRecord, legacyFamily };
+  }
+
+  return nextRecord;
+}
+
+export function hasLegacyFamilyProfile(
+  record: RelationshipLegacyIndexRecord
+): boolean {
+  return Boolean(record.legacyFamily && record.legacyFamily.childrenCount > 0);
+}
+
+export function legacyFamilySearchCountry(record: RelationshipLegacyIndexRecord): string {
+  return record.legacyFamily?.currentCountry ?? record.country;
 }
 
 export type LegacyTimelinePhaseView = {
@@ -116,6 +218,7 @@ export type LegacyTimelinePhaseView = {
 export function deriveLegacyTimelinePhases(input: {
   milestones: JourneyMilestoneEntry[];
   hasFamilyStory?: boolean;
+  hasLegacyFamily?: boolean;
   isLegacyArchive?: boolean;
 }): LegacyTimelinePhaseView[] {
   const milestoneIds = new Set(input.milestones.map((item) => item.id));
@@ -127,7 +230,7 @@ export function deriveLegacyTimelinePhases(input: {
     engagement: milestoneIds.has("engaged"),
     marriage: milestoneIds.has("married"),
     anniversaries: hasAnniversary,
-    "family-milestones": Boolean(input.hasFamilyStory),
+    "family-milestones": Boolean(input.hasLegacyFamily || input.hasFamilyStory),
     "legacy-archive": Boolean(input.isLegacyArchive)
   };
 
@@ -155,6 +258,15 @@ export function milestoneYearById(
   return year || undefined;
 }
 
+export type LegacyFamilyViewModel = {
+  journeyId: string;
+  metYear?: string;
+  marriedYear?: string;
+  childrenCount: number;
+  currentCountry: string;
+  legacyStatus: LegacyStatusId;
+};
+
 export type LegacyProfileViewModel = {
   journeyId: string;
   memberId: string;
@@ -170,6 +282,7 @@ export type LegacyProfileViewModel = {
   anniversaryMilestones: JourneyMilestoneEntry[];
   timelinePhases: LegacyTimelinePhaseView[];
   registeredAt: string;
+  legacyFamily?: LegacyFamilyViewModel;
 };
 
 export function buildLegacyProfileViewModel(input: {
@@ -180,6 +293,9 @@ export function buildLegacyProfileViewModel(input: {
 }): LegacyProfileViewModel {
   const { member, index, storyCategories, milestones } = input;
   const hasFamilyStory = storyCategories.some((item) => item.id === "family-story");
+  const hasLegacyFamily = hasLegacyFamilyProfile(index);
+  const metYear = milestoneYearById(milestones, "met");
+  const marriedYear = milestoneYearById(milestones, "married");
 
   return {
     journeyId: index.journeyId,
@@ -189,17 +305,28 @@ export function buildLegacyProfileViewModel(input: {
     country: index.country,
     consultantName: member.assignedConsultantName,
     legacyStatus: index.legacyStatus,
-    metYear: milestoneYearById(milestones, "met"),
+    metYear,
     engagedYear: milestoneYearById(milestones, "engaged"),
-    marriedYear: milestoneYearById(milestones, "married"),
+    marriedYear,
     storyCategories,
     anniversaryMilestones: filterAnniversaryMilestones(milestones),
     timelinePhases: deriveLegacyTimelinePhases({
       milestones,
       hasFamilyStory,
+      hasLegacyFamily,
       isLegacyArchive: member.journeyArchive?.isLegacyArchive
     }),
-    registeredAt: index.registeredAt
+    registeredAt: index.registeredAt,
+    legacyFamily: index.legacyFamily
+      ? {
+          journeyId: index.journeyId,
+          metYear,
+          marriedYear,
+          childrenCount: index.legacyFamily.childrenCount,
+          currentCountry: index.legacyFamily.currentCountry,
+          legacyStatus: index.legacyStatus
+        }
+      : undefined
   };
 }
 
@@ -227,8 +354,9 @@ export function filterLegacyIndexMembers(
     if (filters.city && !member.aboutYou.city.toLowerCase().includes(filters.city.toLowerCase())) {
       return false;
     }
-    if (filters.country && !index.country.toLowerCase().includes(filters.country.toLowerCase())) {
-      return false;
+    if (filters.country) {
+      const country = legacyFamilySearchCountry(index);
+      if (!country.toLowerCase().includes(filters.country.toLowerCase())) return false;
     }
     if (marriageYear) {
       const year = marriageYearFromMember(member);
@@ -249,6 +377,7 @@ export function filterLegacyIndexMembers(
       member.aboutYou.name,
       member.aboutYou.city,
       index.country,
+      index.legacyFamily?.currentCountry ?? "",
       member.assignedConsultantName ?? "",
       index.legacyStatus,
       categoryLabels

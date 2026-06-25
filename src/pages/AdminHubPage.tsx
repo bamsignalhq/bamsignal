@@ -9,7 +9,50 @@ import {
 } from "../constants/discoverCityConfig";
 import { LAUNCH_PRIMARY_CITIES } from "../constants/seedCities";
 import { STORAGE_KEYS } from "../constants/limits";
-import { AdminPricingPage } from "./AdminPricingPage";
+import { AdminLazyTab } from "../components/admin/AdminLazyTab";
+import {
+  LazyAdminPricingPage,
+  LazyApiPlatformPage,
+  LazyAuditComplianceCenterPage,
+  LazyBusinessContinuityPage,
+  LazyConfigurationPlatformPage,
+  LazyConsultantAcademyPage,
+  LazyConsultantDashboardPage,
+  LazyConsultantQualityPage,
+  LazyDataGovernanceCenterPage,
+  LazyDatabaseAuditPage,
+  LazyDocumentCenterPage,
+  LazyExecutiveDashboardPage,
+  LazyFinanceOperationsPage,
+  LazyInstitutionalComplianceCenterPage,
+  LazyInstitutionalGovernancePage,
+  LazyInstitutionalPoliciesPage,
+  LazyIntegrityDashboard,
+  LazyJourneyIntegrityAuditPage,
+  LazyJourneyIntelligencePage,
+  LazyLaunchControlCenterPage,
+  LazyLaunchReadinessCommandCenterPage,
+  LazyMessagingDashboardPage,
+  LazyMonitoringCenterPage,
+  LazyNotificationQueuePage,
+  LazyOperationsCenterPage,
+  LazyPerformanceCenterPage,
+  LazyPermissionsAuditPage,
+  LazyProductionPerformanceDashboard,
+  LazyReadinessPage,
+  LazyRecoveryDashboardPage,
+  LazyRemediationBoardPage,
+  LazyReportingCenterPage,
+  LazyRouteAuditPage,
+  LazySafetyDashboardPage,
+  LazySecurityDashboard,
+  LazySupportDashboardPage,
+  LazySystemHealthPage,
+  LazyTalentRecruitingPage,
+  LazyUxConsistencyDashboard,
+  LazyWorkflowEnginePage,
+  LazyWorkforceManagementPage
+} from "../components/admin/lazyAdminHubTabs";
 import {
   fetchVerificationSubmissions,
   reviewVerificationSubmission,
@@ -83,45 +126,6 @@ import {
   type AdminMemberCompliance,
   type AdminMemberSummary
 } from "../services/adminMembers";
-import { ConsultantDashboardPage } from "../components/admin/concierge/ConsultantDashboardPage";
-import { OperationsCenterPage } from "../components/admin/concierge/OperationsCenterPage";
-import { TalentRecruitingPage } from "../components/admin/talent/TalentRecruitingPage";
-import { SupportDashboardPage } from "../components/admin/support/SupportDashboardPage";
-import { NotificationQueuePage } from "../components/admin/notificationReliability/NotificationQueuePage";
-import { SystemHealthPage } from "../components/admin/systemHealth/SystemHealthPage";
-import { InstitutionalComplianceCenterPage } from "../components/admin/compliance/InstitutionalComplianceCenterPage";
-import { AuditComplianceCenterPage } from "../components/admin/audit/AuditComplianceCenterPage";
-import { RouteAuditPage } from "../components/admin/routeAudit/RouteAuditPage";
-import { DatabaseAuditPage } from "../components/admin/databaseAudit/DatabaseAuditPage";
-import { PermissionsAuditPage } from "../components/admin/permissionsAudit/PermissionsAuditPage";
-import { JourneyIntegrityAuditPage } from "../components/admin/journeyAudit/JourneyIntegrityAuditPage";
-import { LaunchReadinessCommandCenterPage } from "../components/admin/launchReadiness/LaunchReadinessCommandCenterPage";
-import { LaunchControlCenterPage } from "../components/admin/launchControl/LaunchControlCenterPage";
-import { PerformanceCenterPage } from "../components/admin/performance/PerformanceCenterPage";
-import { WorkflowEnginePage } from "../components/admin/workflows/WorkflowEnginePage";
-import { SecurityDashboard } from "../components/admin/security/SecurityDashboard";
-import { UxConsistencyDashboard } from "../components/admin/uxConsistency/UxConsistencyDashboard";
-import { ReportingCenterPage } from "../components/admin/reporting/ReportingCenterPage";
-import { RemediationBoardPage } from "../components/admin/remediationBoard/RemediationBoardPage";
-import { ReadinessPage } from "../components/admin/institutionalReadiness/ReadinessPage";
-import { IntegrityDashboard } from "../components/admin/dataIntegrity/IntegrityDashboard";
-import { DocumentCenterPage } from "../components/admin/documents/DocumentCenterPage";
-import { InstitutionalPoliciesPage } from "../components/admin/documents/InstitutionalPoliciesPage";
-import { SafetyDashboardPage } from "../components/admin/safety/SafetyDashboardPage";
-import { ConsultantAcademyPage } from "../components/admin/academy/ConsultantAcademyPage";
-import { ConsultantQualityPage } from "../components/admin/quality/ConsultantQualityPage";
-import { FinanceOperationsPage } from "../components/admin/finance/FinanceOperationsPage";
-import { MessagingDashboardPage } from "../components/admin/messages/MessagingDashboardPage";
-import { RecoveryDashboardPage } from "../components/admin/recovery/RecoveryDashboardPage";
-import { ExecutiveDashboardPage } from "../components/admin/executive/ExecutiveDashboardPage";
-import { InstitutionalGovernancePage } from "../components/admin/governance/InstitutionalGovernancePage";
-import { WorkforceManagementPage } from "../components/admin/workforce/WorkforceManagementPage";
-import { BusinessContinuityPage } from "../components/admin/businessContinuity/BusinessContinuityPage";
-import { ConfigurationPlatformPage } from "../components/admin/configuration/ConfigurationPlatformPage";
-import { MonitoringCenterPage } from "../components/admin/monitoring/MonitoringCenterPage";
-import { DataGovernanceCenterPage } from "../components/admin/dataGovernance/DataGovernanceCenterPage";
-import { ApiPlatformPage } from "../components/admin/apiPlatform/ApiPlatformPage";
-import { JourneyIntelligencePage } from "../components/admin/concierge/JourneyIntelligencePage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
 import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
 import { AdminTerminalEmpty } from "../components/admin/AdminTerminalEmpty";
@@ -1316,7 +1320,9 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
         </>
       )}
 
-      {tab === "reports" ? <ReportingCenterPage /> : null}
+      <AdminLazyTab active={tab === "reports"}>
+        <LazyReportingCenterPage />
+      </AdminLazyTab>
 
       {tab === "cities" && (
         <>
@@ -1780,7 +1786,9 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
         </section>
       )}
 
-      {tab === "pricing" && <AdminPricingPage onBack={() => handleTabChange("command")} embedded />}
+      <AdminLazyTab active={tab === "pricing"}>
+        <LazyAdminPricingPage onBack={() => handleTabChange("command")} embedded />
+      </AdminLazyTab>
 
       {tab === "content" && (
         <section className="card admin-cms">
@@ -1943,46 +1951,123 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
         </>
       )}
 
-      {tab === "concierge" && conciergeView === "operations-center" ? <OperationsCenterPage /> : null}
-      {tab === "concierge" && conciergeView === "journey-intelligence" ? (
-        <JourneyIntelligencePage />
-      ) : null}
-      {tab === "concierge" && conciergeView === "dashboard" ? <ConsultantDashboardPage /> : null}
-      {tab === "talent" ? <TalentRecruitingPage /> : null}
-      {tab === "support" ? <SupportDashboardPage /> : null}
-      {tab === "audit" && auditView === "security" ? <PermissionsAuditPage /> : null}
-      {tab === "audit" && auditView === "database" ? <DatabaseAuditPage /> : null}
-      {tab === "audit" && auditView === "routes" ? <RouteAuditPage /> : null}
-      {tab === "audit" && auditView === "journeys" ? <JourneyIntegrityAuditPage /> : null}
-      {tab === "audit" && auditView === "compliance" ? <AuditComplianceCenterPage /> : null}
-      {tab === "compliance" ? <InstitutionalComplianceCenterPage /> : null}
-      {tab === "systemhealth" ? <SystemHealthPage /> : null}
-      {tab === "notifications" ? <NotificationQueuePage /> : null}
-      {tab === "documents" ? <DocumentCenterPage /> : null}
-      {tab === "policies" ? <InstitutionalPoliciesPage /> : null}
-      {tab === "safety" ? <SafetyDashboardPage /> : null}
-      {tab === "academy" ? <ConsultantAcademyPage /> : null}
-      {tab === "quality" ? <ConsultantQualityPage /> : null}
-      {tab === "finance" ? <FinanceOperationsPage /> : null}
-      {tab === "messages" ? <MessagingDashboardPage /> : null}
-      {tab === "executive" ? <ExecutiveDashboardPage /> : null}
-      {tab === "launch" ? <LaunchReadinessCommandCenterPage /> : null}
-      {tab === "launchcontrol" ? <LaunchControlCenterPage /> : null}
-      {tab === "performance" ? <PerformanceCenterPage /> : null}
-      {tab === "workflows" ? <WorkflowEnginePage /> : null}
-      {tab === "securitydashboard" ? <SecurityDashboard /> : null}
-      {tab === "uxconsistency" ? <UxConsistencyDashboard /> : null}
-      {tab === "remediation" ? <RemediationBoardPage /> : null}
-      {tab === "readiness" ? <ReadinessPage /> : null}
-      {tab === "dataintegrity" ? <IntegrityDashboard /> : null}
-      {tab === "recovery" ? <RecoveryDashboardPage /> : null}
-      {tab === "workforce" ? <WorkforceManagementPage /> : null}
-      {tab === "governance" ? <InstitutionalGovernancePage /> : null}
-      {tab === "businesscontinuity" ? <BusinessContinuityPage /> : null}
-      {tab === "configuration" ? <ConfigurationPlatformPage /> : null}
-      {tab === "monitoring" ? <MonitoringCenterPage /> : null}
-      {tab === "datagovernance" ? <DataGovernanceCenterPage /> : null}
-      {tab === "apiplatform" ? <ApiPlatformPage /> : null}
+      <AdminLazyTab active={tab === "concierge" && conciergeView === "operations-center"}>
+        <LazyOperationsCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "concierge" && conciergeView === "journey-intelligence"}>
+        <LazyJourneyIntelligencePage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "concierge" && conciergeView === "dashboard"}>
+        <LazyConsultantDashboardPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "talent"}>
+        <LazyTalentRecruitingPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "support"}>
+        <LazySupportDashboardPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "audit" && auditView === "security"}>
+        <LazyPermissionsAuditPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "audit" && auditView === "database"}>
+        <LazyDatabaseAuditPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "audit" && auditView === "routes"}>
+        <LazyRouteAuditPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "audit" && auditView === "journeys"}>
+        <LazyJourneyIntegrityAuditPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "audit" && auditView === "compliance"}>
+        <LazyAuditComplianceCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "compliance"}>
+        <LazyInstitutionalComplianceCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "systemhealth"}>
+        <LazySystemHealthPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "notifications"}>
+        <LazyNotificationQueuePage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "documents"}>
+        <LazyDocumentCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "policies"}>
+        <LazyInstitutionalPoliciesPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "safety"}>
+        <LazySafetyDashboardPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "academy"}>
+        <LazyConsultantAcademyPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "quality"}>
+        <LazyConsultantQualityPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "finance"}>
+        <LazyFinanceOperationsPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "messages"}>
+        <LazyMessagingDashboardPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "executive"}>
+        <LazyExecutiveDashboardPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "launch"}>
+        <LazyLaunchReadinessCommandCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "launchcontrol"}>
+        <LazyLaunchControlCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "performance"}>
+        <LazyPerformanceCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "workflows"}>
+        <LazyWorkflowEnginePage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "securitydashboard"}>
+        <LazySecurityDashboard />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "uxconsistency"}>
+        <LazyUxConsistencyDashboard />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "performanceoptimization"}>
+        <LazyProductionPerformanceDashboard />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "remediation"}>
+        <LazyRemediationBoardPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "readiness"}>
+        <LazyReadinessPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "dataintegrity"}>
+        <LazyIntegrityDashboard />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "recovery"}>
+        <LazyRecoveryDashboardPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "workforce"}>
+        <LazyWorkforceManagementPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "governance"}>
+        <LazyInstitutionalGovernancePage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "businesscontinuity"}>
+        <LazyBusinessContinuityPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "configuration"}>
+        <LazyConfigurationPlatformPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "monitoring"}>
+        <LazyMonitoringCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "datagovernance"}>
+        <LazyDataGovernanceCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "apiplatform"}>
+        <LazyApiPlatformPage />
+      </AdminLazyTab>
         </main>
         <AdminCommandDock
           activeTab={tab}

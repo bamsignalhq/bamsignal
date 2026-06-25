@@ -1,0 +1,443 @@
+BAMSIGNAL INSTITUTIONAL AUDIT PASS™ — SESSION BUNDLE
+Generated: 2026-06-23
+Repository: bamsignal (github.com/bamsignalhq/bamsignal)
+Production URL: https://bamsignal.com
+
+================================================================================
+OVERVIEW
+================================================================================
+
+This bundle consolidates the Institutional Audit Pass™ work: five automated
+audits, three admin command centers built in-session, and the launch readiness
+verdict for 10,000-member scale.
+
+Goal: Determine whether BamSignal can support 10,000 members safely.
+
+Verdict summary:
+  Launch Readiness Score: 86/100
+  Go / No-Go: NO-GO
+  Critical blockers: 2
+  High risks: 4
+  Medium risks: 4
+  Low risks: 2
+
+Member-facing discovery/auth may proceed in controlled launch with fixes tracked.
+Full Signal Concierge institutional operations at 10k scale are not ready.
+
+
+================================================================================
+COMMITS (THIS SESSION AND RELATED)
+================================================================================
+
+f10d3d2  Run operations and launch readiness audit
+753940c  Build institutional remediation board
+42e1276  Build institutional readiness report
+53e6d03  Build data integrity center
+
+Prior audit commits (Institutional Audit Pass 1–4):
+9806b3f  Run route and navigation integrity audit
+5eeb723  Run permission and security audit
+0100700  Run journey integrity audit
+bef3775  Run Supabase and persistence audit
+
+
+================================================================================
+ADMIN ROUTES BUILT / REFERENCED
+================================================================================
+
+/hard/launch              Launch Readiness Command Center™
+/hard/remediation         Institutional Remediation Board™
+/hard/readiness           Institutional Readiness Report™
+/hard/data-integrity      Data Integrity Center™
+
+Audit live views:
+/hard/audit/routes        Route & Navigation Audit™
+/hard/audit/security      Permissions Audit™
+/hard/audit/journeys      Journey Integrity Audit™
+/hard/audit/database      Database Audit Center™ (Persistence)
+/hard/concierge/operations  Operations Center™
+/hard/executive           Executive Dashboard
+
+
+================================================================================
+NPM COMMANDS
+================================================================================
+
+npm run build
+npm run test:server-import
+npm run audit:routes
+npm run audit:permissions
+npm run audit:journeys
+npm run audit:persistence
+npm run audit:launch
+npm run test:launch-readiness
+npm run test:operations-center
+npm run test:remediation-board
+npm run test:institutional-readiness
+npm run test:data-integrity
+
+
+================================================================================
+AUDIT 1 — ROUTE & NAVIGATION INTEGRITY™
+================================================================================
+
+Report: docs/audits/bamsignal-route-navigation-audit.md
+Command: npm run audit:routes
+Commit: 9806b3f
+
+Executive Summary:
+  Inventory total: 152 registered routes
+  Duplicates: 1 (intentional SEO/support overlap on /help)
+  Unlinked nested admin views: 6
+  Permission gaps: 0
+  Lazy exports: 101
+  Hardcoded route string files (warning): 16
+  Automated check failures: 0
+
+Route inventory by area:
+  admin: 33
+  century: 4
+  concierge: 7
+  consultant: 7
+  events: 8
+  institute: 56
+  member: 13
+  public: 24
+
+Nested admin views missing from main navigation:
+  /hard/concierge/operations     Operations Center
+  /hard/concierge/intelligence   Journey Intelligence
+  /hard/audit/routes             Route & Navigation Audit
+  /hard/audit/database           Database Audit
+  /hard/audit/security           Permissions Audit
+  /hard/audit/journeys           Journey Integrity Audit
+
+Sitemap gaps (non-auth public):
+  /signal-concierge/privacy
+  /signal-concierge/faq
+
+
+================================================================================
+AUDIT 2 — PERMISSION & SECURITY™
+================================================================================
+
+Report: docs/audits/bamsignal-permission-security-audit.md
+Command: npm run audit:permissions
+Commit: 5eeb723
+Live: /hard/audit/security
+
+Executive Summary:
+  Role permission map: 10 roles
+  Enforced /hard routes: 33+ (expanded with new centers)
+  Critical risks: 2
+  Warnings: 6
+  RequirePermission usages: 1
+  PermissionGate usages: 0
+  ConsultantCapabilityGate usages: 1
+  Automated check failures: 0
+
+Critical risks:
+  1. CRON_SECRET bypasses admin auth
+     server/adminAuth.js requireAdmin accepts x-bamsignal-secret matching
+     CRON_SECRET — grants full admin API access without operator session.
+
+  2. Consultant portal uses shared local PIN
+     consultantSession.ts authenticates with fixed demo PIN and localStorage —
+     not per-consultant Supabase credentials.
+
+Warnings (sample):
+  - Executive and Finance dashboards overlap
+  - Consultant capabilities not enforced on all routes
+  - super-admin maps to Admin role permissions
+  - Operations role spans finance, safety, documents, support
+  - PermissionGate component not used in admin sub-sections
+
+
+================================================================================
+AUDIT 3 — JOURNEY INTEGRITY™
+================================================================================
+
+Report: docs/audits/bamsignal-journey-integrity-audit.md
+Command: npm run audit:journeys
+Commit: 0100700
+Live: /hard/audit/journeys
+
+Executive Summary:
+  Canonical journeys: 6
+  Referenced journey IDs: 13
+  Duplicate member IDs: 0
+  Members missing journey ID: 0
+  Orphan references: 7 (expected demo data)
+  Invalid format IDs: 0
+  Finance records missing journeyRef: 4
+  Timeline/archive issues: 0
+  Automated check failures: 0
+
+Canonical member registry (seed):
+  sc_member_amaka   BS-JR-2026-0001
+  sc_member_tunde   BS-JR-2026-0002
+  sc_member_zara    BS-JR-2026-0003
+  sc_member_chidi   BS-JR-2026-0004
+  sc_member_ife     BS-JR-2026-0005
+  sc_member_adaeze  BS-JR-2028-0045
+
+
+================================================================================
+AUDIT 4 — SUPABASE & PERSISTENCE™
+================================================================================
+
+Report: docs/audits/bamsignal-persistence-audit.md
+Command: npm run audit:persistence
+Commit: bef3775
+Live: /hard/audit/database
+
+Executive Summary:
+  Baseline Postgres tables: 41
+  Concierge migration tables: 12
+  Startup-verified tables: 41
+  Concierge tables not verified at startup: 12
+  Admin localStorage dependencies: 15
+  Additional institutional storage keys scanned: 119
+  Mock/stub repositories: 7
+  Automated check failures: 0
+
+Domains needing migration (localStorage-only admin):
+  Support Tickets, Safety Cases, Documents, Talent, Academy, QA, Internal Messaging
+
+Client persistence note:
+  Repository layer uses noopSupabaseWrite — localStorage remains browser source
+  of truth; server Postgres writes exist via conciergePersistence.js.
+
+
+================================================================================
+AUDIT 5 — OPERATIONS & LAUNCH READINESS™
+================================================================================
+
+Report: docs/audits/bamsignal-launch-readiness-audit.md
+Command: npm run audit:launch
+Commit: f10d3d2
+Live: /hard/launch
+
+Executive Summary:
+  Can BamSignal support 10,000 members safely?
+
+  Launch Readiness Score: 86/100
+  Go / No-Go: NO-GO
+  Pipeline steps passing: 7/13 (6 partial)
+  Critical blockers: 2
+  High risks: 4
+  Automated check failures: 0
+
+Score breakdown:
+  Operations pipeline (13 checks): 82/100
+  Institutional audit penalties: −0
+  Prior audits complete bonus: +4
+  Composite score: 86/100
+
+Go / No-Go:
+  Verdict: NO-GO
+  Critical security and persistence blockers prevent safe 10,000-member
+  institutional operations. Member-facing discovery/auth can proceed in
+  controlled launch with fixes tracked.
+
+10,000-member scale assessment:
+  Member auth (username + PIN)     Partial   Throttled pin-login; email exposure risk
+  Member payments (Paystack)       Partial   Fortress active; fulfillment race at scale
+  Discover / social graph          Ready     Postgres-backed app_users, profiles, signals
+  Signal Concierge apply→archive   Partial   End-to-end wired; localStorage admin layer
+  Admin operations at scale        Not ready 15 localStorage engines, 7 noop repositories
+  Executive monitoring             Ready     Launch Readiness + Executive Dashboard wired
+
+Operational pipeline (13 checks):
+  Can a member apply?              PARTIAL   Client repos noopSupabase; server persistence active
+  Can they pay?                    PARTIAL   Paystack verify + webhook; fulfillment race risk
+  Can they schedule?               PASS
+  Can consultant receive assignment? PARTIAL   Assignment engine seeded; local PIN demo auth
+  Can consultation happen?         PASS
+  Can recommendation be recorded?  PASS
+  Can introduction happen?         PASS
+  Can follow-up happen?            PASS
+  Can archive happen?              PASS
+  Can notifications be delivered?  PARTIAL   Queue in localStorage until Postgres cutover
+  Can support resolve issues?      PARTIAL   Support Center localStorage-only
+  Can safety intervene?            PARTIAL   Safety Center localStorage-only
+  Can executives monitor health?   PASS
+
+Critical blockers:
+  1. Consultant portal shared local PIN (consultations)
+  2. CRON_SECRET admin API bypass (operations)
+
+High risks:
+  1. Payment fulfillment race
+  2. Public username-to-email exposure
+  3. Concierge admin data in localStorage
+  4. Concierge schema not startup-verified
+
+Medium risks:
+  1. Client repository cutover incomplete
+  2. Support and Safety admin local-only
+  3. Finance journeyRef gaps (4 records)
+  4. No RLS on concierge tables
+
+Low risks:
+  1. Nested admin nav gaps (6 views)
+  2. Orphan journey references in demo seeds (7)
+
+Recommended fixes:
+  - Replace consultant local PIN with per-consultant Supabase credentials
+  - Scope CRON_SECRET bypass to cron-only endpoints with signed job tokens
+  - Add atomic payment fulfillment lock and unique paystack_reference index
+  - Remove or lock down public username-to-email resolver
+  - Add concierge_* tables to REQUIRED_SCHEMA_TABLES; complete client cutover
+  - Migrate Support Center and Safety Center admin data to Postgres
+  - Attach journeyRef to remaining finance records
+  - Run load test against /ready with production DATABASE_URL before 10k target
+
+
+================================================================================
+INSTITUTIONAL REMEDIATION BOARD™
+================================================================================
+
+Route: /hard/remediation
+Commit: 753940c
+Command: npm run test:remediation-board
+
+Goal: Centralize all audit findings.
+
+Severity: P0 (Critical), P1 (High), P2 (Medium/Low)
+Statuses: Open, In Progress, Blocked, Resolved, Deferred
+
+Categories:
+  Routes, Permissions, Journey Integrity, Persistence, Operations, CRM,
+  Notifications, Safety, Executive, Launch
+
+Metrics:
+  Open Findings, Critical Findings, Resolved Findings, Launch Blockers
+
+Components:
+  RemediationBoardPage, RemediationCard, SeverityBadge,
+  RemediationSummaryCard, RiskOverviewCard
+
+Default snapshot (22 seeded findings):
+  Open findings: ~19
+  Critical (P0 open): 2
+  Launch blockers: 2 (P0 + launchBlocker flag)
+  Resolved: 0
+
+P0 Launch blockers:
+  1. CRON_SECRET bypasses admin auth
+  2. Consultant portal uses shared local PIN
+
+All seeded findings:
+  P0:
+    - CRON_SECRET bypasses admin auth [Launch blocker]
+    - Consultant portal uses shared local PIN [Launch blocker]
+
+  P1:
+    - Payment fulfillment race
+    - Public username-to-email exposure
+    - Concierge admin data in localStorage
+    - Concierge schema not startup-verified
+    - PermissionGate not used in admin pages
+    - Server admin APIs lack role enforcement
+    - Support Center admin is localStorage-only
+    - Safety Center admin is localStorage-only
+    - Notification delivery queue in localStorage
+    - Launch readiness NO-GO at 10k scale
+
+  P2:
+    - Client repository cutover incomplete
+    - Finance records missing journeyRef
+    - No RLS on concierge tables
+    - Nested admin views missing from navigation
+    - Orphan journey references in demo seeds [Deferred]
+    - Operations role spans finance, safety, documents, support
+    - Executive and Finance dashboards overlap [Deferred]
+    - Signal Concierge public sitemap gaps
+    - Consultant capability isolation partial
+    - Parallel audit table families [Deferred]
+
+
+================================================================================
+INSTITUTIONAL READINESS REPORT™
+================================================================================
+
+Route: /hard/readiness
+Commit: 42e1276
+Command: npm run test:institutional-readiness
+
+Goal: Aggregate all audit outputs.
+
+Sections (8 health domains):
+  Route Health, Permission Health, Journey Health, Persistence Health,
+  Operations Health, Safety Health, Executive Health, Launch Readiness
+
+Outputs:
+  Overall Readiness Score (~78–82/100 typical)
+  Critical Blockers, High Risks, Medium Risks, Resolved Risks
+  Go / No-Go (typically NO-GO with 2 P0 blockers)
+
+Components:
+  ReadinessPage, ReadinessScoreCard, HealthCategoryCard, LaunchDecisionCard
+
+Go / No-Go logic:
+  NO-GO if critical blockers > 0 OR score < 70
+  NO-GO — member app only if high risks >= 3 OR score < 82
+  GO — with conditions (default staging posture)
+  GO if high risks = 0 AND score >= 90
+
+
+================================================================================
+DATA INTEGRITY CENTER™
+================================================================================
+
+Route: /hard/data-integrity
+Commit: 53e6d03
+Command: npm run test:data-integrity
+
+Goal: Verify institutional consistency continuously.
+
+Checks (9 domains):
+  Journey IDs, Consultant Assignments, Introductions, Follow-Ups, Archives,
+  Legacy Profiles, Payments, Meetings, Notifications
+
+Statuses: Healthy, Warning, Critical
+
+Components:
+  IntegrityDashboard, IntegrityIssueCard, IntegritySummaryCard
+
+What each check verifies:
+  Journey IDs          Missing/invalid/duplicate IDs; finance journeyRef gaps
+  Consultant Assignments  Active members without stewards; invalid consultant refs
+  Introductions        Broken member refs; missing journey linkage; duplicate IDs
+  Follow-Ups           Orphan introduction refs; broken member pairs
+  Archives             Registry vs member metadata alignment
+  Legacy Profiles      Legacy index ↔ member journey consistency
+  Payments             Orphan members; paid-without-journey; failed payments
+  Meetings             Orphan members; missing scheduling events; missing journey IDs
+  Notifications        Failed deliveries; orphan member refs
+
+
+================================================================================
+DEPLOYMENT NOTES
+================================================================================
+
+Platform: Coolify (self-hosted) — NOT Vercel
+Production health: GET /ready (readiness), GET /health (liveness)
+Deploy: commit + push to main on github.com/bamsignalhq/bamsignal
+
+Required production runtime (503 on /ready if missing):
+  DATABASE_URL, PAYSTACK_SECRET_KEY, signup email (RESEND + Supabase service role),
+  photo storage
+
+
+================================================================================
+END OF BUNDLE
+================================================================================
+
+Full markdown audit reports live in:
+  docs/audits/bamsignal-route-navigation-audit.md
+  docs/audits/bamsignal-permission-security-audit.md
+  docs/audits/bamsignal-journey-integrity-audit.md
+  docs/audits/bamsignal-persistence-audit.md
+  docs/audits/bamsignal-launch-readiness-audit.md

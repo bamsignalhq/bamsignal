@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-19",
+  "generatedAt": "2026-06-25",
   "pages": [
     {
       "canonicalPath": "/cities",
@@ -9,18 +9,6 @@
       "description": "City guides for meeting people in Lagos, Abuja, Port Harcourt, and across Nigeria — practical tips for real conversations.",
       "intro": "Every Nigerian city has its own rhythm. These guides help you show up with confidence — whether you are new in town or ready to meet someone who fits your vibe.",
       "wordCount": 151,
-      "faqCount": 0,
-      "indexable": true,
-      "source": "seoPages.ts"
-    },
-    {
-      "canonicalPath": "/help",
-      "slug": "help",
-      "h1": "How can we help?",
-      "title": "Help centre | BamSignal",
-      "description": "Step-by-step help for profiles, signals, chats, and account settings on BamSignal.",
-      "intro": "Clear answers for getting started, building your profile, and making the most of BamSignal — no jargon, just practical guidance.",
-      "wordCount": 140,
       "faqCount": 0,
       "indexable": true,
       "source": "seoPages.ts"
@@ -2983,18 +2971,6 @@
       "h1": "terms",
       "title": "BamSignal terms",
       "description": "BamSignal terms page.",
-      "intro": "Legal information.",
-      "wordCount": 350,
-      "faqCount": 0,
-      "indexable": true,
-      "source": "legalPages.ts"
-    },
-    {
-      "canonicalPath": "/contact",
-      "slug": "contact",
-      "h1": "contact",
-      "title": "BamSignal contact",
-      "description": "BamSignal contact page.",
       "intro": "Legal information.",
       "wordCount": 350,
       "faqCount": 0,

@@ -1,0 +1,358 @@
+BAMSIGNAL HOUSE LAYER — ARCHITECTURE COPY BUNDLE
+Generated from production constants and pages.
+All routes: /institute/<slug> — architecture preview only, not live.
+
+================================================================================
+SHARED LABELS (The BamSignal House™)
+================================================================================
+
+The BamSignal House™
+The BamSignal House
+
+Good copy: The BamSignal House™, Home, Gather, Celebrate, Legacy, Community
+Forbidden copy: Headquarters, Campus, Office, Branch
+
+Shared institute labels:
+- Learning
+- Growing Together
+- Relationship Wisdom
+- Understanding Relationships
+
+Card status (all features):
+Architecture prepared — not enabled yet
+
+================================================================================
+HOUSE MEMBERSHIP™
+Route: /institute/house-membership
+Nav: Membership
+Commit: Prepare House Membership architecture
+
+Title: House Membership™
+Label: House Membership
+Membership Tier | House Privileges
+
+Subcopy:
+House Membership™ at The BamSignal House™ — Community, Premium, Circle, Legacy, and Founders Circle reserved with dignity.
+
+Purpose:
+Prepare House Membership architecture — tiers and privileges documented, not billing or enrollment yet.
+
+Reserved:
+Architecture prepared. House Membership tiers and privileges are not enabled yet.
+
+--- Levels (Membership Tier) ---
+1. Community
+   Community — entry House Membership with Gather access architecture.
+
+2. Premium
+   Premium — enhanced House access and experiences reserved.
+
+3. Circle
+   Circle — inner-circle membership at The BamSignal House™.
+
+4. Legacy
+   Legacy — multi-generational House privileges architecture.
+
+5. Founders Circle
+   Founders Circle — pioneering households honoured, not headquarters clubs.
+
+--- House Privileges (per level) ---
+Community privileges — House access architecture reserved, not activated yet.
+Premium privileges — House access architecture reserved, not activated yet.
+Circle privileges — House access architecture reserved, not activated yet.
+Legacy privileges — House access architecture reserved, not activated yet.
+Founders Circle privileges — House access architecture reserved, not activated yet.
+
+Page sections:
+- Levels: 5 membership levels — architecture preview, not enrollment yet.
+- Membership tiers: Community through Founders Circle — prepared, not enabled yet.
+- House privileges: Privileges per level — architecture reserved, not billing yet.
+
+================================================================================
+HOUSE RESIDENCIES™
+Route: /institute/house-residencies
+Nav: Residencies
+Commit: Prepare House Residencies
+
+Title: House Residencies™
+Label: House Residencies
+Residency | Family Residence
+
+Subcopy:
+House Residencies™ at The BamSignal House™ — Visiting Scholars, Relationship Fellows, Writers, Researchers, Artists, and Family Mentors reserved with dignity.
+
+Purpose:
+Prepare House Residencies architecture — programs documented, not applications or placements yet.
+
+Reserved:
+Architecture prepared. House Residencies programs are not enabled yet.
+
+--- Residencies ---
+1. Visiting Scholars
+   Visiting Scholars — academic residence architecture at The BamSignal House™.
+
+2. Writers
+   Writers — narrative and reflection residency reserved, not a retreat centre.
+
+3. Researchers
+   Researchers — relationship research residence architecture prepared.
+
+4. Artists
+   Artists — creative residence at the House, not exhibition halls.
+
+--- Family Residences ---
+5. Relationship Fellows
+   Relationship Fellows — fellowship residence for relationship wisdom at the House.
+
+6. Family Mentors
+   Family Mentors — multi-generational mentor residence architecture reserved.
+
+Page sections:
+- Programs: 6 residency programs — architecture preview, not applications yet.
+- Residencies: Visiting Scholars through Artists — prepared, not enabled yet.
+- Family residences: Relationship Fellows and Family Mentors — architecture reserved, not placements yet.
+
+================================================================================
+HOUSE FOUNDATION™
+Route: /institute/house-foundation
+Nav: Foundation
+Commit: Prepare House Foundation
+
+Title: House Foundation™
+Label: House Foundation
+Scholarship | Impact
+
+Subcopy:
+House Foundation™ at The BamSignal House™ — Scholarships, Widows Support, Single Parents, Family Funds, and Community Programs reserved with dignity.
+
+Purpose:
+Prepare House Foundation architecture — programs documented, not disbursements or applications yet.
+
+Reserved:
+Architecture prepared. House Foundation programs are not enabled yet.
+
+--- Scholarships ---
+1. Scholarships
+   Scholarships — learning support architecture at The BamSignal House™.
+
+--- Impact Programs ---
+2. Widows Support
+   Widows Support — dignified care architecture, not charity spectacle.
+
+3. Single Parents
+   Single Parents — family stability support reserved at the House.
+
+4. Family Funds
+   Family Funds — multi-generational support architecture prepared.
+
+5. Community Programs
+   Community Programs — neighbourhood impact at the House, not donor theatre.
+
+Page sections:
+- Programs: 5 foundation programs — architecture preview, not disbursements yet.
+- Scholarships: Learning support architecture — prepared, not enabled yet.
+- Impact programs: Widows Support through Community Programs — architecture reserved, not live yet.
+
+Note: Separate from BamSignal Foundation public routes.
+
+================================================================================
+HOUSE MUSEUM™
+Route: /institute/house-museum
+Nav: Museum
+Commit: Prepare House Museum
+
+Title: House Museum™
+Label: House Museum
+Exhibit | Archive
+
+Subcopy:
+House Museum™ at The BamSignal House™ — Love Stories, Wedding Traditions, Legacy Families, Diaspora Journeys, and African Family Culture preserved with dignity.
+
+Purpose:
+Prepare House Museum architecture — exhibits and archives documented, not physical collections yet.
+
+Reserved:
+Architecture prepared. House Museum exhibits and archives are not enabled yet.
+
+--- Exhibits ---
+1. Love Stories
+   Love Stories — relationship narratives preserved at The BamSignal House™.
+
+2. Wedding Traditions
+   Wedding Traditions — ceremonial heritage exhibit architecture reserved.
+
+3. Legacy Families
+   Legacy Families — multi-generational family exhibits prepared, not pedigree theatre.
+
+--- Archives ---
+4. Diaspora Journeys
+   Diaspora Journeys — corridor and migration archives preserved with dignity.
+
+5. African Family Culture
+   African Family Culture — cultural archive architecture at the House, not folklore storage.
+
+Page sections:
+- Preserved: 5 collections — architecture preview, not physical museum yet.
+- Exhibits: Love Stories through Legacy Families — preserved, not enabled yet.
+- Archives: Diaspora Journeys and African Family Culture — architecture reserved, not catalogued yet.
+
+Note: Separate from BamSignal Museum™ (/institute/bamsignal-museum).
+
+================================================================================
+HOUSE ACADEMY™
+Route: /institute/house-academy
+Nav: Academy
+Commit: Prepare House Academy
+
+Title: House Academy™
+Label: House Academy
+Masterclass | Workshop
+
+Subcopy:
+House Academy™ at The BamSignal House™ — Relationship Courses, Marriage Workshops, Family Programs, and Diaspora Programs prepared with dignity.
+
+Purpose:
+Prepare House Academy architecture — masterclasses and workshops documented, not enrollment yet.
+
+Reserved:
+Architecture prepared. House Academy programs are not enabled yet.
+
+--- Masterclasses ---
+1. Relationship Courses
+   Relationship Courses — masterclass architecture at The BamSignal House™.
+
+--- Workshops ---
+2. Marriage Workshops
+   Marriage Workshops — covenant learning reserved, not seminar theatre.
+
+3. Family Programs
+   Family Programs — multi-generational workshop architecture prepared.
+
+4. Diaspora Programs
+   Diaspora Programs — corridor learning at the House, not relocation advice.
+
+Page sections:
+- Programs: 4 academy programs — architecture preview, not enrollment yet.
+- Masterclasses: Relationship Courses — prepared, not enabled yet.
+- Workshops: Marriage Workshops through Diaspora Programs — architecture reserved, not live yet.
+
+Note: Separate from BamSignal Academy™ (/institute/bamsignal-academy).
+
+================================================================================
+HOUSE INSTITUTE™
+Route: /institute/house-institute
+Nav: Institute
+Commit: Prepare House Institute
+
+Title: House Institute™
+Label: House Institute
+Research | Publication
+
+Subcopy:
+House Institute™ at The BamSignal House™ — Research, Reports, Observatory, and Relationship Index prepared with dignity.
+
+Purpose:
+Prepare House Institute architecture — research and publications documented, not live outputs yet.
+
+Reserved:
+Architecture prepared. House Institute research and publications are not enabled yet.
+
+--- Research ---
+1. Research
+   Research — relationship inquiry architecture at The BamSignal House™.
+
+3. Observatory
+   Observatory — longitudinal relationship observation reserved, not dashboards.
+
+4. Relationship Index
+   Relationship Index — index architecture prepared, not rankings theatre.
+
+--- Publications ---
+2. Reports
+   Reports — published findings architecture at the House, not press releases.
+
+Page sections:
+- Programs: 4 institute programs — architecture preview, not live research yet.
+- Research: Research through Relationship Index — prepared, not enabled yet.
+- Publications: Reports — architecture reserved, not published yet.
+
+Note: House layer separate from /institute/observatory and /institute/relationship-index.
+
+================================================================================
+CENTURY ROOM™
+Route: /institute/century-room
+Nav: Century Room
+Commit: Build Century Room architecture (33ddae3)
+
+Title: Century Room™
+Label: Century Room
+Founding Principles | Legacy Vision
+
+Subcopy:
+Century Room™ at The BamSignal House™ — 100-Year Vision, Founding Values, Stewardship, Family, Faith, Trust, Community, and Legacy displayed with dignity.
+
+Purpose:
+Build Century Room architecture — principles and vision documented, not ceremonies or pledges yet.
+
+Reserved:
+Architecture prepared. Century Room displays are not enabled yet.
+
+--- Legacy Vision ---
+1. 100-Year Vision
+   100-Year Vision — century horizon architecture at The BamSignal House™.
+
+8. Legacy
+   Legacy — multi-generational stewardship vision reserved, not slogans.
+
+--- Founding Principles ---
+2. Founding Values
+   Founding Values — principles that anchor the Century Room.
+
+3. Stewardship
+   Stewardship — caretaking architecture for the House and generations.
+
+4. Family
+   Family — honoured at the centre of the Century Room.
+
+5. Faith
+   Faith — held with dignity in founding principles, not performance.
+
+6. Trust
+   Trust — foundation of relationship wisdom at the House.
+
+7. Community
+   Community — neighbourhood and fellowship architecture prepared.
+
+Page sections:
+- Display: 8 century displays — architecture preview, not ceremonies yet.
+- Legacy vision: 100-Year Vision and Legacy — prepared, not enabled yet.
+- Founding principles: Founding Values through Community — architecture reserved, not live yet.
+
+Card footer (all cards):
+Not Headquarters, Campus, Office, Branch.
+
+Note: Separate from Century Vision™ (/institute/century-vision).
+
+================================================================================
+INSTITUTE NAV ORDER (House tail)
+================================================================================
+
+… → Ballroom → Membership → Residencies → Foundation → Museum → Academy → Institute → Century Room
+
+================================================================================
+SITEMAP (House layer paths)
+================================================================================
+
+/institute/house-membership
+/institute/house-residencies
+/institute/house-foundation
+/institute/house-museum
+/institute/house-academy
+/institute/house-institute
+/institute/century-room
+
+Total indexable URLs (last build): 324
+
+================================================================================
+END OF BUNDLE
+================================================================================

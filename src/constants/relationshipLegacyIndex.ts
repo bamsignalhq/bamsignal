@@ -1,7 +1,12 @@
 /** Relationship Legacy Index™ — permanent archive identity for successful journeys. */
 
 export const RELATIONSHIP_LEGACY_INDEX_TITLE = "Relationship Legacy Index™";
+export const LEGACY_FAMILIES_TITLE = "Legacy Families™";
 export const LEGACY_STATUS_LABEL = "Legacy Status";
+export const LEGACY_FAMILY_CHILDREN_LABEL = "Children";
+export const LEGACY_FAMILY_CURRENT_COUNTRY_LABEL = "Current Country";
+export const LEGACY_FAMILY_PRIVACY_COPY =
+  "No names. No sensitive data. Just relationship milestones.";
 export const CELEBRATING_YOUR_JOURNEY = "Celebrating Your Journey";
 export const LEGACY_INDEX_SUBCOPY =
   "Permanent archive identity for successful journeys. Relationship history preserved indefinitely.";
@@ -65,6 +70,15 @@ export const LEGACY_ANNIVERSARY_MILESTONE_IDS = [
   "silver-anniversary",
   "golden-anniversary"
 ] as const;
+
+/** Reserved — not implemented. */
+export const LEGACY_FAMILY_FUTURE_KINDS = [
+  { id: "family-events", label: "Family events" },
+  { id: "legacy-celebrations", label: "Legacy celebrations" },
+  { id: "child-milestones", label: "Child milestones" }
+] as const;
+
+export type LegacyFamilyFutureKind = (typeof LEGACY_FAMILY_FUTURE_KINDS)[number]["id"];
 
 /** Reserved — not implemented. */
 export const LEGACY_INDEX_FUTURE_KINDS = [

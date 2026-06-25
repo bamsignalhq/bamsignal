@@ -136,4 +136,35 @@ if (hasAdbDevice()) {
   console.log("adb app-link verification skipped (no device attached)");
 }
 
+async function assertAssetlinksServedOverHttp() {
+  const { createApp } = await import("../server/app.js");
+  const distDir = join(rootPath, "dist");
+  if (!existsSync(distDir)) {
+    console.log("assetlinks HTTP check skipped (dist not built)");
+    return;
+  }
+  const app = createApp({ distDir });
+  await new Promise((resolve, reject) => {
+    const server = app.listen(0, async () => {
+      try {
+        const port = server.address()?.port;
+        const response = await fetch(`http://127.0.0.1:${port}/.well-known/assetlinks.json`);
+        assertCheck(response.ok, `assetlinks must be served over HTTP (status ${response.status})`);
+        const contentType = response.headers.get("content-type") || "";
+        assertCheck(
+          contentType.includes("application/json"),
+          `assetlinks must return application/json (got ${contentType})`
+        );
+        const body = await response.json();
+        assertCheck(Array.isArray(body) && body.length > 0, "served assetlinks must be a non-empty JSON array");
+        server.close(() => resolve());
+      } catch (error) {
+        server.close(() => reject(error));
+      }
+    });
+  });
+}
+
+await assertAssetlinksServedOverHttp();
+
 console.log("android app-links tests ok");

@@ -91,6 +91,19 @@ export function assertNoArchiveDeletion(
     ) {
       throw new Error("Archive integrity violation: legacy index status history cannot shrink");
     }
+    if (previous.relationshipLegacyIndex.legacyFamily && !next.relationshipLegacyIndex.legacyFamily) {
+      throw new Error("Archive integrity violation: legacyFamily cannot be removed");
+    }
+    if (previous.relationshipLegacyIndex.legacyFamily && next.relationshipLegacyIndex.legacyFamily) {
+      const prevFamily = previous.relationshipLegacyIndex.legacyFamily;
+      const nextFamily = next.relationshipLegacyIndex.legacyFamily;
+      if (nextFamily.history.length < prevFamily.history.length) {
+        throw new Error("Archive integrity violation: legacy family history cannot shrink");
+      }
+      if (nextFamily.childrenCount < prevFamily.childrenCount) {
+        throw new Error("Archive integrity violation: children count cannot decrease");
+      }
+    }
   }
   if (previous.relationshipLegacyIndex && !next.relationshipLegacyIndex) {
     throw new Error("Archive integrity violation: relationshipLegacyIndex cannot be removed");

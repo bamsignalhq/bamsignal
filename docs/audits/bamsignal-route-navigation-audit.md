@@ -1,22 +1,22 @@
 # Route & Navigation Integrity Audit™
 
-Generated: 2026-06-23T00:13:47.262Z
+Generated: 2026-06-25T02:03:53.902Z
 
 ## Executive Summary
 
 Static route inventory, navigation map cross-check, permission coverage, lazy-loading verification, and sitemap alignment for BamSignal web routes.
 
-**Inventory total:** 152 registered routes  
+**Inventory total:** 159 registered routes  
 **Duplicates:** 1 (1 intentional SEO/support overlap)  
-**Unlinked nested admin views:** 6  
+**Unlinked nested admin views:** 7  
 **Permission gaps:** 0  
 **Lazy exports:** 101  
-**Hardcoded route string files (warning):** 16  
+**Hardcoded route string files (warning):** 17  
 **Automated check failures:** 0
 
 ## Route Inventory
 
-- **admin**: 33 routes
+- **admin**: 40 routes
 - **century**: 4 routes
 - **concierge**: 7 routes
 - **consultant**: 7 routes
@@ -97,6 +97,7 @@ Nested admin workspaces reachable by URL but not listed in `ADMIN_NAV_SECTIONS`:
 | /hard/audit/database | Database Audit | Add sub-nav or cross-link from parent tab |
 | /hard/audit/security | Permissions Audit | Add sub-nav or cross-link from parent tab |
 | /hard/audit/journeys | Journey Integrity Audit | Add sub-nav or cross-link from parent tab |
+| /hard/data-integrity | Data Integrity | Add sub-nav or cross-link from parent tab |
 
 
 ## Permission Mismatches
@@ -136,11 +137,11 @@ Member (`/home`, `/discover`, etc.) and admin (`/hard/*`) routes are intentional
 
 Route constants live under `src/constants/*Routes.ts` and are consumed by `src/utils/routeAudit.ts` inventory builders.
 
-Hardcoded route strings outside constants: **16 files** (acceptable in pages/components when paired with matchers — migrate opportunistically).
+Hardcoded route strings outside constants: **17 files** (acceptable in pages/components when paired with matchers — migrate opportunistically).
 
 ## Recommendations
 
-1. Add sub-navigation or breadcrumbs for nested admin views (Operations Center, Journey Intelligence, Route & Navigation Audit, Database Audit, Permissions Audit, Journey Integrity Audit).
+1. Add sub-navigation or breadcrumbs for nested admin views (Operations Center, Journey Intelligence, Route & Navigation Audit, Database Audit, Permissions Audit, Journey Integrity Audit, Data Integrity).
 2. Cross-link finance surfaces (`/hard/business`, `/hard/finance`, `/hard/executive`) per navigation simplification guidance.
 3. Unify Support Center discoverability for `/help`, `/contact`, `/tickets`, and SEO hub overlap.
 4. Keep institute route density grouped under fewer nav clusters — 60+ institute paths are registered.

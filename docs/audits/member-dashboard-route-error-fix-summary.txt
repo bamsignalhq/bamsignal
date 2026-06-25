@@ -1,0 +1,222 @@
+BamSignal — Member Dashboard Route Error Fix Summary
+Generated: 2026-06-22
+============================================================
+
+USER REPORT
+-----------
+All user/member dashboard pages showed:
+
+  This section needs a moment
+  We saved your session. Try reloading this section.
+  [Try again]
+
+After refresh, some users also saw a blank page (nav shell only, no login form
+or page content).
+
+Related blank-page symptom on /love/login after redirect from /home:
+  - URL changed to /love/login
+  - React authPath state stayed null
+  - App fell through to member shell (TopNav + BottomNav) with nothing in main
+
+
+ERROR SOURCE
+------------
+Message comes from RouteErrorBoundary (src/components/RouteErrorBoundary.tsx).
+Member pages are wrapped in MemberRouteBoundary in App.tsx:
+
+  - home, discover, likes, chats, profile
+  - onboarding, fast-connection, saved-profiles, voice-vibe, trusted-member
+
+This means member pages WERE mounting, then THROWING during render — not a
+network/API failure in most cases.
+
+
+ROOT CAUSES IDENTIFIED
+----------------------
+
+1. BLANK PAGE ON /love/login (after redirect from /home)
+   - URL changed to /love/login but React authPath state stayed null
+   - App rendered member shell (TopNav + BottomNav) with empty main area
+   - Trigger: visit /home unauthenticated → session restore → redirect to login
+   - Direct /love/login visit worked; redirect path broke
+   - Cause: redirect via navigateToPath during render before authPath synced
+
+2. "THIS SECTION NEEDS A MOMENT" ON ALL DASHBOARD PAGES
+   - RouteErrorBoundary caught render crashes on member pages
+   - Pages mounted BEFORE session hydration (goToApp) finished
+   - Old production code did not gate memberAccessReady on memberHydrating
+   - profileComplete could be optimistically true from local cache while
+     goToApp was still running
+
+3. CONTRIBUTING RACE CONDITIONS
+   - Optimistic profileComplete during blocking session restore (set before
+     goToApp confirmed server state)
+   - SIGNED_OUT handler kept isAuthed=true from localStorage without
+     re-validating via goToApp (profileComplete could stay true)
+   - TOKEN_REFRESHED could update auth while dashboards were already mounted
+   - No explicit memberSessionReady flag — profileComplete alone was unreliable
+   - enterMemberApp / openAppLoading not included in memberAccessReady gate
+
+4. PRODUCTION STALE BUNDLE
+   - Production served old bundle: index-BWt95Czb.js
+   - Cache marker: bamsignal-v1.0.13-16-mqnyahzm
+   - Fixes on main were not deployed until Coolify rebuild succeeded
+   - Service worker networkFirst on /assets/ could cache old JS
+
+5. DOCKER BUILD FAILURE (deploy blocker)
+   - App.tsx referenced Signal Concierge imports never committed to main:
+     * LazySignalConciergeRoutePage from lazyRoutes.ts
+     * getSignalConciergeRoute from constants/signalConciergeRoutes.ts
+   - tsc failed in Coolify Docker build
+   - Fixed by removing incomplete concierge wiring until feature ships complete
+
+
+COMMITS (chronological)
+-----------------------
+
+8c605f4 — Fix blank auth routes and speed up session restore
+  - requiresMemberRestoreBlocking() skips public routes on native
+  - validatedAuth option in goToApp to skip duplicate getUser()
+  - Fast member bootstrap; optimistic profileComplete
+  - Auth signup floating header
+
+be172a4 — Fix blank login after member redirect and hydrate gating
+  - activeAuthPath = getAuthPath(currentPathname) ?? authPath (URL as source of truth)
+  - Auth route renders before member shell; nav hidden on auth routes
+  - useLayoutEffect to sync authPath from URL
+  - Redirect moved out of render body (useEffect only)
+  - memberAccessReady requires !authLoading && !memberHydrating
+  - memberSurfaceBooting fallback spinner during hydration
+
+e484405 — Harden member hydration gating before dashboard render
+  - evaluateMemberRouteGuard treats memberHydrating as loading
+  - TOKEN_REFRESHED / background restore sets memberHydrating during goToApp
+  - logRouteCrash persists to sessionStorage (bamsignal:last-crash)
+  - Service worker cache bump
+
+4f05df9 — Remove incomplete Signal Concierge imports blocking Docker build
+  - Removed broken App.tsx references to uncommitted concierge modules
+  - Unblocked Coolify Docker tsc build
+
+2ec2f0a — Gate member dashboards until goToApp session hydration completes
+  - memberSessionReady + memberSessionEpoch state
+  - memberAccessReady requires memberSessionReady
+  - memberSurfaceBooting includes !memberSessionReady and openAppLoading
+  - Removed optimistic profileComplete during blocking restore
+  - Fixed SIGNED_OUT recovery to re-validate via goToApp
+  - MemberRouteBoundary sessionKey resets error boundary on session epoch
+  - Route guard treats !memberSessionReady as loading phase
+
+
+KEY CODE LOCATIONS
+------------------
+
+Auth routing / member shell     src/App.tsx
+Route guard                     src/components/MemberRouteGuard.tsx
+Error UI                        src/components/RouteErrorBoundary.tsx
+Auth paths                      src/constants/routes.ts (AUTH_LOGIN_PATH=/love/login)
+Session restore                 src/services/goToApp.ts
+Crash logging                   src/utils/crashLog.ts
+
+
+FINAL FIX ARCHITECTURE (2ec2f0a)
+--------------------------------
+
+memberSessionReady
+  - false by default
+  - set true ONLY after successful goToApp() (via markMemberSessionReady)
+  - cleared on logout, session restore start, enterMemberApp start
+
+memberAccessReady (all must be true):
+  - isAuthed
+  - memberAppEntered
+  - memberSessionReady          <-- NEW hard gate
+  - !authLoading
+  - !memberHydrating
+  - !openAppLoading             <-- NEW
+  - !isPublicSurface
+  - profileComplete === true
+  - !showComplianceGate
+
+memberSurfaceBooting (shows spinner instead of pages):
+  - isAuthed on member path
+  - !activeAuthPath
+  - authLoading OR memberHydrating OR openAppLoading OR
+    !memberSessionReady OR profileComplete === null
+
+MemberRouteBoundary
+  - sessionKey={memberSessionEpoch} forces remount after session ready
+  - Clears latched error boundary state from failed half-hydrated renders
+
+
+FILES CHANGED IN 2ec2f0a
+------------------------
+src/App.tsx
+src/components/MemberRouteGuard.tsx
+src/components/RouteErrorBoundary.tsx
+src/buildInfo.ts
+public/sw.js
+
+
+TESTS RUN
+---------
+npm run build                 — passed
+npm run test:server-import      — passed
+Pre-push fortress suite         — passed (on each push)
+
+
+DEPLOYMENT
+----------
+Platform: Coolify (control.bamsignal.com)
+Push to main on github.com/bamsignalhq/bamsignal triggers rebuild.
+
+After deploy:
+  1. Confirm production bundle hash is NOT index-BWt95Czb.js
+  2. Confirm cache marker is newer than mqnyahzm
+  3. Users may need hard refresh once for service worker update
+
+Health checks:
+  GET /ready  — production readiness
+  GET /health — liveness only
+
+
+DEBUGGING FUTURE ROUTE CRASHES
+------------------------------
+Browser console: look for [route-crash] logs from logRouteCrash()
+
+sessionStorage:
+  sessionStorage.getItem('bamsignal:last-crash')
+
+Returns JSON with routeName, message, stack, build version, route path.
+
+
+LOCAL REPRODUCTION NOTES
+------------------------
+- /home as guest → "Restoring your session…" → /love/login
+- OLD production: blank shell with nav, no login form
+- FIXED local/preview build: full login form, no bottom nav on auth route
+- Demo login (DEV only): ada / 123456 on /love/login
+
+
+UNRELATED DIRTY WORKSPACE (not staged in fix commits)
+---------------------------------------------------
+Signal Concierge feature files (local/WIP)
+SEO sitemap changes
+Server file modifications
+docs/audits/*.md
+
+
+SUMMARY FOR OPERATORS
+---------------------
+The dashboard error was NOT a random UI bug — member pages crashed because
+they rendered before goToApp() finished hydrating the session. The fix adds
+an explicit memberSessionReady gate so Home, Discover, Chats, and Profile
+only mount after server session + profile data are confirmed. Combined with
+URL-driven auth routing (be172a4) and hydration gating (e484405), this
+prevents both the blank login page and the route error boundary loop.
+
+Redeploy from main (commit 2ec2f0a or later) and verify new bundle on
+production before telling users the issue is resolved.
+
+============================================================
+End of report

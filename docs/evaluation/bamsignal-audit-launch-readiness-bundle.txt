@@ -1,0 +1,338 @@
+BamSignal — Audit & Launch Readiness Bundle
+Generated: 2026-06-22
+Repository: bamsignal (github.com/bamsignalhq/bamsignal)
+
+================================================================================
+PART 1 — JOURNEY INTEGRITY AUDIT™
+================================================================================
+
+ROOT CAUSE
+----------
+Journey ID is the backbone of the institution.
+Every system depends on it.
+Needs verification.
+
+GOAL
+----
+Build Journey Integrity Audit™
+
+ADMIN ROUTE
+-----------
+/hard/audit/journeys
+
+VERIFY (13 STAGES)
+------------------
+- Application
+- Consultation
+- Assignment
+- Introduction
+- Follow-up
+- Relationship
+- Archive
+- Legacy
+- Success Story
+- Milestones
+- Family
+- Quotes
+- Events
+
+DETECT
+------
+- Missing Journey IDs
+- Duplicate Journey IDs
+- Broken links
+- Orphan records
+- Timeline inconsistencies
+- Archive inconsistencies
+
+COMPONENTS
+----------
+- JourneyIntegrityCard
+- JourneyHealthCard
+- JourneyDependencyCard
+- TimelineIntegrityCard
+- JourneyRepairRecommendationCard
+- JourneyIntegrityAuditPage (main page)
+
+REPORT STATUSES
+---------------
+- Healthy
+- Partial
+- Broken
+- Critical
+
+FILES CREATED
+-------------
+Constants / types:
+  src/constants/journeyIntegrityAudit.ts
+  src/types/journeyIntegrityAudit.ts
+
+Logic:
+  src/utils/journeyIntegrityAudit.ts (inventory from seeds/registry)
+  src/utils/journeyIntegrityReport.ts (detection + report builder)
+
+UI:
+  src/components/admin/journeyAudit/JourneyIntegrityCard.tsx
+  src/components/admin/journeyAudit/JourneyHealthCard.tsx
+  src/components/admin/journeyAudit/JourneyDependencyCard.tsx
+  src/components/admin/journeyAudit/TimelineIntegrityCard.tsx
+  src/components/admin/journeyAudit/JourneyRepairRecommendationCard.tsx
+  src/components/admin/journeyAudit/JourneyIntegrityAuditPage.tsx
+
+Styles:
+  src/styles/journey-integrity-audit.css
+
+Test:
+  scripts/test-journey-audit.mjs
+
+WIRING
+------
+- AuditAdminView extended with "journeys"
+- parseAuditAdminViewFromPath() → journeys sub-view
+- AdminHubPage conditional render
+- Cross-links on compliance, route, database, security audit pages
+- navigationAudit.ts, routeAudit.ts, permissionsAudit.ts
+- main.tsx CSS import
+- package.json: test:journey-audit
+
+CANONICAL JOURNEY REGISTRY (SEED)
+---------------------------------
+6 member journeys in conciergeConsultantSeed:
+  BS-JR-2026-0001 through 0005
+  BS-JR-2028-0045 (legacy/success-story)
+
+EXPECTED AUDIT FINDINGS (BY DESIGN)
+-----------------------------------
+Orphan references (in audit/finance/quality but not member registry):
+  BS-JR-2026-0042
+  BS-JR-2026-0038
+  BS-JR-2026-0035
+  BS-JR-2026-0040
+  BS-JR-2025-0031
+
+Finance records with null journeyRef (traceability gaps)
+
+COMMANDS
+--------
+npm run build
+npm run test:server-import
+npm run test:journey-audit
+
+COMMIT
+------
+0b6b5a8 — Build Journey Integrity Audit
+23 files changed, 1390 insertions(+)
+
+
+================================================================================
+PART 2 — LAUNCH READINESS COMMAND CENTER™
+================================================================================
+
+ROOT CAUSE
+----------
+Hundreds of systems now exist.
+No single launch readiness view exists.
+
+GOAL
+----
+Build Launch Readiness Command Center™
+Final institutional readiness dashboard.
+
+ADMIN ROUTE
+-----------
+/hard/launch
+
+AREAS (15)
+----------
+1. Routes
+2. Database
+3. Permissions
+4. Journey Integrity
+5. Payments
+6. Scheduling
+7. Notifications
+8. Consultants
+9. Support
+10. Safety
+11. Finance
+12. Documents
+13. Academy
+14. Operations
+15. Executive
+
+STATUS LEVELS
+-------------
+- Ready
+- Needs Review
+- Blocked
+- Critical
+
+COMPONENTS
+----------
+- LaunchOverviewCard
+- ReadinessCategoryCard
+- CriticalIssueCard
+- LaunchChecklistCard
+- ReadinessTimelineCard
+- LaunchReadinessCommandCenterPage (main page)
+
+METRICS
+-------
+- Completion %
+- Critical issues
+- Warnings
+- Blocked systems
+- Ready systems
+
+RULES
+-----
+- Read-only
+- No operational actions
+- Audit only
+- Refresh audit button + View audit navigation links only
+
+FILES CREATED
+-------------
+Constants / types:
+  src/constants/launchReadiness.ts
+  src/types/launchReadiness.ts
+
+Engine:
+  src/utils/launchReadinessEngine.ts
+  (aggregates buildRouteHealthReport, buildMigrationGapReport,
+   buildPermissionsAuditReport, buildJourneyIntegrityReport,
+   buildOperationsCenterBundle, buildNotificationOperationsBundle,
+   buildAssignmentEngineSnapshot, buildSupportCenterBundle,
+   buildSafetyCenterBundle, buildFinanceOperationsBundle,
+   buildDocumentCenterBundle, buildConsultantAcademyBundle,
+   buildExecutiveDashboard)
+
+UI:
+  src/components/admin/launchReadiness/LaunchOverviewCard.tsx
+  src/components/admin/launchReadiness/ReadinessCategoryCard.tsx
+  src/components/admin/launchReadiness/CriticalIssueCard.tsx
+  src/components/admin/launchReadiness/LaunchChecklistCard.tsx
+  src/components/admin/launchReadiness/ReadinessTimelineCard.tsx
+  src/components/admin/launchReadiness/LaunchReadinessCommandCenterPage.tsx
+
+Styles:
+  src/styles/launch-readiness.css
+
+Test:
+  scripts/test-launch-readiness.mjs
+
+WIRING
+------
+- New HardTab: "launch" → /hard/launch
+- adminConsoleNav.ts — Launch Readiness nav item
+- hardRoutes.ts — parseHardTabFromPath for /hard/launch
+- AdminHubPage — LaunchReadinessCommandCenterPage mount
+- routeAudit.ts, navigationAudit.ts, permissionsAudit.ts
+- main.tsx CSS import
+- package.json: test:launch-readiness
+
+AUDIT PATH LINKS PER AREA
+-------------------------
+Routes           → /hard/audit/routes
+Database         → /hard/audit/database
+Permissions      → /hard/audit/security
+Journey Integrity→ /hard/audit/journeys
+Payments         → /hard/concierge/operations
+Scheduling       → /hard/concierge/operations
+Notifications    → /hard/concierge/operations
+Consultants      → /hard/concierge
+Support          → /hard/support
+Safety           → /hard/safety
+Finance          → /hard/finance
+Documents        → /hard/documents
+Academy          → /hard/academy
+Operations       → /hard/concierge/operations
+Executive        → /hard/executive
+
+COMMANDS
+--------
+npm run build
+npm run test:server-import
+npm run test:launch-readiness
+
+COMMIT
+------
+4297c11 — Build Launch Readiness Command Center
+19 files changed, 1271 insertions(+)
+
+
+================================================================================
+PART 3 — PRIOR AUDIT CENTERS (CONTEXT FROM SAME SESSION ARC)
+================================================================================
+
+| Center                      | Route                    | Commit   | Test script              |
+|-----------------------------|--------------------------|----------|--------------------------|
+| Executive Dashboard™        | /hard/executive          | 174b028  | test:executive-dashboard |
+| Route & Navigation Audit™   | /hard/audit/routes       | b05db67  | test:route-audit         |
+| Database Audit Center™    | /hard/audit/database     | ffcdd66  | test:database-audit      |
+| Permissions Audit™        | /hard/audit/security     | fb6c0bb  | test:permissions-audit   |
+| Journey Integrity Audit™  | /hard/audit/journeys     | 0b6b5a8  | test:journey-audit       |
+| Launch Readiness Command™ | /hard/launch             | 4297c11  | test:launch-readiness    |
+
+AUDIT SUB-ROUTE PATTERN
+-----------------------
+AuditAdminView: "compliance" | "routes" | "database" | "security" | "journeys"
+parseAuditAdminViewFromPath() checks nested paths before defaulting to compliance
+AdminHubPage uses auditView state + conditional renders per sub-view
+
+
+================================================================================
+PART 4 — TEST RESULTS (LAST RUN)
+================================================================================
+
+Journey Integrity Audit:
+  npm run build              — PASSED
+  npm run test:server-import — PASSED (server ok)
+  npm run test:journey-audit — PASSED
+
+Launch Readiness Command Center:
+  npm run build              — PASSED
+  npm run test:server-import — PASSED (server ok)
+  npm run test:launch-readiness — PASSED
+
+Build warnings (pre-existing, not hidden):
+  - VoiceVibePlayer / VoiceVibePage dynamic import overlap
+  - PhotoUploadGrid dynamic import overlap
+  - Some chunks > 500 kB after minification
+
+
+================================================================================
+PART 5 — GIT / UNSTAGED (LEFT OUT OF COMMITS ON PURPOSE)
+================================================================================
+
+Unrelated WIP repeatedly left unstaged:
+  - Relationship legacy index changes
+  - Generated public/sw.js
+  - Generated src/buildInfo.ts
+  - scripts/seo-manifest.json
+  - docs/audits/bamsignal-round-5-launch-audit.md
+  - docs/audits/bamsignal-round-5-production-readiness.md
+  - docs/evaluation/ (other files)
+
+
+================================================================================
+PART 6 — DEPLOYMENT NOTES (FROM PROJECT RULES)
+================================================================================
+
+Platform: Coolify (control.bamsignal.com)
+Production URL: https://bamsignal.com
+Deploy: commit + push to main on github.com/bamsignalhq/bamsignal
+Pre-push: npm run test:server-import
+
+Health checks:
+  GET /ready — production readiness (503 when deps missing)
+  GET /health — liveness only
+
+Required local commands for code changes:
+  npm run build
+  npm run test:server-import
+
+
+================================================================================
+END OF BUNDLE
+================================================================================

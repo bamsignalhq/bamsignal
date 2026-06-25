@@ -112,6 +112,26 @@ export const FINANCE_OPERATIONS_SCHEMA_TABLES = [
   "reconciliation_logs"
 ] as const;
 
+/** Tables from migrations/0010_consultant_quality.sql */
+export const CONSULTANT_QUALITY_SCHEMA_TABLES = [
+  "consultant_reviews",
+  "consultant_certifications",
+  "quality_assessments",
+  "consultation_reviews",
+  "coaching_sessions",
+  "improvement_plans"
+] as const;
+
+/** Tables from migrations/0009_document_center.sql */
+export const DOCUMENT_CENTER_SCHEMA_TABLES = [
+  "documents",
+  "document_versions",
+  "document_categories",
+  "document_acknowledgements",
+  "policy_versions",
+  "knowledge_articles"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -565,16 +585,117 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["reconciliation_logs_type_idx"],
     constraints: ["uuid primary key", "reconciliation_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "documents",
+    migrationRef: "0009_document_center.sql",
+    domainIds: ["documents"],
+    inRequiredSchema: false,
+    indexes: ["documents_category_idx", "documents_status_idx"],
+    constraints: ["uuid primary key", "slug unique"],
+    defaultHealth: "needs-migration",
+    note: "Institutional Policy & Documentation Center™"
+  },
+  {
+    tableName: "document_versions",
+    migrationRef: "0009_document_center.sql",
+    domainIds: ["documents"],
+    inRequiredSchema: false,
+    indexes: ["document_versions_doc_idx"],
+    constraints: ["uuid primary key", "document_id + version unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "document_acknowledgements",
+    migrationRef: "0009_document_center.sql",
+    domainIds: ["documents"],
+    inRequiredSchema: false,
+    indexes: ["document_acknowledgements_doc_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "policy_versions",
+    migrationRef: "0009_document_center.sql",
+    domainIds: ["documents"],
+    inRequiredSchema: false,
+    indexes: ["policy_versions_slug_idx"],
+    constraints: ["uuid primary key", "policy_slug + version unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "knowledge_articles",
+    migrationRef: "0009_document_center.sql",
+    domainIds: ["documents"],
+    inRequiredSchema: false,
+    indexes: ["knowledge_articles_search_idx"],
+    constraints: ["uuid primary key", "slug unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "consultant_reviews",
+    migrationRef: "0010_consultant_quality.sql",
+    domainIds: ["qa", "consultants"],
+    inRequiredSchema: false,
+    indexes: ["consultant_reviews_consultant_idx"],
+    constraints: ["uuid primary key", "review_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Consultant Quality, Standards & Certification™"
+  },
+  {
+    tableName: "consultant_certifications",
+    migrationRef: "0010_consultant_quality.sql",
+    domainIds: ["qa", "consultants"],
+    inRequiredSchema: false,
+    indexes: ["consultant_certifications_active_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "quality_assessments",
+    migrationRef: "0010_consultant_quality.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["quality_assessments_consultant_idx"],
+    constraints: ["uuid primary key", "assessment_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "consultation_reviews",
+    migrationRef: "0010_consultant_quality.sql",
+    domainIds: ["qa", "consultants"],
+    inRequiredSchema: false,
+    indexes: ["consultation_reviews_journey_idx"],
+    constraints: ["uuid primary key", "review_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "coaching_sessions",
+    migrationRef: "0010_consultant_quality.sql",
+    domainIds: ["qa", "consultants", "academy"],
+    inRequiredSchema: false,
+    indexes: ["coaching_sessions_consultant_idx"],
+    constraints: ["uuid primary key", "session_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "improvement_plans",
+    migrationRef: "0010_consultant_quality.sql",
+    domainIds: ["qa", "consultants"],
+    inRequiredSchema: false,
+    indexes: ["improvement_plans_consultant_idx"],
+    constraints: ["uuid primary key", "plan_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
 const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health">[] = [
   {
-    storageKey: "bamsignal.documentCenter.v1",
+    storageKey: "bamsignal.documentCenter.v3",
     domainId: "documents",
     engine: "documentCenterEngine.ts",
-    expectedTable: null,
-    note: "Admin Document Center™ — no Postgres table yet"
+    expectedTable: "documents",
+    note: "Institutional Policy & Documentation Center™ — dual-write via documentCenter.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",
@@ -605,11 +726,11 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     note: "Consultant Academy™ modules — localStorage only"
   },
   {
-    storageKey: "bamsignal.consultantQuality.v1",
+    storageKey: "bamsignal.consultantQuality.v3",
     domainId: "qa",
     engine: "consultantQualityEngine.ts",
-    expectedTable: null,
-    note: "Quality Assurance™ reviews — localStorage only"
+    expectedTable: "consultant_reviews",
+    note: "Consultant Quality, Standards & Certification™ — dual-write via consultantQuality.js"
   },
   {
     storageKey: "bamsignal.financeOperations.v1",

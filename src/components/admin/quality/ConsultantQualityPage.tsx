@@ -1,22 +1,17 @@
 import { useCallback, useMemo, useState } from "react";
-import {
-  CONSULTANT_QUALITY_FUTURE_KINDS,
-  QUALITY_RATINGS,
-  QUALITY_RATING_LABELS
-} from "../../../constants/consultantQuality";
+import { CONSULTANT_QUALITY_FUTURE_KINDS } from "../../../constants/consultantQuality";
 import {
   CONSULTANT_QUALITY_ADMIN_BRAND,
   CONSULTANT_QUALITY_ADMIN_PATH
 } from "../../../constants/consultantQualityAdmin";
-import type { QualityRatingId } from "../../../constants/consultantQuality";
 import { buildConsultantQualityBundle } from "../../../utils/consultantQualityEngine";
 import { averageQualityScore, emptyQualityFilters } from "../../../utils/consultantQualityLogic";
-import { ConsultationAuditCard } from "./ConsultationAuditCard";
-import { DocumentationAuditCard } from "./DocumentationAuditCard";
+import { CertificationCard } from "./CertificationCard";
+import { CoachingCard } from "./CoachingCard";
+import { ConsultantQualityCard } from "./ConsultantQualityCard";
 import { ImprovementPlanCard } from "./ImprovementPlanCard";
-import { IntroductionAuditCard } from "./IntroductionAuditCard";
-import { QualityReviewCard } from "./QualityReviewCard";
-import { QualityScoreCard } from "./QualityScoreCard";
+import { QualityTrendCard } from "./QualityTrendCard";
+import { ReviewHistoryCard } from "./ReviewHistoryCard";
 
 export function ConsultantQualityPage() {
   const [filters, setFilters] = useState(() => emptyQualityFilters());
@@ -47,8 +42,8 @@ export function ConsultantQualityPage() {
         <div>
           <h2>{CONSULTANT_QUALITY_ADMIN_BRAND}</h2>
           <p>
-            Structured quality review framework for consultants operating independently —
-            consultation, introduction, documentation, and conduct audits with append-only records.
+            Institutional consultant excellence — eight quality standards, certification levels,
+            structured reviews, improvement plans, coaching, and append-only audit records.
           </p>
         </div>
         <button
@@ -60,75 +55,32 @@ export function ConsultantQualityPage() {
         </button>
       </header>
 
-      <QualityScoreCard metrics={bundle.metrics} overallScore={portfolioAverage} />
-
-      <div className="consultant-quality-page__filters">
-        <label className="quality-search-field">
-          <span>Search</span>
-          <input
-            type="search"
-            value={filters.query}
-            placeholder="Consultant, journey, reviewer…"
-            onChange={(event) => setFilters({ ...filters, query: event.target.value })}
-          />
-        </label>
-
-        <label className="quality-search-field">
-          <span>Rating filter</span>
-          <select
-            value={filters.rating}
-            onChange={(event) =>
-              setFilters({ ...filters, rating: event.target.value as QualityRatingId | "all" })
-            }
-          >
-            <option value="all">All ratings</option>
-            {QUALITY_RATINGS.map((rating) => (
-              <option key={rating.id} value={rating.id}>
-                {QUALITY_RATING_LABELS[rating.id]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <button type="button" className="concierge-consultant-btn" onClick={handleReset}>
-          Reset
-        </button>
-      </div>
+      <ConsultantQualityCard
+        metrics={bundle.metrics}
+        standardsCoverage={bundle.standardsCoverage}
+        overallScore={portfolioAverage}
+      />
 
       <div className="consultant-quality-page__body">
-        <section className="consultant-quality-page__list">
-          <h3>Quality reviews</h3>
-          {bundle.reviews.length ? (
-            bundle.reviews.map((review) => (
-              <QualityReviewCard
-                key={review.id}
-                review={review}
-                selected={selectedReviewId === review.id}
-                onSelect={() => setSelectedReviewId(review.id)}
-              />
-            ))
-          ) : (
-            <p className="consultant-quality-page__empty">No reviews match the current filters.</p>
-          )}
-        </section>
-
-        <div className="consultant-quality-page__detail">
-          {selectedReview ? (
-            <>
-              <QualityReviewCard review={selectedReview} />
-              <ConsultationAuditCard areaRatings={selectedReview.areaRatings} />
-              <IntroductionAuditCard areaRatings={selectedReview.areaRatings} />
-              <DocumentationAuditCard areaRatings={selectedReview.areaRatings} />
-              <ImprovementPlanCard
-                improvementPlan={selectedReview.improvementPlan}
-                appendLog={selectedReview.appendLog}
-              />
-            </>
-          ) : (
-            <p className="consultant-quality-page__empty">
-              Select a review to inspect consultation, introduction, and documentation audits.
-            </p>
-          )}
+        <div className="consultant-quality-page__column">
+          <ReviewHistoryCard
+            reviews={bundle.reviews}
+            filters={filters}
+            selectedReviewId={selectedReviewId}
+            onFilterChange={setFilters}
+            onSelectReview={setSelectedReviewId}
+            onReset={handleReset}
+          />
+          <ImprovementPlanCard
+            improvementPlans={bundle.improvementPlans}
+            legacyPlan={selectedReview?.improvementPlan}
+            appendLog={selectedReview?.appendLog}
+          />
+        </div>
+        <div className="consultant-quality-page__column">
+          <CertificationCard certifications={bundle.certifications} />
+          <QualityTrendCard trend={bundle.qualityTrend} />
+          <CoachingCard sessions={bundle.coachingSessions} upcoming={bundle.upcomingCoaching} />
         </div>
       </div>
 
@@ -141,6 +93,7 @@ export function ConsultantQualityPage() {
           ))}
         </ul>
         <p>Admin path: {CONSULTANT_QUALITY_ADMIN_PATH}</p>
+        <p>Generated {new Date(bundle.generatedAt).toLocaleString()}</p>
       </footer>
     </div>
   );

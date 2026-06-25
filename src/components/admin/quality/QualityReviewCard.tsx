@@ -1,4 +1,4 @@
-import { QUALITY_REVIEW_AREA_LABELS, QUALITY_RATING_LABELS } from "../../../constants/consultantQuality";
+import { QUALITY_REVIEW_AREA_LABELS, QUALITY_REVIEW_TYPE_LABELS, QUALITY_RATING_LABELS } from "../../../constants/consultantQuality";
 import type { QualityReviewRecord } from "../../../types/consultantQuality";
 
 type QualityReviewCardProps = {
@@ -17,6 +17,10 @@ export function QualityReviewCard({ review, selected = false, onSelect }: Qualit
       <h3>{review.consultantName}</h3>
       <p>{review.summary}</p>
       <dl className="quality-review-card__meta">
+        <div>
+          <dt>Type</dt>
+          <dd>{QUALITY_REVIEW_TYPE_LABELS[review.reviewType]}</dd>
+        </div>
         <div>
           <dt>Reviewer</dt>
           <dd>{review.reviewer}</dd>

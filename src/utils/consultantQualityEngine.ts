@@ -1,50 +1,48 @@
-import { CONSULTANT_QUALITY_SEED } from "../data/consultantQualitySeed";
 import type { ConsultantQualityBundle, QualityFilterState } from "../types/consultantQuality";
 import {
   buildQualityMetrics,
+  buildQualityTrend,
   emptyQualityFilters,
   filterQualityReviews,
   findReviewById,
-  listQualityReviews,
-  sortReviewsByDate
+  listActiveImprovementPlans,
+  listUpcomingCoachingSessions,
+  sortReviewsByDate,
+  summarizeStandardsCoverage
 } from "./consultantQualityLogic";
-import { readJson } from "./storage";
-
-const STORAGE_KEY = "bamsignal.consultantQuality.v1";
-
-type ConsultantQualityState = {
-  reviews: typeof CONSULTANT_QUALITY_SEED;
-  updatedAt: string;
-};
-
-function defaultState(): ConsultantQualityState {
-  return {
-    reviews: [...CONSULTANT_QUALITY_SEED],
-    updatedAt: new Date().toISOString()
-  };
-}
-
-function loadState(): ConsultantQualityState {
-  const stored = readJson<ConsultantQualityState>(STORAGE_KEY, defaultState());
-  if (!stored?.reviews?.length) return defaultState();
-  return stored;
-}
+import {
+  listCoachingSessions,
+  listConsultantCertifications,
+  listConsultantQualityStoreReviews,
+  listImprovementPlans,
+  listQualityTrend
+} from "./consultantQualityStore";
 
 export function listConsultantQualityReviews() {
-  return loadState().reviews;
+  return listConsultantQualityStoreReviews();
 }
 
 export function buildConsultantQualityBundle(
   filters: QualityFilterState = emptyQualityFilters(),
   selectedReviewId?: string | null
 ): ConsultantQualityBundle {
-  const allReviews = listConsultantQualityReviews();
+  const allReviews = listConsultantQualityStoreReviews();
+  const certifications = listConsultantCertifications();
+  const improvementPlans = listImprovementPlans();
+  const coachingSessions = listCoachingSessions();
   const reviews = sortReviewsByDate(filterQualityReviews(allReviews, filters));
 
   return {
     generatedAt: new Date().toISOString(),
-    metrics: buildQualityMetrics(allReviews),
+    metrics: buildQualityMetrics(allReviews, certifications, improvementPlans),
     reviews,
-    selectedReview: findReviewById(reviews, selectedReviewId ?? null)
+    certifications,
+    improvementPlans,
+    coachingSessions,
+    qualityTrend: buildQualityTrend(allReviews, listQualityTrend()),
+    selectedReview: findReviewById(reviews, selectedReviewId ?? null),
+    standardsCoverage: summarizeStandardsCoverage(allReviews),
+    activeImprovementPlans: listActiveImprovementPlans(improvementPlans),
+    upcomingCoaching: listUpcomingCoachingSessions(coachingSessions)
   };
 }

@@ -29,8 +29,14 @@
 
 .consultant-quality-page__body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 14px;
+}
+
+.consultant-quality-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
 }
 
 .consultant-quality-page__list,
@@ -163,6 +169,175 @@
   color: rgba(255, 255, 255, 0.62);
   display: grid;
   gap: 2px;
+}
+
+.quality-score-card,
+.consultation-audit-card,
+.introduction-audit-card,
+.documentation-audit-card,
+.improvement-plan-card,
+.quality-card {
+  padding: 14px;
+}
+
+.consultant-quality-card__overall {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: rgba(160, 230, 180, 0.9);
+}
+
+.consultant-quality-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.consultant-quality-card__standards h4,
+.certification-card__suspended h4,
+.coaching-card__section-title,
+.coaching-card__completed h4,
+.improvement-plan-card__legacy h4 {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+}
+
+.consultant-quality-card__standards ul,
+.certification-card__list,
+.certification-card__suspended ul,
+.coaching-card__list,
+.coaching-card__completed ul,
+.improvement-plan-card__plans,
+.improvement-plan-card__actions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.consultant-quality-card__standards li,
+.certification-card__list li,
+.coaching-card__list li,
+.improvement-plan-card__plans > li,
+.improvement-plan-card__actions li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.consultant-quality-card__count,
+.certification-card__meta,
+.coaching-card__coach,
+.quality-trend-card__count {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.certification-card__row,
+.coaching-card__row,
+.improvement-plan-card__plan-head,
+.improvement-plan-card__action-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.certification-card__level {
+  font-size: 0.78rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(160, 230, 180, 0.35);
+  color: rgba(160, 230, 180, 0.95);
+}
+
+.certification-card__suspended {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+
+.review-history-card__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.review-history-card__list {
+  display: grid;
+  gap: 10px;
+}
+
+.review-history-card__type {
+  font-size: 0.74rem;
+  color: rgba(160, 200, 255, 0.9);
+}
+
+.quality-trend-card__chart {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.quality-trend-card__chart li {
+  display: grid;
+  grid-template-columns: 72px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.84rem;
+}
+
+.quality-trend-card__bar-wrap {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.quality-trend-card__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(120, 200, 140, 0.5), rgba(160, 230, 180, 0.95));
+}
+
+.improvement-plan-card__status {
+  text-transform: capitalize;
+  font-size: 0.76rem;
+}
+
+.improvement-plan-card__status--completed {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.improvement-plan-card__status--in-progress {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.improvement-plan-card__status--pending {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.improvement-plan-card__legacy {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+}
+
+.certification-card__empty,
+.review-history-card__empty,
+.quality-trend-card__empty,
+.coaching-card__empty,
+.improvement-plan-card__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .quality-score-card,

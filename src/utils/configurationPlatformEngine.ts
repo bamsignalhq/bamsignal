@@ -1,9 +1,11 @@
 import type { ConfigurationPlatformBundle, ConfigurationFilterState } from "../types/configurationPlatform";
 import {
+  buildConfigurationAuditHistory,
   buildConfigurationMetrics,
-  countEntriesByCategory,
+  countEntriesBySection,
   emptyConfigurationFilters,
   filterConfigurationEntries,
+  filterFlagsBySection,
   listPendingApprovals
 } from "./configurationPlatformLogic";
 import {
@@ -19,20 +21,25 @@ export function buildConfigurationPlatformBundle(
 ): ConfigurationPlatformBundle {
   const allEntries = listConfigurationEntries();
   const versions = listConfigurationVersions();
-  const featureFlags = listFeatureFlags();
+  const allFlags = listFeatureFlags();
   const approvals = listConfigurationApprovals();
   const snapshots = listConfigurationSnapshots();
   const entries = filterConfigurationEntries(allEntries, filters);
+  const featureFlags =
+    filters.sectionId === "all"
+      ? allFlags
+      : filterFlagsBySection(allFlags, filters.sectionId);
 
   return {
     generatedAt: new Date().toISOString(),
-    metrics: buildConfigurationMetrics(allEntries, featureFlags, approvals, versions),
+    metrics: buildConfigurationMetrics(allEntries, allFlags, approvals, versions),
     entries,
     versions,
     featureFlags,
     approvals,
     snapshots,
     pendingApprovals: listPendingApprovals(approvals),
-    categoryCounts: countEntriesByCategory(allEntries)
+    auditHistory: buildConfigurationAuditHistory(allEntries, versions),
+    sectionCounts: countEntriesBySection(allEntries)
   };
 }

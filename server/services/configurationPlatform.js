@@ -1,5 +1,5 @@
 /**
- * Enterprise Configuration Platform™ — server-side configuration governance.
+ * Institutional Configuration Center™ — server-side configuration governance.
  */
 
 export const CONFIGURATION_PLATFORM_DB_TABLES = [
@@ -125,27 +125,22 @@ export function rollbackConfigurationVersion(entry, versions, targetVersion) {
 }
 
 export function evaluateFeatureFlag(flag, context = {}) {
-  if (!flag?.enabled && flag?.mode === "disabled") return false;
-  if (flag?.mode === "enabled") return true;
-  if (flag?.mode === "disabled") return false;
-  if (flag?.mode === "future-rollout") return false;
-
-  if (flag?.mode === "gradual-rollout") {
+  if (flag?.mode === "maintenance") return Boolean(context.bypassMaintenance);
+  if (flag?.mode === "disable" || (!flag?.enabled && flag?.mode === "disable")) return false;
+  if (flag?.mode === "enable") return true;
+  if (flag?.mode === "preview") return Boolean(context.isPreview);
+  if (flag?.mode === "internal-only") {
+    return (
+      Boolean(context.isInternal) ||
+      ["Admin", "Executive", "Operations"].includes(context.role ?? "")
+    );
+  }
+  if (flag?.mode === "beta") {
+    if (context.isBeta) return true;
     const percentage = Number(flag.rolloutConfig?.percentage ?? 0);
     const bucket = Number(context.memberHash ?? 0) % 100;
     return bucket < percentage;
   }
-
-  if (flag?.mode === "region-rollout") {
-    const regions = flag.rolloutConfig?.regions ?? [];
-    return regions.includes(context.regionId);
-  }
-
-  if (flag?.mode === "role-rollout") {
-    const roles = flag.rolloutConfig?.roles ?? [];
-    return roles.includes(context.role);
-  }
-
   return Boolean(flag?.enabled);
 }
 

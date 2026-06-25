@@ -1,8 +1,8 @@
 import type {
   ConfigurationApprovalStatusId,
-  ConfigurationCategoryId,
-  FeatureFlagModeId,
-  RuntimeConfigDomainId
+  ConfigurationBusinessRuleId,
+  ConfigurationSectionId,
+  FeatureFlagModeId
 } from "../constants/configurationPlatform";
 
 export type ConfigurationValue = string | number | boolean | Record<string, unknown> | unknown[];
@@ -10,8 +10,8 @@ export type ConfigurationValue = string | number | boolean | Record<string, unkn
 export type ConfigurationEntryRecord = {
   id: string;
   configKey: string;
-  categoryId: ConfigurationCategoryId;
-  domainId?: RuntimeConfigDomainId;
+  categoryId: ConfigurationSectionId;
+  businessRuleId?: ConfigurationBusinessRuleId;
   label: string;
   description?: string;
   value: ConfigurationValue;
@@ -36,7 +36,7 @@ export type ConfigurationVersionRecord = {
 export type FeatureFlagRecord = {
   id: string;
   flagKey: string;
-  categoryId: ConfigurationCategoryId;
+  categoryId: ConfigurationSectionId;
   label: string;
   description?: string;
   mode: FeatureFlagModeId;
@@ -75,6 +75,19 @@ export type ConfigurationSnapshotRecord = {
   createdAt: string;
 };
 
+export type ConfigurationAuditRecord = {
+  id: string;
+  configKey: string;
+  label: string;
+  changedBy: string;
+  previousValue: ConfigurationValue;
+  currentValue: ConfigurationValue;
+  changedAt: string;
+  reason?: string;
+  rollbackAvailable: boolean;
+  rollbackVersion?: number;
+};
+
 export type ConfigurationMetric = {
   id: string;
   label: string;
@@ -90,10 +103,11 @@ export type ConfigurationPlatformBundle = {
   approvals: ConfigurationApprovalRecord[];
   snapshots: ConfigurationSnapshotRecord[];
   pendingApprovals: ConfigurationApprovalRecord[];
-  categoryCounts: Record<ConfigurationCategoryId, number>;
+  auditHistory: ConfigurationAuditRecord[];
+  sectionCounts: Record<ConfigurationSectionId, number>;
 };
 
 export type ConfigurationFilterState = {
   query: string;
-  categoryId: ConfigurationCategoryId | "all";
+  sectionId: ConfigurationSectionId | "all";
 };

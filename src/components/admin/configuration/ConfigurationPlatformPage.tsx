@@ -1,38 +1,48 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   CONFIGURATION_FUTURE_ARCHITECTURE,
-  CONFIGURATION_PLATFORM_RULES
+  CONFIGURATION_PLATFORM_RULES,
+  CONFIGURATION_SECTIONS
 } from "../../../constants/configurationPlatform";
 import {
   CONFIGURATION_PLATFORM_ADMIN_BRAND,
   CONFIGURATION_PLATFORM_ADMIN_PATH
 } from "../../../constants/configurationPlatformAdmin";
-import type { ConfigurationCategoryId } from "../../../constants/configurationPlatform";
+import type { ConfigurationSectionId } from "../../../constants/configurationPlatform";
 import { buildConfigurationPlatformBundle } from "../../../utils/configurationPlatformEngine";
 import { emptyConfigurationFilters } from "../../../utils/configurationPlatformLogic";
-import { ApprovalQueueCard } from "./ApprovalQueueCard";
-import { CategoryExplorerCard } from "./CategoryExplorerCard";
-import { ConfigurationOverviewCard } from "./ConfigurationOverviewCard";
-import { FeatureFlagsCard } from "./FeatureFlagsCard";
-import { RollbackCard } from "./RollbackCard";
-import { RuntimeSettingsCard } from "./RuntimeSettingsCard";
-import { VersionHistoryCard } from "./VersionHistoryCard";
+import { AuditHistoryCard } from "./AuditHistoryCard";
+import { BusinessRuleCard } from "./BusinessRuleCard";
+import { ConfigurationCard } from "./ConfigurationCard";
+import { FeatureFlagCard } from "./FeatureFlagCard";
+import { InstitutionSettingsCard } from "./InstitutionSettingsCard";
 
 export function ConfigurationPlatformPage() {
-  const [filters, setFilters] = useState(() => emptyConfigurationFilters());
+  const [section, setSection] = useState<ConfigurationSectionId | "all">("all");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const filters = useMemo(
+    () => ({
+      ...emptyConfigurationFilters(),
+      sectionId: section
+    }),
+    [section]
+  );
 
   const bundle = useMemo(() => {
     void refreshKey;
     return buildConfigurationPlatformBundle(filters);
   }, [filters, refreshKey]);
 
-  const handleCategorySelect = useCallback((categoryId: ConfigurationCategoryId) => {
-    setFilters((current) => ({
-      ...current,
-      categoryId: current.categoryId === categoryId ? "all" : categoryId
-    }));
+  const handleSectionSelect = useCallback((sectionId: ConfigurationSectionId | "all") => {
+    setSection((current) => (current === sectionId ? "all" : sectionId));
   }, []);
+
+  const showOverview = section === "all";
+  const showInstitution = showOverview || section === "institution";
+  const showBusinessRules = showOverview || section !== "feature-flags";
+  const showFlags = showOverview || section === "feature-flags" || bundle.featureFlags.length > 0;
+  const showAudit = showOverview || section !== "feature-flags";
 
   return (
     <div className="configuration-platform-page">
@@ -40,8 +50,10 @@ export function ConfigurationPlatformPage() {
         <div>
           <h2>{CONFIGURATION_PLATFORM_ADMIN_BRAND}</h2>
           <p>
-            Centralized system configuration — feature flags, runtime limits, pricing, journey
-            settings, approvals, versioning, and rollback. Every change is audit logged.
+            Centralized institutional configuration — no critical business rule should require
+            developers to edit code. Operations configures consultation fees, working hours,
+            assignment rules, notification templates, journey policies, feature flags, and audit
+            history with rollback.
           </p>
         </div>
         <button
@@ -53,28 +65,51 @@ export function ConfigurationPlatformPage() {
         </button>
       </header>
 
-      <ConfigurationOverviewCard metrics={bundle.metrics} />
+      <nav className="configuration-platform-page__sections" aria-label="Configuration sections">
+        <button
+          type="button"
+          className={`configuration-platform-page__section-btn${section === "all" ? " is-active" : ""}`}
+          onClick={() => handleSectionSelect("all")}
+        >
+          All
+        </button>
+        {CONFIGURATION_SECTIONS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`configuration-platform-page__section-btn${
+              section === item.id ? " is-active" : ""
+            }`}
+            onClick={() => handleSectionSelect(item.id)}
+          >
+            {item.label}
+            {bundle.sectionCounts[item.id] ? ` (${bundle.sectionCounts[item.id]})` : ""}
+          </button>
+        ))}
+      </nav>
 
-      <CategoryExplorerCard
-        categoryCounts={bundle.categoryCounts}
-        activeCategoryId={filters.categoryId}
-        onSelectCategory={handleCategorySelect}
-      />
+      {showOverview ? (
+        <ConfigurationCard
+          metrics={bundle.metrics}
+          pendingApprovals={bundle.pendingApprovals.length}
+        />
+      ) : null}
 
       <div className="configuration-platform-page__body">
         <div className="configuration-platform-page__column">
-          <RuntimeSettingsCard entries={bundle.entries} />
-          <FeatureFlagsCard flags={bundle.featureFlags} />
-          <ApprovalQueueCard approvals={bundle.approvals} />
+          {showInstitution ? <InstitutionSettingsCard entries={bundle.entries} /> : null}
+          {showBusinessRules ? <BusinessRuleCard entries={bundle.entries} /> : null}
+          {showFlags ? <FeatureFlagCard flags={bundle.featureFlags} /> : null}
         </div>
         <div className="configuration-platform-page__column">
-          <VersionHistoryCard versions={bundle.versions} />
-          <RollbackCard snapshots={bundle.snapshots} />
+          {showAudit ? (
+            <AuditHistoryCard auditHistory={bundle.auditHistory} snapshots={bundle.snapshots} />
+          ) : null}
         </div>
       </div>
 
       <footer className="configuration-platform-page__future">
-        <h4>Future-ready (documented only)</h4>
+        <h4>Future architecture (documented only)</h4>
         <p>{CONFIGURATION_FUTURE_ARCHITECTURE.map((item) => item.label).join(" · ")}</p>
         <ul>
           {CONFIGURATION_PLATFORM_RULES.map((rule) => (

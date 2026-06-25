@@ -1147,7 +1147,7 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     domainId: "qa",
     engine: "configurationPlatformEngine.ts",
     expectedTable: "configuration_entries",
-    note: "Enterprise Configuration Platform™ — dual-write via configurationPlatform.js"
+    note: "Institutional Configuration Center™ — dual-write via configurationPlatform.js"
   },
   {
     storageKey: "bamsignal.monitoringCenter.v1",

@@ -69,6 +69,7 @@
     "test:governance": "node scripts/test-governance.mjs",
     "test:business-continuity": "node scripts/test-business-continuity.mjs",
     "test:configuration": "node scripts/test-configuration.mjs",
+    "test:configuration-center": "node scripts/test-configuration-center.mjs",
     "test:monitoring": "node scripts/test-monitoring.mjs",
     "test:data-governance": "node scripts/test-data-governance.mjs",
     "test:api-platform": "node scripts/test-api-platform.mjs",

@@ -202,7 +202,11 @@ export function updateFeatureFlagMode(
   const index = state.featureFlags.findIndex((item) => item.id === flagId);
   if (index < 0) return null;
 
-  const enabled = mode === "enabled" || mode === "gradual-rollout" || mode === "region-rollout" || mode === "role-rollout";
+  const enabled =
+    mode === "enable" ||
+    mode === "preview" ||
+    mode === "internal-only" ||
+    mode === "beta";
   state.featureFlags[index] = {
     ...state.featureFlags[index],
     mode,

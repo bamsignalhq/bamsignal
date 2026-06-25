@@ -1,16 +1,17 @@
-import { CONFIGURATION_CATEGORIES } from "../constants/configurationPlatform";
+import { CONFIGURATION_SECTIONS } from "../constants/configurationPlatform";
 import type {
   ConfigurationApprovalRecord,
+  ConfigurationAuditRecord,
   ConfigurationEntryRecord,
   ConfigurationFilterState,
   ConfigurationMetric,
   ConfigurationVersionRecord,
   FeatureFlagRecord
 } from "../types/configurationPlatform";
-import type { ConfigurationCategoryId } from "../constants/configurationPlatform";
+import type { ConfigurationSectionId } from "../constants/configurationPlatform";
 
 export function emptyConfigurationFilters(): ConfigurationFilterState {
-  return { query: "", categoryId: "all" };
+  return { query: "", sectionId: "all" };
 }
 
 export function filterConfigurationEntries(
@@ -19,24 +20,33 @@ export function filterConfigurationEntries(
 ): ConfigurationEntryRecord[] {
   const query = filters.query.trim().toLowerCase();
   return entries.filter((entry) => {
-    if (filters.categoryId !== "all" && entry.categoryId !== filters.categoryId) return false;
+    if (filters.sectionId !== "all" && entry.categoryId !== filters.sectionId) return false;
     if (!query) return true;
-    const haystack = [entry.configKey, entry.label, entry.description ?? "", entry.categoryId]
+    const haystack = [
+      entry.configKey,
+      entry.label,
+      entry.description ?? "",
+      entry.categoryId,
+      entry.businessRuleId ?? ""
+    ]
       .join(" ")
       .toLowerCase();
     return haystack.includes(query);
   });
 }
 
-export function countEntriesByCategory(entries: ConfigurationEntryRecord[]) {
+export function countEntriesBySection(entries: ConfigurationEntryRecord[]) {
   const counts = Object.fromEntries(
-    CONFIGURATION_CATEGORIES.map((category) => [category.id, 0])
-  ) as Record<ConfigurationCategoryId, number>;
+    CONFIGURATION_SECTIONS.map((section) => [section.id, 0])
+  ) as Record<ConfigurationSectionId, number>;
   for (const entry of entries) {
     counts[entry.categoryId] = (counts[entry.categoryId] ?? 0) + 1;
   }
   return counts;
 }
+
+/** @deprecated Use countEntriesBySection */
+export const countEntriesByCategory = countEntriesBySection;
 
 export function listPendingApprovals(approvals: ConfigurationApprovalRecord[]) {
   return approvals.filter((item) => item.status === "pending");
@@ -49,7 +59,40 @@ export function listVersionsForEntry(versions: ConfigurationVersionRecord[], ent
 }
 
 export function countEnabledFlags(flags: FeatureFlagRecord[]) {
-  return flags.filter((item) => item.enabled || item.mode === "enabled").length;
+  return flags.filter((item) => item.enabled || item.mode === "enable").length;
+}
+
+export function buildConfigurationAuditHistory(
+  entries: ConfigurationEntryRecord[],
+  versions: ConfigurationVersionRecord[]
+): ConfigurationAuditRecord[] {
+  const entryById = Object.fromEntries(entries.map((entry) => [entry.id, entry]));
+  const sorted = [...versions].sort(
+    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+  );
+
+  return sorted.map((version) => {
+    const entry = entryById[version.entryId];
+    const prior = versions
+      .filter(
+        (item) =>
+          item.entryId === version.entryId && item.versionNumber < version.versionNumber
+      )
+      .sort((left, right) => right.versionNumber - left.versionNumber)[0];
+
+    return {
+      id: version.id,
+      configKey: entry?.configKey ?? version.entryId,
+      label: entry?.label ?? version.entryId,
+      changedBy: version.changedBy,
+      previousValue: prior?.value ?? entry?.value ?? "—",
+      currentValue: version.value,
+      changedAt: version.createdAt,
+      reason: version.changeReason,
+      rollbackAvailable: Boolean(prior),
+      rollbackVersion: prior?.versionNumber
+    };
+  });
 }
 
 export function buildConfigurationMetrics(
@@ -60,12 +103,14 @@ export function buildConfigurationMetrics(
 ): ConfigurationMetric[] {
   const pending = listPendingApprovals(approvals).length;
   const critical = entries.filter((item) => item.critical).length;
+  const businessRules = entries.filter((item) => item.businessRuleId).length;
   return [
     { id: "entries", label: "Configuration entries", value: String(entries.length) },
+    { id: "business-rules", label: "Business rules", value: String(businessRules) },
     { id: "feature-flags", label: "Feature flags", value: String(flags.length) },
     { id: "enabled-flags", label: "Enabled flags", value: String(countEnabledFlags(flags)) },
     { id: "pending-approvals", label: "Pending approvals", value: String(pending) },
-    { id: "versions", label: "Version records", value: String(versions.length) },
+    { id: "audit-records", label: "Audit records", value: String(versions.length) },
     { id: "critical-settings", label: "Critical settings", value: String(critical) }
   ];
 }
@@ -92,7 +137,13 @@ export function validateConfigurationChange(
 export function appendConfigurationVersion(
   entry: ConfigurationEntryRecord,
   versions: ConfigurationVersionRecord[],
-  input: { value: ConfigurationEntryRecord["value"]; changedBy?: string; changeReason?: string; id?: string; createdAt?: string }
+  input: {
+    value: ConfigurationEntryRecord["value"];
+    changedBy?: string;
+    changeReason?: string;
+    id?: string;
+    createdAt?: string;
+  }
 ) {
   const validation = validateConfigurationChange(entry, input.value);
   if (!validation.ok) {
@@ -179,26 +230,41 @@ export function rollbackConfigurationVersion(
 
 export function evaluateFeatureFlag(
   flag: FeatureFlagRecord,
-  context: { memberHash?: number; regionId?: string; role?: string } = {}
+  context: {
+    memberHash?: number;
+    regionId?: string;
+    role?: string;
+    isPreview?: boolean;
+    isInternal?: boolean;
+    isBeta?: boolean;
+    bypassMaintenance?: boolean;
+  } = {}
 ): boolean {
-  if (!flag.enabled && flag.mode === "disabled") return false;
-  if (flag.mode === "enabled") return true;
-  if (flag.mode === "disabled") return false;
-  if (flag.mode === "future-rollout") return false;
-
-  if (flag.mode === "gradual-rollout") {
+  if (flag.mode === "maintenance") return Boolean(context.bypassMaintenance);
+  if (flag.mode === "disable") return false;
+  if (flag.mode === "enable") return true;
+  if (flag.mode === "preview") return Boolean(context.isPreview);
+  if (flag.mode === "internal-only") {
+    return Boolean(context.isInternal) || ["Admin", "Executive", "Operations"].includes(context.role ?? "");
+  }
+  if (flag.mode === "beta") {
+    if (context.isBeta) return true;
     const percentage = Number(flag.rolloutConfig?.percentage ?? 0);
     const bucket = Number(context.memberHash ?? 0) % 100;
     return bucket < percentage;
   }
-
-  if (flag.mode === "region-rollout") {
-    return (flag.rolloutConfig?.regions ?? []).includes(context.regionId ?? "");
-  }
-
-  if (flag.mode === "role-rollout") {
-    return (flag.rolloutConfig?.roles ?? []).includes(context.role ?? "");
-  }
-
   return flag.enabled;
+}
+
+export function filterFlagsBySection(flags: FeatureFlagRecord[], sectionId: ConfigurationSectionId) {
+  if (sectionId === "feature-flags") return flags;
+  return flags.filter((item) => item.categoryId === sectionId);
+}
+
+export function listBusinessRuleEntries(entries: ConfigurationEntryRecord[]) {
+  return entries.filter((item) => item.businessRuleId);
+}
+
+export function listInstitutionEntries(entries: ConfigurationEntryRecord[]) {
+  return entries.filter((item) => item.categoryId === "institution");
 }

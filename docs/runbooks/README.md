@@ -21,6 +21,10 @@ Operational playbooks for backup, restore, and recovery. **Documentation only** 
 | Paid but no premium | [payment-recovery.md](./payment-recovery.md) |
 | Bad deploy | [deployment-recovery.md](./deployment-recovery.md) |
 
+## Release management
+
+Formal release records, checklists, and templates: [docs/releases/](../releases/README.md)
+
 ## Secrets
 
 All runbooks reference variable **names** from `.env.example` only. Store values in Coolify + password manager — never in git.

@@ -171,6 +171,16 @@ export const API_PLATFORM_SCHEMA_TABLES = [
   "api_usage_snapshots"
 ] as const;
 
+/** Tables from migrations/0015_disaster_recovery_center.sql */
+export const RECOVERY_CENTER_SCHEMA_TABLES = [
+  "recovery_backup_records",
+  "recovery_restore_history",
+  "recovery_playbook_records",
+  "recovery_test_runs",
+  "recovery_critical_systems",
+  "recovery_dependency_links"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -936,6 +946,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["api_usage_snapshots_domain_idx"],
     constraints: ["uuid primary key"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "recovery_backup_records",
+    migrationRef: "0015_disaster_recovery_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["recovery_backup_records_category_idx"],
+    constraints: ["uuid primary key", "backup_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Business Continuity & Disaster Recovery Center™"
+  },
+  {
+    tableName: "recovery_restore_history",
+    migrationRef: "0015_disaster_recovery_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["recovery_restore_history_status_idx"],
+    constraints: ["uuid primary key", "restore_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "recovery_playbook_records",
+    migrationRef: "0015_disaster_recovery_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["recovery_playbook_records_playbook_idx"],
+    constraints: ["uuid primary key", "playbook_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "recovery_test_runs",
+    migrationRef: "0015_disaster_recovery_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["recovery_test_runs_playbook_idx"],
+    constraints: ["uuid primary key", "test_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "recovery_critical_systems",
+    migrationRef: "0015_disaster_recovery_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["recovery_critical_systems_tier_idx"],
+    constraints: ["uuid primary key", "system_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "recovery_dependency_links",
+    migrationRef: "0015_disaster_recovery_center.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["recovery_dependency_links_critical_idx"],
+    constraints: ["uuid primary key", "link_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -974,6 +1039,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "apiPlatformEngine.ts",
     expectedTable: "api_catalog_entries",
     note: "Institutional API Platform™ — dual-write via apiPlatform.js"
+  },
+  {
+    storageKey: "bamsignal.recoveryCenter.v2",
+    domainId: "qa",
+    engine: "recoveryCenterEngine.ts",
+    expectedTable: "recovery_backup_records",
+    note: "Business Continuity & Disaster Recovery Center™ — dual-write via recoveryCenter.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

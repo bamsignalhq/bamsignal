@@ -1,15 +1,19 @@
 import type {
-  BackupAreaId,
+  BackupCategoryId,
   BackupStatusId,
+  IncidentPlaybookId,
   IncidentRecoveryStatusId,
+  RecoveryCenterAreaId,
   RecoveryLevelId,
-  RecoveryMetricId,
-  RecoveryPlanStatusId
+  RecoveryModeId,
+  RecoveryPlanStatusId,
+  RestoreStatusId
 } from "../constants/recoveryCenter";
 
-export type BackupStatusRecord = {
+export type BackupRecord = {
   id: string;
-  areaId: BackupAreaId;
+  backupRef: string;
+  categoryId: BackupCategoryId;
   status: BackupStatusId;
   lastBackupAt: string;
   frequencyLabel: string;
@@ -19,9 +23,25 @@ export type BackupStatusRecord = {
   nextScheduledAt: string;
 };
 
-export type RecoveryPlanRecord = {
+/** @deprecated use BackupRecord */
+export type BackupStatusRecord = BackupRecord & { areaId: BackupCategoryId };
+
+export type RecoveryOperationRecord = {
   id: string;
-  levelId: RecoveryLevelId;
+  operationRef: string;
+  modeId: RecoveryModeId;
+  target: string;
+  status: RestoreStatusId;
+  initiatedAt: string;
+  completedAt?: string;
+  initiatedBy: string;
+  checklistComplete: boolean;
+};
+
+export type PlaybookRecord = {
+  id: string;
+  playbookRef: string;
+  playbookId: IncidentPlaybookId;
   title: string;
   owner: string;
   status: RecoveryPlanStatusId;
@@ -29,6 +49,48 @@ export type RecoveryPlanRecord = {
   rpoMinutes: number;
   lastTestedAt: string | null;
   steps: string[];
+};
+
+export type RestoreHistoryRecord = {
+  id: string;
+  restoreRef: string;
+  modeId: RecoveryModeId;
+  categoryId: BackupCategoryId;
+  status: RestoreStatusId;
+  startedAt: string;
+  completedAt?: string;
+  verifiedAt?: string;
+  initiatedBy: string;
+  notes?: string;
+};
+
+export type RecoveryTestRecord = {
+  id: string;
+  testRef: string;
+  playbookId: IncidentPlaybookId;
+  status: "passed" | "failed" | "scheduled";
+  runAt: string;
+  durationMinutes: number;
+  notes?: string;
+};
+
+export type CriticalSystemRecord = {
+  id: string;
+  systemRef: string;
+  name: string;
+  tier: "tier-1" | "tier-2" | "tier-3";
+  rtoMinutes: number;
+  backupCategoryId: BackupCategoryId;
+  lastVerifiedAt: string;
+};
+
+export type DependencyLinkRecord = {
+  id: string;
+  linkRef: string;
+  upstream: string;
+  downstream: string;
+  critical: boolean;
+  failoverAvailable: boolean;
 };
 
 export type RecoveryTimelineEntry = {
@@ -52,24 +114,27 @@ export type IncidentRecoveryRecord = {
   timeline: RecoveryTimelineEntry[];
 };
 
+export type RecoveryPlanRecord = PlaybookRecord & { levelId?: RecoveryLevelId };
+
 export type RecoveryFilterState = {
   query: string;
-  areaId: BackupAreaId | "all";
+  areaId: BackupCategoryId | "all";
   levelId: RecoveryLevelId | "all";
 };
 
-export type RecoveryMetric = {
-  id: RecoveryMetricId;
-  label: string;
-  value: string;
-  numericValue?: number;
-};
-
-export type RecoveryReadinessSummary = {
+export type RecoveryHealthSummary = {
   score: number;
   label: string;
   healthyBackups: number;
   totalBackups: number;
+  testedPlaybooks: number;
+  totalPlaybooks: number;
+  activeRestores: number;
+  verifiedRestores: number;
+};
+
+/** @deprecated use RecoveryHealthSummary */
+export type RecoveryReadinessSummary = RecoveryHealthSummary & {
   testedPlans: number;
   totalPlans: number;
   activeIncidents: number;
@@ -77,10 +142,17 @@ export type RecoveryReadinessSummary = {
 
 export type RecoveryCenterBundle = {
   generatedAt: string;
-  metrics: RecoveryMetric[];
-  backups: BackupStatusRecord[];
-  plans: RecoveryPlanRecord[];
+  summary: RecoveryHealthSummary;
+  backups: BackupRecord[];
+  operations: RecoveryOperationRecord[];
+  playbooks: PlaybookRecord[];
+  restoreHistory: RestoreHistoryRecord[];
+  recoveryTests: RecoveryTestRecord[];
+  criticalSystems: CriticalSystemRecord[];
+  dependencies: DependencyLinkRecord[];
   incidents: IncidentRecoveryRecord[];
-  readiness: RecoveryReadinessSummary;
-  selectedIncident: IncidentRecoveryRecord | null;
+};
+
+export type RecoveryCenterAreaBundle = RecoveryCenterBundle & {
+  areaId: RecoveryCenterAreaId;
 };

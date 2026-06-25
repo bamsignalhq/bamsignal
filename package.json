@@ -64,6 +64,7 @@
     "test:finance-operations": "node scripts/test-finance-operations.mjs",
     "test:internal-messaging": "node scripts/test-internal-messaging.mjs",
     "test:recovery-center": "node scripts/test-recovery-center.mjs",
+    "test:recovery": "node scripts/test-recovery.mjs",
     "test:workforce": "node scripts/test-workforce.mjs",
     "test:governance": "node scripts/test-governance.mjs",
     "test:business-continuity": "node scripts/test-business-continuity.mjs",

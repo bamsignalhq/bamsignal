@@ -450,3 +450,178 @@
     grid-template-columns: 1fr;
   }
 }
+
+.recovery-center-page__areas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recovery-center-page__area-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.recovery-center-page__area-btn.is-active {
+  border-color: rgba(255, 200, 140, 0.55);
+  background: rgba(220, 160, 100, 0.1);
+}
+
+.recovery-center-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.recovery-center-page__note,
+.recovery-center-page__deps,
+.recovery-center-page__systems {
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.recovery-center-page__deps,
+.recovery-center-page__systems {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.recovery-card {
+  padding: 14px;
+}
+
+.recovery-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.recovery-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.recovery-card__line {
+  margin: 12px 0 8px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.recovery-card__empty {
+  margin: 12px 0 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.recovery-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.recovery-card__grid article {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.recovery-card__grid span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.recovery-card__list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.recovery-card__list li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.recovery-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.recovery-card__meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.recovery-health-card__score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 12px 0 8px;
+}
+
+.recovery-health-card__label {
+  font-size: 0.84rem;
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.backup-card__status,
+.recovery-ops-card__status,
+.playbook-card__status,
+.restore-history-card__status {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.backup-card__status--healthy,
+.restore-history-card__status--verified {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.backup-card__status--warning,
+.recovery-ops-card__status--in-progress {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.backup-card__status--failed {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.playbook-card__steps {
+  margin: 6px 0 0;
+  padding-left: 1.2rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.restore-history-card__notes {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 220, 140, 0.9);
+}
+
+.recovery-center-page__future h4 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}

@@ -16,33 +16,30 @@ function assert(condition, message) {
 
 const adminSource = readFileSync(join(rootPath, "src/constants/recoveryCenterAdmin.ts"), "utf8");
 assert(adminSource.includes('RECOVERY_CENTER_ADMIN_PATH = "/hard/recovery"'), "admin recovery route");
-assert(adminSource.includes("Institutional Backup & Recovery Center™"), "recovery center brand");
+assert(
+  adminSource.includes("Business Continuity & Disaster Recovery Center™"),
+  "recovery center brand"
+);
 
 const constantsSource = readFileSync(join(rootPath, "src/constants/recoveryCenter.ts"), "utf8");
-assert(constantsSource.includes("Institutional Backup & Recovery Center™"), "recovery brand");
-assert(constantsSource.includes("database-backups"), "database backups area");
-assert(constantsSource.includes("configuration-backups"), "configuration backups area");
-assert(constantsSource.includes("disaster-recovery"), "disaster recovery level");
-assert(constantsSource.includes("RECOVERY_CENTER_POLICIES"), "recovery policies documented");
-assert(constantsSource.includes("backup-verification"), "backup verification policy");
-assert(constantsSource.includes("disaster-procedures"), "disaster procedures policy");
-assert(constantsSource.includes("RECOVERY_CENTER_FUTURE_KINDS"), "future kinds documented");
-assert(constantsSource.includes("cross-region-recovery"), "cross region recovery future item");
-assert(constantsSource.includes("automated-failover"), "automated failover future item");
-assert(constantsSource.includes("cold-storage-archives"), "cold storage archives future item");
-assert(constantsSource.includes("RECOVERY_CENTER_METRICS"), "recovery metrics");
+assert(constantsSource.includes("Business Continuity & Disaster Recovery Center™"), "recovery brand");
+assert(constantsSource.includes("secrets-inventory"), "secrets inventory backup");
+assert(constantsSource.includes("database-failure"), "database failure playbook");
+assert(constantsSource.includes("RECOVERY_CENTER_AUDIT_ACTIONS"), "audit actions documented");
+assert(constantsSource.includes("RECOVERY_CENTER_FUTURE_ARCHITECTURE"), "future architecture documented");
+assert(constantsSource.includes("Multi-region"), "multi-region future item");
+assert(constantsSource.includes("Chaos Testing"), "chaos testing future item");
 
 const hardRoutesSource = readFileSync(join(rootPath, "src/constants/hardRoutes.ts"), "utf8");
 assert(hardRoutesSource.includes("recovery"), "hard routes include recovery tab");
 
 const engineSource = readFileSync(join(rootPath, "src/utils/recoveryCenterEngine.ts"), "utf8");
 assert(engineSource.includes("buildRecoveryCenterBundle"), "recovery engine exists");
-assert(engineSource.includes("buildRecoveryMetrics"), "recovery metrics in bundle");
+assert(engineSource.includes("buildRecoveryHealthSummary"), "health summary in bundle");
 
 const logicSource = readFileSync(join(rootPath, "src/utils/recoveryCenterLogic.ts"), "utf8");
-assert(logicSource.includes("buildRecoveryReadiness"), "recovery readiness logic");
-assert(logicSource.includes("countHealthyBackups"), "healthy backup counts");
-assert(logicSource.includes("summarizeRetention"), "retention status metric");
+assert(logicSource.includes("buildRecoveryHealthSummary"), "recovery health logic");
+assert(logicSource.includes("formatRecoverySummaryLine"), "summary line formatter");
 
 const seedSource = readFileSync(join(rootPath, "src/data/recoveryCenterSeed.ts"), "utf8");
 assert(seedSource.includes("verifiedAt"), "seed includes backup verification");
@@ -51,10 +48,11 @@ assert(seedSource.includes("timeline"), "seed includes incident timeline");
 
 const adminComponents = [
   "RecoveryDashboardPage.tsx",
-  "BackupStatusCard.tsx",
-  "RecoveryPlanCard.tsx",
-  "IncidentRecoveryTimeline.tsx",
-  "RecoveryReadinessCard.tsx"
+  "BackupCard.tsx",
+  "RecoveryCard.tsx",
+  "PlaybookCard.tsx",
+  "RestoreHistoryCard.tsx",
+  "RecoveryHealthCard.tsx"
 ];
 
 for (const file of adminComponents) {
@@ -70,6 +68,7 @@ assert(navSource.includes('"recovery"'), "admin nav includes recovery tab");
 
 const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:recovery-center"), "package.json defines test:recovery-center");
+assert(packageSource.includes("test:recovery"), "package.json defines test:recovery");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
 assert(mainSource.includes("recovery-center.css"), "recovery styles imported");

@@ -1,0 +1,238 @@
+.configuration-platform-page {
+  display: grid;
+  gap: 18px;
+}
+
+.configuration-platform-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.configuration-platform-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.configuration-platform-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.configuration-platform-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.configuration-platform-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.configuration-platform-page__future {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 6px;
+}
+
+.configuration-platform-page__future h4 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.configuration-platform-page__future ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.config-card {
+  padding: 14px;
+}
+
+.config-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.config-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.config-card__empty {
+  margin: 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.configuration-overview-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.config-metric-chip {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 4px;
+}
+
+.config-metric-chip span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.config-metric-chip strong {
+  font-size: 1.1rem;
+}
+
+.configuration-overview-card__rules h4 {
+  margin: 0 0 6px;
+  font-size: 0.86rem;
+}
+
+.configuration-overview-card__rules ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+}
+
+.category-explorer-card__grid {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.category-explorer-card__btn {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-explorer-card__btn.is-active {
+  border-color: rgba(160, 230, 180, 0.55);
+  background: rgba(140, 200, 120, 0.08);
+}
+
+.runtime-settings-card__list,
+.feature-flags-card__list,
+.approval-queue-card__list,
+.version-history-card__list,
+.rollback-card__list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.runtime-settings-card__list li,
+.feature-flags-card__list li,
+.approval-queue-card__list li,
+.version-history-card__list li,
+.rollback-card__list li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.runtime-settings-card__list li.is-critical {
+  border-color: rgba(255, 200, 140, 0.35);
+}
+
+.runtime-settings-card__row,
+.feature-flags-card__row,
+.version-history-card__row,
+.rollback-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.runtime-settings-card__critical {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 200, 140, 0.45);
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.runtime-settings-card__key,
+.feature-flags-card__key,
+.approval-queue-card__key {
+  font-family: monospace;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+  margin: 0;
+}
+
+.runtime-settings-card__value {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(160, 230, 180, 0.95);
+}
+
+.runtime-settings-card__meta,
+.approval-queue-card__meta,
+.rollback-card__meta,
+.version-history-card__actor,
+.feature-flags-card__category {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.feature-flags-card__mode {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.feature-flags-card__mode--enabled {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.feature-flags-card__mode--disabled,
+.feature-flags-card__mode--future-rollout {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.version-history-card__reason {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+@media (max-width: 900px) {
+  .configuration-platform-page__body {
+    grid-template-columns: 1fr;
+  }
+}

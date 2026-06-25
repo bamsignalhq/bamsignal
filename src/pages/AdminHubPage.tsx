@@ -114,6 +114,7 @@ import { ExecutiveDashboardPage } from "../components/admin/executive/ExecutiveD
 import { InstitutionalGovernancePage } from "../components/admin/governance/InstitutionalGovernancePage";
 import { WorkforceManagementPage } from "../components/admin/workforce/WorkforceManagementPage";
 import { BusinessContinuityPage } from "../components/admin/businessContinuity/BusinessContinuityPage";
+import { ConfigurationPlatformPage } from "../components/admin/configuration/ConfigurationPlatformPage";
 import { JourneyIntelligencePage } from "../components/admin/concierge/JourneyIntelligencePage";
 import { AdminCommandDock } from "../components/admin/AdminCommandDock";
 import { AdminConsoleTopBar } from "../components/admin/AdminConsoleTopBar";
@@ -2098,6 +2099,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       {tab === "workforce" ? <WorkforceManagementPage /> : null}
       {tab === "governance" ? <InstitutionalGovernancePage /> : null}
       {tab === "businesscontinuity" ? <BusinessContinuityPage /> : null}
+      {tab === "configuration" ? <ConfigurationPlatformPage /> : null}
         </main>
         <AdminCommandDock
           activeTab={tab}

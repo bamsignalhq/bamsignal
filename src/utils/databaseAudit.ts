@@ -132,6 +132,15 @@ export const DOCUMENT_CENTER_SCHEMA_TABLES = [
   "knowledge_articles"
 ] as const;
 
+/** Tables from migrations/0011_configuration_platform.sql */
+export const CONFIGURATION_PLATFORM_SCHEMA_TABLES = [
+  "configuration_entries",
+  "configuration_versions",
+  "feature_flags",
+  "configuration_approvals",
+  "configuration_snapshots"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -686,6 +695,52 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["improvement_plans_consultant_idx"],
     constraints: ["uuid primary key", "plan_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "configuration_entries",
+    migrationRef: "0011_configuration_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["configuration_entries_category_idx"],
+    constraints: ["uuid primary key", "config_key unique"],
+    defaultHealth: "needs-migration",
+    note: "Enterprise Configuration Platform™"
+  },
+  {
+    tableName: "configuration_versions",
+    migrationRef: "0011_configuration_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["configuration_versions_entry_idx"],
+    constraints: ["uuid primary key", "entry_id + version_number unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "feature_flags",
+    migrationRef: "0011_configuration_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["feature_flags_category_idx"],
+    constraints: ["uuid primary key", "flag_key unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "configuration_approvals",
+    migrationRef: "0011_configuration_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["configuration_approvals_status_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "configuration_snapshots",
+    migrationRef: "0011_configuration_platform.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["configuration_snapshots_created_idx"],
+    constraints: ["uuid primary key", "snapshot_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -696,6 +751,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "documentCenterEngine.ts",
     expectedTable: "documents",
     note: "Institutional Policy & Documentation Center™ — dual-write via documentCenter.js"
+  },
+  {
+    storageKey: "bamsignal.configurationPlatform.v1",
+    domainId: "qa",
+    engine: "configurationPlatformEngine.ts",
+    expectedTable: "configuration_entries",
+    note: "Enterprise Configuration Platform™ — dual-write via configurationPlatform.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

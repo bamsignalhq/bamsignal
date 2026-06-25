@@ -35,7 +35,8 @@ export type HardTab =
   | "recovery"
   | "workforce"
   | "governance"
-  | "businesscontinuity";
+  | "businesscontinuity"
+  | "configuration";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -92,6 +93,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "governance",
         label: "Governance",
         keywords: ["governance", "authority", "permissions", "roles", "approval", "delegation", "policy"]
+      },
+      {
+        id: "configuration",
+        label: "Configuration",
+        keywords: ["configuration", "feature-flags", "runtime", "settings", "limits", "rollout", "versioning"]
       },
       {
         id: "audit",
@@ -255,7 +261,8 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   recovery: "Recovery",
   workforce: "Workforce",
   governance: "Governance",
-  businesscontinuity: "Business Continuity"
+  businesscontinuity: "Business Continuity",
+  configuration: "Configuration"
 };
 
 export const ADMIN_TAB_TITLES = HARD_TAB_TITLES;

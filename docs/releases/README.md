@@ -80,6 +80,7 @@ Draft → Ready → Approved → Released → Archived
 | [automation-architecture.md](./automation-architecture.md) | Future CI/CD release automation (architecture only) |
 | [../runbooks/deployment-recovery.md](../runbooks/deployment-recovery.md) | Coolify rollback and recovery |
 | [../runbooks/README.md](../runbooks/README.md) | Disaster recovery runbooks |
+| [../operations/monitoring/README.md](../operations/monitoring/README.md) | Production monitoring, SLOs, alerts |
 | [.cursor/rules/deployment.mdc](../../.cursor/rules/deployment.mdc) | Deploy commands and env policy |
 
 ---

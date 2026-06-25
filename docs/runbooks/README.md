@@ -25,6 +25,8 @@ Operational playbooks for backup, restore, and recovery. **Documentation only** 
 
 Formal release records, checklists, and templates: [docs/releases/](../releases/README.md)
 
+Production monitoring, SLOs, alerts, and observability: [docs/operations/monitoring/](../operations/monitoring/README.md)
+
 ## Secrets
 
 All runbooks reference variable **names** from `.env.example` only. Store values in Coolify + password manager — never in git.

@@ -221,6 +221,16 @@ export const REPORTING_CENTER_SCHEMA_TABLES = [
   "reporting_snapshots"
 ] as const;
 
+/** Tables from migrations/0020_institutional_readiness_verification.sql */
+export const READINESS_VERIFICATION_SCHEMA_TABLES = [
+  "readiness_subsystem_contracts",
+  "readiness_verification_checks",
+  "readiness_dependency_links",
+  "readiness_critical_issues",
+  "readiness_verification_runs",
+  "readiness_snapshots"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -1261,6 +1271,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["reporting_snapshots_created_idx"],
     constraints: ["uuid primary key", "snapshot_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "readiness_subsystem_contracts",
+    migrationRef: "0020_institutional_readiness_verification.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["readiness_subsystem_contracts_subsystem_idx"],
+    constraints: ["uuid primary key", "contract_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Institutional Readiness Verification Engine™"
+  },
+  {
+    tableName: "readiness_verification_checks",
+    migrationRef: "0020_institutional_readiness_verification.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["readiness_verification_checks_subsystem_idx"],
+    constraints: ["uuid primary key", "check_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "readiness_dependency_links",
+    migrationRef: "0020_institutional_readiness_verification.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["readiness_dependency_links_downstream_idx"],
+    constraints: ["uuid primary key", "dependency_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "readiness_critical_issues",
+    migrationRef: "0020_institutional_readiness_verification.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["readiness_critical_issues_subsystem_idx"],
+    constraints: ["uuid primary key", "issue_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "readiness_verification_runs",
+    migrationRef: "0020_institutional_readiness_verification.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["readiness_verification_runs_generated_idx"],
+    constraints: ["uuid primary key", "run_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "readiness_snapshots",
+    migrationRef: "0020_institutional_readiness_verification.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["readiness_snapshots_created_idx"],
+    constraints: ["uuid primary key", "snapshot_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -1334,6 +1399,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "reportingCenterEngine.ts",
     expectedTable: "reporting_catalog_entries",
     note: "Institutional Reporting Center™ — dual-write via reportingCenter.js"
+  },
+  {
+    storageKey: "bamsignal.institutionalReadiness.v1",
+    domainId: "qa",
+    engine: "institutionalReadinessEngine.ts",
+    expectedTable: "readiness_subsystem_contracts",
+    note: "Institutional Readiness Verification Engine™ — dual-write via institutionalReadinessVerification.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

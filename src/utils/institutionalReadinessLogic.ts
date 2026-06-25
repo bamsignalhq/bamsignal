@@ -1,118 +1,219 @@
 import { GO_NO_GO_LABELS } from "../constants/institutionalReadiness";
 import type {
   GoNoGoVerdictId,
-  HealthCategory,
-  HealthStatusId,
-  InstitutionalReadinessReport,
-  LaunchDecision,
-  ReadinessRiskItem
+  InstitutionalReadinessVerificationBundle,
+  ReadinessCriticalIssue,
+  ReadinessDependencyLink,
+  ReadinessGoNoGoRecommendation,
+  ReadinessRecommendedAction,
+  ReadinessResultId,
+  ReadinessSubsystemHealth,
+  ReadinessSubsystemId,
+  ReadinessVerificationCheck
 } from "../types/institutionalReadiness";
 import type { RemediationFinding } from "../types/remediationBoard";
 import { isOpenStatus } from "./remediationBoardLogic";
 
-export function scoreToHealthStatus(score: number, hasCriticalIssue: boolean): HealthStatusId {
-  if (hasCriticalIssue || score < 55) return "critical";
-  if (score < 85) return "partial";
+export function scoreToReadinessResult(score: number, hasCriticalIssue: boolean): ReadinessResultId {
+  if (hasCriticalIssue || score < 50) return "critical";
+  if (score < 75) return "warning";
   return "healthy";
 }
 
-export function buildOverallScore(sections: HealthCategory[]): number {
-  if (!sections.length) return 0;
-  const total = sections.reduce((sum, section) => sum + section.score, 0);
-  return Math.round(total / sections.length);
+export function buildInstitutionReadinessScore(subsystems: ReadinessSubsystemHealth[]): number {
+  if (!subsystems.length) return 0;
+  const total = subsystems.reduce((sum, item) => sum + item.score, 0);
+  const criticalCount = subsystems.filter((item) => item.status === "critical").length;
+  const base = Math.round(total / subsystems.length);
+  return Math.max(0, base - criticalCount * 3);
 }
 
-function mapFindingSection(finding: RemediationFinding): ReadinessRiskItem["sectionId"] {
+export function propagateDependencyFailures(
+  subsystems: ReadinessSubsystemHealth[],
+  dependencies: ReadinessDependencyLink[]
+): { subsystems: ReadinessSubsystemHealth[]; dependencies: ReadinessDependencyLink[] } {
+  const statusMap = Object.fromEntries(subsystems.map((item) => [item.id, item.status]));
+  const updated = subsystems.map((item) => ({
+    ...item,
+    failedDependencies: [...item.failedDependencies]
+  }));
+  const updatedDeps = dependencies.map((dep) => ({ ...dep }));
+
+  for (const dep of updatedDeps) {
+    if (!dep.critical) continue;
+    const upstreamStatus = statusMap[dep.upstreamId];
+    dep.upstreamStatus = upstreamStatus;
+    dep.downstreamStatus = statusMap[dep.downstreamId];
+
+    if (upstreamStatus !== "critical" && upstreamStatus !== "warning") continue;
+
+    dep.surfaced = true;
+    const downstreamIdx = updated.findIndex((item) => item.id === dep.downstreamId);
+    if (downstreamIdx === -1) continue;
+
+    const downstream = updated[downstreamIdx];
+    const failedDeps = [...new Set([...downstream.failedDependencies, dep.upstreamId])];
+    let newStatus = downstream.status;
+
+    if (upstreamStatus === "critical") {
+      newStatus = "critical";
+    } else if (downstream.status === "healthy") {
+      newStatus = "warning";
+    }
+
+    updated[downstreamIdx] = {
+      ...downstream,
+      status: newStatus,
+      failedDependencies: failedDeps,
+      summary: `${downstream.summary} · Upstream ${dep.upstreamId}: ${upstreamStatus}`
+    };
+    statusMap[dep.downstreamId] = newStatus;
+    dep.downstreamStatus = newStatus;
+  }
+
+  return { subsystems: updated, dependencies: updatedDeps };
+}
+
+function mapFindingSubsystem(finding: RemediationFinding): ReadinessSubsystemId {
   switch (finding.category) {
     case "routes":
-      return "routes";
+      return "routing";
     case "permissions":
       return "permissions";
     case "journey-integrity":
-      return "journey";
+      return "journey-engine";
     case "persistence":
-      return "persistence";
+      return "supabase";
     case "safety":
-      return "safety";
+      return "security";
     case "executive":
-      return "executive";
+      return "executive-dashboard";
     case "launch":
-      return "launch";
-    case "operations":
-    case "crm":
+      return "operations";
     case "notifications":
+      return "notifications";
+    case "crm":
+      return "crm";
     default:
       return "operations";
   }
 }
 
-function mapFindingToRisk(
-  finding: RemediationFinding,
-  severity: ReadinessRiskItem["severity"]
-): ReadinessRiskItem {
-  return {
-    id: finding.id,
-    title: finding.title,
-    detail: finding.detail,
-    severity,
-    sectionId: mapFindingSection(finding),
-    auditPath: finding.auditPath
-  };
-}
-
-export function buildRiskRegistry(findings: RemediationFinding[]): Pick<
-  InstitutionalReadinessReport,
-  "criticalBlockers" | "highRisks" | "mediumRisks" | "resolvedRisks"
-> {
+export function buildIssuesFromFindings(findings: RemediationFinding[]): {
+  criticalIssues: ReadinessCriticalIssue[];
+  warnings: ReadinessCriticalIssue[];
+} {
   const openFindings = findings.filter((finding) => isOpenStatus(finding.status));
-  const resolvedFindings = findings.filter((finding) => finding.status === "resolved");
 
-  return {
-    criticalBlockers: openFindings
-      .filter((finding) => finding.severity === "P0")
-      .map((finding) => mapFindingToRisk(finding, "critical")),
-    highRisks: openFindings
-      .filter((finding) => finding.severity === "P1")
-      .map((finding) => mapFindingToRisk(finding, "high")),
-    mediumRisks: openFindings
-      .filter((finding) => finding.severity === "P2")
-      .map((finding) => mapFindingToRisk(finding, "medium")),
-    resolvedRisks: resolvedFindings.map((finding) =>
-      mapFindingToRisk(
-        finding,
-        finding.severity === "P0" ? "critical" : finding.severity === "P1" ? "high" : "medium"
-      )
-    )
-  };
+  const criticalIssues = openFindings
+    .filter((finding) => finding.severity === "P0")
+    .map((finding) => ({
+      id: finding.id,
+      issueRef: `ISS-${finding.id.toUpperCase()}`,
+      title: finding.title,
+      detail: finding.detail,
+      subsystemId: mapFindingSubsystem(finding),
+      auditPath: finding.auditPath
+    }));
+
+  const warnings = openFindings
+    .filter((finding) => finding.severity === "P1" || finding.severity === "P2")
+    .map((finding) => ({
+      id: finding.id,
+      issueRef: `WRN-${finding.id.toUpperCase()}`,
+      title: finding.title,
+      detail: finding.detail,
+      subsystemId: mapFindingSubsystem(finding),
+      auditPath: finding.auditPath
+    }));
+
+  return { criticalIssues, warnings };
 }
 
-export function buildLaunchDecision(
-  overallScore: number,
-  criticalBlockers: ReadinessRiskItem[],
-  highRisks: ReadinessRiskItem[]
-): LaunchDecision {
+export function buildRecommendedActions(
+  criticalIssues: ReadinessCriticalIssue[],
+  warnings: ReadinessCriticalIssue[],
+  subsystems: ReadinessSubsystemHealth[]
+): ReadinessRecommendedAction[] {
+  const actions: ReadinessRecommendedAction[] = [];
+
+  for (const issue of criticalIssues.slice(0, 5)) {
+    actions.push({
+      id: `act_${issue.id}`,
+      actionRef: `ACT-${issue.id.toUpperCase()}`,
+      title: `Resolve: ${issue.title}`,
+      detail: issue.detail,
+      priority: "critical"
+    });
+  }
+
+  for (const subsystem of subsystems.filter((item) => item.status === "critical").slice(0, 3)) {
+    actions.push({
+      id: `act_sub_${subsystem.id}`,
+      actionRef: `ACT-SUB-${subsystem.id.toUpperCase()}`,
+      title: `Restore ${subsystem.label} readiness`,
+      detail: subsystem.summary,
+      priority: "high"
+    });
+  }
+
+  for (const warning of warnings.slice(0, 3)) {
+    actions.push({
+      id: `act_warn_${warning.id}`,
+      actionRef: `ACT-WRN-${warning.id.toUpperCase()}`,
+      title: `Review: ${warning.title}`,
+      detail: warning.detail,
+      priority: "medium"
+    });
+  }
+
+  return actions;
+}
+
+export function buildGoNoGoRecommendation(
+  score: number,
+  criticalIssues: ReadinessCriticalIssue[],
+  warnings: ReadinessCriticalIssue[]
+): ReadinessGoNoGoRecommendation {
   let verdict: GoNoGoVerdictId = "go-with-conditions";
   let detail =
-    "Member app core paths are wired. Institutional concierge pipeline is functional in demo/staging mode but requires persistence and security hardening before 10,000-member operational load.";
+    "Core subsystems report operational readiness with tracked warnings. Re-run verification before scale events.";
 
-  if (criticalBlockers.length > 0 || overallScore < 70) {
+  if (criticalIssues.length > 0 || score < 70) {
     verdict = "no-go";
     detail =
-      "Critical security and persistence blockers prevent safe 10,000-member institutional operations. Member-facing discovery/auth can proceed in controlled launch with fixes tracked.";
-  } else if (highRisks.length >= 3 || overallScore < 82) {
+      "Critical subsystem failures block safe institutional launch. Resolve blockers before go-live.";
+  } else if (warnings.length >= 5 || score < 82) {
     verdict = "no-go-member-only";
     detail =
-      "Core member platform may support phased member growth, but full Signal Concierge institutional operations at 10k scale are not ready.";
-  } else if (highRisks.length === 0 && overallScore >= 90) {
+      "Member platform may support phased growth; full institutional operations are not verified ready.";
+  } else if (warnings.length === 0 && score >= 90) {
     verdict = "go";
     detail =
-      "Institutional health sections meet launch thresholds. Continue monitoring remediation board and re-run audits before scale events.";
+      "All verified subsystems meet readiness thresholds. Continue continuous verification monitoring.";
   }
 
   return {
     verdict,
     label: GO_NO_GO_LABELS[verdict],
     detail,
-    overallScore
+    institutionReadinessScore: score
   };
+}
+
+export function partitionChecks(checks: ReadinessVerificationCheck[]): {
+  passedChecks: ReadinessVerificationCheck[];
+  failedChecks: ReadinessVerificationCheck[];
+} {
+  return {
+    passedChecks: checks.filter((check) => check.passed),
+    failedChecks: checks.filter((check) => !check.passed)
+  };
+}
+
+export function formatReadinessSummaryLine(bundle: InstitutionalReadinessVerificationBundle): string {
+  const healthyCount = bundle.subsystems.filter((item) => item.status === "healthy").length;
+  const warningCount = bundle.subsystems.filter((item) => item.status === "warning").length;
+  const criticalCount = bundle.subsystems.filter((item) => item.status === "critical").length;
+  return `${healthyCount} healthy · ${warningCount} warning · ${criticalCount} critical · score ${bundle.institutionReadinessScore}`;
 }

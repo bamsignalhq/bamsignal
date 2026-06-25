@@ -43,7 +43,8 @@ export type HardTab =
   | "launchcontrol"
   | "performance"
   | "workflows"
-  | "securitydashboard";
+  | "securitydashboard"
+  | "uxconsistency";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -130,6 +131,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "securitydashboard",
         label: "Security",
         keywords: ["security", "hardening", "headers", "csrf", "xss", "rls", "secrets", "auth"]
+      },
+      {
+        id: "uxconsistency",
+        label: "UX Audit",
+        keywords: ["ux", "design", "consistency", "typography", "spacing", "buttons", "cards", "theme"]
       },
       {
         id: "compliance",
@@ -301,6 +307,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   launchcontrol: "Launch Control",
   performance: "Performance",
   workflows: "Workflows",
+  uxconsistency: "UX Audit",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

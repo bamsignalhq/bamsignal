@@ -1,0 +1,141 @@
+/* Shared institutional dashboard page shell — one team, one layout rhythm. */
+
+.institutional-page {
+  display: grid;
+  gap: 18px;
+}
+
+.institutional-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.institutional-page__head h2 {
+  margin: 0 0 6px;
+  font-size: 1.2rem;
+}
+
+.institutional-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+  font-size: 0.88rem;
+}
+
+.institutional-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.institutional-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.institutional-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.institutional-page__foot {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.55);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.institutional-card {
+  padding: 14px;
+}
+
+.institutional-card__head h3 {
+  margin: 0 0 4px;
+  font-size: 0.98rem;
+}
+
+.institutional-card__head p {
+  margin: 0 0 10px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.institutional-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.institutional-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.institutional-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.78rem;
+}
+
+.institutional-card__fixes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.institutional-card__fixes li::before {
+  content: "✓ ";
+  color: rgba(160, 220, 140, 0.9);
+}
+
+.institutional-status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.institutional-status-badge--consistent {
+  background: rgba(120, 200, 140, 0.16);
+  color: rgba(180, 240, 190, 0.95);
+  border: 1px solid rgba(120, 200, 140, 0.28);
+}
+
+.institutional-status-badge--review {
+  background: rgba(240, 190, 100, 0.14);
+  color: rgba(255, 220, 150, 0.95);
+  border: 1px solid rgba(240, 190, 100, 0.28);
+}
+
+.institutional-status-badge--inconsistent {
+  background: rgba(240, 120, 120, 0.14);
+  color: rgba(255, 180, 180, 0.95);
+  border: 1px solid rgba(240, 120, 120, 0.28);
+}
+
+@media (max-width: 900px) {
+  .institutional-page__body {
+    grid-template-columns: 1fr;
+  }
+}

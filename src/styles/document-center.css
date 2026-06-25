@@ -229,8 +229,6 @@
   color: rgba(255, 255, 255, 0.58);
 }
 
-.document-search-card,
-.document-search-bar,
 .document-version-card,
 .document-viewer,
 .knowledge-overview-card,
@@ -238,8 +236,6 @@
   padding: 14px;
 }
 
-.document-search-card__head,
-.document-search-bar__head,
 .document-version-card__head,
 .document-viewer__head,
 .knowledge-overview-card__head,
@@ -251,20 +247,11 @@
   margin-bottom: 10px;
 }
 
-.document-search-card__head h3,
-.document-search-bar__head h3,
 .document-version-card__head h3,
 .document-viewer__head h3,
 .knowledge-overview-card__head h3,
 .document-approval-card__head h3 {
   margin: 0;
-}
-
-.document-search-card__grid,
-.document-search-bar__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 10px;
 }
 
 .document-search-field {
@@ -276,13 +263,6 @@
 .document-search-field input,
 .document-search-field select {
   width: 100%;
-}
-
-.document-search-card__count,
-.document-search-bar__count {
-  margin: 10px 0 0;
-  font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.62);
 }
 
 .document-version-card__list {

@@ -1,88 +1,89 @@
 @import "./institutional-page.css";
 
-.production-security-page {
+.ux-consistency-page {
   /* extends institutional-page */
 }
 
-.security-health-report-card__hero {
+.ux-consistency-report-card__hero {
   display: flex;
   align-items: baseline;
-  gap: 10px;
-  margin: 14px 0;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
-.security-health-report-card__hero strong {
+.ux-consistency-report-card__hero strong {
   font-size: 2.4rem;
   line-height: 1;
 }
 
-.security-health-report-card__hero > span:first-of-type {
-  color: rgba(255, 255, 255, 0.55);
+.ux-consistency-report-card__hero > span:nth-child(2) {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.9rem;
 }
 
-.security-health-report-card__line {
-  margin: 0 0 10px;
+.ux-consistency-report-card__line {
+  margin: 0 0 12px;
   color: rgba(255, 255, 255, 0.72);
   font-size: 0.86rem;
 }
 
-.security-health-report-card__metrics {
+.ux-consistency-report-card__metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
-.security-health-report-card__metrics article {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+.ux-consistency-report-card__metrics article {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   padding: 10px;
   display: grid;
   gap: 4px;
 }
 
-.security-health-report-card__metrics span {
+.ux-consistency-report-card__metrics span {
   font-size: 0.76rem;
   color: rgba(255, 255, 255, 0.58);
 }
 
-.security-health-report-card__foot {
+.ux-consistency-report-card__foot {
   margin-top: 10px;
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.55);
 }
 
-.security-checklist-card__item--passed {
+.ux-consistency-checklist-card__item--passed {
   border-left: 3px solid rgba(92, 214, 154, 0.45);
   padding-left: 8px;
 }
 
-.security-checklist-card__item--failed {
+.ux-consistency-checklist-card__item--failed {
   border-left: 3px solid rgba(255, 120, 120, 0.45);
   padding-left: 8px;
 }
 
-.security-checklist-card__badge--pass {
+.ux-consistency-checklist-card__badge--pass {
   color: #9ef0c8;
   font-size: 0.72rem;
 }
 
-.security-checklist-card__badge--fail {
+.ux-consistency-checklist-card__badge--fail {
   color: #ffb4b4;
   font-size: 0.72rem;
 }
 
-.security-checklist-card__domains {
+.ux-consistency-checklist-card__domains {
   margin-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding-top: 12px;
 }
 
-.security-checklist-card__domains h4 {
+.ux-consistency-checklist-card__domains h4 {
   margin: 0 0 8px;
   font-size: 0.84rem;
 }
 
-.security-checklist-card__domains ul {
+.ux-consistency-checklist-card__domains ul {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -91,7 +92,7 @@
   font-size: 0.8rem;
 }
 
-.security-checklist-card__domains li {
+.ux-consistency-checklist-card__domains li {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -101,11 +102,11 @@
 .institutional-card__list p {
   margin: 4px 0 0;
   font-size: 0.82rem;
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 @media (max-width: 960px) {
-  .security-health-report-card__metrics {
+  .ux-consistency-report-card__metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

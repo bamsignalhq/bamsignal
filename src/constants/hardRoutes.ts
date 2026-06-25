@@ -32,6 +32,7 @@ import { LAUNCH_CONTROL_CENTER_ADMIN_PATH } from "./launchControlCenterAdmin";
 import { PERFORMANCE_CENTER_ADMIN_PATH } from "./performanceCenterAdmin";
 import { WORKFLOW_ENGINE_ADMIN_PATH } from "./workflowEngineAdmin";
 import { PRODUCTION_SECURITY_ADMIN_PATH } from "./productionSecurityAdmin";
+import { UX_CONSISTENCY_ADMIN_PATH } from "./uxConsistencyAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
 export type AuditAdminView = "compliance" | "routes" | "database" | "security" | "journeys";
@@ -81,7 +82,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   launchcontrol: "launch-control",
   performance: "performance",
   workflows: "workflows",
-  securitydashboard: "security-dashboard"
+  securitydashboard: "security-dashboard",
+  uxconsistency: "ux-consistency"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(

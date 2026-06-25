@@ -1,0 +1,98 @@
+@import "./institutional-page.css";
+
+.launch-certification-report-card__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.launch-certification-report-card__hero strong {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.launch-certification-report-card__hero > span:first-of-type {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.launch-certification-report-card__line {
+  margin: 0 0 6px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.86rem;
+}
+
+.launch-certification-report-card__detail {
+  margin: 0 0 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+}
+
+.launch-certification-report-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.launch-certification-report-card__metrics article {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.launch-certification-report-card__metrics span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.launch-certification-checklist-card__item--passed {
+  border-left: 3px solid rgba(92, 214, 154, 0.45);
+  padding-left: 8px;
+}
+
+.launch-certification-checklist-card__item--failed {
+  border-left: 3px solid rgba(255, 120, 120, 0.45);
+  padding-left: 8px;
+}
+
+.launch-certification-checklist-card__badge--pass {
+  color: #9ef0c8;
+  font-size: 0.72rem;
+}
+
+.launch-certification-checklist-card__badge--fail {
+  color: #ffb4b4;
+  font-size: 0.72rem;
+}
+
+.launch-issue-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.launch-issue-badge--critical {
+  color: #ffb4b4;
+}
+
+.launch-issue-badge--warning {
+  color: #ffdca0;
+}
+
+.launch-issue-badge--minor {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.institutional-card__list p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+@media (max-width: 960px) {
+  .launch-certification-report-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

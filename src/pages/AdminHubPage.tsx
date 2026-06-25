@@ -39,6 +39,7 @@ import {
   LazyPerformanceCenterPage,
   LazyPermissionsAuditPage,
   LazyProductionPerformanceDashboard,
+  LazyLaunchCertificationDashboard,
   LazyReadinessPage,
   LazyRecoveryDashboardPage,
   LazyRemediationBoardPage,
@@ -2034,6 +2035,9 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       </AdminLazyTab>
       <AdminLazyTab active={tab === "performanceoptimization"}>
         <LazyProductionPerformanceDashboard />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "launchcertification"}>
+        <LazyLaunchCertificationDashboard />
       </AdminLazyTab>
       <AdminLazyTab active={tab === "remediation"}>
         <LazyRemediationBoardPage />

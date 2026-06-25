@@ -78,6 +78,8 @@
     "test:workflow-engine": "node scripts/test-workflow-engine.mjs",
     "test:security": "node scripts/test-security.mjs",
     "test:performance": "node scripts/test-performance.mjs",
+    "test:launch-certification": "node scripts/test-launch-certification.mjs",
+    "test:certification-suite": "node scripts/run-certification-test-suite.mjs",
     "test:reporting-center": "node scripts/test-reporting-center.mjs",
     "test:executive-dashboard": "node scripts/test-executive-dashboard.mjs",
     "test:route-audit": "node scripts/test-route-audit.mjs",

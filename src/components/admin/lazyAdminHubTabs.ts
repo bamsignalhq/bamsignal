@@ -72,6 +72,11 @@ export const LazyProductionPerformanceDashboard = lazy(() =>
     default: module.ProductionPerformanceDashboard
   }))
 );
+export const LazyLaunchCertificationDashboard = lazy(() =>
+  import("./launchCertification/LaunchCertificationDashboard").then((module) => ({
+    default: module.LaunchCertificationDashboard
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

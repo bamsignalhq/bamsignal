@@ -201,6 +201,16 @@ export const PERFORMANCE_CENTER_SCHEMA_TABLES = [
   "performance_growth_forecasts"
 ] as const;
 
+/** Tables from migrations/0018_workflow_engine.sql */
+export const WORKFLOW_ENGINE_SCHEMA_TABLES = [
+  "workflow_definitions",
+  "workflow_triggers",
+  "workflow_actions",
+  "workflow_run_history",
+  "workflow_step_logs",
+  "workflow_automation_snapshots"
+] as const;
+
 type TableManifest = {
   tableName: string;
   migrationRef: string;
@@ -1131,6 +1141,61 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["performance_growth_forecasts_period_idx"],
     constraints: ["uuid primary key", "forecast_ref unique"],
     defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "workflow_definitions",
+    migrationRef: "0018_workflow_engine.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["workflow_definitions_status_idx"],
+    constraints: ["uuid primary key", "workflow_ref unique"],
+    defaultHealth: "needs-migration",
+    note: "Automation & Workflow Engine™"
+  },
+  {
+    tableName: "workflow_triggers",
+    migrationRef: "0018_workflow_engine.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["workflow_triggers_workflow_idx"],
+    constraints: ["uuid primary key", "trigger_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "workflow_actions",
+    migrationRef: "0018_workflow_engine.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["workflow_actions_workflow_idx"],
+    constraints: ["uuid primary key", "action_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "workflow_run_history",
+    migrationRef: "0018_workflow_engine.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["workflow_run_history_started_idx"],
+    constraints: ["uuid primary key", "history_ref unique"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "workflow_step_logs",
+    migrationRef: "0018_workflow_engine.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["workflow_step_logs_run_idx"],
+    constraints: ["uuid primary key"],
+    defaultHealth: "needs-migration"
+  },
+  {
+    tableName: "workflow_automation_snapshots",
+    migrationRef: "0018_workflow_engine.sql",
+    domainIds: ["qa"],
+    inRequiredSchema: false,
+    indexes: ["workflow_automation_snapshots_created_idx"],
+    constraints: ["uuid primary key", "snapshot_ref unique"],
+    defaultHealth: "needs-migration"
   }
 ];
 
@@ -1190,6 +1255,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "performanceCenterEngine.ts",
     expectedTable: "performance_metric_snapshots",
     note: "Performance, Capacity & Scalability Center™ — dual-write via performanceCenter.js"
+  },
+  {
+    storageKey: "bamsignal.workflowEngine.v1",
+    domainId: "qa",
+    engine: "workflowEngineEngine.ts",
+    expectedTable: "workflow_definitions",
+    note: "Automation & Workflow Engine™ — dual-write via workflowEngine.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

@@ -41,7 +41,8 @@ export type HardTab =
   | "datagovernance"
   | "apiplatform"
   | "launchcontrol"
-  | "performance";
+  | "performance"
+  | "workflows";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -190,6 +191,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         keywords: ["performance", "capacity", "scalability", "headroom", "latency", "throughput", "optimization", "growth"]
       },
       {
+        id: "workflows",
+        label: "Workflows",
+        keywords: ["workflow", "automation", "triggers", "actions", "reminders", "assignments", "operational"]
+      },
+      {
         id: "launch",
         label: "Launch Readiness",
         keywords: ["launch", "readiness", "go-live", "institutional", "audit", "blocked", "critical"]
@@ -287,6 +293,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   launch: "Launch Readiness",
   launchcontrol: "Launch Control",
   performance: "Performance",
+  workflows: "Workflows",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

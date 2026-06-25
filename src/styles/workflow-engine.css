@@ -1,0 +1,215 @@
+.workflow-engine-page {
+  display: grid;
+  gap: 18px;
+}
+
+.workflow-engine-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workflow-engine-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.workflow-engine-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.workflow-engine-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workflow-engine-page__filter-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.workflow-engine-page__filter-btn.is-active {
+  border-color: rgba(180, 230, 160, 0.55);
+  background: rgba(120, 200, 100, 0.1);
+}
+
+.workflow-engine-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.workflow-engine-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.workflow-engine-page__future {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 6px;
+}
+
+.workflow-engine-page__future h4 {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.workflow-engine-card {
+  padding: 14px;
+}
+
+.workflow-engine-card__head h3 {
+  margin: 0 0 4px;
+  font-size: 0.98rem;
+}
+
+.workflow-engine-card__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+.workflow-engine-card__line {
+  margin: 10px 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.84rem;
+}
+
+.workflow-engine-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workflow-engine-card__grid article {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.workflow-engine-card__grid span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.workflow-engine-card__list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.workflow-engine-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.workflow-engine-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.78rem;
+}
+
+.workflow-engine-card__detail,
+.workflow-engine-card__empty {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.8rem;
+}
+
+.workflow-engine-card__config {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: rgba(200, 220, 255, 0.85);
+  word-break: break-word;
+}
+
+.workflow-engine-card__badge,
+.workflow-engine-card__trigger,
+.workflow-engine-card__action {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.workflow-engine-card__badge--active,
+.workflow-engine-card__badge--completed {
+  border-color: rgba(120, 210, 150, 0.45);
+  color: rgba(160, 230, 180, 0.95);
+}
+
+.workflow-engine-card__badge--paused {
+  border-color: rgba(220, 190, 100, 0.45);
+  color: rgba(240, 210, 120, 0.95);
+}
+
+.workflow-engine-card__badge--disabled,
+.workflow-engine-card__badge--failed {
+  border-color: rgba(240, 100, 100, 0.45);
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.workflow-engine-card__badge--draft,
+.workflow-engine-card__badge--running {
+  border-color: rgba(180, 190, 255, 0.45);
+  color: rgba(200, 210, 255, 0.95);
+}
+
+.automation-overview-card__score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.automation-overview-card__score span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+.automation-overview-card__score strong {
+  font-size: 1.6rem;
+}
+
+.workflow-history-card__steps {
+  margin: 6px 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+  display: grid;
+  gap: 2px;
+}
+
+@media (max-width: 960px) {
+  .workflow-engine-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-engine-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -57,8 +57,23 @@ export function writeRcReports(outputDir, report) {
   return { jsonPath, mdPath, pdfPath, latestPath, stampedJsonPath, stampedMdPath, stampedPdfPath };
 }
 
+function domainRows(pillars) {
+  return pillars
+    .map(
+      (item) =>
+        `| ${item.label} | ${item.score}% | ${item.passed ? "PASS" : "FAIL"} | ${item.status} | ${item.summary.replace(/\|/g, "\\|")} |`
+    )
+    .join("\n");
+}
+
+function signOffRows(signOffs) {
+  return signOffs
+    .map((item) => `| ${item.role} | ${item.status} | ${item.signedAt} |`)
+    .join("\n");
+}
+
 function renderMarkdown(report) {
-  return `# Release Candidate Certification™
+  return `# Release Candidate ${report.rcLabel || "RC"} Certification™
 
 **RC Number:** ${report.rcNumber}  
 **Generated:** ${report.certificationTimestamp}  
@@ -76,11 +91,23 @@ function renderMarkdown(report) {
 | Warnings | ${report.warnings.length} |
 | Blockers | ${report.blockers.length} |
 
+## RC1 domain scores
+
+| Domain | Score | Gate | Status | Summary |
+|--------|------:|------|--------|---------|
+${domainRows(report.domainPillars || [])}
+
 ## Subsystem scores
 
 | Subsystem | Score | Status | Gate | Summary |
 |-----------|------:|--------|------|---------|
 ${subsystemRows(report.subsystemScores)}
+
+## Sign-off
+
+| Role | Status | Timestamp |
+|------|--------|-----------|
+${signOffRows(report.signOffs || [])}
 
 ## Blockers
 
@@ -98,7 +125,7 @@ No production deployment may proceed without a passing RC certification.
 
 function renderPdfHtml(report) {
   const body = `
-  <h1>Release Candidate Certification™</h1>
+  <h1>Release Candidate ${escapeHtml(report.rcLabel || "RC")} Certification™</h1>
   <p class="meta">
     <strong>RC ${escapeHtml(report.rcNumber)}</strong><br />
     Generated: ${escapeHtml(report.certificationTimestamp)}<br />
@@ -108,6 +135,30 @@ function renderPdfHtml(report) {
   <p class="verdict">${escapeHtml(report.releaseDecisionLabel)} — ${report.overallScore}% overall</p>
   <p>${escapeHtml(report.releaseDecisionDetail)}</p>
   <p>Passed checks: <strong>${report.passedChecks}</strong> · Blockers: <strong>${report.blockers.length}</strong> · Warnings: <strong>${report.warnings.length}</strong></p>
+  <h2>RC1 domain scores</h2>
+  <table>
+    <thead><tr><th>Domain</th><th>Score</th><th>Gate</th><th>Status</th></tr></thead>
+    <tbody>
+      ${(report.domainPillars || [])
+        .map(
+          (item) =>
+            `<tr><td>${escapeHtml(item.label)}</td><td>${item.score}%</td><td>${item.passed ? "PASS" : "FAIL"}</td><td>${escapeHtml(item.status)}</td></tr>`
+        )
+        .join("")}
+    </tbody>
+  </table>
+  <h2>Sign-off</h2>
+  <table>
+    <thead><tr><th>Role</th><th>Status</th><th>Timestamp</th></tr></thead>
+    <tbody>
+      ${(report.signOffs || [])
+        .map(
+          (item) =>
+            `<tr><td>${escapeHtml(item.role)}</td><td>${escapeHtml(item.status)}</td><td>${escapeHtml(item.signedAt)}</td></tr>`
+        )
+        .join("")}
+    </tbody>
+  </table>
   <h2>Subsystem scores</h2>
   <table>
     <thead><tr><th>Subsystem</th><th>Score</th><th>Status</th><th>Gate</th></tr></thead>

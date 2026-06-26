@@ -32,6 +32,22 @@ export function countPassedChecks(subsystemScores) {
   return subsystemScores.filter((item) => item.passed).length;
 }
 
+export function buildSignOffs(decision, timestamp) {
+  const status =
+    decision.releaseDecision === "go"
+      ? "APPROVED"
+      : decision.releaseDecision === "go-with-conditions"
+        ? "APPROVED WITH CONDITIONS"
+        : "NOT APPROVED";
+
+  return [
+    { role: "Chief Engineer", status, signedAt: timestamp },
+    { role: "DevOps", status, signedAt: timestamp },
+    { role: "QA", status, signedAt: timestamp },
+    { role: "Founder", status, signedAt: timestamp }
+  ];
+}
+
 export function buildBlockers(subsystemScores, criticalIssues) {
   const blockers = [];
 

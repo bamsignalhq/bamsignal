@@ -58,7 +58,13 @@ assert(reportSource.includes("release-candidate-report.pdf"), "pdf export");
 
 const collectSource = read("certification/release-candidate/lib/collect.mjs");
 assert(collectSource.includes("collectRcSubsystemScores"), "subsystem collector");
-assert(collectSource.includes("buildRcNumber"), "rc number builder");
+assert(collectSource.includes("buildDomainPillars"), "domain pillar builder");
+assert(collectSource.includes("buildRc1Number"), "RC1 number builder");
+assert(reportSource.includes("RC1 domain scores"), "RC1 domain section");
+assert(reportSource.includes("Sign-off"), "sign-off section");
+assert(sharedSource.includes("penetration"), "penetration subsystem");
+assert(sharedSource.includes("platform-load"), "platform load subsystem");
+assert(sharedSource.includes("RC1_DOMAIN_PILLARS"), "RC1 domain pillars");
 assert(collectSource.includes("readGitCommit"), "git commit reader");
 
 const packageJson = JSON.parse(read("package.json"));

@@ -2,7 +2,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { RC_CERT_SUBSYSTEMS } from "../../../shared/releaseCandidateCertificationSubsystems.mjs";
+import {
+  RC1_DOMAIN_PILLARS,
+  RC_CERT_SUBSYSTEMS,
+  buildRc1Number
+} from "../../../shared/releaseCandidateCertificationSubsystems.mjs";
 import { scoreToReadinessResult } from "../../../server/services/institutionalReadinessVerification.js";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -55,7 +59,7 @@ function certSubsystem(meta, report) {
     );
   }
 
-  const score = report[meta.scoreKey] ?? 0;
+  const score = meta.scoreKey ? report[meta.scoreKey] ?? 0 : report.passed ? 100 : 0;
   const passed = Boolean(report[meta.passedKey]);
   const status = passed ? scoreToReadinessResult(score, false) : "critical";
   const issues = passed
@@ -141,7 +145,7 @@ export function readGitCommit() {
 }
 
 export function buildRcNumber(buildMeta, runId) {
-  return `RC-${buildMeta.buildVersion}-${buildMeta.buildCode}-${runId}`;
+  return buildRc1Number(buildMeta, runId);
 }
 
 export function readEnvironment() {
@@ -320,6 +324,26 @@ export function collectRcSubsystemScores() {
         title: "Go/no-go engine",
         detail: "Readiness decision engine missing"
       }
+    ]),
+    staticSubsystem("founder-acceptance", "Founder Acceptance (FAT)", [
+      {
+        pass: existsSync(join(rootPath, "FOUNDER_ACCEPTANCE_REPORT.md")),
+        critical: false,
+        title: "Founder acceptance report",
+        detail: "FOUNDER_ACCEPTANCE_REPORT.md missing"
+      },
+      {
+        pass: read("package.json").includes("test:founder-acceptance"),
+        critical: true,
+        title: "Founder acceptance test script",
+        detail: "test:founder-acceptance not wired"
+      },
+      {
+        pass: read("src/constants/founderAcceptanceAdmin.ts").includes("/hard/founder-acceptance"),
+        critical: false,
+        title: "Founder acceptance dashboard",
+        detail: "FAT admin route missing"
+      }
     ])
   ];
 
@@ -337,4 +361,33 @@ export function flattenRcIssues(subsystems) {
     }
   }
   return { criticalIssues, warnings };
+}
+
+export function buildDomainPillars(subsystemScores) {
+  return RC1_DOMAIN_PILLARS.map((pillar) => {
+    const members = subsystemScores.filter((item) => pillar.subsystemIds.includes(item.id));
+    const score = members.length
+      ? Math.round(members.reduce((total, item) => total + item.score, 0) / members.length)
+      : 0;
+    const passed = members.length > 0 && members.every((item) => item.passed);
+    const failed = members.filter((item) => !item.passed);
+    return {
+      id: pillar.id,
+      label: pillar.label,
+      score,
+      passed,
+      status: passed ? scoreToReadinessResult(score, false) : "critical",
+      subsystemIds: pillar.subsystemIds,
+      subsystems: members.map((item) => ({
+        id: item.id,
+        label: item.label,
+        score: item.score,
+        passed: item.passed
+      })),
+      summary:
+        failed.length === 0
+          ? `${pillar.label} domain ready (${score}%).`
+          : `${failed.length} subsystem(s) open in ${pillar.label}.`
+    };
+  });
 }

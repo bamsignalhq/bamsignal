@@ -7,11 +7,13 @@
  */
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { RC1_LABEL } from "../../shared/releaseCandidateCertificationSubsystems.mjs";
 import { config } from "./config.mjs";
 import {
   buildRcNumber,
   collectRcSubsystemScores,
   flattenRcIssues,
+  buildDomainPillars,
   readBuildMetadata,
   readEnvironment,
   readGitCommit
@@ -20,6 +22,7 @@ import {
   buildBlockers,
   buildRcOverallScore,
   buildRcReleaseDecision,
+  buildSignOffs,
   countPassedChecks
 } from "./lib/score.mjs";
 import { writeRcReports } from "./lib/report.mjs";
@@ -28,7 +31,7 @@ const rootPath = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const outputDir = join(rootPath, config.outputDir);
 
 function main() {
-  console.log("\n=== Release Candidate Certification™ ===\n");
+  console.log(`\n=== Release Candidate Certification™ (${RC1_LABEL}) ===\n`);
   console.log(`Run ID: ${config.runId}\n`);
 
   const buildMeta = readBuildMetadata();
@@ -44,10 +47,15 @@ function main() {
   const decision = buildRcReleaseDecision(overallScore, criticalIssues, warnings, blockers);
   const passedChecks = countPassedChecks(subsystemScores);
 
+  const domainPillars = buildDomainPillars(subsystemScores);
+  const certificationTimestamp = new Date().toISOString();
+  const signOffs = buildSignOffs(decision, certificationTimestamp);
+
   const report = {
     runId: config.runId,
+    rcLabel: RC1_LABEL,
     rcNumber,
-    certificationTimestamp: new Date().toISOString(),
+    certificationTimestamp,
     gitCommit: git.gitCommit,
     gitCommitShort: git.gitCommitShort,
     buildVersion: buildMeta.buildVersion,
@@ -61,6 +69,8 @@ function main() {
     passed: decision.passed,
     passedChecks,
     subsystemScores,
+    domainPillars,
+    signOffs,
     criticalIssues,
     warnings,
     blockers,

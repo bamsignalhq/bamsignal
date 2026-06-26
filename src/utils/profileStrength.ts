@@ -51,6 +51,8 @@ export type ProfileStrengthFutureSignals = {
 export type ProfileStrengthOptions = {
   phoneVerified?: boolean;
   isPremium?: boolean;
+  /** When true, skip trustedMember scoring — used by getVerificationTier to avoid mutual recursion. */
+  skipTrustedMember?: boolean;
 };
 
 const LEVELS: ProfileStrengthLevel[] = [
@@ -211,6 +213,7 @@ function factorCompletion(
     case "lifestyle":
       return hasLifestyle(profile);
     case "trustedMember":
+      if (options.skipTrustedMember) return false;
       return hasTrustedMemberStatus(profile, phoneVerified, isPremium);
     case "voiceVibe":
       return Boolean(getVoiceVibeUrl(profile));

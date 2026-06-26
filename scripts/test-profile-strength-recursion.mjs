@@ -23,5 +23,9 @@ assert(
   verificationSource.includes("calculateProfileStrength"),
   "verification tier still uses profile strength for full verification"
 );
+assert(
+  verificationSource.includes("skipTrustedMember"),
+  "getVerificationTier must skip trustedMember factor to break calculateProfileStrength recursion"
+);
 
 console.log("profile strength recursion guard ok");

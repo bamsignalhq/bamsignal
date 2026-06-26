@@ -18,7 +18,7 @@ export function getVerificationTier(
   phoneVerified: boolean
 ): VerificationInfo {
   const selfieApproved = profile.verified;
-  const strength = calculateProfileStrength(profile);
+  const strength = calculateProfileStrength(profile, { skipTrustedMember: true });
   const profileComplete = strength >= PROFILE_COMPLETE_MIN;
 
   if (phoneVerified && selfieApproved && isPremium && profileComplete) {

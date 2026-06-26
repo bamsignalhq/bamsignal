@@ -10,7 +10,7 @@ import { calculateProfileStrength, getProfileStrengthLevel } from "./profileStre
 export const ONBOARDING_REQUIRED_PHOTOS = 1;
 
 const REMINDER_DISMISS_KEY = "bamsignal_profile_reminder_dismissed_at";
-const REMINDER_COOLDOWN_MS = 48 * 60 * 60 * 1000;
+const REMINDER_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
 /** Reserved for future insights — not shown yet. */
 export type ProfileBuildFutureInsights = {

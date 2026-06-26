@@ -29,10 +29,8 @@ import { FastConnectionExpiryBanner } from "../components/profile/FastConnection
 import { useFastConnectionActivationPrompt } from "../hooks/useFastConnectionActivationPrompt";
 import { useFastConnectionExpiryReminder } from "../hooks/useFastConnectionExpiryReminder";
 import { navigateToPath } from "../constants/routes";
-import { ProfilePhotoProgressCard } from "../components/profilePhoto/ProfilePhotoProgressCard";
-import { ProfileReminderCard } from "../components/profile/ProfileReminderCard";
-import { TrustedMemberHomeCard } from "../components/trusted/TrustedMemberHomeCard";
-import { isTrustedMember } from "../utils/trustedMember";
+import { debugRender } from "../utils/debugRecursion";
+import { ProfileImprovementNudge } from "../components/nudges/ProfileImprovementNudge";
 
 type HomePageProps = {
   user: UserProfile;
@@ -44,6 +42,7 @@ type HomePageProps = {
 };
 
 export function HomePage({ user, userName, isPremium, phoneVerified = false, onDiscover, onOpenPremium }: HomePageProps) {
+  debugRender("HomePage", { tab: "home", isPremium, phoneVerified });
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     if (normalizePath(window.location.pathname) !== "/home") {
@@ -88,7 +87,6 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
   const [signalRefresh, setSignalRefresh] = useState(0);
   const [signalLimitOpen, setSignalLimitOpen] = useState(false);
   const [activationMessage, setActivationMessage] = useState("");
-  const [profileReminderVisible, setProfileReminderVisible] = useState(true);
 
   const {
     open: fastConnectionActivationOpen,
@@ -213,30 +211,11 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
         />
       </header>
 
-      {profileReminderVisible ? (
-        <ProfileReminderCard
-          profile={viewer}
-          phoneVerified={phoneVerified}
-          isPremium={isPremium}
-          variant="home"
-          onContinue={() => navigateToPath("/profile")}
-          onDismiss={() => setProfileReminderVisible(false)}
-        />
-      ) : null}
-
-      <ProfilePhotoProgressCard
+      <ProfileImprovementNudge
         profile={viewer}
-        variant="home"
-        onAddPhotos={() => {
-          localStorage.setItem(STORAGE_KEYS.profileEditSection, "photos");
-          navigateToPath("/profile");
-        }}
-        className="home-page__photo-progress"
+        phoneVerified={phoneVerified}
+        isPremium={isPremium}
       />
-
-      {!isTrustedMember(viewer) ? (
-        <TrustedMemberHomeCard onBecome={() => navigateToPath("/trusted-member")} />
-      ) : null}
 
       <section className="home-discovery home-discovery--compact" aria-label="Filters">
         <HomeFeedFilters

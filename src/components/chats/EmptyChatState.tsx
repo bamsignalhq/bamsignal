@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { SmartConversationSection } from "../conversation/SmartConversationSection";
-import { ProfileReminderCard } from "../profile/ProfileReminderCard";
 import type { DatingProfile, DiscoverProfile, UserProfile } from "../../types";
 import { copyIcebreaker } from "../../utils/chatDraft";
 import { SuggestedProfilesRow } from "./SuggestedProfilesRow";
@@ -53,7 +52,7 @@ export function EmptyChatState({
   isPremium,
   phoneVerified,
   onDiscover,
-  onBuildProfile,
+  onBuildProfile: _onBuildProfile,
   onSendSignal,
   onOpenProfile
 }: EmptyChatStateProps) {
@@ -115,19 +114,7 @@ export function EmptyChatState({
         </p>
       ) : null}
 
-      {onBuildProfile ? (
-        <div className="empty-chat-stagger" style={{ animationDelay: "320ms" }}>
-          <ProfileReminderCard
-            profile={viewer}
-            phoneVerified={phoneVerified}
-            isPremium={isPremium}
-            variant="empty-chat"
-            onContinue={onBuildProfile}
-          />
-        </div>
-      ) : null}
-
-      <section className="empty-chat-section empty-chat-stagger" style={{ animationDelay: "420ms" }}>
+      <section className="empty-chat-section empty-chat-stagger" style={{ animationDelay: "320ms" }}>
         <h2 className="empty-chat-section__title">Discover More People</h2>
         {onDiscover ? (
           <button type="button" className="btn-secondary btn-full" onClick={onDiscover}>

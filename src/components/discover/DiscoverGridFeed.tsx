@@ -10,7 +10,11 @@ import { HOME_FEED_PROFILE_COUNT } from "../../constants/homeFeedAds";
 import type { HomeFeedAdsSettings } from "../../constants/homeFeedAds";
 import { sendSignalRemote } from "../../services/memberData";
 import type { DatingProfile, DiscoverProfile, UserProfile } from "../../types";
-import { buildHomeFeedGridItems, injectSignalPassPromos } from "../../utils/homeFeed";
+import { buildHomeFeedGridItems, injectSignalPassPromos, injectTrustMemberNudges } from "../../utils/homeFeed";
+import { navigateToPath } from "../../constants/routes";
+import { TrustedMemberNudge } from "../trusted/TrustedMemberNudge";
+import { isTrustedMember } from "../../utils/trustedMember";
+import { shouldShowTrustFeedNudge } from "../../utils/trustFeedInsertion";
 import { blockAndReportUser, blockUser } from "../../utils/safety";
 import { evaluateSignalGate, recordSignalUsage } from "../../utils/signalLimits";
 import { incrementSignalsSent } from "../../utils/streaks";
@@ -74,8 +78,11 @@ export function DiscoverGridFeed({
 
   const gridItems = useMemo(() => {
     const base = buildHomeFeedGridItems(visibleProfiles, adSettings, displayLimit);
-    return injectSignalPassPromos(base, { enabled: !isPremium });
-  }, [visibleProfiles, adSettings, displayLimit, isPremium]);
+    const withPromos = injectSignalPassPromos(base, { enabled: !isPremium });
+    return injectTrustMemberNudges(withPromos, {
+      enabled: !isTrustedMember(viewer) && shouldShowTrustFeedNudge()
+    });
+  }, [visibleProfiles, adSettings, displayLimit, isPremium, viewer.verified, viewer.verificationStatus]);
 
   const hasMore = profiles.length > displayLimit;
   const showingCount = Math.min(displayLimit, profiles.length);
@@ -175,6 +182,17 @@ export function DiscoverGridFeed({
                     variant={item.variant}
                     onUpgrade={onUpgrade}
                     className="signal-pass-inline--grid"
+                  />
+                );
+              }
+
+              if (item.type === "trust-nudge") {
+                return (
+                  <TrustedMemberNudge
+                    key={`trust-nudge-${index}`}
+                    variant="feed"
+                    onBecome={() => navigateToPath("/trusted-member")}
+                    className="trusted-member-nudge--grid"
                   />
                 );
               }

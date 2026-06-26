@@ -46,11 +46,15 @@ import {
   countActiveDiscoverFilters
 } from "../utils/discoverFilters";
 import { isViewerShadowBanned } from "../utils/shadowBan";
+import { debugRender } from "../utils/debugRecursion";
 import { checkSignalBurst } from "../utils/suspicionDetection";
 import { reportModerationFlagRemote } from "../services/memberTrust";
 import { consumePrioritySignal } from "../utils/activeBoosts";
 import { navigateToPath } from "../constants/routes";
-import { ProfileReminderCard } from "../components/profile/ProfileReminderCard";
+import { ProfileImprovementNudge } from "../components/nudges/ProfileImprovementNudge";
+import { TrustedMemberNudge } from "../components/trusted/TrustedMemberNudge";
+import { interleaveTrustNudges, shouldShowTrustFeedNudge } from "../utils/trustFeedInsertion";
+import { isTrustedMember } from "../utils/trustedMember";
 import { useAndroidBack } from "../hooks/useAndroidBack";
 
 const SIGNAL_ANIM_MS = 700;
@@ -74,6 +78,7 @@ export function DiscoverPage({
   paymentLoading,
   onOpenSafety
 }: DiscoverPageProps) {
+  debugRender("DiscoverPage", { isPremium });
   void _onMatch;
 
   const [quickFilter, setQuickFilter] = useState<DiscoverRelationshipFilter>("all");
@@ -91,7 +96,6 @@ export function DiscoverPage({
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [signalLimitOpen, setSignalLimitOpen] = useState(false);
   const [toast, setToast] = useState("");
-  const [discoverReminderVisible, setDiscoverReminderVisible] = useState(true);
   const [safetyOpen, setSafetyOpen] = useState(false);
 
   useEffect(() => {
@@ -138,6 +142,15 @@ export function DiscoverPage({
   );
 
   const visibleFeed = useMemo(() => deck.slice(0, DISCOVER_FEED_BATCH), [deck]);
+
+  const feedItems = useMemo(
+    () =>
+      interleaveTrustNudges(
+        visibleFeed,
+        !isTrustedMember(viewer) && shouldShowTrustFeedNudge()
+      ),
+    [visibleFeed, viewer.verified, viewer.verificationStatus]
+  );
 
   const memberCity = viewer.city || getMemberCity() || "Lagos";
   const cityLabel = prefs.cities?.[0] || memberCity;
@@ -335,16 +348,11 @@ export function DiscoverPage({
       />
       <DiscoverFiltersBar active={quickFilter} onChange={setQuickFilter} />
 
-      {discoverReminderVisible ? (
-        <ProfileReminderCard
-          profile={viewer}
-          phoneVerified={Boolean(memberUser.phoneVerified)}
-          isPremium={isPremium}
-          variant="discover"
-          onContinue={() => navigateToPath("/voice-vibe")}
-          onDismiss={() => setDiscoverReminderVisible(false)}
-        />
-      ) : null}
+      <ProfileImprovementNudge
+        profile={viewer}
+        phoneVerified={Boolean(memberUser.phoneVerified)}
+        isPremium={isPremium}
+      />
 
       {passedIds.length > 0 ? (
         <button type="button" className="discover-undo-btn" onClick={handleUndoPass}>
@@ -360,7 +368,18 @@ export function DiscoverPage({
 
       {!profilesLoading && visibleFeed.length > 0 ? (
         <div className="discover-page__feed">
-          {visibleFeed.map((profile, index) => {
+          {feedItems.map((item, index) => {
+            if (item.type === "trust-nudge") {
+              return (
+                <TrustedMemberNudge
+                  key={`trust-nudge-${item.afterIndex}`}
+                  variant="feed"
+                  onBecome={() => navigateToPath("/trusted-member")}
+                />
+              );
+            }
+
+            const profile = item.profile;
             const signalGate = canUserSignalTarget(viewer, profile, prefs);
             const verification = verificationFor(profile);
             return (

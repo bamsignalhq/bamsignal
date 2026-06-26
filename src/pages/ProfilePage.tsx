@@ -16,7 +16,7 @@ import {
 import { VoiceVibeEmptyCard } from "../components/voice/VoiceVibeEmptyCard";
 import { VoiceVibeWaveformCard } from "../components/voice/VoiceVibeWaveformCard";
 import { TrustedMemberFlow } from "../components/trusted/TrustedMemberFlow";
-import { WhyTrustedMemberCard } from "../components/trusted/WhyTrustedMemberCard";
+import { TrustedMemberNudge } from "../components/trusted/TrustedMemberNudge";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import { TapSelectField } from "../components/TapSelectField";
 import { searchStateFromPrefs, withSearchStateChange, normalizeSearchCities } from "../utils/searchLocationPrefs";
@@ -35,12 +35,10 @@ import {
   stateDisplayLabel
 } from "../constants/profileOptions";
 import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
-import { ProfilePhotoProgressCard } from "../components/profilePhoto/ProfilePhotoProgressCard";
-import { ProfileStrengthCard } from "../components/profile/ProfileStrengthCard";
+import { ProfileCompletionCompact } from "../components/nudges/ProfileCompletionCompact";
 import { ActivityHighlightsCard } from "../components/activity/ActivityHighlightsCard";
 import { SavedProfilesPreview } from "../components/savedProfiles/SavedProfilesPreview";
 import { buildActivityHighlights } from "../utils/buildActivityHighlights";
-import { IncompleteProfileChecklist } from "../components/profile/IncompleteProfileChecklist";
 import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
 import { MoreAboutMePicker } from "../components/moreAboutMe/MoreAboutMePicker";
 import { MoreAboutMeEmptyCard } from "../components/moreAboutMe/MoreAboutMeEmptyCard";
@@ -117,6 +115,8 @@ type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferen
 type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "details" | "prompts" | "voice";
 
 const PROFILE_STATE_OPTIONS = NIGERIAN_STATES.map((s) => ({ value: s, label: stateDisplayLabel(s) }));
+
+import { debugRender } from "../utils/debugRecursion";
 
 type ProfilePageProps = {
   user: UserProfile;
@@ -240,6 +240,7 @@ export function ProfilePage({
   onPurchaseBoost,
   boostCheckoutLoading = false
 }: ProfilePageProps) {
+  debugRender("ProfilePage", { isPremium, theme });
   const { profile, setProfile, prefs, setPrefs } = useMemberProfileListener();
   const [saved, setSaved] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
@@ -561,24 +562,12 @@ export function ProfilePage({
 
           <SavedProfilesPreview viewerCity={profile.city} />
 
-          <ProfilePhotoProgressCard
-            profile={profile}
-            onAddPhotos={() => openEdit("photos")}
-            className="profile-page__photo-progress"
-          />
-
-          <ProfileStrengthCard
+          <ProfileCompletionCompact
             profile={profile}
             phoneVerified={phoneVerified}
             isPremium={isPremium}
-            className="profile-page__strength"
             onImprove={() => setView("edit")}
-          />
-
-          <IncompleteProfileChecklist
-            profile={profile}
-            phoneVerified={phoneVerified}
-            isPremium={isPremium}
+            className="profile-page__completion-compact"
           />
 
           {!isTrustedMember(profile) ? (
@@ -590,7 +579,7 @@ export function ProfilePage({
                 </p>
               </section>
             ) : (
-              <WhyTrustedMemberCard onBecome={openTrustedMemberPage} />
+              <TrustedMemberNudge variant="profile" onBecome={openTrustedMemberPage} />
             )
           ) : null}
 

@@ -4,6 +4,10 @@ import { ReportBlockModal } from "../ReportBlockModal";
 import { HomeFeedCard } from "./HomeFeedCard";
 import { HomeSponsoredBanner } from "./HomeSponsoredBanner";
 import { SignalPassInlineChip } from "../premium/SignalPassInlineChip";
+import { TrustedMemberNudge } from "../trusted/TrustedMemberNudge";
+import { navigateToPath } from "../../constants/routes";
+import { isTrustedMember } from "../../utils/trustedMember";
+import { shouldShowTrustFeedNudge } from "../../utils/trustFeedInsertion";
 import { SignalLimitModal } from "../premium/SignalLimitModal";
 import { BRAND, ERROR_COPY, SUCCESS_COPY } from "../../constants/copy";
 import { HOME_FEED_PROFILE_COUNT } from "../../constants/homeFeedAds";
@@ -15,7 +19,7 @@ import type { DatingProfile, DiscoverProfile, MatchPreferences, ReportRecord, Us
 import type { HomeAdvancedFilters } from "../../types";
 import { isSampleHomeProfile, padHomeFeedWithSamples } from "../../utils/homeFeedSamples";
 import { getMemberCity } from "../../utils/memberCity";
-import { buildHomeFeedGridItems, filterProfilesByName, injectSignalPassPromos } from "../../utils/homeFeed";
+import { buildHomeFeedGridItems, filterProfilesByName, injectSignalPassPromos, injectTrustMemberNudges } from "../../utils/homeFeed";
 import { homeAdvancedToSearchFilters, filterProfilesByDistance } from "../../utils/homeFilters";
 import { effectiveHomeDistanceKm } from "../../utils/cityMetroRadius";
 import { rankProfiles } from "../../utils/matching";
@@ -232,11 +236,15 @@ export function HomeSignalsFeed({
 
   const gridItems = useMemo(() => {
     const base = buildHomeFeedGridItems(visibleProfiles, adSettings, displayLimit);
-    return injectSignalPassPromos(base, {
+    const withPromos = injectSignalPassPromos(base, {
       enabled: !isPremium,
       isSampleProfile: isSampleHomeProfile
     });
-  }, [visibleProfiles, adSettings, displayLimit, isPremium]);
+    return injectTrustMemberNudges(withPromos, {
+      enabled: !isTrustedMember(viewer) && shouldShowTrustFeedNudge(),
+      isSampleProfile: isSampleHomeProfile
+    });
+  }, [visibleProfiles, adSettings, displayLimit, isPremium, viewer.verified, viewer.verificationStatus]);
 
   const showToast = (message: string) => {
     setToast(message);
@@ -322,6 +330,17 @@ export function HomeSignalsFeed({
                     variant={item.variant}
                     onUpgrade={onUpgrade}
                     className="signal-pass-inline--grid"
+                  />
+                );
+              }
+
+              if (item.type === "trust-nudge") {
+                return (
+                  <TrustedMemberNudge
+                    key={`trust-nudge-${index}`}
+                    variant="feed"
+                    onBecome={() => navigateToPath("/trusted-member")}
+                    className="trusted-member-nudge--grid"
                   />
                 );
               }

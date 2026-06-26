@@ -4,13 +4,15 @@ import {
   type HomeFeedAdsSettings
 } from "../constants/homeFeedAds";
 import type { DiscoverProfile, MemberSearchFilters } from "../types";
+import { trustNudgeInsertAfterIndices } from "./trustFeedInsertion";
 
 export const SIGNAL_PASS_PROMO_INTERVAL = 12;
 
 export type HomeFeedGridItem =
   | { type: "profile"; profile: DiscoverProfile }
   | { type: "ad"; slotIndex: 0 | 1 | 2 }
-  | { type: "signal-pass-promo"; variant: "signals" | "visibility" };
+  | { type: "signal-pass-promo"; variant: "signals" | "visibility" }
+  | { type: "trust-nudge" };
 
 function isSlotLive(settings: HomeFeedAdsSettings, slotIndex: number): boolean {
   if (!settings.enabled) return false;
@@ -65,6 +67,36 @@ export function injectSignalPassPromos(
         variant: promoIndex % 2 === 0 ? "signals" : "visibility"
       });
       promoIndex += 1;
+    }
+  }
+
+  return out;
+}
+
+/** Insert compact trust nudges after organic profile views in the home grid. */
+export function injectTrustMemberNudges(
+  items: HomeFeedGridItem[],
+  options: { enabled: boolean; isSampleProfile?: (profile: DiscoverProfile) => boolean }
+): HomeFeedGridItem[] {
+  if (!options.enabled) return items;
+
+  const isSample = options.isSampleProfile ?? (() => false);
+  const realProfiles = items.filter(
+    (item): item is Extract<HomeFeedGridItem, { type: "profile" }> =>
+      item.type === "profile" && !isSample(item.profile)
+  );
+  const insertAfter = trustNudgeInsertAfterIndices(realProfiles.length);
+  if (!insertAfter.size) return items;
+
+  const out: HomeFeedGridItem[] = [];
+  let realCount = 0;
+
+  for (const item of items) {
+    out.push(item);
+    if (item.type !== "profile" || isSample(item.profile)) continue;
+    realCount += 1;
+    if (insertAfter.has(realCount - 1)) {
+      out.push({ type: "trust-nudge" });
     }
   }
 

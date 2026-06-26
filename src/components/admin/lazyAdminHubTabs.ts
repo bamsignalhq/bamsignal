@@ -92,6 +92,11 @@ export const LazyReliabilityCertificationDashboard = lazy(() =>
     default: module.ReliabilityCertificationDashboard
   }))
 );
+export const LazyDependencyCertificationDashboard = lazy(() =>
+  import("./dependencyCertification/DependencyCertificationDashboard").then((module) => ({
+    default: module.DependencyCertificationDashboard
+  }))
+);
 export const LazyFounderCertificationDashboard = lazy(() =>
   import("./founderCertification/FounderCertificationDashboard").then((module) => ({
     default: module.FounderCertificationDashboard

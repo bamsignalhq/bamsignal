@@ -92,6 +92,7 @@ import "./styles/launch-certification.css";
 import "./styles/performance-certification.css";
 import "./styles/security-certification.css";
 import "./styles/reliability-certification.css";
+import "./styles/dependency-certification.css";
 import "./styles/founder-certification.css";
 import "./styles/enterprise-codebase-cleanup.css";
 import "./styles/production-environment.css";

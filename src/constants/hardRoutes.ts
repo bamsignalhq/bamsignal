@@ -41,6 +41,7 @@ import { ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH } from "./enterpriseCodebaseClea
 import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin";
 import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
 import { FOUNDER_CERTIFICATION_ADMIN_PATH } from "./founderCertificationAdmin";
+import { DEPENDENCY_CERTIFICATION_ADMIN_PATH } from "./dependencyCertificationAdmin";
 import { PRODUCTION_OBSERVABILITY_ADMIN_PATH } from "./productionObservabilityAdmin";
 import { FEATURE_FLAG_PLATFORM_ADMIN_PATH } from "./featureFlagPlatformAdmin";
 import { PLATFORM_HEALTH_ADMIN_PATH } from "./platformHealthAdmin";
@@ -107,6 +108,7 @@ const TAB_SLUGS: Record<HardTab, string> = {
   performancecertification: "performance-certification",
   securitycertification: "security-certification",
   reliabilitycertification: "reliability-certification",
+  dependencycertification: "dependency-certification",
   foundercertification: "founder-certification",
   enterprisecleanup: "enterprise-cleanup",
   productionenvironment: "production-environment",

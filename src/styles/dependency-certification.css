@@ -1,0 +1,43 @@
+.dependency-certification-report-card__hero {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.dependency-certification-report-card__hero strong {
+  font-size: 1.75rem;
+}
+
+.dependency-certification-report-card__line {
+  margin: 0 0 0.75rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.dependency-certification-report-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.dependency-certification-report-card__metrics article {
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dependency-certification-report-card__metrics span {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.dependency-certification-report-card__metrics strong {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 960px) {
+  .dependency-certification-report-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

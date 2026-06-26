@@ -1,12 +1,13 @@
-import { ImagePlus, Loader2, MapPin, UserRound } from "lucide-react";
+import { Camera, Loader2, MapPin, UserRound } from "lucide-react";
 import { useState } from "react";
 import { useCoverPhotoFlow } from "../hooks/useCoverPhotoFlow";
 import { ShowcaseImage } from "./ShowcaseImage";
+import { ProfileCoverImage } from "./profile/ProfileCoverImage";
 import { CoverPhotoCropModal } from "./CoverPhotoCropModal";
 import { ProfilePhotoViewerSheet } from "./profile/ProfilePhotoViewerSheet";
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../types";
 import type { VerificationInfo } from "../utils/verification";
-import { coverPhotoDisplayUrl, hasExplicitCoverPhoto, readCoverPhotoUrl } from "../utils/coverPhoto";
+import { hasExplicitCoverPhoto, readCoverPhotoUrl } from "../utils/coverPhoto";
 import { safePhotos } from "../utils/safeProfile";
 import { resolveProfileMainPhoto, isMainPhoto } from "../utils/mainPhoto";
 import { VoiceVibeHero } from "./voice/VoiceVibeHero";
@@ -98,13 +99,7 @@ export function ProfileCoverHeader({
     onModerationMessage: onCoverModerationMessage
   });
 
-  const persistedDisplay = coverPhotoDisplayUrl({
-    coverPhotoUrl: resolvedCoverPhoto,
-    coverPhotoUpdatedAt: profile.coverPhotoUpdatedAt,
-    coverPhotoExplicit: profile.coverPhotoExplicit
-  });
-  const coverPreview = flow.localPreview || flow.pendingCover || persistedDisplay || flow.displayCover || "";
-  const showCoverMedia = Boolean(coverPreview);
+  const coverPreview = flow.localPreview || flow.pendingCover || flow.displayCover;
 
   const premium = variant === "premium";
   const ageText = profile.age != null && profile.age > 0 ? String(profile.age) : null;
@@ -134,35 +129,28 @@ export function ProfileCoverHeader({
   return (
     <>
       <header className={`profile-hero profile-hero--me${premium ? " profile-hero--premium" : ""}`}>
-        <div className="profile-hero__cover" aria-hidden={!showCoverMedia && !avatar}>
-          {showCoverMedia ? (
-            <ShowcaseImage
-              src={coverPreview}
-              alt=""
-              className="profile-hero__cover-media"
-            />
-          ) : (
-            <div className="profile-hero__cover-empty" aria-hidden />
-          )}
+        <div className="profile-hero__cover">
+          <ProfileCoverImage
+            src={coverPreview}
+            className="profile-hero__cover-media"
+            priority={editableCover}
+          />
           {!editableCover && customCover ? <div className="profile-hero__cover-shade" /> : null}
           {editableCover && onCoverChange ? (
             <button
               type="button"
-              className="profile-hero__cover-edit"
+              className="profile-hero__cover-change"
               onClick={flow.openPicker}
               disabled={flow.uploading}
               aria-busy={flow.uploading}
-              aria-label={flow.hasCustomCover ? "Change backdrop photo" : "Add backdrop photo"}
-              title={flow.hasCustomCover ? "Change backdrop photo" : "Add backdrop photo"}
+              aria-label="Change cover photo"
             >
               {flow.uploading ? (
-                <Loader2 size={13} className="photo-upload-grid__spinner" aria-hidden />
+                <Loader2 size={14} className="photo-upload-grid__spinner" aria-hidden />
               ) : (
-                <ImagePlus size={13} aria-hidden />
+                <Camera size={14} aria-hidden />
               )}
-              <span className="profile-hero__cover-edit-label">
-                {flow.hasCustomCover ? "Change" : "Add backdrop"}
-              </span>
+              <span className="profile-hero__cover-change-label">Change Cover</span>
             </button>
           ) : null}
         </div>

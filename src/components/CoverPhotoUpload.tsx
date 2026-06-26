@@ -1,5 +1,6 @@
 import { Camera, Loader2, X } from "lucide-react";
 import { CoverPhotoCropModal } from "./CoverPhotoCropModal";
+import { ProfileCoverImage } from "./profile/ProfileCoverImage";
 import { useCoverPhotoFlow } from "../hooks/useCoverPhotoFlow";
 import type { PhotoReviewMeta } from "../types";
 
@@ -38,33 +39,31 @@ export function CoverPhotoUpload({
     onModerationMessage
   });
 
-  const preview = flow.displayCover;
-
   return (
     <>
       <div className="cover-photo-upload">
         <div className="cover-photo-upload__frame">
-          {preview ? (
-            <img src={preview} alt="" className="cover-photo-upload__preview" />
-          ) : (
-            <div className="cover-photo-upload__empty" aria-hidden />
-          )}
-          <div className="cover-photo-upload__actions">
-            <button
-              type="button"
-              className="cover-photo-upload__btn"
-              onClick={flow.openPicker}
-              disabled={flow.uploading}
-              aria-busy={flow.uploading}
-            >
-              {flow.uploading ? (
-                <Loader2 size={16} className="photo-upload-grid__spinner" aria-hidden />
-              ) : (
-                <Camera size={16} aria-hidden />
-              )}
-              {flow.uploading ? "Uploading…" : flow.hasCustomCover ? "Change backdrop" : "Add backdrop"}
-            </button>
-            {flow.hasCustomCover && (
+          <ProfileCoverImage
+            src={flow.displayCover}
+            className="cover-photo-upload__preview"
+            priority
+          />
+          <button
+            type="button"
+            className="cover-photo-upload__btn cover-photo-upload__btn--pill"
+            onClick={flow.openPicker}
+            disabled={flow.uploading}
+            aria-busy={flow.uploading}
+          >
+            {flow.uploading ? (
+              <Loader2 size={14} className="photo-upload-grid__spinner" aria-hidden />
+            ) : (
+              <Camera size={14} aria-hidden />
+            )}
+            {flow.uploading ? "Uploading…" : "Change Cover"}
+          </button>
+          {flow.hasCustomCover ? (
+            <div className="cover-photo-upload__actions">
               <button
                 type="button"
                 className="cover-photo-upload__btn cover-photo-upload__btn--ghost"
@@ -74,8 +73,8 @@ export function CoverPhotoUpload({
                 <X size={16} aria-hidden />
                 Remove
               </button>
-            )}
-          </div>
+            </div>
+          ) : null}
         </div>
         <input
           ref={flow.fileRef}

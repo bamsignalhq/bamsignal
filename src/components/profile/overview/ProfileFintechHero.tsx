@@ -1,10 +1,10 @@
-import { ImagePlus, Loader2, Pencil, UserRound } from "lucide-react";
+import { Camera, Loader2, Pencil, UserRound } from "lucide-react";
 import { memo, useState } from "react";
 import { useCoverPhotoFlow } from "../../../hooks/useCoverPhotoFlow";
 import { profileIntentLabel } from "../../../constants/intents";
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../../../types";
 import { relationshipIntentsFrom } from "../../../constants/relationshipIntent";
-import { coverPhotoDisplayUrl, hasExplicitCoverPhoto, readCoverPhotoUrl } from "../../../utils/coverPhoto";
+import { hasExplicitCoverPhoto, readCoverPhotoUrl } from "../../../utils/coverPhoto";
 import { safePhotos } from "../../../utils/safeProfile";
 import { resolveProfileMainPhoto } from "../../../utils/mainPhoto";
 import { isTrustedMember } from "../../../utils/trustedMember";
@@ -12,6 +12,7 @@ import type { VerificationInfo } from "../../../utils/verification";
 import { VerificationBadge } from "../../VerificationBadge";
 import { TrustedMemberShieldIcon } from "../../trusted/TrustedMemberBadge";
 import { ShowcaseImage } from "../../ShowcaseImage";
+import { ProfileCoverImage } from "../ProfileCoverImage";
 import { CoverPhotoCropModal } from "../../CoverPhotoCropModal";
 import { ProfilePhotoViewerSheet } from "../ProfilePhotoViewerSheet";
 import { normalizeOccupations } from "../../../constants/profileOptions";
@@ -85,13 +86,8 @@ export const ProfileFintechHero = memo(function ProfileFintechHero({
     onModerationMessage: onCoverModerationMessage
   });
 
-  const persistedDisplay = coverPhotoDisplayUrl({
-    coverPhotoUrl: resolvedCoverPhoto,
-    coverPhotoUpdatedAt: profile.coverPhotoUpdatedAt,
-    coverPhotoExplicit: profile.coverPhotoExplicit
-  });
-  const coverPreview = flow.localPreview || flow.pendingCover || persistedDisplay || flow.displayCover || "";
-  const showCoverMedia = Boolean(coverPreview);
+  const persistedDisplay = flow.displayCover;
+  const coverPreview = flow.localPreview || flow.pendingCover || persistedDisplay;
 
   const openPhotoViewer = (index: number) => {
     if (!onPhotosChange) return;
@@ -109,27 +105,28 @@ export const ProfileFintechHero = memo(function ProfileFintechHero({
           </button>
         </div>
 
-        <div className="profile-fintech-hero__cover" aria-hidden={!showCoverMedia && !avatar}>
-          {showCoverMedia ? (
-            <ShowcaseImage src={coverPreview} alt="" className="profile-fintech-hero__cover-media" />
-          ) : (
-            <div className="profile-fintech-hero__cover-empty" aria-hidden />
-          )}
+        <div className="profile-fintech-hero__cover">
+          <ProfileCoverImage
+            src={coverPreview}
+            className="profile-fintech-hero__cover-media"
+            priority
+          />
           {customCover ? <div className="profile-fintech-hero__cover-shade" /> : null}
           {onCoverChange ? (
             <button
               type="button"
-              className="profile-fintech-hero__cover-edit"
+              className="profile-fintech-hero__cover-change"
               onClick={flow.openPicker}
               disabled={flow.uploading}
               aria-busy={flow.uploading}
-              aria-label={flow.hasCustomCover ? "Change cover photo" : "Add cover photo"}
+              aria-label="Change cover photo"
             >
               {flow.uploading ? (
-                <Loader2 size={13} className="photo-upload-grid__spinner" aria-hidden />
+                <Loader2 size={14} className="photo-upload-grid__spinner" aria-hidden />
               ) : (
-                <ImagePlus size={13} aria-hidden />
+                <Camera size={14} aria-hidden />
               )}
+              <span>Change Cover</span>
             </button>
           ) : null}
         </div>

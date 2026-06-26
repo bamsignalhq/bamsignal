@@ -1,6 +1,10 @@
 /**
  * Smoke tests for cover photo merge + timestamped storage uploads.
  */
+import { stat } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
@@ -52,5 +56,15 @@ const profileOnly = mergeMemberProfilePayload(
 assert(profileOnly.bio === "Updated bio", "profile patch updates bio");
 assert(profileOnly.coverPhotoUrl === "https://example.com/keep.webp", "profile patch keeps cover");
 assert(profileOnly.photos.length === 1, "profile patch keeps photos");
+
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const backdropWebp = path.join(root, "public/showcase/backdrop.webp");
+const backdropPng = path.join(root, "public/showcase/backdrop.png");
+const webpStat = await stat(backdropWebp);
+const pngStat = await stat(backdropPng);
+
+assert(webpStat.size > 512, "backdrop.webp exists and is non-trivial");
+assert(webpStat.size <= 180 * 1024, "backdrop.webp is under 180 KB budget");
+assert(pngStat.isFile(), "backdrop.png source kept in repo");
 
 console.log("cover photo persistence tests ok");

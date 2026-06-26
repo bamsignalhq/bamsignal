@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
-import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
+import { DEFAULT_PROFILE_BACKDROP, PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
 import {
   compressPhotoForPreview,
   deleteStoredPhoto,
@@ -12,7 +12,7 @@ import { PHOTO_FILE_ACCEPT, blobToDataUrl, validatePhotoFile } from "../utils/ph
 import { logPhotoPipeline } from "../utils/photoUploadLog";
 import { upsertPhotoMeta } from "../utils/photoMeta";
 import { isStoragePhotoUrl, samePhotoRef } from "../utils/photoRefs";
-import { coverPhotoDisplayUrl } from "../utils/coverPhoto";
+import { coverPhotoDisplayUrl, hasExplicitCoverPhoto } from "../utils/coverPhoto";
 import { isShowcasePhotoUrl, safeUserCoverPhoto } from "../utils/safeProfile";
 
 type UseCoverPhotoFlowOptions = {
@@ -61,8 +61,13 @@ export function useCoverPhotoFlow({
     }
   }, [pendingCover, persistedCover]);
 
-  const displayCover = localPreview || pendingCover || persistedCover || null;
-  const hasCustomCover = Boolean(displayCover);
+  const displayCover =
+    localPreview || pendingCover || persistedCover || DEFAULT_PROFILE_BACKDROP;
+  const hasCustomCover = hasExplicitCoverPhoto({
+    coverPhotoUrl: persistedCover,
+    coverPhotoExplicit,
+    coverPhotoUpdatedAt
+  });
 
   const setCropPreview = useCallback((next: string | null) => {
     if (cropSrcRef.current) URL.revokeObjectURL(cropSrcRef.current);

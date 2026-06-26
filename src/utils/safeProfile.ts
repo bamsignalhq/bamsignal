@@ -1,5 +1,5 @@
 import { normalizeEthnicities, normalizeLifestyleTraits } from "../constants/profileOptions";
-import { DEFAULT_PROFILE_COVER } from "../constants/photos";
+import { DEFAULT_PROFILE_BACKDROP, DEFAULT_PROFILE_COVER } from "../constants/photos";
 import {
   coverPhotoDisplayUrl,
   hasExplicitCoverPhoto,
@@ -63,7 +63,7 @@ export function resolveCoverPhoto(
   options?: { fallback?: string | null }
 ): string | null {
   const fallback =
-    options?.fallback === undefined ? DEFAULT_PROFILE_COVER : options.fallback;
+    options?.fallback === undefined ? DEFAULT_PROFILE_BACKDROP : options.fallback;
   const display = coverPhotoDisplayUrl(normalizeCoverFields(profile));
   if (!display) {
     return fallback;

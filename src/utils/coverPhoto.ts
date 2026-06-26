@@ -1,3 +1,4 @@
+import { DEFAULT_PROFILE_BACKDROP } from "../constants/photos";
 import type { DatingProfile } from "../types";
 import { isStoragePhotoUrl } from "./photoRefs";
 import { isShowcasePhotoUrl, safeUserCoverPhoto } from "./persistablePhotoUrl";
@@ -151,4 +152,13 @@ export function coverPhotoDisplayUrl(fields: CoverPhotoFields): string | undefin
 export function hasExplicitCoverPhoto(profile: Partial<DatingProfile>): boolean {
   const cover = normalizeCoverFields(profile);
   return Boolean(cover.coverPhotoUrl && cover.coverPhotoExplicit !== false);
+}
+
+/** Resolved cover for UI — custom upload or default backdrop (never empty). */
+export function getMemberCoverDisplayUrl(
+  profile: Partial<DatingProfile> | CoverPhotoFields,
+  options?: { fallback?: string }
+): string {
+  const display = coverPhotoDisplayUrl(normalizeCoverFields(profile));
+  return display ?? options?.fallback ?? DEFAULT_PROFILE_BACKDROP;
 }

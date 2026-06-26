@@ -77,11 +77,11 @@
   display: none;
 }
 
-.profile-hero--premium .profile-hero__cover-edit {
+.profile-hero--premium .profile-hero__cover-change {
   z-index: 2;
   top: 12px;
   right: 12px;
-  height: 34px;
+  height: 38px;
   padding: 0 12px;
   gap: 6px;
   border: 1px solid rgba(255, 255, 255, 0.24);
@@ -90,12 +90,12 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: #fff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   box-shadow: 0 4px 14px rgba(27, 11, 46, 0.2);
 }
 
-.profile-hero--premium .profile-hero__cover-edit-label {
+.profile-hero--premium .profile-hero__cover-change-label {
   max-width: none;
 }
 

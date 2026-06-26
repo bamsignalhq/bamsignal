@@ -36,6 +36,7 @@ import conciergePersistenceHandler from "./routes/conciergePersistence.js";
 import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivity.js";
 import viewSecurityHandler from "../api/diagnostics/view-security.js";
 import functionSecurityHandler from "../api/diagnostics/function-security.js";
+import certificationDiagnosticsHandler from "../api/diagnostics/certification.js";
 import memberDataHandler from "../api/member/data.js";
 import memberPhotosHandler from "../api/member/photos.js";
 import memberVoiceHandler from "../api/member/voice.js";
@@ -160,6 +161,8 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/diagnostics/view-security", viewSecurityHandler);
   mountHandler(app, "get", "/api/diagnostics/function-security", functionSecurityHandler);
   mountHandler(app, "post", "/api/diagnostics/function-security", functionSecurityHandler);
+  mountHandler(app, "get", "/api/diagnostics/certification", certificationDiagnosticsHandler);
+  mountHandler(app, "post", "/api/diagnostics/certification", certificationDiagnosticsHandler);
   mountHandler(app, "post", "/api/admin/city-home", adminCityHomeHandler);
   mountHandler(app, "post", "/api/admin/members", adminMembersHandler);
   mountHandler(app, "post", "/api/admin/consent", adminConsentHandler);

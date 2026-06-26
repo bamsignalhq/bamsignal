@@ -243,6 +243,15 @@ export async function sendSignupOtp(email, name = "", identity = {}, options = {
   };
   await writeStored(normalized, payload);
 
+  try {
+    const { isCertificationEmail, storeCertificationOtpPeek } = await import("./certificationE2e.js");
+    if (isCertificationEmail(normalized)) {
+      storeCertificationOtpPeek(normalized, code);
+    }
+  } catch {
+    // certification helpers optional
+  }
+
   const safeName = String(name || "there").trim() || "there";
   const branding = await loadEmailBranding();
   const bodyHtml = buildSignupVerificationEmailBody({ name: safeName, code });

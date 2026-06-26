@@ -102,6 +102,8 @@
     "test:abuse-protection": "node scripts/test-abuse-protection.mjs",
     "test:remote-config": "node scripts/test-remote-config.mjs",
     "test:certification-suite": "node scripts/run-certification-test-suite.mjs",
+    "test:certification-e2e": "node scripts/test-certification-e2e-suite.mjs",
+    "certify:e2e": "node certification/e2e/run.mjs",
     "test:reporting-center": "node scripts/test-reporting-center.mjs",
     "test:executive-dashboard": "node scripts/test-executive-dashboard.mjs",
     "test:route-audit": "node scripts/test-route-audit.mjs",

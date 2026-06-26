@@ -41,6 +41,7 @@ import { PLATFORM_HEALTH_ADMIN_PATH } from "./platformHealthAdmin";
 import { ABUSE_PROTECTION_ADMIN_PATH } from "./abuseProtectionAdmin";
 import { SEARCH_CENTER_ADMIN_PATH } from "./searchCenterAdmin";
 import { DISASTER_RECOVERY_ADMIN_PATH } from "./disasterRecoveryAdmin";
+import { LAUNCH_COMMAND_CENTER_ADMIN_PATH } from "./launchCommandCenterAdmin";
 import { REPORTING_CENTER_ADMIN_PATH } from "./reportingCenterAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
@@ -178,7 +179,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   platformhealth: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
   abuseprotection: ["ManageSafety", "ManageOperations", "SystemAdministration"],
   search: ["ManageOperations", "SystemAdministration", "ViewMembers"],
-  disasterrecovery: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"]
+  disasterrecovery: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
+  launchcommand: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"]
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -261,7 +263,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [PLATFORM_HEALTH_ADMIN_PATH]: HARD_TAB_PERMISSIONS.platformhealth,
   [ABUSE_PROTECTION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.abuseprotection,
   [SEARCH_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.search,
-  [DISASTER_RECOVERY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.disasterrecovery
+  [DISASTER_RECOVERY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.disasterrecovery,
+  [LAUNCH_COMMAND_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchcommand
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -330,7 +333,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/platform-health",
   "/hard/abuse-protection",
   "/hard/search",
-  "/hard/disaster-recovery"
+  "/hard/disaster-recovery",
+  "/hard/launch-command"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

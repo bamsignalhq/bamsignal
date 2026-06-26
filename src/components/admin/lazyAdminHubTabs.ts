@@ -127,6 +127,11 @@ export const LazyDisasterRecoveryCenterPage = lazy(() =>
     default: module.DisasterRecoveryCenterPage
   }))
 );
+export const LazyLaunchCommandCenterPage = lazy(() =>
+  import("./launchCommand/LaunchCommandCenterPage").then((module) => ({
+    default: module.LaunchCommandCenterPage
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

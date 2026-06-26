@@ -2,11 +2,19 @@ import type {
   PerformanceApiProfile,
   PerformanceCapacityPlan,
   PerformanceCenterSummary,
+  PerformanceEngineeringReport,
+  PerformanceEngineeringSummary,
   PerformanceGrowthForecast,
   PerformanceMetricSnapshot,
-  PerformanceOptimizationItem
+  PerformanceOptimizationItem,
+  PerformanceTrackSnapshot
 } from "../types/performanceCenter";
-import type { PerformanceSectionId } from "../constants/performanceCenter";
+import type {
+  PerformanceCompareWindowId,
+  PerformanceReportTypeId,
+  PerformanceSectionId,
+  PerformanceTrackId
+} from "../constants/performanceCenter";
 
 export function buildPerformanceSummary(
   metrics: PerformanceMetricSnapshot[],
@@ -130,4 +138,98 @@ export function resolveOptimizationItem(
 
 export function formatPerformanceSummaryLine(summary: PerformanceCenterSummary): string {
   return `${summary.healthScore}% health · ${summary.avgResponseMs}ms avg · ${summary.remainingHeadroomPercent}% headroom · ${summary.scalingRecommendation.toUpperCase()}`;
+}
+
+export function getTrackValueForWindow(
+  track: PerformanceTrackSnapshot,
+  windowId: PerformanceCompareWindowId
+): number {
+  switch (windowId) {
+    case "previous-release":
+      return track.previousRelease;
+    case "30-days":
+      return track.days30;
+    case "90-days":
+      return track.days90;
+    default:
+      return track.current;
+  }
+}
+
+export function computeTrackDeltaPercent(
+  current: number,
+  baseline: number,
+  lowerIsBetter: boolean
+): number {
+  if (!baseline) return 0;
+  const raw = ((current - baseline) / baseline) * 100;
+  return lowerIsBetter ? raw : -raw;
+}
+
+export function buildEngineeringSummary(
+  tracks: PerformanceTrackSnapshot[],
+  reports: PerformanceEngineeringReport[],
+  compareWindow: PerformanceCompareWindowId = "current"
+): PerformanceEngineeringSummary {
+  const regressionsCount = reports.filter(
+    (item) => item.reportType === "largest-regressions"
+  ).length;
+  const improvementsCount = reports.filter(
+    (item) => item.reportType === "largest-improvements"
+  ).length;
+  const recommendationsCount = reports.filter(
+    (item) => item.reportType === "recommendations"
+  ).length;
+
+  const order = ["critical", "strained", "watch", "healthy"] as const;
+  const healthStatuses = tracks.map((item) => item.status);
+  const healthStatus = order.find((status) => healthStatuses.includes(status)) ?? "healthy";
+
+  let engineeringScore = 100;
+  const watchTracks = tracks.filter((item) => item.status === "watch").length;
+  const strainedTracks = tracks.filter((item) => item.status === "strained").length;
+  engineeringScore -= watchTracks * 4;
+  engineeringScore -= strainedTracks * 10;
+  engineeringScore -= regressionsCount * 3;
+  engineeringScore = Math.max(0, Math.min(100, engineeringScore));
+
+  return {
+    engineeringScore,
+    healthStatus,
+    trackCount: tracks.length,
+    regressionsCount,
+    improvementsCount,
+    recommendationsCount,
+    compareWindow
+  };
+}
+
+export function filterReportsByType(
+  reports: PerformanceEngineeringReport[],
+  reportType: PerformanceReportTypeId
+): PerformanceEngineeringReport[] {
+  return reports.filter((item) => item.reportType === reportType);
+}
+
+export function filterTracksById(
+  tracks: PerformanceTrackSnapshot[],
+  trackId: PerformanceTrackId
+): PerformanceTrackSnapshot[] {
+  if (trackId === "slow-endpoints" || trackId === "api-latency") {
+    return tracks.filter(
+      (item) =>
+        item.trackId === trackId ||
+        item.trackId === "api-latency" ||
+        item.trackId === "slow-endpoints"
+    );
+  }
+  if (trackId === "slow-queries" || trackId === "database") {
+    return tracks.filter(
+      (item) =>
+        item.trackId === trackId ||
+        item.trackId === "database" ||
+        item.trackId === "slow-queries"
+    );
+  }
+  return tracks.filter((item) => item.trackId === trackId);
 }

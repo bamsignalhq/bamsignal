@@ -202,7 +202,10 @@ export const PERFORMANCE_CENTER_SCHEMA_TABLES = [
   "performance_database_profiles",
   "performance_capacity_plans",
   "performance_optimization_items",
-  "performance_growth_forecasts"
+  "performance_growth_forecasts",
+  "performance_track_snapshots",
+  "performance_engineering_reports",
+  "performance_tool_runs"
 ] as const;
 
 /** Tables from migrations/0018_workflow_engine.sql */
@@ -1416,7 +1419,7 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     domainId: "qa",
     engine: "performanceCenterEngine.ts",
     expectedTable: "performance_metric_snapshots",
-    note: "Performance, Capacity & Scalability Center™ — dual-write via performanceCenter.js"
+    note: "Performance Engineering Center — dual-write via performanceCenter.js"
   },
   {
     storageKey: "bamsignal.workflowEngine.v1",

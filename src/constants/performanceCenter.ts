@@ -1,8 +1,81 @@
-/** Performance, Capacity & Scalability Center™ — institutional capacity planning layer. */
+/** Performance Engineering Center — application performance intelligence layer. */
 
 import { PERFORMANCE_CENTER_ADMIN_BRAND } from "./performanceCenterAdmin";
 
 export const PERFORMANCE_CENTER_BRAND = PERFORMANCE_CENTER_ADMIN_BRAND;
+
+export const PERFORMANCE_CENTER_REFRESH_INTERVAL_MS = 30_000;
+
+/** Core application performance tracks. */
+export const PERFORMANCE_ENGINEERING_TRACKS = [
+  { id: "startup", label: "Startup", unit: "ms", lowerIsBetter: true },
+  { id: "api-latency", label: "API latency", unit: "ms", lowerIsBetter: true },
+  { id: "bundle-size", label: "Bundle size", unit: "KB", lowerIsBetter: true },
+  { id: "lcp", label: "LCP", unit: "s", lowerIsBetter: true },
+  { id: "cls", label: "CLS", unit: "", lowerIsBetter: true },
+  { id: "fid", label: "FID", unit: "ms", lowerIsBetter: true },
+  { id: "ttfb", label: "TTFB", unit: "ms", lowerIsBetter: true },
+  { id: "memory", label: "Memory", unit: "MB", lowerIsBetter: true },
+  { id: "cpu", label: "CPU", unit: "%", lowerIsBetter: true },
+  { id: "database", label: "Database", unit: "qps", lowerIsBetter: false },
+  { id: "slow-queries", label: "Slow queries", unit: "count", lowerIsBetter: true },
+  { id: "slow-endpoints", label: "Slow endpoints", unit: "count", lowerIsBetter: true }
+] as const;
+
+export type PerformanceTrackId = (typeof PERFORMANCE_ENGINEERING_TRACKS)[number]["id"];
+
+export const PERFORMANCE_TRACK_LABELS: Record<PerformanceTrackId, string> =
+  Object.fromEntries(PERFORMANCE_ENGINEERING_TRACKS.map((item) => [item.id, item.label])) as Record<
+    PerformanceTrackId,
+    string
+  >;
+
+export const PERFORMANCE_COMPARE_WINDOWS = [
+  { id: "current", label: "Current" },
+  { id: "previous-release", label: "Previous release" },
+  { id: "30-days", label: "30 days" },
+  { id: "90-days", label: "90 days" }
+] as const;
+
+export type PerformanceCompareWindowId = (typeof PERFORMANCE_COMPARE_WINDOWS)[number]["id"];
+
+export const PERFORMANCE_REPORT_TYPES = [
+  { id: "largest-regressions", label: "Largest regressions" },
+  { id: "largest-improvements", label: "Largest improvements" },
+  { id: "recommendations", label: "Recommendations" }
+] as const;
+
+export type PerformanceReportTypeId = (typeof PERFORMANCE_REPORT_TYPES)[number]["id"];
+
+export const PERFORMANCE_ENGINEERING_TOOLS = [
+  {
+    id: "bundle-analysis",
+    label: "Bundle analysis",
+    description: "Inspect chunk sizes, duplicate modules, and largest dependencies."
+  },
+  {
+    id: "image-audit",
+    label: "Image audit",
+    description: "Find oversized or unoptimized images across member and public surfaces."
+  },
+  {
+    id: "unused-code",
+    label: "Unused code",
+    description: "Surface dead exports and unreachable admin modules for cleanup."
+  },
+  {
+    id: "code-splitting",
+    label: "Code splitting",
+    description: "Validate lazy routes and admin tab chunks load on demand."
+  },
+  {
+    id: "caching",
+    label: "Caching",
+    description: "Review service worker, CDN, and API cache hit patterns."
+  }
+] as const;
+
+export type PerformanceEngineeringToolId = (typeof PERFORMANCE_ENGINEERING_TOOLS)[number]["id"];
 
 export const PERFORMANCE_SECTIONS = [
   { id: "system-performance", label: "System Performance" },
@@ -86,7 +159,10 @@ export const PERFORMANCE_CENTER_DB_TABLES = [
   "performance_database_profiles",
   "performance_capacity_plans",
   "performance_optimization_items",
-  "performance_growth_forecasts"
+  "performance_growth_forecasts",
+  "performance_track_snapshots",
+  "performance_engineering_reports",
+  "performance_tool_runs"
 ] as const;
 
 export const PERFORMANCE_AUDIT_ACTIONS = [
@@ -94,7 +170,11 @@ export const PERFORMANCE_AUDIT_ACTIONS = [
   "capacity-updated",
   "optimization-flagged",
   "optimization-resolved",
-  "forecast-updated"
+  "forecast-updated",
+  "track-refreshed",
+  "compare-updated",
+  "tool-executed",
+  "report-generated"
 ] as const;
 
 export type PerformanceAuditActionId = (typeof PERFORMANCE_AUDIT_ACTIONS)[number];

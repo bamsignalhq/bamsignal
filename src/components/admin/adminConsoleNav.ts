@@ -290,7 +290,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       {
         id: "performance",
         label: "Performance",
-        keywords: ["performance", "capacity", "scalability", "headroom", "latency", "throughput", "optimization", "growth"]
+        keywords: ["performance", "engineering", "lcp", "cls", "fid", "ttfb", "bundle", "startup", "latency", "web vitals", "slow queries"]
       },
       {
         id: "workflows",

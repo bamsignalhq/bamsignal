@@ -1,5 +1,5 @@
 /**
- * Performance, Capacity & Scalability Center™ — server-side capacity planning logic.
+ * Performance Engineering Center — application performance intelligence logic.
  */
 
 export const PERFORMANCE_CENTER_DB_TABLES = [
@@ -8,7 +8,10 @@ export const PERFORMANCE_CENTER_DB_TABLES = [
   "performance_database_profiles",
   "performance_capacity_plans",
   "performance_optimization_items",
-  "performance_growth_forecasts"
+  "performance_growth_forecasts",
+  "performance_track_snapshots",
+  "performance_engineering_reports",
+  "performance_tool_runs"
 ];
 
 export function getPerformanceCenterDatabaseTableManifest() {
@@ -99,6 +102,56 @@ export function buildPerformanceSummary(
     highImpactOptimizations,
     scalingRecommendation
   };
+}
+
+export function buildEngineeringSummary(tracks, reports, compareWindow = "current") {
+  const regressionsCount = reports.filter(
+    (item) => item.reportType === "largest-regressions"
+  ).length;
+  const improvementsCount = reports.filter(
+    (item) => item.reportType === "largest-improvements"
+  ).length;
+  const recommendationsCount = reports.filter(
+    (item) => item.reportType === "recommendations"
+  ).length;
+
+  const healthStatuses = tracks.map((item) => item.status);
+  const healthStatus = worstStatus(healthStatuses);
+
+  let engineeringScore = 100;
+  const watchTracks = tracks.filter((item) => item.status === "watch").length;
+  const strainedTracks = tracks.filter((item) => item.status === "strained").length;
+  engineeringScore -= watchTracks * 4;
+  engineeringScore -= strainedTracks * 10;
+  engineeringScore -= regressionsCount * 3;
+  engineeringScore = Math.max(0, Math.min(100, engineeringScore));
+
+  return {
+    engineeringScore,
+    healthStatus,
+    trackCount: tracks.length,
+    regressionsCount,
+    improvementsCount,
+    recommendationsCount,
+    compareWindow
+  };
+}
+
+export function getTrackValueForWindow(track, windowId) {
+  switch (windowId) {
+    case "previous-release":
+      return track.previousRelease;
+    case "30-days":
+      return track.days30;
+    case "90-days":
+      return track.days90;
+    default:
+      return track.current;
+  }
+}
+
+export function filterReportsByType(reports, reportType) {
+  return reports.filter((item) => item.reportType === reportType);
 }
 
 export function filterMetricsBySection(metrics, sectionId) {

@@ -2,11 +2,18 @@ import type {
   PerformanceApiProfile,
   PerformanceCapacityPlan,
   PerformanceDatabaseProfile,
+  PerformanceEngineeringReport,
   PerformanceGrowthForecast,
   PerformanceMetricSnapshot,
-  PerformanceOptimizationItem
+  PerformanceOptimizationItem,
+  PerformanceToolRun,
+  PerformanceTrackSnapshot
 } from "../types/performanceCenter";
-import { PERFORMANCE_METRICS, PERFORMANCE_SECTIONS } from "../constants/performanceCenter";
+import {
+  PERFORMANCE_ENGINEERING_TRACKS,
+  PERFORMANCE_METRICS,
+  PERFORMANCE_SECTIONS
+} from "../constants/performanceCenter";
 
 const NOW = "2026-06-25T14:00:00.000Z";
 
@@ -375,4 +382,170 @@ export const PERFORMANCE_SCALING_RECOMMENDATIONS_SEED = [
   "Introduce Redis cache layer for discover feed at 25k DAU",
   "Shard photo storage by region before 5TB total",
   "Plan CDN edge for static assets before Nigeria + diaspora launch waves"
+];
+
+const TRACK_VALUES: Record<
+  string,
+  { current: number; previousRelease: number; days30: number; days90: number }
+> = {
+  startup: { current: 1820, previousRelease: 1940, days30: 2100, days90: 2450 },
+  "api-latency": { current: 142, previousRelease: 156, days30: 168, days90: 190 },
+  "bundle-size": { current: 2840, previousRelease: 2910, days30: 3050, days90: 3180 },
+  lcp: { current: 2.4, previousRelease: 2.8, days30: 3.1, days90: 3.4 },
+  cls: { current: 0.08, previousRelease: 0.11, days30: 0.14, days90: 0.18 },
+  fid: { current: 42, previousRelease: 48, days30: 55, days90: 62 },
+  ttfb: { current: 380, previousRelease: 410, days30: 445, days90: 480 },
+  memory: { current: 128, previousRelease: 132, days30: 138, days90: 145 },
+  cpu: { current: 34, previousRelease: 38, days30: 42, days90: 48 },
+  database: { current: 840, previousRelease: 920, days30: 980, days90: 1050 },
+  "slow-queries": { current: 12, previousRelease: 18, days30: 22, days90: 28 },
+  "slow-endpoints": { current: 4, previousRelease: 6, days30: 7, days90: 9 }
+};
+
+function trackStatus(trackId: string, current: number): "healthy" | "watch" | "strained" | "critical" {
+  if (trackId === "lcp" && current > 2.5) return "watch";
+  if (trackId === "cls" && current > 0.1) return "watch";
+  if (trackId === "slow-queries" && current > 10) return "watch";
+  if (trackId === "slow-endpoints" && current > 3) return "watch";
+  if (trackId === "bundle-size" && current > 3000) return "watch";
+  if (trackId === "cpu" && current > 40) return "watch";
+  return "healthy";
+}
+
+export const PERFORMANCE_TRACK_SNAPSHOT_SEED: PerformanceTrackSnapshot[] =
+  PERFORMANCE_ENGINEERING_TRACKS.map((track, index) => {
+    const values = TRACK_VALUES[track.id];
+    return {
+      id: `pt_${index}`,
+      trackRef: `PT-${track.id.toUpperCase().replace(/-/g, "_")}`,
+      trackId: track.id,
+      current: values.current,
+      previousRelease: values.previousRelease,
+      days30: values.days30,
+      days90: values.days90,
+      unit: track.unit,
+      status: trackStatus(track.id, values.current),
+      collectedAt: NOW
+    };
+  });
+
+export const PERFORMANCE_ENGINEERING_REPORT_SEED: PerformanceEngineeringReport[] = [
+  {
+    id: "per_001",
+    reportRef: "PER-REG-001",
+    reportType: "largest-regressions",
+    title: "LCP regressed on /discover mobile",
+    metricRef: "lcp",
+    deltaPercent: 18,
+    detail: "Hero image preload removed in last release — restore priority hint on discover cards.",
+    priority: "high",
+    generatedAt: NOW
+  },
+  {
+    id: "per_002",
+    reportRef: "PER-REG-002",
+    reportType: "largest-regressions",
+    title: "Bundle size grew 4.2% week-over-week",
+    metricRef: "bundle-size",
+    deltaPercent: 4.2,
+    detail: "Admin abuse protection center added without lazy tab split — defer to dynamic import.",
+    priority: "medium",
+    generatedAt: NOW
+  },
+  {
+    id: "per_003",
+    reportRef: "PER-REG-003",
+    reportType: "largest-regressions",
+    title: "Slow query count up on member_profiles",
+    metricRef: "slow-queries",
+    deltaPercent: 33,
+    detail: "Missing composite index on (city_id, last_active_at) — add migration before next release.",
+    priority: "high",
+    generatedAt: NOW
+  },
+  {
+    id: "per_004",
+    reportRef: "PER-IMP-001",
+    reportType: "largest-improvements",
+    title: "Startup time improved 6.2%",
+    metricRef: "startup",
+    deltaPercent: -6.2,
+    detail: "Service worker precache trimmed — member shell loads 120ms faster on 3G.",
+    priority: "medium",
+    generatedAt: NOW
+  },
+  {
+    id: "per_005",
+    reportRef: "PER-IMP-002",
+    reportType: "largest-improvements",
+    title: "API latency down on /api/chats/threads",
+    metricRef: "api-latency",
+    deltaPercent: -12,
+    detail: "N+1 query eliminated — p95 dropped from 520ms to 458ms.",
+    priority: "high",
+    generatedAt: NOW
+  },
+  {
+    id: "per_006",
+    reportRef: "PER-IMP-003",
+    reportType: "largest-improvements",
+    title: "TTFB improved after CDN cache rule",
+    metricRef: "ttfb",
+    deltaPercent: -8.5,
+    detail: "Static asset cache TTL extended — edge hit rate 78% → 91%.",
+    priority: "low",
+    generatedAt: NOW
+  },
+  {
+    id: "per_007",
+    reportRef: "PER-REC-001",
+    reportType: "recommendations",
+    title: "Split admin hub tabs above 200KB",
+    metricRef: "bundle-size",
+    deltaPercent: 0,
+    detail: "Run code splitting tool — 14 admin tabs still in main chunk.",
+    priority: "high",
+    generatedAt: NOW
+  },
+  {
+    id: "per_008",
+    reportRef: "PER-REC-002",
+    reportType: "recommendations",
+    title: "Audit profile photos over 400KB",
+    metricRef: "lcp",
+    deltaPercent: 0,
+    detail: "Image audit found 38 oversized uploads affecting LCP on profile views.",
+    priority: "medium",
+    generatedAt: NOW
+  },
+  {
+    id: "per_009",
+    reportRef: "PER-REC-003",
+    reportType: "recommendations",
+    title: "Enable stale-while-revalidate on discover feed",
+    metricRef: "api-latency",
+    deltaPercent: 0,
+    detail: "Caching tool recommends 60s SWR — reduces repeat latency 40% on return visits.",
+    priority: "medium",
+    generatedAt: NOW
+  }
+];
+
+export const PERFORMANCE_TOOL_RUN_SEED: PerformanceToolRun[] = [
+  {
+    id: "ptr_001",
+    toolId: "bundle-analysis",
+    status: "completed",
+    summary: "Main chunk 1.2MB — admin tabs 420KB, vendor 380KB",
+    ranAt: "2026-06-24T10:00:00.000Z",
+    actor: "ops@bamsignal.com"
+  },
+  {
+    id: "ptr_002",
+    toolId: "image-audit",
+    status: "completed",
+    summary: "38 images over 400KB — profile uploads dominate",
+    ranAt: "2026-06-23T14:30:00.000Z",
+    actor: "ops@bamsignal.com"
+  }
 ];

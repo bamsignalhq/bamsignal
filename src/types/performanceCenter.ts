@@ -1,9 +1,13 @@
 import type {
   OptimizationCategoryId,
+  PerformanceCompareWindowId,
+  PerformanceEngineeringToolId,
   PerformanceHealthStatusId,
   PerformanceImpactLevelId,
   PerformanceMetricId,
-  PerformanceSectionId
+  PerformanceReportTypeId,
+  PerformanceSectionId,
+  PerformanceTrackId
 } from "../constants/performanceCenter";
 
 export type PerformanceMetricSnapshot = {
@@ -82,6 +86,50 @@ export type PerformanceGrowthForecast = {
   status: PerformanceHealthStatusId;
 };
 
+export type PerformanceEngineeringSummary = {
+  engineeringScore: number;
+  healthStatus: PerformanceHealthStatusId;
+  trackCount: number;
+  regressionsCount: number;
+  improvementsCount: number;
+  recommendationsCount: number;
+  compareWindow: PerformanceCompareWindowId;
+};
+
+export type PerformanceTrackSnapshot = {
+  id: string;
+  trackRef: string;
+  trackId: PerformanceTrackId;
+  current: number;
+  previousRelease: number;
+  days30: number;
+  days90: number;
+  unit: string;
+  status: PerformanceHealthStatusId;
+  collectedAt: string;
+};
+
+export type PerformanceEngineeringReport = {
+  id: string;
+  reportRef: string;
+  reportType: PerformanceReportTypeId;
+  title: string;
+  metricRef: string;
+  deltaPercent: number;
+  detail: string;
+  priority: PerformanceImpactLevelId;
+  generatedAt: string;
+};
+
+export type PerformanceToolRun = {
+  id: string;
+  toolId: PerformanceEngineeringToolId;
+  status: "completed" | "running" | "failed";
+  summary: string;
+  ranAt: string;
+  actor: string;
+};
+
 export type PerformanceCenterSummary = {
   healthScore: number;
   healthStatus: PerformanceHealthStatusId;
@@ -99,6 +147,10 @@ export type PerformanceCenterSummary = {
 export type PerformanceCenterBundle = {
   generatedAt: string;
   summary: PerformanceCenterSummary;
+  engineeringSummary: PerformanceEngineeringSummary;
+  tracks: PerformanceTrackSnapshot[];
+  reports: PerformanceEngineeringReport[];
+  toolRuns: PerformanceToolRun[];
   metrics: PerformanceMetricSnapshot[];
   apiProfiles: PerformanceApiProfile[];
   databaseProfiles: PerformanceDatabaseProfile[];

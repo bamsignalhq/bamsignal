@@ -1,40 +1,65 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  PERFORMANCE_FUTURE_ARCHITECTURE,
-  PERFORMANCE_METRIC_LABELS,
-  PERFORMANCE_SECTIONS
+  PERFORMANCE_CENTER_REFRESH_INTERVAL_MS,
+  type PerformanceCompareWindowId,
+  type PerformanceEngineeringToolId,
+  type PerformanceTrackId
 } from "../../../constants/performanceCenter";
 import {
   PERFORMANCE_CENTER_ADMIN_BRAND,
   PERFORMANCE_CENTER_ADMIN_PATH
 } from "../../../constants/performanceCenterAdmin";
-import type { PerformanceSectionId } from "../../../constants/performanceCenter";
-import { buildPerformanceCenterBundle } from "../../../utils/performanceCenterEngine";
+import { buildLivePerformanceCenterBundle } from "../../../utils/performanceCenterEngine";
+import { applyPerformanceEngineeringTool } from "../../../utils/performanceCenterStore";
 import { ApiPerformanceCard } from "./ApiPerformanceCard";
-import { CapacityPlanningCard } from "./CapacityPlanningCard";
 import { DatabasePerformanceCard } from "./DatabasePerformanceCard";
-import { GrowthForecastCard } from "./GrowthForecastCard";
-import { OptimizationCard } from "./OptimizationCard";
-import { PerformanceOverviewCard } from "./PerformanceOverviewCard";
+import { PerformanceCompareCard } from "./PerformanceCompareCard";
+import { PerformanceEngineeringSummaryCard } from "./PerformanceEngineeringSummaryCard";
+import { PerformanceEngineeringToolsCard } from "./PerformanceEngineeringToolsCard";
+import { PerformanceReportsCard } from "./PerformanceReportsCard";
+import { PerformanceTracksCard } from "./PerformanceTracksCard";
 
 export function PerformanceCenterPage() {
-  const [section, setSection] = useState<PerformanceSectionId>("system-performance");
+  const [compareWindow, setCompareWindow] = useState<PerformanceCompareWindowId>("current");
+  const [activeTrack, setActiveTrack] = useState<PerformanceTrackId>("startup");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [busyTool, setBusyTool] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const bundle = useMemo(() => {
     void refreshKey;
-    return buildPerformanceCenterBundle(section);
-  }, [section, refreshKey]);
+    return buildLivePerformanceCenterBundle(compareWindow);
+  }, [compareWindow, refreshKey]);
 
-  const showOverview = section === "system-performance";
+  const refresh = useCallback(() => {
+    setRefreshKey((value) => value + 1);
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(refresh, PERFORMANCE_CENTER_REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(interval);
+  }, [refresh]);
+
+  const handleTool = useCallback(
+    (toolId: PerformanceEngineeringToolId) => {
+      setBusyTool(toolId);
+      try {
+        applyPerformanceEngineeringTool({ toolId, actor: "ops@bamsignal.com" });
+        setToast(`${toolId.replace(/-/g, " ")} completed.`);
+        refresh();
+      } finally {
+        setBusyTool(null);
+      }
+    },
+    [refresh]
+  );
+
   const showApi =
-    showOverview || section === "api-performance" || section === "search-performance";
-  const showDatabase = showOverview || section === "database-performance";
-  const showCapacity =
-    showOverview || section === "capacity-planning" || section === "storage" || section === "bandwidth";
-  const showOptimization =
-    showOverview || section === "optimization" || section === "queue-performance";
-  const showForecast = showOverview || section === "growth-forecast";
+    activeTrack === "api-latency" ||
+    activeTrack === "slow-endpoints" ||
+    activeTrack === "startup";
+  const showDatabase =
+    activeTrack === "database" || activeTrack === "slow-queries";
 
   return (
     <div className="performance-center-page">
@@ -42,66 +67,42 @@ export function PerformanceCenterPage() {
         <div>
           <h2>{PERFORMANCE_CENTER_ADMIN_BRAND}</h2>
           <p>
-            Institutional capacity planning — ensure BamSignal scales from hundreds to millions of
-            members without operational surprises. This is not a server monitor; it is strategic
-            performance, headroom, and optimization intelligence.
+            One dashboard dedicated to application performance — startup, API latency, bundle size,
+            web vitals, memory, CPU, and database health. Auto-refreshes every 30 seconds.
           </p>
         </div>
-        <button
-          type="button"
-          className="concierge-consultant-btn"
-          onClick={() => setRefreshKey((value) => value + 1)}
-        >
-          Refresh
+        <button type="button" className="concierge-consultant-btn" onClick={refresh}>
+          Refresh now
         </button>
       </header>
 
-      <nav className="performance-center-page__sections" aria-label="Performance sections">
-        {PERFORMANCE_SECTIONS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`performance-center-page__section-btn${
-              section === item.id ? " is-active" : ""
-            }`}
-            onClick={() => setSection(item.id)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+      {toast ? <p className="performance-center-page__toast">{toast}</p> : null}
 
-      {showOverview ? <PerformanceOverviewCard summary={bundle.summary} /> : null}
-
-      {!showOverview && bundle.metrics.length ? (
-        <p className="performance-center-page__metrics-note">
-          Section metrics:{" "}
-          {bundle.metrics
-            .map((item) => `${PERFORMANCE_METRIC_LABELS[item.metricId]} ${item.value}${item.unit}`)
-            .join(" · ")}
-        </p>
-      ) : null}
+      <PerformanceEngineeringSummaryCard summary={bundle.engineeringSummary} />
+      <PerformanceCompareCard activeWindow={compareWindow} onWindowChange={setCompareWindow} />
+      <PerformanceTracksCard
+        tracks={bundle.tracks}
+        compareWindow={compareWindow}
+        activeTrack={activeTrack}
+        onTrackSelect={setActiveTrack}
+      />
+      <PerformanceEngineeringToolsCard
+        toolRuns={bundle.toolRuns}
+        busyTool={busyTool}
+        onTool={handleTool}
+      />
 
       <div className="performance-center-page__body">
         <div className="performance-center-page__column">
-          {showApi ? <ApiPerformanceCard profiles={bundle.apiProfiles} /> : null}
-          {showDatabase ? <DatabasePerformanceCard profiles={bundle.databaseProfiles} /> : null}
-          {showCapacity ? (
-            <CapacityPlanningCard
-              plans={bundle.capacityPlans}
-              recommendations={bundle.scalingRecommendations}
-            />
-          ) : null}
+          <PerformanceReportsCard reports={bundle.reports} />
         </div>
         <div className="performance-center-page__column">
-          {showOptimization ? <OptimizationCard items={bundle.optimizationItems} /> : null}
-          {showForecast ? <GrowthForecastCard forecasts={bundle.growthForecasts} /> : null}
+          {showApi ? <ApiPerformanceCard profiles={bundle.apiProfiles} /> : null}
+          {showDatabase ? <DatabasePerformanceCard profiles={bundle.databaseProfiles} /> : null}
         </div>
       </div>
 
       <footer className="performance-center-page__future">
-        <h4>Future architecture (documented only)</h4>
-        <p>{PERFORMANCE_FUTURE_ARCHITECTURE.map((item) => item.label).join(" · ")}</p>
         <span>Route: {PERFORMANCE_CENTER_ADMIN_PATH}</span>
         <span>Generated {new Date(bundle.generatedAt).toLocaleString()}</span>
       </footer>

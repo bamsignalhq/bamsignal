@@ -1,3 +1,7 @@
-export const CONFIGURATION_PLATFORM_ADMIN_BRAND = "Institutional Configuration Center™";
-export const CONFIGURATION_PLATFORM_ADMIN_NAV_LABEL = "Configuration";
+export const CONFIGURATION_PLATFORM_ADMIN_BRAND = "Remote Configuration Center™";
+export const CONFIGURATION_PLATFORM_ADMIN_NAV_LABEL = "Remote Config";
 export const CONFIGURATION_PLATFORM_ADMIN_PATH = "/hard/configuration";
+
+/** @deprecated alias */
+export const REMOTE_CONFIGURATION_CENTER_ADMIN_BRAND = CONFIGURATION_PLATFORM_ADMIN_BRAND;
+export const REMOTE_CONFIGURATION_CENTER_ADMIN_PATH = CONFIGURATION_PLATFORM_ADMIN_PATH;

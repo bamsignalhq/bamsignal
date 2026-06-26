@@ -28,20 +28,17 @@ function assert(condition, message) {
 
 const adminSource = readFileSync(join(rootPath, "src/constants/configurationPlatformAdmin.ts"), "utf8");
 assert(adminSource.includes('CONFIGURATION_PLATFORM_ADMIN_PATH = "/hard/configuration"'), "configuration route");
-assert(adminSource.includes("Institutional Configuration Center™"), "configuration brand");
+assert(adminSource.includes("Remote Configuration Center™"), "remote config brand");
 
 const constantsSource = readFileSync(join(rootPath, "src/constants/configurationPlatform.ts"), "utf8");
-assert(constantsSource.includes("institution"), "institution section");
-assert(constantsSource.includes("feature-flags"), "feature flags section");
+assert(constantsSource.includes("discovery"), "discovery section");
+assert(constantsSource.includes("messaging"), "messaging section");
 assert(constantsSource.includes("consultation-fee"), "consultation fee rule");
-assert(constantsSource.includes("success-story-policies"), "success story policies");
-assert(constantsSource.includes("internal-only"), "internal only flag mode");
-assert(constantsSource.includes("maintenance"), "maintenance flag mode");
+assert(constantsSource.includes("signals.free_daily_limit"), "free daily signals");
 assert(constantsSource.includes("configuration_entries"), "configuration_entries table");
 assert(constantsSource.includes("CONFIGURATION_AUDIT_ACTIONS"), "audit actions");
-assert(constantsSource.includes("CONFIGURATION_FUTURE_ARCHITECTURE"), "future architecture");
-assert(constantsSource.includes("Remote Config"), "remote config future item");
-assert(constantsSource.includes("Approval Workflow"), "approval workflow future item");
+assert(constantsSource.includes("config-published"), "publish audit action");
+assert(constantsSource.includes("REMOTE_CONFIG_DEFAULTS"), "remote config defaults");
 
 const migrationSource = readFileSync(
   join(rootPath, "supabase/migrations/202606252400_configuration_platform.sql"),
@@ -61,7 +58,7 @@ assert(engineSource.includes("auditHistory"), "audit history in bundle");
 
 const storeSource = readFileSync(join(rootPath, "src/utils/configurationPlatformStore.ts"), "utf8");
 assert(storeSource.includes("appendAuditCenterEvent"), "configuration audit logging");
-assert(storeSource.includes("approveConfigurationChange"), "approval workflow");
+assert(storeSource.includes("publishConfigurationDraftEntry"), "publish workflow");
 assert(storeSource.includes("rollbackConfigurationEntry"), "rollback workflow");
 
 const logicSource = readFileSync(join(rootPath, "src/utils/configurationPlatformLogic.ts"), "utf8");
@@ -70,16 +67,12 @@ assert(logicSource.includes("buildConfigurationAuditHistory"), "audit history bu
 assert(logicSource.includes("listBusinessRuleEntries"), "business rule helper");
 
 const seedSource = readFileSync(join(rootPath, "src/data/configurationPlatformSeed.ts"), "utf8");
-assert(seedSource.includes("FEATURE_FLAG_SEED"), "feature flag seed");
-assert(seedSource.includes("CONFIGURATION_APPROVAL_SEED"), "approval seed");
-assert(seedSource.includes("consultation-fee"), "consultation fee seed");
-assert(seedSource.includes("working-hours"), "working hours seed");
+assert(seedSource.includes("CONFIGURATION_ENTRY_SEED"), "configuration entry seed");
+assert(seedSource.includes("signals.free_daily_limit"), "signals seed");
 
 const adminComponents = [
   "ConfigurationCard.tsx",
-  "FeatureFlagCard.tsx",
-  "InstitutionSettingsCard.tsx",
-  "BusinessRuleCard.tsx",
+  "RemoteConfigEntriesCard.tsx",
   "AuditHistoryCard.tsx",
   "ConfigurationPlatformPage.tsx"
 ];
@@ -216,4 +209,4 @@ if (failed) {
   process.exit(1);
 }
 
-console.log("Institutional Configuration Center checks passed.");
+console.log("Remote Configuration Center checks passed.");

@@ -5,7 +5,7 @@ type InstitutionSettingsCardProps = {
 };
 
 export function InstitutionSettingsCard({ entries }: InstitutionSettingsCardProps) {
-  const institutionEntries = entries.filter((item) => item.categoryId === "institution");
+  const institutionEntries = entries.filter((item) => item.categoryId === "discovery");
 
   return (
     <section className="config-card institution-settings-card concierge-consultant-card--glass cc-reveal">

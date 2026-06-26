@@ -107,8 +107,8 @@ export function buildConfigurationMetrics(
   return [
     { id: "entries", label: "Configuration entries", value: String(entries.length) },
     { id: "business-rules", label: "Business rules", value: String(businessRules) },
-    { id: "feature-flags", label: "Feature flags", value: String(flags.length) },
     { id: "enabled-flags", label: "Enabled flags", value: String(countEnabledFlags(flags)) },
+    { id: "draft-settings", label: "Draft settings", value: String(entries.filter((item) => item.status === "draft").length) },
     { id: "pending-approvals", label: "Pending approvals", value: String(pending) },
     { id: "audit-records", label: "Audit records", value: String(versions.length) },
     { id: "critical-settings", label: "Critical settings", value: String(critical) }
@@ -257,7 +257,6 @@ export function evaluateFeatureFlag(
 }
 
 export function filterFlagsBySection(flags: FeatureFlagRecord[], sectionId: ConfigurationSectionId) {
-  if (sectionId === "feature-flags") return flags;
   return flags.filter((item) => item.categoryId === sectionId);
 }
 
@@ -266,5 +265,52 @@ export function listBusinessRuleEntries(entries: ConfigurationEntryRecord[]) {
 }
 
 export function listInstitutionEntries(entries: ConfigurationEntryRecord[]) {
-  return entries.filter((item) => item.categoryId === "institution");
+  return entries.filter((item) => item.categoryId === "discovery");
+}
+
+export function saveConfigurationDraft(
+  entry: ConfigurationEntryRecord,
+  draftValue: ConfigurationEntryRecord["value"]
+): ConfigurationEntryRecord {
+  const validation = validateConfigurationChange(entry, draftValue);
+  if (!validation.ok) {
+    throw new Error(`Configuration validation failed: ${validation.reason}`);
+  }
+  return {
+    ...entry,
+    status: "draft",
+    draftValue,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+export function publishConfigurationDraft(entry: ConfigurationEntryRecord): ConfigurationEntryRecord {
+  if (entry.status !== "draft" || entry.draftValue === undefined) {
+    throw new Error("Configuration publish violation: no draft to publish");
+  }
+  return {
+    ...entry,
+    status: "active",
+    draftValue: undefined
+  };
+}
+
+export function buildRemoteConfigMap(entries: ConfigurationEntryRecord[]) {
+  const map: Record<string, ConfigurationEntryRecord["value"]> = {};
+  for (const entry of entries) {
+    if (entry.status === "active") {
+      map[entry.configKey] = entry.value;
+    }
+  }
+  return map;
+}
+
+export function resolveRemoteConfigValue(
+  key: string,
+  entries: ConfigurationEntryRecord[],
+  defaults: Record<string, ConfigurationEntryRecord["value"]> = {}
+): ConfigurationEntryRecord["value"] | undefined {
+  const entry = entries.find((item) => item.configKey === key && item.status === "active");
+  if (entry) return entry.value;
+  return defaults[key];
 }

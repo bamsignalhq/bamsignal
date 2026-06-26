@@ -18,7 +18,8 @@ export type ConfigurationEntryRecord = {
   valueType: "string" | "number" | "boolean" | "json";
   critical: boolean;
   activeVersion: number;
-  status: "active" | "pending-approval" | "archived";
+  status: "draft" | "active" | "pending-approval" | "archived";
+  draftValue?: ConfigurationValue;
   updatedAt: string;
   updatedBy?: string;
 };

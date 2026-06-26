@@ -1,4 +1,5 @@
 import type { ConfigurationAuditActionId } from "../constants/configurationPlatform";
+import { REMOTE_CONFIG_OFFLINE_CACHE_KEY } from "../constants/configurationPlatform";
 import {
   CONFIGURATION_APPROVAL_SEED,
   CONFIGURATION_ENTRY_SEED,
@@ -17,7 +18,8 @@ import { appendAuditCenterEvent } from "./auditCenterEngine";
 import {
   appendConfigurationVersion,
   processConfigurationApproval,
-  rollbackConfigurationVersion
+  rollbackConfigurationVersion,
+  saveConfigurationDraft
 } from "./configurationPlatformLogic";
 import { readJson, writeJson } from "./storage";
 
@@ -58,7 +60,12 @@ function loadState(): ConfigurationPlatformState {
 }
 
 function saveState(state: ConfigurationPlatformState): void {
-  writeJson(STORAGE_KEY, { ...state, updatedAt: new Date().toISOString() });
+  const updatedAt = new Date().toISOString();
+  writeJson(STORAGE_KEY, { ...state, updatedAt });
+  writeJson(REMOTE_CONFIG_OFFLINE_CACHE_KEY, {
+    entries: state.entries.filter((item) => item.status === "active"),
+    cachedAt: updatedAt
+  });
 }
 
 function logConfigurationAudit(
@@ -220,4 +227,76 @@ export function updateFeatureFlagMode(
     state.featureFlags[index].flagKey
   );
   return state.featureFlags[index];
+}
+
+export function saveConfigurationDraftValue(
+  entryId: string,
+  draftValue: ConfigurationEntryRecord["value"],
+  actor: string,
+  reason?: string
+): ConfigurationEntryRecord | null {
+  const state = loadState();
+  const index = state.entries.findIndex((item) => item.id === entryId);
+  if (index < 0) return null;
+
+  const updated = saveConfigurationDraft(state.entries[index], draftValue);
+  state.entries[index] = { ...updated, updatedBy: actor };
+  saveState(state);
+  logConfigurationAudit(
+    "config-draft-saved",
+    `${updated.configKey} draft saved by ${actor}${reason ? `: ${reason}` : ""}`,
+    updated.configKey
+  );
+  return state.entries[index];
+}
+
+export function publishConfigurationDraftEntry(
+  entryId: string,
+  actor: string,
+  changeReason?: string
+): ConfigurationEntryRecord | null {
+  const state = loadState();
+  const index = state.entries.findIndex((item) => item.id === entryId);
+  if (index < 0) return null;
+
+  const draftEntry = state.entries[index];
+  if (draftEntry.draftValue === undefined) return null;
+
+  const result = appendConfigurationVersion(draftEntry, state.versions, {
+    value: draftEntry.draftValue,
+    changedBy: actor,
+    changeReason: changeReason ?? "Published from draft"
+  });
+
+  state.entries[index] = {
+    ...result.entry,
+    status: result.requiresApproval ? "pending-approval" : "active",
+    draftValue: undefined
+  };
+  state.versions = result.versions;
+
+  if (result.requiresApproval) {
+    state.approvals = [
+      ...state.approvals,
+      {
+        id: `appr_${Date.now()}`,
+        entryId: result.entry.id,
+        configKey: result.entry.configKey,
+        label: result.entry.label,
+        proposedVersion: result.entry.activeVersion,
+        proposedValue: draftEntry.draftValue,
+        status: "pending",
+        requestedBy: actor,
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  saveState(state);
+  logConfigurationAudit(
+    "config-published",
+    `${result.entry.configKey} published by ${actor}`,
+    result.entry.configKey
+  );
+  return state.entries[index];
 }

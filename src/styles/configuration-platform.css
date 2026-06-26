@@ -408,6 +408,87 @@
   color: rgba(255, 255, 255, 0.68);
 }
 
+.configuration-platform-page__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.remote-config-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.remote-config-card__item {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.remote-config-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.remote-config-card__key {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: rgba(160, 200, 255, 0.85);
+}
+
+.remote-config-card__section {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.remote-config-card__values {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.remote-config-card__values code {
+  display: block;
+  margin-top: 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 0.78rem;
+}
+
+.remote-config-card__status {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.remote-config-card__status--draft {
+  color: rgba(255, 200, 120, 0.95);
+}
+
+.remote-config-card__status--active {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.remote-config-card__status--pending-approval {
+  color: rgba(255, 180, 120, 0.95);
+}
+
+.remote-config-card__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
 @media (max-width: 900px) {
   .configuration-platform-page__body {
     grid-template-columns: 1fr;

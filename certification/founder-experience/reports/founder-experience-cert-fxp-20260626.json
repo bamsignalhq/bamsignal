@@ -1,0 +1,112 @@
+{
+  "runId": "fxp-20260626",
+  "generatedAt": "2026-06-26T18:30:00.000Z",
+  "brand": "Founder Experience Certification™",
+  "baseUrl": "https://bamsignal.com",
+  "method": "founder-member-simulation",
+  "personaCount": 25,
+  "stagesPerPersona": 9,
+  "stages": [
+    "signup",
+    "verification",
+    "discover",
+    "signals",
+    "chats",
+    "consultation",
+    "premium",
+    "report",
+    "logout"
+  ],
+  "passed": true,
+  "certificationStatus": "CERTIFIED_OBSERVATIONS_COMPLETE",
+  "crossCutting": {
+    "confusion": 4,
+    "friction": 4,
+    "waiting": 4,
+    "duplicateActions": 2,
+    "unclearWording": 3,
+    "unexpectedBehavior": 2
+  },
+  "crossCuttingFindings": [
+    {
+      "id": "X-01",
+      "category": "confusion",
+      "stage": "signup-login",
+      "detail": "Signup collects email; login accepts username + PIN only."
+    },
+    {
+      "id": "X-02",
+      "category": "confusion",
+      "stage": "premium-consultation",
+      "detail": "Signal Pass and Signal Concierge use separate naming and pricing."
+    },
+    {
+      "id": "X-03",
+      "category": "confusion",
+      "stage": "public-nav",
+      "detail": "Logged-out homepage shows member-style bottom tabs."
+    },
+    {
+      "id": "X-09",
+      "category": "waiting",
+      "stage": "discover",
+      "detail": "Cold /discover shows Restoring your session… before route resolves."
+    },
+    {
+      "id": "X-07",
+      "category": "duplicateActions",
+      "stage": "consultation",
+      "detail": "Four Begin application buttons share identical label."
+    },
+    {
+      "id": "X-18",
+      "category": "unexpectedBehavior",
+      "stage": "discover",
+      "detail": "Session restore overlay on cold discover visit."
+    }
+  ],
+  "stageRollup": {
+    "signup": { "confusion": 2, "friction": 5, "waiting": 2, "duplicate": 0, "unclear": 2, "unexpected": 1 },
+    "verification": { "confusion": 2, "friction": 3, "waiting": 2, "duplicate": 0, "unclear": 0, "unexpected": 0 },
+    "discover": { "confusion": 0, "friction": 1, "waiting": 4, "duplicate": 0, "unclear": 0, "unexpected": 3 },
+    "signals": { "confusion": 0, "friction": 0, "waiting": 0, "duplicate": 0, "unclear": 0, "unexpected": 0 },
+    "chats": { "confusion": 0, "friction": 0, "waiting": 0, "duplicate": 0, "unclear": 0, "unexpected": 0 },
+    "consultation": { "confusion": 5, "friction": 0, "waiting": 2, "duplicate": 4, "unclear": 2, "unexpected": 0 },
+    "premium": { "confusion": 4, "friction": 1, "waiting": 3, "duplicate": 0, "unclear": 1, "unexpected": 0 },
+    "report": { "confusion": 0, "friction": 2, "waiting": 0, "duplicate": 0, "unclear": 1, "unexpected": 0 },
+    "logout": { "confusion": 0, "friction": 0, "waiting": 0, "duplicate": 0, "unclear": 1, "unexpected": 0 }
+  },
+  "limitations": [
+    "Signals and Chats not exercised with live authenticated accounts in this pass.",
+    "Paystack checkout return path not observed live.",
+    "OTP email delivery not verified."
+  ],
+  "personaIds": [
+    "student",
+    "lawyer",
+    "doctor",
+    "entrepreneur",
+    "single_parent",
+    "christian",
+    "muslim",
+    "diaspora",
+    "introvert",
+    "extrovert",
+    "recent_grad",
+    "civil_servant",
+    "creative",
+    "engineer",
+    "nurse",
+    "teacher",
+    "divorcee",
+    "widow",
+    "banker",
+    "trader",
+    "creator",
+    "fitness_coach",
+    "remote_worker",
+    "returning_member",
+    "premium_interested"
+  ],
+  "source": "founder-walkthrough"
+}

@@ -58,7 +58,8 @@ export type HardTab =
   | "search"
   | "disasterrecovery"
   | "launchcommand"
-  | "qualityassurance";
+  | "qualityassurance"
+  | "securityops";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -170,6 +171,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "audit",
         label: "Audit",
         keywords: ["audit", "compliance", "trail", "permissions", "exports"]
+      },
+      {
+        id: "securityops",
+        label: "Security Ops",
+        keywords: ["security", "operations", "soc", "authentication", "brute-force", "sessions", "api-abuse", "incidents", "platform"]
       },
       {
         id: "securitydashboard",
@@ -406,6 +412,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   disasterrecovery: "Disaster Recovery",
   launchcommand: "Launch Command",
   qualityassurance: "QA & Certification",
+  securityops: "Security Ops",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

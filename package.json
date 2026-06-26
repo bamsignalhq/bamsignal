@@ -43,6 +43,7 @@
     "test:disaster-recovery": "node scripts/test-disaster-recovery.mjs",
     "test:launch-command": "node scripts/test-launch-command.mjs",
     "test:quality-assurance": "node scripts/test-quality-assurance.mjs",
+    "test:security-operations": "node scripts/test-security-operations.mjs",
     "test:journey-intelligence": "node scripts/test-journey-intelligence.mjs",
     "test:regional-teams": "node scripts/test-regional-teams.mjs",
     "test:house-pipeline": "node scripts/test-house-pipeline.mjs",

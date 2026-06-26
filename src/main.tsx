@@ -100,6 +100,7 @@ import "./styles/search-center.css";
 import "./styles/disaster-recovery-center.css";
 import "./styles/launch-command-center.css";
 import "./styles/quality-assurance-center.css";
+import "./styles/security-operations-center.css";
 import "./styles/feature-flag-platform.css";
 import "./styles/data-integrity.css";
 import "./styles/recovery-center.css";

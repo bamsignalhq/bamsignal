@@ -1,0 +1,262 @@
+.security-ops-center-page {
+  display: grid;
+  gap: 18px;
+}
+
+.security-ops-center-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.security-ops-center-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.security-ops-center-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.security-ops-center-page__toast {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 140, 140, 0.35);
+  background: rgba(255, 140, 140, 0.08);
+  color: rgba(255, 180, 180, 0.95);
+  font-size: 0.86rem;
+}
+
+.security-ops-center-page__modules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.security-ops-center-page__module-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.security-ops-center-page__module-btn.is-active {
+  border-color: rgba(255, 140, 140, 0.55);
+  background: rgba(255, 140, 140, 0.1);
+}
+
+.security-ops-center-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.security-ops-center-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.security-ops-center-page__foot {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.security-ops-card {
+  padding: 14px;
+}
+
+.security-ops-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.security-ops-card__head p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.security-ops-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.security-ops-card__meta {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.security-ops-card__list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.security-ops-card__list > li {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.security-ops-card__empty {
+  margin: 12px 0 0;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.security-ops-summary-card__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 12px 0 8px;
+}
+
+.security-ops-summary-card__hero strong {
+  font-size: 2rem;
+  color: rgba(255, 180, 180, 0.95);
+}
+
+.security-ops-summary-card__line {
+  margin: 0 0 12px;
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.security-ops-summary-card__grid,
+.security-ops-scores-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+
+.security-ops-summary-card__grid article,
+.security-ops-scores-card__grid article {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.security-ops-summary-card__grid span,
+.security-ops-scores-card__grid span {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.security-ops-score--healthy strong {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.security-ops-score--warning strong {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.security-ops-score--critical strong {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.security-ops-scores-card__grid em {
+  font-size: 0.72rem;
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.security-ops-severity,
+.security-ops-incident-status {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.security-ops-severity--healthy,
+.security-ops-incident-status--resolved {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.security-ops-severity--warning,
+.security-ops-incident-status--investigating,
+.security-ops-incident-status--contained {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.security-ops-severity--critical,
+.security-ops-incident-status--open {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.security-ops-tools-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.security-ops-tool-chip {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+}
+
+.security-ops-tool-chip:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.security-ops-tool-chip strong {
+  font-size: 0.9rem;
+}
+
+.security-ops-tool-chip span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.security-ops-incidents-card__timeline {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.security-ops-incidents-card__timeline p {
+  margin: 2px 0 0;
+}
+
+@media (max-width: 900px) {
+  .security-ops-center-page__body {
+    grid-template-columns: 1fr;
+  }
+}

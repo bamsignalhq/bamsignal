@@ -137,6 +137,11 @@ export const LazyQualityAssuranceCenterPage = lazy(() =>
     default: module.QualityAssuranceCenterPage
   }))
 );
+export const LazySecurityOperationsCenterPage = lazy(() =>
+  import("./securityOps/SecurityOperationsCenterPage").then((module) => ({
+    default: module.SecurityOperationsCenterPage
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

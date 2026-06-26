@@ -47,6 +47,7 @@ import { SEARCH_CENTER_ADMIN_PATH } from "./searchCenterAdmin";
 import { DISASTER_RECOVERY_ADMIN_PATH } from "./disasterRecoveryAdmin";
 import { LAUNCH_COMMAND_CENTER_ADMIN_PATH } from "./launchCommandCenterAdmin";
 import { QA_CERTIFICATION_CENTER_ADMIN_PATH } from "./qualityAssuranceCenterAdmin";
+import { SECURITY_OPERATIONS_CENTER_ADMIN_PATH } from "./securityOperationsCenterAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
 export type AuditAdminView = "compliance" | "routes" | "database" | "security" | "journeys";
@@ -111,7 +112,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   search: "search",
   disasterrecovery: "disaster-recovery",
   launchcommand: "launch-command",
-  qualityassurance: "quality-assurance"
+  qualityassurance: "quality-assurance",
+  securityops: "security"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(
@@ -174,6 +176,12 @@ export function parseHardTabFromPath(pathname = window.location.pathname): HardT
     path.startsWith(`${QA_CERTIFICATION_CENTER_ADMIN_PATH}/`)
   ) {
     return "qualityassurance";
+  }
+  if (
+    path === SECURITY_OPERATIONS_CENTER_ADMIN_PATH ||
+    path.startsWith(`${SECURITY_OPERATIONS_CENTER_ADMIN_PATH}/`)
+  ) {
+    return "securityops";
   }
   if (
     path === DOCUMENT_CENTER_ADMIN_PATH ||

@@ -90,6 +90,7 @@
     "test:launch-infrastructure": "node scripts/test-launch-infrastructure.mjs",
     "test:founder-acceptance": "node scripts/test-founder-acceptance.mjs",
     "test:production-observability": "node scripts/test-production-observability.mjs",
+    "test:feature-flag-platform": "node scripts/test-feature-flag-platform.mjs",
     "test:certification-suite": "node scripts/run-certification-test-suite.mjs",
     "test:reporting-center": "node scripts/test-reporting-center.mjs",
     "test:executive-dashboard": "node scripts/test-executive-dashboard.mjs",

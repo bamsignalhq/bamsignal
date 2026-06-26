@@ -49,6 +49,7 @@ import adminConsentHandler from "../api/admin/consent.js";
 import adminBootstrapHandler from "../api/admin/bootstrap.js";
 import adminModerationHandler from "../api/admin/moderation.js";
 import hardSetupHandler from "../api/hard/setup.js";
+import featureFlagsHandler from "../api/feature-flags/index.js";
 import whatsappVerifyStartHandler from "../api/verify/whatsapp/start.js";
 import whatsappVerifyConfirmHandler from "../api/verify/whatsapp/confirm.js";
 import whatsappVerifyWebhookHandler from "../api/verify/whatsapp/webhook.js";
@@ -165,6 +166,7 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/admin/moderation", adminModerationHandler);
   mountHandler(app, "get", "/api/hard/setup", hardSetupHandler);
   mountHandler(app, "post", "/api/hard/setup", hardSetupHandler);
+  mountHandler(app, "get", "/api/feature-flags", featureFlagsHandler);
   mountHandler(app, "get", "/api/admin/city-spotlight", adminCitySpotlightHandler);
   mountHandler(app, "get", "/api/city/home", cityHomeHandler);
   mountHandler(app, "get", "/api/city/spotlight", citySpotlightHandler);

@@ -40,6 +40,7 @@ import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin"
 import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
 import { FOUNDER_ACCEPTANCE_ADMIN_PATH } from "./founderAcceptanceAdmin";
 import { PRODUCTION_OBSERVABILITY_ADMIN_PATH } from "./productionObservabilityAdmin";
+import { FEATURE_FLAG_PLATFORM_ADMIN_PATH } from "./featureFlagPlatformAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
 export type AuditAdminView = "compliance" | "routes" | "database" | "security" | "journeys";
@@ -97,7 +98,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   productionenvironment: "production-environment",
   launchinfrastructure: "launch-infrastructure",
   founderacceptance: "founder-acceptance",
-  observability: "observability"
+  observability: "observability",
+  featureflags: "feature-flags"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(

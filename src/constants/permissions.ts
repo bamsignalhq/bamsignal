@@ -36,6 +36,7 @@ import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin"
 import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
 import { FOUNDER_ACCEPTANCE_ADMIN_PATH } from "./founderAcceptanceAdmin";
 import { PRODUCTION_OBSERVABILITY_ADMIN_PATH } from "./productionObservabilityAdmin";
+import { FEATURE_FLAG_PLATFORM_ADMIN_PATH } from "./featureFlagPlatformAdmin";
 import { REPORTING_CENTER_ADMIN_PATH } from "./reportingCenterAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
@@ -168,7 +169,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   productionenvironment: "ManageOperations",
   launchinfrastructure: "ManageOperations",
   founderacceptance: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
-  observability: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"]
+  observability: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
+  featureflags: ["SystemAdministration", "ManageGovernance", "ManageOperations"]
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -246,7 +248,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [PRODUCTION_ENVIRONMENT_ADMIN_PATH]: HARD_TAB_PERMISSIONS.productionenvironment,
   [LAUNCH_INFRASTRUCTURE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchinfrastructure,
   [FOUNDER_ACCEPTANCE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.founderacceptance,
-  [PRODUCTION_OBSERVABILITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.observability
+  [PRODUCTION_OBSERVABILITY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.observability,
+  [FEATURE_FLAG_PLATFORM_ADMIN_PATH]: HARD_TAB_PERMISSIONS.featureflags
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -310,7 +313,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/production-environment",
   "/hard/launch-infrastructure",
   "/hard/founder-acceptance",
-  "/hard/observability"
+  "/hard/observability",
+  "/hard/feature-flags"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

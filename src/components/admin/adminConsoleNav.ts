@@ -51,7 +51,8 @@ export type HardTab =
   | "productionenvironment"
   | "launchinfrastructure"
   | "founderacceptance"
-  | "observability";
+  | "observability"
+  | "featureflags";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -113,6 +114,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "configuration",
         label: "Configuration",
         keywords: ["configuration", "feature-flags", "runtime", "settings", "limits", "rollout", "versioning"]
+      },
+      {
+        id: "featureflags",
+        label: "Feature Flags",
+        keywords: ["feature", "flags", "rollout", "toggle", "remote", "experiments", "beta", "launch"]
       },
       {
         id: "observability",
@@ -357,6 +363,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   launchinfrastructure: "Launch Infra",
   founderacceptance: "FAT",
   observability: "Observability",
+  featureflags: "Feature Flags",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

@@ -102,6 +102,11 @@ export const LazyProductionObservabilityPage = lazy(() =>
     default: module.ProductionObservabilityPage
   }))
 );
+export const LazyFeatureFlagPlatformPage = lazy(() =>
+  import("./featureFlags/FeatureFlagPlatformPage").then((module) => ({
+    default: module.FeatureFlagPlatformPage
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

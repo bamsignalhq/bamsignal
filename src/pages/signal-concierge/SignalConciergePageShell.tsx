@@ -1,4 +1,5 @@
 import { SignalConciergeLayout } from "../../components/signalConcierge/SignalConciergeLayout";
+import "../../styles/entry-signal-concierge.css";
 import { navigateToPath } from "../../constants/routes";
 import {
   signalConciergePathForRoute,

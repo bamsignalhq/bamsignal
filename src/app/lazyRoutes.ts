@@ -600,6 +600,10 @@ export const LazySupportKnowledgeBasePage = lazy(() =>
   }))
 );
 
+export const LazyVoiceVibePage = lazy(() =>
+  import("../pages/VoiceVibePage").then((module) => ({ default: module.VoiceVibePage }))
+);
+
 export const LazyLegalPage = lazy(() =>
   import("../pages/LegalPage").then((module) => ({ default: module.LegalPage }))
 );

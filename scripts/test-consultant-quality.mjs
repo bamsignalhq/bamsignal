@@ -111,7 +111,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:consultant-quality"), "package.json defines test:consultant-quality");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("consultant-quality.css"), "quality styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("consultant-quality.css") || mainSource.includes("consultant-quality.css")), "quality styles imported");
 
 assert(CONSULTANT_QUALITY_DB_TABLES.length === 6, "six db tables");
 assert(getConsultantQualityDatabaseTableManifest().length === 6, "table manifest");

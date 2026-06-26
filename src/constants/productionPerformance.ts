@@ -35,8 +35,11 @@ export const PERFORMANCE_STATUS_LABELS: Record<PerformanceStatusId, string> = Ob
 
 export const PERFORMANCE_OPTIMIZATION_FIXES = [
   "Admin institutional tabs lazy-loaded on demand — smaller AdminConsoleRoot initial chunk",
-  "Vite manual chunks for react, supabase, capacitor, icons, heic2any",
+  "CSS entry bundles split: member core vs admin, public, institute, careers, support, concierge, moment",
+  "Vite manual chunks for react, supabase, capacitor, icons, heic2any, tensorflow, photo-crop",
   "heic2any dynamically imported only during photo conversion",
+  "Voice Vibe page and react-easy-crop cropper lazy-loaded on demand",
+  "modulePreload polyfill disabled for modern browsers",
   "In-flight deduplication for discover profiles and premium status refresh",
   "Service worker stale-cache purge on activate",
   "Member API GET assets use network-first; navigations never cached",

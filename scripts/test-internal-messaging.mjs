@@ -71,7 +71,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:internal-messaging"), "package.json defines test:internal-messaging");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("internal-messaging.css"), "messaging styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("internal-messaging.css") || mainSource.includes("internal-messaging.css")), "messaging styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

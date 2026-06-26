@@ -116,7 +116,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:data-governance"), "package.json defines test:data-governance");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("data-governance-center.css"), "data governance styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("data-governance-center.css") || mainSource.includes("data-governance-center.css")), "data governance styles imported");
 
 const cssSource = readFileSync(join(rootPath, "src/styles/data-governance-center.css"), "utf8");
 assert(cssSource.includes("governance-tools-card__grid"), "governance tools styles");

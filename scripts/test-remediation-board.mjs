@@ -85,7 +85,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:remediation-board"), "package.json defines test:remediation-board");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("remediation-board.css"), "remediation board styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("remediation-board.css") || mainSource.includes("remediation-board.css")), "remediation board styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

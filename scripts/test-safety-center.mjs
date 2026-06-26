@@ -78,7 +78,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:safety-center"), "package.json defines test:safety-center");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("safety-center.css"), "safety center styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("safety-center.css") || mainSource.includes("safety-center.css")), "safety center styles imported");
 
 const incident = {
   id: "safety_test_001",

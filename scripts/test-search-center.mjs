@@ -96,7 +96,8 @@ const adminHubSource = read("src/pages/AdminHubPage.tsx");
 assert(adminHubSource.includes('tab === "search"'), "admin hub tab wired");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("search-center.css"), "styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("search-center.css") || mainSource.includes("search-center.css")), "styles imported");
 
 const migrationSource = read("supabase/migrations/202606261200_search_center.sql");
 assert(migrationSource.includes("search_saved_queries"), "saved queries migration");

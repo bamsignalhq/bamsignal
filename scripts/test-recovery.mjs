@@ -101,7 +101,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:recovery"), "package.json defines test:recovery");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("recovery-center.css"), "recovery styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("recovery-center.css") || mainSource.includes("recovery-center.css")), "recovery styles imported");
 
 const cssSource = readFileSync(join(rootPath, "src/styles/recovery-center.css"), "utf8");
 assert(cssSource.includes("recovery-center-page"), "recovery styles");

@@ -104,7 +104,8 @@ const packageSource = read("package.json");
 assert(packageSource.includes("test:enterprise-api-center"), "package.json defines test:enterprise-api-center");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("enterprise-api-center.css"), "enterprise api styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("enterprise-api-center.css") || mainSource.includes("enterprise-api-center.css")), "enterprise api styles imported");
 
 const cssSource = read("src/styles/enterprise-api-center.css");
 assert(cssSource.includes("enterprise-api-endpoints-card"), "endpoint table styles");

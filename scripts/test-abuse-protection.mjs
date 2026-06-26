@@ -86,7 +86,8 @@ const cssSource = read("src/styles/abuse-protection-center.css");
 assert(cssSource.includes("abuse-protection-page"), "page styles");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("abuse-protection-center.css"), "styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("abuse-protection-center.css") || mainSource.includes("abuse-protection-center.css")), "styles imported");
 
 const packageSource = read("package.json");
 assert(packageSource.includes("test:abuse-protection"), "package.json defines test:abuse-protection");

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import "../styles/entry-moment.css";
 import { ArrowLeft, BadgeCheck } from "lucide-react";
 import { getMomentPage, momentDisplayTitle, type MomentPageId } from "../data/momentPages";
 import { CITIES_VISUAL } from "../data/visualLanding";

@@ -100,7 +100,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:governance"), "package.json defines test:governance");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("institutional-governance.css"), "governance styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("institutional-governance.css") || mainSource.includes("institutional-governance.css")), "governance styles imported");
 
 const seedState = getInstitutionalGovernanceSeedState();
 const founderContext = buildGovernanceAuthorizationContext(

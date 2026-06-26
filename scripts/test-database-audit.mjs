@@ -61,7 +61,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:database-audit"), "package.json defines test:database-audit");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("database-audit.css"), "database audit styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("database-audit.css") || mainSource.includes("database-audit.css")), "database audit styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

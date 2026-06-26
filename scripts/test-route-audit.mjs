@@ -58,7 +58,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:route-audit"), "package.json defines test:route-audit");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("route-audit.css"), "route audit styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("route-audit.css") || mainSource.includes("route-audit.css")), "route audit styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

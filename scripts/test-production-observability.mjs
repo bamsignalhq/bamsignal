@@ -92,7 +92,8 @@ const packageSource = read("package.json");
 assert(packageSource.includes("test:production-observability"), "package.json defines test script");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("production-observability.css"), "observability styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("production-observability.css") || mainSource.includes("production-observability.css")), "observability styles imported");
 
 const cssSource = read("src/styles/production-observability.css");
 assert(cssSource.includes("observability-page"), "observability styles");

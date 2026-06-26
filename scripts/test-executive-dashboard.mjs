@@ -65,7 +65,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:executive-dashboard"), "package.json defines test:executive-dashboard");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("executive-dashboard.css"), "executive styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("executive-dashboard.css") || mainSource.includes("executive-dashboard.css")), "executive styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

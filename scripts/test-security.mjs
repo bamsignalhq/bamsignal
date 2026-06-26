@@ -136,7 +136,8 @@ assert(adminHubSource.includes('tab === "securitydashboard"'), "AdminHub mounts 
 assert(adminHubSource.includes("SecurityDashboard"), "SecurityDashboard imported");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("production-security.css"), "security styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("production-security.css") || mainSource.includes("production-security.css")), "security styles imported");
 
 const stylesSource = read("src/styles/production-security.css");
 assert(stylesSource.includes(".production-security-page"), "security page styles");

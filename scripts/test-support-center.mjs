@@ -83,7 +83,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:support-center"), "package.json defines test:support-center");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("support-center.css"), "support styles imported");
+const entrySupportSource = readFileSync(join(rootPath, "src/styles/entry-support.css"), "utf8");
+assert(entrySupportSource.includes("support-center.css"), "support styles imported");
 
 if (failed) process.exit(1);
 console.log("support center tests ok");

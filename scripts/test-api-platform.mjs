@@ -98,7 +98,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:api-platform"), "package.json defines test:api-platform");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("api-platform.css"), "api platform styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("api-platform.css") || mainSource.includes("api-platform.css")), "api platform styles imported");
 
 const cssSource = readFileSync(join(rootPath, "src/styles/api-platform.css"), "utf8");
 assert(cssSource.includes("api-platform-page"), "api platform styles");

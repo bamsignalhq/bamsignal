@@ -58,7 +58,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:journey-audit"), "package.json defines test:journey-audit");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("journey-integrity-audit.css"), "journey audit styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("journey-integrity-audit.css") || mainSource.includes("journey-integrity-audit.css")), "journey audit styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

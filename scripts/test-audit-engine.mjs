@@ -74,7 +74,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:audit-engine"), "package.json defines test:audit-engine");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("institutional-compliance.css"), "institutional compliance styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("institutional-compliance.css") || mainSource.includes("institutional-compliance.css")), "institutional compliance styles imported");
 
 const seed = [
   {

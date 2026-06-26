@@ -16,7 +16,6 @@ import { DiscoverPage } from "./pages/DiscoverPage";
 import { LikesPage } from "./pages/LikesPage";
 import { ChatsPage } from "./pages/ChatsPage";
 import { ProfilePage } from "./pages/ProfilePage";
-import { VoiceVibePage } from "./pages/VoiceVibePage";
 import { SavedProfilesPage } from "./pages/SavedProfilesPage";
 import { TrustedMemberPage } from "./pages/TrustedMemberPage";
 import { LazyRouteFallback } from "./app/LazyRouteFallback";
@@ -26,6 +25,7 @@ import {
   LazyFastConnectionPage,
   LazyLegalPage,
   LazyMomentPage,
+  LazyVoiceVibePage,
   LazyPremiumPage,
   LazyPublicMarketingRoutes,
   LazySafetyCenterPage,
@@ -2895,15 +2895,17 @@ export function App() {
           )}
           {memberAccessReady && tab === "me" && currentPathname === "/voice-vibe" && (
             <MemberRouteBoundary sessionKey={memberSessionEpoch} name="voice-vibe">
-              <VoiceVibePage
-                user={user}
-                profile={getDatingProfile()}
-                isPremium={isPremium}
-                onProfileChange={(next) => {
-                  writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
-                }}
-                onBack={() => navigateToPath("/profile")}
-              />
+              <Suspense fallback={<LazyRouteFallback subtitle="Loading voice vibe…" />}>
+                <LazyVoiceVibePage
+                  user={user}
+                  profile={getDatingProfile()}
+                  isPremium={isPremium}
+                  onProfileChange={(next) => {
+                    writeJson(STORAGE_KEYS.datingProfile, normalizeDatingProfile(next));
+                  }}
+                  onBack={() => navigateToPath("/profile")}
+                />
+              </Suspense>
             </MemberRouteBoundary>
           )}
           {memberAccessReady && tab === "me" && currentPathname === "/trusted-member" && (

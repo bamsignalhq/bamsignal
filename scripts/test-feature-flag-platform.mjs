@@ -103,7 +103,8 @@ const packageSource = read("package.json");
 assert(packageSource.includes("test:feature-flag-platform"), "package.json defines test script");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("feature-flag-platform.css"), "feature flag styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("feature-flag-platform.css") || mainSource.includes("feature-flag-platform.css")), "feature flag styles imported");
 
 const databaseAuditSource = read("src/utils/databaseAudit.ts");
 assert(databaseAuditSource.includes("bamsignal.featureFlagPlatform.v1"), "database audit manifest");

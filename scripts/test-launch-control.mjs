@@ -105,8 +105,9 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:launch-control"), "package.json defines test:launch-control");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("launch-control-center.css"), "launch control styles imported");
-assert(mainSource.includes("api-platform.css"), "api platform styles still imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("launch-control-center.css") || mainSource.includes("launch-control-center.css")), "launch control styles imported");
+assert((entryAdminSource.includes("api-platform.css") || mainSource.includes("api-platform.css")), "api platform styles still imported");
 
 const cssSource = readFileSync(join(rootPath, "src/styles/launch-control-center.css"), "utf8");
 assert(cssSource.includes("launch-control-center-page"), "launch control styles");

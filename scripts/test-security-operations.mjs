@@ -101,7 +101,8 @@ const packageSource = read("package.json");
 assert(packageSource.includes("test:security-operations"), "package.json defines test:security-operations");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("security-operations-center.css"), "security ops styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("security-operations-center.css") || mainSource.includes("security-operations-center.css")), "security ops styles imported");
 
 const migrationSource = read("supabase/migrations/202606261700_security_operations_center.sql");
 assert(migrationSource.includes("security_ops_events"), "events migration");

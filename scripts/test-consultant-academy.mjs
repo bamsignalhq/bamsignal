@@ -69,7 +69,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:consultant-academy"), "package.json defines test:consultant-academy");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("consultant-academy.css"), "academy styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("consultant-academy.css") || mainSource.includes("consultant-academy.css")), "academy styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

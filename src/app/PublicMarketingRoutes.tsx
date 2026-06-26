@@ -1,4 +1,5 @@
 import { BlogIndexPage } from "../pages/BlogIndexPage";
+import "../styles/entry-public-marketing.css";
 import { BlogPostPage } from "../pages/BlogPostPage";
 import { StoreScreenshotsPage } from "../pages/StoreScreenshotsPage";
 import { SeoLayout } from "../pages/seo/SeoLayout";

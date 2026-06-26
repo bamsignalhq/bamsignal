@@ -105,7 +105,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:monitoring"), "package.json defines test:monitoring");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("monitoring-center.css"), "monitoring styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("monitoring-center.css") || mainSource.includes("monitoring-center.css")), "monitoring styles imported");
 
 const cssSource = readFileSync(join(rootPath, "src/styles/monitoring-center.css"), "utf8");
 assert(cssSource.includes("monitoring-center-page"), "monitoring styles");

@@ -106,7 +106,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:workforce"), "package.json defines test:workforce");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("workforce-management.css"), "workforce styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("workforce-management.css") || mainSource.includes("workforce-management.css")), "workforce styles imported");
 
 const profile = {
   id: "profile_test",

@@ -57,7 +57,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:permissions-audit"), "package.json defines test:permissions-audit");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("permissions-audit.css"), "permissions audit styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("permissions-audit.css") || mainSource.includes("permissions-audit.css")), "permissions audit styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

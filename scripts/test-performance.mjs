@@ -58,9 +58,27 @@ if (swSource) {
   assert(!swSource.includes("location.reload()"), "service worker avoids reload loops");
 }
 
+const mainSource = read("src/main.tsx");
+const entryAdminSource = read("src/styles/entry-admin.css");
+const adminRootSource = read("src/app/AdminConsoleRoot.tsx");
+const coverCropSource = read("src/components/CoverPhotoCropModal.tsx");
+const coverCropUtilSource = read("src/utils/coverCrop.ts");
+
+assert(lazyRoutesSource.includes("LazyVoiceVibePage"), "lazyRoutes exports LazyVoiceVibePage");
+assert(appSource.includes("LazyVoiceVibePage"), "App.tsx lazy-loads voice vibe page");
+assert(!appSource.includes('from "./pages/VoiceVibePage"'), "VoiceVibePage not eagerly imported");
+assert(!mainSource.includes("admin-console.css"), "main.tsx does not eagerly import admin CSS");
+assert(entryAdminSource.includes("admin-console.css"), "admin CSS deferred to entry-admin.css");
+assert(adminRootSource.includes("entry-admin.css"), "admin console loads deferred CSS entry");
+assert(coverCropSource.includes('import("react-easy-crop")'), "cover cropper dynamically imported");
+assert(!coverCropSource.includes('from "react-easy-crop"'), "react-easy-crop not statically imported in modal");
+assert(!coverCropUtilSource.includes("react-easy-crop"), "coverCrop utils do not import react-easy-crop");
+
 const viteSource = read("vite.config.ts");
 assert(viteSource.includes("manualChunks"), "vite manual chunks configured");
 assert(viteSource.includes("heic2any"), "heic2any manual chunk");
+assert(viteSource.includes("tensorflow"), "tensorflow manual chunk");
+assert(viteSource.includes("photo-crop"), "photo-crop manual chunk");
 
 // --- Production performance audit ---
 const adminConstants = read("src/constants/productionPerformanceAdmin.ts");

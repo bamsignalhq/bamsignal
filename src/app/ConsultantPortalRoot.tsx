@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import "../styles/entry-consultant.css";
 import { AdminToastProvider } from "../components/admin/AdminToast";
 import { ConsultantLayout } from "../components/consultant/ConsultantLayout";
 import { ConsultantLoginPage } from "../components/consultant/ConsultantLoginPage";

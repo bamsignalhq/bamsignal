@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-06-26T17:00:00.000Z",
+  "initialJsBytes": 741376,
+  "initialCssBytes": 1052672,
+  "initialTotalBytes": 1794048,
+  "largestJs": [
+    { "name": "heic2any-CscD6eeT.js", "bytes": 1363148 },
+    { "name": "index-Bbu7vDMO.js", "bytes": 741376 }
+  ],
+  "largestCss": [
+    { "name": "index-BUalH7k9.css", "bytes": 1052672 }
+  ],
+  "largestImage": {
+    "path": "public/showcase/backdrop.png",
+    "size": 1636296
+  }
+}

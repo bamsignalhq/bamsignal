@@ -1,4 +1,5 @@
 import { AdminShell } from "../components/admin/AdminShell";
+import "../styles/entry-admin.css";
 import { AdminToastProvider } from "../components/admin/AdminToast";
 import { AdminConsentProvider } from "../components/admin/AdminConsentProvider";
 import { AdminAuthPage } from "../pages/AdminAuthPage";

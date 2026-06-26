@@ -1,4 +1,5 @@
 import { BamSignalInstituteLayout } from "../../components/bamSignalInstitute/BamSignalInstituteLayout";
+import "../../styles/entry-institute.css";
 import type { Theme } from "../../types";
 
 export type BamSignalInstitutePageShellProps = {

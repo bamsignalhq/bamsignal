@@ -100,7 +100,8 @@ const packageSource = read("package.json");
 assert(packageSource.includes("test:launch-command"), "package.json defines test:launch-command");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("launch-command-center.css"), "launch command styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("launch-command-center.css") || mainSource.includes("launch-command-center.css")), "launch command styles imported");
 
 const cssSource = read("src/styles/launch-command-center.css");
 assert(cssSource.includes("launch-command-gonogo-card"), "go no go styles");

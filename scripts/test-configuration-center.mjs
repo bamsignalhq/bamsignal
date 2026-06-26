@@ -95,7 +95,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:configuration-center"), "package.json defines test:configuration-center");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("configuration-platform.css"), "configuration styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("configuration-platform.css") || mainSource.includes("configuration-platform.css")), "configuration styles imported");
 
 const databaseAuditSource = readFileSync(join(rootPath, "src/utils/databaseAudit.ts"), "utf8");
 assert(databaseAuditSource.includes("bamsignal.configurationPlatform.v1"), "localStorage manifest");

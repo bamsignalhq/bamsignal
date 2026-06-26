@@ -119,7 +119,8 @@ assert(packageSource.includes("test:institutional-readiness"), "package.json def
 assert(packageSource.includes("readiness:report"), "package.json defines readiness:report");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("institutional-readiness.css"), "readiness styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("institutional-readiness.css") || mainSource.includes("institutional-readiness.css")), "readiness styles imported");
 
 const databaseAuditSource = read("src/utils/databaseAudit.ts");
 assert(databaseAuditSource.includes("READINESS_VERIFICATION_SCHEMA_TABLES"), "database audit schema");

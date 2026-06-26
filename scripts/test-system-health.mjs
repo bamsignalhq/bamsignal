@@ -71,7 +71,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:system-health"), "package.json defines test:system-health");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("system-health.css"), "system health styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("system-health.css") || mainSource.includes("system-health.css")), "system health styles imported");
 
 const monitoredServices = [
   "supabase",

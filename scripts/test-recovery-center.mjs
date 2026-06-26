@@ -71,7 +71,8 @@ assert(packageSource.includes("test:recovery-center"), "package.json defines tes
 assert(packageSource.includes("test:recovery"), "package.json defines test:recovery");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("recovery-center.css"), "recovery styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("recovery-center.css") || mainSource.includes("recovery-center.css")), "recovery styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

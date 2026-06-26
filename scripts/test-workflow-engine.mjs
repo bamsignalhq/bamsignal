@@ -98,7 +98,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:workflow-engine"), "package.json defines test:workflow-engine");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("workflow-engine.css"), "workflow styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("workflow-engine.css") || mainSource.includes("workflow-engine.css")), "workflow styles imported");
 
 const cssSource = readFileSync(join(rootPath, "src/styles/workflow-engine.css"), "utf8");
 assert(cssSource.includes("workflow-engine-page"), "workflow styles");

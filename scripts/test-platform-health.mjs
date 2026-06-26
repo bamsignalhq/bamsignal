@@ -86,7 +86,8 @@ const cssSource = read("src/styles/platform-health-center.css");
 assert(cssSource.includes("platform-health-traffic-light"), "traffic light styles");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("platform-health-center.css"), "styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("platform-health-center.css") || mainSource.includes("platform-health-center.css")), "styles imported");
 
 const packageSource = read("package.json");
 assert(packageSource.includes("test:platform-health"), "package.json defines test:platform-health");

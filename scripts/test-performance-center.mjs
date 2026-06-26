@@ -122,7 +122,8 @@ assert(packageSource.includes("certify:database"), "package.json defines certify
 assert(packageSource.includes("test:database-performance-certification"), "database cert structure test");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("performance-center.css"), "performance styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("performance-center.css") || mainSource.includes("performance-center.css")), "performance styles imported");
 
 const cssSource = readFileSync(join(rootPath, "src/styles/performance-center.css"), "utf8");
 assert(cssSource.includes("performance-tracks-card"), "performance track styles");

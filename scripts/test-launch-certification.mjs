@@ -95,7 +95,8 @@ const sampleReport = {
 assert(formatLaunchCertificationSummary(sampleReport).includes("78"), "summary formatted");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("launch-certification.css"), "launch certification styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("launch-certification.css") || mainSource.includes("launch-certification.css")), "launch certification styles imported");
 
 if (failed > 0) {
   console.error(`\n${failed} launch certification test(s) failed.`);

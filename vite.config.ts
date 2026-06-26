@@ -170,6 +170,9 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1400,
+    modulePreload: {
+      polyfill: false
+    },
     rollupOptions: {
       output: {
         manualChunks: {
@@ -177,7 +180,14 @@ export default defineConfig({
           supabase: ["@supabase/supabase-js"],
           capacitor: ["@capacitor/app", "@capacitor/browser", "@capacitor/core", "@capacitor/push-notifications"],
           icons: ["lucide-react"],
-          heic2any: ["heic2any"]
+          heic2any: ["heic2any"],
+          tensorflow: [
+            "@tensorflow/tfjs-core",
+            "@tensorflow/tfjs-backend-webgl",
+            "@tensorflow/tfjs-converter",
+            "@tensorflow-models/blazeface"
+          ],
+          "photo-crop": ["react-easy-crop"]
         }
       }
     }

@@ -80,7 +80,8 @@ assert(packageSource.includes("certify:data-integrity"), "package.json defines c
 assert(packageSource.includes("test:data-integrity-certification"), "certification structure test");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("data-integrity.css"), "data integrity styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("data-integrity.css") || mainSource.includes("data-integrity.css")), "data integrity styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

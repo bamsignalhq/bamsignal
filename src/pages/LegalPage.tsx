@@ -7,6 +7,7 @@ import {
   Users,
   UserX
 } from "lucide-react";
+import "../styles/legal-pages.css";
 import type { LegalPath } from "../constants/footer";
 import { Link } from "../components/Link";
 import { ShowcaseImage } from "../components/ShowcaseImage";

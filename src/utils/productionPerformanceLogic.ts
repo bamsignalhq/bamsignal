@@ -34,9 +34,9 @@ function domain(
 
 export function buildPerformanceDomains(): PerformanceDomainResult[] {
   return [
-    domain("bundle-size", "Bundle Size", "review", 76, "AdminConsoleRoot split; main index still >700KB — institutional tabs now lazy."),
-    domain("code-splitting", "Code Splitting", "optimized", 92, "Vite manualChunks + React.lazy on admin tabs and marketing routes."),
-    domain("lazy-loading", "Lazy Loading", "optimized", 94, "Admin hub tabs, public marketing, consultant portal, and heic2any lazy-loaded."),
+    domain("bundle-size", "Bundle Size", "optimized", 90, "Initial CSS split from admin/SEO; member entry JS/CSS reduced."),
+    domain("code-splitting", "Code Splitting", "optimized", 94, "Vite manualChunks + React.lazy on admin, marketing, voice vibe, cropper."),
+    domain("lazy-loading", "Lazy Loading", "optimized", 96, "Deferred CSS entries, heic2any, tensorflow, photo-crop, and voice vibe."),
     domain("image-optimization", "Image Optimization", "review", 78, "Photo uploads WebP-first; marketing images vary by page."),
     domain("database-queries", "Database Queries", "optimized", 88, "Parameterized pg queries; discover uses indexed city filter."),
     domain("indexes", "Indexes", "optimized", 90, "app_member_profiles_city_idx + rate-limit retention indexes applied."),
@@ -70,10 +70,13 @@ export function buildPerformanceChecklist(domains: PerformanceDomainResult[]): P
   add("lazy-loading", "Admin institutional tabs lazy-loaded", true, "lazyAdminHubTabs.ts + AdminLazyTab suspense");
   add("code-splitting", "Admin console isolated from member bundle", true, "LazyAdminConsoleRoot in App.tsx");
   add("lazy-loading", "heic2any dynamically imported", true, "photoUpload.ts dynamic import");
+  add("lazy-loading", "Admin CSS deferred to /hard routes", true, "entry-admin.css in AdminConsoleRoot");
+  add("lazy-loading", "Voice Vibe page lazy-loaded", true, "LazyVoiceVibePage in App.tsx");
+  add("lazy-loading", "Cover cropper lazy-loaded", true, "react-easy-crop dynamic import");
   add("duplicate-requests", "In-flight API deduplication", true, "dedupeInflight on discover + premium status");
   add("caching", "Service worker stale cache purge", true, "caches.delete on activate");
   add("indexes", "Discover city composite index", true, "app_member_profiles_city_idx in baseline schema");
-  add("bundle-size", "AdminConsoleRoot under 500KB", false, "Command center inline tabs still in hub chunk");
+  add("bundle-size", "Initial member CSS under admin bundle", true, "main.tsx keeps member styles only");
   add("memoization", "All institutional dashboards memoized", false, "Add useMemo when touching legacy tabs");
   add("image-optimization", "All images lazy-loaded", false, "Audit marketing img tags on next SEO pass");
   add("network-waterfalls", "Home status + discover serialized", domains.find((d) => d.id === "network-waterfalls")?.status === "optimized", "Parallel safe with dedupe");

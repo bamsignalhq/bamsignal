@@ -95,7 +95,8 @@ const adminHubSource = read("src/pages/AdminHubPage.tsx");
 assert(adminHubSource.includes('tab === "disasterrecovery"'), "admin hub tab wired");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("disaster-recovery-center.css"), "styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("disaster-recovery-center.css") || mainSource.includes("disaster-recovery-center.css")), "styles imported");
 
 const migrationSource = read("supabase/migrations/202606261300_disaster_recovery_center.sql");
 assert(migrationSource.includes("disaster_recovery_plans"), "plans migration");

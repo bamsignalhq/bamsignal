@@ -1,4 +1,5 @@
 import { SupportCenterLayout } from "../../components/supportCenter/SupportCenterLayout";
+import "../../styles/entry-support.css";
 import type { Theme } from "../../types";
 
 export type SupportCenterPageShellProps = {

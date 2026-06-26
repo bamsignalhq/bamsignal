@@ -1,4 +1,9 @@
-import type { Area } from "react-easy-crop";
+export type CoverCropArea = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
 
 export const COVER_ASPECT_RATIO = 2.5;
 
@@ -6,7 +11,7 @@ export const COVER_ASPECT_RATIO = 2.5;
 export function initialCoverCropPixels(
   mediaWidth: number,
   mediaHeight: number
-): Area {
+): CoverCropArea {
   const mediaAspect = mediaWidth / mediaHeight;
   if (mediaAspect > COVER_ASPECT_RATIO) {
     const height = mediaHeight;
@@ -38,7 +43,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export async function getCroppedCoverBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+export async function getCroppedCoverBlob(imageSrc: string, pixelCrop: CoverCropArea): Promise<Blob> {
   const image = await loadImage(imageSrc);
   const canvas = document.createElement("canvas");
   const width = Math.max(1, Math.round(pixelCrop.width));

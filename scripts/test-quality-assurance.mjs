@@ -102,7 +102,8 @@ const packageSource = read("package.json");
 assert(packageSource.includes("test:quality-assurance"), "package.json defines test:quality-assurance");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("quality-assurance-center.css"), "qa styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("quality-assurance-center.css") || mainSource.includes("quality-assurance-center.css")), "qa styles imported");
 
 const migrationSource = read("supabase/migrations/202606261600_quality_assurance_center.sql");
 assert(migrationSource.includes("qa_release_gates"), "release gates migration");

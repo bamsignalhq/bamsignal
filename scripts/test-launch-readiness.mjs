@@ -65,7 +65,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:launch-readiness"), "package.json defines test:launch-readiness");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("launch-readiness.css"), "launch readiness styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("launch-readiness.css") || mainSource.includes("launch-readiness.css")), "launch readiness styles imported");
 
 if (failed) {
   console.error(`\n${failed} assertion(s) failed.`);

@@ -115,7 +115,8 @@ const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:reporting-center"), "package.json defines test:reporting-center");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
-assert(mainSource.includes("reporting-center.css"), "reporting styles imported");
+const entryAdminSource = readFileSync(join(rootPath, "src/styles/entry-admin.css"), "utf8");
+assert((entryAdminSource.includes("reporting-center.css") || mainSource.includes("reporting-center.css")), "reporting styles imported");
 
 const cssSource = readFileSync(join(rootPath, "src/styles/reporting-center.css"), "utf8");
 assert(cssSource.includes("reporting-center-page"), "reporting styles");

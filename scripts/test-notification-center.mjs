@@ -111,7 +111,8 @@ const packageSource = read("package.json");
 assert(packageSource.includes("test:notification-center"), "package.json defines test:notification-center");
 
 const mainSource = read("src/main.tsx");
-assert(mainSource.includes("notification-reliability.css"), "notification center styles imported");
+const entryAdminSource = read("src/styles/entry-admin.css");
+assert((entryAdminSource.includes("notification-reliability.css") || mainSource.includes("notification-reliability.css")), "notification center styles imported");
 
 const migrationSource = read("supabase/migrations/202606261100_notification_center.sql");
 assert(migrationSource.includes("notification_audit_log"), "audit log migration");

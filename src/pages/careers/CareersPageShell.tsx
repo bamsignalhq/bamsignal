@@ -1,4 +1,5 @@
 import { CareersLayout } from "../../components/careers/CareersLayout";
+import "../../styles/entry-careers.css";
 import type { Theme } from "../../types";
 
 export type CareersPageShellProps = {

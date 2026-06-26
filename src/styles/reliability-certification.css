@@ -1,0 +1,38 @@
+.reliability-certification-report-card__hero {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.reliability-certification-report-card__hero strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.reliability-certification-report-card__line {
+  margin: 0 0 1rem;
+  color: var(--bs-text-muted, #64748b);
+}
+
+.reliability-certification-report-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.reliability-certification-report-card__metrics article {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.reliability-certification-report-card__metrics span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--bs-text-muted, #64748b);
+}
+
+.reliability-certification-report-card__metrics strong {
+  font-size: 1.25rem;
+}

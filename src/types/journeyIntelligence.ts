@@ -1,5 +1,5 @@
 import type { JourneyIntelligenceMetricId } from "../constants/journeyIntelligence";
-import type { JourneyAnalyticsGrowthSignal, JourneyAnalyticsTrendPoint } from "./journeyAnalytics";
+import type { JourneyAnalyticsTrendPoint } from "./journeyAnalytics";
 import type { RegionalConsultantTeamsBundle } from "./regionalConsultantTeams";
 import type { HouseInstituteDataPipelineBundle } from "./houseInstituteDataPipeline";
 

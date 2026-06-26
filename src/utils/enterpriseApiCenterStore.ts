@@ -6,7 +6,6 @@ import {
 } from "../data/enterpriseApiCenterSeed";
 import type {
   EnterpriseApiEndpoint,
-  EnterpriseApiFailedJob,
   EnterpriseApiToolRun
 } from "../types/enterpriseApiCenter";
 import { appendAuditCenterEvent } from "./auditCenterEngine";

@@ -6,7 +6,7 @@ import type {
   SafetyRiskAssessment,
   SafetyTimelineEntry
 } from "../types/safetyCenter";
-import type { SafetyCaseTypeId, SafetySeverityId, SafetyStatusId } from "../constants/safetyCenter";
+import type { SafetyCaseTypeId, SafetyStatusId } from "../constants/safetyCenter";
 
 const CLOSED_STATUSES: SafetyStatusId[] = ["resolved", "closed"];
 

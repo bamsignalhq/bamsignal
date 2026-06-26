@@ -4,7 +4,6 @@ import type {
   ChatThread,
   DatingProfile,
   DiscoverProfile,
-  DmControl,
   Gender,
   LookingFor,
   MatchPreferences,

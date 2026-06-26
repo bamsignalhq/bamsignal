@@ -9,7 +9,7 @@ import {
   markMeetingInvitesSent,
   recordMeetingInfrastructure
 } from "../utils/MeetingInfrastructureEngine";
-import { resolveConsultationPaymentMember } from "./consultationPayment";
+import { resolveConsultationPaymentMember } from "./consultationPayments";
 import { apiUrl, supabase } from "./supabase";
 import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";

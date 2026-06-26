@@ -1,4 +1,4 @@
-import { Flame, Sparkles, ShieldCheck, Zap } from "lucide-react";
+import { Flame, Sparkles, ShieldCheck } from "lucide-react";
 import type { DiscoverProfile } from "../../types";
 import { ShowcaseImage } from "../ShowcaseImage";
 import { isOnlineNow } from "../../utils/activity";

@@ -1,6 +1,4 @@
 import {
-  CELEBRATIONS_LABEL,
-  JOURNEY_MEMORIES_LABEL,
   LEGACY_CELEBRATION_ARCHITECTURE_SEED,
   surpriseEventLabel,
   type LegacyCelebrationTimelineEntry

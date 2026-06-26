@@ -20,7 +20,7 @@ export type DiscoverFeedCardProps = {
 /** Compact portrait grid card — photo-first, minimal text, signal CTA. */
 export function DiscoverFeedCard({
   profile,
-  verification,
+  verification: _verification,
   signaling,
   onOpen,
   onSignal,

@@ -1,4 +1,3 @@
-import { PERFORMANCE_HEALTH_STATUS_LABELS } from "../../../constants/performanceCenter";
 import type { PerformanceCapacityPlan } from "../../../types/performanceCenter";
 
 type CapacityPlanningCardProps = {

@@ -1,15 +1,10 @@
-import { intentDisplay } from "../constants/intents";
 import { relationshipIntentionsToSearchIntents, normalizeEthnicities, normalizeFaithList, normalizeRelationshipIntentions } from "../constants/profileOptions";
 import type {
   DiscoverProfile,
-  EthnicBackground,
-  Genotype,
   HomeAdvancedFilters,
   IntentTag,
   KidsPreference,
   MatchPreferences,
-  Occupation,
-  Religion,
   SavedSearch,
   VerificationPreference
 } from "../types";

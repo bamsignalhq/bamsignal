@@ -3,20 +3,14 @@ import { DEFAULT_PROFILE_BACKDROP, DEFAULT_PROFILE_COVER } from "../constants/ph
 import {
   coverPhotoDisplayUrl,
   hasExplicitCoverPhoto,
-  mergeMemberCover,
   normalizeCoverFields,
   readCoverPhotoUrl
 } from "./coverPhoto";
 import { normalizeIntents } from "../constants/intents";
-import type { DatingProfile, DiscoverProfile, IntentTag, UserProfile } from "../types";
-import { isBlobPreviewUrl, isDataUrl, isStoragePhotoUrl, isStorageVoiceIntroUrl } from "./photoRefs";
+import type { DatingProfile, DiscoverProfile, UserProfile } from "../types";
+import { isBlobPreviewUrl, isStorageVoiceIntroUrl } from "./photoRefs";
 import { resolveMainPhotoUrl } from "./mainPhoto";
-import {
-  isPersistablePhotoUrl,
-  isShowcasePhotoUrl,
-  safeCoverPhoto,
-  safeUserCoverPhoto
-} from "./persistablePhotoUrl";
+import { isPersistablePhotoUrl, safeUserCoverPhoto } from "./persistablePhotoUrl";
 
 export {
   isPersistablePhotoUrl,

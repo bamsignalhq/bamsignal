@@ -21,7 +21,7 @@ import { ProfileStoryCard } from "../components/discover/ProfileStoryCard";
 import { DiscoverSafetyCard } from "../components/discover/DiscoverSafetyCard";
 import { DiscoverFilters } from "../components/DiscoverFilters";
 import { ReportBlockModal } from "../components/ReportBlockModal";
-import type { DiscoverProfile, Match, MatchPreferences, UserProfile } from "../types";
+import type { DiscoverProfile, Match, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { recordDiscoveryImpression } from "../utils/launchSeed";
 import { buildDensityAwareDeck } from "../utils/cityDensity";
@@ -29,9 +29,7 @@ import { rankDiscoverProfiles } from "../utils/buildDiscoverRanking";
 import { markFirstDayStep } from "../utils/firstDayJourney";
 import { trackUpgradeImpression } from "../utils/premiumConversion";
 import {
-  defaultDatingProfile,
-  normalizeDatingProfile,
-  normalizeMatchPreferences
+  defaultDatingProfile
 } from "../utils/profile";
 import { blockAndReportUser, blockUser, canUserSignalTarget, filterDiscoverDeck } from "../utils/safety";
 import { pushPassedProfile, canUndoPass, undoLastPass } from "../utils/undoPass";
@@ -46,7 +44,6 @@ import {
   applyDiscoverRelationshipFilter,
   countActiveDiscoverFilters
 } from "../utils/discoverFilters";
-import { isViewerShadowBanned } from "../utils/shadowBan";
 import { debugRender } from "../utils/debugRecursion";
 import { checkSignalBurst } from "../utils/suspicionDetection";
 import { reportModerationFlagRemote } from "../services/memberTrust";

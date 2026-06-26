@@ -112,7 +112,7 @@ export function LikesPage({
   isPremium,
   onUpgrade,
   paymentLoading,
-  onCompleteProfile,
+  onCompleteProfile: _onCompleteProfile,
   onDiscover,
   onOpenSafety,
   onOpenChats

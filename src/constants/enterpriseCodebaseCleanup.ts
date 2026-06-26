@@ -52,15 +52,10 @@ export const ENGINEERING_DUPLICATE_FINDINGS = [
   {
     id: "performance-summary-formatter",
     paths: [
-      "src/utils/performanceCenterLogic.ts",
-      "src/utils/productionPerformanceLogic.ts"
+      "src/utils/performanceCenterLogic.ts:formatPerformanceSummaryLine",
+      "src/utils/productionPerformanceLogic.ts:formatPerformanceHealthSummaryLine"
     ],
-    reason: "Parallel formatters for performance center vs production optimization — intentional until unified report type."
-  },
-  {
-    id: "consultation-payment-shim",
-    paths: ["src/utils/consultationPayment.ts"],
-    reason: "@deprecated re-export shim — migrate imports before removal."
+    reason: "Distinct formatters for performance center vs optimization health — names disambiguated."
   }
 ] as const;
 
@@ -83,12 +78,16 @@ export const ENGINEERING_CLEANUP_FIXES = [
   "Removed duplicate scripts/test-bundle-performance.mjs — checks live in test-performance.mjs",
   "Added npm run lint (tsc --noEmit) for type-level hygiene",
   "Added npm run test alias for certification suite",
-  "Enterprise cleanup dashboard at /hard/enterprise-cleanup with engineering health report"
+  "Enterprise cleanup dashboard at /hard/enterprise-cleanup with engineering health report",
+  "Enabled tsconfig noUnusedLocals and noUnusedParameters for zero-warning lint",
+  "Removed consultationPayment.ts service shim — imports use consultationPayments.ts",
+  "Renamed production performance formatter to formatPerformanceHealthSummaryLine"
 ] as const;
 
 export const ENGINEERING_REMOVED_FILES = [
   "src/components/admin/concierge/WorkloadCard.tsx",
   "src/components/InterestPicker.tsx",
   "src/components/profile/InterestPickerSheet.tsx",
-  "scripts/test-bundle-performance.mjs"
+  "scripts/test-bundle-performance.mjs",
+  "src/services/consultationPayment.ts"
 ] as const;

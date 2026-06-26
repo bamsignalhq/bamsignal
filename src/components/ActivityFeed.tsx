@@ -11,8 +11,6 @@ export function ActivityFeed() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const item = RECENT_ACTIVITY[index];
-
   return (
     <div className="activity-feed" aria-live="polite">
       <div className="activity-feed-track" style={{ transform: `translateY(calc(-${index} * 44px))` }}>

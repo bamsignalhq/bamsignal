@@ -2,8 +2,7 @@ import { APP_BUILD_ID } from "../constants/build";
 import {
   clearBamSignalVolatileCache,
   htmlBuildMatchesApp,
-  isChunkLoadError,
-  unregisterStaleServiceWorkers
+  isChunkLoadError
 } from "./crashRecovery";
 import { clearAppUpdatePending, markAppUpdatePending } from "./bootFlags";
 

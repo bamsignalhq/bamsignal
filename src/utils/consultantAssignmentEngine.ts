@@ -19,9 +19,7 @@ import { assignMemberToConsultant, listConciergeConsultants } from "./conciergeC
 import { listConciergeMembers } from "./conciergeConsultantStore";
 import { getMemberStewardName } from "./conciergeMemberStewardship";
 import {
-  buildAssignmentRecommendation,
   listRecommendationsForMember,
-  rankConsultantRecommendations,
   recommendConsultantForMember as pickRecommendation
 } from "./consultantRecommendationEngine";
 import {

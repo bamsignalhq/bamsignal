@@ -8,10 +8,6 @@ function allEvents(): EventRow[] {
   return readJson<EventRow[]>(STORAGE_KEYS.analytics, []);
 }
 
-function sinceMs(days: number): number {
-  return Date.now() - days * 24 * 60 * 60 * 1000;
-}
-
 export function getAnalyticsCity(): string {
   const profile = readJson<{ city?: string }>(STORAGE_KEYS.datingProfile, {});
   return profile.city?.trim() || "Unknown";

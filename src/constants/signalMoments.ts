@@ -1,4 +1,4 @@
-import { MOMENT_SETS, type ShowcaseKey } from "./showcase";
+import { MOMENT_SETS } from "./showcase";
 
 export type SignalMoment = {
   id: string;

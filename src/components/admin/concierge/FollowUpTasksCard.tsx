@@ -1,8 +1,7 @@
 import {
   CONCIERGE_FOLLOW_UP_TASK_LEGACY_LABELS,
   CONCIERGE_FOLLOW_UP_TASK_TYPES,
-  CONCIERGE_FOLLOW_UP_TITLE,
-  CONCIERGE_MEMBER_FLAGS
+  CONCIERGE_FOLLOW_UP_TITLE
 } from "../../../constants/conciergeConsultant";
 import type { ConciergeFollowUpTask } from "../../../types/conciergeConsultant";
 

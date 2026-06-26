@@ -23,7 +23,7 @@ import {
   listIntroductionRecords,
   saveIntroductionRecord
 } from "./conciergeIntroductionStore";
-import { assignIntroductionId, registerExistingIntroductionId } from "./introductionIdRegistry";
+import { assignIntroductionId } from "./introductionIdRegistry";
 import {
   assertIntroductionCooldown,
   assertNoDuplicateIntroduction,

@@ -6,7 +6,6 @@ import {
   emptyAcademyFilters,
   filterAcademyConsultants,
   findConsultantById,
-  listAcademyConsultants,
   sortConsultantsByName
 } from "./consultantAcademyLogic";
 import { readJson } from "./storage";

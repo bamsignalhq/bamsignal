@@ -53,7 +53,6 @@ import { Login2faModal } from "../components/Login2faModal";
 import { ResendCooldown } from "../components/ResendCooldown";
 import { AccountRestoreModal } from "../components/AccountRestoreModal";
 import {
-  checkLogin2faRemote,
   sendLogin2faRemote,
   verifyLogin2faRemote
 } from "../services/accountSecurity";
@@ -161,9 +160,9 @@ export function AuthPage({
   const [codeSentAt, setCodeSentAt] = useState(restored.current.codeSentAt);
   const [pendingAuthProfile, setPendingAuthProfile] = useState<UserProfile | null>(null);
   const [login2faOpen, setLogin2faOpen] = useState(false);
-  const [login2faMethod, setLogin2faMethod] = useState<"email" | "whatsapp">("email");
-  const [login2faMaskedEmail, setLogin2faMaskedEmail] = useState<string | null>(null);
-  const [login2faMaskedPhone, setLogin2faMaskedPhone] = useState<string | null>(null);
+  const [login2faMethod, _setLogin2faMethod] = useState<"email" | "whatsapp">("email");
+  const [login2faMaskedEmail, _setLogin2faMaskedEmail] = useState<string | null>(null);
+  const [login2faMaskedPhone, _setLogin2faMaskedPhone] = useState<string | null>(null);
   const [login2faMessage, setLogin2faMessage] = useState("");
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoreScheduledFor, setRestoreScheduledFor] = useState<string | null>(null);
@@ -406,25 +405,6 @@ export function AuthPage({
       return;
     }
     await completeAuthenticated(profile, meta);
-  };
-
-  const finishLoginAfterPassword = async (profile: UserProfile, meta?: AuthMeta) => {
-    setPendingAuthProfile(profile);
-    const check = await checkLogin2faRemote(profile);
-    if (check.required) {
-      setLogin2faMethod(check.method || "email");
-      setLogin2faMaskedEmail(check.maskedEmail ?? null);
-      setLogin2faMaskedPhone(check.maskedPhone ?? null);
-      setLogin2faMessage("");
-      setLogin2faOpen(true);
-      try {
-        await sendLogin2faRemote(profile);
-      } catch (error) {
-        setLogin2faMessage(error instanceof Error ? error.message : "We couldn't verify this login. Please try again.");
-      }
-      return;
-    }
-    await proceedAfterSecurityChecks(profile, meta);
   };
 
   const signIn = async () => {

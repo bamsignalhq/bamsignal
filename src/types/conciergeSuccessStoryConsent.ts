@@ -5,7 +5,6 @@ import type {
   SuccessStoryVideoPermission,
   SuccessStoryVisibilityLevel
 } from "../constants/conciergeSuccessStoryConsent";
-import { DEFAULT_SUCCESS_STORY_CONSENT } from "../constants/conciergeSuccessStoryConsent";
 
 export type SuccessStoryPartyApproval = {
   memberId: string;

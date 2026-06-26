@@ -9,7 +9,7 @@ import {
   adminHubUsesLazyTabs,
   buildPerformanceScore,
   canAccessProductionPerformance,
-  formatPerformanceSummaryLine,
+  formatPerformanceHealthSummaryLine,
   scoreToPerformanceStatus
 } from "../server/services/productionPerformance.js";
 
@@ -114,7 +114,7 @@ const sampleReport = {
   slowIssueCount: 1,
   overallScore: 80
 };
-assert(formatPerformanceSummaryLine(sampleReport).includes("8 passed"), "summary line formatted");
+assert(formatPerformanceHealthSummaryLine(sampleReport).includes("8 passed"), "summary line formatted");
 
 const migrationSource = read("migrations/0002_baseline_bamsignal_schema.sql");
 assert(migrationSource.includes("app_member_profiles_city_idx"), "discover city index in schema");

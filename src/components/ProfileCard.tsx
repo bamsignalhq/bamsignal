@@ -28,7 +28,7 @@ type ProfileCardProps = {
 
 export function ProfileCard({
   profile,
-  verification,
+  verification: _verification,
   onIgnore,
   onSendSignal,
   onPrioritySignal,

@@ -1,7 +1,6 @@
 import type { DatingProfile, DiscoverProfile } from "../types";
 import { isPreferNot } from "../utils/profile";
 import { hasVoiceVibe } from "../utils/voiceVibe";
-import { safeArray } from "../utils/safeProfile";
 import {
   MORE_ABOUT_ME_ICEBREAKERS,
   normalizeMoreAboutMeInterests

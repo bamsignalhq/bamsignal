@@ -9,7 +9,7 @@ import {
   queueConciergeEmailDraft
 } from "../utils/EmailNotificationEngine";
 import { getAuthenticatedMemberEmail } from "./calendar";
-import { resolveConsultationPaymentMember } from "./consultationPayment";
+import { resolveConsultationPaymentMember } from "./consultationPayments";
 import { apiUrl } from "./supabase";
 import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";

@@ -2,7 +2,6 @@ import { STORAGE_KEYS } from "../constants/limits";
 import type { DatingProfile, UserProfile } from "../types";
 import { normalizeDatingProfile } from "../utils/profile";
 import {
-  clearOnboardingDrafts,
   normalizeOnboardingStatus,
   type OnboardingStatusSnapshot
 } from "../utils/onboardingStatus";

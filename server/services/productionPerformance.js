@@ -22,7 +22,7 @@ export function scoreToPerformanceStatus(score, hasSlow) {
   return "optimized";
 }
 
-export function formatPerformanceSummaryLine(report) {
+export function formatPerformanceHealthSummaryLine(report) {
   return `${report.passedCheckCount} passed · ${report.reviewIssueCount} review · ${report.slowIssueCount} slow · score ${report.overallScore}`;
 }
 

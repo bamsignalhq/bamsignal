@@ -72,7 +72,12 @@ assert(packageSource.includes('"lint"'), "lint script");
 assert(packageSource.includes('"test"'), "test script");
 assert(!packageSource.includes("test-bundle-performance.mjs"), "duplicate bundle test removed from scripts");
 
+const tsconfigSource = read("tsconfig.json");
+assert(tsconfigSource.includes('"noUnusedLocals": true'), "noUnusedLocals enabled");
+assert(tsconfigSource.includes('"noUnusedParameters": true'), "noUnusedParameters enabled");
+
 assert(!existsSync(join(rootPath, "scripts/test-bundle-performance.mjs")), "test-bundle-performance.mjs deleted");
+assert(!existsSync(join(rootPath, "src/services/consultationPayment.ts")), "consultationPayment shim deleted");
 assert(!existsSync(join(rootPath, "src/components/admin/concierge/WorkloadCard.tsx")), "WorkloadCard deleted");
 assert(!existsSync(join(rootPath, "src/components/InterestPicker.tsx")), "InterestPicker deleted");
 assert(!existsSync(join(rootPath, "src/components/profile/InterestPickerSheet.tsx")), "InterestPickerSheet deleted");

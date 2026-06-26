@@ -67,7 +67,7 @@ function formatHeroDetailStrip(profile: DatingProfile): string | null {
 export function ProfileCoverHeader({
   user,
   profile,
-  verification,
+  verification: _verification,
   variant = "default",
   editableCover = false,
   coverPhoto,

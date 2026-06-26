@@ -23,8 +23,6 @@ import {
   syncCalendarAvailabilityFromConsultants
 } from "./CalendarEngine";
 import {
-  defaultConsultantAvailabilityConfig,
-  getConsultantAvailabilityConfig,
   saveConsultantAvailabilityConfig as persistConsultantAvailabilityConfig,
   resetConsultantAvailabilityConfigStoreForTests
 } from "./consultationSchedulingAvailabilityStore";

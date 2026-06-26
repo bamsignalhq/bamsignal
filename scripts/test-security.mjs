@@ -113,7 +113,6 @@ assert(permissionsSource.includes("/hard/security-dashboard"), "security dashboa
 
 const hardRoutesSource = read("src/constants/hardRoutes.ts");
 assert(hardRoutesSource.includes('securitydashboard: "security-dashboard"'), "security dashboard slug");
-assert(hardRoutesSource.includes("PRODUCTION_SECURITY_ADMIN_PATH"), "security path import");
 
 const navSource = read("src/components/admin/adminConsoleNav.ts");
 assert(navSource.includes('"securitydashboard"'), "security dashboard nav tab");

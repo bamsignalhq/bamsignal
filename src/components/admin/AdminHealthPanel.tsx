@@ -37,8 +37,6 @@ function rowsFromHealth(health: AdminHealthSnapshot | null): HealthRow[] {
     }));
   }
 
-  const optional = new Set<keyof AdminHealthSnapshot>(["firebase", "sendchamp", "telegram"]);
-
   return [
     row("database", health.database === "connected", health.database, false),
     row("paystack", health.paystack, health.paystack ? "ok" : "off", false),

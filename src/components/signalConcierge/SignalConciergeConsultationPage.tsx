@@ -23,7 +23,7 @@ import {
   startConsultationPaymentCheckout,
   verifyConsultationPayment,
   type ConsultationPaymentPhase
-} from "../../services/consultationPayment";
+} from "../../services/consultationPayments";
 import { getUpcomingConsultationEventForMember } from "../../utils/CalendarEngine";
 import { getMeetingLinkForMember } from "../../utils/MeetingLinkEngine";
 import { markMeetingInfrastructureInvitesSent } from "../../services/meetingInfrastructure";

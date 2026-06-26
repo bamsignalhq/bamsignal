@@ -57,7 +57,7 @@ export function profileQualifiesForLegacyRepair(
 }
 
 export function shouldRouteToOnboarding(
-  user: Pick<UserProfile, "name" | "email" | "phone">,
+  _user: Pick<UserProfile, "name" | "email" | "phone">,
   profile?: Partial<DatingProfile>,
   options?: { forceOnboarding?: boolean }
 ): boolean {

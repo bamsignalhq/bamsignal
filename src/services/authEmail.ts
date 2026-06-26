@@ -23,7 +23,7 @@ export class AuthEmailError extends Error {
   constructor(
     message: string,
     kind: AuthEmailError["kind"] = "server",
-    field?: AuthEmailError["field"],
+    _field?: AuthEmailError["field"],
     code?: string
   ) {
     super(message);

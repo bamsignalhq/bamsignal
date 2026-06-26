@@ -1,5 +1,4 @@
 import {
-  CALENDAR_DEFAULT_DURATION_MINUTES,
   CALENDAR_DEFAULT_TIMEZONE
 } from "../constants/calendar";
 import { getConsultantAvailabilityConfig } from "./consultationSchedulingAvailabilityStore";
@@ -14,7 +13,6 @@ import type { ConciergeMemberRecord } from "../types/conciergeConsultant";
 import type { ConciergeConsultantRecord } from "../types/conciergeConsultantDirectory";
 import type { SignalConciergeApplication } from "../types/signalConcierge";
 import { listConciergeConsultants } from "./conciergeConsultantDirectoryStore";
-import { listConciergeMembers } from "./conciergeConsultantStore";
 import { ensureMemberJourneyId } from "./conciergeJourneyRegistry";
 import { ensureConsultationMeetingId } from "./consultationMeetingIdRegistry";
 import {
@@ -139,10 +137,6 @@ function resolveConsultant(consultantId?: string): ConciergeConsultantRecord | n
   const consultants = listConciergeConsultants().filter((item) => item.status === "active");
   if (!consultantId) return consultants[0] ?? null;
   return consultants.find((item) => item.id === consultantId) ?? null;
-}
-
-function resolveMember(memberId: string): ConciergeMemberRecord | null {
-  return listConciergeMembers().find((member) => member.id === memberId) ?? null;
 }
 
 export function recordConsultationEvent(input: {

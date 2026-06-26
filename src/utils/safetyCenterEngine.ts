@@ -8,7 +8,6 @@ import {
   filterSafetyCases,
   findCaseById,
   isOpenCase,
-  listSafetyCases,
   sortCasesByReportedAt
 } from "./safetyCenterLogic";
 import { readJson, writeJson } from "./storage";

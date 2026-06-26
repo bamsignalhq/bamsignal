@@ -11,7 +11,6 @@ import {
 } from "../../../constants/conciergeConsultantCommunication";
 import {
   assignAdminConciergeConsultantRoles,
-  fetchAdminConciergeConsultantPortfolio,
   fetchAdminConciergeConsultants,
   inviteAdminConciergeConsultant,
   setAdminConciergeConsultantStatus

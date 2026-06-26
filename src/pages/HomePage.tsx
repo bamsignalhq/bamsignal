@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { greetingForHour } from "../constants/copy";
 import { firstNameFromDisplayName } from "../constants/homeFilters";
@@ -109,17 +109,6 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
     enabled: true,
     onRenewNavigate: () => navigateToPath("/fast-connection")
   });
-
-  const fetchCitiesForFeed = useMemo(() => {
-    const usingSavedSearch =
-      city === filterDefaults.city &&
-      state === filterDefaults.state &&
-      searchCities.length > 0;
-    if (usingSavedSearch && searchCities.length > 1) return searchCities;
-    if (city.trim()) return [city.trim()];
-    if (searchCities.length) return searchCities;
-    return [];
-  }, [city, state, searchCities, filterDefaults.city, filterDefaults.state]);
 
   useEffect(() => {
     setState(filterDefaults.state);

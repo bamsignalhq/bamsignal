@@ -235,7 +235,7 @@ function buildCategoryScores(
 function buildGrowthPlan(categories: PerformanceReviewCategoryScore[]): PerformanceReviewGrowthFocus[] {
   return categories
     .filter((category) => category.rating === "developing" || category.rating === "needs-support")
-    .map((category, index) => ({
+    .map((category, _index) => ({
       id: `growth_${category.id}`,
       categoryId: category.id,
       categoryLabel: category.label,

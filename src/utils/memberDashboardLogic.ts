@@ -199,7 +199,7 @@ export function buildUpcomingMeeting(
 }
 
 export function buildRecentMeetings(
-  application: SignalConciergeApplication,
+  _application: SignalConciergeApplication,
   member?: ConciergeMemberRecord | null
 ): RecentMeetingSummary[] {
   const journal = member?.communicationJournal ?? [];

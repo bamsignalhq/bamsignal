@@ -1,6 +1,6 @@
 import { PERFORMANCE_STATUS_LABELS } from "../../../constants/productionPerformance";
 import type { PerformanceHealthReport } from "../../../types/productionPerformance";
-import { formatPerformanceSummaryLine } from "../../../utils/productionPerformanceLogic";
+import { formatPerformanceHealthSummaryLine } from "../../../utils/productionPerformanceLogic";
 import { InstitutionalStatusBadge } from "../shared/InstitutionalStatusBadge";
 
 type PerformanceHealthReportCardProps = {
@@ -24,7 +24,7 @@ export function PerformanceHealthReportCard({ report }: PerformanceHealthReportC
         />
       </div>
 
-      <p className="performance-health-report-card__line">{formatPerformanceSummaryLine(report)}</p>
+      <p className="performance-health-report-card__line">{formatPerformanceHealthSummaryLine(report)}</p>
 
       <div className="performance-health-report-card__metrics">
         <article>

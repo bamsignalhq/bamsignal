@@ -1,6 +1,5 @@
 import {
   healthAlertSeverityOrder,
-  type RelationshipHealthAlertSeverity,
   type RelationshipHealthAlertStatus
 } from "../constants/relationshipHealthAlerts";
 import type {

@@ -7,8 +7,7 @@ import {
   type FastConnectionPassSnapshot,
   type SignalPassSnapshot
 } from "../utils/memberEntitlements";
-import { isPremiumTrialActive } from "../utils/premiumTrial";
-import { activateQuickiePass, clearQuickiePass, getQuickiePassUntil, syncFastConnectionPassFromServer } from "../utils/quickie";
+import { getQuickiePassUntil, syncFastConnectionPassFromServer } from "../utils/quickie";
 import { pruneExpiredBoosts } from "../utils/activeBoosts";
 import { dedupeInflight } from "../utils/inflightPromise";
 import { apiUrl } from "./supabase";

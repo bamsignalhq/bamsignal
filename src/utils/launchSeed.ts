@@ -1,6 +1,5 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import type { DatingProfile, DiscoverProfile, MatchPreferences } from "../types";
-import { safeArray, safeString } from "./safeProfile";
 import { cityProximityTier } from "../constants/seedCities";
 import { metroForCity } from "../constants/profileOptions";
 import { getDiscoverCityConfig } from "../constants/discoverCityConfig";

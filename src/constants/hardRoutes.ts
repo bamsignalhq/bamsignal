@@ -19,11 +19,8 @@ import {
 import {
   JOURNEY_INTELLIGENCE_PATH
 } from "./journeyIntelligence";
-import { WORKFORCE_MANAGEMENT_ADMIN_PATH } from "./workforceAdmin";
-import { BUSINESS_CONTINUITY_ADMIN_PATH } from "./businessContinuityAdmin";
 import { INSTITUTIONAL_POLICIES_ADMIN_PATH } from "./institutionalPoliciesAdmin";
 import { DOCUMENT_CENTER_ADMIN_PATH } from "./documentCenterAdmin";
-import { INSTITUTIONAL_GOVERNANCE_ADMIN_PATH } from "./institutionalGovernanceAdmin";
 import { CONFIGURATION_PLATFORM_ADMIN_PATH } from "./configurationPlatformAdmin";
 import { MONITORING_CENTER_ADMIN_PATH } from "./monitoringCenterAdmin";
 import { DATA_GOVERNANCE_CENTER_ADMIN_PATH } from "./dataGovernanceCenterAdmin";
@@ -31,23 +28,6 @@ import { API_PLATFORM_ADMIN_PATH } from "./apiPlatformAdmin";
 import { LAUNCH_CONTROL_CENTER_ADMIN_PATH } from "./launchControlCenterAdmin";
 import { PERFORMANCE_CENTER_ADMIN_PATH } from "./performanceCenterAdmin";
 import { WORKFLOW_ENGINE_ADMIN_PATH } from "./workflowEngineAdmin";
-import { PRODUCTION_SECURITY_ADMIN_PATH } from "./productionSecurityAdmin";
-import { UX_CONSISTENCY_ADMIN_PATH } from "./uxConsistencyAdmin";
-import { PRODUCTION_PERFORMANCE_ADMIN_PATH } from "./productionPerformanceAdmin";
-import { PERFORMANCE_CERTIFICATION_ADMIN_PATH } from "./performanceCertificationAdmin";
-import { SECURITY_CERTIFICATION_ADMIN_PATH } from "./securityCertificationAdmin";
-import { RELIABILITY_CERTIFICATION_ADMIN_PATH } from "./reliabilityCertificationAdmin";
-import { ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH } from "./enterpriseCodebaseCleanupAdmin";
-import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin";
-import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
-import { FOUNDER_CERTIFICATION_ADMIN_PATH } from "./founderCertificationAdmin";
-import { DEPENDENCY_CERTIFICATION_ADMIN_PATH } from "./dependencyCertificationAdmin";
-import { DRIFT_CERTIFICATION_ADMIN_PATH } from "./driftCertificationAdmin";
-import { RC_CERTIFICATION_ADMIN_PATH } from "./rcCertificationAdmin";
-import { PRODUCTION_OBSERVABILITY_ADMIN_PATH } from "./productionObservabilityAdmin";
-import { FEATURE_FLAG_PLATFORM_ADMIN_PATH } from "./featureFlagPlatformAdmin";
-import { PLATFORM_HEALTH_ADMIN_PATH } from "./platformHealthAdmin";
-import { ABUSE_PROTECTION_ADMIN_PATH } from "./abuseProtectionAdmin";
 import { SEARCH_CENTER_ADMIN_PATH } from "./searchCenterAdmin";
 import { DISASTER_RECOVERY_ADMIN_PATH } from "./disasterRecoveryAdmin";
 import { LAUNCH_COMMAND_CENTER_ADMIN_PATH } from "./launchCommandCenterAdmin";

@@ -17,8 +17,8 @@ type ActiveMembersRowProps = {
 export function ActiveMembersRow({
   profiles,
   viewer,
-  isPremium,
-  phoneVerified,
+  isPremium: _isPremium,
+  phoneVerified: _phoneVerified,
   sendingId,
   sentIds,
   onSendSignal,

@@ -1,7 +1,6 @@
 import type {
   ApiDomainId,
   ApiKeyStatusId,
-  ApiPlatformSectionId,
   ApiScopeId,
   WebhookProviderId
 } from "../constants/apiPlatform";

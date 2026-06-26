@@ -15,7 +15,6 @@ import { isTrustedMember } from "../../utils/trustedMember";
 import { searchMemberProfiles } from "../../services/discoverProfiles";
 import { sendSignalRemote } from "../../services/memberData";
 import type { DiscoverProfile, HomeAdvancedFilters, UserProfile } from "../../types";
-import { getVerificationTier } from "../../utils/verification";
 import { getMemberCity } from "../../utils/memberCity";
 import {
   emptyHomeAdvancedFilters,
@@ -227,22 +226,6 @@ export function HomeSearchSection({ user, isPremium, onUpgrade, onOpenDiscover }
       {results.length > 0 ? (
         <ul className="home-search__results">
           {results.map((profile) => {
-            const verification = getVerificationTier(
-              {
-                verified: Boolean(profile.verified),
-                premium: Boolean(profile.premium),
-                photos: [],
-                age: profile.age,
-                gender: profile.gender ?? "Man",
-                city: profile.city,
-                bio: profile.bio,
-                lookingFor: profile.lookingFor ?? "Women",
-                intents: profile.intents,
-                interests: profile.interests ?? []
-              },
-              Boolean(profile.premium),
-              Boolean(profile.verified)
-            );
             return (
               <li key={profile.id} className="home-search-card">
                 <button

@@ -52,7 +52,7 @@ export function ProfileDetailSheet({
   profile,
   open,
   onClose,
-  verification,
+  verification: _verification,
   onSendSignal,
   onPass,
   onPrioritySignal,

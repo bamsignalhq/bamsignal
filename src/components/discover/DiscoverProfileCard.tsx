@@ -38,7 +38,7 @@ type DiscoverProfileCardProps = {
 
 export function DiscoverProfileCard({
   profile,
-  verification,
+  verification: _verification,
   signalSent = false,
   signalBlockedReason,
   entering = true,

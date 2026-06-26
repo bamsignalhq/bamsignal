@@ -169,6 +169,7 @@ export default defineConfig({
     __APP_BUILD_TIME__: JSON.stringify(appBuildTime)
   },
   build: {
+    chunkSizeWarningLimit: 1400,
     rollupOptions: {
       output: {
         manualChunks: {

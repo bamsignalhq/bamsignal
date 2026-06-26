@@ -1,4 +1,3 @@
-import { LAUNCH_CONSOLIDATION_CHECKS } from "../constants/launchCertification";
 import { LAUNCH_DECISION_LABELS } from "../constants/launchCertification";
 import { LAUNCH_CERTIFICATION_DOMAIN_LABELS } from "../constants/launchCertification";
 import { INSTITUTIONAL_READINESS_ADMIN_PATH } from "../constants/institutionalReadinessAdmin";

@@ -4,7 +4,6 @@ import { isTrustedMember, isTrustedMemberPending } from "./trustedMember";
 import { dismissProfileNudge, shouldShowProfileNudge } from "./profileNudge";
 import type { ProfileStrengthOptions } from "./profileStrength";
 import { safeArray } from "./safeProfile";
-import { getVoiceVibeUrl } from "./voiceVibe";
 
 export type ProfilePageGuidanceKind = "photos" | "voice" | "trusted";
 

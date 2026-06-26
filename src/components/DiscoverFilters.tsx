@@ -1,6 +1,6 @@
 import { SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { INTENT_FILTER_OPTIONS, INTENT_LIMIT_MESSAGE, MAX_INTENT_SELECTIONS, toggleIntentSelection } from "../constants/intents";
+import { INTENT_FILTER_OPTIONS, MAX_INTENT_SELECTIONS, toggleIntentSelection } from "../constants/intents";
 import { MORE_ABOUT_ME_CATEGORIES, formatMoreAboutMeChip } from "../constants/moreAboutMe";
 import { StateCitySelect } from "./StateCitySelect";
 import { searchStateFromPrefs, withSearchStateChange, normalizeSearchCities } from "../utils/searchLocationPrefs";
@@ -70,7 +70,7 @@ export function DiscoverFilters({
       const list = (prefs.intents ?? []) as IntentTag[];
       const result = toggleIntentSelection(list, value as IntentTag);
       if (result.blocked) {
-        setIntentLimitMessage(result.blockedReason || INTENT_LIMIT_MESSAGE);
+        setIntentLimitMessage(result.blockedReason || `You can select up to ${MAX_INTENT_SELECTIONS} intentions.`);
         return;
       }
       setIntentLimitMessage("");

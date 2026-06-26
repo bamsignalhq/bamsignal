@@ -146,7 +146,6 @@ import {
   retryPendingComplianceSync,
   syncComplianceDoneMarkerFromProfile
 } from "./services/compliance";
-import { normalizeOnboardingStatus } from "./utils/onboardingStatus";
 import { readOpenAppOnboardingCache } from "./utils/openAppOnboardingCache";
 import { clearStaleBootFlags } from "./utils/bootFlags";
 import { debugSessionCall, setHydrationDebugState } from "./utils/debugRecursion";
@@ -207,18 +206,14 @@ import {
   getBlogSlug,
   getMomentSlug,
   isBlogIndex,
-  isHardAuthRoute,
-  isHardHubRoute,
   isHardRoute,
   isAdminAuthRoute,
   isAdminHubRoute,
-  isAdminRoute,
   isPublicWebRoute,
   navigateToPath,
   normalizePath,
   isPaymentReturnPath,
   redirectLegacyConsolePaths,
-  redirectLegacyAdmin,
   redirectAuthSignupAliases,
   requiresMemberRestoreBlocking,
   shouldShowPublicNotFound,
@@ -2048,14 +2043,6 @@ export function App() {
       ? MONETIZATION_COPY.checkoutOpening
       : MONETIZATION_COPY.checkoutLoading;
 
-  const upgradeById = useCallback(
-    (planId: string) => {
-      const plan = plans.find((p) => p.id === planId);
-      if (plan) void handleUpgrade(plan);
-    },
-    [handleUpgrade, plans]
-  );
-
   const premiumCheckoutValue = useMemo(
     () => ({
       busy: paymentLoading,
@@ -2171,14 +2158,6 @@ export function App() {
         pathname: currentPathname
       })
     : null;
-
-  const onPublicWebRoute = isPublicWebRoute(currentPathname) && !paystackCallbackActive;
-
-  const shouldBlockForAuthRestore =
-    !onPublicWebRoute &&
-    (memberRouteGuard?.phase === "loading" ||
-      (requiresMemberRestoreBlocking(window.location.pathname, isNative) &&
-        (authLoading || memberHydrating)));
 
   if (
     memberRouteGuard &&

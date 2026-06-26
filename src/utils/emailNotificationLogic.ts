@@ -132,7 +132,7 @@ export function derivePendingEmailTemplates(
     if (mapped) push(mapped);
   }
 
-  for (const introduction of member.introductions) {
+  for (const _introduction of member.introductions) {
     push("introduction-presented");
   }
 

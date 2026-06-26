@@ -59,7 +59,7 @@ import {
   OPERATIONS_CENTER_PATH
 } from "./operationsCenter";
 import { JOURNEY_INTELLIGENCE_PATH } from "./journeyIntelligence";
-import { PERMISSIONS, ROLES } from "./permissionTypes";
+import { ROLES } from "./permissionTypes";
 import type { Permission as PermissionSlug, Role as RoleSlug } from "./permissionTypes";
 
 export { PERMISSIONS, ROLES } from "./permissionTypes";
@@ -123,8 +123,6 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   SystemAdministration: "System administration",
   ManageRecovery: "Manage recovery"
 };
-
-const ALL_PERMISSIONS: Permission[] = [...PERMISSIONS];
 
 export const RolePermissions: Record<Role, readonly Permission[]> = buildLegacyRolePermissionMap();
 

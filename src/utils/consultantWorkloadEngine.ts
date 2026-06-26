@@ -6,7 +6,7 @@ import { CONCIERGE_CONSULTANT_ROLE_LABELS } from "../constants/conciergeConsulta
 import { REGIONAL_CONSULTANT_TEAM_REGIONS } from "../constants/regionalConsultantTeams";
 import type { ConciergeConsultantRecord } from "../types/conciergeConsultantDirectory";
 import type { ConciergeMemberRecord } from "../types/conciergeConsultant";
-import type { RecommendationLevel, WorkloadHealth, WorkloadProfile } from "../types/consultantAssignment";
+import type { WorkloadHealth, WorkloadProfile } from "../types/consultantAssignment";
 import {
   deriveCapacityLevel,
   deriveWorkloadHealth

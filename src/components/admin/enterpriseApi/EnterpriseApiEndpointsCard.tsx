@@ -1,7 +1,6 @@
 import {
   ENTERPRISE_API_AUTH_LABELS,
-  ENTERPRISE_API_ENDPOINT_STATUS_LABELS,
-  type EnterpriseApiEndpointStatusId
+  ENTERPRISE_API_ENDPOINT_STATUS_LABELS
 } from "../../../constants/enterpriseApiCenter";
 import type { EnterpriseApiEndpoint } from "../../../types/enterpriseApiCenter";
 

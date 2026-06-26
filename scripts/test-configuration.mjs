@@ -28,10 +28,10 @@ function assert(condition, message) {
 
 const adminSource = readFileSync(join(rootPath, "src/constants/configurationPlatformAdmin.ts"), "utf8");
 assert(adminSource.includes('CONFIGURATION_PLATFORM_ADMIN_PATH = "/hard/configuration"'), "configuration route");
-assert(adminSource.includes("Institutional Configuration Center™"), "configuration brand");
+assert(adminSource.includes("Remote Configuration Center™"), "configuration brand");
 
 const constantsSource = readFileSync(join(rootPath, "src/constants/configurationPlatform.ts"), "utf8");
-assert(constantsSource.includes("consultants"), "consultants section");
+assert(constantsSource.includes("consultations"), "consultations section");
 assert(constantsSource.includes("consultation-duration"), "consultation duration rule");
 assert(constantsSource.includes("enable"), "enable flag mode");
 assert(constantsSource.includes("configuration_entries"), "configuration_entries table");

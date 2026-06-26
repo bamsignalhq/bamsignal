@@ -6,9 +6,9 @@ import { profileIntentLabel } from "../constants/intents";
 import { WHAT_BRINGS_ME_HERE_TITLE } from "../constants/relationshipIntent";
 import { WhatBringsYouHerePicker } from "../components/relationshipIntent/WhatBringsYouHerePicker";
 import { relationshipIntentsFrom } from "../constants/relationshipIntent";
+import { PhotoUploadGrid } from "../components/PhotoUploadGrid";
 import {
   LazyCoverPhotoUpload,
-  LazyPhotoUploadGrid,
   LazyProfileAccountPanel,
   LazySafetySettingsCard,
   LazyTwoFactorSettingsCard
@@ -40,7 +40,6 @@ import type {
   DatingProfile,
   IntentTag,
   LookingFor,
-  MatchPreferences,
   SafetySettings,
   Theme,
   UserProfile
@@ -53,9 +52,8 @@ import { BUILD_CODE, BUILD_TIME, BUILD_VERSION, CACHE_VERSION } from "../buildIn
 import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { navigateToPath } from "../constants/routes";
-import { getVoiceVibeDuration, getVoiceVibeUrl, hasVoiceVibe } from "../utils/voiceVibe";
+import { getVoiceVibeUrl, hasVoiceVibe } from "../utils/voiceVibe";
 import { getVerificationTier } from "../utils/verification";
-import { isTrustedMember, isTrustedMemberPending } from "../utils/trustedMember";
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
 import { resolveProfileMainPhoto } from "../utils/mainPhoto";
 import {
@@ -64,7 +62,7 @@ import {
   validateProfileContactLeaks,
   validateUserText
 } from "../utils/contactGuard";
-import { readJson, writeJson } from "../utils/storage";
+import { writeJson } from "../utils/storage";
 import {
   isUserVerificationApproved,
   isUserVerificationPending
@@ -402,7 +400,6 @@ export function ProfilePage({
     loading: fastConnectionLoading,
     closeSheet: closeFastConnectionSheet,
     continueToPayment: continueFastConnectionPayment,
-    handleIntentTap,
     refreshProfileIntents
   } = useFastConnectionCheckout({
     user,
@@ -413,10 +410,6 @@ export function ProfilePage({
     },
     onPaymentError: (message) => showModMessage(message)
   });
-
-  const startSelfieVerification = () => {
-    openTrustedMemberPage();
-  };
 
   const handlePhoneVerified = (phone: string) => {
     const nextUser = { ...user, phone, phoneVerified: true };
@@ -632,8 +625,7 @@ export function ProfilePage({
               />
             </Suspense>
             <h4 className="profile-form-row__label">Profile photos</h4>
-            <Suspense fallback={null}>
-              <LazyPhotoUploadGrid
+            <PhotoUploadGrid
               className="photo-upload-grid--centered"
               photos={profile.photos}
               mainPhotoUrl={profile.mainPhotoUrl}
@@ -651,7 +643,6 @@ export function ProfilePage({
               }}
               onModerationMessage={showModMessage}
             />
-            </Suspense>
             <PhotoTipsCarousel className="profile-edit-photo-tips" />
           </EditAccordion>
 

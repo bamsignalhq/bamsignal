@@ -17,7 +17,7 @@ import { PaywallModal } from "../components/PaywallModal";
 import { QuickiePaywallModal } from "../components/QuickiePaywallModal";
 import { ReportBlockModal } from "../components/ReportBlockModal";
 import { OfflineSafetyAckModal } from "../components/OfflineSafetyAckModal";
-import type { ChatMessage, ChatThread, ContactExchangeShared, ContactExchangeState, DiscoverProfile, LikeEntry, Match, ReportReason, UserProfile } from "../types";
+import type { ChatMessage, ChatThread, ContactExchangeShared, DiscoverProfile, LikeEntry, Match, ReportReason, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { FEMALE_SAFETY_COPY } from "../constants/safety";
 import { chatListStatus, formatBubbleTime, formatThreadTime } from "../utils/chatListStatus";
@@ -29,7 +29,6 @@ import { checkOutgoingChatMessage, CONTACT_LEAK_BLOCK_MESSAGE, VULGAR_CONTENT_BL
 import { blockAndReportUser, blockUser, canUseInbox, filterBlockedByProfileId, isUserBlocked, unmatchUser } from "../utils/safety";
 import { hasOfflineSafetyAck } from "../utils/compliance";
 import { trackEvent } from "../utils/analytics";
-import { isViewerShadowBanned } from "../utils/shadowBan";
 import { incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
 import {
   completeContactExchangeRemote,
@@ -45,7 +44,7 @@ import { BRAND } from "../constants/copy";
 import { startQuickiePassPayment, completePendingPayment } from "../services/payments";
 import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch } from "../utils/quickie";
 import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
-import { consumePendingChatDraft, consumePendingChatOpen, setPendingChatDraft, setPendingChatOpen } from "../utils/chatDraft";
+import { consumePendingChatDraft, consumePendingChatOpen, setPendingChatDraft } from "../utils/chatDraft";
 import { useMemberToast } from "../hooks/useMemberToast";
 import { hapticMedium } from "../utils/memberHaptics";
 import { debugRender } from "../utils/debugRecursion";
@@ -402,7 +401,6 @@ function ChatDetail({
   setSafetyOpen: (v: boolean) => void;
 }) {
   const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
-  const viewerShadowBanned = isViewerShadowBanned(user.phone, user.email);
   const allThreads = readJson<Record<string, ChatThread>>(STORAGE_KEYS.chats, {});
   const initialThread = allThreads[match.id] || { matchId: match.id, messages: [] };
   const [threadMeta, setThreadMeta] = useState<Omit<ChatThread, "messages">>({

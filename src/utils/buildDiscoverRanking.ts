@@ -5,7 +5,7 @@ import { calculateProfileStrength, getProfileStrengthLevel } from "./profileStre
 import { isRecentlyActive } from "./launchSeed";
 import { isTrustedMember } from "./trustedMember";
 import { hasVoiceVibe } from "./voiceVibe";
-import { safeArray, safeString } from "./safeProfile";
+import { safeString } from "./safeProfile";
 import { isPreferNot } from "./profile";
 import { normalizeLifestyleTraits } from "../constants/profileOptions";
 

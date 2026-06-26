@@ -1,5 +1,3 @@
-import { X } from "lucide-react";
-
 type AccountRestoreModalProps = {
   open: boolean;
   scheduledFor?: string | null;

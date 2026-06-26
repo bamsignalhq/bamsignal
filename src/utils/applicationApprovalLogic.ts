@@ -231,7 +231,7 @@ export function buildReviewSummary(review: ApplicationReview): ReviewSummary {
 }
 
 export function buildMemberApplicationApprovalBundle(
-  member: ConciergeMemberRecord,
+  _member: ConciergeMemberRecord,
   review: ApplicationReview
 ): MemberApplicationApprovalBundle {
   return {

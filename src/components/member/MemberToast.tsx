@@ -9,17 +9,12 @@ type MemberToastProps = {
   onDismiss?: () => void;
 };
 
-export function MemberToast({ message, tone = "default", onDismiss }: MemberToastProps) {
+export function MemberToast({ message, tone = "default", onDismiss: _onDismiss }: MemberToastProps) {
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     setLeaving(false);
   }, [message]);
-
-  const handleDismiss = () => {
-    setLeaving(true);
-    window.setTimeout(() => onDismiss?.(), 140);
-  };
 
   const node = (
     <div className="member-toast-host" role="status" aria-live="polite" aria-atomic="true">

@@ -13,7 +13,6 @@ import {
 import { assignAdminConciergeMember } from "../../../services/adminConcierge";
 import { AssignmentDecisionCard } from "./AssignmentDecisionCard";
 import { ConsultantCapacityBadge } from "./ConsultantCapacityBadge";
-import { ConsultantWorkloadCard } from "./ConsultantWorkloadCard";
 
 type AssignmentQueueCardProps = {
   bundle: OperationsCenterBundle;

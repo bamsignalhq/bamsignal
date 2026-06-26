@@ -1,6 +1,6 @@
 import { PROFILE_PROMPT_ANSWER_MAX, PROFILE_PROMPT_MAX, PROFILE_PROMPT_OPTIONS } from "../../constants/profilePrompts";
 import type { DatingProfile } from "../../types";
-import { CONTACT_LEAK_BLOCK_MESSAGE, validateUserText } from "../../utils/contactGuard";
+import { validateUserText } from "../../utils/contactGuard";
 
 type ProfilePromptsEditorProps = {
   prompts: DatingProfile["profilePrompts"];

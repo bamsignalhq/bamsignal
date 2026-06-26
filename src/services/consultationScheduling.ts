@@ -12,7 +12,7 @@ import {
   syncSchedulingAvailability
 } from "../utils/ConsultationSchedulingEngine";
 import { generateMeetingInfrastructureForEvent } from "./meetingInfrastructure";
-import { resolveConsultationPaymentMember } from "./consultationPayment";
+import { resolveConsultationPaymentMember } from "./consultationPayments";
 import { apiUrl, supabase } from "./supabase";
 import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";

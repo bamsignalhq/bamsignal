@@ -39,7 +39,7 @@ export function governanceSlugFromLegacyPermission(permission: Permission): Gove
 
 export function collectRoleAncestors(
   roleSlug: GovernanceRoleSlug,
-  roleMap = rolesBySlug()
+  _roleMap = rolesBySlug()
 ): GovernanceRoleSlug[] {
   const parent = GOVERNANCE_ROLE_SEED.find((role) => role.slug === roleSlug)?.parentRoleId;
   if (!parent) return [];

@@ -10,7 +10,6 @@ import {
   advanceIntroductionStatus,
   getIntroductionPreviewForMember,
   getIntroductionRevealForMember,
-  getMemberDisplayName,
   recordIntroductionMemberApproval,
   scheduleIntroductionFollowUp
 } from "../../../utils/IntroductionEngine";

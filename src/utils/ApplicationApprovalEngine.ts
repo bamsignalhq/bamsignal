@@ -11,8 +11,7 @@ import type { ApplicationReview, MemberApplicationApprovalBundle } from "../type
 import { listConciergeMembers } from "./conciergeConsultantStore";
 import {
   buildApplicationReview,
-  buildMemberApplicationApprovalBundle,
-  buildReviewSummary
+  buildMemberApplicationApprovalBundle
 } from "./applicationApprovalLogic";
 import { readJson, writeJson } from "./storage";
 

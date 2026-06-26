@@ -5,7 +5,6 @@ import { BuildProfileLaterCard } from "../components/profile/BuildProfileLaterCa
 import { Preloader } from "../components/Preloader";
 import { StateCitySelect, resolveProfileLocation } from "../components/StateCitySelect";
 import { WhatBringsYouHerePicker } from "../components/relationshipIntent/WhatBringsYouHerePicker";
-import { relationshipIntentsFrom } from "../constants/relationshipIntent";
 import { hasMinimumRelationshipIntents } from "../utils/relationshipIntent";
 import { isFastConnectionInterested } from "../utils/fastConnectionState";
 import { isQuickiePassActive } from "../utils/quickie";
@@ -14,7 +13,7 @@ import { ONBOARDING_REQUIRED_PHOTOS } from "../utils/buildProfileLater";
 import { CONTACT_LEAK_BLOCK_MESSAGE, validateDisplayName, validateProfileContactLeaks, validateUserText } from "../utils/contactGuard";
 import { STORAGE_KEYS } from "../constants/limits";
 import { MoreAboutMePicker } from "../components/moreAboutMe/MoreAboutMePicker";
-import { MORE_ABOUT_ME_HEADLINE, MORE_ABOUT_ME_SUBTEXT } from "../constants/moreAboutMe";
+import { MORE_ABOUT_ME_SUBTEXT } from "../constants/moreAboutMe";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import type {
   DatingProfile,
@@ -35,7 +34,7 @@ import {
   applyOnboardingRepairLocal,
   fetchOnboardingStatus
 } from "../services/onboardingRepair";
-import { defaultDatingProfile, normalizeDatingProfile } from "../utils/profile";
+import { normalizeDatingProfile } from "../utils/profile";
 import { clearOnboardingDrafts, looksLikeSavedOnboardingProgress } from "../utils/onboardingStatus";
 import { resolveMemberIdentity } from "../utils/authIdentity";
 import { writeJson, readJson } from "../utils/storage";

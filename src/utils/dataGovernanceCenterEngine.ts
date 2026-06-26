@@ -3,8 +3,7 @@ import type { DataGovernanceModuleId } from "../constants/dataGovernanceCenter";
 import {
   buildDataGovernanceSummary,
   filterDeletionRequests,
-  filterExportRequests,
-  filterGeneralPrivacyRequests
+  filterExportRequests
 } from "./dataGovernanceCenterLogic";
 import {
   listAuditExports,

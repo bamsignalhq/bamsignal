@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../../../types";
 import { getProfileAboutDisplay } from "../../../utils/ownProfileOverview";
 import { normalizeMoreAboutMeInterests } from "../../../utils/moreAboutMe";

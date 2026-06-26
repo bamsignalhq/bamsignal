@@ -1,7 +1,6 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import type { UserProfile } from "../types";
 import { readJson, writeJson } from "./storage";
-import { notifyReferralRewardEarned } from "./notifyHelpers";
 
 import { AUTH_SIGNUP_PATH } from "../constants/routes";
 
@@ -60,10 +59,6 @@ export function recordSuccessfulReferral(): ReferralState {
     successfulReferrals: 0,
     rewardsClaimed: 0
   });
-}
-
-function grantReferralReward(count: number): void {
-  notifyReferralRewardEarned(REWARD_DAYS * count);
 }
 
 export function referralProgress(state: ReferralState): {

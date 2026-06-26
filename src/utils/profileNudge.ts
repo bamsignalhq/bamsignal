@@ -67,7 +67,7 @@ function hasProfileFields(profile: DatingProfile, options: ProfileStrengthOption
 function isFieldComplete(
   profile: DatingProfile,
   id: ProfileStrengthFactorId,
-  options: ProfileStrengthOptions
+  _options: ProfileStrengthOptions
 ): boolean {
   switch (id) {
     case "relationshipGoal":

@@ -11,7 +11,7 @@ import {
   applyWhatsappSendResult,
   queueWhatsappNotificationDraft
 } from "../utils/WhatsappNotificationEngine";
-import { resolveConsultationPaymentMember } from "./consultationPayment";
+import { resolveConsultationPaymentMember } from "./consultationPayments";
 import { apiUrl, supabase } from "./supabase";
 import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";

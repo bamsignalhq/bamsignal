@@ -13,7 +13,6 @@ import {
   fetchAdminConciergeConsultants,
   saveAdminConciergeMemberNote,
   saveAdminConciergeMemberStatus,
-  transferAdminConciergeMember,
   journeyTransitionAdminMember
 } from "../../../services/adminConcierge";
 import type { ConciergeFollowUpTask, ConciergeMemberRecord } from "../../../types/conciergeConsultant";

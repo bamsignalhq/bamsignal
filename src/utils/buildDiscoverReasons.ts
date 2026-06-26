@@ -3,7 +3,6 @@ import { buildCompatibilityReasons } from "./buildCompatibilityReasons";
 import {
   isNewHereProfile,
   isOutstandingDiscoverProfile,
-  isRelationshipFocusedProfile,
   isSameCityProfile,
   relationshipDiscoverScore
 } from "./buildDiscoverRanking";

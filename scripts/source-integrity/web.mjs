@@ -403,9 +403,10 @@ assertCheck(
   "runtime smoke must not depend on src/"
 );
 assertCheck(
-  appSource.includes("onPublicWebRoute") &&
-    appSource.includes("!onPublicWebRoute") &&
-    appSource.includes("shouldBlockForAuthRestore"),
+  appSource.includes("sessionRestoreActive") &&
+    appSource.includes("const onPublic = isPublicWebRoute(currentPathname)") &&
+    appSource.includes("onPublic ||") &&
+    appSource.includes("requiresMemberRestoreBlocking"),
   "public routes must never block on member session restore"
 );
 assertCheck(

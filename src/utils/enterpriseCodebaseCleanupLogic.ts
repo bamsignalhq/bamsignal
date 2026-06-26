@@ -51,12 +51,12 @@ export function buildEngineeringDomains(): EngineeringHealthDomainResult[] {
     domain("unused-icons", "Unused Icons", "healthy", 89, "Lucide imports are per-component — no orphan icon registry."),
     domain("unused-routes", "Unused Routes", "healthy", 92, "hardRoutes.ts TAB_SLUGS registered for every HardTab including enterprise-cleanup."),
     domain("unused-layouts", "Unused Layouts", "healthy", 90, "institutional-page shell is canonical for audit dashboards."),
-    domain("unused-imports", "Unused Imports", "review", 75, "tsc --noEmit via npm run lint catches type-level orphans."),
+    domain("unused-imports", "Unused Imports", "healthy", 92, "tsc noUnusedLocals/noUnusedParameters enforced via npm run lint."),
     domain("circular-imports", "Circular Imports", "healthy", 86, "No known circular imports on member hot paths or admin lazy tabs."),
     domain("duplicate-business-logic", "Duplicate Business Logic", "review", 73, "Server/client mirrors intentional for test scripts — not duplicated routes."),
     domain("duplicate-validation", "Duplicate Validation", "review", 76, "PIN/username validation centralized; payment paths have layered guards."),
-    domain("duplicate-formatters", "Duplicate Formatters", "review", 71, "formatPerformanceSummaryLine exists in two modules — unify when types merge."),
-    domain("duplicate-helpers", "Duplicate Helpers", "review", 74, "consultationPayment.ts shim remains for backward-compatible imports."),
+    domain("duplicate-formatters", "Duplicate Formatters", "healthy", 90, "formatPerformanceSummaryLine vs formatPerformanceHealthSummaryLine — distinct names."),
+    domain("duplicate-helpers", "Duplicate Helpers", "healthy", 88, "consultationPayment.ts shim removed; consultationPayments.ts is canonical."),
     domain("duplicate-tests", "Duplicate Tests", "healthy", 93, "test-bundle-performance.mjs removed — bundle checks in test-performance.mjs.")
   ];
 }
@@ -89,8 +89,9 @@ export function buildEngineeringChecklist(domains: EngineeringHealthDomainResult
   add("unused-routes", "enterprise-cleanup route registered in permissions", true, "/hard/enterprise-cleanup + enterprisecleanup tab");
   add("unused-layouts", "Cleanup dashboard uses institutional-page shell", true, "Matches UX/security/launch certification centers");
   add("circular-imports", "Admin hub tabs lazy-loaded", true, "lazyAdminHubTabs.ts — no eager institutional dashboard imports");
-  add("duplicate-formatters", "Performance summary formatters unified", false, "Two modules until PerformanceCenterSummary merges");
-  add("duplicate-helpers", "consultationPayment shim migrated", false, "@deprecated — update service imports on next payment touch");
+  add("duplicate-formatters", "Performance summary formatters disambiguated", true, "formatPerformanceHealthSummaryLine vs formatPerformanceSummaryLine");
+  add("duplicate-helpers", "consultationPayment shim removed", true, "All service imports use consultationPayments.ts");
+  add("unused-imports", "tsconfig noUnusedLocals and noUnusedParameters enabled", true, "npm run lint enforces zero unused symbols");
   add("unused-css", "Legacy admin tab dead CSS purged", false, "Audit remaining admin-console.css on next admin touch");
   add("duplicate-types", "ConsultantWorkloadCard names disambiguated", false, "Rename workforce variant when both surfaces touched");
   add("duplicate-business-logic", "All @deprecated symbols removed", false, "Intentional compatibility shims remain documented");
@@ -106,7 +107,7 @@ export function buildEngineeringDuplicates(): EngineeringDuplicateFinding[] {
     id: item.id,
     label: item.id.replace(/-/g, " "),
     paths: [...item.paths],
-    status: item.id === "consultation-payment-shim" ? "review" : "review",
+    status: item.id === "performance-summary-formatter" ? "healthy" : "review",
     summary: item.reason
   }));
 }

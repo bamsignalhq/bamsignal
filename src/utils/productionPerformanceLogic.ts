@@ -137,6 +137,6 @@ export function buildPerformanceHealthReport(): PerformanceHealthReport {
   };
 }
 
-export function formatPerformanceSummaryLine(report: PerformanceHealthReport): string {
+export function formatPerformanceHealthSummaryLine(report: PerformanceHealthReport): string {
   return `${report.passedCheckCount} passed · ${report.reviewIssueCount} review · ${report.slowIssueCount} slow · score ${report.overallScore}`;
 }

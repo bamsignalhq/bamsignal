@@ -5,7 +5,6 @@ const SIGNAL_BURST_WINDOW_MS = 60_000;
 const SIGNAL_BURST_LIMIT = 50;
 const DUPLICATE_MESSAGE_LIMIT = 5;
 
-type SignalEvent = { at: number };
 type MessageFingerprint = { body: string; targets: string[]; at: number };
 
 const signalBurstKey = "bamsignal-signal-burst";

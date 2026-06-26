@@ -1,4 +1,4 @@
-import { LAUNCH_READINESS_AREA_LABELS, LAUNCH_READINESS_STATUS_LABELS } from "../../../constants/launchReadiness";
+import { LAUNCH_READINESS_AREA_LABELS } from "../../../constants/launchReadiness";
 import type { LaunchCriticalIssue } from "../../../types/launchReadiness";
 
 type CriticalIssueCardProps = {

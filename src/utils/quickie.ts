@@ -1,4 +1,3 @@
-import { MAX_INTENT_SELECTIONS } from "../constants/intents";
 import { STORAGE_KEYS } from "../constants/limits";
 import {
   fastConnectionWeeklyPrice,

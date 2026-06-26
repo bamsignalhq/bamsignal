@@ -1,5 +1,5 @@
 import { STORAGE_KEYS } from "../constants/limits";
-import { readDailyCount, readJson, writeJson } from "./storage";
+import { readJson, writeJson } from "./storage";
 
 const UNDO_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const UNDO_LAST_KEY = "bamsignal-undo-pass-last";

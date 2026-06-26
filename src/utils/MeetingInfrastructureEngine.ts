@@ -6,7 +6,6 @@ import type { ConciergeConsultantRecord } from "../types/conciergeConsultantDire
 import type { ConciergeMemberRecord } from "../types/conciergeConsultant";
 import type { SignalConciergeApplication } from "../types/signalConcierge";
 import {
-  getMeetingLinkForMember,
   getMeetingLinkForMeeting,
   listMeetingLinks,
   recordMeetingLink

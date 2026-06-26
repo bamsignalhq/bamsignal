@@ -20,7 +20,7 @@ import {
   formatUsernameInput,
   isValidSignupUsername
 } from "../../utils/authIdentity";
-import { readJson, writeJson } from "../../utils/storage";
+import { writeJson } from "../../utils/storage";
 import { validateUserText } from "../../utils/contactGuard";
 import { DeleteAccountModal } from "../DeleteAccountModal";
 

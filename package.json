@@ -23,6 +23,7 @@
     "verify:database": "node scripts/verify-database.mjs",
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "test:photo-verification": "node scripts/test-photo-verification.mjs",
+    "test:whatsapp-verification": "node scripts/test-whatsapp-verification.mjs",
     "test:photo-safety": "node scripts/test-photo-safety.mjs",
     "test:interested-in-defaults": "node scripts/test-interested-in-defaults.mjs",
     "test:build-compatibility-reasons": "node scripts/test-build-compatibility-reasons.mjs",

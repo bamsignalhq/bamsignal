@@ -1,6 +1,9 @@
 import { config } from "../config.js";
+import { logWhatsappVerification } from "./verificationLog.js";
 
 const OTP_EXPIRATION_MINUTES = 30;
+const SENDCHAMP_TIMEOUT_MS = 15_000;
+const SENDCHAMP_RETRY_DELAY_MS = 800;
 const BAM_SIGNAL_OTP_MESSAGE =
   "Your BamSignal Code is {{code}}. DO NOT share it with anyone. It is valid for 30 minutes.";
 
@@ -16,16 +19,16 @@ export class SendchampError extends Error {
 }
 
 export function isSendchampConfigured() {
-  return Boolean(
-    config.sendchamp.apiKey && config.sendchamp.sender && config.sendchamp.whatsappSender
-  );
+  const { apiKey, sender, whatsappSender } = config.sendchamp;
+  return Boolean(apiKey && (whatsappSender || sender));
 }
 
 export function getSendchampHealthTrace() {
   return {
     hasApiKey: Boolean(config.sendchamp.apiKey),
     hasSender: Boolean(config.sendchamp.sender),
-    hasWhatsappSender: Boolean(config.sendchamp.whatsappSender)
+    hasWhatsappSender: Boolean(config.sendchamp.whatsappSender),
+    baseUrl: config.sendchamp.baseUrl
   };
 }
 
@@ -55,27 +58,86 @@ function buildVerificationCreateBody({ phone, sender, includeCustomMessage = tru
   };
 }
 
-function parseSendchampEnvelope(payload) {
-  const apiStatus = String(payload?.status || "").toLowerCase();
-  const apiCode = Number(payload?.code);
-  const data = payload?.data && typeof payload.data === "object" ? payload.data : payload;
-  const reference = data?.reference || data?.verification_reference || null;
-  const deliveryStatus = String(data?.status || "sent").toLowerCase();
-  const ok =
-    apiStatus !== "failed" &&
-    (apiCode === 200 || apiCode === 0 || !Number.isFinite(apiCode) || !payload?.code);
+function extractReference(payload) {
+  const data = payload?.data && typeof payload.data === "object" ? payload.data : null;
+  const candidates = [
+    data?.verification_reference,
+    data?.reference,
+    payload?.verification_reference,
+    payload?.reference
+  ];
 
-  return { ok, reference, deliveryStatus, message: payload?.message || "" };
+  for (const candidate of candidates) {
+    const value = String(candidate || "").trim();
+    if (value) return value;
+  }
+
+  return null;
 }
 
-async function sendchampFetch(path, body, { requireReference = true } = {}) {
+function extractProviderMessage(payload) {
+  return (
+    payload?.message ||
+    payload?.error ||
+    payload?.data?.message ||
+    payload?.errors?.[0]?.message ||
+    ""
+  );
+}
+
+export function parseSendchampEnvelope(payload, { requireReference = true } = {}) {
+  const apiStatus = String(payload?.status || "").toLowerCase();
+  const apiCode = Number(payload?.code);
+  const reference = extractReference(payload);
+  const data = payload?.data && typeof payload.data === "object" ? payload.data : payload;
+  const deliveryStatus = String(data?.status || payload?.delivery_status || "sent").toLowerCase();
+  const failed = apiStatus === "failed" || apiStatus === "error";
+  const successCode = apiCode === 200 || apiCode === 201 || apiCode === 0;
+  const ok =
+    !failed &&
+    (successCode || !Number.isFinite(apiCode) || Boolean(reference)) &&
+    (!requireReference || Boolean(reference));
+
+  return {
+    ok,
+    reference,
+    deliveryStatus,
+    message: extractProviderMessage(payload)
+  };
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableNetworkError(error) {
+  if (!error) return false;
+  if (error.name === "AbortError") return true;
+  if (error instanceof TypeError) return true;
+  return false;
+}
+
+async function fetchWithTimeout(url, options, timeoutMs = SENDCHAMP_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function sendchampFetch(path, body, { requireReference = true, logContext = {} } = {}) {
   const apiKey = config.sendchamp.apiKey;
   if (!apiKey) {
-    throw new SendchampError(503, "WhatsApp verification is not available right now.", "not_configured");
+    throw new SendchampError(503, "Verification temporarily unavailable.", "not_configured");
   }
 
   const baseUrl = config.sendchamp.baseUrl.replace(/\/$/, "");
-  const response = await fetch(`${baseUrl}${path}`, {
+  const url = `${baseUrl}${path}`;
+  const started = Date.now();
+
+  const requestOptions = {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -83,20 +145,80 @@ async function sendchampFetch(path, body, { requireReference = true } = {}) {
       Accept: "application/json"
     },
     body: JSON.stringify(body)
-  });
+  };
+
+  let response;
+  let retried = false;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      response = await fetchWithTimeout(url, requestOptions);
+      break;
+    } catch (error) {
+      if (attempt === 0 && isRetryableNetworkError(error)) {
+        retried = true;
+        logWhatsappVerification(
+          "provider_retry",
+          {
+            ...logContext,
+            provider: "sendchamp",
+            path,
+            attempt: attempt + 1,
+            reason: error.name || "network_error"
+          },
+          "warn"
+        );
+        await sleep(SENDCHAMP_RETRY_DELAY_MS);
+        continue;
+      }
+
+      logWhatsappVerification(
+        "provider_failed",
+        {
+          ...logContext,
+          provider: "sendchamp",
+          path,
+          durationMs: Date.now() - started,
+          providerStatus: "network_error",
+          failureReason: error.name || "network_error",
+          retried
+        },
+        "error"
+      );
+
+      throw new SendchampError(
+        504,
+        "Network timeout. Try again.",
+        error.name === "AbortError" ? "provider_timeout" : "network_error"
+      );
+    }
+  }
 
   const payload = await response.json().catch(() => ({}));
-  const parsed = parseSendchampEnvelope(payload);
-  const referenceOk = !requireReference || Boolean(parsed.reference);
+  const parsed = parseSendchampEnvelope(payload, { requireReference });
 
-  if (!response.ok || !parsed.ok || !referenceOk) {
+  logWhatsappVerification(
+    parsed.ok ? "provider_success" : "provider_failed",
+    {
+      ...logContext,
+      provider: "sendchamp",
+      path,
+      durationMs: Date.now() - started,
+      providerStatus: parsed.deliveryStatus || String(response.status),
+      failureReason: parsed.ok ? null : parsed.message || "provider_rejected",
+      deliveryRequested: path.includes("create"),
+      deliveryConfirmed: parsed.ok,
+      otpGenerated: path.includes("create") && parsed.ok,
+      retried
+    },
+    parsed.ok ? "info" : "error"
+  );
+
+  if (!response.ok || !parsed.ok) {
     const message =
       parsed.message ||
-      payload?.message ||
-      payload?.error ||
-      payload?.data?.message ||
       (requireReference
-        ? "We couldn't send the code right now. Please try again."
+        ? "Unable to contact WhatsApp service."
         : "We couldn't verify that code. Check it and try again.");
     throw new SendchampError(response.status || 502, message, payload?.code || "sendchamp_request_failed");
   }
@@ -107,16 +229,16 @@ async function sendchampFetch(path, body, { requireReference = true } = {}) {
   };
 }
 
-export async function sendWhatsAppVerificationOtp({ phone, sender }) {
+export async function sendWhatsAppVerificationOtp({ phone, sender, logContext = {} }) {
   const whatsappSender = resolveWhatsappSender(sender);
   if (!whatsappSender) {
-    throw new SendchampError(503, "WhatsApp verification is not available right now.", "missing_sender");
+    throw new SendchampError(503, "Sender configuration issue.", "missing_sender");
   }
 
   const body = buildVerificationCreateBody({ phone, sender: whatsappSender, includeCustomMessage: true });
 
   try {
-    return await sendchampFetch("/verification/create", body);
+    return await sendchampFetch("/verification/create", body, { logContext });
   } catch (error) {
     const message = error instanceof SendchampError ? error.message : "";
     const customMessageRejected =
@@ -134,20 +256,20 @@ export async function sendWhatsAppVerificationOtp({ phone, sender }) {
         sender: whatsappSender,
         includeCustomMessage: false
       });
-      return sendchampFetch("/verification/create", fallbackBody);
+      return sendchampFetch("/verification/create", fallbackBody, { logContext });
     }
 
     throw error;
   }
 }
 
-export async function confirmWhatsAppVerificationOtp({ reference, code }) {
+export async function confirmWhatsAppVerificationOtp({ reference, code, logContext = {} }) {
   return sendchampFetch(
     "/verification/confirm",
     {
       verification_reference: reference,
       verification_code: String(code || "").trim()
     },
-    { requireReference: false }
+    { requireReference: false, logContext }
   );
 }

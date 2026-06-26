@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ShieldCheck } from "lucide-react";
-import { OtpCodeInput } from "./OtpCodeInput";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { OtpDigitInput } from "./OtpDigitInput";
 import type { UserProfile } from "../types";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { isValidNigerianPhone, normalizeNigerianPhone } from "../utils/authIdentity";
@@ -10,7 +10,7 @@ import {
   submitVerificationSelfie
 } from "../services/whatsappVerification";
 import { PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
-import { PHOTO_UPLOAD_FAIL, photoUploadUserMessage } from "../constants/photos";
+import { photoUploadUserMessage } from "../constants/photos";
 import { useAndroidBack } from "../hooks/useAndroidBack";
 
 type PhoneVerificationPanelProps = {
@@ -23,10 +23,15 @@ type PhoneVerificationPanelProps = {
   onMessage?: (message: string) => void;
 };
 
-type ModalView = "closed" | "confirm" | "change";
+const RESEND_SECONDS = 60;
 
 function digitsOnly(value: string): string {
   return value.replace(/\D/g, "").slice(0, 11);
+}
+
+function formatPhoneDisplay(local: string): string {
+  if (local.length !== 11) return local;
+  return `${local.slice(0, 3)} ${local.slice(3, 7)} ${local.slice(7)}`;
 }
 
 export function PhoneVerificationPanel({
@@ -39,74 +44,96 @@ export function PhoneVerificationPanel({
   onMessage
 }: PhoneVerificationPanelProps) {
   const [phone, setPhone] = useState(() => digitsOnly(user.phone || ""));
-  const [modalView, setModalView] = useState<ModalView>("closed");
+  const [editingPhone, setEditingPhone] = useState(false);
   const [draftPhone, setDraftPhone] = useState("");
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [busy, setBusy] = useState<"idle" | "sending" | "verifying">("idle");
-  const codeInputRef = useRef<HTMLInputElement | null>(null);
+  const [inlineError, setInlineError] = useState("");
+  const [resendSeconds, setResendSeconds] = useState(0);
+  const inFlightRef = useRef(false);
 
   const phoneReady = phone.length === 11 && isValidNigerianPhone(phone);
-  const codeReady = code.length === 6;
 
   useEffect(() => {
-    if (!codeSent || phoneVerified) return;
-    window.setTimeout(() => codeInputRef.current?.focus({ preventScroll: true }), 120);
-  }, [codeSent, phoneVerified]);
+    if (!codeSent || resendSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      setResendSeconds((current) => (current > 0 ? current - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [codeSent, resendSeconds]);
 
   useAndroidBack(() => {
-    if (modalView === "closed") return false;
-    setModalView("closed");
-    return true;
+    if (editingPhone) {
+      setEditingPhone(false);
+      return true;
+    }
+    return false;
   });
 
-  const sendOtp = async () => {
-    if (!isValidNigerianPhone(phone)) return;
+  const sendOtp = useCallback(async () => {
+    if (!isValidNigerianPhone(phone) || inFlightRef.current) return;
+    inFlightRef.current = true;
     setBusy("sending");
+    setInlineError("");
+
     try {
       const result = await startWhatsappVerification(phone, user.email);
       if (!result.ok) {
-        onMessage?.(result.error || USER_MESSAGES.otpSendFailed);
+        if (result.errorCode !== "cancelled") {
+          setInlineError(result.error || USER_MESSAGES.otpSendFailed);
+        }
         return;
       }
-      setModalView("closed");
       setCodeSent(true);
       setCode("");
+      setResendSeconds(RESEND_SECONDS);
       onMessage?.(result.message || "Code sent on WhatsApp.");
     } finally {
+      inFlightRef.current = false;
       setBusy("idle");
     }
-  };
+  }, [onMessage, phone, user.email]);
 
-  const verifyCode = async () => {
-    if (!codeReady || busy === "verifying") return;
-    setBusy("verifying");
-    try {
-      const result = await confirmWhatsappVerification(phone, code, user.email);
-      if (!result.ok) {
-        onMessage?.(result.error || USER_MESSAGES.otpVerifyFailed);
-        window.setTimeout(() => codeInputRef.current?.focus({ preventScroll: true }), 80);
-        return;
+  const verifyCode = useCallback(
+    async (nextCode: string) => {
+      if (nextCode.length !== 6 || busy === "verifying" || inFlightRef.current) return;
+      inFlightRef.current = true;
+      setBusy("verifying");
+      setInlineError("");
+
+      try {
+        const result = await confirmWhatsappVerification(phone, nextCode, user.email);
+        if (!result.ok) {
+          if (result.errorCode !== "cancelled") {
+            setInlineError(result.error || USER_MESSAGES.otpVerifyFailed);
+          }
+          return;
+        }
+        setCodeSent(false);
+        setCode("");
+        setResendSeconds(0);
+        onPhoneVerified(normalizeNigerianPhone(phone));
+        onMessage?.(result.message || "Phone verified successfully.");
+      } finally {
+        inFlightRef.current = false;
+        setBusy("idle");
       }
-      setCodeSent(false);
-      setCode("");
-      onPhoneVerified(normalizeNigerianPhone(phone));
-      onMessage?.(result.message || "Phone verified successfully.");
-    } finally {
-      setBusy("idle");
-    }
-  };
+    },
+    [busy, onMessage, onPhoneVerified, phone, user.email]
+  );
 
   const saveChangedNumber = () => {
     const next = digitsOnly(draftPhone);
     if (!isValidNigerianPhone(next)) {
-      onMessage?.("Enter a valid 11-digit Nigerian number.");
+      setInlineError("Enter a valid 11-digit Nigerian number.");
       return;
     }
     setPhone(next);
     setCodeSent(false);
     setCode("");
-    setModalView("confirm");
+    setInlineError("");
+    setEditingPhone(false);
   };
 
   const uploadSelfie = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -147,79 +174,168 @@ export function PhoneVerificationPanel({
 
   return (
     <>
-      <section className="card verification-card">
-        <div className="verification-card__head">
-          <ShieldCheck size={22} aria-hidden />
-          <div>
-            <h3>Trusted Member</h3>
-            <p className="verification-card__sub">
-              {verificationStatus === "approved"
-                ? "You're a Trusted Member."
-                : verificationStatus === "pending"
-                  ? "Your photo is under private review."
-                  : "Confirm your WhatsApp number to continue."}
-            </p>
+      <section className="card verification-card verification-card--minimal">
+        {!phoneVerified && (
+          <div className="wa-verify">
+            {editingPhone ? (
+              <>
+                <h3 className="wa-verify__title">Change number</h3>
+                <label className="wa-verify__field">
+                  <span className="visually-hidden">Phone number</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    className="wa-verify__phone-input"
+                    value={draftPhone}
+                    onChange={(e) => setDraftPhone(digitsOnly(e.target.value))}
+                    placeholder="08012345678"
+                    maxLength={11}
+                  />
+                </label>
+                <button type="button" className="btn-primary btn-full wa-verify__cta" onClick={saveChangedNumber}>
+                  Save number
+                </button>
+                <button
+                  type="button"
+                  className="wa-verify__link"
+                  onClick={() => {
+                    setEditingPhone(false);
+                    setInlineError("");
+                  }}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : !phoneReady ? (
+              <>
+                <h3 className="wa-verify__title">Verify your number</h3>
+                <p className="wa-verify__copy">Enter your Nigerian WhatsApp number.</p>
+                <label className="wa-verify__field">
+                  <span className="visually-hidden">Phone number</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    className="wa-verify__phone-input"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(digitsOnly(e.target.value));
+                      setCodeSent(false);
+                      setCode("");
+                      setInlineError("");
+                    }}
+                    placeholder="08012345678"
+                    maxLength={11}
+                  />
+                </label>
+              </>
+            ) : !codeSent ? (
+              <>
+                <h3 className="wa-verify__title">Verify your number</h3>
+                <p className="wa-verify__copy">We&apos;ll send a WhatsApp code to</p>
+                <p className="wa-verify__phone">{formatPhoneDisplay(phone)}</p>
+                {inlineError ? (
+                  <p className="wa-verify__alert" role="alert">
+                    {inlineError}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn-primary btn-full wa-verify__cta"
+                  onClick={sendOtp}
+                  disabled={busy === "sending"}
+                >
+                  {busy === "sending" ? (
+                    <>
+                      <Loader2 size={18} className="wa-verify__spinner" aria-hidden />
+                      Sending…
+                    </>
+                  ) : (
+                    "Receive Code"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="wa-verify__link"
+                  onClick={() => {
+                    setDraftPhone(phone);
+                    setEditingPhone(true);
+                    setInlineError("");
+                  }}
+                >
+                  Change number
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="wa-verify__success" role="status">
+                  <CheckCircle2 size={20} aria-hidden />
+                  Code sent
+                </p>
+                <p className="wa-verify__copy">Check your WhatsApp.</p>
+                <OtpDigitInput
+                  value={code}
+                  onChange={setCode}
+                  verifying={busy === "verifying"}
+                  onComplete={verifyCode}
+                />
+                {inlineError ? (
+                  <p className="wa-verify__alert" role="alert">
+                    {inlineError}
+                  </p>
+                ) : null}
+                <div className="wa-verify__footer">
+                  <span className="wa-verify__hint">Didn&apos;t receive it?</span>
+                  {resendSeconds > 0 ? (
+                    <span className="wa-verify__countdown" aria-live="polite">
+                      Resend in {resendSeconds}s
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="wa-verify__link"
+                      onClick={sendOtp}
+                      disabled={busy === "sending"}
+                    >
+                      Resend code
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="wa-verify__link"
+                    onClick={() => {
+                      setCodeSent(false);
+                      setCode("");
+                      setInlineError("");
+                      setDraftPhone(phone);
+                      setEditingPhone(true);
+                    }}
+                  >
+                    Edit number
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-        </div>
+        )}
 
-        <div className="verification-phone-row">
-          <label className="verification-phone-row__field">
-            <span className="profile-form-row__label">Phone number</span>
-            <input
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel"
-              value={phone}
-              onChange={(e) => {
-                setPhone(digitsOnly(e.target.value));
-                setCodeSent(false);
-                setCode("");
-              }}
-              placeholder="08012345678"
-              disabled={phoneVerified}
-              maxLength={11}
-            />
-          </label>
-          {phoneVerified ? (
+        {phoneVerified && (
+          <div className="verification-card__head">
+            <ShieldCheck size={22} aria-hidden />
+            <div>
+              <h3>Trusted Member</h3>
+              <p className="verification-card__sub">
+                {verificationStatus === "approved"
+                  ? "You're a Trusted Member."
+                  : verificationStatus === "pending"
+                    ? "Your photo is under private review."
+                    : "Phone verified. Complete your selfie review."}
+              </p>
+            </div>
             <span className="verification-phone-row__verified" aria-label="Phone verified">
               <CheckCircle2 size={24} />
             </span>
-          ) : (
-            phoneReady && (
-              <button
-                type="button"
-                className="btn-secondary verification-phone-row__verify"
-                onClick={() => {
-                  setDraftPhone(phone);
-                  setModalView("confirm");
-                }}
-              >
-                Verify
-              </button>
-            )
-          )}
-        </div>
-
-        {!phoneVerified && codeSent && (
-          <div className="verification-code-row">
-            <label className="verification-code-row__field">
-              <span className="profile-form-row__label">Verification code</span>
-              <OtpCodeInput
-                ref={codeInputRef}
-                className="verification-code-row__input"
-                value={code}
-                verifying={busy === "verifying"}
-                onChange={setCode}
-              />
-            </label>
-            <button
-              type="button"
-              className="btn-primary verification-code-row__verify"
-              onClick={verifyCode}
-              disabled={busy === "verifying" || !codeReady}
-            >
-              {busy === "verifying" ? "Verifying…" : "Verify Code"}
-            </button>
           </div>
         )}
 
@@ -250,63 +366,6 @@ export function PhoneVerificationPanel({
           </p>
         )}
       </section>
-
-      {modalView !== "closed" && (
-        <div className="modal-backdrop" role="presentation" onClick={() => setModalView("closed")}>
-          <div
-            className="card verification-whatsapp-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="whatsapp-verify-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {modalView === "confirm" && (
-              <>
-                <h3 id="whatsapp-verify-title">Receive code on WhatsApp</h3>
-                <p className="verification-whatsapp-modal__phone">{phone}</p>
-                <button
-                  type="button"
-                  className="btn-primary btn-full"
-                  onClick={sendOtp}
-                  disabled={busy === "sending"}
-                >
-                  {busy === "sending" ? "Sending…" : "Receive WhatsApp OTP"}
-                </button>
-                <button
-                  type="button"
-                  className="verification-whatsapp-modal__link"
-                  onClick={() => {
-                    setDraftPhone(phone);
-                    setModalView("change");
-                  }}
-                >
-                  Wrong number? Change it
-                </button>
-              </>
-            )}
-
-            {modalView === "change" && (
-              <>
-                <h3 id="whatsapp-verify-title">Change phone number</h3>
-                <label className="profile-form-row profile-form-row--stack">
-                  <span className="profile-form-row__label">Phone number</span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    value={draftPhone}
-                    onChange={(e) => setDraftPhone(digitsOnly(e.target.value))}
-                    placeholder="08012345678"
-                    maxLength={11}
-                  />
-                </label>
-                <button type="button" className="btn-primary btn-full" onClick={saveChangedNumber}>
-                  Save number
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </>
   );
 }

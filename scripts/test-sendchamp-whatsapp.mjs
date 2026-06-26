@@ -18,7 +18,7 @@ const phone = toSendchampPhone(phoneArg);
 
 async function main() {
   if (!isSendchampConfigured()) {
-    console.error("Sendchamp is not configured. Set SENDCHAMP_API_KEY, SENDCHAMP_SENDER, SENDCHAMP_WHATSAPP_SENDER.");
+    console.error("Sendchamp is not configured. Set SENDCHAMP_API_KEY and SENDCHAMP_WHATSAPP_SENDER (or SENDCHAMP_SENDER).");
     process.exit(1);
   }
 

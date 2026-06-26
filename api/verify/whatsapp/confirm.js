@@ -5,23 +5,9 @@ import {
 import {
   clientError,
   ensureApiRequestContext,
+  logError,
   sendLoggedApiError
 } from "../../../server/services/errorResponse.js";
-
-const WHATSAPP_CONFIRM_MESSAGES = new Set([
-  "Enter a valid Nigerian phone number.",
-  "Request a new code and try again.",
-  "That code has expired. Request a new one.",
-  "Too many attempts. Request a new code.",
-  "We couldn't verify that code. Check it and try again."
-]);
-
-function whatsappConfirmMessage(error) {
-  const message = String(error?.message || "");
-  return WHATSAPP_CONFIRM_MESSAGES.has(message)
-    ? message
-    : "We couldn't verify that code. Check it and try again.";
-}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -29,31 +15,46 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
+  const { requestId } = ensureApiRequestContext(req, res);
   const body = req.body || {};
   const phone = String(body.phone || "").trim();
   const code = String(body.code || "").trim();
   const email = String(body.email || "").trim().toLowerCase();
 
   if (!phone) {
-    return res.status(400).json({ ok: false, error: "Phone number is required." });
+    return res.status(400).json({
+      ok: false,
+      error: "Phone number is required.",
+      errorCode: "invalid_phone",
+      requestId
+    });
   }
 
   try {
-    const result = await confirmWhatsappVerification(phone, code, { email: email || undefined });
+    const result = await confirmWhatsappVerification(phone, code, {
+      email: email || undefined,
+      requestId,
+      memberId: email || undefined
+    });
     return res.status(200).json({
       ok: true,
       message: result.message || "Phone verified successfully.",
       phone: result.phone,
       phoneVerified: true,
-      verifiedPhone: result.verifiedPhone || result.phone
+      verifiedPhone: result.verifiedPhone || result.phone,
+      requestId
     });
   } catch (error) {
     if (error instanceof WhatsappVerificationError) {
-      const { requestId } = ensureApiRequestContext(req, res);
+      logError(req, "whatsapp_verification_confirm_failed", error, {
+        action: "confirm",
+        errorCode: error.code
+      });
       return clientError(res, {
         status: error.status,
-        message: whatsappConfirmMessage(error),
-        requestId
+        message: error.message,
+        requestId,
+        body: { errorCode: error.code }
       });
     }
     return sendLoggedApiError({
@@ -62,8 +63,9 @@ export default async function handler(req, res) {
       event: "whatsapp_verification_failed",
       error,
       status: 500,
-      message: "We couldn't verify that code. Check it and try again.",
-      context: { action: "confirm" }
+      message: "Unexpected server error.",
+      context: { action: "confirm" },
+      body: { errorCode: "unexpected_error" }
     });
   }
 }

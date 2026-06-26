@@ -30,6 +30,7 @@ import {
 import { getDatingProfile } from "../utils/profile";
 import { setPendingChatDraft, setPendingChatOpen } from "../utils/chatDraft";
 import { useAndroidBack } from "../hooks/useAndroidBack";
+import { debugRender } from "../utils/debugRecursion";
 
 type LikesPageProps = {
   isPremium: boolean;
@@ -114,6 +115,7 @@ export function LikesPage({
   onOpenSafety,
   onOpenChats
 }: LikesPageProps) {
+  debugRender("LikesPage", { isPremium });
   const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
   const { profile: viewer } = useMemberProfileListener();
   const [signals, setSignals] = useState<LikeEntry[]>(() =>
@@ -285,7 +287,7 @@ export function LikesPage({
   const hasSignals = enriched.length > 0;
 
   return (
-    <div className="page member-page signals-premium-page">
+    <div className="page member-page signals-premium-page member-content-pad">
       <SignalsPageHeader onSettings={() => setSettingsOpen(true)} />
 
       {hasSignals ? (

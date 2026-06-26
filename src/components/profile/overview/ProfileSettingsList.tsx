@@ -16,9 +16,7 @@ export const ProfileSettingsList = memo(function ProfileSettingsList({
 }: ProfileSettingsListProps) {
   const rows = [
     { label: "Edit Profile", action: onEdit },
-    { label: "Settings", action: () => onOpenSettings("hub") },
-    { label: "Privacy", action: () => onOpenSettings("privacy") },
-    { label: "Notifications", action: () => onOpenSettings("notifications") }
+    { label: "Settings", action: () => onOpenSettings("hub") }
   ] as const;
 
   return (

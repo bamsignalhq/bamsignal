@@ -46,6 +46,7 @@ import { startQuickiePassPayment, completePendingPayment } from "../services/pay
 import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch } from "../utils/quickie";
 import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
 import { consumePendingChatDraft, consumePendingChatOpen, setPendingChatDraft, setPendingChatOpen } from "../utils/chatDraft";
+import { debugRender } from "../utils/debugRecursion";
 
 type ChatsPageProps = {
   isPremium: boolean;
@@ -113,6 +114,7 @@ export function ChatsPage({
   onBuildProfile,
   phoneVerified = false
 }: ChatsPageProps) {
+  debugRender("ChatsPage", { isPremium, phoneVerified });
   const [activeMatch, setActiveMatch] = useState<Match | null>(null);
   const [query, setQuery] = useState("");
   const [paywallOpen, setPaywallOpen] = useState(false);
@@ -220,7 +222,7 @@ export function ChatsPage({
   };
 
   return (
-    <div className="page member-page messages-page messages-page--premium">
+    <div className="page member-page messages-page messages-page--premium member-content-pad">
       <header className="member-page-head member-page-head--minimal">
         <h1>{EXPERIENCE_COPY.chatsTitle}</h1>
       </header>

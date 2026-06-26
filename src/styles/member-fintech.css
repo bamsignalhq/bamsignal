@@ -224,8 +224,8 @@
 
 /* Discover */
 .platform-root--member .discover-premium-head__titles h1 {
-  font-size: clamp(32px, 8vw, 34px);
-  line-height: 1.08;
+  font-size: var(--bs-font-page-title, clamp(1.35rem, 5vw, 1.65rem));
+  line-height: 1.15;
   color: var(--bs-text);
 }
 
@@ -543,12 +543,6 @@
 [data-theme="dark"].platform-root--member .profile-hero--premium .profile-hero__name,
 [data-theme="dark"].platform-root--member .profile-premium-card__text {
   color: rgba(255, 255, 255, 0.9);
-}
-
-@media (min-width: 900px) {
-  .platform-root--member .discover-premium-head__titles h1 {
-    font-size: 34px;
-  }
 }
 
 @media (max-width: 380px) {

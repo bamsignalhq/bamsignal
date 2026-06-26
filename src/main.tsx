@@ -40,6 +40,7 @@ import "./styles/build-profile-later.css";
 import "./styles/trusted-member.css";
 import "./styles/member-nudges.css";
 import "./styles/profile-fintech-overview.css";
+import "./styles/member-design-system.css";
 import "./styles/relationship-intent.css";
 import "./styles/more-about-me.css";
 import "./styles/activity-highlights.css";

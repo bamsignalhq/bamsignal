@@ -1,4 +1,4 @@
-import type { ReadinessSubsystemId } from "../types/institutionalReadiness";
+import type { ReadinessAuditDomainId, ReadinessSubsystemId } from "../types/institutionalReadiness";
 
 export type ReadinessDependencySeed = {
   id: string;
@@ -167,3 +167,38 @@ export const READINESS_SUBSYSTEM_CONTRACTS: Record<ReadinessSubsystemId, Readine
     },
     {} as Record<ReadinessSubsystemId, ReadinessSubsystemId[]>
   );
+
+/** Maps internal subsystem evaluators to founder audit domains. */
+export const READINESS_AUDIT_DOMAIN_SUBSYSTEM_MAP: Record<
+  ReadinessAuditDomainId,
+  ReadinessSubsystemId[]
+> = {
+  infrastructure: ["routing", "supabase", "legacy"],
+  security: ["security", "authentication", "permissions", "compliance"],
+  payments: ["payments"],
+  messaging: ["notifications"],
+  matching: ["introductions", "journey-engine", "follow-ups"],
+  concierge: ["crm", "scheduling"],
+  support: ["operations"],
+  operations: ["operations"],
+  research: ["executive-dashboard"],
+  communities: ["routing"],
+  events: ["operations"],
+  documentation: ["compliance", "archive"],
+  release: ["monitoring"],
+  backups: ["backups"],
+  monitoring: ["monitoring"],
+  abuse: ["security"],
+  performance: ["monitoring", "executive-dashboard"]
+};
+
+/** Baseline scores for domains without dedicated subsystem evaluators. */
+export const READINESS_AUDIT_DOMAIN_BASELINES: Partial<Record<ReadinessAuditDomainId, number>> = {
+  research: 88,
+  communities: 86,
+  events: 84,
+  documentation: 82,
+  release: 90,
+  abuse: 87,
+  support: 85
+};

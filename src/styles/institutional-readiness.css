@@ -583,7 +583,148 @@
   font-size: 0.84rem;
 }
 
-.launch-recommendation-card__actions-list li span {
+.institutional-readiness-page__toast {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(80, 140, 220, 0.15);
+  border: 1px solid rgba(140, 190, 255, 0.35);
+  font-size: 0.85rem;
+}
+
+.readiness-overview-card__trend {
+  margin-left: 12px;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.readiness-overview-card__trend--up {
+  color: #9ef0c8;
+  background: rgba(92, 214, 154, 0.12);
+}
+
+.readiness-overview-card__trend--down {
+  color: #ffb4b4;
+  background: rgba(255, 92, 92, 0.12);
+}
+
+.readiness-overview-card__trend--flat {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.readiness-audit-domains-card__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.readiness-audit-domains-card__item {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.readiness-audit-domains-card__headline {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.readiness-audit-domains-card__score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.readiness-audit-domains-card__score strong {
+  font-size: 1.2rem;
+}
+
+.readiness-audit-domains-card__item p {
+  margin: 0;
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.62);
+}
+
+.readiness-audit-domains-card__trend--up {
+  color: #9ef0c8;
+}
+
+.readiness-audit-domains-card__trend--down {
+  color: #ffb4b4;
+}
+
+.readiness-blockers-card__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+}
+
+.readiness-blockers-card__section {
+  margin-top: 12px;
+}
+
+.readiness-blockers-card__section h4 {
+  margin: 0 0 8px;
+}
+
+.readiness-blockers-card__section ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.readiness-blockers-card__section li {
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.82rem;
+}
+
+.readiness-export-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.readiness-export-chip {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.readiness-export-chip span {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.readiness-export-card__history ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.readiness-export-card__history li {
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 960px) {
+  .readiness-audit-domains-card__grid,
+  .readiness-export-card__grid {
+    grid-template-columns: 1fr;
+  }
 }

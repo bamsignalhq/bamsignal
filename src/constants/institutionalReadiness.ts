@@ -1,9 +1,66 @@
-/** Institutional Readiness Verification Engine™ — final authority for launch readiness. */
+/** Institutional Readiness Audit — final institutional audit engine for the entire platform. */
 
-import type { GoNoGoVerdictId, ReadinessCheckTypeId, ReadinessSubsystemId } from "../types/institutionalReadiness";
+import type {
+  GoNoGoVerdictId,
+  ReadinessAuditDomainId,
+  ReadinessCheckTypeId,
+  ReadinessSubsystemId
+} from "../types/institutionalReadiness";
 import { INSTITUTIONAL_READINESS_BRAND } from "./institutionalReadinessAdmin";
 
 export const READINESS_VERIFICATION_BRAND = INSTITUTIONAL_READINESS_BRAND;
+
+export const INSTITUTIONAL_READINESS_REFRESH_INTERVAL_MS = 30_000;
+
+/** Founder audit domains — one place that evaluates the entire platform. */
+export const READINESS_AUDIT_DOMAINS = [
+  { id: "infrastructure", label: "Infrastructure" },
+  { id: "security", label: "Security" },
+  { id: "payments", label: "Payments" },
+  { id: "messaging", label: "Messaging" },
+  { id: "matching", label: "Matching" },
+  { id: "concierge", label: "Concierge" },
+  { id: "support", label: "Support" },
+  { id: "operations", label: "Operations" },
+  { id: "research", label: "Research" },
+  { id: "communities", label: "Communities" },
+  { id: "events", label: "Events" },
+  { id: "documentation", label: "Documentation" },
+  { id: "release", label: "Release" },
+  { id: "backups", label: "Backups" },
+  { id: "monitoring", label: "Monitoring" },
+  { id: "abuse", label: "Abuse" },
+  { id: "performance", label: "Performance" }
+] as const;
+
+export const READINESS_AUDIT_DOMAIN_LABELS: Record<ReadinessAuditDomainId, string> =
+  Object.fromEntries(READINESS_AUDIT_DOMAINS.map((item) => [item.id, item.label])) as Record<
+    ReadinessAuditDomainId,
+    string
+  >;
+
+export const READINESS_EXPORT_TYPES = [
+  { id: "founder-report", label: "Founder Report" },
+  { id: "board-report", label: "Board Report" },
+  { id: "launch-report", label: "Launch Report" }
+] as const;
+
+export type ReadinessExportTypeId = (typeof READINESS_EXPORT_TYPES)[number]["id"];
+
+export const READINESS_BLOCKER_SEVERITIES = [
+  { id: "critical", label: "Critical" },
+  { id: "high", label: "High" },
+  { id: "medium", label: "Medium" },
+  { id: "low", label: "Low" }
+] as const;
+
+export type ReadinessBlockerSeverityId = (typeof READINESS_BLOCKER_SEVERITIES)[number]["id"];
+
+export const READINESS_BLOCKER_SEVERITY_LABELS: Record<ReadinessBlockerSeverityId, string> =
+  Object.fromEntries(READINESS_BLOCKER_SEVERITIES.map((item) => [item.id, item.label])) as Record<
+    ReadinessBlockerSeverityId,
+    string
+  >;
 
 export const READINESS_SUBSYSTEMS = [
   { id: "routing", label: "Routing" },
@@ -80,9 +137,8 @@ export const READINESS_FUTURE_ARCHITECTURE = [
 
 export const GO_NO_GO_LABELS: Record<GoNoGoVerdictId, string> = {
   go: "GO",
-  "go-with-conditions": "GO — with conditions",
-  "no-go-member-only": "NO-GO — member app only",
-  "no-go": "NO-GO"
+  "go-with-conditions": "GO WITH CONDITIONS",
+  "no-go": "NO GO"
 };
 
 export const READINESS_VERIFICATION_DB_TABLES = [
@@ -91,14 +147,20 @@ export const READINESS_VERIFICATION_DB_TABLES = [
   "readiness_dependency_links",
   "readiness_critical_issues",
   "readiness_verification_runs",
-  "readiness_snapshots"
+  "readiness_snapshots",
+  "readiness_audit_domains",
+  "readiness_trend_snapshots",
+  "readiness_audit_exports"
 ] as const;
 
 export const READINESS_AUDIT_ACTIONS = [
   "verification-run",
   "subsystem-checked",
   "dependency-surfaced",
-  "go-no-go-updated"
+  "go-no-go-updated",
+  "audit-domain-scored",
+  "report-exported",
+  "trend-recorded"
 ] as const;
 
 export type ReadinessAuditActionId = (typeof READINESS_AUDIT_ACTIONS)[number];

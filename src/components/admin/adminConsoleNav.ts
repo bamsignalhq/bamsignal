@@ -315,8 +315,8 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       },
       {
         id: "readiness",
-        label: "Readiness Report",
-        keywords: ["readiness", "report", "aggregate", "audit", "go-no-go", "health", "score"]
+        label: "Readiness Audit",
+        keywords: ["readiness", "audit", "founder", "go", "no-go", "blockers", "export", "trend", "institutional"]
       },
       {
         id: "dataintegrity",
@@ -421,7 +421,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   securityops: "Security Ops",
   enterpriseapi: "API Ops",
   remediation: "Remediation Board",
-  readiness: "Readiness Report",
+  readiness: "Readiness Audit",
   dataintegrity: "Data Integrity",
   recovery: "Recovery",
   workforce: "Workforce",

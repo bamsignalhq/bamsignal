@@ -1,30 +1,61 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  READINESS_FUTURE_ARCHITECTURE,
+  INSTITUTIONAL_READINESS_REFRESH_INTERVAL_MS,
   READINESS_VERIFICATION_RULES
 } from "../../../constants/institutionalReadiness";
 import {
   INSTITUTIONAL_READINESS_ADMIN_PATH,
   INSTITUTIONAL_READINESS_BRAND
 } from "../../../constants/institutionalReadinessAdmin";
-import { REMEDIATION_BOARD_ADMIN_PATH } from "../../../constants/remediationBoardAdmin";
 import { LAUNCH_READINESS_ADMIN_PATH } from "../../../constants/launchReadiness";
+import { REMEDIATION_BOARD_ADMIN_PATH } from "../../../constants/remediationBoardAdmin";
 import { navigateToPath } from "../../../constants/routes";
-import { buildInstitutionalReadinessVerificationBundle } from "../../../utils/institutionalReadinessEngine";
+import type { ReadinessExportTypeId } from "../../../types/institutionalReadiness";
+import { buildLiveInstitutionalReadinessBundle } from "../../../utils/institutionalReadinessEngine";
+import { exportReadinessReport } from "../../../utils/institutionalReadinessStore";
 import { CriticalIssueCard } from "./CriticalIssueCard";
-import { DependencyCard } from "./DependencyCard";
 import { LaunchRecommendationCard } from "./LaunchRecommendationCard";
+import { ReadinessAuditDomainsCard } from "./ReadinessAuditDomainsCard";
+import { ReadinessBlockersCard } from "./ReadinessBlockersCard";
+import { ReadinessExportCard } from "./ReadinessExportCard";
 import { ReadinessOverviewCard } from "./ReadinessOverviewCard";
-import { SubsystemHealthCard } from "./SubsystemHealthCard";
-import { VerificationCard } from "./VerificationCard";
 
 export function ReadinessPage() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [busyExport, setBusyExport] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const bundle = useMemo(() => {
     void refreshKey;
-    return buildInstitutionalReadinessVerificationBundle();
+    return buildLiveInstitutionalReadinessBundle();
   }, [refreshKey]);
+
+  const refresh = useCallback(() => {
+    setRefreshKey((value) => value + 1);
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(refresh, INSTITUTIONAL_READINESS_REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(interval);
+  }, [refresh]);
+
+  const handleExport = useCallback(
+    (exportType: ReadinessExportTypeId) => {
+      setBusyExport(exportType);
+      try {
+        const record = exportReadinessReport({
+          exportType,
+          bundle,
+          actor: "founder@bamsignal.com"
+        });
+        setToast(`${record.title} generated.`);
+        refresh();
+      } finally {
+        setBusyExport(null);
+      }
+    },
+    [bundle, refresh]
+  );
 
   return (
     <div className="institutional-readiness-page">
@@ -32,8 +63,9 @@ export function ReadinessPage() {
         <div>
           <h2>{INSTITUTIONAL_READINESS_BRAND}</h2>
           <p>
-            Every major subsystem continuously reports operational readiness. This engine is the
-            final authority for institutional launch go / no-go decisions.
+            Final institutional audit engine — one place that evaluates the entire platform. Overall
+            score, trend, blockers, and automatic GO / GO WITH CONDITIONS / NO GO recommendation.
+            Auto-refreshes every 30 seconds.
           </p>
         </div>
         <div className="institutional-readiness-page__actions">
@@ -51,17 +83,16 @@ export function ReadinessPage() {
           >
             Remediation board
           </button>
-          <button
-            type="button"
-            className="concierge-consultant-btn"
-            onClick={() => setRefreshKey((value) => value + 1)}
-          >
+          <button type="button" className="concierge-consultant-btn" onClick={refresh}>
             Re-verify
           </button>
         </div>
       </header>
 
+      {toast ? <p className="institutional-readiness-page__toast">{toast}</p> : null}
+
       <ReadinessOverviewCard bundle={bundle} />
+      <LaunchRecommendationCard bundle={bundle} />
 
       <div className="institutional-readiness-page__rules">
         {READINESS_VERIFICATION_RULES.map((rule) => (
@@ -71,21 +102,17 @@ export function ReadinessPage() {
         ))}
       </div>
 
+      <ReadinessAuditDomainsCard domains={bundle.auditDomains} />
+      <ReadinessBlockersCard blockers={bundle.blockers} blockerCounts={bundle.blockerCounts} />
+      <ReadinessExportCard exports={bundle.exports} busyExport={busyExport} onExport={handleExport} />
+
       <div className="institutional-readiness-page__body">
         <div className="institutional-readiness-page__column">
-          <SubsystemHealthCard subsystems={bundle.subsystems} />
-          <VerificationCard checks={bundle.checks} passedChecks={bundle.passedChecks} />
-        </div>
-        <div className="institutional-readiness-page__column">
-          <DependencyCard dependencies={bundle.dependencies} />
           <CriticalIssueCard criticalIssues={bundle.criticalIssues} warnings={bundle.warnings} />
-          <LaunchRecommendationCard bundle={bundle} />
         </div>
       </div>
 
       <footer className="institutional-readiness-page__future">
-        <h4>Future architecture (documented only)</h4>
-        <p>{READINESS_FUTURE_ARCHITECTURE.map((item) => item.label).join(" · ")}</p>
         <span>Route: {INSTITUTIONAL_READINESS_ADMIN_PATH}</span>
         <span>Generated {new Date(bundle.generatedAt).toLocaleString()}</span>
       </footer>

@@ -243,7 +243,10 @@ export const READINESS_VERIFICATION_SCHEMA_TABLES = [
   "readiness_dependency_links",
   "readiness_critical_issues",
   "readiness_verification_runs",
-  "readiness_snapshots"
+  "readiness_snapshots",
+  "readiness_audit_domains",
+  "readiness_trend_snapshots",
+  "readiness_audit_exports"
 ] as const;
 
 type TableManifest = {
@@ -1455,7 +1458,7 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     domainId: "qa",
     engine: "institutionalReadinessEngine.ts",
     expectedTable: "readiness_subsystem_contracts",
-    note: "Institutional Readiness Verification Engine™ — dual-write via institutionalReadinessVerification.js"
+    note: "Institutional Readiness Audit — dual-write via institutionalReadinessVerification.js"
   },
   {
     storageKey: "bamsignal.supportCenter.v1",

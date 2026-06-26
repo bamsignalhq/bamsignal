@@ -15,13 +15,23 @@ export function ReadinessOverviewCard({ bundle }: ReadinessOverviewCardProps) {
   return (
     <section className="readiness-verification-card readiness-overview-card concierge-consultant-card--glass cc-reveal">
       <header className="readiness-verification-card__head">
-        <h3>Institution readiness score</h3>
-        <p>Final authority for launch readiness — every major subsystem continuously verified.</p>
+        <h3>Institutional readiness score</h3>
+        <p>Overall platform score with trend — evaluates every audit domain in one place.</p>
       </header>
 
       <div className="readiness-overview-card__hero">
         <strong>{bundle.institutionReadinessScore}</strong>
         <span>/100</span>
+        <span
+          className={`readiness-overview-card__trend readiness-overview-card__trend--${bundle.trend.direction}`}
+        >
+          {bundle.trend.direction === "up"
+            ? "↑"
+            : bundle.trend.direction === "down"
+              ? "↓"
+              : "—"}{" "}
+          {bundle.trend.deltaPercent}%
+        </span>
       </div>
 
       <p className="readiness-verification-card__line">{formatReadinessSummaryLine(bundle)}</p>

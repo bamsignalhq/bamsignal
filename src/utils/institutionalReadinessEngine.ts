@@ -29,14 +29,22 @@ import type {
 } from "../types/institutionalReadiness";
 import { buildExecutiveDashboard } from "./executiveDashboardEngine";
 import {
+  buildAuditDomainScores,
+  buildBlockerCounts,
   buildGoNoGoRecommendation,
   buildInstitutionReadinessScore,
   buildIssuesFromFindings,
+  buildReadinessBlockers,
+  buildReadinessTrend,
   buildRecommendedActions,
   partitionChecks,
   propagateDependencyFailures,
   scoreToReadinessResult
 } from "./institutionalReadinessLogic";
+import {
+  listReadinessExports,
+  recordReadinessTrendScore
+} from "./institutionalReadinessStore";
 import { buildJourneyIntegrityReport, summarizeJourneyIntegrityStatus } from "./journeyIntegrityReport";
 import { buildLaunchReadinessReport } from "./launchReadinessEngine";
 import { buildMigrationGapReport } from "./migrationGapReport";
@@ -527,6 +535,10 @@ function buildDependencyLinks(
   }));
 }
 
+export function buildLiveInstitutionalReadinessBundle(): InstitutionalReadinessVerificationBundle {
+  return buildInstitutionalReadinessVerificationBundle();
+}
+
 export function buildInstitutionalReadinessVerificationBundle(): InstitutionalReadinessVerificationBundle {
   checkCounter = 0;
   const generatedAt = new Date().toISOString();
@@ -543,19 +555,36 @@ export function buildInstitutionalReadinessVerificationBundle(): InstitutionalRe
   dependencies = propagated.dependencies;
 
   const institutionReadinessScore = buildInstitutionReadinessScore(subsystems);
+  const previousOverallScore = recordReadinessTrendScore(institutionReadinessScore);
+  const trend = buildReadinessTrend(institutionReadinessScore, previousOverallScore);
+  const auditDomains = buildAuditDomainScores(subsystems);
   const remediation = buildRemediationBoardBundle();
   const { criticalIssues, warnings } = buildIssuesFromFindings(remediation.findings);
   const { passedChecks } = partitionChecks(rawChecks);
   const recommendedActions = buildRecommendedActions(criticalIssues, warnings, subsystems);
+  const blockers = buildReadinessBlockers(
+    criticalIssues,
+    warnings,
+    recommendedActions,
+    auditDomains
+  );
+  const blockerCounts = buildBlockerCounts(blockers);
   const recommendation = buildGoNoGoRecommendation(
     institutionReadinessScore,
     criticalIssues,
-    warnings
+    warnings,
+    blockers
   );
+  const exports = listReadinessExports();
 
   return {
     generatedAt,
     institutionReadinessScore,
+    trend,
+    auditDomains,
+    blockers,
+    blockerCounts,
+    exports,
     subsystems,
     checks: rawChecks,
     dependencies,

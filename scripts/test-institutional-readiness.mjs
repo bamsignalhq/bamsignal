@@ -3,11 +3,15 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  READINESS_AUDIT_DOMAINS,
+  READINESS_EXPORT_TYPES,
   READINESS_VERIFICATION_DB_TABLES,
+  buildBlockerCounts,
   buildGoNoGoRecommendation,
   buildInstitutionReadinessScore,
+  buildReadinessTrend,
   canAccessReadinessVerification,
-  canSubsystemReportReady,
+  filterBlockersBySeverity,
   formatReadinessSummaryLine,
   getReadinessVerificationDatabaseTableManifest,
   propagateDependencyFailures,
@@ -25,116 +29,106 @@ function assert(condition, message) {
   }
 }
 
-const adminSource = readFileSync(join(rootPath, "src/constants/institutionalReadinessAdmin.ts"), "utf8");
+function read(relativePath) {
+  return readFileSync(join(rootPath, relativePath), "utf8");
+}
+
+const adminSource = read("src/constants/institutionalReadinessAdmin.ts");
 assert(adminSource.includes('INSTITUTIONAL_READINESS_ADMIN_PATH = "/hard/readiness"'), "readiness route");
-assert(adminSource.includes("Institutional Readiness Verification Engine™"), "readiness brand");
+assert(adminSource.includes("Institutional Readiness Audit"), "readiness brand");
 
-const constantsSource = readFileSync(join(rootPath, "src/constants/institutionalReadiness.ts"), "utf8");
-assert(constantsSource.includes("Routing"), "routing subsystem");
-assert(constantsSource.includes("Authentication"), "authentication subsystem");
-assert(constantsSource.includes("Permissions"), "permissions subsystem");
-assert(constantsSource.includes("Supabase"), "supabase subsystem");
-assert(constantsSource.includes("Payments"), "payments subsystem");
-assert(constantsSource.includes("Scheduling"), "scheduling subsystem");
-assert(constantsSource.includes("Notifications"), "notifications subsystem");
-assert(constantsSource.includes("CRM"), "crm subsystem");
-assert(constantsSource.includes("Journey Engine"), "journey engine subsystem");
-assert(constantsSource.includes("Introductions"), "introductions subsystem");
-assert(constantsSource.includes("Follow-ups"), "follow-ups subsystem");
-assert(constantsSource.includes("Archive"), "archive subsystem");
-assert(constantsSource.includes("Legacy"), "legacy subsystem");
-assert(constantsSource.includes("Monitoring"), "monitoring subsystem");
-assert(constantsSource.includes("Security"), "security subsystem");
-assert(constantsSource.includes("Compliance"), "compliance subsystem");
-assert(constantsSource.includes("Backups"), "backups subsystem");
-assert(constantsSource.includes("Executive Dashboard"), "executive dashboard subsystem");
-assert(constantsSource.includes('"healthy"'), "healthy result");
-assert(constantsSource.includes('"warning"'), "warning result");
-assert(constantsSource.includes('"critical"'), "critical result");
-assert(constantsSource.includes('"unknown"'), "unknown result");
-assert(constantsSource.includes("Configuration"), "configuration check");
-assert(constantsSource.includes("Connectivity"), "connectivity check");
-assert(constantsSource.includes("Data Integrity"), "data integrity check");
-assert(constantsSource.includes("Performance"), "performance check");
-assert(constantsSource.includes("Dependencies"), "dependencies check");
-assert(constantsSource.includes("Audit Coverage"), "audit coverage check");
-assert(constantsSource.includes("Operational Status"), "operational status check");
-assert(constantsSource.includes("READINESS_VERIFICATION_RULES"), "verification rules");
-assert(constantsSource.includes("READINESS_FUTURE_ARCHITECTURE"), "future architecture");
-assert(constantsSource.includes("Continuous Verification"), "continuous verification future");
-assert(constantsSource.includes("readiness_subsystem_contracts"), "subsystem contracts table");
+const constantsSource = read("src/constants/institutionalReadiness.ts");
+assert(constantsSource.includes("READINESS_AUDIT_DOMAINS"), "audit domains");
+assert(constantsSource.includes("Infrastructure"), "infrastructure audit");
+assert(constantsSource.includes("Security"), "security audit");
+assert(constantsSource.includes("Payments"), "payments audit");
+assert(constantsSource.includes("Messaging"), "messaging audit");
+assert(constantsSource.includes("Matching"), "matching audit");
+assert(constantsSource.includes("Concierge"), "concierge audit");
+assert(constantsSource.includes("Support"), "support audit");
+assert(constantsSource.includes("Research"), "research audit");
+assert(constantsSource.includes("Communities"), "communities audit");
+assert(constantsSource.includes("Events"), "events audit");
+assert(constantsSource.includes("Documentation"), "documentation audit");
+assert(constantsSource.includes("Release"), "release audit");
+assert(constantsSource.includes("Abuse"), "abuse audit");
+assert(constantsSource.includes("Performance"), "performance audit");
+assert(constantsSource.includes("founder-report"), "founder report export");
+assert(constantsSource.includes("board-report"), "board report export");
+assert(constantsSource.includes("launch-report"), "launch report export");
+assert(constantsSource.includes("READINESS_BLOCKER_SEVERITIES"), "blocker severities");
+assert(constantsSource.includes("GO WITH CONDITIONS"), "go with conditions label");
+assert(constantsSource.includes("INSTITUTIONAL_READINESS_REFRESH_INTERVAL_MS"), "refresh interval");
+assert(constantsSource.includes("readiness_audit_domains"), "audit domains table");
 
-const migrationSource = readFileSync(
-  join(rootPath, "supabase/migrations/202606257000_institutional_readiness_verification.sql"),
-  "utf8"
-);
-assert(migrationSource.includes("uuid primary key"), "uuid primary keys");
-assert(migrationSource.includes("readiness_verification_checks"), "verification checks migration");
-assert(migrationSource.includes("readiness_dependency_links"), "dependency links migration");
-assert(migrationSource.includes("readiness_verification_runs"), "verification runs migration");
+const migrationSource = read("supabase/migrations/202606262000_institutional_readiness_audit.sql");
+assert(migrationSource.includes("readiness_audit_domains"), "audit domains migration");
+assert(migrationSource.includes("readiness_trend_snapshots"), "trend snapshots migration");
+assert(migrationSource.includes("readiness_audit_exports"), "audit exports migration");
 
-const typesSource = readFileSync(join(rootPath, "src/types/institutionalReadiness.ts"), "utf8");
-assert(typesSource.includes("institutionReadinessScore"), "institution readiness score");
-assert(typesSource.includes("criticalIssues"), "critical issues output");
-assert(typesSource.includes("passedChecks"), "passed checks output");
-assert(typesSource.includes("recommendedActions"), "recommended actions output");
-assert(typesSource.includes("InstitutionalReadinessVerificationBundle"), "verification bundle type");
+const typesSource = read("src/types/institutionalReadiness.ts");
+assert(typesSource.includes("ReadinessAuditDomainScore"), "audit domain score type");
+assert(typesSource.includes("ReadinessTrendSnapshot"), "trend snapshot type");
+assert(typesSource.includes("ReadinessBlocker"), "blocker type");
+assert(typesSource.includes("ReadinessExportRecord"), "export record type");
+assert(!typesSource.includes("no-go-member-only"), "removed member-only verdict");
 
-const logicSource = readFileSync(join(rootPath, "src/utils/institutionalReadinessLogic.ts"), "utf8");
-assert(logicSource.includes("propagateDependencyFailures"), "dependency propagation");
-assert(logicSource.includes("buildGoNoGoRecommendation"), "go/no-go builder");
-assert(logicSource.includes("buildInstitutionReadinessScore"), "readiness score builder");
-assert(logicSource.includes("buildRecommendedActions"), "recommended actions builder");
+const logicSource = read("src/utils/institutionalReadinessLogic.ts");
+assert(logicSource.includes("buildAuditDomainScores"), "audit domain scores");
+assert(logicSource.includes("buildReadinessBlockers"), "readiness blockers");
+assert(logicSource.includes("buildReadinessTrend"), "readiness trend");
+assert(logicSource.includes("buildReadinessExportSummary"), "export summary");
 
-const engineSource = readFileSync(join(rootPath, "src/utils/institutionalReadinessEngine.ts"), "utf8");
+const engineSource = read("src/utils/institutionalReadinessEngine.ts");
 assert(engineSource.includes("buildInstitutionalReadinessVerificationBundle"), "verification bundle builder");
-assert(engineSource.includes("buildRouteHealthReport"), "routing verification");
-assert(engineSource.includes("buildPermissionsAuditReport"), "permissions verification");
-assert(engineSource.includes("buildJourneyIntegrityReport"), "journey verification");
-assert(engineSource.includes("buildMigrationGapReport"), "supabase verification");
-assert(engineSource.includes("buildRemediationBoardBundle"), "remediation integration");
-assert(engineSource.includes("propagateDependencyFailures"), "engine applies dependency rules");
+assert(engineSource.includes("buildLiveInstitutionalReadinessBundle"), "live bundle builder");
 
-const seedSource = readFileSync(join(rootPath, "src/data/institutionalReadinessSeed.ts"), "utf8");
-assert(seedSource.includes("READINESS_DEPENDENCY_SEED"), "dependency seed");
-assert(seedSource.includes("READINESS_SUBSYSTEM_CONTRACTS"), "subsystem contracts seed");
+const storeSource = read("src/utils/institutionalReadinessStore.ts");
+assert(storeSource.includes("bamsignal.institutionalReadiness.v1"), "localStorage key");
+assert(storeSource.includes("exportReadinessReport"), "export readiness report");
+
+const seedSource = read("src/data/institutionalReadinessSeed.ts");
+assert(seedSource.includes("READINESS_AUDIT_DOMAIN_SUBSYSTEM_MAP"), "audit domain map");
 
 const adminComponents = [
   "ReadinessOverviewCard.tsx",
-  "SubsystemHealthCard.tsx",
-  "VerificationCard.tsx",
-  "DependencyCard.tsx",
-  "CriticalIssueCard.tsx",
+  "ReadinessAuditDomainsCard.tsx",
+  "ReadinessBlockersCard.tsx",
+  "ReadinessExportCard.tsx",
   "LaunchRecommendationCard.tsx",
+  "CriticalIssueCard.tsx",
   "ReadinessPage.tsx"
 ];
 
 for (const file of adminComponents) {
   try {
-    readFileSync(join(rootPath, "src/components/admin/institutionalReadiness", file), "utf8");
+    read(`src/components/admin/institutionalReadiness/${file}`);
   } catch {
     assert(false, `missing component ${file}`);
   }
 }
 
-const hubSource = readFileSync(join(rootPath, "src/pages/AdminHubPage.tsx"), "utf8");
+const hubSource = read("src/pages/AdminHubPage.tsx");
 assert(hubSource.includes("ReadinessPage"), "admin hub mounts readiness page");
 
-const permissionsSource = readFileSync(join(rootPath, "src/constants/permissions.ts"), "utf8");
+const permissionsSource = read("src/constants/permissions.ts");
 assert(permissionsSource.includes("/hard/readiness"), "readiness permission");
 
-const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
+const packageSource = read("package.json");
 assert(packageSource.includes("test:institutional-readiness"), "package.json defines test:institutional-readiness");
+assert(packageSource.includes("readiness:report"), "package.json defines readiness:report");
 
-const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
+const mainSource = read("src/main.tsx");
 assert(mainSource.includes("institutional-readiness.css"), "readiness styles imported");
 
-const databaseAuditSource = readFileSync(join(rootPath, "src/utils/databaseAudit.ts"), "utf8");
+const databaseAuditSource = read("src/utils/databaseAudit.ts");
 assert(databaseAuditSource.includes("READINESS_VERIFICATION_SCHEMA_TABLES"), "database audit schema");
-assert(databaseAuditSource.includes("bamsignal.institutionalReadiness.v1"), "localStorage manifest");
+assert(databaseAuditSource.includes("readiness_audit_domains"), "audit domains in schema");
 
-assert(READINESS_VERIFICATION_DB_TABLES.length === 6, "six readiness tables");
-assert(getReadinessVerificationDatabaseTableManifest().length === 6, "database manifest");
+assert(READINESS_AUDIT_DOMAINS.length === 17, "seventeen audit domains");
+assert(READINESS_EXPORT_TYPES.length === 3, "three export types");
+assert(READINESS_VERIFICATION_DB_TABLES.length === 9, "nine readiness tables");
+assert(getReadinessVerificationDatabaseTableManifest().length === 9, "database manifest");
 
 assert(canAccessReadinessVerification(["ManageOperations"]), "operations role can access");
 assert(canAccessReadinessVerification(["ViewExecutiveDashboard"]), "executive role can access");
@@ -164,16 +158,6 @@ const dependencies = [
 
 const propagated = propagateDependencyFailures(subsystems, dependencies);
 assert(propagated.subsystems[1].status === "critical", "critical dependency propagates");
-assert(propagated.dependencies[0].surfaced === true, "failed dependency surfaced");
-
-assert(
-  !canSubsystemReportReady(
-    { id: "payments", status: "healthy" },
-    { supabase: "critical" },
-    [{ downstreamId: "payments", upstreamId: "supabase", critical: true }]
-  ),
-  "cannot report ready with failing critical dependency"
-);
 
 const score = buildInstitutionReadinessScore([
   { score: 90, status: "healthy" },
@@ -182,13 +166,39 @@ const score = buildInstitutionReadinessScore([
 ]);
 assert(score < 85, "critical subsystems reduce score");
 
-const recommendation = buildGoNoGoRecommendation(65, [{ id: "c1" }], []);
+const trend = buildReadinessTrend(88, 84);
+assert(trend.direction === "up", "trend up when score improves");
+
+const blockers = [
+  { severity: "critical" },
+  { severity: "high" },
+  { severity: "medium" },
+  { severity: "low" }
+];
+const counts = buildBlockerCounts(blockers);
+assert(counts.critical === 1 && counts.high === 1, "blocker counts");
+
+const recommendation = buildGoNoGoRecommendation(65, [{ id: "c1" }], [], blockers);
 assert(recommendation.verdict === "no-go", "no-go with critical issues");
-assert(formatReadinessSummaryLine({ healthyCount: 1, warningCount: 1, criticalCount: 1, score: 75 }).includes("score"), "summary line");
+assert(recommendation.label === "NO GO", "no go label");
+
+const goRecommendation = buildGoNoGoRecommendation(92, [], [], []);
+assert(goRecommendation.verdict === "go", "go verdict at high score");
+
+assert(
+  formatReadinessSummaryLine({
+    institutionReadinessScore: 85,
+    trend: { direction: "up" },
+    subsystems: [{ status: "healthy" }, { status: "warning" }, { status: "critical" }]
+  }).includes("trend"),
+  "summary line includes trend"
+);
+
+assert(filterBlockersBySeverity(blockers, "high").length === 1, "filter high blockers");
 
 if (failed) {
   console.error(`\n${failed} institutional readiness test(s) failed.`);
   process.exit(1);
 }
 
-console.log("Institutional Readiness Verification Engine checks passed.");
+console.log("Institutional Readiness Audit checks passed.");

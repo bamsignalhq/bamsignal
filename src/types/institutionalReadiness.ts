@@ -19,6 +19,25 @@ export type ReadinessSubsystemId =
   | "backups"
   | "executive-dashboard";
 
+export type ReadinessAuditDomainId =
+  | "infrastructure"
+  | "security"
+  | "payments"
+  | "messaging"
+  | "matching"
+  | "concierge"
+  | "support"
+  | "operations"
+  | "research"
+  | "communities"
+  | "events"
+  | "documentation"
+  | "release"
+  | "backups"
+  | "monitoring"
+  | "abuse"
+  | "performance";
+
 export type ReadinessResultId = "healthy" | "warning" | "critical" | "unknown";
 
 export type ReadinessCheckTypeId =
@@ -31,7 +50,13 @@ export type ReadinessCheckTypeId =
   | "audit-coverage"
   | "operational-status";
 
-export type GoNoGoVerdictId = "go" | "go-with-conditions" | "no-go-member-only" | "no-go";
+export type GoNoGoVerdictId = "go" | "go-with-conditions" | "no-go";
+
+export type ReadinessBlockerSeverityId = "critical" | "high" | "medium" | "low";
+
+export type ReadinessExportTypeId = "founder-report" | "board-report" | "launch-report";
+
+export type ReadinessTrendDirectionId = "up" | "down" | "flat";
 
 export type ReadinessVerificationCheck = {
   id: string;
@@ -54,6 +79,50 @@ export type ReadinessSubsystemHealth = {
   failedDependencies: ReadinessSubsystemId[];
   auditPath: string | null;
   contractExposed: boolean;
+};
+
+export type ReadinessAuditDomainScore = {
+  id: ReadinessAuditDomainId;
+  label: string;
+  score: number;
+  status: ReadinessResultId;
+  trend: ReadinessTrendDirectionId;
+  trendDelta: number;
+  blockerCount: number;
+  summary: string;
+};
+
+export type ReadinessTrendSnapshot = {
+  overallScore: number;
+  previousScore: number;
+  deltaPercent: number;
+  direction: ReadinessTrendDirectionId;
+  recordedAt: string;
+};
+
+export type ReadinessBlocker = {
+  id: string;
+  blockerRef: string;
+  title: string;
+  detail: string;
+  severity: ReadinessBlockerSeverityId;
+  auditDomainId: ReadinessAuditDomainId;
+};
+
+export type ReadinessBlockerCounts = {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+};
+
+export type ReadinessExportRecord = {
+  id: string;
+  exportType: ReadinessExportTypeId;
+  title: string;
+  summary: string;
+  exportedAt: string;
+  actor: string;
 };
 
 export type ReadinessDependencyLink = {
@@ -94,6 +163,11 @@ export type ReadinessGoNoGoRecommendation = {
 export type InstitutionalReadinessVerificationBundle = {
   generatedAt: string;
   institutionReadinessScore: number;
+  trend: ReadinessTrendSnapshot;
+  auditDomains: ReadinessAuditDomainScore[];
+  blockers: ReadinessBlocker[];
+  blockerCounts: ReadinessBlockerCounts;
+  exports: ReadinessExportRecord[];
   subsystems: ReadinessSubsystemHealth[];
   checks: ReadinessVerificationCheck[];
   dependencies: ReadinessDependencyLink[];

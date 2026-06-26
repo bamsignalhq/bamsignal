@@ -1,5 +1,5 @@
 /**
- * Institutional Readiness Verification Engine™ — server-side verification logic.
+ * Institutional Readiness Audit — server-side audit logic.
  */
 
 export const READINESS_VERIFICATION_DB_TABLES = [
@@ -8,8 +8,33 @@ export const READINESS_VERIFICATION_DB_TABLES = [
   "readiness_dependency_links",
   "readiness_critical_issues",
   "readiness_verification_runs",
-  "readiness_snapshots"
+  "readiness_snapshots",
+  "readiness_audit_domains",
+  "readiness_trend_snapshots",
+  "readiness_audit_exports"
 ];
+
+export const READINESS_AUDIT_DOMAINS = [
+  "infrastructure",
+  "security",
+  "payments",
+  "messaging",
+  "matching",
+  "concierge",
+  "support",
+  "operations",
+  "research",
+  "communities",
+  "events",
+  "documentation",
+  "release",
+  "backups",
+  "monitoring",
+  "abuse",
+  "performance"
+];
+
+export const READINESS_EXPORT_TYPES = ["founder-report", "board-report", "launch-report"];
 
 export function getReadinessVerificationDatabaseTableManifest() {
   return READINESS_VERIFICATION_DB_TABLES.map((tableName) => ({
@@ -44,6 +69,25 @@ export function buildInstitutionReadinessScore(subsystems) {
   const criticalCount = subsystems.filter((item) => item.status === "critical").length;
   const base = Math.round(total / subsystems.length);
   return Math.max(0, base - criticalCount * 3);
+}
+
+export function buildReadinessTrend(overallScore, previousOverallScore) {
+  const deltaPercent = previousOverallScore
+    ? Math.round(((overallScore - previousOverallScore) / previousOverallScore) * 100)
+    : 0;
+  let direction = "flat";
+  if (deltaPercent > 1) direction = "up";
+  else if (deltaPercent < -1) direction = "down";
+  return { overallScore, previousScore: previousOverallScore, deltaPercent, direction };
+}
+
+export function buildBlockerCounts(blockers) {
+  return {
+    critical: blockers.filter((item) => item.severity === "critical").length,
+    high: blockers.filter((item) => item.severity === "high").length,
+    medium: blockers.filter((item) => item.severity === "medium").length,
+    low: blockers.filter((item) => item.severity === "low").length
+  };
 }
 
 export function canSubsystemReportReady(subsystem, upstreamStatuses, dependencies) {
@@ -97,40 +141,49 @@ export function propagateDependencyFailures(subsystems, dependencies) {
   return { subsystems: updated, dependencies: updatedDeps };
 }
 
-export function buildGoNoGoRecommendation(score, criticalIssues, warnings) {
+export function buildGoNoGoRecommendation(score, criticalIssues, warnings, blockers = []) {
+  const criticalBlockers = blockers.filter((item) => item.severity === "critical").length;
+
   let verdict = "go-with-conditions";
   let detail =
-    "Core subsystems report operational readiness with tracked warnings. Re-run verification before scale events.";
+    "Platform meets core readiness thresholds with tracked conditions. Resolve medium blockers before scale events.";
 
-  if (criticalIssues.length > 0 || score < 70) {
+  if (criticalIssues.length > 0 || criticalBlockers > 0 || score < 70) {
     verdict = "no-go";
     detail =
-      "Critical subsystem failures block safe institutional launch. Resolve blockers before go-live.";
-  } else if (warnings.length >= 5 || score < 82) {
-    verdict = "no-go-member-only";
+      "Critical blockers prevent safe institutional launch. Resolve all critical issues before go-live.";
+  } else if (warnings.length >= 3 || score < 88) {
+    verdict = "go-with-conditions";
     detail =
-      "Member platform may support phased growth; full institutional operations are not verified ready.";
+      "Platform may proceed with conditions — high-priority blockers must be cleared before full launch.";
   } else if (warnings.length === 0 && score >= 90) {
     verdict = "go";
     detail =
-      "All verified subsystems meet readiness thresholds. Continue continuous verification monitoring.";
+      "All audit domains meet readiness thresholds. Automatic recommendation: GO for institutional launch.";
   }
 
   return {
     verdict,
     label: {
       go: "GO",
-      "go-with-conditions": "GO — with conditions",
-      "no-go-member-only": "NO-GO — member app only",
-      "no-go": "NO-GO"
+      "go-with-conditions": "GO WITH CONDITIONS",
+      "no-go": "NO GO"
     }[verdict],
     detail,
     institutionReadinessScore: score
   };
 }
 
-export function formatReadinessSummaryLine(summary) {
-  return `${summary.healthyCount} healthy · ${summary.warningCount} warning · ${summary.criticalCount} critical · score ${summary.score}`;
+export function formatReadinessSummaryLine(bundle) {
+  const healthyCount = bundle.subsystems?.filter((item) => item.status === "healthy").length ?? 0;
+  const warningCount = bundle.subsystems?.filter((item) => item.status === "warning").length ?? 0;
+  const criticalCount = bundle.subsystems?.filter((item) => item.status === "critical").length ?? 0;
+  const trend = bundle.trend?.direction ?? "flat";
+  return `${healthyCount} healthy · ${warningCount} warning · ${criticalCount} critical · score ${bundle.institutionReadinessScore} · trend ${trend}`;
+}
+
+export function filterBlockersBySeverity(blockers, severity) {
+  return blockers.filter((item) => item.severity === severity);
 }
 
 export function worstResult(a, b) {

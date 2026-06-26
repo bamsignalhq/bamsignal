@@ -15,8 +15,8 @@ export function LaunchRecommendationCard({ bundle }: LaunchRecommendationCardPro
       className={`readiness-verification-card launch-recommendation-card launch-recommendation-card--${verdictClass} concierge-consultant-card--glass cc-reveal`}
     >
       <header className="readiness-verification-card__head">
-        <h3>Go / No-Go recommendation</h3>
-        <p>Final launch authority based on continuous subsystem verification.</p>
+        <h3>GO / NO GO</h3>
+        <p>Automatic recommendation — GO, GO WITH CONDITIONS, or NO GO.</p>
       </header>
 
       <div className="launch-recommendation-card__verdict">

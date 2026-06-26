@@ -512,7 +512,7 @@ export function ProfilePage({
           onOpenVoiceVibe={openVoiceVibePage}
           onOpenTrusted={openTrustedMemberPage}
           onOpenBoost={() => setBoostSheetOpen(true)}
-          onOpenSettings={() => openSettings()}
+          onOpenSettings={(panel) => openSettings(panel ?? "hub")}
           onLogout={handleLogout}
           coverPhoto={profile.coverPhoto}
           photoMeta={profile.photoMeta}

@@ -70,7 +70,11 @@ const overviewSource = readFileSync(
 assert(overviewSource.includes("ProfileFintechHero"), "fintech hero section");
 assert(overviewSource.includes("ProfileQuickStats"), "quick stats row");
 assert(overviewSource.includes("ProfileGuidanceChip"), "single guidance chip");
-assert(overviewSource.includes("ProfileCompletionSheet"), "completion sheet");
+assert(overviewSource.includes("ProfileSettingsList"), "settings list");
+assert(overviewSource.includes("ProfileInterestsStrip"), "interests strip");
+assert(overviewSource.includes("profile-voice-row"), "voice action row");
+assert(!overviewSource.includes("ProfileInterestsPreview"), "removed loud interest preview");
+assert(!overviewSource.includes("profile-fintech-footer"), "removed footer links");
 
 const cssOverviewSource = readFileSync(join(rootPath, "src/styles/profile-fintech-overview.css"), "utf8");
 assert(cssOverviewSource.includes("profile-fintech-hero"), "fintech overview styles");

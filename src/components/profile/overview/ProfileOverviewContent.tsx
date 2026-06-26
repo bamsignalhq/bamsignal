@@ -1,8 +1,4 @@
-import { ChevronRight, LogOut, Settings } from "lucide-react";
-import { useEffect, useMemo } from "react";
-import { profileIntentLabel } from "../../../constants/intents";
-import { WHAT_BRINGS_ME_HERE_TITLE } from "../../../constants/relationshipIntent";
-import { relationshipIntentsFrom } from "../../../constants/relationshipIntent";
+import { memo, useMemo, useState } from "react";
 import type { DatingProfile, PhotoReviewMeta, UserProfile } from "../../../types";
 import { getProfileAboutDisplay } from "../../../utils/ownProfileOverview";
 import { normalizeMoreAboutMeInterests } from "../../../utils/moreAboutMe";
@@ -16,16 +12,17 @@ import { safeArray } from "../../../utils/safeProfile";
 import { getVoiceVibeDuration, getVoiceVibeUrl, hasVoiceVibe } from "../../../utils/voiceVibe";
 import type { VerificationInfo } from "../../../utils/verification";
 import { calculateProfileStrength, getProfileStrengthImprovements } from "../../../utils/profileStrength";
-import { navigateToPath } from "../../../constants/routes";
-import { useSavedProfiles } from "../../../hooks/useSavedProfiles";
-import { ProfileInterestsPreview } from "../ProfileInterestsPreview";
 import { VoiceVibeWaveformCard } from "../../voice/VoiceVibeWaveformCard";
-import { MemberMicroNudge } from "../../nudges/MemberMicroNudge";
 import { ProfileFintechHero } from "./ProfileFintechHero";
 import { ProfileGuidanceChip } from "./ProfileGuidanceChip";
-import { ProfilePrivateCard, ProfileQuickStats, type ProfileQuickStatId } from "./ProfileQuickStats";
+import { ProfileInterestsStrip } from "./ProfileInterestsStrip";
+import { ProfilePrivateSection } from "./ProfilePrivateSection";
+import { ProfileQuickStats, type ProfileQuickStatId } from "./ProfileQuickStats";
 import { ProfileCompletionSheet } from "./ProfileCompletionSheet";
+import { ProfileSettingsList } from "./ProfileSettingsList";
 import type { EditSection } from "./profileOverviewTypes";
+
+type SettingsPanel = "hub" | "privacy" | "notifications";
 
 type ProfileOverviewContentProps = {
   user: UserProfile;
@@ -41,7 +38,7 @@ type ProfileOverviewContentProps = {
   onOpenVoiceVibe: () => void;
   onOpenTrusted: () => void;
   onOpenBoost: () => void;
-  onOpenSettings: () => void;
+  onOpenSettings: (panel?: SettingsPanel) => void;
   onLogout: () => void;
   coverPhoto?: string;
   photoMeta?: Record<string, PhotoReviewMeta>;
@@ -71,19 +68,10 @@ function educationLabel(profile: DatingProfile): string | null {
   return educationOccupation ?? null;
 }
 
-function relationshipRows(profile: DatingProfile): { label: string; value: string }[] {
+/** Extended relationship facts — excludes hero identity fields. */
+function relationshipFacts(profile: DatingProfile): { label: string; value: string }[] {
   const rows: { label: string; value: string }[] = [];
-  if (profile.lookingFor) rows.push({ label: "Looking for", value: profile.lookingFor });
-  const intents = relationshipIntentsFrom(profile.intents);
-  if (intents.length) {
-    rows.push({
-      label: WHAT_BRINGS_ME_HERE_TITLE,
-      value: intents.map((intent) => profileIntentLabel(intent)).join(", ")
-    });
-  }
-  if (profile.religion && !isPreferNot(profile.religion)) {
-    rows.push({ label: "Faith", value: profile.religion });
-  }
+  if (profile.lookingFor) rows.push({ label: "Looking For", value: profile.lookingFor });
   const education = educationLabel(profile);
   if (education) rows.push({ label: "Education", value: education });
   const lifestyles = normalizeLifestyleTraits(
@@ -97,7 +85,7 @@ function relationshipRows(profile: DatingProfile): { label: string; value: strin
   return rows;
 }
 
-export function ProfileOverviewContent({
+export const ProfileOverviewContent = memo(function ProfileOverviewContent({
   user,
   profile,
   verification,
@@ -126,15 +114,14 @@ export function ProfileOverviewContent({
     () => getProfileStrengthImprovements(profile, options).slice(0, 6),
     [profile, options]
   );
-  const about = getProfileAboutDisplay(profile);
-  const interests = normalizeMoreAboutMeInterests(profile.interests);
-  const relationship = relationshipRows(profile);
+  const about = useMemo(() => getProfileAboutDisplay(profile), [profile]);
+  const interests = useMemo(
+    () => normalizeMoreAboutMeInterests(profile.interests),
+    [profile.interests]
+  );
+  const relationship = useMemo(() => relationshipFacts(profile), [profile]);
   const voiceUrl = getVoiceVibeUrl(profile);
-  const { profiles: savedProfiles, refreshProfiles } = useSavedProfiles({ viewerCity: profile.city });
-
-  useEffect(() => {
-    void refreshProfiles();
-  }, [refreshProfiles]);
+  const hasVoice = Boolean(voiceUrl && hasVoiceVibe(profile));
 
   const handleStat = (id: ProfileQuickStatId) => {
     switch (id) {
@@ -162,9 +149,7 @@ export function ProfileOverviewContent({
         user={user}
         profile={profile}
         verification={verification}
-        profileScore={profileScore}
         onEdit={onEdit}
-        onOpenCompletion={() => onCompletionSheetOpenChange(true)}
         coverPhoto={coverPhoto}
         photoMeta={photoMeta}
         onCoverChange={onCoverChange}
@@ -190,33 +175,31 @@ export function ProfileOverviewContent({
       />
 
       {about ? (
-        <section className="profile-fintech-section">
-          <div className="profile-fintech-section__head">
+        <section className="profile-fintech-about">
+          <div className="profile-fintech-about__head">
             <h2>About</h2>
             <button type="button" onClick={() => onOpenEditSection("bio")}>
               Edit
             </button>
           </div>
-          <p className="profile-fintech-section__text">{about.text}</p>
+          <p className="profile-fintech-about__text">{about.text}</p>
         </section>
       ) : null}
 
       {interests.length ? (
-        <section className="profile-fintech-section">
+        <section className="profile-fintech-section profile-fintech-section--flat">
           <div className="profile-fintech-section__head">
             <h2>Interests</h2>
             <button type="button" onClick={() => onOpenEditSection("interests")}>
               Edit
             </button>
           </div>
-          <div className="profile-fintech-section__scroll">
-            <ProfileInterestsPreview interests={profile.interests ?? []} variant="premium" />
-          </div>
+          <ProfileInterestsStrip interests={profile.interests ?? []} />
         </section>
       ) : null}
 
       {relationship.length ? (
-        <section className="profile-fintech-section">
+        <section className="profile-fintech-section profile-fintech-section--flat">
           <div className="profile-fintech-section__head">
             <h2>Relationship</h2>
             <button type="button" onClick={() => onOpenEditSection("details")}>
@@ -234,45 +217,32 @@ export function ProfileOverviewContent({
         </section>
       ) : null}
 
-      <section className="profile-fintech-section profile-fintech-section--voice">
-        <div className="profile-fintech-section__head">
-          <h2>Voice Vibe</h2>
-          {hasVoiceVibe(profile) ? (
+      {hasVoice ? (
+        <section className="profile-fintech-section profile-fintech-section--flat profile-fintech-section--voice">
+          <div className="profile-fintech-section__head">
+            <h2>Voice Vibe</h2>
             <button type="button" onClick={onOpenVoiceVibe}>
               Manage
             </button>
-          ) : null}
-        </div>
-        {voiceUrl ? (
+          </div>
           <VoiceVibeWaveformCard
-            url={voiceUrl}
+            url={voiceUrl!}
             duration={getVoiceVibeDuration(profile)}
             variant="mini"
             title=""
             subtext=""
           />
-        ) : (
-          <MemberMicroNudge emoji="🎤" lead="Add Voice Vibe" cta="→" onAction={onOpenVoiceVibe} />
-        )}
-      </section>
-
-      <section className="profile-fintech-section profile-fintech-section--private">
-        <div className="profile-fintech-section__head">
-          <h2>Private</h2>
-        </div>
-        <ProfilePrivateCard count={savedProfiles.length} onOpen={() => navigateToPath("/saved-profiles")} />
-      </section>
-
-      <footer className="profile-fintech-footer">
-        <button type="button" className="profile-fintech-footer__link" onClick={onOpenSettings}>
-          <Settings size={16} aria-hidden />
-          Settings
+        </section>
+      ) : (
+        <button type="button" className="profile-voice-row" onClick={onOpenVoiceVibe}>
+          <span className="profile-voice-row__lead">🎤 Add Voice Vibe</span>
+          <span className="profile-voice-row__cta">→</span>
         </button>
-        <button type="button" className="profile-fintech-footer__link profile-fintech-footer__link--muted" onClick={onLogout}>
-          <LogOut size={16} aria-hidden />
-          Log out
-        </button>
-      </footer>
+      )}
+
+      <ProfilePrivateSection viewerCity={profile.city} />
+
+      <ProfileSettingsList onEdit={onEdit} onOpenSettings={onOpenSettings} onLogout={onLogout} />
 
       <ProfileCompletionSheet
         open={completionSheetOpen}
@@ -286,4 +256,4 @@ export function ProfileOverviewContent({
       />
     </div>
   );
-}
+});

@@ -4,7 +4,7 @@ import {
   isPlaceholderCity,
   isPlaceholderName,
   isTemplateProfileValue
-} from "./onboardingStatus";
+} from "./onboardingPlaceholders";
 import { calculateProfileStrength, getProfileStrengthLevel } from "./profileStrength";
 
 export const ONBOARDING_REQUIRED_PHOTOS = 1;

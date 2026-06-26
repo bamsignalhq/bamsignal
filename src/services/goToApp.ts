@@ -7,7 +7,8 @@ import {
   readOpenAppOnboardingCache,
   writeOpenAppOnboardingCache
 } from "../utils/openAppOnboardingCache";
-import { clearOnboardingDrafts, logRouteDecision } from "../utils/onboardingStatus";
+import { clearOnboardingDrafts } from "../utils/onboardingDrafts";
+import { logRouteDecision } from "../utils/profileOnboardingRepair";
 import { readJson } from "../utils/storage";
 import { bootstrapMemberSession, type MemberSessionBootstrapResult } from "./memberData";
 import type { OnboardingStatusResult } from "./onboardingRepair";

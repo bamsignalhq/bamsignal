@@ -1,4 +1,4 @@
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 
 export const SUPPORT_CENTER_ROUTES = {
   help: "/help",

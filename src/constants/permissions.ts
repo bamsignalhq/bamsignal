@@ -1,7 +1,7 @@
 import type { AuditAdminView, ConciergeAdminView } from "./hardRoutes";
 import { hardPathForTab } from "./hardRoutes";
 import type { HardTab } from "../components/admin/adminConsoleNav";
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 import { NOTIFICATION_RELIABILITY_ADMIN_PATH } from "./notificationReliabilityAdmin";
 import { SYSTEM_HEALTH_ADMIN_PATH } from "./systemHealthAdmin";
 import { INSTITUTIONAL_COMPLIANCE_ADMIN_PATH } from "./institutionalComplianceAdmin";
@@ -42,68 +42,12 @@ import {
   OPERATIONS_CENTER_PATH
 } from "./operationsCenter";
 import { JOURNEY_INTELLIGENCE_PATH } from "./journeyIntelligence";
+import { PERMISSIONS, ROLES } from "./permissionTypes";
+import type { Permission as PermissionSlug, Role as RoleSlug } from "./permissionTypes";
 
-export const ROLES = [
-  "Admin",
-  "Executive",
-  "Operations",
-  "Consultant",
-  "Senior Matchmaker",
-  "Compatibility Specialist",
-  "Family Values Advisor",
-  "Diaspora Consultant",
-  "Support",
-  "Research"
-] as const;
-
-export type Role = (typeof ROLES)[number];
-
-export const PERMISSIONS = [
-  "ViewMembers",
-  "EditMembers",
-  "DeleteMembers",
-  "AssignConsultants",
-  "TransferJourney",
-  "ApproveJourney",
-  "ManageConsultants",
-  "ManagePayments",
-  "ApproveRefund",
-  "IssueRefund",
-  "ManageScheduling",
-  "ManageNotifications",
-  "ManageIntroductions",
-  "ManageFollowUps",
-  "ViewArchives",
-  "ManageArchives",
-  "ViewFinance",
-  "ManageFinance",
-  "ViewResearch",
-  "PublishResearch",
-  "ViewExecutiveDashboard",
-  "ManageGovernance",
-  "ManageSupport",
-  "ManageSafety",
-  "ManageDocuments",
-  "ManagePolicies",
-  "ManageCareers",
-  "ManageOperations",
-  "ManageCrm",
-  "ManageEvents",
-  "ManageInstitute",
-  "ManageCommunity",
-  "ManageMessaging",
-  "ManageConsultantQa",
-  "ManageExecutiveReports",
-  "ManageLegacy",
-  "ManageSuccessStories",
-  "ManageCompliance",
-  "ViewAuditLogs",
-  "ExportReports",
-  "SystemAdministration",
-  "ManageRecovery"
-] as const;
-
-export type Permission = (typeof PERMISSIONS)[number];
+export { PERMISSIONS, ROLES } from "./permissionTypes";
+export type Role = RoleSlug;
+export type Permission = PermissionSlug;
 
 export const ROLE_LABELS: Record<Role, string> = {
   Admin: "Admin",

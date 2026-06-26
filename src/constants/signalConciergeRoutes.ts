@@ -1,4 +1,4 @@
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 
 export const SIGNAL_CONCIERGE_BASE_PATH = "/signal-concierge";
 

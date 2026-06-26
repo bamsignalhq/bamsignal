@@ -18,7 +18,7 @@ import {
   normalizeRelationshipIntentions,
   resolveStateName
 } from "../constants/profileOptions";
-import { sanitizeIntentsForActivePass } from "./fastConnectionIntent";
+import { sanitizeIntentsForActivePass } from "./quickieIntents";
 import { normalizeMoreAboutMeInterests } from "./moreAboutMe";
 import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
@@ -32,10 +32,9 @@ import { samePhotoRef } from "./photoRefs";
 import { isPersistablePhotoUrl, isPersistableVoiceIntroUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString, safeUserCoverPhoto } from "./safeProfile";
 import { prunePhotoMeta, safePhotoMeta } from "./photoMeta";
 import { normalizeMainPhoto } from "./mainPhoto";
-import {
-  isOnboardingFullyComplete,
-  normalizeOnboardingStatus
-} from "./onboardingStatus";
+import { isPreferNot } from "./preferNot";
+import { isOnboardingFullyComplete } from "./onboardingStatus";
+import { normalizeOnboardingStatus } from "./onboardingFlags";
 
 export const defaultDatingProfile = (): DatingProfile => ({
   photos: [],
@@ -109,9 +108,7 @@ export function profileNeedsOnboarding(
   return !isOnboardingFullyComplete(profile, resolvedUser);
 }
 
-export function isPreferNot(value?: string): boolean {
-  return !value || value === "Prefer not to say";
-}
+export { isPreferNot } from "./preferNot";
 
 export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfile {
   const base = defaultDatingProfile();

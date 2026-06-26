@@ -26,7 +26,7 @@ import {
   portfolioIntroductionsInProgress,
   portfolioPendingConsultations
 } from "./conciergeConsultantMetrics";
-import { deriveWorkloadHealth } from "./consultantWorkloadEngine";
+import { deriveWorkloadHealth } from "./consultantWorkloadHealth";
 
 const LAGOS_CITIES = new Set(["lagos", "ibadan", "abeokuta", "benin", "benin city"]);
 

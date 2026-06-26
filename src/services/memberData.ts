@@ -19,12 +19,12 @@ import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import { mergeMemberCover, safeArray, safePhotos, safeString, isPersistablePhotoUrl } from "../utils/safeProfile";
 import {
-  clearOnboardingDrafts,
-  logRouteDecision,
   mergeOnboardingCompleteFlag,
   normalizeOnboardingStatus,
   shouldRouteToOnboarding
 } from "../utils/onboardingStatus";
+import { clearOnboardingDrafts } from "../utils/onboardingDrafts";
+import { logRouteDecision } from "../utils/profileOnboardingRepair";
 import {
   applyOnboardingRepairLocal,
   fetchOnboardingStatus,

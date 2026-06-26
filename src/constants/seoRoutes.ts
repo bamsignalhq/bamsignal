@@ -1,4 +1,4 @@
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 import type { SeoHubId } from "../content/seo/seoPages";
 
 export type SeoRoute = {

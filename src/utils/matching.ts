@@ -3,9 +3,9 @@ import type { DatingProfile, DiscoverProfile, IntentTag, MatchPreferences } from
 import { safeArray, safeString } from "./safeProfile";
 import { computeCompatibilityPercent, hasActivePreferences, matchesPreferences } from "./compatibility";
 import { isOnlineNow } from "./activity";
-import { isPreferNot } from "./profile";
+import { isPreferNot } from "./preferNot";
 import { calculateProfileStrength } from "./profileStrength";
-import { meetsDiscoveryQuality } from "./launchSeed";
+import { meetsDiscoveryQuality } from "./discoverQuality";
 import { trustRankingBoost } from "./trustScore";
 
 const COMPAT_WEIGHT = 35;

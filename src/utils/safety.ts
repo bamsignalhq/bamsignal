@@ -16,12 +16,15 @@ import { matchesPreferences } from "./compatibility";
 import { isExcludedFromPublicDiscovery } from "./signalConciergePrivacy";
 import { resolveProfileMainPhoto } from "./mainPhoto";
 import { defaultMatchPreferences } from "./profile";
-import { meetsDiscoveryQuality } from "./launchSeed";
+import { meetsDiscoveryQuality } from "./discoverQuality";
 import { readJson, writeJson } from "./storage";
 import { persistReportRemote } from "../services/memberData";
 import { apiUrl } from "../services/supabase";
 import { memberApiHeaders } from "./memberApiAuth";
 import { trackSafetyBlock, trackSafetyReport } from "./safetyAnalytics";
+import { getReportCount as countProfileReports } from "./reportCount";
+
+export { getReportCount } from "./reportCount";
 
 export function resolveSafetySettings(profile: {
   gender?: Gender;
@@ -57,18 +60,13 @@ export function genderMatchesLookingFor(lookingFor: LookingFor | undefined, gend
   return true;
 }
 
-export function getReportCount(profileId: string): number {
-  const reports = readJson<ReportRecord[]>(STORAGE_KEYS.reports, []);
-  return reports.filter((r) => r.profileId === profileId).length;
-}
-
 export function isUserBlocked(profileId: string): boolean {
   const blocked = readJson<string[]>(STORAGE_KEYS.blocked, []);
   return blocked.includes(profileId);
 }
 
 export function isAutoFlagged(profileId: string): boolean {
-  return getReportCount(profileId) >= 3;
+  return countProfileReports(profileId) >= 3;
 }
 
 export function recordReport(

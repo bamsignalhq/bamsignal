@@ -1,7 +1,7 @@
 import type { DatingProfile } from "../types";
 import { normalizeEthnicities, normalizeOccupations } from "../constants/profileOptions";
 import { safeArray, safeString } from "./safeProfile";
-import { isPreferNot } from "./profile";
+import { isPreferNot } from "./preferNot";
 import { getVoiceVibeUrl } from "./voiceVibe";
 import { relationshipIntentsFrom } from "../constants/relationshipIntent";
 import { normalizeMoreAboutMeInterests } from "./moreAboutMe";

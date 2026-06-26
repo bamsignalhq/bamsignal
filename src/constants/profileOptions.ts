@@ -1,4 +1,4 @@
-import type { Religion } from "../types";
+import type { Religion } from "../types/profileReligion";
 import {
   ALL_NIGERIAN_CITIES,
   NIGERIAN_STATES,

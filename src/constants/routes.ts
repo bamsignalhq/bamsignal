@@ -10,6 +10,9 @@ import { isCenturyRoute } from "./centuryRoutes";
 import { isConsultantRoute } from "./consultantRoutes";
 import { isCareersRoute } from "./careersRoutes";
 import { isSupportCenterRoute } from "./supportCenterRoutes";
+import { navigateToPath, normalizePath } from "./routePath";
+
+export { navigateToPath, normalizePath } from "./routePath";
 
 export const AUTH_LOGIN_PATH = "/love/login";
 export const AUTH_SIGNUP_PATH = "/love/sign";
@@ -35,10 +38,6 @@ export const AUTH_PATHS = [AUTH_LOGIN_PATH, AUTH_SIGNUP_PATH] as const;
 export type AuthPath = (typeof AUTH_PATHS)[number];
 
 export const HARD_PATHS = [HARD_AUTH_PATH, HARD_HUB_PATH] as const;
-
-export function normalizePath(pathname = window.location.pathname): string {
-  return pathname.replace(/\/$/, "") || "/";
-}
 
 export function getAuthPath(pathname = window.location.pathname): AuthPath | null {
   const path = normalizePath(pathname);
@@ -164,15 +163,6 @@ export function requiresMemberRestoreBlocking(
   if (isPublicWebRoute(path)) return false;
   if (isNative) return true;
   return MEMBER_APP_PATHS.some((memberPath) => path === memberPath || path.startsWith(`${memberPath}/`));
-}
-
-export function navigateToPath(path: string, replace = false) {
-  if (replace) {
-    window.history.replaceState(null, "", path);
-  } else {
-    window.history.pushState(null, "", path);
-  }
-  window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
 /** Redirect legacy /admin/* URLs to canonical /hard/* console paths. */

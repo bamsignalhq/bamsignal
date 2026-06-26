@@ -12,7 +12,7 @@ import {
   buildGovernanceRolePermissionMap
 } from "../data/institutionalGovernanceSeed";
 import type { DelegationRecord, GovernanceRoleRecord } from "../types/institutionalGovernance";
-import type { Permission, Role } from "../constants/permissions";
+import type { Permission, Role } from "../constants/permissionTypes";
 
 export type GovernanceAuthorizationInput = {
   legacyRole: Role | string;

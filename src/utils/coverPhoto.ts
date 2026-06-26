@@ -1,6 +1,6 @@
 import type { DatingProfile } from "../types";
 import { isStoragePhotoUrl } from "./photoRefs";
-import { isShowcasePhotoUrl, safeUserCoverPhoto } from "./safeProfile";
+import { isShowcasePhotoUrl, safeUserCoverPhoto } from "./persistablePhotoUrl";
 
 export type CoverPhotoFields = {
   coverPhotoUrl?: string;

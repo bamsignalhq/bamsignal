@@ -7,22 +7,13 @@ import { getDiscoverCityConfig } from "../constants/discoverCityConfig";
 import { scoreProfile as rankScoreProfile } from "./matching";
 import { readJson, writeJson } from "./storage";
 import { getDiscoverScoreBonusForProfile } from "./activeBoosts";
+import { meetsDiscoveryQuality } from "./discoverQuality";
+
+export { meetsDiscoveryQuality } from "./discoverQuality";
 
 export const NEW_SIGNAL_BOOST_DAYS = 7;
 
 type ImpressionMap = Record<string, { count: number; lastAt: string }>;
-
-export function meetsDiscoveryQuality(
-  profile: Pick<DiscoverProfile, "bio" | "intents" | "photo"> | Pick<DatingProfile, "bio" | "intents" | "photos">
-): boolean {
-  const hasPhoto =
-    "photos" in profile
-      ? safeArray<string>(profile.photos).length >= 1 && Boolean(safeArray<string>(profile.photos)[0])
-      : Boolean(safeString(profile.photo).trim());
-  const hasBio = safeString(profile.bio).trim().length >= 8;
-  const hasIntent = safeArray(profile.intents).length >= 1;
-  return hasPhoto && hasBio && hasIntent;
-}
 
 export function isNewSignalProfile(profile: { createdAt?: string }): boolean {
   if (!profile.createdAt) return false;

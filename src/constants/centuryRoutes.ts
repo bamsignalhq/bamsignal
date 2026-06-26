@@ -1,4 +1,4 @@
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 
 export const CENTURY_BASE_PATH = "/century";
 

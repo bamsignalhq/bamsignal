@@ -1,4 +1,4 @@
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 
 export const CONSULTANT_BASE_PATH = "/consultant";
 export const CONSULTANT_LOGIN_PATH = `${CONSULTANT_BASE_PATH}/login`;

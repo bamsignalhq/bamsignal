@@ -1,5 +1,5 @@
 import type { HardTab } from "../components/admin/adminConsoleNav";
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 import { NOTIFICATION_RELIABILITY_ADMIN_PATH } from "./notificationReliabilityAdmin";
 import { SYSTEM_HEALTH_ADMIN_PATH } from "./systemHealthAdmin";
 import { INSTITUTIONAL_COMPLIANCE_ADMIN_PATH } from "./institutionalComplianceAdmin";

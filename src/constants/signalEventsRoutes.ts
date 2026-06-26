@@ -1,4 +1,4 @@
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 import { getGlobalCity } from "./globalCityNetwork";
 
 export const SIGNAL_EVENTS_BASE_PATH = "/events";

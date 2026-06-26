@@ -1,5 +1,5 @@
 import type { NavTab } from "../types";
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 
 export const ONBOARDING_PATH = "/onboarding";
 

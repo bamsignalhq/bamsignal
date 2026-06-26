@@ -1,6 +1,6 @@
 import type { DatingProfile, DiscoverProfile } from "../types";
 import { calculateProfileStrength } from "./profileStrength";
-import { getReportCount } from "./safety";
+import { getReportCount } from "./reportCount";
 import { readJson } from "./storage";
 import { STORAGE_KEYS } from "../constants/limits";
 

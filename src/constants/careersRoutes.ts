@@ -1,4 +1,4 @@
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 import { getCareerRoleBySlug } from "../utils/careersLogic";
 
 export const CAREERS_BASE_PATH = "/careers";

@@ -1,6 +1,6 @@
 import { STORAGE_KEYS } from "../constants/limits";
 import type { ReportRecord } from "../types";
-import { getReportCount } from "./safety";
+import { getReportCount } from "./reportCount";
 import { isShadowBanned, readShadowBannedIds } from "./shadowBan";
 import { readJson } from "./storage";
 

@@ -19,12 +19,9 @@ export type Gender = "Man" | "Woman" | "Non-binary";
 
 export type LookingFor = "Men" | "Women";
 
-export type Religion =
-  | "Christian"
-  | "Muslim"
-  | "Traditional"
-  | "Other"
-  | "Prefer not to say";
+import type { Religion } from "./profileReligion";
+
+export type { Religion } from "./profileReligion";
 
 export type {
   BodyType,

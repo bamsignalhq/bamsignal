@@ -31,4 +31,4 @@ export function getLegalPath(pathname = window.location.pathname): LegalPath | n
   return LEGAL_PATHS.includes(path as LegalPath) ? (path as LegalPath) : null;
 }
 
-export { navigateToPath } from "./routes";
+export { navigateToPath } from "./routePath";

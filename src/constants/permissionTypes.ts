@@ -1,0 +1,61 @@
+export const ROLES = [
+  "Admin",
+  "Executive",
+  "Operations",
+  "Consultant",
+  "Senior Matchmaker",
+  "Compatibility Specialist",
+  "Family Values Advisor",
+  "Diaspora Consultant",
+  "Support",
+  "Research"
+] as const;
+
+export type Role = (typeof ROLES)[number];
+
+export const PERMISSIONS = [
+  "ViewMembers",
+  "EditMembers",
+  "DeleteMembers",
+  "AssignConsultants",
+  "TransferJourney",
+  "ApproveJourney",
+  "ManageConsultants",
+  "ManagePayments",
+  "ApproveRefund",
+  "IssueRefund",
+  "ManageScheduling",
+  "ManageNotifications",
+  "ManageIntroductions",
+  "ManageFollowUps",
+  "ViewArchives",
+  "ManageArchives",
+  "ViewFinance",
+  "ManageFinance",
+  "ViewResearch",
+  "PublishResearch",
+  "ViewExecutiveDashboard",
+  "ManageGovernance",
+  "ManageSupport",
+  "ManageSafety",
+  "ManageDocuments",
+  "ManagePolicies",
+  "ManageCareers",
+  "ManageOperations",
+  "ManageCrm",
+  "ManageEvents",
+  "ManageInstitute",
+  "ManageCommunity",
+  "ManageMessaging",
+  "ManageConsultantQa",
+  "ManageExecutiveReports",
+  "ManageLegacy",
+  "ManageSuccessStories",
+  "ManageCompliance",
+  "ViewAuditLogs",
+  "ExportReports",
+  "SystemAdministration",
+  "ManageRecovery"
+] as const;
+
+export type Permission = (typeof PERMISSIONS)[number];

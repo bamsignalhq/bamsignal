@@ -1,4 +1,4 @@
-import { normalizePath } from "./routes";
+import { normalizePath } from "./routePath";
 
 export const BAMSIGNAL_FOUNDATION_BASE_PATH = "/foundation";
 

@@ -34,6 +34,7 @@ import { LAUNCH_CERTIFICATION_ADMIN_PATH } from "./launchCertificationAdmin";
 import { PERFORMANCE_CERTIFICATION_ADMIN_PATH } from "./performanceCertificationAdmin";
 import { SECURITY_CERTIFICATION_ADMIN_PATH } from "./securityCertificationAdmin";
 import { RELIABILITY_CERTIFICATION_ADMIN_PATH } from "./reliabilityCertificationAdmin";
+import { FOUNDER_CERTIFICATION_ADMIN_PATH } from "./founderCertificationAdmin";
 import { ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH } from "./enterpriseCodebaseCleanupAdmin";
 import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin";
 import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
@@ -179,6 +180,7 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   performancecertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
   securitycertification: ["ManageOperations", "ManageSafety", "SystemAdministration", "ViewExecutiveDashboard"],
   reliabilitycertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
+  foundercertification: ["ViewExecutiveDashboard", "SystemAdministration", "ManageOperations"],
   enterprisecleanup: "ManageOperations",
   productionenvironment: "ManageOperations",
   launchinfrastructure: "ManageOperations",
@@ -269,6 +271,7 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [PERFORMANCE_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.performancecertification,
   [SECURITY_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.securitycertification,
   [RELIABILITY_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.reliabilitycertification,
+  [FOUNDER_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.foundercertification,
   [ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH]: HARD_TAB_PERMISSIONS.enterprisecleanup,
   [PRODUCTION_ENVIRONMENT_ADMIN_PATH]: HARD_TAB_PERMISSIONS.productionenvironment,
   [LAUNCH_INFRASTRUCTURE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchinfrastructure,
@@ -345,6 +348,7 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/performance-certification",
   "/hard/security-certification",
   "/hard/reliability-certification",
+  "/hard/founder-certification",
   "/hard/enterprise-cleanup",
   "/hard/production-environment",
   "/hard/launch-infrastructure",

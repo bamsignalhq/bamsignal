@@ -50,6 +50,7 @@ export type HardTab =
   | "performancecertification"
   | "securitycertification"
   | "reliabilitycertification"
+  | "foundercertification"
   | "enterprisecleanup"
   | "productionenvironment"
   | "launchinfrastructure"
@@ -220,6 +221,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "reliabilitycertification",
         label: "Rel Cert",
         keywords: ["reliability", "failure", "recovery", "degradation", "retry", "fallback", "outage", "certify"]
+      },
+      {
+        id: "foundercertification",
+        label: "Founder Cert",
+        keywords: ["founder", "launch", "go", "no-go", "board", "release", "certify", "master"]
       },
       {
         id: "enterprisecleanup",
@@ -427,6 +433,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   performancecertification: "Perf Cert",
   securitycertification: "Sec Cert",
   reliabilitycertification: "Rel Cert",
+  foundercertification: "Founder Cert",
   enterprisecleanup: "Code Cleanup",
   productionenvironment: "Env Audit",
   launchinfrastructure: "Launch Infra",

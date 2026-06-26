@@ -2,6 +2,8 @@ import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { Preloader } from "./components/Preloader";
+import { SessionRestoreOverlay } from "./components/SessionRestoreOverlay";
+import { InlineRestoreIndicator } from "./components/InlineRestoreIndicator";
 import { BRAND_ASSETS } from "./constants/brand";
 import { BottomNav } from "./components/BottomNav";
 import { TopNav } from "./components/TopNav";
@@ -147,6 +149,9 @@ import {
 import { normalizeOnboardingStatus } from "./utils/onboardingStatus";
 import { readOpenAppOnboardingCache } from "./utils/openAppOnboardingCache";
 import { clearStaleBootFlags } from "./utils/bootFlags";
+import { debugSessionCall, setHydrationDebugState } from "./utils/debugRecursion";
+import { readCachedMemberSession } from "./utils/sessionRestoreBootstrap";
+import { recordSessionRestoreDuration } from "./utils/sessionRestoreMetrics";
 import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
@@ -339,8 +344,18 @@ export function App() {
   const publicWebRoute = typeof window !== "undefined" && isPublicWebRoute(window.location.pathname);
   const blockMemberRestoreOnBoot =
     typeof window !== "undefined" && requiresMemberRestoreBlocking(window.location.pathname, isNative);
+  const cachedMemberSession =
+    typeof window !== "undefined" && blockMemberRestoreOnBoot ? readCachedMemberSession() : null;
+  const warmMemberLaunch = Boolean(
+    cachedMemberSession?.hasSession &&
+      typeof window !== "undefined" &&
+      isMemberAppPath(window.location.pathname)
+  );
   const { plans } = usePlans();
-  const [booting, setBooting] = useState(() => !publicWebRoute || isNative);
+  const [booting, setBooting] = useState(() => {
+    if (warmMemberLaunch) return false;
+    return !publicWebRoute || isNative;
+  });
   const [authLoading, setAuthLoading] = useState(() => blockMemberRestoreOnBoot);
   const [memberHydrating, setMemberHydrating] = useState(false);
   const [memberAppEntered, setMemberAppEntered] = useState(() => isNative);
@@ -371,17 +386,17 @@ export function App() {
   const [showBlogIndex, setShowBlogIndex] = useState(() => isBlogIndex());
   const [showAdminAuth, setShowAdminAuth] = useState(() => isAdminAuthRoute());
   const [showAdminHub, setShowAdminHub] = useState(() => isAdminHubRoute() && !isAdminAuthRoute());
-  const [profileComplete, setProfileComplete] = useState<boolean | null>(() =>
-    typeof window !== "undefined" && requiresMemberRestoreBlocking(window.location.pathname, isNative)
-      ? null
-      : false
-  );
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(() => {
+    if (!blockMemberRestoreOnBoot) return false;
+    if (cachedMemberSession?.hasSession) return cachedMemberSession.profileCompleteKnown;
+    return null;
+  });
   const [memberPathname, setMemberPathname] = useState(() =>
     typeof window !== "undefined" ? normalizePath(window.location.pathname) : "/"
   );
   const [complianceTick, setComplianceTick] = useState(0);
   const [pendingTab, setPendingTab] = useState<NavTab | null>(null);
-  const [isAuthed, setIsAuthed] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(() => cachedMemberSession?.hasSession ?? false);
   const [authMessage, setAuthMessage] = useState("");
   const [isPremium, setIsPremium] = useState(() => isPremiumActive());
   const [boostTick, setBoostTick] = useState(0);
@@ -394,7 +409,7 @@ export function App() {
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
   const [paymentReturnPhase, setPaymentReturnPhase] = useState<"idle" | "verifying" | "success" | "failed">("idle");
   const [openAppLoading, setOpenAppLoading] = useState(false);
-  const [memberSessionReady, setMemberSessionReady] = useState(false);
+  const [memberSessionReady, setMemberSessionReady] = useState(() => cachedMemberSession?.hasSession ?? false);
   const [memberSessionEpoch, setMemberSessionEpoch] = useState(0);
   const [paystackCallbackActive, setPaystackCallbackActive] = useState(
     () => isPaymentReturnPath() || hasPaystackCallbackInUrl()
@@ -410,6 +425,7 @@ export function App() {
   const isAuthedRef = useRef(isAuthed);
   const userRef = useRef(user);
   const logoutInProgressRef = useRef(false);
+  const sessionRestoreStartedAtRef = useRef<number | null>(null);
 
   const currentPathname = typeof window !== "undefined" ? normalizePath(window.location.pathname) : "/";
   const activeAuthPath = getAuthPath(currentPathname) ?? authPath;
@@ -443,6 +459,25 @@ export function App() {
     !isPublicSurface &&
     profileComplete === true &&
     !showComplianceGate;
+  useEffect(() => {
+    setHydrationDebugState({
+      memberHydrating,
+      memberSessionReady,
+      memberSessionEpoch,
+      authLoading,
+      isAuthed,
+      profileComplete,
+      memberAccessReady
+    });
+  }, [
+    memberHydrating,
+    memberSessionReady,
+    memberSessionEpoch,
+    authLoading,
+    isAuthed,
+    profileComplete,
+    memberAccessReady
+  ]);
   const memberSurfaceBooting =
     isAuthed &&
     isMemberAppPath(currentPathname) &&
@@ -452,6 +487,46 @@ export function App() {
       openAppLoading ||
       !memberSessionReady ||
       profileComplete === null);
+
+  const sessionRestoreActive = useMemo(() => {
+    const onPublic = isPublicWebRoute(currentPathname) && !paystackCallbackActive;
+    if (onPublic || !isMemberAppPath(currentPathname)) return false;
+    const guard = evaluateMemberRouteGuard({
+      authLoading,
+      memberHydrating,
+      memberSessionReady,
+      isAuthed,
+      profileComplete,
+      pathname: currentPathname
+    });
+    const blockingRestore =
+      guard.phase === "loading" ||
+      (requiresMemberRestoreBlocking(currentPathname, isNative) && (authLoading || memberHydrating));
+    return blockingRestore || Boolean(guard.sessionPending) || memberSurfaceBooting;
+  }, [
+    authLoading,
+    currentPathname,
+    isAuthed,
+    isNative,
+    memberHydrating,
+    memberSessionReady,
+    memberSurfaceBooting,
+    paystackCallbackActive,
+    profileComplete
+  ]);
+
+  useEffect(() => {
+    if (sessionRestoreActive) {
+      if (sessionRestoreStartedAtRef.current === null) {
+        sessionRestoreStartedAtRef.current = performance.now();
+      }
+      return;
+    }
+    if (sessionRestoreStartedAtRef.current !== null) {
+      recordSessionRestoreDuration(performance.now() - sessionRestoreStartedAtRef.current);
+      sessionRestoreStartedAtRef.current = null;
+    }
+  }, [sessionRestoreActive]);
 
   useEffect(() => {
     if (!isAuthed) return;
@@ -495,18 +570,13 @@ export function App() {
   }, [complianceSyncPending, isAuthed, user]);
 
   useEffect(() => {
-    if (!memberHydrating) {
+    if (!memberHydrating && !authLoading) {
       setBootStalled(false);
       return;
     }
-    const timer = window.setTimeout(() => setBootStalled(true), 20_000);
+    const timer = window.setTimeout(() => setBootStalled(true), 5000);
     return () => window.clearTimeout(timer);
-  }, [memberHydrating]);
-
-
-  useEffect(() => {
-    rememberSuccessfulRoute();
-  }, []);
+  }, [memberHydrating, authLoading]);
 
   useEffect(() => {
     if (!safeModeActive) return;
@@ -656,6 +726,10 @@ export function App() {
       setBooting(false);
       return;
     }
+    if (warmMemberLaunch) {
+      setBooting(false);
+      return;
+    }
     let cancelled = false;
     const minMs = isNative ? 1200 : 800;
     const start = Date.now();
@@ -680,7 +754,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [isNative]);
+  }, [isNative, warmMemberLaunch]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.theme, theme);
@@ -719,6 +793,7 @@ export function App() {
   }, []);
 
   const markMemberSessionReady = useCallback(() => {
+    debugSessionCall("markMemberSessionReady");
     setMemberSessionReady(true);
     setMemberSessionEpoch((epoch) => epoch + 1);
   }, []);
@@ -739,6 +814,7 @@ export function App() {
         onBootstrap?: (result: MemberSessionBootstrapResult) => void;
       }
     ) => {
+      debugSessionCall("scheduleMemberBundleHydration");
       setMemberHydrating(true);
       clearMemberSessionReady();
       let settled = false;
@@ -815,6 +891,7 @@ export function App() {
   );
 
   const applyRestoredSession = useCallback(async (profile: UserProfile, options?: { blocking?: boolean }) => {
+    debugSessionCall("applyRestoredSession");
     const blocking = options?.blocking ?? true;
     flowLog("session_restore_start", { blocking });
     clearMemberSessionReady();
@@ -1454,10 +1531,9 @@ export function App() {
 
   useEffect(() => {
     if (!authLoading) {
-      setBootStalled(false);
       return;
     }
-    const timer = window.setTimeout(() => setBootStalled(true), 12000);
+    const timer = window.setTimeout(() => setBootStalled(true), 5000);
     return () => window.clearTimeout(timer);
   }, [authLoading]);
 
@@ -1498,7 +1574,6 @@ export function App() {
       sessionRestored = true;
       const blocking = options?.blocking ?? shouldBlockBoot;
       const profile = profileFromSessionUser(session.user);
-      const authUserId = String(session.user.id || "").trim();
 
       if (!blocking) {
         await applyRestoredSession(profile, { blocking: false });
@@ -1513,20 +1588,37 @@ export function App() {
         phone: stored.phone || profile.phone,
         phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
       });
+      const cached = readCachedMemberSession();
+      setMemberAppEntered(true);
       setMemberHydrating(true);
-      clearMemberSessionReady();
+      if (cached.hasSession) {
+        markMemberSessionReady();
+        setProfileComplete(cached.profileCompleteKnown);
+      } else {
+        clearMemberSessionReady();
+      }
       setUser(merged);
       setIsAuthed(true);
       recordStreakActivity();
       checkPremiumTrialExpiry();
 
+      const redirectToSignIn = () => {
+        setIsAuthed(false);
+        setProfileComplete(false);
+        clearMemberSessionReady();
+        setMemberHydrating(false);
+        setAuthPath(AUTH_LOGIN_PATH);
+        navigateToPath(AUTH_LOGIN_PATH, true);
+      };
+
       try {
-        const validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
+        let validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
         if (!validated.ok) {
-          setIsAuthed(false);
-          setProfileComplete(false);
-          clearMemberSessionReady();
-          setMemberHydrating(false);
+          await new Promise((resolve) => window.setTimeout(resolve, 400));
+          validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
+        }
+        if (!validated.ok) {
+          redirectToSignIn();
           return;
         }
         const appSession = await goToApp({
@@ -1534,10 +1626,7 @@ export function App() {
           validatedAuth: validated
         });
         if (!appSession.ok) {
-          setIsAuthed(false);
-          setProfileComplete(false);
-          clearMemberSessionReady();
-          setMemberHydrating(false);
+          redirectToSignIn();
           return;
         }
         applyGoToAppResult(appSession, { blocking: false, source: "session_restore" });
@@ -1551,8 +1640,7 @@ export function App() {
         }
         flowLog("session_restore_done");
       } catch {
-        setMemberHydrating(false);
-        clearMemberSessionReady();
+        redirectToSignIn();
       }
     };
 
@@ -2088,19 +2176,6 @@ export function App() {
       (requiresMemberRestoreBlocking(window.location.pathname, isNative) &&
         (authLoading || memberHydrating)));
 
-  if (shouldBlockForAuthRestore) {
-    return (
-      <div className={`app ${theme}`}>
-        <Preloader
-          exiting={false}
-          subtitle={memberHydrating ? "Restoring your account…" : "Restoring your session…"}
-          showReload={bootStalled}
-          onReload={reloadApp}
-        />
-      </div>
-    );
-  }
-
   if (
     memberRouteGuard &&
     (memberRouteGuard.phase === "redirect" || memberRouteGuard.phase === "unauthenticated")
@@ -2109,6 +2184,7 @@ export function App() {
       <div className={`app ${theme}`}>
         <Preloader
           exiting={false}
+          variant="minimal"
           subtitle="Redirecting…"
           showReload={bootStalled}
           onReload={reloadApp}
@@ -2254,6 +2330,7 @@ export function App() {
         <div className={`app ${theme}`}>
           <Preloader
             exiting={false}
+            variant="minimal"
             subtitle={
               isUnknownSignalConciergeSubroute(currentPathname)
                 ? "Redirecting…"
@@ -2684,11 +2761,7 @@ export function App() {
                 : "app-main--experience"
           }`}
         >
-          {memberSurfaceBooting && (
-            <LazyRouteFallback
-              subtitle={memberHydrating ? "Restoring your account…" : "Restoring your session…"}
-            />
-          )}
+          {memberSurfaceBooting ? <InlineRestoreIndicator /> : null}
           {isAuthed &&
             memberAppEntered &&
             memberSessionReady &&
@@ -2923,6 +2996,13 @@ export function App() {
         onPurchaseBoost={handlePurchaseBoost}
         loading={paymentLoading}
         memberCity={getMemberCity()}
+      />
+
+      <SessionRestoreOverlay
+        active={sessionRestoreActive}
+        subtitle="Restoring your session…"
+        onRetry={reloadApp}
+        onSignOut={handleLogout}
       />
     </div>
     </PremiumCheckoutProvider>

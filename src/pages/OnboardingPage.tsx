@@ -394,7 +394,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   if (!gateReady) {
     return (
       <div className="page onboarding-page onboarding-page--gate">
-        <Preloader exiting={false} subtitle="Restoring your account…" />
+        <Preloader exiting={false} variant="minimal" subtitle="Restoring your session…" />
       </div>
     );
   }

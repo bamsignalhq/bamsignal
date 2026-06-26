@@ -1,0 +1,1284 @@
+{
+  "runId": "drf-5b611bba",
+  "generatedAt": "2026-06-26T16:47:16.766Z",
+  "mode": "static",
+  "driftScore": 0,
+  "passed": false,
+  "counts": {
+    "critical": 17,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "warning": 71
+  },
+  "domains": [
+    {
+      "id": "environment-variables",
+      "label": "Environment variables",
+      "findingsCount": 67,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "feature-flags",
+      "label": "Feature Flags",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "remote-config",
+      "label": "Remote Config",
+      "findingsCount": 2,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "permissions",
+      "label": "Permissions",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "roles",
+      "label": "Roles",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "notification-templates",
+      "label": "Notification templates",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "payment-configuration",
+      "label": "Payment configuration",
+      "findingsCount": 5,
+      "criticalCount": 5,
+      "passed": false
+    },
+    {
+      "id": "sendchamp",
+      "label": "Sendchamp",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "resend",
+      "label": "Resend",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "firebase",
+      "label": "Firebase",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "supabase",
+      "label": "Supabase",
+      "findingsCount": 7,
+      "criticalCount": 7,
+      "passed": false
+    },
+    {
+      "id": "storage-buckets",
+      "label": "Storage buckets",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "cron-schedules",
+      "label": "Cron schedules",
+      "findingsCount": 2,
+      "criticalCount": 1,
+      "passed": false
+    }
+  ],
+  "findings": [
+    {
+      "id": "unused-secret-GOMODCACHE",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "GOMODCACHE present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "GOMODCACHE",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-_ZO_DOCTOR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "_ZO_DOCTOR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "_ZO_DOCTOR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-PUPPETEER_CACHE_DIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "PUPPETEER_CACHE_DIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "PUPPETEER_CACHE_DIR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-VSCODE_CRASH_REPORTER_PROCESS_TYPE",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "VSCODE_CRASH_REPORTER_PROCESS_TYPE present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "VSCODE_CRASH_REPORTER_PROCESS_TYPE",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-NODE",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "NODE present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "NODE",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-INIT_CWD",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "INIT_CWD present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "INIT_CWD",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-ANDROID_HOME",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "ANDROID_HOME present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "ANDROID_HOME",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-TERM",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "TERM present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "TERM",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-SHELL",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "SHELL present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "SHELL",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-VSCODE_PROCESS_TITLE",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "VSCODE_PROCESS_TITLE present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "VSCODE_PROCESS_TITLE",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-TMPDIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "TMPDIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "TMPDIR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CURSOR_WORKSPACE_LABEL",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CURSOR_WORKSPACE_LABEL present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CURSOR_WORKSPACE_LABEL",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-PIP_CACHE_DIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "PIP_CACHE_DIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "PIP_CACHE_DIR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-MallocNanoZone",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "MallocNanoZone present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "MallocNanoZone",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-COLOR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "COLOR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "COLOR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-NO_COLOR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "NO_COLOR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "NO_COLOR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CURSOR_LAYOUT",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CURSOR_LAYOUT present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CURSOR_LAYOUT",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CURSOR_CONVERSATION_ID",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CURSOR_CONVERSATION_ID present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CURSOR_CONVERSATION_ID",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-NX_CACHE_DIRECTORY",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "NX_CACHE_DIRECTORY present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "NX_CACHE_DIRECTORY",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CYPRESS_CACHE_FOLDER",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CYPRESS_CACHE_FOLDER present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CYPRESS_CACHE_FOLDER",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-USER",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "USER present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "USER",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CCACHE_DIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CCACHE_DIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CCACHE_DIR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-COMMAND_MODE",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "COMMAND_MODE present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "COMMAND_MODE",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-YARN_CACHE_FOLDER",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "YARN_CACHE_FOLDER present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "YARN_CACHE_FOLDER",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-SSH_AUTH_SOCK",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "SSH_AUTH_SOCK present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "SSH_AUTH_SOCK",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-__CF_USER_TEXT_ENCODING",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "__CF_USER_TEXT_ENCODING present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "__CF_USER_TEXT_ENCODING",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-BUN_INSTALL_CACHE_DIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "BUN_INSTALL_CACHE_DIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "BUN_INSTALL_CACHE_DIR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-HOMEBREW_CACHE",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "HOMEBREW_CACHE present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "HOMEBREW_CACHE",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-PATH",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "PATH present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "PATH",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-_",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "_ present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "_",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-__CFBundleIdentifier",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "__CFBundleIdentifier present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "__CFBundleIdentifier",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CP_HOME_DIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CP_HOME_DIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CP_HOME_DIR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-PWD",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "PWD present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "PWD",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-VSCODE_HANDLES_UNCAUGHT_ERRORS",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "VSCODE_HANDLES_UNCAUGHT_ERRORS present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "VSCODE_HANDLES_UNCAUGHT_ERRORS",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-EDITOR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "EDITOR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "EDITOR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-VSCODE_ESM_ENTRYPOINT",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "VSCODE_ESM_ENTRYPOINT present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "VSCODE_ESM_ENTRYPOINT",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CONDA_PKGS_DIRS",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CONDA_PKGS_DIRS present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CONDA_PKGS_DIRS",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CURSOR_AGENT",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CURSOR_AGENT present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CURSOR_AGENT",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-LANG",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "LANG present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "LANG",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-PLAYWRIGHT_BROWSERS_PATH",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "PLAYWRIGHT_BROWSERS_PATH present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "PLAYWRIGHT_BROWSERS_PATH",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-XPC_FLAGS",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "XPC_FLAGS present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "XPC_FLAGS",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-FORCE_COLOR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "FORCE_COLOR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "FORCE_COLOR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-MACH_PORT_RENDEZVOUS_PEER_VALDATION",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "MACH_PORT_RENDEZVOUS_PEER_VALDATION present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "MACH_PORT_RENDEZVOUS_PEER_VALDATION",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-GEM_SPEC_CACHE",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "GEM_SPEC_CACHE present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "GEM_SPEC_CACHE",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-XPC_SERVICE_NAME",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "XPC_SERVICE_NAME present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "XPC_SERVICE_NAME",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-GRADLE_USER_HOME",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "GRADLE_USER_HOME present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "GRADLE_USER_HOME",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-SHLVL",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "SHLVL present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "SHLVL",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-HOME",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "HOME present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "HOME",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-VSCODE_NLS_CONFIG",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "VSCODE_NLS_CONFIG present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "VSCODE_NLS_CONFIG",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-PNPM_STORE_PATH",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "PNPM_STORE_PATH present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "PNPM_STORE_PATH",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-BUNDLE_PATH",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "BUNDLE_PATH present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "BUNDLE_PATH",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-TURBO_CACHE_DIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "TURBO_CACHE_DIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "TURBO_CACHE_DIR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-NUGET_PACKAGES",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "NUGET_PACKAGES present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "NUGET_PACKAGES",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-NPM_CONFIG_CACHE",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "NPM_CONFIG_CACHE present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "NPM_CONFIG_CACHE",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-LOGNAME",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "LOGNAME present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "LOGNAME",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-GOCACHE",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "GOCACHE present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "GOCACHE",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CURSOR_RIPGREP_PATH",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CURSOR_RIPGREP_PATH present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CURSOR_RIPGREP_PATH",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-VSCODE_IPC_HOOK",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "VSCODE_IPC_HOOK present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "VSCODE_IPC_HOOK",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-VSCODE_CODE_CACHE_PATH",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "VSCODE_CODE_CACHE_PATH present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "VSCODE_CODE_CACHE_PATH",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-CARGO_TARGET_DIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "CARGO_TARGET_DIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "CARGO_TARGET_DIR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-VSCODE_PID",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "VSCODE_PID present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "VSCODE_PID",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-AGENT_TRANSCRIPTS",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "AGENT_TRANSCRIPTS present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "AGENT_TRANSCRIPTS",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-OSLogRateLimit",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "OSLogRateLimit present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "OSLogRateLimit",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-POETRY_CACHE_DIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "POETRY_CACHE_DIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "POETRY_CACHE_DIR",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-COMPOSER_HOME",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "COMPOSER_HOME present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "COMPOSER_HOME",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-VSCODE_CWD",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "VSCODE_CWD present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "VSCODE_CWD",
+      "passed": false
+    },
+    {
+      "id": "unused-secret-UV_CACHE_DIR",
+      "domainId": "environment-variables",
+      "title": "Unused secret",
+      "detail": "UV_CACHE_DIR present in current environment but not in registry or .env.example.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "variable": "UV_CACHE_DIR",
+      "passed": false
+    },
+    {
+      "id": "missing-DATABASE_URL",
+      "domainId": "supabase",
+      "title": "Missing secret",
+      "detail": "DATABASE_URL required for production but unset.",
+      "severity": "critical",
+      "compareTarget": "production",
+      "variable": "DATABASE_URL",
+      "passed": false
+    },
+    {
+      "id": "missing-SUPABASE_URL",
+      "domainId": "supabase",
+      "title": "Missing secret",
+      "detail": "SUPABASE_URL required for production but unset.",
+      "severity": "critical",
+      "compareTarget": "production",
+      "variable": "SUPABASE_URL",
+      "passed": false
+    },
+    {
+      "id": "missing-SUPABASE_SERVICE_ROLE_KEY",
+      "domainId": "supabase",
+      "title": "Missing secret",
+      "detail": "SUPABASE_SERVICE_ROLE_KEY required for production but unset.",
+      "severity": "critical",
+      "compareTarget": "production",
+      "variable": "SUPABASE_SERVICE_ROLE_KEY",
+      "passed": false
+    },
+    {
+      "id": "missing-COMMAND_CENTER_PIN",
+      "domainId": "authentication",
+      "title": "Missing secret",
+      "detail": "COMMAND_CENTER_PIN required for production but unset.",
+      "severity": "critical",
+      "compareTarget": "production",
+      "variable": "COMMAND_CENTER_PIN",
+      "passed": false
+    },
+    {
+      "id": "missing-PAYSTACK_SECRET_KEY",
+      "domainId": "payment-configuration",
+      "title": "Missing secret",
+      "detail": "PAYSTACK_SECRET_KEY required for production but unset.",
+      "severity": "critical",
+      "compareTarget": "production",
+      "variable": "PAYSTACK_SECRET_KEY",
+      "passed": false
+    },
+    {
+      "id": "missing-VITE_PAYSTACK_PUBLIC_KEY",
+      "domainId": "payment-configuration",
+      "title": "Missing secret",
+      "detail": "VITE_PAYSTACK_PUBLIC_KEY required for production but unset.",
+      "severity": "critical",
+      "compareTarget": "production",
+      "variable": "VITE_PAYSTACK_PUBLIC_KEY",
+      "passed": false
+    },
+    {
+      "id": "missing-CRON_SECRET",
+      "domainId": "operations",
+      "title": "Missing secret",
+      "detail": "CRON_SECRET required for production but unset.",
+      "severity": "critical",
+      "compareTarget": "production",
+      "variable": "CRON_SECRET",
+      "passed": false
+    },
+    {
+      "id": "missing-DATABASE_URL",
+      "domainId": "supabase",
+      "title": "Missing secret",
+      "detail": "DATABASE_URL required for staging but unset.",
+      "severity": "critical",
+      "compareTarget": "staging",
+      "variable": "DATABASE_URL",
+      "passed": false
+    },
+    {
+      "id": "missing-SUPABASE_URL",
+      "domainId": "supabase",
+      "title": "Missing secret",
+      "detail": "SUPABASE_URL required for staging but unset.",
+      "severity": "critical",
+      "compareTarget": "staging",
+      "variable": "SUPABASE_URL",
+      "passed": false
+    },
+    {
+      "id": "missing-SUPABASE_SERVICE_ROLE_KEY",
+      "domainId": "supabase",
+      "title": "Missing secret",
+      "detail": "SUPABASE_SERVICE_ROLE_KEY required for staging but unset.",
+      "severity": "critical",
+      "compareTarget": "staging",
+      "variable": "SUPABASE_SERVICE_ROLE_KEY",
+      "passed": false
+    },
+    {
+      "id": "missing-COMMAND_CENTER_PIN",
+      "domainId": "authentication",
+      "title": "Missing secret",
+      "detail": "COMMAND_CENTER_PIN required for staging but unset.",
+      "severity": "critical",
+      "compareTarget": "staging",
+      "variable": "COMMAND_CENTER_PIN",
+      "passed": false
+    },
+    {
+      "id": "missing-PAYSTACK_SECRET_KEY",
+      "domainId": "payment-configuration",
+      "title": "Missing secret",
+      "detail": "PAYSTACK_SECRET_KEY required for staging but unset.",
+      "severity": "critical",
+      "compareTarget": "staging",
+      "variable": "PAYSTACK_SECRET_KEY",
+      "passed": false
+    },
+    {
+      "id": "missing-VITE_PAYSTACK_PUBLIC_KEY",
+      "domainId": "payment-configuration",
+      "title": "Missing secret",
+      "detail": "VITE_PAYSTACK_PUBLIC_KEY required for staging but unset.",
+      "severity": "critical",
+      "compareTarget": "staging",
+      "variable": "VITE_PAYSTACK_PUBLIC_KEY",
+      "passed": false
+    },
+    {
+      "id": "missing-CRON_SECRET",
+      "domainId": "operations",
+      "title": "Missing secret",
+      "detail": "CRON_SECRET required for staging but unset.",
+      "severity": "critical",
+      "compareTarget": "staging",
+      "variable": "CRON_SECRET",
+      "passed": false
+    },
+    {
+      "severity": "low",
+      "compareTarget": "current",
+      "id": "permissions-registry-pass",
+      "domainId": "permissions",
+      "title": "Permissions registry present",
+      "detail": "48 permission slugs and route guards verified statically.",
+      "passed": true
+    },
+    {
+      "severity": "low",
+      "compareTarget": "current",
+      "id": "roles-registry-pass",
+      "domainId": "roles",
+      "title": "Roles registry present",
+      "detail": "10 roles defined in permissionTypes.ts.",
+      "passed": true
+    },
+    {
+      "severity": "low",
+      "compareTarget": "current",
+      "id": "remote-config-defaults",
+      "domainId": "remote-config",
+      "title": "Remote config baseline",
+      "detail": "20 server defaults registered in remoteConfig.js.",
+      "passed": true
+    },
+    {
+      "severity": "low",
+      "compareTarget": "current",
+      "id": "feature-flag-seed",
+      "domainId": "feature-flags",
+      "title": "Feature flag baseline",
+      "detail": "11 seeded flags in featureFlagPlatform.js.",
+      "passed": true
+    },
+    {
+      "severity": "low",
+      "compareTarget": "current",
+      "id": "notification-templates-static",
+      "domainId": "notification-templates",
+      "title": "Notification templates registered",
+      "detail": "7 concierge email templates in conciergeEmailService.js.",
+      "passed": true
+    },
+    {
+      "severity": "critical",
+      "compareTarget": "current",
+      "id": "payment-secret-missing",
+      "domainId": "payment-configuration",
+      "title": "Paystack secret missing",
+      "detail": "PAYSTACK_SECRET_KEY not set in current environment.",
+      "passed": false
+    },
+    {
+      "severity": "warning",
+      "compareTarget": "current",
+      "id": "sendchamp-missing",
+      "domainId": "sendchamp",
+      "title": "Sendchamp not configured",
+      "detail": "SENDCHAMP_API_KEY unset — WhatsApp channel may be degraded.",
+      "passed": false
+    },
+    {
+      "severity": "low",
+      "compareTarget": "current",
+      "id": "resend-present",
+      "domainId": "resend",
+      "title": "Resend configured",
+      "detail": "RESEND_API_KEY present in current environment.",
+      "passed": true
+    },
+    {
+      "severity": "warning",
+      "compareTarget": "current",
+      "id": "firebase-partial",
+      "domainId": "firebase",
+      "title": "Firebase configuration incomplete",
+      "detail": "Only 0/4 Firebase variables configured.",
+      "passed": false
+    },
+    {
+      "severity": "critical",
+      "compareTarget": "current",
+      "id": "supabase-missing",
+      "domainId": "supabase",
+      "title": "Supabase configuration gap",
+      "detail": "Missing: SUPABASE_SERVICE_ROLE_KEY, DATABASE_URL.",
+      "passed": false
+    },
+    {
+      "severity": "warning",
+      "compareTarget": "current",
+      "id": "storage-bucket-missing",
+      "domainId": "storage-buckets",
+      "title": "Storage bucket unset",
+      "detail": "VITE_FIREBASE_STORAGE_BUCKET not configured.",
+      "passed": false
+    },
+    {
+      "severity": "low",
+      "compareTarget": "current",
+      "id": "cron-scheduler-present",
+      "domainId": "cron-schedules",
+      "title": "Retention cron scheduled",
+      "detail": "Rate-limit retention interval defaults to 360 minutes.",
+      "passed": true
+    },
+    {
+      "severity": "critical",
+      "compareTarget": "current",
+      "id": "cron-secret-missing",
+      "domainId": "cron-schedules",
+      "title": "Cron secret missing",
+      "detail": "CRON_SECRET unset — scheduled job authentication may fail.",
+      "passed": false
+    },
+    {
+      "id": "db-unavailable",
+      "domainId": "remote-config",
+      "title": "Live database drift scan skipped",
+      "detail": "DATABASE_URL not connected — run against staging/production for DB flag/config drift.",
+      "severity": "warning",
+      "compareTarget": "current",
+      "passed": false
+    }
+  ],
+  "unexpectedDrift": 1,
+  "unauthorizedChanges": 0,
+  "configurationMismatches": 0,
+  "missingSecrets": 14,
+  "unusedSecrets": [
+    "GOMODCACHE",
+    "_ZO_DOCTOR",
+    "PUPPETEER_CACHE_DIR",
+    "VSCODE_CRASH_REPORTER_PROCESS_TYPE",
+    "NODE",
+    "INIT_CWD",
+    "ANDROID_HOME",
+    "TERM",
+    "SHELL",
+    "VSCODE_PROCESS_TITLE",
+    "TMPDIR",
+    "CURSOR_WORKSPACE_LABEL",
+    "PIP_CACHE_DIR",
+    "MallocNanoZone",
+    "COLOR",
+    "NO_COLOR",
+    "CURSOR_LAYOUT",
+    "CURSOR_CONVERSATION_ID",
+    "NX_CACHE_DIRECTORY",
+    "CYPRESS_CACHE_FOLDER",
+    "USER",
+    "CCACHE_DIR",
+    "COMMAND_MODE",
+    "YARN_CACHE_FOLDER",
+    "SSH_AUTH_SOCK",
+    "__CF_USER_TEXT_ENCODING",
+    "BUN_INSTALL_CACHE_DIR",
+    "HOMEBREW_CACHE",
+    "PATH",
+    "_",
+    "__CFBundleIdentifier",
+    "CP_HOME_DIR",
+    "PWD",
+    "VSCODE_HANDLES_UNCAUGHT_ERRORS",
+    "EDITOR",
+    "VSCODE_ESM_ENTRYPOINT",
+    "CONDA_PKGS_DIRS",
+    "CURSOR_AGENT",
+    "LANG",
+    "PLAYWRIGHT_BROWSERS_PATH",
+    "XPC_FLAGS",
+    "FORCE_COLOR",
+    "MACH_PORT_RENDEZVOUS_PEER_VALDATION",
+    "GEM_SPEC_CACHE",
+    "XPC_SERVICE_NAME",
+    "GRADLE_USER_HOME",
+    "SHLVL",
+    "HOME",
+    "VSCODE_NLS_CONFIG",
+    "PNPM_STORE_PATH",
+    "BUNDLE_PATH",
+    "TURBO_CACHE_DIR",
+    "NUGET_PACKAGES",
+    "NPM_CONFIG_CACHE",
+    "LOGNAME",
+    "GOCACHE",
+    "CURSOR_RIPGREP_PATH",
+    "VSCODE_IPC_HOOK",
+    "VSCODE_CODE_CACHE_PATH",
+    "CARGO_TARGET_DIR",
+    "VSCODE_PID",
+    "AGENT_TRANSCRIPTS",
+    "OSLogRateLimit",
+    "POETRY_CACHE_DIR",
+    "COMPOSER_HOME",
+    "VSCODE_CWD",
+    "UV_CACHE_DIR"
+  ],
+  "recommendations": [
+    {
+      "id": "fix-missing-DATABASE_URL",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "DATABASE_URL required for production but unset."
+    },
+    {
+      "id": "fix-missing-SUPABASE_URL",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "SUPABASE_URL required for production but unset."
+    },
+    {
+      "id": "fix-missing-SUPABASE_SERVICE_ROLE_KEY",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "SUPABASE_SERVICE_ROLE_KEY required for production but unset."
+    },
+    {
+      "id": "fix-missing-COMMAND_CENTER_PIN",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "COMMAND_CENTER_PIN required for production but unset."
+    },
+    {
+      "id": "fix-missing-PAYSTACK_SECRET_KEY",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "PAYSTACK_SECRET_KEY required for production but unset."
+    },
+    {
+      "id": "fix-missing-VITE_PAYSTACK_PUBLIC_KEY",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "VITE_PAYSTACK_PUBLIC_KEY required for production but unset."
+    },
+    {
+      "id": "fix-missing-CRON_SECRET",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "CRON_SECRET required for production but unset."
+    },
+    {
+      "id": "fix-missing-DATABASE_URL",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "DATABASE_URL required for staging but unset."
+    },
+    {
+      "id": "fix-missing-SUPABASE_URL",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "SUPABASE_URL required for staging but unset."
+    },
+    {
+      "id": "fix-missing-SUPABASE_SERVICE_ROLE_KEY",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "SUPABASE_SERVICE_ROLE_KEY required for staging but unset."
+    },
+    {
+      "id": "fix-missing-COMMAND_CENTER_PIN",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "COMMAND_CENTER_PIN required for staging but unset."
+    },
+    {
+      "id": "fix-missing-PAYSTACK_SECRET_KEY",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "PAYSTACK_SECRET_KEY required for staging but unset."
+    },
+    {
+      "id": "fix-missing-VITE_PAYSTACK_PUBLIC_KEY",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "VITE_PAYSTACK_PUBLIC_KEY required for staging but unset."
+    },
+    {
+      "id": "fix-missing-CRON_SECRET",
+      "priority": "critical",
+      "title": "Missing secret",
+      "detail": "CRON_SECRET required for staging but unset."
+    },
+    {
+      "id": "fix-payment-secret-missing",
+      "priority": "critical",
+      "title": "Paystack secret missing",
+      "detail": "PAYSTACK_SECRET_KEY not set in current environment."
+    },
+    {
+      "id": "fix-supabase-missing",
+      "priority": "critical",
+      "title": "Supabase configuration gap",
+      "detail": "Missing: SUPABASE_SERVICE_ROLE_KEY, DATABASE_URL."
+    },
+    {
+      "id": "fix-cron-secret-missing",
+      "priority": "critical",
+      "title": "Cron secret missing",
+      "detail": "CRON_SECRET unset — scheduled job authentication may fail."
+    },
+    {
+      "id": "remove-GOMODCACHE",
+      "priority": "medium",
+      "title": "Review unused secret",
+      "detail": "GOMODCACHE is not documented in .env.example or ENV_REGISTRY.",
+      "variable": "GOMODCACHE"
+    },
+    {
+      "id": "remove-_ZO_DOCTOR",
+      "priority": "medium",
+      "title": "Review unused secret",
+      "detail": "_ZO_DOCTOR is not documented in .env.example or ENV_REGISTRY.",
+      "variable": "_ZO_DOCTOR"
+    },
+    {
+      "id": "remove-PUPPETEER_CACHE_DIR",
+      "priority": "medium",
+      "title": "Review unused secret",
+      "detail": "PUPPETEER_CACHE_DIR is not documented in .env.example or ENV_REGISTRY.",
+      "variable": "PUPPETEER_CACHE_DIR"
+    },
+    {
+      "id": "remove-VSCODE_CRASH_REPORTER_PROCESS_TYPE",
+      "priority": "medium",
+      "title": "Review unused secret",
+      "detail": "VSCODE_CRASH_REPORTER_PROCESS_TYPE is not documented in .env.example or ENV_REGISTRY.",
+      "variable": "VSCODE_CRASH_REPORTER_PROCESS_TYPE"
+    },
+    {
+      "id": "remove-NODE",
+      "priority": "medium",
+      "title": "Review unused secret",
+      "detail": "NODE is not documented in .env.example or ENV_REGISTRY.",
+      "variable": "NODE"
+    },
+    {
+      "id": "remove-INIT_CWD",
+      "priority": "medium",
+      "title": "Review unused secret",
+      "detail": "INIT_CWD is not documented in .env.example or ENV_REGISTRY.",
+      "variable": "INIT_CWD"
+    }
+  ],
+  "failures": [
+    "Missing secret: DATABASE_URL required for production but unset.",
+    "Missing secret: SUPABASE_URL required for production but unset.",
+    "Missing secret: SUPABASE_SERVICE_ROLE_KEY required for production but unset.",
+    "Missing secret: COMMAND_CENTER_PIN required for production but unset.",
+    "Missing secret: PAYSTACK_SECRET_KEY required for production but unset.",
+    "Missing secret: VITE_PAYSTACK_PUBLIC_KEY required for production but unset.",
+    "Missing secret: CRON_SECRET required for production but unset.",
+    "Missing secret: DATABASE_URL required for staging but unset.",
+    "Missing secret: SUPABASE_URL required for staging but unset.",
+    "Missing secret: SUPABASE_SERVICE_ROLE_KEY required for staging but unset.",
+    "Missing secret: COMMAND_CENTER_PIN required for staging but unset.",
+    "Missing secret: PAYSTACK_SECRET_KEY required for staging but unset.",
+    "Missing secret: VITE_PAYSTACK_PUBLIC_KEY required for staging but unset.",
+    "Missing secret: CRON_SECRET required for staging but unset.",
+    "Paystack secret missing: PAYSTACK_SECRET_KEY not set in current environment.",
+    "Supabase configuration gap: Missing: SUPABASE_SERVICE_ROLE_KEY, DATABASE_URL.",
+    "Cron secret missing: CRON_SECRET unset — scheduled job authentication may fail."
+  ],
+  "source": "cli"
+}

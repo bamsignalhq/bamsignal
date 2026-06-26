@@ -1,5 +1,5 @@
 /**
- * Data Governance, Privacy & Retention Center™ — server-side stewardship logic.
+ * Data Governance & Privacy Center™ — server-side stewardship logic.
  */
 
 export const DATA_GOVERNANCE_CENTER_DB_TABLES = [
@@ -8,14 +8,44 @@ export const DATA_GOVERNANCE_CENTER_DB_TABLES = [
   "privacy_requests",
   "consent_records",
   "regional_policies",
-  "sensitive_data_registers"
+  "sensitive_data_registers",
+  "legal_holds",
+  "policy_versions",
+  "governance_audit_log",
+  "audit_exports"
 ];
+
+export const DATA_GOVERNANCE_MODULES = [
+  "consent-management",
+  "data-retention",
+  "deletion-requests",
+  "export-requests",
+  "privacy-requests",
+  "legal-holds",
+  "audit-exports"
+];
+
+export const DATA_GOVERNANCE_TOOLS = [
+  "export-member",
+  "delete-member",
+  "anonymize",
+  "retention-rules",
+  "policy-versions"
+];
+
+export const GOVERNANCE_TRAIL_ACTIONS = ["accessed", "exported", "deleted", "approved"];
 
 export function getDataGovernanceCenterDatabaseTableManifest() {
   return DATA_GOVERNANCE_CENTER_DB_TABLES.map((tableName) => ({
     tableName,
     domain: "data-governance",
-    migrationRef: "0013_data_governance_center.sql",
+    migrationRef:
+      tableName === "legal_holds" ||
+      tableName === "policy_versions" ||
+      tableName === "governance_audit_log" ||
+      tableName === "audit_exports"
+        ? "202606261400_data_governance_privacy_center.sql"
+        : "202606252700_data_governance_center.sql",
     hasUuidPrimaryKey: true,
     auditFields: ["created_at", "updated_at", "created_by", "updated_by"]
   }));
@@ -35,7 +65,11 @@ export function buildDataGovernanceSummary(
   privacyRequests,
   consentRecords,
   regionalPolicies,
-  sensitiveRegisters
+  sensitiveRegisters,
+  legalHolds = [],
+  auditExports = [],
+  policyVersions = [],
+  governanceAudit = []
 ) {
   const openPrivacyRequests = privacyRequests.filter(
     (item) => !["completed", "rejected"].includes(item.status)
@@ -54,7 +88,11 @@ export function buildDataGovernanceSummary(
     withdrawnConsents,
     regionalPolicies: regionalPolicies.filter((item) => item.active).length,
     sensitiveRegisters: sensitiveRegisters.length,
-    highlyConfidentialCount
+    highlyConfidentialCount,
+    activeLegalHolds: legalHolds.filter((item) => item.active).length,
+    auditExportCount: auditExports.length,
+    policyVersionCount: policyVersions.filter((item) => item.active).length,
+    governanceAuditCount: governanceAudit.length
   };
 }
 
@@ -82,6 +120,21 @@ export function filterPrivacyRequestsByArea(requests, areaId) {
     return requests.filter((item) => item.requestType === "consent-withdrawal");
   }
   return requests;
+}
+
+export function filterDeletionRequests(requests) {
+  return requests.filter((item) => item.requestType === "delete");
+}
+
+export function filterExportRequests(requests) {
+  return requests.filter((item) => item.requestType === "download");
+}
+
+export function mapGovernanceToolToAuditAction(toolId) {
+  if (toolId === "export-member") return "exported";
+  if (toolId === "delete-member" || toolId === "anonymize") return "deleted";
+  if (toolId === "policy-versions") return "approved";
+  return "accessed";
 }
 
 export function appendConsentAudit(consent, actor, action) {

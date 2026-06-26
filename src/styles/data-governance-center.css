@@ -225,3 +225,90 @@
     grid-template-columns: 1fr;
   }
 }
+
+.data-governance-center-page__toast {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(140, 255, 180, 0.35);
+  background: rgba(140, 255, 180, 0.08);
+  color: rgba(180, 255, 200, 0.95);
+  font-size: 0.86rem;
+}
+
+.governance-tools-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.governance-tool-chip {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+}
+
+.governance-tool-chip:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.governance-tool-chip strong {
+  font-size: 0.9rem;
+}
+
+.governance-tool-chip span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.governance-audit-card__action {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.governance-audit-card__action--accessed {
+  color: rgba(160, 200, 255, 0.95);
+}
+
+.governance-audit-card__action--exported {
+  color: rgba(140, 255, 180, 0.95);
+}
+
+.governance-audit-card__action--deleted {
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.governance-audit-card__action--approved {
+  color: rgba(255, 220, 140, 0.95);
+}
+
+.legal-holds-card__status.is-active,
+.policy-versions-card__status.is-active {
+  color: rgba(140, 255, 180, 0.95);
+  font-size: 0.74rem;
+}
+
+.legal-holds-card__status,
+.policy-versions-card__status {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.audit-exports-card__format {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(180, 220, 255, 0.95);
+}

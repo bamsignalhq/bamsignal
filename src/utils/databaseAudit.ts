@@ -158,7 +158,11 @@ export const DATA_GOVERNANCE_CENTER_SCHEMA_TABLES = [
   "privacy_requests",
   "consent_records",
   "regional_policies",
-  "sensitive_data_registers"
+  "sensitive_data_registers",
+  "legal_holds",
+  "policy_versions",
+  "governance_audit_log",
+  "audit_exports"
 ] as const;
 
 /** Tables from migrations/0014_api_platform.sql */
@@ -895,7 +899,7 @@ const TABLE_MANIFEST: TableManifest[] = [
     indexes: ["data_inventory_items_class_idx"],
     constraints: ["uuid primary key", "inventory_ref unique"],
     defaultHealth: "needs-migration",
-    note: "Data Governance, Privacy & Retention Center™"
+    note: "Data Governance & Privacy Center™"
   },
   {
     tableName: "retention_policies",
@@ -1384,7 +1388,7 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     domainId: "qa",
     engine: "dataGovernanceCenterEngine.ts",
     expectedTable: "data_inventory_items",
-    note: "Data Governance, Privacy & Retention Center™ — dual-write via dataGovernanceCenter.js"
+    note: "Data Governance & Privacy Center™ — dual-write via dataGovernanceCenter.js"
   },
   {
     storageKey: "bamsignal.apiPlatform.v1",

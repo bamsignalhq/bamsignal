@@ -2,6 +2,7 @@ import type {
   ConsentStatusId,
   DataClassId,
   DataGovernanceAreaId,
+  GovernanceTrailActionId,
   PrivacyRequestStatusId,
   PrivacyRequestTypeId,
   RetentionCategoryId
@@ -80,6 +81,46 @@ export type SensitiveDataRegister = {
   lastAuditAt: string;
 };
 
+export type LegalHoldRecord = {
+  id: string;
+  holdRef: string;
+  memberRef: string;
+  reason: string;
+  placedBy: string;
+  placedAt: string;
+  expiresAt: string | null;
+  active: boolean;
+};
+
+export type PolicyVersionRecord = {
+  id: string;
+  policyRef: string;
+  name: string;
+  version: number;
+  publishedAt: string;
+  publishedBy: string;
+  active: boolean;
+};
+
+export type GovernanceAuditRecord = {
+  id: string;
+  action: GovernanceTrailActionId;
+  actor: string;
+  target: string;
+  at: string;
+  detail: string;
+};
+
+export type AuditExportRecord = {
+  id: string;
+  exportRef: string;
+  scope: string;
+  requestedBy: string;
+  generatedAt: string;
+  recordCount: number;
+  format: string;
+};
+
 export type DataGovernanceSummary = {
   inventoryCount: number;
   activeRetentionPolicies: number;
@@ -89,6 +130,10 @@ export type DataGovernanceSummary = {
   regionalPolicies: number;
   sensitiveRegisters: number;
   highlyConfidentialCount: number;
+  activeLegalHolds: number;
+  auditExportCount: number;
+  policyVersionCount: number;
+  governanceAuditCount: number;
 };
 
 export type DataGovernanceCenterBundle = {
@@ -97,7 +142,13 @@ export type DataGovernanceCenterBundle = {
   inventory: DataInventoryItem[];
   retentionPolicies: RetentionPolicyRecord[];
   privacyRequests: PrivacyRequestRecord[];
+  deletionRequests: PrivacyRequestRecord[];
+  exportRequests: PrivacyRequestRecord[];
   consentRecords: ConsentRecord[];
   regionalPolicies: RegionalPolicyRecord[];
   sensitiveRegisters: SensitiveDataRegister[];
+  legalHolds: LegalHoldRecord[];
+  policyVersions: PolicyVersionRecord[];
+  governanceAudit: GovernanceAuditRecord[];
+  auditExports: AuditExportRecord[];
 };

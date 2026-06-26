@@ -1,8 +1,59 @@
-/** Data Governance, Privacy & Retention Center™ — institutional data stewardship layer. */
+/** Data Governance & Privacy Center™ — centralized privacy and governance operations. */
 
 import { DATA_GOVERNANCE_CENTER_ADMIN_BRAND } from "./dataGovernanceCenterAdmin";
 
 export const DATA_GOVERNANCE_CENTER_BRAND = DATA_GOVERNANCE_CENTER_ADMIN_BRAND;
+
+export const DATA_GOVERNANCE_REFRESH_INTERVAL_MS = 30_000;
+
+export type DataGovernanceModuleId =
+  | "consent-management"
+  | "data-retention"
+  | "deletion-requests"
+  | "export-requests"
+  | "privacy-requests"
+  | "legal-holds"
+  | "audit-exports";
+
+export type DataGovernanceToolId =
+  | "export-member"
+  | "delete-member"
+  | "anonymize"
+  | "retention-rules"
+  | "policy-versions";
+
+export type GovernanceTrailActionId = "accessed" | "exported" | "deleted" | "approved";
+
+export const DATA_GOVERNANCE_MODULES: { id: DataGovernanceModuleId; label: string }[] = [
+  { id: "consent-management", label: "Consent management" },
+  { id: "data-retention", label: "Data retention" },
+  { id: "deletion-requests", label: "Deletion requests" },
+  { id: "export-requests", label: "Export requests" },
+  { id: "privacy-requests", label: "Privacy requests" },
+  { id: "legal-holds", label: "Legal holds" },
+  { id: "audit-exports", label: "Audit exports" }
+];
+
+export const DATA_GOVERNANCE_MODULE_LABELS: Record<DataGovernanceModuleId, string> =
+  Object.fromEntries(DATA_GOVERNANCE_MODULES.map((item) => [item.id, item.label])) as Record<
+    DataGovernanceModuleId,
+    string
+  >;
+
+export const DATA_GOVERNANCE_TOOLS: { id: DataGovernanceToolId; label: string; hint: string }[] = [
+  { id: "export-member", label: "Export member", hint: "Generate member data export package" },
+  { id: "delete-member", label: "Delete member", hint: "Process verified deletion request" },
+  { id: "anonymize", label: "Anonymize", hint: "Anonymize member PII while preserving aggregates" },
+  { id: "retention-rules", label: "Retention rules", hint: "Review and update retention policies" },
+  { id: "policy-versions", label: "Policy versions", hint: "Publish and track privacy policy versions" }
+];
+
+export const GOVERNANCE_AUDIT_ACTION_LABELS: Record<GovernanceTrailActionId, string> = {
+  accessed: "Accessed",
+  exported: "Exported",
+  deleted: "Deleted",
+  approved: "Approved"
+};
 
 export const DATA_GOVERNANCE_AREAS = [
   { id: "classification", label: "Data Classification" },
@@ -87,7 +138,11 @@ export const DATA_GOVERNANCE_CENTER_DB_TABLES = [
   "privacy_requests",
   "consent_records",
   "regional_policies",
-  "sensitive_data_registers"
+  "sensitive_data_registers",
+  "legal_holds",
+  "policy_versions",
+  "governance_audit_log",
+  "audit_exports"
 ] as const;
 
 export const DATA_GOVERNANCE_AUDIT_ACTIONS = [
@@ -109,5 +164,5 @@ export const DATA_GOVERNANCE_FUTURE_ARCHITECTURE = [
   { id: "ccpa", label: "CCPA" },
   { id: "regional-policies", label: "Regional Policies" },
   { id: "automatic-retention", label: "Automatic Retention" },
-  { id: "legal-hold", label: "Legal Hold" }
+  { id: "automatic-anonymization", label: "Automatic Anonymization" }
 ] as const;

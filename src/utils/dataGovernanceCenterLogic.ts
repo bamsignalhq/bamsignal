@@ -2,10 +2,18 @@ import type {
   ConsentRecord,
   DataGovernanceSummary,
   DataInventoryItem,
+  GovernanceAuditRecord,
+  LegalHoldRecord,
+  PolicyVersionRecord,
   PrivacyRequestRecord,
   RetentionPolicyRecord
 } from "../types/dataGovernanceCenter";
-import type { DataGovernanceAreaId } from "../constants/dataGovernanceCenter";
+import type {
+  DataGovernanceAreaId,
+  DataGovernanceModuleId,
+  DataGovernanceToolId,
+  GovernanceTrailActionId
+} from "../constants/dataGovernanceCenter";
 
 export function buildDataGovernanceSummary(
   inventory: DataInventoryItem[],
@@ -13,7 +21,11 @@ export function buildDataGovernanceSummary(
   privacyRequests: PrivacyRequestRecord[],
   consentRecords: ConsentRecord[],
   regionalPolicies: { active: boolean }[],
-  sensitiveRegisters: unknown[]
+  sensitiveRegisters: unknown[],
+  legalHolds: LegalHoldRecord[],
+  auditExports: unknown[],
+  policyVersions: PolicyVersionRecord[],
+  governanceAudit: GovernanceAuditRecord[]
 ): DataGovernanceSummary {
   const openPrivacyRequests = privacyRequests.filter(
     (item) => !["completed", "rejected"].includes(item.status)
@@ -32,7 +44,11 @@ export function buildDataGovernanceSummary(
     withdrawnConsents,
     regionalPolicies: regionalPolicies.filter((item) => item.active).length,
     sensitiveRegisters: sensitiveRegisters.length,
-    highlyConfidentialCount
+    highlyConfidentialCount,
+    activeLegalHolds: legalHolds.filter((item) => item.active).length,
+    auditExportCount: auditExports.length,
+    policyVersionCount: policyVersions.filter((item) => item.active).length,
+    governanceAuditCount: governanceAudit.length
   };
 }
 
@@ -67,6 +83,45 @@ export function filterPrivacyRequestsByArea(
     return requests.filter((item) => item.requestType === "consent-withdrawal");
   }
   return requests;
+}
+
+export function filterDeletionRequests(requests: PrivacyRequestRecord[]) {
+  return requests.filter((item) => item.requestType === "delete");
+}
+
+export function filterExportRequests(requests: PrivacyRequestRecord[]) {
+  return requests.filter((item) => item.requestType === "download");
+}
+
+export function filterGeneralPrivacyRequests(requests: PrivacyRequestRecord[]) {
+  return requests.filter(
+    (item) =>
+      item.requestType === "correct" ||
+      item.requestType === "processing-restriction" ||
+      item.requestType === "consent-withdrawal"
+  );
+}
+
+export function mapGovernanceToolToAuditAction(toolId: DataGovernanceToolId): GovernanceTrailActionId {
+  if (toolId === "export-member") return "exported";
+  if (toolId === "delete-member" || toolId === "anonymize") return "deleted";
+  if (toolId === "policy-versions") return "approved";
+  return "accessed";
+}
+
+export function buildGovernanceToolDetail(
+  toolId: DataGovernanceToolId,
+  target: string,
+  actor: string
+): string {
+  const labels: Record<DataGovernanceToolId, string> = {
+    "export-member": `Member export package generated for ${target}`,
+    "delete-member": `Member deletion processed for ${target}`,
+    anonymize: `Member PII anonymized for ${target}`,
+    "retention-rules": `Retention rules reviewed by ${actor}`,
+    "policy-versions": `Policy version workflow initiated by ${actor}`
+  };
+  return labels[toolId];
 }
 
 export function appendConsentAudit(
@@ -119,5 +174,13 @@ export function listActiveConsents(consents: ConsentRecord[]) {
 }
 
 export function formatDataGovernanceSummaryLine(summary: DataGovernanceSummary) {
-  return `${summary.inventoryCount} inventory · ${summary.openPrivacyRequests} open requests · ${summary.activeConsents} active consents · ${summary.sensitiveRegisters} sensitive registers`;
+  return `${summary.openPrivacyRequests} open requests · ${summary.activeLegalHolds} legal holds · ${summary.auditExportCount} audit exports · ${summary.governanceAuditCount} audit events`;
+}
+
+export function moduleShowsConsent(moduleId: DataGovernanceModuleId) {
+  return moduleId === "consent-management";
+}
+
+export function moduleShowsRetention(moduleId: DataGovernanceModuleId) {
+  return moduleId === "data-retention";
 }

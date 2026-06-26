@@ -6,13 +6,19 @@ import type { PrivacyRequestRecord } from "../../../types/dataGovernanceCenter";
 
 type PrivacyRequestCardProps = {
   requests: PrivacyRequestRecord[];
+  title?: string;
+  description?: string;
 };
 
 const REQUEST_TYPE_LABELS = Object.fromEntries(
   PRIVACY_REQUEST_TYPES.map((item) => [item.id, item.label])
 ) as Record<PrivacyRequestRecord["requestType"], string>;
 
-export function PrivacyRequestCard({ requests }: PrivacyRequestCardProps) {
+export function PrivacyRequestCard({
+  requests,
+  title = "Privacy requests",
+  description = "Download, delete, correct, consent withdrawal, and processing restriction."
+}: PrivacyRequestCardProps) {
   const sorted = [...requests].sort(
     (left, right) => new Date(right.submittedAt).getTime() - new Date(left.submittedAt).getTime()
   );
@@ -20,8 +26,8 @@ export function PrivacyRequestCard({ requests }: PrivacyRequestCardProps) {
   return (
     <section className="data-governance-card privacy-request-card concierge-consultant-card--glass cc-reveal">
       <header className="data-governance-card__head">
-        <h3>Privacy requests</h3>
-        <p>Download, delete, correct, consent withdrawal, and processing restriction.</p>
+        <h3>{title}</h3>
+        <p>{description}</p>
       </header>
       {sorted.length ? (
         <ul className="data-governance-card__list">

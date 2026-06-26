@@ -1,13 +1,18 @@
 import type { DataGovernanceCenterBundle } from "../types/dataGovernanceCenter";
-import type { DataGovernanceAreaId } from "../constants/dataGovernanceCenter";
+import type { DataGovernanceModuleId } from "../constants/dataGovernanceCenter";
 import {
   buildDataGovernanceSummary,
-  filterInventoryByArea,
-  filterPrivacyRequestsByArea
+  filterDeletionRequests,
+  filterExportRequests,
+  filterGeneralPrivacyRequests
 } from "./dataGovernanceCenterLogic";
 import {
+  listAuditExports,
   listConsentRecords,
   listDataInventory,
+  listGovernanceAudit,
+  listLegalHolds,
+  listPolicyVersions,
   listPrivacyRequests,
   listRegionalPolicies,
   listRetentionPolicies,
@@ -15,7 +20,7 @@ import {
 } from "./dataGovernanceCenterStore";
 
 export function buildDataGovernanceCenterBundle(
-  areaId: DataGovernanceAreaId = "inventory"
+  _moduleId: DataGovernanceModuleId = "consent-management"
 ): DataGovernanceCenterBundle {
   const inventory = listDataInventory();
   const retentionPolicies = listRetentionPolicies();
@@ -23,6 +28,10 @@ export function buildDataGovernanceCenterBundle(
   const consentRecords = listConsentRecords();
   const regionalPolicies = listRegionalPolicies();
   const sensitiveRegisters = listSensitiveDataRegisters();
+  const legalHolds = listLegalHolds();
+  const policyVersions = listPolicyVersions();
+  const governanceAudit = listGovernanceAudit();
+  const auditExports = listAuditExports();
 
   return {
     generatedAt: new Date().toISOString(),
@@ -32,17 +41,23 @@ export function buildDataGovernanceCenterBundle(
       privacyRequests,
       consentRecords,
       regionalPolicies,
-      sensitiveRegisters
+      sensitiveRegisters,
+      legalHolds,
+      auditExports,
+      policyVersions,
+      governanceAudit
     ),
-    inventory: filterInventoryByArea(inventory, areaId),
-    retentionPolicies:
-      areaId === "retention" || areaId === "inventory" ? retentionPolicies : retentionPolicies,
-    privacyRequests: filterPrivacyRequestsByArea(privacyRequests, areaId),
-    consentRecords:
-      areaId === "consent" || areaId === "inventory" ? consentRecords : consentRecords,
-    regionalPolicies:
-      areaId === "regional" || areaId === "inventory" ? regionalPolicies : regionalPolicies,
-    sensitiveRegisters:
-      areaId === "sensitive" || areaId === "inventory" ? sensitiveRegisters : sensitiveRegisters
+    inventory,
+    retentionPolicies,
+    privacyRequests,
+    deletionRequests: filterDeletionRequests(privacyRequests),
+    exportRequests: filterExportRequests(privacyRequests),
+    consentRecords,
+    regionalPolicies,
+    sensitiveRegisters,
+    legalHolds,
+    policyVersions,
+    governanceAudit,
+    auditExports
   };
 }

@@ -1,6 +1,10 @@
 import type {
+  AuditExportRecord,
   ConsentRecord,
   DataInventoryItem,
+  GovernanceAuditRecord,
+  LegalHoldRecord,
+  PolicyVersionRecord,
   PrivacyRequestRecord,
   RegionalPolicyRecord,
   RetentionPolicyRecord,
@@ -257,5 +261,133 @@ export const SENSITIVE_DATA_REGISTER_SEED: SensitiveDataRegister[] = [
     encryptionRequired: true,
     accessRestricted: false,
     lastAuditAt: NOW
+  }
+];
+
+export const LEGAL_HOLD_SEED: LegalHoldRecord[] = [
+  {
+    id: "lh_001",
+    holdRef: "LH-2026-0012",
+    memberRef: "member_***18",
+    reason: "Pending regulatory inquiry — preserve consultation records",
+    placedBy: "legal@bamsignal.com",
+    placedAt: "2026-06-20T09:00:00.000Z",
+    expiresAt: null,
+    active: true
+  },
+  {
+    id: "lh_002",
+    holdRef: "LH-2026-0008",
+    memberRef: "member_***55",
+    reason: "Litigation hold — messaging and payment metadata",
+    placedBy: "governance@bamsignal.com",
+    placedAt: "2026-05-15T14:00:00.000Z",
+    expiresAt: "2026-12-31T23:59:59.000Z",
+    active: true
+  },
+  {
+    id: "lh_003",
+    holdRef: "LH-2026-0003",
+    memberRef: "member_***22",
+    reason: "Resolved dispute — hold released",
+    placedBy: "legal@bamsignal.com",
+    placedAt: "2026-03-01T10:00:00.000Z",
+    expiresAt: "2026-06-01T10:00:00.000Z",
+    active: false
+  }
+];
+
+export const POLICY_VERSION_SEED: PolicyVersionRecord[] = [
+  {
+    id: "pv_001",
+    policyRef: "POL-PRIV-003",
+    name: "BamSignal Privacy Policy",
+    version: 3,
+    publishedAt: "2026-04-01T08:00:00.000Z",
+    publishedBy: "privacy@bamsignal.com",
+    active: true
+  },
+  {
+    id: "pv_002",
+    policyRef: "POL-TERMS-002",
+    name: "Terms of Service",
+    version: 2,
+    publishedAt: "2026-01-15T08:00:00.000Z",
+    publishedBy: "governance@bamsignal.com",
+    active: true
+  },
+  {
+    id: "pv_003",
+    policyRef: "POL-PRIV-002",
+    name: "BamSignal Privacy Policy",
+    version: 2,
+    publishedAt: "2025-09-01T08:00:00.000Z",
+    publishedBy: "privacy@bamsignal.com",
+    active: false
+  }
+];
+
+export const GOVERNANCE_AUDIT_SEED: GovernanceAuditRecord[] = [
+  {
+    id: "ga_001",
+    action: "accessed",
+    actor: "privacy@bamsignal.com",
+    target: "member_***42",
+    at: "2026-06-25T11:30:00.000Z",
+    detail: "Reviewed member profile for export request PRV-2026-0041"
+  },
+  {
+    id: "ga_002",
+    action: "exported",
+    actor: "privacy@bamsignal.com",
+    target: "member_***91",
+    at: "2026-06-21T16:05:00.000Z",
+    detail: "Data package generated for correction request PRV-2026-0035"
+  },
+  {
+    id: "ga_003",
+    action: "approved",
+    actor: "governance@bamsignal.com",
+    target: "POL-PRIV-003",
+    at: "2026-04-01T08:00:00.000Z",
+    detail: "Privacy policy v3 published"
+  },
+  {
+    id: "ga_004",
+    action: "deleted",
+    actor: "privacy@bamsignal.com",
+    target: "member_***33",
+    at: "2026-06-10T15:00:00.000Z",
+    detail: "Verified deletion completed per PRV-2026-0019"
+  }
+];
+
+export const AUDIT_EXPORT_SEED: AuditExportRecord[] = [
+  {
+    id: "ae_001",
+    exportRef: "AEX-2026-0018",
+    scope: "Governance audit log — Q2 2026",
+    requestedBy: "governance@bamsignal.com",
+    generatedAt: "2026-06-24T17:00:00.000Z",
+    recordCount: 1240,
+    format: "CSV"
+  },
+  {
+    id: "ae_002",
+    exportRef: "AEX-2026-0015",
+    scope: "Consent records — active members",
+    requestedBy: "privacy@bamsignal.com",
+    generatedAt: "2026-06-22T10:30:00.000Z",
+    recordCount: 2840,
+    format: "JSON"
+  },
+  {
+    id: "ae_003",
+    exportRef: "AEX-2026-0012",
+    scope: "Privacy requests — deletion queue",
+    requestedBy: "privacy@bamsignal.com",
+    generatedAt: "2026-06-18T14:00:00.000Z",
+    recordCount: 18,
+    format: "CSV"
   }
 ];

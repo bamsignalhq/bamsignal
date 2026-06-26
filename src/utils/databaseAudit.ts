@@ -1366,6 +1366,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     note: "Enterprise Feature Flag Platform™ — dual-write via featureFlagPlatform.js"
   },
   {
+    storageKey: "bamsignal.platformHealthCenter.v1",
+    domainId: "qa",
+    engine: "platformHealthEngine.ts",
+    expectedTable: "platform_health_incidents",
+    note: "Platform Health Center™ — dual-write via platformHealth.js"
+  },
+  {
     storageKey: "bamsignal.dataGovernanceCenter.v1",
     domainId: "qa",
     engine: "dataGovernanceCenterEngine.ts",

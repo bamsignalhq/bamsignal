@@ -107,6 +107,11 @@ export const LazyFeatureFlagPlatformPage = lazy(() =>
     default: module.FeatureFlagPlatformPage
   }))
 );
+export const LazyPlatformHealthCenterPage = lazy(() =>
+  import("./platformHealth/PlatformHealthCenterPage").then((module) => ({
+    default: module.PlatformHealthCenterPage
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

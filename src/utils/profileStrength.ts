@@ -3,7 +3,6 @@ import { normalizeEthnicities, normalizeOccupations } from "../constants/profile
 import { safeArray, safeString } from "./safeProfile";
 import { isPreferNot } from "./profile";
 import { getVoiceVibeUrl } from "./voiceVibe";
-import { getVerificationTier } from "./verification";
 import { relationshipIntentsFrom } from "../constants/relationshipIntent";
 import { normalizeMoreAboutMeInterests } from "./moreAboutMe";
 
@@ -158,15 +157,17 @@ function hasTrustedMemberStatus(
   phoneVerified: boolean,
   isPremium: boolean
 ): boolean {
-  const verification = getVerificationTier(profile, isPremium, phoneVerified);
   const accountAgeDays = profile.createdAt
     ? Math.floor((Date.now() - new Date(profile.createdAt).getTime()) / 86400000)
     : 0;
   const cleanRecord = (profile.reportCount ?? 0) === 0;
+  const selfieApproved = Boolean(profile.verified);
 
-  if (verification.tier >= 3 && cleanRecord) return true;
-  if (verification.tier >= 2 && accountAgeDays >= 7 && cleanRecord) return true;
-  return profile.verified && phoneVerified && cleanRecord;
+  // Mirror verification tier thresholds without calling getVerificationTier — it
+  // uses calculateProfileStrength, which includes this trustedMember factor.
+  if (isPremium && cleanRecord) return true;
+  if (phoneVerified && selfieApproved && accountAgeDays >= 7 && cleanRecord) return true;
+  return selfieApproved && phoneVerified && cleanRecord;
 }
 
 function hasVisibilityReady(profile: DatingProfile): boolean {

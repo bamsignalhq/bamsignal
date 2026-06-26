@@ -55,7 +55,8 @@ export type HardTab =
   | "featureflags"
   | "platformhealth"
   | "abuseprotection"
-  | "search";
+  | "search"
+  | "disasterrecovery";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -142,6 +143,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "search",
         label: "Search",
         keywords: ["search", "find", "command", "palette", "members", "journeys", "payments", "global", "discover"]
+      },
+      {
+        id: "disasterrecovery",
+        label: "Disaster Recovery",
+        keywords: ["disaster", "recovery", "backup", "restore", "failover", "outage", "integrity", "snapshot"]
       },
       {
         id: "monitoring",
@@ -385,6 +391,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   platformhealth: "Platform Health",
   abuseprotection: "Abuse Protection",
   search: "Search",
+  disasterrecovery: "Disaster Recovery",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

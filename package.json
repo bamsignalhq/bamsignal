@@ -40,6 +40,7 @@
     "test:notification-operations": "node scripts/test-notification-operations.mjs",
     "test:notification-center": "node scripts/test-notification-center.mjs",
     "test:search-center": "node scripts/test-search-center.mjs",
+    "test:disaster-recovery": "node scripts/test-disaster-recovery.mjs",
     "test:journey-intelligence": "node scripts/test-journey-intelligence.mjs",
     "test:regional-teams": "node scripts/test-regional-teams.mjs",
     "test:house-pipeline": "node scripts/test-house-pipeline.mjs",

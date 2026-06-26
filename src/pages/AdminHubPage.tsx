@@ -47,6 +47,7 @@ import {
   LazyPlatformHealthCenterPage,
   LazyAbuseProtectionCenterPage,
   LazySearchCenterPage,
+  LazyDisasterRecoveryCenterPage,
   LazyLaunchInfrastructureDashboard,
   LazyFounderAcceptanceDashboard,
   LazyReadinessPage,
@@ -2074,6 +2075,9 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       </AdminLazyTab>
       <AdminLazyTab active={tab === "search"}>
         <LazySearchCenterPage />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "disasterrecovery"}>
+        <LazyDisasterRecoveryCenterPage />
       </AdminLazyTab>
       <AdminLazyTab active={tab === "remediation"}>
         <LazyRemediationBoardPage />

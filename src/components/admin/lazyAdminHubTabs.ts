@@ -122,6 +122,11 @@ export const LazySearchCenterPage = lazy(() =>
     default: module.SearchCenterPage
   }))
 );
+export const LazyDisasterRecoveryCenterPage = lazy(() =>
+  import("./disasterRecovery/DisasterRecoveryCenterPage").then((module) => ({
+    default: module.DisasterRecoveryCenterPage
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

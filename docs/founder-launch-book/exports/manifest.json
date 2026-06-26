@@ -1,0 +1,14 @@
+{
+  "brand": "Founder Launch Book™",
+  "version": "1.0.0",
+  "edition": "P0 Launch Operations",
+  "generatedAt": "2026-06-26T17:56:27.050Z",
+  "commitSha": "a9fd4d4",
+  "chapters": 23,
+  "exports": {
+    "markdown": "/Users/stanlex/Documents/bamsignal/docs/founder-launch-book/exports/founder-launch-book-v1.0.0.md",
+    "pdfHtml": "/Users/stanlex/Documents/bamsignal/docs/founder-launch-book/exports/founder-launch-book-v1.0.0.pdf.html",
+    "latestMarkdown": "/Users/stanlex/Documents/bamsignal/docs/founder-launch-book/exports/latest.md",
+    "latestPdfHtml": "/Users/stanlex/Documents/bamsignal/docs/founder-launch-book/exports/latest.pdf.html"
+  }
+}

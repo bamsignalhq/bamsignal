@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Founder Launch Book™ v1.0.0</title>
+  <style>
+    body { font-family: Georgia, "Times New Roman", serif; color: #111; margin: 40px; line-height: 1.5; font-size: 11pt; }
+    h1, h2, h3 { font-family: Helvetica, Arial, sans-serif; page-break-after: avoid; }
+    h1 { font-size: 1.8rem; border-bottom: 2px solid #1a0a2e; padding-bottom: 8px; }
+    h2 { font-size: 1.25rem; margin-top: 28px; color: #1a0a2e; }
+    h3 { font-size: 1.05rem; margin-top: 18px; }
+    .meta { color: #444; margin: 16px 0 32px; }
+    .toc { margin: 24px 0; padding: 16px; background: #f8f6fb; border: 1px solid #ddd; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .chapter { page-break-inside: avoid; margin-bottom: 24px; }
+    pre { background: #f5f5f5; padding: 12px; overflow-x: auto; font-size: 0.85rem; }
+    code { font-family: Menlo, Consolas, monospace; font-size: 0.9em; }
+    @media print {
+      body { margin: 24px; }
+      .chapter { page-break-before: auto; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Founder Launch Book™</h1>
+  <p class="meta">
+    Version <strong>1.0.0</strong> · P0 Launch Operations<br />
+    Generated 2026-06-26T17:56:27.050Z · Commit <code>a9fd4d4</code><br />
+    Production: <strong>https://bamsignal.com</strong> · Coolify: <strong>https://control.bamsignal.com</strong>
+  </p>
+  <div class="toc">
+    <h2>Table of contents</h2>
+    <ol>
+      <li><a href="#architecture-overview">Architecture Overview</a></li>
+      <li><a href="#infrastructure">Infrastructure</a></li>
+      <li><a href="#deployment-process">Deployment Process</a></li>
+      <li><a href="#rollback-procedure">Rollback Procedure</a></li>
+      <li><a href="#production-environments">Production Environments</a></li>
+      <li><a href="#secrets-management">Secrets Management</a></li>
+      <li><a href="#monitoring">Monitoring</a></li>
+      <li><a href="#alert-handling">Alert Handling</a></li>
+      <li><a href="#incident-response">Incident Response</a></li>
+      <li><a href="#support-workflow">Support Workflow</a></li>
+      <li><a href="#consultant-operations">Consultant Operations</a></li>
+      <li><a href="#release-process">Release Process</a></li>
+      <li><a href="#backup-and-recovery">Backup and Recovery</a></li>
+      <li><a href="#database-maintenance">Database Maintenance</a></li>
+      <li><a href="#android-release-process">Android Release Process</a></li>
+      <li><a href="#play-store-process">Play Store Process</a></li>
+      <li><a href="#feature-flags">Feature Flags</a></li>
+      <li><a href="#remote-config">Remote Config</a></li>
+      <li><a href="#operations-dashboard-guide">Operations Dashboard Guide</a></li>
+      <li><a href="#executive-dashboard-guide">Executive Dashboard Guide</a></li>
+      <li><a href="#emergency-contacts">Emergency Contacts</a></li>
+      <li><a href="#launch-checklist">Launch Checklist</a></li>
+      <li><a href="#first-30-day-operations-plan">First 30-Day Operations Plan</a></li>
+    </ol>
+  </div>
+  <section class="chapter" id="architecture-overview">
+  <h2>Architecture Overview</h2>
+  <p>BamSignal is a Nigerian-first social discovery platform delivered as a **single deployable unit**: a Vite-built React SPA plus an Express API in one Docker container.</p>
+<h2>High-level diagram</h2>
+<pre><code>Members / Public web ──► https://bamsignal.com
+                              │
+                    ┌─────────┴─────────┐
+                    │  Express (Node)   │
+                    │  server/app.js    │
+                    ├─────────┬─────────┤
+                    │  SPA    │  API    │
+                    │  dist/  │ /api/*  │
+                    └────┬────┴────┬────┘
+                         │         │
+              PostgreSQL (Supabase) │ Paystack, Resend, SendChamp, Firebase</code></pre>
+<h2>Core layers</h2>
+<p><code>| Layer | Location | Responsibility |</code></p>
+<p><code>|-------|----------|----------------|</code></p>
+<p><code>| Public marketing | `src/pages`, SEO routes | Homepage, blog, cities, legal — no member restore |</code></p>
+<p><code>| Member app | `/home`, `/discover`, `/chats`, etc. | Username + PIN auth, compact fintech UI |</code></p>
+<p><code>| Onboarding | `/onboarding` only | Incomplete users routed here; never inside `/home` |</code></p>
+<p><code>| Admin / Hard console | `/hard/*` | Operations, certification, executive dashboards |</code></p>
+<p><code>| Consultant portal | `/consultant/*` | Matchmaker and concierge workflows |</code></p>
+<p><code>| API | `api/`, `server/routes/` | Auth, member data, payments, diagnostics |</code></p>
+<p><code>| Android | `android/`, Capacitor | WebView shell over synced `dist/` assets |</code></p>
+<h2>Auth model</h2>
+<ul>
+<li>**Login UI:** username + PIN only (never email/password in member login).</li>
+<li>**Signup:** may collect email/phone for verification; PIN is the credential.</li>
+<li>**Sessions:** server-validated member tokens; public routes must not trigger member restore.</li>
+</ul>
+<h2>Routing locks (do not break)</h2>
+<ul>
+<li>Public routes (`/`, `/blog`, `/premium`, etc.) never show onboarding or member shell.</li>
+<li>Completed users → `/home`; incomplete → `/onboarding`.</li>
+<li>Paystack returns preserve `paymentReturnPath` — never dump users on public homepage after payment.</li>
+</ul>
+<h2>Key entrypoints</h2>
+<p><code>| File | Role |</code></p>
+<p><code>|------|------|</code></p>
+<p><code>| `server/production.js` | Process entry (Docker, Coolify, `npm start`) |</code></p>
+<p><code>| `server/app.js` | Canonical route mounting |</code></p>
+<p><code>| `src/main.tsx` | Client bootstrap |</code></p>
+<p><code>| `Dockerfile` | Build + healthcheck |</code></p>
+</section>
+<section class="chapter" id="infrastructure">
+  <h2>Infrastructure</h2>
+  <h2>Production hosting</h2>
+<p><code>| Component | Provider | URL / access |</code></p>
+<p><code>|-----------|----------|--------------|</code></p>
+<p><code>| Application | Coolify (self-hosted) | https://control.bamsignal.com |</code></p>
+<p><code>| Public site | Coolify → Docker | https://bamsignal.com |</code></p>
+<p><code>| Database | Supabase Postgres | Dashboard + `DATABASE_URL` |</code></p>
+<p><code>| Object storage | Supabase Storage | Profile/cover photos, voice |</code></p>
+<p><code>| Payments | Paystack | Dashboard + webhooks |</code></p>
+<p><code>| Email | Resend | Transactional + signup |</code></p>
+<p><code>| SMS/WhatsApp OTP | SendChamp (optional) | Verification flows |</code></p>
+<p><code>| Push (optional) | Firebase | `VITE_FIREBASE_*` + service account |</code></p>
+<p><code>| Source control | GitHub | `github.com/bamsignalhq/bamsignal` |</code></p>
+<p>**Do not use Vercel** — `.vercel/` is legacy.</p>
+<h2>Container model</h2>
+<ul>
+<li>**Image:** multi-stage `Dockerfile`</li>
+</ul>
+<p>  - Builder: `npm run build` + source integrity smoke</p>
+<p>  - Runner: `node server/production.js` on port 3000</p>
+<ul>
+<li>**Health:** Docker `HEALTHCHECK` hits `GET /ready` (not `/health` alone).</li>
+<li>**Static assets:** `dist/` served by Express; service worker at `public/sw.js` with `CACHE_VERSION`.</li>
+</ul>
+<h2>Network expectations</h2>
+<ul>
+<li>TLS terminates at Coolify / reverse proxy.</li>
+<li>`www.bamsignal.com` redirects to apex.</li>
+<li>Paystack webhooks must reach production (`/api/paystack/webhook` and aliases).</li>
+</ul>
+<h2>External dependencies (readiness)</h2>
+<p>`/ready` requires all of:</p>
+<p>1. Database connected (`DATABASE_URL`)</p>
+<p>2. Paystack secret configured</p>
+<p>3. Signup email path (Resend + Supabase service role)</p>
+<p>4. Photo storage configured</p>
+<p>Until ready, Coolify may mark the container unhealthy — this is intentional.</p>
+</section>
+<section class="chapter" id="deployment-process">
+  <h2>Deployment Process</h2>
+  <p>Standard path: **push to `main` → Coolify webhook rebuild → verify health.**</p>
+<h2>Pre-push checklist (local)</h2>
+<pre><code>npm run build
+npm run test:server-import
+npm run test                    # full certification suite</code></pre>
+<p>Optional before major releases:</p>
+<pre><code>npm run certify:rc
+npm run smoke:production
+npm run certify:e2e             # requires DATABASE_URL + DIAGNOSTICS_SECRET</code></pre>
+<h2>Deploy steps</h2>
+<p>1. Commit to `main` on `github.com/bamsignalhq/bamsignal`.</p>
+<p>2. Coolify rebuilds from `Dockerfile` (webhook). Confirm build logs show:</p>
+<p>   - `npm run build` success</p>
+<p>   - `test:source-integrity` pass in builder stage</p>
+<p>3. Container starts `node server/production.js`.</p>
+<p>4. Verify post-deploy:</p>
+<pre><code>curl -s https://bamsignal.com/health
+curl -s -o /dev/null -w "%{http_code}\n" https://bamsignal.com/ready
+npm run smoke:production</code></pre>
+<p>5. If webhook missed: **manual redeploy** in Coolify UI.</p>
+<h2>Build-time vs runtime env</h2>
+<p><code>| Scope | Where | Examples |</code></p>
+<p><code>|-------|-------|----------|</code></p>
+<p><code>| Buildtime ON | Docker `ARG`, `VITE_*` | `VITE_SUPABASE_URL`, `VITE_PAYSTACK_PUBLIC_KEY` |</code></p>
+<p><code>| Runtime only | Coolify env at start | `DATABASE_URL`, `PAYSTACK_SECRET_KEY`, `RESEND_API_KEY` |</code></p>
+<p>Never pass runtime secrets as Docker build args.</p>
+<h2>Database migrations</h2>
+<p>When schema changes:</p>
+<pre><code># Against production DATABASE_URL from secure shell
+npm run migrate
+npm run verify:database</code></pre>
+<p>Run migrations before or immediately after deploy when SQL changed.</p>
+<h2>Android (separate track)</h2>
+<p>See chapters **Android Release Process** and **Play Store Process**. Web deploy does not publish mobile builds.</p>
+</section>
+<section class="chapter" id="rollback-procedure">
+  <h2>Rollback Procedure</h2>
+  <p>BamSignal has **no separate image registry** — rollback means redeploying a known-good git commit.</p>
+<h2>Application rollback (preferred)</h2>
+<h3>Option A — Coolify redeploy</h3>
+<p>1. Open https://control.bamsignal.com → BamSignal service.</p>
+<p>2. **Deployments** → select last known-good deployment.</p>
+<p>3. **Redeploy** that artifact.</p>
+<p>4. Confirm logs: `[bamsignal] Running on http://0.0.0.0:3000`</p>
+<p>5. Verify `GET /ready` → 200 and `npm run smoke:production` PASS.</p>
+<h3>Option B — Git revert</h3>
+<pre><code>git revert &lt;bad-sha&gt;
+git push origin main</code></pre>
+<p>Wait for Coolify rebuild, then verify health and smoke.</p>
+<h2>Environment rollback</h2>
+<p>If a bad secret was introduced:</p>
+<p>1. Coolify → Environment variables → restore previous values from password manager history.</p>
+<p>2. Restart container (no code change required).</p>
+<p>3. `curl -H "x-diagnostics-secret: $SECRET" "https://bamsignal.com/ready?details=1"`</p>
+<h2>Database rollback</h2>
+<p>Schema rollback is **not automatic**. Options:</p>
+<p>1. Restore Supabase backup to a point before migration (see **Backup and Recovery**).</p>
+<p>2. Ship forward-fix migration if revert SQL was prepared.</p>
+<p>**Stop writes** during data-loss suspicion — escalate P0.</p>
+<h2>Payment rollback</h2>
+<ul>
+<li>Do not delete Paystack ledger rows.</li>
+<li>Use `docs/runbooks/payment-recovery.md` for webhook replay or manual fulfillment with ops approval.</li>
+<li>Confirm member entitlement flags after any payment fix.</li>
+</ul>
+<h2>Communication</h2>
+<ul>
+<li>P1+: notify founder within 30 minutes.</li>
+<li>Record incident using `docs/releases/templates/incident-template.md`.</li>
+</ul>
+</section>
+<section class="chapter" id="production-environments">
+  <h2>Production Environments</h2>
+  <h2>Environment matrix</h2>
+<p><code>| Environment | URL | Purpose | Data |</code></p>
+<p><code>|-------------|-----|---------|------|</code></p>
+<p><code>| **Production** | https://bamsignal.com | Live members | Real Postgres, live Paystack |</code></p>
+<p><code>| **Staging** (if configured) | Operator-defined | Pre-prod QA | Must not point at production DB |</code></p>
+<p><code>| **Local dev** | `npm run dev` | Engineering | `.env` local / dry-run |</code></p>
+<p>Full matrix: `docs/operations/environment/environment-matrix.md`</p>
+<h2>Production characteristics</h2>
+<ul>
+<li>Coolify injects runtime secrets at container start.</li>
+<li>`/health` always 200 when process is up (liveness).</li>
+<li>`/ready` 200 only when DB + Paystack + signup email + photo storage are OK.</li>
+<li>`ADMIN_BOOTSTRAP_ENABLED=false` and `LEGACY_SETUP_ENABLED=false` in production.</li>
+</ul>
+<h2>Promotion rules</h2>
+<p>1. Staging must use **separate** `DATABASE_URL` from production.</p>
+<p>2. Paystack keys must be same mode (both live or both test) — never mix.</p>
+<p>3. Run `npm run certify:drift` before promoting env changes.</p>
+<p>4. Document every Coolify change in release notes.</p>
+<h2>Verification after env change</h2>
+<pre><code>curl -s -H "x-diagnostics-secret: $DIAGNOSTICS_SECRET" \
+  "https://bamsignal.com/ready?details=1" | jq .</code></pre>
+<p>Checklist: `docs/operations/environment/verification-checklist.md`</p>
+<h2>Build identity</h2>
+<p>Each web build embeds `meta name="bamsignal-build"` (CACHE_VERSION). After deploy, confirm marker changed on homepage HTML to detect stale CDN or service worker issues.</p>
+</section>
+<section class="chapter" id="secrets-management">
+  <h2>Secrets Management</h2>
+  <h2>Golden rules</h2>
+<p>1. **Never commit secrets** to git (including `.env`).</p>
+<p>2. Store canonical values in a **password manager** + Coolify runtime env.</p>
+<p>3. Buildtime Docker args: **public `VITE_*` only**.</p>
+<p>4. Rotate using `docs/operations/environment/rotation-policy.md`.</p>
+<h2>Canonical secret locations</h2>
+<p><code>| Secret | Runtime env | Notes |</code></p>
+<p><code>|--------|-------------|-------|</code></p>
+<p><code>| Postgres | `DATABASE_URL` | Supabase connection string |</code></p>
+<p><code>| Supabase admin | `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_URL` | Signup email, admin ops |</code></p>
+<p><code>| Paystack | `PAYSTACK_SECRET_KEY`, webhook secret | Live mode in production |</code></p>
+<p><code>| Email | `RESEND_API_KEY` | Signup + purchase emails |</code></p>
+<p><code>| OTP messaging | `SENDCHAMP_*` | WhatsApp/SMS if enabled |</code></p>
+<p><code>| Firebase admin | `FIREBASE_SERVICE_ACCOUNT_JSON` | Push notifications |</code></p>
+<p><code>| Diagnostics | `CRON_SECRET`, `DIAGNOSTICS_SECRET` | `/ready?details=1`, cron routes |</code></p>
+<p><code>| Admin PIN | `COMMAND_CENTER_PIN`, `ADMIN_ACTION_PIN` | Hard console access |</code></p>
+<p>Full list: `.env.example` and `docs/operations/environment/required-secrets.md`</p>
+<h2>Duplicate / alias variables</h2>
+<p>Use canonical names only. Aliases must match or be unset:</p>
+<ul>
+<li>Paystack public: `VITE_PAYSTACK_PUBLIC_KEY`</li>
+<li>Supabase URL: `SUPABASE_URL` at runtime</li>
+<li>Service role: `SUPABASE_SERVICE_ROLE_KEY`</li>
+</ul>
+<p>Drift detection: `npm run certify:drift`</p>
+<h2>Access control</h2>
+<ul>
+<li>Coolify: founder + designated DevOps only.</li>
+<li>Supabase: least-privilege dashboard users.</li>
+<li>Paystack: separate dashboard logins; webhook secret rotated on compromise.</li>
+</ul>
+<h2>If a secret leaks</h2>
+<p>1. Rotate immediately in provider dashboard.</p>
+<p>2. Update Coolify runtime env.</p>
+<p>3. Restart container.</p>
+<p>4. Record security incident (P1 if production exposed).</p>
+</section>
+<section class="chapter" id="monitoring">
+  <h2>Monitoring</h2>
+  <h2>Health endpoints</h2>
+<p><code>| Endpoint | Type | Pass criteria |</code></p>
+<p><code>|----------|------|---------------|</code></p>
+<p><code>| `GET /health` | Liveness | 200, `{ ok: true, service: "bamsignal" }` — no dependency fields |</code></p>
+<p><code>| `GET /ready` | Readiness | 200 when DB + Paystack + signup email + photos OK |</code></p>
+<p><code>| `HEAD /health`, `HEAD /ready` | Probes | Same status codes, no body |</code></p>
+<p>Detailed readiness: `GET /ready?details=1` with `x-diagnostics-secret` or admin session.</p>
+<h2>Structured logs</h2>
+<p>Service: `server/services/observability.js`</p>
+<p><code>| Event | Meaning |</code></p>
+<p><code>|-------|---------|</code></p>
+<p><code>| `ready_check_failed` | Container not production-ready |</code></p>
+<p><code>| `pin_login_failed` | Auth failure |</code></p>
+<p><code>| `pin_login_locked` | Throttle lockout |</code></p>
+<p><code>| `payment_webhook_failed` | Paystack webhook issue |</code></p>
+<p><code>| `throttle_db_unavailable` | Rate limit DB fallback to memory |</code></p>
+<p>Logs include `requestId` / `correlationId`. Sensitive fields redacted.</p>
+<h2>Admin monitoring surfaces</h2>
+<p><code>| Surface | Path |</code></p>
+<p><code>|---------|------|</code></p>
+<p><code>| System Health | `/hard/system-health` |</code></p>
+<p><code>| Monitoring Center | `/hard/monitoring` |</code></p>
+<p><code>| Production Observability | `/hard/observability` |</code></p>
+<p><code>| Platform Health | `/hard/platform-health` |</code></p>
+<p><code>| Performance Center | `/hard/performance` |</code></p>
+<p><code>| Institutional Readiness | `/hard/readiness` |</code></p>
+<h2>Automated verification</h2>
+<pre><code>npm run test                 # certification suite
+npm run smoke:production     # post-deploy HTTP smoke
+npm run test:monitoring
+npm run test:system-health</code></pre>
+<p>Coolify health check must target **`/ready`**, not `/health` alone.</p>
+<p>See also: `MONITORING.md`, `docs/operations/monitoring/observability-architecture.md`</p>
+</section>
+<section class="chapter" id="alert-handling">
+  <h2>Alert Handling</h2>
+  <h2>Recommended alert signals</h2>
+<p><code>| Signal | Threshold | Severity | First action |</code></p>
+<p><code>|--------|-----------|----------|--------------|</code></p>
+<p><code>| `/ready` != 200 | 2 consecutive failures | P0 | Check Coolify + Supabase + secrets |</code></p>
+<p><code>| `/health` down | Any | P0 | Container crash — restart / rollback |</code></p>
+<p><code>| `pin_login_failed` spike | &gt;3× baseline 15 min | P1 | DB connectivity, abuse review |</code></p>
+<p><code>| `payment_webhook_failed` | Any sustained | P1 | Paystack dashboard + webhook secret |</code></p>
+<p><code>| Error rate 5xx | &gt;1% 10 min | P1 | Logs + recent deploy |</code></p>
+<p><code>| Disk / memory | Host alerts | P2 | Coolify host capacity |</code></p>
+<p>Full catalog: `docs/operations/monitoring/alerts.md`</p>
+<h2>Alert response workflow</h2>
+<p>1. **Acknowledge** within SLA (15 min for P1).</p>
+<p>2. **Triage** using `RUNBOOK.md` quick table.</p>
+<p>3. **Mitigate** — rollback, restart, or failover playbook.</p>
+<p>4. **Communicate** — founder for P1/P2; status updates every 30 min for P1.</p>
+<p>5. **Resolve** — verify `smoke:production` and member smoke paths.</p>
+<p>6. **Document** — incident template + postmortem if required.</p>
+<h2>Diagnostics commands</h2>
+<pre><code>curl -s https://bamsignal.com/health | jq .
+curl -s -H "x-diagnostics-secret: $SECRET" \
+  "https://bamsignal.com/ready?details=1" | jq .</code></pre>
+<p>API diagnostics (secret required):</p>
+<ul>
+<li>`/api/diagnostics/paystack-connectivity`</li>
+<li>`/api/diagnostics/view-security`</li>
+<li>`/api/diagnostics/function-security`</li>
+</ul>
+<h2>False positives</h2>
+<ul>
+<li>`/ready` 503 immediately after deploy: check `start-period` in Dockerfile healthcheck.</li>
+<li>Memory throttle logs during DB blip: restore DB before disabling throttle.</li>
+</ul>
+</section>
+<section class="chapter" id="incident-response">
+  <h2>Incident Response</h2>
+  <p>Severity definitions align with `docs/operations/monitoring/incident-escalation.md`.</p>
+<h2>Severity summary</h2>
+<p><code>| Level | Name | Example | Acknowledge |</code></p>
+<p><code>|-------|------|---------|-------------|</code></p>
+<p><code>| P1 | Critical | Site down, data loss risk | &lt; 15 min |</code></p>
+<p><code>| P2 | High | Payments broken, signup email down | &lt; 30 min |</code></p>
+<p><code>| P3 | Medium | Admin tab broken, workaround exists | &lt; 4 hours |</code></p>
+<p><code>| P4 | Low | Copy typo, log noise | Next business day |</code></p>
+<h2>P1 playbook (site down)</h2>
+<p>1. Coolify → container status + logs.</p>
+<p>2. Check `GET /ready` and `GET /health`.</p>
+<p>3. Recent deploy? → rollback (see **Rollback Procedure**).</p>
+<p>4. DB issue? → Supabase status + `DATABASE_URL`.</p>
+<p>5. Assign Incident Commander; founder notified within 30 min.</p>
+<p>6. Post-incident record mandatory within 5 business days.</p>
+<h2>P1 playbook (payment incident)</h2>
+<p>1. Paystack dashboard — transaction state.</p>
+<p>2. Query `payment_fulfillments` by reference.</p>
+<p>3. Follow `docs/runbooks/payment-recovery.md`.</p>
+<p>4. Confirm entitlement + purchase email sent once.</p>
+<h2>P1 playbook (auth spike)</h2>
+<p>1. Search logs: `pin_login_failed`, `pin_login_locked`.</p>
+<p>2. Restore DB if `throttle_db_unavailable`.</p>
+<p>3. Do **not** disable throttle without security review.</p>
+<h2>Incident record</h2>
+<p>Use `docs/releases/templates/incident-template.md`. Store under `docs/releases/incidents/`.</p>
+<h2>Postmortem requirements</h2>
+<p>P1: required. P2: recommended. Include timeline, root cause, corrective actions, and whether rollback was used.</p>
+</section>
+<section class="chapter" id="support-workflow">
+  <h2>Support Workflow</h2>
+  <h2>Channels</h2>
+<p><code>| Channel | Surface | Owner |</code></p>
+<p><code>|---------|---------|-------|</code></p>
+<p><code>| In-app support | Member settings → help paths | Support team |</code></p>
+<p><code>| Admin Support Center | `/hard/support` | Support + Operations |</code></p>
+<p><code>| Public help | `/help`, Support Center pages | Content + Support |</code></p>
+<p><code>| Safety reports | Report/block flows → moderation | Safety team |</code></p>
+<h2>Admin Support Center (`/hard/support`)</h2>
+<p>Permissions: `ManageOperations`, Support roles (see `permissions.ts`).</p>
+<p>Typical workflow:</p>
+<p>1. **Triage** incoming tickets — assign severity and category.</p>
+<p>2. **Verify** member identity via admin tools (never share PINs).</p>
+<p>3. **Resolve** or escalate to Operations / Safety / Engineering.</p>
+<p>4. **Close** with internal note; member-facing copy must not expose admin jargon.</p>
+<h2>Member-facing rules</h2>
+<ul>
+<li>Login support: username + PIN only — never ask for email password.</li>
+<li>Payment issues: preserve `paymentReturnPath`; verify Paystack reference.</li>
+<li>Photo issues: upload-first policy unless true upload failure.</li>
+</ul>
+<h2>Escalation matrix</h2>
+<p><code>| Issue type | Escalate to |</code></p>
+<p><code>|------------|-------------|</code></p>
+<p><code>| Payment not fulfilled | Operations + `payment-recovery` runbook |</code></p>
+<p><code>| Harassment / safety | `/hard/safety`, moderation queue |</code></p>
+<p><code>| Account lockout abuse | Security + rate-limit review |</code></p>
+<p><code>| Bug / outage | Engineering + incident process |</code></p>
+<p><code>| Concierge journey | Signal Concierge Operations (`/hard/concierge/operations`) |</code></p>
+<h2>SLA guidance</h2>
+<ul>
+<li>P1 member-visible outage: communicate via status channel when platform-wide.</li>
+<li>Individual tickets: target first response &lt; 24h business hours at launch.</li>
+</ul>
+</section>
+<section class="chapter" id="consultant-operations">
+  <h2>Consultant Operations</h2>
+  <p>Signal Concierge and matchmaker workflows are coordinated through institutional admin surfaces.</p>
+<h2>Primary surfaces</h2>
+<p><code>| Surface | Path | Purpose |</code></p>
+<p><code>|---------|------|---------|</code></p>
+<p><code>| Concierge hub | `/hard/concierge` | Consultant dashboard entry |</code></p>
+<p><code>| Operations Center | `/hard/concierge/operations` | Consultations, payments, scheduling, assignments |</code></p>
+<p><code>| Journey Intelligence | `/hard/concierge/intelligence` | Pipeline analytics |</code></p>
+<p><code>| Consultant portal | `/consultant/*` | Day-to-day consultant UI |</code></p>
+<p><code>| Workforce | `/hard/workforce` | Staffing and roles |</code></p>
+<p><code>| Academy | `/hard/academy` | Consultant training content |</code></p>
+<h2>Operations Center sections</h2>
+<p>1. **Consultations** — scheduled sessions across pipeline.</p>
+<p>2. **Payments** — consultation fee lifecycle (Paystack).</p>
+<p>3. **Scheduling** — calendar, slots, meeting links (Google Meet / Zoom when configured).</p>
+<p>4. **Assignment Queue** — unassigned journeys, workload.</p>
+<p>5. **Notifications** — delivery queues for concierge comms.</p>
+<p>6. **Introductions** — Introduction Engine™ consent pipeline.</p>
+<p>7. **Relationship Follow-up** — stewardship and escalations.</p>
+<p>8. **Regional Teams** — director coverage and assignments.</p>
+<h2>Daily operations rhythm</h2>
+<ul>
+<li>Morning: clear assignment queue, review consultations for today.</li>
+<li>Midday: payment exceptions and scheduling conflicts.</li>
+<li>Evening: follow-up tasks and introduction approvals.</li>
+</ul>
+<h2>Permissions</h2>
+<p>Consultant roles are distinct from member accounts. Hard console access requires explicit permissions — see `src/constants/permissions.ts` and governance engine.</p>
+<h2>Quality</h2>
+<p>Consultant quality reviews: `/hard/quality` (Consultant Quality). Escalations with `executive-review` bucket go to leadership.</p>
+<h2>Data integrity</h2>
+<p>Do not fabricate journeys or profiles in production. Use existing engines only; certification E2E uses `cert.bamsignal.com` test emails with diagnostics peek/cleanup.</p>
+</section>
+<section class="chapter" id="release-process">
+  <h2>Release Process</h2>
+  <h2>Release types</h2>
+<p><code>| Type | Branch | Approval |</code></p>
+<p><code>|------|--------|----------|</code></p>
+<p><code>| Standard web | `main` | Release engineer + certification gates |</code></p>
+<p><code>| Hotfix | `main` (revert-forward) | Founder for P1 |</code></p>
+<p><code>| Android | `main` + Play Console | Release engineer + asset verification |</code></p>
+<p><code>| Schema | `main` + migrations | DBA review + backup |</code></p>
+<h2>Standard web release flow</h2>
+<p>1. **Freeze** scope — no unrelated commits.</p>
+<p>2. **Test** locally: `npm run build`, `npm run test`, `npm run test:server-import`.</p>
+<p>3. **Certify** (as applicable):</p>
+<p>   - `npm run certify:rc` — aggregate gate</p>
+<p>   - `npm run certify:security`, `certify:dependencies`, `certify:accessibility`</p>
+<p>   - `npm run smoke:production` after deploy</p>
+<p>4. **Document** using `docs/releases/templates/release-template.md`.</p>
+<p>5. **Push** to `main` → Coolify deploy.</p>
+<p>6. **Verify** health + smoke + manual member paths (login, discover, payment return).</p>
+<p>7. **Record** release in `docs/releases/history/`.</p>
+<h2>Certification commands (reference)</h2>
+<pre><code>npm run certify:launch
+npm run certify:performance
+npm run certify:security
+npm run certify:reliability
+npm run certify:dependencies
+npm run certify:drift
+npm run certify:accessibility
+npm run certify:founder
+npm run certify:rc</code></pre>
+<h2>Go / no-go</h2>
+<p>Founder Launch Certification (`npm run certify:founder`) aggregates subsystem scores for board-level decision. RC certification blocks on critical failures.</p>
+<h2>Rollback criteria</h2>
+<p>Rollback immediately if:</p>
+<ul>
+<li>`/ready` fails &gt; 5 minutes post-deploy</li>
+<li>Payment webhook processing broken</li>
+<li>Auth completely blocked</li>
+<li>Data corruption suspected</li>
+</ul>
+<p>See **Rollback Procedure**.</p>
+</section>
+<section class="chapter" id="backup-and-recovery">
+  <h2>Backup and Recovery</h2>
+  <p>BamSignal does **not** ship automated in-repo backup jobs. Operators manage backups via Supabase and documented playbooks.</p>
+<p>**Admin UI:** `/hard/disaster-recovery` (Disaster Recovery Center)</p>
+<h2>What to back up</h2>
+<p><code>| Layer | Priority | Method |</code></p>
+<p><code>|-------|----------|--------|</code></p>
+<p><code>| Postgres (users, chats, payments, CRM) | Critical | Supabase automated + `pg_dump` |</code></p>
+<p><code>| Supabase Auth | Critical | Included in DB dump |</code></p>
+<p><code>| Storage (photos, voice) | High | Bucket export / mirror |</code></p>
+<p><code>| Platform config tables | High | DB dump |</code></p>
+<p><code>| Application code | Medium | GitHub `main` |</code></p>
+<p><code>| Coolify secrets | Critical | Password manager (not git) |</code></p>
+<h2>Database backup</h2>
+<h3>Supabase automated</h3>
+<p>1. Supabase project → Database → Backups.</p>
+<p>2. Confirm daily backups (Pro plan).</p>
+<p>3. Manual snapshot before risky migrations.</p>
+<h3>Manual dump</h3>
+<pre><code>export DATABASE_URL='postgresql://...'   # from vault
+pg_dump "$DATABASE_URL" \
+  --format=custom \
+  --file="bamsignal-$(date +%Y%m%d-%H%M%S).dump" \
+  --no-owner --no-acl</code></pre>
+<p>Retention: 30 daily + 12 monthly off-site.</p>
+<h2>Recovery</h2>
+<p><code>| Scenario | Playbook |</code></p>
+<p><code>|----------|----------|</code></p>
+<p><code>| Full DB restore | `docs/runbooks/database-restore.md` |</code></p>
+<p><code>| Storage restore | `docs/runbooks/storage-restore.md` |</code></p>
+<p><code>| Bad deploy | `docs/runbooks/deployment-recovery.md` |</code></p>
+<p><code>| Payment replay | `docs/runbooks/payment-recovery.md` |</code></p>
+<p>After restore: `npm run verify:database`, `npm run migrate`, redeploy, `smoke:production`.</p>
+<p>See `BACKUP_RECOVERY.md` for full detail.</p>
+</section>
+<section class="chapter" id="database-maintenance">
+  <h2>Database Maintenance</h2>
+  <h2>Schema sources</h2>
+<p><code>| Location | Purpose |</code></p>
+<p><code>|----------|---------|</code></p>
+<p><code>| `migrations/*.sql` | Application migrations (primary) |</code></p>
+<p><code>| `supabase/migrations/*.sql` | Supabase-tracked migrations |</code></p>
+<p><code>| `server/db.js` | Connection, ping, schema check |</code></p>
+<h2>Routine maintenance</h2>
+<p><code>| Task | Frequency | Command / action |</code></p>
+<p><code>|------|-----------|------------------|</code></p>
+<p><code>| Verify connectivity | Weekly | `npm run verify:database` |</code></p>
+<p><code>| Migration apply | On release | `npm run migrate` |</code></p>
+<p><code>| Index review | Quarterly | Supabase advisors + `certify:database` |</code></p>
+<p><code>| Backup verify | Monthly | Test restore to staging |</code></p>
+<p><code>| Orphan photos | Monthly | `node scripts/reconcile-photo-orphans.mjs` |</code></p>
+<p><code>| Audit | Pre-release | `/hard/audit/database` |</code></p>
+<h2>Migration procedure</h2>
+<p>1. Review SQL in PR — RLS policies included.</p>
+<p>2. Backup production (manual snapshot).</p>
+<p>3. Apply: `npm run migrate` against production `DATABASE_URL`.</p>
+<p>4. Deploy app if code depends on new schema.</p>
+<p>5. Verify: `npm run verify:database`, member API smoke.</p>
+<h2>Connection pool</h2>
+<ul>
+<li>Use Supabase pooler URL for serverless-style bursts if recommended.</li>
+<li>Watch connection count during deploy windows.</li>
+</ul>
+<h2>Read-only diagnostics</h2>
+<p>With `DIAGNOSTICS_SECRET`, certification E2E supports read/peek/cleanup on `cert.bamsignal.com` emails only — not general SQL access.</p>
+<h2>Performance certification</h2>
+<pre><code>npm run certify:database</code></pre>
+<p>Reports under `certification/database/reports/`.</p>
+<h2>Never in production</h2>
+<ul>
+<li>Ad-hoc `DELETE` without backup and approval.</li>
+<li>Disabling RLS without security review.</li>
+<li>Running unreviewed SQL from chat or tickets.</li>
+</ul>
+</section>
+<section class="chapter" id="android-release-process">
+  <h2>Android Release Process</h2>
+  <p>Android ships as a **Capacitor WebView** over the same `dist/` assets as web. Stale assets are a common failure mode — always verify before AAB upload.</p>
+<h2>Preconditions</h2>
+<ul>
+<li>Web release built and tested on production URL.</li>
+<li>Upload signing key documented in password manager.</li>
+<li>`public/.well-known/assetlinks.json` SHA-256 matches release keystore.</li>
+</ul>
+<h2>Release commands</h2>
+<pre><code>npm run build
+npx cap sync android
+npm run android:verify-assets
+npm run android:release</code></pre>
+<p>`android:release` runs `scripts/build-android-release.mjs` which:</p>
+<p>1. Builds fresh web assets.</p>
+<p>2. Syncs Capacitor.</p>
+<p>3. Verifies Android assets match `dist/` (including `bamsignal-build` meta).</p>
+<p>4. Verifies service worker cache version alignment.</p>
+<p>5. Produces AAB/APK for Play upload.</p>
+<h2>Version bumps</h2>
+<p>Edit `android/app/build.gradle`:</p>
+<ul>
+<li>`versionCode` — monotonic integer (required by Play).</li>
+<li>`versionName` — user-visible semver.</li>
+</ul>
+<p>Sync `src/buildInfo.ts` / cache version via release script.</p>
+<h2>Verification gates</h2>
+<p><code>| Check | Command |</code></p>
+<p><code>|-------|---------|</code></p>
+<p><code>| Assets fresh | `npm run android:verify-assets` |</code></p>
+<p><code>| Upload key | `npm run android:verify-upload-key` |</code></p>
+<p><code>| Source integrity | `npm run test:source-integrity:android` |</code></p>
+<h2>Never</h2>
+<ul>
+<li>Upload AAB built before latest `npm run build`.</li>
+<li>Commit `android/app/build/` or `.gradle` caches.</li>
+<li>Skip asset verification after web changes.</li>
+</ul>
+<p>See `ANDROID_RELEASE_NOTES.md` for release-specific notes.</p>
+</section>
+<section class="chapter" id="play-store-process">
+  <h2>Play Store Process</h2>
+  <h2>Tracks</h2>
+<p><code>| Track | Use |</code></p>
+<p><code>|-------|-----|</code></p>
+<p><code>| Internal testing | Engineering smoke on device |</code></p>
+<p><code>| Closed testing | Trusted testers pre-launch |</code></p>
+<p><code>| Open testing | Optional wider beta |</code></p>
+<p><code>| Production | Public Play listing |</code></p>
+<h2>Upload workflow</h2>
+<p>1. Complete **Android Release Process** — fresh AAB in hand.</p>
+<p>2. Google Play Console → BamSignal app.</p>
+<p>3. Create new release on target track.</p>
+<p>4. Upload AAB; confirm version code is higher than previous.</p>
+<p>5. Complete store listing compliance (content rating, data safety).</p>
+<p>6. Roll out; monitor Android vitals.</p>
+<h2>Signing</h2>
+<ul>
+<li>Play App Signing enabled (recommended).</li>
+<li>Upload certificate registered with Play — verify with `npm run android:verify-upload-key`.</li>
+<li>`play-store/` local artifacts are operator tools — **do not commit** private keys or keystores.</li>
+</ul>
+<h2>Deep links and payments</h2>
+<p>Before payment-related releases:</p>
+<ul>
+<li>Complete `docs/releases/checklists/deep-link-verification.md`</li>
+<li>Test `assetlinks.json` on device</li>
+<li>Test Paystack return to preserved member path (not public homepage)</li>
+</ul>
+<h2>Post-publish verification</h2>
+<p>1. Install from Play track on physical device.</p>
+<p>2. Login (username + PIN).</p>
+<p>3. Discover loads; payment flow opens Paystack and returns correctly.</p>
+<p>4. Push notification (if Firebase configured).</p>
+<h2>Rollback on Play</h2>
+<ul>
+<li>Halt rollout in Play Console.</li>
+<li>Ship fixed AAB with incremented `versionCode`.</li>
+<li>Web-only hotfixes still require new AAB if bundled assets changed.</li>
+</ul>
+</section>
+<section class="chapter" id="feature-flags">
+  <h2>Feature Flags</h2>
+  <p>BamSignal uses **two flag systems** — do not confuse them.</p>
+<h2>1. Build-time flags (`VITE_*`)</h2>
+<p>Documented in `docs/operations/environment/feature-flags.md` and `src/constants/featureFlags.ts`.</p>
+<p><code>| Flag | Default | Notes |</code></p>
+<p><code>|------|---------|-------|</code></p>
+<p><code>| `VITE_ENABLE_REFERRALS_UI` | false | Referral widget — enable at campaign launch |</code></p>
+<p><code>| `VITE_ENABLE_IMAGE_MODERATION` | true | Client moderation UX |</code></p>
+<p><code>| `PHOTO_MODERATION_MODE` | upload_first | Server wins over client |</code></p>
+<p><code>| `VITE_STORE_SCREENSHOTS` | false | **Never production** |</code></p>
+<p>Changes require rebuild + redeploy (Coolify build args).</p>
+<h2>2. Enterprise Feature Flag Platform (runtime API)</h2>
+<p><code>| Item | Location |</code></p>
+<p><code>|------|----------|</code></p>
+<p><code>| Admin UI | `/hard/feature-flags` |</code></p>
+<p><code>| Public API | `GET /api/feature-flags` |</code></p>
+<p><code>| Server seed | `server/services/featureFlagPlatform.js` |</code></p>
+<p>Key product flags include: `trusted_member`, `signal_concierge`, `voice_vibe`, `communities`, `events`, `ai_matching`, `executive_dashboard`.</p>
+<h3>Operations</h3>
+<p>1. Review flag in admin UI before enabling rollout.</p>
+<p>2. Prefer percentage / city scoping over global enable for risky features.</p>
+<p>3. Audit trail stored in `feature_flag_audits` table.</p>
+<p>4. Post-deploy: confirm `smoke:production` feature-flags check passes.</p>
+<h3>Certification</h3>
+<pre><code>npm run certify:drift    # env + flag drift
+npm run smoke:production # API returns flags array</code></pre>
+<h2>Governance</h2>
+<ul>
+<li>New flags must be documented before merge to `main`.</li>
+<li>Removing a flag requires cleanup of dead code paths.</li>
+<li>Never enable `future_experiments` in production without founder approval.</li>
+</ul>
+</section>
+<section class="chapter" id="remote-config">
+  <h2>Remote Config</h2>
+  <p>Remote configuration supplies tunable product parameters without redeploying client bundles.</p>
+<h2>Surfaces</h2>
+<p><code>| Surface | Path / endpoint |</code></p>
+<p><code>|---------|-----------------|</code></p>
+<p><code>| Admin UI | `/hard/configuration` (Configuration Platform) |</code></p>
+<p><code>| Public API | `GET /api/remote-config` |</code></p>
+<p><code>| Server defaults | `server/services/remoteConfig.js` → `REMOTE_CONFIG_SERVER_DEFAULTS` |</code></p>
+<h2>Default keys (examples)</h2>
+<p><code>| Key | Purpose |</code></p>
+<p><code>|-----|---------|</code></p>
+<p><code>| `signals.free_daily_limit` | Daily signal allowance |</code></p>
+<p><code>| `messaging.max_messages_per_day` | Chat throttle |</code></p>
+<p><code>| `discovery.max_profile_photos` | Photo cap |</code></p>
+<p><code>| `payments.boost_pricing_ngn` | Boost price |</code></p>
+<p><code>| `verification.otp_cooldown_seconds` | OTP rate limit |</code></p>
+<p><code>| `notifications.retry_interval_seconds` | Notification retry |</code></p>
+<p><code>| `notifications.templates` | Template map |</code></p>
+<h2>Change procedure</h2>
+<p>1. Edit in Configuration Platform admin (or DB `platform_settings` if migrated).</p>
+<p>2. Confirm active status and revision.</p>
+<p>3. API cache TTL ~60s — allow one minute for propagation.</p>
+<p>4. Verify: `curl -s https://bamsignal.com/api/remote-config | jq '.config["signals.free_daily_limit"]'`</p>
+<p>5. Run `npm run smoke:production` notifications + remote-config checks.</p>
+<h2>Drift detection</h2>
+<pre><code>npm run certify:drift</code></pre>
+<p>Compares Coolify env, remote config, and documented defaults.</p>
+<h2>Safety</h2>
+<ul>
+<li>Do not set extreme limits in production without staged rollout.</li>
+<li>Payment amounts must match Paystack product configuration.</li>
+<li>Document every production config change in release notes.</li>
+</ul>
+</section>
+<section class="chapter" id="operations-dashboard-guide">
+  <h2>Operations Dashboard Guide</h2>
+  <p>Institutional operations run from the **Hard console** at `/hard/command` (Command Center tab hub).</p>
+<h2>Entry and auth</h2>
+<ul>
+<li>URL: https://bamsignal.com/hard/auth → `/hard/command`</li>
+<li>Auth: admin username + PIN (`COMMAND_CENTER_PIN` ecosystem)</li>
+<li>Permissions: role-based via `src/constants/permissions.ts`</li>
+</ul>
+<h2>Daily operations map</h2>
+<p><code>| Need | Go to |</code></p>
+<p><code>|------|-------|</code></p>
+<p><code>| Command overview | `/hard/command` |</code></p>
+<p><code>| Concierge pipeline | `/hard/concierge/operations` |</code></p>
+<p><code>| Support tickets | `/hard/support` |</code></p>
+<p><code>| User lookup / moderation | `/hard/users`, `/hard/safety` |</code></p>
+<p><code>| Payments / finance | `/hard/finance` |</code></p>
+<p><code>| System health | `/hard/system-health` |</code></p>
+<p><code>| Live monitoring | `/hard/monitoring` |</code></p>
+<p><code>| Logs / observability | `/hard/observability` |</code></p>
+<p><code>| Launch gates | `/hard/rc-certification`, `/hard/launch-certification` |</code></p>
+<p><code>| Post-deploy smoke | Run `npm run smoke:production`; review failures in terminal |</code></p>
+<p><code>| Disaster recovery | `/hard/disaster-recovery` |</code></p>
+<p><code>| Configuration | `/hard/configuration` |</code></p>
+<p><code>| Feature flags | `/hard/feature-flags` |</code></p>
+<h2>Signal Concierge Operations Center</h2>
+<p>Path: `/hard/concierge/operations`</p>
+<p>Use sections: Consultations → Payments → Scheduling → Assignment Queue → Introductions → Follow-up.</p>
+<h2>Certification dashboards</h2>
+<p><code>| Dashboard | Path |</code></p>
+<p><code>|-----------|------|</code></p>
+<p><code>| Security Cert | `/hard/security-certification` |</code></p>
+<p><code>| Reliability Cert | `/hard/reliability-certification` |</code></p>
+<p><code>| Dependency Cert | `/hard/dependency-certification` |</code></p>
+<p><code>| Accessibility Cert | `/hard/accessibility-certification` |</code></p>
+<p><code>| RC Cert | `/hard/rc-certification` |</code></p>
+<p><code>| Founder Cert | `/hard/founder-certification` |</code></p>
+<h2>Tips for new ops leads</h2>
+<p>1. Start each day with `/ready` and `/hard/system-health`.</p>
+<p>2. Keep Coolify and Supabase dashboards pinned.</p>
+<p>3. Never share diagnostics secret in Slack — use vault links.</p>
+<p>4. Use search in Hard console (keywords on each tab).</p>
+</section>
+<section class="chapter" id="executive-dashboard-guide">
+  <h2>Executive Dashboard Guide</h2>
+  <p>The Executive Dashboard™ provides founder and board-level strategic visibility.</p>
+<h2>Access</h2>
+<p><code>| Item | Value |</code></p>
+<p><code>|------|-------|</code></p>
+<p><code>| Path | `/hard/executive` |</code></p>
+<p><code>| Brand | Executive Dashboard™ |</code></p>
+<p><code>| Permission | `ViewExecutiveDashboard` (and related executive roles) |</code></p>
+<p><code>| Feature flag | `executive_dashboard` (enabled in production seed) |</code></p>
+<h2>Time horizons</h2>
+<p>Switch views across:</p>
+<ul>
+<li>Today</li>
+<li>30 days</li>
+<li>90 days</li>
+<li>12 months</li>
+<li>Lifetime</li>
+</ul>
+<h2>Strategic areas</h2>
+<p><code>| Area | Focus |</code></p>
+<p><code>|------|-------|</code></p>
+<p><code>| Institution health | Platform stability and readiness scores |</code></p>
+<p><code>| Growth | Applications, city expansion |</code></p>
+<p><code>| Journey outcomes | Introductions, relationships, engagements |</code></p>
+<p><code>| Consultant health | Workforce capacity and quality |</code></p>
+<p><code>| Communities &amp; events | Community programs |</code></p>
+<p><code>| Research | Institute and archive metrics |</code></p>
+<p><code>| Finance | Revenue and payment health |</code></p>
+<p><code>| Legacy | Long-horizon family / legacy programs |</code></p>
+<h2>Key metrics</h2>
+<p>Applications, consultations, introductions, relationships, engagements, marriages, legacy families, success stories, cities active, consultants active, revenue.</p>
+<h2>How executives should use it</h2>
+<p>1. **Weekly review** — 30-day view, note `attention` statuses.</p>
+<p>2. **Board prep** — export or screenshot lifetime + finance areas; pair with Founder Certification report (`npm run certify:founder`).</p>
+<p>3. **Do not** use executive dashboard as real-time incident tool — use `/hard/monitoring` for outages.</p>
+<h2>Related surfaces</h2>
+<p><code>| Surface | Path |</code></p>
+<p><code>|---------|------|</code></p>
+<p><code>| Founder Certification | `/hard/founder-certification` |</code></p>
+<p><code>| Founder Acceptance (FAT) | `/hard/founder-acceptance` |</code></p>
+<p><code>| Launch Command | `/hard/launch-command` |</code></p>
+<p><code>| Business / Finance | `/hard/business`, `/hard/finance` |</code></p>
+<p>Future capabilities documented in `EXECUTIVE_DASHBOARD_FUTURE_KINDS` are not yet implemented — do not promise them externally.</p>
+</section>
+<section class="chapter" id="emergency-contacts">
+  <h2>Emergency Contacts</h2>
+  <p>**Store live contact details in your password manager.** This chapter defines roles and escalation — replace bracketed placeholders with vault entries.</p>
+<h2>Internal escalation</h2>
+<p><code>| Role | Responsibility | Primary channel | Backup |</code></p>
+<p><code>|------|----------------|-----------------|--------|</code></p>
+<p><code>| Founder / CEO | Final go/no-go, P1 comms | [vault: founder phone / Signal] | [vault: email] |</code></p>
+<p><code>| Release Engineer / On-call | Deploy, rollback, smoke | [vault: on-call rotation] | Secondary engineer |</code></p>
+<p><code>| Engineering Lead | Architecture, incident commander | [vault] | — |</code></p>
+<p><code>| Operations Lead | Concierge, support, consultant ops | [vault] | — |</code></p>
+<p><code>| Safety Lead | Moderation, abuse, legal escalation | [vault] | — |</code></p>
+<h2>Vendor / infrastructure</h2>
+<p><code>| Vendor | Use | Access |</code></p>
+<p><code>|--------|-----|--------|</code></p>
+<p><code>| Coolify host | Container, env, deploy | https://control.bamsignal.com |</code></p>
+<p><code>| Supabase | Database, auth, storage | Supabase dashboard + support ticket |</code></p>
+<p><code>| Paystack | Payments, webhooks | Paystack dashboard + support |</code></p>
+<p><code>| Resend | Transactional email | Resend dashboard |</code></p>
+<p><code>| SendChamp | WhatsApp/SMS OTP | SendChamp dashboard |</code></p>
+<p><code>| Google Play | Android distribution | Play Console |</code></p>
+<p><code>| GitHub | Source, CI hooks | github.com/bamsignalhq/bamsignal |</code></p>
+<h2>Escalation triggers (call founder)</h2>
+<ul>
+<li>P1 outage &gt; 15 minutes</li>
+<li>Suspected data breach or credential leak</li>
+<li>Payment double-charge or widespread fulfillment failure</li>
+<li>Legal / law enforcement request</li>
+</ul>
+<h2>Status communication</h2>
+<ul>
+<li>Internal: designated incident channel (define in vault).</li>
+<li>External: only founder or delegated comms lead — no engineering Twitter threads during P1.</li>
+</ul>
+<h2>Updating this roster</h2>
+<p>When personnel changes: update vault within 24h, notify on-call rotation, and rebuild this book (`npm run build:founder-launch-book`) if role descriptions change.</p>
+</section>
+<section class="chapter" id="launch-checklist">
+  <h2>Launch Checklist</h2>
+  <p>Condensed from `docs/releases/checklists/production-release-checklist.md`. Copy results into release record.</p>
+<p>**Release:** v________ @ commit `________`  </p>
+<p>**Date:** __________  </p>
+<p>**Release Engineer:** __________</p>
+<h2>Code freeze</h2>
+<ul>
+<li>[ ] `main` only; no unrelated commits</li>
+<li>[ ] Release record from `docs/releases/templates/release-template.md`</li>
+<li>[ ] Rollback commit documented</li>
+</ul>
+<h2>Tests</h2>
+<ul>
+<li>[ ] `npm run build` — PASS</li>
+<li>[ ] `npm run lint` — PASS</li>
+<li>[ ] `npm run test:server-import` — PASS</li>
+<li>[ ] `npm run test` — PASS (certification suite)</li>
+<li>[ ] `npm run certify:rc` — PASS (major releases)</li>
+</ul>
+<h2>Security</h2>
+<ul>
+<li>[ ] No secrets in diff</li>
+<li>[ ] Auth UI: username + PIN only</li>
+<li>[ ] Admin routes separate from member routes</li>
+<li>[ ] `/ready?details=1` gated by diagnostics secret</li>
+</ul>
+<h2>Environment</h2>
+<ul>
+<li>[ ] `.env.example` matches Coolify</li>
+<li>[ ] `DATABASE_URL`, Paystack, Resend, photo storage set</li>
+<li>[ ] `ADMIN_BOOTSTRAP_ENABLED=false`</li>
+</ul>
+<h2>Database</h2>
+<ul>
+<li>[ ] Migrations reviewed</li>
+<li>[ ] Backup &lt; 24h old</li>
+<li>[ ] `npm run migrate` plan documented</li>
+</ul>
+<h2>Payments</h2>
+<ul>
+<li>[ ] Paystack **live** keys in production</li>
+<li>[ ] Webhook reachable</li>
+<li>[ ] Purchase confirmation email path tested</li>
+<li>[ ] Payment return path preserved (not public homepage)</li>
+</ul>
+<h2>Notifications</h2>
+<ul>
+<li>[ ] Firebase push (if used) build + runtime configured</li>
+<li>[ ] Email templates reviewed if changed</li>
+</ul>
+<h2>Android (if release includes mobile)</h2>
+<ul>
+<li>[ ] `npm run android:verify-assets` — PASS</li>
+<li>[ ] `versionCode` bumped</li>
+<li>[ ] Fresh AAB built</li>
+<li>[ ] Deep link checklist complete</li>
+<li>[ ] `assetlinks.json` SHA matches keystore</li>
+</ul>
+<h2>Post-deploy</h2>
+<ul>
+<li>[ ] `GET /health` → 200</li>
+<li>[ ] `GET /ready` → 200</li>
+<li>[ ] `npm run smoke:production` — PASS</li>
+<li>[ ] Manual: login, discover, payment return</li>
+<li>[ ] Coolify logs clean (no `ready_check_failed` storm)</li>
+</ul>
+<h2>Sign-off</h2>
+<p><code>| Role | Name | Date | Approved |</code></p>
+<p><code>|------|------|------|----------|</code></p>
+<p><code>| Release Engineer | | | ☐ |</code></p>
+<p><code>| Operations | | | ☐ |</code></p>
+<p><code>| Founder | | | ☐ |</code></p>
+</section>
+<section class="chapter" id="first-30-day-operations-plan">
+  <h2>First 30-Day Operations Plan</h2>
+  <p>Operational rhythm for the first month after public launch. Adjust thresholds as traffic grows.</p>
+<h2>Week 1 — Stabilize</h2>
+<p><code>| Day | Focus | Actions |</code></p>
+<p><code>|-----|-------|---------|</code></p>
+<p><code>| 1 | Deploy verification | `smoke:production`, manual login/signup, `/ready?details=1` |</code></p>
+<p><code>| 1–2 | Monitoring baselines | Record normal `/ready` latency, error rates, login volume |</code></p>
+<p><code>| 2–3 | Support readiness | Staff `/hard/support`, document top 10 FAQs |</code></p>
+<p><code>| 3–4 | Payment watch | Monitor Paystack + `payment_webhook_failed` logs hourly |</code></p>
+<p><code>| 4–5 | Consultant ops | Clear Operations Center queue daily |</code></p>
+<p><code>| 6–7 | First retrospective | Incidents, near-misses, update runbooks |</code></p>
+<p>**Exit criteria:** 7 consecutive days `/ready` 200, smoke PASS, no open P1.</p>
+<h2>Week 2 — Harden</h2>
+<ul>
+<li>Run `npm run certify:security` and `certify:dependencies`.</li>
+<li>Verify backup restore to staging (tabletop).</li>
+<li>Review feature flags — disable experimental flags.</li>
+<li>Android closed testing track if mobile launched.</li>
+<li>SEO: `npm run seo:validate` if public content changed.</li>
+</ul>
+<h2>Week 3 — Optimize</h2>
+<ul>
+<li>Review Performance Center (`/hard/performance`) and real-user metrics.</li>
+<li>Tune remote config limits (signals, messages) based on abuse signals.</li>
+<li>Consultant quality sample review (`/hard/quality`).</li>
+<li>Document capacity plan: `docs/operations/monitoring/capacity-planning.md`.</li>
+</ul>
+<h2>Week 4 — Institutionalize</h2>
+<ul>
+<li>Complete Founder Certification (`npm run certify:founder`) for board record.</li>
+<li>Publish release history entry for launch month.</li>
+<li>Update emergency contacts in vault.</li>
+<li>Schedule monthly: backup test, drift cert, RC cert before major releases.</li>
+</ul>
+<h2>Daily standing tasks (all 30 days)</h2>
+<p>1. `curl` `/ready` + review Coolify container health.</p>
+<p>2. Triage support queue.</p>
+<p>3. Operations Center — assignments + consultations today.</p>
+<p>4. Scan logs for `payment_webhook_failed`, `ready_check_failed`.</p>
+<p>5. Confirm smoke suite PASS after any deploy.</p>
+<h2>Weekly leadership review</h2>
+<ul>
+<li>Executive Dashboard — 30-day view.</li>
+<li>Subsystem certification scores (RC dashboard).</li>
+<li>Growth vs infrastructure headroom.</li>
+<li>Go/no-go for marketing spend increases.</li>
+</ul>
+<h2>End of month deliverables</h2>
+<ul>
+<li>[ ] Launch postmortem (if any P1/P2)</li>
+<li>[ ] Updated Founder Launch Book chapter edits if process changed</li>
+<li>[ ] `npm run build:founder-launch-book` → commit version bump if material</li>
+<li>[ ] 30-day metrics snapshot for board</li>
+</ul>
+</section>
+  <p><em>Print this document to PDF for the institutional operations record.</em></p>
+</body>
+</html>

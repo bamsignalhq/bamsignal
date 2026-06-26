@@ -132,6 +132,11 @@ export const LazyLaunchCommandCenterPage = lazy(() =>
     default: module.LaunchCommandCenterPage
   }))
 );
+export const LazyQualityAssuranceCenterPage = lazy(() =>
+  import("./qualityAssurance/QualityAssuranceCenterPage").then((module) => ({
+    default: module.QualityAssuranceCenterPage
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

@@ -57,7 +57,8 @@ export type HardTab =
   | "abuseprotection"
   | "search"
   | "disasterrecovery"
-  | "launchcommand";
+  | "launchcommand"
+  | "qualityassurance";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -266,6 +267,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         keywords: ["executive", "strategic", "founder", "board", "institution", "legacy", "growth"]
       },
       {
+        id: "qualityassurance",
+        label: "QA & Certification",
+        keywords: ["qa", "quality", "assurance", "certification", "release", "gates", "regression", "manual", "automated", "pdf"]
+      },
+      {
         id: "launchcommand",
         label: "Launch Command",
         keywords: ["launch", "command", "go", "no-go", "100000", "readiness", "blockers", "executive", "capacity"]
@@ -399,6 +405,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   search: "Search",
   disasterrecovery: "Disaster Recovery",
   launchcommand: "Launch Command",
+  qualityassurance: "QA & Certification",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

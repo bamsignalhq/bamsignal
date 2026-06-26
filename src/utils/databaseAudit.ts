@@ -1373,6 +1373,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     note: "Platform Health Center™ — dual-write via platformHealth.js"
   },
   {
+    storageKey: "bamsignal.abuseProtectionCenter.v1",
+    domainId: "qa",
+    engine: "abuseProtectionEngine.ts",
+    expectedTable: "abuse_blocks",
+    note: "Abuse Protection Center™ — dual-write via abuseProtection.js"
+  },
+  {
     storageKey: "bamsignal.dataGovernanceCenter.v1",
     domainId: "qa",
     engine: "dataGovernanceCenterEngine.ts",

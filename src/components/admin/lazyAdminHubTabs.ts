@@ -112,6 +112,11 @@ export const LazyPlatformHealthCenterPage = lazy(() =>
     default: module.PlatformHealthCenterPage
   }))
 );
+export const LazyAbuseProtectionCenterPage = lazy(() =>
+  import("./abuseProtection/AbuseProtectionCenterPage").then((module) => ({
+    default: module.AbuseProtectionCenterPage
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

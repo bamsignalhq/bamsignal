@@ -92,6 +92,7 @@
     "test:production-observability": "node scripts/test-production-observability.mjs",
     "test:feature-flag-platform": "node scripts/test-feature-flag-platform.mjs",
     "test:platform-health": "node scripts/test-platform-health.mjs",
+    "test:abuse-protection": "node scripts/test-abuse-protection.mjs",
     "test:remote-config": "node scripts/test-remote-config.mjs",
     "test:certification-suite": "node scripts/run-certification-test-suite.mjs",
     "test:reporting-center": "node scripts/test-reporting-center.mjs",

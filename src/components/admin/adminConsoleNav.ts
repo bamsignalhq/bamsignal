@@ -53,7 +53,8 @@ export type HardTab =
   | "founderacceptance"
   | "observability"
   | "featureflags"
-  | "platformhealth";
+  | "platformhealth"
+  | "abuseprotection";
 
 /** @deprecated use HardTab */
 export type AdminTab = HardTab;
@@ -130,6 +131,11 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
         id: "platformhealth",
         label: "Platform Health",
         keywords: ["platform", "health", "dependencies", "traffic-light", "morning", "uptime", "incidents", "alerts", "critical"]
+      },
+      {
+        id: "abuseprotection",
+        label: "Abuse Protection",
+        keywords: ["abuse", "spam", "fraud", "otp", "rate-limit", "bot", "scraping", "trust", "safety", "block"]
       },
       {
         id: "monitoring",
@@ -371,6 +377,7 @@ export const HARD_TAB_TITLES: Record<HardTab, string> = {
   observability: "Observability",
   featureflags: "Feature Flags",
   platformhealth: "Platform Health",
+  abuseprotection: "Abuse Protection",
   remediation: "Remediation Board",
   readiness: "Readiness Report",
   dataintegrity: "Data Integrity",

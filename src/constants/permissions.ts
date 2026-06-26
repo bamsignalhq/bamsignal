@@ -44,6 +44,7 @@ import { DISASTER_RECOVERY_ADMIN_PATH } from "./disasterRecoveryAdmin";
 import { LAUNCH_COMMAND_CENTER_ADMIN_PATH } from "./launchCommandCenterAdmin";
 import { QA_CERTIFICATION_CENTER_ADMIN_PATH } from "./qualityAssuranceCenterAdmin";
 import { SECURITY_OPERATIONS_CENTER_ADMIN_PATH } from "./securityOperationsCenterAdmin";
+import { ENTERPRISE_API_CENTER_ADMIN_PATH } from "./enterpriseApiCenterAdmin";
 import { REPORTING_CENTER_ADMIN_PATH } from "./reportingCenterAdmin";
 import { buildLegacyRolePermissionMap } from "../utils/governancePermissionEngine";
 import {
@@ -184,7 +185,8 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   disasterrecovery: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
   launchcommand: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
   qualityassurance: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
-  securityops: ["ManageOperations", "ManageSafety", "SystemAdministration"]
+  securityops: ["ManageOperations", "ManageSafety", "SystemAdministration"],
+  enterpriseapi: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"]
 };
 
 const CONCIERGE_VIEW_PERMISSIONS: Record<ConciergeAdminView, Permission | Permission[]> = {
@@ -270,7 +272,8 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [DISASTER_RECOVERY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.disasterrecovery,
   [LAUNCH_COMMAND_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchcommand,
   [QA_CERTIFICATION_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.qualityassurance,
-  [SECURITY_OPERATIONS_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.securityops
+  [SECURITY_OPERATIONS_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.securityops,
+  [ENTERPRISE_API_CENTER_ADMIN_PATH]: HARD_TAB_PERMISSIONS.enterpriseapi
 };
 
 /** Every protected /hard workspace path — used for audits and enforcement tests. */
@@ -342,7 +345,8 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/disaster-recovery",
   "/hard/launch-command",
   "/hard/quality-assurance",
-  "/hard/security"
+  "/hard/security",
+  "/hard/api"
 ] as const;
 
 const ROLE_DB_ALIASES: Record<string, Role> = {

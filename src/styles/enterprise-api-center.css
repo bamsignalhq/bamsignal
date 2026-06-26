@@ -1,0 +1,268 @@
+.enterprise-api-center-page {
+  display: grid;
+  gap: 18px;
+}
+
+.enterprise-api-center-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.enterprise-api-center-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.enterprise-api-center-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.enterprise-api-center-page__toast {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(80, 140, 220, 0.15);
+  border: 1px solid rgba(140, 190, 255, 0.35);
+  font-size: 0.85rem;
+}
+
+.enterprise-api-center-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.enterprise-api-center-page__filter-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.enterprise-api-center-page__filter-btn.is-active {
+  border-color: rgba(140, 190, 255, 0.55);
+  background: rgba(80, 140, 220, 0.12);
+}
+
+.enterprise-api-center-page__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.enterprise-api-card {
+  display: grid;
+  gap: 12px;
+}
+
+.enterprise-api-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.enterprise-api-card__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.85rem;
+}
+
+.enterprise-api-card__line {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.enterprise-api-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.enterprise-api-card__grid article {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.enterprise-api-card__grid span {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.enterprise-api-summary-card__score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.enterprise-api-summary-card__score strong {
+  font-size: 1.6rem;
+}
+
+.enterprise-api-summary-card__status {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.enterprise-api-summary-card__status--healthy {
+  border-color: rgba(120, 210, 150, 0.45);
+  color: rgba(160, 230, 180, 0.95);
+}
+
+.enterprise-api-summary-card__status--degraded {
+  border-color: rgba(220, 190, 100, 0.45);
+  color: rgba(240, 210, 120, 0.95);
+}
+
+.enterprise-api-summary-card__status--disabled,
+.enterprise-api-summary-card__status--maintenance {
+  border-color: rgba(240, 100, 100, 0.45);
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.enterprise-api-endpoints-card__table-wrap {
+  overflow-x: auto;
+}
+
+.enterprise-api-endpoints-card__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.enterprise-api-endpoints-card__table th,
+.enterprise-api-endpoints-card__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.enterprise-api-endpoints-card__table tbody tr {
+  cursor: pointer;
+}
+
+.enterprise-api-endpoints-card__table tbody tr.is-selected {
+  background: rgba(80, 140, 220, 0.1);
+}
+
+.enterprise-api-endpoints-card__method {
+  display: inline-block;
+  min-width: 42px;
+  margin-right: 8px;
+  font-weight: 600;
+  color: rgba(140, 190, 255, 0.95);
+}
+
+.enterprise-api-endpoints-card__badge {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.enterprise-api-endpoints-card__badge--healthy {
+  border-color: rgba(120, 210, 150, 0.45);
+  color: rgba(160, 230, 180, 0.95);
+}
+
+.enterprise-api-endpoints-card__badge--degraded {
+  border-color: rgba(220, 190, 100, 0.45);
+  color: rgba(240, 210, 120, 0.95);
+}
+
+.enterprise-api-endpoints-card__badge--disabled,
+.enterprise-api-endpoints-card__badge--maintenance {
+  border-color: rgba(240, 100, 100, 0.45);
+  color: rgba(255, 140, 140, 0.95);
+}
+
+.enterprise-api-tools-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.enterprise-api-tool-chip {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.enterprise-api-tool-chip:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.enterprise-api-tool-chip span {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.enterprise-api-tools-card__history ul,
+.enterprise-api-card__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.enterprise-api-tools-card__history li,
+.enterprise-api-card__list li {
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.82rem;
+}
+
+.enterprise-api-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.enterprise-api-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.enterprise-api-card__empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.enterprise-api-jobs-card__badge {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: rgba(240, 210, 120, 0.95);
+}
+
+@media (max-width: 960px) {
+  .enterprise-api-card__grid,
+  .enterprise-api-tools-card__grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -86,6 +86,7 @@
     "test:api-platform": "node scripts/test-api-platform.mjs",
     "test:launch-control": "node scripts/test-launch-control.mjs",
     "test:performance-center": "node scripts/test-performance-center.mjs",
+    "test:enterprise-api-center": "node scripts/test-enterprise-api-center.mjs",
     "test:workflow-engine": "node scripts/test-workflow-engine.mjs",
     "test:security": "node scripts/test-security.mjs",
     "test:performance": "node scripts/test-performance.mjs",

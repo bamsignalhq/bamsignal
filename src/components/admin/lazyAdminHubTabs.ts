@@ -214,6 +214,11 @@ export const LazyDataGovernanceCenterPage = lazy(() =>
 export const LazyApiPlatformPage = lazy(() =>
   import("./apiPlatform/ApiPlatformPage").then((module) => ({ default: module.ApiPlatformPage }))
 );
+export const LazyEnterpriseApiCenterPage = lazy(() =>
+  import("./enterpriseApi/EnterpriseApiCenterPage").then((module) => ({
+    default: module.EnterpriseApiCenterPage
+  }))
+);
 export const LazyAdminPricingPage = lazy(() =>
   import("../../pages/AdminPricingPage").then((module) => ({ default: module.AdminPricingPage }))
 );

@@ -208,6 +208,14 @@ export const PERFORMANCE_CENTER_SCHEMA_TABLES = [
   "performance_tool_runs"
 ] as const;
 
+/** Tables from migrations/202606261900_enterprise_api_center.sql */
+export const ENTERPRISE_API_CENTER_SCHEMA_TABLES = [
+  "enterprise_api_endpoints",
+  "enterprise_api_operations_snapshots",
+  "enterprise_api_tool_runs",
+  "enterprise_api_failed_jobs"
+] as const;
+
 /** Tables from migrations/0018_workflow_engine.sql */
 export const WORKFLOW_ENGINE_SCHEMA_TABLES = [
   "workflow_definitions",
@@ -1420,6 +1428,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     engine: "performanceCenterEngine.ts",
     expectedTable: "performance_metric_snapshots",
     note: "Performance Engineering Center — dual-write via performanceCenter.js"
+  },
+  {
+    storageKey: "bamsignal.enterpriseApiCenter.v1",
+    domainId: "qa",
+    engine: "enterpriseApiCenterEngine.ts",
+    expectedTable: "enterprise_api_endpoints",
+    note: "Enterprise API Center — dual-write via enterpriseApiCenter.js"
   },
   {
     storageKey: "bamsignal.workflowEngine.v1",

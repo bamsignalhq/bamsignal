@@ -87,14 +87,18 @@ export const ENV_REGISTRY = [
   { name: "SUPABASE_URL", group: "supabase", scope: "runtime", required: "critical", owner: "Engineering", rotation: "n/a", validate: "supabase-url", aliases: ["VITE_SUPABASE_URL"], envs: ["staging", "production"] },
   { name: "SUPABASE_SERVICE_ROLE_KEY", group: "supabase", scope: "runtime", required: "critical", owner: "Engineering", rotation: "quarterly", validate: "supabase-service", aliases: ["SUPABASE_SECRET_KEY"], envs: ["staging", "production"] },
   { name: "SUPABASE_ANON_KEY", group: "supabase", scope: "runtime", required: "warning", owner: "Engineering", rotation: "supabase-rotate", validate: "supabase-anon", aliases: ["VITE_SUPABASE_ANON_KEY"], envs: ["staging", "production"] },
+  { name: "PGSSLMODE", group: "supabase", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["local", "development"] },
 
   // Authentication (member PIN + admin)
   { name: "COMMAND_CENTER_PIN", group: "authentication", scope: "runtime", required: "critical", owner: "Security", rotation: "quarterly", validate: "pin", aliases: ["ADMIN_ACTION_PIN"], envs: ["staging", "production"] },
   { name: "COMMAND_CENTER_EMAILS", group: "authentication", scope: "runtime", required: "critical", owner: "Security", rotation: "on-personnel-change", aliases: ["ADMIN_EMAILS"], envs: ["staging", "production"] },
   { name: "ADMIN_BOOTSTRAP_ENABLED", group: "authentication", scope: "runtime", required: "optional", owner: "Security", rotation: "n/a", validate: "boolean", envs: ["local", "development"] },
   { name: "ADMIN_BOOTSTRAP_SECRET", group: "authentication", scope: "runtime", required: "optional", owner: "Security", rotation: "single-use", envs: ["local", "development"] },
+  { name: "ADMIN_BOOTSTRAP_EMAIL", group: "authentication", scope: "runtime", required: "optional", owner: "Security", rotation: "n/a", validate: "email", envs: ["local", "development"] },
+  { name: "ADMIN_BOOTSTRAP_PASSWORD", group: "authentication", scope: "runtime", required: "optional", owner: "Security", rotation: "single-use", envs: ["local", "development"] },
   { name: "LEGACY_SETUP_ENABLED", group: "authentication", scope: "runtime", required: "optional", owner: "Security", rotation: "n/a", validate: "boolean", envs: ["local"] },
   { name: "LEGACY_SETUP_SECRET", group: "authentication", scope: "runtime", required: "optional", owner: "Security", rotation: "single-use", envs: ["local"] },
+  { name: "SIGNUP_MATH_CHALLENGE_SECRET", group: "authentication", scope: "runtime", required: "optional", owner: "Security", rotation: "quarterly", envs: ["staging", "production"] },
 
   // Payments
   { name: "PAYSTACK_SECRET_KEY", group: "payments", scope: "runtime", required: "critical", owner: "Finance Ops", rotation: "on-compromise", validate: "paystack-secret", envs: ["staging", "production"] },
@@ -137,6 +141,9 @@ export const ENV_REGISTRY = [
 
   // Storage / Firebase push
   { name: "FIREBASE_SERVICE_ACCOUNT_JSON", group: "storage", scope: "runtime", required: "optional", owner: "Engineering", rotation: "on-compromise", validate: "json", envs: ["staging", "production"] },
+  { name: "FIREBASE_PROJECT_ID", group: "storage", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["staging", "production"] },
+  { name: "FIREBASE_CLIENT_EMAIL", group: "storage", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["staging", "production"] },
+  { name: "FIREBASE_PRIVATE_KEY", group: "storage", scope: "runtime", required: "optional", owner: "Engineering", rotation: "on-compromise", envs: ["staging", "production"] },
   { name: "VITE_FIREBASE_API_KEY", group: "notifications", scope: "buildtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["staging", "production"] },
   { name: "VITE_FIREBASE_AUTH_DOMAIN", group: "notifications", scope: "buildtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["staging", "production"] },
   { name: "VITE_FIREBASE_PROJECT_ID", group: "notifications", scope: "buildtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["staging", "production"] },
@@ -148,6 +155,7 @@ export const ENV_REGISTRY = [
   { name: "CRON_SECRET", group: "operations", scope: "runtime", required: "critical", owner: "Security", rotation: "quarterly", envs: ["staging", "production"] },
   { name: "DIAGNOSTICS_SECRET", group: "operations", scope: "runtime", required: "warning", owner: "Security", rotation: "quarterly", envs: ["staging", "production"] },
   { name: "ADMIN_CONSENT_SECRET", group: "operations", scope: "runtime", required: "optional", owner: "Security", rotation: "quarterly", envs: ["production"] },
+  { name: "RATE_LIMIT_CLEANUP_INTERVAL_MS", group: "operations", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["staging", "production"] },
 
   // Feature flags (buildtime)
   { name: "VITE_ENABLE_REFERRALS_UI", group: "feature-flags", scope: "buildtime", required: "optional", owner: "Product", rotation: "n/a", validate: "boolean", envs: ["local", "development", "staging", "production"] },
@@ -155,12 +163,13 @@ export const ENV_REGISTRY = [
   { name: "VITE_PHOTO_MODERATION_MODE", group: "feature-flags", scope: "buildtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "enum:upload_first,review,strict", envs: ["staging", "production"] },
   { name: "PHOTO_MODERATION_MODE", group: "feature-flags", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "enum:upload_first,review,strict", envs: ["staging", "production"] },
   { name: "VITE_STORE_SCREENSHOTS", group: "feature-flags", scope: "buildtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "boolean", envs: ["local", "development"] },
-
-  // Android / deep links (config not env — documented for drift checks)
-  { name: "PAYSTACK_ANDROID_CALLBACK_URL", group: "android", scope: "runtime", required: "warning", owner: "Engineering", rotation: "n/a", envs: ["production"] },
+  { name: "CAP_SERVER_URL", group: "application", scope: "buildtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "url", envs: ["local", "development"] },
 
   // Optional integrations
   { name: "TELEGRAM_BOT_TOKEN", group: "analytics", scope: "runtime", required: "optional", owner: "Engineering", rotation: "on-compromise", envs: ["production"] },
+  { name: "TELEGRAM_FREE_CHANNEL_ID", group: "analytics", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["production"] },
+  { name: "TELEGRAM_VIP_GROUP_ID", group: "analytics", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["production"] },
+  { name: "TELEGRAM_WEBHOOK_SECRET", group: "analytics", scope: "runtime", required: "optional", owner: "Engineering", rotation: "on-compromise", envs: ["production"] },
   { name: "TELEGRAM_ENABLE_POLLING", group: "analytics", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "boolean", envs: ["local", "development"] },
 
   // OpenAI (optional — AI workspace / consultant assist; not on critical path)
@@ -169,8 +178,10 @@ export const ENV_REGISTRY = [
 
   // Certification runners
   { name: "CERTIFICATION_BASE_URL", group: "certification", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "url", envs: ["local", "development", "staging", "production"] },
+  { name: "CERTIFICATION_EMAIL_DOMAIN", group: "certification", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["staging", "production"] },
   { name: "CERTIFICATION_EXECUTION_MODE", group: "certification", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "enum:dry-run,staging,production", envs: ["local", "development", "staging", "production"] },
-  { name: "ENV_TARGET", group: "certification", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["local", "development", "staging", "production"] }
+  { name: "ENV_TARGET", group: "certification", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["local", "development", "staging", "production"] },
+  { name: "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY", group: "payments", scope: "buildtime", required: "optional", owner: "Finance Ops", rotation: "n/a", validate: "paystack-public", envs: ["staging", "production"] }
 ];
 
 /** Where each variable is read (paths relative to repo root). */
@@ -201,10 +212,27 @@ export const ENV_USED_IN = {
   VITE_FIREBASE_API_KEY: ["src/firebase.ts", "capacitor push (android)"],
   VITE_FIREBASE_PROJECT_ID: ["src/firebase.ts"],
   OPENAI_API_KEY: ["src/constants/aiAssistedConsultant.ts", "certification/chaos (optional)"],
-  COMMAND_CENTER_PIN: ["server/services/productionSecurity.js", "server/routes/admin.js"],
-  COMMAND_CENTER_EMAILS: ["server/services/productionSecurity.js"],
-  CRON_SECRET: ["server/services/diagnosticsAccess.js", "server/routes/cron.js"],
+  COMMAND_CENTER_PIN: ["server/consoleEnv.js", "server/services/productionSecurity.js"],
+  COMMAND_CENTER_EMAILS: ["server/consoleEnv.js", "server/services/productionSecurity.js"],
+  ADMIN_ACTION_PIN: ["server/consoleEnv.js"],
+  ADMIN_EMAILS: ["server/consoleEnv.js"],
+  CRON_SECRET: ["server/services/diagnosticsAccess.js", "server/adminAuth.js"],
+  DIAGNOSTICS_SECRET: ["server/services/diagnosticsAccess.js", "certification/production-smoke/config.mjs"],
   PUBLIC_APP_URL: ["server/config.js", "server/seoSitemap.js"],
+  PGSSLMODE: ["server/db.js", "server/migrationRunner.js"],
+  PHOTO_MODERATION_MODE: ["server/services/photoModerationProvider.js"],
+  FIREBASE_PROJECT_ID: ["server/firebaseEnv.js"],
+  FIREBASE_CLIENT_EMAIL: ["server/firebaseEnv.js"],
+  FIREBASE_PRIVATE_KEY: ["server/firebaseEnv.js"],
+  RATE_LIMIT_CLEANUP_INTERVAL_MS: ["server/services/rateLimitRetention.js"],
+  SIGNUP_MATH_CHALLENGE_SECRET: ["server/services/signupMathChallenge.js"],
+  CERTIFICATION_EMAIL_DOMAIN: ["server/services/certificationE2e.js", "certification/e2e/config.mjs"],
+  TELEGRAM_WEBHOOK_SECRET: ["api/auth/identity.js"],
+  TELEGRAM_FREE_CHANNEL_ID: ["server/config.js"],
+  TELEGRAM_VIP_GROUP_ID: ["server/config.js"],
+  CAP_SERVER_URL: ["capacitor.config.ts"],
+  ADMIN_BOOTSTRAP_EMAIL: ["api/admin/bootstrap.js", "scripts/bootstrap-admin.mjs"],
+  ADMIN_BOOTSTRAP_PASSWORD: ["server/services/adminBootstrap.js", "api/admin/bootstrap.js"],
   CERTIFICATION_BASE_URL: ["certification/e2e/config.mjs", "certification/platform-load/config.mjs"]
 };
 

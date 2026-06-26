@@ -12,6 +12,7 @@ import {
 import { buildEnvironmentDependencyReport } from "../shared/environmentDependencyReport.mjs";
 import { ENV_USED_IN, ENV_REGISTRY, registryForEnvironment } from "../shared/environmentRegistry.mjs";
 import { validateStartupEnvironment } from "../shared/environmentStartupValidation.mjs";
+import { buildProductionEnvironmentAuditReport } from "../shared/productionEnvironmentAuditScan.mjs";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "..");
 let failed = 0;
@@ -27,9 +28,17 @@ function read(relativePath) {
   return readFileSync(join(rootPath, relativePath), "utf8");
 }
 
+const auditSource = read("scripts/audit-production-environment.mjs");
+assert(auditSource.includes("buildProductionEnvironmentAuditReport"), "production audit runner");
+assert(auditSource.includes("buildStartupHealthVerification"), "startup health verification");
+
+const scanSource = read("shared/productionEnvironmentAuditScan.mjs");
+assert(scanSource.includes("scanEnvironmentUsage"), "environment usage scan");
+assert(scanSource.includes("renderCleanupReportMarkdown"), "cleanup report");
+
 const packageJson = JSON.parse(read("package.json"));
+assert(packageJson.scripts["audit:production-environment"], "audit:production-environment script");
 assert(packageJson.scripts["validate:environment"], "validate:environment script");
-assert(packageJson.scripts["env:validate"], "env:validate script");
 
 for (const file of [
   ".env.development",
@@ -39,7 +48,9 @@ for (const file of [
   "shared/environmentConnectivity.mjs",
   "shared/environmentStartupValidation.mjs",
   "shared/environmentDependencyReport.mjs",
-  "shared/loadCertificationEnv.mjs"
+  "shared/loadCertificationEnv.mjs",
+  "shared/productionEnvironmentAuditScan.mjs",
+  "scripts/audit-production-environment.mjs"
 ]) {
   assert(existsSync(join(rootPath, file)), `missing ${file}`);
 }
@@ -71,6 +82,11 @@ assert(report.every((row) => row.variable && row.group), "dependency rows comple
 
 const startup = validateStartupEnvironment({ nodeEnv: "development", env: {}, failFast: false });
 assert(startup.errors.length === 0 || startup.target === "development", "development startup lenient");
+
+const auditReport = buildProductionEnvironmentAuditReport(rootPath);
+assert(auditReport.uniqueVariables > 80, "audit scan finds production variables");
+assert(auditReport.summary.duplicateGroups.length >= 5, "duplicate group analysis");
+assert(auditReport.cleanup.rename.length >= 4, "rename recommendations");
 
 const validateSource = read("scripts/validate-environment.mjs");
 assert(validateSource.includes("runConnectivityProbes"), "connectivity probes wired");

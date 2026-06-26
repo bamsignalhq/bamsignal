@@ -1,0 +1,2907 @@
+{
+  "generatedAt": "2026-06-26T23:40:22.610Z",
+  "scannedFiles": 3623,
+  "uniqueVariables": 138,
+  "usage": [
+    {
+      "variable": "ACCESSIBILITY_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/accessibility/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "ADMIN_ACTION_PIN",
+      "filesUsed": [
+        "server/consoleEnv.js"
+      ],
+      "fileCount": 1,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": true,
+      "deprecated": true,
+      "group": "authentication"
+    },
+    {
+      "variable": "ADMIN_BOOTSTRAP_EMAIL",
+      "filesUsed": [
+        "api/admin/bootstrap.js",
+        "scripts/bootstrap-admin.mjs"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "ops@bamsignal.com",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "authentication"
+    },
+    {
+      "variable": "ADMIN_BOOTSTRAP_ENABLED",
+      "filesUsed": [
+        "scripts/test-admin-bootstrap.mjs",
+        "server/services/adminBootstrapAccess.js"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "false",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "authentication"
+    },
+    {
+      "variable": "ADMIN_BOOTSTRAP_PASSWORD",
+      "filesUsed": [
+        "api/admin/bootstrap.js",
+        "scripts/bootstrap-admin.mjs",
+        "server/services/adminBootstrap.js"
+      ],
+      "fileCount": 3,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "authentication"
+    },
+    {
+      "variable": "ADMIN_BOOTSTRAP_SECRET",
+      "filesUsed": [
+        "scripts/test-admin-bootstrap.mjs",
+        "server/services/adminBootstrapAccess.js"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "authentication"
+    },
+    {
+      "variable": "ADMIN_BOOTSTRAP_SMOKE_PORT",
+      "filesUsed": [
+        "scripts/test-admin-bootstrap.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "ADMIN_CONSENT_SECRET",
+      "filesUsed": [
+        "server/adminConsent.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "operations"
+    },
+    {
+      "variable": "ADMIN_EMAILS",
+      "filesUsed": [
+        "server/consoleEnv.js"
+      ],
+      "fileCount": 1,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": true,
+      "deprecated": true,
+      "group": "authentication"
+    },
+    {
+      "variable": "ANDROID_KEYSTORE_SEARCH",
+      "filesUsed": [
+        "scripts/fix-android-play-signing.mjs",
+        "scripts/scan-android-keystores.mjs"
+      ],
+      "fileCount": 2,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "ANDROID_PREPARE_RESET_UPLOAD",
+      "filesUsed": [
+        "scripts/build-android-release.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "ANDROID_STUDIO_JBR",
+      "filesUsed": [
+        "scripts/build-android-release.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "APP_TIMEZONE",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "Africa/Lagos",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "application"
+    },
+    {
+      "variable": "CAP_SERVER_URL",
+      "filesUsed": [
+        "capacitor.config.ts"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "application"
+    },
+    {
+      "variable": "CERTIFICATION_BASE_URL",
+      "filesUsed": [
+        "certification/e2e/config.mjs",
+        "certification/penetration/config.mjs",
+        "certification/performance/config.mjs",
+        "certification/platform-load/config.mjs",
+        "certification/production-smoke/config.mjs"
+      ],
+      "fileCount": 5,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "https://bamsignal.com",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "certification"
+    },
+    {
+      "variable": "CERTIFICATION_CLEANUP",
+      "filesUsed": [
+        "certification/e2e/run.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "CERTIFICATION_DIST_DIR",
+      "filesUsed": [
+        "certification/performance/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "CERTIFICATION_EMAIL_DOMAIN",
+      "filesUsed": [
+        "certification/e2e/config.mjs",
+        "server/services/certificationE2e.js"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "cert.bamsignal.com",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "certification"
+    },
+    {
+      "variable": "CERTIFICATION_HEADLESS",
+      "filesUsed": [
+        "certification/e2e/config.mjs",
+        "certification/performance/config.mjs"
+      ],
+      "fileCount": 2,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "CERTIFICATION_OUTPUT_DIR",
+      "filesUsed": [
+        "certification/e2e/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "CERTIFICATION_PERF_OUTPUT_DIR",
+      "filesUsed": [
+        "certification/performance/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "CERTIFICATION_SCREENSHOTS",
+      "filesUsed": [
+        "certification/e2e/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "CERTIFICATION_TARGET",
+      "filesUsed": [
+        "scripts/validate-environment.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "CERTIFICATION_TIMEOUT_MS",
+      "filesUsed": [
+        "certification/e2e/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "CHAOS_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/chaos/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "COMMAND_CENTER_EMAILS",
+      "filesUsed": [
+        "scripts/test-shadow-ban-restore.mjs",
+        "server/consoleEnv.js"
+      ],
+      "fileCount": 2,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "authentication"
+    },
+    {
+      "variable": "COMMAND_CENTER_PIN",
+      "filesUsed": [
+        "server/consoleEnv.js"
+      ],
+      "fileCount": 1,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "authentication"
+    },
+    {
+      "variable": "CONCIERGE_EMAIL_FROM",
+      "filesUsed": [
+        "server/services/conciergeEmailService.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "email"
+    },
+    {
+      "variable": "CRON_SECRET",
+      "filesUsed": [
+        "api/auth/identity.js",
+        "certification/e2e/config.mjs",
+        "certification/production-smoke/config.mjs",
+        "scripts/test-diagnostics-access.mjs",
+        "scripts/test-signup-protection.mjs",
+        "server/adminAuth.js",
+        "server/adminConsent.js",
+        "server/config.js",
+        "server/services/diagnosticsAccess.js",
+        "server/services/signupMathChallenge.js"
+      ],
+      "fileCount": 10,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "operations"
+    },
+    {
+      "variable": "DATA_INTEGRITY_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/data-integrity/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "DATABASE_PERF_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/database/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "DATABASE_URL",
+      "filesUsed": [
+        "certification/e2e/config.mjs",
+        "scripts/run-migrations.mjs",
+        "server/config.js",
+        "server/services/rateLimitRetention.js",
+        "server/startupMigrations.js"
+      ],
+      "fileCount": 5,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "supabase"
+    },
+    {
+      "variable": "DEPENDENCY_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/dependencies/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "DEPLOY_ENV",
+      "filesUsed": [
+        "certification/release-candidate/lib/collect.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "DIAGNOSTICS_SECRET",
+      "filesUsed": [
+        "certification/e2e/config.mjs",
+        "certification/production-smoke/config.mjs",
+        "server/services/diagnosticsAccess.js"
+      ],
+      "fileCount": 3,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "operations"
+    },
+    {
+      "variable": "DIAGNOSTICS_SMOKE_PORT",
+      "filesUsed": [
+        "scripts/test-diagnostics-access.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "DRIFT_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/drift/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "ENV_PROFILE",
+      "filesUsed": [
+        "scripts/validate-environment.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "ENV_TARGET",
+      "filesUsed": [
+        "certification/release-candidate/lib/collect.mjs",
+        "scripts/validate-environment.mjs"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "certification"
+    },
+    {
+      "variable": "ENV_VALIDATE_CONNECTIVITY",
+      "filesUsed": [
+        "scripts/validate-environment.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "FIREBASE_CLIENT_EMAIL",
+      "filesUsed": [
+        "server/firebaseEnv.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "storage"
+    },
+    {
+      "variable": "FIREBASE_PRIVATE_KEY",
+      "filesUsed": [
+        "server/firebaseEnv.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "storage"
+    },
+    {
+      "variable": "FIREBASE_PROJECT_ID",
+      "filesUsed": [
+        "server/firebaseEnv.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "storage"
+    },
+    {
+      "variable": "FIREBASE_SERVICE_ACCOUNT_JSON",
+      "filesUsed": [
+        "server/firebaseEnv.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "storage"
+    },
+    {
+      "variable": "FOUNDER_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/founder/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "GITHUB_SHA",
+      "filesUsed": [
+        "certification/production-smoke/config.mjs",
+        "vite.config.ts"
+      ],
+      "fileCount": 2,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "GOOGLE_CALENDAR_ID",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "primary",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "google-calendar"
+    },
+    {
+      "variable": "GOOGLE_CALENDAR_REFRESH_TOKEN",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "google-calendar"
+    },
+    {
+      "variable": "GOOGLE_CLIENT_ID",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "google-calendar"
+    },
+    {
+      "variable": "GOOGLE_CLIENT_SECRET",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "google-calendar"
+    },
+    {
+      "variable": "GOOGLE_MEET_CALENDAR_ID",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": "primary",
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "GOOGLE_MEET_CLIENT_ID",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "google-meet"
+    },
+    {
+      "variable": "GOOGLE_MEET_CLIENT_SECRET",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "google-meet"
+    },
+    {
+      "variable": "GOOGLE_MEET_REFRESH_TOKEN",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "google-meet"
+    },
+    {
+      "variable": "GOOGLE_REDIRECT_URI",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "google-calendar"
+    },
+    {
+      "variable": "HOME",
+      "filesUsed": [
+        "scripts/fix-android-play-signing.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "HOST",
+      "filesUsed": [
+        "server/config.js",
+        "server/production.js"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "0.0.0.0",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "application"
+    },
+    {
+      "variable": "IDENTITY_EXPOSURE_SMOKE_PORT",
+      "filesUsed": [
+        "scripts/test-identity-exposure.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "JAVA_HOME",
+      "filesUsed": [
+        "scripts/build-android-release.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LEGACY_SETUP_ENABLED",
+      "filesUsed": [
+        "scripts/test-legacy-setup-hardening.mjs",
+        "server/services/consoleSetupAccess.js"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "false",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "authentication"
+    },
+    {
+      "variable": "LEGACY_SETUP_SECRET",
+      "filesUsed": [
+        "scripts/test-legacy-setup-hardening.mjs",
+        "server/services/consoleSetupAccess.js"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "authentication"
+    },
+    {
+      "variable": "LEGACY_SETUP_SMOKE_PORT",
+      "filesUsed": [
+        "scripts/test-legacy-setup-hardening.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LOAD_CERT_BASE_URL",
+      "filesUsed": [
+        "certification/platform-load/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LOAD_CERT_FAST",
+      "filesUsed": [
+        "certification/platform-load/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LOAD_CERT_MAX_CONCURRENCY",
+      "filesUsed": [
+        "certification/platform-load/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LOAD_CERT_PORT",
+      "filesUsed": [
+        "certification/platform-load/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LOAD_CERT_READY_SAMPLE_MS",
+      "filesUsed": [
+        "certification/platform-load/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LOAD_CERT_REQUEST_TIMEOUT_MS",
+      "filesUsed": [
+        "certification/platform-load/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LOAD_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/platform-load/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LOAD_CERT_START_LOCAL",
+      "filesUsed": [
+        "certification/platform-load/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "LOAD_CERT_VIRTUAL_MEMBERS",
+      "filesUsed": [
+        "certification/platform-load/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "MEMBER_AUTH_SMOKE_PORT",
+      "filesUsed": [
+        "scripts/test-member-data-auth.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "NODE_ENV",
+      "filesUsed": [
+        "certification/release-candidate/lib/collect.mjs",
+        "server/adminConsent.js",
+        "server/config.js"
+      ],
+      "fileCount": 3,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": "development",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "application"
+    },
+    {
+      "variable": "PATH",
+      "filesUsed": [
+        "scripts/build-android-release.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PAYSTACK_ANDROID_CALLBACK_URL",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": "com.bamsignal.com://payment-success",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "payments"
+    },
+    {
+      "variable": "PAYSTACK_CALLBACK_URL",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "payments"
+    },
+    {
+      "variable": "PAYSTACK_PUBLIC_KEY",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "payments"
+    },
+    {
+      "variable": "PAYSTACK_SECRET_KEY",
+      "filesUsed": [
+        "certification/e2e/lib/paystack-cert.mjs",
+        "server/adminConsent.js",
+        "server/config.js",
+        "server/services/signupMathChallenge.js"
+      ],
+      "fileCount": 4,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "payments"
+    },
+    {
+      "variable": "PAYSTACK_WEBHOOK_SECRET",
+      "filesUsed": [
+        "certification/e2e/lib/paystack-cert.mjs",
+        "server/config.js",
+        "server/services/paystackConsultationService.js"
+      ],
+      "fileCount": 3,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "payments"
+    },
+    {
+      "variable": "PAYSTACK_WEBHOOK_URL",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "payments"
+    },
+    {
+      "variable": "PENTEST_BASE_URL",
+      "filesUsed": [
+        "certification/penetration/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PENTEST_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/penetration/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PENTEST_OTP_BURST",
+      "filesUsed": [
+        "certification/penetration/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PENTEST_PIN_BURST",
+      "filesUsed": [
+        "certification/penetration/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PENTEST_PORT",
+      "filesUsed": [
+        "certification/penetration/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PENTEST_REQUEST_TIMEOUT_MS",
+      "filesUsed": [
+        "certification/penetration/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PENTEST_START_LOCAL",
+      "filesUsed": [
+        "certification/penetration/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PGSSLMODE",
+      "filesUsed": [
+        "server/db.js",
+        "server/migrationRunner.js"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "disable (local only)",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "supabase"
+    },
+    {
+      "variable": "PHOTO_ATTRIBUTION_SMOKE_PORT",
+      "filesUsed": [
+        "scripts/test-photo-upload-attribution.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PHOTO_MODERATION_MODE",
+      "filesUsed": [
+        "scripts/test-photo-moderation-provider.mjs",
+        "server/services/photoModerationProvider.js"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "upload_first",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "feature-flags"
+    },
+    {
+      "variable": "PLAY_REVIEWER_PIN",
+      "filesUsed": [
+        "scripts/provision-play-reviewer.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PLAY_UPLOAD_CERT_SHA1",
+      "filesUsed": [
+        "shared/androidPlayUploadCert.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "PORT",
+      "filesUsed": [
+        "certification/penetration/lib/server.mjs",
+        "certification/platform-load/lib/server.mjs",
+        "scripts/smoke-server-import.mjs",
+        "scripts/test-admin-bootstrap.mjs",
+        "scripts/test-diagnostics-access.mjs",
+        "scripts/test-identity-exposure.mjs",
+        "scripts/test-legacy-setup-hardening.mjs",
+        "scripts/test-member-data-auth.mjs",
+        "scripts/test-photo-upload-attribution.mjs",
+        "scripts/test-readiness-health.mjs",
+        "server/config.js",
+        "server/production.js"
+      ],
+      "fileCount": 12,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "3000",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "application"
+    },
+    {
+      "variable": "PUBLIC_APP_URL",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": "https://bamsignal.com",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "application"
+    },
+    {
+      "variable": "RATE_LIMIT_CLEANUP_INTERVAL_MS",
+      "filesUsed": [
+        "server/services/rateLimitRetention.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "operations"
+    },
+    {
+      "variable": "RC_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/release-candidate/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "READINESS_SMOKE_PORT",
+      "filesUsed": [
+        "scripts/test-readiness-health.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "RELIABILITY_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/reliability/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "RESEND_API_KEY",
+      "filesUsed": [
+        "server/services/accountSecurity.js",
+        "server/services/conciergeEmailService.js",
+        "server/services/contactMail.js",
+        "server/services/pinReset.js",
+        "server/services/purchaseEmail.js",
+        "server/services/readiness.js",
+        "server/services/signupOtp.js",
+        "server/supabaseEnv.js"
+      ],
+      "fileCount": 8,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "email"
+    },
+    {
+      "variable": "RUN_MIGRATIONS_ON_STARTUP",
+      "filesUsed": [
+        "server/startupMigrations.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": "true",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "application"
+    },
+    {
+      "variable": "SECURITY_CERT_RUN_ID",
+      "filesUsed": [
+        "certification/security/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "SENDCHAMP_API_KEY",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "whatsapp"
+    },
+    {
+      "variable": "SENDCHAMP_BASE_URL",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "https://api.sendchamp.com/api/v1",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "whatsapp"
+    },
+    {
+      "variable": "SENDCHAMP_SENDER",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "whatsapp"
+    },
+    {
+      "variable": "SENDCHAMP_TEST_CODE",
+      "filesUsed": [
+        "scripts/test-sendchamp-whatsapp.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "SENDCHAMP_WHATSAPP_SENDER",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "whatsapp"
+    },
+    {
+      "variable": "SIGNUP_EMAIL_FROM",
+      "filesUsed": [
+        "server/services/accountSecurity.js",
+        "server/services/conciergeEmailService.js",
+        "server/services/pinReset.js",
+        "server/services/purchaseEmail.js",
+        "server/services/signupOtp.js"
+      ],
+      "fileCount": 5,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "email"
+    },
+    {
+      "variable": "SIGNUP_MATH_CHALLENGE_SECRET",
+      "filesUsed": [
+        "server/services/signupMathChallenge.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "authentication"
+    },
+    {
+      "variable": "SMOKE_BASE_URL",
+      "filesUsed": [
+        "certification/production-smoke/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "SMOKE_COMMIT_SHA",
+      "filesUsed": [
+        "certification/production-smoke/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "SMOKE_DIAGNOSTICS_SECRET",
+      "filesUsed": [
+        "certification/production-smoke/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "SMOKE_PORT",
+      "filesUsed": [
+        "scripts/smoke-server-import.mjs",
+        "scripts/test-admin-bootstrap.mjs",
+        "scripts/test-diagnostics-access.mjs",
+        "scripts/test-identity-exposure.mjs",
+        "scripts/test-legacy-setup-hardening.mjs",
+        "scripts/test-member-data-auth.mjs",
+        "scripts/test-photo-upload-attribution.mjs",
+        "scripts/test-readiness-health.mjs"
+      ],
+      "fileCount": 8,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "SMOKE_RUN_ID",
+      "filesUsed": [
+        "certification/production-smoke/config.mjs"
+      ],
+      "fileCount": 1,
+      "required": "optional-tooling",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "SUPABASE_ANON_KEY",
+      "filesUsed": [
+        "server/services/pinLogin.js",
+        "server/supabaseEnv.js"
+      ],
+      "fileCount": 2,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "supabase"
+    },
+    {
+      "variable": "SUPABASE_SECRET_KEY",
+      "filesUsed": [
+        "server/supabaseEnv.js"
+      ],
+      "fileCount": 1,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": true,
+      "deprecated": true,
+      "group": "supabase"
+    },
+    {
+      "variable": "SUPABASE_SERVICE_ROLE_KEY",
+      "filesUsed": [
+        "scripts/provision-play-reviewer.mjs",
+        "scripts/test-admin-bootstrap.mjs",
+        "server/supabaseEnv.js"
+      ],
+      "fileCount": 3,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "supabase"
+    },
+    {
+      "variable": "SUPABASE_URL",
+      "filesUsed": [
+        "scripts/test-admin-bootstrap.mjs",
+        "server/services/adminBootstrap.js",
+        "server/supabaseEnv.js"
+      ],
+      "fileCount": 3,
+      "required": "critical",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "supabase"
+    },
+    {
+      "variable": "SUPPORT_EMAIL_FROM",
+      "filesUsed": [
+        "server/services/accountSecurity.js",
+        "server/services/conciergeEmailService.js",
+        "server/services/contactMail.js",
+        "server/services/pinReset.js",
+        "server/services/purchaseEmail.js",
+        "server/services/signupOtp.js"
+      ],
+      "fileCount": 6,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": "BamSignal <support@bamsignal.com>",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "email"
+    },
+    {
+      "variable": "SUPPORT_EMAIL_TO",
+      "filesUsed": [
+        "server/services/contactMail.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "support@bamsignal.com",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "email"
+    },
+    {
+      "variable": "TELEGRAM_BOT_TOKEN",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "analytics"
+    },
+    {
+      "variable": "TELEGRAM_ENABLE_POLLING",
+      "filesUsed": [
+        "server/production.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": "false",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "analytics"
+    },
+    {
+      "variable": "TELEGRAM_FREE_CHANNEL_ID",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "analytics"
+    },
+    {
+      "variable": "TELEGRAM_VIP_GROUP_ID",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "analytics"
+    },
+    {
+      "variable": "TELEGRAM_WEBHOOK_SECRET",
+      "filesUsed": [
+        "api/auth/identity.js"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "analytics"
+    },
+    {
+      "variable": "VITE_APP_BUILD_ID",
+      "filesUsed": [
+        "scripts/sync-cache-version.mjs",
+        "vite.config.ts"
+      ],
+      "fileCount": 2,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "buildtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "VITE_APP_BUILD_TIME",
+      "filesUsed": [
+        "vite.config.ts"
+      ],
+      "fileCount": 1,
+      "required": "undocumented",
+      "optional": false,
+      "scope": "buildtime",
+      "defaultValue": null,
+      "inRegistry": false,
+      "legacy": false,
+      "deprecated": false,
+      "group": null
+    },
+    {
+      "variable": "VITE_ENABLE_IMAGE_MODERATION",
+      "filesUsed": [
+        "src/config/imageModeration.ts"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "buildtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "feature-flags"
+    },
+    {
+      "variable": "VITE_ENABLE_REFERRALS_UI",
+      "filesUsed": [
+        "src/constants/featureFlags.ts"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "buildtime",
+      "defaultValue": "false",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "feature-flags"
+    },
+    {
+      "variable": "VITE_PAYSTACK_PUBLIC_KEY",
+      "filesUsed": [
+        "server/config.js",
+        "src/config/paystack.ts"
+      ],
+      "fileCount": 2,
+      "required": "critical",
+      "optional": false,
+      "scope": "buildtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "payments"
+    },
+    {
+      "variable": "VITE_PHOTO_MODERATION_MODE",
+      "filesUsed": [
+        "src/config/imageModeration.ts"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "buildtime",
+      "defaultValue": "upload_first",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "feature-flags"
+    },
+    {
+      "variable": "VITE_PUBLIC_APP_URL",
+      "filesUsed": [
+        "src/services/supabase.ts"
+      ],
+      "fileCount": 1,
+      "required": "critical",
+      "optional": false,
+      "scope": "buildtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "application"
+    },
+    {
+      "variable": "VITE_STORE_SCREENSHOTS",
+      "filesUsed": [
+        "src/App.tsx"
+      ],
+      "fileCount": 1,
+      "required": "optional",
+      "optional": true,
+      "scope": "buildtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "feature-flags"
+    },
+    {
+      "variable": "VITE_SUPABASE_ANON_KEY",
+      "filesUsed": [
+        "server/adminAuth.js",
+        "server/adminConsent.js",
+        "server/services/pinLogin.js",
+        "server/supabaseEnv.js",
+        "src/services/supabase.ts"
+      ],
+      "fileCount": 5,
+      "required": "warning",
+      "optional": false,
+      "scope": "buildtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "supabase"
+    },
+    {
+      "variable": "VITE_SUPABASE_URL",
+      "filesUsed": [
+        "server/adminAuth.js",
+        "server/adminConsent.js",
+        "server/services/adminBootstrap.js",
+        "server/supabaseEnv.js",
+        "src/services/supabase.ts"
+      ],
+      "fileCount": 5,
+      "required": "critical",
+      "optional": false,
+      "scope": "buildtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "supabase"
+    },
+    {
+      "variable": "VITE_SUPPORT_EMAIL",
+      "filesUsed": [
+        "server/services/contactMail.js",
+        "src/constants/support.ts"
+      ],
+      "fileCount": 2,
+      "required": "optional",
+      "optional": true,
+      "scope": "buildtime",
+      "defaultValue": "support@bamsignal.com",
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "email"
+    },
+    {
+      "variable": "ZOOM_ACCOUNT_ID",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "zoom"
+    },
+    {
+      "variable": "ZOOM_CLIENT_ID",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "zoom"
+    },
+    {
+      "variable": "ZOOM_CLIENT_SECRET",
+      "filesUsed": [
+        "server/config.js"
+      ],
+      "fileCount": 1,
+      "required": "warning",
+      "optional": false,
+      "scope": "runtime",
+      "defaultValue": null,
+      "inRegistry": true,
+      "legacy": false,
+      "deprecated": false,
+      "group": "zoom"
+    }
+  ],
+  "summary": {
+    "unusedInCode": [
+      "VITE_FIREBASE_API_KEY",
+      "VITE_FIREBASE_AUTH_DOMAIN",
+      "VITE_FIREBASE_PROJECT_ID",
+      "VITE_FIREBASE_STORAGE_BUCKET",
+      "VITE_FIREBASE_MESSAGING_SENDER_ID",
+      "VITE_FIREBASE_APP_ID",
+      "OPENAI_API_KEY",
+      "OPENAI_MODEL",
+      "CERTIFICATION_EXECUTION_MODE",
+      "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY"
+    ],
+    "missingFromRegistry": [
+      "ADMIN_BOOTSTRAP_SMOKE_PORT",
+      "ANDROID_PREPARE_RESET_UPLOAD",
+      "CERTIFICATION_TARGET",
+      "DIAGNOSTICS_SMOKE_PORT",
+      "ENV_PROFILE",
+      "ENV_VALIDATE_CONNECTIVITY",
+      "GITHUB_SHA",
+      "GOOGLE_MEET_CALENDAR_ID",
+      "IDENTITY_EXPOSURE_SMOKE_PORT",
+      "JAVA_HOME",
+      "LEGACY_SETUP_SMOKE_PORT",
+      "LOAD_CERT_BASE_URL",
+      "LOAD_CERT_FAST",
+      "LOAD_CERT_MAX_CONCURRENCY",
+      "LOAD_CERT_PORT",
+      "LOAD_CERT_READY_SAMPLE_MS",
+      "LOAD_CERT_REQUEST_TIMEOUT_MS",
+      "LOAD_CERT_START_LOCAL",
+      "LOAD_CERT_VIRTUAL_MEMBERS",
+      "MEMBER_AUTH_SMOKE_PORT",
+      "PATH",
+      "PENTEST_BASE_URL",
+      "PENTEST_OTP_BURST",
+      "PENTEST_PIN_BURST",
+      "PENTEST_PORT",
+      "PENTEST_REQUEST_TIMEOUT_MS",
+      "PENTEST_START_LOCAL",
+      "PHOTO_ATTRIBUTION_SMOKE_PORT",
+      "PLAY_REVIEWER_PIN",
+      "PLAY_UPLOAD_CERT_SHA1",
+      "READINESS_SMOKE_PORT",
+      "SENDCHAMP_TEST_CODE",
+      "SMOKE_BASE_URL",
+      "SMOKE_COMMIT_SHA",
+      "SMOKE_DIAGNOSTICS_SECRET",
+      "VITE_APP_BUILD_ID",
+      "VITE_APP_BUILD_TIME"
+    ],
+    "missingFromExample": [
+      "ADMIN_BOOTSTRAP_SMOKE_PORT",
+      "ANDROID_PREPARE_RESET_UPLOAD",
+      "CAP_SERVER_URL",
+      "CERTIFICATION_BASE_URL",
+      "CERTIFICATION_TARGET",
+      "DIAGNOSTICS_SMOKE_PORT",
+      "ENV_PROFILE",
+      "ENV_TARGET",
+      "ENV_VALIDATE_CONNECTIVITY",
+      "FIREBASE_CLIENT_EMAIL",
+      "FIREBASE_PRIVATE_KEY",
+      "FIREBASE_PROJECT_ID",
+      "GITHUB_SHA",
+      "IDENTITY_EXPOSURE_SMOKE_PORT",
+      "JAVA_HOME",
+      "LEGACY_SETUP_SMOKE_PORT",
+      "LOAD_CERT_BASE_URL",
+      "LOAD_CERT_FAST",
+      "LOAD_CERT_MAX_CONCURRENCY",
+      "LOAD_CERT_PORT",
+      "LOAD_CERT_READY_SAMPLE_MS",
+      "LOAD_CERT_REQUEST_TIMEOUT_MS",
+      "LOAD_CERT_START_LOCAL",
+      "LOAD_CERT_VIRTUAL_MEMBERS",
+      "MEMBER_AUTH_SMOKE_PORT",
+      "PATH",
+      "PENTEST_BASE_URL",
+      "PENTEST_OTP_BURST",
+      "PENTEST_PIN_BURST",
+      "PENTEST_PORT",
+      "PENTEST_REQUEST_TIMEOUT_MS",
+      "PENTEST_START_LOCAL",
+      "PGSSLMODE",
+      "PHOTO_ATTRIBUTION_SMOKE_PORT",
+      "PLAY_REVIEWER_PIN",
+      "PLAY_UPLOAD_CERT_SHA1",
+      "RATE_LIMIT_CLEANUP_INTERVAL_MS",
+      "READINESS_SMOKE_PORT",
+      "SENDCHAMP_TEST_CODE",
+      "SIGNUP_MATH_CHALLENGE_SECRET",
+      "SMOKE_BASE_URL",
+      "SMOKE_COMMIT_SHA",
+      "SMOKE_DIAGNOSTICS_SECRET",
+      "VITE_APP_BUILD_ID",
+      "VITE_APP_BUILD_TIME",
+      "VITE_STORE_SCREENSHOTS"
+    ],
+    "legacyVariables": [
+      "SUPABASE_SECRET_KEY",
+      "ADMIN_ACTION_PIN",
+      "ADMIN_EMAILS"
+    ],
+    "deprecatedVariables": [
+      "ADMIN_ACTION_PIN",
+      "ADMIN_EMAILS",
+      "SUPABASE_SECRET_KEY"
+    ],
+    "duplicateGroups": [
+      {
+        "id": "paystack-public-key",
+        "canonical": "VITE_PAYSTACK_PUBLIC_KEY",
+        "variables": [
+          "VITE_PAYSTACK_PUBLIC_KEY",
+          "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY",
+          "PAYSTACK_PUBLIC_KEY"
+        ],
+        "referenced": [
+          "VITE_PAYSTACK_PUBLIC_KEY",
+          "PAYSTACK_PUBLIC_KEY"
+        ],
+        "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+      },
+      {
+        "id": "supabase-url",
+        "canonical": "SUPABASE_URL",
+        "variables": [
+          "SUPABASE_URL",
+          "VITE_SUPABASE_URL"
+        ],
+        "referenced": [
+          "SUPABASE_URL",
+          "VITE_SUPABASE_URL"
+        ],
+        "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+      },
+      {
+        "id": "supabase-anon-key",
+        "canonical": "SUPABASE_ANON_KEY",
+        "variables": [
+          "SUPABASE_ANON_KEY",
+          "VITE_SUPABASE_ANON_KEY"
+        ],
+        "referenced": [
+          "SUPABASE_ANON_KEY",
+          "VITE_SUPABASE_ANON_KEY"
+        ],
+        "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+      },
+      {
+        "id": "supabase-service-key",
+        "canonical": "SUPABASE_SERVICE_ROLE_KEY",
+        "variables": [
+          "SUPABASE_SERVICE_ROLE_KEY",
+          "SUPABASE_SECRET_KEY"
+        ],
+        "referenced": [
+          "SUPABASE_SERVICE_ROLE_KEY",
+          "SUPABASE_SECRET_KEY"
+        ],
+        "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+      },
+      {
+        "id": "public-app-url",
+        "canonical": "PUBLIC_APP_URL",
+        "variables": [
+          "PUBLIC_APP_URL",
+          "VITE_PUBLIC_APP_URL"
+        ],
+        "referenced": [
+          "PUBLIC_APP_URL",
+          "VITE_PUBLIC_APP_URL"
+        ],
+        "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+      },
+      {
+        "id": "command-center-pin",
+        "canonical": "COMMAND_CENTER_PIN",
+        "variables": [
+          "COMMAND_CENTER_PIN",
+          "ADMIN_ACTION_PIN"
+        ],
+        "referenced": [
+          "COMMAND_CENTER_PIN",
+          "ADMIN_ACTION_PIN"
+        ],
+        "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+      },
+      {
+        "id": "command-center-emails",
+        "canonical": "COMMAND_CENTER_EMAILS",
+        "variables": [
+          "COMMAND_CENTER_EMAILS",
+          "ADMIN_EMAILS"
+        ],
+        "referenced": [
+          "COMMAND_CENTER_EMAILS",
+          "ADMIN_EMAILS"
+        ],
+        "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+      }
+    ]
+  },
+  "cleanup": {
+    "keep": [
+      "ADMIN_BOOTSTRAP_EMAIL",
+      "ADMIN_BOOTSTRAP_ENABLED",
+      "ADMIN_BOOTSTRAP_PASSWORD",
+      "ADMIN_BOOTSTRAP_SECRET",
+      "ADMIN_CONSENT_SECRET",
+      "APP_TIMEZONE",
+      "CAP_SERVER_URL",
+      "CERTIFICATION_BASE_URL",
+      "CERTIFICATION_EMAIL_DOMAIN",
+      "COMMAND_CENTER_EMAILS",
+      "COMMAND_CENTER_PIN",
+      "CONCIERGE_EMAIL_FROM",
+      "CRON_SECRET",
+      "DATABASE_URL",
+      "DIAGNOSTICS_SECRET",
+      "ENV_TARGET",
+      "FIREBASE_CLIENT_EMAIL",
+      "FIREBASE_PRIVATE_KEY",
+      "FIREBASE_PROJECT_ID",
+      "FIREBASE_SERVICE_ACCOUNT_JSON",
+      "GOOGLE_CALENDAR_ID",
+      "GOOGLE_CALENDAR_REFRESH_TOKEN",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "GOOGLE_MEET_CLIENT_ID",
+      "GOOGLE_MEET_CLIENT_SECRET",
+      "GOOGLE_MEET_REFRESH_TOKEN",
+      "GOOGLE_REDIRECT_URI",
+      "HOST",
+      "LEGACY_SETUP_ENABLED",
+      "LEGACY_SETUP_SECRET",
+      "NODE_ENV",
+      "PAYSTACK_ANDROID_CALLBACK_URL",
+      "PAYSTACK_CALLBACK_URL",
+      "PAYSTACK_PUBLIC_KEY",
+      "PAYSTACK_SECRET_KEY",
+      "PAYSTACK_WEBHOOK_SECRET",
+      "PAYSTACK_WEBHOOK_URL",
+      "PGSSLMODE",
+      "PHOTO_MODERATION_MODE",
+      "PORT",
+      "PUBLIC_APP_URL",
+      "RATE_LIMIT_CLEANUP_INTERVAL_MS",
+      "RESEND_API_KEY",
+      "RUN_MIGRATIONS_ON_STARTUP",
+      "SENDCHAMP_API_KEY",
+      "SENDCHAMP_BASE_URL",
+      "SENDCHAMP_SENDER",
+      "SENDCHAMP_WHATSAPP_SENDER",
+      "SIGNUP_EMAIL_FROM",
+      "SIGNUP_MATH_CHALLENGE_SECRET",
+      "SUPABASE_ANON_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "SUPABASE_URL",
+      "SUPPORT_EMAIL_FROM",
+      "SUPPORT_EMAIL_TO",
+      "TELEGRAM_BOT_TOKEN",
+      "TELEGRAM_ENABLE_POLLING",
+      "TELEGRAM_FREE_CHANNEL_ID",
+      "TELEGRAM_VIP_GROUP_ID",
+      "TELEGRAM_WEBHOOK_SECRET",
+      "VITE_ENABLE_IMAGE_MODERATION",
+      "VITE_ENABLE_REFERRALS_UI",
+      "VITE_PAYSTACK_PUBLIC_KEY",
+      "VITE_PHOTO_MODERATION_MODE",
+      "VITE_PUBLIC_APP_URL",
+      "VITE_STORE_SCREENSHOTS",
+      "VITE_SUPABASE_ANON_KEY",
+      "VITE_SUPABASE_URL",
+      "VITE_SUPPORT_EMAIL",
+      "ZOOM_ACCOUNT_ID",
+      "ZOOM_CLIENT_ID",
+      "ZOOM_CLIENT_SECRET"
+    ],
+    "delete": [
+      "VITE_FIREBASE_API_KEY",
+      "VITE_FIREBASE_AUTH_DOMAIN",
+      "VITE_FIREBASE_PROJECT_ID",
+      "VITE_FIREBASE_STORAGE_BUCKET",
+      "VITE_FIREBASE_MESSAGING_SENDER_ID",
+      "VITE_FIREBASE_APP_ID",
+      "OPENAI_API_KEY",
+      "OPENAI_MODEL",
+      "CERTIFICATION_EXECUTION_MODE",
+      "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY"
+    ],
+    "rename": [
+      {
+        "from": "SUPABASE_SECRET_KEY",
+        "to": "SUPABASE_SERVICE_ROLE_KEY",
+        "reason": "legacy alias — remove from Coolify after migration"
+      },
+      {
+        "from": "ADMIN_ACTION_PIN",
+        "to": "COMMAND_CENTER_PIN",
+        "reason": "deprecated alias"
+      },
+      {
+        "from": "ADMIN_EMAILS",
+        "to": "COMMAND_CENTER_EMAILS",
+        "reason": "deprecated alias"
+      },
+      {
+        "from": "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY",
+        "to": "VITE_PAYSTACK_PUBLIC_KEY",
+        "reason": "portability alias only"
+      }
+    ],
+    "rotate": [
+      {
+        "name": "DATABASE_URL",
+        "rotation": "on-compromise",
+        "required": "critical"
+      },
+      {
+        "name": "VITE_SUPABASE_ANON_KEY",
+        "rotation": "supabase-rotate",
+        "required": "critical"
+      },
+      {
+        "name": "SUPABASE_SERVICE_ROLE_KEY",
+        "rotation": "quarterly",
+        "required": "critical"
+      },
+      {
+        "name": "SUPABASE_ANON_KEY",
+        "rotation": "supabase-rotate",
+        "required": "warning"
+      },
+      {
+        "name": "COMMAND_CENTER_PIN",
+        "rotation": "quarterly",
+        "required": "critical"
+      },
+      {
+        "name": "COMMAND_CENTER_EMAILS",
+        "rotation": "on-personnel-change",
+        "required": "critical"
+      },
+      {
+        "name": "SIGNUP_MATH_CHALLENGE_SECRET",
+        "rotation": "quarterly",
+        "required": "optional"
+      },
+      {
+        "name": "PAYSTACK_SECRET_KEY",
+        "rotation": "on-compromise",
+        "required": "critical"
+      },
+      {
+        "name": "PAYSTACK_WEBHOOK_SECRET",
+        "rotation": "on-compromise",
+        "required": "warning"
+      },
+      {
+        "name": "RESEND_API_KEY",
+        "rotation": "annual",
+        "required": "critical"
+      },
+      {
+        "name": "SENDCHAMP_API_KEY",
+        "rotation": "annual",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_CLIENT_ID",
+        "rotation": "annual",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_CLIENT_SECRET",
+        "rotation": "annual",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_CALENDAR_REFRESH_TOKEN",
+        "rotation": "oauth-refresh",
+        "required": "warning"
+      },
+      {
+        "name": "ZOOM_CLIENT_ID",
+        "rotation": "annual",
+        "required": "warning"
+      },
+      {
+        "name": "ZOOM_CLIENT_SECRET",
+        "rotation": "annual",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_MEET_CLIENT_ID",
+        "rotation": "annual",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_MEET_CLIENT_SECRET",
+        "rotation": "annual",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_MEET_REFRESH_TOKEN",
+        "rotation": "oauth-refresh",
+        "required": "warning"
+      },
+      {
+        "name": "FIREBASE_SERVICE_ACCOUNT_JSON",
+        "rotation": "on-compromise",
+        "required": "optional"
+      },
+      {
+        "name": "FIREBASE_PRIVATE_KEY",
+        "rotation": "on-compromise",
+        "required": "optional"
+      },
+      {
+        "name": "CRON_SECRET",
+        "rotation": "quarterly",
+        "required": "critical"
+      },
+      {
+        "name": "DIAGNOSTICS_SECRET",
+        "rotation": "quarterly",
+        "required": "warning"
+      },
+      {
+        "name": "ADMIN_CONSENT_SECRET",
+        "rotation": "quarterly",
+        "required": "optional"
+      },
+      {
+        "name": "TELEGRAM_BOT_TOKEN",
+        "rotation": "on-compromise",
+        "required": "optional"
+      },
+      {
+        "name": "TELEGRAM_WEBHOOK_SECRET",
+        "rotation": "on-compromise",
+        "required": "optional"
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "rotation": "on-compromise",
+        "required": "optional"
+      }
+    ],
+    "stagingEquivalents": [
+      {
+        "name": "NODE_ENV",
+        "required": "critical"
+      },
+      {
+        "name": "PUBLIC_APP_URL",
+        "required": "critical"
+      },
+      {
+        "name": "VITE_PUBLIC_APP_URL",
+        "required": "critical"
+      },
+      {
+        "name": "RUN_MIGRATIONS_ON_STARTUP",
+        "required": "warning"
+      },
+      {
+        "name": "DATABASE_URL",
+        "required": "critical"
+      },
+      {
+        "name": "VITE_SUPABASE_URL",
+        "required": "critical"
+      },
+      {
+        "name": "VITE_SUPABASE_ANON_KEY",
+        "required": "critical"
+      },
+      {
+        "name": "SUPABASE_URL",
+        "required": "critical"
+      },
+      {
+        "name": "SUPABASE_SERVICE_ROLE_KEY",
+        "required": "critical"
+      },
+      {
+        "name": "SUPABASE_ANON_KEY",
+        "required": "warning"
+      },
+      {
+        "name": "COMMAND_CENTER_PIN",
+        "required": "critical"
+      },
+      {
+        "name": "COMMAND_CENTER_EMAILS",
+        "required": "critical"
+      },
+      {
+        "name": "PAYSTACK_SECRET_KEY",
+        "required": "critical"
+      },
+      {
+        "name": "VITE_PAYSTACK_PUBLIC_KEY",
+        "required": "critical"
+      },
+      {
+        "name": "PAYSTACK_CALLBACK_URL",
+        "required": "warning"
+      },
+      {
+        "name": "PAYSTACK_ANDROID_CALLBACK_URL",
+        "required": "warning"
+      },
+      {
+        "name": "PAYSTACK_WEBHOOK_URL",
+        "required": "warning"
+      },
+      {
+        "name": "PAYSTACK_WEBHOOK_SECRET",
+        "required": "warning"
+      },
+      {
+        "name": "RESEND_API_KEY",
+        "required": "critical"
+      },
+      {
+        "name": "SIGNUP_EMAIL_FROM",
+        "required": "warning"
+      },
+      {
+        "name": "SUPPORT_EMAIL_FROM",
+        "required": "warning"
+      },
+      {
+        "name": "SENDCHAMP_API_KEY",
+        "required": "warning"
+      },
+      {
+        "name": "SENDCHAMP_SENDER",
+        "required": "warning"
+      },
+      {
+        "name": "SENDCHAMP_WHATSAPP_SENDER",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_CLIENT_ID",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_CLIENT_SECRET",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_REDIRECT_URI",
+        "required": "warning"
+      },
+      {
+        "name": "ZOOM_CLIENT_ID",
+        "required": "warning"
+      },
+      {
+        "name": "ZOOM_CLIENT_SECRET",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_MEET_CLIENT_ID",
+        "required": "warning"
+      },
+      {
+        "name": "GOOGLE_MEET_CLIENT_SECRET",
+        "required": "warning"
+      },
+      {
+        "name": "CRON_SECRET",
+        "required": "critical"
+      },
+      {
+        "name": "DIAGNOSTICS_SECRET",
+        "required": "warning"
+      }
+    ]
+  },
+  "duplicateAnalysis": [
+    {
+      "id": "paystack-public-key",
+      "canonical": "VITE_PAYSTACK_PUBLIC_KEY",
+      "variables": [
+        "VITE_PAYSTACK_PUBLIC_KEY",
+        "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY",
+        "PAYSTACK_PUBLIC_KEY"
+      ],
+      "referenced": [
+        "VITE_PAYSTACK_PUBLIC_KEY",
+        "PAYSTACK_PUBLIC_KEY"
+      ],
+      "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+    },
+    {
+      "id": "supabase-url",
+      "canonical": "SUPABASE_URL",
+      "variables": [
+        "SUPABASE_URL",
+        "VITE_SUPABASE_URL"
+      ],
+      "referenced": [
+        "SUPABASE_URL",
+        "VITE_SUPABASE_URL"
+      ],
+      "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+    },
+    {
+      "id": "supabase-anon-key",
+      "canonical": "SUPABASE_ANON_KEY",
+      "variables": [
+        "SUPABASE_ANON_KEY",
+        "VITE_SUPABASE_ANON_KEY"
+      ],
+      "referenced": [
+        "SUPABASE_ANON_KEY",
+        "VITE_SUPABASE_ANON_KEY"
+      ],
+      "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+    },
+    {
+      "id": "supabase-service-key",
+      "canonical": "SUPABASE_SERVICE_ROLE_KEY",
+      "variables": [
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_SECRET_KEY"
+      ],
+      "referenced": [
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "SUPABASE_SECRET_KEY"
+      ],
+      "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+    },
+    {
+      "id": "public-app-url",
+      "canonical": "PUBLIC_APP_URL",
+      "variables": [
+        "PUBLIC_APP_URL",
+        "VITE_PUBLIC_APP_URL"
+      ],
+      "referenced": [
+        "PUBLIC_APP_URL",
+        "VITE_PUBLIC_APP_URL"
+      ],
+      "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+    },
+    {
+      "id": "command-center-pin",
+      "canonical": "COMMAND_CENTER_PIN",
+      "variables": [
+        "COMMAND_CENTER_PIN",
+        "ADMIN_ACTION_PIN"
+      ],
+      "referenced": [
+        "COMMAND_CENTER_PIN",
+        "ADMIN_ACTION_PIN"
+      ],
+      "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+    },
+    {
+      "id": "command-center-emails",
+      "canonical": "COMMAND_CENTER_EMAILS",
+      "variables": [
+        "COMMAND_CENTER_EMAILS",
+        "ADMIN_EMAILS"
+      ],
+      "referenced": [
+        "COMMAND_CENTER_EMAILS",
+        "ADMIN_EMAILS"
+      ],
+      "undefinedBehaviourRisk": "Multiple aliases read with fallback — mismatched values cause client/server drift or auth failures"
+    }
+  ],
+  "startupHealth": {
+    "configSnapshot": {
+      "hasDatabaseUrl": false,
+      "hasPaystackSecret": false,
+      "publicAppUrl": "https://bamsignal.com",
+      "port": 3000,
+      "host": "0.0.0.0"
+    },
+    "readiness": {
+      "ready": false,
+      "database": "dry-run",
+      "paystack": false,
+      "signupEmail": false,
+      "photoStorage": false,
+      "resend": false
+    },
+    "verification": {
+      "allOk": true,
+      "checks": [
+        {
+          "id": "database",
+          "configSource": "DATABASE_URL → server/config.js → server/db.js",
+          "readinessField": "database",
+          "expected": "dry-run or disconnected",
+          "ok": true
+        },
+        {
+          "id": "paystack",
+          "configSource": "PAYSTACK_SECRET_KEY → server/config.js",
+          "readinessField": "paystack",
+          "expected": "boolean",
+          "ok": true
+        },
+        {
+          "id": "signup-email",
+          "configSource": "RESEND + SUPABASE_SERVICE_ROLE_KEY → server/supabaseEnv.js",
+          "readinessField": "signupEmail",
+          "expected": "boolean",
+          "ok": true
+        },
+        {
+          "id": "photo-storage",
+          "configSource": "SUPABASE_SERVICE_ROLE_KEY → server/services/photoStorage.js",
+          "readinessField": "photoStorage",
+          "expected": "boolean",
+          "ok": true
+        },
+        {
+          "id": "resend",
+          "configSource": "RESEND_API_KEY direct",
+          "readinessField": "resend",
+          "expected": "boolean",
+          "ok": true
+        }
+      ]
+    }
+  }
+}

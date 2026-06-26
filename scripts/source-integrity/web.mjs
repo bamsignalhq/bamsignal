@@ -84,6 +84,7 @@ const profilePhotoUploadSource = ctx.readSrc("src/utils/profilePhotoUpload.ts");
 const complianceGateSource = ctx.readSrc("src/components/ComplianceGateModal.tsx");
 const complianceUtilSource = ctx.readSrc("src/utils/compliance.ts");
 const profilePageSource = ctx.readSrc("src/pages/ProfilePage.tsx");
+const profileOverviewSource = ctx.readSrc("src/components/profile/overview/ProfileOverviewContent.tsx");
 const discoverPageSource = ctx.readSrc("src/pages/DiscoverPage.tsx");
 const homePageSource = ctx.readSrc("src/pages/HomePage.tsx");
 const onboardingPageSource = ctx.readSrc("src/pages/OnboardingPage.tsx");
@@ -628,7 +629,7 @@ assertCheck(
     voiceIntroStorageSource.includes("VOICE_INTROS_BUCKET") &&
     serverAppSource.includes('"/api/member/voice"') &&
     profilePageSource.includes("getVoiceVibeUrl") &&
-    profilePageSource.includes("VoiceVibeWaveformCard") &&
+    profileOverviewSource.includes("VoiceVibeWaveformCard") &&
     userMessagesSource.includes("voiceIntroSaveFailed"),
   "voice intro must record, upload to storage, and persist on profile"
 );

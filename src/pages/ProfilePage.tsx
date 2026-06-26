@@ -4,7 +4,6 @@ import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { profileIntentLabel } from "../constants/intents";
 import { WHAT_BRINGS_ME_HERE_TITLE } from "../constants/relationshipIntent";
 import { WhatBringsYouHerePicker } from "../components/relationshipIntent/WhatBringsYouHerePicker";
-import { WhatBringsYouHereEmptyCard } from "../components/relationshipIntent/WhatBringsYouHereEmptyCard";
 import { relationshipIntentsFrom } from "../constants/relationshipIntent";
 import {
   LazyCoverPhotoUpload,
@@ -13,10 +12,7 @@ import {
   LazySafetySettingsCard,
   LazyTwoFactorSettingsCard
 } from "../components/lazyProfileUi";
-import { VoiceVibeEmptyCard } from "../components/voice/VoiceVibeEmptyCard";
-import { VoiceVibeWaveformCard } from "../components/voice/VoiceVibeWaveformCard";
 import { TrustedMemberFlow } from "../components/trusted/TrustedMemberFlow";
-import { TrustedMemberNudge } from "../components/trusted/TrustedMemberNudge";
 import { MatchPreferenceFields } from "../components/preferences/MatchPreferenceFields";
 import { TapSelectField } from "../components/TapSelectField";
 import { searchStateFromPrefs, withSearchStateChange, normalizeSearchCities } from "../utils/searchLocationPrefs";
@@ -34,14 +30,8 @@ import {
   normalizeBodyTypes,
   stateDisplayLabel
 } from "../constants/profileOptions";
-import { ProfileCoverHeader } from "../components/ProfileCoverHeader";
-import { ProfileCompletionCompact } from "../components/nudges/ProfileCompletionCompact";
-import { ActivityHighlightsCard } from "../components/activity/ActivityHighlightsCard";
-import { SavedProfilesPreview } from "../components/savedProfiles/SavedProfilesPreview";
-import { buildActivityHighlights } from "../utils/buildActivityHighlights";
-import { ProfileInterestsPreview } from "../components/profile/ProfileInterestsPreview";
-import { MoreAboutMePicker } from "../components/moreAboutMe/MoreAboutMePicker";
-import { MoreAboutMeEmptyCard } from "../components/moreAboutMe/MoreAboutMeEmptyCard";
+import { ProfileOverviewContent } from "../components/profile/overview/ProfileOverviewContent";
+import { PhotoTipsCarousel } from "../components/profilePhoto/PhotoTipsCarousel";
 import { normalizeMoreAboutMeInterests } from "../utils/moreAboutMe";
 import { MORE_ABOUT_ME_TITLE } from "../constants/moreAboutMe";
 import type {
@@ -86,10 +76,7 @@ import { ContactForm } from "../components/ContactForm";
 import { ProfileBoostSheet } from "../components/profile/ProfileBoostSheet";
 import { FastConnectionSheet } from "../components/profile/FastConnectionSheet";
 import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
-import { ProfileOverviewCard } from "../components/profile/ProfileOverviewCard";
-import {
-  getProfileAboutDisplay
-} from "../utils/ownProfileOverview";
+import { MoreAboutMePicker } from "../components/moreAboutMe/MoreAboutMePicker";
 import type { BoostProduct } from "../constants/boosts";
 import { boostNeedsMemberCity } from "../constants/boosts";
 import { fetchAccountStateRemote } from "../services/memberTrust";
@@ -252,6 +239,7 @@ export function ProfilePage({
   const [settingsPanel, setSettingsPanel] = useState<SettingsPanel>("hub");
   const [editOpen, setEditOpen] = useState<EditSection | null>(null);
   const [boostSheetOpen, setBoostSheetOpen] = useState(false);
+  const [completionSheetOpen, setCompletionSheetOpen] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
   const [verifySubmitted, setVerifySubmitted] = useState(
     () => profile.verificationStatus === "pending" || isUserVerificationPending(user.phone)
@@ -482,15 +470,6 @@ export function ProfilePage({
   const phoneVerified = Boolean(user.phoneVerified);
   const verification = getVerificationTier(profile, isPremium, phoneVerified);
 
-  const activityHighlights = useMemo(
-    () =>
-      buildActivityHighlights(profile, {
-        phoneVerified,
-        isPremium
-      }),
-    [profile, phoneVerified, isPremium]
-  );
-
   const settingsBack = () => {
     if (settingsPanel === "hub") {
       setView("edit");
@@ -507,7 +486,7 @@ export function ProfilePage({
 
   return (
     <div
-      className={`page profile-page profile-page--hero profile-page--premium ${view === "edit" ? "profile-page--editing" : ""}`}
+      className={`page profile-page profile-page--hero profile-page--premium profile-page--fintech-overview ${view === "edit" ? "profile-page--editing" : ""}`}
     >
       {modMessage && (
         <p
@@ -519,153 +498,46 @@ export function ProfilePage({
       )}
 
       {view === "overview" && (
-        <>
-          <ProfileCoverHeader
-            user={user}
-            profile={profile}
-            verification={verification}
-            variant="premium"
-            editableCover
-            coverPhoto={profile.coverPhoto}
-            photoMeta={profile.photoMeta}
-            onCoverChange={(nextCover, nextPhotoMeta, coverPhotoPath) => {
-              setProfile((p) => {
-                const next = persistCoverPhotoChange(user, p, {
-                  url: nextCover,
-                  path: coverPhotoPath,
-                  photoMeta: nextPhotoMeta
-                });
-                return next;
-              });
-            }}
-            onCoverModerationMessage={showModMessage}
-            editablePhotos
-            onPhotosChange={(photos, nextPhotoMeta, nextMainPhotoUrl) => {
-              commitProfileMediaUpdate(
-                normalizeDatingProfile({
-                  ...profile,
-                  photos,
-                  photoMeta: nextPhotoMeta ?? profile.photoMeta,
-                  mainPhotoUrl: nextMainPhotoUrl
-                })
-              );
-            }}
-            onPhotoModerationMessage={showModMessage}
-            onAddVoiceVibe={openVoiceVibePage}
-          />
-
-          <ActivityHighlightsCard
-            highlights={activityHighlights}
-            variant="profile"
-            className="profile-page__activity-highlights"
-          />
-
-          <SavedProfilesPreview viewerCity={profile.city} />
-
-          <ProfileCompletionCompact
-            profile={profile}
-            phoneVerified={phoneVerified}
-            isPremium={isPremium}
-            onImprove={() => setView("edit")}
-            className="profile-page__completion-compact"
-          />
-
-          {!isTrustedMember(profile) ? (
-            isTrustedMemberPending(profile) ? (
-              <section className="profile-trusted-empty card">
-                <p className="profile-trusted-empty__label">Review in progress</p>
-                <p className="why-trusted-member-card__hint">
-                  Your verification photo remains private and is never shown publicly.
-                </p>
-              </section>
-            ) : (
-              <TrustedMemberNudge variant="profile" onBecome={openTrustedMemberPage} />
-            )
-          ) : null}
-
-          {!relationshipIntentsFrom(profile.intents).length ? (
-            <WhatBringsYouHereEmptyCard onSet={() => openEdit("intent")} />
-          ) : null}
-
-          {!normalizeMoreAboutMeInterests(profile.interests).length ? (
-            <MoreAboutMeEmptyCard onAdd={() => openEdit("interests")} />
-          ) : null}
-
-          <div className="profile-premium-sections">
-            {(() => {
-              const about = getProfileAboutDisplay(profile);
-              if (!about) return null;
-              return (
-                <ProfileOverviewCard
-                  title="About"
-                  onEdit={() => openEdit(about.editSection === "bio" ? "bio" : "prompts")}
-                >
-                  <p className="profile-premium-card__text">{about.text}</p>
-                </ProfileOverviewCard>
-              );
-            })()}
-
-            {normalizeMoreAboutMeInterests(profile.interests).length > 0 ? (
-              <ProfileOverviewCard title={MORE_ABOUT_ME_TITLE} onEdit={() => openEdit("interests")}>
-                <ProfileInterestsPreview interests={profile.interests} variant="premium" />
-              </ProfileOverviewCard>
-            ) : null}
-
-            {relationshipIntentsFrom(profile.intents).length > 0 ? (
-              <ProfileOverviewCard title={WHAT_BRINGS_ME_HERE_TITLE} onEdit={() => openEdit("intent")}>
-                <div className="profile-premium-pills profile-premium-pills--intent">
-                  {relationshipIntentsFrom(profile.intents).map((intent) => (
-                    <span key={intent} className="profile-premium-pill profile-premium-pill--outline">
-                      {profileIntentLabel(intent)}
-                    </span>
-                  ))}
-                </div>
-              </ProfileOverviewCard>
-            ) : null}
-
-            <ProfileOverviewCard title="Voice Vibe" onEdit={openVoiceVibePage}>
-              {hasVoiceVibe(profile) && getVoiceVibeUrl(profile) ? (
-                <VoiceVibeWaveformCard
-                  url={getVoiceVibeUrl(profile)!}
-                  duration={getVoiceVibeDuration(profile)}
-                  variant="card"
-                />
-              ) : (
-                <VoiceVibeEmptyCard onAdd={openVoiceVibePage} />
-              )}
-            </ProfileOverviewCard>
-          </div>
-
-          <div className="profile-action-card">
-            <button type="button" className="btn-primary btn-full profile-action-card__primary" onClick={() => setView("edit")}>
-              Edit profile
-            </button>
-            <div className="profile-action-card__secondary">
-              <button type="button" className="btn-secondary btn-full" onClick={() => openSettings()}>
-                <Settings size={16} aria-hidden />
-                Settings
-              </button>
-              <button type="button" className="btn-secondary btn-full profile-edit-cta__logout" onClick={handleLogout}>
-                <LogOut size={16} aria-hidden />
-                Log out
-              </button>
-            </div>
-            {showBoostEntry ? (
-              <button
-                type="button"
-                className="profile-boost-entry profile-boost-entry--subtle"
-                onClick={() => setBoostSheetOpen(true)}
-              >
-                Boost visibility →
-              </button>
-            ) : null}
-            {fastConnectionStatus ? (
-              <p className="profile-fast-connection-status" role="status">
-                {fastConnectionStatus}
-              </p>
-            ) : null}
-          </div>
-        </>
+        <ProfileOverviewContent
+          user={user}
+          profile={profile}
+          verification={verification}
+          phoneVerified={phoneVerified}
+          isPremium={isPremium}
+          showBoostEntry={showBoostEntry}
+          completionSheetOpen={completionSheetOpen}
+          onCompletionSheetOpenChange={setCompletionSheetOpen}
+          onEdit={() => setView("edit")}
+          onOpenEditSection={openEdit}
+          onOpenVoiceVibe={openVoiceVibePage}
+          onOpenTrusted={openTrustedMemberPage}
+          onOpenBoost={() => setBoostSheetOpen(true)}
+          onOpenSettings={() => openSettings()}
+          onLogout={handleLogout}
+          coverPhoto={profile.coverPhoto}
+          photoMeta={profile.photoMeta}
+          onCoverChange={(nextCover, nextPhotoMeta, coverPhotoPath) => {
+            setProfile((p) =>
+              persistCoverPhotoChange(user, p, {
+                url: nextCover,
+                path: coverPhotoPath,
+                photoMeta: nextPhotoMeta
+              })
+            );
+          }}
+          onCoverModerationMessage={showModMessage}
+          onPhotosChange={(photos, nextPhotoMeta, nextMainPhotoUrl) => {
+            commitProfileMediaUpdate(
+              normalizeDatingProfile({
+                ...profile,
+                photos,
+                photoMeta: nextPhotoMeta ?? profile.photoMeta,
+                mainPhotoUrl: nextMainPhotoUrl
+              })
+            );
+          }}
+          onPhotoModerationMessage={showModMessage}
+        />
       )}
 
       {view === "edit" && (
@@ -790,6 +662,7 @@ export function ProfilePage({
               onModerationMessage={showModMessage}
             />
             </Suspense>
+            <PhotoTipsCarousel className="profile-edit-photo-tips" />
           </EditAccordion>
 
           <EditAccordion

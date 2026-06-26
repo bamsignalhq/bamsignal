@@ -57,10 +57,23 @@ assert(discoverSource.includes("interleaveTrustNudges"), "discover feed trust in
 assert(!discoverSource.includes("ProfileReminderCard"), "discover removed reminder card");
 
 const profilePageSource = readFileSync(join(rootPath, "src/pages/ProfilePage.tsx"), "utf8");
-assert(profilePageSource.includes("ProfileCompletionCompact"), "profile compact completion");
-assert(!profilePageSource.includes("ProfileStrengthCard"), "profile removed strength card");
-assert(!profilePageSource.includes("ProfilePhotoProgressCard"), "profile removed photo card");
-assert(profilePageSource.includes("TrustedMemberNudge"), "profile trusted nudge");
+assert(profilePageSource.includes("ProfileOverviewContent"), "profile fintech overview");
+assert(!profilePageSource.includes("ProfilePhotoProgressCard"), "profile removed photo progress");
+assert(!profilePageSource.includes("ActivityHighlightsCard"), "profile removed activity highlights");
+assert(!profilePageSource.includes("WhatBringsYouHereEmptyCard"), "profile removed empty intent card");
+assert(!profilePageSource.includes("profile-action-card"), "profile removed action card block");
+
+const overviewSource = readFileSync(
+  join(rootPath, "src/components/profile/overview/ProfileOverviewContent.tsx"),
+  "utf8"
+);
+assert(overviewSource.includes("ProfileFintechHero"), "fintech hero section");
+assert(overviewSource.includes("ProfileQuickStats"), "quick stats row");
+assert(overviewSource.includes("ProfileGuidanceChip"), "single guidance chip");
+assert(overviewSource.includes("ProfileCompletionSheet"), "completion sheet");
+
+const cssOverviewSource = readFileSync(join(rootPath, "src/styles/profile-fintech-overview.css"), "utf8");
+assert(cssOverviewSource.includes("profile-fintech-hero"), "fintech overview styles");
 
 const emptyChatSource = readFileSync(join(rootPath, "src/components/chats/EmptyChatState.tsx"), "utf8");
 assert(!emptyChatSource.includes("ProfileReminderCard"), "chats removed profile reminder");

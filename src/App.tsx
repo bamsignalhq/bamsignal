@@ -152,6 +152,7 @@ import { clearStaleBootFlags } from "./utils/bootFlags";
 import { debugSessionCall, setHydrationDebugState } from "./utils/debugRecursion";
 import { readCachedMemberSession } from "./utils/sessionRestoreBootstrap";
 import { recordSessionRestoreDuration } from "./utils/sessionRestoreMetrics";
+import { markStartupFirstPaint } from "./utils/startupInstrumentation";
 import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
@@ -802,7 +803,7 @@ export function App() {
     setMemberSessionReady(false);
   }, []);
 
-  const MEMBER_BUNDLE_HYDRATE_FAILSAFE_MS = 12_000;
+  const MEMBER_BUNDLE_HYDRATE_FAILSAFE_MS = 8_000;
 
   const scheduleMemberBundleHydration = useCallback(
     (
@@ -811,12 +812,11 @@ export function App() {
         forceOnboarding?: boolean;
         referralCode?: string | null;
         loginEmail?: string | null;
+        skipOnboardingStatus?: boolean;
         onBootstrap?: (result: MemberSessionBootstrapResult) => void;
       }
     ) => {
       debugSessionCall("scheduleMemberBundleHydration");
-      setMemberHydrating(true);
-      clearMemberSessionReady();
       let settled = false;
       const finish = (result?: MemberSessionBootstrapResult) => {
         if (settled) return;
@@ -828,10 +828,10 @@ export function App() {
           options?.onBootstrap?.(result);
           if (result.nextRoute === "home") {
             clearOnboardingDrafts();
+          } else if (result.nextRoute === "onboarding" && isMemberAppPath() && !isOnboardingPath()) {
+            navigateToPath("/onboarding", true);
           }
         }
-        markMemberSessionReady();
-        setMemberHydrating(false);
       };
       const failsafeTimer = window.setTimeout(() => finish(undefined), MEMBER_BUNDLE_HYDRATE_FAILSAFE_MS);
       hydrateMemberAppInBackground(
@@ -839,14 +839,15 @@ export function App() {
         {
           forceOnboarding: options?.forceOnboarding,
           referralCode: options?.referralCode,
-          loginEmail: options?.loginEmail || profile.email || undefined
+          loginEmail: options?.loginEmail || profile.email || undefined,
+          skipOnboardingStatus: options?.skipOnboardingStatus ?? true
         },
         (bootstrap) => {
           finish(bootstrap);
         }
       );
     },
-    [clearMemberSessionReady, markMemberSessionReady]
+    []
   );
 
   const applyGoToAppResult = useCallback(
@@ -894,10 +895,6 @@ export function App() {
     debugSessionCall("applyRestoredSession");
     const blocking = options?.blocking ?? true;
     flowLog("session_restore_start", { blocking });
-    clearMemberSessionReady();
-    if (blocking) {
-      setMemberHydrating(true);
-    }
     repairMemberCaches();
     const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const merged = resolveMemberIdentity({
@@ -905,37 +902,43 @@ export function App() {
       phone: stored.phone || profile.phone,
       phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
     });
+    const cached = readCachedMemberSession();
     setUser(merged);
     setIsAuthed(true);
+    setMemberAppEntered(true);
+    if (cached.hasSession) {
+      markMemberSessionReady();
+      setProfileComplete(cached.profileCompleteKnown);
+    }
+    setMemberHydrating(false);
     recordStreakActivity();
     checkPremiumTrialExpiry();
 
-    const finishRestore = async () => {
+    void (async () => {
       const session = await goToApp({ forceOnboarding: false, loginEmail: merged.email || undefined });
       if (!session.ok) {
         setIsAuthed(false);
         setProfileComplete(false);
         clearMemberSessionReady();
-        setMemberHydrating(false);
         return;
       }
       applyGoToAppResult(session, { blocking, source: "session_restore" });
-      scheduleMemberBundleHydration(merged, { loginEmail: merged.email || undefined });
-    };
-
-    if (blocking) {
-      try {
-        await finishRestore();
-      } catch {
-        setMemberHydrating(false);
-        clearMemberSessionReady();
+      setProfileComplete(session.route === "home");
+      if (!cached.hasSession) {
+        markMemberSessionReady();
       }
-      return;
+      scheduleMemberBundleHydration(merged, {
+        loginEmail: merged.email || undefined,
+        skipOnboardingStatus: true
+      });
+    })();
+  }, [applyGoToAppResult, clearMemberSessionReady, markMemberSessionReady, scheduleMemberBundleHydration]);
+
+  useEffect(() => {
+    if (memberAccessReady) {
+      markStartupFirstPaint({ route: memberPathname, tab });
     }
-
-    void finishRestore();
-  }, [applyGoToAppResult, clearMemberSessionReady, scheduleMemberBundleHydration]);
-
+  }, [memberAccessReady, memberPathname, tab]);
   useEffect(() => {
     if (memberAccessReady) recordDailyActive();
   }, [isAuthed, memberAccessReady]);
@@ -1309,8 +1312,10 @@ export function App() {
         flowLog("home_enter", {
           source: result.source === "cache_fallback" ? "open_app_cache_fallback" : "open_app_server_confirmed"
         });
+        markMemberSessionReady();
         scheduleMemberBundleHydration(result.user, {
           loginEmail: result.user.email || undefined,
+          skipOnboardingStatus: true,
           onBootstrap: (bootstrap) => {
             if (bootstrap.nextRoute === "onboarding") {
               setProfileComplete(false);
@@ -1507,22 +1512,30 @@ export function App() {
       }
       void refreshPremiumStatus(appResult.user).then(() => syncPremiumState());
       const nextTab = pendingTab;
+      markMemberSessionReady();
+      setMemberHydrating(false);
+      clearOnboardingDrafts();
+      if (nextTab) {
+        setTab(nextTab);
+        setPendingTab(null);
+        if (memberAppEntered) {
+          navigateToPath(memberPathForTab(nextTab), true);
+        }
+      } else {
+        setTab("home");
+      }
+      flowLog("home_enter");
       scheduleMemberBundleHydration(withPhone, {
         forceOnboarding,
         referralCode: ref,
         loginEmail: meta?.loginEmail || withPhone.email,
-        onBootstrap: () => {
-          clearOnboardingDrafts();
-          if (nextTab) {
-            setTab(nextTab);
-            setPendingTab(null);
-            if (memberAppEntered) {
-              navigateToPath(memberPathForTab(nextTab), true);
-            }
-          } else {
-            setTab("home");
+        skipOnboardingStatus: true,
+        onBootstrap: (bootstrap) => {
+          if (bootstrap.nextRoute === "onboarding") {
+            setProfileComplete(false);
+            navigateToPath("/onboarding", true);
+            flowLog("onboarding_start", { source: "login_hydrate_repair" });
           }
-          flowLog("home_enter");
         }
       });
     },
@@ -1590,15 +1603,15 @@ export function App() {
       });
       const cached = readCachedMemberSession();
       setMemberAppEntered(true);
-      setMemberHydrating(true);
+      setUser(merged);
+      setIsAuthed(true);
       if (cached.hasSession) {
         markMemberSessionReady();
         setProfileComplete(cached.profileCompleteKnown);
       } else {
         clearMemberSessionReady();
       }
-      setUser(merged);
-      setIsAuthed(true);
+      setMemberHydrating(false);
       recordStreakActivity();
       checkPremiumTrialExpiry();
 
@@ -1611,37 +1624,39 @@ export function App() {
         navigateToPath(AUTH_LOGIN_PATH, true);
       };
 
-      try {
-        let validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
-        if (!validated.ok) {
-          await new Promise((resolve) => window.setTimeout(resolve, 400));
-          validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
-        }
-        if (!validated.ok) {
+      void (async () => {
+        try {
+          let validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
+          if (!validated.ok) {
+            await new Promise((resolve) => window.setTimeout(resolve, 400));
+            validated = await validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS);
+          }
+          if (!validated.ok) {
+            redirectToSignIn();
+            return;
+          }
+          const appSession = await goToApp({
+            loginEmail: merged.email || undefined,
+            validatedAuth: validated
+          });
+          if (!appSession.ok) {
+            redirectToSignIn();
+            return;
+          }
+          applyGoToAppResult(appSession, { blocking: false, source: "session_restore" });
+          setProfileComplete(appSession.route === "home");
+          if (!cached.hasSession) {
+            markMemberSessionReady();
+          }
+          scheduleMemberBundleHydration(merged, {
+            loginEmail: merged.email || undefined,
+            skipOnboardingStatus: true
+          });
+          flowLog("session_restore_done");
+        } catch {
           redirectToSignIn();
-          return;
         }
-        const appSession = await goToApp({
-          loginEmail: merged.email || undefined,
-          validatedAuth: validated
-        });
-        if (!appSession.ok) {
-          redirectToSignIn();
-          return;
-        }
-        applyGoToAppResult(appSession, { blocking: false, source: "session_restore" });
-        setProfileComplete(appSession.route === "home");
-        if (appSession.route === "home") {
-          scheduleMemberBundleHydration(merged, { loginEmail: merged.email || undefined });
-        } else {
-          markMemberSessionReady();
-          setMemberHydrating(false);
-          hydrateMemberAppInBackground(merged, { loginEmail: merged.email || undefined });
-        }
-        flowLog("session_restore_done");
-      } catch {
-        redirectToSignIn();
-      }
+      })();
     };
 
     const finishPublicBootstrap = (
@@ -1702,37 +1717,26 @@ export function App() {
         const onMemberSurface =
           requiresMemberRestoreBlocking(window.location.pathname, isNative) ||
           !isPublicWebRoute();
-        if (onMemberSurface && isMemberAppPath()) {
-          clearMemberSessionReady();
-          setMemberHydrating(true);
-        }
         void goToApp()
           .then((sessionResult) => {
-            if (!sessionResult.ok) {
-              clearMemberSessionReady();
-              setMemberHydrating(false);
-              return;
-            }
+            if (!sessionResult.ok) return;
             if (onMemberSurface) {
               if (sessionResult.route === "onboarding" && !isOnboardingPath()) {
                 navigateToPath("/onboarding", true);
+                setProfileComplete(false);
               } else if (sessionResult.route === "home" && isOnboardingPath()) {
                 navigateToPath("/home", true);
+                setProfileComplete(true);
               }
               if (sessionResult.route === "home") {
-                scheduleMemberBundleHydration(profile);
+                scheduleMemberBundleHydration(profile, { skipOnboardingStatus: true });
               } else {
                 setProfileComplete(false);
-                markMemberSessionReady();
-                setMemberHydrating(false);
               }
             }
             if (sessionResult.route === "home") clearOnboardingDrafts();
           })
-          .catch(() => {
-            clearMemberSessionReady();
-            setMemberHydrating(false);
-          });
+          .catch(() => undefined);
         await refreshPremiumStatus(profile);
         syncPremiumState();
         return;
@@ -1831,11 +1835,11 @@ export function App() {
         navigateToPath("/onboarding", true);
         return;
       }
+      markMemberSessionReady();
+      navigateToPath("/home", true);
       scheduleMemberBundleHydration(result.user, {
         loginEmail: user.email,
-        onBootstrap: () => {
-          navigateToPath("/home", true);
-        }
+        skipOnboardingStatus: true
       });
     });
     return () => {

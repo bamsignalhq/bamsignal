@@ -17,6 +17,8 @@ import {
   fetchOnboardingStatusWithTimeout
 } from "./onboardingRepair";
 import { supabase } from "./supabase";
+import { debugSessionCall } from "../utils/debugRecursion";
+import { markStartupPhase } from "../utils/startupInstrumentation";
 
 export const OPEN_APP_FAILSAFE_MS = 2000;
 export const OPEN_APP_STATUS_TIMEOUT_MS = 2000;
@@ -67,18 +69,36 @@ async function readValidatedSession(): Promise<
 > {
   if (!supabase) return { ok: false };
 
+  markStartupPhase("supabase_get_session");
   const {
     data: { session }
   } = await supabase.auth.getSession();
   if (!session?.user) return { ok: false };
 
-  const {
-    data: { user },
-    error
-  } = await supabase.auth.getUser();
-  if (error || !user) {
-    await supabase.auth.signOut().catch(() => undefined);
-    return { ok: false };
+  markStartupPhase("supabase_validate_user");
+  let user = session.user;
+  try {
+    const userResult = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<Awaited<ReturnType<typeof supabase.auth.getUser>>>((resolve) => {
+        setTimeout(
+          () =>
+            resolve({
+              data: { user: null },
+              error: { message: "get_user_timeout", name: "AuthTimeout", status: 408 } as never
+            }),
+          OPEN_APP_STATUS_TIMEOUT_MS
+        );
+      })
+    ]);
+    if (!userResult.error && userResult.data.user) {
+      user = userResult.data.user;
+    } else if (userResult.error && String(userResult.error.message || "") !== "get_user_timeout") {
+      await supabase.auth.signOut().catch(() => undefined);
+      return { ok: false };
+    }
+  } catch {
+    /* keep session.user fallback */
   }
 
   const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
@@ -126,6 +146,7 @@ export async function goToApp(options?: {
   loginEmail?: string | null;
   validatedAuth?: { ok: true; user: UserProfile; authUserId: string };
 }): Promise<GoToAppResult> {
+  debugSessionCall("goToApp");
   if (goToAppInFlight) {
     return goToAppInFlight;
   }
@@ -146,6 +167,7 @@ async function runGoToApp(options?: {
     return { ok: false, route: "login" };
   }
 
+  markStartupPhase("go_to_app");
   const validated =
     options?.validatedAuth ??
     (await validateServerSessionWithTimeout(OPEN_APP_STATUS_TIMEOUT_MS));
@@ -172,6 +194,7 @@ async function runGoToApp(options?: {
   }
 
   const statusResult = await fetchOnboardingStatusWithTimeout(user, OPEN_APP_STATUS_TIMEOUT_MS);
+  markStartupPhase("onboarding_status");
 
   if (statusResult === "timeout" || statusResult === null) {
     if (readOpenAppOnboardingCache(authUserId)) {
@@ -244,16 +267,20 @@ export function hydrateMemberAppInBackground(
     forceOnboarding?: boolean;
     referralCode?: string | null;
     loginEmail?: string | null;
+    skipOnboardingStatus?: boolean;
   },
   onResult?: (result: MemberSessionBootstrapResult) => void
 ): void {
+  debugSessionCall("hydrateMemberAppInBackground");
+  markStartupPhase("background_tasks");
   if (typeof window !== "undefined") {
     sessionStorage.setItem(OPEN_APP_SESSION_KEYS.restorePending, String(Date.now()));
   }
   void bootstrapMemberSession(user, {
     forceOnboarding: options?.forceOnboarding,
     referralCode: options?.referralCode,
-    loginEmail: options?.loginEmail || undefined
+    loginEmail: options?.loginEmail || undefined,
+    skipOnboardingStatus: options?.skipOnboardingStatus
   })
     .then((result) => {
       onResult?.(result);

@@ -3,6 +3,7 @@ import { setPremiumSnapshot } from "../services/premiumStatus";
 import { clearPaymentSession } from "./paymentState";
 import { clearPendingSignup } from "./signupPersistence";
 import { writeJson } from "./storage";
+import { clearMemberApiHeaderCache } from "./memberApiAuth";
 
 /** Clear member-local caches on intentional logout (keep theme + username index). */
 export function clearMemberSessionCaches(): void {
@@ -15,4 +16,5 @@ export function clearMemberSessionCaches(): void {
   localStorage.removeItem(STORAGE_KEYS.premiumUntil);
   localStorage.removeItem(STORAGE_KEYS.firstDayJourney);
   setPremiumSnapshot({ isPremium: false, premiumUntil: null });
+  clearMemberApiHeaderCache();
 }

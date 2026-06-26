@@ -8,6 +8,7 @@ import { resolveSignalPassSnapshot } from "../utils/memberEntitlements";
 import { apiUrl } from "./supabase";
 import { mergeHydratedCompliance, syncComplianceDoneMarkerFromProfile } from "./compliance";
 import { normalizeDatingProfile } from "../utils/profile";
+import { debugSessionCall } from "../utils/debugRecursion";
 import { resolveMemberIdentity } from "../utils/authIdentity";
 import { mergeIncomingSocial } from "../utils/profileSocial";
 import {
@@ -32,7 +33,13 @@ import {
   type OnboardingStatusResult
 } from "./onboardingRepair";
 
+import { markStartupPhase } from "../utils/startupInstrumentation";
+
 type MemberIdentity = Pick<UserProfile, "email" | "phone" | "name" | "username">;
+
+const MEMBER_API_TIMEOUT_MS = 8_000;
+let bootstrapInFlight: Promise<MemberSessionBootstrapResult> | null = null;
+let bootstrapIdentityKey = "";
 
 type MemberBundle = {
   matches?: Match[];
@@ -71,18 +78,24 @@ async function postMemberAction(
   identity: MemberIdentity,
   body: Record<string, unknown> = {}
 ): Promise<MemberActionPayload | null> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
   try {
-    const response = await fetch(apiUrl(`/api/member/data?action=${action}`), {
-      method: "POST",
-      headers: await memberApiHeaders(),
-      body: JSON.stringify({
-        email: identity.email,
-        phone: identity.phone,
-        name: identity.name,
-        username: identity.username,
-        ...body
+    const response = await Promise.race([
+      fetch(apiUrl(`/api/member/data?action=${action}`), {
+        method: "POST",
+        headers: await memberApiHeaders(),
+        body: JSON.stringify({
+          email: identity.email,
+          phone: identity.phone,
+          name: identity.name,
+          username: identity.username,
+          ...body
+        })
+      }),
+      new Promise<Response>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("member_api_timeout")), MEMBER_API_TIMEOUT_MS);
       })
-    });
+    ]);
     const payload = await readResponseJson<MemberActionPayload>(response);
     if (!response.ok || !payload?.ok) {
       recordApiError(action, payload?.error || `HTTP ${response.status}`);
@@ -92,6 +105,8 @@ async function postMemberAction(
   } catch (error) {
     recordApiError(action, error instanceof Error ? error.message : "network");
     return null;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -109,24 +124,64 @@ export type MemberSessionBootstrapResult = {
   nextRoute: "home" | "onboarding";
 };
 
-/** Hydrate remote profile, run server onboarding-status, and return authoritative next route. */
+/** Hydrate remote profile and optionally skip duplicate onboarding-status fetch. */
 export async function bootstrapMemberSession(
   user: MemberIdentity,
-  options?: { forceOnboarding?: boolean; referralCode?: string | null; loginEmail?: string }
+  options?: {
+    forceOnboarding?: boolean;
+    referralCode?: string | null;
+    loginEmail?: string;
+    skipOnboardingStatus?: boolean;
+  }
 ): Promise<MemberSessionBootstrapResult> {
+  debugSessionCall("bootstrapMemberSession");
   if (options?.forceOnboarding) {
     return { hydrated: false, status: null, nextRoute: "onboarding" };
   }
 
   const identity = resolveMemberIdentity(user, { loginEmail: options?.loginEmail });
+  const identityKey = `${identity.email || ""}:${identity.phone || ""}`;
+  if (bootstrapInFlight && bootstrapIdentityKey === identityKey) {
+    return bootstrapInFlight;
+  }
+
+  bootstrapIdentityKey = identityKey;
+  bootstrapInFlight = runBootstrapMemberSession(identity, options).finally(() => {
+    bootstrapInFlight = null;
+    bootstrapIdentityKey = "";
+  });
+  return bootstrapInFlight;
+}
+
+async function runBootstrapMemberSession(
+  identity: MemberIdentity,
+  options?: {
+    referralCode?: string | null;
+    loginEmail?: string;
+    skipOnboardingStatus?: boolean;
+  }
+): Promise<MemberSessionBootstrapResult> {
   const ref = options?.referralCode;
-  await registerMember(identity, ref);
-  let hydrated = await hydrateMemberData(identity);
+  markStartupPhase("member_bundle_hydration");
+
+  markStartupPhase("member_register");
+  const registerPromise = registerMember(identity, ref);
+  markStartupPhase("member_pull");
+  const [registered, hydratedInitial] = await Promise.all([registerPromise, hydrateMemberData(identity)]);
+  void registered;
+  let hydrated = hydratedInitial;
   if (!hydrated) {
-    await registerMember(identity, ref);
+    markStartupPhase("member_pull");
     hydrated = await hydrateMemberData(identity);
   }
 
+  if (options?.skipOnboardingStatus) {
+    const local = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
+    const nextRoute = shouldRouteToOnboarding(identity, local) ? "onboarding" : "home";
+    return { hydrated, status: null, nextRoute };
+  }
+
+  markStartupPhase("onboarding_status");
   const status = await fetchOnboardingStatus(identity);
   logLoginProfileState(identity, status);
 
@@ -171,6 +226,7 @@ export async function hydrateMemberData(
   user: MemberIdentity,
   options?: { serverWins?: boolean }
 ): Promise<boolean> {
+  debugSessionCall("hydrateMemberData");
   const payload = await postMemberAction("pull", user);
   const bundle = payload?.bundle;
   if (!bundle) return false;

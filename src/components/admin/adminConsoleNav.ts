@@ -210,7 +210,7 @@ export const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       {
         id: "notifications",
         label: "Notifications",
-        keywords: ["notifications", "email", "whatsapp", "delivery", "queue", "retry", "reliability"]
+        keywords: ["notifications", "email", "whatsapp", "push", "delivery", "queue", "retry", "templates", "audit", "enterprise"]
       },
       {
         id: "documents",

@@ -1,8 +1,8 @@
-import type { ReliabilityNotificationRecord } from "../../../types/notificationReliability";
+import type { EnterpriseNotificationRecord } from "../../../types/notificationReliability";
 import { NotificationCard } from "./NotificationCard";
 
 type RetryQueueCardProps = {
-  records: ReliabilityNotificationRecord[];
+  records: EnterpriseNotificationRecord[];
   onRetry: (recordId: string) => void;
   retryingId: string | null;
 };

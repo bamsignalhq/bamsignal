@@ -1,8 +1,10 @@
+.notification-center-page,
 .notification-reliability-page {
   display: grid;
   gap: 18px;
 }
 
+.notification-center-page__head,
 .notification-reliability-page__head {
   display: flex;
   align-items: flex-start;
@@ -10,38 +12,264 @@
   gap: 12px;
 }
 
+.notification-center-page__head h2,
 .notification-reliability-page__head h2 {
   margin: 0 0 6px;
 }
 
+.notification-center-page__head p,
 .notification-reliability-page__head p {
   margin: 0;
   color: rgba(255, 255, 255, 0.68);
   max-width: 72ch;
 }
 
-.notification-reliability-page__filters label {
-  display: grid;
-  gap: 4px;
-  font-size: 0.82rem;
-  max-width: 240px;
+.notification-center-page__toast {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.84rem;
 }
 
+.notification-center-page__foot,
+.notification-center-page__empty,
+.notification-reliability-page__foot {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+  display: grid;
+  gap: 4px;
+}
+
+.notification-center-summary,
+.notification-channels-card,
+.notification-queues-card,
+.notification-templates-card,
+.notification-audit-card,
+.notification-tools-panel,
+.notification-metrics-card,
+.notification-queue-panel,
+.failed-delivery-card,
+.retry-queue-card,
+.notification-center-page__future,
+.notification-reliability-page__detail,
+.notification-reliability-page__future,
+.notification-card {
+  padding: 14px;
+}
+
+.notification-center-summary__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.notification-center-summary__head h3 {
+  margin: 0 0 6px;
+}
+
+.notification-center-summary__checked {
+  margin: 0;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.notification-center-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.notification-center-summary__stat {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 4px;
+}
+
+.notification-center-summary__stat strong {
+  font-size: 1.2rem;
+}
+
+.notification-center-summary__stat span {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.notification-center-summary__stat--alert {
+  border-color: rgba(255, 120, 120, 0.35);
+}
+
+.notification-center-summary__stat--rate strong {
+  color: #b8f0cb;
+}
+
+.notification-channels-card__grid,
+.notification-queues-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.notification-channel-chip,
+.notification-queue-chip {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.notification-queue-chip.is-active,
+.notification-queue-chip:hover {
+  border-color: rgba(120, 190, 255, 0.45);
+}
+
+.notification-channel-chip__head,
+.notification-template-row__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.notification-channel-chip p,
+.notification-queue-chip span {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.notification-channel-chip .is-live {
+  color: #b8f0cb;
+  font-size: 0.72rem;
+}
+
+.notification-channel-chip .is-future,
+.notification-template-row .is-disabled {
+  color: rgba(255, 200, 120, 0.85);
+  font-size: 0.72rem;
+}
+
+.notification-channel-chip--future {
+  opacity: 0.72;
+}
+
+.notification-templates-card__list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.notification-template-row {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notification-template-row__preview {
+  margin: 0 0 8px;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.notification-template-row__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.notification-template-row__meta dt {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.notification-template-row__meta dd {
+  margin: 2px 0 0;
+  font-size: 0.84rem;
+}
+
+.notification-audit-card__table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.notification-audit-card__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.notification-audit-card__table th,
+.notification-audit-card__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+  vertical-align: top;
+}
+
+.notification-audit-card__table th {
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+}
+
+.notification-audit-card__provider {
+  max-width: 220px;
+  word-break: break-word;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.notification-audit-card__empty {
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+}
+
+.notification-tools-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.notification-tools-panel__preview,
+.notification-tools-panel__provider {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notification-tools-panel__preview h4,
+.notification-tools-panel__provider h4 {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+}
+
+.notification-tools-panel__preview p,
+.notification-tools-panel__provider p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.notification-center-page__queues,
+.notification-center-page__body,
 .notification-reliability-page__queues,
 .notification-reliability-page__body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-}
-
-.notification-metrics-card,
-.notification-queue-panel,
-.failed-delivery-card,
-.retry-queue-card,
-.notification-reliability-page__detail,
-.notification-reliability-page__future,
-.notification-card {
-  padding: 14px;
 }
 
 .notification-metrics-card__grid {
@@ -144,7 +372,7 @@
 }
 
 .delivery-status-badge--delivered,
-.delivery-status-badge--opened {
+.delivery-status-badge--read {
   border-color: rgba(120, 220, 160, 0.45);
   color: #b8f0cb;
 }
@@ -157,7 +385,7 @@
 }
 
 .delivery-status-badge--failed,
-.delivery-status-badge--abandoned {
+.delivery-status-badge--cancelled {
   border-color: rgba(255, 120, 120, 0.45);
   color: #ffb4b4;
 }
@@ -167,6 +395,7 @@
   gap: 10px;
 }
 
+.notification-center-page__future ul,
 .notification-reliability-page__future ul {
   margin: 12px 0 0;
   padding-left: 18px;
@@ -174,14 +403,9 @@
   gap: 8px;
 }
 
-.notification-reliability-page__foot {
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 0.84rem;
-  display: grid;
-  gap: 4px;
-}
-
 @media (max-width: 900px) {
+  .notification-center-page__queues,
+  .notification-center-page__body,
   .notification-reliability-page__queues,
   .notification-reliability-page__body {
     grid-template-columns: 1fr;

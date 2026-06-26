@@ -1,9 +1,12 @@
-import { NOTIFICATION_QUEUE_LABELS } from "../../../constants/notificationReliability";
-import type { ReliabilityNotificationRecord } from "../../../types/notificationReliability";
+import {
+  NOTIFICATION_CHANNEL_LABELS,
+  NOTIFICATION_QUEUE_LABELS
+} from "../../../constants/notificationReliability";
+import type { EnterpriseNotificationRecord } from "../../../types/notificationReliability";
 import { DeliveryStatusBadge } from "./DeliveryStatusBadge";
 
 type NotificationCardProps = {
-  record: ReliabilityNotificationRecord;
+  record: EnterpriseNotificationRecord;
   selected?: boolean;
   onSelect?: () => void;
 };
@@ -13,7 +16,9 @@ export function NotificationCard({ record, selected = false, onSelect }: Notific
     <>
       <div className="notification-card__head">
         <div>
-          <p className="notification-card__queue">{NOTIFICATION_QUEUE_LABELS[record.queue]}</p>
+          <p className="notification-card__queue">
+            {NOTIFICATION_QUEUE_LABELS[record.queue]} · {NOTIFICATION_CHANNEL_LABELS[record.channel]}
+          </p>
           <h3>{record.recipientName}</h3>
         </div>
         <DeliveryStatusBadge status={record.status} />
@@ -23,6 +28,10 @@ export function NotificationCard({ record, selected = false, onSelect }: Notific
         <div>
           <dt>Template</dt>
           <dd>{record.templateLabel}</dd>
+        </div>
+        <div>
+          <dt>Triggered by</dt>
+          <dd>{record.triggeredBy}</dd>
         </div>
         <div>
           <dt>Updated</dt>

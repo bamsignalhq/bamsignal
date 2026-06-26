@@ -1,8 +1,8 @@
-import type { ReliabilityNotificationRecord } from "../../../types/notificationReliability";
+import type { EnterpriseNotificationRecord } from "../../../types/notificationReliability";
 import { NotificationCard } from "./NotificationCard";
 
 type FailedDeliveryCardProps = {
-  records: ReliabilityNotificationRecord[];
+  records: EnterpriseNotificationRecord[];
   selectedId: string | null;
   onSelect: (recordId: string) => void;
 };

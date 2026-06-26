@@ -44,6 +44,7 @@ import {
   LazySecurityCertificationDashboard,
   LazyReliabilityCertificationDashboard,
   LazyDependencyCertificationDashboard,
+  LazyAccessibilityCertificationDashboard,
   LazyDriftCertificationDashboard,
   LazyRcCertificationDashboard,
   LazyFounderCertificationDashboard,
@@ -2071,6 +2072,9 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
       </AdminLazyTab>
       <AdminLazyTab active={tab === "dependencycertification"}>
         <LazyDependencyCertificationDashboard />
+      </AdminLazyTab>
+      <AdminLazyTab active={tab === "accessibilitycertification"}>
+        <LazyAccessibilityCertificationDashboard />
       </AdminLazyTab>
       <AdminLazyTab active={tab === "driftcertification"}>
         <LazyDriftCertificationDashboard />

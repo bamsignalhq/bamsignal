@@ -97,6 +97,11 @@ export const LazyDependencyCertificationDashboard = lazy(() =>
     default: module.DependencyCertificationDashboard
   }))
 );
+export const LazyAccessibilityCertificationDashboard = lazy(() =>
+  import("./accessibilityCertification/AccessibilityCertificationDashboard").then((module) => ({
+    default: module.AccessibilityCertificationDashboard
+  }))
+);
 export const LazyDriftCertificationDashboard = lazy(() =>
   import("./driftCertification/DriftCertificationDashboard").then((module) => ({
     default: module.DriftCertificationDashboard

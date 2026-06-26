@@ -1,0 +1,43 @@
+.accessibility-certification-report-card__hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+
+.accessibility-certification-report-card__hero strong {
+  font-size: 2.4rem;
+}
+
+.accessibility-certification-report-card__line {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+.accessibility-certification-report-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.accessibility-certification-report-card__metrics article {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.accessibility-certification-report-card__metrics span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.accessibility-certification-report-card__metrics strong {
+  font-size: 1.2rem;
+}
+
+@media (max-width: 720px) {
+  .accessibility-certification-report-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

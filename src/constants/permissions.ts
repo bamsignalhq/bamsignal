@@ -35,6 +35,7 @@ import { PERFORMANCE_CERTIFICATION_ADMIN_PATH } from "./performanceCertification
 import { SECURITY_CERTIFICATION_ADMIN_PATH } from "./securityCertificationAdmin";
 import { RELIABILITY_CERTIFICATION_ADMIN_PATH } from "./reliabilityCertificationAdmin";
 import { FOUNDER_CERTIFICATION_ADMIN_PATH } from "./founderCertificationAdmin";
+import { ACCESSIBILITY_CERTIFICATION_ADMIN_PATH } from "./accessibilityCertificationAdmin";
 import { DEPENDENCY_CERTIFICATION_ADMIN_PATH } from "./dependencyCertificationAdmin";
 import { DRIFT_CERTIFICATION_ADMIN_PATH } from "./driftCertificationAdmin";
 import { RC_CERTIFICATION_ADMIN_PATH } from "./rcCertificationAdmin";
@@ -182,6 +183,7 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   securitycertification: ["ManageOperations", "ManageSafety", "SystemAdministration", "ViewExecutiveDashboard"],
   reliabilitycertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
   dependencycertification: ["ManageOperations", "ManageSafety", "SystemAdministration", "ViewExecutiveDashboard"],
+  accessibilitycertification: ["ManageOperations", "ManageSafety", "SystemAdministration", "ViewExecutiveDashboard"],
   driftcertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
   rccertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
   foundercertification: ["ViewExecutiveDashboard", "SystemAdministration", "ManageOperations"],
@@ -275,6 +277,7 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [PERFORMANCE_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.performancecertification,
   [SECURITY_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.securitycertification,
   [RELIABILITY_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.reliabilitycertification,
+  [ACCESSIBILITY_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.accessibilitycertification,
   [DEPENDENCY_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.dependencycertification,
   [DRIFT_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.driftcertification,
   [RC_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.rccertification,
@@ -356,6 +359,7 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/security-certification",
   "/hard/reliability-certification",
   "/hard/dependency-certification",
+  "/hard/accessibility-certification",
   "/hard/drift-certification",
   "/hard/rc-certification",
   "/hard/founder-certification",

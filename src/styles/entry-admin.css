@@ -39,6 +39,7 @@
 @import "./security-certification.css";
 @import "./reliability-certification.css";
 @import "./dependency-certification.css";
+@import "./accessibility-certification.css";
 @import "./drift-certification.css";
 @import "./rc-certification.css";
 @import "./founder-certification.css";

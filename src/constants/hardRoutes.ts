@@ -91,6 +91,7 @@ const TAB_SLUGS: Record<HardTab, string> = {
   securitycertification: "security-certification",
   reliabilitycertification: "reliability-certification",
   dependencycertification: "dependency-certification",
+  accessibilitycertification: "accessibility-certification",
   driftcertification: "drift-certification",
   rccertification: "rc-certification",
   foundercertification: "founder-certification",

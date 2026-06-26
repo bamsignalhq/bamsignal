@@ -117,6 +117,11 @@ export const LazyAbuseProtectionCenterPage = lazy(() =>
     default: module.AbuseProtectionCenterPage
   }))
 );
+export const LazySearchCenterPage = lazy(() =>
+  import("./searchCenter/SearchCenterPage").then((module) => ({
+    default: module.SearchCenterPage
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

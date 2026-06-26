@@ -43,6 +43,7 @@ import { PRODUCTION_OBSERVABILITY_ADMIN_PATH } from "./productionObservabilityAd
 import { FEATURE_FLAG_PLATFORM_ADMIN_PATH } from "./featureFlagPlatformAdmin";
 import { PLATFORM_HEALTH_ADMIN_PATH } from "./platformHealthAdmin";
 import { ABUSE_PROTECTION_ADMIN_PATH } from "./abuseProtectionAdmin";
+import { SEARCH_CENTER_ADMIN_PATH } from "./searchCenterAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
 export type AuditAdminView = "compliance" | "routes" | "database" | "security" | "journeys";
@@ -103,7 +104,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   observability: "observability",
   featureflags: "feature-flags",
   platformhealth: "platform-health",
-  abuseprotection: "abuse-protection"
+  abuseprotection: "abuse-protection",
+  search: "search"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(
@@ -148,6 +150,9 @@ export function parseHardTabFromPath(pathname = window.location.pathname): HardT
   }
   if (path === NOTIFICATION_RELIABILITY_ADMIN_PATH || path.startsWith(`${NOTIFICATION_RELIABILITY_ADMIN_PATH}/`)) {
     return "notifications";
+  }
+  if (path === SEARCH_CENTER_ADMIN_PATH || path.startsWith(`${SEARCH_CENTER_ADMIN_PATH}/`)) {
+    return "search";
   }
   if (
     path === DOCUMENT_CENTER_ADMIN_PATH ||

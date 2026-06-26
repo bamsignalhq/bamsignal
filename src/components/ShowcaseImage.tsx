@@ -11,6 +11,8 @@ type ShowcaseImageProps = {
   height?: number;
   objectPosition?: string;
   fallbackSrc?: string;
+  /** Fade-in with blur placeholder (member surfaces). */
+  progressive?: boolean;
 };
 
 export function ShowcaseImage({
@@ -22,15 +24,18 @@ export function ShowcaseImage({
   width,
   height,
   objectPosition,
-  fallbackSrc
+  fallbackSrc,
+  progressive = true
 }: ShowcaseImageProps) {
   const [activeSrc, setActiveSrc] = useState(src);
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     setActiveSrc(src);
     setFailed(false);
+    setLoaded(false);
   }, [src]);
 
   if (failed) {
@@ -43,6 +48,7 @@ export function ShowcaseImage({
           onClick={() => {
             setFailed(false);
             setActiveSrc(src);
+            setLoaded(false);
             setRetryKey((k) => k + 1);
           }}
         >
@@ -52,25 +58,54 @@ export function ShowcaseImage({
     );
   }
 
+  if (!progressive) {
+    return (
+      <img
+        key={retryKey}
+        src={activeSrc}
+        alt={alt}
+        className={className}
+        loading={loading}
+        decoding="async"
+        fetchPriority={fetchPriority}
+        width={width}
+        height={height}
+        style={objectPosition ? { objectPosition } : undefined}
+        onError={() => {
+          if (fallbackSrc && activeSrc !== fallbackSrc) {
+            setActiveSrc(fallbackSrc);
+            return;
+          }
+          setFailed(true);
+        }}
+      />
+    );
+  }
+
   return (
-    <img
-      key={retryKey}
-      src={activeSrc}
-      alt={alt}
-      className={className}
-      loading={loading}
-      decoding="async"
-      fetchPriority={fetchPriority}
-      width={width}
-      height={height}
-      style={objectPosition ? { objectPosition } : undefined}
-      onError={() => {
-        if (fallbackSrc && activeSrc !== fallbackSrc) {
-          setActiveSrc(fallbackSrc);
-          return;
-        }
-        setFailed(true);
-      }}
-    />
+    <span className="member-image-frame">
+      {!loaded ? <span className="member-image-placeholder" aria-hidden /> : null}
+      <img
+        key={retryKey}
+        src={activeSrc}
+        alt={alt}
+        className={`member-image${loaded ? " member-image--loaded" : ""}${className ? ` ${className}` : ""}`}
+        loading={loading}
+        decoding="async"
+        fetchPriority={fetchPriority}
+        width={width}
+        height={height}
+        style={{ objectPosition: objectPosition ?? "center" }}
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          if (fallbackSrc && activeSrc !== fallbackSrc) {
+            setActiveSrc(fallbackSrc);
+            setLoaded(false);
+            return;
+          }
+          setFailed(true);
+        }}
+      />
+    </span>
   );
 }

@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Moon, Settings, Sun } from "lucide-react";
 import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
+import { useMemberToast } from "../hooks/useMemberToast";
 import { profileIntentLabel } from "../constants/intents";
 import { WHAT_BRINGS_ME_HERE_TITLE } from "../constants/relationshipIntent";
 import { WhatBringsYouHerePicker } from "../components/relationshipIntent/WhatBringsYouHerePicker";
@@ -32,6 +33,7 @@ import {
 } from "../constants/profileOptions";
 import { ProfileOverviewContent } from "../components/profile/overview/ProfileOverviewContent";
 import { PhotoTipsCarousel } from "../components/profilePhoto/PhotoTipsCarousel";
+import { hapticLight } from "../utils/memberHaptics";
 import { normalizeMoreAboutMeInterests } from "../utils/moreAboutMe";
 import { MORE_ABOUT_ME_TITLE } from "../constants/moreAboutMe";
 import type {
@@ -233,8 +235,7 @@ export function ProfilePage({
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
   const saveNavigateTimerRef = useRef<number | null>(null);
-  const [modMessage, setModMessage] = useState("");
-  const [modMessageSuccess, setModMessageSuccess] = useState(false);
+  const { showToast, ToastHost } = useMemberToast();
   const [view, setView] = useState<ProfileView>("overview");
   const [settingsPanel, setSettingsPanel] = useState<SettingsPanel>("hub");
   const [editOpen, setEditOpen] = useState<EditSection | null>(null);
@@ -392,12 +393,8 @@ export function ProfilePage({
   };
 
   const showModMessage = (msg: string, success = false) => {
-    setModMessage(msg);
-    setModMessageSuccess(success);
-    window.setTimeout(() => {
-      setModMessage("");
-      setModMessageSuccess(false);
-    }, 4000);
+    if (success) hapticLight();
+    showToast(msg, { tone: success ? "success" : "error", duration: 4000 });
   };
 
   const {
@@ -488,14 +485,7 @@ export function ProfilePage({
     <div
       className={`page profile-page profile-page--hero profile-page--premium profile-page--fintech-overview ${view === "edit" ? "profile-page--editing" : ""}`}
     >
-      {modMessage && (
-        <p
-          className={`profile-mod-toast${modMessageSuccess ? " profile-mod-toast--success" : ""}`}
-          role="status"
-        >
-          {modMessage}
-        </p>
-      )}
+      <ToastHost />
 
       {view === "overview" && (
         <ProfileOverviewContent

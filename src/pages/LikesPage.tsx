@@ -1,6 +1,7 @@
 import { ChevronRight, Shield } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
+import { useMemberToast } from "../hooks/useMemberToast";
 import { BRAND, MONETIZATION_COPY, PREMIUM_COPY } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
 import { MatchSuccessIcebreakers } from "../components/icebreakers/MatchSuccessIcebreakers";
@@ -27,6 +28,7 @@ import {
   isDemoSignalEntry,
   mergeReviewerDemoSignals
 } from "../utils/reviewerDemoSignals";
+import { hapticMedium } from "../utils/memberHaptics";
 import { getDatingProfile } from "../utils/profile";
 import { setPendingChatDraft, setPendingChatOpen } from "../utils/chatDraft";
 import { useAndroidBack } from "../hooks/useAndroidBack";
@@ -133,7 +135,7 @@ export function LikesPage({
   const [mayLikeProfiles, setMayLikeProfiles] = useState<DiscoverProfile[]>(() =>
     isReviewerDemoChatUser(user) ? getReviewerDemoMayLikeProfiles() : []
   );
-  const [toast, setToast] = useState("");
+  const { showToast, ToastHost } = useMemberToast();
   const [matchCelebration, setMatchCelebration] = useState<{
     match: Match;
     target: DiscoverProfile;
@@ -181,11 +183,6 @@ export function LikesPage({
     return list;
   }, [enriched, segment, storyFilter]);
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(""), 3000);
-  };
-
   useAndroidBack(() => {
     if (settingsOpen) {
       setSettingsOpen(false);
@@ -218,20 +215,22 @@ export function LikesPage({
 
     if (isDemoSignalEntry(entry)) {
       removeSignal(entry);
-      showToast(`${BRAND.matchCreated} ${BRAND.matchCreatedSub}`);
+      hapticMedium();
+      showToast(`${BRAND.matchCreated} ${BRAND.matchCreatedSub}`, { tone: "success" });
       return;
     }
 
     if (!entry.id) {
-      showToast("Could not accept this signal.");
+      showToast("Could not accept this signal.", { tone: "error" });
       return;
     }
     const match = await acceptSignalRemote(user, entry.id);
     if (!match) {
-      showToast("Could not accept signal. Try again.");
+      showToast("Could not accept signal. Try again.", { tone: "error" });
       return;
     }
     removeSignal(entry);
+    hapticMedium();
     trackEvent("signal_accepted", { profileId: entry.profileId });
     notifySignalAccepted(entry.name);
     setMatchCelebration({
@@ -245,14 +244,15 @@ export function LikesPage({
     blockUser(entry.profileId);
     if (!isDemoSignalEntry(entry) && entry.id) void declineSignalRemote(user, entry.id);
     removeSignal(entry);
-    showToast(`${entry.name} blocked.`);
+    hapticMedium();
+    showToast(`${entry.name} blocked.`, { tone: "success" });
   };
 
   const handleBlockAndReport = (entry: LikeEntry, reason: import("../types").ReportReason, details?: string) => {
     blockAndReportUser(entry.profileId, reason, details);
     if (!isDemoSignalEntry(entry) && entry.id) void declineSignalRemote(user, entry.id);
     removeSignal(entry);
-    showToast(`${entry.name} blocked and reported.`);
+    showToast(`${entry.name} blocked and reported.`, { tone: "success" });
   };
 
   const openProfile = async (entry: LikeEntry) => {
@@ -266,14 +266,17 @@ export function LikesPage({
 
   const handleMayLikeSignal = async (profile: DiscoverProfile) => {
     if (profile.id.startsWith("demo-signal-")) {
-      showToast(BRAND.signalSent);
+      hapticMedium();
+      showToast(BRAND.signalSent, { tone: "success" });
       return;
     }
     setSignalingId(profile.id);
     const result = await sendSignalRemote(user, profile.id, "signal");
     setSignalingId(null);
-    if (result.ok) showToast(BRAND.signalSent);
-    else if (result.error) showToast(result.error);
+    if (result.ok) {
+      hapticMedium();
+      showToast(BRAND.signalSent, { tone: "success" });
+    } else if (result.error) showToast(result.error, { tone: "error" });
   };
 
   const detailVerification = detailProfile
@@ -301,7 +304,7 @@ export function LikesPage({
         </>
       ) : null}
 
-      {toast ? <div className="toast toast--member">{toast}</div> : null}
+      <ToastHost />
 
       {!hasSignals ? (
         <div className="signals-premium-empty">

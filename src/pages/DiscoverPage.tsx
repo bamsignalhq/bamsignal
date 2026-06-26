@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
+import { useMemberToast } from "../hooks/useMemberToast";
 import { BRAND, ERROR_COPY } from "../constants/copy";
 import {
   DISCOVER_EMPTY_HEADLINE,
@@ -52,6 +53,7 @@ import { reportModerationFlagRemote } from "../services/memberTrust";
 import { consumePrioritySignal } from "../utils/activeBoosts";
 import { navigateToPath } from "../constants/routes";
 import { ProfileImprovementNudge } from "../components/nudges/ProfileImprovementNudge";
+import { hapticMedium } from "../utils/memberHaptics";
 import { TrustedMemberNudge } from "../components/trusted/TrustedMemberNudge";
 import { interleaveTrustNudges, shouldShowTrustFeedNudge } from "../utils/trustFeedInsertion";
 import { isTrustedMember } from "../utils/trustedMember";
@@ -95,7 +97,7 @@ export function DiscoverPage({
   const [allProfiles, setAllProfiles] = useState<DiscoverProfile[]>([]);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [signalLimitOpen, setSignalLimitOpen] = useState(false);
-  const [toast, setToast] = useState("");
+  const { showToast, ToastHost } = useMemberToast();
   const [safetyOpen, setSafetyOpen] = useState(false);
 
   useEffect(() => {
@@ -216,8 +218,7 @@ export function DiscoverPage({
 
   const handleUndoPass = () => {
     if (!canUndoPass(isPremium)) {
-      setToast("Signal Pass gives you unlimited undo.");
-      setTimeout(() => setToast(""), 3500);
+      showToast("Signal Pass gives you unlimited undo.");
       trackUpgradeImpression("signal_limit");
       setPaywallOpen(true);
       return;
@@ -225,8 +226,7 @@ export function DiscoverPage({
     const restoredId = undoLastPass(isPremium);
     if (!restoredId) return;
     setPassedIds(readJson<string[]>(STORAGE_KEYS.passed, []));
-    setToast("Undo");
-    setTimeout(() => setToast(""), 2500);
+    showToast("Pass undone", { tone: "success" });
   };
 
   const finishSignal = async (profile: DiscoverProfile, opts?: { priority?: boolean }) => {
@@ -235,8 +235,7 @@ export function DiscoverPage({
     const sent = await sendSignalRemote(user, profile.id, priority ? "priority" : "signal");
 
     if (!sent.ok) {
-      setToast(sent.error || ERROR_COPY.signalFailed);
-      setTimeout(() => setToast(""), 3500);
+      showToast(sent.error || ERROR_COPY.signalFailed, { tone: "error", duration: 3500 });
       advance(profile.id);
       return;
     }
@@ -246,10 +245,8 @@ export function DiscoverPage({
       void reportModerationFlagRemote(user, burst.reason, { count: burst.count }, profile.id);
     }
 
-    setToast(
-      priority ? `${BRAND.prioritySignal} sent` : BRAND.signalSent
-    );
-    setTimeout(() => setToast(""), 3000);
+    hapticMedium();
+    showToast(priority ? `${BRAND.prioritySignal} sent` : BRAND.signalSent, { tone: "success" });
     advance(profile.id);
   };
 
@@ -262,8 +259,7 @@ export function DiscoverPage({
     const signalGate = canUserSignalTarget(viewer, profile, prefs);
     if (!canSignal() || signalSentId === profile.id) return;
     if (!signalGate.allowed) {
-      setToast(signalGate.reason);
-      setTimeout(() => setToast(""), 3500);
+      showToast(signalGate.reason, { tone: "error", duration: 3500 });
       return;
     }
     setSignalSentId(profile.id);
@@ -296,8 +292,7 @@ export function DiscoverPage({
   const handleBlock = (profile: DiscoverProfile) => {
     blockUser(profile.id);
     advance(profile.id);
-    setToast(`${profile.name} blocked. They won't appear in your discovery.`);
-    setTimeout(() => setToast(""), 3000);
+    showToast(`${profile.name} blocked. They won't appear in your discovery.`, { tone: "success" });
   };
 
   const handleBlockAndReport = (
@@ -309,13 +304,11 @@ export function DiscoverPage({
     advance(profile.id);
     setDetailProfile(null);
     setSafetyOpen(false);
-    setToast(`${profile.name} blocked and reported.`);
-    setTimeout(() => setToast(""), 3500);
+    showToast(`${profile.name} blocked and reported.`, { tone: "success", duration: 3500 });
   };
 
   const handleSaveToast = (message: string) => {
-    setToast(message);
-    setTimeout(() => setToast(""), 2800);
+    showToast(message, { tone: "success" });
   };
 
   const memberUser = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
@@ -331,7 +324,11 @@ export function DiscoverPage({
           <button type="button" className="btn-primary" onClick={() => setQuickFilter("all")}>
             Show all
           </button>
-        ) : null}
+        ) : (
+          <button type="button" className="btn-primary" onClick={() => setFiltersOpen(true)}>
+            Adjust preferences
+          </button>
+        )}
       </div>
     );
   };
@@ -360,7 +357,7 @@ export function DiscoverPage({
         </button>
       ) : null}
 
-      {toast ? <p className="save-profile-toast" role="status">{toast}</p> : null}
+      <ToastHost />
 
       {profilesLoading && <ProfileCardSkeleton />}
 

@@ -1,0 +1,294 @@
+/**
+ * BamSignal member motion — single timing spec (ease-out, no bounce).
+ */
+
+.platform-root--member {
+  --bs-motion-fast: 140ms;
+  --bs-motion-standard: 200ms;
+  --bs-motion-large: 280ms;
+  --bs-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Page enter */
+.platform-root--member .app-main--member > .page {
+  animation: memberPageEnter var(--bs-motion-standard) var(--bs-ease-out) both;
+}
+
+@keyframes memberPageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Press feedback */
+.platform-root--member .btn-primary,
+.platform-root--member .btn-secondary,
+.platform-root--member .btn-ghost,
+.platform-root--member .discover-feed-card,
+.platform-root--member .signals-premium-card,
+.platform-root--member .messages-row--premium,
+.platform-root--member .profile-settings-list__row,
+.platform-root--member .settings-hub-row,
+.platform-root--member .member-micro-nudge,
+.platform-root--member .discover-premium-chips__chip,
+.platform-root--member .signals-premium-tabs__tab {
+  transition:
+    transform var(--bs-motion-fast) var(--bs-ease-out),
+    box-shadow var(--bs-motion-fast) var(--bs-ease-out),
+    background var(--bs-motion-fast) var(--bs-ease-out),
+    opacity var(--bs-motion-fast) var(--bs-ease-out);
+}
+
+@media (hover: none) {
+  .platform-root--member .btn-primary:active,
+  .platform-root--member .btn-secondary:active,
+  .platform-root--member .discover-feed-card:active,
+  .platform-root--member .signals-premium-card:active,
+  .platform-root--member .messages-row--premium:active {
+    transform: scale(0.985);
+  }
+}
+
+/* Sheets */
+.platform-root--member .signals-premium-sheet__panel,
+.platform-root--member .profile-completion-sheet__panel,
+.platform-root--member .profile-interests-sheet__panel,
+.platform-root--member .discover-filters-sheet--fintech {
+  animation: memberSheetUp var(--bs-motion-large) var(--bs-ease-out) both;
+}
+
+.platform-root--member .signals-premium-sheet__backdrop,
+.platform-root--member .profile-completion-sheet__backdrop,
+.platform-root--member .profile-interests-sheet__backdrop {
+  animation: memberBackdropIn var(--bs-motion-standard) ease-out both;
+}
+
+@keyframes memberSheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes memberBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Toasts */
+.member-toast-host {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--bottom-nav-height, 72px) + 12px + env(safe-area-inset-bottom, 0px));
+  z-index: 120;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.member-toast {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--bs-border, rgba(27, 11, 46, 0.1));
+  background: var(--bs-surface, #ffffff);
+  color: var(--bs-text, #1b0b2e);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: var(--bs-elevation-1, 0 8px 24px rgba(27, 11, 46, 0.06));
+  animation: memberToastIn var(--bs-motion-standard) var(--bs-ease-out) both;
+}
+
+.member-toast--success {
+  border-color: color-mix(in srgb, var(--bs-pink, #e91e8f) 28%, var(--bs-border, rgba(27, 11, 46, 0.1)));
+}
+
+.member-toast--error {
+  border-color: color-mix(in srgb, #c0392b 35%, var(--bs-border, rgba(27, 11, 46, 0.1)));
+}
+
+@keyframes memberToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes memberToastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.member-toast--leaving {
+  animation: memberToastOut var(--bs-motion-fast) ease-out both;
+}
+
+/* Skeleton fade */
+.platform-root--member .discover-feed-card--skeleton,
+.platform-root--member .skeleton,
+.platform-root--member .skeleton-profile-card {
+  animation:
+    memberSkeletonFade var(--bs-motion-standard) ease-out both,
+    discover-feed-shimmer 1.2s linear infinite;
+}
+
+@keyframes memberSkeletonFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Member images */
+.platform-root--member .member-image-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.platform-root--member .discover-feed-card__open .member-image-frame,
+.platform-root--member .discover-feed-card__photo.member-image-frame {
+  aspect-ratio: 3 / 4.35;
+}
+
+.platform-root--member .member-image-frame .member-image {
+  width: 100%;
+  height: 100%;
+}
+
+.member-image-frame .member-image-placeholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--bs-border, rgba(27, 11, 46, 0.1)) 50%, transparent) 0%,
+    color-mix(in srgb, var(--bs-purple, #7a4df3) 8%, var(--bs-surface, #fff)) 50%,
+    color-mix(in srgb, var(--bs-border, rgba(27, 11, 46, 0.1)) 50%, transparent) 100%
+  );
+  filter: blur(12px);
+  transform: scale(1.05);
+  pointer-events: none;
+}
+
+.member-image-frame .member-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transition: opacity var(--bs-motion-standard) var(--bs-ease-out);
+}
+
+.member-image-frame .member-image--loaded {
+  opacity: 1;
+}
+
+.member-image-frame .member-image--loaded + .member-image-placeholder,
+.member-image-frame:has(.member-image--loaded) .member-image-placeholder {
+  opacity: 0;
+  transition: opacity var(--bs-motion-standard) ease-out;
+}
+
+/* Tab transitions */
+.platform-root--member .signals-premium-tabs__tab,
+.platform-root--member .bottom-nav-item {
+  transition:
+    color var(--bs-motion-fast) ease-out,
+    background var(--bs-motion-fast) ease-out,
+    transform var(--bs-motion-fast) var(--bs-ease-out);
+}
+
+/* Error recovery */
+.member-error-state {
+  max-width: 340px;
+  margin: 16px auto;
+  padding: 20px 16px;
+  text-align: center;
+  border-radius: var(--bs-radius-card, 20px);
+  border: 1px solid var(--bs-border, rgba(27, 11, 46, 0.1));
+  background: var(--bs-surface, #ffffff);
+  box-shadow: var(--bs-elevation-1, 0 8px 24px rgba(27, 11, 46, 0.06));
+  animation: memberPageEnter var(--bs-motion-standard) var(--bs-ease-out) both;
+}
+
+.member-error-state h2 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--bs-text, #1b0b2e);
+}
+
+.member-error-state p {
+  margin: 0 0 14px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--bs-muted, rgba(27, 11, 46, 0.62));
+}
+
+.member-error-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Touch targets */
+.platform-root--member button,
+.platform-root--member a.btn-primary,
+.platform-root--member .messages-row--premium {
+  min-height: 44px;
+}
+
+.platform-root--member button:focus-visible,
+.platform-root--member .discover-feed-card:focus-visible,
+.platform-root--member .signals-premium-card:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--bs-purple, #7a4df3) 55%, transparent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .platform-root--member .app-main--member > .page,
+  .platform-root--member .signals-premium-sheet__panel,
+  .platform-root--member .discover-filters-sheet--fintech,
+  .member-toast,
+  .member-error-state,
+  .platform-root--member .discover-feed-card--skeleton,
+  .member-image-frame .member-image {
+    animation: none;
+    transition: none;
+  }
+
+  .platform-root--member .btn-primary:active,
+  .platform-root--member .discover-feed-card:active {
+    transform: none;
+  }
+}

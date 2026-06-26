@@ -33,7 +33,10 @@ import { incrementSignalsSent } from "../../utils/streaks";
 import { trackEvent } from "../../utils/analytics";
 import { getVerificationTier } from "../../utils/verification";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { useMemberToast } from "../../hooks/useMemberToast";
+import { MemberErrorState } from "../member/MemberErrorState";
 import { flowLog } from "../../utils/flowLog";
+import { hapticMedium } from "../../utils/memberHaptics";
 
 type HomeSignalsFeedProps = {
   user: UserProfile;
@@ -108,9 +111,10 @@ export function HomeSignalsFeed({
 }: HomeSignalsFeedProps) {
   const [baseProfiles, setBaseProfiles] = useState<DiscoverProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const loadedOnceRef = useRef(false);
   const [displayLimit, setDisplayLimit] = useState(HOME_FEED_PROFILE_COUNT);
-  const [toast, setToast] = useState("");
+  const { showToast: pushToast, ToastHost } = useMemberToast();
   const [signalingId, setSignalingId] = useState<string | null>(null);
   const [detailProfile, setDetailProfile] = useState<DiscoverProfile | null>(null);
   const [safetyOpen, setSafetyOpen] = useState(false);
@@ -198,8 +202,12 @@ export function HomeSignalsFeed({
       }
 
       setBaseProfiles(deck);
+      setLoadError(null);
       loadedOnceRef.current = true;
       flowLog("home_feed_load_ok", { count: deck.length });
+    } catch {
+      setLoadError("We couldn't load profiles right now.");
+      flowLog("home_feed_load_failed");
     } finally {
       setLoading(false);
     }
@@ -246,14 +254,13 @@ export function HomeSignalsFeed({
     });
   }, [visibleProfiles, adSettings, displayLimit, isPremium, viewer.verified, viewer.verificationStatus]);
 
-  const showToast = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(""), 3200);
+  const notify = (message: string, tone: "default" | "success" | "error" = "default") => {
+    pushToast(message, { tone, duration: tone === "error" ? 3500 : 2800 });
   };
 
   const handleSignal = async (profile: DiscoverProfile) => {
     if (isSampleHomeProfile(profile)) {
-      showToast("Preview profile — more people join near you every day.");
+      notify("Preview profile — more people join near you every day.");
       return;
     }
 
@@ -270,7 +277,7 @@ export function HomeSignalsFeed({
     setSignalingId(null);
 
     if (!sent.ok) {
-      showToast(sent.error || ERROR_COPY.signalFailed);
+      notify(sent.error || ERROR_COPY.signalFailed, "error");
       return;
     }
 
@@ -278,7 +285,8 @@ export function HomeSignalsFeed({
     incrementSignalsSent();
     onSignalSent?.();
     trackEvent("signal_sent", { profileId: profile.id, source: "home_feed" });
-    showToast(BRAND.signalSent);
+    hapticMedium();
+    notify(BRAND.signalSent, "success");
   };
 
   const detailVerification = detailProfile
@@ -297,27 +305,31 @@ export function HomeSignalsFeed({
         <h2>{SUCCESS_COPY.peopleNearYou}</h2>
       </header>
 
-      {toast ? (
-        <p className="home-signals-feed__toast" role="status">
-          {toast}
-        </p>
-      ) : null}
+      <ToastHost />
 
-      {loading ? (
+      {loadError ? (
+        <MemberErrorState message={loadError} onRetry={() => void loadFeed()} />
+      ) : loading ? (
         <div className="discover-feed-grid discover-feed-grid--loading" aria-busy="true">
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} className="discover-feed-card discover-feed-card--dashboard discover-feed-card--skeleton" />
           ))}
         </div>
       ) : gridItems.length === 0 ? (
-        <div className="home-signals-feed__empty card">
-          <p>{SUCCESS_COPY.homeFeedEmpty}</p>
+        <div className="home-signals-feed__empty card member-empty-state">
+          <h2>{SUCCESS_COPY.homeFeedEmpty}</h2>
           <p className="home-signals-feed__empty-hint">{SUCCESS_COPY.homeFeedEmptyHint}</p>
-          {filtersApplied ? (
-            <button type="button" className="btn-secondary btn-sm" onClick={() => onResetFilters?.()}>
-              Reset filters
-            </button>
-          ) : null}
+          <div className="premium-empty-actions">
+            {filtersApplied ? (
+              <button type="button" className="btn-secondary" onClick={() => onResetFilters?.()}>
+                Reset filters
+              </button>
+            ) : (
+              <button type="button" className="btn-primary" onClick={onViewMore}>
+                Explore Discover
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <>

@@ -31,6 +31,7 @@ import { useFastConnectionExpiryReminder } from "../hooks/useFastConnectionExpir
 import { navigateToPath } from "../constants/routes";
 import { debugRender } from "../utils/debugRecursion";
 import { ProfileImprovementNudge } from "../components/nudges/ProfileImprovementNudge";
+import { useMemberToast } from "../hooks/useMemberToast";
 
 type HomePageProps = {
   user: UserProfile;
@@ -86,7 +87,7 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
   );
   const [signalRefresh, setSignalRefresh] = useState(0);
   const [signalLimitOpen, setSignalLimitOpen] = useState(false);
-  const [activationMessage, setActivationMessage] = useState("");
+  const { showToast, ToastHost } = useMemberToast();
 
   const {
     open: fastConnectionActivationOpen,
@@ -96,7 +97,7 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
   } = useFastConnectionActivationPrompt({
     user,
     enabled: true,
-    onPaymentError: (message) => setActivationMessage(message)
+    onPaymentError: (message) => showToast(message, { tone: "error", duration: 4000 })
   });
 
   const {
@@ -287,11 +288,7 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
         onGetSignalPass={onOpenPremium}
       />
 
-      {activationMessage ? (
-        <p className="profile-mod-toast" role="status">
-          {activationMessage}
-        </p>
-      ) : null}
+      <ToastHost />
 
       {fastConnectionExpiryBanner ? (
         <FastConnectionExpiryBanner

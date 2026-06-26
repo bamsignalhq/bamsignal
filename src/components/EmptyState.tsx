@@ -10,7 +10,7 @@ type EmptyStateProps = {
 
 export function EmptyState({ icon: Icon, title, message, actionLabel, onAction }: EmptyStateProps) {
   return (
-    <div className="empty-state empty-state--calm">
+    <div className="empty-state empty-state--calm member-empty-state">
       {Icon ? <Icon size={28} strokeWidth={1.5} aria-hidden className="empty-state__icon" /> : null}
       <h2>{title}</h2>
       {message ? <p>{message}</p> : null}

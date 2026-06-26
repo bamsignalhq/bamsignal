@@ -46,6 +46,8 @@ import { startQuickiePassPayment, completePendingPayment } from "../services/pay
 import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch } from "../utils/quickie";
 import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
 import { consumePendingChatDraft, consumePendingChatOpen, setPendingChatDraft, setPendingChatOpen } from "../utils/chatDraft";
+import { useMemberToast } from "../hooks/useMemberToast";
+import { hapticMedium } from "../utils/memberHaptics";
 import { debugRender } from "../utils/debugRecursion";
 
 type ChatsPageProps = {
@@ -126,7 +128,7 @@ export function ChatsPage({
     target: DiscoverProfile;
     draft: string;
   } | null>(null);
-  const [emptyToast, setEmptyToast] = useState("");
+  const { showToast: showInboxToast, ToastHost: InboxToastHost } = useMemberToast();
   const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
   const viewer = getDatingProfile();
 
@@ -210,13 +212,12 @@ export function ChatsPage({
   const handleEmptySendSignal = async (profile: DiscoverProfile) => {
     const result = await sendSignalRemote(user, profile.id, "signal");
     if (result.ok) {
-      setEmptyToast(BRAND.signalSent);
-      window.setTimeout(() => setEmptyToast(""), 2400);
+      hapticMedium();
+      showInboxToast(BRAND.signalSent, { tone: "success" });
       return true;
     }
     if (result.error) {
-      setEmptyToast(result.error);
-      window.setTimeout(() => setEmptyToast(""), 3200);
+      showInboxToast(result.error, { tone: "error", duration: 3200 });
     }
     return false;
   };
@@ -239,7 +240,7 @@ export function ChatsPage({
       </label>
       ) : null}
 
-      {emptyToast ? <div className="toast toast--member">{emptyToast}</div> : null}
+      <InboxToastHost />
 
       {messageRequests.length > 0 ? (
         <div className="message-requests-list">
@@ -427,7 +428,7 @@ function ChatDetail({
       blockWarningTimerRef.current = undefined;
     }, 4000);
   };
-  const [toast, setToast] = useState("");
+  const { showToast, ToastHost } = useMemberToast();
   const [composerDraft, setComposerDraft] = useState(() => consumePendingChatDraft(match.id) ?? "");
   const [screenshotNotice, setScreenshotNotice] = useState(false);
   const [quickiePaywallOpen, setQuickiePaywallOpen] = useState(false);
@@ -585,8 +586,7 @@ function ChatDetail({
 
   const requestContactExchange = async () => {
     if (!user.phoneVerified) {
-      setToast("Verify your phone number before exchanging contacts.");
-      setTimeout(() => setToast(""), 3500);
+      showToast("Verify your phone number before exchanging contacts.", { tone: "error", duration: 3500 });
       return;
     }
     runAfterOfflineSafety(() => void executeContactExchangeRequest());
@@ -605,8 +605,7 @@ function ChatDetail({
         setLimitModalOpen(true);
         trackEvent("paywall_seen", { context: "contact_exchange" });
       } else if (result.error) {
-        setToast(result.error);
-        setTimeout(() => setToast(""), 4000);
+        showToast(result.error, { tone: "error", duration: 4000 });
       }
       return;
     }
@@ -614,8 +613,7 @@ function ChatDetail({
     const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
     if (mapped) updateMeta({ contactExchange: mapped });
     setExchangeRole("requester");
-    setToast("We'll ask if they're comfortable continuing outside BamSignal.");
-    setTimeout(() => setToast(""), 3500);
+    showToast("We'll ask if they're comfortable continuing outside BamSignal.", { duration: 3500 });
   };
 
   const acceptContactExchange = async () => {
@@ -629,8 +627,7 @@ function ChatDetail({
       if (result.limitReached) {
         setLimitModalOpen(true);
       } else if (result.error) {
-        setToast(result.error);
-        setTimeout(() => setToast(""), 4000);
+        showToast(result.error, { tone: "error", duration: 4000 });
       }
       return;
     }
@@ -647,8 +644,7 @@ function ChatDetail({
       const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
       if (mapped) updateMeta({ contactExchange: mapped });
     }
-    setToast("Kept inside BamSignal for now.");
-    setTimeout(() => setToast(""), 3500);
+    showToast("Kept inside BamSignal for now.", { duration: 3500 });
   };
 
   const finishContactExchange = async (shared: ContactExchangeShared) => {
@@ -656,16 +652,14 @@ function ChatDetail({
     if (!result) return;
     if (!result.ok) {
       if (result.error) {
-        setToast(result.error);
-        setTimeout(() => setToast(""), 4000);
+        showToast(result.error, { tone: "error", duration: 4000 });
       }
       return;
     }
     trackEvent("exchange_completed", { matchId: match.id });
     const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
     if (mapped) updateMeta({ contactExchange: mapped, offPlatformApproved: true });
-    setToast("Contact exchange saved. Share only what you're comfortable with.");
-    setTimeout(() => setToast(""), 3500);
+    showToast("Contact exchange saved. Share only what you're comfortable with.", { tone: "success", duration: 3500 });
   };
 
   const disableSharing = async () => {
@@ -673,16 +667,14 @@ function ChatDetail({
     setDisableModalOpen(false);
     if (!result?.ok) {
       if (result?.error) {
-        setToast(result.error);
-        setTimeout(() => setToast(""), 4000);
+        showToast(result.error, { tone: "error", duration: 4000 });
       }
       return;
     }
     trackEvent("contact_sharing_disabled", { matchId: match.id });
     const mapped = mapServerExchange(result.exchange as Record<string, unknown>);
     if (mapped) updateMeta({ contactExchange: mapped });
-    setToast("Contact sharing disabled for this conversation.");
-    setTimeout(() => setToast(""), 3500);
+    showToast("Contact sharing disabled for this conversation.", { tone: "success", duration: 3500 });
   };
 
   const handleBlock = () => {
@@ -734,7 +726,7 @@ function ChatDetail({
         </button>
       </header>
 
-      {toast && <div className="toast toast--member">{toast}</div>}
+      <ToastHost />
 
       {showRecipientConsent && (
         <ContactExchangeConsentCard
@@ -846,8 +838,7 @@ function ChatDetail({
           if (!result.ok) {
             setQuickieLoading(false);
             if (!result.cancelled && result.error) {
-              setToast(result.error);
-              setTimeout(() => setToast(""), 4000);
+              showToast(result.error, { tone: "error", duration: 4000 });
             }
             return;
           }
@@ -858,8 +849,7 @@ function ChatDetail({
               unlockQuickieMatch(match.profileId);
               setQuickiePaywallOpen(false);
             } else if (!verified.pending && verified.error) {
-              setToast(verified.error);
-              setTimeout(() => setToast(""), 4000);
+              showToast(verified.error, { tone: "error", duration: 4000 });
             }
           }
           setQuickieLoading(false);

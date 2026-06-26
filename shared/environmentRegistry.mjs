@@ -161,10 +161,58 @@ export const ENV_REGISTRY = [
 
   // Optional integrations
   { name: "TELEGRAM_BOT_TOKEN", group: "analytics", scope: "runtime", required: "optional", owner: "Engineering", rotation: "on-compromise", envs: ["production"] },
-  { name: "TELEGRAM_ENABLE_POLLING", group: "analytics", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "boolean", envs: ["local", "development"] }
+  { name: "TELEGRAM_ENABLE_POLLING", group: "analytics", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "boolean", envs: ["local", "development"] },
+
+  // OpenAI (optional — AI workspace / consultant assist; not on critical path)
+  { name: "OPENAI_API_KEY", group: "openai", scope: "runtime", required: "optional", owner: "Engineering", rotation: "on-compromise", validate: "openai-key", envs: ["staging", "production"] },
+  { name: "OPENAI_MODEL", group: "openai", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["staging", "production"] },
+
+  // Certification runners
+  { name: "CERTIFICATION_BASE_URL", group: "certification", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "url", envs: ["local", "development", "staging", "production"] },
+  { name: "CERTIFICATION_EXECUTION_MODE", group: "certification", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", validate: "enum:dry-run,staging,production", envs: ["local", "development", "staging", "production"] },
+  { name: "ENV_TARGET", group: "certification", scope: "runtime", required: "optional", owner: "Engineering", rotation: "n/a", envs: ["local", "development", "staging", "production"] }
 ];
+
+/** Where each variable is read (paths relative to repo root). */
+export const ENV_USED_IN = {
+  DATABASE_URL: ["server/db.js", "server/config.js", "certification/database/run.mjs"],
+  VITE_SUPABASE_URL: ["src/lib/supabaseClient.ts", "server/supabaseEnv.js", "vite build (Dockerfile ARG)"],
+  VITE_SUPABASE_ANON_KEY: ["src/lib/supabaseClient.ts", "server/supabaseEnv.js"],
+  SUPABASE_URL: ["server/supabaseEnv.js", "server/services/photoStorage.js"],
+  SUPABASE_SERVICE_ROLE_KEY: ["server/supabaseEnv.js", "server/services/photoStorage.js", "api/auth/email-code.js"],
+  SUPABASE_ANON_KEY: ["server/services/photoStorage.js", "api/member/photos.js"],
+  PAYSTACK_SECRET_KEY: ["server/config.js", "server/routes/paystack.js", "server/services/readiness.js"],
+  VITE_PAYSTACK_PUBLIC_KEY: ["src/services/payments.ts", "server/config.js"],
+  RESEND_API_KEY: ["server/services/contactMail.js", "server/services/signupOtp.js", "server/services/readiness.js"],
+  SENDCHAMP_API_KEY: ["server/services/sendchamp.js", "server/config.js"],
+  SENDCHAMP_SENDER: ["server/services/sendchamp.js"],
+  SENDCHAMP_WHATSAPP_SENDER: ["server/services/sendchamp.js", "api/verify/whatsapp/start.js"],
+  GOOGLE_CLIENT_ID: ["server/config.js", "server/routes/consultationScheduling.js"],
+  GOOGLE_CLIENT_SECRET: ["server/config.js", "server/routes/consultationScheduling.js"],
+  GOOGLE_REDIRECT_URI: ["server/config.js"],
+  GOOGLE_CALENDAR_REFRESH_TOKEN: ["server/config.js", "server/services/meetingInfrastructure.js"],
+  ZOOM_CLIENT_ID: ["server/config.js", "server/services/meetingInfrastructure.js"],
+  ZOOM_CLIENT_SECRET: ["server/config.js"],
+  ZOOM_ACCOUNT_ID: ["server/config.js"],
+  GOOGLE_MEET_CLIENT_ID: ["server/config.js"],
+  GOOGLE_MEET_CLIENT_SECRET: ["server/config.js"],
+  GOOGLE_MEET_REFRESH_TOKEN: ["server/config.js"],
+  FIREBASE_SERVICE_ACCOUNT_JSON: ["server/firebase.js", "server/services/readiness.js"],
+  VITE_FIREBASE_API_KEY: ["src/firebase.ts", "capacitor push (android)"],
+  VITE_FIREBASE_PROJECT_ID: ["src/firebase.ts"],
+  OPENAI_API_KEY: ["src/constants/aiAssistedConsultant.ts", "certification/chaos (optional)"],
+  COMMAND_CENTER_PIN: ["server/services/productionSecurity.js", "server/routes/admin.js"],
+  COMMAND_CENTER_EMAILS: ["server/services/productionSecurity.js"],
+  CRON_SECRET: ["server/services/diagnosticsAccess.js", "server/routes/cron.js"],
+  PUBLIC_APP_URL: ["server/config.js", "server/seoSitemap.js"],
+  CERTIFICATION_BASE_URL: ["certification/e2e/config.mjs", "certification/platform-load/config.mjs"]
+};
+
+export function registryEntryWithUsage(entry) {
+  return { ...entry, usedIn: ENV_USED_IN[entry.name] || [] };
+}
 
 export function registryForEnvironment(env) {
   const normalized = String(env || "production").toLowerCase();
-  return ENV_REGISTRY.filter((entry) => entry.envs.includes(normalized));
+  return ENV_REGISTRY.filter((entry) => entry.envs.includes(normalized)).map(registryEntryWithUsage);
 }

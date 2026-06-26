@@ -1,0 +1,1512 @@
+{
+  "target": "development",
+  "rows": [
+    {
+      "variable": "NODE_ENV",
+      "group": "application",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "local",
+        "development",
+        "preview",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "enum:development,production,test",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "PORT",
+      "group": "application",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development",
+        "preview",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "port",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "HOST",
+      "group": "application",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development",
+        "preview",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "PUBLIC_APP_URL",
+      "group": "application",
+      "whereUsed": [
+        "server/config.js",
+        "server/seoSitemap.js"
+      ],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "preview",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "url",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": [
+        "VITE_PUBLIC_APP_URL"
+      ]
+    },
+    {
+      "variable": "VITE_PUBLIC_APP_URL",
+      "group": "application",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "local",
+        "development",
+        "preview",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "url",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "APP_TIMEZONE",
+      "group": "application",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "RUN_MIGRATIONS_ON_STARTUP",
+      "group": "application",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "boolean",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "DATABASE_URL",
+      "group": "supabase",
+      "whereUsed": [
+        "server/db.js",
+        "server/config.js",
+        "certification/database/run.mjs"
+      ],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "local",
+        "development",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "postgres-url",
+      "owner": "Engineering",
+      "rotation": "on-compromise",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_SUPABASE_URL",
+      "group": "supabase",
+      "whereUsed": [
+        "src/lib/supabaseClient.ts",
+        "server/supabaseEnv.js",
+        "vite build (Dockerfile ARG)"
+      ],
+      "scope": "buildtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "local",
+        "development",
+        "preview",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "supabase-url",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_SUPABASE_ANON_KEY",
+      "group": "supabase",
+      "whereUsed": [
+        "src/lib/supabaseClient.ts",
+        "server/supabaseEnv.js"
+      ],
+      "scope": "buildtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "local",
+        "development",
+        "preview",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "supabase-anon",
+      "owner": "Engineering",
+      "rotation": "supabase-rotate",
+      "aliases": []
+    },
+    {
+      "variable": "SUPABASE_URL",
+      "group": "supabase",
+      "whereUsed": [
+        "server/supabaseEnv.js",
+        "server/services/photoStorage.js"
+      ],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "supabase-url",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": [
+        "VITE_SUPABASE_URL"
+      ]
+    },
+    {
+      "variable": "SUPABASE_SERVICE_ROLE_KEY",
+      "group": "supabase",
+      "whereUsed": [
+        "server/supabaseEnv.js",
+        "server/services/photoStorage.js",
+        "api/auth/email-code.js"
+      ],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "supabase-service",
+      "owner": "Engineering",
+      "rotation": "quarterly",
+      "aliases": [
+        "SUPABASE_SECRET_KEY"
+      ]
+    },
+    {
+      "variable": "SUPABASE_ANON_KEY",
+      "group": "supabase",
+      "whereUsed": [
+        "server/services/photoStorage.js",
+        "api/member/photos.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "supabase-anon",
+      "owner": "Engineering",
+      "rotation": "supabase-rotate",
+      "aliases": [
+        "VITE_SUPABASE_ANON_KEY"
+      ]
+    },
+    {
+      "variable": "COMMAND_CENTER_PIN",
+      "group": "authentication",
+      "whereUsed": [
+        "server/services/productionSecurity.js",
+        "server/routes/admin.js"
+      ],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "pin",
+      "owner": "Security",
+      "rotation": "quarterly",
+      "aliases": [
+        "ADMIN_ACTION_PIN"
+      ]
+    },
+    {
+      "variable": "COMMAND_CENTER_EMAILS",
+      "group": "authentication",
+      "whereUsed": [
+        "server/services/productionSecurity.js"
+      ],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Security",
+      "rotation": "on-personnel-change",
+      "aliases": [
+        "ADMIN_EMAILS"
+      ]
+    },
+    {
+      "variable": "ADMIN_BOOTSTRAP_ENABLED",
+      "group": "authentication",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": true,
+      "staging": false,
+      "validate": "boolean",
+      "owner": "Security",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "ADMIN_BOOTSTRAP_SECRET",
+      "group": "authentication",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": true,
+      "staging": false,
+      "validate": null,
+      "owner": "Security",
+      "rotation": "single-use",
+      "aliases": []
+    },
+    {
+      "variable": "LEGACY_SETUP_ENABLED",
+      "group": "authentication",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": true,
+      "staging": false,
+      "validate": "boolean",
+      "owner": "Security",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "LEGACY_SETUP_SECRET",
+      "group": "authentication",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": true,
+      "staging": false,
+      "validate": null,
+      "owner": "Security",
+      "rotation": "single-use",
+      "aliases": []
+    },
+    {
+      "variable": "PAYSTACK_SECRET_KEY",
+      "group": "payments",
+      "whereUsed": [
+        "server/config.js",
+        "server/routes/paystack.js",
+        "server/services/readiness.js"
+      ],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "paystack-secret",
+      "owner": "Finance Ops",
+      "rotation": "on-compromise",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_PAYSTACK_PUBLIC_KEY",
+      "group": "payments",
+      "whereUsed": [
+        "src/services/payments.ts",
+        "server/config.js"
+      ],
+      "scope": "buildtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "local",
+        "development",
+        "preview",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "paystack-public",
+      "owner": "Finance Ops",
+      "rotation": "n/a",
+      "aliases": [
+        "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY",
+        "PAYSTACK_PUBLIC_KEY"
+      ]
+    },
+    {
+      "variable": "PAYSTACK_CALLBACK_URL",
+      "group": "payments",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "url",
+      "owner": "Finance Ops",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "PAYSTACK_ANDROID_CALLBACK_URL",
+      "group": "payments",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "deep-link-scheme",
+      "owner": "Finance Ops",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "PAYSTACK_WEBHOOK_URL",
+      "group": "payments",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "url",
+      "owner": "Finance Ops",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "PAYSTACK_WEBHOOK_SECRET",
+      "group": "payments",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "paystack-secret",
+      "owner": "Finance Ops",
+      "rotation": "on-compromise",
+      "aliases": []
+    },
+    {
+      "variable": "RESEND_API_KEY",
+      "group": "email",
+      "whereUsed": [
+        "server/services/contactMail.js",
+        "server/services/signupOtp.js",
+        "server/services/readiness.js"
+      ],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "resend-key",
+      "owner": "Engineering",
+      "rotation": "annual",
+      "aliases": []
+    },
+    {
+      "variable": "SIGNUP_EMAIL_FROM",
+      "group": "email",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "SUPPORT_EMAIL_FROM",
+      "group": "email",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "CONCIERGE_EMAIL_FROM",
+      "group": "email",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": true,
+      "localOnly": false,
+      "staging": false,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "SUPPORT_EMAIL_TO",
+      "group": "email",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": true,
+      "localOnly": false,
+      "staging": false,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_SUPPORT_EMAIL",
+      "group": "email",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "email",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "SENDCHAMP_API_KEY",
+      "group": "whatsapp",
+      "whereUsed": [
+        "server/services/sendchamp.js",
+        "server/config.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "annual",
+      "aliases": []
+    },
+    {
+      "variable": "SENDCHAMP_SENDER",
+      "group": "whatsapp",
+      "whereUsed": [
+        "server/services/sendchamp.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "SENDCHAMP_WHATSAPP_SENDER",
+      "group": "whatsapp",
+      "whereUsed": [
+        "server/services/sendchamp.js",
+        "api/verify/whatsapp/start.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "SENDCHAMP_BASE_URL",
+      "group": "whatsapp",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "url",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "GOOGLE_CLIENT_ID",
+      "group": "google-calendar",
+      "whereUsed": [
+        "server/config.js",
+        "server/routes/consultationScheduling.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "annual",
+      "aliases": []
+    },
+    {
+      "variable": "GOOGLE_CLIENT_SECRET",
+      "group": "google-calendar",
+      "whereUsed": [
+        "server/config.js",
+        "server/routes/consultationScheduling.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "annual",
+      "aliases": []
+    },
+    {
+      "variable": "GOOGLE_REDIRECT_URI",
+      "group": "google-calendar",
+      "whereUsed": [
+        "server/config.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "url",
+      "owner": "Operations",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "GOOGLE_CALENDAR_REFRESH_TOKEN",
+      "group": "google-calendar",
+      "whereUsed": [
+        "server/config.js",
+        "server/services/meetingInfrastructure.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": true,
+      "localOnly": false,
+      "staging": false,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "oauth-refresh",
+      "aliases": []
+    },
+    {
+      "variable": "GOOGLE_CALENDAR_ID",
+      "group": "google-calendar",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": true,
+      "localOnly": false,
+      "staging": false,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "ZOOM_CLIENT_ID",
+      "group": "zoom",
+      "whereUsed": [
+        "server/config.js",
+        "server/services/meetingInfrastructure.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "annual",
+      "aliases": []
+    },
+    {
+      "variable": "ZOOM_CLIENT_SECRET",
+      "group": "zoom",
+      "whereUsed": [
+        "server/config.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "annual",
+      "aliases": []
+    },
+    {
+      "variable": "ZOOM_ACCOUNT_ID",
+      "group": "zoom",
+      "whereUsed": [
+        "server/config.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": true,
+      "localOnly": false,
+      "staging": false,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "GOOGLE_MEET_CLIENT_ID",
+      "group": "google-meet",
+      "whereUsed": [
+        "server/config.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "annual",
+      "aliases": []
+    },
+    {
+      "variable": "GOOGLE_MEET_CLIENT_SECRET",
+      "group": "google-meet",
+      "whereUsed": [
+        "server/config.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "annual",
+      "aliases": []
+    },
+    {
+      "variable": "GOOGLE_MEET_REFRESH_TOKEN",
+      "group": "google-meet",
+      "whereUsed": [
+        "server/config.js"
+      ],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": true,
+      "localOnly": false,
+      "staging": false,
+      "validate": null,
+      "owner": "Operations",
+      "rotation": "oauth-refresh",
+      "aliases": []
+    },
+    {
+      "variable": "FIREBASE_SERVICE_ACCOUNT_JSON",
+      "group": "storage",
+      "whereUsed": [
+        "server/firebase.js",
+        "server/services/readiness.js"
+      ],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "json",
+      "owner": "Engineering",
+      "rotation": "on-compromise",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_FIREBASE_API_KEY",
+      "group": "notifications",
+      "whereUsed": [
+        "src/firebase.ts",
+        "capacitor push (android)"
+      ],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_FIREBASE_AUTH_DOMAIN",
+      "group": "notifications",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_FIREBASE_PROJECT_ID",
+      "group": "notifications",
+      "whereUsed": [
+        "src/firebase.ts"
+      ],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_FIREBASE_STORAGE_BUCKET",
+      "group": "notifications",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_FIREBASE_MESSAGING_SENDER_ID",
+      "group": "notifications",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_FIREBASE_APP_ID",
+      "group": "notifications",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "CRON_SECRET",
+      "group": "operations",
+      "whereUsed": [
+        "server/services/diagnosticsAccess.js",
+        "server/routes/cron.js"
+      ],
+      "scope": "runtime",
+      "required": "mandatory",
+      "requiredLevel": "critical",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Security",
+      "rotation": "quarterly",
+      "aliases": []
+    },
+    {
+      "variable": "DIAGNOSTICS_SECRET",
+      "group": "operations",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Security",
+      "rotation": "quarterly",
+      "aliases": []
+    },
+    {
+      "variable": "ADMIN_CONSENT_SECRET",
+      "group": "operations",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": true,
+      "localOnly": false,
+      "staging": false,
+      "validate": null,
+      "owner": "Security",
+      "rotation": "quarterly",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_ENABLE_REFERRALS_UI",
+      "group": "feature-flags",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "boolean",
+      "owner": "Product",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_ENABLE_IMAGE_MODERATION",
+      "group": "feature-flags",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "boolean",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_PHOTO_MODERATION_MODE",
+      "group": "feature-flags",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "enum:upload_first,review,strict",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "PHOTO_MODERATION_MODE",
+      "group": "feature-flags",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "enum:upload_first,review,strict",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "VITE_STORE_SCREENSHOTS",
+      "group": "feature-flags",
+      "whereUsed": [],
+      "scope": "buildtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": true,
+      "staging": false,
+      "validate": "boolean",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "PAYSTACK_ANDROID_CALLBACK_URL",
+      "group": "android",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "recommended",
+      "requiredLevel": "warning",
+      "profiles": [
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": true,
+      "localOnly": false,
+      "staging": false,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "TELEGRAM_BOT_TOKEN",
+      "group": "analytics",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": true,
+      "localOnly": false,
+      "staging": false,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "on-compromise",
+      "aliases": []
+    },
+    {
+      "variable": "TELEGRAM_ENABLE_POLLING",
+      "group": "analytics",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": true,
+      "staging": false,
+      "validate": "boolean",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "OPENAI_API_KEY",
+      "group": "openai",
+      "whereUsed": [
+        "src/constants/aiAssistedConsultant.ts",
+        "certification/chaos (optional)"
+      ],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "openai-key",
+      "owner": "Engineering",
+      "rotation": "on-compromise",
+      "aliases": []
+    },
+    {
+      "variable": "OPENAI_MODEL",
+      "group": "openai",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "staging",
+        "production"
+      ],
+      "activeInTarget": false,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "CERTIFICATION_BASE_URL",
+      "group": "certification",
+      "whereUsed": [
+        "certification/e2e/config.mjs",
+        "certification/platform-load/config.mjs"
+      ],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "url",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "CERTIFICATION_EXECUTION_MODE",
+      "group": "certification",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": "enum:dry-run,staging,production",
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    },
+    {
+      "variable": "ENV_TARGET",
+      "group": "certification",
+      "whereUsed": [],
+      "scope": "runtime",
+      "required": "optional",
+      "requiredLevel": "optional",
+      "profiles": [
+        "local",
+        "development",
+        "staging",
+        "production"
+      ],
+      "activeInTarget": true,
+      "productionOnly": false,
+      "localOnly": false,
+      "staging": true,
+      "validate": null,
+      "owner": "Engineering",
+      "rotation": "n/a",
+      "aliases": []
+    }
+  ]
+}

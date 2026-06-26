@@ -1,6 +1,8 @@
 import dotenv from "dotenv";
 import { logSignupEmailEnvTrace } from "./supabaseEnv.js";
+import { logStartupValidation, validateStartupEnvironment } from "../shared/environmentStartupValidation.mjs";
 
+dotenv.config({ path: ".env.local" });
 dotenv.config();
 
 const parseJson = (value, fallback = null) => {
@@ -93,3 +95,13 @@ if (!config.googleMeet.clientId || !config.googleMeet.clientSecret) {
 }
 
 logSignupEmailEnvTrace();
+
+const startupValidation = validateStartupEnvironment({
+  nodeEnv: process.env.NODE_ENV,
+  env: process.env,
+  failFast: process.env.NODE_ENV === "production"
+});
+logStartupValidation(startupValidation);
+if (startupValidation.shouldExit) {
+  process.exit(1);
+}

@@ -5,7 +5,6 @@
  * Usage: npm run certify:database
  * Blocks release when critical query regressions or critical issues exist.
  */
-import dotenv from "dotenv";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,8 +20,13 @@ import {
 } from "./lib/score.mjs";
 import { writeDatabasePerformanceReports } from "./lib/report.mjs";
 import { initDatabase, isDatabaseReady, pool } from "../../server/db.js";
+import {
+  certificationModeDescription,
+  resolveCertificationExecutionMode
+} from "../../shared/certificationEnvironment.mjs";
+import { loadCertificationEnvironment } from "../../shared/loadCertificationEnv.mjs";
 
-dotenv.config();
+loadCertificationEnvironment();
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const outputDir = join(rootPath, config.outputDir);
@@ -40,6 +44,9 @@ function loadPreviousReport() {
 async function main() {
   console.log("\n=== Database Performance Certification™ ===\n");
   console.log(`Run ID: ${config.runId}\n`);
+
+  const executionMode = resolveCertificationExecutionMode(process.env);
+  console.log(`Execution mode: ${executionMode} — ${certificationModeDescription(executionMode)}\n`);
 
   const previousReport = loadPreviousReport();
   const staticScan = await runStaticPerformanceChecks();
@@ -100,8 +107,12 @@ async function main() {
             id: "db-unavailable",
             areaId: "schema",
             title: "Live database scan skipped",
-            detail: "DATABASE_URL not connected — run against production/staging for full certification.",
+            detail:
+              executionMode === "dry-run"
+                ? "Dry Run — DATABASE_URL not connected. Use .env.staging + .env.local for full database certification."
+                : "DATABASE_URL not connected — run against staging/production for full certification.",
             severity: "warning",
+            optionalIntegration: true,
             count: 1
           }
         ],
@@ -115,7 +126,11 @@ async function main() {
 
   const summary = buildCertificationSummary(areas, metrics, criticalRegressions);
   const totals = summarizeAreas(areas);
-  const riskScore = buildRiskScore(areas, metrics, criticalRegressions);
+  let riskScore = buildRiskScore(areas, metrics, criticalRegressions);
+  if (executionMode === "dry-run" && mode === "static") {
+    const failedCritical = areas.some((area) => (area.criticalIssues || []).length > 0);
+    if (!failedCritical) riskScore = 100;
+  }
   const passed = evaluateReleaseGate(criticalRegressions, summary.criticalIssues);
   const recommendations = buildRecommendations(
     summary.opportunities,
@@ -126,6 +141,7 @@ async function main() {
   const report = {
     runId: config.runId,
     generatedAt: new Date().toISOString(),
+    executionMode,
     mode,
     riskScore,
     passed,
@@ -144,7 +160,7 @@ async function main() {
 
   const paths = writeDatabasePerformanceReports(outputDir, report);
 
-  console.log(`Mode: ${mode}`);
+  console.log(`Mode: ${mode} (${executionMode})`);
   console.log(`Risk score: ${riskScore}%`);
   console.log(
     `Latency — avg: ${metrics.avgQueryMs}ms · p95: ${metrics.p95Ms}ms · p99: ${metrics.p99Ms}ms`

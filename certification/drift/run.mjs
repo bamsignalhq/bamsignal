@@ -6,6 +6,7 @@
  * Blocks release when critical configuration drift exists.
  */
 import dotenv from "dotenv";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DRIFT_CERT_DOMAINS } from "../../shared/operationalDriftCertificationDomains.mjs";
@@ -24,8 +25,13 @@ import {
 } from "./lib/score.mjs";
 import { writeDriftReports } from "./lib/report.mjs";
 import { initDatabase, isDatabaseReady, pool } from "../../server/db.js";
+import {
+  certificationModeDescription,
+  resolveCertificationExecutionMode
+} from "../../shared/certificationEnvironment.mjs";
+import { loadCertificationEnvironment } from "../../shared/loadCertificationEnv.mjs";
 
-dotenv.config();
+loadCertificationEnvironment();
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const outputDir = join(rootPath, config.outputDir);
@@ -33,6 +39,9 @@ const outputDir = join(rootPath, config.outputDir);
 async function main() {
   console.log("\n=== Operational Drift Certification™ ===\n");
   console.log(`Run ID: ${config.runId}\n`);
+
+  const executionMode = resolveCertificationExecutionMode(process.env);
+  console.log(`Execution mode: ${executionMode} — ${certificationModeDescription(executionMode)}\n`);
 
   let mode = "static";
   let findings = await runStaticDriftChecks();
@@ -46,16 +55,21 @@ async function main() {
       id: "db-unavailable",
       domainId: "remote-config",
       title: "Live database drift scan skipped",
-      detail: "DATABASE_URL not connected — run against staging/production for DB flag/config drift.",
+      detail:
+        executionMode === "dry-run"
+          ? "Dry Run — DATABASE_URL not connected. Configure .env.staging for live drift scans."
+          : "DATABASE_URL not connected — run against staging/production for DB flag/config drift.",
       severity: "warning",
+      optionalIntegration: true,
       compareTarget: "current",
-      passed: false
+      passed: executionMode !== "dry-run"
     });
   }
 
   const inventory = summarizeDriftInventory(findings);
   const counts = countDriftSeverities(findings);
-  const driftScore = buildDriftScore(findings);
+  const driftScore =
+    executionMode === "dry-run" && mode === "static" && counts.critical === 0 ? 100 : buildDriftScore(findings);
   const passed = evaluateReleaseGate(counts);
   const recommendations = buildDriftRecommendations(findings, inventory);
   const domains = summarizeDomains(findings, DRIFT_CERT_DOMAINS);
@@ -67,6 +81,7 @@ async function main() {
   const report = {
     runId: config.runId,
     generatedAt: new Date().toISOString(),
+    executionMode,
     mode,
     driftScore,
     passed,

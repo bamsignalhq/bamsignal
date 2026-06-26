@@ -1,0 +1,191 @@
+.observability-page {
+  display: grid;
+  gap: 18px;
+}
+
+.observability-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.observability-page__head h2 {
+  margin: 0 0 6px;
+}
+
+.observability-page__head p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 72ch;
+}
+
+.observability-page__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.observability-page__column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.observability-page__empty,
+.observability-page__foot {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+}
+
+.observability-page__foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.observability-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.observability-summary__card {
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.observability-summary__card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.observability-summary__label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.62);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.observability-summary__value {
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.observability-summary__detail {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.observability-card {
+  padding: 14px;
+}
+
+.observability-card__head h3 {
+  margin: 0 0 4px;
+}
+
+.observability-card__head p {
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.84rem;
+}
+
+.observability-card__table,
+.observability-card__errors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.observability-card__row,
+.observability-card__error {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.observability-card__row:last-child,
+.observability-card__error:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.observability-card__row-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.observability-card__tag {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.observability-card__muted {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.78rem;
+}
+
+.observability-card__note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255, 200, 120, 0.85);
+}
+
+.observability-card__error-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.observability-card__error-event {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: rgba(160, 200, 255, 0.85);
+}
+
+.observability-card__stack {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 0.72rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.observability-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.observability-card__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  font-size: 0.84rem;
+}
+
+@media (max-width: 960px) {
+  .observability-page__body {
+    grid-template-columns: 1fr;
+  }
+}

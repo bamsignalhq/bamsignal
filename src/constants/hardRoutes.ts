@@ -39,6 +39,7 @@ import { ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH } from "./enterpriseCodebaseClea
 import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin";
 import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
 import { FOUNDER_ACCEPTANCE_ADMIN_PATH } from "./founderAcceptanceAdmin";
+import { PRODUCTION_OBSERVABILITY_ADMIN_PATH } from "./productionObservabilityAdmin";
 
 export type ConciergeAdminView = "dashboard" | "operations-center" | "journey-intelligence";
 export type AuditAdminView = "compliance" | "routes" | "database" | "security" | "journeys";
@@ -95,7 +96,8 @@ const TAB_SLUGS: Record<HardTab, string> = {
   enterprisecleanup: "enterprise-cleanup",
   productionenvironment: "production-environment",
   launchinfrastructure: "launch-infrastructure",
-  founderacceptance: "founder-acceptance"
+  founderacceptance: "founder-acceptance",
+  observability: "observability"
 };
 
 const SLUG_TO_TAB = Object.fromEntries(

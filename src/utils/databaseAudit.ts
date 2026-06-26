@@ -1352,6 +1352,13 @@ const ADMIN_LOCAL_STORAGE_MANIFEST: Omit<LocalStorageDependency, "id" | "health"
     note: "Enterprise Monitoring & Incident Center™ — dual-write via monitoringCenter.js"
   },
   {
+    storageKey: "bamsignal.productionObservability.v1",
+    domainId: "qa",
+    engine: "productionObservabilityEngine.ts",
+    expectedTable: "observability_error_events",
+    note: "Production Observability Center™ — dual-write via productionObservability.js"
+  },
+  {
     storageKey: "bamsignal.dataGovernanceCenter.v1",
     domainId: "qa",
     engine: "dataGovernanceCenterEngine.ts",

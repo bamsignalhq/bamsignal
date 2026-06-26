@@ -97,6 +97,11 @@ export const LazyFounderAcceptanceDashboard = lazy(() =>
     default: module.FounderAcceptanceDashboard
   }))
 );
+export const LazyProductionObservabilityPage = lazy(() =>
+  import("./observability/ProductionObservabilityPage").then((module) => ({
+    default: module.ProductionObservabilityPage
+  }))
+);
 export const LazyReportingCenterPage = lazy(() =>
   import("./reporting/ReportingCenterPage").then((module) => ({ default: module.ReportingCenterPage }))
 );

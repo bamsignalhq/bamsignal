@@ -1,15 +1,19 @@
+import { performance } from "node:perf_hooks";
 import { PLATFORM_LOAD_JOURNEY_TYPES } from "../../../shared/platformLoadCertification.mjs";
+import { classifyRequestFailure, isRetriableRequest, retryBackoffMs } from "./failures.mjs";
+import { getLoadCertHttpAgent, loadCertFetch } from "./httpClient.mjs";
 import { buildMemberJourney, isExpectedStatus, resolveStepBody, thinkDelayMs } from "./journeys.mjs";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchStep(baseUrl, step, memberId, metrics, timeoutMs) {
+async function fetchStepOnce(baseUrl, step, memberId, metrics, timeoutMs) {
   const url = `${baseUrl}${step.path}`;
   const method = step.method || "GET";
   const headers = {
-    Accept: step.kind === "page" ? "text/html" : "application/json"
+    Accept: step.kind === "page" ? "text/html" : "application/json",
+    Connection: "keep-alive"
   };
   if (method !== "GET" && method !== "HEAD") {
     headers["Content-Type"] = "application/json";
@@ -24,7 +28,7 @@ async function fetchStep(baseUrl, step, memberId, metrics, timeoutMs) {
   let error = null;
 
   try {
-    const response = await fetch(url, {
+    const response = await loadCertFetch(url, {
       method,
       headers,
       body: method === "GET" || method === "HEAD" ? undefined : JSON.stringify(resolveStepBody(step, memberId)),
@@ -44,14 +48,47 @@ async function fetchStep(baseUrl, step, memberId, metrics, timeoutMs) {
 
   const latencyMs = Math.round(performance.now() - started);
   const ok = !error && isExpectedStatus(step, status);
+  return { ok, status, latencyMs, error };
+}
+
+async function fetchStep(baseUrl, step, memberId, metrics, timeoutMs) {
+  let attempt = 1;
+  let lastResult = null;
+
+  while (true) {
+    const result = await fetchStepOnce(baseUrl, step, memberId, metrics, timeoutMs);
+    lastResult = result;
+
+    if (result.ok) {
+      if (attempt > 1) {
+        metrics.recordRetrySuccess(step.path, step.method || "GET", attempt - 1);
+      }
+      break;
+    }
+
+    if (!isRetriableRequest(step, result, attempt)) {
+      break;
+    }
+
+    metrics.recordRetryAttempt(step.path, step.method || "GET", attempt, result);
+    await sleep(retryBackoffMs(attempt));
+    attempt += 1;
+  }
+
+  const { ok, status, latencyMs, error } = lastResult;
+  const category = ok ? null : classifyRequestFailure({ status, error, retried: attempt > 1 });
 
   if (step.kind === "probe") {
     metrics.recordProbe(step.path.includes("ready") ? "ready" : "health", latencyMs);
   } else {
-    metrics.recordEndpoint(step.path, method, latencyMs, status, ok);
+    metrics.recordEndpoint(step.path, step.method || "GET", latencyMs, status, ok, {
+      error,
+      category,
+      attempts: attempt
+    });
   }
 
-  return { ok, status, latencyMs, error };
+  return { ok, status, latencyMs, error, category, attempts: attempt };
 }
 
 async function runMemberJourney(baseUrl, memberIndex, metrics, timeoutMs, fast) {
@@ -63,6 +100,7 @@ async function runMemberJourney(baseUrl, memberIndex, metrics, timeoutMs, fast) 
   for (const step of journey.steps) {
     await sleep(thinkDelayMs(step.kind === "page" ? "page" : "default", fast));
     metrics.trackRam();
+    metrics.trackEventLoopLag();
     const result = await fetchStep(baseUrl, step, journey.memberId, metrics, timeoutMs);
     stepResults.push({
       id: step.id,
@@ -70,7 +108,9 @@ async function runMemberJourney(baseUrl, memberIndex, metrics, timeoutMs, fast) 
       ok: result.ok,
       status: result.status,
       latencyMs: result.latencyMs,
-      error: result.error
+      error: result.error,
+      category: result.category,
+      attempts: result.attempts
     });
     if (!result.ok) failed = true;
   }
@@ -91,13 +131,27 @@ async function runPool(baseUrl, virtualMembers, maxConcurrency, metrics, timeout
   const results = new Array(virtualMembers);
   let nextIndex = 0;
   let completed = 0;
+  let activeWorkers = 0;
 
-  async function worker() {
+  async function worker(workerId) {
     while (true) {
+      const queueWaitStarted = performance.now();
       const index = nextIndex;
       nextIndex += 1;
       if (index >= virtualMembers) return;
-      results[index] = await runMemberJourney(baseUrl, index, metrics, timeoutMs, fast);
+
+      const queueWaitMs = Math.round(performance.now() - queueWaitStarted);
+      metrics.recordQueueWait(queueWaitMs);
+
+      activeWorkers += 1;
+      metrics.recordWorkerActive(activeWorkers, maxConcurrency);
+      try {
+        results[index] = await runMemberJourney(baseUrl, index, metrics, timeoutMs, fast);
+      } finally {
+        activeWorkers -= 1;
+        metrics.recordWorkerActive(activeWorkers, maxConcurrency);
+      }
+
       completed += 1;
       if (onProgress && (completed % 50 === 0 || completed === virtualMembers)) {
         onProgress(completed, virtualMembers);
@@ -105,7 +159,9 @@ async function runPool(baseUrl, virtualMembers, maxConcurrency, metrics, timeout
     }
   }
 
-  const workers = Array.from({ length: Math.min(maxConcurrency, virtualMembers) }, () => worker());
+  const workers = Array.from({ length: Math.min(maxConcurrency, virtualMembers) }, (_item, workerId) =>
+    worker(workerId)
+  );
   await Promise.all(workers);
   return results;
 }
@@ -116,13 +172,14 @@ function sampleReadyLoop(baseUrl, metrics, intervalMs, stopSignal) {
     const started = performance.now();
     metrics.beginRequest();
     try {
-      await fetch(`${baseUrl}/ready`, { method: "GET" });
+      await loadCertFetch(`${baseUrl}/ready`, { method: "GET" });
     } catch {
       // record high latency below
     } finally {
       metrics.endRequest();
       metrics.recordProbe("ready", Math.round(performance.now() - started));
       metrics.trackRam();
+      metrics.trackEventLoopLag();
     }
   }, intervalMs);
   return () => {
@@ -133,7 +190,8 @@ function sampleReadyLoop(baseUrl, metrics, intervalMs, stopSignal) {
 
 export async function simulatePlatformLoad({ baseUrl, virtualMembers, maxConcurrency, timeoutMs, sampleReadyEveryMs, fast = false }) {
   const { createMetricsCollector } = await import("./metrics.mjs");
-  const metrics = createMetricsCollector();
+  getLoadCertHttpAgent(Math.max(maxConcurrency + 32, 128));
+  const metrics = createMetricsCollector({ maxConcurrency });
   metrics.trackRam();
 
   const stopSignal = { stopped: false };

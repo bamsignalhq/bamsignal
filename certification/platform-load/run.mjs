@@ -18,6 +18,7 @@ import {
   evaluateLoadGate,
   identifyBottlenecks
 } from "./lib/score.mjs";
+import { buildEnterpriseLoadReport } from "./lib/enterpriseReport.mjs";
 import { writePlatformLoadReports } from "./lib/report.mjs";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -50,6 +51,7 @@ async function main() {
   const loadScore = buildLoadScore(simulation, bottlenecks);
   const passed = evaluateLoadGate(bottlenecks);
   const recommendations = buildLoadRecommendations(bottlenecks, simulation);
+  const enterpriseReport = buildEnterpriseLoadReport({ ...simulation, loadScore });
   const failures = bottlenecks.filter((item) => item.critical).map((item) => item.detail);
 
   const report = {
@@ -69,6 +71,7 @@ async function main() {
     measurement: simulation.measurement,
     bottlenecks,
     recommendations,
+    enterpriseReport,
     failures,
     source: "cli"
   };

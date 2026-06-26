@@ -40,6 +40,9 @@ const requiredFiles = [
   "certification/platform-load/lib/score.mjs",
   "certification/platform-load/lib/report.mjs",
   "certification/platform-load/lib/server.mjs",
+  "certification/platform-load/lib/httpClient.mjs",
+  "certification/platform-load/lib/failures.mjs",
+  "certification/platform-load/lib/enterpriseReport.mjs",
   "shared/platformLoadCertification.mjs",
   "server/services/platformLoadCertification.js"
 ];
@@ -51,6 +54,8 @@ for (const file of requiredFiles) {
 const sharedSource = read("shared/platformLoadCertification.mjs");
 assert(sharedSource.includes(PLATFORM_LOAD_CERT_BRAND), "platform load brand");
 assert(sharedSource.includes("pin-login"), "login journey");
+assert(sharedSource.includes("PLATFORM_LOAD_RETRY"), "retry policy");
+assert(sharedSource.includes("PLATFORM_LOAD_BASELINE"), "enterprise baseline");
 assert(sharedSource.includes("discover-api"), "discover journey");
 assert(sharedSource.includes("paystack-verify"), "payments journey");
 assert(sharedSource.includes("otp-math-challenge"), "otp journey");
@@ -62,6 +67,18 @@ assert(PLATFORM_LOAD_FULL_SESSION_PHASES.includes("chats"), "full session includ
 const simulateSource = read("certification/platform-load/lib/simulate.mjs");
 assert(simulateSource.includes("simulatePlatformLoad"), "load simulator");
 assert(simulateSource.includes("thinkDelayMs"), "think times between steps");
+assert(simulateSource.includes("loadCertFetch"), "keep-alive fetch client");
+assert(simulateSource.includes("retryBackoffMs"), "retry backoff");
+
+const failuresSource = read("certification/platform-load/lib/failures.mjs");
+assert(failuresSource.includes("classifyRequestFailure"), "failure classification");
+
+const enterpriseSource = read("certification/platform-load/lib/enterpriseReport.mjs");
+assert(enterpriseSource.includes("buildEnterpriseLoadReport"), "enterprise load report");
+
+const metricsSource = read("certification/platform-load/lib/metrics.mjs");
+assert(metricsSource.includes("instrumentation"), "load instrumentation");
+assert(metricsSource.includes("failureClassification"), "failure classification metrics");
 
 const scoreSource = read("certification/platform-load/lib/score.mjs");
 assert(scoreSource.includes("identifyBottlenecks"), "bottleneck detection");

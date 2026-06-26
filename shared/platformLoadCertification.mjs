@@ -17,6 +17,26 @@ export const PLATFORM_LOAD_THRESHOLDS = {
   cpuUserMsPerMember: 120
 };
 
+/** Retry policy for transient load-cert request failures (idempotent GET/HEAD/probes only). */
+export const PLATFORM_LOAD_RETRY = {
+  maxAttempts: 4,
+  baseDelayMs: 100,
+  maxDelayMs: 1800,
+  retriableStatuses: [0, 408, 429, 500, 502, 503, 504]
+};
+
+/** Baseline snapshot from pre-hardening 1000-member run (load-7b5329af) for enterprise reports. */
+export const PLATFORM_LOAD_BASELINE = {
+  runId: "load-7b5329af",
+  loadScore: 94,
+  journeysPassed: 938,
+  journeysFailed: 62,
+  requestFailures: 71,
+  failureRatePercent: 0.5,
+  maxQueueDepth: 65,
+  bottlenecks: 1
+};
+
 /** Realistic think-time ranges (ms) between member actions — avoids API spam patterns. */
 export const PLATFORM_LOAD_THINK_MS = {
   min: 450,

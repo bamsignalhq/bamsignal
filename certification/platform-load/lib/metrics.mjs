@@ -20,11 +20,17 @@ export function summarizeLatencies(latencies) {
   };
 }
 
-export function createMetricsCollector() {
+export function createMetricsCollector({ maxConcurrency = 100 } = {}) {
   const stepLatencies = [];
   const journeyLatencies = [];
   const endpointStats = new Map();
   const failures = [];
+  const failureCategories = new Map();
+  const retryAttempts = [];
+  const retrySuccesses = [];
+  const queueWaitSamples = [];
+  const workerUtilSamples = [];
+  const eventLoopLagSamples = [];
   let inFlight = 0;
   let maxQueueDepth = 0;
   let ramMbPeak = 0;
@@ -32,6 +38,7 @@ export function createMetricsCollector() {
   const healthLatencies = [];
   const cpuStart = process.cpuUsage();
   let ramStartMb = 0;
+  let connectionReuseHint = 0;
 
   function trackRam() {
     const heapMb = Math.round(process.memoryUsage().heapUsed / (1024 * 1024));
@@ -40,24 +47,60 @@ export function createMetricsCollector() {
     return heapMb;
   }
 
-  function recordEndpoint(path, method, latencyMs, status, ok) {
+  function trackEventLoopLag() {
+    const started = Date.now();
+    setImmediate(() => {
+      eventLoopLagSamples.push(Math.max(0, Date.now() - started));
+    });
+  }
+
+  function recordFailureCategory(category, detail) {
+    if (!category) return;
+    const entry = failureCategories.get(category) || { category, count: 0, samples: [] };
+    entry.count += 1;
+    if (entry.samples.length < 5) {
+      entry.samples.push(detail);
+    }
+    failureCategories.set(category, entry);
+  }
+
+  function recordEndpoint(path, method, latencyMs, status, ok, meta = {}) {
     const key = `${method} ${path}`;
     const entry = endpointStats.get(key) || {
       path,
       method,
       latencies: [],
       failures: 0,
-      requests: 0
+      requests: 0,
+      retries: 0
     };
     entry.requests += 1;
     entry.latencies.push(latencyMs);
-    if (!ok) entry.failures += 1;
-    endpointStats.set(key, entry);
-
-    stepLatencies.push(latencyMs);
-    if (!ok) {
-      failures.push({ path, method, status, latencyMs });
+    if ((meta.attempts || 1) > 1) {
+      entry.retries += meta.attempts - 1;
+      connectionReuseHint += 1;
     }
+    if (!ok) {
+      entry.failures += 1;
+      failures.push({ path, method, status, latencyMs, error: meta.error, category: meta.category });
+      recordFailureCategory(meta.category, { path, method, status, error: meta.error });
+    }
+    endpointStats.set(key, entry);
+    stepLatencies.push(latencyMs);
+  }
+
+  function recordRetryAttempt(path, method, attempt, result) {
+    retryAttempts.push({
+      path,
+      method,
+      attempt,
+      status: result.status,
+      error: result.error
+    });
+  }
+
+  function recordRetrySuccess(path, method, retriesUsed) {
+    retrySuccesses.push({ path, method, retriesUsed });
   }
 
   function beginRequest() {
@@ -69,7 +112,15 @@ export function createMetricsCollector() {
     inFlight = Math.max(0, inFlight - 1);
   }
 
-  function recordJourney(durationMs, failed) {
+  function recordQueueWait(queueWaitMs) {
+    queueWaitSamples.push(queueWaitMs);
+  }
+
+  function recordWorkerActive(activeWorkers, poolSize) {
+    workerUtilSamples.push(Math.round((activeWorkers / Math.max(1, poolSize)) * 100));
+  }
+
+  function recordJourney(durationMs) {
     journeyLatencies.push(durationMs);
   }
 
@@ -90,6 +141,7 @@ export function createMetricsCollector() {
       method: item.method,
       requests: item.requests,
       failures: item.failures,
+      retries: item.retries,
       ...summarizeLatencies(item.latencies)
     }));
 
@@ -111,6 +163,16 @@ export function createMetricsCollector() {
         max: maxQueueDepth,
         final: inFlight
       },
+      instrumentation: {
+        queueWait: summarizeLatencies(queueWaitSamples),
+        workerUtilization: summarizeLatencies(workerUtilSamples),
+        eventLoopLag: summarizeLatencies(eventLoopLagSamples),
+        retryAttempts: retryAttempts.length,
+        retryRecoveries: retrySuccesses.length,
+        connectionReuseHint,
+        maxConcurrency
+      },
+      failureClassification: [...failureCategories.values()].sort((a, b) => b.count - a.count),
       cpu: {
         userMs: cpuUserMs,
         systemMs: cpuSystemMs,
@@ -126,9 +188,14 @@ export function createMetricsCollector() {
 
   return {
     trackRam,
+    trackEventLoopLag,
     recordEndpoint,
+    recordRetryAttempt,
+    recordRetrySuccess,
     beginRequest,
     endRequest,
+    recordQueueWait,
+    recordWorkerActive,
     recordJourney,
     recordProbe,
     finalize,

@@ -210,6 +210,16 @@ export function createApp(options = {}) {
   });
 
   if (distDir) {
+    const spaIndexPath = path.join(distDir, "index.html");
+    let spaIndexHtml = null;
+    try {
+      if (fs.existsSync(spaIndexPath)) {
+        spaIndexHtml = fs.readFileSync(spaIndexPath, "utf8");
+      }
+    } catch {
+      spaIndexHtml = null;
+    }
+
     app.use(
       express.static(distDir, {
         index: false,
@@ -228,7 +238,11 @@ export function createApp(options = {}) {
       if (req.path === "/" || req.path.endsWith(".html")) {
         res.setHeader("Cache-Control", "no-cache");
       }
-      res.sendFile(path.join(distDir, "index.html"), (error) => {
+      if (spaIndexHtml) {
+        res.type("html").send(spaIndexHtml);
+        return;
+      }
+      res.sendFile(spaIndexPath, (error) => {
         if (error) next(error);
       });
     });

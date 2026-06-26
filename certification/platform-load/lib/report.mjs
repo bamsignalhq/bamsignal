@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { enterpriseReportMarkdown } from "./enterpriseReport.mjs";
 
 function bottleneckRows(bottlenecks) {
   return bottlenecks
@@ -23,6 +24,25 @@ function endpointRows(endpoints) {
 function journeyRows(byType) {
   return byType
     .map((item) => `| ${item.label} | ${item.members} | ${item.passed} | ${item.failed} |`)
+    .join("\n");
+}
+
+function instrumentationRows(instrumentation) {
+  if (!instrumentation) return "_No instrumentation recorded._";
+  return [
+    `| Queue wait p95 | ${instrumentation.queueWait?.p95 ?? 0}ms |`,
+    `| Worker utilization p95 | ${instrumentation.workerUtilization?.p95 ?? 0}% |`,
+    `| Event-loop lag p95 | ${instrumentation.eventLoopLag?.p95 ?? 0}ms |`,
+    `| Retry attempts | ${instrumentation.retryAttempts ?? 0} |`,
+    `| Retry recoveries | ${instrumentation.retryRecoveries ?? 0} |`,
+    `| Connection reuse hint | ${instrumentation.connectionReuseHint ?? 0} |`
+  ].join("\n");
+}
+
+function failureClassificationRows(classification) {
+  if (!classification?.length) return "_No classified failures._";
+  return classification
+    .map((item) => `| ${item.category} | ${item.count} | ${item.samples?.length ?? 0} |`)
     .join("\n");
 }
 
@@ -90,6 +110,20 @@ ${bottleneckRows(report.bottlenecks)}
 | Endpoint | Requests | Failures | p50 | p95 | max |
 |----------|--------:|---------:|----:|----:|----:|
 ${endpointRows(m.endpoints)}
+
+## Instrumentation
+
+| Metric | Value |
+|--------|------:|
+${instrumentationRows(m.instrumentation)}
+
+## Failure classification
+
+| Category | Count | Samples |
+|----------|------:|--------:|
+${failureClassificationRows(m.failureClassification)}
+
+${report.enterpriseReport ? enterpriseReportMarkdown(report.enterpriseReport) : ""}
 
 ## Recommendations
 

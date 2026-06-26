@@ -1,0 +1,458 @@
+{
+  "runId": "load-9b27fd22",
+  "generatedAt": "2026-06-26T23:31:05.059Z",
+  "baseUrl": "http://127.0.0.1:39457",
+  "localServer": true,
+  "fast": false,
+  "virtualMembers": 1000,
+  "maxConcurrency": 100,
+  "durationMs": 349302,
+  "loadScore": 100,
+  "passed": true,
+  "journeysPassed": 1000,
+  "journeysFailed": 0,
+  "byType": [
+    {
+      "id": "full-session",
+      "label": "Full member session",
+      "members": 550,
+      "failed": 0,
+      "passed": 550
+    },
+    {
+      "id": "browse-discover",
+      "label": "Browse + discover",
+      "members": 200,
+      "failed": 0,
+      "passed": 200
+    },
+    {
+      "id": "signals-chats",
+      "label": "Signals + chats",
+      "members": 150,
+      "failed": 0,
+      "passed": 150
+    },
+    {
+      "id": "payments-otp",
+      "label": "Payments + OTP",
+      "members": 100,
+      "failed": 0,
+      "passed": 100
+    }
+  ],
+  "measurement": {
+    "api": {
+      "count": 17487,
+      "avg": 17,
+      "p50": 2,
+      "p95": 22,
+      "p99": 330,
+      "max": 3185
+    },
+    "journeys": {
+      "count": 1000,
+      "avg": 33316,
+      "p50": 39042,
+      "p95": 49179,
+      "p99": 51526,
+      "max": 55290
+    },
+    "health": {
+      "count": 1000,
+      "avg": 7,
+      "p50": 1,
+      "p95": 6,
+      "p99": 137,
+      "max": 1237
+    },
+    "database": {
+      "count": 1137,
+      "avg": 15,
+      "p50": 1,
+      "p95": 7,
+      "p99": 256,
+      "max": 2382
+    },
+    "endpoints": [
+      {
+        "path": "/love/login",
+        "method": "GET",
+        "requests": 550,
+        "failures": 0,
+        "retries": 0,
+        "count": 550,
+        "avg": 21,
+        "p50": 2,
+        "p95": 100,
+        "p99": 328,
+        "max": 1753
+      },
+      {
+        "path": "/features",
+        "method": "GET",
+        "requests": 1000,
+        "failures": 0,
+        "retries": 0,
+        "count": 1000,
+        "avg": 25,
+        "p50": 2,
+        "p95": 64,
+        "p99": 464,
+        "max": 2386
+      },
+      {
+        "path": "/",
+        "method": "GET",
+        "requests": 1000,
+        "failures": 0,
+        "retries": 0,
+        "count": 1000,
+        "avg": 29,
+        "p50": 2,
+        "p95": 61,
+        "p99": 974,
+        "max": 2871
+      },
+      {
+        "path": "/premium",
+        "method": "GET",
+        "requests": 1000,
+        "failures": 0,
+        "retries": 0,
+        "count": 1000,
+        "avg": 22,
+        "p50": 2,
+        "p95": 52,
+        "p99": 359,
+        "max": 2396
+      },
+      {
+        "path": "/api/auth/pin-login",
+        "method": "POST",
+        "requests": 550,
+        "failures": 0,
+        "retries": 0,
+        "count": 550,
+        "avg": 28,
+        "p50": 2,
+        "p95": 49,
+        "p99": 646,
+        "max": 3084
+      },
+      {
+        "path": "/home",
+        "method": "GET",
+        "requests": 900,
+        "failures": 0,
+        "retries": 0,
+        "count": 900,
+        "avg": 23,
+        "p50": 2,
+        "p95": 39,
+        "p99": 573,
+        "max": 3185
+      },
+      {
+        "path": "/api/paystack/verify",
+        "method": "POST",
+        "requests": 650,
+        "failures": 0,
+        "retries": 0,
+        "count": 650,
+        "avg": 16,
+        "p50": 2,
+        "p95": 31,
+        "p99": 336,
+        "max": 1698
+      },
+      {
+        "path": "/chats",
+        "method": "GET",
+        "requests": 700,
+        "failures": 0,
+        "retries": 0,
+        "count": 700,
+        "avg": 16,
+        "p50": 2,
+        "p95": 28,
+        "p99": 217,
+        "max": 1867
+      },
+      {
+        "path": "/discover",
+        "method": "GET",
+        "requests": 750,
+        "failures": 0,
+        "retries": 0,
+        "count": 750,
+        "avg": 12,
+        "p50": 2,
+        "p95": 17,
+        "p99": 171,
+        "max": 1476
+      },
+      {
+        "path": "/love/sign",
+        "method": "GET",
+        "requests": 650,
+        "failures": 0,
+        "retries": 0,
+        "count": 650,
+        "avg": 17,
+        "p50": 2,
+        "p95": 17,
+        "p99": 208,
+        "max": 2852
+      },
+      {
+        "path": "/api/auth/email-code",
+        "method": "POST",
+        "requests": 650,
+        "failures": 0,
+        "retries": 0,
+        "count": 650,
+        "avg": 20,
+        "p50": 2,
+        "p95": 16,
+        "p99": 589,
+        "max": 1818
+      },
+      {
+        "path": "/api/member/data?action=signals",
+        "method": "POST",
+        "requests": 700,
+        "failures": 0,
+        "retries": 0,
+        "count": 700,
+        "avg": 22,
+        "p50": 2,
+        "p95": 14,
+        "p99": 740,
+        "max": 2382
+      },
+      {
+        "path": "/profile",
+        "method": "GET",
+        "requests": 550,
+        "failures": 0,
+        "retries": 0,
+        "count": 550,
+        "avg": 9,
+        "p50": 2,
+        "p95": 14,
+        "p99": 198,
+        "max": 1199
+      },
+      {
+        "path": "/api/feature-flags",
+        "method": "GET",
+        "requests": 900,
+        "failures": 0,
+        "retries": 0,
+        "count": 900,
+        "avg": 21,
+        "p50": 1,
+        "p95": 13,
+        "p99": 506,
+        "max": 2640
+      },
+      {
+        "path": "/subscription",
+        "method": "GET",
+        "requests": 650,
+        "failures": 0,
+        "retries": 0,
+        "count": 650,
+        "avg": 16,
+        "p50": 2,
+        "p95": 12,
+        "p99": 587,
+        "max": 1066
+      },
+      {
+        "path": "/api/member/data?action=chats",
+        "method": "POST",
+        "requests": 700,
+        "failures": 0,
+        "retries": 0,
+        "count": 700,
+        "avg": 12,
+        "p50": 2,
+        "p95": 11,
+        "p99": 240,
+        "max": 1254
+      },
+      {
+        "path": "/api/member/data?action=profile-patch",
+        "method": "POST",
+        "requests": 550,
+        "failures": 0,
+        "retries": 0,
+        "count": 550,
+        "avg": 20,
+        "p50": 2,
+        "p95": 11,
+        "p99": 323,
+        "max": 2731
+      },
+      {
+        "path": "/api/remote-config",
+        "method": "GET",
+        "requests": 900,
+        "failures": 0,
+        "retries": 0,
+        "count": 900,
+        "avg": 11,
+        "p50": 1,
+        "p95": 8,
+        "p99": 237,
+        "max": 1675
+      },
+      {
+        "path": "/api/member/data?action=profile",
+        "method": "POST",
+        "requests": 550,
+        "failures": 0,
+        "retries": 0,
+        "count": 550,
+        "avg": 6,
+        "p50": 2,
+        "p95": 8,
+        "p99": 87,
+        "max": 538
+      },
+      {
+        "path": "/signals",
+        "method": "GET",
+        "requests": 700,
+        "failures": 0,
+        "retries": 0,
+        "count": 700,
+        "avg": 8,
+        "p50": 2,
+        "p95": 7,
+        "p99": 200,
+        "max": 1049
+      },
+      {
+        "path": "/api/member/data?action=discover",
+        "method": "POST",
+        "requests": 750,
+        "failures": 0,
+        "retries": 0,
+        "count": 750,
+        "avg": 6,
+        "p50": 2,
+        "p95": 6,
+        "p99": 147,
+        "max": 562
+      }
+    ],
+    "failures": 0,
+    "failureRatePercent": 0,
+    "queueDepth": {
+      "max": 93,
+      "final": 0
+    },
+    "instrumentation": {
+      "queueWait": {
+        "count": 1000,
+        "avg": 0,
+        "p50": 0,
+        "p95": 0,
+        "p99": 0,
+        "max": 0
+      },
+      "workerUtilization": {
+        "count": 2000,
+        "avg": 95,
+        "p50": 99,
+        "p95": 100,
+        "p99": 100,
+        "max": 100
+      },
+      "eventLoopLag": {
+        "count": 17487,
+        "avg": 10,
+        "p50": 1,
+        "p95": 8,
+        "p99": 170,
+        "max": 2742
+      },
+      "retryAttempts": 0,
+      "retryRecoveries": 0,
+      "connectionReuseHint": 0,
+      "maxConcurrency": 100
+    },
+    "failureClassification": [],
+    "cpu": {
+      "userMs": 17564,
+      "systemMs": 4788,
+      "totalMs": 22352
+    },
+    "ram": {
+      "startMb": 8,
+      "peakMb": 90
+    },
+    "totalRequests": 15350
+  },
+  "bottlenecks": [],
+  "recommendations": [
+    {
+      "id": "rec_cache_hot_paths",
+      "priority": "high",
+      "title": "Optimize hottest endpoints",
+      "detail": "GET /love/login p95=100ms; GET /features p95=64ms; GET / p95=61ms; GET /premium p95=52ms; POST /api/auth/pin-login p95=49ms"
+    }
+  ],
+  "enterpriseReport": {
+    "baselineRunId": "load-7b5329af",
+    "entries": [
+      {
+        "rootCause": "SPA fallback used per-request sendFile under concurrent page load",
+        "evidence": "71 GET page failures in baseline; hotspots /chats (0), /signals, /home",
+        "impact": "Member journey aborts when index.html delivery fails or stalls under burst concurrency",
+        "fix": "Serve cached in-memory index.html for SPA routes; load-cert HTTP keep-alive + idempotent GET retries",
+        "before": "938/1000 journeys · 71 request failures",
+        "after": "1000/1000 journeys · 0 request failures"
+      },
+      {
+        "rootCause": "Load runner opened fresh fetch sockets without connection reuse",
+        "evidence": "Queue depth peaked at 65 baseline; instrumentation connectionReuseHint=0",
+        "impact": "Transient socket exhaustion and ECONNRESET under 100-way concurrency",
+        "fix": "Undici Agent with keep-alive (128 connections) shared across virtual members",
+        "before": "Queue depth 65 · no connection pooling",
+        "after": "Queue depth 93 · keep-alive agent active"
+      },
+      {
+        "rootCause": "No retry policy for transient idempotent GET failures",
+        "evidence": "Baseline 0.5% failure rate with max page latency 1585ms",
+        "impact": "Single timeout or 503 permanently marks journey failed despite recoverable blip",
+        "fix": "Exponential backoff retries (max 4) for GET/HEAD/probes on retriable statuses",
+        "before": "0 retries · failures counted immediately",
+        "after": "0 retry attempts · 0 recoveries"
+      }
+    ],
+    "summary": {
+      "before": {
+        "loadScore": 94,
+        "journeysPassed": 938,
+        "journeysFailed": 62,
+        "requestFailures": 71,
+        "maxQueueDepth": 65,
+        "bottlenecks": 1
+      },
+      "after": {
+        "loadScore": 100,
+        "journeysPassed": 1000,
+        "journeysFailed": 0,
+        "requestFailures": 0,
+        "maxQueueDepth": 93,
+        "bottlenecks": 0
+      }
+    }
+  },
+  "failures": [],
+  "source": "cli"
+}

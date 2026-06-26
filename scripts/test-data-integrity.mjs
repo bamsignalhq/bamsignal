@@ -76,6 +76,8 @@ assert(adminHubSource.includes("IntegrityDashboard"), "admin hub mounts data int
 
 const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:data-integrity"), "package.json defines test:data-integrity");
+assert(packageSource.includes("certify:data-integrity"), "package.json defines certify:data-integrity");
+assert(packageSource.includes("test:data-integrity-certification"), "certification structure test");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
 assert(mainSource.includes("data-integrity.css"), "data integrity styles imported");

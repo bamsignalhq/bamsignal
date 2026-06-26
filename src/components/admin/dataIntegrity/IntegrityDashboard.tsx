@@ -11,13 +11,20 @@ import { JOURNEY_INTEGRITY_AUDIT_ADMIN_PATH } from "../../../constants/journeyIn
 import { navigateToPath } from "../../../constants/routes";
 import type { DataIntegrityCheckId, IntegrityStatusId } from "../../../types/dataIntegrity";
 import { buildDataIntegrityBundle } from "../../../utils/dataIntegrityEngine";
+import { buildDataIntegrityCertificationBundle } from "../../../utils/dataIntegrityCertificationEngine";
 import { IntegrityIssueCard } from "./IntegrityIssueCard";
 import { IntegritySummaryCard } from "./IntegritySummaryCard";
+import { DataIntegrityCertificationCard } from "./DataIntegrityCertificationCard";
 
 export function IntegrityDashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [statusFilter, setStatusFilter] = useState<IntegrityStatusId | "all">("all");
   const [checkFilter, setCheckFilter] = useState<DataIntegrityCheckId | "all">("all");
+
+  const certReport = useMemo(() => {
+    void refreshKey;
+    return buildDataIntegrityCertificationBundle();
+  }, [refreshKey]);
 
   const bundle = useMemo(() => {
     void refreshKey;
@@ -66,6 +73,8 @@ export function IntegrityDashboard() {
         generatedAt={bundle.generatedAt}
         checkCount={bundle.checks.length}
       />
+
+      <DataIntegrityCertificationCard report={certReport} />
 
       <div className="data-integrity-page__filters">
         <label className="data-integrity-filter">

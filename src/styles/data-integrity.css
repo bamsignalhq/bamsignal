@@ -1,3 +1,14 @@
+.data-integrity-cert-card__hero {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+
+.data-integrity-cert-card__hero strong {
+  font-size: 1.75rem;
+}
+
 .data-integrity-page {
   display: grid;
   gap: 18px;

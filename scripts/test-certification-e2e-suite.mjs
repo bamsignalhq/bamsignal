@@ -26,6 +26,7 @@ const requiredFiles = [
   "certification/e2e/lib/report.mjs",
   "certification/e2e/lib/browser.mjs",
   "certification/e2e/lib/cert-api.mjs",
+  "certification/e2e/lib/paystack-cert.mjs",
   "certification/e2e/lib/member.mjs",
   "certification/e2e/lib/validators.mjs",
   "certification/e2e/scenarios/01-signup-onboarding.mjs",
@@ -56,8 +57,17 @@ assert(signupOtpSource.includes("storeCertificationOtpPeek"), "signupOtp stores 
 
 const certService = read("server/services/certificationE2e.js");
 assert(certService.includes("Production E2E Certification"), "certification service brand");
-assert(certService.includes("simulateCertificationPremiumWebhook"), "premium webhook simulation");
-assert(certService.includes("createCertificationConciergeJourney"), "concierge journey helper");
+assert(certService.includes("QUERY_ALLOWLIST"), "read-only query allowlist");
+assert(!certService.includes("createCertificationConciergeJourney"), "no fabricated concierge journeys");
+assert(!certService.includes("seedCertificationMemberProfile"), "no fabricated profile seeding");
+
+const certApiSource = read("api/diagnostics/certification.js");
+assert(certApiSource.includes("read-peek-cleanup"), "diagnostics scope is read/peek/cleanup only");
+assert(!certApiSource.includes("create-concierge-journey"), "no concierge fabrication endpoint");
+assert(!certApiSource.includes("simulate-premium-webhook"), "webhook sim stays in cert runner");
+
+const paystackCertSource = read("certification/e2e/lib/paystack-cert.mjs");
+assert(paystackCertSource.includes("/api/paystack/webhook"), "webhook cert uses existing handler");
 
 const runner = read("certification/e2e/run.mjs");
 assert(runner.includes("Production End-to-End Certification"), "runner brand");

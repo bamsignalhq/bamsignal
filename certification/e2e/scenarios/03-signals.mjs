@@ -5,9 +5,10 @@ import {
   completeSignupFlow,
   declineSignal,
   incomingSignals,
-  sendSignal
+  sendSignal,
+  syncMemberProfile,
+  certificationOnboardingProfile
 } from "../lib/member.mjs";
-import { seedMemberProfile } from "../lib/cert-api.mjs";
 import { completeOnboarding } from "../lib/member.mjs";
 import { certQuery } from "../lib/cert-api.mjs";
 import { check, validateSignals } from "../lib/validators.mjs";
@@ -32,19 +33,23 @@ export async function run(ctx, { screenshot }) {
     phone: phoneB,
     pin: ctx.pin
   });
-  await seedMemberProfile(emailB, phoneB, {
-    fullName: "Cert Member B",
-    age: 27,
-    gender: "Woman",
-    state: "Lagos",
-    city: "Lagos",
-    photos: [
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400",
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400"
-    ],
-    mainPhotoUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400",
-    intents: ["serious-relationship"]
-  });
+  await syncMemberProfile(
+    sessionB.accessToken,
+    {
+      city: "Lagos",
+      state: "Lagos",
+      profile: certificationOnboardingProfile("Cert Member B", {
+        age: 27,
+        gender: "Woman",
+        photos: [
+          "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400",
+          "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400"
+        ],
+        mainPhotoUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400"
+      })
+    },
+    { email: emailB, phone: phoneB }
+  );
   await completeOnboarding(sessionB.accessToken, { email: emailB, phone: phoneB });
 
   const rowsA = await certQuery("member-by-email", [memberA.email]);

@@ -31,6 +31,7 @@ import { PRODUCTION_SECURITY_ADMIN_PATH } from "./productionSecurityAdmin";
 import { UX_CONSISTENCY_ADMIN_PATH } from "./uxConsistencyAdmin";
 import { PRODUCTION_PERFORMANCE_ADMIN_PATH } from "./productionPerformanceAdmin";
 import { LAUNCH_CERTIFICATION_ADMIN_PATH } from "./launchCertificationAdmin";
+import { PERFORMANCE_CERTIFICATION_ADMIN_PATH } from "./performanceCertificationAdmin";
 import { ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH } from "./enterpriseCodebaseCleanupAdmin";
 import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin";
 import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
@@ -173,6 +174,7 @@ const HARD_TAB_PERMISSIONS: Record<HardTab, Permission | Permission[]> = {
   uxconsistency: "ManageOperations",
   performanceoptimization: "ManageOperations",
   launchcertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
+  performancecertification: ["ManageOperations", "SystemAdministration", "ViewExecutiveDashboard"],
   enterprisecleanup: "ManageOperations",
   productionenvironment: "ManageOperations",
   launchinfrastructure: "ManageOperations",
@@ -260,6 +262,7 @@ export const HARD_ROUTE_PERMISSIONS: Record<string, Permission | Permission[]> =
   [UX_CONSISTENCY_ADMIN_PATH]: HARD_TAB_PERMISSIONS.uxconsistency,
   [PRODUCTION_PERFORMANCE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.performanceoptimization,
   [LAUNCH_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchcertification,
+  [PERFORMANCE_CERTIFICATION_ADMIN_PATH]: HARD_TAB_PERMISSIONS.performancecertification,
   [ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH]: HARD_TAB_PERMISSIONS.enterprisecleanup,
   [PRODUCTION_ENVIRONMENT_ADMIN_PATH]: HARD_TAB_PERMISSIONS.productionenvironment,
   [LAUNCH_INFRASTRUCTURE_ADMIN_PATH]: HARD_TAB_PERMISSIONS.launchinfrastructure,
@@ -333,6 +336,7 @@ export const ENFORCED_HARD_ROUTE_PATHS = [
   "/hard/ux-consistency",
   "/hard/performance-optimization",
   "/hard/launch-certification",
+  "/hard/performance-certification",
   "/hard/enterprise-cleanup",
   "/hard/production-environment",
   "/hard/launch-infrastructure",

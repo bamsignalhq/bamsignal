@@ -108,6 +108,38 @@ export async function completeOnboarding(token, identity = {}) {
   return result.payload;
 }
 
+export async function syncMemberProfile(token, { city, state, profile }, identity = {}) {
+  const result = await memberApi(
+    "profile",
+    { city, state, profile, profilePatchScope: "full", ...identity },
+    token
+  );
+  if (!result.ok) throw new Error(result.payload?.error || "profile sync failed");
+  return result.payload;
+}
+
+const CERT_ONBOARDING_PROFILE = {
+  age: 29,
+  gender: "Man",
+  state: "Lagos",
+  city: "Lagos",
+  photos: [
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400"
+  ],
+  mainPhotoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
+  intents: ["serious-relationship"]
+};
+
+export function certificationOnboardingProfile(name, overrides = {}) {
+  return {
+    fullName: name,
+    name,
+    ...CERT_ONBOARDING_PROFILE,
+    ...overrides
+  };
+}
+
 export async function discoverProfiles(token, identity = {}) {
   const result = await memberApi("discover", { limit: 12, ...identity }, token);
   if (!result.ok) throw new Error(result.payload?.error || "discover failed");

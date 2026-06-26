@@ -3,9 +3,10 @@ import { log } from "../lib/context.mjs";
 import {
   checkUsernameAvailable,
   completeOnboarding,
-  completeSignupFlow
+  completeSignupFlow,
+  syncMemberProfile,
+  certificationOnboardingProfile
 } from "../lib/member.mjs";
-import { seedMemberProfile } from "../lib/cert-api.mjs";
 import { validateMemberInDb } from "../lib/validators.mjs";
 import { check } from "../lib/validators.mjs";
 import { waitForMemberPath } from "../lib/browser.mjs";
@@ -39,19 +40,16 @@ export async function run(ctx, { page, screenshot }) {
   };
   checks.push(check("signup-verify", "api", Boolean(session.accessToken)));
 
-  await seedMemberProfile(email, phone, {
-    fullName: name,
-    age: 29,
-    gender: "Man",
-    state: "Lagos",
-    city: "Lagos",
-    photos: [
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400"
-    ],
-    mainPhotoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
-    intents: ["serious-relationship"]
-  });
+  await syncMemberProfile(
+    session.accessToken,
+    {
+      city: "Lagos",
+      state: "Lagos",
+      profile: certificationOnboardingProfile(name)
+    },
+    identity
+  );
+  checks.push(check("profile-sync", "api", true));
 
   const onboard = await completeOnboarding(session.accessToken, identity);
   checks.push(check("onboarding-complete-api", "api", onboard.completed || onboard.ok));

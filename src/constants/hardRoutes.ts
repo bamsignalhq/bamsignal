@@ -34,7 +34,7 @@ import { WORKFLOW_ENGINE_ADMIN_PATH } from "./workflowEngineAdmin";
 import { PRODUCTION_SECURITY_ADMIN_PATH } from "./productionSecurityAdmin";
 import { UX_CONSISTENCY_ADMIN_PATH } from "./uxConsistencyAdmin";
 import { PRODUCTION_PERFORMANCE_ADMIN_PATH } from "./productionPerformanceAdmin";
-import { LAUNCH_CERTIFICATION_ADMIN_PATH } from "./launchCertificationAdmin";
+import { PERFORMANCE_CERTIFICATION_ADMIN_PATH } from "./performanceCertificationAdmin";
 import { ENTERPRISE_CODEBASE_CLEANUP_ADMIN_PATH } from "./enterpriseCodebaseCleanupAdmin";
 import { PRODUCTION_ENVIRONMENT_ADMIN_PATH } from "./productionEnvironmentAdmin";
 import { LAUNCH_INFRASTRUCTURE_ADMIN_PATH } from "./launchInfrastructureAdmin";
@@ -102,6 +102,7 @@ const TAB_SLUGS: Record<HardTab, string> = {
   uxconsistency: "ux-consistency",
   performanceoptimization: "performance-optimization",
   launchcertification: "launch-certification",
+  performancecertification: "performance-certification",
   enterprisecleanup: "enterprise-cleanup",
   productionenvironment: "production-environment",
   launchinfrastructure: "launch-infrastructure",

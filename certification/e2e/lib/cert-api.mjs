@@ -1,5 +1,5 @@
 /**
- * Diagnostics-gated certification helper API client.
+ * Diagnostics-gated certification helper API client (read / peek / cleanup only).
  */
 import { config } from "../config.mjs";
 import { httpJson } from "./http.mjs";
@@ -36,12 +36,6 @@ export async function certQuery(name, params = []) {
   return result.payload.rows || [];
 }
 
-export async function seedMemberProfile(email, phone, profile = {}) {
-  const result = await certAction("seed-member-profile", { email, phone, profile });
-  if (!result.ok) throw new Error(result.payload?.error || "seed-member-profile failed");
-  return result.payload;
-}
-
 export async function setPhoneVerified(email, phone) {
   const result = await certAction("set-phone-verified", { email, phone });
   if (!result.ok) throw new Error(result.payload?.error || "set-phone-verified failed");
@@ -51,18 +45,6 @@ export async function setPhoneVerified(email, phone) {
 export async function approveVerification(email, phone) {
   const result = await certAction("approve-verification", { email, phone });
   if (!result.ok) throw new Error(result.payload?.error || "approve-verification failed");
-  return result.payload;
-}
-
-export async function simulatePremiumWebhook(email, options = {}) {
-  const result = await certAction("simulate-premium-webhook", { email, ...options });
-  if (!result.ok) throw new Error(result.payload?.error || "simulate-premium-webhook failed");
-  return result.payload;
-}
-
-export async function createConciergeJourney(memberId, consultantId) {
-  const result = await certAction("create-concierge-journey", { memberId, consultantId });
-  if (!result.ok) throw new Error(result.payload?.error || "create-concierge-journey failed");
   return result.payload;
 }
 

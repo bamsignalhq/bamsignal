@@ -1,0 +1,61 @@
+.performance-certification-report-card__hero {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.performance-certification-report-card__hero strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.performance-certification-report-card__line {
+  margin: 0 0 1rem;
+  color: var(--bs-text-secondary, #64748b);
+}
+
+.performance-certification-report-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.65rem;
+}
+
+.performance-certification-report-card__metrics article {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.performance-certification-report-card__metrics span {
+  font-size: 0.75rem;
+  color: var(--bs-text-secondary, #94a3b8);
+}
+
+.performance-certification-report-card__metrics strong {
+  font-size: 1rem;
+}
+
+.performance-certification-report-card__metrics small {
+  font-size: 0.7rem;
+  color: var(--bs-text-secondary, #94a3b8);
+}
+
+.performance-regression-badge {
+  font-size: 0.75rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+}
+
+.performance-regression-badge--critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.performance-regression-badge--warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}

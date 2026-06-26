@@ -1,6 +1,6 @@
 import { log } from "../lib/context.mjs";
 import { initializePremium } from "../lib/member.mjs";
-import { simulatePremiumWebhook } from "../lib/cert-api.mjs";
+import { simulatePremiumWebhook } from "../lib/paystack-cert.mjs";
 import { certQuery } from "../lib/cert-api.mjs";
 import { check, validatePremium } from "../lib/validators.mjs";
 
@@ -27,17 +27,22 @@ export async function run(ctx, { page, screenshot }) {
   );
 
   const webhook = await simulatePremiumWebhook(member.email, {
-    productId: "signal-pass-monthly",
     reference: `cert-premium-${ctx.runId}`
   });
   ctx.paymentReference = webhook.reference;
-  checks.push(check("webhook-simulated", "api", webhook.ok, `status=${webhook.status}`));
+  checks.push(
+    check(
+      "webhook-fulfillment",
+      "api",
+      webhook.ok,
+      `status=${webhook.status} (existing /api/paystack/webhook handler)`
+    )
+  );
 
   const rows = await certQuery("member-by-email", [member.email]);
   const userKey = rows[0]?.user_key;
   if (userKey) {
-    const premiumCheck = await validatePremium(userKey, true);
-    checks.push(premiumCheck);
+    checks.push(await validatePremium(userKey, true));
   }
 
   checks.push(check("subscription-persisted", "permissions", webhook.ok));

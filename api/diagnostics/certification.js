@@ -2,13 +2,10 @@ import { requireDiagnosticsAccess } from "../../server/services/diagnosticsAcces
 import {
   approveCertificationVerification,
   cleanupCertificationMember,
-  createCertificationConciergeJourney,
   peekCertificationOtp,
   runCertificationQuery,
-  seedCertificationMemberProfile,
   seedCertificationSignupOtp,
   setCertificationPhoneVerified,
-  simulateCertificationPremiumWebhook,
   certificationEmailDomain,
   isCertificationEmail
 } from "../../server/services/certificationE2e.js";
@@ -26,8 +23,7 @@ function parseBody(req) {
 }
 
 function sendCertificationError(res, error) {
-  const status = Number(error?.status) || 500;
-  return res.status(status).json({
+  return res.status(Number(error?.status) || 500).json({
     ok: false,
     error: error?.message || "Certification request failed.",
     code: error?.code || null
@@ -48,36 +44,29 @@ export default async function certificationDiagnosticsHandler(req, res) {
       return res.status(200).json({
         ok: true,
         brand: "Production E2E Certification™",
-        certificationEmailDomain: certificationEmailDomain()
+        certificationEmailDomain: certificationEmailDomain(),
+        scope: "read-peek-cleanup"
       });
     }
 
     if (action === "peek-signup-otp") {
-      const email = String(body.email || "").trim();
-      const result = peekCertificationOtp(email);
+      const result = peekCertificationOtp(String(body.email || "").trim());
       return res.status(200).json({ ok: true, ...result });
     }
 
     if (action === "seed-signup-otp") {
-      const email = String(body.email || "").trim();
-      const code = body.code != null ? String(body.code) : "246810";
-      const result = await seedCertificationSignupOtp(email, code);
+      const result = await seedCertificationSignupOtp(
+        String(body.email || "").trim(),
+        body.code != null ? String(body.code) : "246810"
+      );
       return res.status(200).json(result);
     }
 
     if (action === "query") {
-      const name = String(body.name || body.query || "").trim();
-      const params = Array.isArray(body.params) ? body.params : [];
-      const result = await runCertificationQuery(name, params);
-      return res.status(200).json(result);
-    }
-
-    if (action === "seed-member-profile") {
-      const result = await seedCertificationMemberProfile({
-        email: String(body.email || "").trim(),
-        phone: String(body.phone || "").trim(),
-        profile: body.profile && typeof body.profile === "object" ? body.profile : {}
-      });
+      const result = await runCertificationQuery(
+        String(body.name || body.query || "").trim(),
+        Array.isArray(body.params) ? body.params : []
+      );
       return res.status(200).json(result);
     }
 
@@ -93,24 +82,6 @@ export default async function certificationDiagnosticsHandler(req, res) {
       const result = await approveCertificationVerification({
         email: String(body.email || "").trim(),
         phone: String(body.phone || "").trim()
-      });
-      return res.status(200).json(result);
-    }
-
-    if (action === "simulate-premium-webhook") {
-      const result = await simulateCertificationPremiumWebhook({
-        email: String(body.email || "").trim(),
-        reference: body.reference,
-        productId: body.productId,
-        amountKobo: body.amountKobo
-      });
-      return res.status(result.ok ? 200 : 502).json(result);
-    }
-
-    if (action === "create-concierge-journey") {
-      const result = await createCertificationConciergeJourney({
-        memberId: String(body.memberId || "").trim(),
-        consultantId: String(body.consultantId || "cert-consultant-01").trim()
       });
       return res.status(200).json(result);
     }

@@ -90,6 +90,7 @@ import "./styles/ux-consistency.css";
 import "./styles/production-performance.css";
 import "./styles/launch-certification.css";
 import "./styles/performance-certification.css";
+import "./styles/security-certification.css";
 import "./styles/enterprise-codebase-cleanup.css";
 import "./styles/production-environment.css";
 import "./styles/launch-infrastructure.css";

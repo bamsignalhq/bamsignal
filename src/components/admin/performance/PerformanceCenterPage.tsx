@@ -9,10 +9,12 @@ import {
   PERFORMANCE_CENTER_ADMIN_BRAND,
   PERFORMANCE_CENTER_ADMIN_PATH
 } from "../../../constants/performanceCenterAdmin";
+import { buildDatabasePerformanceCertificationBundle } from "../../../utils/databasePerformanceCertificationEngine";
 import { buildLivePerformanceCenterBundle } from "../../../utils/performanceCenterEngine";
 import { applyPerformanceEngineeringTool } from "../../../utils/performanceCenterStore";
 import { ApiPerformanceCard } from "./ApiPerformanceCard";
 import { DatabasePerformanceCard } from "./DatabasePerformanceCard";
+import { DatabasePerformanceCertificationCard } from "./DatabasePerformanceCertificationCard";
 import { PerformanceCompareCard } from "./PerformanceCompareCard";
 import { PerformanceEngineeringSummaryCard } from "./PerformanceEngineeringSummaryCard";
 import { PerformanceEngineeringToolsCard } from "./PerformanceEngineeringToolsCard";
@@ -30,6 +32,11 @@ export function PerformanceCenterPage() {
     void refreshKey;
     return buildLivePerformanceCenterBundle(compareWindow);
   }, [compareWindow, refreshKey]);
+
+  const databaseCertReport = useMemo(() => {
+    void refreshKey;
+    return buildDatabasePerformanceCertificationBundle();
+  }, [refreshKey]);
 
   const refresh = useCallback(() => {
     setRefreshKey((value) => value + 1);
@@ -78,6 +85,7 @@ export function PerformanceCenterPage() {
 
       {toast ? <p className="performance-center-page__toast">{toast}</p> : null}
 
+      <DatabasePerformanceCertificationCard report={databaseCertReport} />
       <PerformanceEngineeringSummaryCard summary={bundle.engineeringSummary} />
       <PerformanceCompareCard activeWindow={compareWindow} onWindowChange={setCompareWindow} />
       <PerformanceTracksCard

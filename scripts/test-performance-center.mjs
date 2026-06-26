@@ -118,12 +118,21 @@ assert(navSource.includes('"performance"'), "performance nav tab");
 
 const packageSource = readFileSync(join(rootPath, "package.json"), "utf8");
 assert(packageSource.includes("test:performance-center"), "package.json defines test:performance-center");
+assert(packageSource.includes("certify:database"), "package.json defines certify:database");
+assert(packageSource.includes("test:database-performance-certification"), "database cert structure test");
 
 const mainSource = readFileSync(join(rootPath, "src/main.tsx"), "utf8");
 assert(mainSource.includes("performance-center.css"), "performance styles imported");
 
 const cssSource = readFileSync(join(rootPath, "src/styles/performance-center.css"), "utf8");
 assert(cssSource.includes("performance-tracks-card"), "performance track styles");
+assert(cssSource.includes("database-perf-cert-card"), "database cert card styles");
+
+const performancePageSource = readFileSync(
+  join(rootPath, "src/components/admin/performance/PerformanceCenterPage.tsx"),
+  "utf8"
+);
+assert(performancePageSource.includes("DatabasePerformanceCertificationCard"), "database cert card mounted");
 
 const databaseAuditSource = readFileSync(join(rootPath, "src/utils/databaseAudit.ts"), "utf8");
 assert(databaseAuditSource.includes("PERFORMANCE_CENTER_SCHEMA_TABLES"), "database audit schema");

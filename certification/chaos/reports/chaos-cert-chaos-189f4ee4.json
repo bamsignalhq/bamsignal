@@ -1,0 +1,326 @@
+{
+  "runId": "chaos-189f4ee4",
+  "generatedAt": "2026-06-26T18:03:24.469Z",
+  "chaosScore": 100,
+  "passed": true,
+  "recoveryTimeMs": {
+    "average": 33,
+    "max": 496
+  },
+  "recoverySuccess": 15,
+  "attacksPassed": 15,
+  "attacksFailed": 0,
+  "attacks": [
+    {
+      "id": "kill-supabase",
+      "label": "Kill Supabase",
+      "critical": true,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Signup and auth fail closed when Supabase identity cannot be verified."
+    },
+    {
+      "id": "kill-storage",
+      "label": "Kill Storage",
+      "critical": true,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Photo upload degrades to pending_review; upload-first preserved when storage fails."
+    },
+    {
+      "id": "kill-paystack",
+      "label": "Kill Paystack",
+      "critical": true,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Paystack client returns 503 when unconfigured; verify endpoint rejects bad refs."
+    },
+    {
+      "id": "kill-sendchamp",
+      "label": "Kill Sendchamp",
+      "critical": false,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Sendchamp returns 503 not_configured when API key missing."
+    },
+    {
+      "id": "kill-resend",
+      "label": "Kill Resend",
+      "critical": true,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Purchase and concierge email skip gracefully when Resend is unavailable."
+    },
+    {
+      "id": "kill-firebase",
+      "label": "Kill Firebase",
+      "critical": false,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": false,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Push registration skips when Firebase admin is not configured."
+    },
+    {
+      "id": "kill-openai",
+      "label": "Kill OpenAI",
+      "critical": false,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "No server OpenAI dependency — photo moderation uses manual safety patterns and pending_review."
+    },
+    {
+      "id": "kill-google-calendar",
+      "label": "Kill Google Calendar",
+      "critical": false,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Consultation scheduling returns service-unavailable when Google Calendar is not ready."
+    },
+    {
+      "id": "kill-webhooks",
+      "label": "Kill Webhooks",
+      "critical": true,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": false,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Invalid webhook signatures are rejected and logged — no silent fulfillment."
+    },
+    {
+      "id": "kill-notification-queue",
+      "label": "Kill Notification Queue",
+      "critical": false,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Notification ops surfaces failed deliveries and supports retry without crashing admin UI."
+    },
+    {
+      "id": "kill-matching-queue",
+      "label": "Kill Matching Queue",
+      "critical": false,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Assignment/matching queue stalls surface in Operations Center and readiness checks."
+    },
+    {
+      "id": "kill-database-connection",
+      "label": "Kill Database Connection",
+      "critical": true,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Database pool loss alerts and throttle falls back to in-memory store."
+    },
+    {
+      "id": "kill-session-refresh",
+      "label": "Kill Session Refresh",
+      "critical": true,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 496,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Invalid refresh tokens reject restore; Supabase client auto-refreshes when configured."
+    },
+    {
+      "id": "kill-feature-flag-endpoint",
+      "label": "Kill Feature Flag Endpoint",
+      "critical": false,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Feature flag client falls back to offline cache and seed defaults when API is dead."
+    },
+    {
+      "id": "kill-remote-config-endpoint",
+      "label": "Kill Remote Config Endpoint",
+      "critical": false,
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallbackUi": true,
+        "logging": true,
+        "recovery": true,
+        "noCrash": true,
+        "noWhiteScreen": true,
+        "noInfiniteSpinner": true
+      },
+      "detail": "Remote config client serves cached defaults when /api/remote-config is unavailable."
+    }
+  ],
+  "criticalWeaknesses": [],
+  "recommendations": [
+    {
+      "id": "chaos_rec_maintain",
+      "priority": "medium",
+      "title": "Maintain chaos baseline",
+      "detail": "Re-run npm run certify:chaos before each release candidate."
+    }
+  ],
+  "failures": [],
+  "source": "cli"
+}

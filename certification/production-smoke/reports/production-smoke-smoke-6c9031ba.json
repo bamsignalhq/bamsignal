@@ -1,0 +1,362 @@
+{
+  "runId": "smoke-6c9031ba",
+  "generatedAt": "2026-06-26T23:00:49.944Z",
+  "baseUrl": "https://bamsignal.com",
+  "deploymentTimestamp": "2026-06-26T09:18:49.000Z",
+  "commitSha": "56ebd608cf7a75094ba30bef94b5e07ea811334f",
+  "deploymentBuildId": "bamsignal-v1.0.14-17-mqupx88v",
+  "smokeScore": 50,
+  "passed": false,
+  "counts": {
+    "critical": 2,
+    "high": 1,
+    "medium": 0,
+    "low": 0,
+    "warning": 0
+  },
+  "checksPassed": 16,
+  "checksFailed": 3,
+  "checks": [
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 200,
+      "responseTimeMs": 618,
+      "expectedUi": {
+        "spaRoot": true,
+        "brandTitle": true,
+        "buildMeta": true,
+        "buildId": "bamsignal-v1.0.14-17-mqupx88v"
+      },
+      "databaseState": null,
+      "detail": "Landing Page: HTTP 200, root=true, brand=true, build=bamsignal-v1.0.14-17-mqupx88v",
+      "id": "landing-page",
+      "label": "Landing Page",
+      "kind": "page",
+      "path": "/"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 200,
+      "responseTimeMs": 291,
+      "expectedUi": {
+        "spaRoot": true,
+        "brandTitle": true,
+        "buildMeta": true,
+        "buildId": "bamsignal-v1.0.14-17-mqupx88v"
+      },
+      "databaseState": null,
+      "detail": "Signup: HTTP 200, root=true, brand=true, build=bamsignal-v1.0.14-17-mqupx88v",
+      "id": "signup",
+      "label": "Signup",
+      "kind": "page",
+      "path": "/love/sign",
+      "error": null
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 200,
+      "responseTimeMs": 291,
+      "expectedUi": {
+        "spaRoot": true,
+        "brandTitle": true,
+        "buildMeta": true,
+        "buildId": "bamsignal-v1.0.14-17-mqupx88v"
+      },
+      "databaseState": null,
+      "detail": "Login: HTTP 200, root=true, brand=true, build=bamsignal-v1.0.14-17-mqupx88v",
+      "id": "login",
+      "label": "Login",
+      "kind": "page",
+      "path": "/love/login",
+      "error": null
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 200,
+      "responseTimeMs": 288,
+      "expectedUi": {
+        "spaRoot": true,
+        "brandTitle": true,
+        "buildMeta": true,
+        "buildId": "bamsignal-v1.0.14-17-mqupx88v"
+      },
+      "databaseState": null,
+      "detail": "Discover: HTTP 200, root=true, brand=true, build=bamsignal-v1.0.14-17-mqupx88v",
+      "id": "discover",
+      "label": "Discover",
+      "kind": "page",
+      "path": "/discover",
+      "error": null
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 200,
+      "responseTimeMs": 286,
+      "expectedUi": {
+        "spaRoot": true,
+        "brandTitle": true,
+        "buildMeta": true,
+        "buildId": "bamsignal-v1.0.14-17-mqupx88v"
+      },
+      "databaseState": null,
+      "detail": "Signals: HTTP 200, root=true, brand=true, build=bamsignal-v1.0.14-17-mqupx88v",
+      "id": "signals",
+      "label": "Signals",
+      "kind": "page",
+      "path": "/signals",
+      "error": null
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 200,
+      "responseTimeMs": 302,
+      "expectedUi": {
+        "spaRoot": true,
+        "brandTitle": true,
+        "buildMeta": true,
+        "buildId": "bamsignal-v1.0.14-17-mqupx88v"
+      },
+      "databaseState": null,
+      "detail": "Chats: HTTP 200, root=true, brand=true, build=bamsignal-v1.0.14-17-mqupx88v",
+      "id": "chats",
+      "label": "Chats",
+      "kind": "page",
+      "path": "/chats",
+      "error": null
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 200,
+      "responseTimeMs": 290,
+      "expectedUi": {
+        "spaRoot": true,
+        "brandTitle": true,
+        "buildMeta": true,
+        "buildId": "bamsignal-v1.0.14-17-mqupx88v"
+      },
+      "databaseState": null,
+      "detail": "Profile: HTTP 200, root=true, brand=true, build=bamsignal-v1.0.14-17-mqupx88v",
+      "id": "profile",
+      "label": "Profile",
+      "kind": "page",
+      "path": "/profile",
+      "error": null
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 200,
+      "responseTimeMs": 281,
+      "expectedUi": null,
+      "databaseState": {
+        "livenessOnly": true
+      },
+      "detail": "GET /health → 200; livenessOnly=true",
+      "id": "health-endpoint",
+      "label": "Health Endpoint",
+      "kind": "api",
+      "path": "/health"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 200,
+      "responseTimeMs": 1073,
+      "expectedUi": null,
+      "databaseState": {
+        "ready": true,
+        "database": null,
+        "paystack": null,
+        "signupEmail": null,
+        "photoStorage": null
+      },
+      "detail": "GET /ready → 200; ready=true; database=unknown",
+      "id": "production-ready",
+      "label": "Production Ready",
+      "kind": "api",
+      "path": "/ready"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 400,
+      "responseTimeMs": 288,
+      "expectedUi": null,
+      "databaseState": null,
+      "detail": "POST /api/auth/email-code → 400 (route mounted, non-5xx)",
+      "id": "otp",
+      "label": "OTP",
+      "kind": "api",
+      "path": "/api/auth/email-code"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 401,
+      "responseTimeMs": 523,
+      "expectedUi": null,
+      "databaseState": null,
+      "detail": "POST /api/auth/pin-login → 401 (auth route mounted)",
+      "id": "login-api",
+      "label": "Login API",
+      "kind": "api",
+      "path": "/api/auth/pin-login"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 400,
+      "responseTimeMs": 293,
+      "expectedUi": null,
+      "databaseState": null,
+      "detail": "POST /api/paystack/verify → 400 (Paystack route mounted)",
+      "id": "payments",
+      "label": "Payments",
+      "kind": "api",
+      "path": "/api/paystack/verify"
+    },
+    {
+      "passed": false,
+      "severity": "critical",
+      "httpStatus": 404,
+      "responseTimeMs": 289,
+      "expectedUi": null,
+      "databaseState": {
+        "flagCount": 0
+      },
+      "detail": "GET /api/feature-flags → 404; flags=0",
+      "id": "feature-flags",
+      "label": "Feature Flags",
+      "kind": "api",
+      "path": "/api/feature-flags"
+    },
+    {
+      "passed": false,
+      "severity": "critical",
+      "httpStatus": 404,
+      "responseTimeMs": 401,
+      "expectedUi": null,
+      "databaseState": {
+        "revision": null
+      },
+      "detail": "GET /api/remote-config → 404; signals.free_daily_limit=undefined",
+      "id": "remote-config",
+      "label": "Remote Config",
+      "kind": "api",
+      "path": "/api/remote-config"
+    },
+    {
+      "passed": false,
+      "severity": "high",
+      "httpStatus": 404,
+      "responseTimeMs": 358,
+      "expectedUi": null,
+      "databaseState": {},
+      "detail": "Remote config exposes notifications.retry_interval_seconds and notifications.templates",
+      "id": "notifications",
+      "label": "Notifications",
+      "kind": "config",
+      "path": "/api/remote-config"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 401,
+      "responseTimeMs": 291,
+      "expectedUi": null,
+      "databaseState": {
+        "requiresAuth": true,
+        "databaseBlocked": false,
+        "error": "not_authorized"
+      },
+      "detail": "POST member discover → 401 (expects auth without session)",
+      "id": "member-discover",
+      "label": "Discover API",
+      "kind": "api",
+      "path": "/api/member/data?action=discover"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 401,
+      "responseTimeMs": 396,
+      "expectedUi": null,
+      "databaseState": {
+        "requiresAuth": true,
+        "databaseBlocked": false,
+        "error": "not_authorized"
+      },
+      "detail": "POST member signals → 401 (expects auth without session)",
+      "id": "member-signals",
+      "label": "Signals API",
+      "kind": "api",
+      "path": "/api/member/data?action=signals"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 401,
+      "responseTimeMs": 359,
+      "expectedUi": null,
+      "databaseState": {
+        "requiresAuth": true,
+        "databaseBlocked": false,
+        "error": "not_authorized"
+      },
+      "detail": "POST member chats → 401 (expects auth without session)",
+      "id": "member-chats",
+      "label": "Chats API",
+      "kind": "api",
+      "path": "/api/member/data?action=chats"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "httpStatus": 401,
+      "responseTimeMs": 289,
+      "expectedUi": null,
+      "databaseState": {
+        "requiresAuth": true,
+        "databaseBlocked": false,
+        "error": "not_authorized"
+      },
+      "detail": "POST member profile → 401 (expects auth without session)",
+      "id": "member-profile",
+      "label": "Profile API",
+      "kind": "api",
+      "path": "/api/member/data?action=profile"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-feature-flags",
+      "priority": "critical",
+      "title": "Feature Flags",
+      "detail": "GET /api/feature-flags → 404; flags=0"
+    },
+    {
+      "id": "rec-remote-config",
+      "priority": "critical",
+      "title": "Remote Config",
+      "detail": "GET /api/remote-config → 404; signals.free_daily_limit=undefined"
+    },
+    {
+      "id": "rec-notifications",
+      "priority": "high",
+      "title": "Notifications",
+      "detail": "Remote config exposes notifications.retry_interval_seconds and notifications.templates"
+    }
+  ],
+  "failures": [
+    "Feature Flags: GET /api/feature-flags → 404; flags=0",
+    "Remote Config: GET /api/remote-config → 404; signals.free_daily_limit=undefined"
+  ],
+  "source": "cli"
+}

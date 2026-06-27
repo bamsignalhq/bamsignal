@@ -1,0 +1,52 @@
+{
+  "runId": "di-7c150df3",
+  "generatedAt": "2026-06-27T11:11:28.629Z",
+  "mode": "static",
+  "integrityScore": 100,
+  "passed": true,
+  "objectsScanned": 18,
+  "objectsRepaired": 0,
+  "objectsRequiringReview": 2,
+  "domains": [
+    {
+      "id": "schema",
+      "label": "Schema",
+      "objectsScanned": 18,
+      "objectsRepaired": 0,
+      "objectsRequiringReview": 1,
+      "criticalIssues": [],
+      "warnings": [
+        {
+          "id": "db-unavailable",
+          "domainId": "schema",
+          "title": "Live database scan skipped",
+          "detail": "DATABASE_URL not connected — run against production/staging for full certification.",
+          "severity": "warning",
+          "count": 1
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "criticalIssues": [],
+  "warnings": [
+    {
+      "id": "db-unavailable",
+      "domainId": "schema",
+      "title": "Live database scan skipped",
+      "detail": "DATABASE_URL not connected — run against production/staging for full certification.",
+      "severity": "warning",
+      "count": 1,
+      "domainLabel": "Schema"
+    }
+  ],
+  "repairs": [],
+  "flaggedForReview": [
+    {
+      "action": "full-db-scan",
+      "detail": "Connect DATABASE_URL for live orphan/FK scans.",
+      "safe": false
+    }
+  ],
+  "source": "cli"
+}

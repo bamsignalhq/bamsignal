@@ -1,0 +1,398 @@
+{
+  "runId": "a11y-89e4d482",
+  "generatedAt": "2026-06-27T11:11:43.906Z",
+  "accessibilityScore": 87,
+  "passed": true,
+  "counts": {
+    "critical": 0,
+    "high": 1,
+    "medium": 0,
+    "low": 0,
+    "warning": 1
+  },
+  "domains": [
+    {
+      "id": "keyboard-navigation",
+      "label": "Keyboard Navigation",
+      "findingsCount": 3,
+      "criticalCount": 0,
+      "openCount": 0,
+      "passedCount": 3,
+      "score": 100,
+      "passed": true
+    },
+    {
+      "id": "focus-order",
+      "label": "Focus Order",
+      "findingsCount": 2,
+      "criticalCount": 0,
+      "openCount": 0,
+      "passedCount": 2,
+      "score": 100,
+      "passed": true
+    },
+    {
+      "id": "aria-labels",
+      "label": "ARIA Labels",
+      "findingsCount": 4,
+      "criticalCount": 0,
+      "openCount": 0,
+      "passedCount": 4,
+      "score": 100,
+      "passed": true
+    },
+    {
+      "id": "color-contrast",
+      "label": "Color Contrast",
+      "findingsCount": 3,
+      "criticalCount": 0,
+      "openCount": 0,
+      "passedCount": 3,
+      "score": 100,
+      "passed": true
+    },
+    {
+      "id": "screen-readers",
+      "label": "Screen Readers",
+      "findingsCount": 3,
+      "criticalCount": 0,
+      "openCount": 0,
+      "passedCount": 3,
+      "score": 100,
+      "passed": true
+    },
+    {
+      "id": "touch-targets",
+      "label": "Touch Targets",
+      "findingsCount": 2,
+      "criticalCount": 0,
+      "openCount": 0,
+      "passedCount": 2,
+      "score": 100,
+      "passed": true
+    },
+    {
+      "id": "reduced-motion",
+      "label": "Reduced Motion",
+      "findingsCount": 2,
+      "criticalCount": 0,
+      "openCount": 1,
+      "passedCount": 1,
+      "score": 50,
+      "passed": true
+    },
+    {
+      "id": "form-labels",
+      "label": "Form Labels",
+      "findingsCount": 3,
+      "criticalCount": 0,
+      "openCount": 0,
+      "passedCount": 3,
+      "score": 100,
+      "passed": true
+    },
+    {
+      "id": "error-messaging",
+      "label": "Error Messaging",
+      "findingsCount": 2,
+      "criticalCount": 0,
+      "openCount": 0,
+      "passedCount": 2,
+      "score": 100,
+      "passed": true
+    },
+    {
+      "id": "modal-focus-trapping",
+      "label": "Modal Focus Trapping",
+      "findingsCount": 8,
+      "criticalCount": 0,
+      "openCount": 1,
+      "passedCount": 7,
+      "score": 88,
+      "passed": true
+    }
+  ],
+  "findings": [
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "OtpDigitInput handles Backspace and digit entry for PIN/verification flows.",
+      "id": "keyboard-otp-backspace",
+      "domainId": "keyboard-navigation",
+      "title": "OTP inputs support keyboard navigation"
+    },
+    {
+      "passed": true,
+      "severity": "high",
+      "detail": "AuthField renders standard <input> elements without removing tab focus.",
+      "id": "keyboard-native-inputs",
+      "domainId": "keyboard-navigation",
+      "title": "Auth fields use native keyboard-focusable inputs"
+    },
+    {
+      "passed": true,
+      "severity": "high",
+      "detail": "BottomNav items are <button> elements reachable via keyboard Tab.",
+      "id": "keyboard-bottom-nav-buttons",
+      "domainId": "keyboard-navigation",
+      "title": "Primary navigation uses native buttons"
+    },
+    {
+      "passed": true,
+      "severity": "warning",
+      "detail": "No positive tabindex values detected in member surfaces.",
+      "id": "focus-order-no-positive-tabindex",
+      "domainId": "focus-order",
+      "title": "Member UI avoids positive tabindex overrides"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Scanned 787 member-facing component/page files.",
+      "id": "focus-order-dom-coverage",
+      "domainId": "focus-order",
+      "title": "Member component tree scanned for focus order"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "BottomNav exposes aria-label=\"Main navigation\".",
+      "id": "aria-bottom-nav",
+      "domainId": "aria-labels",
+      "title": "Main navigation landmark labeled"
+    },
+    {
+      "passed": true,
+      "severity": "high",
+      "detail": "Preloader exposes aria-label=\"Loading BamSignal\".",
+      "id": "aria-preloader",
+      "domainId": "aria-labels",
+      "title": "Loading state labeled for assistive tech"
+    },
+    {
+      "passed": true,
+      "severity": "high",
+      "detail": "Auth home/back controls include aria-label text.",
+      "id": "aria-auth-home",
+      "domainId": "aria-labels",
+      "title": "Auth brand control has accessible name"
+    },
+    {
+      "passed": true,
+      "severity": "warning",
+      "detail": "15/16 icon buttons include aria-label.",
+      "id": "aria-icon-buttons",
+      "domainId": "aria-labels",
+      "title": "Icon buttons include accessible names"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "main.tsx imports theme-contrast.css for member text contrast fixes.",
+      "id": "contrast-theme-import",
+      "domainId": "color-contrast",
+      "title": "Theme contrast stylesheet loaded globally"
+    },
+    {
+      "passed": true,
+      "severity": "high",
+      "detail": "theme-contrast.css and member-fintech.css reference --text and surface tokens.",
+      "id": "contrast-tokens",
+      "domainId": "color-contrast",
+      "title": "Member design tokens define readable text colors"
+    },
+    {
+      "passed": true,
+      "severity": "medium",
+      "detail": "AuthField renders dedicated error styles for invalid fields.",
+      "id": "contrast-auth-errors",
+      "domainId": "color-contrast",
+      "title": "Auth error text styled for visibility"
+    },
+    {
+      "passed": true,
+      "severity": "high",
+      "detail": "AuthPage uses role=\"status\" for verification and reset messaging.",
+      "id": "sr-auth-status",
+      "domainId": "screen-readers",
+      "title": "Auth flows expose status regions"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "AuthField errors use role=\"alert\" for screen reader announcement.",
+      "id": "sr-error-alerts",
+      "domainId": "screen-readers",
+      "title": "Form errors announced as alerts"
+    },
+    {
+      "passed": true,
+      "severity": "high",
+      "detail": "BottomNav sets aria-current on the active tab.",
+      "id": "sr-nav-current-page",
+      "domainId": "screen-readers",
+      "title": "Navigation exposes current page"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "member-fintech.css defines 44px min-height for primary controls.",
+      "id": "touch-target-min-height",
+      "domainId": "touch-targets",
+      "title": "Member tap targets meet 44px minimum"
+    },
+    {
+      "passed": true,
+      "severity": "medium",
+      "detail": "BottomNav buttons span the nav bar for thumb-friendly targets.",
+      "id": "touch-target-bottom-nav",
+      "domainId": "touch-targets",
+      "title": "Bottom navigation uses full-width tap rows"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "member-motion.css includes prefers-reduced-motion media queries.",
+      "id": "motion-member-stylesheet",
+      "domainId": "reduced-motion",
+      "title": "Member motion stylesheet respects reduced motion"
+    },
+    {
+      "passed": false,
+      "severity": "high",
+      "detail": "main.tsx imports member-motion.css.",
+      "id": "motion-global-import",
+      "domainId": "reduced-motion",
+      "title": "Member motion tokens loaded in app shell"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "AuthField wraps inputs in <label> with visible label text.",
+      "id": "form-labels-authfield",
+      "domainId": "form-labels",
+      "title": "AuthField associates labels with inputs"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "Login surface exposes label=\"Username\" and label=\"PIN\" (not password).",
+      "id": "form-labels-login",
+      "domainId": "form-labels",
+      "title": "Login form uses Username and PIN labels"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "User-facing login strings use PIN, not password.",
+      "id": "form-labels-pin-copy",
+      "domainId": "form-labels",
+      "title": "Login copy avoids password terminology"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "AuthField wires aria-invalid and aria-describedby to error text.",
+      "id": "error-authfield-aria",
+      "domainId": "error-messaging",
+      "title": "Field errors linked via aria-describedby"
+    },
+    {
+      "passed": true,
+      "severity": "high",
+      "detail": "Auth handlers return messages like \"Invalid username or PIN.\"",
+      "id": "error-auth-messages",
+      "domainId": "error-messaging",
+      "title": "Auth validation uses plain-language errors"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "34 member files combine role=\"dialog\" with aria-modal=\"true\".",
+      "id": "modal-dialog-semantics",
+      "domainId": "modal-focus-trapping",
+      "title": "Member modals expose dialog semantics"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "aria-modal dialog pattern detected.",
+      "id": "modal-semantics-src/components/ComplianceGateModal.tsx",
+      "domainId": "modal-focus-trapping",
+      "title": "Modal dialog semantics: ComplianceGateModal.tsx"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "aria-modal dialog pattern detected.",
+      "id": "modal-semantics-src/components/PricingModal.tsx",
+      "domainId": "modal-focus-trapping",
+      "title": "Modal dialog semantics: PricingModal.tsx"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "aria-modal dialog pattern detected.",
+      "id": "modal-semantics-src/components/CoverPhotoCropModal.tsx",
+      "domainId": "modal-focus-trapping",
+      "title": "Modal dialog semantics: CoverPhotoCropModal.tsx"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "aria-modal dialog pattern detected.",
+      "id": "modal-semantics-src/components/AuthModal.tsx",
+      "domainId": "modal-focus-trapping",
+      "title": "Modal dialog semantics: AuthModal.tsx"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "aria-modal dialog pattern detected.",
+      "id": "modal-semantics-src/components/home/HomeQuickFilterSheet.tsx",
+      "domainId": "modal-focus-trapping",
+      "title": "Modal dialog semantics: HomeQuickFilterSheet.tsx"
+    },
+    {
+      "passed": true,
+      "severity": "critical",
+      "detail": "aria-modal dialog pattern detected.",
+      "id": "modal-semantics-src/components/ProfileDetailSheet.tsx",
+      "domainId": "modal-focus-trapping",
+      "title": "Modal dialog semantics: ProfileDetailSheet.tsx"
+    },
+    {
+      "passed": false,
+      "severity": "warning",
+      "detail": "No shared focus-trap utility — verify manual Tab cycling in QA.",
+      "id": "modal-focus-trap-utility",
+      "domainId": "modal-focus-trapping",
+      "title": "Centralized modal focus trap utility"
+    }
+  ],
+  "violations": [
+    {
+      "id": "motion-global-import",
+      "domainId": "reduced-motion",
+      "title": "Member motion tokens loaded in app shell",
+      "detail": "main.tsx imports member-motion.css.",
+      "severity": "high"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-motion-global-import",
+      "priority": "high",
+      "title": "Member motion tokens loaded in app shell",
+      "detail": "main.tsx imports member-motion.css."
+    },
+    {
+      "id": "rec-modal-focus-trap-utility",
+      "priority": "medium",
+      "title": "Centralized modal focus trap utility",
+      "detail": "No shared focus-trap utility — verify manual Tab cycling in QA."
+    }
+  ],
+  "failures": [],
+  "source": "cli"
+}

@@ -1,34 +1,34 @@
 {
-  "runId": "perf-mqw9eqgw",
-  "generatedAt": "2026-06-27T11:11:19.259Z",
-  "baseUrl": "http://127.0.0.1:3099",
-  "buildId": "bamsignal-v1.0.15-18-mqw9cpp8",
-  "performanceScore": 100,
-  "passed": true,
+  "runId": "perf-mqvjq5gg",
+  "generatedAt": "2026-06-26T23:12:40.407Z",
+  "baseUrl": "https://bamsignal.com",
+  "buildId": "bamsignal-v1.0.15-18-mqvjh16v",
+  "performanceScore": 57,
+  "passed": false,
   "metrics": [
     {
       "id": "warm-startup",
       "label": "Warm startup",
-      "value": 88,
+      "value": 369,
       "unit": "ms",
       "passed": true,
-      "thresholdLabel": "≤ 300ms"
+      "thresholdLabel": "≤ 2000ms"
     },
     {
       "id": "cold-startup",
       "label": "Cold startup",
-      "value": 154,
+      "value": 2498,
       "unit": "ms",
-      "passed": true,
-      "thresholdLabel": "≤ 1200ms"
+      "passed": false,
+      "thresholdLabel": "≤ 2000ms"
     },
     {
       "id": "lcp",
       "label": "LCP",
-      "value": 344,
+      "value": 2672,
       "unit": "ms",
-      "passed": true,
-      "thresholdLabel": "≤ 1800ms"
+      "passed": false,
+      "thresholdLabel": "≤ 2500ms"
     },
     {
       "id": "cls",
@@ -49,36 +49,35 @@
     {
       "id": "ttfb",
       "label": "TTFB",
-      "value": 14,
+      "value": 924,
       "unit": "ms",
-      "passed": true,
-      "thresholdLabel": "≤ 300ms"
+      "passed": false,
+      "thresholdLabel": "≤ 800ms"
     },
     {
       "id": "api-latency",
       "label": "API latency (P95)",
-      "value": 18,
+      "value": 1387,
       "unit": "ms",
-      "passed": true,
-      "thresholdLabel": "P95 ≤ 250ms"
+      "passed": false,
+      "thresholdLabel": "P95 ≤ 500ms"
     },
     {
       "id": "slowest-endpoint",
       "label": "Slowest endpoint",
-      "value": 18,
+      "value": 1387,
       "unit": "ms",
-      "passed": true,
-      "thresholdLabel": "≤ 250ms",
-      "detail": "GET /"
+      "passed": false,
+      "thresholdLabel": "≤ 500ms",
+      "detail": "HEAD /health"
     },
     {
       "id": "bundle-size",
       "label": "Bundle size",
-      "value": 5026,
+      "value": 5025,
       "unit": "KB",
       "passed": true,
-      "thresholdLabel": "growth ≤ 10%",
-      "detail": "Δ 0.0%"
+      "thresholdLabel": "baseline"
     },
     {
       "id": "memory",
@@ -100,10 +99,10 @@
     {
       "id": "database-response",
       "label": "Database response",
-      "value": 12,
+      "value": 524,
       "unit": "ms",
-      "passed": true,
-      "thresholdLabel": "≤ 150ms"
+      "passed": false,
+      "thresholdLabel": "≤ 500ms"
     },
     {
       "id": "largest-image",
@@ -126,14 +125,21 @@
   ],
   "trend": "stable",
   "regressions": [],
-  "recommendations": [],
-  "failures": [],
-  "comparisons": [
+  "recommendations": [
     {
-      "windowId": "previous-release",
-      "windowLabel": "Previous release",
-      "deltaPercent": 0,
-      "score": 100
+      "id": "rec_fix_failures",
+      "title": "Fix failing metrics",
+      "detail": "Cold startup failed; LCP failed; TTFB failed; API latency (P95) failed; Slowest endpoint failed; Database response failed",
+      "priority": "critical"
     }
-  ]
+  ],
+  "failures": [
+    "Cold startup failed",
+    "LCP failed",
+    "TTFB failed",
+    "API latency (P95) failed",
+    "Slowest endpoint failed",
+    "Database response failed"
+  ],
+  "comparisons": []
 }

@@ -1,0 +1,107 @@
+{
+  "runId": "db-eb75ee22",
+  "generatedAt": "2026-06-26T23:36:32.426Z",
+  "executionMode": "dry-run",
+  "mode": "static",
+  "riskScore": 100,
+  "passed": true,
+  "objectsScanned": 3,
+  "areasPassed": 1,
+  "areas": [
+    {
+      "id": "schema",
+      "label": "Schema",
+      "objectsScanned": 3,
+      "criticalIssues": [],
+      "warnings": [
+        {
+          "id": "db-unavailable",
+          "areaId": "schema",
+          "title": "Live database scan skipped",
+          "detail": "Dry Run — DATABASE_URL not connected. Use .env.staging + .env.local for full database certification.",
+          "severity": "warning",
+          "optionalIntegration": true,
+          "count": 1
+        }
+      ],
+      "passed": true
+    }
+  ],
+  "metrics": {
+    "avgQueryMs": 0,
+    "p95Ms": 0,
+    "p99Ms": 0,
+    "slowQueryCount": 0,
+    "cacheHitPercent": 0,
+    "connectionPoolUsedPercent": 0,
+    "connectionPoolWaiting": 0,
+    "databaseSizeBytes": 0,
+    "largestTables": [],
+    "largestIndexes": [],
+    "expensiveEndpoints": [],
+    "queryPlanSamples": []
+  },
+  "criticalRegressions": [],
+  "criticalIssues": [],
+  "warnings": [
+    {
+      "id": "db-unavailable",
+      "areaId": "schema",
+      "title": "Live database scan skipped",
+      "detail": "Dry Run — DATABASE_URL not connected. Use .env.staging + .env.local for full database certification.",
+      "severity": "warning",
+      "optionalIntegration": true,
+      "count": 1,
+      "areaLabel": "Schema"
+    }
+  ],
+  "optimizationOpportunities": [
+    {
+      "id": "improve-cache-hit",
+      "title": "Improve buffer cache hit rate",
+      "detail": "Cache hit is 0% — review hot tables and memory settings.",
+      "impact": "high"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high",
+      "title": "Improve buffer cache hit rate",
+      "detail": "Cache hit is 0% — review hot tables and memory settings."
+    },
+    {
+      "priority": "medium",
+      "title": "Live database scan skipped",
+      "detail": "Dry Run — DATABASE_URL not connected. Use .env.staging + .env.local for full database certification."
+    }
+  ],
+  "staticScan": {
+    "checks": [
+      {
+        "id": "performance-center-migration",
+        "pass": true,
+        "critical": true,
+        "title": "Performance center schema",
+        "detail": "migrations/0017_performance_center.sql must exist for endpoint profiling."
+      },
+      {
+        "id": "performance-api-profiles-table",
+        "pass": true,
+        "critical": false,
+        "title": "API profile table",
+        "detail": "performance_api_profiles supports expensive endpoint measurement."
+      },
+      {
+        "id": "performance-database-profiles-table",
+        "pass": true,
+        "critical": false,
+        "title": "Database profile table",
+        "detail": "performance_database_profiles supports database telemetry."
+      }
+    ],
+    "objectsScanned": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "source": "cli"
+}

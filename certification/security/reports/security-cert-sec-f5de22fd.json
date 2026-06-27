@@ -1,0 +1,168 @@
+{
+  "runId": "sec-f5de22fd",
+  "generatedAt": "2026-06-26T23:06:09.162Z",
+  "securityScore": 100,
+  "passed": true,
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "findings": [
+    {
+      "id": "owasp-top-10-summary",
+      "checkId": "owasp-top-10",
+      "title": "OWASP Top 10 baseline",
+      "severity": "low",
+      "passed": true,
+      "detail": "No critical or high findings across OWASP-aligned controls.",
+      "owaspRef": "A01-A10"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "No critical or high npm advisories.",
+      "id": "dependency-audit-pass",
+      "checkId": "dependency-audit",
+      "title": "Dependency audit",
+      "owaspRef": "A06"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "No secret patterns in client bundles and cron secret is not query-based.",
+      "id": "secrets-scan-pass",
+      "checkId": "secrets-scan",
+      "title": "Secrets scan",
+      "owaspRef": "A02"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "99 /hard routes permission-mapped.",
+      "id": "permission-audit",
+      "checkId": "permission-audit",
+      "title": "Permission audit",
+      "owaspRef": "A01"
+    },
+    {
+      "passed": true,
+      "severity": "medium",
+      "detail": "RLS not fully configured in migrations — member routes rely on server-side JWT enforcement.",
+      "id": "rls-verification",
+      "checkId": "rls-verification",
+      "title": "RLS verification",
+      "owaspRef": "A01"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Member auth verifies Supabase bearer JWT and rejects body identity mismatch.",
+      "id": "jwt-validation",
+      "checkId": "jwt-validation",
+      "title": "JWT validation",
+      "owaspRef": "A07"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "IP rate limits, PIN/payment throttles, and retention scheduler wired.",
+      "id": "rate-limiting",
+      "checkId": "rate-limiting",
+      "title": "Rate limiting",
+      "owaspRef": "A04"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Sessions use bearer tokens; login does not accept session IDs from query strings.",
+      "id": "session-fixation",
+      "checkId": "session-fixation",
+      "title": "Session fixation",
+      "owaspRef": "A07"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Admin cron secret is header-only; security dashboards RBAC-enforced.",
+      "id": "broken-access-control",
+      "checkId": "broken-access-control",
+      "title": "Broken access control",
+      "owaspRef": "A01"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Public member data actions whitelisted; protected actions require auth with identity mismatch checks.",
+      "id": "idor-scan",
+      "checkId": "idor-scan",
+      "title": "IDOR scan",
+      "owaspRef": "A01"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "No dangerouslySetInnerHTML in src; security headers middleware configured.",
+      "id": "xss-scan",
+      "checkId": "xss-scan",
+      "title": "XSS scan",
+      "owaspRef": "A03"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "State-changing member APIs use Authorization bearer tokens (not cookie-only session).",
+      "id": "csrf-scan",
+      "checkId": "csrf-scan",
+      "title": "CSRF scan",
+      "owaspRef": "A08"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Photo upload-first moderation and contact-leak scanning active.",
+      "id": "upload-validation",
+      "checkId": "upload-validation",
+      "title": "Upload validation",
+      "owaspRef": "A04"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Paystack webhooks verify HMAC signature on raw body.",
+      "id": "webhook-validation",
+      "checkId": "webhook-validation",
+      "title": "Webhook validation",
+      "owaspRef": "A08"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Signup OTP enforces attempt limits, expiry, and protection tests exist.",
+      "id": "otp-abuse",
+      "checkId": "otp-abuse",
+      "title": "OTP abuse",
+      "owaspRef": "A04"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Payment initialize throttling and abuse monitors configured.",
+      "id": "payment-abuse",
+      "checkId": "payment-abuse",
+      "title": "Payment abuse",
+      "owaspRef": "A04"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "sec_rec_1",
+      "title": "Maintain security baseline",
+      "detail": "Re-run npm run certify:security before each release candidate.",
+      "priority": "medium"
+    }
+  ],
+  "failures": [],
+  "source": "cli"
+}

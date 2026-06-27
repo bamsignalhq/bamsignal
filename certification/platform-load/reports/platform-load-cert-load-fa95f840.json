@@ -1,0 +1,369 @@
+{
+  "runId": "load-fa95f840",
+  "generatedAt": "2026-06-26T23:25:10.621Z",
+  "baseUrl": "http://127.0.0.1:39457",
+  "localServer": true,
+  "fast": false,
+  "virtualMembers": 1000,
+  "maxConcurrency": 100,
+  "durationMs": 364638,
+  "loadScore": 94,
+  "passed": true,
+  "journeysPassed": 895,
+  "journeysFailed": 105,
+  "byType": [
+    {
+      "id": "full-session",
+      "label": "Full member session",
+      "members": 550,
+      "failed": 71,
+      "passed": 479
+    },
+    {
+      "id": "browse-discover",
+      "label": "Browse + discover",
+      "members": 200,
+      "failed": 20,
+      "passed": 180
+    },
+    {
+      "id": "signals-chats",
+      "label": "Signals + chats",
+      "members": 150,
+      "failed": 14,
+      "passed": 136
+    },
+    {
+      "id": "payments-otp",
+      "label": "Payments + OTP",
+      "members": 100,
+      "failed": 0,
+      "passed": 100
+    }
+  ],
+  "measurement": {
+    "api": {
+      "count": 17490,
+      "avg": 49,
+      "p50": 2,
+      "p95": 110,
+      "p99": 767,
+      "max": 7614
+    },
+    "journeys": {
+      "count": 1000,
+      "avg": 34600,
+      "p50": 39730,
+      "p95": 51629,
+      "p99": 55156,
+      "max": 59584
+    },
+    "health": {
+      "count": 1000,
+      "avg": 52,
+      "p50": 1,
+      "p95": 93,
+      "p99": 789,
+      "max": 6746
+    },
+    "database": {
+      "count": 1140,
+      "avg": 50,
+      "p50": 1,
+      "p95": 72,
+      "p99": 566,
+      "max": 6747
+    },
+    "endpoints": [
+      {
+        "path": "/profile",
+        "method": "GET",
+        "requests": 550,
+        "failures": 6,
+        "count": 550,
+        "avg": 66,
+        "p50": 2,
+        "p95": 263,
+        "p99": 1269,
+        "max": 5058
+      },
+      {
+        "path": "/discover",
+        "method": "GET",
+        "requests": 750,
+        "failures": 35,
+        "count": 750,
+        "avg": 54,
+        "p50": 2,
+        "p95": 251,
+        "p99": 654,
+        "max": 5008
+      },
+      {
+        "path": "/chats",
+        "method": "GET",
+        "requests": 700,
+        "failures": 12,
+        "count": 700,
+        "avg": 51,
+        "p50": 2,
+        "p95": 250,
+        "p99": 1031,
+        "max": 4808
+      },
+      {
+        "path": "/signals",
+        "method": "GET",
+        "requests": 700,
+        "failures": 17,
+        "count": 700,
+        "avg": 54,
+        "p50": 2,
+        "p95": 215,
+        "p99": 1400,
+        "max": 4950
+      },
+      {
+        "path": "/api/member/data?action=profile-patch",
+        "method": "POST",
+        "requests": 550,
+        "failures": 0,
+        "count": 550,
+        "avg": 66,
+        "p50": 2,
+        "p95": 173,
+        "p99": 986,
+        "max": 6745
+      },
+      {
+        "path": "/api/member/data?action=signals",
+        "method": "POST",
+        "requests": 700,
+        "failures": 0,
+        "count": 700,
+        "avg": 47,
+        "p50": 2,
+        "p95": 158,
+        "p99": 1041,
+        "max": 4913
+      },
+      {
+        "path": "/home",
+        "method": "GET",
+        "requests": 900,
+        "failures": 0,
+        "count": 900,
+        "avg": 66,
+        "p50": 2,
+        "p95": 149,
+        "p99": 843,
+        "max": 7419
+      },
+      {
+        "path": "/features",
+        "method": "GET",
+        "requests": 1000,
+        "failures": 41,
+        "count": 1000,
+        "avg": 49,
+        "p50": 2,
+        "p95": 148,
+        "p99": 724,
+        "max": 5068
+      },
+      {
+        "path": "/api/member/data?action=chats",
+        "method": "POST",
+        "requests": 700,
+        "failures": 0,
+        "count": 700,
+        "avg": 33,
+        "p50": 2,
+        "p95": 144,
+        "p99": 618,
+        "max": 2765
+      },
+      {
+        "path": "/api/member/data?action=discover",
+        "method": "POST",
+        "requests": 750,
+        "failures": 0,
+        "count": 750,
+        "avg": 44,
+        "p50": 2,
+        "p95": 124,
+        "p99": 879,
+        "max": 4381
+      },
+      {
+        "path": "/api/member/data?action=profile",
+        "method": "POST",
+        "requests": 550,
+        "failures": 0,
+        "count": 550,
+        "avg": 36,
+        "p50": 2,
+        "p95": 124,
+        "p99": 735,
+        "max": 3510
+      },
+      {
+        "path": "/premium",
+        "method": "GET",
+        "requests": 1000,
+        "failures": 38,
+        "count": 1000,
+        "avg": 34,
+        "p50": 2,
+        "p95": 106,
+        "p99": 631,
+        "max": 5027
+      },
+      {
+        "path": "/subscription",
+        "method": "GET",
+        "requests": 650,
+        "failures": 5,
+        "count": 650,
+        "avg": 73,
+        "p50": 2,
+        "p95": 103,
+        "p99": 797,
+        "max": 7575
+      },
+      {
+        "path": "/api/remote-config",
+        "method": "GET",
+        "requests": 900,
+        "failures": 0,
+        "count": 900,
+        "avg": 59,
+        "p50": 1,
+        "p95": 100,
+        "p99": 1043,
+        "max": 6746
+      },
+      {
+        "path": "/api/feature-flags",
+        "method": "GET",
+        "requests": 900,
+        "failures": 0,
+        "count": 900,
+        "avg": 39,
+        "p50": 1,
+        "p95": 88,
+        "p99": 411,
+        "max": 6751
+      },
+      {
+        "path": "/love/sign",
+        "method": "GET",
+        "requests": 650,
+        "failures": 16,
+        "count": 650,
+        "avg": 58,
+        "p50": 2,
+        "p95": 85,
+        "p99": 679,
+        "max": 7614
+      },
+      {
+        "path": "/api/auth/email-code",
+        "method": "POST",
+        "requests": 650,
+        "failures": 0,
+        "count": 650,
+        "avg": 85,
+        "p50": 2,
+        "p95": 63,
+        "p99": 4794,
+        "max": 6747
+      },
+      {
+        "path": "/love/login",
+        "method": "GET",
+        "requests": 550,
+        "failures": 34,
+        "count": 550,
+        "avg": 15,
+        "p50": 2,
+        "p95": 56,
+        "p99": 340,
+        "max": 825
+      },
+      {
+        "path": "/api/paystack/verify",
+        "method": "POST",
+        "requests": 650,
+        "failures": 0,
+        "count": 650,
+        "avg": 30,
+        "p50": 2,
+        "p95": 43,
+        "p99": 325,
+        "max": 3923
+      },
+      {
+        "path": "/",
+        "method": "GET",
+        "requests": 1000,
+        "failures": 37,
+        "count": 1000,
+        "avg": 35,
+        "p50": 2,
+        "p95": 38,
+        "p99": 630,
+        "max": 5003
+      },
+      {
+        "path": "/api/auth/pin-login",
+        "method": "POST",
+        "requests": 550,
+        "failures": 0,
+        "count": 550,
+        "avg": 17,
+        "p50": 2,
+        "p95": 17,
+        "p99": 204,
+        "max": 3380
+      }
+    ],
+    "failures": 241,
+    "failureRatePercent": 1.6,
+    "queueDepth": {
+      "max": 101,
+      "final": 0
+    },
+    "cpu": {
+      "userMs": 29125,
+      "systemMs": 9959,
+      "totalMs": 39084
+    },
+    "ram": {
+      "startMb": 19,
+      "peakMb": 141
+    },
+    "totalRequests": 15350
+  },
+  "bottlenecks": [
+    {
+      "id": "journey-failures",
+      "label": "Member journey failures",
+      "critical": false,
+      "metric": "journeysFailed",
+      "value": 105,
+      "threshold": 0,
+      "detail": "105 member journeys reported unexpected step outcomes"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec_cache_hot_paths",
+      "priority": "high",
+      "title": "Optimize hottest endpoints",
+      "detail": "GET /profile p95=263ms; GET /discover p95=251ms; GET /chats p95=250ms; GET /signals p95=215ms; POST /api/member/data?action=profile-patch p95=173ms"
+    }
+  ],
+  "failures": [],
+  "source": "cli"
+}

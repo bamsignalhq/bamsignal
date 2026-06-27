@@ -1,0 +1,593 @@
+{
+  "runId": "dep-65f6d8ce",
+  "generatedAt": "2026-06-27T11:11:40.702Z",
+  "dependencyScore": 88,
+  "passed": true,
+  "counts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 2,
+    "low": 0,
+    "warning": 2
+  },
+  "packagesScanned": 487,
+  "categories": [
+    {
+      "id": "npm-packages",
+      "label": "npm packages",
+      "findingsCount": 5,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "docker-base",
+      "label": "Docker base image",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "node-version",
+      "label": "Node version",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "android-dependencies",
+      "label": "Android dependencies",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "firebase-sdk",
+      "label": "Firebase SDK",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "supabase-sdk",
+      "label": "Supabase SDK",
+      "findingsCount": 1,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "payment-sdks",
+      "label": "Payment SDKs",
+      "findingsCount": 2,
+      "criticalCount": 0,
+      "passed": true
+    },
+    {
+      "id": "notification-sdks",
+      "label": "Notification SDKs",
+      "findingsCount": 5,
+      "criticalCount": 0,
+      "passed": true
+    }
+  ],
+  "findings": [
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "npm audit reports no critical vulnerabilities.",
+      "id": "npm-audit-critical-pass",
+      "categoryId": "npm-packages",
+      "title": "No critical npm CVEs"
+    },
+    {
+      "passed": false,
+      "severity": "medium",
+      "detail": "17 package(s) have newer major releases: @capacitor-community/fcm, @capacitor/android, @capacitor/app, @capacitor/browser.",
+      "id": "outdated-major-versions",
+      "categoryId": "npm-packages",
+      "title": "Outdated major versions"
+    },
+    {
+      "passed": false,
+      "severity": "medium",
+      "detail": "1 deprecated package(s): node-domexception.",
+      "id": "deprecated-packages",
+      "categoryId": "npm-packages",
+      "title": "Deprecated packages"
+    },
+    {
+      "passed": false,
+      "severity": "warning",
+      "detail": "23 package(s) resolve to multiple versions.",
+      "id": "duplicate-packages",
+      "categoryId": "npm-packages",
+      "title": "Duplicate package versions"
+    },
+    {
+      "passed": false,
+      "severity": "warning",
+      "detail": "14 declared package(s) not referenced in src/server/scripts scan: @capacitor-community/fcm, @capacitor/android, @capacitor/ios, @capacitor/push-notifications, @tensorflow/tfjs-converter.",
+      "id": "unused-packages",
+      "categoryId": "npm-packages",
+      "title": "Potentially unused packages"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Docker stages use Node 20 base (node:20-slim, node:20-slim). Expected node:20-slim.",
+      "id": "docker-base-image",
+      "categoryId": "docker-base",
+      "title": "Docker base image"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Node 20 enforced via Dockerfile.",
+      "id": "node-version",
+      "categoryId": "node-version",
+      "title": "Node version alignment"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Android compileSdk 35 with Capacitor stack verified.",
+      "id": "android-dependencies",
+      "categoryId": "android-dependencies",
+      "title": "Android dependency baseline"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "@supabase/supabase-js@^2.108.2 declared in package.json.",
+      "id": "supabase-sdk-@supabase/supabase-js",
+      "categoryId": "supabase-sdk",
+      "title": "@supabase/supabase-js present"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "firebase-admin@^13.8.0 declared in package.json.",
+      "id": "firebase-sdk-firebase-admin",
+      "categoryId": "firebase-sdk",
+      "title": "firebase-admin present"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "axios@^1.15.2 declared in package.json.",
+      "id": "payment-sdks-axios",
+      "categoryId": "payment-sdks",
+      "title": "axios present"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "@capacitor/push-notifications@^7.0.6 declared in package.json.",
+      "id": "notification-sdks-@capacitor/push-notifications",
+      "categoryId": "notification-sdks",
+      "title": "@capacitor/push-notifications present"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "@capacitor-community/fcm@^7.1.3 declared in package.json.",
+      "id": "notification-sdks-@capacitor-community/fcm",
+      "categoryId": "notification-sdks",
+      "title": "@capacitor-community/fcm present"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "telegraf@^4.16.3 declared in package.json.",
+      "id": "notification-sdks-telegraf",
+      "categoryId": "notification-sdks",
+      "title": "telegraf present"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "firebase-admin@^13.8.0 declared in package.json.",
+      "id": "notification-sdks-firebase-admin",
+      "categoryId": "notification-sdks",
+      "title": "firebase-admin present"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "Paystack public key build arg present — REST payment SDK path verified.",
+      "id": "payment-sdk-config",
+      "categoryId": "payment-sdks",
+      "title": "Paystack integration declared"
+    },
+    {
+      "passed": true,
+      "severity": "low",
+      "detail": "@capacitor-community/fcm declared for Firebase Cloud Messaging.",
+      "id": "notification-fcm",
+      "categoryId": "notification-sdks",
+      "title": "FCM push channel"
+    }
+  ],
+  "criticalVulnerabilities": [],
+  "upgradeCandidates": [
+    {
+      "name": "@capacitor-community/fcm",
+      "current": "7.1.3",
+      "wanted": "7.3.0",
+      "latest": "8.1.0",
+      "majorDrift": true
+    },
+    {
+      "name": "@capacitor/android",
+      "current": "7.6.7",
+      "wanted": "7.6.7",
+      "latest": "8.4.1",
+      "majorDrift": true
+    },
+    {
+      "name": "@capacitor/app",
+      "current": "7.1.2",
+      "wanted": "7.1.2",
+      "latest": "8.1.0",
+      "majorDrift": true
+    },
+    {
+      "name": "@capacitor/browser",
+      "current": "7.0.5",
+      "wanted": "7.0.5",
+      "latest": "8.0.3",
+      "majorDrift": true
+    },
+    {
+      "name": "@capacitor/cli",
+      "current": "7.6.7",
+      "wanted": "7.6.7",
+      "latest": "8.4.1",
+      "majorDrift": true
+    },
+    {
+      "name": "@capacitor/core",
+      "current": "7.6.7",
+      "wanted": "7.6.7",
+      "latest": "8.4.1",
+      "majorDrift": true
+    },
+    {
+      "name": "@capacitor/ios",
+      "current": "7.6.7",
+      "wanted": "7.6.7",
+      "latest": "8.4.1",
+      "majorDrift": true
+    },
+    {
+      "name": "@capacitor/push-notifications",
+      "current": "7.0.6",
+      "wanted": "7.0.6",
+      "latest": "8.1.1",
+      "majorDrift": true
+    },
+    {
+      "name": "@types/react",
+      "current": "18.3.31",
+      "wanted": "18.3.31",
+      "latest": "19.2.17",
+      "majorDrift": true
+    },
+    {
+      "name": "@types/react-dom",
+      "current": "18.3.7",
+      "wanted": "18.3.7",
+      "latest": "19.2.3",
+      "majorDrift": true
+    },
+    {
+      "name": "@vitejs/plugin-react",
+      "current": "4.7.0",
+      "wanted": "4.7.0",
+      "latest": "6.0.3",
+      "majorDrift": true
+    },
+    {
+      "name": "axios",
+      "current": "1.18.0",
+      "wanted": "1.18.1",
+      "latest": "1.18.1",
+      "majorDrift": false
+    },
+    {
+      "name": "firebase-admin",
+      "current": "13.10.0",
+      "wanted": "13.10.0",
+      "latest": "14.1.0",
+      "majorDrift": true
+    },
+    {
+      "name": "lucide-react",
+      "current": "0.468.0",
+      "wanted": "0.468.0",
+      "latest": "1.21.0",
+      "majorDrift": true
+    },
+    {
+      "name": "node-cron",
+      "current": "4.4.1",
+      "wanted": "4.5.0",
+      "latest": "4.5.0",
+      "majorDrift": false
+    },
+    {
+      "name": "playwright",
+      "current": "1.61.0",
+      "wanted": "1.61.1",
+      "latest": "1.61.1",
+      "majorDrift": false
+    },
+    {
+      "name": "react",
+      "current": "18.3.1",
+      "wanted": "18.3.1",
+      "latest": "19.2.7",
+      "majorDrift": true
+    },
+    {
+      "name": "react-dom",
+      "current": "18.3.1",
+      "wanted": "18.3.1",
+      "latest": "19.2.7",
+      "majorDrift": true
+    },
+    {
+      "name": "typescript",
+      "current": "5.9.3",
+      "wanted": "5.9.3",
+      "latest": "6.0.3",
+      "majorDrift": true
+    },
+    {
+      "name": "vite",
+      "current": "6.4.3",
+      "wanted": "6.4.3",
+      "latest": "8.1.0",
+      "majorDrift": true
+    }
+  ],
+  "unusedDependencies": [
+    "@capacitor-community/fcm",
+    "@capacitor/android",
+    "@capacitor/ios",
+    "@capacitor/push-notifications",
+    "@tensorflow/tfjs-converter",
+    "axios",
+    "jsqr",
+    "node-cron",
+    "tesseract.js",
+    "@capacitor/cli",
+    "@types/react",
+    "@types/react-dom",
+    "@vitejs/plugin-react",
+    "typescript"
+  ],
+  "duplicatePackages": [
+    {
+      "name": "semver",
+      "versions": [
+        "6.3.1",
+        "7.8.4"
+      ]
+    },
+    {
+      "name": "gcp-metadata",
+      "versions": [
+        "6.1.1",
+        "8.1.2"
+      ]
+    },
+    {
+      "name": "google-auth-library",
+      "versions": [
+        "9.15.1",
+        "10.6.2"
+      ]
+    },
+    {
+      "name": "google-logging-utils",
+      "versions": [
+        "0.0.2",
+        "1.1.3"
+      ]
+    },
+    {
+      "name": "@grpc/proto-loader",
+      "versions": [
+        "0.8.0",
+        "0.7.15"
+      ]
+    },
+    {
+      "name": "fs-extra",
+      "versions": [
+        "9.1.0",
+        "11.3.4"
+      ]
+    },
+    {
+      "name": "@types/offscreencanvas",
+      "versions": [
+        "2019.7.3",
+        "2019.3.0"
+      ]
+    },
+    {
+      "name": "long",
+      "versions": [
+        "4.0.0",
+        "5.3.2"
+      ]
+    },
+    {
+      "name": "node-fetch",
+      "versions": [
+        "2.6.13",
+        "3.3.2",
+        "2.7.0"
+      ]
+    },
+    {
+      "name": "form-data",
+      "versions": [
+        "2.5.6",
+        "4.0.6"
+      ]
+    },
+    {
+      "name": "mime-db",
+      "versions": [
+        "1.52.0",
+        "1.54.0"
+      ]
+    },
+    {
+      "name": "mime-types",
+      "versions": [
+        "2.1.35",
+        "3.0.2"
+      ]
+    },
+    {
+      "name": "agent-base",
+      "versions": [
+        "7.1.4",
+        "6.0.2"
+      ]
+    },
+    {
+      "name": "https-proxy-agent",
+      "versions": [
+        "5.0.1",
+        "7.0.6"
+      ]
+    },
+    {
+      "name": "debug",
+      "versions": [
+        "2.6.9",
+        "4.4.3"
+      ]
+    },
+    {
+      "name": "ms",
+      "versions": [
+        "2.0.0",
+        "2.1.3"
+      ]
+    },
+    {
+      "name": "negotiator",
+      "versions": [
+        "0.6.4",
+        "1.0.0"
+      ]
+    },
+    {
+      "name": "fsevents",
+      "versions": [
+        "2.3.3",
+        "2.3.2"
+      ]
+    },
+    {
+      "name": "gaxios",
+      "versions": [
+        "6.7.1",
+        "7.1.4"
+      ]
+    },
+    {
+      "name": "kleur",
+      "versions": [
+        "4.1.5",
+        "3.0.3"
+      ]
+    },
+    {
+      "name": "lru-cache",
+      "versions": [
+        "5.1.1",
+        "6.0.0",
+        "11.3.5"
+      ]
+    },
+    {
+      "name": "yallist",
+      "versions": [
+        "4.0.0",
+        "5.0.0",
+        "3.1.1"
+      ]
+    },
+    {
+      "name": "xmlbuilder",
+      "versions": [
+        "11.0.1",
+        "15.1.1"
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "major-upgrade-@capacitor-community/fcm",
+      "priority": "high",
+      "title": "Plan major upgrade for @capacitor-community/fcm",
+      "detail": "7.1.3 → latest 8.1.0"
+    },
+    {
+      "id": "major-upgrade-@capacitor/android",
+      "priority": "high",
+      "title": "Plan major upgrade for @capacitor/android",
+      "detail": "7.6.7 → latest 8.4.1"
+    },
+    {
+      "id": "major-upgrade-@capacitor/app",
+      "priority": "high",
+      "title": "Plan major upgrade for @capacitor/app",
+      "detail": "7.1.2 → latest 8.1.0"
+    },
+    {
+      "id": "major-upgrade-@capacitor/browser",
+      "priority": "high",
+      "title": "Plan major upgrade for @capacitor/browser",
+      "detail": "7.0.5 → latest 8.0.3"
+    },
+    {
+      "id": "major-upgrade-@capacitor/cli",
+      "priority": "high",
+      "title": "Plan major upgrade for @capacitor/cli",
+      "detail": "7.6.7 → latest 8.4.1"
+    },
+    {
+      "id": "major-upgrade-@capacitor/core",
+      "priority": "high",
+      "title": "Plan major upgrade for @capacitor/core",
+      "detail": "7.6.7 → latest 8.4.1"
+    },
+    {
+      "id": "prune-unused",
+      "priority": "medium",
+      "title": "Review unused dependencies",
+      "detail": "@capacitor-community/fcm, @capacitor/android, @capacitor/ios, @capacitor/push-notifications, @tensorflow/tfjs-converter, axios, jsqr, node-cron"
+    },
+    {
+      "id": "dedupe-packages",
+      "priority": "medium",
+      "title": "Deduplicate package versions",
+      "detail": "Align transitive dependencies via overrides or direct upgrades."
+    }
+  ],
+  "failures": [],
+  "auditCounts": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "source": "cli"
+}

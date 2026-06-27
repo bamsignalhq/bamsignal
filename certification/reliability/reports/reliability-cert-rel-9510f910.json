@@ -1,0 +1,193 @@
+{
+  "runId": "rel-9510f910",
+  "generatedAt": "2026-06-26T22:59:43.613Z",
+  "reliabilityScore": 100,
+  "passed": true,
+  "recoveryTimeMs": {
+    "average": 41,
+    "max": 345
+  },
+  "recoverySuccess": 10,
+  "recoveryFailures": [],
+  "scenarios": [
+    {
+      "id": "supabase-unavailable",
+      "label": "Supabase unavailable",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Signup and member auth fail closed when Supabase identity cannot be verified."
+    },
+    {
+      "id": "paystack-unavailable",
+      "label": "Paystack unavailable",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Paystack client returns 503 when unconfigured; webhooks reject unsigned payloads."
+    },
+    {
+      "id": "sendchamp-unavailable",
+      "label": "Sendchamp unavailable",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Sendchamp returns 503 not_configured when API key missing."
+    },
+    {
+      "id": "resend-unavailable",
+      "label": "Resend unavailable",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Purchase and concierge email skip gracefully when Resend is not configured."
+    },
+    {
+      "id": "storage-unavailable",
+      "label": "Storage unavailable",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Photo moderation degrades to pending_review when provider fails; upload-first preserved."
+    },
+    {
+      "id": "network-timeout",
+      "label": "Network timeout",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 12,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Recovered after 2 attempts (12ms)."
+    },
+    {
+      "id": "slow-api",
+      "label": "Slow API",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 57,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Slow upstream recovered in 57ms after retry."
+    },
+    {
+      "id": "database-reconnect",
+      "label": "Database reconnect",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Database pool errors alert and throttle falls back to in-memory store."
+    },
+    {
+      "id": "expired-jwt",
+      "label": "Expired JWT",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 345,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Expired or missing JWT returns 401 without trusting request body identity."
+    },
+    {
+      "id": "invalid-refresh-token",
+      "label": "Invalid refresh token",
+      "simulated": true,
+      "passed": true,
+      "recoveryTimeMs": 0,
+      "recoverySuccess": true,
+      "verification": {
+        "gracefulDegradation": true,
+        "retry": true,
+        "fallback": true,
+        "recovery": true,
+        "logging": true,
+        "alertGeneration": true
+      },
+      "detail": "Invalid refresh tokens reject session restore; Supabase client auto-refreshes when configured."
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rel_rec_maintain",
+      "title": "Maintain reliability baseline",
+      "detail": "Re-run npm run certify:reliability before each release candidate.",
+      "priority": "medium"
+    }
+  ],
+  "source": "cli"
+}

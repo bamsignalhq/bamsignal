@@ -8,6 +8,7 @@
  * 3. npm run build
  * 4. npx cap sync android
  * 5. npm run android:verify-assets
+ * 5b. npm run android:verify-upload-key
  * 6. gradle clean
  * 7. gradle bundleRelease
  * 8. gradle assembleRelease
@@ -15,10 +16,11 @@
  * Requires .env (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) and android/key.properties.
  */
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
+import { isUploadKeyResetPending, readSigningStatus } from "../shared/androidPlayUploadCert.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 process.chdir(root);
@@ -154,20 +156,42 @@ function run(step, cmd, args, extraEnv = {}, cwd = root) {
 }
 
 const current = readVersions();
-const nextVersionCode = current.versionCode + 1;
-const nextVersionName = bumpVersionName(current.versionName);
+const skipBump =
+  process.env.ANDROID_SKIP_VERSION_BUMP === "1" ||
+  process.env.ANDROID_RC_BUILD === "1" ||
+  Boolean(process.env.ANDROID_RC_VERSION && process.env.ANDROID_RC_CODE);
+
+const nextVersionCode = skipBump
+  ? process.env.ANDROID_RC_CODE
+    ? Number.parseInt(process.env.ANDROID_RC_CODE, 10)
+    : current.versionCode
+  : current.versionCode + 1;
+const nextVersionName = skipBump
+  ? process.env.ANDROID_RC_VERSION || current.versionName
+  : bumpVersionName(current.versionName);
 const buildTime = new Date().toISOString();
 
-console.log(
-  `[bamsignal] Bumping ${current.versionName} (${current.versionCode}) → ${nextVersionName} (${nextVersionCode})`
-);
+if (skipBump) {
+  console.log(
+    `[bamsignal] RC build — keeping version ${nextVersionName} (${nextVersionCode})`
+  );
+} else {
+  console.log(
+    `[bamsignal] Bumping ${current.versionName} (${current.versionCode}) → ${nextVersionName} (${nextVersionCode})`
+  );
+}
 
-const gradleContent = readFileSync(gradlePath, "utf8");
-writeFileSync(gradlePath, patchGradle(gradleContent, nextVersionCode, nextVersionName), "utf8");
+if (!skipBump || nextVersionCode !== current.versionCode || nextVersionName !== current.versionName) {
+  const gradleContent = readFileSync(gradlePath, "utf8");
+  writeFileSync(gradlePath, patchGradle(gradleContent, nextVersionCode, nextVersionName), "utf8");
+}
 
 writeBuildInfo(nextVersionName, nextVersionCode, buildTime);
 
+const cacheVersion = `bamsignal-v${nextVersionName}-${nextVersionCode}`;
+
 console.log("[bamsignal] Strict Android release flow starting…");
+run("0", "npm", ["run", "android:fix-signing"]);
 cleanWebAssets();
 
 const javaHome = resolveJavaHome();
@@ -176,6 +200,23 @@ console.log(`[bamsignal] Using JAVA_HOME=${javaHome}`);
 run("3", "npm", ["run", "build"]);
 run("4", "npx", ["cap", "sync", "android"]);
 run("5", "npm", ["run", "android:verify-assets"]);
+
+const signingStatus = readSigningStatus();
+const resetApproved = signingStatus?.uploadKeyResetApproved === true;
+const prepareResetUpload = process.env.ANDROID_PREPARE_RESET_UPLOAD === "1";
+const skipUploadVerify = resetApproved || (prepareResetUpload && isUploadKeyResetPending());
+
+if (skipUploadVerify) {
+  if (prepareResetUpload && !resetApproved) {
+    console.log(
+      "\n[bamsignal] ANDROID_PREPARE_RESET_UPLOAD=1 — building AAB for upload AFTER Google approves key reset.\n" +
+        "  Submit play-store/play-upload-certificate.pem in Play Console if not done yet.\n" +
+        "  When approved: npm run android:approve-upload-reset && upload play-store/releases/*.aab\n"
+    );
+  }
+} else {
+  run("5b", "npm", ["run", "android:verify-upload-key"]);
+}
 
 const androidDir = join(root, "android");
 const gradlew = process.platform === "win32" ? "gradlew.bat" : "./gradlew";
@@ -196,19 +237,51 @@ if (!existsSync(apk) || !existsSync(aab)) {
   process.exit(1);
 }
 
+if (!skipUploadVerify) {
+  run("9", "npm", ["run", "android:verify-upload-key", "--", aab]);
+} else if (resetApproved) {
+  run("9", "npm", ["run", "android:verify-upload-key", "--", aab]);
+} else {
+  console.log("[bamsignal] Skipped post-build upload-key verify (reset pending path)");
+}
+
 console.log("\nDONE");
 console.log(`versionName: ${nextVersionName}`);
 console.log(`versionCode: ${nextVersionCode}`);
 console.log(`AAB path: ${aab}`);
 console.log(`APK path: ${apk}`);
 
+function copyReleaseArtifact(src, dest) {
+  const temp = `${dest}.tmp-${process.pid}`;
+  copyFileSync(src, temp);
+  if (existsSync(dest)) {
+    try {
+      unlinkSync(dest);
+    } catch {
+      /* case-only rename on case-insensitive FS */
+    }
+  }
+  renameSync(temp, dest);
+}
+
 const playStoreDir = join(root, "play-store", "releases");
 mkdirSync(playStoreDir, { recursive: true });
-const playAab = join(playStoreDir, `bamsignal-v${nextVersionName}-${nextVersionCode}.aab`);
-const playApk = join(playStoreDir, `bamsignal-v${nextVersionName}-${nextVersionCode}.apk`);
-copyFileSync(aab, playAab);
-copyFileSync(apk, playApk);
+const releaseBase = `BamSignal-v${nextVersionName}-${nextVersionCode}`;
+const playAab = join(playStoreDir, `${releaseBase}.aab`);
+const playApk = join(playStoreDir, `${releaseBase}.apk`);
+copyReleaseArtifact(aab, playAab);
+copyReleaseArtifact(apk, playApk);
 console.log(`Play store copy: ${playAab}`);
+
+const releaseMeta = {
+  versionName: nextVersionName,
+  versionCode: nextVersionCode,
+  buildTime,
+  aabPath: playAab,
+  apkPath: playApk,
+  cacheVersion
+};
+writeFileSync(join(playStoreDir, `${releaseBase}.meta.json`), `${JSON.stringify(releaseMeta, null, 2)}\n`, "utf8");
 
 console.log("\nUpload the AAB to Google Play Console.");
 console.log(`Install on device: adb install -r "${apk}"\n`);

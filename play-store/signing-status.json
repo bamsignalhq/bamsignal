@@ -1,0 +1,14 @@
+{
+  "at": "2026-06-27T23:20:56.170Z",
+  "playExpectedSha1": "85:64:EC:E7:77:F3:57:9E:D7:B5:0F:21:98:78:B2:AB:70:1F:81:71",
+  "playRegisteredSha1": "85:64:EC:E7:77:F3:57:9E:D7:B5:0F:21:98:78:B2:AB:70:1F:81:71",
+  "localKeystoreSha1": "71:BA:6A:A2:70:98:94:CB:45:64:83:F2:36:3E:C9:D6:22:D6:6E:67",
+  "playKeystoreFound": false,
+  "action": "upload_key_reset_active",
+  "pemPath": "play-store/play-upload-certificate.pem",
+  "nextStep": "Run npm run android:release and upload the new AAB from play-store/releases/.",
+  "uploadKeyResetRequired": false,
+  "uploadKeyResetApproved": true,
+  "activeExpectedSha1": "71:BA:6A:A2:70:98:94:CB:45:64:83:F2:36:3E:C9:D6:22:D6:6E:67",
+  "localSha1": "71:BA:6A:A2:70:98:94:CB:45:64:83:F2:36:3E:C9:D6:22:D6:6E:67"
+}

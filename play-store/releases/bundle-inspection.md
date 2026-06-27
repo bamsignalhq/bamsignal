@@ -1,8 +1,8 @@
 # Bundle Inspection Report
 
 **AAB:** `BamSignal-v1.0.15-18.aab`  
-**Size:** 11.21 MB (11752137 bytes)  
-**SHA256:** `a9f50aef8c2e86eefbf501a069d8273214bb7eee266037e69b639220abcc9995`
+**Size:** 11.21 MB (11751805 bytes)  
+**SHA256:** `31618affedf6e4de374c29b70e8567e768dcfe27216dafcba23a33d9d5d20fab`
 
 | Check | Status | Detail |
 |-------|--------|--------|
@@ -32,29 +32,29 @@ Archive:  /Users/stanlex/Documents/bamsignal/play-store/releases/BamSignal-v1.0.
      2038  01-01-1981 01:01   base/assets/public/404.html
       910  01-01-1981 01:01   base/assets/public/app-store-badge.svg
      9704  01-01-1981 01:01   base/assets/public/apple-touch-icon.webp
-    22007  01-01-1981 01:01   base/assets/public/assets/AbuseProtectionCenterPage-D4eB33EE.js
-     6592  01-01-1981 01:01   base/assets/public/assets/AccessibilityCertificationDashboard-DvxKjya1.js
-   118728  01-01-1981 01:01   base/assets/public/assets/AdminConsoleRoot-BnKalSRQ.js
+    22007  01-01-1981 01:01   base/assets/public/assets/AbuseProtectionCenterPage-BmvvKTtg.js
+     6592  01-01-1981 01:01   base/assets/public/assets/AccessibilityCertificationDashboard-DkWrd120.js
+   118728  01-01-1981 01:01   base/assets/public/assets/AdminConsoleRoot-DCg4Zg26.js
    350619  01-01-1981 01:01   base/assets/public/assets/AdminConsoleRoot-Dl8puEbN.css
-    10220  01-01-1981 01:01   base/assets/public/assets/AdminPricingPage-DF4wUQ_8.js
-      671  01-01-1981 01:01   base/assets/public/assets/AdminToast-DbGjp4e8.js
-    16600  01-01-1981 01:01   base/assets/public/assets/ApiPlatformPage-DX4Uv2iL.js
-     7199  01-01-1981 01:01   base/assets/public/assets/AuditComplianceCenterPage-C9ElGXSh.js
-     2292  01-01-1981 01:01   base/assets/public/assets/BamSignalFoundationLandingPage-1a5pBpXJ.js
-     5603  01-01-1981 01:01   base/assets/public/assets/BamSignalFoundationPageShell-gJKicBuj.js
-     3340  01-01-1981 01:01   base/assets/public/assets/BamSignalFoundationProgramsPage-BdiLxRzG.js
-     1602  01-01-1981 01:01   base/assets/public/assets/BamSignalFoundationStoriesPage-CyS8CU3t.js
-     3095  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAcademyPage-CljhnUSM.js
-     2029  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAcademyProgramsPage-C-WARTM_.js
-    11976  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAfricanRelationshipArchivePage-akpn_txu.js
-     6487  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAfricanRelationshipCurriculumPage-BJ0DWRAY.js
-     2114  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAnnualInsightsPage-Bi_MEfqa.js
-     7954  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAnnualRelationshipReportsPage-nNfevhz7.js
-     5600  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBallroomPage-BDwAoXPr.js
-    10215  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalHonorsPage-BPutpTs3.js
-     6398  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalHousePage-BnnFsuzK.js
-    10322  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalMuseumPage-CIlrFfgv.js
-     5805  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalStudioPage-CPlz5o_J.js
-    11675  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalSummitPage-bqK945YM.js
+    10220  01-01-1981 01:01   base/assets/public/assets/AdminPricingPage--aTox61z.js
+      671  01-01-1981 01:01   base/assets/public/assets/AdminToast-CcP3dAHD.js
+    16600  01-01-1981 01:01   base/assets/public/assets/ApiPlatformPage-axEWOnSw.js
+     7199  01-01-1981 01:01   base/assets/public/assets/AuditComplianceCenterPage-6dGCa_I5.js
+     2292  01-01-1981 01:01   base/assets/public/assets/BamSignalFoundationLandingPage-BI6jysBT.js
+     5603  01-01-1981 01:01   base/assets/public/assets/BamSignalFoundationPageShell-BBJ-lDCC.js
+     3340  01-01-1981 01:01   base/assets/public/assets/BamSignalFoundationProgramsPage-DYZtH-3P.js
+     1602  01-01-1981 01:01   base/assets/public/assets/BamSignalFoundationStoriesPage-CX0kdHXR.js
+     3095  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAcademyPage-CO0E_UdK.js
+     2029  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAcademyProgramsPage-C1juLKyq.js
+    11976  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAfricanRelationshipArchivePage-BIqdZfRl.js
+     6487  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAfricanRelationshipCurriculumPage-OOpFRdqo.js
+     2114  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAnnualInsightsPage-CcaNu0iY.js
+     7954  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteAnnualRelationshipReportsPage-Cu_Nola6.js
+     5600  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBallroomPage-C31bZbsG.js
+    10215  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalHonorsPage-B8EGAneM.js
+     6398  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalHousePage-C_t0YAsj.js
+    10322  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalMuseumPage-DXEyszLn.js
+     5805  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalStudioPage-CmVTwGqO.js
+    11675  01-01-1981 01:01   base/assets/public/assets/BamSignalInstituteBamSignalSummitPage-CruIlF4K.js
 ...
 ```

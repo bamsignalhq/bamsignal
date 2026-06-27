@@ -1,5 +1,6 @@
 import React from "react";
 import { logRouteCrash } from "../utils/crashLog";
+import { logStackOverflowCrash, shouldUsePlainErrorFallback } from "../utils/debugRecursion";
 
 type RouteErrorBoundaryProps = {
   children: React.ReactNode;
@@ -19,15 +20,29 @@ export class RouteErrorBoundary extends React.Component<RouteErrorBoundaryProps,
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    logStackOverflowCrash({
+      component: this.props.name,
+      error,
+      componentStack: info.componentStack
+    });
     logRouteCrash(this.props.name, error, info.componentStack);
   }
 
-  private retry = () => {
-    this.setState({ error: null });
-  };
-
   render() {
     if (!this.state.error) return this.props.children;
+
+    if (shouldUsePlainErrorFallback()) {
+      const err = this.state.error;
+      return (
+        <pre
+          className="route-error-fallback__detail"
+          role="alert"
+          style={{ whiteSpace: "pre-wrap", padding: "1rem", fontSize: "12px" }}
+        >
+          {`[debug crash] ${this.props.name}\n${err.message}\n${err.stack ?? ""}`}
+        </pre>
+      );
+    }
 
     return (
       <section className="route-error-fallback" role="alert">
@@ -39,7 +54,11 @@ export class RouteErrorBoundary extends React.Component<RouteErrorBoundaryProps,
               {this.state.error.message}
             </p>
           ) : null}
-          <button type="button" className="btn-primary" onClick={this.retry}>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => this.setState({ error: null })}
+          >
             Try again
           </button>
         </div>

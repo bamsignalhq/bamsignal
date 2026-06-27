@@ -4,7 +4,6 @@ import { defaultSafetySettings } from "../constants/safety";
 import { normalizeIntents } from "../constants/intents";
 import {
   stateForCity,
-  citiesForState,
   normalizeEthnicities,
   normalizeFaith,
   normalizeFaithList,
@@ -23,13 +22,14 @@ import { normalizeMoreAboutMeInterests } from "./moreAboutMe";
 import { normalizeSearchCities } from "./searchLocationPrefs";
 import type { DatingProfile, MatchPreferences } from "../types";
 import { normalizeCoverFields } from "./coverPhoto";
+import { enterNormalize, exitNormalize } from "./debugRecursion";
 import { normalizeCompliance } from "./compliance";
 import {
   resolveLookingFor
 } from "./interestedInDefaults";
 import { readJson } from "./storage";
 import { samePhotoRef } from "./photoRefs";
-import { isPersistablePhotoUrl, isPersistableVoiceIntroUrl, safeArray, safeCoverPhoto, safeNumber, safePhotos, safeProfile, safeString, safeUserCoverPhoto } from "./safeProfile";
+import { isPersistablePhotoUrl, isPersistableVoiceIntroUrl, safeArray, safeNumber, safePhotos, safeProfile, safeString } from "./safeProfile";
 import { prunePhotoMeta, safePhotoMeta } from "./photoMeta";
 import { normalizeMainPhoto } from "./mainPhoto";
 import { isPreferNot } from "./preferNot";
@@ -111,6 +111,15 @@ export function profileNeedsOnboarding(
 export { isPreferNot } from "./preferNot";
 
 export function normalizeDatingProfile(raw: Partial<DatingProfile>): DatingProfile {
+  enterNormalize("normalizeDatingProfile");
+  try {
+    return normalizeDatingProfileInner(raw);
+  } finally {
+    exitNormalize("normalizeDatingProfile");
+  }
+}
+
+function normalizeDatingProfileInner(raw: Partial<DatingProfile>): DatingProfile {
   const base = defaultDatingProfile();
   const cleaned = safeProfile(raw);
   const city = safeString(cleaned.city) || base.city;

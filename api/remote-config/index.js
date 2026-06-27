@@ -10,6 +10,6 @@ export default async function handler(req, res) {
   }
 
   const snapshot = getCachedRemoteConfigSnapshot(REMOTE_CONFIG_SERVER_SEED);
-  res.setHeader("Cache-Control", "private, max-age=60");
+  res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
   res.status(200).json(snapshot);
 }

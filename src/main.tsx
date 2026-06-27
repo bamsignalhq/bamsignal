@@ -5,50 +5,24 @@ import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { PlansProvider } from "./context/PlansContext";
 import "./styles.css";
 import "./styles/experience.css";
-import "./styles/signals.css";
-import "./styles/signals-premium.css";
 import "./styles/visual-home.css";
 import "./styles/home-landing.css";
 import "./styles/auth.css";
 import "./styles/v6.css";
 import "./styles/safety.css";
 import "./styles/launch.css";
-import "./styles/discover-v2.css";
-import "./styles/discover-premium.css";
-import "./styles/discover-relationship.css";
-import "./styles/discover-grid.css";
 import "./styles/footer.css";
-import "./styles/dashboard.css";
-import "./styles/profile-premium.css";
-import "./styles/member-pages.css";
 import "./styles/theme-contrast.css";
 import "./styles/premium-visibility.css";
 import "./styles/compliance.css";
-import "./styles/fintech-ui-cleanup.css";
-import "./styles/member-fintech.css";
-import "./styles/voice-vibe.css";
-import "./styles/icebreakers.css";
-import "./styles/empty-chat.css";
-import "./styles/profile-strength.css";
-import "./styles/profile-photo-progress.css";
-import "./styles/build-profile-later.css";
-import "./styles/trusted-member.css";
-import "./styles/member-nudges.css";
-import "./styles/profile-fintech-overview.css";
-import "./styles/member-design-system.css";
-import "./styles/member-motion.css";
-import "./styles/relationship-intent.css";
-import "./styles/more-about-me.css";
-import "./styles/activity-highlights.css";
-import "./styles/common-ground.css";
-import "./styles/smart-conversation.css";
-import "./styles/saved-profiles.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";
 import { repairMemberCaches } from "./utils/repairMemberCaches";
 import { rememberSuccessfulRoute } from "./utils/crashRecovery";
 import { clearStaleBootFlags } from "./utils/bootFlags";
 import { isDebugRecursionEnabled, logStackOverflowCrash } from "./utils/debugRecursion";
+import { isPublicWebRoute } from "./constants/routes";
+import { isMemberAppPath } from "./constants/memberRoutes";
 
 clearStaleBootFlags();
 repairMemberCaches();
@@ -60,6 +34,11 @@ if (typeof window !== "undefined") {
   if (bootUrl.searchParams.has("recover")) {
     bootUrl.searchParams.delete("recover");
     window.history.replaceState(null, "", bootUrl.toString());
+  }
+
+  const pathname = bootUrl.pathname;
+  if (isMemberAppPath(pathname) && !isPublicWebRoute(pathname)) {
+    void import("./deferredMemberStyles");
   }
 }
 

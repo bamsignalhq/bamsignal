@@ -69,6 +69,7 @@ export function VisualHero({ onGetStarted }: VisualHeroProps) {
                 alt={slide.alt}
                 loading={index === 0 ? "eager" : "lazy"}
                 fetchPriority={index === 0 ? "high" : undefined}
+                progressive={false}
                 width={1086}
                 height={1448}
                 objectPosition={"objectPosition" in slide ? slide.objectPosition : undefined}
@@ -104,6 +105,7 @@ export function VisualHero({ onGetStarted }: VisualHeroProps) {
         alt={primarySlide.alt}
         loading="eager"
         fetchPriority="high"
+        progressive={false}
         width={1086}
         height={1448}
         objectPosition={"objectPosition" in primarySlide ? primarySlide.objectPosition : undefined}

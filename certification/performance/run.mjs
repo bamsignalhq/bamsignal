@@ -15,6 +15,7 @@ import { measureWebPerformance } from "./lib/measure-web.mjs";
 import { appendSnapshot, loadHistory } from "./lib/history.mjs";
 import { bundleGrowthPercent, evaluateMetrics } from "./lib/score.mjs";
 import { writePerformanceReports } from "./lib/report.mjs";
+import { resolvePerformanceCertTarget } from "./lib/server.mjs";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const outputDir = join(rootPath, config.outputDir);
@@ -22,7 +23,7 @@ const distDir = join(rootPath, config.distDir);
 
 async function main() {
   console.log("\n=== Performance Certification™ ===\n");
-  console.log(`Target: ${config.baseUrl}`);
+  console.log(`Target: ${config.baseUrl || `local (127.0.0.1:${config.port})`}`);
   console.log(`Run ID: ${config.runId}\n`);
 
   if (!existsSync(distDir)) {
@@ -32,9 +33,12 @@ async function main() {
 
   const bundle = measureBundle(distDir);
   const buildId = readBuildId(distDir);
-  const api = await measureApiLatency(config.baseUrl);
-  const database = await measureDatabaseResponse(config.baseUrl);
-  const web = await measureWebPerformance(config.baseUrl, { headless: config.headless });
+  const target = await resolvePerformanceCertTarget(config);
+  console.log(`Measuring: ${target.baseUrl}${target.local ? " (local)" : ""}\n`);
+
+  const api = await measureApiLatency(target.baseUrl);
+  const database = await measureDatabaseResponse(target.baseUrl);
+  const web = await measureWebPerformance(target.baseUrl, { headless: config.headless });
 
   const history = loadHistory(outputDir);
   const previousBundleKb =
@@ -59,7 +63,7 @@ async function main() {
   const snapshot = {
     runId: config.runId,
     generatedAt: new Date().toISOString(),
-    baseUrl: config.baseUrl,
+    baseUrl: target.baseUrl,
     buildId,
     performanceScore: scored.score,
     passed: scored.passed,

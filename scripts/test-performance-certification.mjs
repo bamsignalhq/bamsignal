@@ -34,8 +34,13 @@ const requiredFiles = [
   "src/utils/performanceCertificationStore.ts",
   "server/services/performanceCertification.js",
   "shared/performanceCertificationThresholds.mjs",
+  "shared/performanceCertificationConfig.mjs",
   "certification/performance/run.mjs",
   "certification/performance/lib/score.mjs",
+  "certification/performance/lib/server.mjs",
+  "certification/performance/lib/httpClient.mjs",
+  "api/diagnostics/db-ping.js",
+  "src/deferredMemberStyles.ts",
   "src/components/admin/performanceCertification/PerformanceCertificationDashboard.tsx"
 ];
 
@@ -57,9 +62,14 @@ assert(logicSource.includes("buildPerformanceCertificationReport"), "report buil
 assert(logicSource.includes("buildPerformanceRegressions"), "regression builder");
 
 const thresholdsSource = read("shared/performanceCertificationThresholds.mjs");
-assert(thresholdsSource.includes("warmStartupMs: 2000"), "startup threshold");
-assert(thresholdsSource.includes("lcpMs: 2500"), "lcp threshold");
-assert(thresholdsSource.includes("apiP95Ms: 500"), "api p95 threshold");
+assert(thresholdsSource.includes("warmStartupMs: 300"), "warm startup threshold");
+assert(thresholdsSource.includes("coldStartupMs: 1200"), "cold startup threshold");
+assert(thresholdsSource.includes("lcpMs: 1800"), "lcp threshold");
+assert(thresholdsSource.includes("ttfbMs: 300"), "ttfb threshold");
+assert(thresholdsSource.includes("apiP95Ms: 250"), "api p95 threshold");
+assert(thresholdsSource.includes("databaseResponseMs: 150"), "database threshold");
+assert(thresholdsSource.includes("/api/diagnostics/db-ping") === false, "api endpoints exclude db ping");
+assert(!thresholdsSource.includes('path: "/ready"'), "readiness probe excluded from api latency");
 
 const packageJson = JSON.parse(read("package.json"));
 assert(packageJson.scripts["certify:performance"], "certify:performance script");

@@ -1265,6 +1265,8 @@ export function App() {
   const enterMemberApp = useCallback(() => {
     if (openAppLoading) return;
 
+    void import("./deferredMemberStyles");
+
     setOpenAppLoading(true);
     clearMemberSessionReady();
     clearOpenAppPendingState();

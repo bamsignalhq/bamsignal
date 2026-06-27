@@ -9,6 +9,6 @@ export default async function handler(req, res) {
     return;
   }
 
-  res.setHeader("Cache-Control", "private, max-age=60");
+  res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
   res.status(200).json(buildFeatureFlagApiPayload(FEATURE_FLAG_PLATFORM_SERVER_SEED));
 }

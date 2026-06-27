@@ -13,7 +13,7 @@ export function evaluateMetrics(raw, context = {}) {
     { id: "bundle-size", label: "Bundle size", value: raw.bundleSizeKb, unit: "KB", passed: context.bundleGrowthPercent == null || context.bundleGrowthPercent <= PERFORMANCE_CERT_THRESHOLDS.bundleGrowthPercent, thresholdLabel: context.bundleGrowthPercent != null ? `growth ≤ ${PERFORMANCE_CERT_THRESHOLDS.bundleGrowthPercent}%` : "baseline", detail: context.bundleGrowthPercent != null ? `Δ ${context.bundleGrowthPercent.toFixed(1)}%` : undefined },
     { id: "memory", label: "Memory", value: raw.memoryMb, unit: "MB", passed: raw.memoryGrowthPercent <= PERFORMANCE_CERT_THRESHOLDS.memoryLeakGrowthPercent, thresholdLabel: `leak ≤ ${PERFORMANCE_CERT_THRESHOLDS.memoryLeakGrowthPercent}%`, detail: `growth ${raw.memoryGrowthPercent}%` },
     { id: "cpu", label: "CPU proxy", value: raw.cpuProxyMs, unit: "ms", passed: true, thresholdLabel: "informational" },
-    { id: "database-response", label: "Database response", value: raw.databaseResponseMs, unit: "ms", passed: raw.databaseResponseMs <= PERFORMANCE_CERT_THRESHOLDS.apiP95Ms, thresholdLabel: `≤ ${PERFORMANCE_CERT_THRESHOLDS.apiP95Ms}ms` },
+    { id: "database-response", label: "Database response", value: raw.databaseResponseMs, unit: "ms", passed: raw.databaseResponseMs <= PERFORMANCE_CERT_THRESHOLDS.databaseResponseMs, thresholdLabel: `≤ ${PERFORMANCE_CERT_THRESHOLDS.databaseResponseMs}ms` },
     { id: "largest-image", label: "Largest image", value: raw.largestImageKb, unit: "KB", passed: true, thresholdLabel: "informational", detail: raw.largestImageName },
     { id: "largest-js-chunk", label: "Largest JS chunk", value: raw.largestJsChunkKb, unit: "KB", passed: true, thresholdLabel: "informational", detail: raw.largestJsChunkName }
   ];

@@ -3,6 +3,7 @@
  * Start the process via server/production.js only (Docker, Coolify, npm start).
  */
 import express from "express";
+import compression from "compression";
 import fs from "node:fs";
 import path from "node:path";
 import { corsMiddleware } from "./cors.js";
@@ -37,6 +38,7 @@ import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivit
 import viewSecurityHandler from "../api/diagnostics/view-security.js";
 import functionSecurityHandler from "../api/diagnostics/function-security.js";
 import certificationDiagnosticsHandler from "../api/diagnostics/certification.js";
+import dbPingHandler from "../api/diagnostics/db-ping.js";
 import memberDataHandler from "../api/member/data.js";
 import memberPhotosHandler from "../api/member/photos.js";
 import memberVoiceHandler from "../api/member/voice.js";
@@ -67,6 +69,26 @@ export function createApp(options = {}) {
   const app = express();
   app.disable("x-powered-by");
 
+  app.get("/health", (_req, res) => {
+    res.status(200).json(livenessPayload());
+  });
+
+  app.head("/health", (_req, res) => {
+    res.status(200).end();
+  });
+
+  app.use(
+    compression({
+      threshold: 1024,
+      filter(req, res) {
+        if (req.path === "/health" || req.headers["x-no-compression"]) {
+          return false;
+        }
+        return compression.filter(req, res);
+      }
+    })
+  );
+
   app.use(securityHeadersMiddleware);
 
   app.use((req, res, next) => {
@@ -90,14 +112,6 @@ export function createApp(options = {}) {
       return;
     }
     express.json({ limit: "12mb" })(req, res, next);
-  });
-
-  app.get("/health", (_req, res) => {
-    res.status(200).json(livenessPayload());
-  });
-
-  app.head("/health", (_req, res) => {
-    res.status(200).end();
   });
 
   app.get("/ready", async (req, res) => {
@@ -163,6 +177,8 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/diagnostics/function-security", functionSecurityHandler);
   mountHandler(app, "get", "/api/diagnostics/certification", certificationDiagnosticsHandler);
   mountHandler(app, "post", "/api/diagnostics/certification", certificationDiagnosticsHandler);
+  mountHandler(app, "head", "/api/diagnostics/db-ping", dbPingHandler);
+  mountHandler(app, "get", "/api/diagnostics/db-ping", dbPingHandler);
   mountHandler(app, "post", "/api/admin/city-home", adminCityHomeHandler);
   mountHandler(app, "post", "/api/admin/members", adminMembersHandler);
   mountHandler(app, "post", "/api/admin/consent", adminConsentHandler);
@@ -236,9 +252,10 @@ export function createApp(options = {}) {
       if (req.method !== "GET" && req.method !== "HEAD") return next();
       if (req.path.startsWith("/api/") || req.path.startsWith("/webhooks/")) return next();
       if (req.path === "/" || req.path.endsWith(".html")) {
-        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Cache-Control", "no-cache, must-revalidate");
       }
       if (spaIndexHtml) {
+        res.vary("Accept-Encoding");
         res.type("html").send(spaIndexHtml);
         return;
       }

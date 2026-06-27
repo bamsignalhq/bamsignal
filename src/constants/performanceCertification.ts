@@ -38,10 +38,13 @@ export const PERFORMANCE_CERTIFICATION_COMPARE_WINDOWS: Array<{
 ];
 
 export const PERFORMANCE_CERTIFICATION_FAIL_RULES = [
-  "Startup > 2 seconds",
-  "LCP > 2.5 seconds",
+  "Warm startup > 300ms",
+  "Cold startup > 1.2 seconds",
+  "LCP > 1.8 seconds",
   "CLS > 0.1",
-  "API P95 > 500ms",
+  "TTFB > 300ms",
+  "API P95 > 250ms",
+  "Database response > 150ms",
   "Bundle grows > 10% vs previous release",
   "Memory leak detected (>15% heap growth across repeat navigation)"
 ] as const;

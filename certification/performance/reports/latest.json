@@ -1,0 +1,139 @@
+{
+  "runId": "perf-mqvm2hoo",
+  "generatedAt": "2026-06-27T00:17:55.411Z",
+  "baseUrl": "http://127.0.0.1:3099",
+  "buildId": "bamsignal-v1.0.15-18-mqvm03by",
+  "performanceScore": 100,
+  "passed": true,
+  "metrics": [
+    {
+      "id": "warm-startup",
+      "label": "Warm startup",
+      "value": 107,
+      "unit": "ms",
+      "passed": true,
+      "thresholdLabel": "≤ 300ms"
+    },
+    {
+      "id": "cold-startup",
+      "label": "Cold startup",
+      "value": 143,
+      "unit": "ms",
+      "passed": true,
+      "thresholdLabel": "≤ 1200ms"
+    },
+    {
+      "id": "lcp",
+      "label": "LCP",
+      "value": 352,
+      "unit": "ms",
+      "passed": true,
+      "thresholdLabel": "≤ 1800ms"
+    },
+    {
+      "id": "cls",
+      "label": "CLS",
+      "value": 0,
+      "unit": "",
+      "passed": true,
+      "thresholdLabel": "≤ 0.1"
+    },
+    {
+      "id": "fid",
+      "label": "FID",
+      "value": 0,
+      "unit": "ms",
+      "passed": true,
+      "thresholdLabel": "≤ 100ms"
+    },
+    {
+      "id": "ttfb",
+      "label": "TTFB",
+      "value": 14,
+      "unit": "ms",
+      "passed": true,
+      "thresholdLabel": "≤ 300ms"
+    },
+    {
+      "id": "api-latency",
+      "label": "API latency (P95)",
+      "value": 13,
+      "unit": "ms",
+      "passed": true,
+      "thresholdLabel": "P95 ≤ 250ms"
+    },
+    {
+      "id": "slowest-endpoint",
+      "label": "Slowest endpoint",
+      "value": 13,
+      "unit": "ms",
+      "passed": true,
+      "thresholdLabel": "≤ 250ms",
+      "detail": "GET /"
+    },
+    {
+      "id": "bundle-size",
+      "label": "Bundle size",
+      "value": 5026,
+      "unit": "KB",
+      "passed": true,
+      "thresholdLabel": "growth ≤ 10%",
+      "detail": "Δ 0.0%"
+    },
+    {
+      "id": "memory",
+      "label": "Memory",
+      "value": 10,
+      "unit": "MB",
+      "passed": true,
+      "thresholdLabel": "leak ≤ 15%",
+      "detail": "growth 0%"
+    },
+    {
+      "id": "cpu",
+      "label": "CPU proxy",
+      "value": 0,
+      "unit": "ms",
+      "passed": true,
+      "thresholdLabel": "informational"
+    },
+    {
+      "id": "database-response",
+      "label": "Database response",
+      "value": 4,
+      "unit": "ms",
+      "passed": true,
+      "thresholdLabel": "≤ 150ms"
+    },
+    {
+      "id": "largest-image",
+      "label": "Largest image",
+      "value": 0,
+      "unit": "KB",
+      "passed": true,
+      "thresholdLabel": "informational",
+      "detail": ""
+    },
+    {
+      "id": "largest-js-chunk",
+      "label": "Largest JS chunk",
+      "value": 1321,
+      "unit": "KB",
+      "passed": true,
+      "thresholdLabel": "informational",
+      "detail": "heic2any-CzAtys5V.js"
+    }
+  ],
+  "trend": "regressing",
+  "regressions": [],
+  "recommendations": [],
+  "failures": [],
+  "comparisons": [
+    {
+      "windowId": "previous-release",
+      "windowLabel": "Previous release",
+      "deltaPercent": 75.4,
+      "score": 57
+    }
+  ]
+}

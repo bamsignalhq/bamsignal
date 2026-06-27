@@ -1,0 +1,710 @@
+{
+  "runId": "rc-0cd5a925",
+  "rcLabel": "RC1",
+  "rcNumber": "RC1-1.0.15-18-rc-0cd5a925",
+  "certificationTimestamp": "2026-06-26T23:00:55.802Z",
+  "gitCommit": "56ebd608cf7a75094ba30bef94b5e07ea811334f",
+  "gitCommitShort": "56ebd608cf7a",
+  "buildVersion": "1.0.15",
+  "buildCode": "18",
+  "cacheVersion": "bamsignal-v1.0.15-18-mqvi9340",
+  "environment": "production",
+  "overallScore": 71,
+  "releaseDecision": "no-go",
+  "releaseDecisionLabel": "NO GO",
+  "releaseDecisionDetail": "Critical blockers prevent safe institutional launch. Resolve all critical issues before go-live.",
+  "passed": false,
+  "passedChecks": 19,
+  "subsystemScores": [
+    {
+      "id": "qa",
+      "label": "QA",
+      "score": 67,
+      "status": "warning",
+      "summary": "1 gap(s) in QA.",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "security",
+      "label": "Security",
+      "score": 88,
+      "status": "critical",
+      "summary": "Security failed (88%).",
+      "source": "cert-report",
+      "passed": false
+    },
+    {
+      "id": "penetration",
+      "label": "Penetration",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Penetration passed (100%).",
+      "source": "cert-report",
+      "passed": true
+    },
+    {
+      "id": "performance",
+      "label": "Performance",
+      "score": 0,
+      "status": "warning",
+      "summary": "No performance snapshot — run certify:performance.",
+      "source": "pending",
+      "passed": false
+    },
+    {
+      "id": "platform-load",
+      "label": "Platform Load",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Platform Load passed (100%).",
+      "source": "cert-report",
+      "passed": true
+    },
+    {
+      "id": "reliability",
+      "label": "Reliability",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Reliability passed (100%).",
+      "source": "cert-report",
+      "passed": true
+    },
+    {
+      "id": "chaos",
+      "label": "Chaos Engineering",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Chaos Engineering passed (100%).",
+      "source": "cert-report",
+      "passed": true
+    },
+    {
+      "id": "data-integrity",
+      "label": "Data Integrity",
+      "score": 0,
+      "status": "warning",
+      "summary": "No data integrity snapshot — run certify:data-integrity.",
+      "source": "pending",
+      "passed": false
+    },
+    {
+      "id": "database",
+      "label": "Database",
+      "score": 89,
+      "status": "healthy",
+      "summary": "Database passed (89%).",
+      "source": "cert-report",
+      "passed": true
+    },
+    {
+      "id": "dependencies",
+      "label": "Dependencies",
+      "score": 80,
+      "status": "healthy",
+      "summary": "Dependencies passed (80%).",
+      "source": "cert-report",
+      "passed": true
+    },
+    {
+      "id": "operational-drift",
+      "label": "Operational Drift",
+      "score": 0,
+      "status": "warning",
+      "summary": "No operational drift snapshot — run certify:drift.",
+      "source": "pending",
+      "passed": false
+    },
+    {
+      "id": "accessibility",
+      "label": "Accessibility",
+      "score": 97,
+      "status": "healthy",
+      "summary": "Accessibility passed (97%).",
+      "source": "cert-report",
+      "passed": true
+    },
+    {
+      "id": "production-smoke",
+      "label": "Production Smoke",
+      "score": 50,
+      "status": "critical",
+      "summary": "Production Smoke failed (50%).",
+      "source": "cert-report",
+      "passed": false
+    },
+    {
+      "id": "observability",
+      "label": "Observability",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Observability controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "platform-health",
+      "label": "Platform Health",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Platform Health controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "notifications",
+      "label": "Notifications",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Notifications controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "payments",
+      "label": "Payments",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Payments controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "otp",
+      "label": "OTP",
+      "score": 100,
+      "status": "healthy",
+      "summary": "OTP controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "feature-flags",
+      "label": "Feature Flags",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Feature Flags controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "remote-config",
+      "label": "Remote Config",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Remote Config controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "backups",
+      "label": "Backups",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Backups controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "release-management",
+      "label": "Release Management",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Release Management controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "launch-readiness",
+      "label": "Launch Readiness",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Launch Readiness controls verified (100%).",
+      "source": "static",
+      "passed": true
+    },
+    {
+      "id": "founder-certification",
+      "label": "Founder Certification",
+      "score": 96,
+      "status": "critical",
+      "summary": "Founder Certification failed (96%).",
+      "source": "cert-report",
+      "passed": false
+    },
+    {
+      "id": "founder-experience",
+      "label": "Founder Experience",
+      "score": 0,
+      "status": "warning",
+      "summary": "No founder experience snapshot — run founder-experience.",
+      "source": "pending",
+      "passed": false
+    },
+    {
+      "id": "founder-acceptance",
+      "label": "Founder Acceptance (FAT)",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Founder Acceptance (FAT) controls verified (100%).",
+      "source": "static",
+      "passed": true
+    }
+  ],
+  "domainPillars": [
+    {
+      "id": "architecture",
+      "label": "Architecture",
+      "score": 42,
+      "passed": false,
+      "status": "critical",
+      "subsystemIds": [
+        "dependencies",
+        "database",
+        "data-integrity",
+        "operational-drift"
+      ],
+      "subsystems": [
+        {
+          "id": "data-integrity",
+          "label": "Data Integrity",
+          "score": 0,
+          "passed": false
+        },
+        {
+          "id": "database",
+          "label": "Database",
+          "score": 89,
+          "passed": true
+        },
+        {
+          "id": "dependencies",
+          "label": "Dependencies",
+          "score": 80,
+          "passed": true
+        },
+        {
+          "id": "operational-drift",
+          "label": "Operational Drift",
+          "score": 0,
+          "passed": false
+        }
+      ],
+      "summary": "2 subsystem(s) open in Architecture."
+    },
+    {
+      "id": "security",
+      "label": "Security",
+      "score": 94,
+      "passed": false,
+      "status": "critical",
+      "subsystemIds": [
+        "security",
+        "penetration"
+      ],
+      "subsystems": [
+        {
+          "id": "security",
+          "label": "Security",
+          "score": 88,
+          "passed": false
+        },
+        {
+          "id": "penetration",
+          "label": "Penetration",
+          "score": 100,
+          "passed": true
+        }
+      ],
+      "summary": "1 subsystem(s) open in Security."
+    },
+    {
+      "id": "performance",
+      "label": "Performance",
+      "score": 50,
+      "passed": false,
+      "status": "critical",
+      "subsystemIds": [
+        "performance",
+        "platform-load"
+      ],
+      "subsystems": [
+        {
+          "id": "performance",
+          "label": "Performance",
+          "score": 0,
+          "passed": false
+        },
+        {
+          "id": "platform-load",
+          "label": "Platform Load",
+          "score": 100,
+          "passed": true
+        }
+      ],
+      "summary": "1 subsystem(s) open in Performance."
+    },
+    {
+      "id": "reliability",
+      "label": "Reliability",
+      "score": 100,
+      "passed": true,
+      "status": "healthy",
+      "subsystemIds": [
+        "reliability",
+        "chaos"
+      ],
+      "subsystems": [
+        {
+          "id": "reliability",
+          "label": "Reliability",
+          "score": 100,
+          "passed": true
+        },
+        {
+          "id": "chaos",
+          "label": "Chaos Engineering",
+          "score": 100,
+          "passed": true
+        }
+      ],
+      "summary": "Reliability domain ready (100%)."
+    },
+    {
+      "id": "operations",
+      "label": "Operations",
+      "score": 88,
+      "passed": false,
+      "status": "critical",
+      "subsystemIds": [
+        "observability",
+        "platform-health",
+        "notifications",
+        "production-smoke"
+      ],
+      "subsystems": [
+        {
+          "id": "production-smoke",
+          "label": "Production Smoke",
+          "score": 50,
+          "passed": false
+        },
+        {
+          "id": "observability",
+          "label": "Observability",
+          "score": 100,
+          "passed": true
+        },
+        {
+          "id": "platform-health",
+          "label": "Platform Health",
+          "score": 100,
+          "passed": true
+        },
+        {
+          "id": "notifications",
+          "label": "Notifications",
+          "score": 100,
+          "passed": true
+        }
+      ],
+      "summary": "1 subsystem(s) open in Operations."
+    },
+    {
+      "id": "governance",
+      "label": "Governance",
+      "score": 100,
+      "passed": true,
+      "status": "healthy",
+      "subsystemIds": [
+        "backups",
+        "release-management",
+        "launch-readiness"
+      ],
+      "subsystems": [
+        {
+          "id": "backups",
+          "label": "Backups",
+          "score": 100,
+          "passed": true
+        },
+        {
+          "id": "release-management",
+          "label": "Release Management",
+          "score": 100,
+          "passed": true
+        },
+        {
+          "id": "launch-readiness",
+          "label": "Launch Readiness",
+          "score": 100,
+          "passed": true
+        }
+      ],
+      "summary": "Governance domain ready (100%)."
+    },
+    {
+      "id": "infrastructure",
+      "label": "Infrastructure",
+      "score": 100,
+      "passed": true,
+      "status": "healthy",
+      "subsystemIds": [
+        "feature-flags",
+        "remote-config",
+        "payments",
+        "otp"
+      ],
+      "subsystems": [
+        {
+          "id": "payments",
+          "label": "Payments",
+          "score": 100,
+          "passed": true
+        },
+        {
+          "id": "otp",
+          "label": "OTP",
+          "score": 100,
+          "passed": true
+        },
+        {
+          "id": "feature-flags",
+          "label": "Feature Flags",
+          "score": 100,
+          "passed": true
+        },
+        {
+          "id": "remote-config",
+          "label": "Remote Config",
+          "score": 100,
+          "passed": true
+        }
+      ],
+      "summary": "Infrastructure domain ready (100%)."
+    },
+    {
+      "id": "qa",
+      "label": "QA",
+      "score": 82,
+      "passed": true,
+      "status": "healthy",
+      "subsystemIds": [
+        "qa",
+        "accessibility"
+      ],
+      "subsystems": [
+        {
+          "id": "qa",
+          "label": "QA",
+          "score": 67,
+          "passed": true
+        },
+        {
+          "id": "accessibility",
+          "label": "Accessibility",
+          "score": 97,
+          "passed": true
+        }
+      ],
+      "summary": "QA domain ready (82%)."
+    },
+    {
+      "id": "founder-acceptance",
+      "label": "Founder Acceptance",
+      "score": 65,
+      "passed": false,
+      "status": "critical",
+      "subsystemIds": [
+        "founder-certification",
+        "founder-experience",
+        "founder-acceptance"
+      ],
+      "subsystems": [
+        {
+          "id": "founder-certification",
+          "label": "Founder Certification",
+          "score": 96,
+          "passed": false
+        },
+        {
+          "id": "founder-experience",
+          "label": "Founder Experience",
+          "score": 0,
+          "passed": false
+        },
+        {
+          "id": "founder-acceptance",
+          "label": "Founder Acceptance (FAT)",
+          "score": 100,
+          "passed": true
+        }
+      ],
+      "summary": "2 subsystem(s) open in Founder Acceptance."
+    }
+  ],
+  "signOffs": [
+    {
+      "role": "Chief Engineer",
+      "status": "NOT APPROVED",
+      "signedAt": "2026-06-26T23:00:55.802Z"
+    },
+    {
+      "role": "DevOps",
+      "status": "NOT APPROVED",
+      "signedAt": "2026-06-26T23:00:55.802Z"
+    },
+    {
+      "role": "QA",
+      "status": "NOT APPROVED",
+      "signedAt": "2026-06-26T23:00:55.802Z"
+    },
+    {
+      "role": "Founder",
+      "status": "NOT APPROVED",
+      "signedAt": "2026-06-26T23:00:55.802Z"
+    }
+  ],
+  "criticalIssues": [
+    {
+      "id": "security_failed",
+      "subsystemId": "security",
+      "title": "Security certification failed",
+      "detail": "Latest certify:security report did not pass.",
+      "severity": "critical"
+    },
+    {
+      "id": "production-smoke_failed",
+      "subsystemId": "production-smoke",
+      "title": "Production Smoke certification failed",
+      "detail": "Latest smoke:production report did not pass.",
+      "severity": "critical"
+    },
+    {
+      "id": "founder-certification_failed",
+      "subsystemId": "founder-certification",
+      "title": "Founder Certification certification failed",
+      "detail": "Latest certify:founder report did not pass.",
+      "severity": "critical"
+    }
+  ],
+  "warnings": [
+    {
+      "id": "qa_0",
+      "subsystemId": "qa",
+      "title": "E2E certification snapshot",
+      "detail": "Run npm run certify:e2e for full QA gate.",
+      "severity": "warning"
+    },
+    {
+      "id": "performance_pending",
+      "subsystemId": "performance",
+      "title": "Performance certification pending",
+      "detail": "Run certify:performance before RC certification.",
+      "severity": "warning"
+    },
+    {
+      "id": "data-integrity_pending",
+      "subsystemId": "data-integrity",
+      "title": "Data Integrity certification pending",
+      "detail": "Run certify:data-integrity before RC certification.",
+      "severity": "warning"
+    },
+    {
+      "id": "operational-drift_pending",
+      "subsystemId": "operational-drift",
+      "title": "Operational Drift certification pending",
+      "detail": "Run certify:drift before RC certification.",
+      "severity": "warning"
+    },
+    {
+      "id": "founder-experience_pending",
+      "subsystemId": "founder-experience",
+      "title": "Founder Experience certification pending",
+      "detail": "Run founder-experience before RC certification.",
+      "severity": "warning"
+    }
+  ],
+  "blockers": [
+    {
+      "id": "blocker-security",
+      "subsystemId": "security",
+      "title": "Security certification failed",
+      "detail": "Security failed (88%).",
+      "severity": "critical"
+    },
+    {
+      "id": "blocker-performance",
+      "subsystemId": "performance",
+      "title": "Performance certification failed",
+      "detail": "No performance snapshot — run certify:performance.",
+      "severity": "high"
+    },
+    {
+      "id": "blocker-data-integrity",
+      "subsystemId": "data-integrity",
+      "title": "Data Integrity certification failed",
+      "detail": "No data integrity snapshot — run certify:data-integrity.",
+      "severity": "high"
+    },
+    {
+      "id": "blocker-operational-drift",
+      "subsystemId": "operational-drift",
+      "title": "Operational Drift certification failed",
+      "detail": "No operational drift snapshot — run certify:drift.",
+      "severity": "high"
+    },
+    {
+      "id": "blocker-production-smoke",
+      "subsystemId": "production-smoke",
+      "title": "Production Smoke certification failed",
+      "detail": "Production Smoke failed (50%).",
+      "severity": "critical"
+    },
+    {
+      "id": "blocker-founder-certification",
+      "subsystemId": "founder-certification",
+      "title": "Founder Certification certification failed",
+      "detail": "Founder Certification failed (96%).",
+      "severity": "critical"
+    },
+    {
+      "id": "blocker-founder-experience",
+      "subsystemId": "founder-experience",
+      "title": "Founder Experience certification failed",
+      "detail": "No founder experience snapshot — run founder-experience.",
+      "severity": "high"
+    },
+    {
+      "id": "security_failed",
+      "subsystemId": "security",
+      "title": "Security certification failed",
+      "detail": "Latest certify:security report did not pass.",
+      "severity": "critical"
+    },
+    {
+      "id": "production-smoke_failed",
+      "subsystemId": "production-smoke",
+      "title": "Production Smoke certification failed",
+      "detail": "Latest smoke:production report did not pass.",
+      "severity": "critical"
+    },
+    {
+      "id": "founder-certification_failed",
+      "subsystemId": "founder-certification",
+      "title": "Founder Certification certification failed",
+      "detail": "Latest certify:founder report did not pass.",
+      "severity": "critical"
+    }
+  ],
+  "summaryLine": "NO GO · 71% · 19/26 passed · 10 blockers",
+  "source": "cli",
+  "exports": {
+    "json": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.json",
+    "jsonStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-0cd5a925.json",
+    "markdown": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.md",
+    "markdownStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-0cd5a925.md",
+    "pdf": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.pdf.html",
+    "pdfStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-0cd5a925.pdf.html"
+  }
+}

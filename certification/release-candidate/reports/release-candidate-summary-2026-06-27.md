@@ -1,7 +1,7 @@
 # Release Candidate Summary
 
-**Generated:** 2026-06-27T11:38:00Z  
-**Pipeline status:** STOPPED at step 12 (`smoke:production` FAIL)  
+**Generated:** 2026-06-27T23:02:00Z  
+**Pipeline status:** COMPLETE (steps 1–14 run; production smoke still FAIL)  
 **Verdict:** **NO GO**
 
 ---
@@ -38,8 +38,10 @@ Production is **one build behind** local HEAD (`1.0.14-17` vs `1.0.15-18`).
 | 10 | `certify:platform-load` | PASS | 100% |
 | 11 | `certify:production-penetration` | PASS | 100% |
 | 12 | `smoke:production` | **FAIL** | 50% |
-| 13 | `certify:founder` | **SKIPPED** | — |
-| 14 | `certify:rc` | **SKIPPED** | — |
+| 13 | `certify:founder` | PASS | 100% (GO) |
+| 14 | `certify:rc` | **FAIL** | 85% → 82% (NO GO) |
+
+**Also run:** `certify:drift` — FAIL (0%, local secrets unset; expected in dev workspace)
 
 ---
 
@@ -57,6 +59,10 @@ Production is **one build behind** local HEAD (`1.0.14-17` vs `1.0.15-18`).
 | Platform load | 100% | PASS | local (1000 journeys) |
 | Production penetration | 100% | PASS | local |
 | **Production smoke** | **50%** | **FAIL** | **https://bamsignal.com** |
+| Founder launch | 100% | PASS (GO) | local cert aggregate |
+| **Release Candidate (RC1)** | **82%** | **NO GO** | 23/26 checks, 5 blockers |
+
+**RC1:** `RC1-1.0.15-18-rc-0e652a26` · Report: `certification/release-candidate/reports/release-candidate-report.md`
 
 ---
 
@@ -81,6 +87,16 @@ Production is **one build behind** local HEAD (`1.0.14-17` vs `1.0.15-18`).
 ### 3. Notifications config unavailable (HIGH — downstream of #2)
 
 - Remote config fields `notifications.retry_interval_seconds` and `notifications.templates` cannot be verified because `/api/remote-config` returns 404.
+
+### 4. Operational drift (local cert — BLOCKED)
+
+- `certify:drift` reports 14 missing production/staging secrets in this workspace (expected without Coolify runtime env).
+- Does not indicate production misconfiguration — re-run on staging with filled `.env.staging` for live drift gate.
+
+### 5. Founder Experience snapshot missing (RC blocker)
+
+- RC expects `certify:founder-experience` / founder-experience reports — no runner in current `package.json` (legacy reports removed).
+- `certify:founder` passed at 100% GO separately.
 
 ---
 
@@ -111,7 +127,8 @@ Production is **one build behind** local HEAD (`1.0.14-17` vs `1.0.15-18`).
 2. Trigger Coolify redeploy for bamsignal.com.
 3. Confirm production build meta updates to `bamsignal-v1.0.15-18-*` or newer.
 4. Re-run `npm run smoke:production` — expect 200 on both API routes.
-5. Resume pipeline at steps 13–14 (`certify:founder`, `certify:rc`).
+5. Re-run `npm run certify:rc` — target NO GO → GO WITH CONDITIONS or GO.
+6. Optional: run `certify:drift` against staging with secrets loaded.
 
 ---
 

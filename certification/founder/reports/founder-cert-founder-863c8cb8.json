@@ -1,0 +1,177 @@
+{
+  "runId": "founder-863c8cb8",
+  "generatedAt": "2026-06-27T23:02:40.999Z",
+  "releaseCandidate": "bamsignal-v1.0.15-18-mqw9cpp8",
+  "overallScore": 100,
+  "releaseDecision": "go",
+  "releaseDecisionLabel": "GO",
+  "releaseDecisionDetail": "All audit domains meet readiness thresholds. Automatic recommendation: GO for institutional launch.",
+  "passed": true,
+  "subsystemScores": [
+    {
+      "id": "qa",
+      "label": "QA",
+      "score": 100,
+      "status": "healthy",
+      "summary": "QA controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "security",
+      "label": "Security",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Security certification passed.",
+      "source": "cert-report"
+    },
+    {
+      "id": "performance",
+      "label": "Performance",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Performance certification passed.",
+      "source": "cert-report"
+    },
+    {
+      "id": "reliability",
+      "label": "Reliability",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Reliability certification passed.",
+      "source": "cert-report"
+    },
+    {
+      "id": "observability",
+      "label": "Observability",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Observability controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "platform-health",
+      "label": "Platform Health",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Platform Health controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "payments",
+      "label": "Payments",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Payments controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "otp",
+      "label": "OTP",
+      "score": 100,
+      "status": "healthy",
+      "summary": "OTP controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "messaging",
+      "label": "Messaging",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Messaging controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "notifications",
+      "label": "Notifications",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Notifications controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "concierge",
+      "label": "Concierge",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Concierge controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "abuse-protection",
+      "label": "Abuse Protection",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Abuse Protection controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "readiness",
+      "label": "Readiness",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Readiness controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "release",
+      "label": "Release",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Release controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "backup",
+      "label": "Backup",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Backup controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "governance",
+      "label": "Governance",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Governance controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "api",
+      "label": "API",
+      "score": 100,
+      "status": "healthy",
+      "summary": "API controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "feature-flags",
+      "label": "Feature Flags",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Feature Flags controls verified (100%).",
+      "source": "static"
+    },
+    {
+      "id": "remote-config",
+      "label": "Remote Config",
+      "score": 100,
+      "status": "healthy",
+      "summary": "Remote Config controls verified (100%).",
+      "source": "static"
+    }
+  ],
+  "criticalIssues": [],
+  "warnings": [],
+  "resolvedSinceLastRelease": [
+    "security_failed"
+  ],
+  "summaryLine": "GO · 100% · 0 critical · 0 warnings",
+  "source": "cli",
+  "exports": {
+    "json": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-863c8cb8.json",
+    "markdown": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-863c8cb8.md",
+    "founderPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-863c8cb8-founder.pdf.html",
+    "boardPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-863c8cb8-board.pdf.html"
+  }
+}

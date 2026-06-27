@@ -54,10 +54,13 @@ FROM node:20-slim AS runner
 
 WORKDIR /app
 
+ARG BAMSIGNAL_GIT_COMMIT=unknown
+
 # Runtime secrets are injected by Coolify at container start (process.env), not at build.
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
+ENV BAMSIGNAL_GIT_COMMIT=$BAMSIGNAL_GIT_COMMIT
 
 COPY package.json package-lock.json ./
 COPY scripts/install-githooks.mjs ./scripts/install-githooks.mjs

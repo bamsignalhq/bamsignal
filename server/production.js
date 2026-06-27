@@ -14,6 +14,7 @@ import { createApp } from "./app.js";
 import { readinessPayload } from "./services/readiness.js";
 import { logBackgroundTaskFailure, logReadyCheckFailed } from "./services/observability.js";
 import { runStartupMigrations } from "./startupMigrations.js";
+import { buildServerRouteInventory } from "../shared/serverRouteInventory.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "..", "dist");
@@ -86,9 +87,19 @@ async function start() {
   }
 
   const app = createApp({ distDir });
+  const routeInventory = buildServerRouteInventory();
+  console.log(
+    `[bamsignal] Route inventory: ${routeInventory.routeCount} registered; critical config APIs=${routeInventory.allCriticalOk ? "ok" : "MISSING"}`
+  );
+  if (!routeInventory.allCriticalOk) {
+    console.error("[bamsignal] FATAL: /api/feature-flags or /api/remote-config not mounted in server/app.js");
+    process.exit(1);
+  }
 
   const server = app.listen(port, host, async () => {
-    console.log(`[bamsignal] Running on http://${host}:${port}`);
+  console.log(
+    `[bamsignal] Running on http://${host}:${port} (commit=${process.env.BAMSIGNAL_GIT_COMMIT || "unknown"})`
+  );
     const readiness = await readinessPayload({ detailed: true });
     if (!readiness.ready) {
       logReadyCheckFailed({ source: "startup", ready: false });

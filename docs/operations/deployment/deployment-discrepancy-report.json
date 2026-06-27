@@ -1,0 +1,394 @@
+{
+  "generatedAt": "2026-06-27T23:13:02.857Z",
+  "rootCause": "**Local repository contains `/api/feature-flags` and `/api/remote-config`, but `origin/main` does not.** Coolify builds from GitHub `main`, so production runs an older server bundle without these mounts. Production returns Express `Cannot GET` HTML 404 (route not registered), not SPA fallback.",
+  "evidence": [
+    "Production `GET /api/feature-flags` → 404 (Express Cannot GET)",
+    "Production `GET /api/remote-config` → 404 (Express Cannot GET)",
+    "Production `POST /api/auth/pin-login` → 401 (route exists on prod)",
+    "Local inventory: 57 routes; critical routes mounted=true",
+    "Local HEAD: 6a7e192d7ec632b65b0d481ef9aa839b51addb1c",
+    "origin/main: a66155ecd4ca86e4dd083f431f878d35a259447f",
+    "Ahead of origin/main: 52 commits",
+    "origin/main includes feature-flags mount: false",
+    "Production HTML build meta: bamsignal-v1.0.14-17-mqupx88v"
+  ],
+  "git": {
+    "localHead": "6a7e192d7ec632b65b0d481ef9aa839b51addb1c",
+    "localHeadShort": "6a7e192d7ec6",
+    "originMain": "a66155ecd4ca86e4dd083f431f878d35a259447f",
+    "originMainShort": "a66155ecd4ca",
+    "commitsAheadOfOrigin": 52,
+    "commitsBehindOrigin": 0,
+    "originHasCriticalRoutes": false
+  },
+  "local": {
+    "build": {
+      "version": "1.0.15",
+      "code": "18",
+      "cacheVersion": "bamsignal-v1.0.15-18-mqw9cpp8",
+      "buildTime": "2026-06-27T11:09:38.203Z"
+    },
+    "inventoryRouteCount": 57
+  },
+  "production": {
+    "baseUrl": "https://bamsignal.com",
+    "buildId": "bamsignal-v1.0.14-17-mqupx88v",
+    "probes": [
+      {
+        "path": "/api/feature-flags",
+        "method": "GET",
+        "status": 404,
+        "durationMs": 887,
+        "express404": true,
+        "contentType": "text/html; charset=utf-8"
+      },
+      {
+        "path": "/api/remote-config",
+        "method": "GET",
+        "status": 404,
+        "durationMs": 305,
+        "express404": true,
+        "contentType": "text/html; charset=utf-8"
+      }
+    ]
+  },
+  "inventory": {
+    "generatedAt": "2026-06-27T23:13:00.167Z",
+    "appPath": "server/app.js",
+    "routeCount": 57,
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/.well-known/apple-app-site-association",
+        "mount": "express"
+      },
+      {
+        "method": "GET",
+        "path": "/.well-known/assetlinks.json",
+        "mount": "express"
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/bootstrap",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/city-home",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/city-spotlight",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/consent",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/members",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/moderation",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/email-code",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/identity",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/login-security",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/pin-login",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/pin-reset",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/auth/play-reviewer-finish",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/calendar",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/calendar",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/city/home",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/city/spotlight",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/city/spotlight-event",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/concierge-email",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/concierge-persistence",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/concierge-whatsapp",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/consultation-payment",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/consultation-payments",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/consultation-scheduling",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/consultation-scheduling",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/contact",
+        "mount": "express"
+      },
+      {
+        "method": "GET",
+        "path": "/api/diagnostics/certification",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/diagnostics/certification",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/diagnostics/db-ping",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "HEAD",
+        "path": "/api/diagnostics/db-ping",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/diagnostics/function-security",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/diagnostics/function-security",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/diagnostics/paystack-connectivity",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/diagnostics/view-security",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/diagnostics/view-security",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/feature-flags",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/hard/setup",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/hard/setup",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/meeting-infrastructure",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/meeting-link",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/member/data",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/member/photos",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/member/voice",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/paystack/verify",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/remote-config",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/verify/submissions",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/verify/submissions",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/verify/whatsapp/confirm",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/verify/whatsapp/start",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/verify/whatsapp/webhook",
+        "mount": "mountHandler"
+      },
+      {
+        "method": "GET",
+        "path": "/health",
+        "mount": "express"
+      },
+      {
+        "method": "HEAD",
+        "path": "/health",
+        "mount": "express"
+      },
+      {
+        "method": "GET",
+        "path": "/ready",
+        "mount": "express"
+      },
+      {
+        "method": "HEAD",
+        "path": "/ready",
+        "mount": "express"
+      },
+      {
+        "method": "GET",
+        "path": "/robots.txt",
+        "mount": "express"
+      },
+      {
+        "method": "GET",
+        "path": "/sitemap.xml",
+        "mount": "express"
+      }
+    ],
+    "criticalRoutes": [
+      {
+        "method": "GET",
+        "path": "/api/feature-flags",
+        "handlerFile": "api/feature-flags/index.js",
+        "mounted": true,
+        "handlerExists": true,
+        "ok": true
+      },
+      {
+        "method": "GET",
+        "path": "/api/remote-config",
+        "handlerFile": "api/remote-config/index.js",
+        "mounted": true,
+        "handlerExists": true,
+        "ok": true
+      }
+    ],
+    "allCriticalOk": true
+  },
+  "criticalRoutes": [
+    {
+      "method": "GET",
+      "path": "/api/feature-flags",
+      "handlerFile": "api/feature-flags/index.js",
+      "mounted": true,
+      "handlerExists": true,
+      "ok": true,
+      "productionStatus": "HTTP 404 (Express 404)"
+    },
+    {
+      "method": "GET",
+      "path": "/api/remote-config",
+      "handlerFile": "api/remote-config/index.js",
+      "mounted": true,
+      "handlerExists": true,
+      "ok": true,
+      "productionStatus": "HTTP 404 (Express 404)"
+    }
+  ],
+  "deploymentMismatch": "Git divergence: local main is 52 commits ahead of origin/main. Coolify never received commits that add feature-flags and remote-config (from `af251e7` onward). Production build marker `bamsignal-v1.0.14-17-mqupx88v` matches pre-route release `v1.0.14-17`.",
+  "correctiveAction": [
+    "Push local `main` to `github.com/bamsignalhq/bamsignal` (`git push origin main`).",
+    "Trigger Coolify redeploy (disable cache reuse / force rebuild if needed).",
+    "Confirm production HTML meta updates to `bamsignal-v1.0.15-18-*` or newer.",
+    "Verify `GET /api/feature-flags` and `GET /api/remote-config` return HTTP 200.",
+    "Re-run `npm run smoke:production` and `npm run certify:rc`."
+  ]
+}

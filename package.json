@@ -35,6 +35,7 @@
     "test:build-compatibility-reasons": "node scripts/test-build-compatibility-reasons.mjs",
     "test:photo-upload-payload": "node scripts/test-photo-upload-payload.mjs",
     "test:server-import": "node scripts/smoke-server-import.mjs",
+    "verify:production-routes": "node scripts/verify-production-route-deployment.mjs",
     "test:payments": "node scripts/test-consultation-payments.mjs && node scripts/test-payment-catalog.mjs && node scripts/test-payment-webhook.mjs",
     "test:scheduling": "node scripts/test-consultation-scheduling.mjs",
     "test:meetings": "node scripts/test-consultation-meetings.mjs",

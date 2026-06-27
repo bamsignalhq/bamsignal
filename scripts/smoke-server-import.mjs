@@ -43,7 +43,9 @@ const requiredRouteMounts = [
   { method: "post", route: "/api/auth/email-code" },
   { method: "post", route: "/api/member/data" },
   { method: "post", route: "/api/member/photos" },
-  { method: "post", route: "/api/paystack/verify" }
+  { method: "post", route: "/api/paystack/verify" },
+  { method: "get", route: "/api/feature-flags" },
+  { method: "get", route: "/api/remote-config" }
 ];
 for (const { method, route } of requiredRouteMounts) {
   const mountPattern = new RegExp(
@@ -137,6 +139,14 @@ try {
     });
     if (response.status === 404) {
       console.error(`server smoke failed: route is not mounted: ${check.path}`);
+      process.exit(1);
+    }
+  }
+
+  for (const path of ["/api/feature-flags", "/api/remote-config"]) {
+    const response = await fetch(`${baseUrl}${path}`);
+    if (response.status !== 200) {
+      console.error(`server smoke failed: GET ${path} returned ${response.status} (expected 200)`);
       process.exit(1);
     }
   }

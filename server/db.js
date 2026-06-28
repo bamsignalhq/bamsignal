@@ -146,6 +146,20 @@ export async function initDatabase() {
   }
 }
 
+export async function closeDatabase() {
+  if (!pool) return { ok: true, skipped: true };
+  try {
+    await pool.end();
+    dbConnectionStatus = "disconnected";
+    dbConnectionError = null;
+    return { ok: true };
+  } catch (error) {
+    const sanitized = sanitizeApiErrorForLog(error);
+    dbConnectionError = databaseErrorSummary(error, "Database pool close failed");
+    return { ok: false, reason: sanitized.message };
+  }
+}
+
 export async function pingDatabase() {
   if (!pool) return false;
   if (dbConnectionStatus !== "connected") return false;

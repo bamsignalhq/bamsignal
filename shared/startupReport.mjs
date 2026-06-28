@@ -10,8 +10,9 @@ function mark(label, enabled) {
 
 /**
  * @param {import("./enterpriseStartupValidation.mjs").validateEnterpriseStartup extends (...args: any) => infer R ? R : never} validation
+ * @param {import("./serviceRegistry/ServiceRegistry.mjs").ServiceRegistry["startupTimingReport"] extends () => infer R ? R : never} [timing]
  */
-export function printStartupReport(validation) {
+export function printStartupReport(validation, timing) {
   if (reportPrinted) return;
   reportPrinted = true;
 
@@ -49,6 +50,9 @@ export function printStartupReport(validation) {
   }
   lines.push("");
   lines.push(`Overall: ${validation.ok ? "READY" : "NOT READY"}`);
+  if (timing?.totalStartupMs != null) {
+    lines.push(`Registry init: ${timing.totalStartupMs}ms`);
+  }
   if (validation.critical.length) {
     lines.push("");
     lines.push("Critical blockers:");

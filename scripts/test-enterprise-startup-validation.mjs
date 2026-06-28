@@ -135,6 +135,8 @@ const productionSource = await import("node:fs").then((fs) =>
   fs.readFileSync(new URL("../server/production.js", import.meta.url), "utf8")
 );
 assert(productionSource.includes("bootstrapStartup"), "production uses enterprise bootstrap");
+assert(productionSource.includes("bootstrapServiceRegistry"), "production initializes service registry post-migration");
+assert(productionSource.includes("registerGracefulShutdownHandlers"), "production registers graceful shutdown");
 assert(productionSource.includes("export async function startServer"), "startServer exported");
 
 if (failed > 0) {

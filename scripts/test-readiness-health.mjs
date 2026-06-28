@@ -34,9 +34,9 @@ assert(
 );
 assert(
   readinessSource.includes("criticalReady") &&
-    readinessSource.includes("getRegisteredFeatures") &&
+    readinessSource.includes("getServiceRegistry") &&
     readinessSource.includes("checkSchema"),
-  "readiness must check CRITICAL features, database connectivity, and expose schema in detailed mode"
+  "readiness must check CRITICAL features via registry, database connectivity, and expose schema in detailed mode"
 );
 
 const live = livenessPayload();

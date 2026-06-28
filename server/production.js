@@ -9,13 +9,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { initDatabase } from "./db.js";
 import { fixFunctionSecurity } from "./fixFunctionSecurity.js";
 import { fixSecurityDefinerViews } from "./fixSecurityDefinerViews.js";
 import { registerBotCommands, bot } from "./telegram.js";
 import { createApp } from "./app.js";
 import { readinessPayload } from "./services/readiness.js";
-import { bootstrapStartup, enforceProductionStartupGate } from "./services/startupBootstrap.js";
+import { bootstrapStartup, bootstrapServiceRegistry, enforceProductionStartupGate } from "./services/startupBootstrap.js";
+import {
+  registerGracefulShutdownHandlers,
+  registerHttpServerForShutdown
+} from "./services/gracefulShutdown.js";
 import { logBackgroundTaskFailure } from "./services/observability.js";
 import { runStartupMigrations } from "./startupMigrations.js";
 import { buildServerRouteInventory } from "../shared/serverRouteInventory.mjs";
@@ -33,14 +36,6 @@ function isEntryModule() {
     return false;
   }
 }
-
-process.on("uncaughtException", (error) => {
-  console.error("[bamsignal] Uncaught exception:", error);
-});
-
-process.on("unhandledRejection", (reason) => {
-  console.error("[bamsignal] Unhandled rejection:", reason);
-});
 
 async function runPostDatabaseStartup() {
   const viewFix = await fixSecurityDefinerViews().catch((error) => {
@@ -69,22 +64,16 @@ async function runPostDatabaseStartup() {
   if (deletionResult?.processed) {
     console.log(`[bamsignal] finalized ${deletionResult.processed} scheduled account deletion(s)`);
   }
-
-  const { startRateLimitRetentionScheduler } = await import("./services/rateLimitRetention.js");
-  const retentionScheduler = startRateLimitRetentionScheduler();
-  if (retentionScheduler.started) {
-    console.log(
-      `[bamsignal] rate-limit retention cleanup scheduled every ${Math.round(retentionScheduler.intervalMs / 60_000)} minutes`
-    );
-  }
 }
 
 /** @returns {Promise<import("node:http").Server>} */
 export async function startServer() {
+  registerGracefulShutdownHandlers();
+
   const port = Number(process.env.PORT || 3000);
   const host = process.env.HOST || "0.0.0.0";
 
-  const validation = bootstrapStartup(process.env);
+  const validation = await bootstrapStartup(process.env);
   enforceProductionStartupGate(validation);
 
   if (!fs.existsSync(indexHtml)) {
@@ -99,11 +88,7 @@ export async function startServer() {
     process.exit(1);
   }
 
-  try {
-    await initDatabase();
-  } catch (error) {
-    logBackgroundTaskFailure("database_init", error);
-  }
+  await bootstrapServiceRegistry(process.env);
 
   const app = createApp({ distDir });
   const routeInventory = buildServerRouteInventory();
@@ -117,6 +102,7 @@ export async function startServer() {
 
   return new Promise((resolve, reject) => {
     const server = app.listen(port, host, async () => {
+      registerHttpServerForShutdown(server);
       console.log(
         `[bamsignal] Running on http://${host}:${port} (commit=${process.env.BAMSIGNAL_GIT_COMMIT || "unknown"})`
       );

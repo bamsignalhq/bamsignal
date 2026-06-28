@@ -56,9 +56,9 @@ assertSmoke(
 );
 assertSmoke(
   productionSource.includes("runStartupMigrations") &&
-    productionSource.includes("await initDatabase()") &&
-    productionSource.indexOf("await initDatabase()") < productionSource.indexOf("app.listen"),
-  "production startup must migrate and connect database before accepting traffic"
+    productionSource.includes("bootstrapServiceRegistry") &&
+    productionSource.indexOf("bootstrapServiceRegistry") < productionSource.indexOf("app.listen"),
+  "production startup must migrate and initialize service registry before accepting traffic"
 );
 
 const requiredRouteMounts = [

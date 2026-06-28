@@ -32,4 +32,4 @@ export const RC_CERTIFICATION_DECISIONS = {
 } as const;
 
 export const RC_CERTIFICATION_RELEASE_RULE =
-  "No production deployment may proceed without a passing RC certification.";
+  "Official production release requires CERTIFICATION_PROFILE=production RC GO with fresh staging integration reports; local runs are advisory only.";

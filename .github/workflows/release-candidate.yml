@@ -1,0 +1,104 @@
+name: Release Candidate Certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Certification profile
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "server/**"
+      - "api/**"
+      - "certification/**"
+      - "shared/**"
+      - "package.json"
+      - "Dockerfile"
+
+jobs:
+  staging-certification:
+    if: github.event_name == 'push' || github.event.inputs.profile == 'staging'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CERTIFICATION_PROFILE: staging
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Run staging release pipeline
+        run: npm run certify:pipeline:staging
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PAYSTACK_SECRET_KEY: ${{ secrets.PAYSTACK_SECRET_KEY }}
+          SENDCHAMP_API_KEY: ${{ secrets.SENDCHAMP_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          COMMAND_CENTER_PIN: ${{ secrets.COMMAND_CENTER_PIN }}
+          VITE_PAYSTACK_PUBLIC_KEY: ${{ secrets.VITE_PAYSTACK_PUBLIC_KEY }}
+
+      - name: Upload release manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest-staging
+          path: |
+            certification/manifest/latest-staging.json
+            certification/release-candidate/reports/latest.json
+
+  production-rc:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.profile == 'production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CERTIFICATION_PROFILE: production
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production smoke (read-only)
+        run: npm run smoke:production
+        env:
+          PUBLIC_APP_URL: https://bamsignal.com
+
+      - name: Official Release Candidate gate
+        run: npm run certify:rc:production
+
+      - name: Upload official RC manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest-production
+          path: |
+            certification/manifest/latest-production.json
+            certification/manifest/latest.json
+            certification/release-candidate/reports/latest.json

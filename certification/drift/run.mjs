@@ -29,6 +29,12 @@ import {
   certificationModeDescription,
   resolveCertificationExecutionMode
 } from "../../shared/certificationEnvironment.mjs";
+import {
+  buildSkipReason,
+  detectCertificationPrerequisites,
+  resolveCertificationProfile
+} from "../../shared/certificationProfile.mjs";
+import { buildSkippedCertReport, certificationExitCode } from "../../shared/certificationRunner.mjs";
 import { loadCertificationEnvironment } from "../../shared/loadCertificationEnv.mjs";
 
 loadCertificationEnvironment();
@@ -41,7 +47,28 @@ async function main() {
   console.log(`Run ID: ${config.runId}\n`);
 
   const executionMode = resolveCertificationExecutionMode(process.env);
-  console.log(`Execution mode: ${executionMode} — ${certificationModeDescription(executionMode)}\n`);
+  const profile = resolveCertificationProfile(process.env);
+  const prerequisites = detectCertificationPrerequisites(process.env);
+  console.log(`Execution mode: ${executionMode} — ${certificationModeDescription(executionMode)}`);
+  console.log(`Profile: ${profile.toUpperCase()}\n`);
+
+  if (profile === "local" && Object.keys(prerequisites.missingSecrets).length > 0) {
+    const skipped = buildSkippedCertReport({
+      suite: "operational-drift",
+      requirement: "staging_secrets",
+      detail: `Missing local secrets: ${Object.keys(prerequisites.missingSecrets).join(", ")}. Run with CERTIFICATION_PROFILE=staging in CI or load .env.local.`,
+      extra: {
+        runId: config.runId,
+        driftScore: 0,
+        executionMode,
+        missingSecrets: prerequisites.missingSecrets
+      }
+    });
+    const paths = writeDriftReports(outputDir, skipped);
+    console.log(`SKIPPED — ${skipped.skipDetail}`);
+    console.log(`Report: ${paths.jsonPath}\n`);
+    process.exit(certificationExitCode(skipped, profile));
+  }
 
   let mode = "static";
   let findings = await runStaticDriftChecks();
@@ -81,6 +108,7 @@ async function main() {
   const report = {
     runId: config.runId,
     generatedAt: new Date().toISOString(),
+    certificationProfile: profile,
     executionMode,
     mode,
     driftScore,
@@ -117,7 +145,7 @@ async function main() {
     for (const failure of failures.slice(0, 10)) {
       console.error(`  • ${failure}`);
     }
-    process.exit(1);
+    process.exit(certificationExitCode(report, profile));
   }
 
   console.log("Operational drift certification PASSED.\n");

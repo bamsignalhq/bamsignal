@@ -16,14 +16,29 @@ export function writeDriftReports(outputDir, report) {
 }
 
 function renderMarkdown(report) {
-  const domainRows = report.domains
+  if (report.skipped || report.status === "skipped") {
+    return `# Operational Drift Certification™
+
+**Run ID:** ${report.runId}  
+**Generated:** ${report.generatedAt}  
+**Profile:** ${report.certificationProfile || "local"}  
+**Status:** SKIPPED  
+**Reason:** ${report.skipReason || "environment unavailable"}  
+**Detail:** ${report.skipDetail || ""}
+
+---
+Command: \`npm run certify:drift\`
+`;
+  }
+
+  const domainRows = (report.domains || [])
     .map(
       (item) =>
         `| ${item.label} | ${item.findingsCount} | ${item.criticalCount} | ${item.passed ? "PASS" : "FAIL"} |`
     )
     .join("\n");
 
-  const findingRows = report.findings
+  const findingRows = (report.findings || [])
     .filter((item) => !item.passed)
     .slice(0, 20)
     .map(
@@ -47,8 +62,8 @@ function renderMarkdown(report) {
 | Unexpected drift | ${report.unexpectedDrift} |
 | Unauthorized changes | ${report.unauthorizedChanges} |
 | Configuration mismatches | ${report.configurationMismatches} |
-| Missing secrets | ${report.missingSecrets} |
-| Unused secrets | ${report.unusedSecrets.length} |
+| Missing secrets | ${report.missingSecrets ?? 0} |
+| Unused secrets | ${(report.unusedSecrets || []).length} |
 
 ## Domains
 
@@ -64,11 +79,11 @@ ${findingRows || "| — | — | — | — | — |"}
 
 ## Unused secrets
 
-${report.unusedSecrets.map((item) => `- ${item}`).join("\n") || "- None"}
+${(report.unusedSecrets || []).map((item) => `- ${item}`).join("\n") || "- None"}
 
 ## Recommendations
 
-${report.recommendations.map((item) => `- [${item.priority}] ${item.title}: ${item.detail}`).join("\n") || "- None"}
+${(report.recommendations || []).map((item) => `- [${item.priority}] ${item.title}: ${item.detail}`).join("\n") || "- None"}
 
 ---
 Command: \`npm run certify:drift\`

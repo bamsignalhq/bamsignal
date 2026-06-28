@@ -8,6 +8,9 @@ import {
   buildRc1Number
 } from "../../../shared/releaseCandidateCertificationSubsystems.mjs";
 import { scoreToReadinessResult } from "../../../server/services/institutionalReadinessVerification.js";
+import { CERT_RESULT_STATUS, resolveCertificationProfile } from "../../../shared/certificationProfile.mjs";
+import { evaluateSubsystemGate, reportOutcome } from "../../../shared/releaseCandidateGate.mjs";
+import { loadCertificationEnvironment } from "../../../shared/loadCertificationEnv.mjs";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -24,8 +27,8 @@ function readJson(relativePath) {
   }
 }
 
-function subsystem(id, label, score, status, summary, source, passed, issues = []) {
-  return { id, label, score, status, summary, source, passed, issues };
+function subsystem(id, label, score, status, summary, source, passed, issues = [], extra = {}) {
+  return { id, label, score, status, summary, source, passed, issues, ...extra };
 }
 
 function issue(id, subsystemId, title, detail, severity) {
@@ -37,30 +40,68 @@ function staticScore(passed, total) {
   return Math.round((passed / total) * 100);
 }
 
-function certSubsystem(meta, report) {
+function certSubsystem(meta, report, profile, stagingReports = {}) {
+  const gate = evaluateSubsystemGate(meta.id, report, profile, { stagingReports });
+  const outcome = reportOutcome(report);
+
   if (!report) {
+    const pendingIssue = issue(
+      `${meta.id}_pending`,
+      meta.id,
+      `${meta.label} certification pending`,
+      `Run ${meta.certify} before RC certification.`,
+      profile === "local" ? "warning" : "critical"
+    );
+    return subsystem(
+      meta.id,
+      meta.label,
+      0,
+      profile === "local" ? "warning" : "critical",
+      `No ${meta.label.toLowerCase()} snapshot — run ${meta.certify}.`,
+      "pending",
+      profile === "local",
+      profile === "local" ? [pendingIssue] : [pendingIssue],
+      {
+        outcome: CERT_RESULT_STATUS.FAILED,
+        required: gate.required,
+        blocksRelease: gate.blocksRelease,
+        skipped: false
+      }
+    );
+  }
+
+  if (outcome === CERT_RESULT_STATUS.SKIPPED) {
     return subsystem(
       meta.id,
       meta.label,
       0,
       "warning",
-      `No ${meta.label.toLowerCase()} snapshot — run ${meta.certify}.`,
-      "pending",
-      false,
-      [
-        issue(
-          `${meta.id}_pending`,
-          meta.id,
-          `${meta.label} certification pending`,
-          `Run ${meta.certify} before RC certification.`,
-          "warning"
-        )
-      ]
+      report.skipDetail || `${meta.label} skipped — ${report.skipReason || "environment unavailable"}.`,
+      "cert-report",
+      gate.passed,
+      gate.passed
+        ? []
+        : [
+            issue(
+              `${meta.id}_skipped`,
+              meta.id,
+              `${meta.label} certification skipped`,
+              report.skipDetail || report.skipReason || "Required infrastructure unavailable.",
+              "critical"
+            )
+          ],
+      {
+        outcome: CERT_RESULT_STATUS.SKIPPED,
+        required: gate.required,
+        blocksRelease: gate.blocksRelease,
+        skipped: true,
+        skipReason: report.skipReason || null
+      }
     );
   }
 
   const score = meta.scoreKey ? report[meta.scoreKey] ?? 0 : report.passed ? 100 : 0;
-  const passed = Boolean(report[meta.passedKey]);
+  const passed = gate.passed;
   const status = passed ? scoreToReadinessResult(score, false) : "critical";
   const issues = passed
     ? []
@@ -79,10 +120,17 @@ function certSubsystem(meta, report) {
     meta.label,
     score,
     status,
-    `${meta.label} ${passed ? "passed" : "failed"} (${score}%).`,
-    "cert-report",
+    gate.summary || `${meta.label} ${passed ? "passed" : "failed"} (${score}%).`,
+    gate.delegatedFrom ? "staging-delegation" : "cert-report",
     passed,
-    issues
+    issues,
+    {
+      outcome: passed ? CERT_RESULT_STATUS.PASSED : CERT_RESULT_STATUS.FAILED,
+      required: gate.required,
+      blocksRelease: gate.blocksRelease,
+      skipped: false,
+      delegatedFrom: gate.delegatedFrom || null
+    }
   );
 }
 
@@ -149,15 +197,25 @@ export function buildRcNumber(buildMeta, runId) {
 }
 
 export function readEnvironment() {
-  return (
-    process.env.ENV_TARGET ||
-    process.env.DEPLOY_ENV ||
-    process.env.NODE_ENV ||
-    "production"
-  ).toLowerCase();
+  return resolveCertificationProfile(process.env);
 }
 
-export function collectRcSubsystemScores() {
+export function collectRcSubsystemScores(profile = resolveCertificationProfile(process.env)) {
+  loadCertificationEnvironment();
+
+  const stagingManifestPath = join(rootPath, "certification/manifest/latest-staging.json");
+  let stagingManifest = null;
+  if (existsSync(stagingManifestPath)) {
+    try {
+      stagingManifest = JSON.parse(readFileSync(stagingManifestPath, "utf8"));
+    } catch {
+      stagingManifest = null;
+    }
+  }
+  const stagingReports = Object.fromEntries(
+    (stagingManifest?.subsystems || []).map((item) => [item.id, item])
+  );
+
   const certReports = Object.fromEntries(
     RC_CERT_SUBSYSTEMS.filter((item) => item.certPath).map((item) => [
       item.id,
@@ -189,7 +247,7 @@ export function collectRcSubsystemScores() {
       }
     ]),
     ...RC_CERT_SUBSYSTEMS.filter((item) => item.certPath).map((meta) =>
-      certSubsystem(meta, certReports[meta.id])
+      certSubsystem(meta, certReports[meta.id], profile, stagingReports)
     ),
     staticSubsystem("observability", "Observability", [
       {

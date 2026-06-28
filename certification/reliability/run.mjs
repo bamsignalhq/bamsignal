@@ -11,13 +11,20 @@ import { config } from "./config.mjs";
 import { runAllReliabilitySimulations, buildRecommendations } from "./lib/simulations.mjs";
 import { buildReliabilityScore, evaluateReleaseGate, summarizeRecovery } from "./lib/score.mjs";
 import { writeReliabilityReports } from "./lib/report.mjs";
+import { resolveCertificationProfile } from "../../shared/certificationProfile.mjs";
+import { certificationExitCode } from "../../shared/certificationRunner.mjs";
+import { loadCertificationEnvironment } from "../../shared/loadCertificationEnv.mjs";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const outputDir = join(rootPath, config.outputDir);
 
 async function main() {
+  loadCertificationEnvironment();
+  const profile = resolveCertificationProfile(process.env);
+
   console.log("\n=== Reliability Certification™ ===\n");
-  console.log(`Run ID: ${config.runId}\n`);
+  console.log(`Run ID: ${config.runId}`);
+  console.log(`Profile: ${profile.toUpperCase()}\n`);
 
   const scenarios = await runAllReliabilitySimulations();
   const recovery = summarizeRecovery(scenarios);
@@ -28,8 +35,10 @@ async function main() {
   const report = {
     runId: config.runId,
     generatedAt: new Date().toISOString(),
+    certificationProfile: profile,
     reliabilityScore,
     passed,
+    status: passed ? "passed" : "failed",
     recoveryTimeMs: {
       average: recovery.average,
       max: recovery.max
@@ -55,7 +64,7 @@ async function main() {
     for (const failure of recovery.recoveryFailures) {
       console.error(`  • ${failure}`);
     }
-    process.exit(1);
+    process.exit(certificationExitCode(report, profile));
   }
 
   console.log("Reliability certification PASSED.\n");

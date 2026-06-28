@@ -16,19 +16,52 @@ import { appendSnapshot, loadHistory } from "./lib/history.mjs";
 import { bundleGrowthPercent, evaluateMetrics } from "./lib/score.mjs";
 import { writePerformanceReports } from "./lib/report.mjs";
 import { resolvePerformanceCertTarget } from "./lib/server.mjs";
+import {
+  detectPlaywrightBrowsers,
+  mergeExecutionContext,
+  resolveCertificationProfile
+} from "../../shared/certificationProfile.mjs";
+import {
+  buildSkippedCertReport,
+  certificationExitCode
+} from "../../shared/certificationRunner.mjs";
+import { loadCertificationEnvironment } from "../../shared/loadCertificationEnv.mjs";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const outputDir = join(rootPath, config.outputDir);
 const distDir = join(rootPath, config.distDir);
 
 async function main() {
+  loadCertificationEnvironment();
+  const profile = resolveCertificationProfile(process.env);
+  const context = mergeExecutionContext(process.env);
+
   console.log("\n=== Performance Certification™ ===\n");
   console.log(`Target: ${config.baseUrl || `local (127.0.0.1:${config.port})`}`);
+  console.log(`Profile: ${profile.toUpperCase()} — ${context.profileDescription}`);
   console.log(`Run ID: ${config.runId}\n`);
 
   if (!existsSync(distDir)) {
     console.error("dist/ not found — run npm run build first.");
     process.exit(1);
+  }
+
+  const playwright = detectPlaywrightBrowsers();
+  if (!playwright.ready) {
+    const skipped = buildSkippedCertReport({
+      suite: "performance",
+      requirement: "playwright_browsers",
+      detail: playwright.reason || "Playwright Chromium is not installed.",
+      extra: {
+        runId: config.runId,
+        performanceScore: 0,
+        baseUrl: config.baseUrl || null
+      }
+    });
+    const paths = writePerformanceReports(skipped, outputDir);
+    console.log(`SKIPPED — ${skipped.skipDetail}`);
+    console.log(`Report: ${paths.jsonPath}\n`);
+    process.exit(certificationExitCode(skipped, profile));
   }
 
   const bundle = measureBundle(distDir);
@@ -65,8 +98,10 @@ async function main() {
     generatedAt: new Date().toISOString(),
     baseUrl: target.baseUrl,
     buildId,
+    certificationProfile: profile,
     performanceScore: scored.score,
     passed: scored.passed,
+    status: scored.passed ? "passed" : "failed",
     metrics: scored.metrics
   };
 
@@ -128,10 +163,18 @@ async function main() {
     console.log(`${metric.passed ? "PASS" : "FAIL"} ${metric.label}: ${metric.value}${metric.unit}`);
   }
 
-  process.exit(scored.passed ? 0 : 1);
+  process.exit(certificationExitCode(report, profile));
 }
 
 main().catch((error) => {
+  const profile = resolveCertificationProfile(process.env);
+  if (
+    profile === "local" &&
+    /playwright|Executable doesn't exist|browserType.launch/i.test(String(error?.message || error))
+  ) {
+    console.error("Performance certification skipped — Playwright unavailable on local profile.");
+    process.exit(0);
+  }
   console.error("Performance certification failed:", error);
   process.exit(1);
 });

@@ -119,7 +119,8 @@ async function simulateSendchampUnavailable() {
     result.detail = "Sendchamp returns 503 not_configured when API key missing.";
   }
 
-  result.verification.retry = sendchampSource.includes("SENDCHAMP_RETRY_DELAY_MS");
+  result.verification.retry =
+    sendchampSource.includes("withBoundedRetry") || sendchampSource.includes("SENDCHAMP_RETRY_DELAY_MS");
   result.verification.alertGeneration = whatsappSource.includes("logThresholdedAlert");
   result.recoverySuccess = result.verification.gracefulDegradation && result.verification.recovery;
   result.recoveryTimeMs = 0;

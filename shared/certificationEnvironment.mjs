@@ -9,6 +9,11 @@ export const CERT_EXECUTION_MODES = ["dry-run", "staging", "production"];
  * @returns {"dry-run"|"staging"|"production"}
  */
 export function resolveCertificationExecutionMode(env = process.env) {
+  const profile = String(env.CERTIFICATION_PROFILE || "").toLowerCase();
+  if (profile === "local") return "dry-run";
+  if (profile === "staging") return "staging";
+  if (profile === "production") return "production";
+
   const explicit = String(env.CERTIFICATION_EXECUTION_MODE || "").toLowerCase();
   if (CERT_EXECUTION_MODES.includes(explicit)) return explicit;
 

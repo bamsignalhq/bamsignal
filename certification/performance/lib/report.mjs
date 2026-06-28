@@ -25,6 +25,16 @@ export function writePerformanceReports(report, outputDir) {
 }
 
 function renderMarkdown(report) {
+  if (report.skipped || report.status === "skipped") {
+    return `# Performance Certification™
+
+**Run:** ${report.runId}  
+**Status:** SKIPPED  
+**Reason:** ${report.skipReason || "environment unavailable"}  
+**Detail:** ${report.skipDetail || ""}
+`;
+  }
+
   const lines = [
     `# Performance Certification™`,
     "",
@@ -40,7 +50,7 @@ function renderMarkdown(report) {
     "|--------|-------|--------|-----------|"
   ];
 
-  for (const metric of report.metrics) {
+  for (const metric of report.metrics || []) {
     lines.push(`| ${metric.label} | ${metric.value}${metric.unit} | ${metric.passed ? "PASS" : "FAIL"} | ${metric.thresholdLabel} |`);
   }
 
@@ -62,7 +72,11 @@ function renderMarkdown(report) {
 }
 
 function renderHtml(report) {
-  const rows = report.metrics
+  if (report.skipped || report.status === "skipped") {
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>Performance Certification™</title></head><body><h1>SKIPPED</h1><p>${escapeHtml(report.skipDetail || "")}</p></body></html>`;
+  }
+
+  const rows = (report.metrics || [])
     .map(
       (m) =>
         `<tr><td>${escapeHtml(m.label)}</td><td>${m.value}${escapeHtml(m.unit)}</td><td class="${m.passed ? "pass" : "fail"}">${m.passed ? "PASS" : "FAIL"}</td><td>${escapeHtml(m.thresholdLabel)}</td></tr>`

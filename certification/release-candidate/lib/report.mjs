@@ -12,7 +12,7 @@ function subsystemRows(scores) {
   return scores
     .map(
       (item) =>
-        `| ${item.label} | ${item.score}% | ${item.status} | ${item.passed ? "PASS" : "FAIL"} | ${item.summary.replace(/\|/g, "\\|")} |`
+        `| ${item.label} | ${item.score}% | ${item.status} | ${item.skipped ? "SKIPPED" : item.passed ? "PASS" : "FAIL"} | ${item.summary.replace(/\|/g, "\\|")} |`
     )
     .join("\n");
 }
@@ -79,7 +79,8 @@ function renderMarkdown(report) {
 **Generated:** ${report.certificationTimestamp}  
 **Git commit:** ${report.gitCommit}  
 **Build version:** ${report.buildVersion} (${report.buildCode})  
-**Environment:** ${report.environment}  
+**Profile:** ${report.certificationProfile || report.environment}  
+**Advisory only:** ${report.advisoryOnly ? "yes" : "no"}  
 **Overall score:** ${report.overallScore}%  
 **Decision:** ${report.releaseDecisionLabel}
 
@@ -102,6 +103,10 @@ ${domainRows(report.domainPillars || [])}
 | Subsystem | Score | Status | Gate | Summary |
 |-----------|------:|--------|------|---------|
 ${subsystemRows(report.subsystemScores)}
+
+## Skipped subsystems
+
+${report.skippedSubsystems?.length ? report.skippedSubsystems.map((item) => `- **${item.label}** — ${item.summary}`).join("\n") : "- None"}
 
 ## Sign-off
 

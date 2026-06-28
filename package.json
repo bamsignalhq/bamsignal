@@ -18,6 +18,7 @@
     "test:environment-validation": "node scripts/test-environment-validation.mjs",
     "test:enterprise-startup": "node scripts/test-enterprise-startup-validation.mjs",
     "test:service-registry": "node scripts/test-service-registry.mjs",
+    "test:consistency-audit": "node scripts/test-consistency-audit.mjs",
     "generate:brand": "node scripts/generate-brand-assets.mjs",
     "generate:email-icons": "node scripts/generate-email-social-icons.mjs",
     "preview:emails": "node scripts/preview-email-templates.mjs",

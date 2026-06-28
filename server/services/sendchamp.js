@@ -1,9 +1,14 @@
+import {
+  PAYSTACK_HTTP_TIMEOUT_MS,
+  SENDCHAMP_HTTP_TIMEOUT_MS,
+  SENDCHAMP_MAX_NETWORK_ATTEMPTS,
+  SENDCHAMP_RETRY_DELAY_MS,
+  WHATSAPP_OTP_EXPIRATION_MINUTES
+} from "../../shared/operationalConstants.mjs";
 import { config } from "../config.js";
 import { logWhatsappVerification } from "./verificationLog.js";
 
-const OTP_EXPIRATION_MINUTES = 30;
-const SENDCHAMP_TIMEOUT_MS = 15_000;
-const SENDCHAMP_RETRY_DELAY_MS = 800;
+const OTP_EXPIRATION_MINUTES = WHATSAPP_OTP_EXPIRATION_MINUTES;
 const BAM_SIGNAL_OTP_MESSAGE =
   "Your BamSignal Code is {{code}}. DO NOT share it with anyone. It is valid for 30 minutes.";
 
@@ -117,7 +122,7 @@ function isRetryableNetworkError(error) {
   return false;
 }
 
-async function fetchWithTimeout(url, options, timeoutMs = SENDCHAMP_TIMEOUT_MS) {
+async function fetchWithTimeout(url, options, timeoutMs = SENDCHAMP_HTTP_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -150,7 +155,7 @@ async function sendchampFetch(path, body, { requireReference = true, logContext 
   let response;
   let retried = false;
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < SENDCHAMP_MAX_NETWORK_ATTEMPTS; attempt += 1) {
     try {
       response = await fetchWithTimeout(url, requestOptions);
       break;

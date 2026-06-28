@@ -1,8 +1,13 @@
 import { logRetryExhausted } from "./observability.js";
+import {
+  RETRY_BASE_DELAY_MS,
+  RETRY_DEFAULT_ATTEMPTS,
+  RETRY_MAX_DELAY_MS
+} from "../../shared/operationalConstants.mjs";
 
-const DEFAULT_ATTEMPTS = 3;
-const DEFAULT_BASE_DELAY_MS = 500;
-const DEFAULT_MAX_DELAY_MS = 8000;
+const DEFAULT_ATTEMPTS = RETRY_DEFAULT_ATTEMPTS;
+const DEFAULT_BASE_DELAY_MS = RETRY_BASE_DELAY_MS;
+const DEFAULT_MAX_DELAY_MS = RETRY_MAX_DELAY_MS;
 
 export function isRetryableHttpStatus(status) {
   const code = Number(status);

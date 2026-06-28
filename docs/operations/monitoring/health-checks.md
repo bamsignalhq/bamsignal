@@ -2,7 +2,7 @@
 
 Production health verification standards for BamSignal. Defines endpoints, probes, expected results, and check frequency.
 
-**Implementation reference:** `server/services/readiness.js`, `server/app.js`, `MONITORING.md` (root)
+**Implementation reference:** `server/services/readiness.js`, `server/services/serviceRegistry.js`, `docs/operations/service-registry-lifecycle.md`
 
 ---
 
@@ -18,18 +18,18 @@ Production health verification standards for BamSignal. Defines endpoints, probe
 
 ### Readiness gates (`isReadinessChecksReady`)
 
-All must pass for `/ready` → 200:
+`/ready` returns **200** only when **all CRITICAL registry services are configured** and **database is connected**. Important/optional integrations never fail readiness.
 
-| Gate | Env / check |
-|------|-------------|
-| Database | `DATABASE_URL` connected, ping OK |
-| Paystack | `PAYSTACK_SECRET_KEY` set |
-| Signup email | Resend + Supabase service role |
-| Photo storage | Supabase storage buckets accessible |
+| Gate | Source |
+|------|--------|
+| Critical features | Service Registry — database, supabase, application URL, Paystack, Command Center, cron |
+| Database | Registry `database` health — connected + ping OK |
 
-### Detailed-only fields (`?details=1`)
+Signup email, photo storage, Sendchamp, and Firebase are **important/optional** — visible in detailed readiness but do not fail `/ready`.
 
-`resend`, `signupEmailTrace`, Firebase health, `telegram`, `sendchamp`, `sendchampTrace`, `schema`, `databaseError`
+### Detailed-only fields (`?details=1` + diagnostics auth)
+
+Registry snapshot (`registry.services`, metrics), `features`, `paystack`, `resend`, `signupEmail`, `sendchamp`, `firebase`, `photoStorage`, `telegram`, `schema`, `databaseError`
 
 ---
 

@@ -1,3 +1,4 @@
+import { PAYSTACK_HTTP_TIMEOUT_MS } from "../../shared/operationalConstants.mjs";
 import dns from "node:dns";
 import { config } from "../config.js";
 import { isRetryableNetworkError, withBoundedRetry } from "./retryPolicy.js";
@@ -11,7 +12,7 @@ import { sanitizeApiErrorForLog } from "./errorResponse.js";
 dns.setDefaultResultOrder("ipv4first");
 
 const PAYSTACK_API_BASE = "https://api.paystack.co";
-const DEFAULT_TIMEOUT_MS = 20000;
+const DEFAULT_TIMEOUT_MS = PAYSTACK_HTTP_TIMEOUT_MS;
 
 export const PAYMENT_INITIALIZE_CLIENT_ERROR = "Unable to start payment. Please try again.";
 export const PAYMENT_VERIFY_CLIENT_ERROR = "Payment could not be verified. Please try again.";

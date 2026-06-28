@@ -39,28 +39,27 @@ Never calls `process.exit()`.
 
 ## 3. Bootstrap
 
-**Module:** `server/services/startupBootstrap.js`  
+**Modules:** `server/services/startupBootstrap.js`, `server/services/serviceRegistry.js`  
 **Called from:** `startServer()` in `server/production.js`
 
 1. Resolve mode (`production` | `smoke` | `development` | `smoke-import`)
-2. Run enterprise validation
-3. Register feature integrations (`shared/environmentClassification.mjs`)
-4. Print **one** startup report (`shared/startupReport.mjs`)
-5. If `production` and CRITICAL missing → `process.exit(1)` **before** `listen()`
-6. If IMPORTANT missing → features disabled; startup continues
-7. If OPTIONAL missing → logged in report; startup continues
+2. Run enterprise validation + register services (no initialize)
+3. Print **one** startup report (`shared/startupReport.mjs`)
+4. If `production` and CRITICAL missing → `process.exit(1)` **before** `listen()`
+5. If IMPORTANT missing → features disabled; startup continues
+6. If OPTIONAL missing → logged in report; startup continues
 
 ## 4. HTTP startup
 
 **Function:** `startServer()`
 
-1. Bootstrap gate (above)
+1. Bootstrap validation gate (above)
 2. Verify `dist/index.html`
 3. Run SQL migrations
-4. `initDatabase()`
+4. `bootstrapServiceRegistry()` — initialize database, background workers (dependency order)
 5. `createApp({ distDir })`
 6. Route inventory check
-7. `app.listen()`
+7. `app.listen()` + register graceful shutdown handlers
 
 Entry module auto-start: `node server/production.js` only.
 
@@ -71,14 +70,22 @@ Smoke/tests: `shared/startProductionServer.mjs` sets `BAMSIGNAL_STARTUP_MODE=smo
 | Route | Purpose | Payload |
 |-------|---------|---------|
 | `GET /health` | Liveness | `{ ok, service, alive }` — process alive only |
-| `GET /ready` | Readiness | `503` unless CRITICAL features configured **and** database connected |
+| `GET /ready` | Readiness | `503` unless CRITICAL registry services configured **and** database connected |
 
 Important/optional integrations appear in detailed readiness (`?details=1` + diagnostics auth) but **never** fail `/ready`.
 
 ## 6. Shutdown
 
-- SIGTERM/SIGINT: Node HTTP server drain (Coolify container stop)
-- No import-time schedulers — post-DB tasks start after listen in `runPostDatabaseStartup()`
+Ordered via Service Registry (`server/services/gracefulShutdown.js`):
+
+1. HTTP server
+2. Telegram polling
+3. Background workers (rate-limit retention)
+4. Postgres pool
+
+Signals: SIGTERM, SIGINT, uncaughtException, unhandledRejection
+
+Post-DB maintenance tasks (security definer fixes, account deletion sweep) run after listen via `runPostDatabaseStartup()` — not during import.
 
 ## 7. Recovery
 

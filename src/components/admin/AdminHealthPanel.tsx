@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiUrl } from "../../services/supabase";
+import { fetchAdminHealthSnapshot } from "../../utils/fetchAdminHealthSnapshot";
 
 export type AdminHealthSnapshot = {
   database: string;
@@ -75,10 +75,9 @@ export function AdminHealthPanel({ compact = false }: { compact?: boolean }) {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch(apiUrl("/health"), { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
+    void fetchAdminHealthSnapshot()
       .then((payload) => {
-        if (!cancelled && payload) setHealth(payload as AdminHealthSnapshot);
+        if (!cancelled) setHealth(payload);
       })
       .catch(() => {
         if (!cancelled) setHealth(null);
@@ -114,17 +113,14 @@ export function useAdminHealthSummary(): { ok: boolean | null; criticalDown: boo
 
   useEffect(() => {
     let cancelled = false;
-    void fetch(apiUrl("/health"), { cache: "no-store" })
-      .then(async (r) => {
-        if (!r.ok) {
-          if (!cancelled) {
-            setOk(false);
-            setCriticalDown(true);
-          }
+    void fetchAdminHealthSnapshot()
+      .then((payload) => {
+        if (cancelled) return;
+        if (!payload) {
+          setOk(false);
+          setCriticalDown(true);
           return;
         }
-        const payload = (await r.json()) as AdminHealthSnapshot;
-        if (cancelled) return;
         const down =
           payload.database !== "connected" ||
           !payload.paystack ||

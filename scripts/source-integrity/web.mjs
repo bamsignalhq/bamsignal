@@ -4,6 +4,10 @@
 import { isDisposableEmail } from "../../shared/blockedEmailDomains.mjs";
 import { assertCheck } from "./lib.mjs";
 
+function paystackVerifyFailsClosedOn503(source) {
+  return source.includes("status(503)") || source.includes("status: 503");
+}
+
 export function runWebIntegrityChecks(ctx) {
 const signupMathSource = ctx.readSrc("server/services/signupMathChallenge.js");
 const authPageSource = ctx.readSrc("src/pages/AuthPage.tsx");
@@ -716,7 +720,7 @@ assertCheck(
     paymentFortressSource.includes("completePaymentFulfillment") &&
     paystackVerifySource.includes("completePaymentFulfillment") &&
     paystackVerifySource.includes("PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE") &&
-    paystackVerifySource.includes("status(503)") &&
+    paystackVerifyFailsClosedOn503(paystackVerifySource) &&
     paystackWebhookHandlerSource.includes("status: 503") &&
     paystackWebhookSource.includes("handlePaystackWebhookRequest") &&
     !paystackWebhookSource.includes("completePaymentFulfillment") &&
@@ -734,7 +738,7 @@ assertCheck(
     paymentFortressSource.includes("fulfillmentAlreadyInProgress") &&
     paymentFortressSource.includes("processingClaim.claimed") &&
     paystackVerifySource.includes("result.processing") &&
-    paystackVerifySource.includes("status(503)") &&
+    paystackVerifyFailsClosedOn503(paystackVerifySource) &&
     paystackWebhookHandlerSource.includes("result?.processing") &&
     paystackWebhookHandlerSource.includes("status: 503") &&
     cityHomeSource.includes("on conflict (paystack_reference)") &&
@@ -763,7 +767,8 @@ assertCheck(
     serverAppSource.includes("livenessPayload()") &&
     serverAppSource.includes('app.get("/ready"') &&
     serverAppSource.includes("readinessPayload") &&
-    readinessServiceSource.includes("isPhotoStorageConfigured") &&
+    readinessServiceSource.includes("getServiceRegistry") &&
+    readinessServiceSource.includes("photoStorage") &&
     !serverAppSource.includes("healthPayload"),
   "health endpoints must split liveness (/health) from readiness (/ready)"
 );

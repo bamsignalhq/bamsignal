@@ -20,6 +20,7 @@ import {
   registerHttpServerForShutdown
 } from "./services/gracefulShutdown.js";
 import { logBackgroundTaskFailure } from "./services/observability.js";
+import { startRateLimitRetentionScheduler } from "./services/rateLimitRetention.js";
 import { runStartupMigrations } from "./startupMigrations.js";
 import { buildServerRouteInventory } from "../shared/serverRouteInventory.mjs";
 
@@ -89,6 +90,7 @@ export async function startServer() {
   }
 
   await bootstrapServiceRegistry(process.env);
+  startRateLimitRetentionScheduler();
 
   const app = createApp({ distDir });
   const routeInventory = buildServerRouteInventory();

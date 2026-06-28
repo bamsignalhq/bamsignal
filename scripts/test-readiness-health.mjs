@@ -33,11 +33,10 @@ assert(
   "server must expose separate /health liveness and /ready readiness routes"
 );
 assert(
-  readinessSource.includes("isSignupEmailConfigured") &&
-    readinessSource.includes("isPhotoStorageConfigured") &&
-    readinessSource.includes("config.paystackSecretKey") &&
+  readinessSource.includes("criticalReady") &&
+    readinessSource.includes("getRegisteredFeatures") &&
     readinessSource.includes("checkSchema"),
-  "readiness must check database, Paystack, signup email, photo storage, and expose schema in detailed mode"
+  "readiness must check CRITICAL features, database connectivity, and expose schema in detailed mode"
 );
 
 const live = livenessPayload();
@@ -46,30 +45,24 @@ assert(!("database" in live), "liveness must not expose dependency status");
 
 assert(
   isReadinessChecksReady({
-    databaseReady: true,
-    paystackReady: true,
-    signupEmailReady: true,
-    photoStorageReady: true
+    criticalReady: true,
+    databaseReady: true
   }),
-  "readiness helper must pass when all critical checks are true"
+  "readiness helper must pass when critical features and database are ready"
 );
 assert(
   !isReadinessChecksReady({
-    databaseReady: false,
-    paystackReady: true,
-    signupEmailReady: true,
-    photoStorageReady: true
+    criticalReady: false,
+    databaseReady: true
+  }),
+  "readiness helper must fail when critical features are missing"
+);
+assert(
+  !isReadinessChecksReady({
+    criticalReady: true,
+    databaseReady: false
   }),
   "readiness helper must fail when database is unavailable"
-);
-assert(
-  !isReadinessChecksReady({
-    databaseReady: true,
-    paystackReady: false,
-    signupEmailReady: true,
-    photoStorageReady: true
-  }),
-  "readiness helper must fail when Paystack secret is missing"
 );
 
 const port = Number(process.env.SMOKE_PORT || process.env.READINESS_SMOKE_PORT || 39455);
@@ -98,7 +91,7 @@ try {
   const health = await healthResponse.json();
   assert(health.ok === true && health.service === "bamsignal", "/health must return minimal liveness payload");
   assert(
-    Object.keys(health).every((key) => key === "ok" || key === "service"),
+    Object.keys(health).every((key) => key === "ok" || key === "service" || key === "alive"),
     "/health must not expose dependency diagnostics publicly"
   );
 

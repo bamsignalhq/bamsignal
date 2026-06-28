@@ -94,7 +94,11 @@ assert(validateSource.includes("remediation"), "remediation steps");
 assert(validateSource.includes("dependencyReport"), "dependency report export");
 
 const configSource = read("server/config.js");
-assert(configSource.includes("validateStartupEnvironment"), "startup validation in config");
+assert(!configSource.includes("process.exit"), "config import must not exit");
+assert(!configSource.includes("validateStartupEnvironment"), "validation moved to bootstrap");
+
+const bootstrapSource = read("server/services/startupBootstrap.js");
+assert(bootstrapSource.includes("validateEnterpriseStartup"), "enterprise validation in bootstrap");
 
 const databaseRun = read("certification/database/run.mjs");
 assert(databaseRun.includes("executionMode"), "database cert execution mode");

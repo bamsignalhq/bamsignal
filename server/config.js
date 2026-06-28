@@ -1,6 +1,4 @@
 import dotenv from "dotenv";
-import { logSignupEmailEnvTrace } from "./supabaseEnv.js";
-import { logStartupValidation, validateStartupEnvironment } from "../shared/environmentStartupValidation.mjs";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -12,11 +10,11 @@ const parseJson = (value, fallback = null) => {
   try {
     return JSON.parse(trimmed);
   } catch {
-    console.warn("[bamsignal] Ignoring invalid JSON environment value.");
-    return fallback;
+    return null;
   }
 };
 
+/** Runtime configuration object — import is side-effect free (dotenv load only). */
 export const config = {
   port: Number(process.env.PORT || 3000),
   host: process.env.HOST || "0.0.0.0",
@@ -38,7 +36,7 @@ export const config = {
     process.env.PAYSTACK_ANDROID_CALLBACK_URL || "com.bamsignal.com://payment-success",
   paystackWebhookUrl:
     process.env.PAYSTACK_WEBHOOK_URL ||
-    `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/api/paystack/webhook`, // Paystack dashboard URL
+    `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/api/paystack/webhook`,
   timezone: process.env.APP_TIMEZONE || "Africa/Lagos",
   cronSecret: process.env.CRON_SECRET,
   telegram: {
@@ -69,36 +67,6 @@ export const config = {
     clientSecret: process.env.GOOGLE_MEET_CLIENT_SECRET?.trim() || "",
     refreshToken: process.env.GOOGLE_MEET_REFRESH_TOKEN?.trim() || "",
     calendarId: process.env.GOOGLE_MEET_CALENDAR_ID?.trim() || "primary"
-  }
+  },
+  parseJson
 };
-
-if (!config.databaseUrl) {
-  console.warn("[bamsignal] DATABASE_URL is not set. Database-backed features will run in dry-run mode.");
-}
-
-if (!config.paystackSecretKey) {
-  console.warn("[bamsignal] PAYSTACK_SECRET_KEY is not set. Payment endpoints will return service-unavailable errors.");
-} else if (!/^sk_(test|live)_/.test(config.paystackSecretKey)) {
-  console.warn("[bamsignal] PAYSTACK_SECRET_KEY format looks invalid (expected sk_test_ or sk_live_ prefix).");
-}
-
-if (!config.google.clientId || !config.google.clientSecret || !config.google.redirectUri) {
-  console.warn("[bamsignal] Google Calendar OAuth env is incomplete. Calendar booking will return service-unavailable errors.");
-}
-
-if (!config.zoom.clientId || !config.zoom.clientSecret) {
-  console.warn("[bamsignal] Zoom meeting env is incomplete. Zoom meeting links will return service-unavailable errors.");
-}
-
-if (!config.googleMeet.clientId || !config.googleMeet.clientSecret) {
-  console.warn("[bamsignal] Google Meet env is incomplete. Standalone Meet links will return service-unavailable errors.");
-}
-
-logSignupEmailEnvTrace();
-
-export const startupValidation = validateStartupEnvironment({
-  nodeEnv: process.env.NODE_ENV,
-  env: process.env,
-  failFast: false
-});
-logStartupValidation(startupValidation);

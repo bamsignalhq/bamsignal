@@ -1,21 +1,18 @@
 import { config } from "../config.js";
 import { checkSchema, getDatabaseError, getDatabaseStatus, pingDatabase } from "../db.js";
 import { getFirebaseHealth } from "../firebase.js";
-import { isSignupEmailConfigured, getSignupEmailHealthTrace } from "../supabaseEnv.js";
-import { getSendchampHealthTrace, isSendchampConfigured } from "./sendchamp.js";
-import { isPhotoStorageConfigured } from "./photoStorage.js";
+import { featureSnapshot, getRegisteredFeatures, getStartupValidation } from "./startupBootstrap.js";
 
 export function livenessPayload() {
-  return { ok: true, service: "bamsignal" };
+  return { ok: true, service: "bamsignal", alive: true };
 }
 
+/**
+ * Readiness is READY only when all CRITICAL features are configured and database is connected.
+ * Important/optional integrations never fail readiness.
+ */
 export function isReadinessChecksReady(checks = {}) {
-  return Boolean(
-    checks.databaseReady &&
-      checks.paystackReady &&
-      checks.signupEmailReady &&
-      checks.photoStorageReady
-  );
+  return Boolean(checks.criticalReady && checks.databaseReady);
 }
 
 async function evaluateReadinessChecks() {
@@ -25,12 +22,15 @@ async function evaluateReadinessChecks() {
     database = alive ? "connected" : "disconnected";
   }
 
+  const features = getRegisteredFeatures();
+  const criticalFeatures = features.filter((f) => f.tier === "critical");
+  const criticalReady = criticalFeatures.every((f) => f.enabled);
+
   return {
     database,
     databaseReady: database === "connected",
-    paystackReady: Boolean(config.paystackSecretKey),
-    signupEmailReady: isSignupEmailConfigured(),
-    photoStorageReady: isPhotoStorageConfigured()
+    criticalReady: criticalReady && Boolean(config.databaseUrl),
+    features
   };
 }
 
@@ -42,6 +42,7 @@ export async function isProductionReady() {
 export async function readinessPayload(options = {}) {
   const checks = await evaluateReadinessChecks();
   const ready = isReadinessChecksReady(checks);
+  const validation = getStartupValidation();
 
   if (!options.detailed) {
     return {
@@ -57,6 +58,7 @@ export async function readinessPayload(options = {}) {
     ok: ready,
     service: "bamsignal",
     ready,
+    mode: validation?.mode,
     database: checks.database,
     databaseError: getDatabaseError() || undefined,
     schema: schemaStatus
@@ -66,14 +68,10 @@ export async function readinessPayload(options = {}) {
           missing: schemaStatus.missing?.length ? schemaStatus.missing : undefined
         }
       : undefined,
-    paystack: checks.paystackReady,
-    resend: Boolean(process.env.RESEND_API_KEY?.trim()),
-    signupEmail: checks.signupEmailReady,
-    signupEmailTrace: getSignupEmailHealthTrace(),
-    ...getFirebaseHealth(),
-    telegram: Boolean(config.telegram.botToken),
-    sendchamp: isSendchampConfigured(),
-    sendchampTrace: getSendchampHealthTrace(),
-    photoStorage: checks.photoStorageReady
+    features: featureSnapshot(),
+    integrations: featureSnapshot(),
+    enabledFeatures: validation?.enabledFeatures,
+    disabledFeatures: validation?.disabledFeatures,
+    ...getFirebaseHealth()
   };
 }

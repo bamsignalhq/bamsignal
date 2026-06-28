@@ -6,9 +6,11 @@ import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { startProductionServer } from "../shared/startProductionServer.mjs";
+import { applySmokeStartupFixtures } from "../shared/startupExecutionMode.mjs";
 
 const port = Number(process.env.SMOKE_PORT || process.env.PORT || 39451);
 process.env.PORT = String(port);
+applySmokeStartupFixtures(process.env);
 
 function assertSmoke(condition, message) {
   if (condition) return;

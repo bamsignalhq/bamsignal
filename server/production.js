@@ -15,7 +15,8 @@ import { fixSecurityDefinerViews } from "./fixSecurityDefinerViews.js";
 import { registerBotCommands, bot } from "./telegram.js";
 import { createApp } from "./app.js";
 import { readinessPayload } from "./services/readiness.js";
-import { logBackgroundTaskFailure, logReadyCheckFailed } from "./services/observability.js";
+import { bootstrapStartup, enforceProductionStartupGate } from "./services/startupBootstrap.js";
+import { logBackgroundTaskFailure } from "./services/observability.js";
 import { runStartupMigrations } from "./startupMigrations.js";
 import { buildServerRouteInventory } from "../shared/serverRouteInventory.mjs";
 
@@ -83,6 +84,9 @@ export async function startServer() {
   const port = Number(process.env.PORT || 3000);
   const host = process.env.HOST || "0.0.0.0";
 
+  const validation = bootstrapStartup(process.env);
+  enforceProductionStartupGate(validation);
+
   if (!fs.existsSync(indexHtml)) {
     console.error(`[bamsignal] Missing build output at ${indexHtml}. Run "npm run build" before starting production.`);
     process.exit(1);
@@ -116,17 +120,9 @@ export async function startServer() {
       console.log(
         `[bamsignal] Running on http://${host}:${port} (commit=${process.env.BAMSIGNAL_GIT_COMMIT || "unknown"})`
       );
-      const readiness = await readinessPayload({ detailed: true });
+      const readiness = await readinessPayload({ detailed: false });
       if (!readiness.ready) {
-        logReadyCheckFailed({ source: "startup", ready: false });
-        console.warn(
-          "[bamsignal] Production readiness incomplete — GET /ready returns 503 until database, Paystack, signup email, and photo storage are configured."
-        );
-      }
-      if (!readiness.signupEmail) {
-        console.warn(
-          "[bamsignal] signupEmail=false — set RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_URL in Coolify."
-        );
+        console.warn("[bamsignal] GET /ready returns 503 until CRITICAL services and database are available.");
       }
       resolve(server);
     });

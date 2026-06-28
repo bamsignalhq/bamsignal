@@ -120,10 +120,11 @@ export function logSanitizedApiError(req, event, error, context = {}, level = "e
   );
 }
 
-export function sendApiError(res, { status = 500, message = "Request failed.", requestId, body = {} }) {
+export function sendApiError(res, { status = 500, message = "Request failed.", requestId, errorCode = "request_failed", body = {} }) {
   return res.status(status).json({
     ok: false,
     error: message,
+    errorCode,
     requestId,
     ...body
   });
@@ -144,11 +145,13 @@ export function sendLoggedApiError({
   error,
   status = 500,
   message = "Request failed.",
+  errorCode = "request_failed",
   context = {},
   level = "error",
   body = {}
 }) {
   const { requestId } = ensureApiRequestContext(req, res);
   logSanitizedApiError(req, event, error, context, level);
-  return sendApiError(res, { status, message, requestId, body });
+  const resolvedCode = body.errorCode || errorCode || error?.code || "request_failed";
+  return sendApiError(res, { status, message, requestId, errorCode: resolvedCode, body });
 }

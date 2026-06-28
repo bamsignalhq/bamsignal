@@ -1,6 +1,5 @@
 import { config } from "../config.js";
 import { checkSchema, getDatabaseError, getDatabaseStatus } from "../db.js";
-import { getFirebaseHealth } from "../firebase.js";
 import { getStartupValidation } from "./startupBootstrap.js";
 import {
   buildRegistryAdminHealthSnapshot,
@@ -115,7 +114,6 @@ export async function readinessPayload(options = {}) {
     sendchamp: adminHealth.sendchamp,
     firebase: adminHealth.firebase,
     photoStorage: adminHealth.photoStorage,
-    telegram: adminHealth.telegram,
-    ...getFirebaseHealth()
+    telegram: adminHealth.telegram
   };
 }

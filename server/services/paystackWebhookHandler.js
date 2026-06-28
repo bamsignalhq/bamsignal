@@ -142,9 +142,10 @@ export async function handlePaystackWebhookRequest({
     { observability: { requestId, correlationId } },
     { ledgerSource }
   );
-  const errorBody = (message) => ({
+  const errorBody = (message, errorCode = "payment_webhook_error") => ({
     ok: false,
     error: message,
+    errorCode,
     ...(requestId ? { requestId } : {})
   });
 
@@ -152,7 +153,7 @@ export async function handlePaystackWebhookRequest({
     return {
       status: 405,
       headers: { Allow: "POST" },
-      body: errorBody("Method not allowed")
+      body: errorBody("Method not allowed", "method_not_allowed")
     };
   }
 
@@ -164,7 +165,7 @@ export async function handlePaystackWebhookRequest({
     });
     return {
       status: 401,
-      body: errorBody("Invalid Paystack signature")
+      body: errorBody("Invalid Paystack signature", "invalid_signature")
     };
   }
 
@@ -181,7 +182,7 @@ export async function handlePaystackWebhookRequest({
     if (result?.processing) {
       return {
         status: 503,
-        body: errorBody(PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE)
+        body: errorBody(PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE, "payment_unavailable")
       };
     }
     if (!result?.ok) {
@@ -199,7 +200,7 @@ export async function handlePaystackWebhookRequest({
       });
       return {
         status: result?.status || 422,
-        body: errorBody("Unable to fulfill purchase.")
+        body: errorBody("Unable to fulfill purchase.", "fulfillment_failed")
       };
     }
 
@@ -216,7 +217,7 @@ export async function handlePaystackWebhookRequest({
       });
       return {
         status: 503,
-        body: errorBody(PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE)
+        body: errorBody(PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE, "payment_unavailable")
       };
     }
     const sanitized = sanitizeApiErrorForLog(error);
@@ -227,7 +228,7 @@ export async function handlePaystackWebhookRequest({
     });
     return {
       status: paymentHttpStatusForError(error),
-      body: errorBody("Paystack webhook failed")
+      body: errorBody("Paystack webhook failed", "webhook_failed")
     };
   }
 }

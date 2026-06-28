@@ -10,7 +10,8 @@ import {
 import {
   ensureApiRequestContext,
   logError,
-  safeClientMessage
+  safeClientMessage,
+  sendApiError
 } from "./errorResponse.js";
 
 dotenv.config();
@@ -162,10 +163,25 @@ export function sendContactJson(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function contactApiError(res, { status, message, errorCode, requestId }) {
+  return sendContactJson(res, status, {
+    ok: false,
+    error: message,
+    errorCode,
+    requestId
+  });
+}
+
 export async function handleContactNodeRequest(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
-    return sendContactJson(res, 405, { ok: false, error: "Method not allowed" });
+    const { requestId } = ensureApiRequestContext(req, res);
+    return contactApiError(res, {
+      status: 405,
+      message: "Method not allowed.",
+      errorCode: "method_not_allowed",
+      requestId
+    });
   }
 
   try {
@@ -183,18 +199,20 @@ export async function handleContactNodeRequest(req, res) {
           "error"
         );
       }
-      return sendContactJson(res, error.status, {
-        ok: false,
-        error: safeClientMessage(error?.message, "Request failed."),
+      return contactApiError(res, {
+        status: error.status,
+        message: safeClientMessage(error?.message, "Request failed."),
+        errorCode: error.status === 400 ? "validation_error" : "contact_unavailable",
         requestId
       });
     }
 
     const { requestId } = ensureApiRequestContext(req, res);
     logError(req, "contact_form_failed", error, {}, "error");
-    return sendContactJson(res, 500, {
-      ok: false,
-      error: "We're unable to send your message right now. Please try again shortly.",
+    return contactApiError(res, {
+      status: 500,
+      message: "We're unable to send your message right now. Please try again shortly.",
+      errorCode: "contact_failed",
       requestId
     });
   }

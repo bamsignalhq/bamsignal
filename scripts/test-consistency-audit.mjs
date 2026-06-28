@@ -46,7 +46,15 @@ assert(auditDoc.includes("P0"), "technical debt audit report exists");
 
 const fetchUtil = read("src/utils/fetchAdminHealthSnapshot.ts");
 assert(fetchUtil.includes("fetchAdminHealthSnapshot"), "shared admin health fetch util exists");
-assert(fetchUtil.includes('!("database" in payload)'), "admin fetch rejects liveness-only payload");
+assert(fetchUtil.includes('/ready?details=1'), "admin fetch uses authenticated readiness endpoint");
+assert(fetchUtil.includes('typeof payload?.database !== "string"'), "admin fetch validates registry snapshot");
+
+assert(sendchampSource.includes("withBoundedRetry"), "sendchamp uses shared bounded retry");
+assert(sendchampSource.includes("isRetryableHttpStatus"), "sendchamp retries retryable HTTP statuses");
+
+const paystackVerifySource = read("api/paystack/verify.js");
+assert(paystackVerifySource.includes("sendLoggedApiError"), "paystack verify uses unified error helper");
+assert(paystackVerifySource.includes("errorCode"), "paystack verify includes errorCode");
 
 const observabilityEngine = read("src/utils/productionObservabilityEngine.ts");
 const platformEngine = read("src/utils/platformHealthEngine.ts");

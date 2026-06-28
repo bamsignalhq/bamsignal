@@ -292,11 +292,13 @@ export function logPaymentProviderError(req, scope, error, extra = {}) {
 
 export function paystackErrorResponse(error, clientMessage = PAYMENT_INITIALIZE_CLIENT_ERROR) {
   const status = error instanceof PaystackClientError ? error.status : 503;
+  const errorCode = error instanceof PaystackClientError ? error.code || "paystack_error" : "paystack_error";
   return {
     status,
     body: {
       ok: false,
-      error: clientMessage
+      error: clientMessage,
+      errorCode
     }
   };
 }

@@ -8,6 +8,7 @@ import {
 import { getPhoneVerifiedStatus } from "../../server/services/whatsappVerification.js";
 import { verifySupabaseAdmin } from "../../server/adminAuth.js";
 import { requireAdminConsent } from "../../server/adminConsent.js";
+import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -31,7 +32,14 @@ export default async function handler(req, res) {
 
   if (action === "submit-selfie") {
     if (getDatabaseStatus() !== "connected") {
-      return res.status(503).json({ ok: false, error: "Database is not connected." });
+      return sendLoggedApiError({
+        req,
+        res,
+        status: 503,
+        message: "Database is not connected.",
+        errorCode: "database_unavailable",
+        event: "verification_submit_db_unavailable"
+      });
     }
 
     const email = String(body.email || "").trim().toLowerCase();
@@ -39,14 +47,25 @@ export default async function handler(req, res) {
     const verificationSelfie = String(body.verificationSelfie || "").trim();
 
     if (!verificationSelfie) {
-      return res.status(400).json({ ok: false, error: "Selfie is required." });
+      return sendLoggedApiError({
+        req,
+        res,
+        status: 400,
+        message: "Selfie is required.",
+        errorCode: "selfie_required",
+        event: "verification_submit_missing_selfie"
+      });
     }
 
     const phoneVerified = await getPhoneVerifiedStatus({ email, phone });
     if (!phoneVerified) {
-      return res.status(400).json({
-        ok: false,
-        error: "Verify your WhatsApp number first."
+      return sendLoggedApiError({
+        req,
+        res,
+        status: 400,
+        message: "Verify your WhatsApp number first.",
+        errorCode: "phone_not_verified",
+        event: "verification_submit_phone_unverified"
       });
     }
 
@@ -68,11 +87,25 @@ export default async function handler(req, res) {
 
   const isAdmin = await verifySupabaseAdmin(req);
   if (!isAdmin) {
-    return res.status(401).json({ ok: false, error: "Admin access required." });
+    return sendLoggedApiError({
+      req,
+      res,
+      status: 401,
+      message: "Admin access required.",
+      errorCode: "not_authorized",
+      event: "verification_admin_denied"
+    });
   }
 
   if (getDatabaseStatus() !== "connected") {
-    return res.status(503).json({ ok: false, error: "Database is not connected." });
+    return sendLoggedApiError({
+      req,
+      res,
+      status: 503,
+      message: "Database is not connected.",
+      errorCode: "database_unavailable",
+      event: "verification_admin_db_unavailable"
+    });
   }
 
   if (action === "stats") {
@@ -84,7 +117,14 @@ export default async function handler(req, res) {
     if (!(await requireAdminConsent(req, res))) return;
     const id = String(body.id || "").trim();
     if (!id) {
-      return res.status(400).json({ ok: false, error: "Submission id is required." });
+      return sendLoggedApiError({
+        req,
+        res,
+        status: 400,
+        message: "Submission id is required.",
+        errorCode: "submission_id_required",
+        event: "verification_review_missing_id"
+      });
     }
     const row = await reviewVerificationSubmission(id, {
       status: action === "approve" ? "approved" : "rejected",

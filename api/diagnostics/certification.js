@@ -9,6 +9,7 @@ import {
   certificationEmailDomain,
   isCertificationEmail
 } from "../../server/services/certificationE2e.js";
+import { ensureApiRequestContext, sendApiError, sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -22,18 +23,27 @@ function parseBody(req) {
   return req.body;
 }
 
-function sendCertificationError(res, error) {
-  return res.status(Number(error?.status) || 500).json({
-    ok: false,
-    error: error?.message || "Certification request failed.",
-    code: error?.code || null
+function sendCertificationError(req, res, error) {
+  const { requestId } = ensureApiRequestContext(req, res);
+  return sendApiError(res, {
+    status: Number(error?.status) || 500,
+    message: error?.message || "Certification request failed.",
+    errorCode: error?.code || "certification_error",
+    requestId
   });
 }
 
 export default async function certificationDiagnosticsHandler(req, res) {
   const access = await requireDiagnosticsAccess(req);
   if (!access.ok) {
-    return res.status(access.status || 401).json({ ok: false, error: "Not authorized." });
+    return sendLoggedApiError({
+      req,
+      res,
+      status: access.status || 401,
+      message: "Not authorized.",
+      errorCode: "not_authorized",
+      event: "certification_access_denied"
+    });
   }
 
   const body = parseBody(req);
@@ -89,18 +99,39 @@ export default async function certificationDiagnosticsHandler(req, res) {
     if (action === "cleanup-member") {
       const email = String(body.email || "").trim();
       if (!isCertificationEmail(email)) {
-        return res.status(403).json({ ok: false, error: "Certification email required." });
+        return sendLoggedApiError({
+          req,
+          res,
+          status: 403,
+          message: "Certification email required.",
+          errorCode: "certification_email_required",
+          event: "certification_cleanup_denied"
+        });
       }
       const result = await cleanupCertificationMember(email);
       return res.status(200).json({ ok: true, ...result });
     }
 
-    return res.status(400).json({ ok: false, error: "Invalid action." });
+    return sendLoggedApiError({
+      req,
+      res,
+      status: 400,
+      message: "Invalid action.",
+      errorCode: "invalid_action",
+      event: "certification_invalid_action"
+    });
   } catch (error) {
     if (error?.name === "CertificationE2eError") {
-      return sendCertificationError(res, error);
+      return sendCertificationError(req, res, error);
     }
-    console.error("[bamsignal:certification-e2e]", error);
-    return res.status(500).json({ ok: false, error: "Certification handler failed." });
+    return sendLoggedApiError({
+      req,
+      res,
+      error,
+      status: 500,
+      message: "Certification handler failed.",
+      errorCode: "certification_handler_failed",
+      event: "certification_handler_failed"
+    });
   }
 }

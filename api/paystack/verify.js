@@ -27,12 +27,34 @@ import {
   logObservabilityEvent,
   observabilityContext
 } from "../../server/services/observability.js";
-import { sanitizeApiErrorForLog } from "../../server/services/errorResponse.js";
+import { sanitizeApiErrorForLog, ensureApiRequestContext, sendApiError, sendLoggedApiError } from "../../server/services/errorResponse.js";
 import { requireMemberAuth } from "../../server/services/memberAuth.js";
 import {
   PAYMENT_INITIALIZE_RATE_LIMITED_MESSAGE,
   enforcePaymentInitializeThrottle
 } from "../../server/services/paymentInitializeThrottle.js";
+
+function paystackMappedError(req, res, mapped) {
+  const { requestId } = ensureApiRequestContext(req, res);
+  return res.status(mapped.status).json({ ...mapped.body, requestId });
+}
+
+function paystackVerifyError(req, res, { status, message, errorCode, error, event, context }) {
+  if (error) {
+    return sendLoggedApiError({
+      req,
+      res,
+      status,
+      message,
+      errorCode,
+      error,
+      event: event || "paystack_verify_error",
+      context
+    });
+  }
+  const { requestId } = ensureApiRequestContext(req, res);
+  return sendApiError(res, { status, message, errorCode, requestId });
+}
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -171,10 +193,20 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
   const intent = await resolveInitializeIntent(action, body);
 
   if (!email) {
-    return res.status(400).json({ ok: false, error: "A verified email is required before Paystack checkout." });
+    return paystackVerifyError(req, res, {
+      status: 400,
+      message: "A verified email is required before Paystack checkout.",
+      errorCode: "email_required",
+      event: "paystack_initialize_email_required"
+    });
   }
   if (!intent?.amountKobo) {
-    return res.status(400).json({ ok: false, error: "Unknown product or pricing is not configured yet." });
+    return paystackVerifyError(req, res, {
+      status: 400,
+      message: "Unknown product or pricing is not configured yet.",
+      errorCode: "product_not_configured",
+      event: "paystack_initialize_product_missing"
+    });
   }
 
   const { returnPath, sourcePage } = paymentReturnFrom({}, body, fallbackReturnPath);
@@ -247,7 +279,13 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
         productType: intent.productType,
         productId: intent.productId
       });
-      return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
+      return paystackVerifyError(req, res, {
+        status: 503,
+        message: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE,
+        errorCode: "payment_unavailable",
+        error,
+        event: "paystack_initialize_db_error"
+      });
     }
     logPaymentProviderError(req, "initialize", error, {
       productType: intent.productType,
@@ -255,7 +293,7 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
       amount: intent.amountKobo
     });
     const mapped = paystackErrorResponse(error, PAYMENT_INITIALIZE_CLIENT_ERROR);
-    return res.status(mapped.status).json(mapped.body);
+    return paystackMappedError(req, res, mapped);
   }
 }
 
@@ -263,7 +301,12 @@ export default async function handler(req, res) {
   try {
     if (req.method !== "POST") {
       res.setHeader("Allow", "POST");
-      return res.status(405).json({ ok: false, error: "Method not allowed" });
+      return paystackVerifyError(req, res, {
+        status: 405,
+        message: "Method not allowed.",
+        errorCode: "method_not_allowed",
+        event: "paystack_verify_method_not_allowed"
+      });
     }
 
     const body = parseBody(req);
@@ -275,22 +318,31 @@ export default async function handler(req, res) {
     if (isInitializeAction) {
       memberAuth = await requireMemberAuth(req, body);
       if (!memberAuth.ok) {
-        return res.status(memberAuth.status || 401).json({ ok: false, error: "not_authorized" });
+        return paystackVerifyError(req, res, {
+          status: memberAuth.status || 401,
+          message: "not_authorized",
+          errorCode: "not_authorized",
+          event: "paystack_initialize_unauthorized"
+        });
       }
 
       const throttle = await enforcePaymentInitializeThrottle({ req, action, memberAuth });
       if (!throttle.ok) {
-        return res.status(throttle.status || 429).json({
-          ok: false,
-          error: throttle.error || PAYMENT_INITIALIZE_RATE_LIMITED_MESSAGE
+        return paystackVerifyError(req, res, {
+          status: throttle.status || 429,
+          message: throttle.error || PAYMENT_INITIALIZE_RATE_LIMITED_MESSAGE,
+          errorCode: "rate_limited",
+          event: "paystack_initialize_throttled"
         });
       }
     }
 
     if (!paystackConfigured()) {
-      return res.status(503).json({
-        ok: false,
-        error: isInitializeAction ? PAYMENT_INITIALIZE_CLIENT_ERROR : PAYMENT_VERIFY_CLIENT_ERROR
+      return paystackVerifyError(req, res, {
+        status: 503,
+        message: isInitializeAction ? PAYMENT_INITIALIZE_CLIENT_ERROR : PAYMENT_VERIFY_CLIENT_ERROR,
+        errorCode: "paystack_not_configured",
+        event: "paystack_not_configured"
       });
     }
 
@@ -318,9 +370,21 @@ export default async function handler(req, res) {
     const email = String(body.email || "").trim().toLowerCase();
     const phone = normalizePhone(body.phone);
     const name = String(body.name || "").trim();
-    if (!reference) return res.status(400).json({ ok: false, error: "Payment reference is required." });
+    if (!reference) {
+      return paystackVerifyError(req, res, {
+        status: 400,
+        message: "Payment reference is required.",
+        errorCode: "reference_required",
+        event: "paystack_verify_reference_required"
+      });
+    }
     if (!email && !phone) {
-      return res.status(400).json({ ok: false, error: "User email or phone number is required." });
+      return paystackVerifyError(req, res, {
+        status: 400,
+        message: "User email or phone number is required.",
+        errorCode: "identity_required",
+        event: "paystack_verify_identity_required"
+      });
     }
 
     let transaction;
@@ -334,7 +398,7 @@ export default async function handler(req, res) {
     } catch (error) {
       logPaymentProviderError(req, "verify", error, { reference });
       const mapped = paystackErrorResponse(error, PAYMENT_VERIFY_CLIENT_ERROR);
-      return res.status(mapped.status).json(mapped.body);
+      return paystackMappedError(req, res, mapped);
     }
 
     if (transaction?.status !== "success") {
@@ -343,7 +407,12 @@ export default async function handler(req, res) {
         observabilityContext(req, { reference, ok: false, status: transaction?.status || null }),
         "info"
       );
-      return res.status(402).json({ ok: false, error: "Payment is not successful yet." });
+      return paystackVerifyError(req, res, {
+        status: 402,
+        message: "Payment is not successful yet.",
+        errorCode: "payment_pending",
+        event: "paystack_verify_not_successful"
+      });
     }
 
     logObservabilityEvent(
@@ -354,7 +423,12 @@ export default async function handler(req, res) {
 
     const transactionEmail = String(transaction?.customer?.email || transaction?.metadata?.email || "").toLowerCase();
     if (email && transactionEmail && transactionEmail !== email) {
-      return res.status(403).json({ ok: false, error: "Payment email does not match this BamSignal account." });
+      return paystackVerifyError(req, res, {
+        status: 403,
+        message: "Payment email does not match this BamSignal account.",
+        errorCode: "email_mismatch",
+        event: "paystack_verify_email_mismatch"
+      });
     }
 
     const metadata = transaction?.metadata || {};
@@ -375,11 +449,21 @@ export default async function handler(req, res) {
       });
 
       if (result.processing) {
-        return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
+        return paystackVerifyError(req, res, {
+          status: 503,
+          message: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE,
+          errorCode: "payment_unavailable",
+          event: "paystack_verify_processing"
+        });
       }
 
       if (!result.ok) {
-        return res.status(result.status || 422).json({ ok: false, error: result.error });
+        return paystackVerifyError(req, res, {
+          status: result.status || 422,
+          message: result.error,
+          errorCode: "fulfillment_failed",
+          event: "paystack_verify_fulfillment_failed"
+        });
       }
 
       if (!result.idempotent) {
@@ -396,18 +480,27 @@ export default async function handler(req, res) {
     } catch (error) {
       if (isPaymentDatabaseError(error)) {
         logPaymentProviderError(req, "verify", error, { reference, scope: "verify persistence" });
-        return res.status(503).json({ ok: false, error: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE });
+        return paystackVerifyError(req, res, {
+          status: 503,
+          message: PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE,
+          errorCode: "payment_unavailable",
+          error,
+          event: "paystack_verify_db_error"
+        });
       }
       throw error;
     }
   } catch (error) {
     logPaymentProviderError(req, "verify", error, { scope: "handler" });
     const status = paymentHttpStatusForError(error);
-    return res.status(status).json({
-      ok: false,
-      error: isPaymentDatabaseError(error)
+    return paystackVerifyError(req, res, {
+      status,
+      message: isPaymentDatabaseError(error)
         ? PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE
-        : PAYMENT_VERIFY_CLIENT_ERROR
+        : PAYMENT_VERIFY_CLIENT_ERROR,
+      errorCode: isPaymentDatabaseError(error) ? "payment_unavailable" : "paystack_verify_failed",
+      error,
+      event: "paystack_verify_handler_error"
     });
   }
 }

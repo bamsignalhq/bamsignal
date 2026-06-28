@@ -1,10 +1,17 @@
 import { pingDatabase } from "../../server/db.js";
+import { ensureApiRequestContext, sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 /** Lightweight database latency probe for performance certification and ops. */
 export default async function handler(req, res) {
   if (req.method !== "HEAD" && req.method !== "GET") {
-    res.status(405).json({ error: "Method not allowed" });
-    return;
+    return sendLoggedApiError({
+      req,
+      res,
+      status: 405,
+      message: "Method not allowed.",
+      errorCode: "method_not_allowed",
+      event: "db_ping_method_not_allowed"
+    });
   }
 
   const started = Date.now();
@@ -19,5 +26,16 @@ export default async function handler(req, res) {
     return;
   }
 
-  res.status(ok ? 200 : 503).json({ ok, durationMs });
+  const { requestId } = ensureApiRequestContext(req, res);
+  if (ok) {
+    return res.status(200).json({ ok: true, durationMs, requestId });
+  }
+
+  return res.status(503).json({
+    ok: false,
+    error: "Database unavailable.",
+    errorCode: "database_unavailable",
+    durationMs,
+    requestId
+  });
 }

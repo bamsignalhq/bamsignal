@@ -1,12 +1,11 @@
 import {
-  PAYSTACK_HTTP_TIMEOUT_MS,
   SENDCHAMP_HTTP_TIMEOUT_MS,
-  SENDCHAMP_MAX_NETWORK_ATTEMPTS,
-  SENDCHAMP_RETRY_DELAY_MS,
+  RETRY_DEFAULT_ATTEMPTS,
   WHATSAPP_OTP_EXPIRATION_MINUTES
 } from "../../shared/operationalConstants.mjs";
 import { config } from "../config.js";
 import { logWhatsappVerification } from "./verificationLog.js";
+import { isRetryableHttpStatus, isRetryableNetworkError, withBoundedRetry } from "./retryPolicy.js";
 
 const OTP_EXPIRATION_MINUTES = WHATSAPP_OTP_EXPIRATION_MINUTES;
 const BAM_SIGNAL_OTP_MESSAGE =
@@ -111,27 +110,6 @@ export function parseSendchampEnvelope(payload, { requireReference = true } = {}
   };
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function isRetryableNetworkError(error) {
-  if (!error) return false;
-  if (error.name === "AbortError") return true;
-  if (error instanceof TypeError) return true;
-  return false;
-}
-
-async function fetchWithTimeout(url, options, timeoutMs = SENDCHAMP_HTTP_TIMEOUT_MS) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 async function sendchampFetch(path, body, { requireReference = true, logContext = {} } = {}) {
   const apiKey = config.sendchamp.apiKey;
   if (!apiKey) {
@@ -141,6 +119,7 @@ async function sendchampFetch(path, body, { requireReference = true, logContext 
   const baseUrl = config.sendchamp.baseUrl.replace(/\/$/, "");
   const url = `${baseUrl}${path}`;
   const started = Date.now();
+  let retried = false;
 
   const requestOptions = {
     method: "POST",
@@ -152,15 +131,9 @@ async function sendchampFetch(path, body, { requireReference = true, logContext 
     body: JSON.stringify(body)
   };
 
-  let response;
-  let retried = false;
-
-  for (let attempt = 0; attempt < SENDCHAMP_MAX_NETWORK_ATTEMPTS; attempt += 1) {
-    try {
-      response = await fetchWithTimeout(url, requestOptions);
-      break;
-    } catch (error) {
-      if (attempt === 0 && isRetryableNetworkError(error)) {
+  const { response, payload } = await withBoundedRetry(
+    async (attempt) => {
+      if (attempt > 1) {
         retried = true;
         logWhatsappVerification(
           "provider_retry",
@@ -168,38 +141,71 @@ async function sendchampFetch(path, body, { requireReference = true, logContext 
             ...logContext,
             provider: "sendchamp",
             path,
-            attempt: attempt + 1,
-            reason: error.name || "network_error"
+            attempt,
+            reason: "retryable_error"
           },
           "warn"
         );
-        await sleep(SENDCHAMP_RETRY_DELAY_MS);
-        continue;
       }
 
-      logWhatsappVerification(
-        "provider_failed",
-        {
-          ...logContext,
-          provider: "sendchamp",
-          path,
-          durationMs: Date.now() - started,
-          providerStatus: "network_error",
-          failureReason: error.name || "network_error",
-          retried
-        },
-        "error"
-      );
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), SENDCHAMP_HTTP_TIMEOUT_MS);
+      try {
+        const httpResponse = await fetch(url, { ...requestOptions, signal: controller.signal });
+        const json = await httpResponse.json().catch(() => ({}));
 
-      throw new SendchampError(
-        504,
-        "Network timeout. Try again.",
-        error.name === "AbortError" ? "provider_timeout" : "network_error"
-      );
+        if (!httpResponse.ok && isRetryableHttpStatus(httpResponse.status)) {
+          const retryError = new SendchampError(httpResponse.status, "Sendchamp temporary error.", "retryable_http");
+          retryError.retryable = true;
+          throw retryError;
+        }
+
+        return { response: httpResponse, payload: json };
+      } catch (error) {
+        if (error instanceof SendchampError && error.code === "retryable_http") {
+          throw error;
+        }
+        if (error?.name === "AbortError") {
+          throw new SendchampError(504, "Network timeout. Try again.", "provider_timeout");
+        }
+        if (isRetryableNetworkError(error)) {
+          throw error;
+        }
+        throw new SendchampError(504, "Network timeout. Try again.", "network_error");
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+    {
+      service: "sendchamp",
+      attempts: RETRY_DEFAULT_ATTEMPTS,
+      shouldRetry: (error) => {
+        if (error instanceof SendchampError && error.code === "retryable_http") {
+          return isRetryableHttpStatus(error.status);
+        }
+        return isRetryableNetworkError(error);
+      },
+      context: { path }
     }
-  }
+  ).catch((error) => {
+    logWhatsappVerification(
+      "provider_failed",
+      {
+        ...logContext,
+        provider: "sendchamp",
+        path,
+        durationMs: Date.now() - started,
+        providerStatus: "network_error",
+        failureReason: error instanceof SendchampError ? error.code : error?.name || "network_error",
+        retried
+      },
+      "error"
+    );
+    throw error instanceof SendchampError
+      ? error
+      : new SendchampError(504, "Network timeout. Try again.", "network_error");
+  });
 
-  const payload = await response.json().catch(() => ({}));
   const parsed = parseSendchampEnvelope(payload, { requireReference });
 
   logWhatsappVerification(

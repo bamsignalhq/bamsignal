@@ -11,10 +11,10 @@
 | Area | Status | Notes |
 |------|--------|-------|
 | Configuration | Partial | `shared/operationalConstants.mjs` added; many TTL/throttle literals remain local |
-| Error handling | Partial | 24/33 API handlers use `sendLoggedApiError`; `errorCode` not standardized |
+| Error handling | Strong | All audited API handlers use unified `{ ok, error, errorCode, requestId }` envelope |
 | Logging | Strong | Structured observability with redaction, request IDs, alert debounce |
-| Retries/timeouts | Partial | Paystack uses `withBoundedRetry`; Sendchamp uses inline retry |
-| Health/metrics | Good | Service Registry is source of truth for `/ready`; admin UI still on wrong endpoint |
+| Retries/timeouts | Strong | Paystack, Resend, Sendchamp share `withBoundedRetry` + operational constants |
+| Health/metrics | Strong | Service Registry backs `/ready`; admin dashboards use authenticated `/ready?details=1` |
 | Security | Strong | No hard-coded prod secrets; sanitization tested |
 | Performance | Acceptable | `axios` unused; TensorFlow/heic2any dominate bundle |
 | Dependencies | 1 unused | `axios` in package.json, zero imports |
@@ -30,7 +30,7 @@
 |----------|-----------|--------|--------------|
 | Provider HTTP timeout | `paystackClient.js`, `sendchamp.js` | 20s / 15s | Yes |
 | Retry backoff | `retryPolicy.js` | 3 attempts, 500ms base, 8s max | Yes |
-| Sendchamp retry | `sendchamp.js` | 800ms delay, 2 attempts | Yes |
+| Sendchamp retry | `sendchamp.js` | 3 attempts via `withBoundedRetry` | Yes |
 | Email OTP TTL | `signupOtp.js`, `pinReset.js`, `accountSecurity.js` | 10 min | Documented only |
 | WhatsApp OTP TTL | `sendchamp.js`, `whatsappVerification.js` | 30 min | Partial |
 | Pin auth throttle | `pinAuthThrottle.js`, `adminActionPinThrottle.js` | 15 min window | Documented only |
@@ -48,9 +48,8 @@
 
 Target shape: `{ ok, error, errorCode, requestId }`
 
-- **24/33** `api/` handlers use `sendLoggedApiError` / `sendApiError`
-- **9** use ad-hoc responses (remote-config, feature-flags, paystack verify/webhook, diagnostics, contact, whatsapp webhook, verify submissions)
-- **`errorCode`** only on WhatsApp verify APIs today
+- **33/33** audited `api/` handlers use `sendLoggedApiError` / `sendApiError` (or shared webhook/contact helpers)
+- **`errorCode`** standardized on all P1-audited handlers (remote-config, feature-flags, paystack verify/webhook, diagnostics, contact, whatsapp webhook, verify submissions)
 
 ---
 
@@ -67,11 +66,11 @@ Target shape: `{ ok, error, errorCode, requestId }`
 | Integration | Timeout | Retry |
 |-------------|---------|-------|
 | Paystack | 20s | 3x exponential via `withBoundedRetry` |
-| Sendchamp | 15s | 2x network-only inline |
+| Sendchamp | 15s | 3x exponential via `withBoundedRetry` (429/5xx + network) |
 | Resend email | fetch default | 3x via `withBoundedRetry` |
 | Database | pg pool | none |
 
-Sendchamp does not retry HTTP 429/5xx — only network abort.
+Sendchamp retries HTTP 429/5xx and transient network errors via shared retry policy.
 
 ---
 
@@ -81,9 +80,9 @@ Sendchamp does not retry HTTP 429/5xx — only network abort.
 |----------|--------|----------|
 | `/ready` | Service Registry | Yes |
 | `/health` | Liveness | Yes |
-| Admin Observability / Platform Health / System Health | `/health` via shared fetch util | **No** — liveness lacks dependency fields |
+| Admin Observability / Platform Health / System Health | `/ready?details=1` (admin bearer) | **Yes** |
 
-**Action:** `src/utils/fetchAdminHealthSnapshot.ts` deduplicates 4 fetch implementations; returns null until P1-01 adds proper endpoint.
+**Action:** `src/utils/fetchAdminHealthSnapshot.ts` fetches authenticated registry snapshot from `/ready?details=1`.
 
 ---
 
@@ -126,11 +125,11 @@ None.
 
 | ID | Item | Risk | Fix | Effort | When |
 |----|------|------|-----|--------|------|
-| P1-01 | Admin dashboards fetch `/health` not registry/`/ready` | Ops blind during launch | Admin-authenticated health API | 4–8h | Before launch war room |
-| P1-02 | 9 API handlers lack unified error envelope | Support triage harder | Migrate to `sendLoggedApiError` | 4h | Post-launch |
-| P1-03 | Sendchamp retry skips HTTP 429/5xx | WhatsApp OTP flakes | Use `withBoundedRetry` | 2h | Post-launch |
+| P1-01 | Admin dashboards fetch `/health` not registry/`/ready` | Ops blind during launch | Admin-authenticated health API | **Fixed** | Done |
+| P1-02 | 9 API handlers lack unified error envelope | Support triage harder | Migrate to `sendLoggedApiError` | **Fixed** | Done |
+| P1-03 | Sendchamp retry skips HTTP 429/5xx | WhatsApp OTP flakes | Use `withBoundedRetry` | **Fixed** | Done |
 | P1-04 | Outdated health-checks doc | Wrong alert config | **Fixed** | — | Done |
-| P1-05 | Duplicate firebase health in detailed `/ready` | Noisy diagnostics | Registry-only payload | 1h | Post-launch |
+| P1-05 | Duplicate firebase health in detailed `/ready` | Noisy diagnostics | Registry-only payload | **Fixed** | Done |
 
 ### P2 — Performance
 
@@ -167,4 +166,4 @@ npm run build
 
 ## Launch recommendation
 
-**GO** — no P0 consistency blockers. Member paths and `/ready` probes are correct. Prioritize P1-01 if ops dashboards are used during launch.
+**GO** — no P0 or P1 consistency blockers remain. Member paths, `/ready` probes, admin dashboards, API errors, and Sendchamp retries are aligned.

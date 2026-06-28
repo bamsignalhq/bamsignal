@@ -40,7 +40,8 @@ export async function resolvePerformanceCertTarget(config) {
 
   process.env.PORT = String(config.port);
   process.env.HOST = process.env.HOST || "127.0.0.1";
-  await import("../../../server/production.js");
+  const { startProductionServer } = await import("../../../shared/startProductionServer.mjs");
+  await startProductionServer();
   await waitForServer(baseUrl);
   return { baseUrl, local: true, reused: false };
 }

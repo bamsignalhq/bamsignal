@@ -2,10 +2,13 @@
  * Canonical BamSignal server entrypoint.
  * Docker/Coolify: CMD node server/production.js
  * Local: npm start
+ *
+ * Importing this module is side-effect free — HTTP starts only via startServer()
+ * or when executed as the process entry module.
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { initDatabase } from "./db.js";
 import { fixFunctionSecurity } from "./fixFunctionSecurity.js";
 import { fixSecurityDefinerViews } from "./fixSecurityDefinerViews.js";
@@ -19,12 +22,15 @@ import { buildServerRouteInventory } from "../shared/serverRouteInventory.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, "..", "dist");
 const indexHtml = path.join(distDir, "index.html");
-const port = Number(process.env.PORT || 3000);
-const host = process.env.HOST || "0.0.0.0";
 
-if (!fs.existsSync(indexHtml)) {
-  console.error(`[bamsignal] Missing build output at ${indexHtml}. Run "npm run build" before starting production.`);
-  process.exit(1);
+function isEntryModule() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return import.meta.url === pathToFileURL(path.resolve(entry)).href;
+  } catch {
+    return false;
+  }
 }
 
 process.on("uncaughtException", (error) => {
@@ -72,7 +78,16 @@ async function runPostDatabaseStartup() {
   }
 }
 
-async function start() {
+/** @returns {Promise<import("node:http").Server>} */
+export async function startServer() {
+  const port = Number(process.env.PORT || 3000);
+  const host = process.env.HOST || "0.0.0.0";
+
+  if (!fs.existsSync(indexHtml)) {
+    console.error(`[bamsignal] Missing build output at ${indexHtml}. Run "npm run build" before starting production.`);
+    process.exit(1);
+  }
+
   try {
     await runStartupMigrations();
   } catch (error) {
@@ -96,46 +111,52 @@ async function start() {
     process.exit(1);
   }
 
-  const server = app.listen(port, host, async () => {
-  console.log(
-    `[bamsignal] Running on http://${host}:${port} (commit=${process.env.BAMSIGNAL_GIT_COMMIT || "unknown"})`
-  );
-    const readiness = await readinessPayload({ detailed: true });
-    if (!readiness.ready) {
-      logReadyCheckFailed({ source: "startup", ready: false });
-      console.warn(
-        "[bamsignal] Production readiness incomplete — GET /ready returns 503 until database, Paystack, signup email, and photo storage are configured."
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, host, async () => {
+      console.log(
+        `[bamsignal] Running on http://${host}:${port} (commit=${process.env.BAMSIGNAL_GIT_COMMIT || "unknown"})`
       );
-    }
-    if (!readiness.signupEmail) {
-      console.warn(
-        "[bamsignal] signupEmail=false — set RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_URL in Coolify."
-      );
+      const readiness = await readinessPayload({ detailed: true });
+      if (!readiness.ready) {
+        logReadyCheckFailed({ source: "startup", ready: false });
+        console.warn(
+          "[bamsignal] Production readiness incomplete — GET /ready returns 503 until database, Paystack, signup email, and photo storage are configured."
+        );
+      }
+      if (!readiness.signupEmail) {
+        console.warn(
+          "[bamsignal] signupEmail=false — set RESEND_API_KEY, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_URL in Coolify."
+        );
+      }
+      resolve(server);
+    });
+
+    void runPostDatabaseStartup().catch((error) => {
+      logBackgroundTaskFailure("post_database_startup", error);
+    });
+
+    server.on("error", (error) => {
+      console.error("[bamsignal] Server failed to start:", error);
+      reject(error);
+      process.exit(1);
+    });
+
+    try {
+      registerBotCommands();
+      if (bot && process.env.TELEGRAM_ENABLE_POLLING === "true") {
+        bot.launch().catch((error) => {
+          logBackgroundTaskFailure("telegram_polling", error);
+        });
+      }
+    } catch (error) {
+      logBackgroundTaskFailure("telegram_setup", error);
     }
   });
-
-  void runPostDatabaseStartup().catch((error) => {
-    logBackgroundTaskFailure("post_database_startup", error);
-  });
-
-  server.on("error", (error) => {
-    console.error("[bamsignal] Server failed to start:", error);
-    process.exit(1);
-  });
-
-  try {
-    registerBotCommands();
-    if (bot && process.env.TELEGRAM_ENABLE_POLLING === "true") {
-      bot.launch().catch((error) => {
-        logBackgroundTaskFailure("telegram_polling", error);
-      });
-    }
-  } catch (error) {
-    logBackgroundTaskFailure("telegram_setup", error);
-  }
 }
 
-start().catch((error) => {
-  console.error("[bamsignal] Failed to start:", error);
-  process.exit(1);
-});
+if (isEntryModule()) {
+  startServer().catch((error) => {
+    console.error("[bamsignal] Failed to start:", error);
+    process.exit(1);
+  });
+}

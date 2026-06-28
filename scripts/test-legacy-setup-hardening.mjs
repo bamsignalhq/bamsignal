@@ -5,6 +5,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { startProductionServer } from "../shared/startProductionServer.mjs";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -125,7 +126,7 @@ async function callSetup(baseUrl, options = {}) {
 }
 
 try {
-  await import("../server/production.js");
+  await startProductionServer();
   const baseUrl = `http://127.0.0.1:${port}`;
   await waitForServer(baseUrl);
 

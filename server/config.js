@@ -96,12 +96,9 @@ if (!config.googleMeet.clientId || !config.googleMeet.clientSecret) {
 
 logSignupEmailEnvTrace();
 
-const startupValidation = validateStartupEnvironment({
+export const startupValidation = validateStartupEnvironment({
   nodeEnv: process.env.NODE_ENV,
   env: process.env,
-  failFast: process.env.NODE_ENV === "production"
+  failFast: false
 });
 logStartupValidation(startupValidation);
-if (startupValidation.shouldExit) {
-  process.exit(1);
-}

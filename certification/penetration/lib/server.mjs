@@ -34,7 +34,8 @@ export async function resolvePenetrationTarget(config) {
   }
 
   process.env.PORT = String(config.port);
-  await import("../../../server/production.js");
+  const { startProductionServer } = await import("../../../shared/startProductionServer.mjs");
+  await startProductionServer();
   await waitForServer(baseUrl);
   return { baseUrl, local: true, reused: false };
 }

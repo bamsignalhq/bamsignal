@@ -5,6 +5,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { startProductionServer } from "../shared/startProductionServer.mjs";
 
 const port = Number(process.env.SMOKE_PORT || process.env.PORT || 39451);
 process.env.PORT = String(port);
@@ -12,6 +13,22 @@ process.env.PORT = String(port);
 function assertSmoke(condition, message) {
   if (condition) return;
   console.error(`server smoke failed: ${message}`);
+  process.exit(1);
+}
+
+function logImportFailure(label, error, startedAt) {
+  const durationMs = Number.isFinite(startedAt) ? Date.now() - startedAt : null;
+  console.error(`\n[bamsignal] smoke import failure: ${label}`);
+  if (durationMs != null) {
+    console.error(`  import duration: ${durationMs}ms`);
+  }
+  if (error?.code === "ERR_MODULE_NOT_FOUND") {
+    console.error(`  missing module: ${error.message}`);
+  }
+  console.error(error);
+  if (error?.stack) {
+    console.error(error.stack);
+  }
   process.exit(1);
 }
 
@@ -29,6 +46,11 @@ assertSmoke(
 assertSmoke(
   productionSource.includes('from "./app.js"') && productionSource.includes("createApp({ distDir })"),
   "server/production.js must delegate app creation to server/app.js"
+);
+assertSmoke(
+  productionSource.includes("export async function startServer") &&
+    productionSource.includes("isEntryModule()"),
+  "server/production.js must export startServer() and only auto-start as the entry module"
 );
 assertSmoke(
   productionSource.includes("runStartupMigrations") &&
@@ -73,7 +95,26 @@ async function waitForServer(baseUrl) {
 }
 
 try {
-  await import("../server/production.js");
+  const importStartedAt = Date.now();
+  let productionModule;
+  try {
+    productionModule = await import("../server/production.js");
+  } catch (error) {
+    logImportFailure("server/production.js", error, importStartedAt);
+  }
+  console.error(
+    `[bamsignal] smoke import ok: server/production.js (${Date.now() - importStartedAt}ms)`
+  );
+  assertSmoke(typeof productionModule.startServer === "function", "server/production.js must export startServer()");
+
+  const bootStartedAt = Date.now();
+  try {
+    await startProductionServer();
+  } catch (error) {
+    logImportFailure("startProductionServer()", error, bootStartedAt);
+  }
+  console.error(`[bamsignal] smoke boot ok: startServer() (${Date.now() - bootStartedAt}ms)`);
+
   const baseUrl = `http://127.0.0.1:${port}`;
   await waitForServer(baseUrl);
 
@@ -154,6 +195,9 @@ try {
   console.log("server ok");
   process.exit(0);
 } catch (error) {
-  console.error("server import failed:", error);
+  console.error("server smoke failed:", error);
+  if (error?.stack) {
+    console.error(error.stack);
+  }
   process.exit(1);
 }

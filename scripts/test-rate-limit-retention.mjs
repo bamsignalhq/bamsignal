@@ -28,6 +28,7 @@ const retentionSource = read("server/services/rateLimitRetention.js");
 const batchSource = read("server/services/retentionBatchDelete.js");
 const migrationSource = read("migrations/0003_rate_limit_retention_indexes.sql");
 const productionSource = read("server/production.js");
+const serviceDefinitionsSource = read("server/services/serviceDefinitions.js");
 
 assert(
   rateLimitSource.includes("export async function pruneRateLimitEvents") &&
@@ -66,10 +67,11 @@ assert(
 );
 
 assert(
-  productionSource.includes("startRateLimitRetentionScheduler") &&
+  serviceDefinitionsSource.includes("startRateLimitRetentionScheduler") &&
+    retentionSource.includes("already_running") &&
     !rateLimitSource.includes("create table if not exists") &&
     !paymentThrottleSource.includes("delete from api_rate_events"),
-  "scheduler must run in production without changing request-path rate-limit behavior"
+  "scheduler must run via service registry without changing request-path rate-limit behavior"
 );
 
 const now = Date.parse("2026-06-21T12:00:00.000Z");

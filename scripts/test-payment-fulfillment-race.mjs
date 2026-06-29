@@ -63,7 +63,7 @@ assert(
 
 assert(
   paystackVerifySource.includes("result.processing") &&
-    paystackVerifySource.includes("status(503)") &&
+    paystackVerifySource.includes("status: 503") &&
     paystackVerifySource.includes("PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE"),
   "browser payment verification must treat concurrent fulfillment as retryable"
 );

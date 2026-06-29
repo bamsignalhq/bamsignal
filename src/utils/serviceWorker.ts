@@ -6,6 +6,15 @@ import {
 } from "./crashRecovery";
 import { clearAppUpdatePending, markAppUpdatePending } from "./bootFlags";
 
+function isNativeCapacitorApp(): boolean {
+  try {
+    const cap = (window as Window & { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+    return Boolean(cap?.isNativePlatform?.());
+  } catch {
+    return false;
+  }
+}
+
 const BUILD_KEY = "bamsignal:build-id";
 const BUILD_RELOAD_KEY = "bamsignal:build-reload";
 const CHUNK_RELOAD_KEY = "bamsignal:chunk-reload";
@@ -113,6 +122,7 @@ export function installChunkLoadHandlers(): void {
 }
 
 export function registerServiceWorker(): void {
+  if (isNativeCapacitorApp()) return;
   if (!("serviceWorker" in navigator) || !import.meta.env.PROD) return;
 
   installChunkLoadHandlers();

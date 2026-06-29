@@ -354,7 +354,7 @@ export function App() {
   });
   const [authLoading, setAuthLoading] = useState(() => blockMemberRestoreOnBoot);
   const [memberHydrating, setMemberHydrating] = useState(false);
-  const [memberAppEntered, setMemberAppEntered] = useState(() => isNative);
+  const [memberAppEntered, setMemberAppEntered] = useState(false);
   const [bootExit, setBootExit] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => getSavedTheme());
   const [tab, setTab] = useState<NavTab>("home");
@@ -428,8 +428,7 @@ export function App() {
   const isPublicSurface =
     !isNative && isPublicWebRoute(currentPathname) && !paystackCallbackActive;
   const isGuest = !isAuthed;
-  const isPublicHome =
-    !isNative && currentPathname === "/" && !paystackCallbackActive;
+  const isPublicHome = currentPathname === "/" && !paystackCallbackActive;
   const isOnboardingRoute = isOnboardingPath(currentPathname);
   const showMarketingHome =
     isPublicHome && !isOnboardingRoute && !paystackCallbackActive;
@@ -1761,7 +1760,7 @@ export function App() {
           if (isPublicWebRoute()) {
             clearMemberSessionCaches();
             setIsAuthed(false);
-            setMemberAppEntered(isNative);
+            setMemberAppEntered(false);
             setProfileComplete(false);
             clearMemberSessionReady();
             setIsPremium(false);
@@ -1867,7 +1866,7 @@ export function App() {
   const resetLoggedOutState = useCallback(() => {
     clearMemberSessionCaches();
     setIsAuthed(false);
-    setMemberAppEntered(isNative);
+    setMemberAppEntered(false);
     setProfileComplete(false);
     clearMemberSessionReady();
     setIsPremium(false);

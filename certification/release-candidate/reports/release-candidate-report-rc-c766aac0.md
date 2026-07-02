@@ -1,9 +1,9 @@
 # Release Candidate RC1 Certification™
 
-**RC Number:** RC1-1.0.16-19-rc-92f14ae2  
-**Generated:** 2026-07-02T11:13:43.791Z  
-**Git commit:** fb96e2c532815bb5e56c28ddd399e97ebc1b8f75  
-**Build version:** 1.0.16 (19)  
+**RC Number:** RC1-1.0.15-18-rc-c766aac0  
+**Generated:** 2026-06-29T13:12:52.074Z  
+**Git commit:** 85de8267dff800ccdecdd2261da21cdda6535a68  
+**Build version:** 1.0.15 (18)  
 **Profile:** local  
 **Advisory only:** yes  
 **Overall score:** 94%  
@@ -70,10 +70,10 @@
 
 | Role | Status | Timestamp |
 |------|--------|-----------|
-| Chief Engineer | APPROVED WITH CONDITIONS | 2026-07-02T11:13:43.791Z |
-| DevOps | APPROVED WITH CONDITIONS | 2026-07-02T11:13:43.791Z |
-| QA | APPROVED WITH CONDITIONS | 2026-07-02T11:13:43.791Z |
-| Founder | APPROVED WITH CONDITIONS | 2026-07-02T11:13:43.791Z |
+| Chief Engineer | APPROVED WITH CONDITIONS | 2026-06-29T13:12:52.074Z |
+| DevOps | APPROVED WITH CONDITIONS | 2026-06-29T13:12:52.074Z |
+| QA | APPROVED WITH CONDITIONS | 2026-06-29T13:12:52.074Z |
+| Founder | APPROVED WITH CONDITIONS | 2026-06-29T13:12:52.074Z |
 
 ## Blockers
 

@@ -1,12 +1,12 @@
 {
-  "runId": "founder-866144a1",
-  "generatedAt": "2026-07-02T11:13:37.757Z",
-  "releaseCandidate": "bamsignal-v1.0.16-19-mqz9bxsr",
-  "overallScore": 100,
-  "releaseDecision": "go",
-  "releaseDecisionLabel": "GO",
-  "releaseDecisionDetail": "All audit domains meet readiness thresholds. Automatic recommendation: GO for institutional launch.",
-  "passed": true,
+  "runId": "founder-b93ca147",
+  "generatedAt": "2026-06-28T05:23:41.682Z",
+  "releaseCandidate": "bamsignal-v1.0.15-18-mqxc4380",
+  "overallScore": 96,
+  "releaseDecision": "no-go",
+  "releaseDecisionLabel": "NO GO",
+  "releaseDecisionDetail": "Critical blockers prevent safe institutional launch. Resolve all critical issues before go-live.",
+  "passed": false,
   "subsystemScores": [
     {
       "id": "qa",
@@ -35,9 +35,9 @@
     {
       "id": "reliability",
       "label": "Reliability",
-      "score": 100,
-      "status": "healthy",
-      "summary": "Reliability certification passed.",
+      "score": 90,
+      "status": "critical",
+      "summary": "Reliability certification failed.",
       "source": "cert-report"
     },
     {
@@ -161,15 +161,23 @@
       "source": "static"
     }
   ],
-  "criticalIssues": [],
+  "criticalIssues": [
+    {
+      "id": "reliability_failed",
+      "subsystemId": "reliability",
+      "title": "Reliability certification failed",
+      "detail": "Run npm run certify:reliability and verify failure recovery.",
+      "severity": "critical"
+    }
+  ],
   "warnings": [],
   "resolvedSinceLastRelease": [],
-  "summaryLine": "GO · 100% · 0 critical · 0 warnings",
+  "summaryLine": "NO GO · 96% · 1 critical · 0 warnings",
   "source": "cli",
   "exports": {
-    "json": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-866144a1.json",
-    "markdown": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-866144a1.md",
-    "founderPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-866144a1-founder.pdf.html",
-    "boardPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-866144a1-board.pdf.html"
+    "json": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-b93ca147.json",
+    "markdown": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-b93ca147.md",
+    "founderPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-b93ca147-founder.pdf.html",
+    "boardPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-b93ca147-board.pdf.html"
   }
 }

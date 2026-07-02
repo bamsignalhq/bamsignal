@@ -1,7 +1,7 @@
 {
-  "runId": "founder-866144a1",
-  "generatedAt": "2026-07-02T11:13:37.757Z",
-  "releaseCandidate": "bamsignal-v1.0.16-19-mqz9bxsr",
+  "runId": "founder-7933f1c0",
+  "generatedAt": "2026-06-29T13:12:44.966Z",
+  "releaseCandidate": "bamsignal-v1.0.15-18-mqz7robq",
   "overallScore": 100,
   "releaseDecision": "go",
   "releaseDecisionLabel": "GO",
@@ -163,13 +163,15 @@
   ],
   "criticalIssues": [],
   "warnings": [],
-  "resolvedSinceLastRelease": [],
+  "resolvedSinceLastRelease": [
+    "reliability_failed"
+  ],
   "summaryLine": "GO · 100% · 0 critical · 0 warnings",
   "source": "cli",
   "exports": {
-    "json": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-866144a1.json",
-    "markdown": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-866144a1.md",
-    "founderPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-866144a1-founder.pdf.html",
-    "boardPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-866144a1-board.pdf.html"
+    "json": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-7933f1c0.json",
+    "markdown": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-7933f1c0.md",
+    "founderPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-7933f1c0-founder.pdf.html",
+    "boardPdf": "/Users/stanlex/Documents/bamsignal/certification/founder/reports/founder-cert-founder-7933f1c0-board.pdf.html"
   }
 }

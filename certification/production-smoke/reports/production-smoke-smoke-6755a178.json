@@ -1,9 +1,9 @@
 {
-  "runId": "smoke-30720b2d",
-  "generatedAt": "2026-07-02T11:13:24.880Z",
+  "runId": "smoke-6755a178",
+  "generatedAt": "2026-06-29T13:12:51.259Z",
   "baseUrl": "https://bamsignal.com",
-  "deploymentTimestamp": "2026-07-02T11:13:17.000Z",
-  "commitSha": "fb96e2c532815bb5e56c28ddd399e97ebc1b8f75",
+  "deploymentTimestamp": "2026-06-29T13:12:46.000Z",
+  "commitSha": "85de8267dff800ccdecdd2261da21cdda6535a68",
   "deploymentBuildId": "bamsignal-v1.0.15-18-mqx2n4dm",
   "smokeScore": 100,
   "passed": true,
@@ -21,7 +21,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 1373,
+      "responseTimeMs": 1171,
       "expectedUi": {
         "spaRoot": true,
         "brandTitle": true,
@@ -39,7 +39,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 313,
+      "responseTimeMs": 251,
       "expectedUi": {
         "spaRoot": true,
         "brandTitle": true,
@@ -58,7 +58,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 309,
+      "responseTimeMs": 244,
       "expectedUi": {
         "spaRoot": true,
         "brandTitle": true,
@@ -77,7 +77,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 368,
+      "responseTimeMs": 250,
       "expectedUi": {
         "spaRoot": true,
         "brandTitle": true,
@@ -96,7 +96,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 507,
+      "responseTimeMs": 244,
       "expectedUi": {
         "spaRoot": true,
         "brandTitle": true,
@@ -115,7 +115,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 758,
+      "responseTimeMs": 285,
       "expectedUi": {
         "spaRoot": true,
         "brandTitle": true,
@@ -134,7 +134,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 289,
+      "responseTimeMs": 235,
       "expectedUi": {
         "spaRoot": true,
         "brandTitle": true,
@@ -153,7 +153,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 307,
+      "responseTimeMs": 288,
       "expectedUi": null,
       "databaseState": {
         "livenessOnly": true
@@ -168,7 +168,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 1023,
+      "responseTimeMs": 530,
       "expectedUi": null,
       "databaseState": {
         "ready": true,
@@ -187,7 +187,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 400,
-      "responseTimeMs": 426,
+      "responseTimeMs": 313,
       "expectedUi": null,
       "databaseState": null,
       "detail": "POST /api/auth/email-code → 400 (route mounted, non-5xx)",
@@ -200,7 +200,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 401,
-      "responseTimeMs": 416,
+      "responseTimeMs": 453,
       "expectedUi": null,
       "databaseState": null,
       "detail": "POST /api/auth/pin-login → 401 (auth route mounted)",
@@ -213,7 +213,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 400,
-      "responseTimeMs": 254,
+      "responseTimeMs": 230,
       "expectedUi": null,
       "databaseState": null,
       "detail": "POST /api/paystack/verify → 400 (Paystack route mounted)",
@@ -226,7 +226,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 522,
+      "responseTimeMs": 224,
       "expectedUi": null,
       "databaseState": {
         "flagCount": 11
@@ -241,7 +241,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 318,
+      "responseTimeMs": 248,
       "expectedUi": null,
       "databaseState": {
         "revision": 20
@@ -256,7 +256,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 200,
-      "responseTimeMs": 253,
+      "responseTimeMs": 242,
       "expectedUi": null,
       "databaseState": {
         "retryIntervalSeconds": 300,
@@ -275,7 +275,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 401,
-      "responseTimeMs": 439,
+      "responseTimeMs": 241,
       "expectedUi": null,
       "databaseState": {
         "requiresAuth": true,
@@ -292,7 +292,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 401,
-      "responseTimeMs": 582,
+      "responseTimeMs": 229,
       "expectedUi": null,
       "databaseState": {
         "requiresAuth": true,
@@ -309,7 +309,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 401,
-      "responseTimeMs": 254,
+      "responseTimeMs": 362,
       "expectedUi": null,
       "databaseState": {
         "requiresAuth": true,
@@ -326,7 +326,7 @@
       "passed": true,
       "severity": "low",
       "httpStatus": 401,
-      "responseTimeMs": 175,
+      "responseTimeMs": 230,
       "expectedUi": null,
       "databaseState": {
         "requiresAuth": true,

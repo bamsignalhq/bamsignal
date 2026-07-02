@@ -1,24 +1,20 @@
 {
-  "runId": "rc-92f14ae2",
+  "runId": "rc-ce16fde9",
   "rcLabel": "RC1",
-  "rcNumber": "RC1-1.0.16-19-rc-92f14ae2",
-  "certificationTimestamp": "2026-07-02T11:13:43.791Z",
-  "gitCommit": "fb96e2c532815bb5e56c28ddd399e97ebc1b8f75",
-  "gitCommitShort": "fb96e2c53281",
-  "buildVersion": "1.0.16",
-  "buildCode": "19",
-  "cacheVersion": "bamsignal-v1.0.16-19-mqz9bxsr",
-  "environment": "local",
-  "certificationProfile": "local",
-  "profileDescription": "Local — advisory certification; unavailable infrastructure is SKIPPED, not FAILED.",
-  "executionMode": "dry-run",
-  "advisoryOnly": true,
-  "overallScore": 94,
-  "releaseDecision": "go-with-conditions",
-  "releaseDecisionLabel": "LOCAL ADVISORY",
-  "releaseDecisionDetail": "Local profile — certification is advisory and does not block production release.",
-  "passed": true,
-  "passedChecks": 26,
+  "rcNumber": "RC1-1.0.15-18-rc-ce16fde9",
+  "certificationTimestamp": "2026-06-28T04:58:22.815Z",
+  "gitCommit": "0aa691783af61fd2a56d061bf1002c3044359afd",
+  "gitCommitShort": "0aa691783af6",
+  "buildVersion": "1.0.15",
+  "buildCode": "18",
+  "cacheVersion": "bamsignal-v1.0.15-18-mqxbf55w",
+  "environment": "production",
+  "overallScore": 87,
+  "releaseDecision": "no-go",
+  "releaseDecisionLabel": "NO GO",
+  "releaseDecisionDetail": "Critical blockers prevent safe institutional launch. Resolve all critical issues before go-live.",
+  "passed": false,
+  "passedChecks": 24,
   "subsystemScores": [
     {
       "id": "qa",
@@ -34,168 +30,108 @@
       "label": "Security",
       "score": 100,
       "status": "healthy",
-      "summary": "security passed (local advisory).",
+      "summary": "Security passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "penetration",
       "label": "Penetration",
       "score": 100,
       "status": "healthy",
-      "summary": "penetration passed (local advisory).",
+      "summary": "Penetration passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "performance",
       "label": "Performance",
       "score": 100,
       "status": "healthy",
-      "summary": "performance passed (local advisory).",
+      "summary": "Performance passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "platform-load",
       "label": "Platform Load",
       "score": 100,
       "status": "healthy",
-      "summary": "platform-load passed (local advisory).",
+      "summary": "Platform Load passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "reliability",
       "label": "Reliability",
       "score": 100,
       "status": "healthy",
-      "summary": "reliability passed (local advisory).",
+      "summary": "Reliability passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "chaos",
       "label": "Chaos Engineering",
       "score": 100,
       "status": "healthy",
-      "summary": "chaos passed (local advisory).",
+      "summary": "Chaos Engineering passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "data-integrity",
       "label": "Data Integrity",
       "score": 100,
       "status": "healthy",
-      "summary": "data-integrity passed (local advisory).",
+      "summary": "Data Integrity passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "database",
       "label": "Database",
       "score": 100,
       "status": "healthy",
-      "summary": "database passed (local advisory).",
+      "summary": "Database passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "dependencies",
       "label": "Dependencies",
       "score": 88,
       "status": "healthy",
-      "summary": "dependencies passed (local advisory).",
+      "summary": "Dependencies passed (88%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "operational-drift",
       "label": "Operational Drift",
       "score": 0,
-      "status": "warning",
-      "summary": "Missing local secrets: database, supabase, paystack, sendchamp, resend, cron, commandCenter. Run with CERTIFICATION_PROFILE=staging in CI or load .env.local.",
+      "status": "critical",
+      "summary": "Operational Drift failed (0%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "skipped",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": true,
-      "skipReason": "staging_secrets"
+      "passed": false
     },
     {
       "id": "accessibility",
       "label": "Accessibility",
       "score": 87,
       "status": "healthy",
-      "summary": "accessibility passed (local advisory).",
+      "summary": "Accessibility passed (87%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "production-smoke",
       "label": "Production Smoke",
       "score": 100,
       "status": "healthy",
-      "summary": "production-smoke passed (local advisory).",
+      "summary": "Production Smoke passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "observability",
@@ -292,14 +228,9 @@
       "label": "Founder Certification",
       "score": 100,
       "status": "healthy",
-      "summary": "founder-certification passed (local advisory).",
+      "summary": "Founder Certification passed (100%).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false,
-      "delegatedFrom": null
+      "passed": true
     },
     {
       "id": "founder-experience",
@@ -308,11 +239,7 @@
       "status": "warning",
       "summary": "No founder experience snapshot — run founder-experience.",
       "source": "pending",
-      "passed": true,
-      "outcome": "failed",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": false
+      "passed": false
     },
     {
       "id": "founder-acceptance",
@@ -329,8 +256,8 @@
       "id": "architecture",
       "label": "Architecture",
       "score": 72,
-      "passed": true,
-      "status": "warning",
+      "passed": false,
+      "status": "critical",
       "subsystemIds": [
         "dependencies",
         "database",
@@ -360,10 +287,10 @@
           "id": "operational-drift",
           "label": "Operational Drift",
           "score": 0,
-          "passed": true
+          "passed": false
         }
       ],
-      "summary": "Architecture domain ready (72%)."
+      "summary": "1 subsystem(s) open in Architecture."
     },
     {
       "id": "security",
@@ -586,8 +513,8 @@
       "id": "founder-acceptance",
       "label": "Founder Acceptance",
       "score": 67,
-      "passed": true,
-      "status": "warning",
+      "passed": false,
+      "status": "critical",
       "subsystemIds": [
         "founder-certification",
         "founder-experience",
@@ -604,7 +531,7 @@
           "id": "founder-experience",
           "label": "Founder Experience",
           "score": 0,
-          "passed": true
+          "passed": false
         },
         {
           "id": "founder-acceptance",
@@ -613,32 +540,40 @@
           "passed": true
         }
       ],
-      "summary": "Founder Acceptance domain ready (67%)."
+      "summary": "1 subsystem(s) open in Founder Acceptance."
     }
   ],
   "signOffs": [
     {
       "role": "Chief Engineer",
-      "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "status": "NOT APPROVED",
+      "signedAt": "2026-06-28T04:58:22.815Z"
     },
     {
       "role": "DevOps",
-      "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "status": "NOT APPROVED",
+      "signedAt": "2026-06-28T04:58:22.815Z"
     },
     {
       "role": "QA",
-      "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "status": "NOT APPROVED",
+      "signedAt": "2026-06-28T04:58:22.815Z"
     },
     {
       "role": "Founder",
-      "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "status": "NOT APPROVED",
+      "signedAt": "2026-06-28T04:58:22.815Z"
     }
   ],
-  "criticalIssues": [],
+  "criticalIssues": [
+    {
+      "id": "operational-drift_failed",
+      "subsystemId": "operational-drift",
+      "title": "Operational Drift certification failed",
+      "detail": "Latest certify:drift report did not pass.",
+      "severity": "critical"
+    }
+  ],
   "warnings": [
     {
       "id": "qa_0",
@@ -655,68 +590,37 @@
       "severity": "warning"
     }
   ],
-  "blockers": [],
-  "skippedSubsystems": [
+  "blockers": [
     {
-      "id": "operational-drift",
-      "label": "Operational Drift",
-      "score": 0,
-      "status": "warning",
-      "summary": "Missing local secrets: database, supabase, paystack, sendchamp, resend, cron, commandCenter. Run with CERTIFICATION_PROFILE=staging in CI or load .env.local.",
-      "source": "cert-report",
-      "passed": true,
-      "outcome": "skipped",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": true,
-      "skipReason": "staging_secrets"
+      "id": "blocker-operational-drift",
+      "subsystemId": "operational-drift",
+      "title": "Operational Drift certification failed",
+      "detail": "Operational Drift failed (0%).",
+      "severity": "critical"
+    },
+    {
+      "id": "blocker-founder-experience",
+      "subsystemId": "founder-experience",
+      "title": "Founder Experience certification failed",
+      "detail": "No founder experience snapshot — run founder-experience.",
+      "severity": "high"
+    },
+    {
+      "id": "operational-drift_failed",
+      "subsystemId": "operational-drift",
+      "title": "Operational Drift certification failed",
+      "detail": "Latest certify:drift report did not pass.",
+      "severity": "critical"
     }
   ],
-  "prerequisites": {
-    "playwright": {
-      "ready": true,
-      "reason": null
-    },
-    "database": false,
-    "supabase": false,
-    "paystack": false,
-    "sendchamp": false,
-    "resend": false,
-    "cron": false,
-    "commandCenter": false,
-    "missingSecrets": {
-      "database": [
-        "DATABASE_URL"
-      ],
-      "supabase": [
-        "SUPABASE_URL",
-        "SUPABASE_SERVICE_ROLE_KEY"
-      ],
-      "paystack": [
-        "PAYSTACK_SECRET_KEY"
-      ],
-      "sendchamp": [
-        "SENDCHAMP_API_KEY"
-      ],
-      "resend": [
-        "RESEND_API_KEY"
-      ],
-      "cron": [
-        "CRON_SECRET"
-      ],
-      "commandCenter": [
-        "COMMAND_CENTER_PIN"
-      ]
-    }
-  },
-  "summaryLine": "LOCAL ADVISORY · 94% · 26/26 passed · 0 blockers · profile=local",
+  "summaryLine": "NO GO · 87% · 24/26 passed · 3 blockers",
   "source": "cli",
   "exports": {
     "json": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.json",
-    "jsonStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-92f14ae2.json",
+    "jsonStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-ce16fde9.json",
     "markdown": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.md",
-    "markdownStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-92f14ae2.md",
+    "markdownStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-ce16fde9.md",
     "pdf": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.pdf.html",
-    "pdfStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-92f14ae2.pdf.html"
+    "pdfStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-ce16fde9.pdf.html"
   }
 }

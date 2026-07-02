@@ -1,24 +1,24 @@
 {
-  "runId": "rc-92f14ae2",
+  "runId": "rc-cb128c6f",
   "rcLabel": "RC1",
-  "rcNumber": "RC1-1.0.16-19-rc-92f14ae2",
-  "certificationTimestamp": "2026-07-02T11:13:43.791Z",
-  "gitCommit": "fb96e2c532815bb5e56c28ddd399e97ebc1b8f75",
-  "gitCommitShort": "fb96e2c53281",
-  "buildVersion": "1.0.16",
-  "buildCode": "19",
-  "cacheVersion": "bamsignal-v1.0.16-19-mqz9bxsr",
+  "rcNumber": "RC1-1.0.15-18-rc-cb128c6f",
+  "certificationTimestamp": "2026-06-28T08:31:06.054Z",
+  "gitCommit": "f4c967ec5bd2b4b5a165b061f4ca7775f2f4b889",
+  "gitCommitShort": "f4c967ec5bd2",
+  "buildVersion": "1.0.15",
+  "buildCode": "18",
+  "cacheVersion": "bamsignal-v1.0.15-18-mqxc4380",
   "environment": "local",
   "certificationProfile": "local",
   "profileDescription": "Local — advisory certification; unavailable infrastructure is SKIPPED, not FAILED.",
   "executionMode": "dry-run",
   "advisoryOnly": true,
-  "overallScore": 94,
+  "overallScore": 76,
   "releaseDecision": "go-with-conditions",
   "releaseDecisionLabel": "LOCAL ADVISORY",
   "releaseDecisionDetail": "Local profile — certification is advisory and does not block production release.",
   "passed": true,
-  "passedChecks": 26,
+  "passedChecks": 22,
   "subsystemScores": [
     {
       "id": "qa",
@@ -74,12 +74,12 @@
     {
       "id": "platform-load",
       "label": "Platform Load",
-      "score": 100,
-      "status": "healthy",
-      "summary": "platform-load passed (local advisory).",
+      "score": 70,
+      "status": "critical",
+      "summary": "platform-load failed (local advisory — does not block production).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
+      "passed": false,
+      "outcome": "failed",
       "required": false,
       "blocksRelease": false,
       "skipped": false,
@@ -88,12 +88,12 @@
     {
       "id": "reliability",
       "label": "Reliability",
-      "score": 100,
-      "status": "healthy",
-      "summary": "reliability passed (local advisory).",
+      "score": 90,
+      "status": "critical",
+      "summary": "reliability failed (local advisory — does not block production).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
+      "passed": false,
+      "outcome": "failed",
       "required": false,
       "blocksRelease": false,
       "skipped": false,
@@ -159,15 +159,15 @@
       "id": "operational-drift",
       "label": "Operational Drift",
       "score": 0,
-      "status": "warning",
-      "summary": "Missing local secrets: database, supabase, paystack, sendchamp, resend, cron, commandCenter. Run with CERTIFICATION_PROFILE=staging in CI or load .env.local.",
+      "status": "critical",
+      "summary": "operational-drift failed (local advisory — does not block production).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "skipped",
+      "passed": false,
+      "outcome": "failed",
       "required": false,
       "blocksRelease": false,
-      "skipped": true,
-      "skipReason": "staging_secrets"
+      "skipped": false,
+      "delegatedFrom": null
     },
     {
       "id": "accessibility",
@@ -290,12 +290,12 @@
     {
       "id": "founder-certification",
       "label": "Founder Certification",
-      "score": 100,
-      "status": "healthy",
-      "summary": "founder-certification passed (local advisory).",
+      "score": 96,
+      "status": "critical",
+      "summary": "founder-certification failed (local advisory — does not block production).",
       "source": "cert-report",
-      "passed": true,
-      "outcome": "passed",
+      "passed": false,
+      "outcome": "failed",
       "required": false,
       "blocksRelease": false,
       "skipped": false,
@@ -329,8 +329,8 @@
       "id": "architecture",
       "label": "Architecture",
       "score": 72,
-      "passed": true,
-      "status": "warning",
+      "passed": false,
+      "status": "critical",
       "subsystemIds": [
         "dependencies",
         "database",
@@ -360,10 +360,10 @@
           "id": "operational-drift",
           "label": "Operational Drift",
           "score": 0,
-          "passed": true
+          "passed": false
         }
       ],
-      "summary": "Architecture domain ready (72%)."
+      "summary": "1 subsystem(s) open in Architecture."
     },
     {
       "id": "security",
@@ -394,9 +394,9 @@
     {
       "id": "performance",
       "label": "Performance",
-      "score": 100,
-      "passed": true,
-      "status": "healthy",
+      "score": 85,
+      "passed": false,
+      "status": "critical",
       "subsystemIds": [
         "performance",
         "platform-load"
@@ -411,18 +411,18 @@
         {
           "id": "platform-load",
           "label": "Platform Load",
-          "score": 100,
-          "passed": true
+          "score": 70,
+          "passed": false
         }
       ],
-      "summary": "Performance domain ready (100%)."
+      "summary": "1 subsystem(s) open in Performance."
     },
     {
       "id": "reliability",
       "label": "Reliability",
-      "score": 100,
-      "passed": true,
-      "status": "healthy",
+      "score": 95,
+      "passed": false,
+      "status": "critical",
       "subsystemIds": [
         "reliability",
         "chaos"
@@ -431,8 +431,8 @@
         {
           "id": "reliability",
           "label": "Reliability",
-          "score": 100,
-          "passed": true
+          "score": 90,
+          "passed": false
         },
         {
           "id": "chaos",
@@ -441,7 +441,7 @@
           "passed": true
         }
       ],
-      "summary": "Reliability domain ready (100%)."
+      "summary": "1 subsystem(s) open in Reliability."
     },
     {
       "id": "operations",
@@ -585,9 +585,9 @@
     {
       "id": "founder-acceptance",
       "label": "Founder Acceptance",
-      "score": 67,
-      "passed": true,
-      "status": "warning",
+      "score": 65,
+      "passed": false,
+      "status": "critical",
       "subsystemIds": [
         "founder-certification",
         "founder-experience",
@@ -597,8 +597,8 @@
         {
           "id": "founder-certification",
           "label": "Founder Certification",
-          "score": 100,
-          "passed": true
+          "score": 96,
+          "passed": false
         },
         {
           "id": "founder-experience",
@@ -613,32 +613,61 @@
           "passed": true
         }
       ],
-      "summary": "Founder Acceptance domain ready (67%)."
+      "summary": "1 subsystem(s) open in Founder Acceptance."
     }
   ],
   "signOffs": [
     {
       "role": "Chief Engineer",
       "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "signedAt": "2026-06-28T08:31:06.054Z"
     },
     {
       "role": "DevOps",
       "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "signedAt": "2026-06-28T08:31:06.054Z"
     },
     {
       "role": "QA",
       "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "signedAt": "2026-06-28T08:31:06.054Z"
     },
     {
       "role": "Founder",
       "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "signedAt": "2026-06-28T08:31:06.054Z"
     }
   ],
-  "criticalIssues": [],
+  "criticalIssues": [
+    {
+      "id": "platform-load_failed",
+      "subsystemId": "platform-load",
+      "title": "Platform Load certification failed",
+      "detail": "Latest certify:platform-load report did not pass.",
+      "severity": "critical"
+    },
+    {
+      "id": "reliability_failed",
+      "subsystemId": "reliability",
+      "title": "Reliability certification failed",
+      "detail": "Latest certify:reliability report did not pass.",
+      "severity": "critical"
+    },
+    {
+      "id": "operational-drift_failed",
+      "subsystemId": "operational-drift",
+      "title": "Operational Drift certification failed",
+      "detail": "Latest certify:drift report did not pass.",
+      "severity": "critical"
+    },
+    {
+      "id": "founder-certification_failed",
+      "subsystemId": "founder-certification",
+      "title": "Founder Certification certification failed",
+      "detail": "Latest certify:founder report did not pass.",
+      "severity": "critical"
+    }
+  ],
   "warnings": [
     {
       "id": "qa_0",
@@ -656,22 +685,7 @@
     }
   ],
   "blockers": [],
-  "skippedSubsystems": [
-    {
-      "id": "operational-drift",
-      "label": "Operational Drift",
-      "score": 0,
-      "status": "warning",
-      "summary": "Missing local secrets: database, supabase, paystack, sendchamp, resend, cron, commandCenter. Run with CERTIFICATION_PROFILE=staging in CI or load .env.local.",
-      "source": "cert-report",
-      "passed": true,
-      "outcome": "skipped",
-      "required": false,
-      "blocksRelease": false,
-      "skipped": true,
-      "skipReason": "staging_secrets"
-    }
-  ],
+  "skippedSubsystems": [],
   "prerequisites": {
     "playwright": {
       "ready": true,
@@ -709,14 +723,14 @@
       ]
     }
   },
-  "summaryLine": "LOCAL ADVISORY · 94% · 26/26 passed · 0 blockers · profile=local",
+  "summaryLine": "LOCAL ADVISORY · 76% · 22/26 passed · 0 blockers · profile=local",
   "source": "cli",
   "exports": {
     "json": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.json",
-    "jsonStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-92f14ae2.json",
+    "jsonStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-cb128c6f.json",
     "markdown": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.md",
-    "markdownStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-92f14ae2.md",
+    "markdownStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-cb128c6f.md",
     "pdf": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.pdf.html",
-    "pdfStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-92f14ae2.pdf.html"
+    "pdfStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-cb128c6f.pdf.html"
   }
 }

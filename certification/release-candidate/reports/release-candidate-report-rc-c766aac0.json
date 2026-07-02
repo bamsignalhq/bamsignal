@@ -1,13 +1,13 @@
 {
-  "runId": "rc-92f14ae2",
+  "runId": "rc-c766aac0",
   "rcLabel": "RC1",
-  "rcNumber": "RC1-1.0.16-19-rc-92f14ae2",
-  "certificationTimestamp": "2026-07-02T11:13:43.791Z",
-  "gitCommit": "fb96e2c532815bb5e56c28ddd399e97ebc1b8f75",
-  "gitCommitShort": "fb96e2c53281",
-  "buildVersion": "1.0.16",
-  "buildCode": "19",
-  "cacheVersion": "bamsignal-v1.0.16-19-mqz9bxsr",
+  "rcNumber": "RC1-1.0.15-18-rc-c766aac0",
+  "certificationTimestamp": "2026-06-29T13:12:52.074Z",
+  "gitCommit": "85de8267dff800ccdecdd2261da21cdda6535a68",
+  "gitCommitShort": "85de8267dff8",
+  "buildVersion": "1.0.15",
+  "buildCode": "18",
+  "cacheVersion": "bamsignal-v1.0.15-18-mqz7robq",
   "environment": "local",
   "certificationProfile": "local",
   "profileDescription": "Local — advisory certification; unavailable infrastructure is SKIPPED, not FAILED.",
@@ -620,22 +620,22 @@
     {
       "role": "Chief Engineer",
       "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "signedAt": "2026-06-29T13:12:52.074Z"
     },
     {
       "role": "DevOps",
       "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "signedAt": "2026-06-29T13:12:52.074Z"
     },
     {
       "role": "QA",
       "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "signedAt": "2026-06-29T13:12:52.074Z"
     },
     {
       "role": "Founder",
       "status": "APPROVED WITH CONDITIONS",
-      "signedAt": "2026-07-02T11:13:43.791Z"
+      "signedAt": "2026-06-29T13:12:52.074Z"
     }
   ],
   "criticalIssues": [],
@@ -713,10 +713,10 @@
   "source": "cli",
   "exports": {
     "json": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.json",
-    "jsonStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-92f14ae2.json",
+    "jsonStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-c766aac0.json",
     "markdown": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.md",
-    "markdownStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-92f14ae2.md",
+    "markdownStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-c766aac0.md",
     "pdf": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report.pdf.html",
-    "pdfStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-92f14ae2.pdf.html"
+    "pdfStamped": "/Users/stanlex/Documents/bamsignal/certification/release-candidate/reports/release-candidate-report-rc-c766aac0.pdf.html"
   }
 }

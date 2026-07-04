@@ -627,16 +627,44 @@ export async function completeOnboardingReferral({ email, phone }) {
   const count = countResult.rows[0]?.count ?? 0;
   let rewardGranted = false;
 
+  let rewardPoints = 0;
   if (count > 0 && count % REFERRAL_GOAL === 0) {
     await extendUserPremium(referrerRow, REWARD_DAYS);
-    await query(
-      "update app_referral_events set reward_days = $2 where referred_user_key = $1",
-      [referredUserKey, REWARD_DAYS]
+    const { REMOTE_CONFIG_SERVER_DEFAULTS } = await import("./services/remoteConfig.js");
+    rewardPoints = Math.max(
+      0,
+      Math.round(Number(REMOTE_CONFIG_SERVER_DEFAULTS["payments.referral_reward_ngn"] || 500))
     );
+    if (rewardPoints > 0) {
+      await query(
+        `update app_users
+         set referral_points = coalesce(referral_points, 0) + $2, updated_at = now()
+         where user_key = $1`,
+        [user.referred_by_user_key, rewardPoints]
+      );
+    }
+    await query(
+      `update app_referral_events
+       set reward_days = $2,
+           reward_points = coalesce(reward_points, 0) + $3
+       where referred_user_key = $1`,
+      [referredUserKey, REWARD_DAYS, rewardPoints]
+    ).catch(async () => {
+      await query(
+        "update app_referral_events set reward_days = $2 where referred_user_key = $1",
+        [referredUserKey, REWARD_DAYS]
+      );
+    });
     rewardGranted = true;
   }
 
-  return { credited: true, rewardGranted, referrerUserKey: user.referred_by_user_key };
+  return {
+    credited: true,
+    rewardGranted,
+    rewardPoints,
+    rewardDays: rewardGranted ? REWARD_DAYS : 0,
+    referrerUserKey: user.referred_by_user_key
+  };
 }
 
 export async function fetchReferralStats({ email, phone }) {
@@ -706,7 +734,8 @@ export async function fetchMemberSocialBundle({ email, phone }) {
   if (!isDatabaseReady()) return null;
   await ensureSocialSchema();
 
-  const [incomingSignals, referral, premium, ownProfile, incomingLikes, incomingFollows, savedProfileIds] =
+  const { listActiveMemberBoosts } = await import("./services/memberBoosts.js");
+  const [incomingSignals, referral, premium, ownProfile, incomingLikes, incomingFollows, savedProfileIds, activeBoosts] =
     await Promise.all([
       fetchIncomingSignals({ email, phone }),
       fetchReferralStats({ email, phone }),
@@ -714,7 +743,8 @@ export async function fetchMemberSocialBundle({ email, phone }) {
       findMemberProfileByUserKey(email, phone),
       fetchIncomingProfileLikes({ email, phone }),
       fetchIncomingProfileFollows({ email, phone }),
-      fetchSavedProfileIds({ email, phone })
+      fetchSavedProfileIds({ email, phone }),
+      listActiveMemberBoosts({ email, phone })
     ]);
 
   const profileJson = ownProfile?.profile || {};
@@ -795,7 +825,8 @@ export async function fetchMemberSocialBundle({ email, phone }) {
       : null,
     incomingLikes,
     incomingFollows,
-    savedProfileIds
+    savedProfileIds,
+    activeBoosts: activeBoosts || []
   };
 }
 

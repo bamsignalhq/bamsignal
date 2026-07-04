@@ -1,5 +1,6 @@
 import { activateAppUserFastConnectionPass, activateAppUserPremium } from "../db.js";
 import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../cityHome.js";
+import { activateMemberBoost } from "./memberBoosts.js";
 import { createVipInviteLink } from "../telegram.js";
 import { resetFastConnectionDailySignals } from "./fastConnection.js";
 import {
@@ -197,13 +198,24 @@ export async function fulfillVerifiedPurchase({
         durationHours: durationHours || 24,
         paystackReference: reference
       });
+      const expiresAt = placement?.expires_at || boostExpiresAtFromIntent(intent);
+      if (placement) {
+        await activateMemberBoost({
+          email: email || null,
+          phone: phone || null,
+          boostId,
+          expiresAt,
+          paystackReference: reference,
+          city: resolvedCity
+        });
+      }
       return {
         ok: Boolean(placement),
         productType: "boost",
         productId: intent.productId,
         boostId,
         placement,
-        expiresAt: placement?.expires_at || boostExpiresAtFromIntent(intent),
+        expiresAt,
         requiresCity: !placement
       };
     }
@@ -216,23 +228,48 @@ export async function fulfillVerifiedPurchase({
         durationHours,
         paystackReference: reference
       });
+      const expiresAt = placement?.expires_at || boostExpiresAtFromIntent(intent);
+      if (placement) {
+        await activateMemberBoost({
+          email: email || null,
+          phone: phone || null,
+          boostId,
+          expiresAt,
+          paystackReference: reference,
+          city: resolvedCity
+        });
+      }
       return {
         ok: Boolean(placement),
         productType: "boost",
         productId: intent.productId,
         boostId,
         placement,
-        expiresAt: placement?.expires_at || boostExpiresAtFromIntent(intent),
+        expiresAt,
         requiresCity: !placement
       };
     }
 
+    // Shop boosts (signal / priority / profile): server grants entitlement — client must not be required.
+    const expiresAt = boostExpiresAtFromIntent(intent);
+    const boostRow = await activateMemberBoost({
+      email: email || null,
+      phone: phone || null,
+      boostId,
+      expiresAt,
+      paystackReference: reference,
+      city: resolvedCity
+    });
+    if (!boostRow) {
+      return { ok: false, reason: "boost_activation_failed" };
+    }
     return {
       ok: true,
       productType: "boost",
       productId: intent.productId,
       boostId,
-      expiresAt: boostExpiresAtFromIntent(intent)
+      expiresAt: boostRow.expiresAt || expiresAt,
+      boost: boostRow
     };
   }
 

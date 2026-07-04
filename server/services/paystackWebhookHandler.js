@@ -27,6 +27,11 @@ export const PAYSTACK_WEBHOOK_MOUNT_PATHS = [
   ...PAYSTACK_WEBHOOK_ALIAS_PATHS
 ];
 
+/**
+ * Events that grant or extend paid access.
+ * Subscription cancellation (subscription.disable / subscription.not_renew) is intentionally
+ * ignored: access remains until premium_until expires (period-end access policy).
+ */
 const PREMIUM_EVENTS = new Set(["subscription.create", "charge.success", "invoice.payment_success"]);
 
 function normalizePhone(value = "") {

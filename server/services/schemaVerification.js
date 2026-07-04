@@ -1,4 +1,4 @@
-import { isDatabaseReady, pool } from "../db.js";
+import { isDatabaseReady, pool } from "../databaseConnection.js";
 
 export class SchemaVerificationError extends Error {
   constructor(missing = [], message = null) {
@@ -26,6 +26,7 @@ export const REQUIRED_SCHEMA_TABLES = Object.freeze([
   "app_profile_follows",
   "app_profile_likes",
   "app_referral_events",
+  "app_member_boosts",
   "app_reports",
   "app_signals",
   "app_users",

@@ -25,6 +25,7 @@ import {
   shouldRouteToOnboarding
 } from "../utils/onboardingStatus";
 import { clearOnboardingDrafts } from "../utils/onboardingDrafts";
+import { snapshotMemberDataToNativeCache } from "../native/offlineMemberCache";
 import { logRouteDecision } from "../utils/profileOnboardingRepair";
 import {
   applyOnboardingRepairLocal,
@@ -48,6 +49,14 @@ type MemberBundle = {
   signalsSent?: number;
   incomingSignals?: LikeEntry[];
   referral?: { code?: string; successfulReferrals?: number; rewardsClaimed?: number };
+  activeBoosts?: Array<{
+    productId?: string;
+    activatedAt?: string | null;
+    expiresAt?: string | null;
+    consumed?: boolean;
+    city?: string;
+    memberDiscoverId?: string;
+  }>;
   premium?: { isPremium: boolean; premiumUntil: string | null };
   user?: { premium_until?: string | null; is_premium?: boolean };
   memberProfileId?: string;
@@ -280,6 +289,11 @@ export async function hydrateMemberData(
     });
   }
 
+  if (Array.isArray(bundle.activeBoosts)) {
+    const { hydrateBoostsFromServer } = await import("../utils/activeBoosts");
+    hydrateBoostsFromServer(bundle.activeBoosts, user);
+  }
+
   if (bundle.premium) {
     const resolved = resolveSignalPassSnapshot({
       premiumUntil: bundle.premium.premiumUntil,
@@ -496,6 +510,8 @@ export async function hydrateMemberData(
     lastActiveAt: match.lastActiveAt
   }));
   if (matchProfiles?.length) cacheDiscoverProfiles(matchProfiles);
+
+  void snapshotMemberDataToNativeCache();
 
   return true;
 }

@@ -78,6 +78,34 @@ export function hasActiveBoost(productId: BoostProductId, memberDiscoverId?: str
   return getActiveBoosts().some((b) => b.productId === productId && b.memberDiscoverId === id);
 }
 
+/** Apply server-granted boosts (payment fortress). Replaces local active list for this member. */
+export function hydrateBoostsFromServer(
+  boosts: Array<{
+    productId?: string;
+    activatedAt?: string | null;
+    expiresAt?: string | null;
+    consumed?: boolean;
+    city?: string;
+    memberDiscoverId?: string;
+  }>,
+  user: Pick<UserProfile, "email" | "phone" | "username">
+): ActiveBoostEntry[] {
+  const memberDiscoverId = getMemberDiscoverId(user);
+  const others = loadBoosts().filter((b) => b.memberDiscoverId !== memberDiscoverId);
+  const serverEntries: ActiveBoostEntry[] = (boosts || [])
+    .filter((b) => b.productId)
+    .map((b) => ({
+      productId: b.productId as BoostProductId,
+      activatedAt: b.activatedAt || new Date().toISOString(),
+      expiresAt: b.expiresAt ?? null,
+      status: b.consumed ? "consumed" : "active",
+      consumed: Boolean(b.consumed),
+      memberDiscoverId: b.memberDiscoverId || memberDiscoverId,
+      city: b.city || ""
+    }));
+  return saveBoosts([...others, ...serverEntries]);
+}
+
 export function activateBoost(
   productId: BoostProductId,
   user: Pick<UserProfile, "email" | "phone" | "username">,

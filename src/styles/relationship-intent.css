@@ -1,22 +1,22 @@
-/* What Brings You Here — dark purple glass cards */
+/* What Brings You Here — real selectable buttons (light + dark) */
 
 .what-brings-you-here {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .what-brings-you-here__head {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .what-brings-you-here__title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 800;
-  color: #faf5ff;
+  color: var(--bs-text, var(--text, #1b0b2e));
 }
 
 .what-brings-you-here__sub,
@@ -24,12 +24,13 @@
   margin: 0;
   font-size: 0.86rem;
   line-height: 1.45;
-  color: rgba(237, 233, 254, 0.82);
+  color: var(--bs-muted, var(--text-muted, rgba(27, 11, 46, 0.62)));
 }
 
 .what-brings-you-here__limit {
   font-size: 0.78rem;
-  color: rgba(216, 180, 254, 0.72);
+  font-weight: 650;
+  color: var(--bs-purple, #7a4df3);
 }
 
 .what-brings-you-here__grid {
@@ -41,78 +42,133 @@
 .what-brings-you-here__card {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  min-height: 96px;
-  padding: 14px 12px;
-  border-radius: 16px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 12px 14px;
+  border-radius: 14px;
   text-align: left;
-  color: #ede9fe;
-  background: linear-gradient(155deg, rgba(46, 16, 101, 0.9) 0%, rgba(30, 12, 68, 0.82) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.18);
-  box-shadow: 0 8px 22px rgba(15, 6, 36, 0.35);
-  backdrop-filter: blur(10px);
+  color: var(--bs-text, #1b0b2e);
+  background: var(--bs-surface, #ffffff);
+  border: 1.5px solid color-mix(in srgb, var(--bs-purple, #7a4df3) 18%, transparent);
+  box-shadow: 0 1px 3px rgba(27, 11, 46, 0.05);
+  cursor: pointer;
   transition:
-    transform 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .what-brings-you-here__card:hover:not(:disabled) {
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--bs-purple, #7a4df3) 40%, transparent);
+  box-shadow: 0 4px 12px rgba(122, 77, 243, 0.12);
 }
 
 .what-brings-you-here__card--selected {
-  border-color: rgba(212, 175, 55, 0.55);
+  border-color: var(--bs-purple, #7a4df3);
+  background: linear-gradient(145deg, #faf5ff 0%, #fdf2f8 100%);
   box-shadow:
-    0 0 0 1px rgba(212, 175, 55, 0.15),
-    0 10px 26px rgba(88, 28, 135, 0.45);
-  animation: relationship-intent-card-pulse 2.4s ease-in-out infinite;
+    0 0 0 1px color-mix(in srgb, var(--bs-purple, #7a4df3) 20%, transparent),
+    0 4px 14px rgba(122, 77, 243, 0.16);
 }
 
 .what-brings-you-here__card--disabled {
-  opacity: 0.45;
+  opacity: 0.42;
+  cursor: not-allowed;
 }
 
 .what-brings-you-here__emoji {
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .what-brings-you-here__label {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
+  padding-right: 18px;
 }
 
 .what-brings-you-here__check {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 999px;
-  color: #2e1065;
-  background: linear-gradient(135deg, #fbbf24 0%, #d4af37 100%);
+  color: #fff;
+  background: linear-gradient(135deg, #a78bfa 0%, #7a4df3 100%);
   animation: relationship-intent-check-in 0.25s ease-out;
 }
 
-@keyframes relationship-intent-card-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 1px rgba(212, 175, 55, 0.15),
-      0 10px 26px rgba(88, 28, 135, 0.4);
-  }
-  50% {
-    box-shadow:
-      0 0 0 1px rgba(212, 175, 55, 0.32),
-      0 12px 30px rgba(124, 58, 237, 0.5);
-  }
+/* Fast Connection optional control — matches intent buttons */
+.onboarding-step .intent-fieldset {
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.onboarding-step .intent-fieldset legend {
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--bs-muted, var(--text-muted));
+}
+
+.onboarding-step .welcome-intent-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.onboarding-step .intent-tag--quickie {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1.5px solid color-mix(in srgb, var(--bs-purple, #7a4df3) 18%, transparent);
+  background: var(--bs-surface, #ffffff);
+  color: var(--bs-text, #1b0b2e);
+  font-size: 0.84rem;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(27, 11, 46, 0.05);
+  cursor: pointer;
+}
+
+.onboarding-step .intent-tag--quickie.selected {
+  border-color: var(--bs-purple, #7a4df3);
+  background: linear-gradient(145deg, #faf5ff 0%, #fdf2f8 100%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--bs-purple, #7a4df3) 20%, transparent),
+    0 4px 14px rgba(122, 77, 243, 0.16);
+}
+
+.app.dark .what-brings-you-here__card,
+[data-theme="dark"] .what-brings-you-here__card,
+.app.dark .onboarding-step .intent-tag--quickie,
+[data-theme="dark"] .onboarding-step .intent-tag--quickie {
+  color: #ede9fe;
+  background: linear-gradient(155deg, rgba(46, 16, 101, 0.9) 0%, rgba(30, 12, 68, 0.82) 100%);
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+.app.dark .what-brings-you-here__card--selected,
+[data-theme="dark"] .what-brings-you-here__card--selected,
+.app.dark .onboarding-step .intent-tag--quickie.selected,
+[data-theme="dark"] .onboarding-step .intent-tag--quickie.selected {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: linear-gradient(155deg, rgba(76, 29, 149, 0.95) 0%, rgba(46, 16, 101, 0.9) 100%);
 }
 
 @keyframes relationship-intent-check-in {
@@ -193,7 +249,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .what-brings-you-here__card--selected,
   .what-brings-you-here__check {
     animation: none;
   }

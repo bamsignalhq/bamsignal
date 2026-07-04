@@ -15,8 +15,6 @@ import { ShowcaseImage } from "../../ShowcaseImage";
 import { ProfileCoverImage } from "../ProfileCoverImage";
 import { CoverPhotoCropModal } from "../../CoverPhotoCropModal";
 import { ProfilePhotoViewerSheet } from "../ProfilePhotoViewerSheet";
-import { normalizeOccupations } from "../../../constants/profileOptions";
-import { isPreferNot } from "../../../utils/preferNot";
 
 type ProfileFintechHeroProps = {
   user: UserProfile;
@@ -70,11 +68,6 @@ export const ProfileFintechHero = memo(function ProfileFintechHero({
   const ageText = profile.age != null && profile.age > 0 ? String(profile.age) : null;
   const intents = relationshipIntentsFrom(profile.intents);
   const relationshipGoal = intents[0] ? profileIntentLabel(intents[0]) : null;
-  const religion =
-    profile.religion && !isPreferNot(profile.religion) ? profile.religion : null;
-  const occupation =
-    normalizeOccupations(profile.occupations, profile.occupation).find((value) => !isPreferNot(value)) ??
-    null;
 
   const flow = useCoverPhotoFlow({
     coverPhoto: resolvedCoverPhoto,
@@ -98,13 +91,6 @@ export const ProfileFintechHero = memo(function ProfileFintechHero({
   return (
     <>
       <header className="profile-fintech-hero">
-        <div className="profile-fintech-hero__toolbar">
-          <button type="button" className="profile-fintech-hero__edit" onClick={onEdit}>
-            <Pencil size={14} aria-hidden />
-            Edit
-          </button>
-        </div>
-
         <div className="profile-fintech-hero__cover">
           <ProfileCoverImage
             src={coverPreview}
@@ -126,7 +112,6 @@ export const ProfileFintechHero = memo(function ProfileFintechHero({
               ) : (
                 <Camera size={14} aria-hidden />
               )}
-              <span>Change Cover</span>
             </button>
           ) : null}
         </div>
@@ -153,24 +138,42 @@ export const ProfileFintechHero = memo(function ProfileFintechHero({
           </button>
 
           <div className="profile-fintech-hero__identity">
-            {(verification.tier || trusted) && (
-              <div className="profile-fintech-hero__badges">
-                <VerificationBadge info={verification} />
-                {trusted ? <TrustedMemberShieldIcon className="profile-fintech-hero__trusted-icon" /> : null}
+            <div className="profile-fintech-hero__identity-top">
+              <div className="profile-fintech-hero__identity-main">
+                {(verification.tier || trusted) && (
+                  <div className="profile-fintech-hero__badges">
+                    <VerificationBadge info={verification} />
+                    {trusted ? (
+                      <TrustedMemberShieldIcon className="profile-fintech-hero__trusted-icon" />
+                    ) : null}
+                  </div>
+                )}
+
+                <h1 className="profile-fintech-hero__name">
+                  {user.name || "Your profile"}
+                  {ageText ? `, ${ageText}` : ""}
+                </h1>
+
+                {relationshipGoal ? (
+                  <p className="profile-fintech-hero__caption">{relationshipGoal}</p>
+                ) : null}
+                {locationText ? (
+                  <p className="profile-fintech-hero__caption profile-fintech-hero__caption--location">
+                    {locationText}
+                  </p>
+                ) : null}
               </div>
-            )}
 
-            <h1 className="profile-fintech-hero__name">
-              {user.name || "Your profile"}
-              {ageText ? `, ${ageText}` : ""}
-            </h1>
-
-            {relationshipGoal ? (
-              <p className="profile-fintech-hero__caption">{relationshipGoal}</p>
-            ) : null}
-            {locationText ? <p className="profile-fintech-hero__caption">{locationText}</p> : null}
-            {religion ? <p className="profile-fintech-hero__caption">{religion}</p> : null}
-            {occupation ? <p className="profile-fintech-hero__caption">{occupation}</p> : null}
+              <button
+                type="button"
+                className="profile-fintech-hero__edit"
+                onClick={onEdit}
+                aria-label="Edit profile"
+              >
+                <Pencil size={14} aria-hidden />
+                <span>Edit</span>
+              </button>
+            </div>
           </div>
         </div>
 

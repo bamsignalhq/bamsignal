@@ -1,6 +1,14 @@
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
+import {
+  NATIVE_ROUTE_EVENT,
+  applyNativeDeepLinkRoute,
+  registerNativeAppBridge
+} from "./native/appBridge";
+import { handleNativeLaunchUrl, initNativeExperience } from "./native/nativeInit";
+import { restoreNativeMemberSnapshotIfNeeded } from "./native/offlineMemberCache";
+import { setPendingChatOpen } from "./utils/chatDraft";
 import { Preloader } from "./components/Preloader";
 import { SessionRestoreOverlay } from "./components/SessionRestoreOverlay";
 import { InlineRestoreIndicator } from "./components/InlineRestoreIndicator";
@@ -1089,9 +1097,52 @@ export function App() {
     }
   }, [applyPaymentSuccess, user]);
 
+  const openChatThread = useCallback((threadId?: string) => {
+    if (threadId) setPendingChatOpen(threadId);
+    setTab("chats");
+  }, []);
+
+  useEffect(() => {
+    if (!isNative) return;
+    void initNativeExperience();
+    void restoreNativeMemberSnapshotIfNeeded();
+  }, [isNative]);
+
+  useEffect(() => {
+    if (!isNative) return;
+    registerNativeAppBridge({
+      setTab,
+      navigateToPath,
+      openNotifications: () => setNotificationsOpen(true),
+      openPricing: () => setPricingOpen(true),
+      openChatThread,
+      applyReferralCode: () => undefined
+    });
+    return () => registerNativeAppBridge(null);
+  }, [isNative, openChatThread]);
+
+  useEffect(() => {
+    if (!isNative) return;
+    const onNativeRoute = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (!detail) return;
+      applyNativeDeepLinkRoute(detail, {
+        setTab,
+        navigateToPath,
+        openNotifications: () => setNotificationsOpen(true),
+        openPricing: () => setPricingOpen(true),
+        openChatThread,
+        applyReferralCode: () => undefined
+      });
+    };
+    window.addEventListener(NATIVE_ROUTE_EVENT, onNativeRoute);
+    return () => window.removeEventListener(NATIVE_ROUTE_EVENT, onNativeRoute);
+  }, [isNative, openChatThread]);
+
   useEffect(() => {
     if (!isNative) return;
     const listener = CapApp.addListener("appUrlOpen", (event) => {
+      if (handleNativeLaunchUrl(event.url)) return;
       const parsed = parsePaymentReturnUrl(event.url);
       if (!parsed) return;
       logPaymentEvent("checkout callback", { reference: parsed.reference, mode: "deep-link" });
@@ -1264,7 +1315,7 @@ export function App() {
   const enterMemberApp = useCallback(() => {
     if (openAppLoading) return;
 
-    void import("./deferredMemberStyles");
+    void import("./deferredMemberStyles"); // remaining member styles (critical set loads in main.tsx)
 
     setOpenAppLoading(true);
     clearMemberSessionReady();

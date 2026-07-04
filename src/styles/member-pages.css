@@ -1200,7 +1200,8 @@
 }
 
 .profile-page--editing {
-  padding-bottom: 88px;
+  /* Save bar sits above bottom nav — keep last accordion fully scrollable */
+  padding-bottom: calc(var(--bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px) + 96px);
   background: color-mix(in srgb, var(--bg) 96%, var(--brand-pink) 4%);
 }
 

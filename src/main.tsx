@@ -15,6 +15,15 @@ import "./styles/footer.css";
 import "./styles/theme-contrast.css";
 import "./styles/premium-visibility.css";
 import "./styles/compliance.css";
+/* Critical member UI — eager so first paint is not unstyled (home/profile/onboarding). */
+import "./styles/dashboard.css";
+import "./styles/member-pages.css";
+import "./styles/member-fintech.css";
+import "./styles/member-design-system.css";
+import "./styles/profile-fintech-overview.css";
+import "./styles/profile-premium.css";
+import "./styles/relationship-intent.css";
+import "./styles/fintech-ui-cleanup.css";
 
 import { checkBuildVersion, registerServiceWorker } from "./utils/serviceWorker";
 import { repairMemberCaches } from "./utils/repairMemberCaches";

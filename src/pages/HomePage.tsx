@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { greetingForHour } from "../constants/copy";
 import { firstNameFromDisplayName } from "../constants/homeFilters";
@@ -110,10 +110,20 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
     onRenewNavigate: () => navigateToPath("/fast-connection")
   });
 
-  useEffect(() => {
+  /* Apply profile defaults before paint so home is not broken on first load. */
+  useLayoutEffect(() => {
+    setAgeMin(filterDefaults.ageMin);
+    setAgeMax(filterDefaults.ageMax);
     setState(filterDefaults.state);
     setCity(filterDefaults.city);
-  }, [JSON.stringify(prefs.states), JSON.stringify(prefs.cities), filterDefaults.state, filterDefaults.city]);
+    setDistanceKm(filterDefaults.distanceKm);
+  }, [
+    filterDefaults.ageMin,
+    filterDefaults.ageMax,
+    filterDefaults.state,
+    filterDefaults.city,
+    filterDefaults.distanceKm
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

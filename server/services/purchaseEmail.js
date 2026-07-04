@@ -255,13 +255,17 @@ export async function sendPurchaseConfirmationEmail({
 export async function logPaymentInitialized({
   reference,
   userId,
+  authUserId,
+  profileId,
   userEmail,
   productType,
   productId,
   returnPath
 }) {
   await appendPaymentAudit(reference, "payment_initialized", {
-    userId: userId || null,
+    userId: userId || authUserId || null,
+    authUserId: authUserId || userId || null,
+    profileId: profileId || null,
     userEmail: userEmail || null,
     productType,
     productId,

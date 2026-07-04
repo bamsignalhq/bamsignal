@@ -1,0 +1,89 @@
+import type { UserProfile } from "../types";
+import { STORAGE_KEYS } from "../constants/limits";
+import { readJson } from "./storage";
+import { safeUserProfile } from "./safeProfile";
+import {
+  hasRecoverablePaymentSession,
+  isSuccessfulPaymentOutcome,
+  paymentReturnPhaseFromOutcome,
+  pollVerifyOutcome,
+  readStoredPaymentReference,
+  resolvePaymentIdentityFromStorage,
+  type PaymentReturnOutcome,
+  type PaymentReturnScreenPhase
+} from "./paymentReturnStatus";
+import { completePendingPayment } from "../services/payments";
+import { logPaymentEvent, setPaymentFlowState } from "./paymentState";
+
+export type PaymentReturnFlowResult = {
+  outcome: PaymentReturnOutcome;
+  phase: PaymentReturnScreenPhase;
+  identity: UserProfile;
+};
+
+async function verifyOnce(user: UserProfile): Promise<PaymentReturnOutcome> {
+  const result = await completePendingPayment(user);
+  if (result.ok) {
+    return {
+      status: "fulfilled",
+      kind: result.kind,
+      productId: result.productId,
+      returnPath: result.returnPath,
+      sourcePage: result.sourcePage,
+      boostId: result.boostId,
+      quickiePassUntil: result.quickiePassUntil,
+      premiumUntil: result.premiumUntil,
+      expiresAt: result.expiresAt
+    };
+  }
+  if (result.cancelled) {
+    return { status: "cancelled", kind: result.kind };
+  }
+  if (result.pending) {
+    return {
+      status: "pending",
+      kind: result.kind,
+      retryable: true,
+      error: result.error
+    };
+  }
+  return {
+    status: "failed",
+    kind: result.kind,
+    error: result.error || "Payment not verified yet.",
+    explicit: true
+  };
+}
+
+/** Run verify with polling — never returns failed while backend may still be processing. */
+export async function runPaymentReturnVerification(
+  user: UserProfile,
+  options: { poll?: boolean; signal?: AbortSignal } = {}
+): Promise<PaymentReturnFlowResult> {
+  const identity = resolvePaymentIdentityFromStorage(user);
+  const reference = readStoredPaymentReference();
+  logPaymentEvent("payment return verify", { reference, email: identity.email || null });
+
+  const outcome = options.poll
+    ? await pollVerifyOutcome(() => verifyOnce(identity), { signal: options.signal })
+    : await verifyOnce(identity);
+
+  if (isSuccessfulPaymentOutcome(outcome)) {
+    setPaymentFlowState("success");
+  }
+
+  return {
+    outcome,
+    phase: paymentReturnPhaseFromOutcome(outcome),
+    identity
+  };
+}
+
+export function readPaymentReturnIdentity(): UserProfile {
+  const stored = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
+  return safeUserProfile(stored);
+}
+
+export function shouldAttemptPaymentRecovery(): boolean {
+  return hasRecoverablePaymentSession();
+}

@@ -12,7 +12,7 @@ import {
   markPaymentSessionStarted,
   setPaymentFlowState
 } from "../utils/paymentState";
-import { PAYMENT_CONFIRM_UNAVAILABLE, PAYMENT_START_ERROR } from "../config/paystack";
+import { PAYMENT_START_ERROR } from "../config/paystack";
 import {
   getPaymentReturnMeta,
   getPaymentReturnPath,
@@ -29,6 +29,11 @@ import { activateQuickiePass } from "../utils/quickie";
 import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
 import { fetchSubscriptionCatalog } from "./subscriptionCatalog";
 import { memberApiHeaders } from "../utils/memberApiAuth";
+import {
+  interpretVerifyHttpResponse,
+  type PaymentReturnKind,
+  type PaymentReturnOutcome
+} from "../utils/paymentReturnStatus";
 
 export { isPremiumActive, refreshPremiumStatus };
 export { clearPaymentSession } from "../utils/paymentState";
@@ -101,22 +106,59 @@ function normalizePaymentKind(kind?: string | null): PaymentKind {
 function parseVerifyHttpResult(
   response: Response,
   payload: VerifyPaymentPayload | null | undefined,
-  fallbackError: string
+  fallbackError: string,
+  kind: PaymentReturnKind = "premium"
 ): { ok: true; payload: VerifyPaymentPayload } | { ok: false; error: string; pending?: boolean; retryable?: boolean } {
-  if (response.status === 402) {
-    return { ok: false, pending: true, error: payload?.error || "Payment not completed." };
+  const outcome = interpretVerifyHttpResponse(response, payload, kind, fallbackError);
+  if (outcome.status === "fulfilled") {
+    return { ok: true, payload: payload || { ok: true } };
   }
-  if (response.status === 503) {
+  if (outcome.status === "pending") {
+    return { ok: false, pending: true, error: outcome.error || "Payment not completed." };
+  }
+  if (outcome.status === "processing") {
+    return { ok: false, retryable: true, error: outcome.error || "Payment processing." };
+  }
+  if (outcome.status === "cancelled") {
+    return { ok: false, error: "Payment was cancelled." };
+  }
+  return { ok: false, error: outcome.error || fallbackError };
+}
+
+export function toVerifyResultFromOutcome(outcome: PaymentReturnOutcome): {
+  ok: boolean;
+  kind: PaymentKind;
+  error?: string;
+  pending?: boolean;
+  cancelled?: boolean;
+  productId?: string;
+  returnPath?: string;
+  sourcePage?: string;
+  boostId?: string;
+  quickiePassUntil?: string;
+  premiumUntil?: string;
+  expiresAt?: string;
+} {
+  if (outcome.status === "fulfilled") {
     return {
-      ok: false,
-      retryable: true,
-      error: payload?.error || PAYMENT_CONFIRM_UNAVAILABLE
+      ok: true,
+      kind: outcome.kind,
+      productId: outcome.productId,
+      returnPath: outcome.returnPath,
+      sourcePage: outcome.sourcePage,
+      boostId: outcome.boostId,
+      quickiePassUntil: outcome.quickiePassUntil,
+      premiumUntil: outcome.premiumUntil,
+      expiresAt: outcome.expiresAt
     };
   }
-  if (!response.ok || !payload?.ok) {
-    return { ok: false, error: payload?.error || fallbackError };
+  if (outcome.status === "cancelled") {
+    return { ok: false, kind: outcome.kind, cancelled: true };
   }
-  return { ok: true, payload };
+  if (outcome.status === "pending" || outcome.status === "processing") {
+    return { ok: false, kind: outcome.kind, pending: true, error: outcome.error || "Payment pending." };
+  }
+  return { ok: false, kind: outcome.kind, error: outcome.error || "Payment not verified yet." };
 }
 
 function currentPaymentReturnBody(): Pick<PaymentReturnContext, "returnPath" | "productType" | "productId" | "sourcePage"> {
@@ -311,7 +353,7 @@ export async function verifyPayment(user: UserProfile): Promise<{
       })
     });
     const payload = await readResponseJson<VerifyPaymentPayload>(response);
-    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.");
+    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.", "premium");
     if (!parsed.ok) {
       return parsed;
     }
@@ -427,7 +469,7 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
       })
     });
     const payload = await readResponseJson<VerifyPaymentPayload>(response);
-    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.");
+    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.", "quickie");
     if (!parsed.ok) {
       return parsed;
     }
@@ -524,7 +566,7 @@ export async function verifyBoostPayment(
       })
     });
     const payload = await readResponseJson<VerifyPaymentPayload>(response);
-    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.");
+    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.", "boost");
     if (!parsed.ok) {
       return parsed;
     }

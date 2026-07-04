@@ -166,7 +166,6 @@ import {
   refreshPremiumStatus,
   startBoostPayment,
   startPlanPayment,
-  completePendingPayment,
   clearPaymentSession
 } from "./services/payments";
 import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive } from "./utils/premiumTrial";
@@ -326,6 +325,13 @@ import {
   normalizePaymentReturnPath,
   resolvePaymentReturnPath
 } from "./utils/paymentReturn";
+import {
+  readPaymentReturnIdentity,
+  runPaymentReturnVerification,
+  shouldAttemptPaymentRecovery
+} from "./utils/paymentReturnFlow";
+import { isSuccessfulPaymentOutcome } from "./utils/paymentReturnStatus";
+import type { PaymentReturnScreenPhase } from "./components/PaymentReturnScreen";
 
 type VerifiedPaymentRoute = {
   productId?: string;
@@ -411,7 +417,7 @@ export function App() {
   const [memberOverlay, setMemberOverlay] = useState<"visitors" | "premium" | "safety" | null>(null);
   const [notifVersion, setNotifVersion] = useState(0);
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
-  const [paymentReturnPhase, setPaymentReturnPhase] = useState<"idle" | "verifying" | "success" | "failed">("idle");
+  const [paymentReturnPhase, setPaymentReturnPhase] = useState<PaymentReturnScreenPhase>("verifying");
   const [openAppLoading, setOpenAppLoading] = useState(false);
   const [memberSessionReady, setMemberSessionReady] = useState(() => cachedMemberSession?.hasSession ?? false);
   const [memberSessionEpoch, setMemberSessionEpoch] = useState(0);
@@ -970,10 +976,10 @@ export function App() {
       const memberTab = memberTabFromPath(returnPath);
       if (memberTab) setTab(memberTab);
       setPaymentReturnPhase("success");
+      setPaystackCallbackActive(false);
       window.setTimeout(() => {
-        navigateToPath(returnPath, true);
         clearPaystackCallbackParams(returnPath);
-        setPaymentReturnPhase("idle");
+        navigateToPath(returnPath, true);
       }, 900);
     },
     []
@@ -1041,61 +1047,76 @@ export function App() {
     if (!callbackActive && !urlRef && (state === "initializing" || state === "checkout_open")) return;
     if (!callbackActive && !urlRef && state !== "verifying") return;
 
+    const identity = readPaymentReturnIdentity();
+    if (!identity.email?.trim() && !identity.phone?.trim()) {
+      if (callbackActive) {
+        setPaymentReturnPhase("verifying");
+      }
+      return;
+    }
+
     paymentVerifyInFlight.current = true;
     if (callbackActive) {
       setPaymentReturnPhase("verifying");
       setMemberAppEntered(true);
     }
     try {
-      logPaymentEvent("verification started", { reference: urlRef || localStorage.getItem(STORAGE_KEYS.paymentReference) });
-      const result = await completePendingPayment(userRef.current);
+      logPaymentEvent("verification started", {
+        reference: urlRef || localStorage.getItem(STORAGE_KEYS.paymentReference)
+      });
+      const { outcome, phase } = await runPaymentReturnVerification(identity, { poll: true });
       setPaymentFlowTick((v) => v + 1);
+      setPaymentReturnPhase(phase);
 
-      if (result.ok) {
-        logPaymentEvent("verification result", { ok: true, kind: result.kind });
-        applyPaymentSuccess(result.kind, {
-          productId: result.productId,
-          returnPath: result.returnPath,
-          sourcePage: result.sourcePage,
-          boostId: result.boostId,
-          quickiePassUntil: result.quickiePassUntil,
-          expiresAt: result.expiresAt
+      if (isSuccessfulPaymentOutcome(outcome)) {
+        logPaymentEvent("verification result", { ok: true, kind: outcome.kind });
+        applyPaymentSuccess(outcome.kind, {
+          productId: outcome.productId,
+          returnPath: outcome.returnPath,
+          sourcePage: outcome.sourcePage,
+          boostId: outcome.boostId,
+          quickiePassUntil: outcome.quickiePassUntil,
+          expiresAt: outcome.expiresAt
         });
         return;
       }
 
-      if (result.pending) {
-        logPaymentEvent("verification result", { ok: false, pending: true, kind: result.kind });
+      if (outcome.status === "pending" || outcome.status === "processing") {
+        logPaymentEvent("verification result", { ok: false, pending: true, kind: outcome.kind });
         return;
       }
 
-      if (result.cancelled) {
+      if (outcome.status === "cancelled") {
         setPaymentFlowState("cancelled");
         setAuthMessage(fastConnectionPaymentFailureMessage());
         if (callbackActive) {
           const returnPath = getPaymentReturnPath();
-          setPaymentReturnPhase("idle");
+          setPaystackCallbackActive(false);
           navigateToPath(returnPath, true);
           clearPaystackCallbackParams(returnPath);
         }
         return;
       }
 
-      if (getPaymentFlowState() !== "failed") {
-        setPaymentFlowState("failed");
+      if (outcome.status === "failed") {
+        if (getPaymentFlowState() !== "failed") {
+          setPaymentFlowState("failed");
+        }
+        logPaymentEvent("verification result", { ok: false, kind: outcome.kind, error: outcome.error });
+        if (outcome.error) {
+          setAuthMessage(
+            outcome.kind === "quickie" ? fastConnectionPaymentFailureMessage() : outcome.error
+          );
+        }
+        if (callbackActive) {
+          setPaymentReturnPhase("failed");
+        }
       }
-      logPaymentEvent("verification result", { ok: false, kind: result.kind, error: result.error });
-      if (result.error) {
-        setAuthMessage(
-          result.kind === "quickie" ? fastConnectionPaymentFailureMessage() : result.error
-        );
-      }
-      if (callbackActive) setPaymentReturnPhase("failed");
     } finally {
       paymentVerifyInFlight.current = false;
       setPaymentLoading(false);
     }
-  }, [applyPaymentSuccess, user]);
+  }, [applyPaymentSuccess]);
 
   const openChatThread = useCallback((threadId?: string) => {
     if (threadId) setPendingChatOpen(threadId);
@@ -1180,8 +1201,13 @@ export function App() {
 
   useEffect(() => {
     if (!isAuthed || paystackCallbackActive) return;
+    if (!shouldAttemptPaymentRecovery()) return;
+    const path = normalizePath(window.location.pathname);
+    if (path !== "/profile" && path !== "/payment/success" && getPaymentFlowState() !== "verifying") {
+      return;
+    }
     void processPaymentReturn();
-  }, [isAuthed, paystackCallbackActive, processPaymentReturn, paymentFlowTick]);
+  }, [isAuthed, paystackCallbackActive, processPaymentReturn, paymentFlowTick, memberPathname]);
 
   /** Re-check Supabase session when returning from Paystack / back button — never logout on payment failure. */
   useEffect(() => {
@@ -1441,24 +1467,25 @@ export function App() {
           setIsAuthed(true);
           clearMemberSessionReady();
           setMemberHydrating(true);
-          void goToApp({ loginEmail: stored.email || undefined })
-            .then((result) => {
-              if (!result.ok) {
-                setMemberHydrating(false);
-                clearMemberSessionReady();
-                return;
-              }
-              applyGoToAppResult(result, { blocking: false, source: "payment_return_recover" });
-              scheduleMemberBundleHydration(stored, { loginEmail: stored.email || undefined });
-            });
+          const result = await goToApp({ loginEmail: stored.email || undefined });
+          if (!result.ok) {
+            setMemberHydrating(false);
+            clearMemberSessionReady();
+          } else {
+            applyGoToAppResult(result, { blocking: false, source: "payment_return_recover" });
+            scheduleMemberBundleHydration(stored, { loginEmail: stored.email || undefined });
+          }
         }
       }
       if (cancelled) return;
-      if (!userRef.current.email && !userRef.current.phone) {
-        setPaymentReturnPhase("failed");
+
+      const identity = readPaymentReturnIdentity();
+      if (!identity.email?.trim() && !identity.phone?.trim()) {
+        setPaymentReturnPhase("verifying");
         openAuth("login");
         return;
       }
+
       await processPaymentReturn();
     };
 
@@ -2158,7 +2185,7 @@ export function App() {
   if (paystackCallbackActive) {
     return (
       <div className={`app ${theme}`}>
-        <PaymentReturnScreen phase={paymentReturnPhase === "idle" ? "verifying" : paymentReturnPhase} />
+        <PaymentReturnScreen phase={paymentReturnPhase} />
       </div>
     );
   }

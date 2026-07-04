@@ -65,6 +65,13 @@ export function isPublicMemberDataAction(action = "") {
   return PUBLIC_MEMBER_DATA_ACTIONS.has(String(action || "").trim());
 }
 
+export async function tryOptionalMemberAuth(req, body = {}) {
+  const bearer = extractBearerToken(req);
+  if (!bearer) return null;
+  const result = await requireMemberAuth(req, body);
+  return result.ok ? result : null;
+}
+
 /**
  * Verify Supabase bearer token and resolve BamSignal member identity server-side.
  * Never trust email/phone/username from the request body.

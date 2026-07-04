@@ -102,6 +102,7 @@ export function isPaymentReturnRoute(pathname = typeof window !== "undefined" ? 
 export function clearPaystackCallbackParams(returnPath: string): void {
   if (typeof window === "undefined") return;
   navigateReplace(returnPath);
+  window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
 function navigateReplace(path: string): void {

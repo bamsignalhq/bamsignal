@@ -10,7 +10,8 @@ import {
   verifyPaystackTransaction
 } from "../../server/services/paystackClient.js";
 import { logPaymentInitialized } from "../../server/services/purchaseEmail.js";
-import { appendPaymentAudit } from "../../server/services/paymentEvents.js";
+import { appendPaymentAudit, repairPaymentAuditIdentity } from "../../server/services/paymentEvents.js";
+import { resolvePaymentAuditIdentity } from "../../server/services/paymentAuditIdentity.js";
 import {
   buildPaystackPurchaseMetadata,
   completePaymentFulfillment,
@@ -28,7 +29,7 @@ import {
   observabilityContext
 } from "../../server/services/observability.js";
 import { sanitizeApiErrorForLog, ensureApiRequestContext, sendApiError, sendLoggedApiError } from "../../server/services/errorResponse.js";
-import { requireMemberAuth } from "../../server/services/memberAuth.js";
+import { requireMemberAuth, tryOptionalMemberAuth } from "../../server/services/memberAuth.js";
 import {
   PAYMENT_INITIALIZE_RATE_LIMITED_MESSAGE,
   enforcePaymentInitializeThrottle
@@ -110,14 +111,18 @@ function paymentReturnFrom(metadata = {}, body = {}, fallback = "/home") {
   return { returnPath, sourcePage };
 }
 
-async function logPaymentReturnRedirect(req, { reference, returnPath, productType, productId, sourcePage }) {
+async function logPaymentReturnRedirect(req, { reference, returnPath, productType, productId, sourcePage, auditIdentity = {} }) {
   try {
     await appendPaymentAudit(reference, "payment_return_redirect", {
       returnPath,
       productType,
       productId,
       sourcePage: sourcePage || null,
-      source: "verify_response"
+      source: "verify_response",
+      userId: auditIdentity.userId || auditIdentity.authUserId || null,
+      authUserId: auditIdentity.authUserId || auditIdentity.userId || null,
+      profileId: auditIdentity.profileId || null,
+      userEmail: auditIdentity.userEmail || null
     });
   } catch (error) {
     const sanitized = sanitizeApiErrorForLog(error);
@@ -258,6 +263,9 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
 
     await logPaymentInitialized({
       reference: data?.reference || reference,
+      userId: memberAuth?.authUserId || memberAuth?.memberId || null,
+      authUserId: memberAuth?.authUserId || null,
+      profileId: memberAuth?.memberId || null,
       userEmail: email,
       productType: intent.productType,
       productId: intent.productId,
@@ -433,6 +441,13 @@ export default async function handler(req, res) {
 
     const metadata = transaction?.metadata || {};
     const { returnPath, sourcePage } = paymentReturnFrom(metadata, {}, "/home");
+    const optionalAuth = await tryOptionalMemberAuth(req, body);
+    const auditIdentity = await resolvePaymentAuditIdentity({
+      memberAuth: optionalAuth,
+      email: email || transactionEmail,
+      phone,
+      body
+    });
 
     try {
       const result = await completePaymentFulfillment({
@@ -467,13 +482,26 @@ export default async function handler(req, res) {
       }
 
       if (!result.idempotent) {
+        await repairPaymentAuditIdentity(reference, auditIdentity);
+        await appendPaymentAudit(reference, "payment_activation_complete", {
+          productType: result.productType,
+          productId: result.productId,
+          userId: auditIdentity.userId || auditIdentity.authUserId || null,
+          authUserId: auditIdentity.authUserId || auditIdentity.userId || null,
+          profileId: auditIdentity.profileId || null,
+          userEmail: auditIdentity.userEmail || email || transactionEmail || null,
+          activationOk: true
+        });
         await logPaymentReturnRedirect(req, {
           reference,
           returnPath,
           sourcePage,
           productType: result.productType,
-          productId: result.productId
+          productId: result.productId,
+          auditIdentity
         });
+      } else {
+        await repairPaymentAuditIdentity(reference, auditIdentity);
       }
 
       return res.status(200).json(buildVerifySuccessResponse(result));

@@ -1,10 +1,22 @@
 import { query, isDatabaseReady } from "../db.js";
 import { paymentQuery, requireDatabaseReadyForPayments } from "./paymentDb.js";
 import { assertSchemaTable } from "./schemaVerification.js";
+import { buildPaymentAuditIdentity } from "./paymentAuditIdentity.js";
 
 export async function ensurePaymentEventsTable() {
   if (!isDatabaseReady()) return;
   await assertSchemaTable("payment_events");
+}
+
+function auditIdentityPatch(detail = {}) {
+  const identity = buildPaymentAuditIdentity({
+    email: detail.userEmail || detail.email || "",
+    phone: detail.phone || "",
+    body: detail
+  });
+  const userId = detail.userId || detail.authUserId || identity.userId || null;
+  const userEmail = detail.userEmail || detail.email || identity.userEmail || null;
+  return { userId, userEmail };
 }
 
 export async function appendPaymentAudit(reference, event, detail = {}) {
@@ -15,16 +27,60 @@ export async function appendPaymentAudit(reference, event, detail = {}) {
     return;
   }
 
-  const entry = { event, at: new Date().toISOString(), ...detail };
-  console.info("[payment-audit]", event, { reference, ...detail });
+  const identityPatch = auditIdentityPatch(detail);
+  const entry = {
+    event,
+    at: new Date().toISOString(),
+    ...detail,
+    userId: detail.userId || detail.authUserId || identityPatch.userId || null,
+    authUserId: detail.authUserId || detail.userId || identityPatch.userId || null,
+    profileId: detail.profileId || null,
+    userEmail: detail.userEmail || identityPatch.userEmail || null
+  };
+  console.info("[payment-audit]", event, { reference, ...entry });
   await query(
-    `insert into payment_events (paystack_reference, audit_log)
-     values ($1, jsonb_build_array($2::jsonb))
+    `insert into payment_events (paystack_reference, user_id, user_email, audit_log)
+     values ($1, $2, $3, jsonb_build_array($4::jsonb))
      on conflict (paystack_reference) do update
-     set audit_log = payment_events.audit_log || jsonb_build_array($2::jsonb),
+     set audit_log = payment_events.audit_log || jsonb_build_array($4::jsonb),
+         user_id = coalesce(excluded.user_id, payment_events.user_id),
+         user_email = coalesce(excluded.user_email, payment_events.user_email),
          updated_at = now()`,
-    [reference, JSON.stringify(entry)]
+    [
+      reference,
+      entry.userId,
+      entry.userEmail,
+      JSON.stringify(entry)
+    ]
   );
+}
+
+export async function repairPaymentAuditIdentity(reference, identity = {}) {
+  if (!reference) return false;
+  await ensurePaymentEventsTable();
+  if (!isDatabaseReady()) return false;
+
+  const patch = buildPaymentAuditIdentity({
+    memberAuth: identity.memberAuth || null,
+    email: identity.userEmail || identity.email || "",
+    phone: identity.phone || "",
+    body: identity
+  });
+  const userId = identity.userId || identity.authUserId || patch.userId || null;
+  const userEmail = identity.userEmail || patch.userEmail || null;
+  if (!userId && !userEmail) return false;
+
+  const result = await query(
+    `update payment_events
+     set user_id = coalesce($2, user_id),
+         user_email = coalesce($3, user_email),
+         updated_at = now()
+     where paystack_reference = $1
+       and (user_id is null or user_email is null)
+     returning paystack_reference`,
+    [reference, userId, userEmail]
+  );
+  return Boolean(result.rows[0]);
 }
 
 export async function recordPaymentVerified({

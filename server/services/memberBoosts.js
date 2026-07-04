@@ -1,7 +1,9 @@
 /**
  * Server-side boost entitlements — granted only by payment fortress after successful Paystack payment.
+ * Schema: migrations/0038_member_boost_entitlements.sql
  */
 import { isDatabaseReady, normalizeUserKey, query } from "../db.js";
+import { assertSchemaTable } from "./schemaVerification.js";
 
 const SHOP_BOOST_IDS = new Set([
   "signal-boost",
@@ -12,29 +14,7 @@ const SHOP_BOOST_IDS = new Set([
 ]);
 
 export async function ensureMemberBoostsTable() {
-  await query(`
-    create table if not exists app_member_boosts (
-      id uuid primary key default gen_random_uuid(),
-      user_key text not null,
-      product_id text not null,
-      activated_at timestamptz not null default now(),
-      expires_at timestamptz,
-      status text not null default 'active',
-      consumed boolean not null default false,
-      paystack_reference text,
-      city text,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await query(`
-    create unique index if not exists app_member_boosts_paystack_reference_uidx
-      on app_member_boosts (paystack_reference)
-      where paystack_reference is not null and paystack_reference <> ''
-  `).catch(() => null);
-  await query(`
-    create index if not exists app_member_boosts_user_active_idx
-      on app_member_boosts (user_key, status, expires_at desc)
-  `).catch(() => null);
+  return assertSchemaTable("app_member_boosts");
 }
 
 /**
@@ -93,7 +73,11 @@ export async function listActiveMemberBoosts({ email, phone }) {
   const userKey = normalizeUserKey({ email, phone });
   if (!userKey) return [];
 
-  await ensureMemberBoostsTable();
+  try {
+    await ensureMemberBoostsTable();
+  } catch {
+    return [];
+  }
   const result = await query(
     `select *
      from app_member_boosts

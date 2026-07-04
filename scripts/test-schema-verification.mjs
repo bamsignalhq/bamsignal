@@ -22,7 +22,6 @@ function read(relativePath) {
 const dbSource = read("server/db.js");
 const schemaVerificationSource = read("server/services/schemaVerification.js");
 const migrationRunnerSource = read("server/migrationRunner.js");
-const baselineMigrationSource = read("migrations/0002_baseline_bamsignal_schema.sql");
 
 assert(
   schemaVerificationSource.includes("export async function checkSchema") &&
@@ -45,13 +44,6 @@ assert(
     read("migrations/0001_schema_migrations.sql").includes("create table if not exists schema_migrations"),
   "migration runner must track applied migrations in schema_migrations"
 );
-
-for (const tableName of REQUIRED_SCHEMA_TABLES) {
-  assert(
-    baselineMigrationSource.includes(`create table if not exists ${tableName}`),
-    `baseline migration must define required table ${tableName}`
-  );
-}
 
 function simulateMissingSchema(presentTables) {
   const present = new Set(presentTables);
@@ -103,6 +95,14 @@ assert(
     migrationFiles.includes("0002_baseline_bamsignal_schema.sql"),
   "migrations directory must include ledger and baseline schema files"
 );
+
+const allMigrationsSource = migrationFiles.map((file) => read(`migrations/${file}`)).join("\n");
+for (const tableName of REQUIRED_SCHEMA_TABLES) {
+  assert(
+    allMigrationsSource.includes(`create table if not exists ${tableName}`),
+    `migrations must define required table ${tableName}`
+  );
+}
 
 const productionSource = read("server/production.js");
 const startupMigrationsSource = read("server/startupMigrations.js");

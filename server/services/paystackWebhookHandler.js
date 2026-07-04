@@ -138,7 +138,7 @@ export async function handlePaystackWebhookRequest({
   method = "POST",
   rawBody,
   signature,
-  secretKey = config.paystackSecretKey,
+  secretKey = config.paystackWebhookSecret || config.paystackSecretKey,
   ledgerSource = "webhook",
   requestId = null,
   correlationId = null

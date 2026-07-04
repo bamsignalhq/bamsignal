@@ -6,6 +6,12 @@ store-assets/
 .vercel/
 .env
 .env.local
+.env.development
+.env.staging
+.env.production
+# Keep only committed templates:
+# .env.example
+# .env.production.example
 
 .DS_Store
 

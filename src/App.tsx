@@ -188,6 +188,10 @@ import { recordDailyActive, trackEvent } from "./utils/analytics";
 import { getProfileViewsToday } from "./utils/profileViews";
 import { unreadCount, notificationDestination, type AppNotification } from "./utils/notifications";
 import { activateBoost, pruneExpiredBoosts } from "./utils/activeBoosts";
+import {
+  applyServerBoostEntitlement,
+  refreshMemberBoostEntitlements
+} from "./services/boostEntitlements";
 import { BoostActiveBanner } from "./components/BoostActiveBanner";
 import { cacheSubscriptionCatalogPricing } from "./utils/quickie";
 import { applyQuickieIntentAfterPayment, applyPendingQuickieIntentIfNeeded } from "./utils/fastConnectionIntent";
@@ -340,6 +344,16 @@ type VerifiedPaymentRoute = {
   boostId?: string;
   quickiePassUntil?: string;
   expiresAt?: string;
+  entitlementId?: string;
+  boost?: {
+    id?: string;
+    productId?: string;
+    activatedAt?: string | null;
+    expiresAt?: string | null;
+    consumed?: boolean;
+    city?: string;
+    memberDiscoverId?: string;
+  };
 };
 
 function fastConnectionPaymentFailureMessage(): string {
@@ -996,6 +1010,7 @@ export function App() {
       };
       const boostId =
         route?.boostId ||
+        route?.boost?.productId ||
         (kind === "boost" ? route?.productId : undefined) ||
         localStorage.getItem(STORAGE_KEYS.paymentBoostId) ||
         "city-boost";
@@ -1005,15 +1020,27 @@ export function App() {
 
       if (kind === "boost") {
         const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
-        activateBoost(boostId as BoostProduct["id"], user, datingProfile, {
-          expiresAt: route?.expiresAt || null
-        });
-        setBoostTick((tick) => tick + 1);
-        void refreshPremiumStatus(user).then(() => syncPremiumState());
+        void (async () => {
+          const hydrated =
+            applyServerBoostEntitlement(user, route?.boost) ||
+            (await refreshMemberBoostEntitlements(user)).length > 0;
+          if (!hydrated) {
+            activateBoost(boostId as BoostProduct["id"], user, datingProfile, {
+              expiresAt: route?.expiresAt || route?.boost?.expiresAt || null
+            });
+          }
+          setBoostTick((tick) => tick + 1);
+          await refreshPremiumStatus(user);
+          syncPremiumState();
+        })();
         const boostCopy = boostSuccessCopy(boostId as BoostProduct["id"], datingProfile.city);
         setPaymentSuccess(boostCopy);
         notifyBoostActivated(boostId);
-        trackEvent("boost_activated", { product: boostId, paid: "true" });
+        trackEvent("boost_activated", {
+          product: boostId,
+          paid: "true",
+          entitlementId: route?.entitlementId || route?.boost?.id || null
+        });
       } else if (kind === "quickie") {
         applyQuickieIntentAfterPayment(user, route?.quickiePassUntil);
         setPaymentSuccess({
@@ -1076,7 +1103,9 @@ export function App() {
           sourcePage: outcome.sourcePage,
           boostId: outcome.boostId,
           quickiePassUntil: outcome.quickiePassUntil,
-          expiresAt: outcome.expiresAt
+          expiresAt: outcome.expiresAt,
+          entitlementId: outcome.entitlementId,
+          boost: outcome.boost
         });
         return;
       }

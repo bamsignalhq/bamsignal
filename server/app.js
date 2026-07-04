@@ -51,6 +51,7 @@ import adminMembersHandler from "../api/admin/members.js";
 import adminConsentHandler from "../api/admin/consent.js";
 import adminBootstrapHandler from "../api/admin/bootstrap.js";
 import adminModerationHandler from "../api/admin/moderation.js";
+import adminBoostIntegrityHandler from "../api/admin/boost-integrity.js";
 import hardSetupHandler from "../api/hard/setup.js";
 import featureFlagsHandler from "../api/feature-flags/index.js";
 import remoteConfigHandler from "../api/remote-config/index.js";
@@ -184,6 +185,7 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/admin/consent", adminConsentHandler);
   mountHandler(app, "post", "/api/admin/bootstrap", adminBootstrapHandler);
   mountHandler(app, "post", "/api/admin/moderation", adminModerationHandler);
+  mountHandler(app, "post", "/api/admin/boost-integrity", adminBoostIntegrityHandler);
   mountHandler(app, "get", "/api/hard/setup", hardSetupHandler);
   mountHandler(app, "post", "/api/hard/setup", hardSetupHandler);
   mountHandler(app, "get", "/api/feature-flags", featureFlagsHandler);

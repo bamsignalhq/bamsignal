@@ -143,13 +143,24 @@ function buildVerifySuccessResponse(result) {
   const { intent, activation, returnPath, sourcePage, productType, productId } = result;
 
   if (result.idempotent) {
-    return {
+    const base = {
       ok: true,
       productType,
       productId,
       returnPath,
       sourcePage
     };
+    if (productType === "boost" && result.activation) {
+      return {
+        ...base,
+        boostId: result.activation.boostId || productId,
+        expiresAt: result.activation.expiresAt || null,
+        entitlementId: result.activation.entitlementId || result.entitlementId || null,
+        boost: result.activation.boost || null,
+        boostActive: Boolean(result.activation.boost?.id || result.activation.entitlementId)
+      };
+    }
+    return base;
   }
 
   if (isFastConnectionProductType(intent.productType)) {
@@ -173,7 +184,10 @@ function buildVerifySuccessResponse(result) {
       sourcePage,
       boostId: activation.boostId,
       city: activation.placement?.city,
-      expiresAt: activation.expiresAt
+      expiresAt: activation.expiresAt,
+      entitlementId: activation.entitlementId || activation.boost?.id || null,
+      boost: activation.boost || null,
+      boostActive: Boolean(activation.boost?.id || activation.entitlementId)
     };
   }
 
@@ -490,7 +504,10 @@ export default async function handler(req, res) {
           authUserId: auditIdentity.authUserId || auditIdentity.userId || null,
           profileId: auditIdentity.profileId || null,
           userEmail: auditIdentity.userEmail || email || transactionEmail || null,
-          activationOk: true
+          activationOk: true,
+          entitlementId: result.activation?.entitlementId || result.activation?.boost?.id || result.entitlementId || null,
+          boostId: result.activation?.boostId || result.productId || null,
+          verificationSource: "verify"
         });
         await logPaymentReturnRedirect(req, {
           reference,

@@ -49,7 +49,7 @@
     "test:photo-upload-payload": "node scripts/test-photo-upload-payload.mjs",
     "test:server-import": "node scripts/smoke-server-import.mjs",
     "verify:production-routes": "node scripts/verify-production-route-deployment.mjs",
-    "test:payments": "node scripts/test-consultation-payments.mjs && node scripts/test-payment-catalog.mjs && node scripts/test-payment-webhook.mjs && node scripts/test-payment-return-reliability.mjs",
+    "test:payments": "node scripts/test-consultation-payments.mjs && node scripts/test-payment-catalog.mjs && node scripts/test-payment-webhook.mjs && node scripts/test-payment-return-reliability.mjs && node scripts/test-boost-activation-integrity.mjs",
     "test:scheduling": "node scripts/test-consultation-scheduling.mjs",
     "test:meetings": "node scripts/test-consultation-meetings.mjs",
     "test:operations-center": "node scripts/test-operations-center.mjs",

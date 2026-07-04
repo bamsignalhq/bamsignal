@@ -10,6 +10,7 @@ import {
 import type { LaunchCommandSectionId } from "../../../constants/launchCommandCenter";
 import { buildLiveLaunchCommandCenterBundle } from "../../../utils/launchCommandCenterEngine";
 import { findSectionSnapshot } from "../../../utils/launchCommandCenterLogic";
+import { LaunchCommandBoostIntegrityCard } from "./LaunchCommandBoostIntegrityCard";
 import { LaunchCommandBlockersCard } from "./LaunchCommandBlockersCard";
 import { LaunchCommandGoNoGoCard } from "./LaunchCommandGoNoGoCard";
 import { LaunchCommandOperationsCard } from "./LaunchCommandOperationsCard";
@@ -80,6 +81,7 @@ export function LaunchCommandCenterPage() {
             incidents={bundle.incidents}
             deployments={bundle.deployments}
           />
+          <LaunchCommandBoostIntegrityCard />
         </div>
       </div>
 

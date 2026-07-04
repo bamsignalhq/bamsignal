@@ -81,6 +81,17 @@ type VerifyPaymentPayload = {
   fastConnectionPassUntil?: string;
   boostId?: string;
   expiresAt?: string;
+  entitlementId?: string;
+  boostActive?: boolean;
+  boost?: {
+    id?: string;
+    productId?: string;
+    activatedAt?: string | null;
+    expiresAt?: string | null;
+    consumed?: boolean;
+    city?: string;
+    memberDiscoverId?: string;
+  };
 };
 
 type VerifyResult = {
@@ -96,6 +107,8 @@ type VerifyResult = {
   quickiePassUntil?: string;
   boostId?: string;
   expiresAt?: string;
+  entitlementId?: string;
+  boost?: VerifyPaymentPayload["boost"];
 };
 
 function normalizePaymentKind(kind?: string | null): PaymentKind {
@@ -371,7 +384,9 @@ export async function verifyPayment(user: UserProfile): Promise<{
       sourcePage: verified.sourcePage,
       quickiePassUntil: verified.quickiePassUntil || verified.fastConnectionPassUntil,
       boostId: verified.boostId,
-      expiresAt: verified.expiresAt
+      expiresAt: verified.expiresAt,
+      entitlementId: verified.entitlementId || verified.boost?.id,
+      boost: verified.boost
     };
   } catch {
     return { ok: false, error: "Verification failed." };
@@ -483,7 +498,9 @@ export async function verifyQuickiePayment(user: UserProfile): Promise<{
       sourcePage: verified.sourcePage,
       premiumUntil: verified.premium_until,
       boostId: verified.boostId,
-      expiresAt: verified.expiresAt
+      expiresAt: verified.expiresAt,
+      entitlementId: verified.entitlementId || verified.boost?.id,
+      boost: verified.boost
     };
   } catch {
     return { ok: false, error: "Verification failed." };
@@ -600,6 +617,8 @@ export async function completePendingPayment(user: UserProfile): Promise<{
   quickiePassUntil?: string;
   premiumUntil?: string;
   expiresAt?: string;
+  entitlementId?: string;
+  boost?: VerifyPaymentPayload["boost"];
 }> {
   const params = new URLSearchParams(window.location.search);
   const urlStatus = params.get("status")?.trim().toLowerCase();
@@ -652,7 +671,9 @@ export async function completePendingPayment(user: UserProfile): Promise<{
         boostId: result.boostId || boostId,
         quickiePassUntil: result.quickiePassUntil,
         premiumUntil: result.premiumUntil,
-        expiresAt: result.expiresAt
+        expiresAt: result.expiresAt,
+        entitlementId: result.entitlementId,
+        boost: result.boost
       };
     }
     if (result.pending || result.retryable) {

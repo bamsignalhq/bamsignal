@@ -17,6 +17,8 @@ export type PaymentReturnOutcome =
       quickiePassUntil?: string;
       premiumUntil?: string;
       expiresAt?: string;
+      entitlementId?: string;
+      boost?: VerifyPayload["boost"];
       idempotent?: boolean;
     }
   | {
@@ -50,6 +52,17 @@ type VerifyPayload = {
   fastConnectionPassUntil?: string;
   boostId?: string;
   expiresAt?: string;
+  entitlementId?: string;
+  boostActive?: boolean;
+  boost?: {
+    id?: string;
+    productId?: string;
+    activatedAt?: string | null;
+    expiresAt?: string | null;
+    consumed?: boolean;
+    city?: string;
+    memberDiscoverId?: string;
+  };
 };
 
 function normalizeKind(value?: string | null): PaymentReturnKind {
@@ -84,6 +97,14 @@ export function interpretVerifyHttpResponse(
 
   if (response.ok && payload?.ok) {
     const resolvedKind = normalizeKind(payload.productType || kind);
+    if (resolvedKind === "boost" && payload.boostActive === false) {
+      return {
+        status: "failed",
+        kind: resolvedKind,
+        error: payload.error || "Boost entitlement not confirmed.",
+        explicit: true
+      };
+    }
     return {
       status: "fulfilled",
       kind: resolvedKind,
@@ -94,7 +115,9 @@ export function interpretVerifyHttpResponse(
       expiresAt: payload.expiresAt,
       premiumUntil: payload.premium_until,
       quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil,
-      idempotent: !payload.productId && !payload.boostId && !payload.premium_until
+      entitlementId: payload.entitlementId || payload.boost?.id,
+      boost: payload.boost,
+      idempotent: payload.boostActive === undefined && !payload.entitlementId && !payload.boost?.id
     };
   }
 

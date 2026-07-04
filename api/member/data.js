@@ -1,10 +1,13 @@
 import {
-  fetchMemberBundle,
   findAppUserIdentity,
   getDatabaseStatus,
-  persistReport,
   upsertAppUserIdentity
 } from "../../server/db.js";
+import {
+  fetchMemberBundle,
+  persistMessage,
+  persistReport
+} from "../../server/services/memberPersistence.js";
 import {
   isPublicMemberDataAction,
   PUBLIC_MEMBER_DATA_ACTIONS,
@@ -162,11 +165,17 @@ export default async function handler(req, res) {
       if (!requireDatabase(res)) return;
       const user = await findAppUserIdentity(identity);
       const entitlements = await fetchMemberEntitlements(identity);
+      const { listActiveMemberBoosts } = await import("../server/services/memberBoosts.js");
+      const activeBoosts = await listActiveMemberBoosts({
+        email: identity.email,
+        phone: identity.phone
+      });
       return res.status(200).json({
         ok: true,
         user,
         premium: entitlements.signalPass,
-        entitlements
+        entitlements,
+        activeBoosts
       });
     }
 
@@ -478,7 +487,6 @@ export default async function handler(req, res) {
 
     if (action === "message") {
       if (!requireDatabase(res)) return;
-      const { persistMessage } = await import("../../server/db.js");
       try {
         const row = await persistMessage({
           email: identity.email,

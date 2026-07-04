@@ -1,6 +1,11 @@
 import { activateAppUserFastConnectionPass, activateAppUserPremium } from "../db.js";
 import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../cityHome.js";
 import { activateMemberBoost } from "./memberBoosts.js";
+import {
+  evaluateBoostActivationIntegrity,
+  fulfillBoostWithIntegrity,
+  repairBoostEntitlementForReference
+} from "./boostIntegrity.js";
 import { createVipInviteLink } from "../telegram.js";
 import { resetFastConnectionDailySignals } from "./fastConnection.js";
 import {
@@ -142,7 +147,8 @@ export async function fulfillVerifiedPurchase({
   name = "",
   reference = "",
   city = "",
-  transaction = null
+  transaction = null,
+  ledgerSource = "verify"
 }) {
   if (!intent) {
     return { ok: false, reason: "missing_intent" };
@@ -250,27 +256,30 @@ export async function fulfillVerifiedPurchase({
       };
     }
 
-    // Shop boosts (signal / priority / profile): server grants entitlement — client must not be required.
-    const expiresAt = boostExpiresAtFromIntent(intent);
-    const boostRow = await activateMemberBoost({
-      email: email || null,
-      phone: phone || null,
-      boostId,
-      expiresAt,
-      paystackReference: reference,
-      city: resolvedCity
+    // Shop boosts (signal / priority / profile): transactional entitlement + fulfillment commit.
+    const activation = await fulfillBoostWithIntegrity({
+      intent,
+      email,
+      phone,
+      reference,
+      city: resolvedCity,
+      transaction,
+      ledgerSource,
+      fulfillmentPatch: {
+        productType: intent.productType,
+        productId: intent.productId,
+        amountKobo: Number(transaction?.amount || 0),
+        currency: String(transaction?.currency || "").trim() || null,
+        rawPayload: {
+          purchaseIntent: intent,
+          source: ledgerSource
+        }
+      }
     });
-    if (!boostRow) {
+    if (!activation.ok || !activation.boost?.id) {
       return { ok: false, reason: "boost_activation_failed" };
     }
-    return {
-      ok: true,
-      productType: "boost",
-      productId: intent.productId,
-      boostId,
-      expiresAt: boostRow.expiresAt || expiresAt,
-      boost: boostRow
-    };
+    return activation;
   }
 
   const premiumUntil = premiumUntilFromIntent(intent);
@@ -356,6 +365,60 @@ function fulfillmentAlreadyComplete(row, returnPath, sourcePage) {
   };
 }
 
+async function resolveIdempotentFulfillment(row, { reference, email, phone, returnPath, sourcePage }) {
+  if (row?.product_type !== "boost") {
+    return fulfillmentAlreadyComplete(row, returnPath, sourcePage);
+  }
+
+  const integrity = await evaluateBoostActivationIntegrity(reference, { email, phone });
+  if (integrity.ok) {
+    return {
+      ...fulfillmentAlreadyComplete(row, returnPath, sourcePage),
+      activation: {
+        ok: true,
+        productType: "boost",
+        productId: row.product_id,
+        boostId: integrity.entitlement?.productId || row.product_id,
+        expiresAt: integrity.entitlement?.expiresAt || null,
+        boost: integrity.entitlement,
+        entitlementId: integrity.entitlement?.id || row.entitlement_id || null
+      },
+      entitlementId: integrity.entitlement?.id || null
+    };
+  }
+
+  if (integrity.reason === "missing_entitlement") {
+    const repaired = await repairBoostEntitlementForReference(reference, { source: "idempotent_repair" });
+    if (repaired.ok && repaired.boost) {
+      return {
+        ...fulfillmentAlreadyComplete(row, returnPath, sourcePage),
+        activation: {
+          ok: true,
+          productType: "boost",
+          productId: row.product_id,
+          boostId: repaired.boost.productId,
+          expiresAt: repaired.boost.expiresAt,
+          boost: repaired.boost,
+          entitlementId: repaired.boost.id,
+          repaired: true
+        },
+        entitlementId: repaired.boost.id
+      };
+    }
+    return {
+      ok: false,
+      status: 422,
+      error: "Payment fulfilled but boost entitlement is missing."
+    };
+  }
+
+  return {
+    ok: false,
+    status: 422,
+    error: "Boost entitlement is not active for this payment."
+  };
+}
+
 export async function completePaymentFulfillment({
   reference,
   transaction,
@@ -386,7 +449,13 @@ export async function completePaymentFulfillment({
   if (!processingClaim.claimed) {
     const existingFulfillment = processingClaim.row || (await getPaymentFulfillment(reference));
     if (existingFulfillment?.status === "fulfilled") {
-      return fulfillmentAlreadyComplete(existingFulfillment, returnPath, sourcePage);
+      return resolveIdempotentFulfillment(existingFulfillment, {
+        reference,
+        email,
+        phone,
+        returnPath,
+        sourcePage
+      });
     }
     if (existingFulfillment?.status === "processing") {
       return fulfillmentAlreadyInProgress(existingFulfillment, returnPath, sourcePage);
@@ -428,7 +497,8 @@ export async function completePaymentFulfillment({
     name,
     reference,
     city,
-    transaction
+    transaction,
+    ledgerSource
   });
 
   if (!activation.ok) {
@@ -449,16 +519,25 @@ export async function completePaymentFulfillment({
     return { ok: false, status: 422, error: "Unable to activate this purchase." };
   }
 
-  await markPaymentFulfillmentStatus(reference, "fulfilled", {
-    productType: intent.productType,
-    productId: intent.productId,
-    amountKobo: Number(transaction?.amount || 0),
-    currency: String(transaction?.currency || "").trim() || null,
-    rawPayload: {
-      purchaseIntent: intent,
-      activation
-    }
-  });
+  if (!activation.fulfillmentCommitted) {
+    await markPaymentFulfillmentStatus(reference, "fulfilled", {
+      productType: intent.productType,
+      productId: intent.productId,
+      amountKobo: Number(transaction?.amount || 0),
+      currency: String(transaction?.currency || "").trim() || null,
+      rawPayload: {
+        purchaseIntent: intent,
+        activation
+      }
+    });
+  } else {
+    await markPaymentFulfillmentStatus(reference, "fulfilled", {
+      rawPayload: {
+        purchaseIntent: intent,
+        activation
+      }
+    });
+  }
 
   if (email) {
     await sendPurchaseConfirmationEmail({

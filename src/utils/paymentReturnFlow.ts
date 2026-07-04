@@ -33,7 +33,9 @@ async function verifyOnce(user: UserProfile): Promise<PaymentReturnOutcome> {
       boostId: result.boostId,
       quickiePassUntil: result.quickiePassUntil,
       premiumUntil: result.premiumUntil,
-      expiresAt: result.expiresAt
+      expiresAt: result.expiresAt,
+      entitlementId: result.entitlementId,
+      boost: result.boost
     };
   }
   if (result.cancelled) {

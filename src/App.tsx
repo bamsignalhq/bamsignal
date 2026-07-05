@@ -167,6 +167,8 @@ import {
   clearPaymentSession
 } from "./services/payments";
 import { WalletExperienceSheet } from "./components/wallet/WalletExperienceSheet";
+import { MemberOfflineBanner, MemberSlowConnectionBanner } from "./components/member";
+import { useNetworkStatus } from "./hooks/useNetworkStatus";
 import {
   boostIdToWalletEntry,
   premiumPlanToWalletContext,
@@ -446,6 +448,7 @@ export function App() {
   const [paymentFlowTick, setPaymentFlowTick] = useState(0);
   const [walletOpen, setWalletOpen] = useState(false);
   const [walletPurchaseCtx, setWalletPurchaseCtx] = useState<WalletPurchaseContext | null>(null);
+  const { online: networkOnline, slow: networkSlow, refresh: refreshNetworkStatus } = useNetworkStatus();
   const [bootStalled, setBootStalled] = useState(false);
   const [safeModeActive] = useState(() => isSafeMode());
   const [recoveryBanner, setRecoveryBanner] = useState(() => shouldShowRecoveryBanner());
@@ -2201,7 +2204,10 @@ export function App() {
   if (paystackCallbackActive) {
     return (
       <div className={`app ${theme}`}>
-        <PaymentReturnScreen phase={paymentReturnPhase} />
+        <PaymentReturnScreen
+          phase={paymentReturnPhase}
+          onRetry={() => void processPaymentReturn()}
+        />
       </div>
     );
   }
@@ -2750,6 +2756,12 @@ export function App() {
   return (
     <PremiumCheckoutProvider value={premiumCheckoutValue}>
     <div className={`app ${theme} platform-root ${memberAppEntered && !isPublicSurface ? "platform-root--member" : ""}`}>
+      {memberAppEntered && !isPublicSurface && !networkOnline ? (
+        <MemberOfflineBanner onRetry={refreshNetworkStatus} />
+      ) : null}
+      {memberAppEntered && !isPublicSurface && networkOnline && networkSlow ? (
+        <MemberSlowConnectionBanner />
+      ) : null}
       <div
         className="platform-shell"
       >

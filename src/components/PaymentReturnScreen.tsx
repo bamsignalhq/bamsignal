@@ -3,9 +3,10 @@ export type PaymentReturnScreenPhase = "verifying" | "processing" | "success" | 
 type PaymentReturnScreenProps = {
   phase: PaymentReturnScreenPhase;
   message?: string;
+  onRetry?: () => void;
 };
 
-export function PaymentReturnScreen({ phase, message }: PaymentReturnScreenProps) {
+export function PaymentReturnScreen({ phase, message, onRetry }: PaymentReturnScreenProps) {
   const title =
     phase === "success"
       ? "Payment confirmed"
@@ -32,6 +33,11 @@ export function PaymentReturnScreen({ phase, message }: PaymentReturnScreenProps
         ) : null}
         <h1>{title}</h1>
         <p>{body}</p>
+        {phase === "failed" && onRetry ? (
+          <button type="button" className="btn-secondary" onClick={onRetry}>
+            Try again
+          </button>
+        ) : null}
       </div>
     </div>
   );

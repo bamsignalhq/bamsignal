@@ -15,6 +15,7 @@ import { DiscoverHeader } from "../components/discover/DiscoverHeader";
 import { DiscoverFiltersBar } from "../components/discover/DiscoverFiltersBar";
 import { SignalLimitModal } from "../components/premium/SignalLimitModal";
 import { ProfileCardSkeleton } from "../components/Skeleton";
+import { MemberEmptyState } from "../components/member";
 import { PaywallModal } from "../components/PaywallModal";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
 import { ProfileStoryCard } from "../components/discover/ProfileStoryCard";
@@ -314,19 +315,13 @@ export function DiscoverPage({
     const filteredEmpty = baseDeck.length > 0 && deck.length === 0;
 
     return (
-      <div className="discover-page__empty">
-        <h2>{filteredEmpty ? "No matches for this filter yet" : DISCOVER_EMPTY_HEADLINE}</h2>
-        <p>{filteredEmpty ? "Try another filter or widen your preferences." : DISCOVER_EMPTY_SUBTEXT}</p>
-        {filteredEmpty ? (
-          <button type="button" className="btn-primary" onClick={() => setQuickFilter("all")}>
-            Show all
-          </button>
-        ) : (
-          <button type="button" className="btn-primary" onClick={() => setFiltersOpen(true)}>
-            Adjust preferences
-          </button>
-        )}
-      </div>
+      <MemberEmptyState
+        className="discover-page__empty"
+        title={filteredEmpty ? "No matches for this filter yet" : DISCOVER_EMPTY_HEADLINE}
+        body={filteredEmpty ? "Try another filter or widen your preferences." : DISCOVER_EMPTY_SUBTEXT}
+        actionLabel={filteredEmpty ? "Show all" : "Adjust preferences"}
+        onAction={() => (filteredEmpty ? setQuickFilter("all") : setFiltersOpen(true))}
+      />
     );
   };
 

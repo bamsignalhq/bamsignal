@@ -16,7 +16,24 @@ export const INSTITUTIONAL_PAGE_FOOT = "institutional-page__foot";
 
 export const MEMBER_BUTTON_PRIMARY = "btn-primary";
 export const MEMBER_BUTTON_SECONDARY = "btn-secondary";
+export const MEMBER_BUTTON_GHOST = "btn-ghost";
 export const MEMBER_ROOT = "platform-root--member";
+export const MEMBER_SHEET_SCRIM = "member-ux-sheet__scrim";
+export const MEMBER_SHEET_PANEL = "member-ux-sheet__panel";
+
+/** PROGRAM 001 M2 — surfaces that must use MemberUxKit primitives. */
+export const MEMBER_UX_SURFACES = [
+  "auth",
+  "discover",
+  "chats",
+  "signals",
+  "profile",
+  "wallet",
+  "premium",
+  "settings",
+  "notifications",
+  "payment-return"
+] as const;
 
 export const UX_STANDARDIZATION_TARGETS = [
   { surface: "Institutional admin", button: INSTITUTIONAL_BUTTON, card: INSTITUTIONAL_CARD },

@@ -21,6 +21,7 @@ import "./styles/member-nudges.css";
 import "./styles/profile-fintech-overview.css";
 import "./styles/member-design-system.css";
 import "./styles/member-motion.css";
+import "./styles/member-ux-kit.css";
 import "./styles/relationship-intent.css";
 import "./styles/more-about-me.css";
 import "./styles/activity-highlights.css";

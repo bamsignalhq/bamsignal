@@ -1053,6 +1053,13 @@ export function ProfilePage({
                 <>
                   <p className="profile-overview-empty">{PREMIUM_COPY.subscriptionActive}</p>
                   <p className="settings-help-hours">{PREMIUM_COPY.subscriptionManage}</p>
+                  <button type="button" className="settings-hub-row settings-hub-row--cta" onClick={onUpgrade}>
+                    <span>
+                      <strong>Premium Center</strong>
+                      <small>Benefits, usage, renewal, and history</small>
+                    </span>
+                    <ChevronRight size={18} aria-hidden="true" />
+                  </button>
                 </>
               ) : (
                 <button type="button" className="settings-hub-row settings-hub-row--cta" onClick={onUpgrade}>

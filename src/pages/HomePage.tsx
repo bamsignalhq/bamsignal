@@ -28,6 +28,8 @@ import { FastConnectionActivationSheet } from "../components/profile/FastConnect
 import { FastConnectionExpiryBanner } from "../components/profile/FastConnectionExpiryBanner";
 import { useFastConnectionActivationPrompt } from "../hooks/useFastConnectionActivationPrompt";
 import { useFastConnectionExpiryReminder } from "../hooks/useFastConnectionExpiryReminder";
+import { PremiumRenewalBanner } from "../components/premium/PremiumRenewalBanner";
+import { usePremiumRenewalReminder } from "../hooks/usePremiumRenewalReminder";
 import { navigateToPath } from "../constants/routes";
 import { debugRender } from "../utils/debugRecursion";
 import { ProfileImprovementNudge } from "../components/nudges/ProfileImprovementNudge";
@@ -108,6 +110,16 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
     user,
     enabled: true,
     onRenewNavigate: () => navigateToPath("/fast-connection")
+  });
+
+  const {
+    bannerMessage: premiumRenewalBanner,
+    dismissBanner: dismissPremiumRenewalBanner,
+    renew: renewPremiumFromBanner,
+    renewLoading: premiumRenewLoading
+  } = usePremiumRenewalReminder({
+    enabled: isPremium,
+    onRenew: onOpenPremium
   });
 
   /* Apply profile defaults before paint so home is not broken on first load. */
@@ -294,6 +306,15 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
           message={fastConnectionExpiryBanner}
           onRenew={() => void renewFastConnectionFromBanner()}
           onDismiss={dismissFastConnectionExpiryBanner}
+        />
+      ) : null}
+
+      {premiumRenewalBanner ? (
+        <PremiumRenewalBanner
+          message={premiumRenewalBanner}
+          onRenew={renewPremiumFromBanner}
+          onDismiss={dismissPremiumRenewalBanner}
+          loading={premiumRenewLoading}
         />
       ) : null}
 

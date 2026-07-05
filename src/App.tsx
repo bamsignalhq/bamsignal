@@ -35,6 +35,7 @@ import {
   LazyMomentPage,
   LazyVoiceVibePage,
   LazyPremiumPage,
+  LazyPremiumCenterPage,
   LazyPublicMarketingRoutes,
   LazySafetyCenterPage,
   LazySignalConciergeApplicationPage,
@@ -2115,6 +2116,11 @@ export function App() {
     [handleUpgrade, plans]
   );
 
+  const openPremiumCenter = useCallback(() => {
+    setTab("me");
+    navigateToPath("/subscription", true);
+  }, []);
+
   const handlePurchaseBoost = useCallback(
     async (product: BoostProduct) => {
       if (!isAuthed) {
@@ -2911,8 +2917,21 @@ export function App() {
                 isPremium={isPremium}
                 phoneVerified={Boolean(user.phoneVerified)}
                 onDiscover={() => setTab("discover")}
-                onOpenPremium={startPremiumCheckout}
+                onOpenPremium={openPremiumCenter}
               />
+            </MemberRouteBoundary>
+          )}
+          {memberAccessReady && !memberOverlay && currentPathname === "/subscription" && (
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="subscription">
+              <Suspense fallback={<LazyRouteFallback subtitle="Loading Premium Center…" />}>
+                <LazyPremiumCenterPage
+                  isPremium={isPremium}
+                  plans={plans}
+                  onBack={() => navigateToPath("/profile", true)}
+                  onSelectPlan={(plan) => void handleUpgrade(plan)}
+                  loading={paymentLoading}
+                />
+              </Suspense>
             </MemberRouteBoundary>
           )}
           {memberAccessReady && !memberOverlay && currentPathname === "/fast-connection" && (
@@ -2922,7 +2941,7 @@ export function App() {
                   user={user}
                   isPremium={isPremium}
                   onHome={() => navigateToPath("/home")}
-                  onOpenPremium={startPremiumCheckout}
+                  onOpenPremium={openPremiumCenter}
                 />
               </Suspense>
             </MemberRouteBoundary>
@@ -3029,7 +3048,7 @@ export function App() {
               />
             </MemberRouteBoundary>
           )}
-          {memberAccessReady && tab === "me" && currentPathname !== "/voice-vibe" && currentPathname !== "/trusted-member" && currentPathname !== "/saved-profiles" && (
+          {memberAccessReady && tab === "me" && currentPathname !== "/voice-vibe" && currentPathname !== "/trusted-member" && currentPathname !== "/saved-profiles" && currentPathname !== "/subscription" && (
             <MemberRouteBoundary sessionKey={memberSessionEpoch} name="profile">
               <ProfilePage
                 user={user}
@@ -3038,7 +3057,7 @@ export function App() {
                 onToggleTheme={toggleTheme}
                 onUserChange={setUser}
                 onLogout={handleLogout}
-                onUpgrade={startPremiumCheckout}
+                onUpgrade={openPremiumCenter}
                 onReturnToDashboard={() => {
                   setTab("home");
                   navigateToPath("/home");

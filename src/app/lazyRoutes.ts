@@ -20,6 +20,10 @@ export const LazyPremiumPage = lazy(() =>
   import("../pages/PremiumPage").then((module) => ({ default: module.PremiumPage }))
 );
 
+export const LazyPremiumCenterPage = lazy(() =>
+  import("../pages/PremiumCenterPage").then((module) => ({ default: module.PremiumCenterPage }))
+);
+
 export const LazyVisitorsPage = lazy(() =>
   import("../pages/VisitorsPage").then((module) => ({ default: module.VisitorsPage }))
 );

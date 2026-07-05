@@ -110,13 +110,15 @@ export const DEFAULT_PREMIUM_PLAN_INPUTS: PremiumPlanInput[] = [
 
 export const DEFAULT_PREMIUM_PLANS: PremiumPlan[] = DEFAULT_PREMIUM_PLAN_INPUTS.map(hydratePlan);
 
-/** Shown on Signal Pass upgrade */
+/** Shown on Signal Pass upgrade — PROGRAM 002 M8 audit */
 export const SIGNAL_PASS_INCLUDES = [
-  "Unlimited contact exchanges",
-  "Priority visibility",
-  "Premium badge",
-  "More Signals",
-  "Exclusive features as BamSignal grows"
+  "Unlimited Signals",
+  "Advanced Filters",
+  "Priority Placement",
+  "Read Receipts",
+  "Exclusive Badge",
+  "Profile Insights",
+  "Future Benefits as BamSignal grows",
 ] as const;
 
 /** @deprecated use SIGNAL_PASS_INCLUDES */

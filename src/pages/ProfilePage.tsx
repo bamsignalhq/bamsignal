@@ -31,6 +31,8 @@ import {
   normalizeBodyTypes,
   stateDisplayLabel
 } from "../constants/profileOptions";
+import { ReferralCard } from "../components/dashboard/ReferralCard";
+import { NativeShareProfileButton } from "../components/NativeShareProfileButton";
 import { ProfileOverviewContent } from "../components/profile/overview/ProfileOverviewContent";
 import { PhotoTipsCarousel } from "../components/profilePhoto/PhotoTipsCarousel";
 import { hapticLight } from "../utils/memberHaptics";
@@ -75,6 +77,7 @@ import { revalidateMemberProfileAfterUpdate } from "../services/memberProfileSyn
 import { ContactForm } from "../components/ContactForm";
 import { ProfileBoostSheet } from "../components/profile/ProfileBoostSheet";
 import { FastConnectionSheet } from "../components/profile/FastConnectionSheet";
+import { WalletExperienceSheet } from "../components/wallet/WalletExperienceSheet";
 import { ProfilePromptsEditor } from "../components/profile/ProfilePromptsEditor";
 import { MoreAboutMePicker } from "../components/moreAboutMe/MoreAboutMePicker";
 import type { BoostProduct } from "../constants/boosts";
@@ -397,9 +400,13 @@ export function ProfilePage({
 
   const {
     sheetOpen: fastConnectionSheetOpen,
+    walletOpen: fastConnectionWalletOpen,
     loading: fastConnectionLoading,
     closeSheet: closeFastConnectionSheet,
+    closeWallet: closeFastConnectionWallet,
     continueToPayment: continueFastConnectionPayment,
+    onWalletCompleted: onFastConnectionWalletCompleted,
+    onBuyBayGold: onFastConnectionBuyBayGold,
     refreshProfileIntents
   } = useFastConnectionCheckout({
     user,
@@ -859,7 +866,12 @@ export function ProfilePage({
 
           {settingsPanel === "hub" && (
             <>
+              <ReferralCard user={user} />
               <section className="card settings-hub-card">
+                <NativeShareProfileButton
+                  profileName={user.name}
+                  profileId={localStorage.getItem(STORAGE_KEYS.memberProfileId) || undefined}
+                />
                 <SettingsRow
                   label={isPremium ? "Manage Signal Pass" : "Signal Pass"}
                   hint={isPremium ? PREMIUM_COPY.subscriptionManage : PREMIUM_COPY.settingsSignalPassHint}
@@ -1157,6 +1169,16 @@ export function ProfilePage({
         onClose={closeFastConnectionSheet}
         onContinuePayment={() => void continueFastConnectionPayment()}
         loading={fastConnectionLoading}
+      />
+
+      <WalletExperienceSheet
+        open={fastConnectionWalletOpen}
+        entry="fast_connection"
+        productId="fast-connection-pass"
+        productLabel="Fast Connection"
+        onClose={closeFastConnectionWallet}
+        onCompleted={onFastConnectionWalletCompleted}
+        onBuyBayGold={(ctx) => void onFastConnectionBuyBayGold(ctx)}
       />
     </div>
   );

@@ -12,7 +12,11 @@ import {
   type PaymentReturnOutcome,
   type PaymentReturnScreenPhase
 } from "./paymentReturnStatus";
-import { completePendingPayment } from "../services/payments";
+import { completePendingPayment as completeLegacyPendingPayment } from "../services/payments";
+import {
+  completeWalletFundingReturn,
+  isWalletFundingPayment
+} from "../services/walletPurchaseFlow";
 import { logPaymentEvent, setPaymentFlowState } from "./paymentState";
 
 export type PaymentReturnFlowResult = {
@@ -22,7 +26,31 @@ export type PaymentReturnFlowResult = {
 };
 
 async function verifyOnce(user: UserProfile): Promise<PaymentReturnOutcome> {
-  const result = await completePendingPayment(user);
+  if (isWalletFundingPayment()) {
+    const reference = readStoredPaymentReference();
+    if (!reference) {
+      return { status: "failed", kind: "premium", error: "No payment reference." };
+    }
+    const funded = await completeWalletFundingReturn(reference, user);
+    if (funded.ok) {
+      return {
+        status: "fulfilled",
+        kind: "premium",
+        returnPath: "/home"
+      };
+    }
+    if (funded.pending) {
+      return { status: "pending", kind: "premium", retryable: true, error: funded.error };
+    }
+    return {
+      status: "failed",
+      kind: "premium",
+      error: funded.error || "Wallet funding failed.",
+      explicit: true
+    };
+  }
+
+  const result = await completeLegacyPendingPayment(user);
   if (result.ok) {
     return {
       status: "fulfilled",

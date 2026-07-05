@@ -31,6 +31,7 @@ import {
   markPaymentFulfillmentStatus
 } from "./paymentFulfillments.js";
 import { sendPurchaseConfirmationEmail } from "./purchaseEmail.js";
+import { afterBamSignalPurchaseFulfillment } from "./stankingsPlatform.js";
 
 export async function recordPurchaseIntent({
   reference,
@@ -135,6 +136,12 @@ export function buildPaystackPurchaseMetadata({
     metadata.payment_id = intent.productId;
     metadata.consultation_fee = true;
     metadata.fee_kind = "consultation-fee";
+  }
+
+  if (intent.productType === "wallet_funding") {
+    metadata.wallet_funding = true;
+    metadata.resume_token = intent.resumeToken || "";
+    metadata.baygold_amount = intent.bayGoldAmount ?? null;
   }
 
   return metadata;
@@ -331,7 +338,71 @@ export async function resolveInitializeIntent(action, body = {}) {
     });
   }
 
+  if (action === "initialize-baygold") {
+    return resolveBayGoldFundingIntent({
+      shortfallBayGold: body.shortfallBayGold,
+      resumeToken: body.resumeToken
+    });
+  }
+
   return null;
+}
+
+/** Wallet-only Paystack funding — credits BayGold then resumes platform purchase. */
+export function resolveBayGoldFundingIntent({ shortfallBayGold = 0, resumeToken = "" } = {}) {
+  const bayGoldAmount = Math.max(100, Math.ceil(Number(shortfallBayGold) || 100));
+  return {
+    productType: "wallet_funding",
+    productId: "baygold",
+    amountKobo: bayGoldAmount * 1000,
+    bayGoldAmount,
+    resumeToken: String(resumeToken || "").trim(),
+    days: null,
+    durationHours: null,
+    dailyFastSignals: null,
+    boostId: null,
+    planName: `${bayGoldAmount} BayGold`
+  };
+}
+
+export async function completeWalletFundingFulfillment({
+  reference,
+  metadata = {},
+  memberId,
+  email
+}) {
+  const resumeToken = String(metadata.resume_token || metadata.resumeToken || "").trim();
+  if (!resumeToken) {
+    return { ok: false, status: 422, error: "Wallet resume token missing." };
+  }
+  if (!memberId) {
+    return { ok: false, status: 401, error: "Member identity required for wallet funding." };
+  }
+
+  const { resumePlatformPurchase } = await import("./stankingsPlatform.js");
+  const resumed = await resumePlatformPurchase({
+    memberId,
+    email,
+    resumeToken,
+    paystackReference: reference
+  });
+
+  if (!resumed?.ok) {
+    return {
+      ok: false,
+      status: resumed?.status || 502,
+      error: resumed?.error || "Purchase resume failed after wallet funding."
+    };
+  }
+
+  return {
+    ok: true,
+    idempotent: false,
+    productType: "wallet_funding",
+    productId: "baygold",
+    walletFunding: true,
+    purchase: resumed.purchase ?? null
+  };
 }
 
 function cityBoostError(boostId) {
@@ -550,6 +621,17 @@ export async function completePaymentFulfillment({
       userId: metadata.user_id || metadata.userId || null,
       returnPath
     });
+  }
+
+  const memberId = metadata.user_id || metadata.userId || email || phone;
+  if (memberId) {
+    await afterBamSignalPurchaseFulfillment({
+      memberId: String(memberId),
+      email,
+      productType: intent.productType,
+      productId: intent.productId,
+      reference
+    }).catch(() => null);
   }
 
   return {

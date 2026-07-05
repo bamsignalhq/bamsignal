@@ -15,6 +15,7 @@ import { resolvePaymentAuditIdentity } from "../../server/services/paymentAuditI
 import {
   buildPaystackPurchaseMetadata,
   completePaymentFulfillment,
+  completeWalletFundingFulfillment,
   recordPurchaseIntent,
   resolveInitializeIntent
 } from "../../server/services/paymentFortress.js";
@@ -334,7 +335,10 @@ export default async function handler(req, res) {
     const body = parseBody(req);
     const action = String(req.query.action || "").trim();
     const isInitializeAction =
-      action === "initialize" || action === "initialize-boost" || action === "initialize-quickie";
+      action === "initialize" ||
+      action === "initialize-boost" ||
+      action === "initialize-quickie" ||
+      action === "initialize-baygold";
 
     let memberAuth = null;
     if (isInitializeAction) {
@@ -386,6 +390,10 @@ export default async function handler(req, res) {
 
     if (action === "initialize-quickie") {
       return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize-quickie", "/home", memberAuth);
+    }
+
+    if (action === "initialize-baygold") {
+      return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize-baygold", "/home", memberAuth);
     }
 
     const reference = String(body.reference || body.trxref || "").trim();
@@ -462,6 +470,37 @@ export default async function handler(req, res) {
       phone,
       body
     });
+
+    const isWalletFunding =
+      metadata.wallet_funding === true ||
+      metadata.wallet_funding === "true" ||
+      String(metadata.product_type || "").trim() === "wallet_funding";
+
+    if (isWalletFunding) {
+      const result = await completeWalletFundingFulfillment({
+        reference,
+        metadata,
+        memberId: auditIdentity.userId || auditIdentity.authUserId || optionalAuth?.memberId || null,
+        email: email || transactionEmail
+      });
+
+      if (!result.ok) {
+        return paystackVerifyError(req, res, {
+          status: result.status || 422,
+          message: result.error,
+          errorCode: "wallet_funding_failed",
+          event: "paystack_verify_wallet_funding_failed"
+        });
+      }
+
+      return res.json({
+        ok: true,
+        walletFunding: true,
+        purchase: result.purchase ?? null,
+        returnPath,
+        sourcePage
+      });
+    }
 
     try {
       const result = await completePaymentFulfillment({

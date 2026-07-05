@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
 import type { IntentTag, UserProfile } from "../types";
-import { completePendingPayment, startQuickiePassPayment } from "../services/payments";
 import {
   applyQuickieIntentAfterPayment,
   handleQuickieIntentTap
@@ -9,6 +8,7 @@ import { clearPendingQuickieIntent, markPendingQuickieIntent, QUICKIE_INTENT } f
 import { getDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { STORAGE_KEYS } from "../constants/limits";
 import { readJson, writeJson } from "../utils/storage";
+import { startBayGoldFunding } from "../services/walletPurchaseFlow";
 
 type UseFastConnectionCheckoutOptions = {
   user: UserProfile;
@@ -24,6 +24,7 @@ export function useFastConnectionCheckout({
   onPaymentError
 }: UseFastConnectionCheckoutOptions) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [walletOpen, setWalletOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleIntentTap = useCallback(
@@ -55,42 +56,44 @@ export function useFastConnectionCheckout({
     setSheetOpen(false);
   }, [loading]);
 
-  const continueToPayment = useCallback(async () => {
-    if (loading) return;
-    setLoading(true);
+  const continueToPayment = useCallback(() => {
     markPendingQuickieIntent();
+    setSheetOpen(false);
+    setWalletOpen(true);
+  }, []);
 
-    try {
-      const result = await startQuickiePassPayment(
-        user,
-        {},
-        { returnPath, sourcePage: returnPath }
-      );
-      if (!result.ok) {
-        clearPendingQuickieIntent();
-        if (!result.cancelled) {
-          onPaymentError?.(result.error || "Payment could not start.");
-        }
-        return;
-      }
+  const closeWallet = useCallback(() => {
+    if (loading) return;
+    setWalletOpen(false);
+    clearPendingQuickieIntent();
+  }, [loading]);
 
-      if (result.needsVerify) {
-        const verified = await completePendingPayment(user);
-        if (verified.ok) {
-          applyQuickieIntentAfterPayment(user, verified.quickiePassUntil);
-          setSheetOpen(false);
-          onPaymentSuccess?.();
-          return;
+  const onWalletCompleted = useCallback(() => {
+    applyQuickieIntentAfterPayment(user);
+    clearPendingQuickieIntent();
+    setWalletOpen(false);
+    onPaymentSuccess?.();
+  }, [onPaymentSuccess, user]);
+
+  const onBuyBayGold = useCallback(
+    async (ctx: { resumeToken?: string; shortfallBayGold?: number }) => {
+      setWalletOpen(false);
+      setLoading(true);
+      try {
+        const result = await startBayGoldFunding({
+          resumeToken: ctx.resumeToken,
+          shortfallBayGold: ctx.shortfallBayGold,
+          returnPath
+        });
+        if (!result.ok && !result.cancelled) {
+          onPaymentError?.(result.error || "BayGold funding could not start.");
         }
-        if (!verified.pending) {
-          clearPendingQuickieIntent();
-          onPaymentError?.(verified.error || "Payment verification failed.");
-        }
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, onPaymentError, onPaymentSuccess, returnPath, user]);
+    },
+    [onPaymentError, returnPath]
+  );
 
   const refreshProfileIntents = useCallback(() => {
     const next = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, getDatingProfile()));
@@ -100,9 +103,13 @@ export function useFastConnectionCheckout({
 
   return {
     sheetOpen,
+    walletOpen,
     loading,
     closeSheet,
+    closeWallet,
     continueToPayment,
+    onWalletCompleted,
+    onBuyBayGold,
     handleIntentTap,
     refreshProfileIntents
   };

@@ -41,7 +41,8 @@ import {
 } from "../services/contactExchange";
 import { persistMessageRemote, acceptSignalRemote, declineSignalRemote, fetchIncomingSignalsRemote, ignoreSignalRemote, sendSignalRemote } from "../services/memberData";
 import { BRAND } from "../constants/copy";
-import { startQuickiePassPayment, completePendingPayment } from "../services/payments";
+import { WalletExperienceSheet } from "../components/wallet/WalletExperienceSheet";
+import { startBayGoldFunding } from "../services/walletPurchaseFlow";
 import { canMessageQuickieProfile, profileHasQuickieIntent, unlockQuickieMatch } from "../utils/quickie";
 import { applyQuickieIntentAfterPayment } from "../utils/fastConnectionIntent";
 import { consumePendingChatDraft, consumePendingChatOpen, setPendingChatDraft } from "../utils/chatDraft";
@@ -430,6 +431,7 @@ function ChatDetail({
   const [composerDraft, setComposerDraft] = useState(() => consumePendingChatDraft(match.id) ?? "");
   const [screenshotNotice, setScreenshotNotice] = useState(false);
   const [quickiePaywallOpen, setQuickiePaywallOpen] = useState(false);
+  const [quickieWalletOpen, setQuickieWalletOpen] = useState(false);
   const [quickieLoading, setQuickieLoading] = useState(false);
   const viewer = getDatingProfile();
   const inboxGate = canUseInbox(viewer);
@@ -831,26 +833,30 @@ function ChatDetail({
         loading={quickieLoading}
         context="message"
         onPay={async () => {
+          setQuickiePaywallOpen(false);
+          setQuickieWalletOpen(true);
+        }}
+      />
+
+      <WalletExperienceSheet
+        open={quickieWalletOpen}
+        entry="fast_connection"
+        productId="fast-connection-pass"
+        productLabel="Fast Connection"
+        onClose={() => setQuickieWalletOpen(false)}
+        onCompleted={() => {
+          applyQuickieIntentAfterPayment(user, undefined, { addIntent: false });
+          unlockQuickieMatch(match.profileId);
+          setQuickieWalletOpen(false);
+        }}
+        onBuyBayGold={(ctx) => {
+          setQuickieWalletOpen(false);
           setQuickieLoading(true);
-          const result = await startQuickiePassPayment(user);
-          if (!result.ok) {
-            setQuickieLoading(false);
-            if (!result.cancelled && result.error) {
-              showToast(result.error, { tone: "error", duration: 4000 });
-            }
-            return;
-          }
-          if (result.needsVerify) {
-            const verified = await completePendingPayment(user);
-            if (verified.ok) {
-              applyQuickieIntentAfterPayment(user, verified.quickiePassUntil, { addIntent: false });
-              unlockQuickieMatch(match.profileId);
-              setQuickiePaywallOpen(false);
-            } else if (!verified.pending && verified.error) {
-              showToast(verified.error, { tone: "error", duration: 4000 });
-            }
-          }
-          setQuickieLoading(false);
+          void startBayGoldFunding({
+            resumeToken: ctx.resumeToken,
+            shortfallBayGold: ctx.shortfallBayGold,
+            returnPath: "/chats"
+          }).finally(() => setQuickieLoading(false));
         }}
       />
 

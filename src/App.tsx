@@ -164,10 +164,15 @@ import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
   refreshPremiumStatus,
-  startBoostPayment,
-  startPlanPayment,
   clearPaymentSession
 } from "./services/payments";
+import { WalletExperienceSheet } from "./components/wallet/WalletExperienceSheet";
+import {
+  boostIdToWalletEntry,
+  premiumPlanToWalletContext,
+  startBayGoldFunding,
+  type WalletPurchaseContext
+} from "./services/walletPurchaseFlow";
 import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive } from "./utils/premiumTrial";
 import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { markFirstDayStep } from "./utils/firstDayJourney";
@@ -439,6 +444,8 @@ export function App() {
     () => isPaymentReturnPath() || hasPaystackCallbackInUrl()
   );
   const [paymentFlowTick, setPaymentFlowTick] = useState(0);
+  const [walletOpen, setWalletOpen] = useState(false);
+  const [walletPurchaseCtx, setWalletPurchaseCtx] = useState<WalletPurchaseContext | null>(null);
   const [bootStalled, setBootStalled] = useState(false);
   const [safeModeActive] = useState(() => isSafeMode());
   const [recoveryBanner, setRecoveryBanner] = useState(() => shouldShowRecoveryBanner());
@@ -1039,7 +1046,9 @@ export function App() {
         trackEvent("boost_activated", {
           product: boostId,
           paid: "true",
-          entitlementId: route?.entitlementId || route?.boost?.id || null
+          ...(route?.entitlementId || route?.boost?.id
+            ? { entitlementId: String(route.entitlementId || route.boost?.id) }
+            : {})
         });
       } else if (kind === "quickie") {
         applyQuickieIntentAfterPayment(user, route?.quickiePassUntil);
@@ -2027,48 +2036,56 @@ export function App() {
     [navigateTab]
   );
 
-  const handleUpgrade = useCallback(
-    async (plan: PremiumPlan) => {
+  const openWalletPurchase = useCallback(
+    (ctx: WalletPurchaseContext) => {
       if (!isAuthed) {
         openAuth("signup", tab === "home" ? "discover" : tab);
         return;
       }
-      if (paymentLoading) return;
+      if (!user.email?.trim()) {
+        setAuthMessage("Add a verified email before purchasing.");
+        return;
+      }
+      setWalletPurchaseCtx(ctx);
+      setWalletOpen(true);
+      setPricingOpen(false);
+      setMemberOverlay(null);
+    },
+    [isAuthed, openAuth, tab, user.email]
+  );
 
-      setPaymentFlowTick((v) => v + 1);
+  const handleWalletPurchaseCompleted = useCallback(() => {
+    void refreshPremiumStatus(user).then(() => syncPremiumState());
+    void refreshMemberBoostEntitlements(user).then(() => setBoostTick((tick) => tick + 1));
+    setPaymentSuccess({
+      title: "Purchase complete",
+      body: "Your BayGold purchase is confirmed."
+    });
+    trackEvent("wallet_purchase_completed", {
+      entry: walletPurchaseCtx?.entry,
+      productId: walletPurchaseCtx?.productId
+    });
+    setNotifVersion((v) => v + 1);
+  }, [syncPremiumState, user, walletPurchaseCtx?.entry, walletPurchaseCtx?.productId]);
+
+  const handleBuyBayGoldFromWallet = useCallback(
+    async (ctx: { resumeToken?: string; shortfallBayGold?: number }) => {
+      setWalletOpen(false);
       setPaymentLoading(true);
       setPaymentPhase("preparing");
-      setAuthMessage("");
-      trackEvent("payment_started", { plan: plan.id });
       try {
-        const result = await startPlanPayment(
-          plan,
-          user,
-          {
-            onPhase: (phase) => setPaymentPhase(phase)
-          },
-          {
-            returnPath: resolvePaymentReturnPath({ tab, pathname: memberPathname }),
-            sourcePage: memberPathname || memberPathForTab(tab),
-            productType: "premium",
-            productId: plan.id
-          }
-        );
+        const result = await startBayGoldFunding({
+          resumeToken: ctx.resumeToken,
+          shortfallBayGold: ctx.shortfallBayGold,
+          returnPath: resolvePaymentReturnPath({ tab, pathname: memberPathname })
+        });
         setPaymentFlowTick((v) => v + 1);
-
         if (!result.ok) {
-          if (result.cancelled) {
-            if (checkoutWasOpened()) {
-              setAuthMessage(USER_MESSAGES.paymentNotCompleted);
-            }
-            return;
+          if (!result.cancelled && result.error) {
+            setAuthMessage(result.error);
           }
-          setAuthMessage(result.error || MONETIZATION_COPY.checkoutStartFailed);
           return;
         }
-
-        setPricingOpen(false);
-        setMemberOverlay(null);
         if (result.needsVerify) {
           await processPaymentReturn();
         }
@@ -2077,7 +2094,14 @@ export function App() {
         setPaymentPhase("idle");
       }
     },
-    [isAuthed, memberPathname, openAuth, paymentLoading, processPaymentReturn, tab, user]
+    [memberPathname, processPaymentReturn, tab]
+  );
+
+  const handleUpgrade = useCallback(
+    async (plan: PremiumPlan) => {
+      openWalletPurchase(premiumPlanToWalletContext(plan));
+    },
+    [openWalletPurchase]
   );
 
   const startPremiumCheckout = useCallback(
@@ -2094,56 +2118,19 @@ export function App() {
         openAuth("signup", tab === "home" ? "discover" : tab);
         return;
       }
-      if (!user.email) {
-        setAuthMessage("Add a verified email before purchasing a boost.");
-        return;
-      }
       const memberCity = getMemberCity();
       if (boostNeedsMemberCity(product.id) && !memberCity) {
         setAuthMessage("Set your city in Edit Profile before buying this boost.");
         return;
       }
-
-      const datingProfile = normalizeDatingProfile(readJson(STORAGE_KEYS.datingProfile, {}));
-
-      setPaymentFlowTick((v) => v + 1);
-      setPaymentLoading(true);
-      setPaymentPhase("preparing");
-      setAuthMessage("");
-      try {
-        const result = await startBoostPayment(
-          product.id,
-          user,
-          memberCity || datingProfile.city || "",
-          { onPhase: (phase) => setPaymentPhase(phase) },
-          {
-            returnPath: "/profile",
-            sourcePage: "/profile",
-            productType: "boost",
-            productId: product.id
-          }
-        );
-        setPaymentFlowTick((v) => v + 1);
-        if (!result.ok) {
-          if (result.cancelled) {
-            if (checkoutWasOpened()) {
-              setAuthMessage(USER_MESSAGES.paymentNotCompleted);
-            }
-            return;
-          }
-          setAuthMessage(result.error || MONETIZATION_COPY.checkoutStartFailed);
-          return;
-        }
-        setPricingOpen(false);
-        if (result.needsVerify) {
-          await processPaymentReturn();
-        }
-      } finally {
-        setPaymentLoading(false);
-        setPaymentPhase("idle");
-      }
+      trackEvent("payment_started", { product: product.id, via: "wallet" });
+      openWalletPurchase({
+        entry: boostIdToWalletEntry(product.id),
+        productId: product.id,
+        productLabel: product.name
+      });
     },
-    [isAuthed, openAuth, processPaymentReturn, tab, user]
+    [isAuthed, openAuth, openWalletPurchase, tab]
   );
 
   const paymentOverlayMessage =
@@ -3097,6 +3084,21 @@ export function App() {
         onRetry={reloadApp}
         onSignOut={handleLogout}
       />
+
+      {walletPurchaseCtx ? (
+        <WalletExperienceSheet
+          open={walletOpen}
+          entry={walletPurchaseCtx.entry}
+          productId={walletPurchaseCtx.productId}
+          productLabel={walletPurchaseCtx.productLabel}
+          onClose={() => {
+            setWalletOpen(false);
+            setWalletPurchaseCtx(null);
+          }}
+          onCompleted={handleWalletPurchaseCompleted}
+          onBuyBayGold={(ctx) => void handleBuyBayGoldFromWallet(ctx)}
+        />
+      ) : null}
     </div>
     </PremiumCheckoutProvider>
   );

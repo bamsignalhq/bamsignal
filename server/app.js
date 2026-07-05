@@ -59,6 +59,7 @@ import whatsappVerifyStartHandler from "../api/verify/whatsapp/start.js";
 import whatsappVerifyConfirmHandler from "../api/verify/whatsapp/confirm.js";
 import whatsappVerifyWebhookHandler from "../api/verify/whatsapp/webhook.js";
 import verificationSubmissionsHandler from "../api/verify/submissions.js";
+import walletHandler from "../api/wallet/index.js";
 import { buildSitemapXml, getRobotsTxt } from "./seoSitemap.js";
 
 /**
@@ -159,6 +160,8 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/member/data", memberDataHandler);
   mountHandler(app, "post", "/api/member/photos", memberPhotosHandler);
   mountHandler(app, "post", "/api/member/voice", memberVoiceHandler);
+  mountHandler(app, "get", "/api/wallet", walletHandler);
+  mountHandler(app, "post", "/api/wallet", walletHandler);
   mountHandler(app, "post", "/api/paystack/verify", paystackVerifyHandler);
   mountHandler(app, "post", "/api/consultation-payments", consultationPaymentsHandler);
   mountHandler(app, "post", "/api/consultation-payment", consultationPaymentsHandler);

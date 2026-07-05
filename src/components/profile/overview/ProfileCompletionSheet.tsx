@@ -1,5 +1,7 @@
 import { X } from "lucide-react";
+import { ProfileCompletionProgress } from "../components/member/ProfileCompletionProgress";
 import type { ProfileStrengthImprovement } from "../../../utils/profileStrength";
+import { formatUnlockLabels, resolveProfileMilestones } from "../../../utils/profileCompletionMilestones";
 
 type ProfileCompletionSheetProps = {
   open: boolean;
@@ -24,7 +26,7 @@ export function ProfileCompletionSheet({
       <div className="profile-completion-sheet__panel">
         <header className="profile-completion-sheet__head">
           <div>
-            <p className="profile-completion-sheet__score">{score}%</p>
+            <ProfileCompletionProgress score={score} compact />
             <h2 id="profile-completion-sheet-title">Profile Complete</h2>
           </div>
           <button type="button" className="profile-completion-sheet__close" onClick={onClose} aria-label="Close">
@@ -42,7 +44,9 @@ export function ProfileCompletionSheet({
             </ul>
           </>
         ) : (
-          <p className="profile-completion-sheet__done">Your profile is in great shape.</p>
+          <p className="profile-completion-sheet__done">
+            Your profile is in great shape — {formatUnlockLabels(resolveProfileMilestones(score).at(-1)?.unlocks ?? [])} unlocked.
+          </p>
         )}
 
         {onEdit ? (

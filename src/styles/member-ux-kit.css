@@ -259,3 +259,131 @@
     animation: none;
   }
 }
+
+/* PROGRAM 002 M6 — profile completion milestones */
+.profile-completion-progress {
+  margin: 12px 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 166, 74, 0.25);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-completion-progress--compact {
+  margin: 8px 0;
+  padding: 10px 12px;
+}
+
+.profile-completion-progress__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.profile-completion-progress__label {
+  font-size: 0.75rem;
+  color: var(--bs-muted, var(--text-muted));
+  margin: 0;
+}
+
+.profile-completion-progress__score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--bs-gold, #d4a64a);
+  margin: 0;
+}
+
+.profile-completion-progress__track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: visible;
+}
+
+.profile-completion-progress__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #9b6dff, #e91e8f);
+}
+
+.profile-completion-progress__tick {
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-50%);
+}
+
+.profile-completion-progress__tick.is-reached {
+  background: var(--bs-gold, #d4a64a);
+}
+
+.profile-completion-progress__next {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: var(--bs-muted, var(--text-muted));
+}
+
+.profile-completion-progress__milestones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-completion-progress__milestones li {
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--bs-muted, var(--text-muted));
+}
+
+.profile-completion-progress__milestones li.is-reached {
+  border-color: rgba(212, 166, 74, 0.45);
+  color: var(--bs-gold, #d4a64a);
+}
+
+.discovery-tutorial-banner {
+  margin: 0 12px 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(155, 109, 255, 0.35);
+  background: rgba(155, 109, 255, 0.12);
+}
+
+.discovery-tutorial-banner__title {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.discovery-tutorial-banner__body {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  color: var(--bs-muted, var(--text-muted));
+}
+
+.discovery-tutorial-banner__dismiss {
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 166, 74, 0.45);
+  background: transparent;
+  color: var(--bs-gold, #d4a64a);
+}
+
+.member-ux-teach__body {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--bs-muted, var(--text-muted));
+}

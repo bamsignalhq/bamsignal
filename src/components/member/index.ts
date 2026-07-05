@@ -7,3 +7,5 @@ export {
   MemberSkeleton,
   MemberSlowConnectionBanner
 } from "./MemberUxKit";
+export { ProfileCompletionProgress } from "./ProfileCompletionProgress";
+export { DiscoveryTutorialBanner, FirstTimeTeachSheet } from "./FirstTimeTeachSheet";

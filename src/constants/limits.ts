@@ -71,6 +71,7 @@ export const STORAGE_KEYS = {
   launchConfig: "bamsignal-launch-config",
   premiumTrial: "bamsignal-premium-trial",
   firstDayJourney: "bamsignal-first-day-journey",
+  discoveryTutorialDismissed: "bamsignal-discovery-tutorial-dismissed",
   discoverShownToday: "bamsignal-discover-shown-today",
   onboardingStep: "bamsignal-onboarding-step",
   profileEditSection: "bamsignal-profile-edit-section",

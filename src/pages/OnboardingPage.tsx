@@ -22,7 +22,8 @@ import type {
 } from "../types";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { SUCCESS_COPY } from "../constants/copy";
-import { navigateToPath } from "../constants/routes";
+import { ProfileCompletionProgress } from "../components/member";
+import { calculateProfileStrength } from "../utils/profileStrength";
 import { trackEvent } from "../utils/analytics";
 import { defaultSafetySettings } from "../constants/safety";
 import { applyFemaleFirstDefaults } from "../utils/safety";
@@ -415,6 +416,10 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           <div className="onboarding-progress__bar" style={{ width: `${progress}%` }} />
         </div>
       </header>
+
+      {phase === "optional" ? (
+        <ProfileCompletionProgress score={calculateProfileStrength(profile)} compact />
+      ) : null}
 
       {phase === "required" && step === 0 && (
         <section className="onboarding-step onboarding-step--location">

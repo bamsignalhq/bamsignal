@@ -3,8 +3,10 @@ import {
   MemberErrorState,
   MemberLoadingState,
   MemberSheet,
-  MemberSkeleton
+  MemberSkeleton,
+  MemberEmptyState
 } from "../member/MemberUxKit";
+import { MEMBER_EMPTY_STATES } from "../../constants/firstTimeUser";
 import {
   fetchWalletHome,
   purchaseThroughWallet,
@@ -153,7 +155,15 @@ export function WalletExperienceSheet({
                 </span>
               ))}
             </div>
-          ) : null}
+          ) : (
+            <MemberEmptyState
+              title={MEMBER_EMPTY_STATES.wallet.title}
+              body={MEMBER_EMPTY_STATES.wallet.body}
+              actionLabel={MEMBER_EMPTY_STATES.wallet.actionLabel}
+              onAction={() => onBuyBayGold?.({})}
+              className="member-ux-wallet-empty"
+            />
+          )}
         </>
       ) : null}
 

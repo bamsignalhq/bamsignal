@@ -7,6 +7,7 @@ import {
   markRead,
   type AppNotification
 } from "../utils/notifications";
+import { MEMBER_EMPTY_STATES } from "../constants/firstTimeUser";
 
 type NotificationCenterProps = {
   open: boolean;
@@ -82,7 +83,12 @@ export function NotificationCenter({
           </div>
         </header>
         <ul className="notification-list">
-          {items.length === 0 && <li className="notification-list__empty">You're all caught up.</li>}
+          {items.length === 0 ? (
+            <li className="notification-list__empty">
+              <strong>{MEMBER_EMPTY_STATES.notifications.title}</strong>
+              <span>{MEMBER_EMPTY_STATES.notifications.body}</span>
+            </li>
+          ) : null}
           {items.map((n) => (
             <li key={n.id}>
               <button

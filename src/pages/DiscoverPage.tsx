@@ -3,8 +3,6 @@ import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { useMemberToast } from "../hooks/useMemberToast";
 import { BRAND, ERROR_COPY } from "../constants/copy";
 import {
-  DISCOVER_EMPTY_HEADLINE,
-  DISCOVER_EMPTY_SUBTEXT,
   DISCOVER_FEED_BATCH
 } from "../constants/discoverExperience";
 import type { DiscoverRelationshipFilter } from "../constants/discoverExperience";
@@ -15,7 +13,8 @@ import { DiscoverHeader } from "../components/discover/DiscoverHeader";
 import { DiscoverFiltersBar } from "../components/discover/DiscoverFiltersBar";
 import { SignalLimitModal } from "../components/premium/SignalLimitModal";
 import { ProfileCardSkeleton } from "../components/Skeleton";
-import { MemberEmptyState } from "../components/member";
+import { MemberEmptyState, DiscoveryTutorialBanner } from "../components/member";
+import { MEMBER_EMPTY_STATES } from "../constants/firstTimeUser";
 import { PaywallModal } from "../components/PaywallModal";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
 import { ProfileStoryCard } from "../components/discover/ProfileStoryCard";
@@ -97,6 +96,9 @@ export function DiscoverPage({
   const [signalLimitOpen, setSignalLimitOpen] = useState(false);
   const { showToast, ToastHost } = useMemberToast();
   const [safetyOpen, setSafetyOpen] = useState(false);
+  const [showDiscoveryTutorial, setShowDiscoveryTutorial] = useState(
+    () => !readJson<boolean>(STORAGE_KEYS.discoveryTutorialDismissed, false)
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -313,13 +315,14 @@ export function DiscoverPage({
 
   const renderEmpty = () => {
     const filteredEmpty = baseDeck.length > 0 && deck.length === 0;
+    const discoverEmpty = MEMBER_EMPTY_STATES.discover;
 
     return (
       <MemberEmptyState
         className="discover-page__empty"
-        title={filteredEmpty ? "No matches for this filter yet" : DISCOVER_EMPTY_HEADLINE}
-        body={filteredEmpty ? "Try another filter or widen your preferences." : DISCOVER_EMPTY_SUBTEXT}
-        actionLabel={filteredEmpty ? "Show all" : "Adjust preferences"}
+        title={filteredEmpty ? "No matches for this filter yet" : discoverEmpty.title}
+        body={filteredEmpty ? "Try another filter or widen your preferences." : discoverEmpty.body}
+        actionLabel={filteredEmpty ? "Show all" : discoverEmpty.actionLabel}
         onAction={() => (filteredEmpty ? setQuickFilter("all") : setFiltersOpen(true))}
       />
     );
@@ -330,6 +333,15 @@ export function DiscoverPage({
 
   return (
     <div className="page discover-page discover-page--premium member-content-pad">
+      {showDiscoveryTutorial ? (
+        <DiscoveryTutorialBanner
+          onDismiss={() => {
+            writeJson(STORAGE_KEYS.discoveryTutorialDismissed, true);
+            setShowDiscoveryTutorial(false);
+            markFirstDayStep("discover_opened");
+          }}
+        />
+      ) : null}
       <DiscoverHeader
         cityLabel={browseLocation}
         filterCount={countActiveDiscoverFilters(prefs)}

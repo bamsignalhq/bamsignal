@@ -71,6 +71,7 @@ export const STORAGE_KEYS = {
   photoModerationStrikes: "bamsignal-photo-mod-strikes",
   voiceModerationStrikes: "bamsignal-voice-mod-strikes",
   referrals: "bamsignal-referrals",
+  marketingCampaigns: "bamsignal-marketing-campaigns",
   launchConfig: "bamsignal-launch-config",
   premiumTrial: "bamsignal-premium-trial",
   firstDayJourney: "bamsignal-first-day-journey",

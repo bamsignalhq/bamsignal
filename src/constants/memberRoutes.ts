@@ -24,7 +24,8 @@ const PATH_TO_TAB: Record<string, NavTab> = {
   "/trusted-member": "me",
   "/saved-profiles": "me",
   "/settings": "me",
-  "/subscription": "me"
+  "/subscription": "me",
+  "/referral": "me"
 };
 
 export function memberPathForTab(tab: NavTab): string {

@@ -38,6 +38,7 @@ import {
   LazyPremiumCenterPage,
   LazyPublicMarketingRoutes,
   LazySafetyCenterPage,
+  LazyReferralDashboardPage,
   LazySignalConciergeApplicationPage,
   LazySignalConciergeConsultationPage,
   LazySignalConciergeFaqPage,
@@ -2926,6 +2927,16 @@ export function App() {
               />
             </MemberRouteBoundary>
           )}
+          {memberAccessReady && !memberOverlay && currentPathname === "/referral" && (
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="referral">
+              <Suspense fallback={<LazyRouteFallback subtitle="Loading referral dashboard…" />}>
+                <LazyReferralDashboardPage
+                  user={user}
+                  onBack={() => navigateToPath("/profile", true)}
+                />
+              </Suspense>
+            </MemberRouteBoundary>
+          )}
           {memberAccessReady && !memberOverlay && currentPathname === "/subscription" && (
             <MemberRouteBoundary sessionKey={memberSessionEpoch} name="subscription">
               <Suspense fallback={<LazyRouteFallback subtitle="Loading Premium Center…" />}>
@@ -3053,7 +3064,7 @@ export function App() {
               />
             </MemberRouteBoundary>
           )}
-          {memberAccessReady && tab === "me" && currentPathname !== "/voice-vibe" && currentPathname !== "/trusted-member" && currentPathname !== "/saved-profiles" && currentPathname !== "/subscription" && (
+          {memberAccessReady && tab === "me" && currentPathname !== "/voice-vibe" && currentPathname !== "/trusted-member" && currentPathname !== "/saved-profiles" && currentPathname !== "/subscription" && currentPathname !== "/referral" && (
             <MemberRouteBoundary sessionKey={memberSessionEpoch} name="profile">
               <ProfilePage
                 user={user}

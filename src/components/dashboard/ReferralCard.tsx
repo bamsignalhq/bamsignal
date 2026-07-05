@@ -1,6 +1,9 @@
 import { Copy, Gift, Share2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { navigateToPath } from "../../constants/routes";
+import { shareNativeInvite } from "../../native/share";
 import type { UserProfile } from "../../types";
+import { hapticLight } from "../../utils/memberHaptics";
 import {
   getReferralState,
   recordInviteSent,
@@ -23,10 +26,18 @@ export function ReferralCard({ user }: ReferralCardProps) {
     try {
       await navigator.clipboard.writeText(`${shareUrl}\nCode: ${state.code}`);
       setCopied(true);
+      hapticLight();
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
     }
+  };
+
+  const shareInvite = async () => {
+    recordInviteSent();
+    hapticLight();
+    const shared = await shareNativeInvite(state.code);
+    if (!shared) await copyCode();
   };
 
   return (
@@ -78,9 +89,16 @@ export function ReferralCard({ user }: ReferralCardProps) {
           <span>Pending</span>
         </li>
       </ul>
-      <button type="button" className="link-btn dash-referral__share" onClick={copyCode}>
+      <button type="button" className="link-btn dash-referral__share" onClick={() => void shareInvite()}>
         <Share2 size={16} />
         Share your invite link
+      </button>
+      <button
+        type="button"
+        className="link-btn dash-referral__dashboard"
+        onClick={() => navigateToPath("/referral", true)}
+      >
+        Open referral dashboard
       </button>
     </section>
   );

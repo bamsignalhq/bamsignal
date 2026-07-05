@@ -32,6 +32,12 @@ export const LazySafetyCenterPage = lazy(() =>
   import("../pages/SafetyCenterPage").then((module) => ({ default: module.SafetyCenterPage }))
 );
 
+export const LazyReferralDashboardPage = lazy(() =>
+  import("../pages/ReferralDashboardPage").then((module) => ({
+    default: module.ReferralDashboardPage,
+  }))
+);
+
 export const LazySignalConciergeLandingPage = lazy(() =>
   import("../pages/signal-concierge/SignalConciergeLandingPage").then((module) => ({
     default: module.SignalConciergeLandingPage

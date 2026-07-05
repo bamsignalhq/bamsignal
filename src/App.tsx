@@ -2906,6 +2906,11 @@ export function App() {
                   setMemberOverlay(null);
                   setTab("me");
                 }}
+                onOpenVerification={() => {
+                  setMemberOverlay(null);
+                  setTab("me");
+                  navigateToPath("/trusted-member", true);
+                }}
               />
             </Suspense>
           )}

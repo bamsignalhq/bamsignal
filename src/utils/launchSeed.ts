@@ -7,6 +7,7 @@ import { scoreProfile as rankScoreProfile } from "./matching";
 import { readJson, writeJson } from "./storage";
 import { getDiscoverScoreBonusForProfile } from "./activeBoosts";
 import { meetsDiscoveryQuality } from "./discoverQuality";
+import { filterHiddenProfiles } from "./safetyInteractions";
 import { impressionPenalty, recordDiscoveryImpression } from "./matchQualityDiscovery";
 
 export { meetsDiscoveryQuality } from "./discoverQuality";
@@ -57,7 +58,8 @@ export function buildDiscoveryDeck(
 ): DiscoverProfile[] {
   const viewerMetro = metroForCity(viewer.city);
   const eligible = candidates.filter((p) => meetsDiscoveryQuality(p));
-  const scored = eligible
+  const visible = filterHiddenProfiles(eligible);
+  const scored = visible
     .map((p) => ({
       p,
       tier: cityProximityTier(viewerMetro, metroForCity(p.city)),

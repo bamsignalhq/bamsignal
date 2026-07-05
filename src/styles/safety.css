@@ -331,3 +331,114 @@
 .safety-centre-card li {
   margin-bottom: 4px;
 }
+
+.community-trust-hub__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.community-trust-hub__nav-btn {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.82rem;
+}
+
+.community-trust-hub__nav-btn.active {
+  border-color: color-mix(in srgb, var(--brand-pink) 45%, var(--border));
+  background: color-mix(in srgb, var(--brand-pink) 10%, var(--surface));
+}
+
+.community-trust-hub__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.community-trust-hub__panel {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+}
+
+.community-trust__tips,
+.community-trust__list,
+.community-trust__report-types,
+.community-trust__emergency {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.community-trust__list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.community-trust__muted {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.community-trust__subtitle {
+  margin: 16px 0 8px;
+  font-size: 0.92rem;
+}
+
+.community-trust__empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.community-trust__emergency li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.community-trust__emergency-link {
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.community-trust-education__topic {
+  margin-top: 12px;
+}
+
+.community-trust-education__topic h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+.community-trust__band {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  margin-bottom: 12px;
+}
+
+.community-trust__band--strong {
+  background: color-mix(in srgb, #2f8f5b 12%, var(--surface));
+}
+
+.community-trust__band--good {
+  background: color-mix(in srgb, var(--brand-pink) 10%, var(--surface));
+}
+
+.community-trust__band--building,
+.community-trust__band--review {
+  background: color-mix(in srgb, var(--input-bg) 80%, transparent);
+}

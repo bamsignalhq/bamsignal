@@ -135,7 +135,7 @@ export function DiscoverPage({
     const available = filterDiscoverDeck(allProfiles, viewer, blocked, passedIds);
     const { deck } = buildDensityAwareDeck(available, viewer, prefs, blocked, passedIds);
     const preferred = applyDiscoverPreferences(deck, prefs, viewer);
-    return rankDiscoverProfiles(preferred, viewer);
+    return rankDiscoverProfiles(preferred, viewer, prefs);
   }, [passedIds, blocked, viewer, prefs, allProfiles]);
 
   const deck = useMemo(

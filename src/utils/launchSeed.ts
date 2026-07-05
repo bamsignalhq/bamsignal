@@ -7,12 +7,12 @@ import { scoreProfile as rankScoreProfile } from "./matching";
 import { readJson, writeJson } from "./storage";
 import { getDiscoverScoreBonusForProfile } from "./activeBoosts";
 import { meetsDiscoveryQuality } from "./discoverQuality";
+import { impressionPenalty, recordDiscoveryImpression } from "./matchQualityDiscovery";
 
 export { meetsDiscoveryQuality } from "./discoverQuality";
+export { recordDiscoveryImpression };
 
 export const NEW_SIGNAL_BOOST_DAYS = 7;
-
-type ImpressionMap = Record<string, { count: number; lastAt: string }>;
 
 export function isNewSignalProfile(profile: { createdAt?: string }): boolean {
   if (!profile.createdAt) return false;
@@ -24,28 +24,6 @@ export function isNewSignalProfile(profile: { createdAt?: string }): boolean {
 export function isRecentlyActive(profile: { lastActiveAt?: string }): boolean {
   if (!profile.lastActiveAt) return false;
   return Date.now() - new Date(profile.lastActiveAt).getTime() < 3 * 24 * 60 * 60 * 1000;
-}
-
-function getImpressions(): ImpressionMap {
-  return readJson<ImpressionMap>(STORAGE_KEYS.discoveryImpressions, {});
-}
-
-export function recordDiscoveryImpression(profileId: string): void {
-  const map = getImpressions();
-  const prev = map[profileId];
-  map[profileId] = {
-    count: (prev?.count ?? 0) + 1,
-    lastAt: new Date().toISOString()
-  };
-  writeJson(STORAGE_KEYS.discoveryImpressions, map);
-}
-
-function impressionPenalty(profileId: string): number {
-  const entry = getImpressions()[profileId];
-  if (!entry) return 0;
-  const hoursSince = (Date.now() - new Date(entry.lastAt).getTime()) / 3600000;
-  if (hoursSince > 48) return 0;
-  return Math.min(entry.count * 12, 48);
 }
 
 function cityPriorityRank(viewerCity: string, candidateCity: string): number {
@@ -101,7 +79,9 @@ export function buildDiscoveryDeck(
   }
 
   const orderedTiers = [0, 1, 2, 3].filter((t) => byTier.has(t));
-  return orderedTiers.flatMap((t) => (byTier.get(t) ?? []).sort((a, b) => seedScore(b, viewer, prefs) - seedScore(a, viewer, prefs)));
+  return orderedTiers.flatMap((t) =>
+    (byTier.get(t) ?? []).sort((a, b) => seedScore(b, viewer, prefs) - seedScore(a, viewer, prefs))
+  );
 }
 
 export function countSameCityProfiles(

@@ -40,6 +40,38 @@ const runbooks = [
       "Paystack",
       "completePaymentFulfillment"
     ]
+  },
+  {
+    path: "docs/runbooks/wallet-recovery.md",
+    mustInclude: ["baygold_purchases", "resume_token", "STANKINGS_PLATFORM", "wallet_funding"]
+  },
+  {
+    path: "docs/runbooks/messaging-recovery.md",
+    mustInclude: ["/ready", "persist", "database"]
+  },
+  {
+    path: "docs/runbooks/notification-recovery.md",
+    mustInclude: ["signupEmail", "RESEND", "ready"]
+  },
+  {
+    path: "docs/runbooks/support-escalation.md",
+    mustInclude: ["support@bamsignal.com", "Founder", "P1"]
+  },
+  {
+    path: "docs/runbooks/moderation-incidents.md",
+    mustInclude: ["report", "photo", "P1"]
+  },
+  {
+    path: "docs/runbooks/incident-response.md",
+    mustInclude: ["deployment-recovery", "wallet-recovery", "alerts"]
+  },
+  {
+    path: "docs/runbooks/configuration-backup.md",
+    mustInclude: ["Coolify", "feature", "never commit"]
+  },
+  {
+    path: "docs/runbooks/secrets-recovery.md",
+    mustInclude: ["PAYSTACK", "rotation", "Coolify"]
   }
 ];
 
@@ -56,5 +88,8 @@ for (const book of runbooks) {
 
 const readmePath = join(rootPath, "docs/runbooks/README.md");
 assert(existsSync(readmePath), "missing docs/runbooks/README.md");
+const readme = readFileSync(readmePath, "utf8");
+assert(readme.includes("wallet-recovery"), "README must index wallet-recovery");
+assert(readme.includes("incident-response"), "README must index incident-response");
 
-console.log("runbook tests ok");
+console.log("PASS: runbook tests");

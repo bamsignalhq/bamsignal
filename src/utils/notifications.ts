@@ -12,7 +12,9 @@ export type AppNotification = {
     | "premium_activated"
     | "off_platform_request"
     | "boost_activated"
-    | "referral_reward";
+    | "referral_reward"
+    | "lifecycle_milestone"
+    | "lifecycle_next_step";
   title: string;
   body: string;
   at: string;
@@ -40,6 +42,8 @@ export function notificationDestination(
       return { kind: "overlay", overlay: "premium" };
     case "verification_approved":
     case "referral_reward":
+    case "lifecycle_milestone":
+    case "lifecycle_next_step":
       return { kind: "tab", tab: "me" };
     default:
       return null;

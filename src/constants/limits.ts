@@ -63,6 +63,7 @@ export const STORAGE_KEYS = {
   fastConnectionExpiryTodayReminderDate: "bamsignal-fast-connection-expiry-today-reminder-date",
   profileSocial: "bamsignal-profile-social",
   memberProfileId: "bamsignal-member-profile-id",
+  lifecycle: "bamsignal-user-lifecycle",
   authUsernameIndex: "bamsignal-auth-usernames",
   discoverLocationMeta: "bamsignal-discover-location-meta",
   savedDiscoverProfiles: "bamsignal-saved-discover-profiles",

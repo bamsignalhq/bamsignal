@@ -329,7 +329,6 @@ import {
   type CheckoutPhase
 } from "./context/PremiumCheckoutContext";
 import { defaultPremiumPlan } from "./utils/premiumPlan";
-import { checkoutWasOpened } from "./utils/paymentState";
 import {
   clearPaystackCallbackParams,
   getPaymentReturnMeta,
@@ -2067,8 +2066,8 @@ export function App() {
       body: "Your BayGold purchase is confirmed."
     });
     trackEvent("wallet_purchase_completed", {
-      entry: walletPurchaseCtx?.entry,
-      productId: walletPurchaseCtx?.productId
+      entry: String(walletPurchaseCtx?.entry || ""),
+      productId: String(walletPurchaseCtx?.productId || "")
     });
     setNotifVersion((v) => v + 1);
   }, [syncPremiumState, user, walletPurchaseCtx?.entry, walletPurchaseCtx?.productId]);

@@ -15,6 +15,7 @@ import { getReportCount } from "./reportCount";
 import { isPreferNot } from "./preferNot";
 import { safeString } from "./safeProfile";
 import { relationshipDiscoverScore } from "./buildDiscoverRankingCore";
+import { discoverPremiumWeightCap } from "./personalizationEngine";
 
 export type MatchQualityFactorId =
   | "location"
@@ -174,6 +175,9 @@ export function computeMatchQualityScore(
   const relationship = relationshipDiscoverScore(viewer, candidate);
   const intelligence = scoreProfile(candidate, viewer, prefs);
 
+  // Premium visibility: tiny capped boost — never enough to bury quality free matches.
+  const premiumBoost = candidate.premium ? 100 * discoverPremiumWeightCap() : 0;
+
   let spamPenalty = 0;
   if (isSpamRiskProfile(candidate)) spamPenalty = 500;
 
@@ -186,7 +190,8 @@ export function computeMatchQualityScore(
   const total =
     weighted / weightSum +
     relationship * 0.35 +
-    intelligence * 2.5 -
+    intelligence * 2.5 +
+    premiumBoost -
     spamPenalty -
     inactivePenalty -
     repeatPenalty;

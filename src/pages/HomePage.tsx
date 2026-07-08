@@ -33,6 +33,7 @@ import { usePremiumRenewalReminder } from "../hooks/usePremiumRenewalReminder";
 import { navigateToPath } from "../constants/routes";
 import { debugRender } from "../utils/debugRecursion";
 import { ProfileImprovementNudge } from "../components/nudges/ProfileImprovementNudge";
+import { PersonalizedHomeCard } from "../components/dashboard/PersonalizedHomeCard";
 import { useMemberToast } from "../hooks/useMemberToast";
 
 type HomePageProps = {
@@ -228,6 +229,8 @@ export function HomePage({ user, userName, isPremium, phoneVerified = false, onD
         phoneVerified={phoneVerified}
         isPremium={isPremium}
       />
+
+      <PersonalizedHomeCard user={user} profile={viewer} />
 
       <section className="home-discovery home-discovery--compact" aria-label="Filters">
         <HomeFeedFilters

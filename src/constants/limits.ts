@@ -64,6 +64,7 @@ export const STORAGE_KEYS = {
   profileSocial: "bamsignal-profile-social",
   memberProfileId: "bamsignal-member-profile-id",
   lifecycle: "bamsignal-user-lifecycle",
+  personalization: "bamsignal-personalization",
   authUsernameIndex: "bamsignal-auth-usernames",
   discoverLocationMeta: "bamsignal-discover-location-meta",
   savedDiscoverProfiles: "bamsignal-saved-discover-profiles",

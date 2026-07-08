@@ -1,25 +1,24 @@
 import { verifySupabaseAdmin } from "../adminAuth.js";
 import { logDiagnosticsAccessDenied } from "./identityExposure.js";
-
-function allowedDiagnosticsSecrets() {
-  return [process.env.DIAGNOSTICS_SECRET, process.env.CRON_SECRET]
-    .filter(Boolean)
-    .map((value) => String(value).trim());
-}
+import {
+  ADMIN_SECRET_HEADER,
+  adminAutomationSecret,
+  extractHeaderSecret
+} from "./operationSecrets.js";
 
 export function extractDiagnosticsSecret(req) {
-  return String(req?.headers?.["x-diagnostics-secret"] || "").trim();
+  return extractHeaderSecret(req, ADMIN_SECRET_HEADER);
 }
 
 export function hasDiagnosticsSecret(req) {
-  const allowed = allowedDiagnosticsSecrets();
-  if (!allowed.length) return false;
+  const expected = adminAutomationSecret();
+  if (!expected) return false;
   const provided = extractDiagnosticsSecret(req);
-  return Boolean(provided && allowed.includes(provided));
+  return Boolean(provided && provided === expected);
 }
 
 /**
- * Require x-diagnostics-secret (DIAGNOSTICS_SECRET or CRON_SECRET) or verified admin session.
+ * Require x-bamsignal-secret (ADMIN_SECRET only) or verified admin session.
  */
 export async function requireDiagnosticsAccess(req) {
   if (hasDiagnosticsSecret(req)) return { ok: true };

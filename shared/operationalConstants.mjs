@@ -7,6 +7,14 @@
 export const PAYSTACK_HTTP_TIMEOUT_MS = 20_000;
 export const SENDCHAMP_HTTP_TIMEOUT_MS = 15_000;
 
+/** Postgres pool — bounded connections per process */
+export const PG_POOL_MAX_DEFAULT = 20;
+export const PG_POOL_IDLE_TIMEOUT_MS = 30_000;
+export const PG_POOL_CONNECTION_TIMEOUT_MS = 10_000;
+
+/** Readiness probe cache — avoids full registry health sweep on every /ready under burst load */
+export const READINESS_PROBE_CACHE_TTL_MS = 3_000;
+
 /** Sendchamp inline retry (network abort only — see also withBoundedRetry) */
 export const SENDCHAMP_RETRY_DELAY_MS = 800;
 export const SENDCHAMP_MAX_NETWORK_ATTEMPTS = 2;

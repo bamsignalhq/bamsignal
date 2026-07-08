@@ -16,6 +16,7 @@ const adminSessionSource = ctx.readSrc("src/utils/adminSession.ts");
 const adminShellSource = ctx.readSrc("src/components/admin/AdminShell.tsx");
 const paymentsSource = ctx.readSrc("src/services/payments.ts");
 const paymentReturnSource = ctx.readSrc("src/utils/paymentReturn.ts");
+const paymentReturnStatusSource = ctx.readSrc("src/utils/paymentReturnStatus.ts");
 const purchaseEmailSource = ctx.readSrc("server/services/purchaseEmail.js");
 const memberProfileSyncSource = ctx.readSrc("src/services/memberProfileSync.ts");
 const memberProfileListenerSource = ctx.readSrc("src/hooks/useMemberProfileListener.ts");
@@ -48,6 +49,7 @@ const functionSecurityApiSource = ctx.readSrc("api/diagnostics/function-security
 const paystackVerifySource = ctx.readFile("api/paystack/verify.js");
 const paymentInitializeThrottleSource = ctx.readFile("server/services/paymentInitializeThrottle.js");
 const rateLimitRetentionSource = ctx.readSrc("server/services/rateLimitRetention.js");
+const serviceDefinitionsSource = ctx.readSrc("server/services/serviceDefinitions.js");
 const retentionBatchDeleteSource = ctx.readSrc("server/services/retentionBatchDelete.js");
 const productionServerSource = ctx.readSrc("server/production.js");
 const rateLimitRetentionMigrationSource = ctx.readFile("migrations/0003_rate_limit_retention_indexes.sql");
@@ -315,8 +317,9 @@ assertCheck(
 );
 assertCheck(
   diagnosticsAccessSource.includes("requireDiagnosticsAccess") &&
-    diagnosticsAccessSource.includes('headers?.["x-diagnostics-secret"]') &&
-    diagnosticsAccessSource.includes("verifySupabaseAdmin"),
+    diagnosticsAccessSource.includes("operationSecrets.js") &&
+    diagnosticsAccessSource.includes("verifySupabaseAdmin") &&
+    !diagnosticsAccessSource.includes("process.env.CRON_SECRET"),
   "diagnostics access helper must require secret header or admin session"
 );
 for (const [label, source] of [
@@ -509,7 +512,9 @@ assertCheck(
     rateLimitRetentionMigrationSource.includes("api_rate_events_created_at_idx") &&
     rateLimitRetentionMigrationSource.includes("payment_initialize_rate_events_created_at_idx") &&
     rateLimitRetentionMigrationSource.includes("pin_auth_attempts_last_attempt_at_idx") &&
-    productionServerSource.includes("startRateLimitRetentionScheduler") &&
+    serviceDefinitionsSource.includes('id: "background-workers"') &&
+    serviceDefinitionsSource.includes("startRateLimitRetentionScheduler") &&
+    rateLimitRetentionSource.includes("already_running") &&
     ctx.exists("migrations/0003_rate_limit_retention_indexes.sql"),
   "rate-limit tables must define retention cleanup, batch deletes, and scheduled pruning"
 );
@@ -724,9 +729,10 @@ assertCheck(
     paystackWebhookHandlerSource.includes("status: 503") &&
     paystackWebhookSource.includes("handlePaystackWebhookRequest") &&
     !paystackWebhookSource.includes("completePaymentFulfillment") &&
-    paymentsSource.includes("PAYMENT_CONFIRM_UNAVAILABLE") &&
-    paymentsSource.includes("response.status === 503") &&
-    paymentsSource.includes("retryable: true") &&
+    paymentsSource.includes("interpretVerifyHttpResponse") &&
+    paymentReturnStatusSource.includes("PAYMENT_CONFIRM_UNAVAILABLE") &&
+    paymentReturnStatusSource.includes("response.status === 503") &&
+    paymentReturnStatusSource.includes("retryable: true") &&
     !paystackVerifySource.includes("await notifyPurchaseEmail") &&
     paymentFortressSource.includes("sendPurchaseConfirmationEmail"),
   "payment fulfillment must fail closed when persistence is unavailable"

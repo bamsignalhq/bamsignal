@@ -59,13 +59,18 @@ export function LaunchCommandBoostIntegrityCard() {
         "/api/admin/boost-integrity?action=dashboard",
         { limit: 15 }
       );
-      if (!response.ok || !response.dashboard) {
+      if (!response.ok) {
         setError(response.error || "Unable to load boost integrity dashboard.");
         setDashboard(null);
         return;
       }
+      if (!response.data.dashboard) {
+        setError("Unable to load boost integrity dashboard.");
+        setDashboard(null);
+        return;
+      }
       setError(null);
-      setDashboard(response.dashboard);
+      setDashboard(response.data.dashboard);
     } catch {
       setError("Boost integrity dashboard unavailable.");
       setDashboard(null);

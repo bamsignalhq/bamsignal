@@ -43,7 +43,7 @@ const INACTIVE_DAYS = 14;
 const STALE_DAYS = 21;
 
 function agePreferenceScore(
-  viewer: DatingProfile,
+  _viewer: DatingProfile,
   candidate: DiscoverProfile,
   prefs: MatchPreferences
 ): number {

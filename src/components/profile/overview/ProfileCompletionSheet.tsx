@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { ProfileCompletionProgress } from "../components/member/ProfileCompletionProgress";
+import { ProfileCompletionProgress } from "../../member/ProfileCompletionProgress";
 import type { ProfileStrengthImprovement } from "../../../utils/profileStrength";
 import { formatUnlockLabels, resolveProfileMilestones } from "../../../utils/profileCompletionMilestones";
 
@@ -45,7 +45,14 @@ export function ProfileCompletionSheet({
           </>
         ) : (
           <p className="profile-completion-sheet__done">
-            Your profile is in great shape — {formatUnlockLabels(resolveProfileMilestones(score).at(-1)?.unlocks ?? [])} unlocked.
+            Your profile is in great shape —{" "}
+            {formatUnlockLabels(
+              (() => {
+                const milestones = resolveProfileMilestones(score);
+                return milestones[milestones.length - 1]?.unlocks ?? [];
+              })()
+            )}{" "}
+            unlocked.
           </p>
         )}
 

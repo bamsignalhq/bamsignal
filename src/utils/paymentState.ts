@@ -3,7 +3,9 @@ import { readJson, writeJson } from "./storage";
 
 export type PaymentFlowState =
   | "idle"
+  | "preparing"
   | "initializing"
+  | "opening"
   | "checkout_open"
   | "verifying"
   | "success"

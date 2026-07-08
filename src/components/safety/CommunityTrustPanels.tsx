@@ -1,6 +1,6 @@
-import { reportReasonLabel } from "../constants/safety";
-import type { ReportRecord } from "../types";
-import { unblockUser } from "../utils/safetyInteractions";
+import { reportReasonLabel } from "../../constants/safety";
+import type { ReportRecord } from "../../types";
+import { unblockUser } from "../../utils/safetyInteractions";
 
 type BlockedUsersListProps = {
   blockedIds: string[];

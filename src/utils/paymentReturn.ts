@@ -6,7 +6,7 @@ import { logPaymentEvent } from "./paymentState";
 
 export type PaymentReturnContext = {
   returnPath: string;
-  productType: "premium" | "boost" | "quickie" | "fast_connection";
+  productType: "premium" | "boost" | "quickie" | "fast_connection" | "wallet_funding";
   productId: string;
   sourcePage: string;
   reference?: string;

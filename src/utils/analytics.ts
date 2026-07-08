@@ -14,6 +14,7 @@ export type AnalyticsEvent =
   | "payment_started"
   | "payment_successful"
   | "payment_failed"
+  | "wallet_purchase_completed"
   | "daily_active"
   | "message_started"
   | "waitlist_joined"
@@ -54,6 +55,11 @@ export type AnalyticsEvent =
   | "verification_approved"
   | "photo_rejected_contact_text"
   | "photo_rejected"
+  | "discover_impression"
+  | "discover_profile_opened"
+  | "discover_reason_shown"
+  | "discover_filter_changed"
+  | "discover_search"
   | "home_search";
 
 type EventRow = { event: AnalyticsEvent; at: string; meta?: Record<string, string> };

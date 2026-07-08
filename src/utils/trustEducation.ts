@@ -30,7 +30,11 @@ function trustBandLabel(band: TrustEducationView["memberTrustBand"]): string {
 }
 
 export function getTrustEducationView(profile: DatingProfile): TrustEducationView {
-  const score = computeTrustScore(profile);
+  const score = computeTrustScore({
+    ...profile,
+    id: "self",
+    photo: profile.mainPhotoUrl || profile.photos?.[0] || ""
+  });
   const band = trustBand(score);
   return {
     topics: TRUST_EDUCATION_TOPICS,

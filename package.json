@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "node scripts/generate-sitemap.mjs && node scripts/sync-cache-version.mjs && tsc && vite build",
+    "typecheck": "tsc --noEmit",
     "analyze:bundle": "npm run build && node scripts/analyze-production-bundle.mjs",
     "lint": "tsc --noEmit",
     "test": "npm run test:certification-suite",

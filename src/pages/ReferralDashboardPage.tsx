@@ -23,7 +23,7 @@ import {
   shareMemberReferral,
   shareSuccessStory,
 } from "../utils/marketingSharing";
-import { getDatingProfile } from "../utils/profile";
+import { STORAGE_KEYS } from "../constants/limits";
 
 type ReferralDashboardPageProps = {
   user: UserProfile;
@@ -36,12 +36,15 @@ export function ReferralDashboardPage({ user, onBack }: ReferralDashboardPagePro
   const campaigns = useMemo(() => listMarketingCampaigns(), []);
   const activeCampaigns = useMemo(() => getActiveMarketingCampaigns(), []);
   const seoCatalog = useMemo(() => getMarketingSeoCatalog(), []);
-  const profile = useMemo(() => getDatingProfile(), []);
+  const memberProfileId = useMemo(
+    () => (typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEYS.memberProfileId) || undefined : undefined),
+    []
+  );
 
   const runShare = async (kind: "profile" | "referral" | "success_story") => {
     let ok = false;
     if (kind === "profile") {
-      ok = await shareMemberProfile(user.name, profile.id);
+      ok = await shareMemberProfile(user.name, memberProfileId);
     } else if (kind === "referral") {
       ok = await shareMemberReferral(snapshot.code);
     } else {
@@ -110,7 +113,7 @@ export function ReferralDashboardPage({ user, onBack }: ReferralDashboardPagePro
           ))}
         </div>
         <div className="referral-dashboard-page__profile-share">
-          <NativeShareProfileButton profileName={user.name} profileId={profile.id} />
+          <NativeShareProfileButton profileName={user.name} profileId={memberProfileId} />
         </div>
         {shareStatus ? <p className="referral-dashboard-page__status">{shareStatus}</p> : null}
       </section>

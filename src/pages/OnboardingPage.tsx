@@ -22,6 +22,7 @@ import type {
 } from "../types";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { SUCCESS_COPY } from "../constants/copy";
+import { navigateToPath } from "../constants/routes";
 import { ProfileCompletionProgress } from "../components/member";
 import { calculateProfileStrength } from "../utils/profileStrength";
 import { trackEvent } from "../utils/analytics";

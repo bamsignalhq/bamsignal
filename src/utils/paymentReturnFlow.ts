@@ -29,7 +29,7 @@ async function verifyOnce(user: UserProfile): Promise<PaymentReturnOutcome> {
   if (isWalletFundingPayment()) {
     const reference = readStoredPaymentReference();
     if (!reference) {
-      return { status: "failed", kind: "premium", error: "No payment reference." };
+      return { status: "failed", kind: "premium", error: "No payment reference.", explicit: true };
     }
     const funded = await completeWalletFundingReturn(reference, user);
     if (funded.ok) {

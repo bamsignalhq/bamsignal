@@ -8,7 +8,9 @@ import { dirname, join } from "node:path";
 import { startProductionServer } from "../shared/startProductionServer.mjs";
 import { applySmokeStartupFixtures } from "../shared/startupExecutionMode.mjs";
 
-const port = Number(process.env.SMOKE_PORT || process.env.PORT || 39451);
+// Never bind to runtime PORT during Docker build — Coolify sets PORT=3000 while the
+// live container may already be listening on that port on the build host.
+const port = Number(process.env.SMOKE_PORT || 39451);
 process.env.PORT = String(port);
 applySmokeStartupFixtures(process.env);
 

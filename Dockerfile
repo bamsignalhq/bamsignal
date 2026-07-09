@@ -74,7 +74,8 @@ COPY shared ./shared
 COPY scripts ./scripts
 COPY migrations ./migrations
 # Import smoke test — must pass without runtime secrets (dry-run DB, optional services).
-RUN node scripts/smoke-server-import.mjs
+# SMOKE_PORT avoids EADDRINUSE when PORT=3000 is already taken on the build host.
+RUN SMOKE_PORT=39451 node scripts/smoke-server-import.mjs
 
 EXPOSE 3000
 

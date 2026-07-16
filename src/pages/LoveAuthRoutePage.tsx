@@ -16,8 +16,12 @@ type LoveAuthRoutePageProps = {
   onMessage: (msg: string) => void;
 };
 
+/** Local-only modes that must not rewrite the URL or bounce through Home. */
+const LOCAL_AUTH_MODES: ReadonlySet<AuthMode> = new Set(["verify", "reset", "existing"]);
+
 function initialAuthMode(path: AuthPath): AuthMode {
-  if (hasRestorableSignupVerify()) return "verify";
+  // Never hijack /love/login into Verify — that created the registration trap loop.
+  if (path === AUTH_SIGNUP_PATH && hasRestorableSignupVerify()) return "verify";
   return path === AUTH_SIGNUP_PATH ? "signup" : "login";
 }
 
@@ -31,8 +35,9 @@ export function LoveAuthRoutePage({
   const [mode, setMode] = useState<AuthMode>(() => initialAuthMode(path));
 
   useEffect(() => {
-    if (mode === "verify" || mode === "reset") return;
-    if (hasRestorableSignupVerify()) {
+    if (LOCAL_AUTH_MODES.has(mode)) return;
+    // Restore in-progress email verify only from the signup route — never from login.
+    if (pathMode === "signup" && hasRestorableSignupVerify()) {
       setMode("verify");
       return;
     }
@@ -43,7 +48,7 @@ export function LoveAuthRoutePage({
     <AuthPage
       mode={mode}
       onModeChange={(next) => {
-        if (next === "verify" || next === "reset") {
+        if (LOCAL_AUTH_MODES.has(next)) {
           setMode(next);
           return;
         }
@@ -53,7 +58,11 @@ export function LoveAuthRoutePage({
       onAuthenticated={onAuthenticated}
       message={message}
       onMessage={onMessage}
-      onLogoClick={() => navigateToPath("/")}
+      onLogoClick={() => {
+        // Auth logo must return to the auth landing — never the public homepage.
+        navigateToPath(AUTH_LOGIN_PATH);
+        setMode("login");
+      }}
     />
   );
 }

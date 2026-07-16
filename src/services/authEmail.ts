@@ -23,12 +23,13 @@ export class AuthEmailError extends Error {
   constructor(
     message: string,
     kind: AuthEmailError["kind"] = "server",
-    _field?: AuthEmailError["field"],
+    field?: AuthEmailError["field"],
     code?: string
   ) {
     super(message);
     this.name = "AuthEmailError";
     this.kind = kind;
+    this.field = field;
     this.code = code;
   }
 }

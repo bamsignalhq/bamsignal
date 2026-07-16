@@ -359,7 +359,7 @@ export async function ensureSupabaseAuthUser({ email, password, name, username, 
     provisioningFlowLog("user_create_failed", { reason: "duplicate_user_unresolved", detail: detail.slice(0, 240) });
     throw new SignupProvisioningError(
       409,
-      "An account with this email already exists. Try logging in instead.",
+      "An account already exists with this email address.",
       "duplicate_user"
     );
   }
@@ -521,7 +521,7 @@ async function assertRepairIdentityAvailable({ email, phone, username, userKey, 
       throw new SignupIdentityError(
         409,
         "phone",
-        "This phone number is already linked to an account. Try logging in instead."
+        "This phone number is already linked to an account."
       );
     }
   }

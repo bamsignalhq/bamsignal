@@ -58,7 +58,7 @@ export function friendlyAuthError(error: unknown): string {
   if (/already exists|already registered|user already registered|already taken|already linked/i.test(message)) {
     return message.includes("email")
       ? message
-      : message || "An account already exists with these details. Try logging in instead.";
+      : message || "An account already exists with these details.";
   }
 
   if (/not configured|temporarily unavailable|email delivery is not configured/i.test(message)) {

@@ -1,5 +1,5 @@
 import { ensureAppUsersTable, isDatabaseReady, query } from "../db.js";
-import { ensureMemberProfilesTable } from "../cityHome.js";
+import { ensureMemberProfilesTable } from "./memberProfileSchema.js";
 import { supabaseServiceHeaders } from "../supabaseEnv.js";
 import { isDisposableEmail } from "../../shared/blockedEmailDomains.mjs";
 
@@ -15,9 +15,9 @@ export class SignupIdentityError extends Error {
 }
 
 const MESSAGES = {
-  email: "An account with this email already exists. Try logging in instead.",
-  phone: "This phone number is already linked to an account. Try logging in instead.",
-  username: "This username is already taken. Choose another or log in."
+  email: "An account already exists with this email address.",
+  phone: "This phone number is already linked to an account.",
+  username: "This username is already taken. Choose another."
 };
 
 export function normalizeSignupEmail(email = "") {

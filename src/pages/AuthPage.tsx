@@ -1,4 +1,4 @@
-import { Loader2, Mail, ShieldCheck } from "lucide-react";
+import { Loader2, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppLogo } from "../components/AppLogo";
 import { AuthField } from "../components/AuthField";
@@ -86,6 +86,11 @@ const FIELD_CHECK_DELAY_MS = 450;
 type SignupField = "email" | "phone" | "username";
 type SignupFieldErrors = Partial<Record<SignupField, string>>;
 type SignupFieldChecking = Partial<Record<SignupField, boolean>>;
+type ExistingAccountState = {
+  field: SignupField;
+  email: string;
+  username: string;
+};
 
 function restoredSignupState() {
   const pending = loadPendingSignup();
@@ -158,6 +163,7 @@ export function AuthPage({
   const resetOtpRef = useRef<HTMLInputElement | null>(null);
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
   const [codeSentAt, setCodeSentAt] = useState(restored.current.codeSentAt);
+  const [existingAccount, setExistingAccount] = useState<ExistingAccountState | null>(null);
   const [pendingAuthProfile, setPendingAuthProfile] = useState<UserProfile | null>(null);
   const [login2faOpen, setLogin2faOpen] = useState(false);
   const [login2faMethod, _setLogin2faMethod] = useState<"email" | "whatsapp">("email");
@@ -177,6 +183,72 @@ export function AuthPage({
     window.requestAnimationFrame(() => {
       otpInputRef.current?.focus({ preventScroll: true });
     });
+  };
+
+  const showExistingAccount = useCallback(
+    (input: { field?: SignupField | null; email?: string; username?: string }) => {
+      clearPendingSignup();
+      setPendingSignup(null);
+      setVerifyCode("");
+      const field: SignupField =
+        input.field === "phone" || input.field === "username" || input.field === "email"
+          ? input.field
+          : "email";
+      setExistingAccount({
+        field,
+        email: (input.email || signupForm.email || "").trim().toLowerCase(),
+        username: normalizeUsername(input.username || signupForm.username || "")
+      });
+      onMessage("");
+      onModeChange("existing");
+      signupLog("signup-validation", { event: "existing_account", field });
+      flowLog("existing_account_shown", { field });
+    },
+    [onMessage, onModeChange, signupForm.email, signupForm.username]
+  );
+
+  const goToLoginFromExisting = () => {
+    clearPendingSignup();
+    setPendingSignup(null);
+    const username = normalizeUsername(existingAccount?.username || signupForm.username || "");
+    setLoginForm((current) => ({
+      ...current,
+      username: username || current.username
+    }));
+    setExistingAccount(null);
+    onMessage("");
+    onModeChange("login");
+  };
+
+  const useAnotherIdentity = () => {
+    clearPendingSignup();
+    setPendingSignup(null);
+    const field = existingAccount?.field || "email";
+    if (field === "email") {
+      setSignupFieldErrors((current) => {
+        const next = { ...current };
+        delete next.email;
+        return next;
+      });
+      setSignupForm((current) => ({ ...current, email: "" }));
+    } else if (field === "phone") {
+      setSignupFieldErrors((current) => {
+        const next = { ...current };
+        delete next.phone;
+        return next;
+      });
+      setSignupForm((current) => ({ ...current, phone: "" }));
+    } else {
+      setSignupFieldErrors((current) => {
+        const next = { ...current };
+        delete next.username;
+        return next;
+      });
+      setSignupForm((current) => ({ ...current, username: "" }));
+    }
+    setExistingAccount(null);
+    onMessage("");
+    onModeChange("signup");
   };
 
   useEffect(() => {
@@ -278,6 +350,7 @@ export function AuthPage({
   }, [mode, mathChallenge, loadMathChallenge]);
 
   useEffect(() => {
+    if (mode !== "signup") return;
     const username = normalizeUsername(signupForm.username);
     if (!isValidSignupUsername(username)) {
       clearSignupFieldError("username");
@@ -310,9 +383,10 @@ export function AuthPage({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [signupForm.username]);
+  }, [mode, signupForm.username]);
 
   useEffect(() => {
+    if (mode !== "signup") return;
     const phone = phoneDigits(signupForm.phone);
     if (!isValidNigerianPhone(phone)) {
       clearSignupFieldError("phone");
@@ -331,6 +405,10 @@ export function AuthPage({
         .catch((error) => {
           if (cancelled) return;
           if (error instanceof AuthEmailError) {
+            if (error.kind === "exists") {
+              showExistingAccount({ field: "phone", username: signupForm.username, email: signupForm.email });
+              return;
+            }
             setSignupFieldError("phone", error.message);
           }
         })
@@ -345,9 +423,10 @@ export function AuthPage({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [signupForm.phone]);
+  }, [mode, signupForm.phone, showExistingAccount, signupForm.username, signupForm.email]);
 
   useEffect(() => {
+    if (mode !== "signup") return;
     const email = signupForm.email.trim().toLowerCase();
     if (!isLikelyEmail(email)) {
       clearSignupFieldError("email");
@@ -373,6 +452,10 @@ export function AuthPage({
         .catch((error) => {
           if (cancelled) return;
           if (error instanceof AuthEmailError) {
+            if (error.kind === "exists") {
+              showExistingAccount({ field: "email", email, username: signupForm.username });
+              return;
+            }
             setSignupFieldError("email", error.message);
           }
         })
@@ -387,7 +470,7 @@ export function AuthPage({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [signupForm.email]);
+  }, [mode, signupForm.email, signupForm.username, showExistingAccount]);
 
   const completeAuthenticated = async (profile: UserProfile, meta?: AuthMeta) => {
     await onAuthenticated(profile, meta);
@@ -586,12 +669,16 @@ export function AuthPage({
       return;
     } catch (error) {
       if (error instanceof AuthEmailError) {
+        if (error.kind === "exists") {
+          showExistingAccount({
+            field: error.field || "email",
+            email,
+            username
+          });
+          return;
+        }
         if (error.field === "email" || error.field === "phone" || error.field === "username") {
           setSignupFieldError(error.field, error.message);
-        }
-        if (error.kind === "exists") {
-          clearPendingSignup();
-          onModeChange("signup");
         }
         if (error.code === "challenge_expired" || /quick check|answer correctly/i.test(error.message)) {
           setMathError(
@@ -687,9 +774,12 @@ export function AuthPage({
     } catch (error) {
       if (timedOut) return;
       if (error instanceof AuthEmailError && error.kind === "exists") {
-        clearPendingSignup();
-        setPendingSignup(null);
-        onModeChange("signup");
+        showExistingAccount({
+          field: error.field || "email",
+          email: pendingSignup.email,
+          username: pendingSignup.username || signupForm.username
+        });
+        return;
       }
       if (import.meta.env.DEV && error instanceof Error) {
         flowLog("signup_verify_failed", { reason: error.message });
@@ -829,7 +919,7 @@ export function AuthPage({
 
   return (
     <main
-      className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""} ${mode === "login" ? "auth-page--login" : ""} ${mode === "signup" ? "auth-page--signup" : ""} ${mode === "reset" ? "auth-page--reset" : ""}`.trim()}
+      className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""} ${mode === "existing" ? "auth-page--existing" : ""} ${mode === "login" ? "auth-page--login" : ""} ${mode === "signup" ? "auth-page--signup" : ""} ${mode === "reset" ? "auth-page--reset" : ""}`.trim()}
     >
       <div className="auth-shell">
         <div className="auth-shell__glow" aria-hidden />
@@ -837,7 +927,7 @@ export function AuthPage({
           {mode !== "signup" && (
             <div className="auth-brand">
               {onLogoClick ? (
-                <button type="button" className="auth-brand-btn" onClick={onLogoClick} aria-label="Back to BamSignal home">
+                <button type="button" className="auth-brand-btn" onClick={onLogoClick} aria-label="Back to BamSignal login">
                   <AppLogo size="lg" />
                 </button>
               ) : (
@@ -899,7 +989,7 @@ export function AuthPage({
                       type="button"
                       className="auth-brand-btn"
                       onClick={onLogoClick}
-                      aria-label="Back to BamSignal home"
+                      aria-label="Back to BamSignal login"
                     >
                       <AppLogo size="md" />
                     </button>
@@ -1025,6 +1115,61 @@ export function AuthPage({
                 </button>
               </div>
             </>
+          )}
+
+          {mode === "existing" && (
+            <div className="auth-existing">
+              <div className="auth-verify__hero">
+                <div className="auth-verify__icon-ring" aria-hidden>
+                  <div className="auth-verify__icon">
+                    <UserRound size={26} strokeWidth={2.2} />
+                  </div>
+                </div>
+                <h1 className="auth-title auth-verify__title">Account already exists</h1>
+                <p className="auth-verify__lede">
+                  {existingAccount?.field === "phone"
+                    ? "This phone number is already linked to an account."
+                    : existingAccount?.field === "username"
+                      ? "This username is already taken."
+                      : "An account already exists with this email address."}
+                  {existingAccount?.email && existingAccount.field === "email" ? (
+                    <>
+                      {" "}
+                      <strong>{maskEmail(existingAccount.email)}</strong>
+                    </>
+                  ) : null}
+                </p>
+              </div>
+
+              <div className="auth-existing__actions">
+                <button type="button" className="btn-primary btn-full btn-auth" onClick={goToLoginFromExisting}>
+                  Log In
+                </button>
+                <button type="button" className="btn-secondary btn-full btn-auth" onClick={useAnotherIdentity}>
+                  {existingAccount?.field === "phone"
+                    ? "Use another phone"
+                    : existingAccount?.field === "username"
+                      ? "Choose another username"
+                      : "Use another email"}
+                </button>
+                <button
+                  type="button"
+                  className="auth-link-secondary"
+                  onClick={() => {
+                    clearPendingSignup();
+                    setPendingSignup(null);
+                    if (existingAccount?.email) {
+                      setResetEmail(existingAccount.email);
+                    }
+                    setExistingAccount(null);
+                    onMessage("");
+                    onModeChange("reset");
+                  }}
+                >
+                  Forgot your PIN?
+                </button>
+              </div>
+            </div>
           )}
 
           {mode === "verify" && (
@@ -1256,7 +1401,7 @@ export function AuthPage({
             </>
           )}
 
-          {message && mode !== "verify" && mode !== "reset" ? (
+          {message && mode !== "verify" && mode !== "reset" && mode !== "existing" ? (
             <p className={`auth-message ${message.toLowerCase().includes("sent") ? "auth-message--success" : ""}`}>
               {message}
             </p>

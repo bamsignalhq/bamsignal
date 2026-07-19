@@ -1,6 +1,12 @@
 import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query } from "./db.js";
 import { ensureMemberProfilesTable, findMemberProfileByUserKey } from "./cityHome.js";
 import { assertSchemaReady } from "./services/schemaVerification.js";
+import {
+  computeDiscoverableFlag,
+  discoverVisibilitySql as policyDiscoverVisibilitySql,
+  isDiscreetPrivacyActive
+} from "./services/memberVisibilityPolicy.js";
+import { syncMemberDiscoverableFromPolicy } from "./services/discreetMembership.js";
 
 const USERNAME_CHANGE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 const DELETE_GRACE_DAYS = 30;
@@ -88,6 +94,7 @@ function memberDiscoverable(row) {
   const status = String(row.account_status || "active");
   if (status === "deleted_pending" || status === "deleted") return false;
   if (row.profile_paused_at) return false;
+  if (isDiscreetPrivacyActive(row)) return false;
   return Boolean(row.discoverable);
 }
 
@@ -127,7 +134,14 @@ export async function unpauseMemberProfile({ email, phone }) {
 
   const profile = member.profile || {};
   const hideFromDiscovery = Boolean(profile.safetySettings?.hideFromDiscovery);
-  const discoverable = !hideFromDiscovery && String(member.account_status || "active") === "active";
+  const discoverable = computeDiscoverableFlag({
+    hideFromDiscovery,
+    paused: false,
+    accountStatus: member.account_status || "active",
+    privacyMode: member.privacy_mode || "discover",
+    discreetUntil: member.discreet_until || null,
+    clientDiscoverable: true
+  });
 
   const result = await query(
     `update app_member_profiles
@@ -200,7 +214,14 @@ export async function restoreMemberAccount({ email, phone }) {
   const profile = member.profile || {};
   const hideFromDiscovery = Boolean(profile.safetySettings?.hideFromDiscovery);
   const paused = Boolean(member.profile_paused_at);
-  const discoverable = !hideFromDiscovery && !paused;
+  const discoverable = computeDiscoverableFlag({
+    hideFromDiscovery,
+    paused,
+    accountStatus: "active",
+    privacyMode: member.privacy_mode || "discover",
+    discreetUntil: member.discreet_until || null,
+    clientDiscoverable: true
+  });
 
   const result = await query(
     `update app_member_profiles
@@ -245,8 +266,13 @@ export async function processExpiredAccountDeletions() {
 export async function fetchMemberAccountState({ email, phone }) {
   if (!isDatabaseReady()) return null;
   await ensureMemberTrustSchema();
-  const member = await findMemberProfileByUserKey(email, phone);
+  let member = await findMemberProfileByUserKey(email, phone);
   if (!member) return null;
+  const { expireDiscreetMembershipIfNeeded, resolveDiscreetStatus } = await import(
+    "./services/discreetMembership.js"
+  );
+  member = (await expireDiscreetMembershipIfNeeded(member)) || member;
+  const discreet = resolveDiscreetStatus(member);
   return {
     accountStatus: member.account_status || "active",
     accountDeletedAt: member.account_deleted_at || null,
@@ -255,7 +281,10 @@ export async function fetchMemberAccountState({ email, phone }) {
     profilePauseReason: member.profile_pause_reason || null,
     usernameLastChangedAt: member.username_last_changed_at || null,
     usernameChangeCount: Number(member.username_change_count || 0),
-    discoverable: memberDiscoverable(member)
+    discoverable: memberDiscoverable(member),
+    privacyMode: discreet.privacyMode,
+    discreetActive: discreet.active,
+    discreetUntil: discreet.discreetUntil
   };
 }
 
@@ -431,8 +460,7 @@ export async function listModerationFlags({ limit = 50, unresolvedOnly = true } 
 }
 
 export function discoverVisibilitySql(alias = "") {
-  const p = alias ? `${alias}.` : "";
-  return `coalesce(${p}account_status, 'active') = 'active'
-    and ${p}profile_paused_at is null
-    and coalesce(${p}shadow_banned, false) = false`;
+  return policyDiscoverVisibilitySql(alias);
 }
+
+export { syncMemberDiscoverableFromPolicy };

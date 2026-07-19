@@ -6,6 +6,12 @@ import {
 } from "./db.js";
 import { assertSchemaTable } from "./services/schemaVerification.js";
 import { publicPhotosFromProfile } from "./services/photoReview.js";
+import { passiveListingVisibilitySql } from "./services/memberVisibilityPolicy.js";
+import {
+  CAPABILITY,
+  canFromSnapshot,
+  entitlementsFromMemberRow
+} from "./services/membershipEntitlements.js";
 
 /** Lower rank = shown first on city home */
 export const PLACEMENT_RANK = {
@@ -244,6 +250,7 @@ export async function listCityHomeProfiles(city, limit = 6) {
          and p.discoverable = true
          and p.city_home_hidden = false
          and p.onboarding_complete = true
+         and ${passiveListingVisibilitySql("p")}
          and (pl.expires_at is null or pl.expires_at > now())
      )
      select * from ranked where rn = 1
@@ -314,6 +321,7 @@ export async function listCitySpotlightProfiles(city, limit = 8) {
          and p.discoverable = true
          and p.city_home_hidden = false
          and p.onboarding_complete = true
+         and ${passiveListingVisibilitySql("p")}
          and (pl.expires_at is null or pl.expires_at > now())
      )
      select * from candidates
@@ -407,6 +415,8 @@ export async function activateCitySpotlightPlacement({
   );
   const row = member.rows[0];
   if (!row) return null;
+  const ents = entitlementsFromMemberRow(row);
+  if (!canFromSnapshot(ents, CAPABILITY.PURCHASE_SPOTLIGHT)) return null;
 
   const targetCity = String(row.city || city || "").trim();
   if (!targetCity) return null;
@@ -565,6 +575,8 @@ export async function activateCityBoostPlacement({
   );
   const row = member.rows[0];
   if (!row) return null;
+  const ents = entitlementsFromMemberRow(row);
+  if (!canFromSnapshot(ents, CAPABILITY.PURCHASE_CITY_BOOST)) return null;
 
   const targetCity = String(row.city || city || "").trim();
   if (!targetCity) return null;

@@ -22,9 +22,19 @@ import {
   query,
   upsertAppUserIdentity
 } from "./db.js";
+import { findMemberProfileByUserKey } from "./cityHome.js";
 import { discoverVisibilitySql, ensureMemberTrustSchema } from "./memberTrust.js";
 import { assertSchemaReady } from "./services/schemaVerification.js";
 import { publicPhotosFromProfile } from "./services/photoReview.js";
+import {
+  VISIBILITY_CONTEXT,
+  computeDiscoverableFlag,
+  evaluateMemberVisibility,
+  filterPassiveExposureRows,
+  hasIntentionalContact,
+  isDiscreetPrivacyActive
+} from "./services/memberVisibilityPolicy.js";
+import { expireDiscreetMembershipIfNeeded } from "./services/discreetMembership.js";
 
 export async function ensureSocialSchema() {
   if (!isDatabaseReady()) return;
@@ -255,7 +265,38 @@ export async function searchMemberProfiles({
 export async function getMemberProfileById(profileId) {
   if (!isDatabaseReady() || !profileId) return null;
   const result = await query("select * from app_member_profiles where id = $1 limit 1", [profileId]);
-  return rowToDiscoverProfile(result.rows[0]);
+  const row = result.rows[0];
+  if (!row) return null;
+  const healed = await expireDiscreetMembershipIfNeeded(row);
+  return rowToDiscoverProfile(healed || row);
+}
+
+/**
+ * Fail-closed profile fetch for Direct Profile views (Discover / Discreet policy).
+ */
+export async function getVisibleMemberProfileById({
+  profileId,
+  viewerEmail = null,
+  viewerPhone = null
+} = {}) {
+  if (!isDatabaseReady() || !profileId) return null;
+  const result = await query("select * from app_member_profiles where id = $1 limit 1", [profileId]);
+  let subject = result.rows[0];
+  if (!subject) return null;
+  subject = (await expireDiscreetMembershipIfNeeded(subject)) || subject;
+
+  let viewer = null;
+  if (viewerEmail || viewerPhone) {
+    viewer = await findMemberProfileByUserKey(viewerEmail, viewerPhone);
+  }
+
+  const decision = await evaluateMemberVisibility({
+    subject,
+    viewer,
+    context: VISIBILITY_CONTEXT.DIRECT_PROFILE
+  });
+  if (!decision.allowed) return null;
+  return rowToDiscoverProfile(subject);
 }
 
 export async function sendSignalToProfile({
@@ -282,10 +323,23 @@ export async function sendSignalToProfile({
   }
 
   const target = await query(
-    `select id, profile_paused_at, shadow_banned from app_member_profiles where id = $1 limit 1`,
+    `select id, user_key, profile_paused_at, shadow_banned, privacy_mode, discreet_until, account_status
+     from app_member_profiles where id = $1 limit 1`,
     [targetProfileId]
   );
-  if (!target.rows[0] || target.rows[0].shadow_banned) return null;
+  const targetRow = target.rows[0];
+  if (!targetRow || targetRow.shadow_banned) return null;
+
+  if (isDiscreetPrivacyActive(targetRow)) {
+    // Discreet targets are reachable only after they initiate (or a match exists).
+    const allowed = await hasIntentionalContact({
+      subjectUserKey: targetRow.user_key,
+      subjectProfileId: targetRow.id,
+      viewerUserKey: sender.user_key,
+      viewerProfileId: sender.id
+    });
+    if (!allowed) return null;
+  }
 
   const duplicate = await query(
     `select id from app_signals
@@ -524,29 +578,25 @@ const REFERRAL_GOAL = 3;
 const REWARD_DAYS = 7;
 
 async function extendUserPremium({ email, phone }, days) {
-  const user = await findAppUserIdentity({ email, phone });
-  if (!user) return null;
-
-  const base =
-    user.premium_until && new Date(user.premium_until).getTime() > Date.now()
-      ? new Date(user.premium_until).getTime()
-      : Date.now();
-  const premiumUntil = new Date(base + days * 86400000).toISOString();
-
-  const result = await query(
-    `update app_users
-     set is_premium = true, premium_until = $3, updated_at = now()
-     where ($1::text is not null and lower(email) = lower($1::text))
-        or ($2::text is not null and phone = $2::text)
-     returning *`,
-    [email || null, phone || null, premiumUntil]
-  );
-  return result.rows[0] || null;
+  // Referral rewards must go through commerce (membership events + entitlements),
+  // not mutate premium_until directly.
+  const { grantMembershipManual } = await import("./services/membershipCommerce.js");
+  const result = await grantMembershipManual({
+    experienceMode: "discover",
+    email: email || null,
+    phone: phone || null,
+    days,
+    productId: "referral_reward",
+    planId: "referral_reward",
+    adminActor: "referral_reward",
+    metadata: { source: "referral_reward" }
+  });
+  return result?.ok ? result : null;
 }
 
 export async function markMemberOnboardingComplete({ email, phone }) {
   if (!isDatabaseReady()) return { ok: false };
-  const { findMemberProfileByUserKey, upsertMemberProfile } = await import("./cityHome.js");
+  const { upsertMemberProfile } = await import("./cityHome.js");
   const member = await findMemberProfileByUserKey(email, phone);
   if (!member?.city) return { ok: false, reason: "no_profile" };
 
@@ -568,7 +618,14 @@ export async function markMemberOnboardingComplete({ email, phone }) {
     city: member.city,
     state: member.state,
     profile: profileJson,
-    discoverable: !hideFromDiscovery,
+    discoverable: computeDiscoverableFlag({
+      hideFromDiscovery,
+      paused: Boolean(member.profile_paused_at),
+      accountStatus: member.account_status || "active",
+      privacyMode: member.privacy_mode || "discover",
+      discreetUntil: member.discreet_until || null,
+      clientDiscoverable: true
+    }),
     onboardingComplete: true,
     cityHomeHidden: Boolean(member.city_home_hidden)
   });
@@ -716,18 +773,8 @@ export async function fetchPremiumStatus({ email, phone }) {
 }
 
 export async function fetchMemberEntitlements({ email, phone }) {
-  let user = await findAppUserIdentity({ email, phone });
-  if (!user) {
-    return {
-      signalPass: resolvePremiumStatus(null),
-      fastConnectionPass: resolveFastConnectionPassStatus(null)
-    };
-  }
-  user = await expireStalePremiumFlags(user);
-  return {
-    signalPass: resolveSignalPassStatus(user),
-    fastConnectionPass: resolveFastConnectionPassStatus(user)
-  };
+  const { loadMembershipEntitlements } = await import("./services/membershipEntitlements.js");
+  return loadMembershipEntitlements({ email, phone });
 }
 
 export async function fetchMemberSocialBundle({ email, phone }) {
@@ -835,6 +882,24 @@ export async function saveMemberProfile({ email, phone, targetProfileId }) {
   await ensureSocialSchema();
   const actor = await findMemberProfileByUserKey(email, phone);
   if (!actor?.id || actor.id === targetProfileId) return null;
+
+  const target = await query(
+    `select id, user_key, privacy_mode, discreet_until, shadow_banned
+     from app_member_profiles where id = $1 limit 1`,
+    [targetProfileId]
+  );
+  const targetRow = target.rows[0];
+  if (!targetRow || targetRow.shadow_banned) return null;
+  if (isDiscreetPrivacyActive(targetRow)) {
+    const allowed = await hasIntentionalContact({
+      subjectUserKey: targetRow.user_key,
+      subjectProfileId: targetRow.id,
+      viewerUserKey: actor.user_key,
+      viewerProfileId: actor.id
+    });
+    if (!allowed) return null;
+  }
+
   const result = await query(
     `insert into saved_profiles (member_id, saved_member_id)
      values ($1, $2)
@@ -890,7 +955,8 @@ export async function fetchSavedProfiles({ email, phone }) {
      order by s.created_at desc`,
     [actor.id]
   );
-  return result.rows
+  const visibleRows = await filterPassiveExposureRows(result.rows, actor);
+  return visibleRows
     .map((row) => {
       const profile = rowToDiscoverProfile(row);
       if (!profile) return null;
@@ -904,6 +970,24 @@ export async function likeMemberProfile({ email, phone, targetProfileId, photoIn
   await ensureSocialSchema();
   const actor = await findMemberProfileByUserKey(email, phone);
   if (!actor?.id || actor.id === targetProfileId) return null;
+
+  const target = await query(
+    `select id, user_key, privacy_mode, discreet_until, shadow_banned
+     from app_member_profiles where id = $1 limit 1`,
+    [targetProfileId]
+  );
+  const targetRow = target.rows[0];
+  if (!targetRow || targetRow.shadow_banned) return null;
+  if (isDiscreetPrivacyActive(targetRow)) {
+    const allowed = await hasIntentionalContact({
+      subjectUserKey: targetRow.user_key,
+      subjectProfileId: targetRow.id,
+      viewerUserKey: actor.user_key,
+      viewerProfileId: actor.id
+    });
+    if (!allowed) return null;
+  }
+
   const result = await query(
     `insert into app_profile_likes (actor_profile_id, target_profile_id, photo_index)
      values ($1, $2, $3)
@@ -919,6 +1003,24 @@ export async function followMemberProfile({ email, phone, targetProfileId }) {
   await ensureSocialSchema();
   const actor = await findMemberProfileByUserKey(email, phone);
   if (!actor?.id || actor.id === targetProfileId) return null;
+
+  const target = await query(
+    `select id, user_key, privacy_mode, discreet_until, shadow_banned
+     from app_member_profiles where id = $1 limit 1`,
+    [targetProfileId]
+  );
+  const targetRow = target.rows[0];
+  if (!targetRow || targetRow.shadow_banned) return null;
+  if (isDiscreetPrivacyActive(targetRow)) {
+    const allowed = await hasIntentionalContact({
+      subjectUserKey: targetRow.user_key,
+      subjectProfileId: targetRow.id,
+      viewerUserKey: actor.user_key,
+      viewerProfileId: actor.id
+    });
+    if (!allowed) return null;
+  }
+
   const result = await query(
     `insert into app_profile_follows (actor_profile_id, target_profile_id)
      values ($1, $2)
@@ -933,15 +1035,26 @@ async function fetchIncomingProfileLikes({ email, phone }) {
   const own = await findMemberProfileByUserKey(email, phone);
   if (!own?.id) return [];
   const result = await query(
-    `select l.*, p.name, p.city, p.profile
+    `select l.*, p.id as actor_id, p.user_key as actor_user_key, p.name, p.city, p.profile,
+            p.privacy_mode, p.discreet_until, p.shadow_banned, p.account_status, p.profile_paused_at
      from app_profile_likes l
      join app_member_profiles p on p.id = l.actor_profile_id
      where l.target_profile_id = $1
+       and coalesce(p.shadow_banned, false) = false
      order by l.created_at desc
      limit 100`,
     [own.id]
   );
-  return result.rows.map((row) => {
+  const visible = await filterPassiveExposureRows(result.rows, own, (row) => ({
+    id: row.actor_id,
+    user_key: row.actor_user_key,
+    privacy_mode: row.privacy_mode,
+    discreet_until: row.discreet_until,
+    shadow_banned: row.shadow_banned,
+    account_status: row.account_status,
+    profile_paused_at: row.profile_paused_at
+  }));
+  return visible.map((row) => {
     const profile = row.profile || {};
     return {
       profileId: row.actor_profile_id,
@@ -956,15 +1069,26 @@ async function fetchIncomingProfileFollows({ email, phone }) {
   const own = await findMemberProfileByUserKey(email, phone);
   if (!own?.id) return [];
   const result = await query(
-    `select f.*, p.name, p.city, p.profile
+    `select f.*, p.id as actor_id, p.user_key as actor_user_key, p.name, p.city, p.profile,
+            p.privacy_mode, p.discreet_until, p.shadow_banned, p.account_status, p.profile_paused_at
      from app_profile_follows f
      join app_member_profiles p on p.id = f.actor_profile_id
      where f.target_profile_id = $1
+       and coalesce(p.shadow_banned, false) = false
      order by f.created_at desc
      limit 100`,
     [own.id]
   );
-  return result.rows.map((row) => {
+  const visible = await filterPassiveExposureRows(result.rows, own, (row) => ({
+    id: row.actor_id,
+    user_key: row.actor_user_key,
+    privacy_mode: row.privacy_mode,
+    discreet_until: row.discreet_until,
+    shadow_banned: row.shadow_banned,
+    account_status: row.account_status,
+    profile_paused_at: row.profile_paused_at
+  }));
+  return visible.map((row) => {
     const profile = row.profile || {};
     return {
       profileId: row.actor_profile_id,

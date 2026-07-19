@@ -1,5 +1,10 @@
 import type { BoostProductId } from "../constants/boosts";
 import { isPremiumTrialActive } from "./premiumTrial";
+import {
+  CAPABILITY,
+  canCapability,
+  type MembershipEntitlementSnapshot
+} from "./membershipCapabilities";
 
 export type SignalPassSnapshot = {
   active: boolean;
@@ -48,6 +53,15 @@ export function hasUnlimitedSignals(signalPass: SignalPassSnapshot): boolean {
   return signalPass.active;
 }
 
+/** Prefer this when an entitlement snapshot from the server is available. */
+export function hasUnlimitedSignalsFromEntitlements(
+  snapshot: MembershipEntitlementSnapshot | null | undefined
+): boolean {
+  if (canCapability(snapshot, CAPABILITY.UNLIMITED_SIGNALS)) return true;
+  if (isPremiumTrialActive()) return true;
+  return Boolean(snapshot?.signalPass?.isPremium);
+}
+
 export function formatEntitlementUntil(iso: string): string {
   try {
     return new Intl.DateTimeFormat(undefined, {
@@ -76,3 +90,6 @@ export function boostActiveLabel(productId: BoostProductId, expiresAt: string): 
       return `Boost active until ${when}`;
   }
 }
+
+export { CAPABILITY, canCapability };
+export type { MembershipEntitlementSnapshot };

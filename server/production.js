@@ -65,6 +65,15 @@ async function runPostDatabaseStartup() {
   if (deletionResult?.processed) {
     console.log(`[bamsignal] finalized ${deletionResult.processed} scheduled account deletion(s)`);
   }
+
+  const { processExpiredMemberships } = await import("./services/membershipCommerce.js");
+  const membershipExpiry = await processExpiredMemberships({ limit: 200 }).catch((error) => {
+    logBackgroundTaskFailure("membership_expiry_sweep", error);
+    return { processed: 0 };
+  });
+  if (membershipExpiry?.processed) {
+    console.log(`[bamsignal] expired ${membershipExpiry.processed} membership(s)`);
+  }
 }
 
 /** @returns {Promise<import("node:http").Server>} */

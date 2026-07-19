@@ -21,13 +21,20 @@ export const DEFAULT_CONTACT_EXCHANGE_POLICY = {
 
 export const DEFAULT_SIGNAL_PASS_FEATURES = [
   "Unlimited Signals",
-  "People Interested In You",
+  "Unlimited messaging",
   "Advanced Filters",
-  "Priority Visibility",
-  "Unlimited Undo",
-  "Unlimited Contact Exchanges",
-  "Premium badge",
-  "Faster support"
+  "Premium boosts",
+  "See Likes",
+  "AI compatibility tools",
+  "Full Discover experience"
+];
+
+export const DEFAULT_DISCREET_FEATURES = [
+  "Complete anonymity in Discover",
+  "Full Discover access while browsing",
+  "Unlimited Signals and messaging",
+  "Full search and premium filters",
+  "Reveal yourself only when you initiate contact"
 ];
 
 export const DEFAULT_FAST_CONNECTION_FEATURES = [
@@ -78,9 +85,20 @@ export function defaultSubscriptionCatalog() {
       days: plan.days,
       highlight: plan.highlight,
       sortOrder: index,
-      active: true
+      active: plan.active !== false && plan.visibility !== "hidden"
     })
   );
+
+  const discreetPlans = [
+    normalizePlanRow({
+      id: "monthly",
+      name: "Monthly Discreet Membership",
+      price: 9999,
+      days: 30,
+      sortOrder: 0,
+      active: true
+    })
+  ];
 
   return {
     contactExchangePolicy: { ...DEFAULT_CONTACT_EXCHANGE_POLICY },
@@ -88,8 +106,8 @@ export function defaultSubscriptionCatalog() {
       normalizeProduct(
         {
           id: "signal_pass",
-          name: "Signal Pass",
-          description: "Connect without limits on BamSignal.",
+          name: "Discover Membership",
+          description: "Self-directed dating — freedom to explore, Signal, and chat at your own pace.",
           sortOrder: 1,
           visibility: "public",
           features: DEFAULT_SIGNAL_PASS_FEATURES,
@@ -99,10 +117,22 @@ export function defaultSubscriptionCatalog() {
       ),
       normalizeProduct(
         {
+          id: "discreet_membership",
+          name: "Discreet Membership",
+          description: "Full Discover power while remaining undiscoverable until you initiate contact.",
+          sortOrder: 2,
+          visibility: "public",
+          features: DEFAULT_DISCREET_FEATURES,
+          plans: discreetPlans
+        },
+        discreetPlans
+      ),
+      normalizeProduct(
+        {
           id: "fast_connection_pass",
           name: "Fast Connection Pass",
           description: "For members who prefer faster-paced connections.",
-          sortOrder: 2,
+          sortOrder: 3,
           visibility: "public",
           badgeText: "Fast Connection",
           features: DEFAULT_FAST_CONNECTION_FEATURES,
@@ -156,6 +186,7 @@ export async function getSubscriptionCatalog() {
   if (premiumPlans.length) {
     const signal = catalog.products.find((product) => product.id === "signal_pass");
     if (signal) {
+      signal.name = signal.name === "Signal Pass" ? "Discover Membership" : signal.name;
       signal.plans = premiumPlans.map((plan, index) =>
         normalizePlanRow({
           id: plan.id,
@@ -164,12 +195,49 @@ export async function getSubscriptionCatalog() {
           days: plan.days,
           highlight: plan.highlight,
           sortOrder: index,
-          active: true
+          active: plan.active !== false && plan.visibility !== "hidden"
         })
       );
     }
   }
 
+  try {
+    const { listMembershipPlans, DISCREET_PRODUCT_ID } = await import("./membershipCatalog.js");
+    const discreetPlans = await listMembershipPlans(DISCREET_PRODUCT_ID, { forSaleOnly: false });
+    if (discreetPlans.length) {
+      let discreet = catalog.products.find((product) => product.id === "discreet_membership");
+      if (!discreet) {
+        discreet = normalizeProduct(
+          {
+            id: "discreet_membership",
+            name: "Discreet Membership",
+            description: "Full Discover power while remaining undiscoverable until you initiate contact.",
+            sortOrder: 2,
+            visibility: "public",
+            features: DEFAULT_DISCREET_FEATURES,
+            plans: []
+          },
+          []
+        );
+        catalog.products.push(discreet);
+      }
+      discreet.plans = discreetPlans.map((plan, index) =>
+        normalizePlanRow({
+          id: plan.id,
+          name: plan.name,
+          price: plan.price,
+          days: plan.days,
+          highlight: plan.highlight,
+          sortOrder: index,
+          active: plan.active !== false && plan.visibility !== "hidden"
+        })
+      );
+    }
+  } catch {
+    /* tables may not exist yet */
+  }
+
+  catalog.products.sort((a, b) => a.sortOrder - b.sortOrder);
   return catalog;
 }
 
@@ -186,9 +254,59 @@ export async function saveSubscriptionCatalog(catalog) {
         name: plan.name,
         price: plan.price,
         days: plan.days,
-        highlight: plan.highlight || ""
+        highlight: plan.highlight || "",
+        active: plan.active !== false,
+        visibility: plan.active === false ? "hidden" : "public"
       }))
     );
+    try {
+      const { upsertMembershipPlans, DISCOVER_PRODUCT_ID } = await import("./membershipCatalog.js");
+      await upsertMembershipPlans(
+        DISCOVER_PRODUCT_ID,
+        signal.plans.map((plan) => ({
+          id: plan.id,
+          name: plan.name,
+          price: plan.price,
+          days: plan.days,
+          highlight: plan.highlight || "",
+          active: plan.active !== false,
+          visibility: plan.active === false ? "hidden" : "public"
+        }))
+      );
+    } catch {
+      /* best effort until migration applied */
+    }
+  }
+
+  const discreet = normalized.products.find((product) => product.id === "discreet_membership");
+  if (discreet?.plans?.length) {
+    await setPlatformSetting(
+      "discreet_plans",
+      discreet.plans.map((plan) => ({
+        id: plan.id,
+        name: plan.name,
+        price: plan.price,
+        days: plan.days,
+        highlight: plan.highlight || "",
+        active: plan.active !== false
+      }))
+    );
+    try {
+      const { upsertMembershipPlans, DISCREET_PRODUCT_ID } = await import("./membershipCatalog.js");
+      await upsertMembershipPlans(
+        DISCREET_PRODUCT_ID,
+        discreet.plans.map((plan) => ({
+          id: plan.id,
+          name: plan.name,
+          price: plan.price,
+          days: plan.days,
+          highlight: plan.highlight || "",
+          active: plan.active !== false
+        }))
+      );
+    } catch {
+      /* best effort */
+    }
   }
 
   const { writePlatformAudit } = await import("./auditTrail.js");

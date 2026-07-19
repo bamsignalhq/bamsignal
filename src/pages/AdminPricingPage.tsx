@@ -13,6 +13,11 @@ import {
   type SubscriptionCatalog,
   type SubscriptionProduct
 } from "../services/subscriptionCatalog";
+import {
+  fetchConciergePackagesAdmin,
+  saveConciergePackagesAdmin,
+  type ConciergePackageAdmin
+} from "../services/conciergePackagesAdmin";
 import { supabase } from "../services/supabase";
 import { useAdminConsent } from "../components/admin/AdminConsentProvider";
 
@@ -31,6 +36,8 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
   const [draft, setDraft] = useState<PremiumPlanInput[]>([]);
   const [catalogDraft, setCatalogDraft] = useState<SubscriptionCatalog | null>(null);
   const [boostDraft, setBoostDraft] = useState<BoostProductInput[]>(DEFAULT_BOOST_INPUTS);
+  const [conciergeDraft, setConciergeDraft] = useState<ConciergePackageAdmin[]>([]);
+  const [consultationFeeNgn, setConsultationFeeNgn] = useState(100_000);
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [message, setMessage] = useState("");
   const [savingKey, setSavingKey] = useState<string | null>(null);
@@ -64,6 +71,13 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
           cta: p.cta
         }))
       );
+    });
+  }, []);
+
+  useEffect(() => {
+    void fetchConciergePackagesAdmin().then((result) => {
+      if (result.packages.length) setConciergeDraft(result.packages);
+      if (result.consultationFeeNgn) setConsultationFeeNgn(result.consultationFeeNgn);
     });
   }, []);
 
@@ -129,7 +143,7 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
     setSavingKey(null);
     if (result.ok) {
       await refreshPlans();
-      setMessage(result.error ? `Plans saved. ${result.error}` : "Signal passes saved.");
+      setMessage(result.error ? `Plans saved. ${result.error}` : "Discover Membership plans saved.");
     } else {
       setMessage(result.error || "Could not save plans.");
     }
@@ -167,7 +181,37 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
     }
   };
 
+  const saveConcierge = async (label: string) => {
+    setSavingKey(label);
+    setMessage("");
+    if (!(await ensureConsent("Save Signal Concierge packages."))) {
+      setSavingKey(null);
+      setMessage("Console PIN required.");
+      return;
+    }
+    const { data } = (await supabase?.auth.getSession()) || { data: { session: null } };
+    const result = await saveConciergePackagesAdmin(
+      conciergeDraft,
+      data.session?.access_token,
+      consultationFeeNgn
+    );
+    setSavingKey(null);
+    if (result.ok) {
+      if (result.packages) setConciergeDraft(result.packages);
+      setMessage("Signal Concierge packages saved.");
+    } else {
+      setMessage(result.error || "Could not save Concierge packages.");
+    }
+  };
+
+  const updateConciergePackage = (index: number, patch: Partial<ConciergePackageAdmin>) => {
+    setConciergeDraft((current) =>
+      current.map((row, i) => (i === index ? { ...row, ...patch } : row))
+    );
+  };
+
   const signalProduct = catalogDraft ? productById(catalogDraft, "signal_pass") : undefined;
+  const discreetProduct = catalogDraft ? productById(catalogDraft, "discreet_membership") : undefined;
   const fastConnectionProduct = catalogDraft ? productById(catalogDraft, "fast_connection_pass") : undefined;
 
   if (authorized === null) {
@@ -202,8 +246,11 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
       )}
 
       <header className="page-header">
-        <h2>Pricing & boosts</h2>
-        <p>Configure passes, free exchange limits, and one-time boosts — no code deploy required.</p>
+        <h2>Billing & membership pricing</h2>
+        <p>
+          Discover Membership, Discreet Membership, and Signal Concierge packages — prices live in the
+          catalog, not in code.
+        </p>
       </header>
 
       {catalogDraft ? (
@@ -307,7 +354,7 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
               onClick={() => void saveCatalog("signal_pass")}
             >
               {savingKey === "signal_pass" ? <Loader2 className="spin" size={16} /> : <Save size={16} />}
-              Save Signal Pass
+              Save Discover Membership
             </button>
           </section>
         </>
@@ -324,8 +371,12 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
                 disabled={savingKey === `plan-${plan.id}`}
                 onClick={() => void savePlans(`plan-${plan.id}`)}
               >
-                {savingKey === `plan-${plan.id}` ? <Loader2 className="spin" size={16} /> : <Save size={16} />}
-                Save pass
+                {savingKey === `plan-${plan.id}` ? (
+                  <Loader2 className="spin" size={16} />
+                ) : (
+                  <Save size={16} />
+                )}
+                Save Discover plan
               </button>
             </div>
             <label>
@@ -369,7 +420,7 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
                   updatePlan(index, { highlight: e.target.value });
                   updateCatalogPlan("signal_pass", plan.id, { highlight: e.target.value });
                 }}
-                placeholder="Popular, Best value..."
+                placeholder="Recommended..."
               />
             </label>
             <p className="admin-plan-preview">
@@ -379,6 +430,166 @@ export function AdminPricingPage({ onBack, embedded }: AdminPricingPageProps) {
           </section>
         ))}
       </div>
+
+      {discreetProduct ? (
+        <>
+          <header className="page-header">
+            <h3>{discreetProduct.name}</h3>
+            <p>{discreetProduct.description}</p>
+          </header>
+          <section className="card admin-plan-row">
+            <label className="admin-toggle-row">
+              <input
+                type="checkbox"
+                checked={discreetProduct.active}
+                onChange={(e) =>
+                  updateCatalogProduct("discreet_membership", { active: e.target.checked })
+                }
+              />
+              Active
+            </label>
+            <label>
+              Features (one per line)
+              <textarea
+                rows={5}
+                value={discreetProduct.features.join("\n")}
+                onChange={(e) =>
+                  updateCatalogProduct("discreet_membership", {
+                    features: e.target.value.split("\n").map((line) => line.trim()).filter(Boolean)
+                  })
+                }
+              />
+            </label>
+            {discreetProduct.plans.map((plan) => (
+              <div key={plan.id} className="admin-plan-row admin-plan-row--nested">
+                <span className="admin-plan-id">{plan.id}</span>
+                <label>
+                  Plan name
+                  <input
+                    value={plan.name}
+                    onChange={(e) =>
+                      updateCatalogPlan("discreet_membership", plan.id, { name: e.target.value })
+                    }
+                  />
+                </label>
+                <label>
+                  Price (₦)
+                  <input
+                    type="number"
+                    min={100}
+                    value={plan.price}
+                    onChange={(e) =>
+                      updateCatalogPlan("discreet_membership", plan.id, {
+                        price: Number(e.target.value)
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Duration (days)
+                  <input
+                    type="number"
+                    min={1}
+                    value={plan.days}
+                    onChange={(e) =>
+                      updateCatalogPlan("discreet_membership", plan.id, {
+                        days: Number(e.target.value)
+                      })
+                    }
+                  />
+                </label>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn-secondary btn-sm admin-row-save"
+              disabled={savingKey === "discreet_membership"}
+              onClick={() => void saveCatalog("discreet_membership")}
+            >
+              {savingKey === "discreet_membership" ? (
+                <Loader2 className="spin" size={16} />
+              ) : (
+                <Save size={16} />
+              )}
+              Save Discreet Membership
+            </button>
+          </section>
+        </>
+      ) : null}
+
+      <header className="page-header">
+        <h3>Signal Concierge™ packages</h3>
+        <p>Package prices are never hardcoded for checkout authority — edit here.</p>
+      </header>
+      <section className="card admin-plan-row">
+        <label>
+          Consultation fee (₦)
+          <input
+            type="number"
+            min={1000}
+            value={consultationFeeNgn}
+            onChange={(e) => setConsultationFeeNgn(Number(e.target.value))}
+          />
+        </label>
+        {conciergeDraft.map((pkg, index) => (
+          <div key={pkg.id} className="admin-plan-row admin-plan-row--nested">
+            <span className="admin-plan-id">{pkg.id}</span>
+            <label className="admin-toggle-row">
+              <input
+                type="checkbox"
+                checked={pkg.active}
+                onChange={(e) => updateConciergePackage(index, { active: e.target.checked })}
+              />
+              Active
+            </label>
+            <label>
+              Package name
+              <input
+                value={pkg.name}
+                onChange={(e) => updateConciergePackage(index, { name: e.target.value })}
+              />
+            </label>
+            <label>
+              Tagline
+              <input
+                value={pkg.tagline || ""}
+                onChange={(e) => updateConciergePackage(index, { tagline: e.target.value })}
+              />
+            </label>
+            <label>
+              Price (₦)
+              <input
+                type="number"
+                min={1000}
+                value={Math.round(pkg.priceKobo / 100)}
+                onChange={(e) =>
+                  updateConciergePackage(index, { priceKobo: Number(e.target.value) * 100 })
+                }
+              />
+            </label>
+            <label>
+              Sort order
+              <input
+                type="number"
+                min={0}
+                value={pkg.sortOrder}
+                onChange={(e) =>
+                  updateConciergePackage(index, { sortOrder: Number(e.target.value) })
+                }
+              />
+            </label>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn-secondary btn-sm admin-row-save"
+          disabled={savingKey === "concierge"}
+          onClick={() => void saveConcierge("concierge")}
+        >
+          {savingKey === "concierge" ? <Loader2 className="spin" size={16} /> : <Save size={16} />}
+          Save Concierge packages
+        </button>
+      </section>
 
       {fastConnectionProduct ? (
         <>

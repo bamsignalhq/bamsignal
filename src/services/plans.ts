@@ -26,7 +26,9 @@ function normalizeInputs(raw: unknown): PremiumPlanInput[] {
         name: String(row.name || id),
         price: Math.max(0, Math.round(Number(row.price) || 0)),
         days: Math.max(1, Math.round(Number(row.days) || 1)),
-        highlight: row.highlight ? String(row.highlight) : undefined
+        highlight: row.highlight ? String(row.highlight) : undefined,
+        active: row.active !== false,
+        visibility: row.visibility === "hidden" ? "hidden" : "public"
       } satisfies PremiumPlanInput;
     })
     .filter(Boolean) as PremiumPlanInput[];

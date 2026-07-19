@@ -1,10 +1,14 @@
-import { getPlatformSetting } from "../db.js";
-import { normalizePlans } from "../pricing.js";
 import {
   activePlanPrice,
   getProductFromCatalog,
   getSubscriptionCatalog
 } from "./subscriptionCatalog.js";
+import {
+  DEFAULT_CONSULTATION_FEE_NGN,
+  getConsultationFeeAmountKobo,
+  loadDiscoverPlansForCheckout,
+  loadDiscreetPlansForCheckout
+} from "./membershipCatalog.js";
 
 /** Server-authoritative boost catalog — prices and durations must never come from the client. */
 export const DEFAULT_BOOST_CATALOG = [
@@ -23,31 +27,44 @@ export const FAST_CONNECTION_PRODUCT_IDS = new Set([
   "fast_connection"
 ]);
 
+export const DISCREET_PRODUCT_IDS = new Set([
+  "discreet",
+  "discreet_membership",
+  "discreet-membership",
+  "discreet_mode"
+]);
+
 export const FAST_CONNECTION_DEFAULT_PLAN_ID = "weekly";
 export const FAST_CONNECTION_DAILY_SIGNALS = 30;
 
 export const CONSULTATION_FEE_PRODUCT_TYPE = "consultation-fee";
 export const CONSULTATION_FEE_PRODUCT_ID = "signal-concierge-consultation";
-export const CONSULTATION_FEE_AMOUNT_KOBO = 10_000_000;
+/** Fallback only — live amount comes from platform_settings / membership catalog. */
+export const CONSULTATION_FEE_AMOUNT_KOBO = DEFAULT_CONSULTATION_FEE_NGN * 100;
 
 const PREMIUM_PLAN_ALIASES = new Map([
   ["premium_weekly", "weekly"],
   ["premium_monthly", "monthly"],
-  ["premium_quarterly", "quarterly"]
+  ["premium_quarterly", "quarterly"],
+  ["discover_weekly", "weekly"],
+  ["discover_monthly", "monthly"],
+  ["discover_quarterly", "quarterly"]
 ]);
 
 let premiumPlansCache = null;
 let premiumPlansCacheAt = 0;
 
-export async function loadPremiumPlans() {
+export async function loadPremiumPlans({ forSaleOnly = false } = {}) {
   const now = Date.now();
-  if (premiumPlansCache && now - premiumPlansCacheAt < 60_000) {
+  if (!forSaleOnly && premiumPlansCache && now - premiumPlansCacheAt < 60_000) {
     return premiumPlansCache;
   }
-  const stored = await getPlatformSetting("premium_plans", null);
-  premiumPlansCache = normalizePlans(stored);
-  premiumPlansCacheAt = now;
-  return premiumPlansCache;
+  const plans = await loadDiscoverPlansForCheckout({ forSaleOnly });
+  if (!forSaleOnly) {
+    premiumPlansCache = plans;
+    premiumPlansCacheAt = now;
+  }
+  return plans;
 }
 
 export function normalizePremiumPlanId(planId = "monthly") {
@@ -64,12 +81,13 @@ export function isConsultationFeeProductType(productType) {
   return String(productType || "").trim().toLowerCase() === CONSULTATION_FEE_PRODUCT_TYPE;
 }
 
-export function resolveConsultationFeeProduct(paymentId = CONSULTATION_FEE_PRODUCT_ID) {
+export async function resolveConsultationFeeProduct(paymentId = CONSULTATION_FEE_PRODUCT_ID) {
   const id = String(paymentId || CONSULTATION_FEE_PRODUCT_ID).trim();
+  const amountKobo = await getConsultationFeeAmountKobo();
   return {
     productType: CONSULTATION_FEE_PRODUCT_TYPE,
     productId: id,
-    amountKobo: CONSULTATION_FEE_AMOUNT_KOBO,
+    amountKobo,
     days: null,
     durationHours: null,
     dailyFastSignals: null,
@@ -80,7 +98,8 @@ export function resolveConsultationFeeProduct(paymentId = CONSULTATION_FEE_PRODU
 
 export async function resolvePremiumPlan(planId = "monthly") {
   const id = normalizePremiumPlanId(planId);
-  const plans = await loadPremiumPlans();
+  // Match any known plan (including retired quarterly) for verification; new sales use forSaleOnly at init.
+  const plans = await loadPremiumPlans({ forSaleOnly: false });
   const plan = plans.find((row) => row.id === id);
   if (!plan) return null;
   return {
@@ -90,8 +109,31 @@ export async function resolvePremiumPlan(planId = "monthly") {
     days: plan.days,
     durationHours: null,
     dailyFastSignals: null,
-    planName: plan.name
+    planName: plan.name,
+    experienceMode: "discover"
   };
+}
+
+export async function resolveDiscreetPlan(planId = "monthly") {
+  const id = String(planId || "monthly").trim() || "monthly";
+  const plans = await loadDiscreetPlansForCheckout({ forSaleOnly: false });
+  const plan = plans.find((row) => row.id === id) || plans[0];
+  if (!plan) return null;
+  return {
+    productType: "discreet",
+    productId: plan.id,
+    amountKobo: plan.amountKobo,
+    days: plan.days,
+    durationHours: null,
+    dailyFastSignals: null,
+    planName: plan.name,
+    experienceMode: "discreet"
+  };
+}
+
+export function isDiscreetProductType(productType) {
+  const value = String(productType || "").trim().toLowerCase();
+  return value === "discreet" || value === "discreet_membership" || value === "discreet-mode";
 }
 
 export async function resolveFastConnectionProduct(planId = FAST_CONNECTION_DEFAULT_PLAN_ID) {
@@ -149,6 +191,10 @@ export async function resolvePaymentProduct({
 
   if (isConsultationFeeProductType(type)) {
     return resolveConsultationFeeProduct(id);
+  }
+
+  if (isDiscreetProductType(type) || DISCREET_PRODUCT_IDS.has(id)) {
+    return resolveDiscreetPlan(planId || id || "monthly");
   }
 
   return resolvePremiumPlan(id || "monthly");

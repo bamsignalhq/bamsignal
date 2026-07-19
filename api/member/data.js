@@ -25,7 +25,7 @@ import {
   observabilityContext
 } from "../../server/services/observability.js";
 import { sendLoggedApiError } from "../../server/services/apiErrorResponse.js";
-import { upsertMemberProfile } from "../../server/cityHome.js";
+import { upsertMemberProfile, findMemberProfileByUserKey } from "../../server/cityHome.js";
 import {
   acceptIncomingSignal,
   completeOnboardingReferral,
@@ -36,7 +36,7 @@ import {
   fetchMemberEntitlements,
   fetchProfileVisitors,
   fetchReferralStats,
-  getMemberProfileById,
+  getVisibleMemberProfileById,
   ignoreIncomingSignal,
   listDiscoverProfiles,
   searchMemberProfiles,
@@ -101,7 +101,14 @@ export default async function handler(req, res) {
     if (action === "profile-by-id") {
       if (!requireDatabase(res)) return;
       if (!(await enforceRate(req, res, {}, "profile-view"))) return;
-      const profile = await getMemberProfileById(String(body.profileId || "").trim());
+      const profileId = String(body.profileId || "").trim();
+      const viewerEmail = String(body.email || "").trim() || null;
+      const viewerPhone = String(body.phone || "").trim() || null;
+      const profile = await getVisibleMemberProfileById({
+        profileId,
+        viewerEmail,
+        viewerPhone
+      });
       return res.status(200).json({
         ok: true,
         profile: sanitizePublicMemberProfile(profile)
@@ -310,9 +317,14 @@ export default async function handler(req, res) {
         return res.status(429).json({ ok: false, error: row.error, cooldown: true });
       }
       if (row?.ok === false) {
+        // Sender-state errors only (e.g. paused). Target denials stay generic below.
         return res.status(400).json(row);
       }
-      return res.status(row ? 200 : 503).json({ ok: Boolean(row), signal: row });
+      // Missing, shadow-banned, and Discreet-without-contact all return null — same denial.
+      if (!row) {
+        return res.status(404).json({ ok: false, error: "Profile not available." });
+      }
+      return res.status(200).json({ ok: true, signal: row });
     }
 
     if (action === "accept-signal") {
@@ -353,7 +365,10 @@ export default async function handler(req, res) {
         targetProfileId: String(body.targetProfileId || "").trim(),
         photoIndex: Number(body.photoIndex) || 0
       });
-      return res.status(row ? 200 : 400).json({ ok: Boolean(row), like: row });
+      if (!row) {
+        return res.status(404).json({ ok: false, error: "Profile not available." });
+      }
+      return res.status(200).json({ ok: true, like: row });
     }
 
     if (action === "follow-profile") {
@@ -363,7 +378,10 @@ export default async function handler(req, res) {
         phone: identity.phone,
         targetProfileId: String(body.targetProfileId || "").trim()
       });
-      return res.status(row ? 200 : 400).json({ ok: Boolean(row), follow: row });
+      if (!row) {
+        return res.status(404).json({ ok: false, error: "Profile not available." });
+      }
+      return res.status(200).json({ ok: true, follow: row });
     }
 
     if (action === "save-profile") {
@@ -373,7 +391,10 @@ export default async function handler(req, res) {
         phone: identity.phone,
         targetProfileId: String(body.targetProfileId || "").trim()
       });
-      return res.status(row ? 200 : 400).json({ ok: Boolean(row), saved: row });
+      if (!row) {
+        return res.status(404).json({ ok: false, error: "Profile not available." });
+      }
+      return res.status(200).json({ ok: true, saved: row });
     }
 
     if (action === "unsave-profile") {
@@ -573,7 +594,6 @@ export default async function handler(req, res) {
         incomingProfile.coverPhotoExplicit = false;
       }
 
-      const { findMemberProfileByUserKey } = await import("../../server/cityHome.js");
       const { mergeMemberProfilePayload } = await import("../../server/utils/profileMerge.js");
       const existingMember = await findMemberProfileByUserKey(identity.email, identity.phone);
       const existingProfile =
@@ -623,8 +643,18 @@ export default async function handler(req, res) {
       }
 
       const hideFromDiscovery = Boolean(profile.safetySettings?.hideFromDiscovery);
-      const discoverable =
-        body.discoverable !== false && !hideFromDiscovery && body.accountStatus !== "deleted_pending";
+      const { computeDiscoverableFlag } = await import(
+        "../../server/services/memberVisibilityPolicy.js"
+      );
+      const existing = await findMemberProfileByUserKey(identity.email, identity.phone);
+      const discoverable = computeDiscoverableFlag({
+        hideFromDiscovery,
+        paused: Boolean(existing?.profile_paused_at),
+        accountStatus: body.accountStatus || existing?.account_status || "active",
+        privacyMode: existing?.privacy_mode || "discover",
+        discreetUntil: existing?.discreet_until || null,
+        clientDiscoverable: body.discoverable !== false
+      });
 
       const row = await upsertMemberProfile({
         email: identity.email,
@@ -732,7 +762,6 @@ export default async function handler(req, res) {
       if (!targetProfileId) {
         return res.status(400).json({ ok: false, error: "targetProfileId is required." });
       }
-      const { findMemberProfileByUserKey } = await import("../../server/cityHome.js");
       const { persistMemberBlock } = await import("../../server/services/memberBlocks.js");
       const { normalizeUserKey } = await import("../../server/db.js");
       const reporter = await findMemberProfileByUserKey(identity.email, identity.phone);
@@ -765,7 +794,6 @@ export default async function handler(req, res) {
       if (!matchId) {
         return res.status(400).json({ ok: false, error: "matchId is required." });
       }
-      const { findMemberProfileByUserKey } = await import("../../server/cityHome.js");
       const { unmatchBothSides, persistMemberBlock } = await import("../../server/services/memberBlocks.js");
       const { normalizeUserKey } = await import("../../server/db.js");
       const reporter = await findMemberProfileByUserKey(identity.email, identity.phone);

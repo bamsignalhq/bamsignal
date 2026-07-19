@@ -7,7 +7,7 @@ import {
   PREMIUM_VALUE_VS_PRICE,
 } from "../constants/premiumExperience";
 import type { PlanId, PremiumPlan } from "../constants/plans";
-import { planBadge, planCheckoutLabel } from "../constants/plans";
+import { planBadge, planCheckoutLabel, plansForSale } from "../constants/plans";
 import { PremiumPurchaseHistory } from "../components/premium/PremiumPurchaseHistory";
 import { getSignalPassSnapshot } from "../services/premiumStatus";
 import { listPremiumPurchaseHistory } from "../utils/premiumPurchaseHistory";
@@ -27,7 +27,7 @@ type PremiumCenterPageProps = {
   loading?: boolean;
 };
 
-const FEATURED_PLAN_ORDER: PlanId[] = ["monthly", "quarterly", "weekly"];
+const FEATURED_PLAN_ORDER: PlanId[] = ["monthly", "weekly"];
 
 export function PremiumCenterPage({
   isPremium,
@@ -43,7 +43,8 @@ export function PremiumCenterPage({
   const renewalCopy = premiumRenewalMessage(renewalStage);
 
   const orderedPlans = useMemo(() => {
-    const byId = new Map(plans.map((plan) => [plan.id, plan]));
+    const salePlans = plansForSale(plans);
+    const byId = new Map(salePlans.map((plan) => [plan.id, plan]));
     return FEATURED_PLAN_ORDER.map((id) => byId.get(id)).filter(
       (plan): plan is PremiumPlan => Boolean(plan),
     );
@@ -57,7 +58,8 @@ export function PremiumCenterPage({
         </button>
         <div>
           <h1 className="premium-page__title premium-page__title-row">
-            Signal Pass <Star size={20} className="premium-page__star" aria-hidden fill="currentColor" />
+            Discover Membership{" "}
+            <Star size={20} className="premium-page__star" aria-hidden fill="currentColor" />
           </h1>
           <p className="premium-page__subtitle">{PREMIUM_EXPERIENCE_MISSION}</p>
         </div>
@@ -65,7 +67,7 @@ export function PremiumCenterPage({
 
       {isPremium ? (
         <section className="premium-center__status card">
-          <p className="premium-center__eyebrow">Active · Premium Center</p>
+          <p className="premium-center__eyebrow">Active · Discover Membership</p>
           <p className="premium-center__remaining">
             {remainingPremiumTimeLabel(pass.expiresAt)}
           </p>
@@ -78,7 +80,7 @@ export function PremiumCenterPage({
         </section>
       ) : (
         <section className="premium-center__status card">
-          <p className="premium-center__eyebrow">Signal Pass</p>
+          <p className="premium-center__eyebrow">I want to find someone myself</p>
           <p className="premium-center__muted">{BRAND.paywallBody}</p>
         </section>
       )}
@@ -139,10 +141,10 @@ export function PremiumCenterPage({
         </h2>
         {!isPremium ? (
           <p className="premium-center__muted">
-            Value exceeds price — from {PREMIUM_VALUE_VS_PRICE.monthly.perDay} on Monthly.
+            Weekly ₦999 · Monthly ₦2,999 — freedom to explore Discover at your pace.
           </p>
         ) : null}
-        <div className="premium-plan-buttons" aria-label="Signal Pass plans">
+        <div className="premium-plan-buttons" aria-label="Discover Membership plans">
           {orderedPlans.map((plan) => {
             const badge = planBadge(plan);
             const value = PREMIUM_VALUE_VS_PRICE[plan.id];

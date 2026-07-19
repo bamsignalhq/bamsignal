@@ -1,4 +1,4 @@
-import { activateAppUserFastConnectionPass, activateAppUserPremium } from "../db.js";
+import { activateAppUserFastConnectionPass } from "../db.js";
 import { activateCityBoostPlacement, activateCitySpotlightPlacement } from "../cityHome.js";
 import { activateMemberBoost } from "./memberBoosts.js";
 import {
@@ -13,13 +13,15 @@ import {
   boostExpiresAtFromIntent,
   fastConnectionUntilFromIntent,
   isConsultationFeeProductType,
+  isDiscreetProductType,
   isFastConnectionProductType,
-  premiumUntilFromIntent,
   resolveBoostProduct,
   resolvePaymentProduct,
   resolvePurchaseIntent,
-  verifyExpectedAmount
+  verifyExpectedAmount,
+  loadPremiumPlans
 } from "./paymentCatalog.js";
+import { activateMembershipFromPayment } from "./membershipCommerce.js";
 import {
   PaymentDatabaseError,
   requireDatabaseReadyForPayments
@@ -164,6 +166,27 @@ export async function fulfillVerifiedPurchase({
   requireDatabaseReadyForPayments();
 
   if (isConsultationFeeProductType(intent.productType)) {
+    // Consultation payment grants Concierge eligibility via membership events — not payment flags.
+    const activation = await activateMembershipFromPayment({
+      experienceMode: "concierge",
+      email: email || null,
+      phone: phone || null,
+      name,
+      days: Math.max(1, Math.round(Number(intent.days || 365))),
+      productId: intent.productId || "consultation-fee",
+      planId: intent.planId || intent.productId || null,
+      paymentRef: reference,
+      ledgerSource,
+      metadata: {
+        journeyId:
+          String(transaction?.metadata?.journey_id || transaction?.metadata?.journeyId || "").trim() ||
+          null,
+        memberId:
+          String(transaction?.metadata?.member_id || transaction?.metadata?.memberId || "").trim() ||
+          null
+      }
+    });
+    // Payment itself succeeds even if profile is not yet linked; eligibility is best-effort.
     return {
       ok: true,
       productType: intent.productType,
@@ -172,7 +195,10 @@ export async function fulfillVerifiedPurchase({
       paymentId: intent.productId,
       journeyId:
         String(transaction?.metadata?.journey_id || transaction?.metadata?.journeyId || "").trim() || null,
-      consultationEligible: true
+      consultationEligible: true,
+      membershipGranted: Boolean(activation?.ok),
+      activation,
+      entitlements: activation?.entitlements || null
     };
   }
 
@@ -195,6 +221,35 @@ export async function fulfillVerifiedPurchase({
       productId: intent.productId,
       activation,
       passUntil
+    };
+  }
+
+  if (isDiscreetProductType(intent.productType)) {
+    const days = Math.max(1, Math.round(Number(intent.days || 30)));
+    const activation = await activateMembershipFromPayment({
+      experienceMode: "discreet",
+      email: email || null,
+      phone: phone || null,
+      name,
+      days,
+      planId: intent.productId,
+      productId: "discreet",
+      paymentRef: reference,
+      ledgerSource,
+      metadata: { planName: intent.planName || null }
+    });
+    if (!activation?.ok) {
+      throw new PaymentDatabaseError();
+    }
+    return {
+      ok: true,
+      productType: "discreet",
+      productId: intent.productId,
+      activation,
+      discreetUntil: activation.endsAt,
+      privacyMode: "discreet",
+      entitlements: activation.entitlements,
+      duplicate: Boolean(activation.duplicate)
     };
   }
 
@@ -289,39 +344,55 @@ export async function fulfillVerifiedPurchase({
     return activation;
   }
 
-  const premiumUntil = premiumUntilFromIntent(intent);
-  if (!premiumUntil) {
+  const days = Math.max(1, Math.round(Number(intent.days || 0)));
+  if (!Number.isFinite(days) || days <= 0) {
     return { ok: false, reason: "invalid_premium_duration" };
   }
 
-  const inviteLink = await createVipInviteLink(email || phone).catch(() => null);
-  const activation = await activateAppUserPremium({
+  const activation = await activateMembershipFromPayment({
+    experienceMode: "discover",
     email: email || null,
     phone: phone || null,
     name,
-    premiumUntil,
-    paystackReference: reference,
-    inviteLink
+    days,
+    productId: intent.productId || "discover",
+    planId: intent.productId || null,
+    paymentRef: reference,
+    ledgerSource,
+    metadata: { planName: intent.planName || null }
   });
-  if (!activation) {
+  if (!activation?.ok) {
     throw new PaymentDatabaseError();
   }
+
+  const inviteLink = await createVipInviteLink(email || phone).catch(() => null);
 
   return {
     ok: true,
     productType: "premium",
     productId: intent.productId,
     activation,
-    premiumUntil,
-    inviteLink
+    premiumUntil: activation.endsAt,
+    inviteLink,
+    entitlements: activation.entitlements,
+    duplicate: Boolean(activation.duplicate)
   };
 }
 
 export async function resolveInitializeIntent(action, body = {}) {
   if (action === "initialize") {
     const planId = String(body.productId || body.plan || "monthly").trim();
+    const productType = String(body.productType || "premium").trim().toLowerCase();
+    if (productType === "discreet" || productType === "discreet_membership") {
+      return resolvePaymentProduct({ productType: "discreet", productId: planId, planId });
+    }
     const intent = await resolvePaymentProduct({ productType: "premium", productId: planId, planId });
-    return intent || null;
+    if (!intent) return null;
+    const forSale = await loadPremiumPlans({ forSaleOnly: true });
+    if (!forSale.some((plan) => plan.id === intent.productId)) {
+      return null;
+    }
+    return intent;
   }
 
   if (action === "initialize-boost") {

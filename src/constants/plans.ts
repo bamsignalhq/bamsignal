@@ -8,6 +8,8 @@ export type PremiumPlan = {
   days: number;
   amountKobo: number;
   highlight?: string;
+  active?: boolean;
+  visibility?: "public" | "hidden";
 };
 
 export type PremiumPlanInput = {
@@ -16,6 +18,8 @@ export type PremiumPlanInput = {
   price: number;
   days: number;
   highlight?: string;
+  active?: boolean;
+  visibility?: "public" | "hidden";
 };
 
 export function formatPriceLabel(price: number): string {
@@ -51,7 +55,12 @@ export function planCheckoutLabel(plan: PremiumPlan): string {
 }
 
 export function planShortLabel(plan: PremiumPlan): string {
-  return PLAN_SHORT_NAMES[plan.id] ?? plan.name.replace(/\s*Signal Pass$/i, "");
+  return (
+    PLAN_SHORT_NAMES[plan.id] ??
+    plan.name
+      .replace(/\s*Discover Membership$/i, "")
+      .replace(/\s*Signal Pass$/i, "")
+  );
 }
 
 export function planBadge(plan: PremiumPlan): string | undefined {
@@ -61,6 +70,8 @@ export function planBadge(plan: PremiumPlan): string | undefined {
 export function hydratePlan(raw: PremiumPlanInput): PremiumPlan {
   const price = Math.max(0, Math.round(raw.price));
   const days = Math.max(1, Math.round(raw.days));
+  const active = raw.active !== false;
+  const visibility = raw.visibility === "hidden" || !active ? "hidden" : "public";
   return {
     id: raw.id,
     name: raw.name,
@@ -68,57 +79,70 @@ export function hydratePlan(raw: PremiumPlanInput): PremiumPlan {
     priceLabel: formatPriceLabel(price),
     days,
     amountKobo: price * 100,
-    highlight: raw.highlight?.trim() || undefined
+    highlight: raw.highlight?.trim() || undefined,
+    active,
+    visibility
   };
 }
 
+/** Plans offered for new checkout (hides retired intervals). */
+export function plansForSale(plans: PremiumPlan[]): PremiumPlan[] {
+  return plans.filter((plan) => plan.active !== false && plan.visibility !== "hidden");
+}
+
 export const PLAN_TAGLINES: Record<PlanId, string> = {
-  weekly: "7-day sprint — test Premium without a long commitment",
-  monthly: "30-day pass — full inbox, filters & unlimited signals",
-  quarterly: "90-day pass — lowest cost per week for serious daters"
+  weekly: "7-day sprint — try Discover Membership without a long commitment",
+  monthly: "30 days — full inbox, filters & unlimited Signals",
+  quarterly: "Legacy plan — no longer offered for new purchases"
 };
 
 export const PLAN_PERKS: Record<PlanId, string> = {
   weekly: "Ideal for a busy week of connecting",
   monthly: "Most chosen · renew or pause anytime",
-  quarterly: "Best value · save vs paying weekly"
+  quarterly: "Grandfathered entitlement only"
 };
 
 /** Fallback when API/local overrides are unavailable */
 export const DEFAULT_PREMIUM_PLAN_INPUTS: PremiumPlanInput[] = [
   {
     id: "weekly",
-    name: "Weekly Signal Pass",
-    price: 1499,
-    days: 7
+    name: "Weekly Discover Membership",
+    price: 999,
+    days: 7,
+    active: true,
+    visibility: "public"
   },
   {
     id: "monthly",
-    name: "Monthly Signal Pass",
-    price: 3999,
+    name: "Monthly Discover Membership",
+    price: 2999,
     days: 30,
-    highlight: "Recommended"
+    highlight: "Recommended",
+    active: true,
+    visibility: "public"
   },
   {
     id: "quarterly",
-    name: "3 Months Signal Pass",
+    name: "3 Months Discover Membership",
     price: 10999,
     days: 90,
-    highlight: "Best Value"
+    highlight: "Legacy",
+    active: false,
+    visibility: "hidden"
   }
 ];
 
 export const DEFAULT_PREMIUM_PLANS: PremiumPlan[] = DEFAULT_PREMIUM_PLAN_INPUTS.map(hydratePlan);
 
-/** Shown on Signal Pass upgrade — PROGRAM 002 M8 audit */
+/** Shown on Discover Membership upgrade */
 export const SIGNAL_PASS_INCLUDES = [
   "Unlimited Signals",
+  "Unlimited messaging",
   "Advanced Filters",
-  "Priority Placement",
-  "Read Receipts",
-  "Exclusive Badge",
-  "Profile Insights",
-  "Future Benefits as BamSignal grows",
+  "Premium boosts",
+  "See Likes",
+  "AI compatibility tools",
+  "Full Discover experience",
 ] as const;
 
 /** @deprecated use SIGNAL_PASS_INCLUDES */

@@ -35,6 +35,7 @@ import meetingInfrastructureHandler from "./routes/meetingInfrastructure.js";
 import conciergeEmailHandler from "./routes/conciergeEmail.js";
 import conciergeWhatsappHandler from "./routes/conciergeWhatsapp.js";
 import conciergePersistenceHandler from "./routes/conciergePersistence.js";
+import conciergeOperationsHandler from "./routes/conciergeOperations.js";
 import paystackConnectivityHandler from "../api/diagnostics/paystack-connectivity.js";
 import viewSecurityHandler from "../api/diagnostics/view-security.js";
 import functionSecurityHandler from "../api/diagnostics/function-security.js";
@@ -191,6 +192,7 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/concierge-email", conciergeEmailHandler);
   mountHandler(app, "post", "/api/concierge-whatsapp", conciergeWhatsappHandler);
   mountHandler(app, "post", "/api/concierge-persistence", conciergePersistenceHandler);
+  mountHandler(app, "post", "/api/concierge-operations", conciergeOperationsHandler);
   mountHandler(app, "get", "/api/diagnostics/paystack-connectivity", paystackConnectivityHandler);
   mountHandler(app, "get", "/api/diagnostics/view-security", viewSecurityHandler);
   mountHandler(app, "post", "/api/diagnostics/view-security", viewSecurityHandler);

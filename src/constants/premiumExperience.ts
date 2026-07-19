@@ -19,7 +19,7 @@ export type PremiumFeatureAudit = {
 };
 
 export const PREMIUM_EXPERIENCE_MISSION =
-  "Premium should feel valuable every day — members naturally understand why Signal Pass exists.";
+  "Discover Membership is for members who want to find someone themselves — freedom, unlimited usage, and enhanced self-service dating.";
 
 export const PREMIUM_GRACE_DAYS = 3;
 
@@ -36,7 +36,7 @@ export const PREMIUM_FEATURE_AUDIT: PremiumFeatureAudit[] = [
     id: "unlimited_signals",
     label: "Unlimited Signals",
     summary: "Connect without daily signal caps.",
-    valueNote: "Free tier: 5/day · Premium: unlimited",
+    valueNote: "Free tier: 5/day · Discover Membership: unlimited",
     freeTier: "5 Signals per day",
     premiumTier: "Unlimited Signals",
   },
@@ -44,7 +44,7 @@ export const PREMIUM_FEATURE_AUDIT: PremiumFeatureAudit[] = [
     id: "advanced_filters",
     label: "Advanced Filters",
     summary: "Refine discovery by lifestyle, faith, and intent.",
-    valueNote: "Premium unlocks full advanced filter sheet",
+    valueNote: "Discover Membership unlocks full advanced filter sheet",
     freeTier: "Basic preferences",
     premiumTier: "Advanced filters",
   },
@@ -52,7 +52,7 @@ export const PREMIUM_FEATURE_AUDIT: PremiumFeatureAudit[] = [
     id: "priority_placement",
     label: "Priority Placement",
     summary: "Appear higher in recommendations and discovery.",
-    valueNote: "Ranking boost while Signal Pass is active",
+    valueNote: "Ranking boost while Discover Membership is active",
     freeTier: "Standard visibility",
     premiumTier: "Priority placement",
   },
@@ -60,40 +60,40 @@ export const PREMIUM_FEATURE_AUDIT: PremiumFeatureAudit[] = [
     id: "read_receipts",
     label: "Read Receipts",
     summary: "Know when messages are seen (when both allow).",
-    valueNote: "Premium members can enable read receipts in Safety",
+    valueNote: "Members can enable read receipts in Safety",
     freeTier: "Optional · both must allow",
     premiumTier: "Full read receipt control",
   },
   {
     id: "exclusive_badge",
-    label: "Exclusive Badge",
-    summary: "Signal Pass badge on profile and in feeds.",
+    label: "Discover Badge",
+    summary: "Discover Membership badge on profile and in feeds.",
     valueNote: "Trust and intent signal for other members",
     freeTier: "—",
-    premiumTier: "Premium badge",
+    premiumTier: "Discover badge",
   },
   {
     id: "profile_insights",
-    label: "Profile Insights",
-    summary: "See who viewed your profile and momentum stats.",
+    label: "See Likes",
+    summary: "See who liked you and profile momentum.",
     valueNote: "Visitors page and profile strength insights",
     freeTier: "Limited preview",
-    premiumTier: "Full profile insights",
+    premiumTier: "Full See Likes",
   },
   {
     id: "future_benefits",
-    label: "Future Benefits",
-    summary: "Early access to new Premium features as BamSignal grows.",
-    valueNote: "Roadmap perks included at no extra cost",
-    freeTier: "—",
-    premiumTier: "Included roadmap access",
+    label: "AI compatibility tools",
+    summary: "Compatibility tools and Discover Premium boosts.",
+    valueNote: "Included with Discover Membership",
+    freeTier: "Basic AI recommendations",
+    premiumTier: "Full compatibility tools",
   },
 ];
 
 export const PREMIUM_VALUE_VS_PRICE: Record<PlanId, { perDay: string; headline: string }> = {
-  weekly: { perDay: "≈ ₦214/day", headline: "Try Premium for a busy week" },
-  monthly: { perDay: "≈ ₦133/day", headline: "Best daily value for active daters" },
-  quarterly: { perDay: "≈ ₦122/day", headline: "Lowest cost per week — serious connections" },
+  weekly: { perDay: "≈ ₦143/day", headline: "Try Discover Membership for a busy week" },
+  monthly: { perDay: "≈ ₦100/day", headline: "Best daily value for self-directed dating" },
+  quarterly: { perDay: "Legacy", headline: "No longer offered for new purchases" },
 };
 
 export function premiumFeatureLabels(): string[] {

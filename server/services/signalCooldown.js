@@ -1,18 +1,11 @@
 import { isDatabaseReady, query } from "../db.js";
 import { findMemberProfileByUserKey } from "../cityHome.js";
-
-const FREE_COOLDOWN_MS = 15_000;
-const PREMIUM_COOLDOWN_MS = 5_000;
-
-async function senderIsPremium(userKey) {
-  if (!userKey || !isDatabaseReady()) return false;
-  const result = await query(
-    `select premium_until from app_users where user_key = $1 limit 1`,
-    [userKey]
-  );
-  const until = result.rows[0]?.premium_until;
-  return until ? new Date(until).getTime() > Date.now() : false;
-}
+import {
+  CAPABILITY,
+  canFromSnapshot,
+  loadMembershipEntitlements
+} from "./membershipEntitlements.js";
+import { FREE_TIER_LIMITS } from "../../shared/membershipCapabilities.mjs";
 
 export async function assertSignalCooldown({ email, phone }) {
   if (!isDatabaseReady()) return { ok: true };
@@ -20,8 +13,10 @@ export async function assertSignalCooldown({ email, phone }) {
   const sender = await findMemberProfileByUserKey(email, phone);
   if (!sender?.user_key) return { ok: true };
 
-  const premium = await senderIsPremium(sender.user_key);
-  const cooldownMs = premium ? PREMIUM_COOLDOWN_MS : FREE_COOLDOWN_MS;
+  const entitlements = await loadMembershipEntitlements({ email, phone });
+  const cooldownMs = canFromSnapshot(entitlements, CAPABILITY.REDUCED_SIGNAL_COOLDOWN)
+    ? FREE_TIER_LIMITS.premiumSignalCooldownMs
+    : FREE_TIER_LIMITS.signalCooldownMs;
 
   const result = await query(
     `select created_at from app_signals
@@ -31,7 +26,7 @@ export async function assertSignalCooldown({ email, phone }) {
     [sender.user_key]
   );
   const lastAt = result.rows[0]?.created_at;
-  if (!lastAt) return { ok: true };
+  if (!lastAt) return { ok: true, entitlements };
 
   const elapsed = Date.now() - new Date(lastAt).getTime();
   if (elapsed < cooldownMs) {
@@ -42,5 +37,9 @@ export async function assertSignalCooldown({ email, phone }) {
       retryAfterMs: cooldownMs - elapsed
     };
   }
-  return { ok: true, premium };
+  return {
+    ok: true,
+    entitlements,
+    premium: canFromSnapshot(entitlements, CAPABILITY.REDUCED_SIGNAL_COOLDOWN)
+  };
 }

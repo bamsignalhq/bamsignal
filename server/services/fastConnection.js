@@ -6,6 +6,7 @@ import {
 import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query } from "../db.js";
 import { findMemberProfileByUserKey } from "../cityHome.js";
 import { discoverVisibilitySql, ensureMemberTrustSchema } from "../memberTrust.js";
+import { isDiscreetPrivacyActive } from "./memberVisibilityPolicy.js";
 import { publicPhotosFromProfile } from "./photoReview.js";
 import { assertSchemaTable } from "./schemaVerification.js";
 
@@ -340,6 +341,9 @@ async function assertFastConnectionTarget({ sender, targetProfileId }) {
     return { ok: false, error: "Profile not available." };
   }
   if (row.shadow_banned || row.profile_paused_at || String(row.account_status || "active") !== "active") {
+    return { ok: false, error: "Profile not available." };
+  }
+  if (isDiscreetPrivacyActive(row)) {
     return { ok: false, error: "Profile not available." };
   }
   if (!row.discoverable || row.city_home_hidden || !row.onboarding_complete) {

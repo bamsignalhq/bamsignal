@@ -1,10 +1,13 @@
 # BamSignal Launch — Friends & Family
 
-**Status:** F&F-ready (pending Coolify redeploy of this commit)  
+**Status:** Code shipped to `main` (`1f76cda`); **Coolify redeploy required** before live SMS routes  
+**Commit:** `89a11fb` (launch) · `1f76cda` (410 error helper)  
 **Date:** 2026-07-19  
 **Production:** https://bamsignal.com  
 **Coolify:** https://control.bamsignal.com → app `wn3vlu5j7zwp5danjqfcvr2z`  
 **Health:** `GET /health` (liveness) · `GET /ready` (readiness)
+
+> Pre-deploy probe (2026-07-19): `/health`+`/ready` = 200; SMS routes still **404** until Coolify rebuilds from `main`.
 
 ---
 

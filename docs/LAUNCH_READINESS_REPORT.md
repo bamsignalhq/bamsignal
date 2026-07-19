@@ -1,7 +1,7 @@
 # Launch Readiness Report — Friends & Family
 
 **Date:** 2026-07-19  
-**Verdict:** Ready to invite F&F after Coolify redeploy + env confirm (`SENDCHAMP_SENDER=YIKE`, `ADMIN_SECRET` set).
+**Verdict:** Code on `main` (`1f76cda`). Invite F&F after Coolify redeploy confirms SMS routes live + env (`SENDCHAMP_SENDER=YIKE`, `ADMIN_SECRET` set).
 
 ## Greens confirmed
 

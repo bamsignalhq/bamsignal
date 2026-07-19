@@ -393,7 +393,7 @@ export function StoreScreenshotsPage() {
   return (
     <div className={`app light store-shot store-shot--${variant}`} data-store-shot-ready="true" data-scene={scene}>
       <div className="store-shot__brand">
-        <img src="/brand/logo.webp" alt="" />
+        <img src="/brand/dark-icon.webp" alt="" />
         <span>BamSignal</span>
       </div>
       <h1 className="store-shot__caption">{caption}</h1>

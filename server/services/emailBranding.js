@@ -1,8 +1,11 @@
 import { getPlatformSetting } from "../db.js";
 
 export const BAMSIGNAL_SITE = "https://bamsignal.com";
-export const BAMSIGNAL_LOGO = `${BAMSIGNAL_SITE}/brand/logo.webp`;
-export const BAMSIGNAL_LOGO_2X = `${BAMSIGNAL_SITE}/brand/logo.png`;
+/** Emails use light surfaces — light wordmark. */
+export const BAMSIGNAL_LOGO = `${BAMSIGNAL_SITE}/brand/light-logo.webp`;
+export const BAMSIGNAL_LOGO_2X = `${BAMSIGNAL_SITE}/brand/light-logo.png`;
+/** Square mark for compact email headers if needed */
+export const BAMSIGNAL_ICON = `${BAMSIGNAL_SITE}/icons/icon-192.webp`;
 
 /** Light brand theme — matches app tokens (--bg, --brand-purple, etc.) */
 export const EMAIL_THEME = {

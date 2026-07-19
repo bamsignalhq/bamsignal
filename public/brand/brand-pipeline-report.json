@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-07-19T08:16:54.477Z",
+  "sources": [
+    {
+      "name": "dark-favicon",
+      "masterBytes": 1221659,
+      "png": 1221659,
+      "webp": 39430
+    },
+    {
+      "name": "light-favicon",
+      "masterBytes": 767504,
+      "png": 767504,
+      "webp": 40982
+    },
+    {
+      "name": "dark-logo",
+      "masterBytes": 417910,
+      "png": 417910,
+      "webp": 34174
+    },
+    {
+      "name": "light-logo",
+      "masterBytes": 396292,
+      "png": 396292,
+      "webp": 35102
+    },
+    {
+      "name": "dark-icon",
+      "masterBytes": 1203995,
+      "png": 1203995,
+      "webp": 46360
+    },
+    {
+      "name": "light-icon",
+      "masterBytes": 767504,
+      "png": 767504,
+      "webp": 40982
+    },
+    {
+      "name": "dark-splash",
+      "masterBytes": 1479311,
+      "png": 1479311,
+      "webp": 104554
+    },
+    {
+      "name": "light-splash",
+      "masterBytes": 1504481,
+      "png": 1504481,
+      "webp": 188238
+    }
+  ],
+  "outputs": []
+}

@@ -41,7 +41,7 @@ export function ShowcaseImage({
   if (failed) {
     return (
       <div className={`showcase-fallback ${className ?? ""}`} role="img" aria-label={alt}>
-        <img src={BRAND_ASSETS.logo} alt="" className="showcase-fallback__logo" />
+        <img src={BRAND_ASSETS.iconDark} alt="" className="showcase-fallback__logo" />
         <button
           type="button"
           className="link-btn showcase-fallback__retry"

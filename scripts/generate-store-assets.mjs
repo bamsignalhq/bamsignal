@@ -130,7 +130,7 @@ async function captureScene(page, scene, variant, outputPath) {
 
 async function generateFeatureGraphic() {
   const heroPath = path.join(root, "public/showcase/hero-lagos-young-professionals-01.webp");
-  const logoPath = path.join(root, "public/brand/logo.webp");
+  const logoPath = path.join(root, "public/brand/dark-logo.webp");
   const width = 1024;
   const height = 500;
   const outPath = path.join(outDir, "feature-graphic", "feature-graphic-1024x500.png");

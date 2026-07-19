@@ -35,7 +35,7 @@ export function buildLaunchInfraArtifacts(): LaunchInfraArtifactResult[] {
         robots: { status: "ready", score: 93, text: "Generated with member/admin/consultant disallow rules." },
         manifest: { status: "ready", score: 91, text: "manifest.webmanifest — start_url /, icons 192+512." },
         icons: { status: "ready", score: 92, text: "public/icons/icon-192.webp and icon-512.webp present." },
-        favicons: { status: "ready", score: 92, text: "favicon.webp + apple-touch-icon.webp linked in index.html." },
+        favicons: { status: "ready", score: 92, text: "favicon.ico + theme WebP favicons + apple-touch-icon.png." },
         pwa: { status: "ready", score: 90, text: "Standalone manifest, theme-color, apple-mobile-web-app meta." },
         caching: { status: "ready", score: 91, text: "Immutable /assets/* 1y; HTML no-cache; SW cache version bump on build." },
         headers: { status: "ready", score: 90, text: "securityHeadersMiddleware on all responses." },

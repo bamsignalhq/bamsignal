@@ -8,16 +8,27 @@
       content="BamSignal — the right connection starts with a signal."
     />
     <meta name="theme-color" content="#1a0a2e" />
+    <meta name="msapplication-TileColor" content="#1a0a2e" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
     <meta property="og:title" content="BamSignal" />
     <meta property="og:description" content="The right connection starts with a signal." />
-    <meta property="og:image" content="/icons/icon-512.webp" />
+    <meta property="og:image" content="https://bamsignal.com/icons/icon-512.webp" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
     <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="BamSignal" />
+    <meta name="twitter:description" content="The right connection starts with a signal." />
+    <meta name="twitter:image" content="https://bamsignal.com/icons/icon-512.webp" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" type="image/webp" href="/favicon.webp" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/webp" href="/favicon.webp" data-brand-favicon="1" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="BamSignal" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.webp" />
     <link rel="canonical" href="https://bamsignal.com/" />
     <meta name="bamsignal-build" content="__BAMSIGNAL_BUILD__" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
@@ -26,7 +37,13 @@
     <script>
       try {
         var t = localStorage.getItem("bamsignal-theme");
-        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+        if (t === "light" || t === "dark") {
+          document.documentElement.dataset.theme = t;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", t === "dark" ? "#1a0a2e" : "#fdf2f8");
+          var fav = document.querySelector('link[data-brand-favicon]');
+          if (fav) fav.href = t === "dark" ? "/favicon-dark.webp" : "/favicon-light.webp";
+        }
       } catch (e) {}
     </script>
   </head>

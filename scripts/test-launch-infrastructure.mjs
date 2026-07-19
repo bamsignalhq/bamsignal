@@ -38,12 +38,19 @@ assert(
 );
 assert(existsSync(join(rootPath, "public/sw.js")), "sw.js exists");
 assert(existsSync(join(rootPath, "public/favicon.webp")), "favicon.webp exists");
+assert(existsSync(join(rootPath, "public/favicon.ico")), "favicon.ico exists");
+assert(existsSync(join(rootPath, "public/apple-touch-icon.png")), "apple-touch-icon.png exists");
 assert(existsSync(join(rootPath, "public/icons/icon-192.webp")), "icon-192 exists");
 assert(existsSync(join(rootPath, "public/icons/icon-512.webp")), "icon-512 exists");
+assert(existsSync(join(rootPath, "public/brand/dark-logo.webp")), "dark-logo.webp exists");
+assert(existsSync(join(rootPath, "public/brand/light-logo.webp")), "light-logo.webp exists");
+assert(existsSync(join(rootPath, "public/icons/maskable/icon-512.png")), "maskable icon exists");
+assert(existsSync(join(rootPath, "public/browserconfig.xml")), "browserconfig.xml exists");
 
 const dockerfile = read("Dockerfile");
 assert(dockerfile.includes("HEALTHCHECK"), "Dockerfile healthcheck");
 assert(dockerfile.includes("/ready"), "Dockerfile ready probe");
+assert(dockerfile.includes("wget"), "Dockerfile must ship wget for orchestrator probes");
 assert(!dockerfile.includes("ARG DATABASE_URL"), "no DATABASE_URL build arg");
 
 const vercel = read("vercel.json");

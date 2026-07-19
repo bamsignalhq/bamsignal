@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
+import { useSyncExternalStore } from "react";
 import { BRAND } from "../constants/copy";
-import { BRAND_ASSETS } from "../constants/brand";
+import { brandIcon, brandSplash, resolveBrandTheme, type BrandTheme } from "../constants/brand";
 import { SignalRipple } from "./signals/SignalRipple";
 
 type PreloaderProps = {
@@ -15,6 +16,18 @@ type PreloaderProps = {
   onSignOut?: () => void;
 };
 
+function subscribeTheme(onStoreChange: () => void) {
+  const el = document.documentElement;
+  const obs = new MutationObserver(onStoreChange);
+  obs.observe(el, { attributes: true, attributeFilter: ["data-theme"] });
+  return () => obs.disconnect();
+}
+
+function readTheme(): BrandTheme {
+  if (typeof document === "undefined") return "dark";
+  return resolveBrandTheme(document.documentElement.dataset.theme);
+}
+
 export function Preloader({
   exiting = false,
   subtitle,
@@ -27,11 +40,21 @@ export function Preloader({
   onSignOut
 }: PreloaderProps) {
   const minimal = variant === "minimal";
+  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "dark" as BrandTheme);
 
   return (
     <main
       className={`preloader ${minimal ? "preloader--minimal" : ""} ${exiting ? "preloader--exit" : ""}`}
       aria-label="Loading BamSignal"
+      style={
+        minimal
+          ? undefined
+          : {
+              backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${brandSplash(theme)})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }
+      }
     >
       {!minimal ? <div className="preloader__gradient" /> : null}
       <div className="preloader__core">
@@ -39,7 +62,14 @@ export function Preloader({
         {minimal ? (
           <Loader2 size={22} className="preloader__spinner" aria-hidden />
         ) : (
-          <img src={BRAND_ASSETS.logo} alt="" className="preloader__logo" width={112} height={112} />
+          <img
+            src={brandIcon(theme)}
+            alt=""
+            className="preloader__logo"
+            width={112}
+            height={112}
+            decoding="async"
+          />
         )}
       </div>
       <h1 className="preloader__title">{BRAND.name}</h1>

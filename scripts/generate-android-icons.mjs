@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const src = path.join(root, "public/brand/logo.png");
+const src = path.join(root, "public/brand/dark-icon.png");
 const resRoot = path.join(root, "android/app/src/main/res");
 
 const BRAND_BG = { r: 26, g: 10, b: 46, alpha: 1 }; // #1a0a2e
@@ -107,4 +107,4 @@ await mkdir(drawableDir, { recursive: true });
 await writeSplash(path.join(drawableDir, "splash_logo.png"), 512);
 console.log("✓ drawable/splash_logo.png");
 
-console.log("Android icons generated from public/brand/logo.png");
+console.log("Android icons generated from public/brand/dark-icon.png");

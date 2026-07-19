@@ -768,7 +768,7 @@ export function App() {
     const minMs = isNative ? 1200 : 800;
     const start = Date.now();
     const img = new Image();
-    img.src = BRAND_ASSETS.logo;
+    img.src = theme === "light" ? BRAND_ASSETS.iconLight : BRAND_ASSETS.iconDark;
     void Promise.all([
       new Promise<void>((resolve) => {
         img.onload = () => resolve();
@@ -788,15 +788,19 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [isNative, warmMemberLaunch]);
+  }, [isNative, warmMemberLaunch, theme]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.theme, theme);
     document.documentElement.dataset.theme = theme;
+    const colors = theme === "dark" ? { theme: "#1a0a2e", bg: "#1a0a2e" } : { theme: "#fdf2f8", bg: "#fdf2f8" };
     const meta = document.querySelector("meta[name='theme-color']");
-    meta?.setAttribute("content", theme === "dark" ? "#1a0a2e" : "#fdf2f8");
-    const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
-    if (favicon) favicon.href = BRAND_ASSETS.favicon;
+    meta?.setAttribute("content", colors.theme);
+    const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon'][data-brand-favicon]");
+    const faviconAny = favicon || document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (faviconAny) {
+      faviconAny.href = theme === "dark" ? BRAND_ASSETS.faviconDark : BRAND_ASSETS.faviconLight;
+    }
   }, [theme]);
 
   useEffect(() => {

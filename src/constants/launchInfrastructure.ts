@@ -44,7 +44,7 @@ export const LAUNCH_INFRA_ARTIFACT_PATHS = {
   appleAssociation: "public/.well-known/apple-app-site-association",
   serviceWorker: "public/sw.js",
   favicon: "public/favicon.webp",
-  appleTouchIcon: "public/apple-touch-icon.webp",
+  appleTouchIcon: "public/apple-touch-icon.png",
   icon192: "public/icons/icon-192.webp",
   icon512: "public/icons/icon-512.webp"
 } as const;

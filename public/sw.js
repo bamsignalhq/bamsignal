@@ -1,9 +1,15 @@
-const CACHE_NAME = "bamsignal-v1.0.16-19-mqz9bxsr";
+const CACHE_NAME = "bamsignal-v1.0.17-20-mrrixp09";
 const APP_SHELL = [
   "/manifest.webmanifest",
+  "/favicon.ico",
   "/favicon.webp",
-  "/apple-touch-icon.webp",
-  "/brand/logo.webp",
+  "/favicon-dark.webp",
+  "/favicon-light.webp",
+  "/apple-touch-icon.png",
+  "/brand/dark-logo.webp",
+  "/brand/light-logo.webp",
+  "/brand/dark-icon.webp",
+  "/brand/light-icon.webp",
   "/icons/icon-192.webp",
   "/icons/icon-512.webp",
   "/app-store-badge.svg",

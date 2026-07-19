@@ -48,6 +48,14 @@ import {
 import { clearSignupDraft, loadSignupDraft, saveSignupDraft } from "../utils/signupDraft";
 import { signupLog } from "../utils/signupLog";
 import { mergeLocalCompliance, saveComplianceAcknowledgements } from "../services/compliance";
+import {
+  getBiometricAvailability,
+  getBiometricQuickLoginEmail,
+  isBiometricQuickLoginEnabled,
+  promptBiometricUnlock,
+  setBiometricQuickLoginEnabled
+} from "../native/biometrics";
+import { isNativeApp } from "../native/platform";
 import { signupLegalAckTypes } from "../utils/compliance";
 import { Login2faModal } from "../components/Login2faModal";
 import { ResendCooldown } from "../components/ResendCooldown";
@@ -58,6 +66,16 @@ import {
 } from "../services/accountSecurity";
 import { fetchAccountStateRemote, restoreAccountRemote } from "../services/memberTrust";
 import { clearOtpVerifyPending, markOtpVerifyPending } from "../utils/bootFlags";
+import type { JourneyDraft } from "../types/journey";
+import { applyJourneyDraftToSignupForm } from "../utils/journeyDraft";
+import {
+  JourneySecureExisting,
+  JourneySecureLogin,
+  JourneySecureResetCode,
+  JourneySecureResetEmail,
+  JourneySecureSignup,
+  JourneySecureVerify
+} from "../components/journey/secure/JourneySecureAuthViews";
 
 type AuthPageProps = {
   mode: AuthMode;
@@ -67,6 +85,9 @@ type AuthPageProps = {
   onMessage: (msg: string) => void;
   embedded?: boolean;
   onLogoClick?: () => void;
+  journeyHandoff?: JourneyDraft | null;
+  useJourneyShell?: boolean;
+  onJourneyBack?: () => void;
 };
 
 const emptySignup = {
@@ -140,12 +161,17 @@ export function AuthPage({
   message,
   onMessage,
   embedded,
-  onLogoClick
+  onLogoClick,
+  journeyHandoff = null,
+  useJourneyShell = false,
+  onJourneyBack
 }: AuthPageProps) {
   const restored = useRef(restoredSignupState());
   const [busy, setBusy] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
-  const [signupForm, setSignupForm] = useState(restored.current.signupForm);
+  const [signupForm, setSignupForm] = useState(() =>
+    applyJourneyDraftToSignupForm(restored.current.signupForm, journeyHandoff)
+  );
   const [signupFieldErrors, setSignupFieldErrors] = useState<SignupFieldErrors>({});
   const [signupFieldChecking, setSignupFieldChecking] = useState<SignupFieldChecking>({});
   const [verifyCode, setVerifyCode] = useState(restored.current.verifyCode);
@@ -170,11 +196,18 @@ export function AuthPage({
   const [login2faMaskedEmail, _setLogin2faMaskedEmail] = useState<string | null>(null);
   const [login2faMaskedPhone, _setLogin2faMaskedPhone] = useState<string | null>(null);
   const [login2faMessage, setLogin2faMessage] = useState("");
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoreScheduledFor, setRestoreScheduledFor] = useState<string | null>(null);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const verifyInFlight = useRef(false);
   const verifyPersistTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!journeyHandoff?.name?.trim()) return;
+    setSignupForm((current) => applyJourneyDraftToSignupForm(current, journeyHandoff));
+  }, [journeyHandoff]);
 
   const phoneDigits = (value: string) => normalizeNigerianPhone(value);
   const pinDigits = (value: string) => value.replace(/\D/g, "").slice(0, 6);
@@ -225,31 +258,38 @@ export function AuthPage({
     setPendingSignup(null);
     const field = existingAccount?.field || "email";
     if (field === "email") {
-      setSignupFieldErrors((current) => {
-        const next = { ...current };
-        delete next.email;
-        return next;
-      });
+      clearSignupFieldError("email");
       setSignupForm((current) => ({ ...current, email: "" }));
     } else if (field === "phone") {
-      setSignupFieldErrors((current) => {
-        const next = { ...current };
-        delete next.phone;
-        return next;
-      });
+      clearSignupFieldError("phone");
       setSignupForm((current) => ({ ...current, phone: "" }));
     } else {
-      setSignupFieldErrors((current) => {
-        const next = { ...current };
-        delete next.username;
-        return next;
-      });
+      clearSignupFieldError("username");
       setSignupForm((current) => ({ ...current, username: "" }));
     }
     setExistingAccount(null);
     onMessage("");
     onModeChange("signup");
   };
+
+  useEffect(() => {
+    if (mode !== "login" || !isNativeApp()) return;
+    void (async () => {
+      const [availability, enabled, email] = await Promise.all([
+        getBiometricAvailability(),
+        isBiometricQuickLoginEnabled(),
+        getBiometricQuickLoginEmail()
+      ]);
+      setBiometricAvailable(availability.available);
+      setBiometricEnabled(enabled);
+      if (email) {
+        setLoginForm((current) => ({
+          username: current.username || email.split("@")[0] || "",
+          password: current.password
+        }));
+      }
+    })();
+  }, [mode]);
 
   useEffect(() => {
     if (mode !== "verify" || !pendingSignup?.email) return;
@@ -490,6 +530,20 @@ export function AuthPage({
     await completeAuthenticated(profile, meta);
   };
 
+  const signInWithBiometric = async () => {
+    if (!biometricAvailable || !biometricEnabled) return;
+    const unlocked = await promptBiometricUnlock("Unlock BamSignal");
+    if (!unlocked) return;
+    const email = await getBiometricQuickLoginEmail();
+    if (email) {
+      setLoginForm((current) => ({
+        username: current.username || email.split("@")[0] || "",
+        password: current.password
+      }));
+    }
+    onMessage("Identity verified. Enter your PIN and tap Login to continue.");
+  };
+
   const signIn = async () => {
     const username = normalizeUsername(loginForm.username.trim());
     if (!isValidLoginUsername(username)) {
@@ -522,6 +576,9 @@ export function AuthPage({
         const resolvedEmail = loginResult.email || profile.email;
         if (resolvedEmail) {
           rememberUsernameEmail(username, resolvedEmail);
+        }
+        if (isNativeApp()) {
+          await setBiometricQuickLoginEnabled(true, resolvedEmail || username);
         }
         const loginProfile = resolveMemberIdentity(
           { ...profile, username: profile.username || username },
@@ -565,11 +622,11 @@ export function AuthPage({
       return false;
     }
     if (signupFieldChecking.username) {
-      onMessage("Still checking your username — wait a moment.");
+      onMessage("Still checking your username — preparing your journey.");
       return false;
     }
     if (!isValidNigerianPhone(phone)) {
-      onMessage("Put your correct WhatsApp number.");
+      onMessage("Enter a valid phone number.");
       signupLog("signup-validation", { reason: "phone_format" });
       return false;
     }
@@ -590,7 +647,7 @@ export function AuthPage({
       return false;
     }
     if (signupFieldChecking.phone || signupFieldChecking.email) {
-      onMessage("Still checking your details — wait a moment.");
+      onMessage("Still checking your details — preparing your journey.");
       signupLog("signup-validation", { reason: "field_checking" });
       return false;
     }
@@ -610,7 +667,7 @@ export function AuthPage({
       return false;
     }
     if (!mathChallenge) {
-      onMessage("One moment…");
+      onMessage("Preparing your journey…");
       void loadMathChallenge();
       return false;
     }
@@ -917,6 +974,242 @@ export function AuthPage({
     }
   };
 
+  const journeyModals = (
+    <>
+      <Login2faModal
+        open={login2faOpen}
+        method={login2faMethod}
+        maskedEmail={login2faMaskedEmail}
+        maskedPhone={login2faMaskedPhone}
+        busy={busy === "login-2fa"}
+        message={login2faMessage}
+        onClose={() => {
+          setLogin2faOpen(false);
+          setPendingAuthProfile(null);
+          void supabase?.auth.signOut();
+        }}
+        onResend={() => {
+          if (!pendingAuthProfile) return;
+          void (async () => {
+            setBusy("login-2fa");
+            setLogin2faMessage("");
+            try {
+              await sendLogin2faRemote(pendingAuthProfile);
+              setLogin2faMessage("Code sent.");
+            } catch (error) {
+              setLogin2faMessage(
+                error instanceof Error ? error.message : "We couldn't verify this login. Please try again."
+              );
+            } finally {
+              setBusy(null);
+            }
+          })();
+        }}
+        onVerify={(code) => {
+          if (!pendingAuthProfile) return;
+          void (async () => {
+            setBusy("login-2fa");
+            setLogin2faMessage("");
+            try {
+              await verifyLogin2faRemote(pendingAuthProfile, code);
+              setLogin2faOpen(false);
+              await proceedAfterSecurityChecks(pendingAuthProfile, { isNewSignup: false });
+            } catch (error) {
+              setLogin2faMessage(
+                error instanceof Error ? error.message : "We couldn't verify this login. Please try again."
+              );
+            } finally {
+              setBusy(null);
+            }
+          })();
+        }}
+      />
+
+      <AccountRestoreModal
+        open={restoreOpen}
+        scheduledFor={restoreScheduledFor}
+        busy={busy === "restore"}
+        onContinueDeletion={() => {
+          setRestoreOpen(false);
+          setPendingAuthProfile(null);
+          void supabase?.auth.signOut();
+          onMessage("Your account remains scheduled for deletion.");
+        }}
+        onRestore={() => {
+          if (!pendingAuthProfile) return;
+          void (async () => {
+            setBusy("restore");
+            const ok = await restoreAccountRemote(pendingAuthProfile);
+            setBusy(null);
+            if (!ok) {
+              onMessage("We couldn't restore your account right now.");
+              return;
+            }
+            setRestoreOpen(false);
+            await completeAuthenticated(pendingAuthProfile, { isNewSignup: false, recovered: true });
+            onMessage("Welcome back — your account is restored.");
+          })();
+        }}
+      />
+    </>
+  );
+
+  if (useJourneyShell) {
+    if (mode === "signup") {
+      return (
+        <>
+          <JourneySecureSignup
+            firstName={journeyHandoff?.name || signupForm.name}
+            form={signupForm}
+            hideName={Boolean(journeyHandoff?.name?.trim())}
+            fieldErrors={signupFieldErrors}
+            legalAccepted={legalAccepted}
+            mathChallenge={mathChallenge}
+            mathAnswer={mathAnswer}
+            mathError={mathError}
+            mathLoading={mathLoading}
+            busy={busy === "signup"}
+            message={message}
+            onFormChange={(patch) => setSignupForm((current) => ({ ...current, ...patch }))}
+            onLegalChange={setLegalAccepted}
+            onMathAnswerChange={(value) => {
+              setMathAnswer(value);
+              setMathError("");
+            }}
+            onMathRefresh={() => void loadMathChallenge()}
+            onSubmit={() => void signUp()}
+            onLogin={() => onModeChange("login")}
+            onBack={journeyHandoff ? onJourneyBack : undefined}
+            pinDigits={pinDigits}
+            phoneDigits={phoneDigits}
+            formatUsername={formatUsernameInput}
+            clearFieldError={clearSignupFieldError}
+          />
+          {journeyModals}
+        </>
+      );
+    }
+
+    if (mode === "verify") {
+      return (
+        <>
+          <JourneySecureVerify
+            maskedEmail={maskEmail(pendingSignup?.email || signupForm.email)}
+            verifyCode={verifyCode}
+            busy={busy === "verify"}
+            resendBusy={busy === "resend"}
+            codeSentAt={codeSentAt}
+            cooldownSec={RESEND_COOLDOWN_SEC}
+            message={message}
+            otpRef={otpInputRef}
+            onOtpChange={handleOtpChange}
+            onVerify={() => verifySignup()}
+            onResend={() => void resendVerification()}
+            onChangeEmail={() => {
+              clearPendingSignup();
+              setPendingSignup(null);
+              setVerifyCode("");
+              onModeChange("signup");
+            }}
+            onBack={journeyHandoff ? onJourneyBack : undefined}
+          />
+          {journeyModals}
+        </>
+      );
+    }
+
+    if (mode === "login") {
+      return (
+        <>
+          <JourneySecureLogin
+            username={loginForm.username}
+            pin={loginForm.password}
+            busy={busy === "login"}
+            message={message}
+            biometricAvailable={biometricAvailable}
+            biometricEnabled={biometricEnabled}
+            onUsernameChange={(username) => setLoginForm({ ...loginForm, username })}
+            onPinChange={(password) => setLoginForm({ ...loginForm, password })}
+            onLogin={() => void signIn()}
+            onBiometric={() => void signInWithBiometric()}
+            onForgotPin={() => onModeChange("reset")}
+            onJoin={() => onModeChange("signup")}
+            formatUsername={formatUsernameInput}
+            pinDigits={pinDigits}
+          />
+          {journeyModals}
+        </>
+      );
+    }
+
+    if (mode === "existing" && existingAccount) {
+      return (
+        <>
+          <JourneySecureExisting
+            field={existingAccount.field}
+            maskedEmail={existingAccount.email ? maskEmail(existingAccount.email) : undefined}
+            onLogin={goToLoginFromExisting}
+            onUseAnother={useAnotherIdentity}
+            onForgotPin={() => {
+              clearPendingSignup();
+              setPendingSignup(null);
+              if (existingAccount.email) {
+                setResetEmail(existingAccount.email);
+              }
+              setExistingAccount(null);
+              onMessage("");
+              onModeChange("reset");
+            }}
+          />
+          {journeyModals}
+        </>
+      );
+    }
+
+    if (mode === "reset" && resetStep === "email") {
+      return (
+        <>
+          <JourneySecureResetEmail
+            email={resetEmail}
+            busy={busy === "reset"}
+            message={message}
+            onEmailChange={setResetEmail}
+            onSend={() => void sendReset()}
+            onBackToLogin={() => onModeChange("login")}
+          />
+          {journeyModals}
+        </>
+      );
+    }
+
+    if (mode === "reset" && resetStep === "code") {
+      return (
+        <>
+          <JourneySecureResetCode
+            maskedEmail={maskEmail(resetEmail)}
+            resetCode={resetCode}
+            newPin={resetNewPin}
+            confirmPin={resetConfirmPin}
+            busy={busy === "reset-complete"}
+            resendBusy={busy === "reset-resend"}
+            codeSentAt={resetCodeSentAt}
+            cooldownSec={RESEND_COOLDOWN_SEC}
+            message={message}
+            otpRef={resetOtpRef}
+            onResetCodeChange={setResetCode}
+            onNewPinChange={setResetNewPin}
+            onConfirmPinChange={setResetConfirmPin}
+            onSubmit={() => void submitPinReset()}
+            onResend={() => void resendResetCode()}
+            onBackToLogin={() => onModeChange("login")}
+            pinDigits={pinDigits}
+          />
+          {journeyModals}
+        </>
+      );
+    }
+  }
+
   return (
     <main
       className={`auth-page ${embedded ? "auth-page--embedded" : ""} ${mode === "verify" ? "auth-page--verify" : ""} ${mode === "existing" ? "auth-page--existing" : ""} ${mode === "login" ? "auth-page--login" : ""} ${mode === "signup" ? "auth-page--signup" : ""} ${mode === "reset" ? "auth-page--reset" : ""}`.trim()}
@@ -967,6 +1260,21 @@ export function AuthPage({
                 <button type="button" className="btn-primary btn-full btn-auth" onClick={signIn} disabled={busy === "login"}>
                   {busy === "login" ? <Loader2 className="spin" size={20} /> : "Login"}
                 </button>
+                {biometricAvailable && biometricEnabled ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn-secondary btn-full btn-auth auth-biometric-btn"
+                      onClick={() => void signInWithBiometric()}
+                      disabled={busy === "login"}
+                    >
+                      Verify with biometrics
+                    </button>
+                    <p className="auth-biometric-hint">
+                      Confirms device identity only — you still enter your PIN to sign in.
+                    </p>
+                  </>
+                ) : null}
               </div>
               <div className="auth-links auth-links--stack">
                 <button type="button" className="auth-link-secondary" onClick={() => onModeChange("reset")}>
@@ -997,8 +1305,14 @@ export function AuthPage({
                     <AppLogo size="md" />
                   )}
                 </div>
-                <h1 className="auth-title">Create your account</h1>
-                <p className="auth-sub auth-sub--compact">Let&apos;s get you started — it only takes a minute.</p>
+                <h1 className="auth-title">
+                  {journeyHandoff ? "Secure your journey" : "Create your account"}
+                </h1>
+                <p className="auth-sub auth-sub--compact">
+                  {journeyHandoff
+                    ? "You're almost there — create your username and PIN to continue."
+                    : "Let's get you started — it only takes a minute."}
+                </p>
               </div>
               <div className="auth-signup-body">
                 <div className="auth-fields">
@@ -1085,7 +1399,7 @@ export function AuthPage({
                     refreshing={mathLoading}
                   />
                 ) : mathLoading ? (
-                  <p className="auth-message auth-message--inline">One moment…</p>
+                  <p className="auth-message auth-message--inline">Preparing your journey…</p>
                 ) : null}
               </div>
 

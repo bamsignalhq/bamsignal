@@ -352,35 +352,6 @@
   color: var(--bs-gold, #d4a64a);
 }
 
-.discovery-tutorial-banner {
-  margin: 0 12px 12px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(155, 109, 255, 0.35);
-  background: rgba(155, 109, 255, 0.12);
-}
-
-.discovery-tutorial-banner__title {
-  margin: 0 0 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.discovery-tutorial-banner__body {
-  margin: 0 0 10px;
-  font-size: 0.78rem;
-  color: var(--bs-muted, var(--text-muted));
-}
-
-.discovery-tutorial-banner__dismiss {
-  font-size: 0.78rem;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(212, 166, 74, 0.45);
-  background: transparent;
-  color: var(--bs-gold, #d4a64a);
-}
-
 .member-ux-teach__body {
   margin: 0;
   font-size: 0.88rem;

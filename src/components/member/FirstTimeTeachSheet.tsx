@@ -27,18 +27,3 @@ export function FirstTimeTeachSheet({ open, topicId, onClose }: FirstTimeTeachSh
     </MemberSheet>
   );
 }
-
-export function DiscoveryTutorialBanner({ onDismiss }: { onDismiss: () => void }) {
-  return (
-    <div className="discovery-tutorial-banner" role="status">
-      <p className="discovery-tutorial-banner__title">Discovery tutorial</p>
-      <p className="discovery-tutorial-banner__body">
-        Swipe through profiles, tap Signal to show interest, and adjust filters anytime. Your first Signal
-        is the fastest path to a conversation.
-      </p>
-      <button type="button" className="discovery-tutorial-banner__dismiss" onClick={onDismiss}>
-        Got it
-      </button>
-    </div>
-  );
-}

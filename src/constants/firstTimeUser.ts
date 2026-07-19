@@ -71,8 +71,8 @@ export const MEMBER_EMPTY_STATES: Record<
     actionLabel: "Go to Discover"
   },
   discover: {
-    title: "Discover people near you",
-    body: "Complete your profile to appear in recommendations. Signals start conversations.",
+    title: "We're still gathering people near you",
+    body: "New members join every day. Try expanding distance, adjusting preferences, or coming back later — your Signal will wait.",
     actionLabel: "Adjust preferences"
   },
   wallet: {

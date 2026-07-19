@@ -39,6 +39,7 @@ import {
 import { normalizeDatingProfile } from "../utils/profile";
 import { clearOnboardingDrafts } from "../utils/onboardingStatus";
 import { resolveMemberIdentity } from "../utils/authIdentity";
+import { mergeJourneyDraftIntoDatingProfile, readJourneyDraft } from "../utils/journeyDraft";
 import { writeJson, readJson } from "../utils/storage";
 import { logAuthRoute } from "../utils/authRouteLog";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
@@ -50,6 +51,7 @@ import {
   applyGenderInterestedInDefault,
   applyInterestedInManualChange
 } from "../utils/interestedInDefaults";
+import { RelationshipProfileJourneyPage } from "./RelationshipProfileJourneyPage";
 
 function countSignupPhotos(profile: Pick<DatingProfile, "photos" | "photoMeta">): number {
   return profile.photos.filter(
@@ -109,7 +111,7 @@ type OnboardingPageProps = {
   onComplete: () => void;
 };
 
-export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPageProps) {
+function LegacyOnboardingPage({ user, onUserChange, onComplete }: OnboardingPageProps) {
   const [gateReady, setGateReady] = useState(false);
   const [phase, setPhase] = useState<OnboardingPhase>("required");
   /** In-session step only — never restore from localStorage. */
@@ -188,12 +190,17 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       if (status?.datingProfile) {
         const remote = normalizeDatingProfile(status.datingProfile);
         setProfile((prev) => {
-          const merged = normalizeDatingProfile({
-            ...prev,
-            ...remote,
-            onboardingComplete: false,
-            setupCompleted: false
-          });
+          const merged = normalizeDatingProfile(
+            mergeJourneyDraftIntoDatingProfile(
+              {
+                ...prev,
+                ...remote,
+                onboardingComplete: false,
+                setupCompleted: false
+              },
+              readJourneyDraft()
+            )
+          );
           return !merged.interestedInManuallyChanged
             ? {
                 ...merged,
@@ -406,7 +413,7 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   if (!gateReady) {
     return (
       <div className="page onboarding-page onboarding-page--gate">
-        <Preloader exiting={false} variant="minimal" subtitle="Restoring your session…" />
+        <Preloader exiting={false} variant="minimal" subtitle="Preparing your journey…" />
       </div>
     );
   }
@@ -679,5 +686,21 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
         </button>
       </footer>
     </div>
+  );
+}
+
+/** Phase 4E — Profile Journey when basics exist; legacy form only as fallback. */
+export function OnboardingPage(props: OnboardingPageProps) {
+  const [mode, setMode] = useState<"journey" | "legacy">("journey");
+
+  if (mode === "legacy") {
+    return <LegacyOnboardingPage {...props} />;
+  }
+
+  return (
+    <RelationshipProfileJourneyPage
+      {...props}
+      onNeedBasics={() => setMode("legacy")}
+    />
   );
 }

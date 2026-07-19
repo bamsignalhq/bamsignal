@@ -8,6 +8,7 @@ import "./styles/experience.css";
 import "./styles/visual-home.css";
 import "./styles/home-landing.css";
 import "./styles/auth.css";
+import "./styles/journey.css";
 import "./styles/v6.css";
 import "./styles/safety.css";
 import "./styles/launch.css";

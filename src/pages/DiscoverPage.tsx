@@ -11,10 +11,25 @@ import { fetchDiscoverProfiles, searchMemberProfiles } from "../services/discove
 import { sendSignalRemote } from "../services/memberData";
 import { DiscoverHeader } from "../components/discover/DiscoverHeader";
 import { DiscoverFiltersBar } from "../components/discover/DiscoverFiltersBar";
+import { DiscoverQuickFilters } from "../components/discover/DiscoverQuickFilters";
 import { SignalLimitModal } from "../components/premium/SignalLimitModal";
 import { ProfileCardSkeleton } from "../components/Skeleton";
-import { MemberEmptyState, DiscoveryTutorialBanner } from "../components/member";
+import { MemberEmptyState } from "../components/member";
 import { MEMBER_EMPTY_STATES } from "../constants/firstTimeUser";
+import {
+  DiscoverIntro,
+  FirstDiscoverTip,
+  FirstSignalCelebration
+} from "../components/journey/discover/FirstDiscoverExperience";
+import {
+  completeFirstDiscoverIntro,
+  dismissFirstDiscoverTip,
+  isFirstDiscoverIntroPending,
+  isFirstDiscoverTipVisible,
+  markFirstSignalCelebrationSeen,
+  shouldCelebrateFirstSignal
+} from "../utils/firstDiscover";
+import { markFirstDayStep } from "../utils/firstDayJourney";
 import { PaywallModal } from "../components/PaywallModal";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
 import { ProfileStoryCard } from "../components/discover/ProfileStoryCard";
@@ -25,8 +40,6 @@ import type { DiscoverProfile, Match, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { recordDiscoveryImpression } from "../utils/launchSeed";
 import { buildDensityAwareDeck } from "../utils/cityDensity";
-import { rankDiscoverProfiles } from "../utils/buildDiscoverRanking";
-import { markFirstDayStep } from "../utils/firstDayJourney";
 import { trackUpgradeImpression } from "../utils/premiumConversion";
 import {
   defaultDatingProfile
@@ -41,6 +54,7 @@ import { resolveSearchLocationFromPrefs } from "../utils/searchLocationPrefs";
 import { getRemainingDaily, incrementDailyCount, readDailyCount, readJson, writeJson } from "../utils/storage";
 import {
   applyDiscoverPreferences,
+  applyQuickFilter,
   applyDiscoverRelationshipFilter,
   countActiveDiscoverFilters
 } from "../utils/discoverFilters";
@@ -55,6 +69,16 @@ import { TrustedMemberNudge } from "../components/trusted/TrustedMemberNudge";
 import { interleaveTrustNudges, shouldShowTrustFeedNudge } from "../utils/trustFeedInsertion";
 import { isTrustedMember } from "../utils/trustedMember";
 import { useAndroidBack } from "../hooks/useAndroidBack";
+import type { DiscoverQuickFilter } from "../utils/discoverFilters";
+import { buildDiscoverReasons } from "../utils/buildDiscoverReasons";
+import {
+  discoverMembers,
+  recordDiscoverFilterChange,
+  recordDiscoverSearch,
+  recordDiscoveryImpressions,
+  recordDiscoveryOpen
+} from "../utils/discoveryEngine";
+import { recordDiscoverySignal } from "../utils/discoveryFreshness";
 
 const SIGNAL_ANIM_MS = 700;
 
@@ -80,8 +104,10 @@ export function DiscoverPage({
   debugRender("DiscoverPage", { isPremium });
   void _onMatch;
 
-  const [quickFilter, setQuickFilter] = useState<DiscoverRelationshipFilter>("all");
+  const [relationshipFilter, setRelationshipFilter] = useState<DiscoverRelationshipFilter>("all");
+  const [quickFilter, setQuickFilter] = useState<DiscoverQuickFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [passedIds, setPassedIds] = useState<string[]>(() =>
     readJson<string[]>(STORAGE_KEYS.passed, [])
   );
@@ -96,9 +122,15 @@ export function DiscoverPage({
   const [signalLimitOpen, setSignalLimitOpen] = useState(false);
   const { showToast, ToastHost } = useMemberToast();
   const [safetyOpen, setSafetyOpen] = useState(false);
-  const [showDiscoveryTutorial, setShowDiscoveryTutorial] = useState(
-    () => !readJson<boolean>(STORAGE_KEYS.discoveryTutorialDismissed, false)
-  );
+  const [showDiscoverIntro, setShowDiscoverIntro] = useState(() => isFirstDiscoverIntroPending());
+  const [showFirstTip, setShowFirstTip] = useState(() => isFirstDiscoverTipVisible());
+  const [firstSignalCelebrate, setFirstSignalCelebrate] = useState(false);
+
+  useEffect(() => {
+    if (!showDiscoverIntro) {
+      markFirstDayStep("discover_opened");
+    }
+  }, [showDiscoverIntro]);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,13 +167,35 @@ export function DiscoverPage({
     const available = filterDiscoverDeck(allProfiles, viewer, blocked, passedIds);
     const { deck } = buildDensityAwareDeck(available, viewer, prefs, blocked, passedIds);
     const preferred = applyDiscoverPreferences(deck, prefs, viewer);
-    return rankDiscoverProfiles(preferred, viewer, prefs);
-  }, [passedIds, blocked, viewer, prefs, allProfiles]);
+    const discovered = discoverMembers({
+      candidates: preferred,
+      viewer,
+      prefs,
+      blocked,
+      passed: passedIds
+    }).map((row) => row.profile);
+    return applyQuickFilter(discovered, quickFilter, viewer);
+  }, [passedIds, blocked, viewer, prefs, allProfiles, quickFilter]);
 
-  const deck = useMemo(
-    () => applyDiscoverRelationshipFilter(baseDeck, quickFilter, viewer),
-    [baseDeck, quickFilter, viewer]
-  );
+  const deck = useMemo(() => {
+    const filtered = applyDiscoverRelationshipFilter(baseDeck, relationshipFilter, viewer);
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return filtered;
+    return filtered.filter((p) => {
+      const hay = [
+        p.name,
+        p.city,
+        p.state,
+        p.occupation,
+        ...(p.occupations ?? []),
+        ...(p.interests ?? [])
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(query);
+    });
+  }, [baseDeck, relationshipFilter, viewer, searchQuery]);
 
   const visibleFeed = useMemo(() => deck.slice(0, DISCOVER_FEED_BATCH), [deck]);
 
@@ -169,9 +223,24 @@ export function DiscoverPage({
     for (const profile of visibleFeed) {
       recordDiscoveryImpression(profile.id);
     }
-  }, [visibleFeed]);
+    // Record explainability + impression analytics (client-side).
+    recordDiscoveryImpressions(
+      visibleFeed.map((profile) => ({
+        profile,
+        discoveryScore: 0,
+        reasons: buildDiscoverReasons(viewer, profile, 2)
+      }))
+    );
+  }, [visibleFeed, viewer]);
 
   useAndroidBack(() => {
+    if (firstSignalCelebrate) {
+      setFirstSignalCelebrate(false);
+      return true;
+    }
+    if (showDiscoverIntro) {
+      return true;
+    }
     if (filtersOpen) {
       setFiltersOpen(false);
       return true;
@@ -229,7 +298,7 @@ export function DiscoverPage({
     showToast("Pass undone", { tone: "success" });
   };
 
-  const finishSignal = async (profile: DiscoverProfile, opts?: { priority?: boolean }) => {
+  const finishSignal = async (profile: DiscoverProfile, opts?: { priority?: boolean; quiet?: boolean }) => {
     const user = readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" });
     const priority = opts?.priority ?? false;
     const sent = await sendSignalRemote(user, profile.id, priority ? "priority" : "signal");
@@ -246,7 +315,9 @@ export function DiscoverPage({
     }
 
     hapticMedium();
-    showToast(priority ? `${BRAND.prioritySignal} sent` : BRAND.signalSent, { tone: "success" });
+    if (!opts?.quiet) {
+      showToast(priority ? `${BRAND.prioritySignal} sent` : BRAND.signalSent, { tone: "success" });
+    }
     advance(profile.id);
   };
 
@@ -262,21 +333,29 @@ export function DiscoverPage({
       showToast(signalGate.reason, { tone: "error", duration: 3500 });
       return;
     }
+    const celebrate = shouldCelebrateFirstSignal();
     setSignalSentId(profile.id);
     useSwipe();
     incrementSignalsSent();
     markFirstDayStep("first_signal");
     const priority = consumePrioritySignal();
     trackEvent("signal_sent", { profileId: profile.id, priority: priority ? "true" : "false" });
+    recordDiscoverySignal(profile.id);
     setTimeout(() => {
       setSignalSentId(null);
-      finishSignal(profile, { priority });
+      void finishSignal(profile, { priority, quiet: celebrate }).then(() => {
+        if (celebrate) {
+          markFirstSignalCelebrationSeen();
+          setFirstSignalCelebrate(true);
+        }
+      });
     }, SIGNAL_ANIM_MS);
   };
 
   const handlePrioritySignal = (profile: DiscoverProfile) => {
     const signalGate = canUserSignalTarget(viewer, profile, prefs);
     if (!canSignal() || !signalGate.allowed || signalSentId === profile.id) return;
+    const celebrate = shouldCelebrateFirstSignal();
     setSignalSentId(profile.id);
     useSwipe();
     incrementSignalsSent();
@@ -285,7 +364,12 @@ export function DiscoverPage({
     const usedBoost = consumePrioritySignal();
     setTimeout(() => {
       setSignalSentId(null);
-      finishSignal(profile, { priority: usedBoost || isPremium });
+      void finishSignal(profile, { priority: usedBoost || isPremium, quiet: celebrate }).then(() => {
+        if (celebrate) {
+          markFirstSignalCelebrationSeen();
+          setFirstSignalCelebrate(true);
+        }
+      });
     }, SIGNAL_ANIM_MS);
   };
 
@@ -320,10 +404,14 @@ export function DiscoverPage({
     return (
       <MemberEmptyState
         className="discover-page__empty"
-        title={filteredEmpty ? "No matches for this filter yet" : discoverEmpty.title}
-        body={filteredEmpty ? "Try another filter or widen your preferences." : discoverEmpty.body}
-        actionLabel={filteredEmpty ? "Show all" : discoverEmpty.actionLabel}
-        onAction={() => (filteredEmpty ? setQuickFilter("all") : setFiltersOpen(true))}
+        title={filteredEmpty ? "No one matches this filter right now" : discoverEmpty.title}
+        body={
+          filteredEmpty
+            ? "Widen distance, relax preferences, or check back later — new people join every day."
+            : discoverEmpty.body
+        }
+        actionLabel={filteredEmpty ? "Adjust preferences" : discoverEmpty.actionLabel}
+        onAction={() => setFiltersOpen(true)}
       />
     );
   };
@@ -331,14 +419,29 @@ export function DiscoverPage({
   const verificationFor = (profile: DiscoverProfile) =>
     getVerificationTier({ ...defaultDatingProfile(), verified: profile.verified }, false, true);
 
+  if (showDiscoverIntro) {
+    return (
+      <div className="page discover-page discover-page--intro">
+        <DiscoverIntro
+          firstName={memberUser.name}
+          onMeetSomeone={() => {
+            completeFirstDiscoverIntro();
+            setShowDiscoverIntro(false);
+            setShowFirstTip(true);
+            markFirstDayStep("discover_opened");
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="page discover-page discover-page--premium member-content-pad">
-      {showDiscoveryTutorial ? (
-        <DiscoveryTutorialBanner
+      {showFirstTip && visibleFeed.length > 0 ? (
+        <FirstDiscoverTip
           onDismiss={() => {
-            writeJson(STORAGE_KEYS.discoveryTutorialDismissed, true);
-            setShowDiscoveryTutorial(false);
-            markFirstDayStep("discover_opened");
+            dismissFirstDiscoverTip();
+            setShowFirstTip(false);
           }}
         />
       ) : null}
@@ -347,7 +450,36 @@ export function DiscoverPage({
         filterCount={countActiveDiscoverFilters(prefs)}
         onOpenFilters={() => setFiltersOpen(true)}
       />
-      <DiscoverFiltersBar active={quickFilter} onChange={setQuickFilter} />
+      <DiscoverQuickFilters
+        active={quickFilter}
+        onChange={(next) => {
+          setQuickFilter(next);
+          recordDiscoverFilterChange({ kind: "quick", value: next });
+        }}
+      />
+      <DiscoverFiltersBar
+        active={relationshipFilter}
+        onChange={(next) => {
+          setRelationshipFilter(next);
+          recordDiscoverFilterChange({ kind: "relationship", value: next });
+        }}
+      />
+
+      <div className="discover-page__search">
+        <label className="discover-page__search-label">
+          <span className="sr-only">Search discover</span>
+          <input
+            className="discover-page__search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onBlur={() => {
+              if (searchQuery.trim()) recordDiscoverSearch(searchQuery);
+            }}
+            placeholder="Search by name, city, occupation, interests…"
+            inputMode="search"
+          />
+        </label>
+      </div>
 
       <ProfileImprovementNudge
         profile={viewer}
@@ -394,6 +526,7 @@ export function DiscoverPage({
                 onSignal={() => handleSendSignal(profile)}
                 onViewProfile={() => {
                   markFirstDayStep("compat_viewed");
+                  recordDiscoveryOpen(profile.id);
                   setDetailProfile(profile);
                 }}
                 signalBlockedReason={!signalGate.allowed ? signalGate.reason : undefined}
@@ -476,6 +609,16 @@ export function DiscoverPage({
           onClose={() => setSafetyOpen(false)}
           onBlock={() => handleBlock(detailProfile)}
           onBlockAndReport={(reason, details) => handleBlockAndReport(detailProfile, reason, details)}
+        />
+      ) : null}
+
+      {firstSignalCelebrate ? (
+        <FirstSignalCelebration
+          onKeepExploring={() => {
+            setFirstSignalCelebrate(false);
+            dismissFirstDiscoverTip();
+            setShowFirstTip(false);
+          }}
         />
       ) : null}
     </div>

@@ -181,6 +181,7 @@ import {
 import { maybeGrantPremiumTrial, checkPremiumTrialExpiry, isPremiumTrialActive } from "./utils/premiumTrial";
 import { notifyPremiumActivated, notifyBoostActivated } from "./utils/notifyHelpers";
 import { markFirstDayStep } from "./utils/firstDayJourney";
+import { markFirstDiscoverIntroPending } from "./utils/firstDiscover";
 import { markJoinedAt } from "./utils/launchSeed";
 import { hydrateMemberData, type MemberSessionBootstrapResult } from "./services/memberData";
 import {
@@ -1958,8 +1959,9 @@ export function App() {
     setProfileComplete(true);
     markMemberSessionReady();
     clearOnboardingDrafts();
-    setTab("home");
-    navigateToPath("/home", true);
+    markFirstDiscoverIntroPending();
+    setTab("discover");
+    navigateToPath(memberPathForTab("discover"), true);
     setComplianceTick((tick) => tick + 1);
     void refreshPremiumStatus(user).then(() => {
       syncPremiumState();

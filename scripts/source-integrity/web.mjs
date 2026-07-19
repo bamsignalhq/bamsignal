@@ -174,7 +174,9 @@ assertCheck(
   "public routes must not render the member shell"
 );
 assertCheck(
-  appSource.includes("showOpenApp={isAuthed && isPublicHome}") &&
+  (appSource.includes("showOpenApp={isAuthed && isPublicHome}") ||
+    (appSource.includes("PublicMarketingNav") &&
+      appSource.includes("onOpenApp={isAuthed && isPublicHome ? enterMemberApp : undefined}"))) &&
     appSource.includes("goToApp({ loginEmail: undefined })") &&
     appSource.includes("open_app_server_confirmed") &&
     !appSource.includes('flowLog("home_enter", { source: "open_app_fast" })') &&

@@ -273,6 +273,12 @@ export function createApp(options = {}) {
     app.use((req, res, next) => {
       if (req.method !== "GET" && req.method !== "HEAD") return next();
       if (req.path.startsWith("/api/") || req.path.startsWith("/webhooks/")) return next();
+      // Never SPA-fallback hashed build assets — a 200 HTML response here gets
+      // cached by CDN and poisons the next deploy until purge/TTL.
+      if (/\.[a-zA-Z0-9]{1,12}$/.test(req.path) && !req.path.endsWith(".html")) {
+        res.setHeader("Cache-Control", "no-store");
+        return res.status(404).type("text/plain").send("Not found");
+      }
       if (req.path === "/" || req.path.endsWith(".html")) {
         res.setHeader("Cache-Control", "no-cache, must-revalidate");
       }

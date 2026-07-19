@@ -21,6 +21,7 @@ import { securityHeadersMiddleware } from "./services/securityHeaders.js";
 import { paystackRouter } from "./routes/paystack.js";
 import { handleContactNodeRequest } from "./services/contactMail.js";
 import { mountHandler } from "./mountHandler.js";
+import { injectSeoIntoHtml, resolvePublicSeo } from "./seoHtml.js";
 import identityHandler from "../api/auth/identity.js";
 import pinLoginHandler from "../api/auth/pin-login.js";
 import pinResetHandler from "../api/auth/pin-reset.js";
@@ -260,8 +261,10 @@ export function createApp(options = {}) {
         res.setHeader("Cache-Control", "no-cache, must-revalidate");
       }
       if (spaIndexHtml) {
+        const seo = resolvePublicSeo(req.path);
+        const html = injectSeoIntoHtml(spaIndexHtml, seo);
         res.vary("Accept-Encoding");
-        res.type("html").send(spaIndexHtml);
+        res.type("html").send(html);
         return;
       }
       res.sendFile(spaIndexPath, (error) => {

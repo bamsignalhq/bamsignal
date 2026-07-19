@@ -244,6 +244,43 @@ function loadBlogPages() {
       source: "blogPosts.ts"
     });
   }
+
+  const pillars = [
+    {
+      slug: "best-dating-apps-nigeria-2026",
+      title: "Best dating apps in Nigeria 2026 | BamSignal",
+      description: "A practical look at dating apps in Nigeria — and where BamSignal fits."
+    },
+    {
+      slug: "find-real-love-nigeria-guide",
+      title: "How to find real love in Nigeria | BamSignal",
+      description: "A calm guide to finding real connection in Nigeria without the noise."
+    },
+    {
+      slug: "verified-dating-nigeria-safety",
+      title: "Verified dating and safety in Nigeria | BamSignal",
+      description: "How verification and safety habits help Nigerian daters stay in control."
+    },
+    {
+      slug: "what-is-bamsignal-nigeria-dating",
+      title: "What is BamSignal? | Nigerian dating explained",
+      description: "BamSignal is a Nigerian-first social discovery app built for real conversations."
+    }
+  ];
+  for (const pillar of pillars) {
+    pages.push({
+      canonicalPath: `/blog/${pillar.slug}`,
+      slug: pillar.slug,
+      h1: pillar.title,
+      title: pillar.title,
+      description: pillar.description,
+      intro: "Blog guide",
+      wordCount: posts.includes(pillar.slug) ? 700 : 400,
+      faqCount: 0,
+      indexable: true,
+      source: "blogPosts.ts"
+    });
+  }
   return pages;
 }
 
@@ -256,18 +293,51 @@ const pages = [
   ...loadLegacyCityPages(),
   ...loadNigeriaPages(),
   ...loadBlogPages(),
-  ...LEGAL_STATIC_PATHS.map((path) => ({
-    canonicalPath: path,
-    slug: path.slice(1),
-    h1: path.slice(1),
-    title: `BamSignal ${path.slice(1)}`,
-    description: `BamSignal ${path.slice(1)} page.`,
-    intro: "Legal information.",
-    wordCount: 350,
-    faqCount: 0,
-    indexable: true,
-    source: "legalPages.ts"
-  })),
+  ...LEGAL_STATIC_PATHS.map((path) => {
+    const legalMeta = {
+      "/about": {
+        title: "About BamSignal | Nigerian dating, calmly",
+        description: "Learn about BamSignal — a Nigerian-first social discovery platform built for real conversations.",
+        h1: "About BamSignal"
+      },
+      "/privacy": {
+        title: "Privacy Policy | BamSignal",
+        description: "How BamSignal collects, uses, and protects your personal information.",
+        h1: "Privacy Policy"
+      },
+      "/terms": {
+        title: "Terms of Service | BamSignal",
+        description: "Terms that govern your use of BamSignal.",
+        h1: "Terms of Service"
+      },
+      "/safety-policy": {
+        title: "Safety Policy | BamSignal",
+        description: "BamSignal safety standards for online dating and meeting in person.",
+        h1: "Safety Policy"
+      },
+      "/delete-account": {
+        title: "Delete your BamSignal account",
+        description: "How to delete your BamSignal account and what happens to your data.",
+        h1: "Delete account"
+      }
+    }[path] ?? {
+      title: `BamSignal ${path.slice(1)}`,
+      description: `BamSignal ${path.slice(1)} page.`,
+      h1: path.slice(1)
+    };
+    return {
+      canonicalPath: path,
+      slug: path.slice(1),
+      h1: legalMeta.h1,
+      title: legalMeta.title,
+      description: legalMeta.description,
+      intro: "Legal information.",
+      wordCount: 350,
+      faqCount: 0,
+      indexable: true,
+      source: "legalPages.ts"
+    };
+  }),
   {
     canonicalPath: "/",
     slug: "home",

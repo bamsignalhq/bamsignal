@@ -13,6 +13,7 @@
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
     "generate:seo-manifest": "node scripts/generate-seo-manifest.mjs",
     "seo:validate": "node scripts/generate-seo-manifest.mjs && node scripts/validate-seo-content.mjs && node scripts/validate-nigeria-seo.mjs",
+    "seo:audit:prod": "node scripts/audit-production-seo.mjs",
     "env:validate": "node scripts/validate-environment.mjs",
     "validate:environment": "node scripts/validate-environment.mjs --connectivity",
     "audit:production-environment": "node scripts/audit-production-environment.mjs",

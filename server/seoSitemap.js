@@ -16,6 +16,18 @@ const root = join(__dirname, "..");
 const LASTMOD = new Date().toISOString().slice(0, 10);
 
 function loadBlogPaths() {
+  // Prefer seo-manifest (copied into Docker via scripts/) so production sitemap
+  // still includes blog URLs when src/ is not in the runtime image.
+  try {
+    const manifest = JSON.parse(readFileSync(join(root, "scripts/seo-manifest.json"), "utf8"));
+    const fromManifest = (manifest.pages || [])
+      .map((page) => page.canonicalPath)
+      .filter((path) => typeof path === "string" && path.startsWith("/blog/"));
+    if (fromManifest.length > 0) return [...new Set(fromManifest)];
+  } catch {
+    // fall through
+  }
+
   try {
     const cities = JSON.parse(readFileSync(join(root, "src/data/blog/sitemap-cities.json"), "utf8"));
     const pillarSlugs = [

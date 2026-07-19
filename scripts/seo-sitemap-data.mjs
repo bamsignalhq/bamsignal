@@ -1,6 +1,7 @@
 /** Shared SEO sitemap paths — keep in sync with src/content/seo/*.ts */
 export const SEO_HUB_PATHS = [
   "/cities",
+  "/help",
   "/safety",
   "/features",
   "/premium",

@@ -167,8 +167,17 @@ function isEmpty(value) {
   return !String(value ?? "").trim();
 }
 
+/** Runtime aliases accepted when the canonical server env key is unset. */
+const ENV_FALLBACKS = {
+  SUPABASE_URL: ["VITE_SUPABASE_URL"],
+  SUPABASE_ANON_KEY: ["VITE_SUPABASE_ANON_KEY"]
+};
+
 function resolveEnvValue(env, name) {
   if (!isEmpty(env[name])) return env[name];
+  for (const alias of ENV_FALLBACKS[name] || []) {
+    if (!isEmpty(env[alias])) return env[alias];
+  }
   return undefined;
 }
 
@@ -202,7 +211,8 @@ export function evaluateFeature(definition, env = process.env) {
 
   if (definition.id === "photo-storage") {
     const supabaseOk =
-      !isEmpty(env.SUPABASE_URL) && !isEmpty(env.SUPABASE_SERVICE_ROLE_KEY);
+      !isEmpty(resolveEnvValue(env, "SUPABASE_URL")) &&
+      !isEmpty(resolveEnvValue(env, "SUPABASE_SERVICE_ROLE_KEY"));
     return {
       id: definition.id,
       label: definition.label,

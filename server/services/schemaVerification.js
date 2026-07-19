@@ -98,23 +98,24 @@ export async function checkSchema(options = {}) {
     return result;
   }
 
+  // Select public base tables, then filter in JS.
+  // Avoid `= any($1::text[])` — some pooler/driver paths return zero rows for that bind.
   const result = await pool.query(
     `select table_name
      from information_schema.tables
      where table_schema = 'public'
-       and table_type = 'BASE TABLE'
-       and table_name = any($1::text[])`,
-    [Array.from(REQUIRED_SCHEMA_TABLES)]
+       and table_type = 'BASE TABLE'`
   );
-  const present = result.rows.map((row) => String(row.table_name));
-  const presentSet = new Set(present);
-  const missing = REQUIRED_SCHEMA_TABLES.filter((tableName) => !presentSet.has(tableName));
+  const publicTables = new Set(result.rows.map((row) => String(row.table_name)));
+  const present = REQUIRED_SCHEMA_TABLES.filter((tableName) => publicTables.has(tableName));
+  const missing = REQUIRED_SCHEMA_TABLES.filter((tableName) => !publicTables.has(tableName));
   const checkResult = {
     ok: missing.length === 0,
     skipped: false,
     reason: missing.length ? "schema_incomplete" : "schema_ok",
     missing,
     present,
+    publicTableCount: publicTables.size,
     message:
       missing.length === 0
         ? "Database schema verified."

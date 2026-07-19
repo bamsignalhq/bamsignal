@@ -20,7 +20,7 @@ export function CareerCategoryCard({ categoryId, hint, roleCount }: CareerCatego
         <button
           type="button"
           className="careers-btn careers-btn--ghost"
-          onClick={() => navigateToPath(careersPathForHub("openRoles"))}
+          onClick={() => navigateToPath(careersPathForHub("landing"))}
         >
           View roles
         </button>

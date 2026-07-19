@@ -1,4 +1,8 @@
 #!/usr/bin/env node
+/**
+ * Careers + admin Talent Recruiting™ integrity.
+ * Public BamSignal /careers is a Join Our Team landing; hiring lives on Stankings.
+ */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,15 +20,15 @@ function assert(condition, message) {
 
 const careersRoutesSource = readFileSync(join(rootPath, "src/constants/careersRoutes.ts"), "utf8");
 assert(careersRoutesSource.includes('CAREERS_BASE_PATH = "/careers"'), "canonical careers base path");
-assert(careersRoutesSource.includes("openRoles"), "open roles route key");
-assert(careersRoutesSource.includes("culture"), "culture route key");
-assert(careersRoutesSource.includes("ourValues"), "values route key");
-assert(careersRoutesSource.includes("hiringProcess"), "hiring process route key");
-assert(careersRoutesSource.includes("kind: \"role\""), "role detail route kind");
+assert(careersRoutesSource.includes("landing: CAREERS_BASE_PATH"), "single public landing route");
+assert(!careersRoutesSource.includes("open-roles"), "no public open-roles path");
 
 const careersConstantsSource = readFileSync(join(rootPath, "src/constants/careers.ts"), "utf8");
-assert(careersConstantsSource.includes("Careers & Talent System™"), "careers brand");
-assert(careersConstantsSource.includes("signal-concierge"), "signal concierge category");
+assert(careersConstantsSource.includes("Join Our Team"), "join-our-team brand");
+assert(careersConstantsSource.includes("STANKINGS_CAREERS_URL"), "stankings careers url");
+assert(careersConstantsSource.includes("Explore Opportunities at Stankings"), "opportunities CTA");
+assert(careersConstantsSource.includes("CAREERS_PORTFOLIO_COMPANIES"), "portfolio companies");
+assert(careersConstantsSource.includes("signal-concierge"), "legacy category retained for admin seeds");
 assert(careersConstantsSource.includes("TALENT_RECRUITING_FUTURE_KINDS"), "future-ready kinds documented");
 assert(careersConstantsSource.includes("applicant-tracking"), "applicant tracking documented only");
 
@@ -47,19 +51,13 @@ const engineSource = readFileSync(join(rootPath, "src/utils/talentRecruitingEngi
 assert(engineSource.includes("buildTalentRecruitingBundle"), "talent recruiting engine exists");
 assert(engineSource.includes("updateTalentCandidateStage"), "stage updates supported");
 
-const publicComponents = [
-  "CareerCategoryCard.tsx",
-  "CareerRoleCard.tsx",
-  "CultureCard.tsx",
-  "ValuesCard.tsx",
-  "HiringProcessCard.tsx",
-  "CareersLandingPage.tsx"
-];
-
-for (const file of publicComponents) {
-  const source = readFileSync(join(rootPath, "src/components/careers", file), "utf8");
-  assert(source.length > 0, `${file} exists`);
-}
+const landingSource = readFileSync(
+  join(rootPath, "src/components/careers/CareersLandingPage.tsx"),
+  "utf8"
+);
+assert(landingSource.includes("CAREERS_PRIMARY_CTA"), "landing primary CTA");
+assert(landingSource.includes("CAREERS_CLOSING_HEADING"), "landing closing proposition");
+assert(landingSource.includes("CAREERS_PORTFOLIO_COMPANIES"), "landing companies grid");
 
 const adminComponents = [
   "ApplicationPipelineCard.tsx",

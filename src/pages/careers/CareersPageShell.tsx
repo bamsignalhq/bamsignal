@@ -8,6 +8,7 @@ export type CareersPageShellProps = {
   onToggleTheme: () => void;
   onLogoClick: () => void;
   onLogin?: () => void;
+  onSignup?: () => void;
 };
 
 export function CareersPageShell({
@@ -15,7 +16,8 @@ export function CareersPageShell({
   theme,
   onToggleTheme,
   onLogoClick,
-  onLogin
+  onLogin,
+  onSignup
 }: CareersPageShellProps) {
   return (
     <CareersLayout
@@ -23,6 +25,7 @@ export function CareersPageShell({
       onToggleTheme={onToggleTheme}
       onLogoClick={onLogoClick}
       onLogin={onLogin}
+      onSignup={onSignup}
     >
       {children}
     </CareersLayout>

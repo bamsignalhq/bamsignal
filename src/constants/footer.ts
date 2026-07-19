@@ -21,6 +21,8 @@ export type FooterLink = {
   href: string;
   label: string;
   comingSoon?: boolean;
+  /** Open in a new tab (parent-company / external destinations) */
+  external?: boolean;
 };
 
 /** Column 2 — Discover */

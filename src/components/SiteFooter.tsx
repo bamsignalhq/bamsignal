@@ -42,6 +42,15 @@ function FooterLinkList({
                 {link.label}
                 <em>Soon</em>
               </span>
+            ) : link.external ? (
+              <a
+                className="site-footer-link"
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {link.label}
+              </a>
             ) : (
               <a
                 className="site-footer-link"

@@ -84,7 +84,7 @@
     "test:journey-story-categories": "node scripts/test-journey-story-categories.mjs",
     "test:journey-milestones": "node scripts/test-journey-milestones.mjs",
     "test:relationship-legacy-index": "node scripts/test-relationship-legacy-index.mjs",
-    "test:careers": "node scripts/test-careers.mjs",
+    "test:careers": "node scripts/test-careers.mjs && node scripts/test-careers-stankings-redirect.mjs",
     "test:support-center": "node scripts/test-support-center.mjs",
     "test:audit-center": "node scripts/test-audit-center.mjs",
     "test:audit-engine": "node scripts/test-audit-engine.mjs",

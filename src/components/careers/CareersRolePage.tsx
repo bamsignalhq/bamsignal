@@ -13,7 +13,7 @@ export function CareersRolePage({ role }: CareersRolePageProps) {
       <button
         type="button"
         className="careers-back-link"
-        onClick={() => navigateToPath(careersPathForHub("openRoles"))}
+        onClick={() => navigateToPath(careersPathForHub("landing"))}
       >
         ← Back to open roles
       </button>
@@ -57,7 +57,7 @@ export function CareersRolePage({ role }: CareersRolePageProps) {
         <button
           type="button"
           className="careers-btn"
-          onClick={() => navigateToPath(careersPathForHub("hiringProcess"))}
+          onClick={() => navigateToPath(careersPathForHub("landing"))}
         >
           See hiring process
         </button>

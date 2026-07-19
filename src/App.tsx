@@ -129,11 +129,6 @@ import {
   LazySignalEventsHubPage,
   LazyVisitorsPage,
   LazyCareersLandingPage,
-  LazyCareersOpenRolesPage,
-  LazyCareersCulturePage,
-  LazyCareersOurValuesPage,
-  LazyCareersHiringProcessPage,
-  LazyCareersRolePage,
   LazySupportCenterLandingPage,
   LazySupportContactPage,
   LazySupportTicketsPage,
@@ -2882,26 +2877,13 @@ export function App() {
       theme,
       onToggleTheme: toggleTheme,
       onLogoClick: goHome,
-      onLogin: isAuthed ? undefined : () => openAuth("login")
+      onLogin: isAuthed ? undefined : () => openAuth("login"),
+      onSignup: isAuthed ? undefined : () => openAuth("signup", "discover")
     };
 
     return (
       <Suspense fallback={<LazyRouteFallback subtitle="Loading careers…" />}>
-        {careersRoute.kind === "hub" && careersRoute.route === "landing" ? (
-          <LazyCareersLandingPage {...careersShellProps} />
-        ) : careersRoute.kind === "hub" && careersRoute.route === "openRoles" ? (
-          <LazyCareersOpenRolesPage {...careersShellProps} />
-        ) : careersRoute.kind === "hub" && careersRoute.route === "culture" ? (
-          <LazyCareersCulturePage {...careersShellProps} />
-        ) : careersRoute.kind === "hub" && careersRoute.route === "ourValues" ? (
-          <LazyCareersOurValuesPage {...careersShellProps} />
-        ) : careersRoute.kind === "hub" && careersRoute.route === "hiringProcess" ? (
-          <LazyCareersHiringProcessPage {...careersShellProps} />
-        ) : careersRoute.kind === "role" ? (
-          <LazyCareersRolePage {...careersShellProps} roleSlug={careersRoute.roleSlug} />
-        ) : (
-          <LazyCareersLandingPage {...careersShellProps} />
-        )}
+        <LazyCareersLandingPage {...careersShellProps} />
       </Suspense>
     );
   }

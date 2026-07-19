@@ -202,23 +202,68 @@ body {
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  line-height: 0;
 }
 
 .app-logo-img {
   display: block;
   object-fit: contain;
   object-position: left center;
+  flex-shrink: 0;
 }
 
 .app-logo-img--mark {
   border-radius: 10px;
+  width: 36px;
+  height: 36px;
 }
 
 .app-logo-img--wordmark {
   border-radius: 0;
-  height: auto;
-  max-height: 100%;
+  /* Never fall back to intrinsic 1274×456 — parent height is not always set. */
+  height: 36px;
   width: auto;
+  max-width: min(220px, 100%);
+}
+
+.app-logo--sm .app-logo-img--mark {
+  width: 28px;
+  height: 28px;
+}
+
+.app-logo--sm .app-logo-img--wordmark {
+  height: 28px;
+  max-width: min(160px, 100%);
+}
+
+.app-logo--md .app-logo-img--mark {
+  width: 36px;
+  height: 36px;
+}
+
+.app-logo--md .app-logo-img--wordmark {
+  height: 36px;
+  max-width: min(200px, 100%);
+}
+
+.app-logo--lg .app-logo-img--mark {
+  width: 48px;
+  height: 48px;
+}
+
+.app-logo--lg .app-logo-img--wordmark {
+  height: 48px;
+  max-width: min(260px, 100%);
+}
+
+.app-logo--xl .app-logo-img--mark {
+  width: 72px;
+  height: 72px;
+}
+
+.app-logo--xl .app-logo-img--wordmark {
+  height: 72px;
+  max-width: min(340px, 100%);
 }
 
 .app-logo-text {
@@ -233,13 +278,15 @@ body {
 /* Top nav */
 /* Top nav brand */
 .top-nav-brand {
+  display: inline-flex;
+  align-items: center;
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
   flex: 0 1 auto;
   min-width: 0;
-  max-width: 52%;
+  max-width: min(220px, 52%);
 }
 
 /* Landing page — premium emotional layout */

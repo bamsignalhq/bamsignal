@@ -38,7 +38,7 @@ export function AppLogo({ className = "", size = "md", showText = true, theme }:
     const height = px;
     const width = Math.round(height * (1274 / 456));
     return (
-      <div className={`app-logo app-logo--wordmark ${className}`}>
+      <div className={`app-logo app-logo--wordmark app-logo--${size} ${className}`.trim()}>
         <img
           src={brandLogo(active)}
           alt="BamSignal"
@@ -52,7 +52,7 @@ export function AppLogo({ className = "", size = "md", showText = true, theme }:
   }
 
   return (
-    <div className={`app-logo app-logo--mark ${className}`}>
+    <div className={`app-logo app-logo--mark app-logo--${size} ${className}`.trim()}>
       <img
         src={brandIcon(active)}
         alt="BamSignal"

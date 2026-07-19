@@ -1,3 +1,8 @@
+import {
+  PROFILE_BOOST_DURATION_HOURS,
+  PROFILE_BOOST_PRICE_NGN
+} from "../../shared/discoverCommerceHelpers.mjs";
+
 export type BoostProductId =
   | "signal-boost"
   | "priority-signal-once"
@@ -50,10 +55,10 @@ export const DEFAULT_BOOST_INPUTS: BoostProductInput[] = [
   },
   {
     id: "profile-boost",
-    name: "Featured Profile",
-    price: 750,
-    description: "Appear at the top of statewide recommendations for 48 hours.",
-    cta: "Go featured"
+    name: "Profile Boost",
+    price: PROFILE_BOOST_PRICE_NGN,
+    description: `Improve your ranking in Discover, Nearby, and recommendations for ${PROFILE_BOOST_DURATION_HOURS} hours.`,
+    cta: "Boost profile"
   }
 ];
 
@@ -66,7 +71,7 @@ export function shopBoostDescription(product: BoostProduct, _cityLabel?: string)
     case "priority-signal-once":
       return "Make sure your next Signal gets noticed first.";
     case "profile-boost":
-      return "Appear at the top of statewide recommendations for 48 hours.";
+      return `Improve your ranking in Discover, Nearby, and recommendations for ${PROFILE_BOOST_DURATION_HOURS} hours.`;
     default:
       return product.description;
   }
@@ -79,7 +84,7 @@ export function boostDisplayName(id: BoostProductId): string {
     case "priority-signal-once":
       return "Priority Introduction";
     case "profile-boost":
-      return "Featured Profile";
+      return "Profile Boost";
     case "city-boost":
       return "City Spotlight";
     case "city-spotlight":
@@ -107,8 +112,8 @@ export function boostSuccessCopy(
       };
     case "profile-boost":
       return {
-        title: "Featured Profile is live",
-        body: "You're featured at the top of statewide recommendations for 48 hours."
+        title: "Profile Boost is live",
+        body: `Your ranking is improved in Discover, Nearby, and recommendations for ${PROFILE_BOOST_DURATION_HOURS} hours.`
       };
     case "city-spotlight":
       return {

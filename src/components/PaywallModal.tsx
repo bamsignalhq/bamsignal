@@ -42,7 +42,7 @@ export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: Pa
         </h2>
         <p className="paywall-modal__subtitle">{BRAND.paywallBody}</p>
 
-        <div className="premium-plan-strip premium-plan-strip--modal" aria-label="Signal Pass plans">
+        <div className="premium-plan-strip premium-plan-strip--modal" aria-label="Discover Membership plans">
           {plans.map((plan) => {
             const badge = planBadge(plan);
             return (
@@ -70,7 +70,7 @@ export function PaywallModal({ open, onClose, onSelectPlan, plans, loading }: Pa
         </div>
 
         <div className="premium-includes premium-includes--modal">
-          <p className="premium-includes__title">Included with Signal Pass</p>
+          <p className="premium-includes__title">Included with Discover Membership</p>
           <ul className="premium-includes__list">
             {SIGNAL_PASS_INCLUDES.map((item) => (
               <li key={item}>

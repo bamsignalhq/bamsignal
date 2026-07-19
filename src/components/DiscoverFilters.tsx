@@ -175,7 +175,7 @@ export function DiscoverFilters({
               </button>
               {!isPremium ? (
                 <p className="discover-filters-card__hint discover-filters-card__hint--lock">
-                  Signal Pass feature 🔒
+                  Discover Membership feature
                 </p>
               ) : (
                 <p className="discover-filters-card__hint">Prioritize recently active profiles</p>
@@ -317,7 +317,7 @@ export function DiscoverFilters({
               <h4 className="discover-filters-card__title">Advanced Preferences</h4>
               {!isPremium ? (
                 <p className="discover-filters-card__hint discover-filters-card__hint--lock">
-                  Signal Pass required 🔒
+                  Discover Membership required
                 </p>
               ) : null}
 

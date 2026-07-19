@@ -8,9 +8,15 @@ export const SIGNAL_CONCIERGE_ROUTES = {
   status: `${SIGNAL_CONCIERGE_BASE_PATH}/status`,
   dashboard: `${SIGNAL_CONCIERGE_BASE_PATH}/dashboard`,
   consultation: `${SIGNAL_CONCIERGE_BASE_PATH}/consultation`,
+  invoices: `${SIGNAL_CONCIERGE_BASE_PATH}/invoices`,
   shareStory: `${SIGNAL_CONCIERGE_BASE_PATH}/share-your-story`,
   privacy: `${SIGNAL_CONCIERGE_BASE_PATH}/privacy`,
-  faq: `${SIGNAL_CONCIERGE_BASE_PATH}/faq`
+  faq: `${SIGNAL_CONCIERGE_BASE_PATH}/faq`,
+  /** Dedicated Concierge client auth — separate from Discover login. */
+  signIn: `${SIGNAL_CONCIERGE_BASE_PATH}/sign-in`,
+  signUp: `${SIGNAL_CONCIERGE_BASE_PATH}/sign-up`,
+  forgotPin: `${SIGNAL_CONCIERGE_BASE_PATH}/forgot-pin`,
+  verifyEmail: `${SIGNAL_CONCIERGE_BASE_PATH}/verify-email`
 } as const;
 
 export type SignalConciergeRoute = keyof typeof SIGNAL_CONCIERGE_ROUTES;
@@ -26,12 +32,21 @@ const PATH_TO_ROUTE = Object.fromEntries(
   Object.entries(SIGNAL_CONCIERGE_ROUTES).map(([route, path]) => [path, route])
 ) as Record<string, SignalConciergeRoute>;
 
-const SIGNAL_CONCIERGE_PUBLIC_ROUTE_SET = new Set<SignalConciergeRoute>(["landing", "faq", "privacy"]);
+const SIGNAL_CONCIERGE_PUBLIC_ROUTE_SET = new Set<SignalConciergeRoute>([
+  "landing",
+  "faq",
+  "privacy",
+  "signIn",
+  "signUp",
+  "forgotPin",
+  "verifyEmail"
+]);
 const SIGNAL_CONCIERGE_AUTH_ROUTE_SET = new Set<SignalConciergeRoute>([
   "apply",
   "status",
   "dashboard",
   "consultation",
+  "invoices",
   "shareStory"
 ]);
 

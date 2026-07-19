@@ -1028,6 +1028,87 @@ export async function cancelConciergeInvoice({ invoiceId, actor = "admin", notes
   return { ok: true, invoice: result.rows[0], grantsMembership: false };
 }
 
+/** Member CX — invoices visible to the client (sent / paid / partial / overdue). */
+export async function listMemberVisibleInvoices(memberId) {
+  if (!isDatabaseReady() || !memberId) return [];
+  try {
+    const result = await query(
+      `select *
+       from concierge_invoices
+       where member_id = $1
+         and status in ('sent', 'partially_paid', 'paid', 'overdue')
+       order by created_at desc`,
+      [String(memberId).trim()]
+    );
+    return result.rows;
+  } catch {
+    return [];
+  }
+}
+
+export async function getConciergeInvoiceForMember({ memberId, invoiceId }) {
+  if (!isDatabaseReady()) {
+    return fail("database_unavailable", "Database is not connected.");
+  }
+  const mid = String(memberId || "").trim();
+  const iid = String(invoiceId || "").trim();
+  if (!mid || !iid) return fail("invoice_id_required", "Invoice ID is required.");
+
+  try {
+    const found = await query(
+      `select * from concierge_invoices where id = $1 and member_id = $2 limit 1`,
+      [iid, mid]
+    );
+    const invoice = found.rows[0];
+    if (!invoice) return fail("invoice_not_found", "Invoice not found.");
+    if (invoice.status === INVOICE_STATUS.DRAFT) {
+      return fail("invoice_not_sent", "Invoice is not available yet.");
+    }
+    const lines = await query(
+      `select * from concierge_invoice_line_items
+       where invoice_id = $1
+       order by sort_order asc`,
+      [iid]
+    ).catch(() => ({ rows: [] }));
+    return { ok: true, invoice, lineItems: lines.rows || [], grantsMembership: false };
+  } catch {
+    return fail("invoice_unavailable", "Invoice unavailable.");
+  }
+}
+
+/** Resolve invoice for payment catalog (server-authoritative amount). */
+export async function resolveConciergeInvoiceForCheckout(invoiceId) {
+  if (!isDatabaseReady() || !invoiceId) return null;
+  try {
+    const found = await query(`select * from concierge_invoices where id = $1 limit 1`, [
+      String(invoiceId).trim()
+    ]);
+    const invoice = found.rows[0];
+    if (!invoice) return null;
+    if (
+      invoice.status === INVOICE_STATUS.DRAFT ||
+      invoice.status === INVOICE_STATUS.CANCELLED ||
+      invoice.status === INVOICE_STATUS.PAID
+    ) {
+      return null;
+    }
+    const remaining = Math.max(
+      0,
+      Number(invoice.total_kobo || 0) - Number(invoice.amount_paid_kobo || 0)
+    );
+    if (remaining <= 0) return null;
+    return {
+      invoice,
+      amountKobo: remaining,
+      memberId: invoice.member_id,
+      journeyId: invoice.journey_id,
+      invoiceNumber: invoice.invoice_number
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Convenience for tests / admin: full happy-path verification without matching. */
 export async function getCaseHistory(memberId) {
   if (!isDatabaseReady()) return [];

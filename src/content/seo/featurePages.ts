@@ -290,7 +290,7 @@ export const FEATURE_PAGES = [
       {
         heading: "Premium visibility",
         paragraphs: [
-          "Some premium tools may show additional interest insights — check Signal Pass.",
+          "Some premium tools may show additional interest insights — check Discover Membership.",
           "Free members still receive and manage signals fully."
         ]
       }

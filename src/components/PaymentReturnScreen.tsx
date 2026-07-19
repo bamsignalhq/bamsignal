@@ -1,3 +1,5 @@
+import { COMMERCIAL_OUTCOME } from "../constants/commercialExperience";
+
 export type PaymentReturnScreenPhase = "verifying" | "processing" | "success" | "failed";
 
 type PaymentReturnScreenProps = {
@@ -9,27 +11,29 @@ type PaymentReturnScreenProps = {
 export function PaymentReturnScreen({ phase, message, onRetry }: PaymentReturnScreenProps) {
   const title =
     phase === "success"
-      ? "Payment confirmed"
+      ? COMMERCIAL_OUTCOME.successTitle
       : phase === "failed"
-        ? "Payment not confirmed"
+        ? COMMERCIAL_OUTCOME.failureTitle
         : phase === "processing"
-          ? "Processing payment"
-          : "Confirming payment";
+          ? COMMERCIAL_OUTCOME.processingTitle
+          : COMMERCIAL_OUTCOME.verifyingTitle;
   const body =
     message ||
     (phase === "success"
-      ? "Taking you back…"
+      ? COMMERCIAL_OUTCOME.successBody
       : phase === "failed"
-        ? "We couldn't verify this payment yet."
+        ? COMMERCIAL_OUTCOME.failureBody
         : phase === "processing"
-          ? "Your payment succeeded. Finalizing your purchase…"
-          : "Please wait a moment…");
+          ? COMMERCIAL_OUTCOME.processingBody
+          : COMMERCIAL_OUTCOME.verifyingBody);
 
   return (
     <div className="payment-return-screen" role="status" aria-live="polite">
-      <div className="payment-return-screen__card">
+      <div className={`payment-return-screen__card commercial-outcome commercial-outcome--${
+        phase === "success" ? "success" : phase === "failed" ? "failure" : "pending"
+      }`}>
         {phase === "verifying" || phase === "processing" ? (
-          <span className="payment-loading-overlay__spinner" aria-hidden />
+          <span className="commercial-skeleton commercial-skeleton--spinner" aria-hidden />
         ) : null}
         <h1>{title}</h1>
         <p>{body}</p>

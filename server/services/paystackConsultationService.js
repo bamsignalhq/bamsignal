@@ -94,16 +94,19 @@ export function normalizeConsultationPaymentReturnPath(value, fallback = "/signa
   return safeFallback;
 }
 
-export function resolveConsultationFeeIntent({ paymentId, memberId, journeyId = "" } = {}) {
+export async function resolveConsultationFeeIntent({ paymentId, memberId, journeyId = "" } = {}) {
   const normalizedPaymentId = normalizeConsultationPaymentId(paymentId);
   if (!isValidConsultationPaymentId(normalizedPaymentId)) return null;
   const normalizedMemberId = String(memberId || "").trim();
   if (!normalizedMemberId) return null;
 
+  const { getConsultationFeeAmountKobo } = await import("./membershipCatalog.js");
+  const amountKobo = await getConsultationFeeAmountKobo();
+
   return {
     productType: CONSULTATION_FEE_PRODUCT_TYPE,
     productId: normalizedPaymentId,
-    amountKobo: CONSULTATION_FEE_AMOUNT_KOBO,
+    amountKobo,
     paymentId: normalizedPaymentId,
     memberId: normalizedMemberId,
     journeyId: String(journeyId || "").trim() || undefined

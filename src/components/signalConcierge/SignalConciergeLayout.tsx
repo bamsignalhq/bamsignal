@@ -53,7 +53,7 @@ export function SignalConciergeLayout({
               ) : null}
               {onLogin ? (
                 <button type="button" className="signal-concierge-header__link" onClick={onLogin}>
-                  Member login
+                  Client Sign In
                 </button>
               ) : null}
             </div>

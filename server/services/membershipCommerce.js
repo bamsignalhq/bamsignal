@@ -649,3 +649,69 @@ export async function processExpiredMemberships({ limit = 100 } = {}) {
 
   return { processed };
 }
+
+/**
+ * Member-facing Discreet purchase / renewal / refund history (audit trail).
+ */
+export async function listMembershipEventsForMember({
+  email,
+  phone = "",
+  experienceMode = EXPERIENCE_MODE.DISCREET,
+  limit = 40
+} = {}) {
+  if (!isDatabaseReady()) return [];
+  const ctx = await resolveMemberContext({ email, phone });
+  const mode = normalizeExperienceMode(experienceMode) || EXPERIENCE_MODE.DISCREET;
+  try {
+    const result = await query(
+      `select *
+       from membership_events
+       where experience_mode = $1
+         and (
+           ($2::text is not null and member_id = $2)
+           or ($3::text is not null and user_key = $3)
+         )
+       order by created_at desc
+       limit $4`,
+      [
+        mode,
+        ctx.member?.id || null,
+        ctx.userKey || null,
+        Math.min(200, Math.max(1, Number(limit) || 40))
+      ]
+    );
+    return result.rows;
+  } catch {
+    return [];
+  }
+}
+
+/** Admin audit — recent Discreet commerce events (grants, renewals, refunds, expiry). */
+export async function listDiscreetMembershipAdminEvents({ limit = 50 } = {}) {
+  if (!isDatabaseReady()) return { events: [], activeMemberships: [] };
+  try {
+    const [events, active] = await Promise.all([
+      query(
+        `select *
+         from membership_events
+         where experience_mode = 'discreet'
+         order by created_at desc
+         limit $1`,
+        [Math.min(200, Math.max(1, Number(limit) || 50))]
+      ),
+      query(
+        `select *
+         from member_experience_memberships
+         where experience_mode = 'discreet'
+           and status = 'active'
+           and (ends_at is null or ends_at > now())
+         order by ends_at asc nulls first
+         limit $1`,
+        [Math.min(100, Math.max(1, Number(limit) || 50))]
+      )
+    ]);
+    return { events: events.rows, activeMemberships: active.rows };
+  } catch {
+    return { events: [], activeMemberships: [] };
+  }
+}

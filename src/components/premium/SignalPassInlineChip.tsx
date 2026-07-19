@@ -10,8 +10,8 @@ type SignalPassInlineChipProps = {
 };
 
 const COPY: Record<SignalPassInlineVariant, { lead: string; cta: string }> = {
-  signals: { lead: "Need more Signals?", cta: "Signal Pass" },
-  visibility: { lead: "Need more visibility?", cta: "Signal Pass" }
+  signals: { lead: "Need more Signals?", cta: "Membership" },
+  visibility: { lead: "Need more visibility?", cta: "Membership" }
 };
 
 export function SignalPassInlineChip({

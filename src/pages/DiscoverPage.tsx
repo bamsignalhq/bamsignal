@@ -36,6 +36,8 @@ import { ProfileStoryCard } from "../components/discover/ProfileStoryCard";
 import { DiscoverSafetyCard } from "../components/discover/DiscoverSafetyCard";
 import { DiscoverFilters } from "../components/DiscoverFilters";
 import { ReportBlockModal } from "../components/ReportBlockModal";
+import { ConversationUnlockSheet } from "../components/discover/ConversationUnlockSheet";
+import { hasLocalConversationUnlock } from "../constants/conversationUnlock";
 import type { DiscoverProfile, Match, UserProfile } from "../types";
 import type { PremiumPlan } from "../constants/plans";
 import { recordDiscoveryImpression } from "../utils/launchSeed";
@@ -90,6 +92,7 @@ type DiscoverPageProps = {
   onStartPremiumCheckout: () => void;
   paymentLoading?: boolean;
   onOpenSafety?: () => void;
+  onUnlockConversation?: (profile: DiscoverProfile) => void;
 };
 
 export function DiscoverPage({
@@ -99,7 +102,8 @@ export function DiscoverPage({
   onUpgrade,
   onStartPremiumCheckout,
   paymentLoading,
-  onOpenSafety
+  onOpenSafety,
+  onUnlockConversation
 }: DiscoverPageProps) {
   debugRender("DiscoverPage", { isPremium });
   void _onMatch;
@@ -122,6 +126,7 @@ export function DiscoverPage({
   const [signalLimitOpen, setSignalLimitOpen] = useState(false);
   const { showToast, ToastHost } = useMemberToast();
   const [safetyOpen, setSafetyOpen] = useState(false);
+  const [unlockSheetOpen, setUnlockSheetOpen] = useState(false);
   const [showDiscoverIntro, setShowDiscoverIntro] = useState(() => isFirstDiscoverIntroPending());
   const [showFirstTip, setShowFirstTip] = useState(() => isFirstDiscoverTipVisible());
   const [firstSignalCelebrate, setFirstSignalCelebrate] = useState(false);
@@ -287,7 +292,7 @@ export function DiscoverPage({
 
   const handleUndoPass = () => {
     if (!canUndoPass(isPremium)) {
-      showToast("Signal Pass gives you unlimited undo.");
+      showToast("Discover Membership gives you unlimited undo.");
       trackUpgradeImpression("signal_limit");
       setPaywallOpen(true);
       return;
@@ -571,12 +576,30 @@ export function DiscoverPage({
           onSendSignal={() => handleSendSignal(detailProfile)}
           onPass={() => handleIgnore(detailProfile)}
           onPrioritySignal={() => handlePrioritySignal(detailProfile)}
+          onUnlockConversation={
+            onUnlockConversation && !hasLocalConversationUnlock(detailProfile.id)
+              ? () => setUnlockSheetOpen(true)
+              : undefined
+          }
           onReport={() => setSafetyOpen(true)}
           onBlock={() => handleBlock(detailProfile)}
           onBlockAndReport={() => setSafetyOpen(true)}
           isPremium={isPremium}
           signalSent={signalSentId === detailProfile.id}
           viewer={memberUser}
+        />
+      ) : null}
+
+      {detailProfile && onUnlockConversation ? (
+        <ConversationUnlockSheet
+          open={unlockSheetOpen}
+          onClose={() => setUnlockSheetOpen(false)}
+          targetName={detailProfile.name}
+          loading={paymentLoading}
+          onPurchase={() => {
+            setUnlockSheetOpen(false);
+            onUnlockConversation(detailProfile);
+          }}
         />
       ) : null}
 

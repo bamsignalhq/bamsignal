@@ -10,7 +10,12 @@ export type NotificationEventType =
   | "introduction-accepted"
   | "follow-up-reminder"
   | "milestone-recorded"
-  | "relationship-archived";
+  | "relationship-archived"
+  | "invoice-issued"
+  | "invoice-paid"
+  | "consultant-assigned"
+  | "status-updated"
+  | "case-completed";
 
 export type NotificationDeliveryStatus =
   | "queued"

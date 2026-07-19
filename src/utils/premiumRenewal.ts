@@ -32,17 +32,17 @@ export function resolvePremiumRenewalStage(expiresAt: string | null): PremiumRen
 export function premiumRenewalMessage(stage: PremiumRenewalStage): string | null {
   switch (stage) {
     case "seven_days":
-      return "Signal Pass renews in 7 days — keep unlimited Signals and priority visibility.";
+      return "Discover Membership renews in 7 days — keep unlimited Signals and priority visibility.";
     case "three_days":
-      return "Signal Pass ends in 3 days. Renew to avoid losing Premium benefits.";
+      return "Discover Membership ends in 3 days. Renew to avoid losing membership benefits.";
     case "one_day":
-      return "Signal Pass ends tomorrow. Renew now to stay uninterrupted.";
+      return "Discover Membership ends tomorrow. Renew now to stay uninterrupted.";
     case "expiry":
-      return "Signal Pass ends today. Renew to keep your Premium benefits.";
+      return "Discover Membership ends today. Renew to keep your membership benefits.";
     case "grace":
-      return `Grace period — renew within ${PREMIUM_GRACE_DAYS} days to restore full Premium access.`;
+      return `Grace period — renew within ${PREMIUM_GRACE_DAYS} days to restore full membership access.`;
     case "lapsed":
-      return "Signal Pass expired. Renew to unlock unlimited Signals again.";
+      return "Discover Membership expired. Renew to unlock unlimited Signals again.";
     default:
       return null;
   }

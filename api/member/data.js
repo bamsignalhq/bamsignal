@@ -174,17 +174,44 @@ export default async function handler(req, res) {
       const user = await findAppUserIdentity(identity);
       const entitlements = await fetchMemberEntitlements(identity);
       const { listActiveMemberBoosts } = await import("../server/services/memberBoosts.js");
+      const { listConversationUnlocks } = await import("../server/services/conversationUnlock.js");
       const activeBoosts = await listActiveMemberBoosts({
         email: identity.email,
         phone: identity.phone
+      });
+      const conversationUnlocks = await listConversationUnlocks({
+        email: identity.email,
+        phone: identity.phone,
+        limit: 50
+      });
+      const { listMembershipEventsForMember } = await import("../server/services/membershipCommerce.js");
+      const discreetEvents = await listMembershipEventsForMember({
+        email: identity.email,
+        phone: identity.phone,
+        experienceMode: "discreet",
+        limit: 40
       });
       return res.status(200).json({
         ok: true,
         user,
         premium: entitlements.signalPass,
         entitlements,
-        activeBoosts
+        activeBoosts,
+        conversationUnlocks,
+        discreetEvents
       });
+    }
+
+    if (action === "payment-history") {
+      if (!requireDatabase(res)) return;
+      const { listPaymentHistoryForMember } = await import(
+        "../server/services/paymentFulfillments.js"
+      );
+      const payments = await listPaymentHistoryForMember({
+        userId: authResult.memberId || authResult.authUserId || null,
+        limit: body.limit || 40
+      });
+      return res.status(200).json({ ok: true, payments });
     }
 
     if (action === "discover") {

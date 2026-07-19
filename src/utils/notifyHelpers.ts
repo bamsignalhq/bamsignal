@@ -72,6 +72,6 @@ export function notifyReferralRewardEarned(days: number): void {
   pushNotification({
     type: "referral_reward",
     title: "Referral reward earned",
-    body: `${days} days of Signal Pass added to your account.`
+    body: `${days} days of Discover Membership added to your account.`
   });
 }

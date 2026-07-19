@@ -4,7 +4,7 @@ import { STORAGE_KEYS } from "../constants/limits";
 import { logPaymentEvent } from "./paymentState";
 
 /** Canonical client interpretation of POST /api/paystack/verify — single source of truth. */
-export type PaymentReturnKind = "premium" | "boost" | "quickie";
+export type PaymentReturnKind = "premium" | "boost" | "quickie" | "conversation_unlock" | "discreet" | "concierge_invoice";
 
 export type PaymentReturnOutcome =
   | {
@@ -19,6 +19,9 @@ export type PaymentReturnOutcome =
       expiresAt?: string;
       entitlementId?: string;
       boost?: VerifyPayload["boost"];
+      matchId?: string;
+      targetProfileId?: string;
+      discreetUntil?: string;
       idempotent?: boolean;
     }
   | {
@@ -54,6 +57,10 @@ type VerifyPayload = {
   expiresAt?: string;
   entitlementId?: string;
   boostActive?: boolean;
+  matchId?: string;
+  targetProfileId?: string;
+  unlock?: { id?: string; match_id?: string | null } | null;
+  discreetUntil?: string;
   boost?: {
     id?: string;
     productId?: string;
@@ -67,6 +74,9 @@ type VerifyPayload = {
 
 function normalizeKind(value?: string | null): PaymentReturnKind {
   if (value === "fast_connection") return "quickie";
+  if (value === "conversation_unlock" || value === "conversation-unlock") return "conversation_unlock";
+  if (value === "discreet" || value === "discreet_membership") return "discreet";
+  if (value === "concierge_invoice" || value === "concierge-invoice") return "concierge_invoice";
   return value === "boost" || value === "quickie" || value === "premium" ? value : "premium";
 }
 
@@ -117,6 +127,9 @@ export function interpretVerifyHttpResponse(
       quickiePassUntil: payload.quickiePassUntil || payload.fastConnectionPassUntil,
       entitlementId: payload.entitlementId || payload.boost?.id,
       boost: payload.boost,
+      matchId: payload.matchId,
+      targetProfileId: payload.targetProfileId,
+      discreetUntil: payload.discreetUntil,
       idempotent: payload.boostActive === undefined && !payload.entitlementId && !payload.boost?.id
     };
   }

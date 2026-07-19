@@ -1,12 +1,21 @@
 import type { NavTab } from "../types";
 import { STORAGE_KEYS } from "../constants/limits";
 import { isMemberAppPath } from "../constants/memberRoutes";
+import { isSignalConciergeRoute } from "../constants/signalConciergeRoutes";
 import { normalizePath } from "../constants/routes";
 import { logPaymentEvent } from "./paymentState";
 
 export type PaymentReturnContext = {
   returnPath: string;
-  productType: "premium" | "boost" | "quickie" | "fast_connection" | "wallet_funding";
+  productType:
+    | "premium"
+    | "boost"
+    | "quickie"
+    | "fast_connection"
+    | "wallet_funding"
+    | "conversation_unlock"
+    | "discreet"
+    | "concierge_invoice";
   productId: string;
   sourcePage: string;
   reference?: string;
@@ -20,7 +29,10 @@ export function normalizePaymentReturnPath(value?: string | null): string {
     return DEFAULT_RETURN_PATH;
   }
   const appPath = normalizePath(raw.split(/[?#]/)[0]);
-  return isMemberAppPath(appPath) ? raw.replace(/\/$/, "") : DEFAULT_RETURN_PATH;
+  if (isMemberAppPath(appPath) || isSignalConciergeRoute(appPath)) {
+    return raw.replace(/\/$/, "") || DEFAULT_RETURN_PATH;
+  }
+  return DEFAULT_RETURN_PATH;
 }
 
 export function resolvePaymentReturnPath(options?: {
@@ -71,7 +83,10 @@ export function getPaymentReturnMeta(): Pick<PaymentReturnContext, "productType"
       productType === "boost" ||
       productType === "quickie" ||
       productType === "premium" ||
-      productType === "fast_connection"
+      productType === "fast_connection" ||
+      productType === "conversation_unlock" ||
+      productType === "discreet" ||
+      productType === "concierge_invoice"
         ? productType
         : "premium",
     productId: localStorage.getItem(STORAGE_KEYS.paymentProductId)?.trim() || "monthly",

@@ -7,8 +7,8 @@ export const BRAND = {
   cta: "Discover Signals",
   nearbySignals: "Nearby Signals",
   premiumCta: "Upgrade Today",
-  paywallTitle: "Signal Pass",
-  paywallBody: "Unlock unlimited connections and enjoy a premium BamSignal experience.",
+  paywallTitle: "Discover Membership",
+  paywallBody: "Find someone yourself — unlimited Signals, messaging, and the full Discover experience.",
   contactBlockMessage:
     "We couldn't save that information. Please try something different.",
   contactTelegramBlocked:
@@ -60,7 +60,7 @@ export const BUTTON_COPY = {
   done: "Done",
   explore: "Explore",
   sendSignal: "Send Signal",
-  getSignalPass: "Upgrade Today"
+  getSignalPass: "Get Discover Membership"
 } as const;
 
 export const ERROR_COPY = {
@@ -93,49 +93,49 @@ export const EXPERIENCE_COPY = {
 } as const;
 
 export const MONETIZATION_COPY = {
-  unlockSignalPass: "Unlock Signal Pass",
+  unlockSignalPass: "Unlock Discover Membership",
   upgradeToday: "Upgrade Today",
-  goPremium: "Go Premium",
+  goPremium: "Discover Membership",
   checkoutLoading: "Preparing secure checkout...",
   checkoutOpening: "Opening checkout...",
   checkoutStartFailed: "We couldn't start checkout. Please try again.",
-  paymentSuccessTitle: "Welcome to Signal Pass ❤️",
-  paymentSuccessBody: "Enjoy unlimited connections.",
-  paymentCancelledTitle: "No worries ❤️",
+  paymentSuccessTitle: "Welcome to Discover Membership",
+  paymentSuccessBody: "Enjoy unlimited connections on Discover.",
+  paymentCancelledTitle: "No worries",
   paymentCancelledBody: "Your upgrade is still available whenever you're ready.",
-  lockedFeature: "Included with Signal Pass 🔒",
+  lockedFeature: "Included with Discover Membership",
   seeEveryone: "See Everyone",
   signalsExhaustedTitle: "No Signals left today",
-  signalsExhaustedHint: "Signal Pass lets you keep connecting without waiting.",
-  getSignalPass: "Get Signal Pass",
+  signalsExhaustedHint: "Discover Membership lets you keep connecting without waiting.",
+  getSignalPass: "Get Discover Membership",
   maybeLater: "Maybe later"
 } as const;
 
 export const PREMIUM_COPY = {
-  unlockTitle: "Unlock Signal Pass",
-  settingsEyebrow: "Premium",
-  settingsSubtitle: "Unlimited connections and premium benefits.",
-  profileEyebrow: "Signal Pass",
-  profileSubtitle: "Unlock unlimited connections and premium features.",
-  homeBannerEyebrow: "Upgrade to Signal Pass",
-  homeBannerTitle: "Unlimited connections. Priority visibility. Premium experience.",
-  homeBannerBullets: ["Unlimited connections.", "Priority visibility.", "Premium experience."],
-  discoverPillTitle: "Signal Pass",
+  unlockTitle: "Unlock Discover Membership",
+  settingsEyebrow: "Discover Membership",
+  settingsSubtitle: "Unlimited connections and Discover Premium benefits.",
+  profileEyebrow: "Discover Membership",
+  profileSubtitle: "Unlock unlimited connections and Discover Premium features.",
+  homeBannerEyebrow: "Discover Membership",
+  homeBannerTitle: "Find someone yourself — unlimited Signals and full Discover.",
+  homeBannerBullets: ["Unlimited Signals.", "Unlimited messaging.", "Full Discover experience."],
+  discoverPillTitle: "Discover Membership",
   discoverPillHint: "Unlimited experience",
   signalsEmptyTitle: "No signals yet ❤️",
   signalsEmptyBody: "",
-  settingsSignalPassHint: "Manage premium benefits",
+  settingsSignalPassHint: "Manage Discover Membership",
   explorePeople: "Explore People",
-  subscriptionManage: "Manage your subscription",
+  subscriptionManage: "Manage your membership",
   subscriptionFreeHint: "Upgrade when you want more Signals.",
-  subscriptionActive: "Signal Pass is active on your account.",
+  subscriptionActive: "Discover Membership is active on your account.",
   helpSupport: "Help & Support"
 } as const;
 
 export const LANDING = {
-  heroHeadline: "Meet people who match your vibe.",
+  heroHeadline: "Find Love Your Way.",
   heroSubheadline:
-    "Good conversations often begin with a signal. Discover new people and connect at your own pace.",
+    "Discover. Discreet Mode. Signal Concierge™. Three distinct ways to find a meaningful relationship.",
   finalHeadline: "Someone nearby might signal you today.",
   finalFooter: "5 free signals daily.\n5 free messages daily."
 } as const;

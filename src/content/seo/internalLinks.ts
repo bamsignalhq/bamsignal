@@ -37,9 +37,10 @@ const SAFETY_RELATED: Record<string, SeoLinkItem[]> = {
 
 const COMPARE_LINKS: SeoLinkItem[] = [
   { href: "/features/signals", label: "How signals work" },
-  { href: "/features/discover", label: "Discover" },
+  { href: "/dating", label: "Discover" },
+  { href: "/features/discover", label: "How Discover works" },
   { href: "/safety/meeting-safely", label: "Meeting safely" },
-  { href: "/premium/signal-pass", label: "Signal Pass" }
+  { href: "/premium/signal-pass", label: "Discover Membership" }
 ];
 
 const CITY_LINKS: SeoLinkItem[] = [

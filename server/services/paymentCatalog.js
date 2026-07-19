@@ -10,16 +10,26 @@ import {
   loadDiscreetPlansForCheckout
 } from "./membershipCatalog.js";
 
+import {
+  CONVERSATION_UNLOCK_AMOUNT_KOBO,
+  DISCOVER_PRODUCT,
+  PROFILE_BOOST_DURATION_HOURS,
+  PROFILE_BOOST_PRICE_NGN,
+  isConversationUnlockProductId
+} from "../../shared/discoverCommerceHelpers.mjs";
+
 /** Server-authoritative boost catalog — prices and durations must never come from the client. */
 export const DEFAULT_BOOST_CATALOG = [
   { id: "signal-boost", price: 350, durationHours: 24 },
   { id: "priority-signal-once", price: 250, durationHours: null },
-  { id: "profile-boost", price: 750, durationHours: 48 },
+  { id: "profile-boost", price: PROFILE_BOOST_PRICE_NGN, durationHours: PROFILE_BOOST_DURATION_HOURS },
   { id: "city-boost", price: 600, durationHours: 48 },
   { id: "city-spotlight", price: 600, durationHours: 24 }
 ];
 
 export const BOOST_PRODUCT_IDS = new Set(DEFAULT_BOOST_CATALOG.map((row) => row.id));
+
+export const CONVERSATION_UNLOCK_PRODUCT_TYPE = "conversation_unlock";
 
 export const FAST_CONNECTION_PRODUCT_IDS = new Set([
   "fast-connection-pass",
@@ -41,6 +51,8 @@ export const CONSULTATION_FEE_PRODUCT_TYPE = "consultation-fee";
 export const CONSULTATION_FEE_PRODUCT_ID = "signal-concierge-consultation";
 /** Fallback only — live amount comes from platform_settings / membership catalog. */
 export const CONSULTATION_FEE_AMOUNT_KOBO = DEFAULT_CONSULTATION_FEE_NGN * 100;
+
+export const CONCIERGE_INVOICE_PRODUCT_TYPE = "concierge_invoice";
 
 const PREMIUM_PLAN_ALIASES = new Map([
   ["premium_weekly", "weekly"],
@@ -79,6 +91,32 @@ export function isFastConnectionProductType(productType) {
 
 export function isConsultationFeeProductType(productType) {
   return String(productType || "").trim().toLowerCase() === CONSULTATION_FEE_PRODUCT_TYPE;
+}
+
+export function isConciergeInvoiceProductType(productType) {
+  const value = String(productType || "").trim().toLowerCase();
+  return value === CONCIERGE_INVOICE_PRODUCT_TYPE || value === "concierge-invoice";
+}
+
+export async function resolveConciergeInvoiceProduct(invoiceId = "") {
+  const { resolveConciergeInvoiceForCheckout } = await import("./conciergeOperations.js");
+  const resolved = await resolveConciergeInvoiceForCheckout(invoiceId);
+  if (!resolved) return null;
+  return {
+    productType: CONCIERGE_INVOICE_PRODUCT_TYPE,
+    productId: String(invoiceId).trim(),
+    invoiceId: String(invoiceId).trim(),
+    amountKobo: resolved.amountKobo,
+    days: null,
+    durationHours: null,
+    dailyFastSignals: null,
+    boostId: null,
+    memberId: resolved.memberId,
+    journeyId: resolved.journeyId,
+    invoiceNumber: resolved.invoiceNumber,
+    planName: `Concierge invoice ${resolved.invoiceNumber || ""}`.trim(),
+    grantsMembership: false
+  };
 }
 
 export async function resolveConsultationFeeProduct(paymentId = CONSULTATION_FEE_PRODUCT_ID) {
@@ -172,14 +210,43 @@ export function resolveBoostProduct(boostId = "city-boost") {
   };
 }
 
+export function resolveConversationUnlockProduct(targetProfileId = "") {
+  const targetId = String(targetProfileId || "").trim();
+  return {
+    productType: CONVERSATION_UNLOCK_PRODUCT_TYPE,
+    productId: DISCOVER_PRODUCT.CONVERSATION_UNLOCK,
+    amountKobo: CONVERSATION_UNLOCK_AMOUNT_KOBO,
+    days: null,
+    durationHours: null,
+    dailyFastSignals: null,
+    boostId: null,
+    targetProfileId: targetId || null,
+    planName: "Conversation Unlock"
+  };
+}
+
+export function isConversationUnlockProductType(productType) {
+  const value = String(productType || "").trim().toLowerCase();
+  return value === CONVERSATION_UNLOCK_PRODUCT_TYPE || value === "conversation-unlock";
+}
+
 export async function resolvePaymentProduct({
   productType = "premium",
   productId = "",
   planId = "",
-  boostId = ""
+  boostId = "",
+  targetProfileId = ""
 } = {}) {
   const type = String(productType || "premium").trim().toLowerCase();
   const id = String(productId || planId || boostId || "").trim();
+
+  if (isConversationUnlockProductType(type) || isConversationUnlockProductId(id)) {
+    return resolveConversationUnlockProduct(targetProfileId || planId);
+  }
+
+  if (isConciergeInvoiceProductType(type) || type === "concierge-invoice") {
+    return resolveConciergeInvoiceProduct(id || productId);
+  }
 
   if (type === "boost" || BOOST_PRODUCT_IDS.has(id)) {
     return resolveBoostProduct(id || boostId || "city-boost");
@@ -217,6 +284,7 @@ export function readPurchaseIntentFromFulfillment(fulfillment) {
     durationHours: intent.durationHours ?? null,
     dailyFastSignals: intent.dailyFastSignals ?? null,
     boostId: intent.boostId ?? null,
+    targetProfileId: intent.targetProfileId ?? null,
     planName: intent.planName ?? null
   };
 }
@@ -228,7 +296,10 @@ export async function resolvePurchaseIntent({ fulfillment, metadata = {} } = {})
   const productType = String(metadata.product_type || fulfillment?.product_type || "premium").trim();
   const productId = String(metadata.product_id || fulfillment?.product_id || metadata.plan || "monthly").trim();
   const boostId = String(metadata.boost_id || productId || "city-boost").trim();
-  const resolved = await resolvePaymentProduct({ productType, productId, boostId });
+  const targetProfileId = String(
+    metadata.target_profile_id || metadata.targetProfileId || ""
+  ).trim();
+  const resolved = await resolvePaymentProduct({ productType, productId, boostId, targetProfileId });
   return resolved || null;
 }
 

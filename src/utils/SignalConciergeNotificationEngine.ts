@@ -18,6 +18,7 @@ import {
   buildMemberNotificationBundle,
   createDefaultNotificationPreferences,
   deriveNotificationEventsFromMember,
+  deriveNotificationEventsFromOpsHistory,
   updateNotificationPreferences
 } from "./notificationLogic";
 import { readJson, writeJson } from "./storage";
@@ -182,6 +183,40 @@ export function ensureMemberNotificationBundle(member: ConciergeMemberRecord): M
     member,
     preferences: synced.preferences,
     events: synced.events
+  });
+}
+
+/** Merge Operations case history into member notifications (invoice / assignment / status / completion). */
+export function mergeOpsCaseNotifications(
+  member: ConciergeMemberRecord,
+  history: Array<{
+    id?: string;
+    eventType?: string;
+    event_type?: string;
+    createdAt?: string | null;
+    created_at?: string | null;
+  }>
+): MemberNotificationBundle {
+  const store = loadStore();
+  const synced = syncMemberNotifications(member, store);
+  const opsEvents = deriveNotificationEventsFromOpsHistory(member, history, (recordId, at) =>
+    ensureNotificationId(recordId, at, store.events[recordId]?.notificationId)
+  );
+  const events = { ...store.events };
+  for (const event of [...synced.events, ...opsEvents]) {
+    events[event.id] = event;
+  }
+  saveStore({
+    preferences: { ...store.preferences, [member.id]: synced.preferences },
+    events,
+    updatedAt: new Date().toISOString()
+  });
+  return buildMemberNotificationBundle({
+    member,
+    preferences: synced.preferences,
+    events: Object.values(events)
+      .filter((event) => event.memberId === member.id)
+      .sort((a, b) => Date.parse(b.queuedAt) - Date.parse(a.queuedAt))
   });
 }
 

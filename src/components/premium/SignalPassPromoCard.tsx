@@ -30,7 +30,7 @@ export function SignalPassPromoCard({
   return (
     <section
       className={`signal-pass-promo signal-pass-promo--${variant}`}
-      aria-label="Signal Pass"
+      aria-label="Discover Membership"
     >
       {variant === "home" && onDismiss ? (
         <button

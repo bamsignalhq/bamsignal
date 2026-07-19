@@ -128,8 +128,30 @@ export default async function conciergePersistenceHandler(req, res) {
         return databaseUnavailable(res);
       }
       const memberId = String(body.memberId || memberAuth.memberId).trim();
+      if (memberId !== memberAuth.memberId) {
+        return res.status(403).json({ ok: false, error: "Forbidden." });
+      }
       const member = await getConciergeMemberFromDb(memberId);
       return res.status(200).json({ ok: true, member });
+    }
+
+    if (action === "member-upsert") {
+      const memberAuth = await requireMemberAuth(req);
+      if (!memberAuth?.memberId) {
+        return res.status(401).json({ ok: false, error: "Authentication required." });
+      }
+      if (getDatabaseStatus() !== "connected") {
+        return databaseUnavailable(res);
+      }
+      const member = body.member;
+      if (!member || typeof member !== "object") {
+        return res.status(400).json({ ok: false, error: "Member payload is required." });
+      }
+      const result = await upsertConciergeMemberRecord({
+        ...member,
+        id: memberAuth.memberId
+      });
+      return res.status(result.ok ? 200 : 400).json(result);
     }
 
     return res.status(400).json({ ok: false, error: "Unsupported action." });

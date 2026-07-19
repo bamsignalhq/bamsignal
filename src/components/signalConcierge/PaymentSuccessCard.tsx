@@ -1,5 +1,7 @@
-import { CONSULTATION_PAYMENT_AMOUNT_LABEL, CONSULTATION_PAYMENT_FEE_LABEL } from "../../constants/consultationPayment";
+import { COMMERCIAL_PRODUCT_LABELS, COMMERCIAL_RECEIPT } from "../../constants/commercialExperience";
+import { CONSULTATION_PAYMENT_AMOUNT_LABEL } from "../../constants/consultationPayment";
 import type { PaymentSummary } from "../../types/consultationPayment";
+import { CommercialReceiptCard } from "../commercial/CommercialOutcomeCard";
 
 type PaymentSuccessCardProps = {
   summary: PaymentSummary;
@@ -8,24 +10,14 @@ type PaymentSuccessCardProps = {
 
 export function PaymentSuccessCard({ summary, paymentId }: PaymentSuccessCardProps) {
   return (
-    <article className="consultation-payment-status-card consultation-payment-status-card--success signal-concierge-glass sc-reveal">
-      <h2>Consultation fee received</h2>
-      <p>
-        Thank you, {summary.memberName}. Your {CONSULTATION_PAYMENT_FEE_LABEL.toLowerCase()} ({CONSULTATION_PAYMENT_AMOUNT_LABEL}) is confirmed.
-      </p>
-      <dl className="consultation-payment-status-card__meta">
-        <div>
-          <dt>Payment ID</dt>
-          <dd>{paymentId || summary.paymentId}</dd>
-        </div>
-        <div>
-          <dt>Status</dt>
-          <dd>{summary.statusLabel}</dd>
-        </div>
-      </dl>
-      <p className="consultation-payment-status-card__note">
-        You may now schedule your private consultation. Your steward will meet you with care and discretion.
-      </p>
-    </article>
+    <div className="sc-reveal">
+      <CommercialReceiptCard
+        productLabel={COMMERCIAL_PRODUCT_LABELS.consultation_fee}
+        amountLabel={CONSULTATION_PAYMENT_AMOUNT_LABEL}
+        reference={paymentId || summary.paymentId}
+        statusLabel={summary.statusLabel || COMMERCIAL_RECEIPT.paid}
+        note={`Thank you, ${summary.memberName}. You may now schedule your private consultation. ${COMMERCIAL_RECEIPT.membershipNote}`}
+      />
+    </div>
   );
 }

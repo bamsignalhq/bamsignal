@@ -15,7 +15,7 @@ export type ActiveBoostEntry = {
 
 const DURATION_MS: Record<Exclude<BoostProductId, "priority-signal-once">, number> = {
   "signal-boost": 24 * 60 * 60 * 1000,
-  "profile-boost": 48 * 60 * 60 * 1000,
+  "profile-boost": 24 * 60 * 60 * 1000,
   "city-boost": 48 * 60 * 60 * 1000,
   "city-spotlight": 24 * 60 * 60 * 1000
 };

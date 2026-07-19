@@ -53,7 +53,7 @@ export const HELP_PAGES = [
         heading: "Sending a signal",
         paragraphs: [
           "On Discover, open a profile and tap Signal. Write something specific — a prompt they answered, a shared interest, or a friendly question.",
-          "Free members receive a daily signal allowance. Premium plans may include more — see Signal Pass for details."
+          "Free members receive a daily signal allowance. Discover Membership includes unlimited Signals — see Membership for details."
         ]
       },
       {
@@ -159,29 +159,29 @@ export const HELP_PAGES = [
   ),
   helpPage(
     "signal-pass",
-    "Signal Pass help",
-    "Signal Pass premium help | BamSignal",
-    "What Signal Pass includes, how billing works, and how to manage your premium plan.",
-    "Signal Pass is BamSignal's premium subscription. Core features remain free — premium adds capacity and convenience.",
+    "Discover Membership help",
+    "Discover Membership help | BamSignal",
+    "What Discover Membership includes, how billing works, and how to manage your plan.",
+    "Discover Membership is BamSignal's paid Discover plan. Core features remain free — membership adds capacity and convenience.",
     [
       {
         heading: "What you get",
         paragraphs: [
-          "More daily signals, premium visibility options, and additional tools shown on the Premium screen.",
+          "Unlimited Signals, premium visibility options, and additional tools shown on the Membership screen.",
           "Exact limits and pricing appear in-app in Naira at checkout."
         ]
       },
       {
         heading: "Managing your plan",
         paragraphs: [
-          "View or change your plan from Profile → Premium or Settings.",
+          "View or change your plan from Profile → Membership or Settings.",
           "Payment is processed securely through our payment partner."
         ]
       }
     ],
     [
       {
-        question: "Can I use BamSignal without Signal Pass?",
+        question: "Can I use BamSignal without Discover Membership?",
         answer: "Yes. Discovery, signals, and chat work on the free plan."
       },
       {
@@ -189,7 +189,7 @@ export const HELP_PAGES = [
         answer: "Follow the cancellation steps shown in your plan details or payment provider receipt."
       }
     ],
-    ["Signal Pass help", "BamSignal premium", "cancel subscription"]
+    ["Discover Membership help", "BamSignal premium", "cancel subscription"]
   ),
   helpPage(
     "boosts",

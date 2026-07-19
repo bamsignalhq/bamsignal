@@ -37,17 +37,21 @@ import {
   LazyVoiceVibePage,
   LazyPremiumPage,
   LazyPremiumCenterPage,
+  LazyDiscreetCenterPage,
   LazyPublicMarketingRoutes,
   LazySafetyCenterPage,
   LazyReferralDashboardPage,
   LazySignalConciergeApplicationPage,
   LazySignalConciergeConsultationPage,
   LazySignalConciergeFaqPage,
+  LazySignalConciergeClientAuthPage,
   LazyShareYourStoryPage,
+  LazyProductLandingPage,
   LazySignalConciergeLandingPage,
   LazySignalConciergePrivacyPage,
   LazySignalConciergeStatusPage,
   LazySignalConciergeDashboardPage,
+  LazySignalConciergeInvoicesPage,
   LazyBamSignalInstituteRelationshipConnectPage,
   LazyBamSignalInstituteBamSignalSummitPage,
   LazyBamSignalInstituteBamSignalHonorsPage,
@@ -167,8 +171,12 @@ import { recordStreakActivity } from "./utils/streaks";
 import {
   isPremiumActive,
   refreshPremiumStatus,
-  clearPaymentSession
+  clearPaymentSession,
+  startConversationUnlockPayment,
+  startDiscreetPayment
 } from "./services/payments";
+import { rememberConversationUnlock } from "./constants/conversationUnlock";
+import { rememberDiscreetPurchase } from "./utils/discreetMembership";
 import { WalletExperienceSheet } from "./components/wallet/WalletExperienceSheet";
 import { MemberOfflineBanner, MemberSlowConnectionBanner } from "./components/member";
 import { useNetworkStatus } from "./hooks/useNetworkStatus";
@@ -252,6 +260,11 @@ import {
   SIGNAL_CONCIERGE_ROUTES,
   type SignalConciergeRoute
 } from "./constants/signalConciergeRoutes";
+import {
+  getProductLandingId,
+  redirectProfessionalMatchmakingAlias,
+  type ProductLandingId
+} from "./constants/productRoutes";
 import {
   CONSULTANT_ROUTES,
   getConsultantRoute,
@@ -355,6 +368,9 @@ type VerifiedPaymentRoute = {
   quickiePassUntil?: string;
   expiresAt?: string;
   entitlementId?: string;
+  matchId?: string;
+  targetProfileId?: string;
+  discreetUntil?: string;
   boost?: {
     id?: string;
     productId?: string;
@@ -401,6 +417,9 @@ export function App() {
   const [nigeriaRoute, setNigeriaRoute] = useState<NigeriaRoute | null>(() => getNigeriaRoute());
   const [signalConciergeRoute, setSignalConciergeRoute] = useState<SignalConciergeRoute | null>(() =>
     getSignalConciergeRoute()
+  );
+  const [productLandingId, setProductLandingId] = useState<ProductLandingId | null>(() =>
+    getProductLandingId()
   );
   const [signalEventsRoute, setSignalEventsRoute] = useState<SignalEventsRoute | null>(() =>
     getSignalEventsRoute()
@@ -643,10 +662,12 @@ export function App() {
       if (fromMemberTab) setTab(fromMemberTab);
       redirectLegacyConsolePaths();
       redirectAuthSignupAliases();
+      redirectProfessionalMatchmakingAlias();
       setLegalPath(getLegalPath());
       setSeoRoute(getSeoRoute());
       setNigeriaRoute(getNigeriaRoute());
       setSignalConciergeRoute(getSignalConciergeRoute());
+      setProductLandingId(getProductLandingId());
       setSignalEventsRoute(getSignalEventsRoute());
       setBamSignalFoundationRoute(getBamSignalFoundationRoute());
       setBamSignalInstituteRoute(getBamSignalInstituteRoute());
@@ -987,7 +1008,7 @@ export function App() {
 
   const finishPaymentReturnRedirect = useCallback(
     (
-      kind: "premium" | "boost" | "quickie",
+      kind: "premium" | "boost" | "quickie" | "conversation_unlock" | "discreet" | "concierge_invoice",
       returnPath = getPaymentReturnPath(),
       meta = getPaymentReturnMeta()
     ) => {
@@ -1012,7 +1033,7 @@ export function App() {
   );
 
   const applyPaymentSuccess = useCallback(
-    (kind: "premium" | "boost" | "quickie", route?: VerifiedPaymentRoute) => {
+    (kind: "premium" | "boost" | "quickie" | "conversation_unlock" | "discreet" | "concierge_invoice", route?: VerifiedPaymentRoute) => {
       const returnPath = normalizePaymentReturnPath(route?.returnPath || getPaymentReturnPath());
       const storedMeta = getPaymentReturnMeta();
       const meta = {
@@ -1026,6 +1047,7 @@ export function App() {
         (kind === "boost" ? route?.productId : undefined) ||
         localStorage.getItem(STORAGE_KEYS.paymentBoostId) ||
         "city-boost";
+      const paymentReference = localStorage.getItem(STORAGE_KEYS.paymentReference);
       clearPaymentSession();
       setPaymentFlowState("success");
       setPaymentFlowTick((v) => v + 1);
@@ -1055,6 +1077,42 @@ export function App() {
             ? { entitlementId: String(route.entitlementId || route.boost?.id) }
             : {})
         });
+      } else if (kind === "conversation_unlock") {
+        const targetProfileId =
+          route?.targetProfileId ||
+          localStorage.getItem(STORAGE_KEYS.paymentUnlockTargetId) ||
+          "";
+        if (targetProfileId) {
+          rememberConversationUnlock({
+            targetProfileId,
+            matchId: route?.matchId || null,
+            purchasedAt: new Date().toISOString()
+          });
+        }
+        setPaymentSuccess({
+          title: "Conversation unlocked",
+          body: "You can message this member now. This does not grant Premium."
+        });
+        trackEvent("conversation_unlocked", {
+          targetProfileId: String(targetProfileId || ""),
+          matchId: String(route?.matchId || "")
+        });
+        scheduleMemberBundleHydration(user);
+      } else if (kind === "discreet") {
+        rememberDiscreetPurchase({
+          endsAt: route?.discreetUntil || null,
+          purchasedAt: new Date().toISOString(),
+          reference: paymentReference
+        });
+        void refreshPremiumStatus(user).then(() => syncPremiumState());
+        setPaymentSuccess({
+          title: "Discreet Membership active",
+          body: "You are hidden from Discover, Search, Nearby, and recommendations. Unlimited Signals and messaging are on."
+        });
+        trackEvent("payment_successful", {
+          product: "discreet",
+          plan: String(route?.productId || "monthly")
+        });
       } else if (kind === "quickie") {
         applyQuickieIntentAfterPayment(user, route?.quickiePassUntil);
         setPaymentSuccess({
@@ -1062,6 +1120,15 @@ export function App() {
           body: "Fast Connection is active."
         });
         trackEvent("quickie_unlock");
+      } else if (kind === "concierge_invoice") {
+        setPaymentSuccess({
+          title: "Invoice paid",
+          body: "Payment recorded. Your Concierge case can continue — membership was not changed."
+        });
+        trackEvent("payment_successful", {
+          product: "concierge_invoice",
+          plan: String(route?.productId || "")
+        });
       } else {
         void refreshPremiumStatus(user).then(() => syncPremiumState());
         setPaymentSuccess({
@@ -1074,7 +1141,7 @@ export function App() {
       setNotifVersion((v) => v + 1);
       finishPaymentReturnRedirect(kind, returnPath, meta);
     },
-    [finishPaymentReturnRedirect, syncPremiumState, user]
+    [finishPaymentReturnRedirect, scheduleMemberBundleHydration, syncPremiumState, user]
   );
 
   const processPaymentReturn = useCallback(async () => {
@@ -1119,7 +1186,10 @@ export function App() {
           quickiePassUntil: outcome.quickiePassUntil,
           expiresAt: outcome.expiresAt,
           entitlementId: outcome.entitlementId,
-          boost: outcome.boost
+          boost: outcome.boost,
+          matchId: outcome.matchId,
+          targetProfileId: outcome.targetProfileId,
+          discreetUntil: outcome.discreetUntil
         });
         return;
       }
@@ -1378,8 +1448,9 @@ export function App() {
     const route = getSignalConciergeRoute(memberPathname);
     if (!route || !isSignalConciergeAuthenticatedRoute(route)) return;
     if (authLoading || isAuthed || getAuthPath()) return;
-    openAuth("login");
-  }, [memberPathname, authLoading, isAuthed, openAuth]);
+    // Concierge clients use dedicated auth — never Discover login.
+    navigateToPath(SIGNAL_CONCIERGE_ROUTES.signIn);
+  }, [memberPathname, authLoading, isAuthed]);
 
   const enterMemberApp = useCallback(() => {
     if (openAppLoading) return;
@@ -2130,6 +2201,91 @@ export function App() {
     [isAuthed, openAuth, openWalletPurchase, tab]
   );
 
+  const handleConversationUnlock = useCallback(
+    async (profile: { id: string; name?: string }) => {
+      if (!isAuthed) {
+        openAuth("signup", "discover");
+        return;
+      }
+      if (!user.email?.trim()) {
+        setAuthMessage("Add a verified email before unlocking a conversation.");
+        return;
+      }
+      trackEvent("payment_started", { product: "conversation-unlock", targetProfileId: profile.id });
+      setPaymentLoading(true);
+      setPaymentPhase("preparing");
+      try {
+        const result = await startConversationUnlockPayment(
+          profile.id,
+          user,
+          {
+            onPhase: (phase) => setPaymentPhase(phase)
+          },
+          {
+            returnPath: "/chats",
+            sourcePage: "/discover"
+          }
+        );
+        setPaymentFlowTick((v) => v + 1);
+        if (!result.ok) {
+          if (!result.cancelled && result.error) {
+            setAuthMessage(result.error);
+          }
+          return;
+        }
+        if (result.needsVerify) {
+          await processPaymentReturn();
+        }
+      } finally {
+        setPaymentLoading(false);
+        setPaymentPhase("idle");
+      }
+    },
+    [isAuthed, openAuth, processPaymentReturn, user]
+  );
+
+  const openDiscreetCenter = useCallback(() => {
+    setTab("me");
+    navigateToPath("/discreet-membership", true);
+  }, []);
+
+  const handleDiscreetPurchase = useCallback(async () => {
+    if (!isAuthed) {
+      openAuth("signup", "me");
+      return;
+    }
+    if (!user.email?.trim()) {
+      setAuthMessage("Add a verified email before purchasing Discreet Membership.");
+      return;
+    }
+    trackEvent("payment_started", { product: "discreet", plan: "monthly" });
+    setPaymentLoading(true);
+    setPaymentPhase("preparing");
+    try {
+      const result = await startDiscreetPayment(
+        user,
+        { onPhase: (phase) => setPaymentPhase(phase) },
+        {
+          returnPath: "/discreet-membership",
+          sourcePage: "/discreet-membership"
+        }
+      );
+      setPaymentFlowTick((v) => v + 1);
+      if (!result.ok) {
+        if (!result.cancelled && result.error) {
+          setAuthMessage(result.error);
+        }
+        return;
+      }
+      if (result.needsVerify) {
+        await processPaymentReturn();
+      }
+    } finally {
+      setPaymentLoading(false);
+      setPaymentPhase("idle");
+    }
+  }, [isAuthed, openAuth, processPaymentReturn, user]);
+
   const paymentOverlayMessage =
     paymentPhase === "opening"
       ? MONETIZATION_COPY.checkoutOpening
@@ -2399,6 +2555,21 @@ export function App() {
     );
   }
 
+  if (productLandingId) {
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading…" />}>
+        <LazyProductLandingPage
+          productId={productLandingId}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onLogoClick={goHome}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup", "discover")}
+        />
+      </Suspense>
+    );
+  }
+
   if (signalConciergeRoute) {
     if (
       isUnknownSignalConciergeSubroute(currentPathname) ||
@@ -2414,7 +2585,7 @@ export function App() {
                 ? "Redirecting…"
                 : authLoading
                   ? "Restoring your session…"
-                  : "Redirecting to login…"
+                  : "Redirecting to client sign in…"
             }
             showReload={bootStalled}
             onReload={reloadApp}
@@ -2427,19 +2598,43 @@ export function App() {
       theme,
       onToggleTheme: toggleTheme,
       onLogoClick: goHome,
-      onLogin: isAuthed ? undefined : () => openAuth("login")
+      onLogin: isAuthed ? undefined : () => navigateToPath(SIGNAL_CONCIERGE_ROUTES.signIn)
     };
+
+    const isConciergeAuthRoute =
+      signalConciergeRoute === "signIn" ||
+      signalConciergeRoute === "signUp" ||
+      signalConciergeRoute === "forgotPin" ||
+      signalConciergeRoute === "verifyEmail";
 
     return (
       <Suspense fallback={<LazyRouteFallback subtitle="Loading Signal Concierge…" />}>
         {signalConciergeRoute === "landing" ? (
           <LazySignalConciergeLandingPage {...signalConciergeShellProps} />
+        ) : isConciergeAuthRoute ? (
+          <LazySignalConciergeClientAuthPage
+            {...signalConciergeShellProps}
+            view={
+              signalConciergeRoute === "signUp"
+                ? "signUp"
+                : signalConciergeRoute === "forgotPin"
+                  ? "forgotPin"
+                  : signalConciergeRoute === "verifyEmail"
+                    ? "verifyEmail"
+                    : "signIn"
+            }
+            onAuthenticated={handleAuthenticated}
+            message={authMessage}
+            onMessage={setAuthMessage}
+          />
         ) : signalConciergeRoute === "apply" ? (
           <LazySignalConciergeApplicationPage {...signalConciergeShellProps} />
         ) : signalConciergeRoute === "status" ? (
           <LazySignalConciergeStatusPage {...signalConciergeShellProps} />
         ) : signalConciergeRoute === "dashboard" ? (
           <LazySignalConciergeDashboardPage {...signalConciergeShellProps} />
+        ) : signalConciergeRoute === "invoices" ? (
+          <LazySignalConciergeInvoicesPage {...signalConciergeShellProps} user={user} />
         ) : signalConciergeRoute === "consultation" ? (
           <LazySignalConciergeConsultationPage {...signalConciergeShellProps} />
         ) : signalConciergeRoute === "shareStory" ? (
@@ -2857,7 +3052,7 @@ export function App() {
             </MemberRouteBoundary>
           )}
           {isAuthed && memberAccessReady && memberOverlay === "premium" && (
-            <Suspense fallback={<LazyRouteFallback subtitle="Loading Signal Pass…" />}>
+            <Suspense fallback={<LazyRouteFallback subtitle="Loading Discover Membership…" />}>
               <LazyPremiumPage
                 isPremium={isPremium}
                 plans={plans}
@@ -2933,6 +3128,18 @@ export function App() {
                   onBack={() => navigateToPath("/profile", true)}
                   onSelectPlan={(plan) => void handleUpgrade(plan)}
                   loading={paymentLoading}
+                  onOpenDiscreet={openDiscreetCenter}
+                />
+              </Suspense>
+            </MemberRouteBoundary>
+          )}
+          {memberAccessReady && !memberOverlay && currentPathname === "/discreet-membership" && (
+            <MemberRouteBoundary sessionKey={memberSessionEpoch} name="discreet-membership">
+              <Suspense fallback={<LazyRouteFallback subtitle="Loading Discreet Membership…" />}>
+                <LazyDiscreetCenterPage
+                  onBack={() => navigateToPath("/profile", true)}
+                  onPurchase={() => void handleDiscreetPurchase()}
+                  loading={paymentLoading}
                 />
               </Suspense>
             </MemberRouteBoundary>
@@ -2969,6 +3176,7 @@ export function App() {
                 onStartPremiumCheckout={startPremiumCheckout}
                 paymentLoading={paymentLoading}
                 onOpenSafety={() => setMemberOverlay("safety")}
+                onUnlockConversation={(profile) => void handleConversationUnlock(profile)}
               />
             </MemberRouteBoundary>
           )}
@@ -3051,7 +3259,7 @@ export function App() {
               />
             </MemberRouteBoundary>
           )}
-          {memberAccessReady && tab === "me" && currentPathname !== "/voice-vibe" && currentPathname !== "/trusted-member" && currentPathname !== "/saved-profiles" && currentPathname !== "/subscription" && currentPathname !== "/referral" && (
+          {memberAccessReady && tab === "me" && currentPathname !== "/voice-vibe" && currentPathname !== "/trusted-member" && currentPathname !== "/saved-profiles" && currentPathname !== "/subscription" && currentPathname !== "/discreet-membership" && currentPathname !== "/referral" && (
             <MemberRouteBoundary sessionKey={memberSessionEpoch} name="profile">
               <ProfilePage
                 user={user}

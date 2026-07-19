@@ -107,13 +107,13 @@ export const SEO_HUBS: Record<SeoHubId, SeoHubConfig> = {
     basePath: "/premium",
     title: "Premium | BamSignal",
     description:
-      "Learn about Signal Pass and premium tools that help you connect with more clarity.",
+      "Learn about Discover Membership and premium tools that help you connect with more clarity.",
     h1: "More room to connect",
     intro:
-      "Premium is optional — the core BamSignal experience stays free. When you are ready, Signal Pass adds tools that make discovery and conversation easier.",
+      "Premium is optional — the core BamSignal experience stays free. When you are ready, Discover Membership adds tools that make discovery and conversation easier.",
     category: "Premium",
-    lastUpdated: "2026-06-19",
-    keywords: ["BamSignal premium", "Signal Pass", "dating app subscription Nigeria"]
+    lastUpdated: "2026-07-19",
+    keywords: ["BamSignal premium", "Discover Membership", "dating app subscription Nigeria"]
   },
   faq: {
     id: "faq",

@@ -40,6 +40,7 @@ type ProfileDetailSheetProps = {
   onSendSignal?: () => void;
   onPass?: () => void;
   onPrioritySignal?: () => void;
+  onUnlockConversation?: () => void;
   onReport?: () => void;
   onBlock?: () => void;
   onBlockAndReport?: () => void;
@@ -56,6 +57,7 @@ export function ProfileDetailSheet({
   onSendSignal,
   onPass,
   onPrioritySignal,
+  onUnlockConversation,
   onReport,
   onBlock,
   onBlockAndReport,
@@ -298,7 +300,7 @@ export function ProfileDetailSheet({
 
         </div>
 
-        {(onSendSignal || onPass) && (
+        {(onSendSignal || onPass || onUnlockConversation) && (
           <footer className="profile-detail-sheet__actions profile-detail-sheet__actions--clean">
             <button
               type="button"
@@ -308,6 +310,17 @@ export function ProfileDetailSheet({
             >
               {BRAND.sendSignal}
             </button>
+            {onUnlockConversation ? (
+              <button
+                type="button"
+                className="btn-secondary btn-sm"
+                onClick={() => {
+                  onUnlockConversation();
+                }}
+              >
+                Unlock chat · ₦500
+              </button>
+            ) : null}
             <button
               type="button"
               className="profile-detail-sheet__pass"

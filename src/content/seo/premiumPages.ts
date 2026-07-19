@@ -3,16 +3,16 @@ import { premiumPage } from "./pageBuilders";
 export const PREMIUM_PAGES = [
   premiumPage(
     "signal-pass",
-    "Signal Pass",
-    "Signal Pass | BamSignal premium",
-    "What Signal Pass includes — extra signals, visibility tools, and premium features for members who want more room to connect.",
-    "Signal Pass is BamSignal's premium plan. The free experience stays fully usable — premium adds optional capacity and tools.",
+    "Discover Membership",
+    "Discover Membership | BamSignal premium",
+    "What Discover Membership includes — unlimited Signals, visibility tools, and premium filters for members who want more room to connect.",
+    "Discover Membership is BamSignal's paid Discover plan. The free experience stays fully usable — membership adds optional capacity and tools.",
     [
       {
-        heading: "What Signal Pass includes",
+        heading: "What Discover Membership includes",
         paragraphs: [
-          "More daily signals and premium visibility options shown at checkout.",
-          "Additional tools may vary by region — see the Premium screen for your plan."
+          "Unlimited Signals plus premium visibility options shown at checkout.",
+          "Additional tools may vary by region — see the Membership screen for your plan."
         ]
       },
       {
@@ -33,7 +33,7 @@ export const PREMIUM_PAGES = [
         answer: "Secure checkout in Naira through our payment partner."
       }
     ],
-    ["Signal Pass", "BamSignal premium plan", "dating subscription Nigeria"]
+    ["Discover Membership", "BamSignal premium plan", "dating subscription Nigeria"]
   ),
   premiumPage(
     "boost-visibility",
@@ -60,7 +60,7 @@ export const PREMIUM_PAGES = [
     [
       {
         question: "Is this the same as Boosts?",
-        answer: "Related but separate. Boosts are often one-off purchases; Signal Pass may bundle visibility perks."
+        answer: "Related but separate. Boosts are often one-off purchases; Discover Membership may bundle visibility perks."
       },
       {
         question: "Can I turn visibility off?",
@@ -97,8 +97,8 @@ export const PREMIUM_PAGES = [
         answer: "No. It may increase noticeability — replies depend on mutual interest."
       },
       {
-        question: "Is it included in Signal Pass?",
-        answer: "Check your Premium screen for bundled features in your region."
+        question: "Is it included in Discover Membership?",
+        answer: "Check your Membership screen for bundled features in your region."
       }
     ],
     ["priority introduction", "premium signals", "stand out dating app"]

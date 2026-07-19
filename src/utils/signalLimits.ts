@@ -32,7 +32,7 @@ export function signalLimitReachedMessage(): string {
 }
 
 export function signalLimitReachedHint(): string {
-  return "Signal Pass lets you keep connecting.";
+  return "Discover Membership lets you keep connecting.";
 }
 
 export type SignalGateResult =

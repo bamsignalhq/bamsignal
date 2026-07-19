@@ -10,18 +10,25 @@ import { createVipInviteLink } from "../telegram.js";
 import { resetFastConnectionDailySignals } from "./fastConnection.js";
 import {
   FAST_CONNECTION_DEFAULT_PLAN_ID,
+  CONVERSATION_UNLOCK_PRODUCT_TYPE,
   boostExpiresAtFromIntent,
   fastConnectionUntilFromIntent,
+  CONCIERGE_INVOICE_PRODUCT_TYPE,
   isConsultationFeeProductType,
+  isConciergeInvoiceProductType,
+  isConversationUnlockProductType,
   isDiscreetProductType,
   isFastConnectionProductType,
   resolveBoostProduct,
+  resolveConversationUnlockProduct,
+  resolveConciergeInvoiceProduct,
   resolvePaymentProduct,
   resolvePurchaseIntent,
   verifyExpectedAmount,
   loadPremiumPlans
 } from "./paymentCatalog.js";
 import { activateMembershipFromPayment } from "./membershipCommerce.js";
+import { activateConversationUnlockFromPayment } from "./conversationUnlock.js";
 import {
   PaymentDatabaseError,
   requireDatabaseReadyForPayments
@@ -61,6 +68,7 @@ export async function recordPurchaseIntent({
         durationHours: intent.durationHours ?? null,
         dailyFastSignals: intent.dailyFastSignals ?? null,
         boostId: intent.boostId ?? null,
+        targetProfileId: intent.targetProfileId ?? null,
         planName: intent.planName ?? null
       }
     }
@@ -122,6 +130,12 @@ export function buildPaystackPurchaseMetadata({
     metadata.plan_days = intent.days;
   }
 
+  if (isDiscreetProductType(intent.productType)) {
+    metadata.plan = intent.productId;
+    metadata.plan_days = intent.days;
+    metadata.experience_mode = "discreet";
+  }
+
   if (isFastConnectionProductType(intent.productType)) {
     metadata.quickie_days = intent.days;
     metadata.duration_days = intent.days;
@@ -134,10 +148,23 @@ export function buildPaystackPurchaseMetadata({
     if (city) metadata.city = String(city).trim();
   }
 
+  if (isConversationUnlockProductType(intent.productType)) {
+    metadata.target_profile_id = String(intent.targetProfileId || "").trim();
+  }
+
   if (isConsultationFeeProductType(intent.productType)) {
     metadata.payment_id = intent.productId;
     metadata.consultation_fee = true;
     metadata.fee_kind = "consultation-fee";
+  }
+
+  if (isConciergeInvoiceProductType(intent.productType)) {
+    metadata.invoice_id = intent.invoiceId || intent.productId;
+    metadata.concierge_invoice = true;
+    metadata.grants_membership = false;
+    if (intent.memberId) metadata.member_id = intent.memberId;
+    if (intent.journeyId) metadata.journey_id = intent.journeyId;
+    if (intent.invoiceNumber) metadata.invoice_number = intent.invoiceNumber;
   }
 
   if (intent.productType === "wallet_funding") {
@@ -202,6 +229,28 @@ export async function fulfillVerifiedPurchase({
     };
   }
 
+  if (isConciergeInvoiceProductType(intent.productType)) {
+    // Commerce records money only — Ops advances the case after verify (never membership).
+    const invoiceId = String(
+      intent.invoiceId || intent.productId || transaction?.metadata?.invoice_id || ""
+    ).trim();
+    return {
+      ok: true,
+      productType: CONCIERGE_INVOICE_PRODUCT_TYPE,
+      productId: invoiceId || intent.productId,
+      invoiceId,
+      invoiceNumber: intent.invoiceNumber || transaction?.metadata?.invoice_number || null,
+      amountKobo: Number(intent.amountKobo || transaction?.amount || 0),
+      grantsMembership: false,
+      membershipUnchanged: true,
+      activation: {
+        invoiceId,
+        grantsMembership: false,
+        membershipUnchanged: true
+      }
+    };
+  }
+
   if (isFastConnectionProductType(intent.productType)) {
     const passUntil = fastConnectionUntilFromIntent(intent);
     const activation = await activateAppUserFastConnectionPass({
@@ -249,6 +298,38 @@ export async function fulfillVerifiedPurchase({
       discreetUntil: activation.endsAt,
       privacyMode: "discreet",
       entitlements: activation.entitlements,
+      duplicate: Boolean(activation.duplicate)
+    };
+  }
+
+  if (isConversationUnlockProductType(intent.productType)) {
+    const targetProfileId = String(
+      intent.targetProfileId ||
+        transaction?.metadata?.target_profile_id ||
+        transaction?.metadata?.targetProfileId ||
+        ""
+    ).trim();
+    const activation = await activateConversationUnlockFromPayment({
+      email: email || null,
+      phone: phone || null,
+      name,
+      targetProfileId,
+      paymentRef: reference,
+      ledgerSource,
+      metadata: { productId: intent.productId }
+    });
+    if (!activation?.ok) {
+      return { ok: false, reason: activation?.reason || "conversation_unlock_failed" };
+    }
+    return {
+      ok: true,
+      productType: CONVERSATION_UNLOCK_PRODUCT_TYPE,
+      productId: intent.productId,
+      activation,
+      matchId: activation.matchId,
+      targetProfileId,
+      unlock: activation.unlock,
+      grantsPremium: false,
       duplicate: Boolean(activation.duplicate)
     };
   }
@@ -398,6 +479,24 @@ export async function resolveInitializeIntent(action, body = {}) {
   if (action === "initialize-boost") {
     const boostId = String(body.productId || body.boostId || body.product || "city-boost").trim();
     return resolveBoostProduct(boostId);
+  }
+
+  if (action === "initialize-conversation-unlock") {
+    const targetProfileId = String(body.targetProfileId || body.target_profile_id || "").trim();
+    if (!targetProfileId) return null;
+    return resolveConversationUnlockProduct(targetProfileId);
+  }
+
+  if (action === "initialize-concierge-invoice") {
+    const invoiceId = String(body.invoiceId || body.productId || "").trim();
+    if (!invoiceId) return null;
+    const intent = await resolveConciergeInvoiceProduct(invoiceId);
+    if (!intent) return null;
+    const payerId = String(body.memberId || body.userId || "").trim();
+    if (payerId && intent.memberId && payerId !== intent.memberId) {
+      return null;
+    }
+    return intent;
   }
 
   if (action === "initialize-quickie") {

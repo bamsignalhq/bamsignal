@@ -11,6 +11,9 @@ import type { LaunchCommandSectionId } from "../../../constants/launchCommandCen
 import { buildLiveLaunchCommandCenterBundle } from "../../../utils/launchCommandCenterEngine";
 import { findSectionSnapshot } from "../../../utils/launchCommandCenterLogic";
 import { LaunchCommandBoostIntegrityCard } from "./LaunchCommandBoostIntegrityCard";
+import { LaunchCommandDiscoverCommerceCard } from "./LaunchCommandDiscoverCommerceCard";
+import { LaunchCommandDiscreetMembershipCard } from "./LaunchCommandDiscreetMembershipCard";
+import { LaunchCommandConciergeOpsCard } from "./LaunchCommandConciergeOpsCard";
 import { LaunchCommandBlockersCard } from "./LaunchCommandBlockersCard";
 import { LaunchCommandGoNoGoCard } from "./LaunchCommandGoNoGoCard";
 import { LaunchCommandOperationsCard } from "./LaunchCommandOperationsCard";
@@ -82,6 +85,9 @@ export function LaunchCommandCenterPage() {
             deployments={bundle.deployments}
           />
           <LaunchCommandBoostIntegrityCard />
+          <LaunchCommandDiscoverCommerceCard />
+          <LaunchCommandDiscreetMembershipCard />
+          <LaunchCommandConciergeOpsCard />
         </div>
       </div>
 

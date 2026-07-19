@@ -7,7 +7,7 @@ type PremiumPurchaseHistoryProps = {
 export function PremiumPurchaseHistory({ purchases }: PremiumPurchaseHistoryProps) {
   if (!purchases.length) {
     return (
-      <p className="premium-center__empty">Purchase history appears here after your first Signal Pass.</p>
+      <p className="premium-center__empty">Purchase history appears here after your first Discover Membership payment.</p>
     );
   }
 

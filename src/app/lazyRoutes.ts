@@ -24,6 +24,10 @@ export const LazyPremiumCenterPage = lazy(() =>
   import("../pages/PremiumCenterPage").then((module) => ({ default: module.PremiumCenterPage }))
 );
 
+export const LazyDiscreetCenterPage = lazy(() =>
+  import("../pages/DiscreetCenterPage").then((module) => ({ default: module.DiscreetCenterPage }))
+);
+
 export const LazyVisitorsPage = lazy(() =>
   import("../pages/VisitorsPage").then((module) => ({ default: module.VisitorsPage }))
 );
@@ -62,6 +66,12 @@ export const LazySignalConciergeDashboardPage = lazy(() =>
   }))
 );
 
+export const LazySignalConciergeInvoicesPage = lazy(() =>
+  import("../pages/signal-concierge/SignalConciergeInvoicesPage").then((module) => ({
+    default: module.SignalConciergeInvoicesPage
+  }))
+);
+
 export const LazySignalConciergeConsultationPage = lazy(() =>
   import("../pages/signal-concierge/SignalConciergeConsultationPage").then((module) => ({
     default: module.SignalConciergeConsultationPage
@@ -80,9 +90,21 @@ export const LazySignalConciergeFaqPage = lazy(() =>
   }))
 );
 
+export const LazySignalConciergeClientAuthPage = lazy(() =>
+  import("../pages/signal-concierge/SignalConciergeClientAuthPage").then((module) => ({
+    default: module.SignalConciergeClientAuthPage
+  }))
+);
+
 export const LazyShareYourStoryPage = lazy(() =>
   import("../pages/signal-concierge/ShareYourStoryPage").then((module) => ({
     default: module.ShareYourStoryPage
+  }))
+);
+
+export const LazyProductLandingPage = lazy(() =>
+  import("../pages/products/ProductLandingPage").then((module) => ({
+    default: module.ProductLandingPage
   }))
 );
 

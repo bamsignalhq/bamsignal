@@ -216,3 +216,25 @@ export async function fulfillmentEmailAlreadySent(reference) {
   );
   return Boolean(result.rows[0]?.email_sent_at);
 }
+
+/** Member-facing fulfilled payment history (server-authoritative ledger). */
+export async function listPaymentHistoryForMember({ userId = null, limit = 40 } = {}) {
+  const id = String(userId || "").trim();
+  if (!id) return [];
+  requireDatabaseReadyForPayments();
+  await ensurePaymentFulfillmentsSchema();
+  try {
+    const result = await paymentQuery(
+      `select paystack_reference, user_id, product_type, product_id, amount_kobo, currency,
+              status, fulfilled_at, created_at
+       from payment_fulfillments
+       where status = 'fulfilled' and user_id = $1
+       order by coalesce(fulfilled_at, created_at) desc
+       limit $2`,
+      [id, Math.min(200, Math.max(1, Number(limit) || 40))]
+    );
+    return result.rows || [];
+  } catch {
+    return [];
+  }
+}

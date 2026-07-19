@@ -10,6 +10,7 @@ import { isCenturyRoute } from "./centuryRoutes";
 import { isConsultantRoute } from "./consultantRoutes";
 import { isCareersRoute } from "./careersRoutes";
 import { isSupportCenterRoute } from "./supportCenterRoutes";
+import { isProductLandingRoute, PROFESSIONAL_MATCHMAKING_ALIAS } from "./productRoutes";
 import { navigateToPath, normalizePath } from "./routePath";
 
 export { navigateToPath, normalizePath } from "./routePath";
@@ -118,6 +119,8 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   if (isCenturyRoute(path)) return true;
   if (isCareersRoute(path)) return true;
   if (isSupportCenterRoute(path)) return true;
+  if (isProductLandingRoute(path)) return true;
+  if (path === PROFESSIONAL_MATCHMAKING_ALIAS) return true;
   if (path === "/") return true;
   return false;
 }

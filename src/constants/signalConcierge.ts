@@ -2,9 +2,9 @@ export const SIGNAL_CONCIERGE_BRAND = "Signal Concierge™";
 
 export const SIGNAL_CONCIERGE_LANDING_HEADLINE = "Signal Concierge™";
 export const SIGNAL_CONCIERGE_LANDING_SUBTEXT =
-  "Human-led matchmaking for people seeking meaningful relationships and, in time, marriage.";
+  "A private Nigerian relationship advisory for discerning clients who value discretion, intention, and exceptional introductions.";
 
-export const SIGNAL_CONCIERGE_HERO_TAG = "Private by design";
+export const SIGNAL_CONCIERGE_HERO_TAG = "By application · Lagos & beyond";
 
 export const SIGNAL_CONCIERGE_CONFIDENTIALITY_HEADLINE = "Private by design";
 export const SIGNAL_CONCIERGE_CONFIDENTIALITY_BODY =
@@ -14,8 +14,76 @@ export const SIGNAL_CONCIERGE_CONFIDENTIALITY_NOTE = "Introductions happen only 
 export const SIGNAL_CONCIERGE_PRIVATE_HEADLINE = SIGNAL_CONCIERGE_CONFIDENTIALITY_HEADLINE;
 export const SIGNAL_CONCIERGE_PRIVATE_BODY = SIGNAL_CONCIERGE_CONFIDENTIALITY_BODY;
 
-export const SIGNAL_CONCIERGE_CTA_PRIMARY = "Schedule Consultation";
-export const SIGNAL_CONCIERGE_CTA_SECONDARY = "Learn More";
+export const SIGNAL_CONCIERGE_CTA_PRIMARY = "Request a private consultation";
+export const SIGNAL_CONCIERGE_CTA_SECONDARY = "Client portal sign-in";
+
+export const SIGNAL_CONCIERGE_PRICING_HEADLINE = "Investment";
+export const SIGNAL_CONCIERGE_PRICING_BODY =
+  "Pricing is tailored to your requirements. Your consultant issues invoices after understanding your needs — never a one-size plan.";
+export const SIGNAL_CONCIERGE_PRICING_NOTE =
+  "No public price list. Every engagement begins with a private consultation.";
+
+export const SIGNAL_CONCIERGE_HOW_IT_WORKS = [
+  { id: "application", step: 1, title: "Application", detail: "Share your goals in confidence." },
+  { id: "consultation", step: 2, title: "Consultation", detail: "A private conversation with our team." },
+  { id: "consultant", step: 3, title: "Dedicated Consultant", detail: "One steward for your journey." },
+  { id: "introductions", step: 4, title: "Curated Introductions", detail: "Only with mutual consent." },
+  { id: "guidance", step: 5, title: "Private Guidance", detail: "Human support at every step." },
+  { id: "match", step: 6, title: "Successful Match", detail: "Meaningful outcomes, not volume." }
+] as const;
+
+export const SIGNAL_CONCIERGE_EXPECTED_TIMELINES = [
+  {
+    id: "application-review",
+    title: "Application review",
+    detail: "Typically 2–5 business days after you submit."
+  },
+  {
+    id: "consultation",
+    title: "Consultation",
+    detail: "Usually scheduled within 1 week of acceptance."
+  },
+  {
+    id: "consultant-assignment",
+    title: "Consultant assignment",
+    detail: "Often within a few days after your consultation."
+  },
+  {
+    id: "first-invoice",
+    title: "Engagement invoice",
+    detail: "Issued by your consultant once the plan is agreed — never before."
+  },
+  {
+    id: "introductions",
+    title: "First introductions",
+    detail: "Timeline varies by goals and availability; your consultant sets clear milestones."
+  }
+] as const;
+
+export const SIGNAL_CONCIERGE_BENEFITS = [
+  "Private, consultant-led matchmaking — not browsing",
+  "Dedicated relationship steward for your case",
+  "Transparent case status, notes, and milestones",
+  "Invoices only when you are ready to proceed",
+  "Payment never changes Discover Premium membership"
+] as const;
+
+export const SIGNAL_CONCIERGE_CONSULTANT_PROMISES = [
+  "Dedicated relationship consultant",
+  "Private communication channels",
+  "Human review of every application",
+  "Personal guidance throughout",
+  "Progress tracking with dignity"
+] as const;
+
+export const SIGNAL_CONCIERGE_EDITORIAL_IMAGES = {
+  hero: "/showcase/hero-lagos-young-professionals-01.webp",
+  dinner: "/showcase/lagos-rooftop-01.webp",
+  lounge: "/showcase/lagos-rooftop-02.webp",
+  conversation: "/showcase/hero-lagos-young-professionals-02.webp",
+  lifestyle: "/showcase/lagos-rooftop-03.webp",
+  professionals: "/showcase/hero-lagos-young-professionals-03.webp"
+} as const;
 
 export const SIGNAL_CONCIERGE_BEFORE_CONTINUE_TITLE = "Before You Continue";
 export const SIGNAL_CONCIERGE_BEFORE_CONTINUE_BODY =
@@ -242,22 +310,22 @@ export const SIGNAL_CONCIERGE_FAQ = [
   {
     question: "What is Signal Concierge?",
     answer:
-      "Signal Concierge™ is BamSignal's human-led matchmaking service for people seeking meaningful relationships and, in time, marriage. Introductions are private, consent-based, and guided by real consultants."
+      "Signal Concierge™ is BamSignal's private relationship advisory — human-led matchmaking for people seeking meaningful relationships and, in time, marriage. Introductions are confidential, consent-based, and guided by dedicated consultants."
   },
   {
     question: "Will my profile appear on Discover?",
     answer:
-      "No. Signal Concierge members exist outside the public BamSignal ecosystem. Your information is never displayed publicly."
+      "No. Signal Concierge clients are never displayed on Discover. Your information remains private unless you and your consultant agree to an introduction."
   },
   {
     question: "How does the consultation work?",
     answer:
-      "A consultation helps us understand your goals, values, and preferences. The consultation fee is ₦100,000. Payment is only requested once you're comfortable moving forward."
+      "A private consultation helps us understand your goals, values, and preferences. Payment is only discussed once you're comfortable moving forward — pricing is tailored to your requirements."
   },
   {
-    question: "Can I apply without a membership tier?",
+    question: "How does pricing work?",
     answer:
-      "Yes. You may begin with a consultation. Membership plans begin from ₦100,000 and are discussed after your consultation."
+      "Pricing is tailored to your requirements. Consultants issue invoices after understanding your needs. There is no public price list."
   },
   {
     question: "Do you offer worldwide introductions?",

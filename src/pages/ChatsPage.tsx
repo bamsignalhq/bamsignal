@@ -50,9 +50,15 @@ import { useMemberToast } from "../hooks/useMemberToast";
 import { hapticMedium } from "../utils/memberHaptics";
 import { debugRender } from "../utils/debugRecursion";
 import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
-import { resolveProfileMainPhoto } from "../utils/mainPhoto";
 import { syncMemberProfileRemote } from "../services/cityHome";
 import { isMessagingUnlocked } from "../utils/messagingTrustGate";
+import {
+  fetchNationalVerificationStatus,
+  runNationalVerification,
+  startNationalVerification
+} from "../services/nationalVerification";
+import { resolveProfileMainPhoto } from "../utils/mainPhoto";
+import type { PublicVerificationStatus } from "../lib/verification/types";
 
 type ChatsPageProps = {
   isPremium: boolean;
@@ -456,6 +462,7 @@ function ChatDetail({
     readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" })
   );
   const [gateProfile, setGateProfile] = useState(() => getDatingProfile());
+  const [nationalStatus, setNationalStatus] = useState<PublicVerificationStatus | null>(null);
   const exchangeStatus = threadMeta.contactExchange?.status;
   const sharingDisabled = threadMeta.contactExchange?.contactSharingEnabled === false;
   const exchangeApproved =
@@ -546,7 +553,7 @@ function ChatDetail({
     });
   };
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     setBlockWarning("");
 
     if (isUserBlocked(match.profileId)) {
@@ -576,16 +583,34 @@ function ChatDetail({
 
     const liveUser = readJson<UserProfile>(STORAGE_KEYS.userProfile, gateUser);
     const liveProfile = getDatingProfile();
-    if (!isMessagingUnlocked(liveUser, liveProfile)) {
+    const nationalRequired =
+      String(import.meta.env.VITE_FACE_MATCH_REQUIRED_FOR_MESSAGING || "false").toLowerCase() === "true";
+    let national = nationalStatus;
+    if (nationalRequired && !national?.messagingUnlocked) {
+      const fetched = await fetchNationalVerificationStatus();
+      national = fetched.status || null;
+      setNationalStatus(national);
+    }
+    if (
+      !isMessagingUnlocked(liveUser, liveProfile, {
+        nationalStatus: national,
+        nationalFaceMatchRequired: nationalRequired
+      })
+    ) {
       setGateUser(liveUser);
       setGateProfile(liveProfile);
       setPendingMessageText(text);
       setComposerDraft(text);
       setVerifyGateOpen(true);
-      showToast("Verify your phone with SMS, then submit a selfie to unlock messaging.", {
-        tone: "error",
-        duration: 4000
-      });
+      showToast(
+        nationalRequired
+          ? "Complete SMS Verification and live selfie face match to unlock messaging."
+          : "Verify your phone with SMS, then submit a selfie to unlock messaging.",
+        {
+          tone: "error",
+          duration: 4000
+        }
+      );
       trackEvent("message_started", { matchId: match.id, gate: "trust_shown" });
       return;
     }
@@ -610,8 +635,21 @@ function ChatDetail({
     if (isFirstMessage) trackEvent("message_started", { matchId: match.id });
   };
 
-  const sendPendingAfterUnlock = (nextUser: UserProfile, nextProfile: ReturnType<typeof getDatingProfile>) => {
-    if (!isMessagingUnlocked(nextUser, nextProfile)) return;
+  const sendPendingAfterUnlock = (
+    nextUser: UserProfile,
+    nextProfile: ReturnType<typeof getDatingProfile>,
+    national?: PublicVerificationStatus | null
+  ) => {
+    const nationalRequired =
+      String(import.meta.env.VITE_FACE_MATCH_REQUIRED_FOR_MESSAGING || "false").toLowerCase() === "true";
+    if (
+      !isMessagingUnlocked(nextUser, nextProfile, {
+        nationalStatus: national ?? nationalStatus,
+        nationalFaceMatchRequired: nationalRequired
+      })
+    ) {
+      return;
+    }
     const draft = pendingMessageText;
     setVerifyGateOpen(false);
     setPendingMessageText(null);
@@ -991,15 +1029,60 @@ function ChatDetail({
                 });
               }}
               onSelfieSubmitted={(verificationSelfie) => {
-                const nextProfile = normalizeDatingProfile({
-                  ...gateProfile,
-                  verificationSelfie,
-                  verificationStatus: "pending" as const
-                });
-                setGateProfile(nextProfile);
-                writeJson(STORAGE_KEYS.datingProfile, nextProfile);
-                void syncMemberProfileRemote(gateUser, nextProfile, { patchScope: "profile" });
-                sendPendingAfterUnlock({ ...gateUser, phoneVerified: true }, nextProfile);
+                void (async () => {
+                  const nextProfile = normalizeDatingProfile({
+                    ...gateProfile,
+                    verificationSelfie,
+                    verificationStatus: "pending" as const
+                  });
+                  setGateProfile(nextProfile);
+                  writeJson(STORAGE_KEYS.datingProfile, nextProfile);
+                  void syncMemberProfileRemote(gateUser, nextProfile, { patchScope: "profile" });
+
+                  const nationalRequired =
+                    String(import.meta.env.VITE_FACE_MATCH_REQUIRED_FOR_MESSAGING || "false").toLowerCase() ===
+                    "true";
+                  if (!nationalRequired) {
+                    sendPendingAfterUnlock({ ...gateUser, phoneVerified: true }, nextProfile);
+                    return;
+                  }
+
+                  const started = await startNationalVerification();
+                  if (!started.ok || !started.status?.sessionId) {
+                    showToast(started.error || "Could not start face verification.", {
+                      tone: "error",
+                      duration: 4000
+                    });
+                    return;
+                  }
+
+                  const profilePhotos = [verificationSelfie, resolveProfileMainPhoto(nextProfile)].filter(
+                    Boolean
+                  ) as string[];
+                  const verified = await runNationalVerification({
+                    sessionId: started.status.sessionId,
+                    selfieDataUrl: verificationSelfie,
+                    profilePhotos
+                  });
+                  if (verified.status) setNationalStatus(verified.status);
+
+                  if (!verified.ok || !verified.status?.messagingUnlocked) {
+                    const pendingReview = verified.status?.status === "manual_review";
+                    showToast(
+                      pendingReview
+                        ? "Under review — messaging unlocks after moderator approval."
+                        : verified.error || "Face match needs another try. Retake your selfie.",
+                      { tone: pendingReview ? "success" : "error", duration: 4500 }
+                    );
+                    return;
+                  }
+
+                  sendPendingAfterUnlock(
+                    { ...gateUser, phoneVerified: true },
+                    nextProfile,
+                    verified.status
+                  );
+                })();
               }}
               onMessage={(message) => showToast(message, { duration: 3500 })}
             />

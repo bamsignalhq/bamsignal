@@ -2,6 +2,7 @@ import type { UserProfile } from "../types";
 import { memberApiHeaders } from "../utils/memberApiAuth";
 import { readResponseJson } from "../utils/httpJson";
 import { hydrateBoostsFromServer } from "../utils/activeBoosts";
+import { hydrateConversationUnlocksFromServer } from "../constants/conversationUnlock";
 import { apiUrl } from "./supabase";
 
 export type ServerBoostEntitlement = {
@@ -27,8 +28,21 @@ export async function refreshMemberBoostEntitlements(
     const payload = await readResponseJson<{
       ok?: boolean;
       activeBoosts?: ServerBoostEntitlement[];
+      conversationUnlocks?: Array<{
+        target_profile_id?: string;
+        match_id?: string | null;
+        created_at?: string;
+        source_payment_ref?: string | null;
+        metadata?: { targetName?: string | null };
+      }>;
     }>(response);
-    if (!response.ok || !payload?.ok || !Array.isArray(payload.activeBoosts)) {
+    if (!response.ok || !payload?.ok) {
+      return [];
+    }
+    if (Array.isArray(payload.conversationUnlocks)) {
+      hydrateConversationUnlocksFromServer(payload.conversationUnlocks);
+    }
+    if (!Array.isArray(payload.activeBoosts)) {
       return [];
     }
     hydrateBoostsFromServer(payload.activeBoosts, user);

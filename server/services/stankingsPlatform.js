@@ -100,7 +100,7 @@ export function platformNotificationForPurchase({ productType, productId }) {
     return {
       templateId: "premium_activated",
       title: "Premium Activated",
-      body: "Your Signal Pass is active on BamSignal.",
+      body: "Your Discover Membership is active on BamSignal.",
       category: "purchase"
     };
   }
@@ -118,6 +118,14 @@ export function platformNotificationForPurchase({ productType, productId }) {
       templateId: "boost_activated",
       title: "Boost Activated",
       body: "Your boost is live on BamSignal.",
+      category: "purchase"
+    };
+  }
+  if (productType === "conversation_unlock" || productType === "conversation-unlock") {
+    return {
+      templateId: "payment_successful",
+      title: "Conversation Unlocked",
+      body: "You can message this member now on BamSignal.",
       category: "purchase"
     };
   }

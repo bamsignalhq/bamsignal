@@ -27,7 +27,7 @@ export function ContactExchangeLimitModal({
         <p className="safety-modal__lead">
           {message || "You've used your free contact exchange for this month."}
         </p>
-        <p className="safety-modal__lead">Signal Pass lets you continue connecting without limits.</p>
+        <p className="safety-modal__lead">Discover Membership lets you continue connecting without limits.</p>
         <div className="safety-modal__actions">
           <button type="button" className="btn-secondary" onClick={onClose}>
             Maybe later

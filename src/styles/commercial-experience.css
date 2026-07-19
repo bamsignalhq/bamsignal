@@ -1,0 +1,228 @@
+/* Pass 4 — commercial experience polish (shared tokens, no redesign) */
+
+.commercial-eyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bs-muted, #6b7280);
+}
+
+.commercial-muted {
+  margin: 0.2rem 0 0;
+  color: var(--bs-muted, #6b7280);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.commercial-muted--sm {
+  font-size: 0.78rem;
+}
+
+.commercial-empty {
+  margin: 0;
+  color: var(--bs-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+.commercial-dashboard {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.commercial-dashboard__head h2 {
+  margin: 0;
+}
+
+.commercial-dashboard__grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .commercial-dashboard__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.commercial-tile {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem 1rem;
+}
+
+.commercial-tile__value {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--bs-text, inherit);
+}
+
+.commercial-tx-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.commercial-tx-list__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--bs-border, #e5e7eb) 80%, transparent);
+}
+
+.commercial-tx-list__item:last-child {
+  border-bottom: 0;
+}
+
+.commercial-tx-list__aside {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: end;
+  flex-shrink: 0;
+}
+
+.commercial-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--bs-surface-2, #f3f4f6) 90%, transparent);
+  color: var(--bs-text, inherit);
+}
+
+.commercial-status--active,
+.commercial-status--paid {
+  background: color-mix(in srgb, #059669 16%, transparent);
+  color: #047857;
+}
+
+.commercial-status--expired,
+.commercial-status--failed,
+.commercial-status--not {
+  background: color-mix(in srgb, #b42318 14%, transparent);
+  color: #b42318;
+}
+
+.commercial-status--open,
+.commercial-status--pending,
+.commercial-status--event {
+  background: color-mix(in srgb, #b54708 14%, transparent);
+  color: #b54708;
+}
+
+.platform-root--member.theme-dark .commercial-status--active,
+.platform-root--member.theme-dark .commercial-status--paid {
+  color: #6ee7b7;
+}
+
+.platform-root--member.theme-dark .commercial-status--expired,
+.platform-root--member.theme-dark .commercial-status--failed {
+  color: #fca5a5;
+}
+
+.commercial-receipt,
+.commercial-outcome {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem;
+}
+
+.commercial-receipt__meta {
+  margin: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.commercial-receipt__meta > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.commercial-receipt__meta dt {
+  margin: 0;
+  color: var(--bs-muted, #6b7280);
+}
+
+.commercial-receipt__meta dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.commercial-outcome--success {
+  border-color: color-mix(in srgb, #059669 35%, transparent);
+}
+
+.commercial-outcome--failure {
+  border-color: color-mix(in srgb, #b42318 35%, transparent);
+}
+
+.commercial-outcome h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.commercial-skeleton-stack {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.commercial-skeleton {
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--bs-surface-2, #e5e7eb) 80%, transparent) 0%,
+    color-mix(in srgb, var(--bs-surface, #f9fafb) 90%, transparent) 50%,
+    color-mix(in srgb, var(--bs-surface-2, #e5e7eb) 80%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: commercial-shimmer 1.2s ease-in-out infinite;
+}
+
+.commercial-skeleton--row {
+  height: 2.6rem;
+}
+
+.commercial-skeleton--spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+}
+
+@keyframes commercial-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commercial-skeleton {
+    animation: none;
+  }
+}
+
+.payment-return-screen__card {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.payment-return-screen__card h1 {
+  margin: 0;
+  font-size: 1.15rem;
+}

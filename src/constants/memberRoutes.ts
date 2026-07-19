@@ -25,6 +25,7 @@ const PATH_TO_TAB: Record<string, NavTab> = {
   "/saved-profiles": "me",
   "/settings": "me",
   "/subscription": "me",
+  "/discreet-membership": "me",
   "/referral": "me"
 };
 

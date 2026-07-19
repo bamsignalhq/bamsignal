@@ -31,8 +31,9 @@ function formatPurchaseDate(date = new Date()) {
 function productDisplayName(productType, productId) {
   const id = String(productId || "").trim();
   if (productType === "consultation-fee") return "Signal Concierge consultation fee";
-  if (productType === "premium") return "Signal Pass";
-  if (productType === "quickie") return "Fast Connection Pass";
+  if (productType === "premium") return "Discover Membership";
+  if (productType === "discreet") return "Discreet Membership";
+  if (productType === "quickie" || productType === "fast_connection") return "Fast Connection Pass";
   if (productType === "boost") {
     switch (id) {
       case "signal-boost":
@@ -55,7 +56,8 @@ function productDisplayName(productType, productId) {
 function purchaseEmailSubject(productType, productId) {
   const id = String(productId || "").trim();
   if (productType === "consultation-fee") return "Your consultation fee is confirmed";
-  if (productType === "premium") return "Your Signal Pass is active ❤️";
+  if (productType === "premium") return "Your Discover Membership is active ❤️";
+  if (productType === "discreet") return "Your Discreet Membership is active ❤️";
   if (productType === "quickie") return "Your Fast Connection Pass is active ❤️";
   if (productType === "boost") {
     if (id === "priority-signal-once") return "Your Priority Introduction is ready";
@@ -71,7 +73,10 @@ function nextStepsCopy(productType, productId) {
     return "Your consultation fee is received. You may now schedule your private Signal Concierge consultation when you are ready.";
   }
   if (productType === "premium") {
-    return "Your Signal Pass benefits are now active — unlimited signals, premium filters, and more.";
+    return "Your Discover Membership benefits are now active — unlimited Signals, messaging, and the full Discover experience.";
+  }
+  if (productType === "discreet") {
+    return "Your Discreet Membership is active — full Discover power while remaining undiscoverable until you initiate contact.";
   }
   if (productType === "quickie") {
     return "Your Fast Connection Pass is active — unlock faster connections this week.";

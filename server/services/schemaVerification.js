@@ -27,6 +27,7 @@ export const REQUIRED_SCHEMA_TABLES = Object.freeze([
   "app_profile_likes",
   "app_referral_events",
   "app_member_boosts",
+  "app_conversation_unlocks",
   "app_reports",
   "app_signals",
   "app_users",

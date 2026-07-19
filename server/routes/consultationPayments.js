@@ -47,7 +47,7 @@ async function handleInitialize(req, res, body, memberAuth) {
   const email = String(memberAuth?.identity?.email || memberAuth?.email || "").trim().toLowerCase();
   const phone = normalizePhone(memberAuth?.identity?.phone || memberAuth?.phone || "");
   const name = String(memberAuth?.identity?.name || body.name || "").trim();
-  const intent = resolveConsultationFeeIntent({
+  const intent = await resolveConsultationFeeIntent({
     paymentId: body.paymentId,
     memberId: body.memberId,
     journeyId: body.journeyId

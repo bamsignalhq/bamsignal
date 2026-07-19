@@ -876,7 +876,7 @@ export function ProfilePage({
                   profileId={localStorage.getItem(STORAGE_KEYS.memberProfileId) || undefined}
                 />
                 <SettingsRow
-                  label={isPremium ? "Manage Signal Pass" : "Signal Pass"}
+                  label={isPremium ? "Manage membership" : "Discover Membership"}
                   hint={isPremium ? PREMIUM_COPY.subscriptionManage : PREMIUM_COPY.settingsSignalPassHint}
                   onClick={() => setSettingsPanel("subscription")}
                 />
@@ -1067,7 +1067,7 @@ export function ProfilePage({
               ) : (
                 <button type="button" className="settings-hub-row settings-hub-row--cta" onClick={onUpgrade}>
                   <span>
-                    <strong>Signal Pass</strong>
+                    <strong>Discover Membership</strong>
                     <small>{PREMIUM_COPY.settingsSignalPassHint}</small>
                   </span>
                   <ChevronRight size={18} aria-hidden="true" />

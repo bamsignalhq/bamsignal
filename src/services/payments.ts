@@ -67,12 +67,12 @@ type CheckoutCallbacks = {
   onPhase?: (phase: PaymentCheckoutPhase) => void;
 };
 
-type PaymentKind = "premium" | "boost" | "quickie";
+type PaymentKind = "premium" | "boost" | "quickie" | "conversation_unlock" | "discreet" | "concierge_invoice";
 
 type VerifyPaymentPayload = {
   ok?: boolean;
   error?: string;
-  productType?: PaymentKind;
+  productType?: PaymentKind | string;
   productId?: string;
   returnPath?: string;
   sourcePage?: string;
@@ -83,6 +83,11 @@ type VerifyPaymentPayload = {
   expiresAt?: string;
   entitlementId?: string;
   boostActive?: boolean;
+  matchId?: string;
+  targetProfileId?: string;
+  unlock?: { id?: string; match_id?: string | null } | null;
+  discreetUntil?: string;
+  invoiceId?: string;
   boost?: {
     id?: string;
     productId?: string;
@@ -113,6 +118,9 @@ type VerifyResult = {
 
 function normalizePaymentKind(kind?: string | null): PaymentKind {
   if (kind === "fast_connection") return "quickie";
+  if (kind === "conversation_unlock" || kind === "conversation-unlock") return "conversation_unlock";
+  if (kind === "discreet" || kind === "discreet_membership") return "discreet";
+  if (kind === "concierge_invoice" || kind === "concierge-invoice") return "concierge_invoice";
   return kind === "boost" || kind === "quickie" || kind === "premium" ? kind : "premium";
 }
 
@@ -604,6 +612,338 @@ export async function verifyBoostPayment(
   }
 }
 
+export async function startDiscreetPayment(
+  user: UserProfile,
+  callbacks: CheckoutCallbacks = {},
+  returnContext?: Partial<PaymentReturnContext>,
+  planId = "monthly"
+): Promise<StartPaymentResult> {
+  if (!user.email) {
+    return { ok: false, error: "Add a verified email before purchasing Discreet Membership." };
+  }
+
+  beginPaymentSession();
+  markPaymentSessionStarted();
+  callbacks.onPhase?.("preparing");
+
+  try {
+    const paymentReturnContext = buildReturnContext(
+      "discreet",
+      planId,
+      returnContext,
+      "/discreet-membership"
+    );
+    const init = await postInitialize(apiUrl("/api/paystack/verify?action=initialize"), {
+      email: user.email,
+      phone: user.phone,
+      name: user.name,
+      productType: "discreet",
+      productId: planId,
+      plan: planId,
+      platform: paymentPlatform(),
+      returnPath: paymentReturnContext.returnPath,
+      sourcePage: paymentReturnContext.sourcePage
+    });
+
+    if (!init.ok) {
+      setPaymentFlowState("idle");
+      return { ok: false, error: init.error || INIT_ERROR };
+    }
+
+    callbacks.onPhase?.("opening");
+    return await launchCheckout(init, "discreet", undefined, paymentReturnContext);
+  } catch {
+    setPaymentFlowState("idle");
+    return { ok: false, error: INIT_ERROR };
+  }
+}
+
+export async function verifyDiscreetPayment(
+  user: UserProfile
+): Promise<
+  {
+    ok: boolean;
+    error?: string;
+    pending?: boolean;
+    retryable?: boolean;
+    discreetUntil?: string;
+  } & VerifyResult
+> {
+  const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
+  if (!reference) {
+    return { ok: false, error: "No payment reference found." };
+  }
+
+  try {
+    const returnBody = currentPaymentReturnBody();
+    const response = await fetch(apiUrl("/api/paystack/verify"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference,
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        ...returnBody,
+        productType: "discreet",
+        productId: returnBody.productId || "monthly"
+      })
+    });
+    const payload = await readResponseJson<VerifyPaymentPayload>(response);
+    const parsed = parseVerifyHttpResult(response, payload, "Payment not verified yet.", "discreet");
+    if (!parsed.ok) {
+      return parsed;
+    }
+    const verified = parsed.payload;
+    return {
+      ok: true,
+      productType: normalizePaymentKind(verified.productType),
+      productId: verified.productId,
+      returnPath: verified.returnPath,
+      sourcePage: verified.sourcePage,
+      discreetUntil: verified.discreetUntil
+    };
+  } catch {
+    return { ok: false, error: "Verification failed." };
+  }
+}
+
+export async function startConversationUnlockPayment(
+  targetProfileId: string,
+  user: UserProfile,
+  callbacks: CheckoutCallbacks = {},
+  returnContext?: Partial<PaymentReturnContext>
+): Promise<StartPaymentResult> {
+  const targetId = String(targetProfileId || "").trim();
+  if (!user.email) {
+    return { ok: false, error: "Add a verified email before unlocking a conversation." };
+  }
+  if (!targetId) {
+    return { ok: false, error: "Choose a profile to unlock." };
+  }
+
+  beginPaymentSession();
+  markPaymentSessionStarted();
+  callbacks.onPhase?.("preparing");
+
+  try {
+    const paymentReturnContext = buildReturnContext(
+      "conversation_unlock",
+      "conversation-unlock",
+      returnContext,
+      "/chats"
+    );
+    const init = await postInitialize(
+      apiUrl("/api/paystack/verify?action=initialize-conversation-unlock"),
+      {
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        productType: "conversation_unlock",
+        productId: "conversation-unlock",
+        targetProfileId: targetId,
+        platform: paymentPlatform(),
+        returnPath: paymentReturnContext.returnPath,
+        sourcePage: paymentReturnContext.sourcePage
+      }
+    );
+
+    if (!init.ok) {
+      setPaymentFlowState("idle");
+      return { ok: false, error: init.error || INIT_ERROR };
+    }
+
+    callbacks.onPhase?.("opening");
+    return await launchCheckout(
+      init,
+      "conversation_unlock",
+      {
+        [STORAGE_KEYS.paymentUnlockTargetId]: targetId
+      },
+      paymentReturnContext
+    );
+  } catch {
+    setPaymentFlowState("idle");
+    return { ok: false, error: INIT_ERROR };
+  }
+}
+
+export async function verifyConversationUnlockPayment(
+  user: UserProfile,
+  targetProfileId?: string
+): Promise<
+  {
+    ok: boolean;
+    error?: string;
+    pending?: boolean;
+    retryable?: boolean;
+    matchId?: string;
+    targetProfileId?: string;
+  } & VerifyResult
+> {
+  const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
+  if (!reference) {
+    return { ok: false, error: "No payment reference found." };
+  }
+  const targetId =
+    String(targetProfileId || localStorage.getItem(STORAGE_KEYS.paymentUnlockTargetId) || "").trim();
+
+  try {
+    const returnBody = currentPaymentReturnBody();
+    const response = await fetch(apiUrl("/api/paystack/verify"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference,
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        ...returnBody,
+        productType: "conversation_unlock",
+        productId: "conversation-unlock",
+        targetProfileId: targetId
+      })
+    });
+    const payload = await readResponseJson<VerifyPaymentPayload>(response);
+    const parsed = parseVerifyHttpResult(
+      response,
+      payload,
+      "Payment not verified yet.",
+      "conversation_unlock"
+    );
+    if (!parsed.ok) {
+      return parsed;
+    }
+    const verified = parsed.payload;
+    return {
+      ok: true,
+      productType: normalizePaymentKind(verified.productType),
+      productId: verified.productId,
+      returnPath: verified.returnPath,
+      sourcePage: verified.sourcePage,
+      matchId: verified.matchId,
+      targetProfileId: verified.targetProfileId || targetId
+    };
+  } catch {
+    return { ok: false, error: "Verification failed." };
+  }
+}
+
+export async function startConciergeInvoicePayment(
+  invoiceId: string,
+  user: UserProfile,
+  callbacks: CheckoutCallbacks = {},
+  returnContext?: Partial<PaymentReturnContext>
+): Promise<StartPaymentResult> {
+  const id = String(invoiceId || "").trim();
+  if (!user.email) {
+    return { ok: false, error: "Add a verified email before paying a Concierge invoice." };
+  }
+  if (!id) {
+    return { ok: false, error: "Choose an invoice to pay." };
+  }
+
+  beginPaymentSession();
+  markPaymentSessionStarted();
+  callbacks.onPhase?.("preparing");
+
+  try {
+    const paymentReturnContext = buildReturnContext(
+      "concierge_invoice",
+      id,
+      returnContext,
+      "/signal-concierge/invoices"
+    );
+    const init = await postInitialize(
+      apiUrl("/api/paystack/verify?action=initialize-concierge-invoice"),
+      {
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        productType: "concierge_invoice",
+        productId: id,
+        invoiceId: id,
+        platform: paymentPlatform(),
+        returnPath: paymentReturnContext.returnPath,
+        sourcePage: paymentReturnContext.sourcePage
+      }
+    );
+
+    if (!init.ok) {
+      setPaymentFlowState("idle");
+      return { ok: false, error: init.error || INIT_ERROR };
+    }
+
+    callbacks.onPhase?.("opening");
+    return await launchCheckout(init, "concierge_invoice", {}, paymentReturnContext);
+  } catch {
+    setPaymentFlowState("idle");
+    return { ok: false, error: INIT_ERROR };
+  }
+}
+
+export async function verifyConciergeInvoicePayment(
+  user: UserProfile,
+  invoiceId?: string
+): Promise<
+  {
+    ok: boolean;
+    error?: string;
+    pending?: boolean;
+    retryable?: boolean;
+    invoiceId?: string;
+    grantsMembership?: boolean;
+  } & VerifyResult
+> {
+  const reference = localStorage.getItem(STORAGE_KEYS.paymentReference)?.trim();
+  if (!reference) {
+    return { ok: false, error: "No payment reference found." };
+  }
+  const id = String(invoiceId || "").trim();
+
+  try {
+    const returnBody = currentPaymentReturnBody();
+    const response = await fetch(apiUrl("/api/paystack/verify"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference,
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        ...returnBody,
+        productType: "concierge_invoice",
+        productId: id || undefined,
+        invoiceId: id || undefined
+      })
+    });
+    const payload = await readResponseJson<VerifyPaymentPayload & { invoiceId?: string; grantsMembership?: boolean }>(
+      response
+    );
+    const parsed = parseVerifyHttpResult(
+      response,
+      payload,
+      "Payment not verified yet.",
+      "concierge_invoice"
+    );
+    if (!parsed.ok) {
+      return parsed;
+    }
+    const verified = parsed.payload;
+    return {
+      ok: true,
+      productType: normalizePaymentKind(verified.productType),
+      productId: verified.productId,
+      returnPath: verified.returnPath,
+      sourcePage: verified.sourcePage,
+      invoiceId: verified.invoiceId || id,
+      grantsMembership: false
+    };
+  } catch {
+    return { ok: false, error: "Verification failed." };
+  }
+}
+
 export async function completePendingPayment(user: UserProfile): Promise<{
   ok: boolean;
   kind: PaymentKind;
@@ -617,6 +957,10 @@ export async function completePendingPayment(user: UserProfile): Promise<{
   quickiePassUntil?: string;
   premiumUntil?: string;
   expiresAt?: string;
+  matchId?: string;
+  targetProfileId?: string;
+  discreetUntil?: string;
+  invoiceId?: string;
   entitlementId?: string;
   boost?: VerifyPaymentPayload["boost"];
 }> {
@@ -686,6 +1030,100 @@ export async function completePendingPayment(user: UserProfile): Promise<{
       setPaymentFlowState("idle");
     }
     return { ok: false, kind: "boost", error: result.error };
+  }
+
+  if (storedKind === "conversation_unlock") {
+    const result = await verifyConversationUnlockPayment(user);
+    if (result.ok) {
+      logPaymentEvent("verification result", {
+        reference,
+        ok: true,
+        kind: "conversation_unlock"
+      });
+      return {
+        ok: true,
+        kind: "conversation_unlock",
+        productId: result.productId || "conversation-unlock",
+        returnPath: result.returnPath,
+        sourcePage: result.sourcePage,
+        matchId: result.matchId,
+        targetProfileId: result.targetProfileId
+      };
+    }
+    if (result.pending || result.retryable) {
+      return { ok: false, kind: "conversation_unlock", pending: true, error: result.error };
+    }
+    logPaymentEvent("verification result", {
+      reference,
+      ok: false,
+      kind: "conversation_unlock",
+      error: result.error
+    });
+    if (checkoutWasOpened()) {
+      setPaymentFlowState("failed");
+    } else {
+      setPaymentFlowState("idle");
+    }
+    return { ok: false, kind: "conversation_unlock", error: result.error };
+  }
+
+  if (storedKind === "concierge_invoice") {
+    const result = await verifyConciergeInvoicePayment(user);
+    if (result.ok) {
+      logPaymentEvent("verification result", {
+        reference,
+        ok: true,
+        kind: "concierge_invoice"
+      });
+      return {
+        ok: true,
+        kind: "concierge_invoice",
+        productId: result.productId,
+        returnPath: result.returnPath || "/signal-concierge/invoices",
+        sourcePage: result.sourcePage,
+        invoiceId: result.invoiceId
+      };
+    }
+    if (result.pending || result.retryable) {
+      return { ok: false, kind: "concierge_invoice", pending: true, error: result.error };
+    }
+    logPaymentEvent("verification result", {
+      reference,
+      ok: false,
+      kind: "concierge_invoice",
+      error: result.error
+    });
+    if (checkoutWasOpened()) {
+      setPaymentFlowState("failed");
+    } else {
+      setPaymentFlowState("idle");
+    }
+    return { ok: false, kind: "concierge_invoice", error: result.error };
+  }
+
+  if (storedKind === "discreet") {
+    const result = await verifyDiscreetPayment(user);
+    if (result.ok) {
+      logPaymentEvent("verification result", { reference, ok: true, kind: "discreet" });
+      return {
+        ok: true,
+        kind: "discreet",
+        productId: result.productId || "monthly",
+        returnPath: result.returnPath,
+        sourcePage: result.sourcePage,
+        discreetUntil: result.discreetUntil
+      };
+    }
+    if (result.pending || result.retryable) {
+      return { ok: false, kind: "discreet", pending: true, error: result.error };
+    }
+    logPaymentEvent("verification result", { reference, ok: false, kind: "discreet", error: result.error });
+    if (checkoutWasOpened()) {
+      setPaymentFlowState("failed");
+    } else {
+      setPaymentFlowState("idle");
+    }
+    return { ok: false, kind: "discreet", error: result.error };
   }
 
   if (storedKind === "quickie") {

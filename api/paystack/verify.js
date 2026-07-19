@@ -19,7 +19,8 @@ import {
   recordPurchaseIntent,
   resolveInitializeIntent
 } from "../../server/services/paymentFortress.js";
-import { isFastConnectionProductType } from "../../server/services/paymentCatalog.js";
+import { isConciergeInvoiceProductType, isConversationUnlockProductType, isDiscreetProductType, isFastConnectionProductType } from "../../server/services/paymentCatalog.js";
+import { markConciergeInvoicePaid } from "../../server/services/conciergeOperations.js";
 import {
   PAYMENT_CONFIRM_UNAVAILABLE_MESSAGE,
   isPaymentDatabaseError,
@@ -80,7 +81,17 @@ function buildReference(prefix) {
   return `bs_${prefix}_${stamp}_${random}`.slice(0, 64);
 }
 
-const APP_RETURN_PREFIXES = ["/home", "/fast-connection", "/profile", "/settings", "/subscription", "/discover", "/chats", "/signals"];
+const APP_RETURN_PREFIXES = [
+  "/home",
+  "/fast-connection",
+  "/profile",
+  "/settings",
+  "/subscription",
+  "/discover",
+  "/chats",
+  "/signals",
+  "/signal-concierge"
+];
 
 function normalizePaymentReturnPath(value, fallback = "/home") {
   const raw = String(value || "").trim();
@@ -161,6 +172,32 @@ function buildVerifySuccessResponse(result) {
         boostActive: Boolean(result.activation.boost?.id || result.activation.entitlementId)
       };
     }
+    if (isConversationUnlockProductType(productType) && result.activation) {
+      return {
+        ...base,
+        matchId: result.activation.matchId || null,
+        targetProfileId: result.activation.targetProfileId || null,
+        unlock: result.activation.unlock || null,
+        grantsPremium: false
+      };
+    }
+    if (isDiscreetProductType(productType) && result.activation) {
+      return {
+        ...base,
+        discreetUntil: result.activation.discreetUntil || result.activation.endsAt || null,
+        privacyMode: "discreet",
+        entitlements: result.activation.entitlements || null
+      };
+    }
+    if (isConciergeInvoiceProductType(productType) && result.activation) {
+      return {
+        ...base,
+        invoiceId: result.activation.invoiceId || productId,
+        grantsMembership: false,
+        membershipUnchanged: true,
+        ops: result.ops || null
+      };
+    }
     return base;
   }
 
@@ -189,6 +226,50 @@ function buildVerifySuccessResponse(result) {
       entitlementId: activation.entitlementId || activation.boost?.id || null,
       boost: activation.boost || null,
       boostActive: Boolean(activation.boost?.id || activation.entitlementId)
+    };
+  }
+
+  if (isConversationUnlockProductType(intent.productType)) {
+    return {
+      ok: true,
+      productType: "conversation_unlock",
+      productId: intent.productId,
+      returnPath,
+      sourcePage,
+      matchId: activation.matchId || null,
+      targetProfileId: activation.targetProfileId || intent.targetProfileId || null,
+      unlock: activation.unlock || null,
+      grantsPremium: false
+    };
+  }
+
+  if (isDiscreetProductType(intent.productType)) {
+    return {
+      ok: true,
+      productType: "discreet",
+      productId: intent.productId,
+      returnPath,
+      sourcePage,
+      discreetUntil: activation.discreetUntil || activation.endsAt || null,
+      privacyMode: "discreet",
+      days: intent.days,
+      entitlements: activation.entitlements || null,
+      duplicate: Boolean(activation.duplicate)
+    };
+  }
+
+  if (isConciergeInvoiceProductType(intent.productType)) {
+    return {
+      ok: true,
+      productType: "concierge_invoice",
+      productId: intent.productId,
+      returnPath,
+      sourcePage,
+      invoiceId: activation.invoiceId || intent.productId,
+      invoiceNumber: activation.invoiceNumber || intent.invoiceNumber || null,
+      grantsMembership: false,
+      membershipUnchanged: true,
+      ops: result.ops || null
     };
   }
 
@@ -233,9 +314,13 @@ async function initializeCatalogCheckout(req, res, body, callbackUrl, action, fa
   const referencePrefix =
     intent.productType === "boost"
       ? intent.boostId || intent.productId
-      : isFastConnectionProductType(intent.productType)
-        ? "quickie"
-        : intent.productId;
+      : isConversationUnlockProductType(intent.productType)
+        ? "unlock"
+        : isConciergeInvoiceProductType(intent.productType)
+          ? "cinv"
+          : isFastConnectionProductType(intent.productType)
+            ? "quickie"
+            : intent.productId;
   const reference = buildReference(referencePrefix);
   const startedAt = Date.now();
 
@@ -337,6 +422,8 @@ export default async function handler(req, res) {
     const isInitializeAction =
       action === "initialize" ||
       action === "initialize-boost" ||
+      action === "initialize-conversation-unlock" ||
+      action === "initialize-concierge-invoice" ||
       action === "initialize-quickie" ||
       action === "initialize-baygold";
 
@@ -386,6 +473,34 @@ export default async function handler(req, res) {
 
     if (action === "initialize-boost") {
       return initializeCatalogCheckout(req, res, body, callbackUrl, "initialize-boost", "/profile", memberAuth);
+    }
+
+    if (action === "initialize-conversation-unlock") {
+      return initializeCatalogCheckout(
+        req,
+        res,
+        body,
+        callbackUrl,
+        "initialize-conversation-unlock",
+        "/chats",
+        memberAuth
+      );
+    }
+
+    if (action === "initialize-concierge-invoice") {
+      return initializeCatalogCheckout(
+        req,
+        res,
+        {
+          ...body,
+          memberId: memberAuth?.memberId || body.memberId,
+          invoiceId: body.invoiceId || body.productId
+        },
+        callbackUrl,
+        "initialize-concierge-invoice",
+        "/signal-concierge/invoices",
+        memberAuth
+      );
     }
 
     if (action === "initialize-quickie") {
@@ -558,6 +673,36 @@ export default async function handler(req, res) {
         });
       } else {
         await repairPaymentAuditIdentity(reference, auditIdentity);
+      }
+
+      // Bridge: Commerce already recorded payment in fortress; Ops advances the case here.
+      // Fortress must never import conciergeOperations (3E boundary).
+      if (isConciergeInvoiceProductType(result.productType || result.intent?.productType)) {
+        const invoiceId = String(
+          result.activation?.invoiceId ||
+            result.productId ||
+            metadata.invoice_id ||
+            metadata.product_id ||
+            ""
+        ).trim();
+        if (invoiceId) {
+          const ops = await markConciergeInvoicePaid({
+            invoiceId,
+            paymentRef: reference,
+            amountPaidKobo: Number(transaction?.amount || result.activation?.amountKobo || 0) || null,
+            actor: "paystack-verify"
+          }).catch((error) => ({
+            ok: false,
+            error: String(error?.message || "ops_bridge_failed"),
+            grantsMembership: false
+          }));
+          result.ops = {
+            ok: Boolean(ops?.ok),
+            duplicate: Boolean(ops?.duplicate),
+            invoiceStatus: ops?.invoice?.status || null,
+            grantsMembership: false
+          };
+        }
       }
 
       return res.status(200).json(buildVerifySuccessResponse(result));

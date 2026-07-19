@@ -1,6 +1,7 @@
 import { ArrowLeft, Check, Star } from "lucide-react";
 import { useMemo } from "react";
 import { BRAND, MONETIZATION_COPY } from "../constants/copy";
+import { DISCOVER_MEMBERSHIP_INCLUDES_TITLE } from "../constants/commercialExperience";
 import type { PlanId, PremiumPlan } from "../constants/plans";
 import { SIGNAL_PASS_INCLUDES, planBadge, planCheckoutLabel } from "../constants/plans";
 
@@ -31,7 +32,8 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
         </button>
         <div>
           <h1 className="premium-page__title premium-page__title-row">
-            Signal Pass <Star size={20} className="premium-page__star" aria-hidden fill="currentColor" />
+            Discover Membership{" "}
+            <Star size={20} className="premium-page__star" aria-hidden fill="currentColor" />
           </h1>
           {!isPremium && <p className="premium-page__subtitle">{BRAND.paywallBody}</p>}
         </div>
@@ -40,11 +42,11 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
       {isPremium ? (
         <section className="premium-page__active premium-page__active--fintech">
           <p className="premium-page__active-label">Active</p>
-          <p className="premium-page__active-copy">Signal Pass is on your account.</p>
+          <p className="premium-page__active-copy">Discover Membership is on your account.</p>
         </section>
       ) : (
         <>
-          <section className="premium-plan-buttons" aria-label="Signal Pass plans">
+          <section className="premium-plan-buttons" aria-label="Discover Membership plans">
             {orderedPlans.map((plan) => {
               const badge = planBadge(plan);
               return (
@@ -67,7 +69,7 @@ export function PremiumPage({ isPremium, plans, onBack, onSelectPlan, loading }:
 
           <section className="premium-includes" aria-labelledby="premium-includes-title">
             <h2 id="premium-includes-title" className="premium-includes__title">
-              Benefits
+              {DISCOVER_MEMBERSHIP_INCLUDES_TITLE}
             </h2>
             <ul className="premium-includes__list">
               {SIGNAL_PASS_INCLUDES.map((item) => (

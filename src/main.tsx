@@ -14,6 +14,7 @@ import "./styles/safety.css";
 import "./styles/launch.css";
 import "./styles/footer.css";
 import "./styles/theme-contrast.css";
+import "./styles/commercial-experience.css";
 import "./styles/premium-visibility.css";
 import "./styles/compliance.css";
 /* Critical member UI — eager so first paint is not unstyled (home/profile/onboarding). */

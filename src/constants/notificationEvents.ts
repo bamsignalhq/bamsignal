@@ -43,7 +43,12 @@ export const NOTIFICATION_EVENT_TYPES: {
   { id: "introduction-accepted", label: "Introduction Accepted" },
   { id: "follow-up-reminder", label: "Follow-Up Reminder" },
   { id: "milestone-recorded", label: "Milestone Recorded" },
-  { id: "relationship-archived", label: "Relationship Archived" }
+  { id: "relationship-archived", label: "Relationship Archived" },
+  { id: "invoice-issued", label: "Invoice Issued" },
+  { id: "invoice-paid", label: "Invoice Paid" },
+  { id: "consultant-assigned", label: "Consultant Assigned" },
+  { id: "status-updated", label: "Status Updated" },
+  { id: "case-completed", label: "Case Completed" }
 ];
 
 export const NOTIFICATION_EVENT_LABELS: Record<NotificationEventType, string> = Object.fromEntries(

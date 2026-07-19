@@ -1,9 +1,13 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MEMBER_DASHBOARD_BRAND, MEMBER_JOURNEY_DASHBOARD_PATH } from "../../constants/memberDashboard";
 import { navigateToPath } from "../../constants/routes";
 import { getConciergeMember } from "../../utils/conciergeConsultantStore";
 import { buildMemberDashboardBundle } from "../../utils/memberDashboardLogic";
-import { readSignalConciergeApplication } from "../../utils/signalConciergeStorage";
+import {
+  hydrateSignalConciergeApplicationFromServer,
+  readSignalConciergeApplication
+} from "../../utils/signalConciergeStorage";
+import type { SignalConciergeApplication } from "../../types/signalConcierge";
 import { AssignedConsultantCard } from "./AssignedConsultantCard";
 import { IntroductionSummaryCard } from "./IntroductionSummaryCard";
 import { JourneyHeader } from "./JourneyHeader";
@@ -22,7 +26,19 @@ export function SignalConciergeStatusPage({
   onApply,
   onScheduleConsultation
 }: SignalConciergeStatusPageProps) {
-  const application = readSignalConciergeApplication();
+  const [application, setApplication] = useState<SignalConciergeApplication | null>(() =>
+    readSignalConciergeApplication()
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void hydrateSignalConciergeApplicationFromServer().then((next) => {
+      if (!cancelled) setApplication(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const bundle = useMemo(() => {
     if (!application) return null;

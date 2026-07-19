@@ -9,6 +9,10 @@ import {
 } from "../utils/memberEntitlements";
 import { getQuickiePassUntil, syncFastConnectionPassFromServer } from "../utils/quickie";
 import { pruneExpiredBoosts } from "../utils/activeBoosts";
+import {
+  hydrateDiscreetHistoryFromServer,
+  setDiscreetStatusSnapshot
+} from "../utils/discreetMembership";
 import { dedupeInflight } from "../utils/inflightPromise";
 import { apiUrl } from "./supabase";
 
@@ -62,7 +66,15 @@ function applyEntitlementsPayload(payload?: {
   entitlements?: {
     signalPass?: PremiumSnapshot;
     fastConnectionPass?: { active?: boolean; expiresAt?: string | null };
+    experiences?: { discreet?: boolean };
+    discreetUntil?: string | null;
   };
+  discreetEvents?: Array<{
+    id?: string;
+    event_type?: string;
+    created_at?: string;
+    metadata?: { endsAt?: string; renewed?: boolean };
+  }>;
 }): MemberEntitlementsSnapshot {
   const signalSource = payload?.entitlements?.signalPass || payload?.premium;
   if (signalSource) {
@@ -74,6 +86,17 @@ function applyEntitlementsPayload(payload?: {
     (payload?.entitlements?.fastConnectionPass?.active ? getQuickiePassUntil() : null);
   const fastConnectionPass = resolveFastConnectionPassSnapshot(passUntil);
   syncFastConnectionPassFromServer(fastConnectionPass.expiresAt, fastConnectionPass.active);
+
+  const discreetUntil = payload?.entitlements?.discreetUntil || null;
+  const discreetActive = Boolean(payload?.entitlements?.experiences?.discreet) ||
+    Boolean(discreetUntil && new Date(discreetUntil).getTime() > Date.now());
+  setDiscreetStatusSnapshot({
+    active: discreetActive,
+    discreetUntil: discreetActive ? discreetUntil : discreetUntil
+  });
+  if (Array.isArray(payload?.discreetEvents)) {
+    hydrateDiscreetHistoryFromServer(payload.discreetEvents);
+  }
 
   pruneExpiredBoosts();
 
@@ -100,7 +123,15 @@ export async function refreshPremiumStatus(
         entitlements?: {
           signalPass?: PremiumSnapshot;
           fastConnectionPass?: { active?: boolean; expiresAt?: string | null };
+          experiences?: { discreet?: boolean };
+          discreetUntil?: string | null;
         };
+        discreetEvents?: Array<{
+          id?: string;
+          event_type?: string;
+          created_at?: string;
+          metadata?: { endsAt?: string; renewed?: boolean };
+        }>;
       }>(response);
       if (response.ok && payload?.ok) {
         applyEntitlementsPayload(payload);

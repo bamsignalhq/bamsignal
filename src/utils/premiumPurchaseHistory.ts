@@ -19,9 +19,9 @@ type AnalyticsRow = {
 };
 
 const PLAN_LABELS: Record<string, string> = {
-  weekly: "Weekly Signal Pass",
-  monthly: "Monthly Signal Pass",
-  quarterly: "3 Months Signal Pass",
+  weekly: "Weekly Discover Membership",
+  monthly: "Monthly Discover Membership",
+  quarterly: "3 Months Discover Membership",
 };
 
 export function listPremiumPurchaseHistory(limit = 12): PremiumPurchaseRecord[] {
@@ -41,7 +41,7 @@ export function listPremiumPurchaseHistory(limit = 12): PremiumPurchaseRecord[] 
     return {
       id: `${row.at}-${index}`,
       planId: planId in PLAN_LABELS ? (planId as PlanId) : "unknown",
-      planLabel: PLAN_LABELS[planId] ?? "Signal Pass",
+      planLabel: PLAN_LABELS[planId] ?? "Discover Membership",
       purchasedAt: row.at,
       expiresAt,
       status: active ? "Active" : "Expired",
@@ -52,7 +52,7 @@ export function listPremiumPurchaseHistory(limit = 12): PremiumPurchaseRecord[] 
     history.push({
       id: "current",
       planId: "unknown",
-      planLabel: "Signal Pass",
+      planLabel: "Discover Membership",
       purchasedAt: premiumUntil,
       expiresAt: premiumUntil,
       status: new Date(premiumUntil).getTime() > Date.now() ? "Active" : "Expired",

@@ -5,6 +5,12 @@ import {
   logAdminStatusHidden
 } from "./services/identityExposure.js";
 import { logAlertableEvent, observabilityContext } from "./services/observability.js";
+import {
+  ADMIN_SECRET_HEADER,
+  extractHeaderSecret,
+  matchesAdminAutomationSecret,
+  usesDeprecatedCronAdminSecret
+} from "./services/operationSecrets.js";
 
 export function allowedAdminEmails() {
   return commandCenterEmails();
@@ -29,15 +35,16 @@ export async function verifySupabaseAdmin(req) {
 }
 
 export async function requireAdmin(req, res) {
-  const allowedSecrets = [process.env.CRON_SECRET].filter(Boolean);
-  const provided = req.headers["x-bamsignal-secret"];
-  if (provided && allowedSecrets.includes(provided)) {
-    logAlertableEvent(
-      "admin_cron_secret_auth",
-      observabilityContext(req, {
-        endpoint: req?.path || req?.url || "admin"
-      })
-    );
+  const provided = extractHeaderSecret(req, ADMIN_SECRET_HEADER);
+  if (matchesAdminAutomationSecret(provided)) {
+    if (usesDeprecatedCronAdminSecret(provided)) {
+      logAlertableEvent(
+        "admin_cron_secret_auth_deprecated",
+        observabilityContext(req, {
+          endpoint: req?.path || req?.url || "admin"
+        })
+      );
+    }
     return true;
   }
   if (await verifySupabaseAdmin(req)) return true;

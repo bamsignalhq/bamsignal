@@ -59,9 +59,9 @@ export default async function handler(req, res) {
 
   try {
     if (req.query.action === "telegram-webhook") {
-      const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET || process.env.CRON_SECRET || "";
+      const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET || "";
       const providedSecret = req.query.secret || req.headers["x-telegram-bot-api-secret-token"];
-      if (expectedSecret && providedSecret !== expectedSecret) {
+      if (!expectedSecret || providedSecret !== expectedSecret) {
         return res.status(401).json({ ok: false, error: "Invalid Telegram webhook secret." });
       }
       if (!bot) return res.status(503).json({ ok: false, error: "Telegram bot token is not configured." });

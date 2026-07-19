@@ -155,6 +155,27 @@ export function unmatchUser(matchId: string, profileId: string): void {
   const { [matchId]: _removed, ...rest } = chats;
   void _removed;
   writeJson(STORAGE_KEYS.chats, rest);
+
+  const user = readJson<{ email?: string; phone?: string }>(STORAGE_KEYS.userProfile, {
+    email: "",
+    phone: ""
+  });
+  if (user.email || user.phone) {
+    void memberApiHeaders()
+      .then((headers) =>
+        fetch(apiUrl("/api/member/data?action=unmatch"), {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            email: user.email || "",
+            phone: user.phone || "",
+            matchId,
+            targetProfileId: profileId
+          })
+        })
+      )
+      .catch(() => undefined);
+  }
 }
 
 export type SignalGateResult = { allowed: true } | { allowed: false; reason: string };

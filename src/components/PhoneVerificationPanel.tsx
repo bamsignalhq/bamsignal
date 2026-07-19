@@ -5,10 +5,10 @@ import type { UserProfile } from "../types";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { isValidNigerianPhone, normalizeNigerianPhone } from "../utils/authIdentity";
 import {
-  confirmWhatsappVerification,
-  startWhatsappVerification,
+  confirmSmsVerification,
+  startSmsVerification,
   submitVerificationSelfie
-} from "../services/whatsappVerification";
+} from "../services/smsVerification";
 import { PHOTO_FILE_ACCEPT, validatePhotoFile } from "../utils/photoUpload";
 import { photoUploadUserMessage } from "../constants/photos";
 import { useAndroidBack } from "../hooks/useAndroidBack";
@@ -78,7 +78,7 @@ export function PhoneVerificationPanel({
     setInlineError("");
 
     try {
-      const result = await startWhatsappVerification(phone, user.email);
+      const result = await startSmsVerification(phone, user.email);
       if (!result.ok) {
         if (result.errorCode !== "cancelled") {
           setInlineError(result.error || USER_MESSAGES.otpSendFailed);
@@ -88,7 +88,7 @@ export function PhoneVerificationPanel({
       setCodeSent(true);
       setCode("");
       setResendSeconds(RESEND_SECONDS);
-      onMessage?.(result.message || "Code sent on WhatsApp.");
+      onMessage?.(result.message || "Code sent by SMS.");
     } finally {
       inFlightRef.current = false;
       setBusy("idle");
@@ -103,7 +103,7 @@ export function PhoneVerificationPanel({
       setInlineError("");
 
       try {
-        const result = await confirmWhatsappVerification(phone, nextCode, user.email);
+        const result = await confirmSmsVerification(phone, nextCode, user.email);
         if (!result.ok) {
           if (result.errorCode !== "cancelled") {
             setInlineError(result.error || USER_MESSAGES.otpVerifyFailed);
@@ -210,7 +210,7 @@ export function PhoneVerificationPanel({
             ) : !phoneReady ? (
               <>
                 <h3 className="wa-verify__title">Verify your number</h3>
-                <p className="wa-verify__copy">Enter your Nigerian WhatsApp number.</p>
+                <p className="wa-verify__copy">Enter your Nigerian mobile number for SMS Verification.</p>
                 <label className="wa-verify__field">
                   <span className="visually-hidden">Phone number</span>
                   <input
@@ -233,7 +233,7 @@ export function PhoneVerificationPanel({
             ) : !codeSent ? (
               <>
                 <h3 className="wa-verify__title">Verify your number</h3>
-                <p className="wa-verify__copy">We&apos;ll send a WhatsApp code to</p>
+                <p className="wa-verify__copy">We&apos;ll send an SMS code to</p>
                 <p className="wa-verify__phone">{formatPhoneDisplay(phone)}</p>
                 {inlineError ? (
                   <p className="wa-verify__alert" role="alert">
@@ -273,7 +273,7 @@ export function PhoneVerificationPanel({
                   <CheckCircle2 size={20} aria-hidden />
                   Code sent
                 </p>
-                <p className="wa-verify__copy">Check your WhatsApp.</p>
+                <p className="wa-verify__copy">Check your SMS messages.</p>
                 <OtpDigitInput
                   value={code}
                   onChange={setCode}

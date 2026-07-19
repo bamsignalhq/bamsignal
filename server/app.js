@@ -59,6 +59,8 @@ import remoteConfigHandler from "../api/remote-config/index.js";
 import whatsappVerifyStartHandler from "../api/verify/whatsapp/start.js";
 import whatsappVerifyConfirmHandler from "../api/verify/whatsapp/confirm.js";
 import whatsappVerifyWebhookHandler from "../api/verify/whatsapp/webhook.js";
+import smsVerifyStartHandler from "../api/verify/sms/start.js";
+import smsVerifyConfirmHandler from "../api/verify/sms/confirm.js";
 import verificationSubmissionsHandler from "../api/verify/submissions.js";
 import walletHandler from "../api/wallet/index.js";
 import { buildSitemapXml, getRobotsTxt } from "./seoSitemap.js";
@@ -153,6 +155,8 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/auth/login-security", loginSecurityHandler);
   mountHandler(app, "post", "/api/auth/play-reviewer-finish", playReviewerFinishHandler);
   mountHandler(app, "post", "/api/auth/identity", identityHandler);
+  mountHandler(app, "post", "/api/verify/sms/start", smsVerifyStartHandler);
+  mountHandler(app, "post", "/api/verify/sms/confirm", smsVerifyConfirmHandler);
   mountHandler(app, "post", "/api/verify/whatsapp/start", whatsappVerifyStartHandler);
   mountHandler(app, "post", "/api/verify/whatsapp/confirm", whatsappVerifyConfirmHandler);
   mountHandler(app, "post", "/api/verify/whatsapp/webhook", whatsappVerifyWebhookHandler);

@@ -49,7 +49,7 @@ export function applyNativeDeepLinkRoute(route: NativeDeepLinkRoute, api: Native
       api.setTab("likes");
       break;
     case "matches":
-      api.setTab("likes");
+      api.setTab("chats");
       break;
     case "premium":
       api.openPricing();

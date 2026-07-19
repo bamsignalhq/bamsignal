@@ -39,6 +39,31 @@ export const config = {
     `${process.env.PUBLIC_APP_URL || "https://bamsignal.com"}/api/paystack/webhook`,
   timezone: process.env.APP_TIMEZONE || "Africa/Lagos",
   cronSecret: process.env.CRON_SECRET,
+  /** Product verification / market policy — providers stay in adapters. */
+  verification: {
+    emailRequired: String(process.env.EMAIL_VERIFICATION_REQUIRED || "true").toLowerCase() !== "false",
+    smsRequiredForMessaging:
+      String(process.env.SMS_VERIFICATION_REQUIRED_FOR_MESSAGING || "true").toLowerCase() !== "false",
+    selfieRequiredForMessaging:
+      String(process.env.SELFIE_VERIFICATION_REQUIRED_FOR_MESSAGING || "true").toLowerCase() !== "false",
+    defaultCountry: (process.env.DEFAULT_COUNTRY || "NG").trim().toUpperCase(),
+    defaultPhoneRegion: (process.env.DEFAULT_PHONE_REGION || process.env.DEFAULT_COUNTRY || "NG")
+      .trim()
+      .toUpperCase(),
+    supportedCountries: String(process.env.SUPPORTED_COUNTRIES || "NG")
+      .split(",")
+      .map((c) => c.trim().toUpperCase())
+      .filter(Boolean),
+    smsProvider: (process.env.SMS_PROVIDER || "sendchamp").trim().toLowerCase(),
+    smsSenderId:
+      process.env.SMS_SENDER_ID?.trim() ||
+      process.env.SENDCHAMP_SENDER?.trim() ||
+      "",
+    otpLength: Number(process.env.OTP_LENGTH || 6),
+    otpExpiryMinutes: Number(process.env.OTP_EXPIRY_MINUTES || 30),
+    otpMaxAttempts: Number(process.env.OTP_MAX_ATTEMPTS || 5),
+    otpResendSeconds: Number(process.env.OTP_RESEND_SECONDS || 60)
+  },
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN?.trim() || "",
     freeChannelId: process.env.TELEGRAM_FREE_CHANNEL_ID,
@@ -46,7 +71,10 @@ export const config = {
   },
   sendchamp: {
     apiKey: process.env.SENDCHAMP_API_KEY?.trim() || "",
-    sender: process.env.SENDCHAMP_SENDER?.trim() || "",
+    sender:
+      process.env.SMS_SENDER_ID?.trim() ||
+      process.env.SENDCHAMP_SENDER?.trim() ||
+      "",
     whatsappSender: process.env.SENDCHAMP_WHATSAPP_SENDER?.trim() || "",
     baseUrl: process.env.SENDCHAMP_BASE_URL?.trim() || "https://api.sendchamp.com/api/v1"
   },

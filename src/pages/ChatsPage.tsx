@@ -1,4 +1,4 @@
-import { ArrowLeft, MoreVertical, Pin, Search } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pin, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EXPERIENCE_COPY } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
@@ -24,7 +24,7 @@ import { chatListStatus, formatBubbleTime, formatThreadTime } from "../utils/cha
 import { readReceiptsAllowed } from "../utils/activityPrivacy";
 import { isDemoTypingMatch, seedReviewerDemoChatsIfNeeded } from "../utils/reviewerDemoChats";
 import { matchAnniversaryBanner } from "../utils/connectionAnniversary";
-import { getDatingProfile } from "../utils/profile";
+import { getDatingProfile, normalizeDatingProfile } from "../utils/profile";
 import { checkOutgoingChatMessage, CONTACT_LEAK_BLOCK_MESSAGE, VULGAR_CONTENT_BLOCK_MESSAGE } from "../utils/contactGuard";
 import { blockAndReportUser, blockUser, canUseInbox, filterBlockedByProfileId, isUserBlocked, unmatchUser } from "../utils/safety";
 import { hasOfflineSafetyAck } from "../utils/compliance";
@@ -49,6 +49,10 @@ import { consumePendingChatDraft, consumePendingChatOpen, setPendingChatDraft } 
 import { useMemberToast } from "../hooks/useMemberToast";
 import { hapticMedium } from "../utils/memberHaptics";
 import { debugRender } from "../utils/debugRecursion";
+import { PhoneVerificationPanel } from "../components/PhoneVerificationPanel";
+import { resolveProfileMainPhoto } from "../utils/mainPhoto";
+import { syncMemberProfileRemote } from "../services/cityHome";
+import { isMessagingUnlocked } from "../utils/messagingTrustGate";
 
 type ChatsPageProps = {
   isPremium: boolean;
@@ -446,6 +450,12 @@ function ChatDetail({
   const [disableModalOpen, setDisableModalOpen] = useState(false);
   const [offlineSafetyOpen, setOfflineSafetyOpen] = useState(false);
   const pendingExchangeActionRef = useRef<(() => void) | null>(null);
+  const [verifyGateOpen, setVerifyGateOpen] = useState(false);
+  const [pendingMessageText, setPendingMessageText] = useState<string | null>(null);
+  const [gateUser, setGateUser] = useState(() =>
+    readJson<UserProfile>(STORAGE_KEYS.userProfile, { name: "", email: "", phone: "" })
+  );
+  const [gateProfile, setGateProfile] = useState(() => getDatingProfile());
   const exchangeStatus = threadMeta.contactExchange?.status;
   const sharingDisabled = threadMeta.contactExchange?.contactSharingEnabled === false;
   const exchangeApproved =
@@ -564,6 +574,22 @@ function ChatDetail({
       return;
     }
 
+    const liveUser = readJson<UserProfile>(STORAGE_KEYS.userProfile, gateUser);
+    const liveProfile = getDatingProfile();
+    if (!isMessagingUnlocked(liveUser, liveProfile)) {
+      setGateUser(liveUser);
+      setGateProfile(liveProfile);
+      setPendingMessageText(text);
+      setComposerDraft(text);
+      setVerifyGateOpen(true);
+      showToast("Verify your phone with SMS, then submit a selfie to unlock messaging.", {
+        tone: "error",
+        duration: 4000
+      });
+      trackEvent("message_started", { matchId: match.id, gate: "trust_shown" });
+      return;
+    }
+
     if (!isPremium) {
       if (readDailyCount(STORAGE_KEYS.dailyMessages) >= FREE_DAILY_MESSAGES) {
         setPaywallOpen(true);
@@ -582,6 +608,35 @@ function ChatDetail({
     const nextMessages = [...messages, msg];
     persistThread(nextMessages);
     if (isFirstMessage) trackEvent("message_started", { matchId: match.id });
+  };
+
+  const sendPendingAfterUnlock = (nextUser: UserProfile, nextProfile: ReturnType<typeof getDatingProfile>) => {
+    if (!isMessagingUnlocked(nextUser, nextProfile)) return;
+    const draft = pendingMessageText;
+    setVerifyGateOpen(false);
+    setPendingMessageText(null);
+    if (!draft?.trim()) {
+      showToast("Messaging unlocked. You can send your message now.", { tone: "success", duration: 3000 });
+      return;
+    }
+    if (!isPremium) {
+      if (readDailyCount(STORAGE_KEYS.dailyMessages) >= FREE_DAILY_MESSAGES) {
+        setPaywallOpen(true);
+        return;
+      }
+      incrementDailyCount(STORAGE_KEYS.dailyMessages);
+    }
+    const msg: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      from: "me",
+      text: draft,
+      at: new Date().toISOString()
+    };
+    const isFirstMessage = messages.length === 0;
+    persistThread([...messages, msg]);
+    setComposerDraft("");
+    if (isFirstMessage) trackEvent("message_started", { matchId: match.id, gate: "trust_unlocked" });
+    showToast("Messaging unlocked.", { tone: "success", duration: 2500 });
   };
 
   const requestContactExchange = async () => {
@@ -895,6 +950,62 @@ function ChatDetail({
           action?.();
         }}
       />
+
+      {verifyGateOpen ? (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => setVerifyGateOpen(false)}
+        >
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="messaging-verify-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => setVerifyGateOpen(false)}
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+            <h2 id="messaging-verify-title">Unlock messaging</h2>
+            <p className="wa-verify__copy">
+              Confirm your number with SMS Verification, then submit a selfie. Messaging unlocks when you submit.
+            </p>
+            <PhoneVerificationPanel
+              user={gateUser}
+              phoneVerified={Boolean(gateUser.phoneVerified)}
+              profilePhoto={resolveProfileMainPhoto(gateProfile) || undefined}
+              verificationStatus={gateProfile.verificationStatus || "none"}
+              onPhoneVerified={(phone) => {
+                const nextUser = { ...gateUser, phone, phoneVerified: true };
+                setGateUser(nextUser);
+                writeJson(STORAGE_KEYS.userProfile, nextUser);
+                showToast("Phone verified. Take a selfie to unlock messaging.", {
+                  tone: "success",
+                  duration: 3500
+                });
+              }}
+              onSelfieSubmitted={(verificationSelfie) => {
+                const nextProfile = normalizeDatingProfile({
+                  ...gateProfile,
+                  verificationSelfie,
+                  verificationStatus: "pending" as const
+                });
+                setGateProfile(nextProfile);
+                writeJson(STORAGE_KEYS.datingProfile, nextProfile);
+                void syncMemberProfileRemote(gateUser, nextProfile, { patchScope: "profile" });
+                sendPendingAfterUnlock({ ...gateUser, phoneVerified: true }, nextProfile);
+              }}
+              onMessage={(message) => showToast(message, { duration: 3500 })}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

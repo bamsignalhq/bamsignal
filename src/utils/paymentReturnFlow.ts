@@ -18,6 +18,7 @@ import {
   isWalletFundingPayment
 } from "../services/walletPurchaseFlow";
 import { logPaymentEvent, setPaymentFlowState } from "./paymentState";
+import { getPaymentReturnPath } from "./paymentReturn";
 
 export type PaymentReturnFlowResult = {
   outcome: PaymentReturnOutcome;
@@ -36,7 +37,7 @@ async function verifyOnce(user: UserProfile): Promise<PaymentReturnOutcome> {
       return {
         status: "fulfilled",
         kind: "premium",
-        returnPath: "/home"
+        returnPath: getPaymentReturnPath() || "/home"
       };
     }
     if (funded.pending) {

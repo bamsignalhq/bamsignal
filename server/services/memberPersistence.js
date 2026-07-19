@@ -81,6 +81,29 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
     });
   }
 
+  const peerLookup = await query(
+    `select user_key, owner_email, owner_phone, profile_id
+     from app_matches
+     where id = $1 and user_key <> $2
+     limit 1`,
+    [threadId, identity.userKey]
+  );
+  const peer = peerLookup.rows[0] || null;
+  if (peer?.user_key) {
+    const { isEitherSideBlocked } = await import("./memberBlocks.js");
+    const blocked = await isEitherSideBlocked({
+      userKeyA: identity.userKey,
+      userKeyB: peer.user_key,
+      profileIdA: member.rows[0]?.id || null,
+      profileIdB: peer.profile_id || null
+    });
+    if (blocked) {
+      const error = new Error("You can't message this person.");
+      error.code = "MEMBER_BLOCKED";
+      throw error;
+    }
+  }
+
   await ensureAppMessagesTable();
   await ensureAppChatThreadsTable();
 
@@ -115,6 +138,46 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
   if (senderShadowBanned) {
     return { ...row, payload: { ...(row.payload || message), suppressed: true }, suppressed: true };
   }
+
+  // Fan-out to match partner so both sides share the same thread id.
+  try {
+    if (peer?.user_key) {
+      const peerFrom = message.from === "me" ? "them" : "me";
+      const peerPayload = { ...message, from: peerFrom };
+      await query(
+        `insert into app_messages (id, thread_id, user_key, owner_email, owner_phone, from_side, body, payload, created_at)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         on conflict (id, user_key) do nothing`,
+        [
+          message.id,
+          threadId,
+          peer.user_key,
+          peer.owner_email || null,
+          peer.owner_phone || null,
+          peerFrom,
+          message.text,
+          peerPayload,
+          message.at || new Date().toISOString()
+        ]
+      );
+      await query(
+        `insert into app_chat_threads (match_id, user_key, owner_email, owner_phone, meta, updated_at)
+         values ($1, $2, $3, $4, $5, now())
+         on conflict (match_id, user_key)
+         do update set updated_at = now()`,
+        [
+          threadId,
+          peer.user_key,
+          peer.owner_email || null,
+          peer.owner_phone || null,
+          {}
+        ]
+      );
+    }
+  } catch (error) {
+    console.error("[bamsignal] message fan-out failed:", error?.message || error);
+  }
+
   return row;
 }
 

@@ -9,6 +9,7 @@ import {
 import { handleNativeLaunchUrl, initNativeExperience } from "./native/nativeInit";
 import { restoreNativeMemberSnapshotIfNeeded } from "./native/offlineMemberCache";
 import { setPendingChatOpen } from "./utils/chatDraft";
+import { ENABLE_REFERRALS_UI } from "./constants/featureFlags";
 import { Preloader } from "./components/Preloader";
 import { SessionRestoreOverlay } from "./components/SessionRestoreOverlay";
 import { InlineRestoreIndicator } from "./components/InlineRestoreIndicator";
@@ -2930,7 +2931,7 @@ export function App() {
               />
             </MemberRouteBoundary>
           )}
-          {memberAccessReady && !memberOverlay && currentPathname === "/referral" && (
+          {memberAccessReady && !memberOverlay && currentPathname === "/referral" && ENABLE_REFERRALS_UI && (
             <MemberRouteBoundary sessionKey={memberSessionEpoch} name="referral">
               <Suspense fallback={<LazyRouteFallback subtitle="Loading referral dashboard…" />}>
                 <LazyReferralDashboardPage

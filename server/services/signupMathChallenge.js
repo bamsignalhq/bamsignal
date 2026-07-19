@@ -6,7 +6,7 @@ const TOKEN_VERSION = 1;
 function challengeSecret() {
   return (
     process.env.SIGNUP_MATH_CHALLENGE_SECRET?.trim() ||
-    process.env.CRON_SECRET?.trim() ||
+    process.env.ADMIN_SECRET?.trim() ||
     process.env.PAYSTACK_SECRET_KEY?.trim() ||
     ""
   );

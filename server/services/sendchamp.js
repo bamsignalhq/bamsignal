@@ -23,8 +23,9 @@ export class SendchampError extends Error {
 }
 
 export function isSendchampConfigured() {
-  const { apiKey, sender, whatsappSender } = config.sendchamp;
-  return Boolean(apiKey && (whatsappSender || sender));
+  const { apiKey, sender } = config.sendchamp;
+  // SMS verification requires API key + SMS sender (YIKE). WhatsApp sender is not required for OTP.
+  return Boolean(apiKey && sender);
 }
 
 export function getSendchampHealthTrace() {
@@ -32,15 +33,28 @@ export function getSendchampHealthTrace() {
     hasApiKey: Boolean(config.sendchamp.apiKey),
     hasSender: Boolean(config.sendchamp.sender),
     hasWhatsappSender: Boolean(config.sendchamp.whatsappSender),
+    smsProvider: config.verification?.smsProvider || "sendchamp",
     baseUrl: config.sendchamp.baseUrl
   };
+}
+
+function resolveSmsSender(override) {
+  return override || config.sendchamp.sender || config.verification?.smsSenderId || "";
 }
 
 function resolveWhatsappSender(override) {
   return override || config.sendchamp.whatsappSender || config.sendchamp.sender;
 }
 
-function buildVerificationCreateBody({ phone, sender, includeCustomMessage = true }) {
+function buildVerificationCreateBody({
+  phone,
+  sender,
+  channel = "sms",
+  includeCustomMessage = true
+}) {
+  const expiration =
+    Number(config.verification?.otpExpiryMinutes) || OTP_EXPIRATION_MINUTES;
+  const tokenLength = Number(config.verification?.otpLength) || 6;
   const meta_data = {
     description: "BamSignal phone verification",
     brand: "BamSignal"
@@ -50,11 +64,11 @@ function buildVerificationCreateBody({ phone, sender, includeCustomMessage = tru
   }
 
   return {
-    channel: "whatsapp",
+    channel,
     sender,
     token_type: "numeric",
-    token_length: 6,
-    expiration_time: OTP_EXPIRATION_MINUTES,
+    token_length: tokenLength,
+    expiration_time: expiration,
     customer_mobile_number: phone,
     customer_email_address: "",
     meta_data,
@@ -229,7 +243,7 @@ async function sendchampFetch(path, body, { requireReference = true, logContext 
     const message =
       parsed.message ||
       (requireReference
-        ? "Unable to contact WhatsApp service."
+        ? "Unable to send verification code. Try again."
         : "We couldn't verify that code. Check it and try again.");
     throw new SendchampError(response.status || 502, message, payload?.code || "sendchamp_request_failed");
   }
@@ -240,13 +254,18 @@ async function sendchampFetch(path, body, { requireReference = true, logContext 
   };
 }
 
-export async function sendWhatsAppVerificationOtp({ phone, sender, logContext = {} }) {
-  const whatsappSender = resolveWhatsappSender(sender);
-  if (!whatsappSender) {
+export async function sendSmsVerificationOtp({ phone, sender, logContext = {} }) {
+  const smsSender = resolveSmsSender(sender);
+  if (!smsSender) {
     throw new SendchampError(503, "Sender configuration issue.", "missing_sender");
   }
 
-  const body = buildVerificationCreateBody({ phone, sender: whatsappSender, includeCustomMessage: true });
+  const body = buildVerificationCreateBody({
+    phone,
+    sender: smsSender,
+    channel: "sms",
+    includeCustomMessage: true
+  });
 
   try {
     return await sendchampFetch("/verification/create", body, { logContext });
@@ -264,7 +283,8 @@ export async function sendWhatsAppVerificationOtp({ phone, sender, logContext = 
       }
       const fallbackBody = buildVerificationCreateBody({
         phone,
-        sender: whatsappSender,
+        sender: smsSender,
+        channel: "sms",
         includeCustomMessage: false
       });
       return sendchampFetch("/verification/create", fallbackBody, { logContext });
@@ -274,7 +294,12 @@ export async function sendWhatsAppVerificationOtp({ phone, sender, logContext = 
   }
 }
 
-export async function confirmWhatsAppVerificationOtp({ reference, code, logContext = {} }) {
+/** @deprecated WhatsApp OTP retired — use sendSmsVerificationOtp */
+export async function sendWhatsAppVerificationOtp({ phone, sender, logContext = {} }) {
+  return sendSmsVerificationOtp({ phone, sender, logContext });
+}
+
+export async function confirmSmsVerificationOtp({ reference, code, logContext = {} }) {
   return sendchampFetch(
     "/verification/confirm",
     {
@@ -283,4 +308,8 @@ export async function confirmWhatsAppVerificationOtp({ reference, code, logConte
     },
     { requireReference: false, logContext }
   );
+}
+
+export async function confirmWhatsAppVerificationOtp(args) {
+  return confirmSmsVerificationOtp(args);
 }

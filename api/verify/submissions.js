@@ -5,9 +5,12 @@ import {
   submitVerificationSelfie,
   verificationQueueStats
 } from "../../server/services/verificationQueue.js";
-import { getPhoneVerifiedStatus } from "../../server/services/whatsappVerification.js";
+import { getPhoneVerifiedStatus } from "../../server/services/smsVerification.js";
 import { verifySupabaseAdmin } from "../../server/adminAuth.js";
 import { requireAdminConsent } from "../../server/adminConsent.js";
+import { requireMemberAuth } from "../../server/services/memberAuth.js";
+import { validateVerificationImagePayload } from "../../server/services/verificationImage.js";
+import { PhotoStorageError } from "../../server/services/photoStorage.js";
 import { sendLoggedApiError } from "../../server/services/errorResponse.js";
 
 function parseBody(req) {
@@ -42,8 +45,19 @@ export default async function handler(req, res) {
       });
     }
 
-    const email = String(body.email || "").trim().toLowerCase();
-    const phone = normalizePhone(body.phone);
+    const auth = await requireMemberAuth(req, body);
+    if (!auth.ok) {
+      return sendLoggedApiError({
+        req,
+        res,
+        status: auth.status || 401,
+        message: "Sign in to submit verification.",
+        errorCode: auth.error || "not_authorized",
+        event: "verification_submit_unauthorized"
+      });
+    }
+
+    const phone = normalizePhone(body.phone || auth.phone);
     const verificationSelfie = String(body.verificationSelfie || "").trim();
 
     if (!verificationSelfie) {
@@ -57,22 +71,43 @@ export default async function handler(req, res) {
       });
     }
 
-    const phoneVerified = await getPhoneVerifiedStatus({ email, phone });
+    try {
+      validateVerificationImagePayload(verificationSelfie);
+    } catch (error) {
+      const message =
+        error instanceof PhotoStorageError
+          ? error.message
+          : "Invalid verification image payload.";
+      return sendLoggedApiError({
+        req,
+        res,
+        status: 400,
+        message,
+        errorCode: "invalid_selfie",
+        event: "verification_submit_invalid_image"
+      });
+    }
+
+    const phoneVerified = await getPhoneVerifiedStatus({
+      email: auth.email,
+      phone,
+      authUserId: auth.authUserId
+    });
     if (!phoneVerified) {
       return sendLoggedApiError({
         req,
         res,
         status: 400,
-        message: "Verify your WhatsApp number first.",
+        message: "Verify your phone number with SMS first.",
         errorCode: "phone_not_verified",
         event: "verification_submit_phone_unverified"
       });
     }
 
     const row = await submitVerificationSelfie({
-      email,
+      email: auth.email,
       phone,
-      name: String(body.name || "").trim(),
+      name: auth.name || String(body.name || "").trim(),
       profilePhoto: String(body.profilePhoto || "").trim() || null,
       verificationSelfie,
       phoneVerified: true

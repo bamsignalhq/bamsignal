@@ -17,7 +17,12 @@ const CONSENT_TTL_MS = 15 * 60 * 1000;
 const PIN_SETTING_KEY = "admin_action_pin_hash";
 
 function consentSecret() {
-  return process.env.ADMIN_CONSENT_SECRET || process.env.CRON_SECRET || process.env.PAYSTACK_SECRET_KEY || "";
+  return (
+    process.env.ADMIN_CONSENT_SECRET ||
+    process.env.ADMIN_SECRET ||
+    process.env.PAYSTACK_SECRET_KEY ||
+    ""
+  );
 }
 
 function hashPin(pin) {

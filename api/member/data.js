@@ -1,7 +1,8 @@
 import {
   findAppUserIdentity,
   getDatabaseStatus,
-  upsertAppUserIdentity
+  upsertAppUserIdentity,
+  query
 } from "../../server/db.js";
 import {
   fetchMemberBundle,
@@ -509,6 +510,18 @@ export default async function handler(req, res) {
             level: "warn"
           });
         }
+        if (error?.code === "MEMBER_BLOCKED") {
+          return sendLoggedApiError({
+            req,
+            res,
+            event: "member_data_blocked",
+            error,
+            status: 403,
+            message: "You can't message this person.",
+            context: { action, code: error.code },
+            level: "warn"
+          });
+        }
         throw error;
       }
     }
@@ -720,7 +733,21 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: "targetProfileId is required." });
       }
       const { findMemberProfileByUserKey } = await import("../../server/cityHome.js");
+      const { persistMemberBlock } = await import("../../server/services/memberBlocks.js");
+      const { normalizeUserKey } = await import("../../server/db.js");
       const reporter = await findMemberProfileByUserKey(identity.email, identity.phone);
+      const blockerUserKey =
+        reporter?.user_key ||
+        normalizeUserKey({ email: identity.email, phone: identity.phone });
+      const target = await query(
+        `select user_key from app_member_profiles where id = $1 limit 1`,
+        [targetProfileId]
+      );
+      await persistMemberBlock({
+        blockerUserKey,
+        blockedProfileId: targetProfileId,
+        blockedUserKey: target.rows[0]?.user_key || null
+      });
       const { writeAuditLog } = await import("../../server/services/auditLog.js");
       await writeAuditLog({
         userId: reporter?.id || null,
@@ -729,6 +756,35 @@ export default async function handler(req, res) {
         details: {}
       });
       return res.status(200).json({ ok: true });
+    }
+
+    if (action === "unmatch") {
+      if (!requireDatabase(res)) return;
+      const matchId = String(body.matchId || "").trim();
+      const targetProfileId = String(body.targetProfileId || "").trim();
+      if (!matchId) {
+        return res.status(400).json({ ok: false, error: "matchId is required." });
+      }
+      const { findMemberProfileByUserKey } = await import("../../server/cityHome.js");
+      const { unmatchBothSides, persistMemberBlock } = await import("../../server/services/memberBlocks.js");
+      const { normalizeUserKey } = await import("../../server/db.js");
+      const reporter = await findMemberProfileByUserKey(identity.email, identity.phone);
+      const userKey =
+        reporter?.user_key ||
+        normalizeUserKey({ email: identity.email, phone: identity.phone });
+      const result = await unmatchBothSides({ matchId, userKey });
+      if (targetProfileId) {
+        const target = await query(
+          `select user_key from app_member_profiles where id = $1 limit 1`,
+          [targetProfileId]
+        );
+        await persistMemberBlock({
+          blockerUserKey: userKey,
+          blockedProfileId: targetProfileId,
+          blockedUserKey: target.rows[0]?.user_key || result?.peerUserKey || null
+        });
+      }
+      return res.status(200).json({ ok: Boolean(result?.ok) });
     }
 
     if (action === "connection-note") {

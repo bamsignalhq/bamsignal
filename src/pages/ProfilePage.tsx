@@ -32,6 +32,7 @@ import {
   stateDisplayLabel
 } from "../constants/profileOptions";
 import { ReferralCard } from "../components/dashboard/ReferralCard";
+import { ENABLE_REFERRALS_UI } from "../constants/featureFlags";
 import { LifecycleJourneyCard } from "../components/dashboard/LifecycleJourneyCard";
 import { NativeShareProfileButton } from "../components/NativeShareProfileButton";
 import { ProfileOverviewContent } from "../components/profile/overview/ProfileOverviewContent";
@@ -868,7 +869,7 @@ export function ProfilePage({
           {settingsPanel === "hub" && (
             <>
               <LifecycleJourneyCard user={user} profile={profile} />
-              <ReferralCard user={user} />
+              {ENABLE_REFERRALS_UI ? <ReferralCard user={user} /> : null}
               <section className="card settings-hub-card">
                 <NativeShareProfileButton
                   profileName={user.name}

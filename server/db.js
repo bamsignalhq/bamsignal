@@ -121,14 +121,49 @@ export async function initDatabase() {
     resetSchemaVerificationCache();
     const schema = await checkSchema({ force: true });
     if (!schema.ok && !schema.skipped) {
+      // Fail-closed only when the public schema is actually empty.
+      // A false-negative required-table probe must not take production offline.
+      let publicTableCount = 0;
+      try {
+        const countResult = await pool.query(
+          `select count(*)::int as n
+           from information_schema.tables
+           where table_schema = 'public' and table_type = 'BASE TABLE'`
+        );
+        publicTableCount = Number(countResult.rows[0]?.n || 0);
+      } catch {
+        publicTableCount = 0;
+      }
+
+      console.warn("[bamsignal] schema_verification_mismatch", {
+        missingCount: schema.missing?.length || 0,
+        presentCount: schema.present?.length || 0,
+        publicTableCount,
+        missingSample: (schema.missing || []).slice(0, 8)
+      });
+
+      if (publicTableCount > 10) {
+        logThresholdedAlert("schema_incomplete", {
+          reason: "schema_probe_mismatch",
+          missing: schema.missing,
+          publicTableCount
+        });
+        console.warn(
+          `[bamsignal] Keeping database connected despite schema probe mismatch (public_tables=${publicTableCount}).`
+        );
+        console.log("[bamsignal] Database connected successfully");
+        return { ok: true, schemaVerified: false, publicTableCount, missing: schema.missing };
+      }
+
       dbConnectionStatus = "disconnected";
       dbConnectionError = schema.message;
       logThresholdedAlert("schema_incomplete", {
         reason: "schema_not_migrated",
-        missing: schema.missing
+        missing: schema.missing,
+        publicTableCount
       });
       console.warn(`[bamsignal] ${schema.message}`);
-      return { ok: false, reason: schema.message, missing: schema.missing };
+      return { ok: false, reason: schema.message, missing: schema.missing, publicTableCount };
     }
     console.log("[bamsignal] Database connected successfully");
     return { ok: true, schemaVerified: schema.ok && !schema.skipped };

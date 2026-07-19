@@ -73,14 +73,20 @@ COPY public ./public
 COPY shared ./shared
 COPY scripts ./scripts
 COPY migrations ./migrations
+
+# Coolify/orchestrator probes may use wget; keep image small (no recommends).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
+
 # Import smoke test — must pass without runtime secrets (dry-run DB, optional services).
 # SMOKE_PORT avoids EADDRINUSE when PORT=3000 is already taken on the build host.
 RUN SMOKE_PORT=39451 node scripts/smoke-server-import.mjs
 
 EXPOSE 3000
 
-# Readiness probe — allow first-boot SQL migrations before marking unhealthy.
+# Liveness probe — keep Traefik routing up while /ready may be 503 during dependency recovery.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 CMD ["node", "server/production.js"]

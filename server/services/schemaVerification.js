@@ -102,8 +102,9 @@ export async function checkSchema(options = {}) {
     `select table_name
      from information_schema.tables
      where table_schema = 'public'
+       and table_type = 'BASE TABLE'
        and table_name = any($1::text[])`,
-    [REQUIRED_SCHEMA_TABLES]
+    [Array.from(REQUIRED_SCHEMA_TABLES)]
   );
   const present = result.rows.map((row) => String(row.table_name));
   const presentSet = new Set(present);

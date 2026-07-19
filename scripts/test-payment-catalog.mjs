@@ -22,7 +22,7 @@ function assert(condition, message) {
 }
 
 const monthly = await resolvePremiumPlan("monthly");
-assert(monthly?.amountKobo === 399900, "monthly premium amount comes from server catalog");
+assert(monthly?.amountKobo === 299900, "monthly premium amount comes from server catalog");
 assert(monthly?.days === 30, "monthly premium duration comes from server catalog");
 
 const tamperedPremium = await resolvePremiumPlan("monthly");

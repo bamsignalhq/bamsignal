@@ -15,6 +15,7 @@ import { SessionRestoreOverlay } from "./components/SessionRestoreOverlay";
 import { InlineRestoreIndicator } from "./components/InlineRestoreIndicator";
 import { BRAND_ASSETS } from "./constants/brand";
 import { BottomNav } from "./components/BottomNav";
+import { PublicMarketingNav } from "./components/PublicMarketingNav";
 import { TopNav } from "./components/TopNav";
 import { PricingModal } from "./components/PricingModal";
 import { GuestGate } from "./components/GuestGate";
@@ -250,6 +251,7 @@ import {
   HARD_AUTH_PATH,
   type AuthPath
 } from "./constants/routes";
+import { getComingSoonPage } from "./constants/comingSoonPages";
 import { getLegalPath, type LegalPath } from "./constants/footer";
 import { getSeoRoute, type SeoRoute } from "./constants/seoRoutes";
 import { getNigeriaRoute, type NigeriaRoute } from "./constants/nigeriaRoutes";
@@ -321,7 +323,6 @@ import { flowLog } from "./utils/flowLog";
 import { clearOnboardingDrafts } from "./utils/onboardingDrafts";
 import { logRouteDecision } from "./utils/profileOnboardingRepair";
 import { repairMemberCaches } from "./utils/repairMemberCaches";
-import { memberFirstName } from "./utils/safeProfile";
 import { MemberRouteBoundary, PublicRouteBoundary } from "./components/RouteErrorBoundary";
 import { evaluateMemberRouteGuard } from "./components/MemberRouteGuard";
 import {
@@ -2437,22 +2438,14 @@ export function App() {
 
   if (momentSlug && getMomentPage(momentSlug)) {
     return (
-      <div className={`app ${theme} platform-root`}>
+      <div className={`app ${theme} platform-root platform-root--public-web`}>
         <div className="platform-shell platform-shell--legal">
-          <TopNav
+          <PublicMarketingNav
             theme={theme}
             onToggleTheme={toggleTheme}
-            isPremium={isPremium}
-            isGuest={isGuest}
-            onLogin={() => openAuth("login")}
             onLogoClick={goHome}
-            showNotifications={isAuthed}
-            notificationCount={notificationUnread}
-            onNotificationsClick={() => setNotificationsOpen(true)}
-            showFoundingMember={false}
-            memberFirstName={
-              isAuthed ? memberFirstName(user) : undefined
-            }
+            onLogin={() => openAuth("login")}
+            onSignup={() => openAuth("signup", "discover")}
           />
           <main className="app-main app-main--legal">
             <Suspense fallback={<LazyRouteFallback />}>
@@ -2462,6 +2455,10 @@ export function App() {
               />
             </Suspense>
           </main>
+          <SiteFooter
+            onLogoClick={goHome}
+            onSignup={() => openAuth("signup", "discover")}
+          />
         </div>
       </div>
     );
@@ -2480,6 +2477,23 @@ export function App() {
           onSignup={() => openAuth("signup", "discover")}
           onBackToBlog={() => navigateToPath("/blog")}
           blogPost={post}
+        />
+      </Suspense>
+    );
+  }
+
+  const comingSoonPage = getComingSoonPage(currentPathname);
+  if (comingSoonPage && !activeAuthPath) {
+    return (
+      <Suspense fallback={<LazyRouteFallback />}>
+        <LazyPublicMarketingRoutes
+          variant="coming-soon"
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onLogoClick={goHome}
+          onLogin={() => openAuth("login")}
+          onSignup={() => openAuth("signup", "discover")}
+          comingSoonPage={comingSoonPage}
         />
       </Suspense>
     );
@@ -2894,57 +2908,32 @@ export function App() {
 
   if (legalPath) {
     return (
-      <div className={`app ${theme} platform-root`}>
+      <div className={`app ${theme} platform-root platform-root--public-web`}>
         <div className="platform-shell platform-shell--legal">
-          <TopNav
+          <PublicMarketingNav
             theme={theme}
             onToggleTheme={toggleTheme}
-            isPremium={isPremium}
-            isGuest={isGuest}
-            onLogin={() => openAuth("login")}
             onLogoClick={goHome}
-            showNotifications={isAuthed}
-            notificationCount={notificationUnread}
-            onNotificationsClick={() => setNotificationsOpen(true)}
-            showFoundingMember={false}
-            memberFirstName={
-              isAuthed ? memberFirstName(user) : undefined
-            }
+            onLogin={() => openAuth("login")}
+            onSignup={() => openAuth("signup", "discover")}
           />
           <main className="app-main app-main--legal">
             <Suspense fallback={<LazyRouteFallback />}>
               <LazyLegalPage path={legalPath} />
             </Suspense>
           </main>
-          <SiteFooter onLogoClick={goHome} />
+          <SiteFooter
+            onLogoClick={goHome}
+            onSignup={() => openAuth("signup", "discover")}
+          />
         </div>
-
-        <NotificationCenter
-          open={notificationsOpen}
-          onClose={() => {
-            setNotificationsOpen(false);
-            setNotifVersion((v) => v + 1);
-          }}
-          onReadChange={() => setNotifVersion((v) => v + 1)}
-          onOpenNotification={handleNotificationOpen}
-        />
-
-        <PricingModal
-          open={pricingOpen}
-          onClose={() => setPricingOpen(false)}
-          plans={plans}
-          onSelectPlan={(plan) => void handleUpgrade(plan)}
-          onPurchaseBoost={handlePurchaseBoost}
-          loading={paymentLoading}
-          memberCity={getMemberCity()}
-        />
       </div>
     );
   }
 
   return (
     <PremiumCheckoutProvider value={premiumCheckoutValue}>
-    <div className={`app ${theme} platform-root ${memberAppEntered && !isPublicSurface ? "platform-root--member" : ""}`}>
+    <div className={`app ${theme} platform-root ${memberAppEntered && !isPublicSurface ? "platform-root--member" : ""} ${isPublicSurface ? "platform-root--public-web" : ""}`}>
       {memberAppEntered && !isPublicSurface && !networkOnline ? (
         <MemberOfflineBanner onRetry={refreshNetworkStatus} />
       ) : null}
@@ -2955,28 +2944,39 @@ export function App() {
         className="platform-shell"
       >
         {!isOnboardingRoute && !showComplianceGate && !activeAuthPath && (
-          <TopNav
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            isPremium={isPremium}
-            isGuest={!isAuthed}
-            onLogin={() => openAuth("login")}
-            onLogoClick={goHome}
-            showOpenApp={isAuthed && isPublicHome}
-            onOpenApp={enterMemberApp}
-            openAppLoading={openAppLoading}
-            showNotifications={isAuthed && memberAppEntered && !isPublicSurface}
-            notificationCount={notificationUnread}
-            onNotificationsClick={() => setNotificationsOpen(true)}
-            showEarlyAccess={false}
-            showMemberNav={isAuthed && memberAppEntered && !isPublicSurface}
-            memberTab={tab}
-            onMemberNavigate={navigateTab}
-            likeCount={incomingSignals}
-            messageCount={messageCount}
-            showBrandText={showGuestChrome}
-            showGreeting={false}
-          />
+          isPublicSurface ? (
+            <PublicMarketingNav
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onLogoClick={goHome}
+              onLogin={isAuthed ? undefined : () => openAuth("login")}
+              onSignup={isAuthed ? undefined : () => openAuth("signup", "discover")}
+              onOpenApp={isAuthed && isPublicHome ? enterMemberApp : undefined}
+              openAppLoading={openAppLoading}
+              transparentOverHero={showMarketingHome}
+            />
+          ) : (
+            <TopNav
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              isPremium={isPremium}
+              isGuest={!isAuthed}
+              onLogin={() => openAuth("login")}
+              onLogoClick={goHome}
+              showOpenApp={false}
+              showNotifications={isAuthed && memberAppEntered && !isPublicSurface}
+              notificationCount={notificationUnread}
+              onNotificationsClick={() => setNotificationsOpen(true)}
+              showEarlyAccess={false}
+              showMemberNav={isAuthed && memberAppEntered && !isPublicSurface}
+              memberTab={tab}
+              onMemberNavigate={navigateTab}
+              likeCount={incomingSignals}
+              messageCount={messageCount}
+              showBrandText={showGuestChrome}
+              showGreeting={false}
+            />
+          )
         )}
 
         {recoveryBanner ? (
@@ -3281,7 +3281,7 @@ export function App() {
           )}
         </main>
 
-        {!isNative && isGuest && !isOnboardingRoute && tab !== "home" && (
+        {!isNative && isGuest && !isOnboardingRoute && tab !== "home" && !isPublicSurface && (
           <SiteFooter className="site-footer--compact" onLogoClick={goHome} />
         )}
       </div>
@@ -3290,11 +3290,15 @@ export function App() {
         <ComplianceGateModal user={user} onComplete={() => setComplianceTick((tick) => tick + 1)} />
       )}
 
-      {!isOnboardingRoute && !showComplianceGate && !activeAuthPath && (
+      {!isOnboardingRoute &&
+        !showComplianceGate &&
+        !activeAuthPath &&
+        !isPublicSurface &&
+        (isNative || (isAuthed && memberAppEntered)) && (
         <BottomNav
           active={tab}
           onNavigate={navigateTab}
-          isGuest={showGuestChrome}
+          isGuest={isNative && showGuestChrome && !(isAuthed && memberAppEntered)}
           onJoin={() => openAuth("signup")}
           likeCount={isAuthed && memberAppEntered ? incomingSignals : 0}
         />

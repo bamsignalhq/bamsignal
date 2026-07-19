@@ -1,3 +1,4 @@
+import { isComingSoonPath } from "./comingSoonPages";
 import { hardPathForTab, parseHardTabFromPath } from "./hardRoutes";
 import { getLegalPath } from "./footer";
 import { isSeoRoute } from "./seoRoutes";
@@ -122,6 +123,7 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   if (isProductLandingRoute(path)) return true;
   if (path === PROFESSIONAL_MATCHMAKING_ALIAS) return true;
   if (path === "/") return true;
+  if (isComingSoonPath(path)) return true;
   return false;
 }
 

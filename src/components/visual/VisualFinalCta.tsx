@@ -11,8 +11,8 @@ export function VisualFinalCta({ onSignup }: VisualFinalCtaProps) {
   const { final } = HOME_SECTIONS;
 
   return (
-    <section className="visual-final visual-final--premium visual-final--simple">
-      <ShowcaseImage className="visual-final__bg" src={FINAL_CTA_IMAGE} alt="" />
+    <section className="visual-final visual-final--premium visual-final--simple" id="ready">
+      <ShowcaseImage className="visual-final__bg" src={FINAL_CTA_IMAGE} alt="" loading="lazy" />
       <div className="visual-final__shade" />
       <div className="visual-final__content visual-final__content--spaced">
         <h2>{final.headline}</h2>

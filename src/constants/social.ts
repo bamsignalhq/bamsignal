@@ -1,6 +1,11 @@
 /** Official BamSignal social profiles — shared by site footer and email templates */
 export const SOCIAL_LINKS = [
   {
+    id: "facebook",
+    label: "Facebook",
+    href: "https://www.facebook.com/realbamsignal/"
+  },
+  {
     id: "instagram",
     label: "Instagram",
     href: "https://www.instagram.com/realbamsignal/"
@@ -11,9 +16,9 @@ export const SOCIAL_LINKS = [
     href: "https://x.com/realbamsignal"
   },
   {
-    id: "facebook",
-    label: "Facebook",
-    href: "https://www.facebook.com/realbamsignal/"
+    id: "linkedin",
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/bamsignal/"
   },
   {
     id: "tiktok",

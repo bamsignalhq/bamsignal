@@ -13,6 +13,7 @@ import "./styles/v6.css";
 import "./styles/safety.css";
 import "./styles/launch.css";
 import "./styles/footer.css";
+import "./styles/public-marketing-nav.css";
 import "./styles/theme-contrast.css";
 import "./styles/commercial-experience.css";
 import "./styles/premium-visibility.css";

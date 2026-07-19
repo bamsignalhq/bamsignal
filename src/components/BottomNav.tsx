@@ -1,4 +1,4 @@
-import { Compass, Heart, Home, MessageCircle, User, UserPlus } from "lucide-react";
+import { Compass, Heart, Home, MessageCircle, Sparkles, User } from "lucide-react";
 import type { NavTab } from "../types";
 
 type BottomNavProps = {
@@ -24,10 +24,11 @@ const memberTabs: NavItem[] = [
   { id: "me", label: "Profile", icon: User }
 ];
 
+/** Native / non-marketing guest chrome only — never used on the public marketing website. */
 const guestTabs: NavItem[] = [
   { id: "home", label: "Home", icon: Home },
   { id: "discover", label: "Discover", icon: Compass },
-  { id: "join", label: "Join", icon: UserPlus, action: true }
+  { id: "join", label: "Get Started", icon: Sparkles, action: true }
 ];
 
 export function BottomNav({ active, onNavigate, likeCount = 0, isGuest, onJoin }: BottomNavProps) {

@@ -6,13 +6,23 @@ import { SeoLayout } from "../pages/seo/SeoLayout";
 import { SeoRouter } from "../pages/seo/SeoRouter";
 import { NigeriaLocationRouter } from "../pages/seo/NigeriaLocationRouter";
 import { PublicNotFoundPage } from "../pages/seo/PublicNotFoundPage";
+import { ComingSoonPage } from "../pages/seo/ComingSoonPage";
 import type { BlogPost } from "../data/blogPosts";
 import type { SeoRoute } from "../constants/seoRoutes";
 import type { NigeriaRoute } from "../constants/nigeriaRoutes";
+import type { ComingSoonPageConfig } from "../constants/comingSoonPages";
 import type { Theme } from "../types";
 
 type PublicMarketingRoutesProps = {
-  variant: "blog-index" | "blog-post" | "blog-missing" | "seo" | "nigeria" | "not-found" | "store-screenshots";
+  variant:
+    | "blog-index"
+    | "blog-post"
+    | "blog-missing"
+    | "seo"
+    | "nigeria"
+    | "not-found"
+    | "coming-soon"
+    | "store-screenshots";
   theme: Theme;
   onToggleTheme: () => void;
   onLogoClick: () => void;
@@ -22,6 +32,7 @@ type PublicMarketingRoutesProps = {
   blogPost?: BlogPost | null;
   seoRoute?: SeoRoute | null;
   nigeriaRoute?: NigeriaRoute | null;
+  comingSoonPage?: ComingSoonPageConfig | null;
 };
 
 /** Public SEO, blog, help, safety, and premium guides — outside the member shell bundle. */
@@ -35,14 +46,17 @@ export function PublicMarketingRoutes({
   onBackToBlog,
   blogPost,
   seoRoute,
-  nigeriaRoute
+  nigeriaRoute,
+  comingSoonPage
 }: PublicMarketingRoutesProps) {
   if (variant === "store-screenshots") {
     return <StoreScreenshotsPage />;
   }
 
   const content =
-    variant === "blog-index" ? (
+    variant === "coming-soon" && comingSoonPage ? (
+      <ComingSoonPage page={comingSoonPage} onSignup={onSignup} />
+    ) : variant === "blog-index" ? (
       <BlogIndexPage onSignup={onSignup} />
     ) : variant === "blog-post" && blogPost ? (
       <BlogPostPage post={blogPost} onSignup={onSignup} />

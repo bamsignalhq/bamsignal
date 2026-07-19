@@ -33,7 +33,7 @@ export function PublicNotFoundPage() {
           <Link href="/safety">Safety centre</Link>
         </li>
         <li>
-          <Link href={AUTH_SIGNUP_PATH}>Join BamSignal</Link>
+          <Link href={AUTH_SIGNUP_PATH}>Get Started</Link>
         </li>
       </ul>
     </div>

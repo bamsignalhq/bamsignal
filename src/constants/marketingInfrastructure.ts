@@ -19,7 +19,7 @@ export type MarketingShareKind = "profile" | "referral" | "success_story";
 export const REFERRAL_REWARD_RULES = {
   goal: 3,
   rewardDays: 7,
-  rewardLabel: "7-day Signal Pass",
+  rewardLabel: "7-day Discover Membership",
 } as const;
 
 export const MARKETING_CAMPAIGN_TEMPLATES: {
@@ -54,7 +54,7 @@ export const MARKETING_CAMPAIGN_TEMPLATES: {
     id: "referral-wave",
     kind: "referral",
     title: "Referral Wave",
-    summary: "Invite 3 friends — earn Signal Pass rewards.",
+    summary: "Invite 3 friends — earn Discover Membership rewards.",
     cta: "Share your code",
   },
 ];

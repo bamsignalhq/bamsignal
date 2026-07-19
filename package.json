@@ -74,6 +74,8 @@
     "test:diagnostics-access": "node scripts/test-diagnostics-access.mjs",
     "test:photo-upload-attribution": "node scripts/test-photo-upload-attribution.mjs",
     "test:open-app-onboarding": "node scripts/test-open-app-onboarding.mjs",
+    "test:onboarding-db-authority": "node scripts/test-onboarding-db-authority.mjs",
+    "test:national-verification": "node scripts/test-national-verification.mjs",
     "test:existing-account-auth": "node scripts/test-existing-account-auth.mjs",
     "test:admin-action-pin-throttle": "node scripts/test-admin-action-pin-throttle.mjs",
     "test:journey-id": "node scripts/test-journey-id.mjs",

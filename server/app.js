@@ -62,6 +62,11 @@ import whatsappVerifyWebhookHandler from "../api/verify/whatsapp/webhook.js";
 import smsVerifyStartHandler from "../api/verify/sms/start.js";
 import smsVerifyConfirmHandler from "../api/verify/sms/confirm.js";
 import verificationSubmissionsHandler from "../api/verify/submissions.js";
+import nationalVerificationStartHandler from "../api/verification/start.js";
+import nationalVerificationUploadHandler from "../api/verification/upload.js";
+import nationalVerificationVerifyHandler from "../api/verification/verify.js";
+import nationalVerificationStatusHandler from "../api/verification/status.js";
+import nationalVerificationAdminHandler from "../api/verification/admin.js";
 import walletHandler from "../api/wallet/index.js";
 import { buildSitemapXml, getRobotsTxt } from "./seoSitemap.js";
 
@@ -162,6 +167,13 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/verify/whatsapp/webhook", whatsappVerifyWebhookHandler);
   mountHandler(app, "post", "/api/verify/submissions", verificationSubmissionsHandler);
   mountHandler(app, "get", "/api/verify/submissions", verificationSubmissionsHandler);
+  mountHandler(app, "post", "/api/verification/start", nationalVerificationStartHandler);
+  mountHandler(app, "post", "/api/verification/upload", nationalVerificationUploadHandler);
+  mountHandler(app, "post", "/api/verification/verify", nationalVerificationVerifyHandler);
+  mountHandler(app, "post", "/api/verification/status", nationalVerificationStatusHandler);
+  mountHandler(app, "get", "/api/verification/status", nationalVerificationStatusHandler);
+  mountHandler(app, "post", "/api/verification/admin", nationalVerificationAdminHandler);
+  mountHandler(app, "get", "/api/verification/admin", nationalVerificationAdminHandler);
   mountHandler(app, "post", "/api/member/data", memberDataHandler);
   mountHandler(app, "post", "/api/member/photos", memberPhotosHandler);
   mountHandler(app, "post", "/api/member/voice", memberVoiceHandler);

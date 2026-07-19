@@ -37,9 +37,10 @@ import {
   fetchOnboardingStatus
 } from "../services/onboardingRepair";
 import { normalizeDatingProfile } from "../utils/profile";
-import { clearOnboardingDrafts, looksLikeSavedOnboardingProgress } from "../utils/onboardingStatus";
+import { clearOnboardingDrafts } from "../utils/onboardingStatus";
 import { resolveMemberIdentity } from "../utils/authIdentity";
 import { writeJson, readJson } from "../utils/storage";
+import { logAuthRoute } from "../utils/authRouteLog";
 import { isStoragePhotoUrl } from "../utils/photoRefs";
 import { isSignupPhotoCountable } from "../utils/photoMeta";
 import { flowLog } from "../utils/flowLog";
@@ -111,10 +112,8 @@ type OnboardingPageProps = {
 export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPageProps) {
   const [gateReady, setGateReady] = useState(false);
   const [phase, setPhase] = useState<OnboardingPhase>("required");
-  const [step, setStep] = useState(() => {
-    const saved = readJson<number>(STORAGE_KEYS.onboardingStep, 0);
-    return Number.isFinite(saved) ? Math.min(Math.max(0, saved), REQUIRED_STEPS.length - 1) : 0;
-  });
+  /** In-session step only — never restore from localStorage. */
+  const [step, setStep] = useState(0);
   const [optionalStep, setOptionalStep] = useState(0);
   const [modMessage, setModMessage] = useState("");
   const modMessageTimerRef = useRef<number | undefined>(undefined);
@@ -127,40 +126,22 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
       modMessageTimerRef.current = undefined;
     }, 4000);
   };
-  const [profile, setProfile] = useState<DatingProfile>(() => {
-    const stored = readJson<Partial<DatingProfile>>(STORAGE_KEYS.datingProfile, {});
-    const normalized = normalizeDatingProfile(stored);
-    const resuming = looksLikeSavedOnboardingProgress(stored);
-    if (!resuming) {
-      return {
-        ...normalized,
-        interests: [],
-        interestsTouched: false,
-        age: 0,
-        gender: "" as Gender,
-        lookingFor: undefined,
-        interestedInManuallyChanged: false,
-        dateOfBirth: undefined,
-        state: "",
-        city: ""
-      };
-    }
-    const synced = !normalized.interestedInManuallyChanged
-      ? {
-          ...normalized,
-          lookingFor: resolveLookingFor({
-            raw: normalized.lookingFor,
-            gender: normalized.gender,
-            interestedInManuallyChanged: false,
-            onboardingComplete: false
-          })
-        }
-      : normalized;
-    if (stored.dateOfBirth && !stored.age) {
-      return { ...synced, dateOfBirth: undefined };
-    }
-    return synced;
-  });
+  /** Start empty; hydrate only from server onboarding-status when incomplete. */
+  const [profile, setProfile] = useState<DatingProfile>(() =>
+    normalizeDatingProfile({
+      interests: [],
+      interestsTouched: false,
+      age: 0,
+      gender: "" as Gender,
+      lookingFor: undefined,
+      interestedInManuallyChanged: false,
+      dateOfBirth: undefined,
+      state: "",
+      city: "",
+      onboardingComplete: false,
+      setupCompleted: false
+    })
+  );
   const [prefSearchState, setPrefSearchState] = useState("");
   const [prefCities, setPrefCities] = useState<string[]>([]);
   const [ageMin, setAgeMin] = useState(22);
@@ -179,6 +160,11 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
     void (async () => {
       const status = await fetchOnboardingStatus(identity);
       if (cancelled) return;
+      logAuthRoute("PROFILE_FETCHED", {
+        source: "onboarding_page_gate",
+        completed: Boolean(status?.completed),
+        reason: status?.reason ?? null
+      });
       if (status?.completed) {
         if (status.datingProfile) {
           applyOnboardingRepairLocal({
@@ -190,9 +176,36 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
           });
         }
         clearOnboardingDrafts();
+        logAuthRoute("REDIRECT_REASON", {
+          reason: status.reason || "server_onboarding_complete",
+          route: "home",
+          source: "onboarding_page_gate"
+        });
         onComplete();
         navigateToPath("/home", true);
         return;
+      }
+      if (status?.datingProfile) {
+        const remote = normalizeDatingProfile(status.datingProfile);
+        setProfile((prev) => {
+          const merged = normalizeDatingProfile({
+            ...prev,
+            ...remote,
+            onboardingComplete: false,
+            setupCompleted: false
+          });
+          return !merged.interestedInManuallyChanged
+            ? {
+                ...merged,
+                lookingFor: resolveLookingFor({
+                  raw: merged.lookingFor,
+                  gender: merged.gender,
+                  interestedInManuallyChanged: false,
+                  onboardingComplete: false
+                })
+              }
+            : merged;
+        });
       }
       setGateReady(true);
     })();
@@ -211,13 +224,11 @@ export function OnboardingPage({ user, onUserChange, onComplete }: OnboardingPag
   useEffect(() => {
     if (phase !== "required") return;
     flowLog("onboarding_step", { step });
-    if (!writeJson(STORAGE_KEYS.onboardingStep, step)) {
-      showModMessage(USER_MESSAGES.progressSaveFailed);
-    }
   }, [phase, step]);
 
   useEffect(() => {
     if (profile.onboardingComplete) return;
+    // In-progress draft for this incomplete session only — never used for post-login routing.
     if (!writeJson(STORAGE_KEYS.datingProfile, { ...profile, onboardingComplete: false })) {
       showModMessage(USER_MESSAGES.progressSaveFailed);
     }

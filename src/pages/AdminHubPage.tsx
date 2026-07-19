@@ -10,6 +10,7 @@ import {
 import { LAUNCH_PRIMARY_CITIES } from "../constants/seedCities";
 import { STORAGE_KEYS } from "../constants/limits";
 import { AdminLazyTab } from "../components/admin/AdminLazyTab";
+import { NationalVerificationAdminQueue } from "../components/admin/NationalVerificationAdminQueue";
 import {
   LazyAdminPricingPage,
   LazyApiPlatformPage,
@@ -1418,6 +1419,7 @@ export function AdminHubPage({ onLogout }: AdminHubPageProps) {
 
       {tab === "verifications" && (
         <section className="admin-verifications">
+          <NationalVerificationAdminQueue onToast={pushToast} ensureConsent={ensureConsent} />
           <div className="admin-stats-grid admin-stats-grid--highlight">
             <div className="card admin-stat admin-stat--highlight">
               <strong>{serverVerifications.filter((v) => v.status === "pending").length || verifyStats.pending}</strong>

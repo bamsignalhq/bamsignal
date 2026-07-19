@@ -306,7 +306,9 @@ export async function getMemberOnboardingStatus({ email, phone, username }) {
 
   return {
     ok: true,
+    /** Canonical completion flag — computed from database member + profile fields only. */
     completed: result.completed,
+    onboardingCompleted: result.completed,
     nextRoute: result.nextRoute,
     reason,
     repaired: result.repaired,

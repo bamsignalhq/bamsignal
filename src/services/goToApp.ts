@@ -3,11 +3,10 @@ import { STORAGE_KEYS } from "../constants/limits";
 import type { DatingProfile, UserProfile } from "../types";
 import { profileFromSessionUser, resolveMemberIdentity } from "../utils/authIdentity";
 import {
-  clearOpenAppOnboardingCache,
-  readOpenAppOnboardingCache,
-  writeOpenAppOnboardingCache
+  clearOpenAppOnboardingCache
 } from "../utils/openAppOnboardingCache";
 import { clearOnboardingDrafts } from "../utils/onboardingDrafts";
+import { logAuthRoute } from "../utils/authRouteLog";
 import { logRouteDecision } from "../utils/profileOnboardingRepair";
 import { readJson } from "../utils/storage";
 import { bootstrapMemberSession, type MemberSessionBootstrapResult } from "./memberData";
@@ -37,7 +36,7 @@ export type GoToAppResult =
       authUserId: string;
       status: OnboardingStatusResult | null;
       hydrated: boolean;
-      source: "server" | "cache_fallback";
+      source: "server";
     }
   | { ok: false; route: "login" };
 
@@ -131,15 +130,12 @@ export async function validateServerSessionWithTimeout(
   }
 }
 
-export function navigateOpenAppFallback(hasSession: boolean, authUserId = ""): void {
-  if (hasSession && authUserId && readOpenAppOnboardingCache(authUserId)) {
-    window.location.replace("/home");
-    return;
-  }
+/** Without server onboarding status, never invent a home/onboarding route from client cache. */
+export function navigateOpenAppFallback(_hasSession: boolean, _authUserId = ""): void {
   window.location.replace(AUTH_SIGNUP_PATH);
 }
 
-/** Authoritative entry from public homepage — session + server onboarding status, never local drafts. */
+/** Authoritative entry — session + server onboarding status only. */
 export async function goToApp(options?: {
   forceOnboarding?: boolean;
   referralCode?: string | null;
@@ -172,8 +168,11 @@ async function runGoToApp(options?: {
     options?.validatedAuth ??
     (await validateServerSessionWithTimeout(OPEN_APP_STATUS_TIMEOUT_MS));
   if (!validated.ok) {
+    logAuthRoute("REDIRECT_REASON", { reason: "auth_session_invalid", route: "login" });
     return { ok: false, route: "login" };
   }
+
+  logAuthRoute("AUTH_SUCCESS", { authUserId: validated.authUserId });
 
   const user = resolveMemberIdentity(validated.user, {
     loginEmail: options?.loginEmail || undefined
@@ -182,6 +181,11 @@ async function runGoToApp(options?: {
 
   if (options?.forceOnboarding) {
     clearOpenAppOnboardingCache(authUserId);
+    logAuthRoute("ROUTE_SELECTED", {
+      route: "onboarding",
+      reason: "force_new_signup",
+      authUserId
+    });
     return {
       ok: true,
       route: "onboarding",
@@ -197,22 +201,28 @@ async function runGoToApp(options?: {
   markStartupPhase("onboarding_status");
 
   if (statusResult === "timeout" || statusResult === null) {
-    if (readOpenAppOnboardingCache(authUserId)) {
-      return {
-        ok: true,
-        route: "home",
-        user,
-        authUserId,
-        status: null,
-        hydrated: false,
-        source: "cache_fallback"
-      };
-    }
+    logAuthRoute("REDIRECT_REASON", {
+      reason: statusResult === "timeout" ? "onboarding_status_timeout" : "onboarding_status_unavailable",
+      route: "login",
+      authUserId
+    });
     return { ok: false, route: "login" };
   }
 
+  logAuthRoute("PROFILE_FETCHED", {
+    authUserId,
+    completed: statusResult.completed,
+    nextRoute: statusResult.nextRoute,
+    reason: statusResult.reason
+  });
+  logAuthRoute("PROFILE_COMPLETED", {
+    authUserId,
+    onboardingCompleted: Boolean(statusResult.completed),
+    reason: statusResult.reason
+  });
+
   if (statusResult.completed || statusResult.nextRoute === "/home") {
-    writeOpenAppOnboardingCache(authUserId);
+    clearOpenAppOnboardingCache(authUserId);
     if (statusResult.datingProfile) {
       applyOnboardingRepairLocal({
         ok: true,
@@ -229,6 +239,11 @@ async function runGoToApp(options?: {
       repaired: statusResult.repaired,
       repairRoute: statusResult.nextRoute,
       reason: statusResult.reason
+    });
+    logAuthRoute("ROUTE_SELECTED", {
+      route: "home",
+      reason: statusResult.reason || "server_onboarding_complete",
+      authUserId
     });
     return {
       ok: true,
@@ -248,6 +263,11 @@ async function runGoToApp(options?: {
     repaired: statusResult.repaired,
     repairRoute: statusResult.nextRoute,
     reason: statusResult.reason
+  });
+  logAuthRoute("ROUTE_SELECTED", {
+    route: "onboarding",
+    reason: statusResult.reason || "server_onboarding_incomplete",
+    authUserId
   });
   return {
     ok: true,

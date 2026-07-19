@@ -42,11 +42,14 @@ export function isProfileOnboardingMarkedComplete(profile: Partial<DatingProfile
   return normalizeOnboardingStatus(profile).markedComplete;
 }
 
+/**
+ * Completion is database/remote-only. Local drafts must never mark a profile complete
+ * for hydration or routing — that caused completed users to re-enter onboarding when
+ * local flags were stale/missing, and incomplete users to skip steps when local was stale-true.
+ */
 export function mergeOnboardingCompleteFlag(
-  local: Partial<DatingProfile>,
+  _local: Partial<DatingProfile>,
   remote: Partial<DatingProfile>
 ): boolean {
-  return (
-    normalizeOnboardingStatus(remote).markedComplete || normalizeOnboardingStatus(local).markedComplete
-  );
+  return normalizeOnboardingStatus(remote).markedComplete;
 }

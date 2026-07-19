@@ -37,7 +37,8 @@ function testUiWiring() {
   assert(guardSource.includes("SessionRestoreOverlay"), "MemberRouteGuard uses tiered restore overlay");
   assert(!guardSource.includes("Restoring your account"), "Removed account restore marketing copy");
   assert(appSource.includes("SessionRestoreOverlay"), "App mounts tiered session restore overlay");
-  assert(appSource.includes("readCachedMemberSession"), "App uses cached session bootstrap");
+  assert(appSource.includes("readCachedMemberSession"), "App may warm-launch identity from cache (not completion)");
+  assert(!appSource.includes("profileCompleteKnown"), "App must not seed completion from client cache");
   assert(appSource.includes("validateServerSessionWithTimeout(OPEN_APP_FAILSAFE_MS)"), "Silent retry path preserved");
   console.log("✓ Session restore UI wiring");
 }

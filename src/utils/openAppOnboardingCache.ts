@@ -1,61 +1,28 @@
-import { readJson, writeJson } from "./storage";
+/**
+ * Legacy open-app completion cache — DISABLED for routing.
+ * Onboarding completion is decided only by the database via /api/member/data?action=onboarding-status.
+ * These helpers remain as no-ops / clearers so logout and old keys stay cleaned up.
+ */
 
 const CACHE_STORAGE_KEY = "bamsignal-open-app-onboarding-confirmed";
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-type OpenAppOnboardingCacheEntry = {
-  userId: string;
-  confirmedAt: string;
-  expiresAt: number;
-};
-
-function readCacheRoot(): Record<string, OpenAppOnboardingCacheEntry> {
-  return readJson<Record<string, OpenAppOnboardingCacheEntry>>(CACHE_STORAGE_KEY, {});
+/** Always false — client cache must never confirm onboarding completion. */
+export function readOpenAppOnboardingCache(_userId = ""): boolean {
+  return false;
 }
 
-function writeCacheRoot(entries: Record<string, OpenAppOnboardingCacheEntry>): void {
-  writeJson(CACHE_STORAGE_KEY, entries);
+/** No-op — do not persist completion on the client. */
+export function writeOpenAppOnboardingCache(_userId = ""): void {
+  /* intentionally disabled */
 }
 
-export function readOpenAppOnboardingCache(userId = ""): boolean {
-  const id = String(userId || "").trim();
-  if (!id || typeof window === "undefined") return false;
-
-  const entry = readCacheRoot()[id];
-  if (!entry) return false;
-  if (entry.userId !== id) return false;
-  if (!Number.isFinite(entry.expiresAt) || Date.now() > entry.expiresAt) {
-    clearOpenAppOnboardingCache(id);
-    return false;
-  }
-  return true;
-}
-
-export function writeOpenAppOnboardingCache(userId = ""): void {
-  const id = String(userId || "").trim();
-  if (!id || typeof window === "undefined") return;
-
-  const confirmedAt = new Date().toISOString();
-  const entries = readCacheRoot();
-  entries[id] = {
-    userId: id,
-    confirmedAt,
-    expiresAt: Date.now() + CACHE_TTL_MS
-  };
-  writeCacheRoot(entries);
-}
-
-export function clearOpenAppOnboardingCache(userId = ""): void {
+export function clearOpenAppOnboardingCache(_userId = ""): void {
   if (typeof window === "undefined") return;
-  const id = String(userId || "").trim();
-  const entries = readCacheRoot();
-  if (!id) {
-    writeCacheRoot({});
-    return;
+  try {
+    localStorage.removeItem(CACHE_STORAGE_KEY);
+  } catch {
+    /* ignore */
   }
-  if (!entries[id]) return;
-  delete entries[id];
-  writeCacheRoot(entries);
 }
 
-export const OPEN_APP_ONBOARDING_CACHE_TTL_MS = CACHE_TTL_MS;
+export const OPEN_APP_ONBOARDING_CACHE_TTL_MS = 0;

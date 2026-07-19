@@ -157,9 +157,9 @@ import {
   retryPendingComplianceSync,
   syncComplianceDoneMarkerFromProfile
 } from "./services/compliance";
-import { readOpenAppOnboardingCache } from "./utils/openAppOnboardingCache";
 import { clearStaleBootFlags } from "./utils/bootFlags";
 import { debugSessionCall, setHydrationDebugState } from "./utils/debugRecursion";
+import { logAuthRoute } from "./utils/authRouteLog";
 import { readCachedMemberSession } from "./utils/sessionRestoreBootstrap";
 import { recordSessionRestoreDuration } from "./utils/sessionRestoreMetrics";
 import { markStartupFirstPaint } from "./utils/startupInstrumentation";
@@ -419,11 +419,10 @@ export function App() {
   const [showBlogIndex, setShowBlogIndex] = useState(() => isBlogIndex());
   const [showAdminAuth, setShowAdminAuth] = useState(() => isAdminAuthRoute());
   const [showAdminHub, setShowAdminHub] = useState(() => isAdminHubRoute() && !isAdminAuthRoute());
-  const [profileComplete, setProfileComplete] = useState<boolean | null>(() => {
-    if (!blockMemberRestoreOnBoot) return false;
-    if (cachedMemberSession?.hasSession) return cachedMemberSession.profileCompleteKnown;
-    return null;
-  });
+  /** null until /onboarding-status returns — never seed from localStorage. */
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(() =>
+    blockMemberRestoreOnBoot ? null : false
+  );
   const [memberPathname, setMemberPathname] = useState(() =>
     typeof window !== "undefined" ? normalizePath(window.location.pathname) : "/"
   );
@@ -442,7 +441,8 @@ export function App() {
   const [paymentSuccess, setPaymentSuccess] = useState<{ title: string; body: string } | null>(null);
   const [paymentReturnPhase, setPaymentReturnPhase] = useState<PaymentReturnScreenPhase>("verifying");
   const [openAppLoading, setOpenAppLoading] = useState(false);
-  const [memberSessionReady, setMemberSessionReady] = useState(() => cachedMemberSession?.hasSession ?? false);
+  /** Ready only after server onboarding status — warm identity cache must not unlock member routes. */
+  const [memberSessionReady, setMemberSessionReady] = useState(false);
   const [memberSessionEpoch, setMemberSessionEpoch] = useState(0);
   const [paystackCallbackActive, setPaystackCallbackActive] = useState(
     () => isPaymentReturnPath() || hasPaystackCallbackInUrl()
@@ -940,14 +940,11 @@ export function App() {
       phone: stored.phone || profile.phone,
       phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
     });
-    const cached = readCachedMemberSession();
-    setUser(merged);
+      setUser(merged);
     setIsAuthed(true);
     setMemberAppEntered(true);
-    if (cached.hasSession) {
-      markMemberSessionReady();
-      setProfileComplete(cached.profileCompleteKnown);
-    }
+    setProfileComplete(null);
+    clearMemberSessionReady();
     setMemberHydrating(false);
     recordStreakActivity();
     checkPremiumTrialExpiry();
@@ -962,9 +959,7 @@ export function App() {
       }
       applyGoToAppResult(session, { blocking, source: "session_restore" });
       setProfileComplete(session.route === "home");
-      if (!cached.hasSession) {
-        markMemberSessionReady();
-      }
+      markMemberSessionReady();
       scheduleMemberBundleHydration(merged, {
         loginEmail: merged.email || undefined,
         skipOnboardingStatus: true
@@ -1429,24 +1424,24 @@ export function App() {
         clearOnboardingDrafts();
         setTab("home");
         navigateToPath("/home", true);
-        flowLog("home_enter", {
-          source: result.source === "cache_fallback" ? "open_app_cache_fallback" : "open_app_server_confirmed"
+        flowLog("home_enter", { source: "open_app_server_confirmed" });
+        logAuthRoute("REDIRECT_REASON", {
+          reason: result.status?.reason || "server_onboarding_complete",
+          route: "home"
         });
         markMemberSessionReady();
+        // Background hydrate must never override a server home decision.
         scheduleMemberBundleHydration(result.user, {
           loginEmail: result.user.email || undefined,
-          skipOnboardingStatus: true,
-          onBootstrap: (bootstrap) => {
-            if (bootstrap.nextRoute === "onboarding") {
-              setProfileComplete(false);
-              navigateToPath("/onboarding", true);
-              flowLog("onboarding_start", { source: "open_app_hydrate_repair" });
-            }
-          }
+          skipOnboardingStatus: true
         });
       } else {
         navigateToPath("/onboarding", true);
         flowLog("onboarding_start", { source: "open_app_server_confirmed" });
+        logAuthRoute("REDIRECT_REASON", {
+          reason: result.status?.reason || "server_onboarding_incomplete",
+          route: "onboarding"
+        });
         markMemberSessionReady();
         hydrateMemberAppInBackground(result.user, { loginEmail: result.user.email || undefined });
       }
@@ -1457,27 +1452,9 @@ export function App() {
         releaseOpenApp();
         return;
       }
-      void validateServerSessionWithTimeout(500).then((validated) => {
-        if (!validated.ok) {
-          applyOpenAppResult({ ok: false, route: "login" });
-          releaseOpenApp();
-          return;
-        }
-        if (readOpenAppOnboardingCache(validated.authUserId)) {
-          applyOpenAppResult({
-            ok: true,
-            route: "home",
-            user: validated.user,
-            authUserId: validated.authUserId,
-            status: null,
-            hydrated: false,
-            source: "cache_fallback"
-          });
-        } else {
-          applyOpenAppResult({ ok: false, route: "login" });
-        }
-        releaseOpenApp();
-      });
+      // Never fall back to client completion cache — wait for server or send to auth.
+      applyOpenAppResult({ ok: false, route: "login" });
+      releaseOpenApp();
     }, OPEN_APP_FAILSAFE_MS);
 
     void goToApp({ loginEmail: undefined }).then((result) => {
@@ -1563,6 +1540,11 @@ export function App() {
         isNewSignup: Boolean(meta?.isNewSignup),
         recovered: Boolean(meta?.recovered)
       });
+      logAuthRoute("AUTH_SUCCESS", {
+        isNewSignup: Boolean(meta?.isNewSignup),
+        recovered: Boolean(meta?.recovered)
+      });
+      setProfileComplete(null);
       const ref = new URLSearchParams(window.location.search).get("ref");
       const forceOnboarding = Boolean(meta?.isNewSignup);
       if (meta?.isNewSignup) {
@@ -1613,6 +1595,10 @@ export function App() {
         repaired: appResult.status?.repaired,
         reason: appResult.status?.reason ?? null
       });
+      logAuthRoute("ROUTE_SELECTED", {
+        route: needsOnboarding ? "onboarding" : "home",
+        reason: appResult.status?.reason ?? (forceOnboarding ? "force_new_signup" : "server_status")
+      });
       if (getAuthPath() || isPublicWebRoute()) {
         navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
         setAuthPath(null);
@@ -1621,6 +1607,10 @@ export function App() {
       if (needsOnboarding) {
         setPendingTab(null);
         flowLog("onboarding_start");
+        logAuthRoute("REDIRECT_REASON", {
+          reason: appResult.status?.reason || "server_onboarding_incomplete",
+          route: "onboarding"
+        });
         markMemberSessionReady();
         setMemberHydrating(false);
         void refreshPremiumStatus(appResult.user).then(() => syncPremiumState());
@@ -1646,18 +1636,16 @@ export function App() {
         setTab("home");
       }
       flowLog("home_enter");
+      logAuthRoute("REDIRECT_REASON", {
+        reason: appResult.status?.reason || "server_onboarding_complete",
+        route: "home"
+      });
+      // Background hydrate must never override a server home decision.
       scheduleMemberBundleHydration(withPhone, {
         forceOnboarding,
         referralCode: ref,
         loginEmail: meta?.loginEmail || withPhone.email,
-        skipOnboardingStatus: true,
-        onBootstrap: (bootstrap) => {
-          if (bootstrap.nextRoute === "onboarding") {
-            setProfileComplete(false);
-            navigateToPath("/onboarding", true);
-            flowLog("onboarding_start", { source: "login_hydrate_repair" });
-          }
-        }
+        skipOnboardingStatus: true
       });
     },
     [clearMemberSessionReady, markMemberSessionReady, memberAppEntered, pendingTab, scheduleMemberBundleHydration, syncPremiumState]
@@ -1722,16 +1710,11 @@ export function App() {
         phone: stored.phone || profile.phone,
         phoneVerified: Boolean(stored.phoneVerified ?? profile.phoneVerified)
       });
-      const cached = readCachedMemberSession();
       setMemberAppEntered(true);
       setUser(merged);
       setIsAuthed(true);
-      if (cached.hasSession) {
-        markMemberSessionReady();
-        setProfileComplete(cached.profileCompleteKnown);
-      } else {
-        clearMemberSessionReady();
-      }
+      setProfileComplete(null);
+      clearMemberSessionReady();
       setMemberHydrating(false);
       recordStreakActivity();
       checkPremiumTrialExpiry();
@@ -1766,9 +1749,7 @@ export function App() {
           }
           applyGoToAppResult(appSession, { blocking: false, source: "session_restore" });
           setProfileComplete(appSession.route === "home");
-          if (!cached.hasSession) {
-            markMemberSessionReady();
-          }
+          markMemberSessionReady();
           scheduleMemberBundleHydration(merged, {
             loginEmail: merged.email || undefined,
             skipOnboardingStatus: true

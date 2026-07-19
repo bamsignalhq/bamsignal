@@ -178,8 +178,8 @@ assertCheck(
     appSource.includes("goToApp({ loginEmail: undefined })") &&
     appSource.includes("open_app_server_confirmed") &&
     !appSource.includes('flowLog("home_enter", { source: "open_app_fast" })') &&
-    appSource.includes("readOpenAppOnboardingCache"),
-  "Open App must route only after server onboarding status or cached fallback"
+    !appSource.includes("readOpenAppOnboardingCache"),
+  "Open App must route only after server onboarding status (no client completion cache)"
 );
 assertCheck(
   appSource.includes("setAuthPath(AUTH_SIGNUP_PATH)") &&
@@ -368,7 +368,8 @@ assertCheck(
   goToAppSource.includes("fetchOnboardingStatusWithTimeout") &&
     goToAppSource.includes("hydrateMemberAppInBackground") &&
     !goToAppSource.includes("await bootstrapMemberSession") &&
-    openAppCacheSource.includes("readOpenAppOnboardingCache"),
+    !goToAppSource.includes('source: "cache_fallback"') &&
+    openAppCacheSource.includes("intentionally disabled"),
   "Open App must confirm onboarding on the server before routing home"
 );
 assertCheck(
@@ -780,7 +781,8 @@ assertCheck(
 );
 assertCheck(
   dockerfileSource.includes("/ready") &&
-    !dockerfileSource.match(/HEALTHCHECK[\s\S]*\/health/),
+    !dockerfileSource.match(/HEALTHCHECK[\s\S]*\/health/) &&
+    dockerfileSource.includes("wget"),
   "Docker HEALTHCHECK must probe /ready for production dependency readiness"
 );
 assertCheck(

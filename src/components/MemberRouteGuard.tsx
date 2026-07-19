@@ -10,13 +10,14 @@ import {
   parseMemberPath
 } from "../constants/memberRoutes";
 import type { NavTab } from "../types";
-import { readCachedMemberSession } from "../utils/sessionRestoreBootstrap";
+import { logAuthRoute } from "../utils/authRouteLog";
 
 export type MemberRouteGuardInput = {
   authLoading: boolean;
   memberHydrating: boolean;
   memberSessionReady?: boolean;
   isAuthed: boolean;
+  /** Server-derived only. null = not yet known — never guess from client cache. */
   profileComplete: boolean | null;
   pathname?: string;
 };
@@ -29,58 +30,45 @@ export type MemberRouteGuardResult = {
   sessionPending?: boolean;
 };
 
-function resolveProfileComplete(input: MemberRouteGuardInput): boolean | null {
-  if (input.profileComplete !== null) return input.profileComplete;
-  const cached = typeof window !== "undefined" ? readCachedMemberSession() : null;
-  if (!cached?.hasSession || !input.isAuthed) return null;
-  return cached.profileCompleteKnown;
-}
-
-/** Pure route guard — server profileComplete is authoritative once known. */
+/**
+ * Pure route guard — completion must come from backend profileComplete.
+ * Client caches must never decide onboarding vs home.
+ */
 export function evaluateMemberRouteGuard(input: MemberRouteGuardInput): MemberRouteGuardResult {
   const path = normalizePath(input.pathname ?? window.location.pathname);
   const memberPath = parseMemberPath(path);
   const onMemberSurface = isMemberAppPath(path);
-  const cached = typeof window !== "undefined" ? readCachedMemberSession() : null;
-  const optimisticReady = Boolean(cached?.hasSession && input.isAuthed && onMemberSurface);
-  const profileComplete = resolveProfileComplete(input);
 
-  const sessionPending =
-    input.authLoading ||
-    input.memberHydrating ||
-    (input.isAuthed && onMemberSurface && input.memberSessionReady === false) ||
-    (input.isAuthed && input.profileComplete === null && onMemberSurface);
-
-  if (sessionPending && !optimisticReady) {
+  if (input.authLoading || input.memberHydrating) {
     return { phase: "loading", memberPath, memberTab: null, sessionPending: true };
   }
 
-  if (onMemberSurface && !input.isAuthed && !input.authLoading) {
+  if (onMemberSurface && !input.isAuthed) {
     return { phase: "unauthenticated", redirectTo: AUTH_LOGIN_PATH, memberPath, memberTab: null };
   }
 
-  if (onMemberSurface && !input.isAuthed && input.authLoading && !optimisticReady) {
+  if (!input.isAuthed || !onMemberSurface) {
+    return { phase: "ready", memberPath: null, memberTab: null };
+  }
+
+  if (input.memberSessionReady === false || input.profileComplete === null) {
     return { phase: "loading", memberPath, memberTab: null, sessionPending: true };
   }
 
-  if (!input.isAuthed || !onMemberSurface) {
-    return { phase: "ready", memberPath: null, memberTab: null, sessionPending: sessionPending && optimisticReady };
-  }
-
-  if (profileComplete === false && !isOnboardingPath(path)) {
+  if (input.profileComplete === false && !isOnboardingPath(path)) {
     return { phase: "redirect", redirectTo: ONBOARDING_PATH, memberPath, memberTab: null };
   }
 
-  if (profileComplete === true && isOnboardingPath(path)) {
+  if (input.profileComplete === true && isOnboardingPath(path)) {
     return { phase: "redirect", redirectTo: memberPathForTab("home"), memberPath, memberTab: null };
   }
 
   if (isOnboardingPath(path)) {
-    return { phase: "ready", memberPath: "onboarding", memberTab: null, sessionPending: sessionPending && optimisticReady };
+    return { phase: "ready", memberPath: "onboarding", memberTab: null };
   }
 
   const memberTab = memberPath && memberPath !== "onboarding" ? memberPath : null;
-  return { phase: "ready", memberPath, memberTab, sessionPending: sessionPending && optimisticReady };
+  return { phase: "ready", memberPath, memberTab };
 }
 
 type MemberRouteGuardProps = MemberRouteGuardInput & {
@@ -90,10 +78,11 @@ type MemberRouteGuardProps = MemberRouteGuardInput & {
   children: (result: Extract<MemberRouteGuardResult, { phase: "ready" }>) => ReactNode;
 };
 
-/** Blocks member surfaces until session + profile route are resolved; redirects off /home when incomplete. */
+/** Blocks member surfaces until session + server profile route are resolved. */
 export function MemberRouteGuard({
   authLoading,
   memberHydrating,
+  memberSessionReady,
   isAuthed,
   profileComplete,
   pathname,
@@ -105,6 +94,7 @@ export function MemberRouteGuard({
   const result = evaluateMemberRouteGuard({
     authLoading,
     memberHydrating,
+    memberSessionReady,
     isAuthed,
     profileComplete,
     pathname
@@ -123,6 +113,17 @@ export function MemberRouteGuard({
 
   if (result.phase === "unauthenticated" || result.phase === "redirect") {
     if (result.redirectTo && normalizePath(window.location.pathname) !== normalizePath(result.redirectTo)) {
+      logAuthRoute("REDIRECT_REASON", {
+        from: pathname ?? window.location.pathname,
+        to: result.redirectTo,
+        reason:
+          result.phase === "unauthenticated"
+            ? "unauthenticated_member_surface"
+            : profileComplete === false
+              ? "server_profile_incomplete"
+              : "server_profile_complete_leave_onboarding",
+        profileComplete
+      });
       navigateToPath(result.redirectTo, true);
     }
     return (
@@ -136,12 +137,5 @@ export function MemberRouteGuard({
     );
   }
 
-  return (
-    <>
-      {result.sessionPending ? (
-        <SessionRestoreOverlay active subtitle="Restoring your session…" onRetry={onReload} onSignOut={onSignOut} />
-      ) : null}
-      {children(result as Extract<MemberRouteGuardResult, { phase: "ready" }>)}
-    </>
-  );
+  return <>{children(result as Extract<MemberRouteGuardResult, { phase: "ready" }>)}</>;
 }

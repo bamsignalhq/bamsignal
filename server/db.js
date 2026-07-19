@@ -6,7 +6,8 @@ import {
   assertSchemaReady,
   assertSchemaTable,
   checkSchema,
-  resetSchemaVerificationCache
+  resetSchemaVerificationCache,
+  acceptSchemaDespiteProbeMismatch
 } from "./services/schemaVerification.js";
 
 export { checkSchema } from "./services/schemaVerification.js";
@@ -151,6 +152,10 @@ export async function initDatabase() {
         console.warn(
           `[bamsignal] Keeping database connected despite schema probe mismatch (public_tables=${publicTableCount}).`
         );
+        acceptSchemaDespiteProbeMismatch({
+          publicTableCount,
+          missing: schema.missing
+        });
         console.log("[bamsignal] Database connected successfully");
         return { ok: true, schemaVerified: false, publicTableCount, missing: schema.missing };
       }

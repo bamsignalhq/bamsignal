@@ -2,7 +2,7 @@
 
 Permanent operational standard for production health, alerting, SLOs, incident response, and observability architecture.
 
-**Platform:** [Coolify](https://control.bamsignal.com) — Docker at [https://bamsignal.com](https://bamsignal.com)  
+**Platform:** [Coolify](https://control.stankings.com) (alias: [control.bamsignal.com](https://control.bamsignal.com)) — Docker at [https://bamsignal.com](https://bamsignal.com)  
 **Scope:** Documentation and operational standards only — **no third-party monitoring vendor integration**
 
 This system defines what to measure, when to alert, who responds, and how to recover. Future integrations (Datadog, Grafana, Prometheus, Sentry, etc.) plug into this model — they do not replace it.

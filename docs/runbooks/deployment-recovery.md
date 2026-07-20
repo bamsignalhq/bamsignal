@@ -1,6 +1,6 @@
 # Deployment recovery runbook
 
-**Platform:** Coolify ([control.bamsignal.com](https://control.bamsignal.com)) — self-hosted Docker. **Not Vercel.**
+**Platform:** Coolify ([control.stankings.com](https://control.stankings.com); alias [control.bamsignal.com](https://control.bamsignal.com)) — self-hosted Docker. **Not Vercel.**
 
 **Production URL:** https://bamsignal.com
 

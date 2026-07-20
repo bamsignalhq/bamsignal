@@ -1,6 +1,6 @@
 # Deployment
 
-BamSignal deploys as a **single Docker container** serving the Vite-built SPA and Express API. Production runs on **Coolify** at [control.bamsignal.com](https://control.bamsignal.com).
+BamSignal deploys as a **single Docker container** serving the Vite-built SPA and Express API. Production runs on **Coolify** at [control.stankings.com](https://control.stankings.com) (compatibility alias: [control.bamsignal.com](https://control.bamsignal.com)).
 
 **Production URL:** https://bamsignal.com  
 **Do not use Vercel** — `.vercel/` is legacy.

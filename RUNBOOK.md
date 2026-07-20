@@ -2,7 +2,7 @@
 
 Operational procedures for BamSignal production. Detailed playbooks live in `docs/runbooks/` — this document is the **on-call index**.
 
-**Platform:** Coolify — https://control.bamsignal.com  
+**Platform:** Coolify — https://control.stankings.com (alias: https://control.bamsignal.com)  
 **Production:** https://bamsignal.com
 
 ---

@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Deployment
 
-- **Platform:** [Coolify](https://control.bamsignal.com) — self-hosted on the BamSignal server.
+- **Platform:** [Coolify](https://control.stankings.com) — shared Stankings Group Hetzner host (alias: `https://control.bamsignal.com`).
 - **Production URL:** https://bamsignal.com
 - **Do not use Vercel** for this repo (`.vercel/` is legacy/unused).
 
@@ -14,7 +14,7 @@ alwaysApply: true
 1. Commit and push to `main` on `github.com/bamsignalhq/bamsignal`.
 2. Before pushing, run the server import smoke test: `npm run test:server-import` (also enforced by the `.githooks/pre-push` hook after `npm install`).
 3. Coolify rebuilds from the repo `Dockerfile` (`npm run build` → server import smoke test → `node server/production.js`).
-4. Confirm deploy status in Coolify at control.bamsignal.com (manual redeploy if webhook did not fire).
+4. Confirm deploy status in Coolify at control.stankings.com (manual redeploy if webhook did not fire).
 5. **Health checks:** use **`GET /ready`** for production readiness (Docker `HEALTHCHECK` and Coolify health check). **`GET /health`** is liveness only (process alive). Detailed dependency status requires `x-diagnostics-secret` or admin session on `/ready?details=1`.
 
 ## Build args / env (Coolify)

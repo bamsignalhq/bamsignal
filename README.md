@@ -51,6 +51,8 @@ npm run server
 
 Copy `.env.example` to `.env.local` and fill in Supabase, Paystack, and email keys before production deploy.
 
+<!-- GitHub App deployment test. -->
+
 ## Mobile (optional)
 
 Capacitor projects live in `android/` and `ios/`. Sync after a web build:

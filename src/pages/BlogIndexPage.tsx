@@ -1,3 +1,4 @@
+/* GitHub App auto-deploy verification */
 import { useMemo } from "react";
 import { BookOpen, MapPin } from "lucide-react";
 import { Link } from "../components/Link";

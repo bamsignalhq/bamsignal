@@ -29,6 +29,7 @@ export type AnalyticsEvent =
   | "contact_sharing_disabled"
   | "contact_request_expired"
   | "boost_activated"
+  | "conversation_unlocked"
   | "upgrade_impression"
   | "upgrade_click"
   | "premium_trial_started"

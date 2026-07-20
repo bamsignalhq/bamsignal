@@ -73,6 +73,31 @@ const TEMPLATE_COPY: Record<
     subject: "Relationship archived",
     preview: "Your journey was archived with dignity. The record is permanent.",
     dignityNote: "Archives honor the journey — never deleted, never public."
+  },
+  "invoice-issued": {
+    subject: "Invoice issued",
+    preview: "Your consultant issued a private invoice for your Concierge engagement.",
+    dignityNote: "Invoices never change membership — only your Concierge case advances after payment."
+  },
+  "invoice-paid": {
+    subject: "Invoice paid",
+    preview: "Payment received. Thank you — your case can continue.",
+    dignityNote: "Receipts stay private. Membership products are unchanged."
+  },
+  "consultant-assigned": {
+    subject: "Consultant assigned",
+    preview: "A dedicated relationship consultant has been assigned to your journey.",
+    dignityNote: "Your steward is private — introductions remain consent-based."
+  },
+  "status-updated": {
+    subject: "Case status updated",
+    preview: "Your Concierge case status was updated. Open your dashboard for details.",
+    dignityNote: "Status changes are shared only with you and your steward."
+  },
+  "case-completed": {
+    subject: "Case completed",
+    preview: "Your Concierge case was marked complete. Congratulations.",
+    dignityNote: "Completion is celebrated privately within BamSignal."
   }
 };
 
@@ -266,6 +291,50 @@ export function deriveNotificationEventsFromMember(
     );
   }
 
+  return events.sort((a, b) => Date.parse(b.queuedAt) - Date.parse(a.queuedAt));
+}
+
+const OPS_EVENT_MAP: Record<string, NotificationEventType> = {
+  INVOICE_SENT: "invoice-issued",
+  INVOICE_PAID: "invoice-paid",
+  CONSULTANT_ASSIGNED: "consultant-assigned",
+  CONSULTANT_TRANSFERRED: "consultant-assigned",
+  STATUS_CHANGED: "status-updated",
+  PROGRESS_RECORDED: "status-updated",
+  CASE_COMPLETED: "case-completed",
+  APPLICATION_ACCEPTED: "application-approved",
+  APPLICATION_SUBMITTED: "application-received"
+};
+
+/** Map Operations case events into member notifications (CX layer). */
+export function deriveNotificationEventsFromOpsHistory(
+  member: ConciergeMemberRecord,
+  history: Array<{
+    id?: string;
+    eventType?: string;
+    event_type?: string;
+    createdAt?: string | null;
+    created_at?: string | null;
+  }>,
+  assignNotificationId: (recordId: string, at: string) => string
+): NotificationEvent[] {
+  const events: NotificationEvent[] = [];
+  for (const row of history || []) {
+    const eventTypeKey = String(row.eventType || row.event_type || "");
+    const mapped = OPS_EVENT_MAP[eventTypeKey];
+    if (!mapped) continue;
+    const at = String(row.createdAt || row.created_at || member.updatedAt || member.createdAt);
+    const recordId = `notif_ops_${member.id}_${row.id || eventTypeKey}_${at}`;
+    events.push(
+      buildNotificationEventDraft({
+        id: recordId,
+        notificationId: assignNotificationId(recordId, at),
+        member,
+        eventType: mapped,
+        at
+      })
+    );
+  }
   return events.sort((a, b) => Date.parse(b.queuedAt) - Date.parse(a.queuedAt));
 }
 

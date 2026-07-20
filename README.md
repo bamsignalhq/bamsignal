@@ -51,7 +51,7 @@ npm run server
 
 Copy `.env.example` to `.env.local` and fill in Supabase, Paystack, and email keys before production deploy.
 
-<!-- GitHub App deployment test. -->
+<!-- Auto-deploy verification after Watch Paths removal. -->
 
 ## Mobile (optional)
 

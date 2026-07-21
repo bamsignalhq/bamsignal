@@ -1,0 +1,37 @@
+---
+description: Supabase migration safety — verify project identity before any migration work
+alwaysApply: true
+---
+
+# Supabase Migration Safety
+
+Before proposing, generating, or running **any** Supabase migration or database command:
+
+1. Read `docs/engineering/PROJECT_IDENTITY.md` for the expected **Supabase ref**.
+2. Confirm `supabase/config.toml` `project_id` matches that ref.
+3. Confirm `supabase/.temp/project-ref` matches (after `supabase link`).
+
+Run verification:
+
+```bash
+npm run verify:supabase-project -- --require-linked
+```
+
+## If verification fails
+
+- **Never** generate migration SQL.
+- **Never** execute `supabase db push`, `db reset`, `db pull`, `migration new`, `link`, or `seed`.
+- Instruct the developer to `supabase link --project-ref <ref-from-PROJECT_IDENTITY.md>` in **this repository only**.
+
+## Ecosystem project refs (never cross-link)
+
+| Application | Repository | Supabase ref |
+|-------------|------------|--------------|
+| BamSignal | bamsignalhq/bamsignal | `nswiwxmavuqpuzlsascs` |
+| Yike | yikeltd/yike | `hlpojfurfldvcxfxhveg` |
+| BayRight | br9jaa/bayright | `rnltzcfndsodelfdbaoh` |
+| Stankings | bamsignalsm/stankings | `dfaqkrikdvohvvcuxoek` |
+
+Use wrapped npm scripts (`supabase:db:push`, etc.) — they run verification first.
+
+Do not modify schemas or run migrations unless the user explicitly requests it **and** verification passes.

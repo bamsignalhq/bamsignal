@@ -9,7 +9,10 @@ export const APPLICATION_IDENTITY = {
   defaultDomain: "https://bamsignal.com",
   healthEndpoint: "/health",
   readinessEndpoint: "/ready",
-  supportContact: "support@bamsignal.com"
+  supportContact: "support@bamsignal.com",
+  supabaseProjectRef: "nswiwxmavuqpuzlsascs",
+  supabaseOrganization: "Stankings Group",
+  supabaseEnvironment: "production"
 };
 
 /** Full application identity including runtime deployment metadata. */

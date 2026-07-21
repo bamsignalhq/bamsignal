@@ -1,5 +1,5 @@
 import { Eye, EyeOff } from "lucide-react";
-import { useState, type InputHTMLAttributes } from "react";
+import { useState, type InputHTMLAttributes, type Ref } from "react";
 
 type AuthFieldProps = {
   label: string;
@@ -15,8 +15,11 @@ type AuthFieldProps = {
   className?: string;
   error?: string;
   checking?: boolean;
+  available?: boolean;
   /** Show/hide toggle for PIN fields. */
   showToggle?: boolean;
+  inputRef?: Ref<HTMLInputElement>;
+  id?: string;
 };
 
 export function AuthField({
@@ -33,16 +36,23 @@ export function AuthField({
   className = "",
   error = "",
   checking = false,
-  showToggle = true
+  available = false,
+  showToggle = true,
+  inputRef,
+  id
 }: AuthFieldProps) {
   const [visible, setVisible] = useState(false);
   const isPassword = type === "password" || pin;
   const inputType = isPassword ? (visible ? "text" : "password") : type;
+  const errorId = `${(id || label).replace(/\s+/g, "-").toLowerCase()}-error`;
+  const statusId = `${(id || label).replace(/\s+/g, "-").toLowerCase()}-status`;
 
   return (
     <div className={`auth-field-wrap ${error ? "auth-field-wrap--error" : ""}`.trim()}>
       <label className={`auth-field auth-field--float ${pin ? "auth-field--pin" : ""} ${className}`.trim()}>
         <input
+          ref={inputRef}
+          id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           type={inputType}
@@ -53,7 +63,9 @@ export function AuthField({
           spellCheck={spellCheck}
           placeholder=" "
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${label}-error` : undefined}
+          aria-describedby={[error ? errorId : null, checking || available ? statusId : null]
+            .filter(Boolean)
+            .join(" ") || undefined}
           className={
             pin ? (className.includes("auth-field--centered") ? "auth-pin-input" : "auth-code-input") : undefined
           }
@@ -70,9 +82,18 @@ export function AuthField({
           </button>
         )}
       </label>
-      {checking ? <p className="auth-field__hint">Checking…</p> : null}
+      {checking ? (
+        <p id={statusId} className="auth-field__hint" aria-live="polite">
+          Checking…
+        </p>
+      ) : null}
+      {!checking && available && !error ? (
+        <p id={statusId} className="auth-field__hint auth-field__hint--ok" aria-live="polite">
+          Available ✓
+        </p>
+      ) : null}
       {error ? (
-        <p id={`${label}-error`} className="auth-field__error" role="alert">
+        <p id={errorId} className="auth-field__error" role="alert">
           {error}
         </p>
       ) : null}

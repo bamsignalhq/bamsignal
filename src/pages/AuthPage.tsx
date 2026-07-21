@@ -14,14 +14,23 @@ import {
   checkSignupAvailability,
   checkSignupField,
   completePinReset,
+  completeForgotUsername,
   requestSignupMathChallenge,
   resendSignupEmailCode,
   sendPinResetCode,
+  sendForgotUsernameCode,
   sendSignupEmailCode,
   verifySignupEmailCode,
   AuthEmailError
 } from "../services/authEmail";
 import { USER_MESSAGES } from "../constants/userMessages";
+import {
+  buildLocalUsernameSuggestions,
+  conflictMessageFor,
+  type SignupConflict,
+  type SignupConflictField
+} from "../constants/signupConflicts";
+import { SignupConflictActions } from "../components/SignupConflictActions";
 import { flowLog } from "../utils/flowLog";
 import { trackEvent } from "../utils/analytics";
 import {
@@ -70,6 +79,8 @@ import type { JourneyDraft } from "../types/journey";
 import { applyJourneyDraftToSignupForm } from "../utils/journeyDraft";
 import {
   JourneySecureExisting,
+  JourneySecureForgotUsernameCode,
+  JourneySecureForgotUsernameLookup,
   JourneySecureLogin,
   JourneySecureResetCode,
   JourneySecureResetEmail,
@@ -104,9 +115,10 @@ const OTP_VERIFY_TIMEOUT_MS = 15_000;
 const RESEND_COOLDOWN_SEC = 60;
 const FIELD_CHECK_DELAY_MS = 450;
 
-type SignupField = "email" | "phone" | "username";
+type SignupField = SignupConflictField;
 type SignupFieldErrors = Partial<Record<SignupField, string>>;
 type SignupFieldChecking = Partial<Record<SignupField, boolean>>;
+type SignupFieldAvailable = Partial<Record<SignupField, boolean>>;
 type ExistingAccountState = {
   field: SignupField;
   email: string;
@@ -174,6 +186,9 @@ export function AuthPage({
   );
   const [signupFieldErrors, setSignupFieldErrors] = useState<SignupFieldErrors>({});
   const [signupFieldChecking, setSignupFieldChecking] = useState<SignupFieldChecking>({});
+  const [signupFieldAvailable, setSignupFieldAvailable] = useState<SignupFieldAvailable>({});
+  const [signupConflicts, setSignupConflicts] = useState<SignupConflict[]>([]);
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
   const [verifyCode, setVerifyCode] = useState(restored.current.verifyCode);
   const [legalAccepted, setLegalAccepted] = useState(restored.current.legalAccepted);
   const [mathChallenge, setMathChallenge] = useState<{ token: string; a: number; b: number } | null>(null);
@@ -187,6 +202,15 @@ export function AuthPage({
   const [resetConfirmPin, setResetConfirmPin] = useState("");
   const [resetCodeSentAt, setResetCodeSentAt] = useState(0);
   const resetOtpRef = useRef<HTMLInputElement | null>(null);
+  const [forgotLookup, setForgotLookup] = useState("");
+  const [forgotStep, setForgotStep] = useState<"lookup" | "code" | "done">("lookup");
+  const [forgotCode, setForgotCode] = useState("");
+  const [forgotDeliveryEmail, setForgotDeliveryEmail] = useState("");
+  const [recoveredUsername, setRecoveredUsername] = useState("");
+  const forgotOtpRef = useRef<HTMLInputElement | null>(null);
+  const usernameInputRef = useRef<HTMLInputElement | null>(null);
+  const phoneInputRef = useRef<HTMLInputElement | null>(null);
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
   const [pendingSignup, setPendingSignup] = useState<UserProfile | null>(restored.current.pendingSignup);
   const [codeSentAt, setCodeSentAt] = useState(restored.current.codeSentAt);
   const [existingAccount, setExistingAccount] = useState<ExistingAccountState | null>(null);
@@ -218,26 +242,81 @@ export function AuthPage({
     });
   };
 
-  const showExistingAccount = useCallback(
-    (input: { field?: SignupField | null; email?: string; username?: string }) => {
-      clearPendingSignup();
-      setPendingSignup(null);
-      setVerifyCode("");
-      const field: SignupField =
-        input.field === "phone" || input.field === "username" || input.field === "email"
-          ? input.field
-          : "email";
-      setExistingAccount({
-        field,
-        email: (input.email || signupForm.email || "").trim().toLowerCase(),
-        username: normalizeUsername(input.username || signupForm.username || "")
+  const focusSignupField = useCallback((field: SignupField) => {
+    window.requestAnimationFrame(() => {
+      const ref =
+        field === "username" ? usernameInputRef : field === "phone" ? phoneInputRef : emailInputRef;
+      ref.current?.focus({ preventScroll: true });
+      ref.current?.select?.();
+    });
+  }, []);
+
+  const applySignupConflicts = useCallback(
+    (input: {
+      conflicts?: SignupConflict[];
+      field?: SignupField | null;
+      message?: string;
+      suggestions?: string[];
+      clearIdentity?: boolean;
+    }) => {
+      // Stay on signup — never trap the user on a forced-login screen.
+      if (mode !== "signup") {
+        onModeChange("signup");
+      }
+      if (input.clearIdentity) {
+        clearPendingSignup();
+        setPendingSignup(null);
+        setVerifyCode("");
+      }
+
+      const conflicts =
+        input.conflicts && input.conflicts.length > 0
+          ? input.conflicts
+          : input.field
+            ? [
+                {
+                  field: input.field,
+                  message: conflictMessageFor(input.field, input.message)
+                }
+              ]
+            : [];
+
+      setSignupConflicts(conflicts);
+      setSignupFieldErrors((current) => {
+        const next = { ...current };
+        for (const item of conflicts) {
+          next[item.field] = conflictMessageFor(item.field, item.message);
+        }
+        return next;
       });
+      setSignupFieldAvailable((current) => {
+        const next = { ...current };
+        for (const item of conflicts) {
+          next[item.field] = false;
+        }
+        return next;
+      });
+
+      if (conflicts.some((item) => item.field === "username")) {
+        const suggestions =
+          input.suggestions && input.suggestions.length > 0
+            ? input.suggestions
+            : buildLocalUsernameSuggestions(signupForm.username);
+        setUsernameSuggestions(suggestions);
+      } else {
+        setUsernameSuggestions([]);
+      }
+
       onMessage("");
-      onModeChange("existing");
-      signupLog("signup-validation", { event: "existing_account", field });
-      flowLog("existing_account_shown", { field });
+      const first = conflicts[0]?.field;
+      if (first) focusSignupField(first);
+      signupLog("signup-validation", {
+        event: "identity_conflict",
+        fields: conflicts.map((item) => item.field)
+      });
+      flowLog("signup_conflicts_shown", { fields: conflicts.map((item) => item.field) });
     },
-    [onMessage, onModeChange, signupForm.email, signupForm.username]
+    [focusSignupField, mode, onMessage, onModeChange, signupForm.username]
   );
 
   const goToLoginFromExisting = () => {
@@ -249,27 +328,25 @@ export function AuthPage({
       username: username || current.username
     }));
     setExistingAccount(null);
+    setSignupConflicts([]);
     onMessage("");
     onModeChange("login");
   };
 
-  const useAnotherIdentity = () => {
-    clearPendingSignup();
-    setPendingSignup(null);
-    const field = existingAccount?.field || "email";
-    if (field === "email") {
-      clearSignupFieldError("email");
-      setSignupForm((current) => ({ ...current, email: "" }));
-    } else if (field === "phone") {
-      clearSignupFieldError("phone");
-      setSignupForm((current) => ({ ...current, phone: "" }));
-    } else {
-      clearSignupFieldError("username");
-      setSignupForm((current) => ({ ...current, username: "" }));
-    }
+  const useAnotherIdentity = (field?: SignupField) => {
+    const target = field || signupConflicts[0]?.field || existingAccount?.field || "email";
+    clearSignupFieldError(target);
+    setSignupForm((current) => ({
+      ...current,
+      [target]: ""
+    }));
+    setSignupConflicts((current) => current.filter((item) => item.field !== target));
+    setSignupFieldAvailable((current) => ({ ...current, [target]: false }));
+    if (target === "username") setUsernameSuggestions([]);
     setExistingAccount(null);
     onMessage("");
     onModeChange("signup");
+    focusSignupField(target);
   };
 
   useEffect(() => {
@@ -395,6 +472,7 @@ export function AuthPage({
     if (!isValidSignupUsername(username)) {
       clearSignupFieldError("username");
       setSignupFieldChecking((current) => ({ ...current, username: false }));
+      setSignupFieldAvailable((current) => ({ ...current, username: false }));
       return;
     }
 
@@ -405,11 +483,19 @@ export function AuthPage({
         .then(() => {
           if (cancelled) return;
           clearSignupFieldError("username");
+          setSignupFieldAvailable((current) => ({ ...current, username: true }));
+          setSignupConflicts((current) => current.filter((item) => item.field !== "username"));
+          setUsernameSuggestions([]);
         })
         .catch((error) => {
           if (cancelled) return;
           if (error instanceof AuthEmailError) {
-            setSignupFieldError("username", error.message);
+            applySignupConflicts({
+              conflicts: error.conflicts,
+              field: "username",
+              message: error.message,
+              suggestions: error.suggestions
+            });
           }
         })
         .finally(() => {
@@ -423,7 +509,7 @@ export function AuthPage({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [mode, signupForm.username]);
+  }, [mode, signupForm.username, applySignupConflicts]);
 
   useEffect(() => {
     if (mode !== "signup") return;
@@ -431,6 +517,7 @@ export function AuthPage({
     if (!isValidNigerianPhone(phone)) {
       clearSignupFieldError("phone");
       setSignupFieldChecking((current) => ({ ...current, phone: false }));
+      setSignupFieldAvailable((current) => ({ ...current, phone: false }));
       return;
     }
 
@@ -441,15 +528,17 @@ export function AuthPage({
         .then(() => {
           if (cancelled) return;
           clearSignupFieldError("phone");
+          setSignupFieldAvailable((current) => ({ ...current, phone: true }));
+          setSignupConflicts((current) => current.filter((item) => item.field !== "phone"));
         })
         .catch((error) => {
           if (cancelled) return;
           if (error instanceof AuthEmailError) {
-            if (error.kind === "exists") {
-              showExistingAccount({ field: "phone", username: signupForm.username, email: signupForm.email });
-              return;
-            }
-            setSignupFieldError("phone", error.message);
+            applySignupConflicts({
+              conflicts: error.conflicts,
+              field: "phone",
+              message: error.message
+            });
           }
         })
         .finally(() => {
@@ -463,7 +552,7 @@ export function AuthPage({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [mode, signupForm.phone, showExistingAccount, signupForm.username, signupForm.email]);
+  }, [mode, signupForm.phone, applySignupConflicts]);
 
   useEffect(() => {
     if (mode !== "signup") return;
@@ -471,12 +560,14 @@ export function AuthPage({
     if (!isLikelyEmail(email)) {
       clearSignupFieldError("email");
       setSignupFieldChecking((current) => ({ ...current, email: false }));
+      setSignupFieldAvailable((current) => ({ ...current, email: false }));
       return;
     }
 
     if (isDisposableEmail(email)) {
       setSignupFieldError("email", DISPOSABLE_EMAIL_MESSAGE);
       setSignupFieldChecking((current) => ({ ...current, email: false }));
+      setSignupFieldAvailable((current) => ({ ...current, email: false }));
       signupLog("signup-validation", { event: "disposable_email_blocked" });
       return;
     }
@@ -488,15 +579,17 @@ export function AuthPage({
         .then(() => {
           if (cancelled) return;
           clearSignupFieldError("email");
+          setSignupFieldAvailable((current) => ({ ...current, email: true }));
+          setSignupConflicts((current) => current.filter((item) => item.field !== "email"));
         })
         .catch((error) => {
           if (cancelled) return;
           if (error instanceof AuthEmailError) {
-            if (error.kind === "exists") {
-              showExistingAccount({ field: "email", email, username: signupForm.username });
-              return;
-            }
-            setSignupFieldError("email", error.message);
+            applySignupConflicts({
+              conflicts: error.conflicts,
+              field: "email",
+              message: error.message
+            });
           }
         })
         .finally(() => {
@@ -510,7 +603,7 @@ export function AuthPage({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [mode, signupForm.email, signupForm.username, showExistingAccount]);
+  }, [mode, signupForm.email, applySignupConflicts]);
 
   const completeAuthenticated = async (profile: UserProfile, meta?: AuthMeta) => {
     await onAuthenticated(profile, meta);
@@ -727,10 +820,12 @@ export function AuthPage({
     } catch (error) {
       if (error instanceof AuthEmailError) {
         if (error.kind === "exists") {
-          showExistingAccount({
+          applySignupConflicts({
+            conflicts: error.conflicts,
             field: error.field || "email",
-            email,
-            username
+            message: error.message,
+            suggestions: error.suggestions,
+            clearIdentity: true
           });
           return;
         }
@@ -831,10 +926,12 @@ export function AuthPage({
     } catch (error) {
       if (timedOut) return;
       if (error instanceof AuthEmailError && error.kind === "exists") {
-        showExistingAccount({
+        applySignupConflicts({
+          conflicts: error.conflicts,
           field: error.field || "email",
-          email: pendingSignup.email,
-          username: pendingSignup.username || signupForm.username
+          message: error.message,
+          suggestions: error.suggestions,
+          clearIdentity: true
         });
         return;
       }
@@ -974,6 +1071,86 @@ export function AuthPage({
     }
   };
 
+  const openForgotUsername = () => {
+    setForgotLookup(signupForm.email || resetEmail || "");
+    setForgotStep("lookup");
+    setForgotCode("");
+    setForgotDeliveryEmail("");
+    setRecoveredUsername("");
+    onMessage("");
+    onModeChange("forgot-username");
+  };
+
+  const sendForgotUsername = async () => {
+    const raw = forgotLookup.trim();
+    const email = raw.includes("@") ? raw.toLowerCase() : "";
+    const phone = email ? "" : phoneDigits(raw);
+    if (!email && !isValidNigerianPhone(phone)) {
+      onMessage("Enter your registered email or phone number.");
+      return;
+    }
+    setBusy("forgot-username");
+    onMessage("");
+    try {
+      const result = await sendForgotUsernameCode({ email, phone });
+      setForgotDeliveryEmail(result.email || email);
+      setForgotStep("code");
+      setForgotCode("");
+      onMessage(result.message || "If an account matches, we sent a recovery code.");
+    } catch (error) {
+      onMessage(friendlyAuthError(error));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const submitForgotUsername = async () => {
+    const email = forgotDeliveryEmail || (forgotLookup.includes("@") ? forgotLookup.trim().toLowerCase() : "");
+    const phone = email ? "" : phoneDigits(forgotLookup);
+    if (forgotCode.length !== OTP_LENGTH) {
+      onMessage("Enter the 6-digit recovery code.");
+      return;
+    }
+    setBusy("forgot-username-complete");
+    onMessage("");
+    try {
+      const result = await completeForgotUsername({ email, phone, code: forgotCode });
+      const username = normalizeUsername(result.username || "");
+      setRecoveredUsername(username);
+      setForgotStep("done");
+      if (username) {
+        setLoginForm((current) => ({ ...current, username }));
+        onMessage(result.message || `Your username is ${username}.`);
+      }
+    } catch (error) {
+      onMessage(friendlyAuthError(error));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const conflictPanel = signupConflicts.length > 0 ? (
+    <SignupConflictActions
+      conflicts={signupConflicts}
+      usernameSuggestions={usernameSuggestions}
+      onEditField={(field) => useAnotherIdentity(field)}
+      onUseSuggestion={(username) => {
+        clearSignupFieldError("username");
+        setSignupForm((current) => ({ ...current, username }));
+        setSignupConflicts((current) => current.filter((item) => item.field !== "username"));
+        setUsernameSuggestions([]);
+        focusSignupField("username");
+      }}
+      onLogin={goToLoginFromExisting}
+      onForgotPin={() => {
+        if (signupForm.email) setResetEmail(signupForm.email.trim().toLowerCase());
+        onModeChange("reset");
+      }}
+      onForgotUsername={openForgotUsername}
+      onRecoverAccount={openForgotUsername}
+    />
+  ) : null;
+
   const journeyModals = (
     <>
       <Login2faModal
@@ -1063,6 +1240,9 @@ export function AuthPage({
             form={signupForm}
             hideName={Boolean(journeyHandoff?.name?.trim())}
             fieldErrors={signupFieldErrors}
+            fieldChecking={signupFieldChecking}
+            fieldAvailable={signupFieldAvailable}
+            conflictPanel={conflictPanel}
             legalAccepted={legalAccepted}
             mathChallenge={mathChallenge}
             mathAnswer={mathAnswer}
@@ -1133,6 +1313,7 @@ export function AuthPage({
             onLogin={() => void signIn()}
             onBiometric={() => void signInWithBiometric()}
             onForgotPin={() => onModeChange("reset")}
+            onForgotUsername={openForgotUsername}
             onJoin={() => onModeChange("signup")}
             formatUsername={formatUsernameInput}
             pinDigits={pinDigits}
@@ -1149,7 +1330,7 @@ export function AuthPage({
             field={existingAccount.field}
             maskedEmail={existingAccount.email ? maskEmail(existingAccount.email) : undefined}
             onLogin={goToLoginFromExisting}
-            onUseAnother={useAnotherIdentity}
+            onUseAnother={() => useAnotherIdentity(existingAccount.field)}
             onForgotPin={() => {
               clearPendingSignup();
               setPendingSignup(null);
@@ -1160,6 +1341,41 @@ export function AuthPage({
               onMessage("");
               onModeChange("reset");
             }}
+          />
+          {journeyModals}
+        </>
+      );
+    }
+
+    if (mode === "forgot-username" && forgotStep === "lookup") {
+      return (
+        <>
+          <JourneySecureForgotUsernameLookup
+            lookup={forgotLookup}
+            busy={busy === "forgot-username"}
+            message={message}
+            onLookupChange={setForgotLookup}
+            onSubmit={() => void sendForgotUsername()}
+            onBackToLogin={() => onModeChange("login")}
+          />
+          {journeyModals}
+        </>
+      );
+    }
+
+    if (mode === "forgot-username") {
+      return (
+        <>
+          <JourneySecureForgotUsernameCode
+            code={forgotCode}
+            busy={busy === "forgot-username-complete"}
+            recoveredUsername={recoveredUsername}
+            message={message}
+            otpRef={forgotOtpRef}
+            onCodeChange={setForgotCode}
+            onSubmit={() => void submitForgotUsername()}
+            onBackToLogin={() => onModeChange("login")}
+            done={forgotStep === "done"}
           />
           {journeyModals}
         </>
@@ -1280,6 +1496,9 @@ export function AuthPage({
                 <button type="button" className="auth-link-secondary" onClick={() => onModeChange("reset")}>
                   Forgot PIN?
                 </button>
+                <button type="button" className="auth-link-secondary" onClick={openForgotUsername}>
+                  Forgot username?
+                </button>
                 <button type="button" className="auth-switch auth-switch--inline" onClick={() => onModeChange("signup")}>
                   <span className="auth-switch__lead">New here?</span>
                   <span className="auth-switch__action">Create account</span>
@@ -1323,6 +1542,8 @@ export function AuthPage({
                     autoComplete="name"
                   />
                   <AuthField
+                    id="signup-username"
+                    inputRef={usernameInputRef}
                     label="Username"
                     value={signupForm.username}
                     onChange={(username) => {
@@ -1335,8 +1556,11 @@ export function AuthPage({
                     maxLength={24}
                     error={signupFieldErrors.username}
                     checking={signupFieldChecking.username}
+                    available={signupFieldAvailable.username}
                   />
                   <AuthField
+                    id="signup-phone"
+                    inputRef={phoneInputRef}
                     label="Phone"
                     value={signupForm.phone}
                     onChange={(phone) => {
@@ -1349,8 +1573,11 @@ export function AuthPage({
                     maxLength={11}
                     error={signupFieldErrors.phone}
                     checking={signupFieldChecking.phone}
+                    available={signupFieldAvailable.phone}
                   />
                   <AuthField
+                    id="signup-email"
+                    inputRef={emailInputRef}
                     label="Email"
                     value={signupForm.email}
                     onChange={(email) => {
@@ -1361,7 +1588,9 @@ export function AuthPage({
                     autoComplete="email"
                     error={signupFieldErrors.email}
                     checking={signupFieldChecking.email}
+                    available={signupFieldAvailable.email}
                   />
+                  {conflictPanel}
                   <AuthField
                     label="PIN"
                     value={signupForm.pin}
@@ -1439,13 +1668,13 @@ export function AuthPage({
                     <UserRound size={26} strokeWidth={2.2} />
                   </div>
                 </div>
-                <h1 className="auth-title auth-verify__title">Account already exists</h1>
+                <h1 className="auth-title auth-verify__title">Fix your details</h1>
                 <p className="auth-verify__lede">
                   {existingAccount?.field === "phone"
-                    ? "This phone number is already linked to an account."
+                    ? "This phone number is already registered."
                     : existingAccount?.field === "username"
                       ? "This username is already taken."
-                      : "An account already exists with this email address."}
+                      : "This email is already registered."}
                   {existingAccount?.email && existingAccount.field === "email" ? (
                     <>
                       {" "}
@@ -1456,15 +1685,19 @@ export function AuthPage({
               </div>
 
               <div className="auth-existing__actions">
-                <button type="button" className="btn-primary btn-full btn-auth" onClick={goToLoginFromExisting}>
-                  Log In
-                </button>
-                <button type="button" className="btn-secondary btn-full btn-auth" onClick={useAnotherIdentity}>
+                <button
+                  type="button"
+                  className="btn-primary btn-full btn-auth"
+                  onClick={() => useAnotherIdentity(existingAccount?.field)}
+                >
                   {existingAccount?.field === "phone"
-                    ? "Use another phone"
+                    ? "Use another phone number"
                     : existingAccount?.field === "username"
-                      ? "Choose another username"
+                      ? "Edit username"
                       : "Use another email"}
+                </button>
+                <button type="button" className="btn-secondary btn-full btn-auth" onClick={goToLoginFromExisting}>
+                  Log In
                 </button>
                 <button
                   type="button"
@@ -1480,9 +1713,78 @@ export function AuthPage({
                     onModeChange("reset");
                   }}
                 >
-                  Forgot your PIN?
+                  Forgot PIN?
+                </button>
+                <button type="button" className="auth-link-secondary" onClick={openForgotUsername}>
+                  Forgot username?
                 </button>
               </div>
+            </div>
+          )}
+
+          {mode === "forgot-username" && (
+            <div className="auth-reset">
+              <h1 className="auth-title">Forgot username?</h1>
+              {forgotStep === "lookup" ? (
+                <>
+                  <p className="auth-sub">
+                    Enter the email or phone number on your account. We&apos;ll send a recovery code.
+                  </p>
+                  <AuthField
+                    label="Email or phone"
+                    value={forgotLookup}
+                    onChange={setForgotLookup}
+                    autoComplete="username"
+                  />
+                  <button
+                    type="button"
+                    className="btn-primary btn-full btn-auth"
+                    onClick={() => void sendForgotUsername()}
+                    disabled={busy === "forgot-username"}
+                  >
+                    {busy === "forgot-username" ? <Loader2 className="spin" size={20} /> : "Send recovery code"}
+                  </button>
+                </>
+              ) : forgotStep === "code" ? (
+                <>
+                  <p className="auth-sub">Enter the 6-digit code sent to the email on your account.</p>
+                  <OtpCodeInput
+                    ref={forgotOtpRef}
+                    value={forgotCode}
+                    verifying={busy === "forgot-username-complete"}
+                    onChange={setForgotCode}
+                    aria-label="Username recovery code"
+                  />
+                  <button
+                    type="button"
+                    className="btn-primary btn-full btn-auth"
+                    onClick={() => void submitForgotUsername()}
+                    disabled={busy === "forgot-username-complete" || forgotCode.length !== 6}
+                  >
+                    {busy === "forgot-username-complete" ? (
+                      <Loader2 className="spin" size={20} />
+                    ) : (
+                      "Reveal username"
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="auth-sub auth-sub--success" role="status">
+                    Your username is <strong>{recoveredUsername}</strong>.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-primary btn-full btn-auth"
+                    onClick={() => onModeChange("login")}
+                  >
+                    Continue to login
+                  </button>
+                </>
+              )}
+              <button type="button" className="auth-link-secondary" onClick={() => onModeChange("login")}>
+                Back to login
+              </button>
             </div>
           )}
 

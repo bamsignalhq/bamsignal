@@ -471,7 +471,7 @@ export type LikeEntry = {
   verified?: boolean;
 };
 
-export type AuthMode = "login" | "signup" | "verify" | "reset" | "existing";
+export type AuthMode = "login" | "signup" | "verify" | "reset" | "existing" | "forgot-username";
 
 export type AuthMeta = {
   isNewSignup?: boolean;

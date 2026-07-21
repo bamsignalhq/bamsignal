@@ -5,7 +5,9 @@ export type JourneyAuthScreenId =
   | "a1-login"
   | "a2-reset-email"
   | "a3-reset-code"
-  | "a4-existing";
+  | "a4-existing"
+  | "a5-forgot-username"
+  | "a5-forgot-username-code";
 
 export const JOURNEY_SECURE_STRENGTH: Record<
   JourneyAuthScreenId,
@@ -17,7 +19,9 @@ export const JOURNEY_SECURE_STRENGTH: Record<
   "a1-login": { fill: 8, label: "Welcome back", hint: "Continue your journey." },
   "a2-reset-email": { fill: 12, label: "Recovering access", hint: "We'll help you safely." },
   "a3-reset-code": { fill: 18, label: "Recovering access", hint: "Choose a PIN only you know." },
-  "a4-existing": { fill: 78, label: "Welcome back", hint: "Your account is already here." }
+  "a4-existing": { fill: 78, label: "Almost there", hint: "Edit your details or log in." },
+  "a5-forgot-username": { fill: 14, label: "Recovering username", hint: "We'll verify ownership first." },
+  "a5-forgot-username-code": { fill: 20, label: "Recovering username", hint: "Enter the code from your email." }
 };
 
 export const JOURNEY_SECURE_TRUST: Partial<Record<JourneyAuthScreenId, string>> = {
@@ -27,7 +31,9 @@ export const JOURNEY_SECURE_TRUST: Partial<Record<JourneyAuthScreenId, string>> 
   "a1-login": "Your PIN stays private.",
   "a2-reset-email": "We'll only use this to help you recover access.",
   "a3-reset-code": "Choose a PIN only you know.",
-  "a4-existing": "You can sign in or use a different email."
+  "a4-existing": "You can edit your details or sign in.",
+  "a5-forgot-username": "We never reveal your username without verification.",
+  "a5-forgot-username-code": "Your username stays private until the code is verified."
 };
 
 export const JOURNEY_SECURE_GUIDE: Partial<Record<JourneyAuthScreenId, string>> = {

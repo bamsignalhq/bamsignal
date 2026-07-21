@@ -1,4 +1,4 @@
-import type { Ref } from "react";
+import type { ReactNode, Ref } from "react";
 import { OtpCodeInput } from "../../OtpCodeInput";
 import { ResendCooldown } from "../../ResendCooldown";
 import { isSignupLegalComplete, SignupLegalCheckboxes } from "../../SignupLegalCheckboxes";
@@ -12,6 +12,7 @@ import {
 import { JourneyAuthShell } from "../JourneyAuthShell";
 
 type FieldError = Partial<Record<"email" | "phone" | "username", string>>;
+type FieldFlag = Partial<Record<"email" | "phone" | "username", boolean>>;
 
 type JourneySecureSignupProps = {
   firstName?: string;
@@ -25,6 +26,9 @@ type JourneySecureSignupProps = {
   };
   hideName?: boolean;
   fieldErrors: FieldError;
+  fieldChecking?: FieldFlag;
+  fieldAvailable?: FieldFlag;
+  conflictPanel?: ReactNode;
   legalAccepted: boolean;
   mathChallenge: { a: number; b: number } | null;
   mathAnswer: string;
@@ -50,6 +54,9 @@ export function JourneySecureSignup({
   form,
   hideName,
   fieldErrors,
+  fieldChecking,
+  fieldAvailable,
+  conflictPanel,
   legalAccepted,
   mathChallenge,
   mathAnswer,
@@ -72,6 +79,24 @@ export function JourneySecureSignup({
   const lede = firstName?.trim()
     ? `${firstName.trim()}, protect what you've already built.`
     : "Protect what you've already built.";
+
+  const statusLine = (field: "email" | "phone" | "username") => {
+    if (fieldChecking?.[field]) {
+      return (
+        <p className="journey-hint" aria-live="polite">
+          Checking…
+        </p>
+      );
+    }
+    if (fieldAvailable?.[field] && !fieldErrors[field]) {
+      return (
+        <p className="journey-hint journey-hint--success" aria-live="polite">
+          Available ✓
+        </p>
+      );
+    }
+    return null;
+  };
 
   return (
     <JourneyAuthShell
@@ -110,7 +135,13 @@ export function JourneySecureSignup({
             onFormChange({ username: formatUsername(username) });
           }}
         />
-        {fieldErrors.username ? <p className="journey-error">{fieldErrors.username}</p> : null}
+        {fieldErrors.username ? (
+          <p className="journey-error" role="alert">
+            {fieldErrors.username}
+          </p>
+        ) : (
+          statusLine("username")
+        )}
         <JourneyInput
           id="journey-signup-phone"
           label="Phone number"
@@ -123,7 +154,13 @@ export function JourneySecureSignup({
             onFormChange({ phone: phoneDigits(phone).slice(0, 11) });
           }}
         />
-        {fieldErrors.phone ? <p className="journey-error">{fieldErrors.phone}</p> : null}
+        {fieldErrors.phone ? (
+          <p className="journey-error" role="alert">
+            {fieldErrors.phone}
+          </p>
+        ) : (
+          statusLine("phone")
+        )}
         <JourneyInput
           id="journey-signup-email"
           label="Email"
@@ -135,7 +172,14 @@ export function JourneySecureSignup({
             onFormChange({ email });
           }}
         />
-        {fieldErrors.email ? <p className="journey-error">{fieldErrors.email}</p> : null}
+        {fieldErrors.email ? (
+          <p className="journey-error" role="alert">
+            {fieldErrors.email}
+          </p>
+        ) : (
+          statusLine("email")
+        )}
+        {conflictPanel}
         <JourneyInput
           id="journey-signup-pin"
           label="PIN"
@@ -268,6 +312,7 @@ type JourneySecureLoginProps = {
   onLogin: () => void;
   onBiometric?: () => void;
   onForgotPin: () => void;
+  onForgotUsername?: () => void;
   onJoin: () => void;
   formatUsername: (value: string) => string;
   pinDigits: (value: string) => string;
@@ -285,6 +330,7 @@ export function JourneySecureLogin({
   onLogin,
   onBiometric,
   onForgotPin,
+  onForgotUsername,
   onJoin,
   formatUsername,
   pinDigits
@@ -301,6 +347,9 @@ export function JourneySecureLogin({
             <JourneySecondaryButton onClick={onBiometric}>Verify with biometrics</JourneySecondaryButton>
           ) : null}
           <JourneySecondaryButton onClick={onForgotPin}>Forgot PIN?</JourneySecondaryButton>
+          {onForgotUsername ? (
+            <JourneySecondaryButton onClick={onForgotUsername}>Forgot username?</JourneySecondaryButton>
+          ) : null}
           <JourneySecondaryButton onClick={onJoin}>Join BamSignal</JourneySecondaryButton>
         </>
       }
@@ -513,28 +562,143 @@ export function JourneySecureExisting({
 }: JourneySecureExistingProps) {
   const lede =
     field === "phone"
-      ? "This phone number is already linked to an account."
+      ? "This phone number is already registered."
       : field === "username"
         ? "This username is already taken."
         : maskedEmail
-          ? `An account already exists for ${maskedEmail}.`
-          : "An account already exists with this email.";
+          ? `This email is already registered (${maskedEmail}).`
+          : "This email is already registered.";
 
   const anotherLabel =
-    field === "phone" ? "Use another phone number" : field === "username" ? "Choose another username" : "Use another email";
+    field === "phone"
+      ? "Use another phone number"
+      : field === "username"
+        ? "Edit username"
+        : "Use another email";
 
   return (
     <JourneyAuthShell
       screen="a4-existing"
       footer={
         <>
-          <JourneyPrimaryButton onClick={onLogin}>Log in</JourneyPrimaryButton>
-          <JourneySecondaryButton onClick={onUseAnother}>{anotherLabel}</JourneySecondaryButton>
+          <JourneyPrimaryButton onClick={onUseAnother}>{anotherLabel}</JourneyPrimaryButton>
+          <JourneySecondaryButton onClick={onLogin}>Log in</JourneySecondaryButton>
           <JourneySecondaryButton onClick={onForgotPin}>Forgot PIN?</JourneySecondaryButton>
         </>
       }
     >
-      <JourneyQuestion title="Welcome back" lede={lede} />
+      <JourneyQuestion title="Almost there" lede={lede} />
+    </JourneyAuthShell>
+  );
+}
+
+type JourneySecureForgotUsernameLookupProps = {
+  lookup: string;
+  busy: boolean;
+  message?: string;
+  onLookupChange: (value: string) => void;
+  onSubmit: () => void;
+  onBackToLogin: () => void;
+};
+
+export function JourneySecureForgotUsernameLookup({
+  lookup,
+  busy,
+  message,
+  onLookupChange,
+  onSubmit,
+  onBackToLogin
+}: JourneySecureForgotUsernameLookupProps) {
+  return (
+    <JourneyAuthShell
+      screen="a5-forgot-username"
+      showBack
+      onBack={onBackToLogin}
+      footer={
+        <JourneyPrimaryButton onClick={onSubmit} disabled={busy || !lookup.trim()}>
+          {busy ? "Sending code…" : "Send recovery code"}
+        </JourneyPrimaryButton>
+      }
+    >
+      <JourneyQuestion
+        title="Forgot username?"
+        lede="Enter the email or phone number on your account. We'll send a recovery code."
+      >
+        <JourneyInput
+          id="journey-forgot-username-lookup"
+          label="Email or phone"
+          value={lookup}
+          autoComplete="username"
+          onChange={onLookupChange}
+        />
+        {message ? <p className="journey-hint" role="status">{message}</p> : null}
+      </JourneyQuestion>
+    </JourneyAuthShell>
+  );
+}
+
+type JourneySecureForgotUsernameCodeProps = {
+  code: string;
+  busy: boolean;
+  recoveredUsername?: string;
+  message?: string;
+  otpRef: Ref<HTMLInputElement>;
+  onCodeChange: (value: string) => void;
+  onSubmit: () => void;
+  onBackToLogin: () => void;
+  done?: boolean;
+};
+
+export function JourneySecureForgotUsernameCode({
+  code,
+  busy,
+  recoveredUsername,
+  message,
+  otpRef,
+  onCodeChange,
+  onSubmit,
+  onBackToLogin,
+  done
+}: JourneySecureForgotUsernameCodeProps) {
+  return (
+    <JourneyAuthShell
+      screen="a5-forgot-username-code"
+      showBack
+      onBack={onBackToLogin}
+      footer={
+        done ? (
+          <JourneyPrimaryButton onClick={onBackToLogin}>Continue to login</JourneyPrimaryButton>
+        ) : (
+          <JourneyPrimaryButton onClick={onSubmit} disabled={busy || code.length !== 6}>
+            {busy ? "Verifying…" : "Reveal username"}
+          </JourneyPrimaryButton>
+        )
+      }
+    >
+      <JourneyQuestion
+        title={done ? "Username recovered" : "Enter recovery code"}
+        lede={
+          done
+            ? `Your username is ${recoveredUsername}.`
+            : "Check the email on your account for a 6-digit code."
+        }
+      >
+        {!done ? (
+          <label className="journey-secure-otp" htmlFor="journey-forgot-username-code">
+            <span className="journey-input__label">Recovery code</span>
+            <OtpCodeInput
+              ref={otpRef}
+              id="journey-forgot-username-code"
+              className="journey-secure-otp__input"
+              value={code}
+              verifying={busy}
+              onChange={onCodeChange}
+              aria-label="Username recovery code"
+            />
+          </label>
+        ) : null}
+        {message ? <p className="journey-hint journey-hint--success" role="status">{message}</p> : null}
+      </JourneyQuestion>
     </JourneyAuthShell>
   );
 }

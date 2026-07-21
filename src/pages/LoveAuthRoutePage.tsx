@@ -21,7 +21,12 @@ type LoveAuthRoutePageProps = {
 };
 
 /** Local-only modes that must not rewrite the URL or bounce through Home. */
-const LOCAL_AUTH_MODES: ReadonlySet<AuthMode> = new Set(["verify", "reset", "existing"]);
+const LOCAL_AUTH_MODES: ReadonlySet<AuthMode> = new Set([
+  "verify",
+  "reset",
+  "existing",
+  "forgot-username"
+]);
 
 type AuthPhase = "journey" | "ready" | "auth";
 

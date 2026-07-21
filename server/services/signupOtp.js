@@ -35,10 +35,37 @@ dotenv.config();
 const OTP_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_VERIFY_ATTEMPTS = 8;
+const CHECK_WINDOW_MS = 60 * 1000;
+const CHECK_MAX_PER_WINDOW = 30;
 
 const memoryStore = createBoundedMemoryStore("signup_otp", {
   isExpired: isOtpMemoryEntryExpired
 });
+
+const checkThrottle = new Map();
+
+function assertSignupCheckThrottle(reqLike = {}) {
+  const ip =
+    String(reqLike.ip || reqLike.headers?.["x-forwarded-for"] || "")
+      .split(",")[0]
+      .trim() || "unknown";
+  const now = Date.now();
+  const entry = checkThrottle.get(ip) || { count: 0, window: now };
+  if (now - entry.window > CHECK_WINDOW_MS) {
+    entry.count = 0;
+    entry.window = now;
+  }
+  entry.count += 1;
+  checkThrottle.set(ip, entry);
+  if (checkThrottle.size > 5000) {
+    for (const [key, value] of checkThrottle) {
+      if (now - value.window > CHECK_WINDOW_MS * 2) checkThrottle.delete(key);
+    }
+  }
+  if (entry.count > CHECK_MAX_PER_WINDOW) {
+    throw new SignupOtpError(429, "Too many checks. Please wait a moment.", "check_rate_limited");
+  }
+}
 
 export class SignupOtpError extends Error {
   constructor(status, message, code = null) {
@@ -334,7 +361,7 @@ async function completeSignupAfterOtp(body = {}) {
   }
 }
 
-export async function handleSignupEmailCodeRequest(body = {}) {
+export async function handleSignupEmailCodeRequest(body = {}, reqLike = {}) {
   const action = String(body.action || "send").toLowerCase();
 
   if (action === "math-challenge") {
@@ -342,6 +369,7 @@ export async function handleSignupEmailCodeRequest(body = {}) {
   }
 
   if (action === "check") {
+    assertSignupCheckThrottle(reqLike);
     const field = String(body.field || "").toLowerCase();
     if (field === "email" || field === "phone" || field === "username") {
       return checkSignupIdentityField(field, body[field] ?? body.email ?? body.phone ?? body.username);

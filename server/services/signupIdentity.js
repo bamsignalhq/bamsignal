@@ -5,20 +5,29 @@ import { isDisposableEmail } from "../../shared/blockedEmailDomains.mjs";
 
 export const DISPOSABLE_EMAIL_MESSAGE = "Please use a real email address to continue.";
 
+export const SIGNUP_CONFLICT_CODES = {
+  email: "email_exists",
+  phone: "phone_exists",
+  username: "username_exists"
+};
+
+export const SIGNUP_CONFLICT_MESSAGES = {
+  email: "This email is already registered.",
+  phone: "This phone number is already registered.",
+  username: "This username is already taken."
+};
+
 export class SignupIdentityError extends Error {
-  constructor(status, field, message) {
+  constructor(status, field, message, options = {}) {
     super(message);
     this.name = "SignupIdentityError";
     this.status = status;
     this.field = field;
+    this.code = options.code || (field ? SIGNUP_CONFLICT_CODES[field] : null);
+    this.conflicts = Array.isArray(options.conflicts) ? options.conflicts : null;
+    this.suggestions = Array.isArray(options.suggestions) ? options.suggestions : null;
   }
 }
-
-const MESSAGES = {
-  email: "An account already exists with this email address.",
-  phone: "This phone number is already linked to an account.",
-  username: "This username is already taken. Choose another."
-};
 
 export function normalizeSignupEmail(email = "") {
   return String(email).trim().toLowerCase();
@@ -87,7 +96,6 @@ async function emailExistsInSupabaseAuth(email) {
     if (users.some((user) => authUserEmailMatches(user, normalized))) return true;
   }
 
-  // Legacy query param — only trust an exact email match on the returned row.
   const list = await fetch(
     `${config.url}/auth/v1/admin/users?${new URLSearchParams({
       page: "1",
@@ -193,16 +201,68 @@ async function phoneExists(phone) {
   return Boolean(authMeta.rows[0]);
 }
 
-async function throwIfTaken(field, exists) {
-  if (exists) {
-    throw new SignupIdentityError(409, field, MESSAGES[field]);
+function conflictEntry(field) {
+  return {
+    field,
+    code: SIGNUP_CONFLICT_CODES[field],
+    message: SIGNUP_CONFLICT_MESSAGES[field]
+  };
+}
+
+/**
+ * Username suggestions from a taken base (does not hit DB for every suffix —
+ * caller should re-check chosen suggestion via checkSignupIdentityField).
+ */
+export function buildUsernameSuggestions(rawUsername = "") {
+  const base = normalizeSignupUsername(rawUsername).replace(/_+$/g, "").slice(0, 16) || "member";
+  const stem = base.replace(/\d+$/g, "") || base;
+  const candidates = [
+    stem,
+    `${stem}_01`,
+    `${stem}_ng`,
+    `official_${stem}`.slice(0, 24),
+    `${stem}${Math.floor(Math.random() * 90 + 10)}`
+  ];
+  const seen = new Set();
+  const out = [];
+  for (const candidate of candidates) {
+    const normalized = normalizeSignupUsername(candidate).slice(0, 24);
+    if (normalized.length < 4 || seen.has(normalized)) continue;
+    seen.add(normalized);
+    out.push(normalized);
   }
+  return out.slice(0, 4);
+}
+
+export async function suggestAvailableUsernames(rawUsername = "", limit = 4) {
+  const seeds = buildUsernameSuggestions(rawUsername);
+  const available = [];
+  for (const candidate of seeds) {
+    if (available.length >= limit) break;
+    if (!(await usernameExists(candidate))) {
+      available.push(candidate);
+    }
+  }
+  // Fill with numbered variants if needed
+  const base = normalizeSignupUsername(rawUsername).replace(/\d+$/g, "").slice(0, 12) || "member";
+  let n = 1;
+  while (available.length < limit && n < 40) {
+    const candidate = normalizeSignupUsername(`${base}_${String(n).padStart(2, "0")}`);
+    n += 1;
+    if (candidate.length < 4) continue;
+    if (await usernameExists(candidate)) continue;
+    if (available.includes(candidate)) continue;
+    available.push(candidate);
+  }
+  return available;
 }
 
 export function assertEmailNotDisposable(email) {
   const normalized = normalizeSignupEmail(email);
   if (normalized && isDisposableEmail(normalized)) {
-    throw new SignupIdentityError(400, "email", DISPOSABLE_EMAIL_MESSAGE);
+    throw new SignupIdentityError(400, "email", DISPOSABLE_EMAIL_MESSAGE, {
+      code: "disposable_email"
+    });
   }
 }
 
@@ -210,53 +270,109 @@ export function assertEmailNotDisposable(email) {
 export async function checkSignupIdentityField(field, value) {
   if (field === "email") {
     const normalized = normalizeSignupEmail(value);
-    if (!normalized.includes("@")) return { ok: true, field };
+    if (!normalized.includes("@")) {
+      return { ok: true, available: true, field, status: "incomplete" };
+    }
     assertEmailNotDisposable(normalized);
-    await throwIfTaken("email", await emailExists(normalized));
-    return { ok: true, field, email: normalized };
+    if (await emailExists(normalized)) {
+      throw new SignupIdentityError(409, "email", SIGNUP_CONFLICT_MESSAGES.email, {
+        code: SIGNUP_CONFLICT_CODES.email,
+        conflicts: [conflictEntry("email")]
+      });
+    }
+    return { ok: true, available: true, field, email: normalized, status: "available" };
   }
 
   if (field === "username") {
     const normalized = normalizeSignupUsername(value);
-    if (normalized.length < 4) return { ok: true, field };
-    await throwIfTaken("username", await usernameExists(normalized));
-    return { ok: true, field, username: normalized };
+    if (normalized.length < 4) {
+      return { ok: true, available: true, field, status: "incomplete" };
+    }
+    if (await usernameExists(normalized)) {
+      const suggestions = await suggestAvailableUsernames(normalized);
+      throw new SignupIdentityError(409, "username", SIGNUP_CONFLICT_MESSAGES.username, {
+        code: SIGNUP_CONFLICT_CODES.username,
+        conflicts: [conflictEntry("username")],
+        suggestions
+      });
+    }
+    return { ok: true, available: true, field, username: normalized, status: "available" };
   }
 
   if (field === "phone") {
     const normalized = normalizeSignupPhone(value);
-    if (normalized.length !== 11) return { ok: true, field };
-    await throwIfTaken("phone", await phoneExists(normalized));
-    return { ok: true, field, phone: normalized };
+    if (normalized.length !== 11) {
+      return { ok: true, available: true, field, status: "incomplete" };
+    }
+    if (await phoneExists(normalized)) {
+      throw new SignupIdentityError(409, "phone", SIGNUP_CONFLICT_MESSAGES.phone, {
+        code: SIGNUP_CONFLICT_CODES.phone,
+        conflicts: [conflictEntry("phone")]
+      });
+    }
+    return { ok: true, available: true, field, phone: normalized, status: "available" };
   }
 
   throw new SignupIdentityError(400, null, "Invalid field.");
 }
 
-/** Block signup when email, phone, or username already belongs to an account. */
-export async function assertSignupIdentityAvailable({ email, phone, username }) {
+/**
+ * Collect every conflicting identity field at once (email + username + phone).
+ */
+export async function collectSignupIdentityConflicts({ email, phone, username }) {
   const normalizedEmail = normalizeSignupEmail(email);
   const normalizedUsername = normalizeSignupUsername(username);
   const normalizedPhone = normalizeSignupPhone(phone);
+  const conflicts = [];
 
   if (normalizedEmail && normalizedEmail.includes("@")) {
     assertEmailNotDisposable(normalizedEmail);
-    await throwIfTaken("email", await emailExists(normalizedEmail));
+    if (await emailExists(normalizedEmail)) {
+      conflicts.push(conflictEntry("email"));
+    }
   }
 
+  let suggestions = null;
   if (normalizedUsername && normalizedUsername.length >= 4) {
-    await throwIfTaken("username", await usernameExists(normalizedUsername));
+    if (await usernameExists(normalizedUsername)) {
+      conflicts.push(conflictEntry("username"));
+      suggestions = await suggestAvailableUsernames(normalizedUsername);
+    }
   }
 
   if (normalizedPhone && normalizedPhone.length === 11) {
-    await throwIfTaken("phone", await phoneExists(normalizedPhone));
+    if (await phoneExists(normalizedPhone)) {
+      conflicts.push(conflictEntry("phone"));
+    }
+  }
+
+  return {
+    email: normalizedEmail,
+    username: normalizedUsername,
+    phone: normalizedPhone,
+    conflicts,
+    suggestions
+  };
+}
+
+/** Block signup when email, phone, or username already belongs to an account. */
+export async function assertSignupIdentityAvailable({ email, phone, username }) {
+  const result = await collectSignupIdentityConflicts({ email, phone, username });
+
+  if (result.conflicts.length > 0) {
+    const primary = result.conflicts[0];
+    throw new SignupIdentityError(409, primary.field, primary.message, {
+      code: primary.code,
+      conflicts: result.conflicts,
+      suggestions: result.suggestions
+    });
   }
 
   return {
     ok: true,
-    email: normalizedEmail,
-    username: normalizedUsername,
-    phone: normalizedPhone
+    email: result.email,
+    username: result.username,
+    phone: result.phone
   };
 }
 

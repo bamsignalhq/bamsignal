@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await handleSignupEmailCodeRequest(req.body || {});
+    const result = await handleSignupEmailCodeRequest(req.body || {}, req);
     return res.status(200).json(result);
   } catch (error) {
     const action = String((req.body && req.body.action) || "send").toLowerCase();
@@ -33,7 +33,9 @@ export default async function handler(req, res) {
         requestId,
         body: {
           field: error.field || undefined,
-          code: error.code || undefined
+          code: error.code || undefined,
+          conflicts: Array.isArray(error.conflicts) ? error.conflicts : undefined,
+          suggestions: Array.isArray(error.suggestions) ? error.suggestions : undefined
         }
       });
     }

@@ -25,6 +25,7 @@ import { injectSeoIntoHtml, resolvePublicSeo } from "./seoHtml.js";
 import identityHandler from "../api/auth/identity.js";
 import pinLoginHandler from "../api/auth/pin-login.js";
 import pinResetHandler from "../api/auth/pin-reset.js";
+import forgotUsernameHandler from "../api/auth/forgot-username.js";
 import emailCodeHandler from "../api/auth/email-code.js";
 import loginSecurityHandler from "../api/auth/login-security.js";
 import playReviewerFinishHandler from "../api/auth/play-reviewer-finish.js";
@@ -161,6 +162,7 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/auth/email-code", emailCodeHandler);
   mountHandler(app, "post", "/api/auth/pin-login", pinLoginHandler);
   mountHandler(app, "post", "/api/auth/pin-reset", pinResetHandler);
+  mountHandler(app, "post", "/api/auth/forgot-username", forgotUsernameHandler);
   mountHandler(app, "post", "/api/auth/login-security", loginSecurityHandler);
   mountHandler(app, "post", "/api/auth/play-reviewer-finish", playReviewerFinishHandler);
   mountHandler(app, "post", "/api/auth/identity", identityHandler);

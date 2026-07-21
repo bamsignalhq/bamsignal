@@ -2,6 +2,8 @@ import { readResponseJson } from "../utils/httpJson";
 import { apiUrl } from "./supabase";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { normalizeUsername, isValidSignupUsername } from "../utils/authIdentity";
+import type { SignupConflict, SignupConflictField } from "../constants/signupConflicts";
+import { conflictMessageFor } from "../constants/signupConflicts";
 
 type SendCodeResponse = { ok: boolean; email?: string; error?: string };
 type VerifyCodeResponse = {
@@ -17,24 +19,65 @@ type VerifyCodeResponse = {
 
 export class AuthEmailError extends Error {
   readonly kind: "network" | "server" | "validation" | "rate_limit" | "exists";
-  readonly field?: "email" | "phone" | "username";
+  readonly field?: SignupConflictField;
   readonly code?: string;
+  readonly conflicts?: SignupConflict[];
+  readonly suggestions?: string[];
 
   constructor(
     message: string,
     kind: AuthEmailError["kind"] = "server",
     field?: AuthEmailError["field"],
-    code?: string
+    code?: string,
+    extras?: { conflicts?: SignupConflict[]; suggestions?: string[] }
   ) {
     super(message);
     this.name = "AuthEmailError";
     this.kind = kind;
     this.field = field;
     this.code = code;
+    this.conflicts = extras?.conflicts;
+    this.suggestions = extras?.suggestions;
   }
 }
 
-async function readApiResponse<T extends { ok?: boolean; error?: string; field?: string; code?: string }>(
+type ApiErrorPayload = {
+  ok?: boolean;
+  error?: string;
+  field?: string;
+  code?: string;
+  conflicts?: SignupConflict[];
+  suggestions?: string[];
+};
+
+function normalizeConflicts(
+  payload: ApiErrorPayload | null,
+  fallbackField?: SignupConflictField
+): SignupConflict[] | undefined {
+  if (Array.isArray(payload?.conflicts) && payload.conflicts.length > 0) {
+    return payload.conflicts
+      .filter((item): item is SignupConflict =>
+        Boolean(item && (item.field === "email" || item.field === "phone" || item.field === "username"))
+      )
+      .map((item) => ({
+        field: item.field,
+        code: item.code,
+        message: conflictMessageFor(item.field, item.message)
+      }));
+  }
+  if (fallbackField) {
+    return [
+      {
+        field: fallbackField,
+        code: payload?.code,
+        message: conflictMessageFor(fallbackField, payload?.error)
+      }
+    ];
+  }
+  return undefined;
+}
+
+async function readApiResponse<T extends ApiErrorPayload>(
   response: Response,
   fallbackError: string
 ): Promise<T> {
@@ -70,12 +113,24 @@ async function readApiResponse<T extends { ok?: boolean; error?: string; field?:
     if (response.status === 429) {
       throw new AuthEmailError(message, "rate_limit");
     }
-    if (response.status === 409 || /already exists|already taken|already linked/i.test(message)) {
+    if (
+      response.status === 409 ||
+      /already exists|already taken|already linked|already registered/i.test(message)
+    ) {
       const field = payload?.field as AuthEmailError["field"] | undefined;
-      throw new AuthEmailError(message, "exists", field);
+      const conflicts = normalizeConflicts(payload, field);
+      throw new AuthEmailError(message, "exists", field || conflicts?.[0]?.field, payload?.code, {
+        conflicts,
+        suggestions: Array.isArray(payload?.suggestions) ? payload.suggestions : undefined
+      });
     }
     if (response.status === 400) {
-      throw new AuthEmailError(message, "validation", payload?.field as AuthEmailError["field"], payload?.code);
+      throw new AuthEmailError(
+        message,
+        "validation",
+        payload?.field as AuthEmailError["field"],
+        payload?.code
+      );
     }
     if (response.status === 503 || /not configured|unavailable/i.test(message)) {
       throw new AuthEmailError(
@@ -137,20 +192,33 @@ export async function checkSignupAvailability(input: {
   );
 }
 
+export type SignupFieldCheckResult = {
+  available: boolean;
+  status?: string;
+  suggestions?: string[];
+};
+
 export async function checkSignupField(
-  field: "email" | "phone" | "username",
+  field: SignupConflictField,
   value: string
-): Promise<void> {
+): Promise<SignupFieldCheckResult> {
   const body: Record<string, unknown> = { action: "check", field };
   if (field === "email") body.email = value.trim().toLowerCase();
   if (field === "phone") body.phone = value;
   if (field === "username") body.username = value;
 
   const response = await postEmailCode(body);
-  await readApiResponse<{ ok: boolean }>(
-    response,
-    "We couldn't verify your details. Try again shortly."
-  );
+  const payload = await readApiResponse<{
+    ok: boolean;
+    available?: boolean;
+    status?: string;
+    suggestions?: string[];
+  }>(response, "We couldn't verify your details. Try again shortly.");
+  return {
+    available: payload.available !== false,
+    status: payload.status,
+    suggestions: payload.suggestions
+  };
 }
 
 /** Pick an available username from email when signup collects name in onboarding. */
@@ -223,10 +291,7 @@ export async function sendSignupEmailCode(
     mathToken: options?.mathToken || "",
     mathAnswer: options?.mathAnswer || ""
   });
-  return readApiResponse<SendCodeResponse>(
-    response,
-    USER_MESSAGES.otpSendFailed
-  );
+  return readApiResponse<SendCodeResponse>(response, USER_MESSAGES.otpSendFailed);
 }
 
 export async function verifySignupEmailCode(input: {
@@ -238,10 +303,7 @@ export async function verifySignupEmailCode(input: {
   phone: string;
 }): Promise<VerifyCodeResponse> {
   const response = await postEmailCode({ action: "verify", ...input });
-  return readApiResponse<VerifyCodeResponse>(
-    response,
-    USER_MESSAGES.signupCompleteFailed
-  );
+  return readApiResponse<VerifyCodeResponse>(response, USER_MESSAGES.signupCompleteFailed);
 }
 
 type LoginResponse = {
@@ -324,6 +386,69 @@ export async function completePinReset(
     return readApiResponse<PinResetCompleteResponse>(
       response,
       "We couldn't reset your PIN right now. Please try again shortly."
+    );
+  } catch (error) {
+    if (error instanceof AuthEmailError) throw error;
+    throw new AuthEmailError("Unable to connect. Check your internet and try again.", "network");
+  }
+}
+
+type ForgotUsernameSendResponse = {
+  ok?: boolean;
+  sent?: boolean;
+  email?: string;
+  message?: string;
+  error?: string;
+};
+
+type ForgotUsernameCompleteResponse = {
+  ok?: boolean;
+  username?: string;
+  message?: string;
+  error?: string;
+};
+
+export async function sendForgotUsernameCode(input: {
+  email?: string;
+  phone?: string;
+}): Promise<ForgotUsernameSendResponse> {
+  try {
+    const response = await fetch(apiUrl("/api/auth/forgot-username?action=send"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: (input.email || "").trim().toLowerCase(),
+        phone: input.phone || ""
+      })
+    });
+    return readApiResponse<ForgotUsernameSendResponse>(
+      response,
+      "We couldn't start username recovery right now. Please try again shortly."
+    );
+  } catch (error) {
+    if (error instanceof AuthEmailError) throw error;
+    throw new AuthEmailError("Unable to connect. Check your internet and try again.", "network");
+  }
+}
+
+export async function completeForgotUsername(input: {
+  email?: string;
+  phone?: string;
+  code: string;
+}): Promise<ForgotUsernameCompleteResponse> {
+  try {
+    const response = await fetch(apiUrl("/api/auth/forgot-username?action=complete"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: (input.email || "").trim().toLowerCase(),
+        phone: input.phone || "",
+        code: input.code
+      })
+    });
+    return readApiResponse<ForgotUsernameCompleteResponse>(
+      response,
+      "We couldn't recover your username right now. Please try again shortly."
     );
   } catch (error) {
     if (error instanceof AuthEmailError) throw error;

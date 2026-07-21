@@ -4,7 +4,9 @@ import {
   normalizeSignupEmail,
   normalizeSignupPhone,
   normalizeSignupUsername,
-  SignupIdentityError
+  SignupIdentityError,
+  SIGNUP_CONFLICT_MESSAGES,
+  SIGNUP_CONFLICT_CODES
 } from "./signupIdentity.js";
 import { findAppUserIdentity, isDatabaseReady, normalizeUserKey, query, upsertAppUserIdentity } from "../db.js";
 import { findMemberProfileByUserKey, upsertMemberProfile } from "../cityHome.js";
@@ -359,7 +361,7 @@ export async function ensureSupabaseAuthUser({ email, password, name, username, 
     provisioningFlowLog("user_create_failed", { reason: "duplicate_user_unresolved", detail: detail.slice(0, 240) });
     throw new SignupProvisioningError(
       409,
-      "An account already exists with this email address.",
+      SIGNUP_CONFLICT_MESSAGES.email,
       "duplicate_user"
     );
   }
@@ -511,18 +513,32 @@ async function assertRepairIdentityAvailable({ email, phone, username, userKey, 
   if (normalizedUsername.length >= 7) {
     const taken = await usernameTakenByOther(normalizedUsername, userKey || member?.user_key || "");
     if (taken) {
-      throw new SignupIdentityError(409, "username", "This username is already taken. Choose another or log in.");
+      throw new SignupIdentityError(409, "username", SIGNUP_CONFLICT_MESSAGES.username, {
+        code: SIGNUP_CONFLICT_CODES.username,
+        conflicts: [
+          {
+            field: "username",
+            code: SIGNUP_CONFLICT_CODES.username,
+            message: SIGNUP_CONFLICT_MESSAGES.username
+          }
+        ]
+      });
     }
   }
 
   if (normalizedPhone.length === 11) {
     const taken = await phoneTakenByOther(normalizedPhone, userKey || member?.user_key || "");
     if (taken) {
-      throw new SignupIdentityError(
-        409,
-        "phone",
-        "This phone number is already linked to an account."
-      );
+      throw new SignupIdentityError(409, "phone", SIGNUP_CONFLICT_MESSAGES.phone, {
+        code: SIGNUP_CONFLICT_CODES.phone,
+        conflicts: [
+          {
+            field: "phone",
+            code: SIGNUP_CONFLICT_CODES.phone,
+            message: SIGNUP_CONFLICT_MESSAGES.phone
+          }
+        ]
+      });
     }
   }
 

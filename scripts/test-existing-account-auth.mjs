@@ -1,6 +1,6 @@
 /**
- * Static regression checks for the existing-account registration trap fix.
- * Covers: existing email → Account already exists → Login (no OTP / no Home loop).
+ * Static regression checks for signup identity conflict UX.
+ * Covers: stay on signup, field-specific conflicts, forgot username, no forced login trap.
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -19,30 +19,26 @@ const loveAuth = readFileSync(join(rootPath, "src/pages/LoveAuthRoutePage.tsx"),
 const authEmail = readFileSync(join(rootPath, "src/services/authEmail.ts"), "utf8");
 const signupIdentity = readFileSync(join(rootPath, "server/services/signupIdentity.js"), "utf8");
 const authTypes = readFileSync(join(rootPath, "src/types/index.ts"), "utf8");
+const forgotUsername = readFileSync(join(rootPath, "server/services/forgotUsername.js"), "utf8");
+const appJs = readFileSync(join(rootPath, "server/app.js"), "utf8");
 
 assertCheck(
-  /export type AuthMode = .*"existing"/.test(authTypes),
-  "AuthMode must include existing"
+  /export type AuthMode = .*"existing"/.test(authTypes) &&
+    /"forgot-username"/.test(authTypes),
+  "AuthMode must include existing and forgot-username"
 );
 
 assertCheck(
-  authPage.includes('onModeChange("existing")') &&
-    authPage.includes("Account already exists") &&
-    authPage.includes("showExistingAccount") &&
-    authPage.includes("goToLoginFromExisting") &&
-    authPage.includes("Use another email") &&
-    authPage.includes("Forgot your PIN?"),
-  "AuthPage must show dedicated existing-account screen with Log In / Use another email / Forgot PIN"
+  authPage.includes("applySignupConflicts") &&
+    authPage.includes("SignupConflictActions") &&
+    authPage.includes("Forgot username?") &&
+    !/onModeChange\("existing"\)/.test(authPage),
+  "Conflicts must stay on signup via applySignupConflicts (no forced existing mode)"
 );
 
 assertCheck(
-  authPage.includes("Log In") && authPage.includes("goToLoginFromExisting"),
-  "Existing-account primary action must navigate to login"
-);
-
-assertCheck(
-  /if\s*\(\s*error\.kind\s*===\s*"exists"\s*\)\s*\{[\s\S]*?showExistingAccount/.test(authPage),
-  "Signup exists errors must open existing-account screen (not verify OTP)"
+  /if\s*\(\s*error\.kind\s*===\s*"exists"\s*\)\s*\{[\s\S]*?applySignupConflicts/.test(authPage),
+  "Signup exists errors must apply inline conflicts (not verify OTP)"
 );
 
 assertCheck(
@@ -52,10 +48,10 @@ assertCheck(
 
 assertCheck(
   loveAuth.includes("LOCAL_AUTH_MODES") &&
-    loveAuth.includes('"existing"') &&
+    loveAuth.includes('"forgot-username"') &&
     loveAuth.includes("path === AUTH_SIGNUP_PATH && hasRestorableSignupVerify()") &&
     !loveAuth.includes('onLogoClick={() => navigateToPath("/")}'),
-  "Login must not restore verify; logo must not go to homepage"
+  "Login must not restore verify; logo must not go to homepage; forgot-username is local"
 );
 
 assertCheck(
@@ -73,14 +69,28 @@ assertCheck(
 );
 
 assertCheck(
-  authEmail.includes("this.field = field"),
-  "AuthEmailError must preserve field for exists routing"
+  authEmail.includes("this.field = field") &&
+    authEmail.includes("conflicts") &&
+    authEmail.includes("sendForgotUsernameCode"),
+  "AuthEmailError must preserve field/conflicts; forgot-username client API required"
 );
 
 assertCheck(
-  signupIdentity.includes("An account already exists with this email address.") &&
-    !signupIdentity.includes("Try logging in instead."),
-  "Existing-email copy must not rely on buried try-logging-in text"
+  signupIdentity.includes("email_exists") &&
+    signupIdentity.includes("phone_exists") &&
+    signupIdentity.includes("username_exists") &&
+    signupIdentity.includes("collectSignupIdentityConflicts") &&
+    signupIdentity.includes("This email is already registered.") &&
+    signupIdentity.includes("This username is already taken.") &&
+    signupIdentity.includes("This phone number is already registered."),
+  "Server must return structured multi-field conflict codes and required copy"
+);
+
+assertCheck(
+  forgotUsername.includes("sendForgotUsernameCode") &&
+    forgotUsername.includes("completeForgotUsername") &&
+    appJs.includes("/api/auth/forgot-username"),
+  "Forgot username service and route must be mounted"
 );
 
 assertCheck(

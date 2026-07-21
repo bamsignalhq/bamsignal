@@ -1,0 +1,45 @@
+name: Platform Governance CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/platform-freeze
+
+concurrency:
+  group: platform-governance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  governance-gates:
+    name: Verify · Migrations · Lint · Smoke · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Supabase project identity
+        run: npm run verify:supabase-project
+
+      - name: Verify migration integrity
+        run: npm run verify:migrations
+
+      - name: Typecheck (lint)
+        run: npm run lint
+
+      - name: Server import smoke test
+        run: npm run test:server-import
+
+      - name: Production build
+        run: npm run build

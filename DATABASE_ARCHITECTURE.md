@@ -21,16 +21,21 @@ BamSignal uses **Postgres** (typically Supabase-hosted) via `DATABASE_URL`. The 
 
 ## Migration sources
 
-Two migration directories exist for historical reasons:
+**Canonical authority:** `migrations/*.sql` via `npm run migrate` (and Coolify startup). See [docs/engineering/PLATFORM_GOVERNANCE.md](./docs/engineering/PLATFORM_GOVERNANCE.md).
 
-| Directory | Applied by |
-|-----------|------------|
-| `migrations/*.sql` | `npm run migrate` (numbered `0001`–`0020`) |
-| `supabase/migrations/*.sql` | Supabase CLI / manual apply for security patches |
+| Directory | Role |
+|-----------|------|
+| `migrations/*.sql` | **Canonical** numbered history (`0001`…`0055` baseline; next `0056+`) |
+| `supabase/migrations/*.sql` | Non-authoritative archive / CLI inspection only — **not** the write path |
 
-Always run `npm run migrate` on deploy. Verify with `npm run verify:database` or schema verification tests.
+```bash
+npm run verify:migrations
+npm run migrate
+npm run verify:database
+```
 
-**Tracking table:** `schema_migrations` (`0001_schema_migrations.sql`).
+**Tracking table:** `schema_migrations` (`0001_schema_migrations.sql`).  
+**Do not** edit historical migrations or use CLI `migration repair` / `db push` for repository issues.
 
 ---
 

@@ -8,6 +8,7 @@ import {
   SAVED_PROFILES_TITLE
 } from "../constants/savedProfiles";
 import { navigateToPath } from "../constants/routes";
+import { MemberEmptyState, MemberLoadingState, MemberPageHead } from "../components/member";
 import { SavedProfileCard } from "../components/savedProfiles/SavedProfileCard";
 import { ProfileDetailSheet } from "../components/ProfileDetailSheet";
 import { useSavedProfiles } from "../hooks/useSavedProfiles";
@@ -51,17 +52,12 @@ export function SavedProfilesPage({ onBack }: SavedProfilesPageProps) {
 
   return (
     <div className="page member-page saved-profiles-page">
-      <header className="member-page-head member-page-head--minimal">
-        <button
-          type="button"
-          className="saved-profiles-page__back"
-          onClick={() => (onBack ? onBack() : navigateToPath("/profile"))}
-        >
-          Back
-        </button>
-        <h1>{SAVED_PROFILES_TITLE}</h1>
-        <p className="saved-profiles-page__sub">Private — only you can see this list.</p>
-      </header>
+      <MemberPageHead
+        minimal
+        title={SAVED_PROFILES_TITLE}
+        subtitle="Private — only you can see this list."
+        onBack={() => (onBack ? onBack() : navigateToPath("/profile"))}
+      />
 
       {toast ? (
         <p className="saved-profiles-toast" role="status">
@@ -87,24 +83,22 @@ export function SavedProfilesPage({ onBack }: SavedProfilesPageProps) {
       </div>
 
       {loading && !filteredProfiles.length ? (
-        <p className="saved-profiles-page__loading">Loading saved profiles…</p>
+        <MemberLoadingState label="Loading saved profiles…" compact />
       ) : null}
 
       {!loading && !filteredProfiles.length ? (
-        <div className="saved-profiles-empty">
-          <div className="saved-profiles-empty__illustration" aria-hidden>
-            <Bookmark size={34} strokeWidth={1.4} />
-          </div>
-          <h2>{SAVED_PROFILES_EMPTY_HEADLINE}</h2>
-          <p>{SAVED_PROFILES_EMPTY_SUBTEXT}</p>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => navigateToPath("/discover")}
-          >
-            Discover People
-          </button>
-        </div>
+        <MemberEmptyState
+          className="saved-profiles-empty"
+          title={SAVED_PROFILES_EMPTY_HEADLINE}
+          body={SAVED_PROFILES_EMPTY_SUBTEXT}
+          actionLabel="Discover People"
+          onAction={() => navigateToPath("/discover")}
+          leading={
+            <div className="saved-profiles-empty__illustration" aria-hidden>
+              <Bookmark size={34} strokeWidth={1.4} />
+            </div>
+          }
+        />
       ) : (
         <div className="saved-profiles-page__list">
           {filteredProfiles.map((profile, index) => (

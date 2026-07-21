@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { MemberEmptyState } from "../member";
 import { SmartConversationSection } from "../conversation/SmartConversationSection";
 import type { DatingProfile, DiscoverProfile, UserProfile } from "../../types";
 import { copyIcebreaker } from "../../utils/chatDraft";
@@ -82,11 +83,14 @@ export function EmptyChatState({
 
   return (
     <div className="empty-chat-state">
-      <header className="empty-chat-state__hero empty-chat-stagger">
-        <EmptyChatIllustration />
-        <h2 className="empty-chat-state__title">Nobody here yet 😊</h2>
-        <p className="empty-chat-state__subtext">{subtext}</p>
-      </header>
+      <MemberEmptyState
+        className="empty-chat-state__hero empty-chat-stagger"
+        title="Nobody here yet"
+        body={subtext}
+        leading={<EmptyChatIllustration />}
+        actionLabel={onDiscover ? "Go to Discover" : undefined}
+        onAction={onDiscover}
+      />
 
       <SuggestedProfilesRow
         user={user}
@@ -113,15 +117,6 @@ export function EmptyChatState({
           {icebreakerToast}
         </p>
       ) : null}
-
-      <section className="empty-chat-section empty-chat-stagger" style={{ animationDelay: "320ms" }}>
-        <h2 className="empty-chat-section__title">Discover More People</h2>
-        {onDiscover ? (
-          <button type="button" className="btn-secondary btn-full" onClick={onDiscover}>
-            Go to Discover
-          </button>
-        ) : null}
-      </section>
     </div>
   );
 }

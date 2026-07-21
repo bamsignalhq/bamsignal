@@ -1,5 +1,6 @@
 import { ArrowLeft, MoreVertical, Pin, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MemberPageHead } from "../components/member";
 import { EXPERIENCE_COPY } from "../constants/copy";
 import { FREE_DAILY_MESSAGES, STORAGE_KEYS } from "../constants/limits";
 import { getCachedMemberProfile, fetchMemberProfileById } from "../services/discoverProfiles";
@@ -234,9 +235,7 @@ export function ChatsPage({
 
   return (
     <div className="page member-page messages-page messages-page--premium member-content-pad">
-      <header className="member-page-head member-page-head--minimal">
-        <h1>{EXPERIENCE_COPY.chatsTitle}</h1>
-      </header>
+      <MemberPageHead minimal title={EXPERIENCE_COPY.chatsTitle} />
 
       {!showEmptyInbox ? (
       <label className="member-search member-search--chats">

@@ -10,6 +10,7 @@ import {
 } from "../constants/marketingInfrastructure";
 import { ReferralCard } from "../components/dashboard/ReferralCard";
 import { NativeShareProfileButton } from "../components/NativeShareProfileButton";
+import { MemberPageHead } from "../components/member";
 import {
   campaignConversionRate,
   getActiveMarketingCampaigns,
@@ -62,15 +63,14 @@ export function ReferralDashboardPage({ user, onBack }: ReferralDashboardPagePro
 
   return (
     <div className="page referral-dashboard-page">
-      <header className="referral-dashboard-page__head">
-        <button type="button" className="icon-btn" onClick={onBack} aria-label="Back">
-          <ArrowLeft size={22} />
-        </button>
-        <div>
-          <h1>Referral Dashboard</h1>
-          <p>{MARKETING_INFRASTRUCTURE_MISSION}</p>
-        </div>
-      </header>
+      <MemberPageHead
+        className="referral-dashboard-page__head"
+        title="Referral Dashboard"
+        subtitle={MARKETING_INFRASTRUCTURE_MISSION}
+        onBack={onBack}
+        backVariant="icon"
+        backIcon={<ArrowLeft size={22} />}
+      />
 
       <ReferralCard user={user} />
 

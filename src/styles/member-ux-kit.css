@@ -18,7 +18,7 @@
 
 .member-ux-loading__spinner {
   animation: memberUxSpin 0.9s linear infinite;
-  color: var(--bs-gold, var(--brand-pink));
+  color: var(--bs-pink, var(--brand-pink));
 }
 
 @keyframes memberUxSpin {
@@ -83,8 +83,8 @@
   gap: 10px;
   padding: 16px;
   border-radius: var(--bs-radius-card, 16px);
-  border: 1px solid color-mix(in srgb, #ff6b6b 35%, var(--bs-border, var(--border)));
-  background: color-mix(in srgb, #ff6b6b 8%, var(--bs-surface, var(--card)));
+  border: 1px solid color-mix(in srgb, var(--bs-danger, #e5484d) 35%, var(--bs-border, var(--border)));
+  background: color-mix(in srgb, var(--bs-danger, #e5484d) 8%, var(--bs-surface, var(--card)));
 }
 
 .member-ux-error__title {
@@ -100,6 +100,43 @@
   color: var(--bs-muted, var(--text-muted));
 }
 
+.member-ux-error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.member-ux-empty__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.member-ux-empty .btn-primary,
+.member-ux-empty .btn-secondary,
+.member-ux-empty .btn-ghost,
+.member-ux-error .btn-primary,
+.member-ux-error .btn-secondary,
+.member-ux-error .btn-ghost,
+.member-ux-sheet__close,
+.member-ux-network__action {
+  outline-offset: 2px;
+}
+
+.member-ux-empty .btn-primary:focus-visible,
+.member-ux-empty .btn-secondary:focus-visible,
+.member-ux-empty .btn-ghost:focus-visible,
+.member-ux-error .btn-primary:focus-visible,
+.member-ux-error .btn-secondary:focus-visible,
+.member-ux-error .btn-ghost:focus-visible,
+.member-ux-sheet__close:focus-visible,
+.member-ux-network__action:focus-visible {
+  outline: 2px solid var(--bs-pink, var(--brand-pink));
+}
+
 .member-ux-network {
   display: flex;
   align-items: center;
@@ -111,13 +148,13 @@
 }
 
 .member-ux-network--offline {
-  color: #ffb4b4;
-  background: color-mix(in srgb, #ff6b6b 12%, var(--bs-surface, var(--card)));
+  color: var(--bs-danger-soft, #ffb4b4);
+  background: color-mix(in srgb, var(--bs-danger, #e5484d) 12%, var(--bs-surface, var(--card)));
 }
 
 .member-ux-network--slow {
-  color: #f5d08a;
-  background: color-mix(in srgb, var(--bs-gold, #d4a64a) 12%, var(--bs-surface, var(--card)));
+  color: var(--bs-warning-soft, #f5d08a);
+  background: color-mix(in srgb, var(--bs-warning, var(--bs-gold, #d4a64a)) 12%, var(--bs-surface, var(--card)));
 }
 
 .member-ux-network__action {
@@ -155,8 +192,8 @@
   max-height: min(90vh, 720px);
   overflow: auto;
   border-radius: var(--bs-radius-sheet, 20px);
-  border: 1px solid color-mix(in srgb, var(--bs-gold, #d4a64a) 40%, transparent);
-  background: var(--bs-ink, var(--card));
+  border: 1px solid color-mix(in srgb, var(--bs-pink, var(--brand-pink)) 40%, transparent);
+  background: var(--bs-surface, var(--card));
   color: var(--bs-text, var(--text));
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
   animation: memberSheetUp var(--bs-motion-large, 280ms) var(--bs-ease-out, ease-out) both;
@@ -265,7 +302,7 @@
   margin: 12px 0 16px;
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(212, 166, 74, 0.25);
+  border: 1px solid color-mix(in srgb, var(--bs-gold, #d4a64a) 25%, transparent);
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -348,7 +385,7 @@
 }
 
 .profile-completion-progress__milestones li.is-reached {
-  border-color: rgba(212, 166, 74, 0.45);
+  border-color: color-mix(in srgb, var(--bs-gold, #d4a64a) 45%, transparent);
   color: var(--bs-gold, #d4a64a);
 }
 

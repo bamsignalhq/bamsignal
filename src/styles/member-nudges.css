@@ -88,110 +88,6 @@
   grid-column: 1 / -1;
 }
 
-.profile-completion-compact {
-  border-radius: 16px;
-  background: var(--bs-surface, #ffffff);
-  border: 1px solid var(--bs-border, rgba(27, 11, 46, 0.1));
-  box-shadow: 0 4px 14px rgba(27, 11, 46, 0.05);
-  animation: memberNudgeFadeIn 0.2s ease both;
-}
-
-.profile-completion-compact__toggle {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 56px;
-  padding: 10px 14px;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-
-.profile-completion-compact__ring {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-}
-
-.profile-completion-compact__ring-svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.profile-completion-compact__ring-track {
-  fill: none;
-  stroke: color-mix(in srgb, var(--bs-border, rgba(27, 11, 46, 0.1)) 80%, transparent);
-  stroke-width: 3;
-}
-
-.profile-completion-compact__ring-fill {
-  fill: none;
-  stroke: var(--bs-pink, #e91e8f);
-  stroke-width: 3;
-  stroke-linecap: round;
-  pathLength: 100;
-  transition: stroke-dasharray 0.2s ease;
-}
-
-.profile-completion-compact__percent {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: var(--bs-text, #1b0b2e);
-}
-
-.profile-completion-compact__copy {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.profile-completion-compact__label {
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--bs-text, #1b0b2e);
-}
-
-.profile-completion-compact__hint {
-  font-size: 0.78rem;
-  color: var(--bs-muted, rgba(27, 11, 46, 0.62));
-}
-
-.profile-completion-compact__missing {
-  margin: 0;
-  padding: 0 14px 10px 66px;
-  list-style: none;
-}
-
-.profile-completion-compact__missing li {
-  font-size: 0.82rem;
-  color: var(--bs-muted, rgba(27, 11, 46, 0.62));
-  padding: 3px 0;
-}
-
-.profile-completion-compact__action {
-  display: block;
-  width: calc(100% - 28px);
-  margin: 0 14px 12px;
-  padding: 8px 10px;
-  border: 0;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--bs-pink, #e91e8f) 8%, transparent);
-  color: var(--bs-pink, #e91e8f);
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
 @keyframes memberNudgeFadeIn {
   from {
     opacity: 0;
@@ -214,8 +110,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .member-micro-nudge,
-  .member-micro-nudge--exit,
-  .profile-completion-compact {
+  .member-micro-nudge--exit {
     animation: none;
   }
 }

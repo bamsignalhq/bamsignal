@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { MemberEmptyState } from "./member/MemberUxKit";
 
 type EmptyStateProps = {
   icon?: LucideIcon;
@@ -6,19 +7,30 @@ type EmptyStateProps = {
   message?: string;
   actionLabel?: string;
   onAction?: () => void;
+  className?: string;
 };
 
-export function EmptyState({ icon: Icon, title, message, actionLabel, onAction }: EmptyStateProps) {
+/** Legacy adapter — delegates to MemberEmptyState for one visual language. */
+export function EmptyState({
+  icon: Icon,
+  title,
+  message,
+  actionLabel,
+  onAction,
+  className = ""
+}: EmptyStateProps) {
   return (
-    <div className="empty-state empty-state--calm member-empty-state">
-      {Icon ? <Icon size={28} strokeWidth={1.5} aria-hidden className="empty-state__icon" /> : null}
-      <h2>{title}</h2>
-      {message ? <p>{message}</p> : null}
-      {actionLabel && onAction && (
-        <button type="button" className="btn-primary" onClick={onAction}>
-          {actionLabel}
-        </button>
-      )}
-    </div>
+    <MemberEmptyState
+      title={title}
+      body={message}
+      actionLabel={actionLabel}
+      onAction={onAction}
+      className={`empty-state empty-state--calm member-empty-state ${className}`.trim()}
+      leading={
+        Icon ? (
+          <Icon size={28} strokeWidth={1.5} aria-hidden className="empty-state__icon" />
+        ) : undefined
+      }
+    />
   );
 }

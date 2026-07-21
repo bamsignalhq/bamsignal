@@ -34,7 +34,7 @@ import { trackEvent } from "../../utils/analytics";
 import { getVerificationTier } from "../../utils/verification";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useMemberToast } from "../../hooks/useMemberToast";
-import { MemberErrorState } from "../member/MemberErrorState";
+import { MemberEmptyState, MemberErrorState } from "../member";
 import { flowLog } from "../../utils/flowLog";
 import { hapticMedium } from "../../utils/memberHaptics";
 
@@ -308,7 +308,7 @@ export function HomeSignalsFeed({
       <ToastHost />
 
       {loadError ? (
-        <MemberErrorState message={loadError} onRetry={() => void loadFeed()} />
+        <MemberErrorState body={loadError} onRetry={() => void loadFeed()} />
       ) : loading ? (
         <div className="discover-feed-grid discover-feed-grid--loading" aria-busy="true">
           {Array.from({ length: 9 }).map((_, i) => (
@@ -316,21 +316,25 @@ export function HomeSignalsFeed({
           ))}
         </div>
       ) : gridItems.length === 0 ? (
-        <div className="home-signals-feed__empty card member-empty-state">
-          <h2>{SUCCESS_COPY.homeFeedEmpty}</h2>
-          <p className="home-signals-feed__empty-hint">{SUCCESS_COPY.homeFeedEmptyHint}</p>
-          <div className="premium-empty-actions">
-            {filtersApplied ? (
-              <button type="button" className="btn-secondary" onClick={() => onResetFilters?.()}>
-                Reset filters
-              </button>
-            ) : (
-              <button type="button" className="btn-primary" onClick={onViewMore}>
-                Explore Discover
-              </button>
-            )}
-          </div>
-        </div>
+        filtersApplied ? (
+          <MemberEmptyState
+            className="home-signals-feed__empty card member-empty-state"
+            title={SUCCESS_COPY.homeFeedEmpty}
+            body={SUCCESS_COPY.homeFeedEmptyHint}
+          >
+            <button type="button" className="btn-secondary" onClick={() => onResetFilters?.()}>
+              Reset filters
+            </button>
+          </MemberEmptyState>
+        ) : (
+          <MemberEmptyState
+            className="home-signals-feed__empty card member-empty-state"
+            title={SUCCESS_COPY.homeFeedEmpty}
+            body={SUCCESS_COPY.homeFeedEmptyHint}
+            actionLabel="Explore Discover"
+            onAction={onViewMore}
+          />
+        )
       ) : (
         <>
           <div className="discover-feed-grid">

@@ -8,6 +8,7 @@
   --bs-border: rgba(27, 11, 46, 0.1);
   --bs-pink: #e91e8f;
   --bs-purple: #7a4df3;
+  --bs-gold: #d4a64a;
   --bs-gradient: linear-gradient(135deg, #e91e8f, #7a4df3);
   --bs-radius-card: 20px;
   --bs-radius-pill: 999px;
@@ -107,11 +108,11 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 48px;
-  height: 48px;
+  min-height: var(--bs-btn-h-primary, 48px);
+  height: var(--bs-btn-h-primary, 48px);
   padding: 0 20px;
   border: none;
-  border-radius: 16px;
+  border-radius: var(--bs-radius-input, 16px);
   background: var(--bs-gradient);
   color: #fff;
   font-size: 15px;
@@ -124,10 +125,10 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
-  height: 44px;
+  min-height: var(--bs-btn-h-secondary, 44px);
+  height: var(--bs-btn-h-secondary, 44px);
   padding: 0 18px;
-  border-radius: 16px;
+  border-radius: var(--bs-radius-input, 16px);
   border: 1px solid var(--bs-border);
   background: var(--bs-surface);
   color: var(--bs-text);
@@ -276,7 +277,7 @@
 }
 
 .platform-root--member .signals-premium-empty {
-  max-width: 340px;
+  max-width: var(--bs-empty-max, 340px);
   margin-left: auto;
   margin-right: auto;
   text-align: center;

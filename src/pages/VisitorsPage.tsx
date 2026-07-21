@@ -1,6 +1,6 @@
 import { ArrowLeft, Crown, Eye, Zap } from "lucide-react";
 import { MONETIZATION_COPY, SUCCESS_COPY, BUTTON_COPY } from "../constants/copy";
-import { EmptyState } from "../components/EmptyState";
+import { MemberEmptyState, MemberPageHead } from "../components/member";
 import { ShowcaseImage } from "../components/ShowcaseImage";
 import type { ProfileViewer } from "../utils/profileViews";
 
@@ -27,18 +27,14 @@ export function VisitorsPage({
 
   return (
     <div className="page visitors-page">
-      <header className="visitors-page__head">
-        <button type="button" className="icon-btn" onClick={onBack} aria-label="Back">
-          <ArrowLeft size={22} />
-        </button>
-        <div>
-          <Eye size={24} aria-hidden />
-          <h1>{SUCCESS_COPY.profileVisitorsTitle}</h1>
-          <p>
-            {displayCount} profile view{displayCount === 1 ? "" : "s"} today
-          </p>
-        </div>
-      </header>
+      <MemberPageHead
+        className="visitors-page__head"
+        title={SUCCESS_COPY.profileVisitorsTitle}
+        subtitle={`${displayCount} profile view${displayCount === 1 ? "" : "s"} today`}
+        onBack={onBack}
+        backVariant="icon"
+        backIcon={<ArrowLeft size={22} />}
+      />
 
       {!isPremium ? (
         <section className="visitors-page__locked card">
@@ -50,10 +46,10 @@ export function VisitorsPage({
           </button>
         </section>
       ) : viewers.length === 0 ? (
-        <EmptyState
-          icon={Eye}
+        <MemberEmptyState
+          leading={<Eye size={28} strokeWidth={1.5} aria-hidden className="empty-state__icon" />}
           title={SUCCESS_COPY.emptyPremiumState}
-          message="When someone views your profile, you'll see them here."
+          body="When someone views your profile, you'll see them here."
           actionLabel={BUTTON_COPY.explore}
           onAction={onCompleteProfile}
         />

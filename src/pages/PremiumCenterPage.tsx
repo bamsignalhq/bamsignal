@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Star } from "lucide-react";
+import { Check } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { BRAND, MONETIZATION_COPY } from "../constants/copy";
 import {
@@ -7,7 +7,12 @@ import {
   PREMIUM_VALUE_VS_PRICE,
 } from "../constants/premiumExperience";
 import type { PlanId, PremiumPlan } from "../constants/plans";
-import { planBadge, planCheckoutLabel, plansForSale } from "../constants/plans";
+import { plansForSale } from "../constants/plans";
+import {
+  PremiumMembershipHead,
+  PremiumPlanButtonList
+} from "../components/premium/PremiumMembershipShell";
+import { MemberLoadingState } from "../components/member";
 import { PremiumPurchaseHistory } from "../components/premium/PremiumPurchaseHistory";
 import { CommercialDashboardSummary } from "../components/commercial/CommercialDashboardSummary";
 import {
@@ -82,18 +87,7 @@ export function PremiumCenterPage({
 
   return (
     <div className="page premium-page premium-page--fintech premium-center">
-      <header className="premium-page__head premium-page__head--fintech">
-        <button type="button" className="icon-btn" onClick={onBack} aria-label="Back">
-          <ArrowLeft size={22} />
-        </button>
-        <div>
-          <h1 className="premium-page__title premium-page__title-row">
-            Discover Membership{" "}
-            <Star size={20} className="premium-page__star" aria-hidden fill="currentColor" />
-          </h1>
-          <p className="premium-page__subtitle">{PREMIUM_EXPERIENCE_MISSION}</p>
-        </div>
-      </header>
+      <PremiumMembershipHead onBack={onBack} subtitle={PREMIUM_EXPERIENCE_MISSION} />
 
       {isPremium ? (
         <section className="premium-center__status card">
@@ -234,32 +228,14 @@ export function PremiumCenterPage({
             Weekly ₦999 · Monthly ₦2,999 — unlimited Signals, messaging, and Discover Membership benefits.
           </p>
         ) : null}
-        <div className="premium-plan-buttons" aria-label="Discover Membership plans">
-          {orderedPlans.map((plan) => {
-            const badge = planBadge(plan);
-            const value = PREMIUM_VALUE_VS_PRICE[plan.id];
-            return (
-              <button
-                key={plan.id}
-                type="button"
-                className="premium-plan-button"
-                disabled={loading}
-                onClick={() => onSelectPlan(plan)}
-              >
-                <span>
-                  <span className="premium-plan-button__name">{planCheckoutLabel(plan)}</span>
-                  <span className="premium-plan-button__price">{plan.priceLabel}</span>
-                  <span className="premium-center__muted">{value.headline}</span>
-                </span>
-                {badge ? <span className="premium-plan-button__badge">{badge}</span> : null}
-              </button>
-            );
-          })}
-        </div>
+        <PremiumPlanButtonList
+          plans={orderedPlans}
+          onSelectPlan={onSelectPlan}
+          loading={loading}
+          planHint={(plan) => PREMIUM_VALUE_VS_PRICE[plan.id]?.headline}
+        />
         {loading ? (
-          <p className="premium-page__checkout-status" role="status">
-            {MONETIZATION_COPY.checkoutLoading}
-          </p>
+          <MemberLoadingState label={MONETIZATION_COPY.checkoutLoading} compact />
         ) : null}
       </section>
 

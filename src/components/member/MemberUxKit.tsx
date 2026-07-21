@@ -1,6 +1,7 @@
 import { Loader2, WifiOff, SignalLow } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import {
+  MEMBER_BUTTON_GHOST,
   MEMBER_BUTTON_PRIMARY,
   MEMBER_BUTTON_SECONDARY,
   MEMBER_SHEET_PANEL,
@@ -50,6 +51,10 @@ type MemberEmptyStateProps = {
   body?: string;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
+  /** Optional icon/illustration above the title. */
+  leading?: ReactNode;
   children?: ReactNode;
   className?: string;
 };
@@ -59,20 +64,37 @@ export function MemberEmptyState({
   body,
   actionLabel,
   onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
+  leading,
   children,
   className = ""
 }: MemberEmptyStateProps) {
+  const titleId = useId();
+  const hasPrimary = Boolean(actionLabel && onAction);
+  const hasSecondary = Boolean(secondaryActionLabel && onSecondaryAction);
+
   return (
-    <section className={`member-ux-empty ${className}`.trim()} aria-labelledby="member-ux-empty-title">
-      <h2 id="member-ux-empty-title" className="member-ux-empty__title">
+    <section className={`member-ux-empty ${className}`.trim()} aria-labelledby={titleId}>
+      {leading}
+      <h2 id={titleId} className="member-ux-empty__title">
         {title}
       </h2>
       {body ? <p className="member-ux-empty__body">{body}</p> : null}
       {children}
-      {actionLabel && onAction ? (
-        <button type="button" className={MEMBER_BUTTON_PRIMARY} onClick={onAction}>
-          {actionLabel}
-        </button>
+      {hasPrimary || hasSecondary ? (
+        <div className="member-ux-empty__actions premium-empty-actions">
+          {hasPrimary ? (
+            <button type="button" className={MEMBER_BUTTON_PRIMARY} onClick={onAction}>
+              {actionLabel}
+            </button>
+          ) : null}
+          {hasSecondary ? (
+            <button type="button" className={MEMBER_BUTTON_GHOST} onClick={onSecondaryAction}>
+              {secondaryActionLabel}
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </section>
   );
@@ -83,22 +105,35 @@ type MemberErrorStateProps = {
   body?: string;
   onRetry?: () => void;
   retryLabel?: string;
+  onSupport?: () => void;
+  supportLabel?: string;
 };
 
 export function MemberErrorState({
   title = "Something went wrong",
   body = "Check your connection and try again.",
   onRetry,
-  retryLabel = "Try again"
+  retryLabel = "Try again",
+  onSupport,
+  supportLabel = "Contact support"
 }: MemberErrorStateProps) {
   return (
     <div className="member-ux-error" role="alert">
-      <h3 className="member-ux-error__title">{title}</h3>
+      <h2 className="member-ux-error__title">{title}</h2>
       <p className="member-ux-error__body">{body}</p>
-      {onRetry ? (
-        <button type="button" className={MEMBER_BUTTON_SECONDARY} onClick={onRetry}>
-          {retryLabel}
-        </button>
+      {onRetry || onSupport ? (
+        <div className="member-ux-error__actions">
+          {onRetry ? (
+            <button type="button" className={MEMBER_BUTTON_SECONDARY} onClick={onRetry}>
+              {retryLabel}
+            </button>
+          ) : null}
+          {onSupport ? (
+            <button type="button" className={MEMBER_BUTTON_GHOST} onClick={onSupport}>
+              {supportLabel}
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

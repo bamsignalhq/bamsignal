@@ -17,6 +17,7 @@ export const INSTITUTIONAL_PAGE_FOOT = "institutional-page__foot";
 export const MEMBER_BUTTON_PRIMARY = "btn-primary";
 export const MEMBER_BUTTON_SECONDARY = "btn-secondary";
 export const MEMBER_BUTTON_GHOST = "btn-ghost";
+export const MEMBER_CARD = "member-card card";
 export const MEMBER_ROOT = "platform-root--member";
 export const MEMBER_SHEET_SCRIM = "member-ux-sheet__scrim";
 export const MEMBER_SHEET_PANEL = "member-ux-sheet__panel";
@@ -37,7 +38,7 @@ export const MEMBER_UX_SURFACES = [
 
 export const UX_STANDARDIZATION_TARGETS = [
   { surface: "Institutional admin", button: INSTITUTIONAL_BUTTON, card: INSTITUTIONAL_CARD },
-  { surface: "Member app", button: MEMBER_BUTTON_PRIMARY, card: "member-card", locked: true },
+  { surface: "Member app", button: MEMBER_BUTTON_PRIMARY, card: MEMBER_CARD, locked: true },
   { surface: "Public marketing", button: "landing-cta", card: "seo-card", locked: true }
 ] as const;
 

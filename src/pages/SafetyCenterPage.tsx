@@ -16,6 +16,7 @@ import { navigateToPath } from "../constants/routes";
 import { whatsappHref } from "../utils/whatsapp";
 import { BlockedUsersList, MemberReportsList } from "../components/safety/CommunityTrustPanels";
 import { CommunityTrustEducation } from "../components/safety/CommunityTrustEducation";
+import { MemberPageHead } from "../components/member";
 import {
   getCommunityTrustMemberSnapshot,
   listMemberReports,
@@ -41,15 +42,14 @@ export function SafetyCenterPage({ onBack, onOpenProfile, onOpenVerification }: 
 
   return (
     <div className="page safety-center-page safety-center-page--clean community-trust-hub">
-      <header className="safety-center-page__head">
-        <button type="button" className="icon-btn" onClick={onBack} aria-label="Back">
-          <ArrowLeft size={22} />
-        </button>
-        <div>
-          <h1>Safety Center</h1>
-          <p>{COMMUNITY_TRUST_MISSION}</p>
-        </div>
-      </header>
+      <MemberPageHead
+        className="safety-center-page__head"
+        title="Safety Center"
+        subtitle={COMMUNITY_TRUST_MISSION}
+        onBack={onBack}
+        backVariant="icon"
+        backIcon={<ArrowLeft size={22} />}
+      />
 
       <nav className="community-trust-hub__nav" aria-label="Safety sections">
         {COMMUNITY_TRUST_HUB_SECTIONS.map((item) => (

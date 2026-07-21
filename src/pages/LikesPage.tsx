@@ -1,7 +1,7 @@
-import { ChevronRight, Shield } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useMemberProfileListener } from "../hooks/useMemberProfileListener";
 import { useMemberToast } from "../hooks/useMemberToast";
+import { MemberEmptyState, MemberSafetyRow } from "../components/member";
 import { BRAND, MONETIZATION_COPY, PREMIUM_COPY } from "../constants/copy";
 import { STORAGE_KEYS } from "../constants/limits";
 import { MatchSuccessIcebreakers } from "../components/icebreakers/MatchSuccessIcebreakers";
@@ -307,24 +307,23 @@ export function LikesPage({
       <ToastHost />
 
       {!hasSignals ? (
-        <div className="signals-premium-empty">
-          <h2>{PREMIUM_COPY.signalsEmptyTitle}</h2>
-          <div className="premium-empty-actions">
-            <button type="button" className="btn-primary" onClick={onDiscover ?? onUpgrade}>
-              {PREMIUM_COPY.explorePeople}
+        <MemberEmptyState
+          className="signals-premium-empty"
+          title={PREMIUM_COPY.signalsEmptyTitle}
+          actionLabel={PREMIUM_COPY.explorePeople}
+          onAction={onDiscover ?? onUpgrade}
+        >
+          {!isPremium ? (
+            <button
+              type="button"
+              className="signals-premium-empty__pass-link"
+              onClick={onUpgrade}
+              disabled={paymentLoading}
+            >
+              {paymentLoading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.getSignalPass}
             </button>
-            {!isPremium ? (
-              <button
-                type="button"
-                className="signals-premium-empty__pass-link"
-                onClick={onUpgrade}
-                disabled={paymentLoading}
-              >
-                {paymentLoading ? MONETIZATION_COPY.checkoutLoading : MONETIZATION_COPY.getSignalPass}
-              </button>
-            ) : null}
-          </div>
-        </div>
+          ) : null}
+        </MemberEmptyState>
       ) : (
         <div className="signals-premium-list">
           {filtered.map((entry) => (
@@ -350,16 +349,7 @@ export function LikesPage({
         />
       ) : null}
 
-      <button type="button" className="signals-premium-safety" onClick={onOpenSafety}>
-        <span className="signals-premium-safety__icon" aria-hidden>
-          <Shield size={22} />
-        </span>
-        <span className="signals-premium-safety__copy">
-          <strong>You&apos;re in control</strong>
-          <span>We protect your privacy and keep it safe.</span>
-        </span>
-        <ChevronRight size={20} className="signals-premium-safety__chevron" aria-hidden />
-      </button>
+      <MemberSafetyRow variant="signals" onClick={onOpenSafety} />
 
       <SignalsSettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 

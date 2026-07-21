@@ -1,3 +1,4 @@
+import { CORPORATE } from "./corporate";
 import { AUTH_SIGNUP_PATH } from "./routes";
 import { SIGNAL_CONCIERGE_ROUTES } from "./signalConciergeRoutes";
 
@@ -47,7 +48,7 @@ export const FOOTER_PRIVACY_LINKS: readonly FooterLink[] = [
 export const FOOTER_COMPANY_LINKS: readonly FooterLink[] = [
   { href: "/about", label: "About" },
   { href: "/blog", label: "Blog" },
-  { href: "/careers", label: "Careers" },
+  { href: CORPORATE.careersUrl, label: "Careers", external: true },
   { href: "/press", label: "Press" },
   { href: "/contact", label: "Contact" },
   { href: "/faq", label: "FAQ" }

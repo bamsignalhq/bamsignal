@@ -1,8 +1,8 @@
-/** Careers — public Join Our Team landing; hiring centralized under Stankings Legacy Ltd. */
+/** Careers — public nav only; hiring centralized at stankings.com/career. */
 
-export const STANKINGS_COMPANY_NAME = "Stankings Legacy Ltd";
-export const STANKINGS_SITE_URL = "https://stankings.com";
-export const STANKINGS_CAREERS_URL = "https://stankings.com/careers";
+import { CORPORATE, STANKINGS_CAREERS_URL, STANKINGS_COMPANY_NAME, STANKINGS_SITE_URL } from "./corporate";
+
+export { CORPORATE, STANKINGS_COMPANY_NAME, STANKINGS_CAREERS_URL, STANKINGS_SITE_URL };
 
 export const CAREERS_BRAND = "Join Our Team";
 export const CAREERS_TITLE = "Careers at BamSignal";
@@ -68,7 +68,7 @@ export const CAREERS_CLOSING_HEADING =
 export const CAREERS_SEO = {
   title: "Careers at BamSignal | Hiring via Stankings Legacy Ltd",
   description:
-    "BamSignal is a product of Stankings Legacy Ltd. Explore opportunities across BamSignal, Yike, BayRight and the Stankings group at stankings.com/careers."
+    `BamSignal is a product of ${CORPORATE.legalName}. Recruitment is managed centrally at ${CORPORATE.careersUrl.replace("https://", "")}.`
 } as const;
 
 /** @deprecated Legacy hosted careers taxonomy — admin talent tooling / seeds only. */

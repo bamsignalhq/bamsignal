@@ -128,7 +128,6 @@ import {
   LazySignalEventsDiasporaPage,
   LazySignalEventsHubPage,
   LazyVisitorsPage,
-  LazyCareersLandingPage,
   LazySupportCenterLandingPage,
   LazySupportContactPage,
   LazySupportTicketsPage,
@@ -298,11 +297,12 @@ import {
   type CenturyRoute
 } from "./constants/centuryRoutes";
 import {
-  CAREERS_ROUTES,
   getCareersRoute,
   isUnknownCareersSubroute,
   type CareersRoute
 } from "./constants/careersRoutes";
+import { CORPORATE } from "./constants/corporate";
+import { CareersExternalRedirect } from "./components/careers/CareersExternalRedirect";
 import { getSupportCenterRoute, type SupportCenterRoute } from "./constants/supportCenterRoutes";
 import { resolveHardHubPath } from "./utils/adminSession";
 import { profileFromSessionUser, rememberUsernameEmail, resolveMemberIdentity } from "./utils/authIdentity";
@@ -737,7 +737,7 @@ export function App() {
 
   useLayoutEffect(() => {
     if (!isUnknownCareersSubroute(memberPathname)) return;
-    navigateToPath(CAREERS_ROUTES.landing, true);
+    window.location.replace(CORPORATE.careersUrl);
   }, [memberPathname]);
 
   useLayoutEffect(() => {
@@ -2873,19 +2873,7 @@ export function App() {
   }
 
   if (careersRoute) {
-    const careersShellProps = {
-      theme,
-      onToggleTheme: toggleTheme,
-      onLogoClick: goHome,
-      onLogin: isAuthed ? undefined : () => openAuth("login"),
-      onSignup: isAuthed ? undefined : () => openAuth("signup", "discover")
-    };
-
-    return (
-      <Suspense fallback={<LazyRouteFallback subtitle="Loading careers…" />}>
-        <LazyCareersLandingPage {...careersShellProps} />
-      </Suspense>
-    );
+    return <CareersExternalRedirect />;
   }
 
   if (legalPath) {

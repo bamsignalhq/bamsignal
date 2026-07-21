@@ -102,10 +102,10 @@
 
 ## Outstanding technical debt (post-freeze)
 
-1. Gradual hex cleanup in `member-pages.css` → `--bs-*` only  
+1. Remaining non-exact hex in `member-pages.css` (semantic reds/greens/slate) — exact brand matches done in closeout  
 2. Photo-card skeletons remain domain-specific (correct — do not flatten to line skeletons)  
 3. Profile/Settings deep panels: optional future pass to MemberPageHead only where heads diverge further  
-4. After merge: author `docs/design/MEMBER_DESIGN_SYSTEM.md` and freeze like Platform/Brand governance  
+4. ~~After merge: author `docs/design/MEMBER_DESIGN_SYSTEM.md`~~ — **done in closeout**  
 
 ---
 
@@ -178,3 +178,39 @@ After merge + deploy:
 ---
 
 *Certification authored as part of Member Experience Stabilization sprint; CSS cleanup appended before commit approval.*
+
+---
+
+## Closeout pass (2026-07-21)
+
+**Branch:** `main` (post PR #3 merge `f5dd98d`)  
+**Mode:** SAFE REFACTOR — docs + exact-match token cleanup only  
+**Commit:** pending approval (not committed)
+
+### Delivered
+
+| Item | Result |
+|------|--------|
+| `docs/design/MEMBER_DESIGN_SYSTEM.md` | **Published** — tokens, shared primitives, adapters, freeze policy |
+| `member-pages.css` hex → `--bs-*` | **Exact matches only** — `#fff4fa`→`--bs-bg`, `#1b0b2e`→`--bs-text`, `#e91e8f`→`--bs-pink`, `#fff`/`#ffffff` backgrounds → `--bs-surface` |
+| Intentional `#fff` left | On-brand / overlay contrast (`color: #fff`, photo borders, white color-mix rings) — no `--bs-on-brand` token yet |
+| Non-exact reds/greens/muted | Left as page-local hex (not equal to `--bs-danger` / muted rgba) |
+
+### Outstanding debt (unchanged / deferred)
+
+1. Remaining non-exact hex in `member-pages.css` (semantic reds, greens, slate) — map only if new tokens are introduced  
+2. Photo-card skeletons remain domain-specific  
+3. Optional Profile/Settings deep-panel head alignment  
+4. Stylelint `--bs-*` enforcement (not configured)  
+5. Periodic SR audit on signals cards / chat threads  
+
+### Validation (closeout)
+
+| Command | Result |
+|---------|--------|
+| `npm run lint` | **PASS** |
+| `npm run typecheck` | **PASS** |
+| `npm run build` | **PASS** |
+| `npm run test:server-import` | **PASS** (`server ok`) |
+
+*Closeout complete — awaiting commit approval.*

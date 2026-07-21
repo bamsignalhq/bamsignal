@@ -333,7 +333,7 @@
 .messages-page--premium .member-page-head h1 {
   font-size: 1.65rem;
   font-weight: 800;
-  color: #1b0b2e;
+  color: var(--bs-text);
   letter-spacing: -0.02em;
 }
 
@@ -358,7 +358,7 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1b0b2e;
+  color: var(--bs-text);
 }
 
 .messages-empty--compact p {
@@ -385,7 +385,7 @@
   gap: 0;
   border-radius: 16px;
   overflow: hidden;
-  background: #fff;
+  background: var(--bs-surface);
   box-shadow: 0 1px 0 rgba(27, 11, 46, 0.04);
 }
 
@@ -399,8 +399,8 @@
   border: none;
   border-bottom: 1px solid rgba(27, 11, 46, 0.08);
   border-radius: 0;
-  background: #fff;
-  color: #1b0b2e;
+  background: var(--bs-surface);
+  color: var(--bs-text);
   text-align: left;
   cursor: pointer;
   box-shadow: none;
@@ -459,7 +459,7 @@
 .messages-row__top strong {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #1b0b2e;
+  color: var(--bs-text);
   line-height: 1.2;
   min-width: 0;
   overflow: hidden;
@@ -485,7 +485,7 @@
 }
 
 .messages-row__status--typing {
-  color: #e91e8f;
+  color: var(--bs-pink);
   font-weight: 600;
 }
 
@@ -518,13 +518,13 @@
 }
 
 .messages-row--unread {
-  background: #fff4fa;
+  background: var(--bs-bg);
 }
 
 .messages-row--unread .messages-row__top strong,
 .messages-row--unread .messages-row__preview {
   font-weight: 700;
-  color: #1b0b2e;
+  color: var(--bs-text);
 }
 
 .messages-row--unread .messages-row__preview {
@@ -543,7 +543,7 @@
   height: 28px;
   padding: 0 8px;
   border-radius: 999px;
-  background: #e91e8f;
+  background: var(--bs-pink);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 700;
@@ -554,19 +554,19 @@
 
 .app.dark .messages-list--premium,
 [data-theme="dark"] .messages-list--premium {
-  background: color-mix(in srgb, var(--card) 94%, #fff);
+  background: color-mix(in srgb, var(--card) 94%, var(--bs-surface));
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .app.dark .messages-row,
 [data-theme="dark"] .messages-row {
-  background: color-mix(in srgb, var(--card) 94%, #fff);
+  background: color-mix(in srgb, var(--card) 94%, var(--bs-surface));
   color: var(--text);
 }
 
 .app.dark .messages-row--unread,
 [data-theme="dark"] .messages-row--unread {
-  background: color-mix(in srgb, #fff4fa 72%, var(--card));
+  background: color-mix(in srgb, var(--bs-bg) 72%, var(--card));
 }
 
 .app.dark .messages-row__top strong,
@@ -637,9 +637,9 @@
 }
 
 .chat-bubble--premium.them {
-  background: #fff;
+  background: var(--bs-surface);
   border: 1px solid rgba(27, 11, 46, 0.1);
-  color: #1b0b2e;
+  color: var(--bs-text);
 }
 
 .chat-bubble--premium.them .chat-bubble__time {
@@ -647,7 +647,7 @@
 }
 
 .chat-bubble--premium.me {
-  background: linear-gradient(135deg, #e91e8f 0%, #6d5ef8 100%);
+  background: linear-gradient(135deg, var(--bs-pink) 0%, #6d5ef8 100%);
   color: #fff;
   border: none;
 }
@@ -658,7 +658,7 @@
 
 .chat-detail-header--fintech {
   border-bottom: 1px solid rgba(27, 11, 46, 0.08);
-  background: #fff;
+  background: var(--bs-surface);
   backdrop-filter: blur(12px);
 }
 
@@ -671,7 +671,7 @@
 .chat-detail-header--fintech .chat-detail-header__meta strong {
   font-size: 1rem;
   font-weight: 800;
-  color: #1b0b2e;
+  color: var(--bs-text);
 }
 
 /* Facebook-style profile */
@@ -2619,7 +2619,7 @@
 
 .app.light .compat-reasons-card__row,
 [data-theme="light"] .compat-reasons-card__row {
-  color: #1b0b2e;
+  color: var(--bs-text);
 }
 
 .profile-detail-sheet__voice-vibe {

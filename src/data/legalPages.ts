@@ -150,7 +150,7 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
       {
         heading: "Overview",
         body:
-          "This policy explains what we collect when you use BamSignal, why we need it, and the choices you have. We only collect what's needed to run a safe, useful dating and social discovery service."
+          "BamSignal is a product of Stankings Legacy Ltd. This policy explains what we collect when you use BamSignal, why we need it, and the choices you have. We only collect what's needed to run a safe, useful dating and social discovery service."
       },
       {
         heading: "Information we collect",
@@ -202,7 +202,7 @@ export const LEGAL_PAGES: Record<LegalPath, LegalPageConfig> = {
       {
         heading: "Agreement",
         body:
-          "By creating an account or using BamSignal, you agree to these Terms and our Privacy Policy. If you do not agree, please do not use the service."
+          "BamSignal is operated by Stankings Legacy Ltd. By creating an account or using BamSignal, you agree to these Terms and our Privacy Policy. If you do not agree, please do not use the service."
       },
       {
         heading: "Eligibility",

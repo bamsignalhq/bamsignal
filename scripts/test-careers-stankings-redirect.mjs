@@ -1,5 +1,5 @@
 /**
- * BamSignal careers → Stankings Legacy Ltd employer brand (no local job board).
+ * BamSignal careers → Stankings Legacy Ltd centralized recruitment (no local page).
  */
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -11,40 +11,39 @@ const assert = (c, m) => {
   if (!c) throw new Error(m);
 };
 
-const careers = read("src/constants/careers.ts");
-assert(careers.includes("STANKINGS_CAREERS_URL"), "stankings careers url");
-assert(careers.includes("https://stankings.com/careers"), "careers CTA target");
-assert(careers.includes("BamSignal is a product of Stankings Legacy Ltd."), "product-of positioning");
-assert(careers.includes("Explore Opportunities at Stankings"), "primary CTA label");
-assert(careers.includes("Learn About Stankings Legacy Ltd"), "secondary CTA label");
-assert(
-  careers.includes("Join the Team Behind Africa's Next Generation of Digital Products."),
-  "closing employer proposition"
-);
-assert(careers.includes("CAREERS_PORTFOLIO_COMPANIES"), "portfolio companies");
-assert(careers.includes("https://yike.ng"), "Yike link");
-assert(careers.includes("https://bayright.com"), "BayRight link");
+const corporate = read("src/constants/corporate.ts");
+assert(corporate.includes("careersUrl: \"https://stankings.com/career\""), "careers external target");
+assert(corporate.includes("legalName: \"Stankings Legacy Ltd\""), "parent legal name");
 
-const landing = read("src/components/careers/CareersLandingPage.tsx");
-assert(landing.includes("CAREERS_PRIMARY_CTA"), "primary CTA");
-assert(landing.includes("CAREERS_SECONDARY_CTA"), "secondary CTA");
-assert(landing.includes("CAREERS_PORTFOLIO_COMPANIES"), "companies section");
-assert(landing.includes("CAREERS_CLOSING_HEADING"), "closing CTA");
-assert(!landing.includes("View open roles"), "no local open roles CTA");
-assert(landing.includes("SeoHead"), "SEO metadata");
+const careers = read("src/constants/careers.ts");
+assert(careers.includes("CORPORATE"), "careers imports CORPORATE");
+assert(careers.includes("BamSignal is a product of"), "product-of positioning");
+assert(!careers.includes("Stankings group"), "no unofficial group naming");
 
 const footer = read("src/constants/footer.ts");
-assert(footer.includes('href: "/careers"'), "footer careers → BamSignal join landing");
+assert(footer.includes("CORPORATE.careersUrl"), "footer uses centralized careers url");
+assert(footer.includes("external: true"), "footer careers opens Stankings");
 
 const routes = read("src/constants/careersRoutes.ts");
-assert(routes.includes("landing: CAREERS_BASE_PATH"), "single landing route");
+assert(routes.includes('CAREERS_ALIAS_PATH = "/career"'), "supports /career alias");
+assert(routes.includes("CORPORATE.careersUrl"), "routes reference external destination");
 assert(!routes.includes("open-roles"), "open-roles route removed");
 
+const redirect = read("src/components/careers/CareersExternalRedirect.tsx");
+assert(redirect.includes("window.location.replace"), "immediate external redirect");
+assert(redirect.includes("CORPORATE.careersUrl"), "redirect target");
+
 const app = read("src/App.tsx");
-assert(app.includes("LazyCareersLandingPage"), "landing still mounted");
-assert(!app.includes("LazyCareersOpenRolesPage"), "open roles not mounted");
+assert(app.includes("CareersExternalRedirect"), "app uses external redirect");
+assert(!app.includes("LazyCareersLandingPage"), "landing page not mounted");
 
 const siteFooter = read("src/components/SiteFooter.tsx");
 assert(siteFooter.includes("link.external"), "footer supports external links");
+
+const legal = read("src/data/legalPages.ts");
+assert(legal.includes("Stankings Legacy Ltd"), "legal pages identify parent company");
+
+const sitemap = read("scripts/careers-sitemap-paths.mjs");
+assert(sitemap.includes("CAREERS_HUB_PATHS = []"), "no local careers sitemap entries");
 
 console.log("careers-stankings-redirect: PASS");

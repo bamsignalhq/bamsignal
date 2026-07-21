@@ -38,8 +38,9 @@ jobs:
       - name: Typecheck (lint)
         run: npm run lint
 
-      - name: Server import smoke test
-        run: npm run test:server-import
-
+      # Smoke boots production.js and requires dist/index.html (same order as Dockerfile).
       - name: Production build
         run: npm run build
+
+      - name: Server import smoke test
+        run: npm run test:server-import

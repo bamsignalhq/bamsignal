@@ -22,6 +22,7 @@ import {
 import { logBackgroundTaskFailure } from "./services/observability.js";
 import { startRateLimitRetentionScheduler } from "./services/rateLimitRetention.js";
 import { runStartupMigrations } from "./startupMigrations.js";
+import { logStartupBanner } from "./startupLogging.js";
 import { buildServerRouteInventory } from "../shared/serverRouteInventory.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -114,9 +115,7 @@ export async function startServer() {
   return new Promise((resolve, reject) => {
     const server = app.listen(port, host, async () => {
       registerHttpServerForShutdown(server);
-      console.log(
-        `[bamsignal] Running on http://${host}:${port} (commit=${process.env.BAMSIGNAL_GIT_COMMIT || "unknown"})`
-      );
+      logStartupBanner({ port, host });
       const readiness = await readinessPayload({ detailed: false });
       if (!readiness.ready) {
         console.warn("[bamsignal] GET /ready returns 503 until CRITICAL services and database are available.");

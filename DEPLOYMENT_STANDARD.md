@@ -3,6 +3,8 @@
 Gold-standard blueprint proven on **BamSignal**, replicated on **Yike**.
 Use this for **BayRight**, **Stankings**, and any future app on the shared Coolify host.
 
+See also: [PLATFORM_STANDARD.md](./docs/engineering/PLATFORM_STANDARD.md)
+
 Do not reinvent. Follow this document exactly unless the project has a documented exception.
 
 ---

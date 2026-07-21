@@ -4,7 +4,7 @@ import type { LaunchInfraArtifactId } from "../types/launchInfrastructure";
 
 export const LAUNCH_INFRA_ARTIFACTS: { id: LaunchInfraArtifactId; label: string }[] = [
   { id: "docker", label: "Docker" },
-  { id: "vercel", label: "Vercel (legacy)" },
+  { id: "coolify", label: "Coolify deploy" },
   { id: "supabase", label: "Supabase" },
   { id: "build-scripts", label: "Build Scripts" },
   { id: "sitemap", label: "Sitemap" },
@@ -31,12 +31,12 @@ export const LAUNCH_INFRA_FIXES_APPLIED = [
   "Sitemap includes /signal-concierge/privacy and /signal-concierge/faq",
   "robots.txt disallows /consultant and /subscription member paths",
   "manifest.webmanifest start_url and scope set to /",
-  "vercel.json marked legacy — Coolify/Docker is canonical deploy"
+  "Vercel decommissioned — Coolify/Docker is canonical deploy"
 ] as const;
 
 export const LAUNCH_INFRA_ARTIFACT_PATHS = {
   dockerfile: "Dockerfile",
-  vercel: "vercel.json",
+  coolify: "Dockerfile",
   sitemap: "public/sitemap.xml",
   robots: "public/robots.txt",
   manifest: "public/manifest.webmanifest",

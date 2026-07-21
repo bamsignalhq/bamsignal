@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+STAGED="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+echo "$STAGED" | grep -Eq '^supabase/migrations/|^supabase/config\.toml$' || exit 0
+
+echo "Migration-related files staged — running Supabase project verification..."
+node scripts/verify-supabase-project.mjs --require-linked

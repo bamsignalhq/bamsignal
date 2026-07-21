@@ -7,7 +7,7 @@ alwaysApply: true
 
 - **Platform:** [Coolify](https://control.stankings.com) — shared Stankings Group Hetzner host (alias: `https://control.bamsignal.com`).
 - **Production URL:** https://bamsignal.com
-- **Do not use Vercel** for this repo (`.vercel/` is legacy/unused).
+- **Do not use Vercel** for this repo — Vercel is decommissioned.
 
 ## How to deploy
 

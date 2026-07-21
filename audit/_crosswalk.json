@@ -1,0 +1,650 @@
+{
+  "rows": [
+    {
+      "app": "0001_schema_migrations",
+      "cli": null,
+      "note": "app-only tracking",
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "schema_migrations"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0002_baseline_bamsignal_schema",
+      "cli": null,
+      "note": "baseline; CLI has no equivalent",
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "admin_users",
+        "api_rate_events",
+        "app_chat_threads",
+        "app_fast_connection_daily",
+        "app_matches",
+        "app_member_profiles",
+        "app_messages",
+        "app_profile_follows",
+        "app_profile_likes",
+        "app_referral_events",
+        "app_reports",
+        "app_signals",
+        "app_users",
+        "audit_logs",
+        "city_home_placements",
+        "city_spotlight_events",
+        "connection_notes",
+        "contact_exchange_events",
+        "contact_exchange_requests",
+        "contact_leak_attempts",
+        "email_verification_codes",
+        "login_2fa_codes",
+        "member_introductions",
+        "moderation_audit_log",
+        "moderation_flags",
+        "payment_events",
+        "payment_fulfillments",
+        "payment_initialize_rate_events",
+        "photo_reviews",
+        "pin_auth_attempts",
+        "pin_reset_codes",
+        "platform_audit_log",
+        "platform_settings",
+        "saved_profiles",
+        "signup_provisioning_attempts",
+        "spam_message_fingerprints",
+        "subscription_events",
+        "success_stories",
+        "user_compliance_acknowledgements",
+        "verification_submissions",
+        "whatsapp_verification_codes"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0003_rate_limit_retention_indexes",
+      "cli": null,
+      "note": "indexes only",
+      "appExists": true,
+      "cliExists": null,
+      "objects": [],
+      "confidence": "high"
+    },
+    {
+      "app": "0004_signal_concierge_persistence",
+      "cli": null,
+      "note": "concierge core",
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "concierge_archives",
+        "concierge_consultants",
+        "concierge_consultation_payments",
+        "concierge_consultations",
+        "concierge_followups",
+        "concierge_introductions",
+        "concierge_legacy_profiles",
+        "concierge_meeting_notes",
+        "concierge_members",
+        "concierge_notifications",
+        "concierge_relationship_health_alerts",
+        "concierge_success_story_consents"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0005_workforce_management",
+      "cli": "202606251200_workforce_management",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "consultant_assignments",
+        "consultant_capacity",
+        "leave_requests",
+        "regional_assignments",
+        "staffing_forecasts",
+        "workforce_availability",
+        "workforce_metrics",
+        "workforce_profiles",
+        "workforce_transfers"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0006_institutional_governance",
+      "cli": "202606251400_institutional_governance",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "approval_history",
+        "approval_requests",
+        "approval_steps",
+        "authority_matrix",
+        "delegations",
+        "executive_decisions",
+        "governance_assignments",
+        "governance_permissions",
+        "governance_role_permissions",
+        "governance_roles",
+        "institutional_policies",
+        "policy_acknowledgements"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0007_business_continuity",
+      "cli": "202606251600_business_continuity",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "backup_jobs",
+        "continuity_exercises",
+        "incident_reports",
+        "provider_status",
+        "recovery_plans",
+        "system_health_snapshots"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0008_finance_operations",
+      "cli": "202606251800_finance_operations",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "consultant_payouts",
+        "financial_reports",
+        "financial_transactions",
+        "operating_expenses",
+        "reconciliation_logs",
+        "refund_approvals",
+        "refund_requests"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0009_document_center",
+      "cli": "202606252000_document_center",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "document_acknowledgements",
+        "document_categories",
+        "document_versions",
+        "documents",
+        "knowledge_articles",
+        "policy_versions"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0010_consultant_quality",
+      "cli": "202606252200_consultant_quality",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "coaching_sessions",
+        "consultant_certifications",
+        "consultant_reviews",
+        "consultation_reviews",
+        "improvement_plans",
+        "quality_assessments"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0011_configuration_platform",
+      "cli": "202606252400_configuration_platform",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "configuration_approvals",
+        "configuration_entries",
+        "configuration_snapshots",
+        "configuration_versions",
+        "feature_flags"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0012_monitoring_center",
+      "cli": "202606252600_monitoring_center",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "maintenance_windows",
+        "metric_snapshots",
+        "monitoring_alerts",
+        "monitoring_incidents",
+        "monitoring_services",
+        "service_health_snapshots"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0013_data_governance_center",
+      "cli": "202606252700_data_governance_center",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "consent_records",
+        "data_inventory_items",
+        "privacy_requests",
+        "regional_policies",
+        "retention_policies",
+        "sensitive_data_registers"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0014_api_platform",
+      "cli": "202606252800_api_platform",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "api_catalog_entries",
+        "api_clients",
+        "api_keys",
+        "api_rate_limits",
+        "api_usage_snapshots",
+        "api_webhooks"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0015_disaster_recovery_center",
+      "cli": "202606252900_disaster_recovery_center",
+      "note": "also 202606261300 different SQL",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "recovery_backup_records",
+        "recovery_critical_systems",
+        "recovery_dependency_links",
+        "recovery_playbook_records",
+        "recovery_restore_history",
+        "recovery_test_runs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0016_launch_control_center",
+      "cli": "202606253000_launch_control_center",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "launch_blockers",
+        "launch_checklist_entries",
+        "launch_dependencies",
+        "launch_readiness_items",
+        "launch_risks",
+        "launch_timeline_events"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0017_performance_center",
+      "cli": "202606254000_performance_center",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "performance_api_profiles",
+        "performance_capacity_plans",
+        "performance_database_profiles",
+        "performance_growth_forecasts",
+        "performance_metric_snapshots",
+        "performance_optimization_items"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0018_workflow_engine",
+      "cli": "202606255000_workflow_engine",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "workflow_actions",
+        "workflow_automation_snapshots",
+        "workflow_definitions",
+        "workflow_run_history",
+        "workflow_step_logs",
+        "workflow_triggers"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0019_reporting_center",
+      "cli": "202606256000_reporting_center",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "reporting_catalog_entries",
+        "reporting_export_history",
+        "reporting_filter_presets",
+        "reporting_run_history",
+        "reporting_schedules",
+        "reporting_snapshots"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0020_institutional_readiness_verification",
+      "cli": "202606257000_institutional_readiness_verification",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "readiness_critical_issues",
+        "readiness_dependency_links",
+        "readiness_snapshots",
+        "readiness_subsystem_contracts",
+        "readiness_verification_checks",
+        "readiness_verification_runs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0021_feature_flag_platform",
+      "cli": "202606258000_feature_flag_platform",
+      "appExists": true,
+      "cliExists": true,
+      "objects": [
+        "feature_flag_audits"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0022_row_level_security_hardening",
+      "cli": null,
+      "note": "MISSING FILE; applied live; SQL not found in CLI folder",
+      "appExists": false,
+      "cliExists": null,
+      "objects": [],
+      "confidence": "low"
+    },
+    {
+      "app": "0023_fix_security_definer_views",
+      "cli": "202606151800_fix_security_definer_views",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [],
+      "confidence": "medium"
+    },
+    {
+      "app": "0024_fix_function_security",
+      "cli": "202606152000_fix_function_security",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [],
+      "confidence": "medium"
+    },
+    {
+      "app": "0025_payment_fulfillment_processing",
+      "cli": "202606211300_payment_fulfillment_processing",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [],
+      "confidence": "medium"
+    },
+    {
+      "app": "0026_platform_health_center",
+      "cli": "202606259000_platform_health_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "platform_health_acknowledgements",
+        "platform_health_alerts",
+        "platform_health_incidents",
+        "platform_health_snapshots"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0027_abuse_protection_center",
+      "cli": "202606259100_abuse_protection_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "abuse_blocks",
+        "abuse_forensics",
+        "abuse_monitor_snapshots",
+        "abuse_rate_limits",
+        "abuse_reports"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0028_notification_center",
+      "cli": "202606261100_notification_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "notification_audit_log",
+        "notification_dead_letter",
+        "notification_messages",
+        "notification_templates"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0029_search_center",
+      "cli": "202606261200_search_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "search_index_snapshots",
+        "search_recent_queries",
+        "search_saved_queries"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0030_disaster_recovery_operations",
+      "cli": "202606261300_disaster_recovery_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "disaster_backup_monitors",
+        "disaster_recovery_operations",
+        "disaster_recovery_plans",
+        "disaster_recovery_reports"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0031_data_governance_privacy_center",
+      "cli": "202606261400_data_governance_privacy_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "audit_exports",
+        "governance_audit_log",
+        "legal_holds",
+        "policy_versions"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0032_launch_command_center",
+      "cli": "202606261500_launch_command_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "launch_command_blockers",
+        "launch_command_deployments",
+        "launch_command_incidents",
+        "launch_command_readiness_scores",
+        "launch_command_section_snapshots"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0033_quality_assurance_center",
+      "cli": "202606261600_quality_assurance_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "qa_automated_test_runs",
+        "qa_certification_records",
+        "qa_certification_reports",
+        "qa_manual_qa_runs",
+        "qa_release_gates"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0034_security_operations_center",
+      "cli": "202606261700_security_operations_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "security_ops_actions",
+        "security_ops_events",
+        "security_ops_incidents",
+        "security_ops_scores",
+        "security_ops_timeline"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0035_performance_engineering_center",
+      "cli": "202606261800_performance_engineering_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "performance_engineering_reports",
+        "performance_tool_runs",
+        "performance_track_snapshots"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0036_enterprise_api_center",
+      "cli": "202606261900_enterprise_api_center",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "enterprise_api_endpoints",
+        "enterprise_api_failed_jobs",
+        "enterprise_api_operations_snapshots",
+        "enterprise_api_tool_runs"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0037_institutional_readiness_audit",
+      "cli": "202606262000_institutional_readiness_audit",
+      "appExists": false,
+      "cliExists": true,
+      "objects": [
+        "readiness_audit_domains",
+        "readiness_audit_exports",
+        "readiness_trend_snapshots"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "app": "0038_member_boost_entitlements",
+      "cli": null,
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "app_member_boosts"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0039_boost_activation_integrity",
+      "cli": null,
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "boost_activation_repairs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0048_member_blocks",
+      "cli": null,
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "member_blocks"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0049_national_verification",
+      "cli": null,
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "verification_audit_logs",
+        "verification_events",
+        "verification_results",
+        "verification_sessions"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0050_experience_membership_billing",
+      "cli": null,
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "concierge_invoice_line_items",
+        "concierge_invoices",
+        "concierge_packages",
+        "member_experience_memberships",
+        "membership_plans",
+        "membership_products",
+        "payment_risk_assessments",
+        "pricing_promotions"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0051_discreet_visibility_policy",
+      "cli": null,
+      "appExists": true,
+      "cliExists": null,
+      "objects": [],
+      "confidence": "high"
+    },
+    {
+      "app": "0052_membership_commerce_events",
+      "cli": null,
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "membership_events"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0053_concierge_operations",
+      "cli": null,
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "concierge_case_events"
+      ],
+      "confidence": "high"
+    },
+    {
+      "app": "0054_discover_conversation_unlock",
+      "cli": null,
+      "appExists": true,
+      "cliExists": null,
+      "objects": [
+        "app_conversation_unlocks",
+        "discover_product_events"
+      ],
+      "confidence": "high"
+    }
+  ],
+  "cliOnly": [
+    "202606211200_saved_profiles",
+    "202606211430_signup_provisioning_recovery"
+  ]
+}

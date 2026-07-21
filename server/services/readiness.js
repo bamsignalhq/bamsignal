@@ -1,5 +1,6 @@
 import { config } from "../config.js";
 import { checkSchema, getDatabaseError, getDatabaseStatus } from "../db.js";
+import { buildStandardHealthPayload, getDeploymentMetadata } from "../deployMetadata.js";
 import { getStartupValidation } from "./startupBootstrap.js";
 import {
   buildRegistryAdminHealthSnapshot,
@@ -60,60 +61,65 @@ export async function readinessPayload(options = {}) {
   const registry = getServiceRegistry();
 
   if (!options.detailed) {
-    return {
-      ok: ready,
-      service: "bamsignal",
-      ready
-    };
+    return buildStandardHealthPayload({
+      application: "bamsignal",
+      status: ready ? "ok" : "degraded",
+      database: checks.database,
+      extra: { ok: ready, service: "bamsignal", ready }
+    });
   }
 
   const schemaStatus = config.databaseUrl ? await checkSchema({ force: true }) : null;
   const adminHealth = await buildRegistryAdminHealthSnapshot(process.env);
 
   return {
-    ok: ready,
-    service: "bamsignal",
-    ready,
-    mode: validation?.mode,
-    database: checks.database,
-    databaseError: getDatabaseError() || undefined,
-    schema: schemaStatus
-      ? {
-          ok: schemaStatus.ok,
-          reason: schemaStatus.reason,
-          missing: schemaStatus.missing?.length ? schemaStatus.missing : undefined
-        }
-      : undefined,
-    features: registryFeatureSnapshot(process.env).map((feature) => ({
-      id: feature.id,
-      label: feature.label,
-      tier: feature.tier,
-      enabled: feature.enabled,
-      healthy: feature.healthy,
-      featureState: feature.featureState,
-      reason: feature.reason,
-      metrics: feature.metrics
-    })),
-    integrations: registryFeatureSnapshot(process.env).map((feature) => ({
-      id: feature.id,
-      label: feature.label,
-      tier: feature.tier,
-      enabled: feature.enabled,
-      healthy: feature.healthy,
-      reason: feature.reason
-    })),
-    registry: {
-      services: registry.snapshot(process.env),
-      timing: registry.startupTimingReport()
-    },
-    enabledFeatures: validation?.enabledFeatures,
-    disabledFeatures: validation?.disabledFeatures,
-    paystack: adminHealth.paystack,
-    resend: adminHealth.resend,
-    signupEmail: adminHealth.signupEmail,
-    sendchamp: adminHealth.sendchamp,
-    firebase: adminHealth.firebase,
-    photoStorage: adminHealth.photoStorage,
-    telegram: adminHealth.telegram
+    ...buildStandardHealthPayload({
+      application: "bamsignal",
+      status: ready ? "ok" : "degraded",
+      database: checks.database,
+      extra: { ok: ready, service: "bamsignal", ready },
+      diagnostics: {
+        mode: validation?.mode,
+        schema: schemaStatus
+          ? {
+              ok: schemaStatus.ok,
+              reason: schemaStatus.reason,
+              missing: schemaStatus.missing?.length ? schemaStatus.missing : undefined
+            }
+          : undefined,
+        features: registryFeatureSnapshot(process.env).map((feature) => ({
+          id: feature.id,
+          label: feature.label,
+          tier: feature.tier,
+          enabled: feature.enabled,
+          healthy: feature.healthy,
+          featureState: feature.featureState,
+          reason: feature.reason,
+          metrics: feature.metrics
+        })),
+        integrations: registryFeatureSnapshot(process.env).map((feature) => ({
+          id: feature.id,
+          label: feature.label,
+          tier: feature.tier,
+          enabled: feature.enabled,
+          healthy: feature.healthy,
+          reason: feature.reason
+        })),
+        registry: {
+          services: registry.snapshot(process.env),
+          timing: registry.startupTimingReport()
+        },
+        enabledFeatures: validation?.enabledFeatures,
+        disabledFeatures: validation?.disabledFeatures,
+        paystack: adminHealth.paystack,
+        resend: adminHealth.resend,
+        signupEmail: adminHealth.signupEmail,
+        sendchamp: adminHealth.sendchamp,
+        firebase: adminHealth.firebase,
+        photoStorage: adminHealth.photoStorage,
+        telegram: adminHealth.telegram
+      }
+    }),
+    databaseError: getDatabaseError() || undefined
   };
 }

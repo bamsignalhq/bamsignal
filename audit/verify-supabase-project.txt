@@ -1,0 +1,17 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> bamsignal@0.1.0 verify:supabase-project
+> node scripts/verify-supabase-project.mjs --require-linked
+
+Supabase Migration Guard
+========================
+Repository:        bamsignalhq/bamsignal
+Application:       BamSignal
+Organization:      Stankings Group
+Environment:       production
+Canonical Domain:  https://bamsignal.com
+Expected Project:  nswiwxmavuqpuzlsascs
+config.toml:       nswiwxmavuqpuzlsascs
+.temp/project-ref: nswiwxmavuqpuzlsascs
+Detected Project:  nswiwxmavuqpuzlsascs
+Status:            PASS

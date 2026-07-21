@@ -28,7 +28,7 @@ export function buildLaunchInfraArtifacts(): LaunchInfraArtifactResult[] {
     const summaries: Record<LaunchInfraArtifactId, { status: LaunchInfraStatusId; score: number; text: string }> =
       {
         docker: { status: "ready", score: 95, text: "Multi-stage Dockerfile, HEALTHCHECK on /ready, smoke import in image." },
-        vercel: { status: "ready", score: 90, text: "vercel.json marked legacy — Coolify is production deploy path." },
+        coolify: { status: "ready", score: 95, text: "Coolify + Dockerfile is the only production deploy path." },
         supabase: { status: "ready", score: 92, text: "migrations/ + supabase/migrations; runtime via DATABASE_URL." },
         "build-scripts": { status: "ready", score: 93, text: "npm run build → sitemap + cache version + tsc + vite." },
         sitemap: { status: "ready", score: 94, text: "generate-sitemap.mjs — includes Signal Concierge public paths." },
@@ -75,7 +75,7 @@ export function buildLaunchInfraChecklist(): LaunchInfraCheck[] {
 
   add("docker", "Dockerfile HEALTHCHECK uses /ready", true, "HEALTHCHECK CMD fetches /ready");
   add("docker", "Runtime secrets not in Docker build args", true, "Dockerfile ARG list is VITE_* only");
-  add("vercel", "Vercel marked legacy", true, "vercel.json _comment documents Coolify canonical");
+  add("coolify", "Coolify is production deploy", true, "Dockerfile + Coolify webhook deploy on push to main");
   add("sitemap", "Signal Concierge privacy + FAQ in sitemap", true, "signal-concierge-sitemap-paths.mjs");
   add("robots", "Member routes disallowed", true, "/home, /discover, /hard, /consultant, etc.");
   add("manifest", "PWA manifest start_url is absolute path /", true, "manifest.webmanifest");

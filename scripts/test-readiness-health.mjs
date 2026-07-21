@@ -100,16 +100,24 @@ try {
   const ready = await readyResponse.json();
   assert(ready.ok === false && ready.ready === false, "/ready must report not ready when deps are missing");
   assert(
-    !("signupEmailTrace" in ready) &&
+    ready.status === "degraded" &&
+      ready.application === "bamsignal" &&
+      typeof ready.database === "string" &&
+      typeof ready.uptime === "number",
+    "/ready must return the standard health envelope publicly"
+  );
+  assert(
+    !("diagnostics" in ready) &&
+      !("signupEmailTrace" in ready) &&
       !("sendchampTrace" in ready) &&
-      !("database" in ready) &&
       !("paystack" in ready) &&
       !("photoStorage" in ready),
-    "/ready must not leak internal dependency details publicly"
+    "/ready must not expose detailed diagnostics without auth"
   );
 
   const publicPayload = await readinessPayload({ detailed: false });
   assert(publicPayload.ready === false, "readiness payload must be false in smoke env without secrets");
+  assert(!("diagnostics" in publicPayload), "public readiness payload must omit diagnostics");
 
   console.log("readiness health tests ok");
   process.exit(0);

@@ -1,6 +1,6 @@
 export type LaunchInfraArtifactId =
   | "docker"
-  | "vercel"
+  | "coolify"
   | "supabase"
   | "build-scripts"
   | "sitemap"

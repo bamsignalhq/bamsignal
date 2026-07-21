@@ -4,6 +4,23 @@ BamSignal is a React + Vite social discovery platform for Nigeria — discover p
 
 **Production:** https://bamsignal.com
 
+## Engineering standards
+
+| Standard | Document |
+|----------|----------|
+| **Platform governance (ACTIVE)** | [docs/engineering/PLATFORM_GOVERNANCE.md](./docs/engineering/PLATFORM_GOVERNANCE.md) |
+| Project identity / Supabase ref | [docs/engineering/PROJECT_IDENTITY.md](./docs/engineering/PROJECT_IDENTITY.md) |
+| Contributing / PR checklists | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+
+**Database governance:** `migrations/` is the only canonical migration source. Flow: new migration → `npm run migrate` → commit → PR → merge → Coolify → production. Historical migrations are immutable. Next migration: **0056+** (baseline **0055**, Recovery Baseline — July 2026).
+
+```bash
+npm run verify:platform       # identity + migration integrity
+npm run migrate               # apply pending migrations/*.sql
+```
+
+Recovery forensic record: `audit/RECOVERY_COMPLETION.md`.
+
 ## Engineering documentation
 
 | Document | Description |

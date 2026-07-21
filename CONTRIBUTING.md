@@ -61,6 +61,7 @@ Production rules live in `.cursor/rules/bamsignal.mdc`. Summary:
 ## Required commands (code changes)
 
 ```bash
+npm run verify:platform       # identity + migration integrity
 npm run build                 # tsc + vite — must pass
 npm run lint                  # tsc --noEmit
 npm run test:server-import    # server smoke test
@@ -128,14 +129,43 @@ Pre-push hook runs `test:server-import` after `npm install`.
 
 ---
 
-## Migrations
+## Database workflow
+
+Canonical policy: [docs/engineering/PLATFORM_GOVERNANCE.md](./docs/engineering/PLATFORM_GOVERNANCE.md)  
+Baseline: **Recovery Baseline — July 2026** (next migration **0056+**).
+
+### Migration policy
+
+- **`migrations/` is the only canonical source.**
+- Add a **new** file: `NNNN_snake_case_description.sql` (never edit/renumber applied files).
+- Apply locally / against the linked project: `npm run migrate`
+- Coolify applies pending migrations on deploy via startup migrate.
+- Supabase CLI is for inspection/local/debug only — **not** canonical history.
+- Do **not** use `supabase migration repair` or `db push` to fix repository problems.
 
 ```bash
-npm run migrate               # applies migrations/*.sql
-npm run verify:database
+npm run verify:migrations     # numbering, duplicates, gaps, hashes
+npm run verify:supabase-project
+npm run migrate               # verify guards + apply migrations/*.sql
+npm run verify:database       # optional schema checks
 ```
 
-Add numbered SQL in `migrations/` and mirror critical changes in `supabase/migrations/` when needed.
+### PR checklist (database / platform)
+
+- [ ] New schema work is a forward migration (`0056+`) — no historical edits
+- [ ] `npm run verify:platform` PASS
+- [ ] `npm run lint` PASS
+- [ ] `npm run test:server-import` PASS
+- [ ] `npm run build` PASS
+- [ ] PR description notes migration ID(s) if any
+
+### Deployment checklist
+
+- [ ] PR merged to the deploy branch (`main` for production)
+- [ ] Coolify rebuild succeeded
+- [ ] `/ready` healthy
+- [ ] If a migration shipped: confirm `schema_migrations` contains the new ID
+- [ ] No manual production DDL
 
 ---
 
@@ -151,6 +181,8 @@ Add numbered SQL in `migrations/` and mirror critical changes in `supabase/migra
 
 | Document | Topic |
 |----------|-------|
+| [docs/engineering/PLATFORM_GOVERNANCE.md](./docs/engineering/PLATFORM_GOVERNANCE.md) | Permanent DB / CI / deploy governance |
+| [docs/engineering/PROJECT_IDENTITY.md](./docs/engineering/PROJECT_IDENTITY.md) | App identity + Supabase ref |
 | [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) | Boundaries, layout, data flow |
 | [DATABASE_ARCHITECTURE.md](./DATABASE_ARCHITECTURE.md) | Schema, migrations |
 | [JOURNEY_ENGINE.md](./JOURNEY_ENGINE.md) | Concierge journey lifecycle |

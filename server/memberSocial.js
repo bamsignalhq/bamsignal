@@ -486,6 +486,29 @@ export async function acceptIncomingSignal({ email, phone, signalId }) {
     /* conversation lifecycle must not block match creation */
   }
 
+  void import("./services/passportIntegration/index.js")
+    .then(({ handlePlatformTrustEvent }) =>
+      Promise.all([
+        handlePlatformTrustEvent({
+          memberId: own.id,
+          sourceSystem: "matching",
+          eventType: "signal_accepted",
+          correlationId: `match:${matchId}`,
+          payload: { signalId, matchId }
+        }),
+        handlePlatformTrustEvent({
+          memberId: signal.sender_profile_id,
+          sourceSystem: "matching",
+          eventType: "match_created",
+          correlationId: `match:${matchId}:sender`,
+          payload: { signalId, matchId }
+        })
+      ])
+    )
+    .catch((error) => {
+      console.warn("[bamsignal] passport match hook failed:", error?.message || error);
+    });
+
   return { match: matchForAcceptor, signalId };
 }
 

@@ -94,6 +94,27 @@ export async function transitionAccountLifecycle(input = {}) {
       });
     }
 
+    if (input.profileId) {
+      const trustEvent =
+        newStatus === "profile_completion" || newStatus === "active"
+          ? "profile_completed"
+          : newStatus === "email_verification"
+            ? "email_verified"
+            : null;
+      if (trustEvent) {
+        void import("../passportIntegration/index.js")
+          .then(({ handlePlatformTrustEvent }) =>
+            handlePlatformTrustEvent({
+              memberId: input.profileId,
+              sourceSystem: "authentication",
+              eventType: trustEvent,
+              correlationId: `lifecycle:${logId}`
+            })
+          )
+          .catch(() => {});
+      }
+    }
+
     return { ok: true, logId, previousStatus, newStatus };
   } catch (error) {
     console.warn("[auth:lifecycle] transition failed", error?.message || error);

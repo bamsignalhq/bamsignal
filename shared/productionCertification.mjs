@@ -11,7 +11,7 @@ import { resolveStartupMode } from "./startupExecutionMode.mjs";
 
 const rootPath = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-export const PRODUCTION_CERT_VERSION = "1.5.0";
+export const PRODUCTION_CERT_VERSION = "1.6.0";
 
 /**
  * @param {string} command

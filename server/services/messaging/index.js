@@ -164,5 +164,19 @@ export async function handleMessagingSendEvent(input = {}) {
     });
   }
 
+  if (!input.failed && !input.suppressed && input.senderMemberId) {
+    void import("../passportIntegration/index.js")
+      .then(({ handlePlatformTrustEvent }) =>
+        handlePlatformTrustEvent({
+          memberId: input.senderMemberId,
+          sourceSystem: "messaging",
+          eventType: "message_sent",
+          correlationId: input.messageId || input.message?.id,
+          payload: { conversationId: input.conversationId || input.threadId }
+        })
+      )
+      .catch(() => {});
+  }
+
   return pipeline;
 }

@@ -83,6 +83,7 @@ import nationalVerificationAdminHandler from "../api/verification/admin.js";
 import walletHandler from "../api/wallet/index.js";
 import passportSignalsHandler from "../api/passport/signals.js";
 import passportAdminSignalsHandler from "../api/passport/admin/signals.js";
+import passportIntegrationHandler from "../api/passport/integration.js";
 import { buildSitemapXml, getRobotsTxt } from "./seoSitemap.js";
 
 /**
@@ -250,6 +251,8 @@ export function createApp(options = {}) {
   mountHandler(app, "get", "/api/passport/admin/signals", passportAdminSignalsHandler);
   mountHandler(app, "get", "/api/passport/admin/signals/:signalId", passportAdminSignalsHandler);
   mountHandler(app, "post", "/api/passport/admin/signals/:signalId/:action", passportAdminSignalsHandler);
+  mountHandler(app, "post", "/api/passport/integration", passportIntegrationHandler);
+  mountHandler(app, "get", "/api/passport/integration", passportIntegrationHandler);
   app.use(paystackRouter);
 
   app.get("/sitemap.xml", (_req, res) => {

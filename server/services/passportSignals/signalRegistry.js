@@ -36,7 +36,20 @@ export const SIGNAL_TYPE_DEFAULTS = {
   successful_transaction: { category: "marketplace", humanReview: "none" },
   inspection_passed: { category: "marketplace", humanReview: "recommended" },
   property_verified: { category: "verification", humanReview: "required" },
-  dispute_closed: { category: "compliance", humanReview: "completed" }
+  dispute_closed: { category: "compliance", humanReview: "completed" },
+  email_verified: { category: "verification", humanReview: "none" },
+  profile_completed: { category: "verification", humanReview: "none" },
+  premium_active: { category: "financial", humanReview: "none" },
+  payment_successful: { category: "financial", humanReview: "none" },
+  payment_refund: { category: "financial", humanReview: "recommended" },
+  conversation_started: { category: "community", humanReview: "none" },
+  message_delivered: { category: "community", humanReview: "none" },
+  message_read: { category: "community", humanReview: "none" },
+  member_reported: { category: "compliance", humanReview: "required" },
+  moderation_action: { category: "compliance", humanReview: "required" },
+  concierge_engaged: { category: "community", humanReview: "none" },
+  support_resolved: { category: "community", humanReview: "none" },
+  verification_completed: { category: "verification", humanReview: "required" }
 };
 
 export const PASSPORT_ID_PATTERN = /^SKL-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}-[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{4}$/i;

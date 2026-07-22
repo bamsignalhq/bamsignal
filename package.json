@@ -26,6 +26,8 @@
     "certify:messaging-journey": "node scripts/certify-messaging-journey.mjs",
     "test:operations-core": "node scripts/test-operations-core.mjs",
     "certify:operations-journey": "node scripts/certify-operations-journey.mjs",
+    "test:passport-integration": "node scripts/test-passport-integration.mjs",
+    "certify:passport-journey": "node scripts/certify-passport-journey.mjs",
     "generate:launch-readiness": "node scripts/generate-launch-readiness.mjs",
     "test:service-registry": "node scripts/test-service-registry.mjs",
     "test:consistency-audit": "node scripts/test-consistency-audit.mjs",

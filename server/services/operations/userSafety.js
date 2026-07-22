@@ -100,6 +100,32 @@ async function recordSafetyAction(input = {}) {
   incrementOperationsMetric("safetyActions", 1);
   incrementOperationsMetric(`safety_${actionType}`, 1);
 
+  if (actionType === "suspend" && input.targetProfileId) {
+    void import("../passportIntegration/index.js")
+      .then(({ handlePlatformTrustEvent }) =>
+        handlePlatformTrustEvent({
+          memberId: input.targetProfileId,
+          sourceSystem: "operations",
+          eventType: "user_suspended",
+          correlationId,
+          payload: { reason: input.reason }
+        })
+      )
+      .catch(() => {});
+  }
+  if ((actionType === "unsuspend" || actionType === "remove_shadow_ban") && input.targetProfileId) {
+    void import("../passportIntegration/index.js")
+      .then(({ handlePlatformTrustEvent }) =>
+        handlePlatformTrustEvent({
+          memberId: input.targetProfileId,
+          sourceSystem: "operations",
+          eventType: "user_restored",
+          correlationId
+        })
+      )
+      .catch(() => {});
+  }
+
   return { ok: true, logId, correlationId, actionType };
 }
 

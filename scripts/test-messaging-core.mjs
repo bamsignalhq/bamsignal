@@ -110,7 +110,7 @@ incrementMessagingMetric("messagesSent", 1);
 const metrics = getMessagingObservabilityMetrics();
 assert(metrics.messagesSent >= 1, "messaging metrics");
 
-assert(PRODUCTION_CERT_VERSION === "1.5.0", "certification version for Sprint 5");
+assert(PRODUCTION_CERT_VERSION === "1.6.0", "certification version for Sprint 6");
 
 for (const doc of [
   "docs/architecture/MESSAGING.md",

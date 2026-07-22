@@ -2,9 +2,9 @@
   "application": "BamSignal",
   "repository": "bamsignalhq/bamsignal",
   "supabaseProject": "nswiwxmavuqpuzlsascs",
-  "certificationVersion": "1.5.0",
-  "sprint": "Sprint 5 — Admin Console, Moderation, Concierge Operations & Customer Support",
-  "generatedAt": "2026-07-22T13:21:37.254Z",
+  "certificationVersion": "1.6.0",
+  "sprint": "Sprint 6 — Digital Trust Passport Integration, Trust Signals & Reputation Platform",
+  "generatedAt": "2026-07-22T13:38:53.816Z",
   "overallReadinessPercentage": 97,
   "categories": {
     "infrastructure": {
@@ -12,9 +12,7 @@
       "present": 3,
       "total": 3,
       "blockingIssues": [],
-      "recommendations": [
-        "Maintain migration certification on every sprint"
-      ]
+      "recommendations": []
     },
     "authentication": {
       "score": 100,
@@ -71,17 +69,26 @@
       "blockingIssues": [],
       "recommendations": []
     },
+    "trustPlatform": {
+      "score": 100,
+      "present": 4,
+      "total": 4,
+      "blockingIssues": [],
+      "recommendations": [
+        "Trust Engine scoring deferred — structured inputs ready"
+      ]
+    },
     "documentation": {
       "score": 100,
-      "present": 7,
-      "total": 7,
+      "present": 8,
+      "total": 8,
       "blockingIssues": [],
       "recommendations": []
     },
     "certification": {
       "score": 100,
-      "present": 2,
-      "total": 2,
+      "present": 3,
+      "total": 3,
       "blockingIssues": [],
       "recommendations": []
     }
@@ -91,11 +98,12 @@
     "fc0abae feat(infrastructure): production hardening and certification",
     "5343070 feat(auth): implement authentication lifecycle and session management",
     "65a706a feat(finance): implement financial core",
-    "a609d37 feat(messaging): implement messaging, notifications, presence and realtime"
+    "a609d37 feat(messaging): implement messaging, notifications, presence and realtime",
+    "d9c4631 feat(operations): implement admin console, moderation, concierge and support platform"
   ],
   "nextActions": [
-    "Push milestone commits once GitHub authentication is confirmed",
-    "Run npm run certify:production after migration deploy",
-    "Wire operations admin UI to /api/operations/admin contracts"
+    "Apply migration 0063 on Supabase before production trust sync",
+    "Push commits once GitHub authentication is confirmed",
+    "Begin Yike Production Sprint 1 after Sprint 6 approval"
   ]
 }

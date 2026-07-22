@@ -89,7 +89,7 @@ incrementOperationsMetric("auditRecords", 1);
 const metrics = getOperationsObservabilityMetrics();
 assert(metrics.auditRecords >= 1, "operations metrics");
 
-assert(PRODUCTION_CERT_VERSION === "1.5.0", "certification version for Sprint 5");
+assert(PRODUCTION_CERT_VERSION === "1.6.0", "certification version for Sprint 6");
 
 assert(existsSync(join(rootPath, "scripts/certify-operations-journey.mjs")), "operations journey cert");
 assert(existsSync(join(rootPath, "scripts/generate-launch-readiness.mjs")), "launch readiness generator");

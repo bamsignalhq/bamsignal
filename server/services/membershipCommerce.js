@@ -469,6 +469,17 @@ export async function activateMembershipFromPayment({
       } catch {
         /* subscription state must not block fulfillment */
       }
+      void import("./passportIntegration/index.js")
+        .then(({ handlePlatformTrustEvent }) =>
+          handlePlatformTrustEvent({
+            memberId: ctx.member.id,
+            sourceSystem: "finance",
+            eventType: "subscription_activated",
+            correlationId: ref,
+            payload: { productId, planId, experienceMode: mode }
+          })
+        )
+        .catch(() => {});
     }
     return activation;
   });

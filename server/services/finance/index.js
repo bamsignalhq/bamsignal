@@ -52,6 +52,30 @@ export async function handlePaymentFinancialEvent(input = {}) {
 
   if (input.lifecycleStatus === "successful" && input.memberId) {
     await deriveMemberWalletSnapshot(input.memberId, { publishEvent: true });
+    void import("../passportIntegration/index.js")
+      .then(({ handlePlatformTrustEvent }) =>
+        handlePlatformTrustEvent({
+          memberId: input.memberId,
+          sourceSystem: "finance",
+          eventType: "payment_successful",
+          correlationId: input.reference || input.transactionId,
+          payload: { amountKobo: input.amountKobo, productType: input.productType }
+        })
+      )
+      .catch(() => {});
+  }
+
+  if (input.lifecycleStatus === "refunded" && input.memberId) {
+    void import("../passportIntegration/index.js")
+      .then(({ handlePlatformTrustEvent }) =>
+        handlePlatformTrustEvent({
+          memberId: input.memberId,
+          sourceSystem: "finance",
+          eventType: "payment_refund",
+          correlationId: input.reference || input.transactionId
+        })
+      )
+      .catch(() => {});
   }
 
   return result;

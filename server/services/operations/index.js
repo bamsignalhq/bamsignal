@@ -109,6 +109,21 @@ export async function handleReportSubmittedEvent(input = {}) {
     reporterUserKey: input.reporterUserKey || input.userKey || null,
     reason: input.reason || "Member report",
     metadata: input.metadata || input.payload || {}
+  }).then(async (result) => {
+    if (input.reporterUserKey || input.memberId) {
+      void import("../passportIntegration/index.js")
+        .then(({ handlePlatformTrustEvent }) =>
+          handlePlatformTrustEvent({
+            memberId: input.reporterMemberId || null,
+            sourceSystem: "moderation",
+            eventType: "report_submitted",
+            correlationId: reportId,
+            payload: { reportedProfileId: profileId }
+          })
+        )
+        .catch(() => {});
+    }
+    return result;
   });
 }
 

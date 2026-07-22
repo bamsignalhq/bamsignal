@@ -3,7 +3,7 @@
  * Launch Readiness Scorecard — machine-readable ecosystem readiness tracker.
  * Usage: npm run generate:launch-readiness
  */
-import { writeFileSync, existsSync, readFileSync } from "node:fs";
+import { writeFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { PRODUCTION_CERT_VERSION } from "../shared/productionCertification.mjs";
@@ -28,18 +28,16 @@ function scoreCategory(present, total, blockers = [], recommendations = []) {
 
 const categories = {
   infrastructure: scoreCategory(
-    fileExists("migrations/0062_admin_operations_core.sql") &&
+    fileExists("migrations/0063_passport_integration.sql") &&
       fileExists("server/services/schemaVerification.js") &&
       fileExists("certification/production/run.mjs")
       ? 3
       : 0,
-    3,
-    [],
-    ["Maintain migration certification on every sprint"]
+    3
   ),
   authentication: scoreCategory(
     fileExists("server/services/auth/lifecycle.js") &&
-      fileExists("server/services/auth/sessions.js") &&
+      fileExists("server/services/passportIntegration/bridge.js") &&
       fileExists("scripts/test-auth-lifecycle.mjs")
       ? 3
       : 0,
@@ -96,24 +94,37 @@ const categories = {
       : 0,
     3
   ),
+  trustPlatform: scoreCategory(
+    fileExists("server/services/passportIntegration/index.js") &&
+      fileExists("migrations/0063_passport_integration.sql") &&
+      fileExists("scripts/certify-passport-journey.mjs") &&
+      fileExists("docs/architecture/TRUST_SIGNALS.md")
+      ? 4
+      : 0,
+    4,
+    [],
+    ["Trust Engine scoring deferred — structured inputs ready"]
+  ),
   documentation: scoreCategory(
     [
+      "docs/architecture/TRUST_SIGNALS.md",
+      "docs/architecture/PASSPORT_INTEGRATION.md",
+      "docs/architecture/REPUTATION_PLATFORM.md",
+      "docs/operations/PASSPORT_RUNBOOK.md",
       "docs/architecture/ADMIN.md",
       "docs/architecture/MODERATION.md",
       "docs/architecture/CONCIERGE.md",
-      "docs/architecture/SUPPORT.md",
-      "docs/architecture/FEATURE_FLAGS.md",
-      "docs/operations/ADMIN_RUNBOOK.md",
-      "docs/operations/MODERATION_RUNBOOK.md"
+      "docs/architecture/SUPPORT.md"
     ].filter(fileExists).length,
-    7
+    8
   ),
   certification: scoreCategory(
-    fileExists("scripts/certify-operations-journey.mjs") &&
+    fileExists("scripts/certify-passport-journey.mjs") &&
+      fileExists("scripts/certify-operations-journey.mjs") &&
       fileExists("certification/production/run.mjs")
-      ? 2
+      ? 3
       : 0,
-    2
+    3
   )
 };
 
@@ -127,7 +138,7 @@ const report = {
   repository: "bamsignalhq/bamsignal",
   supabaseProject: "nswiwxmavuqpuzlsascs",
   certificationVersion: PRODUCTION_CERT_VERSION,
-  sprint: "Sprint 5 — Admin Console, Moderation, Concierge Operations & Customer Support",
+  sprint: "Sprint 6 — Digital Trust Passport Integration, Trust Signals & Reputation Platform",
   generatedAt,
   overallReadinessPercentage,
   categories,
@@ -136,12 +147,13 @@ const report = {
     "fc0abae feat(infrastructure): production hardening and certification",
     "5343070 feat(auth): implement authentication lifecycle and session management",
     "65a706a feat(finance): implement financial core",
-    "a609d37 feat(messaging): implement messaging, notifications, presence and realtime"
+    "a609d37 feat(messaging): implement messaging, notifications, presence and realtime",
+    "d9c4631 feat(operations): implement admin console, moderation, concierge and support platform"
   ],
   nextActions: [
-    "Push milestone commits once GitHub authentication is confirmed",
-    "Run npm run certify:production after migration deploy",
-    "Wire operations admin UI to /api/operations/admin contracts"
+    "Apply migration 0063 on Supabase before production trust sync",
+    "Push commits once GitHub authentication is confirmed",
+    "Begin Yike Production Sprint 1 after Sprint 6 approval"
   ]
 };
 
@@ -168,7 +180,7 @@ const md = [
   "",
   ...report.nextActions.map((a) => `- ${a}`),
   "",
-  "This scorecard is the authoritative launch tracker for BamSignal Phase C."
+  "BamSignal backend platform is feature-complete after Trust Platform integration."
 ].join("\n");
 
 writeFileSync(join(rootPath, "launch-readiness.md"), md);

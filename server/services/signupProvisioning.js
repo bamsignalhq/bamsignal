@@ -757,6 +757,30 @@ export async function runSignupProvisioning(body = {}, provisioning = {}) {
       /* auth audit must not block signup */
     }
 
+    void import("./passportIntegration/index.js")
+      .then(({ handlePlatformTrustEvent }) =>
+        handlePlatformTrustEvent({
+          memberId: profileRow.id,
+          userKey: userKey || normalizeSignupEmail(body.email),
+          sourceSystem: "authentication",
+          eventType: "signup",
+          correlationId: `signup:${profileRow.id}`
+        })
+      )
+      .then(() =>
+        import("./passportIntegration/index.js").then(({ handlePlatformTrustEvent }) =>
+          handlePlatformTrustEvent({
+            memberId: profileRow.id,
+            sourceSystem: "authentication",
+            eventType: "email_verified",
+            correlationId: `email_verified:${profileRow.id}`
+          })
+        )
+      )
+      .catch((error) => {
+        console.warn("[bamsignal] passport signup hook failed:", error?.message || error);
+      });
+
     return {
       ok: true,
       email: normalizeSignupEmail(body.email),

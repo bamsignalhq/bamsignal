@@ -1,0 +1,101 @@
+{
+  "application": "BamSignal",
+  "repository": "bamsignalhq/bamsignal",
+  "supabaseProject": "nswiwxmavuqpuzlsascs",
+  "certificationVersion": "1.5.0",
+  "sprint": "Sprint 5 — Admin Console, Moderation, Concierge Operations & Customer Support",
+  "generatedAt": "2026-07-22T13:21:37.254Z",
+  "overallReadinessPercentage": 97,
+  "categories": {
+    "infrastructure": {
+      "score": 100,
+      "present": 3,
+      "total": 3,
+      "blockingIssues": [],
+      "recommendations": [
+        "Maintain migration certification on every sprint"
+      ]
+    },
+    "authentication": {
+      "score": 100,
+      "present": 3,
+      "total": 3,
+      "blockingIssues": [],
+      "recommendations": []
+    },
+    "finance": {
+      "score": 100,
+      "present": 3,
+      "total": 3,
+      "blockingIssues": [],
+      "recommendations": []
+    },
+    "messaging": {
+      "score": 100,
+      "present": 3,
+      "total": 3,
+      "blockingIssues": [],
+      "recommendations": []
+    },
+    "moderation": {
+      "score": 100,
+      "present": 3,
+      "total": 3,
+      "blockingIssues": [],
+      "recommendations": [
+        "Wire production moderator UI to /api/operations/admin"
+      ]
+    },
+    "support": {
+      "score": 67,
+      "present": 2,
+      "total": 3,
+      "blockingIssues": [
+        "Member-facing support ticket submission UI not yet wired"
+      ],
+      "recommendations": [
+        "Connect help center to createSupportTicket API"
+      ]
+    },
+    "concierge": {
+      "score": 100,
+      "present": 3,
+      "total": 3,
+      "blockingIssues": [],
+      "recommendations": []
+    },
+    "operations": {
+      "score": 100,
+      "present": 3,
+      "total": 3,
+      "blockingIssues": [],
+      "recommendations": []
+    },
+    "documentation": {
+      "score": 100,
+      "present": 7,
+      "total": 7,
+      "blockingIssues": [],
+      "recommendations": []
+    },
+    "certification": {
+      "score": 100,
+      "present": 2,
+      "total": 2,
+      "blockingIssues": [],
+      "recommendations": []
+    }
+  },
+  "milestoneHistory": [
+    "3d3658a feat(passport): implement trust signal platform (v2.0-v2.2)",
+    "fc0abae feat(infrastructure): production hardening and certification",
+    "5343070 feat(auth): implement authentication lifecycle and session management",
+    "65a706a feat(finance): implement financial core",
+    "a609d37 feat(messaging): implement messaging, notifications, presence and realtime"
+  ],
+  "nextActions": [
+    "Push milestone commits once GitHub authentication is confirmed",
+    "Run npm run certify:production after migration deploy",
+    "Wire operations admin UI to /api/operations/admin contracts"
+  ]
+}

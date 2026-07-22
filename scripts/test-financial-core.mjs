@@ -86,7 +86,7 @@ incrementFinancialMetric("successfulPayments", 1);
 const metrics = getFinancialObservabilityMetrics();
 assert(metrics.successfulPayments >= 1, "financial metrics");
 
-assert(PRODUCTION_CERT_VERSION === "1.4.0", "certification version for Sprint 4");
+assert(PRODUCTION_CERT_VERSION === "1.5.0", "certification version for Sprint 5");
 
 for (const doc of [
   "docs/architecture/PAYMENTS.md",

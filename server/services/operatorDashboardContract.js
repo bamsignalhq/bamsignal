@@ -12,6 +12,7 @@ import { PRODUCTION_CERT_VERSION } from "../../shared/productionCertification.mj
 import { getAuthObservabilityMetrics } from "./auth/observability.js";
 import { getFinancialObservabilityMetrics } from "./finance/observability.js";
 import { getMessagingObservabilityMetrics } from "./messaging/observability.js";
+import { getOperationsObservabilityMetrics } from "./operations/observability.js";
 
 export async function buildOperatorDashboardSnapshot() {
   const deploy = getDeploymentMetadata("bamsignal");
@@ -75,7 +76,8 @@ export async function buildOperatorDashboardSnapshot() {
       pinAuthMemoryFallbacks: infrastructure.pinAuthMemoryFallbacks,
       auth: getAuthObservabilityMetrics(),
       finance: getFinancialObservabilityMetrics(),
-      messaging: getMessagingObservabilityMetrics()
+      messaging: getMessagingObservabilityMetrics(),
+      operations: getOperationsObservabilityMetrics()
     }
   };
 }

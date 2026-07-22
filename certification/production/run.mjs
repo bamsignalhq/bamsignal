@@ -64,6 +64,12 @@ function main() {
   const messagingJourney = runNpmScript("certify:messaging-journey");
   checks.push({ id: "messaging-journey", label: "Messaging Journey", ...messagingJourney });
 
+  const operationsCore = runNpmScript("test:operations-core");
+  checks.push({ id: "operations-core", label: "Operations Core", ...operationsCore });
+
+  const operationsJourney = runNpmScript("certify:operations-journey");
+  checks.push({ id: "operations-journey", label: "Operations Journey", ...operationsJourney });
+
   const fortress = runNpmScript("test:fortress");
   checks.push({ id: "fortress", label: "Fortress Suite", ...fortress });
 

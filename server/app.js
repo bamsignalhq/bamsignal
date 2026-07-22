@@ -36,6 +36,7 @@ import financeBillingHandler from "../api/finance/billing.js";
 import financeAdminHandler from "../api/finance/admin.js";
 import messagingMemberHandler from "../api/messaging/member.js";
 import messagingAdminHandler from "../api/messaging/admin.js";
+import operationsAdminHandler from "../api/operations/admin.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
 import consultationPaymentsHandler from "./routes/consultationPayments.js";
 import consultationSchedulingHandler from "./routes/consultationScheduling.js";
@@ -184,6 +185,7 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/finance/admin", financeAdminHandler);
   mountHandler(app, "post", "/api/messaging/member", messagingMemberHandler);
   mountHandler(app, "post", "/api/messaging/admin", messagingAdminHandler);
+  mountHandler(app, "post", "/api/operations/admin", operationsAdminHandler);
   mountHandler(app, "post", "/api/verify/sms/start", smsVerifyStartHandler);
   mountHandler(app, "post", "/api/verify/sms/confirm", smsVerifyConfirmHandler);
   mountHandler(app, "post", "/api/verify/whatsapp/start", whatsappVerifyStartHandler);

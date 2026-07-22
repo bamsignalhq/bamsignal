@@ -254,6 +254,19 @@ export async function persistReport({ email, phone, report }) {
         hasDetails: Boolean(report.details)
       }
     });
+    void import("./operations/index.js")
+      .then(({ handleReportSubmittedEvent }) =>
+        handleReportSubmittedEvent({
+          reportId: String(row.id),
+          profileId: report.profileId,
+          reporterUserKey: identity.userKey,
+          reason: report.reason,
+          payload: report
+        })
+      )
+      .catch((error) => {
+        console.warn("[bamsignal] ops report hook failed:", error?.message || error);
+      });
   }
   return row;
 }

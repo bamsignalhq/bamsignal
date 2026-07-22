@@ -7,9 +7,9 @@
  * @see docs/architecture/DIGITAL_TRUST_CONSTITUTION.md
  */
 
-export const CONSTITUTION_VERSION = "1.0.0" as const;
+export const CONSTITUTION_VERSION = "1.2.0" as const;
 
-/** The ten constitutional principles of the Stankings Digital Trust Passport. */
+/** The constitutional principles of the Stankings Digital Trust Passport. */
 export const CONSTITUTIONAL_PRINCIPLES = [
   {
     id: "one_human_one_passport",
@@ -70,6 +70,25 @@ export const CONSTITUTIONAL_PRINCIPLES = [
     number: 10,
     title: "Ecosystem First",
     summary: "New products integrate as Trust Contributors — never duplicate identity or trust systems."
+  },
+  {
+    id: "trust_can_be_earned",
+    number: 11,
+    title: "Trust Can Be Earned",
+    summary:
+      "The Passport must never permanently define a person by isolated mistakes. " +
+      "Trust evolves through verified identity, positive participation, responsible behaviour, " +
+      "completed transactions, successful interactions, dispute resolution, and long-term consistency. " +
+      "Historical events remain auditable; trust summaries remain current."
+  },
+  {
+    id: "legacy_is_built",
+    number: 12,
+    title: "Legacy Is Built",
+    summary:
+      "Legacy recognizes sustained positive contribution over time. It cannot be purchased, granted arbitrarily, " +
+      "or inherited. Legacy emerges from years of verified participation, responsible conduct, meaningful contribution, " +
+      "and enduring trust. Legacy represents stewardship rather than status."
   }
 ] as const;
 
@@ -83,7 +102,10 @@ export const PASSPORT_PROHIBITIONS = [
   "Never share data externally without consent or legal basis",
   "Never act as autonomous judge in employment, credit, or legal decisions",
   "Never duplicate identity across products",
-  "Never opaque black-box trust without explainability path"
+  "Never opaque black-box trust without explainability path",
+  "Never permanently define a person by isolated mistakes",
+  "Never purchase, arbitrarily grant, or inherit Legacy recognition",
+  "Never calculate Legacy directly as a score or trust dimension"
 ] as const;
 
 /** Mission statement — constitution preamble. */

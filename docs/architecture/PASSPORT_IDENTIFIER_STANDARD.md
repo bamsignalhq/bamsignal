@@ -189,6 +189,24 @@ SKA-TM84-QP73
 
 No implementation beyond **SKL** is required in v1.0.
 
+### Future linkable Passport types (v1.1 — documented only)
+
+Reserved namespaces may eventually link across ecosystem participation:
+
+```text
+Individual Passport (SKL)
+  ↓ may link
+Business Passport (SKB)
+  ↓ may link
+Organization Passport (SKO)
+  ↓ may link
+Government Passport (SKG)
+  ↓ may link
+Autonomous Agent Passport (SKA)
+```
+
+Linking requires architectural review — see [TRUST_EVOLUTION_MODEL.md](./TRUST_EVOLUTION_MODEL.md).
+
 ---
 
 ## Development migration

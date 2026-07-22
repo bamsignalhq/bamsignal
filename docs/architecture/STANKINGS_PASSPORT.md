@@ -48,6 +48,20 @@ Four independent concepts:
 | **Reputation** | Behaviour history |
 | **Audit** | Event timeline |
 
+### Complete foundation stack (v1.2)
+
+```text
+Human
+  ↓
+Identity → Verification → Trust → Reputation → Audit
+  ↓
+Journey → Timeline → Achievements → Legacy
+  ↓
+Digital Trust Passport
+```
+
+Legacy is distinct from Lifecycle, Trust Timeline, and Achievements. See [LEGACY_ARCHITECTURE.md](./LEGACY_ARCHITECTURE.md).
+
 See [DIGITAL_TRUST_MODEL.md](./DIGITAL_TRUST_MODEL.md) for full trust architecture.
 
 ---
@@ -133,6 +147,8 @@ See `src/passport/externalApi.ts`
 | External API interfaces | `src/passport/externalApi.ts` |
 | Privacy | `src/passport/privacy.ts` |
 | **Governance** | `src/passport/governance/` |
+| **Trust evolution** | `src/passport/evolution/` |
+| **Legacy layer** | `src/passport/legacy/` |
 | **Maturity registry** | `src/passport/governance/maturity.ts` |
 | Audit timeline | `src/passport/audit.ts` |
 | Workspaces | `src/workspaces/` |
@@ -223,6 +239,8 @@ flowchart TB
 ## Related documentation
 
 - **[PASSPORT_IDENTIFIER_STANDARD.md](./PASSPORT_IDENTIFIER_STANDARD.md)** — SKL-XXXX-XXXX format, prefixes, validation
+- **[TRUST_EVOLUTION_MODEL.md](./TRUST_EVOLUTION_MODEL.md)** — lifecycle, timeline, journey, milestones (v1.1)
+- **[LEGACY_ARCHITECTURE.md](./LEGACY_ARCHITECTURE.md)** — Legacy layer, contributions, badges, timeline (v1.2)
 - **[DIGITAL_TRUST_CONSTITUTION.md](./DIGITAL_TRUST_CONSTITUTION.md)** — governing principles, ethics, consent, disputes, AI policy
 - [DIGITAL_TRUST_MODEL.md](./DIGITAL_TRUST_MODEL.md) — trust, reputation, audit, contributors, privacy, external API
 - [IDENTITY_ARCHITECTURE.md](./IDENTITY_ARCHITECTURE.md) — workspace, persona, permissions

@@ -1,7 +1,7 @@
 # Stankings Digital Trust Passport — Constitution
 
-**Version:** 1.0.0  
-**Status:** Platform governance contract — pre-first-commit  
+**Version:** 1.2.0  
+**Status:** Platform governance contract — Foundation v1.0 frozen; v1.1 adds evolution; v1.2 adds Legacy architecture  
 **Authority:** Stankings ecosystem architecture
 
 ---
@@ -165,6 +165,76 @@ Every new Stankings product integrates by becoming a **Trust Contributor**:
 3. Bind Passport on auth — never create parallel identity
 4. Emit signals — never duplicate trust logic locally
 
+### Principle 11 — Trust Can Be Earned
+
+The Passport must **never permanently define a person by isolated mistakes**.
+
+Trust should evolve over time through:
+
+- Verified identity
+- Positive participation
+- Responsible behaviour
+- Completed transactions
+- Successful interactions
+- Dispute resolution
+- Long-term consistency
+
+Historical events remain **auditable**. Trust summaries remain **current**.
+
+No algorithms in this sprint — see [TRUST_EVOLUTION_MODEL.md](./TRUST_EVOLUTION_MODEL.md).
+
+### Principle 12 — Legacy Is Built
+
+A Passport should recognize **sustained positive contribution over time**.
+
+Legacy:
+
+- **Cannot** be purchased
+- **Cannot** be granted arbitrarily
+- **Cannot** be inherited
+- **Emerges** from years of verified participation, responsible conduct, meaningful contribution, and enduring trust
+- **Represents stewardship** rather than status
+
+Legacy is **never calculated directly** as a score, rank, or trust dimension.
+
+Full architecture: [LEGACY_ARCHITECTURE.md](./LEGACY_ARCHITECTURE.md)
+
+---
+
+## Living Digital Trust Passport (v1.1)
+
+Identity is **permanent**. Trust is **dynamic**. Reputation **evolves**. Confidence **grows**.
+
+The Passport is a lifelong digital trust **journey** — not a static repository of data.
+
+| Permanent (Foundation v1.0) | Dynamic (Evolution v1.1) |
+|---------------------------|---------------------------|
+| SKL Passport ID | Trust dimensions |
+| Identity model | Lifecycle stages |
+| Namespace registry | Trust Timeline |
+| Constitutional principles | Achievements & milestones |
+
+Full architecture: [TRUST_EVOLUTION_MODEL.md](./TRUST_EVOLUTION_MODEL.md)
+
+---
+
+## Legacy layer (v1.2)
+
+Legacy is the **final permanent layer** — distinct from Lifecycle, Trust Timeline, and Achievements.
+
+```text
+Identity → Verification → Trust → Reputation → Audit → Journey → Timeline → Achievements → Legacy
+```
+
+| Concept | Role |
+|---------|------|
+| Legacy Contributions | What has this person contributed? (not trust dimensions) |
+| Legacy Timeline | Decades-scale contribution narrative |
+| Legacy Badges | Stewardship recognition — not achievements |
+| Legacy | Emerges over years; never calculated directly |
+
+Full architecture: [LEGACY_ARCHITECTURE.md](./LEGACY_ARCHITECTURE.md)
+
 ---
 
 ## Decision boundaries
@@ -177,6 +247,9 @@ The Passport must **never**:
 - Share data externally without consent or legal basis
 - Act as autonomous judge in high-impact contexts
 - Operate as opaque black-box trust
+- Permanently define a person by isolated mistakes
+- Purchase, arbitrarily grant, or inherit Legacy recognition
+- Calculate Legacy directly as a score or trust dimension
 
 Code reference: `PASSPORT_PROHIBITIONS` in `src/passport/governance/constitution.ts`
 
@@ -286,16 +359,22 @@ Human review is **mandatory** — no automated dispute resolution.
 
 ## Future AI usage policy
 
-AI may **assist** the Passport platform. AI must **not** judge people autonomously.
+AI may **assist** in identifying patterns. AI must **never** become the final authority.
 
 | Allowed (with audit) | Prohibited |
 |---------------------|------------|
 | Dispute triage assistance | Autonomous credit/employment/legal decisions |
 | Plain-language explanation summaries | Single-score person ranking |
-| Anomaly detection for human investigation | Trust overrides without review |
+| Anomaly detection for human investigation | Final authority over identity |
+| Pattern identification for human review | Final authority over verification |
+| | Final authority over permanent trust |
+| | Final authority over dispute resolution |
+| | Trust overrides without human review |
 | | Training on raw product data without consent |
 
 Code reference: `AI_USAGE_POLICY` in `src/passport/governance/index.ts`
+
+**Human oversight remains mandatory** for identity, verification, permanent trust, disputes, and all high-impact decisions.
 
 ---
 
@@ -408,6 +487,8 @@ flowchart TB
 | Disputes | `src/passport/governance/disputes.ts` |
 | User visibility | `src/passport/governance/userVisibility.ts` |
 | **Maturity registry** | `src/passport/governance/maturity.ts` |
+| **Trust evolution** | `src/passport/evolution/` |
+| **Legacy layer** | `src/passport/legacy/` |
 | Public exports | `src/passport/governance/index.ts` |
 
 ---
@@ -431,9 +512,13 @@ The following are **frozen platform contracts** after the foundation release. Ch
 | Passport Summary schema | Portable trust summaries only |
 | Consent model | Scoped, expiring, revocable |
 | Explainability model | Every conclusion must be explainable |
-| Constitutional principles | Ten principles + prohibitions |
+| Constitutional principles | Twelve principles + prohibitions |
 
 Specification: [PASSPORT_IDENTIFIER_STANDARD.md](./PASSPORT_IDENTIFIER_STANDARD.md)
+
+Evolution architecture (extends v1.0): [TRUST_EVOLUTION_MODEL.md](./TRUST_EVOLUTION_MODEL.md)
+
+Legacy architecture (extends v1.1): [LEGACY_ARCHITECTURE.md](./LEGACY_ARCHITECTURE.md)
 
 ---
 
@@ -455,6 +540,8 @@ If **yes** to 2–6, the feature must be redesigned or rejected.
 ## Related documents
 
 - [PASSPORT_IDENTIFIER_STANDARD.md](./PASSPORT_IDENTIFIER_STANDARD.md) — Passport ID format (SKL)
+- [TRUST_EVOLUTION_MODEL.md](./TRUST_EVOLUTION_MODEL.md) — lifecycle, timeline, journey, milestones
+- [LEGACY_ARCHITECTURE.md](./LEGACY_ARCHITECTURE.md) — Legacy layer, contributions, badges, timeline
 - [STANKINGS_PASSPORT.md](./STANKINGS_PASSPORT.md) — platform overview
 - [DIGITAL_TRUST_MODEL.md](./DIGITAL_TRUST_MODEL.md) — trust, reputation, contributors
 - [IDENTITY_ARCHITECTURE.md](./IDENTITY_ARCHITECTURE.md) — workspace, persona, permissions

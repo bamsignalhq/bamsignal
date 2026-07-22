@@ -38,7 +38,24 @@ export type TrustDimensionExplanation = {
 export type PassportTrustExplanation = {
   passportId: string;
   dimensions: Partial<Record<TrustDimension, TrustDimensionExplanation>>;
+  /** Principle 11 — how trust has evolved over time. */
+  evolutionSummary: string | null;
+  milestonesContributing: string[];
+  incompleteAreas: string[];
   /** Principle 9 — explanations assist humans; they do not replace judgment. */
+  humanOversightNotice: string;
+  generatedAt: string;
+};
+
+/** Extended explainability — answers growth-oriented questions (Principle 11). */
+export type PassportTrustEvolutionExplanation = {
+  passportId: string;
+  headline: string;
+  whyTrusted: string;
+  howTrustImproved: string;
+  milestonesContributing: string[];
+  participatingProducts: string[];
+  remainsIncomplete: string[];
   humanOversightNotice: string;
   generatedAt: string;
 };
@@ -51,7 +68,13 @@ export interface TrustExplanationClient {
   ): Promise<TrustDimensionExplanation | null>;
 
   explainAll(passportId: string): Promise<PassportTrustExplanation | null>;
+
+  /** Principle 11 — growth-oriented explainability. */
+  explainEvolution(passportId: string): Promise<PassportTrustEvolutionExplanation | null>;
 }
+
+const HUMAN_OVERSIGHT_NOTICE =
+  "Trust explanations assist human decision-making. They do not replace judgment in high-impact contexts.";
 
 /** Stub builder — returns constitutional placeholder until signal engine ships. */
 export function buildPlaceholderTrustExplanation(
@@ -70,6 +93,27 @@ export function buildPlaceholderTrustExplanation(
     expiredFactors: [],
     pendingReviewFactors: [],
     disputedFactors: [],
+    generatedAt: new Date().toISOString()
+  };
+}
+
+/** Placeholder — answers growth questions when progression data ships. */
+export function buildPlaceholderTrustEvolutionExplanation(
+  passportId: string
+): PassportTrustEvolutionExplanation {
+  return {
+    passportId,
+    headline: "Trust evolution pending",
+    whyTrusted:
+      "Trust dimensions are not yet derived. When signals and milestones arrive, this view will explain " +
+      "why confidence has grown — in plain language, never as an opaque score.",
+    howTrustImproved:
+      "No progression events indexed yet. Positive participation, verification, and dispute resolution " +
+      "will appear here as your Passport journey grows.",
+    milestonesContributing: [],
+    participatingProducts: [],
+    remainsIncomplete: ["Trust signal ingestion", "Milestone indexing", "Timeline curation"],
+    humanOversightNotice: HUMAN_OVERSIGHT_NOTICE,
     generatedAt: new Date().toISOString()
   };
 }

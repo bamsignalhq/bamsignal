@@ -35,7 +35,19 @@ export type PassportCapabilityId =
   | "disputes"
   | "disputeWorkflow"
   | "externalApi"
-  | "userVisibility";
+  | "userVisibility"
+  | "trustLifecycle"
+  | "trustProgression"
+  | "trustTimeline"
+  | "passportJourney"
+  | "achievements"
+  | "milestones"
+  | "trustEvolutionModel"
+  | "legacy"
+  | "legacyContributions"
+  | "legacyTimeline"
+  | "legacyBadges"
+  | "legacyApi";
 
 export type PassportCapabilityDefinition = {
   id: PassportCapabilityId;
@@ -192,6 +204,78 @@ export const PASSPORT_CAPABILITY_REGISTRY: Record<
     label: "User Visibility",
     maturity: "foundation",
     description: "User-facing Passport visibility snapshot contract"
+  },
+  trustLifecycle: {
+    id: "trustLifecycle",
+    label: "Trust Lifecycle",
+    maturity: "foundation",
+    description: "Lifecycle stages — maturity markers, not rankings"
+  },
+  trustProgression: {
+    id: "trustProgression",
+    label: "Trust Progression",
+    maturity: "foundation",
+    description: "Progression event interfaces — no calculations"
+  },
+  trustTimeline: {
+    id: "trustTimeline",
+    label: "Trust Timeline",
+    maturity: "foundation",
+    description: "Curated positive milestones — separate from audit"
+  },
+  passportJourney: {
+    id: "passportJourney",
+    label: "Passport Journey",
+    maturity: "foundation",
+    description: "User narrative architecture — document only"
+  },
+  achievements: {
+    id: "achievements",
+    label: "Achievements",
+    maturity: "foundation",
+    description: "Achievement registry — badges do not directly affect trust"
+  },
+  milestones: {
+    id: "milestones",
+    label: "Milestones",
+    maturity: "foundation",
+    description: "Milestone registry — participation markers"
+  },
+  trustEvolutionModel: {
+    id: "trustEvolutionModel",
+    label: "Trust Evolution Model",
+    maturity: "foundation",
+    description: "Living Passport philosophy and evolution phases"
+  },
+  legacy: {
+    id: "legacy",
+    label: "Legacy",
+    maturity: "foundation",
+    description: "Legacy layer — emerges over decades, never calculated directly"
+  },
+  legacyContributions: {
+    id: "legacyContributions",
+    label: "Legacy Contributions",
+    maturity: "foundation",
+    description: "Contribution dimension registry — not trust dimensions"
+  },
+  legacyTimeline: {
+    id: "legacyTimeline",
+    label: "Legacy Timeline",
+    maturity: "foundation",
+    description: "Decades-scale legacy narrative — separate from trust timeline"
+  },
+  legacyBadges: {
+    id: "legacyBadges",
+    label: "Legacy Recognition",
+    maturity: "foundation",
+    description: "Legacy badges — stewardship recognition, not achievements"
+  },
+  legacyApi: {
+    id: "legacyApi",
+    label: "Legacy API",
+    maturity: "planned",
+    description: "Server-side legacy emergence and human-reviewed recognition"
   }
 } as const;
 

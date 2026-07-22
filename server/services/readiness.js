@@ -2,6 +2,8 @@ import { config } from "../config.js";
 import { checkSchema, getDatabaseError, getDatabaseStatus } from "../db.js";
 import { buildStandardHealthPayload, getDeploymentMetadata } from "../deployMetadata.js";
 import { getStartupValidation } from "./startupBootstrap.js";
+import { getInfrastructureMetrics } from "./infrastructureObservability.js";
+import { PRODUCTION_CERT_VERSION } from "../../shared/productionCertification.mjs";
 import {
   buildRegistryAdminHealthSnapshot,
   getServiceRegistry,
@@ -71,6 +73,42 @@ export async function readinessPayload(options = {}) {
 
   const schemaStatus = config.databaseUrl ? await checkSchema({ force: true }) : null;
   const adminHealth = await buildRegistryAdminHealthSnapshot(process.env);
+  const infrastructure = getInfrastructureMetrics();
+  const deploy = getDeploymentMetadata("bamsignal");
+
+  const infrastructureSummary = {
+    database: checks.database,
+    migration: schemaStatus
+      ? {
+          ok: schemaStatus.ok,
+          missingCount: schemaStatus.missing?.length || 0,
+          presentCount: schemaStatus.present?.length || 0
+        }
+      : { ok: false, reason: "no_database_url" },
+    storage: adminHealth.photoStorage,
+    payments: adminHealth.paystack,
+    email: adminHealth.resend,
+    sms: adminHealth.sendchamp,
+    environment: {
+      mode: validation?.mode,
+      ok: validation?.ok,
+      warningCount: validation?.warnings?.length || 0
+    },
+    diagnostics: {
+      failures: infrastructure.diagnosticsFailures,
+      certificationVersion: PRODUCTION_CERT_VERSION
+    },
+    observability: {
+      startupDurationMs: infrastructure.startupDurationMs,
+      migrationDurationMs: infrastructure.migrationDurationMs,
+      fallbackActivations: infrastructure.fallbackActivations
+    },
+    deployment: {
+      version: deploy.version,
+      commit: deploy.commit,
+      platform: deploy.platform
+    }
+  };
 
   return {
     ...buildStandardHealthPayload({
@@ -80,6 +118,7 @@ export async function readinessPayload(options = {}) {
       extra: { ok: ready, service: "bamsignal", ready },
       diagnostics: {
         mode: validation?.mode,
+        infrastructure: infrastructureSummary,
         schema: schemaStatus
           ? {
               ok: schemaStatus.ok,
@@ -117,7 +156,14 @@ export async function readinessPayload(options = {}) {
         sendchamp: adminHealth.sendchamp,
         firebase: adminHealth.firebase,
         photoStorage: adminHealth.photoStorage,
-        telegram: adminHealth.telegram
+        telegram: adminHealth.telegram,
+        secrets: validation?.secrets
+          ? {
+              ok: validation.secrets.ok,
+              warningCount: validation.secrets.warnings?.length || 0,
+              criticalCount: validation.secrets.critical?.length || 0
+            }
+          : undefined
       }
     }),
     databaseError: getDatabaseError() || undefined

@@ -21,7 +21,9 @@ const PRODUCTION_BASE = {
   VITE_PAYSTACK_PUBLIC_KEY: "pk_live_test1234567890",
   COMMAND_CENTER_PIN: "123456",
   COMMAND_CENTER_EMAILS: "admin@bamsignal.com",
-  CRON_SECRET: "cron-secret-test"
+  CRON_SECRET: "cron-secret-test",
+  ADMIN_SECRET: "admin-secret-test",
+  DIAGNOSTICS_SECRET: "diagnostics-secret-test"
 };
 
 let failed = 0;

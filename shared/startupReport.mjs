@@ -60,6 +60,13 @@ export function printStartupReport(validation, timing) {
       lines.push(`  • ${item.feature}: ${item.reason}`);
     }
   }
+  if (validation.secrets?.warnings?.length) {
+    lines.push("");
+    lines.push("Secret warnings:");
+    for (const item of validation.secrets.warnings) {
+      lines.push(`  • ${item.name}: ${item.detail}`);
+    }
+  }
   lines.push("==============================");
   console.log(lines.join("\n"));
 }

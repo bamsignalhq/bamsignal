@@ -7,15 +7,40 @@ import {
   batchDeleteOlderThan,
   batchDeletePlan
 } from "./retentionBatchDelete.js";
+import {
+  checkMemoryMemberThrottle,
+  logMemberMemoryThrottleUsed,
+  logThrottleDbUnavailable,
+  recordMemoryMemberThrottleFailure
+} from "./memoryThrottle.js";
+import { recordFallbackActivation } from "./infrastructureObservability.js";
 
 export { API_RATE_EVENTS_RETENTION_MS };
 
-const LIMITS = {
+const DEFAULT_LIMITS = {
   search: { windowMs: 60_000, max: 30 },
   "profile-view": { windowMs: 3_600_000, max: 100 },
   discover: { windowMs: 60_000, max: 60 },
   "home-feed": { windowMs: 60_000, max: 60 }
 };
+
+function parseEnvLimit(name, fallback) {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/** Configurable via RATE_LIMIT_<ENDPOINT>_MAX and RATE_LIMIT_<ENDPOINT>_WINDOW_MS env vars. */
+export function getRateLimitConfig(endpoint) {
+  const base = DEFAULT_LIMITS[endpoint];
+  if (!base) return null;
+  const envKey = String(endpoint).toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  return {
+    windowMs: parseEnvLimit(`RATE_LIMIT_${envKey}_WINDOW_MS`, base.windowMs),
+    max: parseEnvLimit(`RATE_LIMIT_${envKey}_MAX`, base.max)
+  };
+}
+
+export const LIMITS = DEFAULT_LIMITS;
 
 export async function ensureRateLimitSchema() {
   if (!isDatabaseReady()) return;
@@ -45,14 +70,69 @@ function clientIp(req) {
   return forwarded || req?.socket?.remoteAddress || null;
 }
 
+function memoryIdentifier(endpoint, userKey, ip) {
+  const parts = [endpoint, userKey || "", ip || ""].filter(Boolean);
+  return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 24);
+}
+
+const loggedRateLimitFallback = new Set();
+
+function checkMemoryRateLimit({ endpoint, userKey, ip, config }) {
+  const fallbackKey = `rate_limit:${endpoint}`;
+  if (!loggedRateLimitFallback.has(fallbackKey)) {
+    loggedRateLimitFallback.add(fallbackKey);
+    logThrottleDbUnavailable(fallbackKey, "rate_limit");
+    logMemberMemoryThrottleUsed(fallbackKey);
+    recordFallbackActivation("rate_limit_memory", { endpoint });
+  }
+
+  const action = `rate_limit:${endpoint}`;
+  const identifier = memoryIdentifier(endpoint, userKey, ip);
+  const throttleConfig = {
+    action,
+    identifier,
+    ip: null,
+    userAgentHash: null,
+    windowMs: config.windowMs,
+    lockMs: config.windowMs,
+    maxAttempts: config.max + 1
+  };
+
+  const existing = checkMemoryMemberThrottle(throttleConfig);
+  if (!existing.ok) {
+    return {
+      ok: false,
+      error: "Please slow down a little.",
+      retryAfterMs: config.windowMs,
+      store: "memory"
+    };
+  }
+
+  const recorded = recordMemoryMemberThrottleFailure(throttleConfig);
+  if (!recorded.ok) {
+    return {
+      ok: false,
+      error: "Please slow down a little.",
+      retryAfterMs: config.windowMs,
+      store: "memory"
+    };
+  }
+
+  return { ok: true, store: "memory" };
+}
+
 export async function checkRateLimit({ req, endpoint, email, phone }) {
-  if (!isDatabaseReady()) return { ok: true };
-  const config = LIMITS[endpoint];
+  const config = getRateLimitConfig(endpoint);
   if (!config) return { ok: true };
 
-  await ensureRateLimitSchema();
   const userKey = normalizeUserKey({ email, phone });
   const ip = clientIp(req);
+
+  if (!isDatabaseReady()) {
+    return checkMemoryRateLimit({ endpoint, userKey, ip, config });
+  }
+
+  await ensureRateLimitSchema();
   const since = new Date(Date.now() - config.windowMs).toISOString();
 
   await query(
@@ -81,9 +161,9 @@ export async function checkRateLimit({ req, endpoint, email, phone }) {
         metadata: { endpoint, count, windowMs: config.windowMs, ip }
       });
     }
-    return { ok: false, error: "Please slow down a little.", retryAfterMs: config.windowMs };
+    return { ok: false, error: "Please slow down a little.", retryAfterMs: config.windowMs, store: "database" };
   }
-  return { ok: true };
+  return { ok: true, store: "database" };
 }
 
 export function rateLimitIp(req) {

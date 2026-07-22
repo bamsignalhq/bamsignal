@@ -1,11 +1,43 @@
+# BamSignal Launch Program
+
+**Program:** BamSignal Ecosystem Launch Program  
+**Current sprint:** Sprint 1.1 — Production Hardening & Certification  
+**Production:** https://bamsignal.com  
+**Health:** `GET /health` (liveness) · `GET /ready` (readiness)  
+**Certification:** `npm run certify:production`
+
+---
+
+## Sprint 1.1 — Production Hardening (in progress)
+
+Infrastructure sprint — no UI, no feature work.
+
+| Capability | Status |
+|------------|--------|
+| Rate limit memory fallback | Database authoritative; memory fallback during outages |
+| PIN auth memory fallback | Configurable via `PIN_AUTH_*` env; observable |
+| Startup secret validation | `ADMIN_SECRET`, `DIAGNOSTICS_SECRET`, `CRON_SECRET` uniqueness |
+| Environment registry levels | Critical · Required · Recommended · Deprecated |
+| Production certification | `npm run certify:production` → Markdown + JSON report |
+| PR checks workflow | `.github/workflows/pr-checks.yml` |
+| Branch governance | [docs/engineering/BRANCH_GOVERNANCE.md](./docs/engineering/BRANCH_GOVERNANCE.md) |
+
+**Pre-launch gate:**
+
+```bash
+npm run certify:production
+```
+
+Reports: `certification/production/reports/latest.md` and `latest.json`
+
+---
+
 # BamSignal Launch — Friends & Family
 
 **Status:** Code shipped to `main` (`1f76cda`); **Coolify redeploy required** before live SMS routes  
 **Commit:** `89a11fb` (launch) · `1f76cda` (410 error helper)  
 **Date:** 2026-07-19  
-**Production:** https://bamsignal.com  
-**Coolify:** https://control.stankings.com → app `wn3vlu5j7zwp5danjqfcvr2z` (alias: https://control.bamsignal.com)  
-**Health:** `GET /health` (liveness) · `GET /ready` (readiness)
+**Coolify:** https://control.stankings.com → app `wn3vlu5j7zwp5danjqfcvr2z` (alias: https://control.bamsignal.com)
 
 > Pre-deploy probe (2026-07-19): `/health`+`/ready` = 200; SMS routes still **404** until Coolify rebuilds from `main`.
 

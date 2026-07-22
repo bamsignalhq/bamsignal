@@ -9,6 +9,7 @@ import path from "node:path";
 import { corsMiddleware } from "./cors.js";
 import { PAYSTACK_WEBHOOK_MOUNT_PATHS } from "./services/paystackWebhookHandler.js";
 import { livenessPayload, readinessPayload } from "./services/readiness.js";
+import { recordHealthRequest } from "./services/infrastructureObservability.js";
 import { requireDiagnosticsAccess } from "./services/diagnosticsAccess.js";
 import {
   logAlertableEvent,
@@ -87,10 +88,12 @@ export function createApp(options = {}) {
   app.disable("x-powered-by");
 
   app.get("/health", (_req, res) => {
+    recordHealthRequest("health");
     res.status(200).json(livenessPayload());
   });
 
   app.head("/health", (_req, res) => {
+    recordHealthRequest("health");
     res.status(200).end();
   });
 
@@ -132,6 +135,7 @@ export function createApp(options = {}) {
   });
 
   app.get("/ready", async (req, res) => {
+    recordHealthRequest("ready");
     const access = await requireDiagnosticsAccess(req);
     const payload = await readinessPayload({ detailed: access.ok });
     if (!payload.ready) {

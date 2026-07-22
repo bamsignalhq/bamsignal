@@ -20,6 +20,7 @@ import {
   registerHttpServerForShutdown
 } from "./services/gracefulShutdown.js";
 import { logBackgroundTaskFailure } from "./services/observability.js";
+import { recordMigrationDuration, recordStartupDuration } from "./services/infrastructureObservability.js";
 import { startRateLimitRetentionScheduler } from "./services/rateLimitRetention.js";
 import { runStartupMigrations } from "./startupMigrations.js";
 import { logStartupBanner } from "./startupLogging.js";
@@ -80,6 +81,7 @@ async function runPostDatabaseStartup() {
 /** @returns {Promise<import("node:http").Server>} */
 export async function startServer() {
   registerGracefulShutdownHandlers();
+  const startupStarted = Date.now();
 
   const port = Number(process.env.PORT || 3000);
   const host = process.env.HOST || "0.0.0.0";
@@ -92,12 +94,14 @@ export async function startServer() {
     process.exit(1);
   }
 
+  const migrationStarted = Date.now();
   try {
     await runStartupMigrations();
   } catch (error) {
     console.error("[bamsignal] Migration failed:", error);
     process.exit(1);
   }
+  recordMigrationDuration(Date.now() - migrationStarted);
 
   await bootstrapServiceRegistry(process.env);
   startRateLimitRetentionScheduler();
@@ -116,6 +120,7 @@ export async function startServer() {
     const server = app.listen(port, host, async () => {
       registerHttpServerForShutdown(server);
       logStartupBanner({ port, host });
+      recordStartupDuration(Date.now() - startupStarted);
       const readiness = await readinessPayload({ detailed: false });
       if (!readiness.ready) {
         console.warn("[bamsignal] GET /ready returns 503 until CRITICAL services and database are available.");

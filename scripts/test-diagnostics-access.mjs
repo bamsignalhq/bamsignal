@@ -30,10 +30,10 @@ const paystackConnectivitySource = readFileSync(
 
 assertCheck(
   diagnosticsAccessSource.includes("export async function requireDiagnosticsAccess") &&
-    diagnosticsAccessSource.includes('headers?.["x-diagnostics-secret"]') &&
-    diagnosticsAccessSource.includes("verifySupabaseAdmin") &&
-    diagnosticsAccessSource.includes("DIAGNOSTICS_SECRET") &&
-    diagnosticsAccessSource.includes("process.env.CRON_SECRET"),
+    diagnosticsAccessSource.includes("DIAGNOSTICS_SECRET_HEADER") &&
+    diagnosticsAccessSource.includes("matchesDiagnosticsSecret") &&
+    diagnosticsAccessSource.includes("matchesCronSecret") &&
+    diagnosticsAccessSource.includes("verifySupabaseAdmin"),
   "diagnosticsAccess must accept x-diagnostics-secret or verified admin session"
 );
 

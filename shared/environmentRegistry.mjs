@@ -6,6 +6,29 @@
 
 export const ENVIRONMENTS = ["local", "development", "preview", "staging", "production"];
 
+/** Validation levels for environment registry tooling. */
+export const VALIDATION_LEVELS = {
+  CRITICAL: "critical",
+  REQUIRED: "required",
+  RECOMMENDED: "recommended",
+  DEPRECATED: "deprecated"
+};
+
+/** Map legacy registry `required` field to validation levels. */
+export const REGISTRY_REQUIRED_TO_LEVEL = {
+  critical: VALIDATION_LEVELS.CRITICAL,
+  warning: VALIDATION_LEVELS.REQUIRED,
+  optional: VALIDATION_LEVELS.RECOMMENDED
+};
+
+/** Variables retained for compatibility but not recommended for new deployments. */
+export const DEPRECATED_ENV_VARS = [
+  "ADMIN_EMAILS",
+  "ADMIN_ACTION_PIN",
+  "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY",
+  "SUPABASE_SECRET_KEY"
+];
+
 export const PLACEHOLDER_PATTERNS = [
   /^<.*>$/,
   /changeme/i,
@@ -250,7 +273,13 @@ export const ENV_USED_IN = {
 };
 
 export function registryEntryWithUsage(entry) {
-  return { ...entry, usedIn: ENV_USED_IN[entry.name] || [] };
+  const level = REGISTRY_REQUIRED_TO_LEVEL[entry.required] || VALIDATION_LEVELS.RECOMMENDED;
+  const deprecated = DEPRECATED_ENV_VARS.includes(entry.name);
+  return {
+    ...entry,
+    validationLevel: deprecated ? VALIDATION_LEVELS.DEPRECATED : level,
+    usedIn: ENV_USED_IN[entry.name] || []
+  };
 }
 
 export function registryForEnvironment(env) {

@@ -1,0 +1,17 @@
+{
+  "certificationVersion": "1.2.0",
+  "gitCommitSha": "4bff4e45335051f7b4b1c96f7645ae1c574a70f1",
+  "branch": "main",
+  "buildTimestamp": "2026-07-22T11:38:42.085Z",
+  "migrationVersion": "0058_member_auth_lifecycle",
+  "migrationCertStatus": "PASS",
+  "environment": "unknown",
+  "nodeVersion": "v25.9.0",
+  "dockerImage": null,
+  "checksExecuted": 12,
+  "checksPassed": 12,
+  "checksFailed": 0,
+  "overallStatus": "PASS",
+  "title": "Production Ready",
+  "profile": "local"
+}

@@ -52,9 +52,25 @@ Implementation: `server/services/securityHeaders.js`
 
 | Control | Implementation |
 |---------|----------------|
-| Diagnostics | `x-diagnostics-secret` header (`DIAGNOSTICS_SECRET` or `CRON_SECRET`) |
-| Cron | `CRON_SECRET` header only — no query param |
+| Diagnostics | `x-diagnostics-secret` header (`DIAGNOSTICS_SECRET`; deprecated `CRON_SECRET` fallback when unset) |
+| Admin automation | `x-bamsignal-secret` header (`ADMIN_SECRET` only) |
+| Cron | `x-cron-secret` header (`CRON_SECRET`) — no query param |
 | Access helper | `server/services/diagnosticsAccess.js` |
+
+**Rule:** `ADMIN_SECRET`, `DIAGNOSTICS_SECRET`, and `CRON_SECRET` must use **unique values** in production.
+
+---
+
+## Transport hardening
+
+| Control | Implementation |
+|---------|----------------|
+| HSTS | Terminated at Cloudflare edge for production domains — origin receives HTTPS from Cloudflare |
+| CSP | No application-level CSP header today; static assets served from same origin. Third-party scripts limited to build-time `VITE_*` integrations. Document any new inline scripts through security review. |
+| TLS to Postgres | `DATABASE_URL` connections use SSL with `rejectUnauthorized: false` for managed Postgres providers (Supabase/Hetzner). Set `PGSSLMODE=disable` only for local development. |
+| Webhook signatures | Paystack webhooks verify HMAC using `PAYSTACK_WEBHOOK_SECRET` or `PAYSTACK_SECRET_KEY` — never skip verification on production paths |
+
+Implementation references: `server/db.js`, `server/migrationRunner.js`, `server/databaseConnection.js`, Paystack webhook handler in `server/routes/paystack.js`.
 
 ---
 
@@ -105,9 +121,11 @@ Reference: `.env.example`, `Dockerfile` comments, `.cursor/rules/deployment.mdc`
 
 ## Rate limiting
 
-- PIN login throttle (per username + IP context).
-- Admin action PIN throttle — `test:admin-action-pin-throttle.mjs`.
-- Rate limit retention — `rate_limit_events` table (`0003` migration).
+- PIN login throttle (per username + IP context) — memory fallback when DB unavailable.
+- API rate limits (`server/services/rateLimit.js`) — database authoritative, **memory fallback** during outages.
+- Payment initialize throttle — memory fallback (`test:payment-initialize-throttle.mjs`).
+- Admin action PIN throttle — fail-closed without database (`test:admin-action-pin-throttle.mjs`).
+- Rate limit retention — `api_rate_events` table (`0003` migration).
 
 ---
 
@@ -117,6 +135,8 @@ Reference: `.env.example`, `Dockerfile` comments, `.cursor/rules/deployment.mdc`
 npm run test:security
 npm run audit:permissions
 npm run test:source-integrity
+npm run test:production-hardening
+npm run certify:production
 ```
 
 Institutional dashboard aggregates checks at `/hard/security-dashboard` (`productionSecurityLogic.ts`).

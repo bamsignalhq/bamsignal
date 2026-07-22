@@ -7,6 +7,7 @@ import {
   evaluateAllFeatures,
   STARTUP_FEATURE_DEFINITIONS
 } from "./environmentClassification.mjs";
+import { validateOperationSecrets } from "./operationSecretValidation.mjs";
 import { resolveStartupMode } from "./startupExecutionMode.mjs";
 
 function isEmpty(value) {
@@ -80,6 +81,22 @@ export function validateEnterpriseStartup(env = process.env, options = {}) {
     }
   }
 
+  const secretValidation = validateOperationSecrets(env, { mode });
+  for (const item of secretValidation.critical) {
+    if (mode === "production") {
+      critical.push({
+        feature: item.name,
+        tier: "critical",
+        reason: item.detail
+      });
+    } else {
+      warnings.push({ name: item.name, detail: item.detail });
+    }
+  }
+  for (const item of secretValidation.warnings) {
+    warnings.push({ name: item.name, detail: item.detail });
+  }
+
   const ok = smokeMode || mode === "development" ? true : critical.length === 0;
 
   return {
@@ -92,7 +109,8 @@ export function validateEnterpriseStartup(env = process.env, options = {}) {
     missing: [...new Set(missing)],
     enabledFeatures: [...new Set(enabledFeatures)],
     disabledFeatures: [...new Set(disabledFeatures)],
-    features
+    features,
+    secrets: secretValidation
   };
 }
 

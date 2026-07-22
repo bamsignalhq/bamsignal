@@ -1,0 +1,210 @@
+{
+  "certificationVersion": "1.2.0",
+  "suite": "production",
+  "title": "Production Ready",
+  "passed": true,
+  "status": "PASS",
+  "generatedAt": "2026-07-22T11:38:42.085Z",
+  "environment": "unknown",
+  "profile": "local",
+  "sections": [
+    {
+      "id": "migrations",
+      "label": "Migrations",
+      "status": "PASS",
+      "durationMs": 925
+    },
+    {
+      "id": "environment",
+      "label": "Environment",
+      "status": "PASS",
+      "durationMs": 0
+    },
+    {
+      "id": "lint",
+      "label": "Lint",
+      "status": "PASS",
+      "durationMs": 79101
+    },
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "status": "PASS",
+      "durationMs": 99463
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "status": "PASS",
+      "durationMs": 171419
+    },
+    {
+      "id": "server-import",
+      "label": "Server Import",
+      "status": "PASS",
+      "durationMs": 2406
+    },
+    {
+      "id": "source-integrity",
+      "label": "Source Integrity",
+      "status": "PASS",
+      "durationMs": 956
+    },
+    {
+      "id": "diagnostics",
+      "label": "Diagnostics",
+      "status": "PASS",
+      "durationMs": 4700
+    },
+    {
+      "id": "readiness",
+      "label": "Readiness",
+      "status": "PASS",
+      "durationMs": 1594
+    },
+    {
+      "id": "hardening",
+      "label": "Production Hardening",
+      "status": "PASS",
+      "durationMs": 767
+    },
+    {
+      "id": "auth-lifecycle",
+      "label": "Auth Lifecycle",
+      "status": "PASS",
+      "durationMs": 826
+    },
+    {
+      "id": "fortress",
+      "label": "Fortress Suite",
+      "status": "PASS",
+      "durationMs": 13133
+    }
+  ],
+  "checks": [
+    {
+      "id": "migrations",
+      "label": "Migrations",
+      "command": "npm run certify:migrations",
+      "passed": true,
+      "durationMs": 925,
+      "stdout": "\n> bamsignal@0.1.0 certify:migrations\n> node certification/migrations/run.mjs\n\nMigration certification PASS\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "environment",
+      "label": "Environment",
+      "passed": true,
+      "status": "PASS",
+      "mode": "development",
+      "startupOk": true,
+      "secretsOk": true,
+      "criticalCount": 0,
+      "warningCount": 0,
+      "durationMs": 0
+    },
+    {
+      "id": "lint",
+      "label": "Lint",
+      "command": "npm run lint",
+      "passed": true,
+      "durationMs": 79101,
+      "stdout": "\n> bamsignal@0.1.0 lint\n> tsc --noEmit\n\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "typecheck",
+      "label": "Typecheck",
+      "command": "npm run typecheck",
+      "passed": true,
+      "durationMs": 99463,
+      "stdout": "\n> bamsignal@0.1.0 typecheck\n> tsc --noEmit\n\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "build",
+      "label": "Build",
+      "command": "npm run build",
+      "passed": true,
+      "durationMs": 171419,
+      "stdout": "4 kB │ gzip:   4.97 kB\ndist/assets/PremiumCenterPage-CshCH9P7.js                                       16.37 kB │ gzip:   4.83 kB\ndist/assets/ApiPlatformPage-Y8fACQBe.js                                         16.60 kB │ gzip:   4.48 kB\ndist/assets/EnterpriseApiCenterPage-ByFrmUkF.js                                 16.65 kB │ gzip:   4.81 kB\ndist/assets/WorkflowEnginePage-CjZYUtqc.js                                      17.11 kB │ gzip:   4.26 kB\ndist/assets/LaunchControlCenterPage-CWYFprTB.js                                 17.79 kB │ gzip:   4.61 kB\ndist/assets/PlatformHealthCenterPage-CwfZJrW3.js                                17.87 kB │ gzip:   4.96 kB\ndist/assets/ConsultantQualityPage-Cvc7NrIQ.js                                   18.08 kB │ gzip:   4.91 kB\ndist/assets/ConfigurationPlatformPage-YprS0LZC.js                               19.90 kB │ gzip:   5.96 kB\ndist/assets/SearchCenterPage-CmaVLwZf.js                                        19.93 kB │ gzip:   5.95 kB\ndist/assets/SignalConciergeApplicationPage-CCW7czLd.js                          20.00 kB │ gzip:   5.56 kB\ndist/assets/InstitutionalComplianceCenterPage-Cxwq54eR.js                       20.59 kB │ gzip:   5.00 kB\ndist/assets/consultantWorkloadEngine-BWMBZBE5.js                                20.65 kB │ gzip:   6.56 kB\ndist/assets/AbuseProtectionCenterPage-0fT-lK7c.js                               22.01 kB │ gzip:   5.91 kB\ndist/assets/ProductionObservabilityPage-CsA007P4.js                             22.34 kB │ gzip:   5.98 kB\ndist/assets/BusinessContinuityPage-BDz8NEkY.js                                  23.20 kB │ gzip:   6.00 kB\ndist/assets/OperationsCenterPage-BhWi38VP.js                                    23.62 kB │ gzip:   5.08 kB\ndist/assets/ProductionEnvironmentDashboard-BCWtoOCY.js                          23.92 kB │ gzip:   5.73 kB\ndist/assets/institutionalReadinessEngine-DcwXjJr_.js                            24.65 kB │ gzip:   7.43 kB\ndist/assets/ConsultantPortalRoot-Bhl9y_cP.js                                    25.55 kB │ gzip:   7.32 kB\ndist/assets/photo-crop-Dx6E_7WB.js                                              25.67 kB │ gzip:   7.56 kB\ndist/assets/WorkforceManagementPage-CoDYmdhh.js                                 26.31 kB │ gzip:   6.70 kB\ndist/assets/NotificationQueuePage-Lb5Pbhs0.js                                   27.27 kB │ gzip:   7.21 kB\ndist/assets/DataGovernanceCenterPage-BLLtvly-.js                                28.57 kB │ gzip:   6.83 kB\ndist/assets/LaunchCommandCenterPage-TVJ_sOO5.js                                 29.11 kB │ gzip:   6.99 kB\ndist/assets/PerformanceCenterPage-DvkKXQkx.js                                   31.48 kB │ gzip:   9.16 kB\ndist/assets/icons-DaGvh0KE.js                                                   37.80 kB │ gzip:   9.01 kB\ndist/assets/migrationGapReport-HuG5hZHY.js                                      44.13 kB │ gzip:   6.88 kB\ndist/assets/relationshipHealthAlertsSeed-CdkIAywA.js                            47.15 kB │ gzip:  12.31 kB\ndist/assets/index-Ce5UAYG-.js                                                   66.38 kB │ gzip:  21.07 kB\ndist/assets/RelationshipFollowUpPage-Bh8wsPMd.js                                90.21 kB │ gzip:  20.22 kB\ndist/assets/PublicMarketingRoutes-BBAvjAdH.js                                   95.05 kB │ gzip:  27.40 kB\ndist/assets/AdminConsoleRoot-Chp-sSxT.js                                       122.18 kB │ gzip:  31.21 kB\ndist/assets/react-DyOn8q_x.js                                                  134.66 kB │ gzip:  43.24 kB\ndist/assets/ConsultantDashboardPage-QdpzjEun.js                                163.66 kB │ gzip:  33.05 kB\ndist/assets/supabase-dIChsWQP.js                                               212.38 kB │ gzip:  54.87 kB\ndist/assets/index-ClLR2DP7.js                                                  894.51 kB │ gzip: 256.94 kB\ndist/assets/heic2any-CzAtys5V.js                                             1,352.43 kB │ gzip: 341.18 kB\n✓ built in 45.82s\n",
+      "stderr": "Generated an empty chunk: \"tensorflow\".\n[plugin vite:reporter] \n(!) /Users/stanlex/Documents/bamsignal/src/utils/activeBoosts.ts is dynamically imported by /Users/stanlex/Documents/bamsignal/src/services/memberData.ts but also statically imported by /Users/stanlex/Documents/bamsignal/src/App.tsx, /Users/stanlex/Documents/bamsignal/src/components/BoostActiveBanner.tsx, /Users/stanlex/Documents/bamsignal/src/pages/DiscoverPage.tsx, /Users/stanlex/Documents/bamsignal/src/services/boostEntitlements.ts, /Users/stanlex/Documents/bamsignal/src/services/boosts.ts, /Users/stanlex/Documents/bamsignal/src/services/premiumStatus.ts, /Users/stanlex/Documents/bamsignal/src/utils/boostPerformance.ts, /Users/stanlex/Documents/bamsignal/src/utils/commercialLedger.ts, /Users/stanlex/Documents/bamsignal/src/utils/discoverFilters.ts, /Users/stanlex/Documents/bamsignal/src/utils/launchSeed.ts, /Users/stanlex/Documents/bamsignal/src/utils/signalLimits.ts, dynamic import will not move module into another chunk.\n\n",
+      "exitCode": 0
+    },
+    {
+      "id": "server-import",
+      "label": "Server Import",
+      "command": "npm run test:server-import",
+      "passed": true,
+      "durationMs": 2406,
+      "stdout": "\n> bamsignal@0.1.0 test:server-import\n> node scripts/smoke-server-import.mjs\n\n◇ injected env (45) from .env.local // tip: ⌘ enable debugging { debug: true }\n◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]\n◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }\n◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }\n==============================\nBamSignal Startup Report\n\nEnvironment: smoke\n\nCritical\n  ✕ Database\n  ✕ Supabase\n  ✓ Application URL\n  ✕ Paystack\n  ✕ Command Center\n  ✕ Cron & Diagnostics\n\nImportant\n  ✕ Resend Email\n  ✕ Sendchamp WhatsApp\n  ✕ Firebase Push\n  ✕ Photo Storage\n\nOptional\n  ✕ Google Calendar\n  ✕ Zoom\n  ✕ Google Meet\n  ✕ OpenAI\n  ✕ Telegram\n\nEnabled Features\n  • Application URL\n\nDisabled Features\n  • Database\n  • Supabase\n  • Paystack\n  • Command Center\n  • Cron & Diagnostics\n  • Resend Email\n  • Sendchamp WhatsApp\n  • Firebase Push\n  • Photo Storage\n  • Google Calendar\n  • Zoom\n  • Google Meet\n  • OpenAI\n  • Telegram\n\nOverall: READY\n==============================\n[bamsignal] infrastructure_migration_complete {\n  event: 'infrastructure_migration_complete',\n  at: '2026-07-22T11:38:19.736Z',\n  durationMs: 0\n}\n[bamsignal] Route inventory: 82 registered; critical config APIs=ok\n[bamsignal] startup application=BamSignal version=0.1.0 environment=unknown platform=coolify provider=hetzner commit=local port=39451 host=0.0.0.0 node=v25.9.0 startedAt=2026-07-22T11:38:19.778Z\n[bamsignal] infrastructure_startup_complete {\n  event: 'infrastructure_startup_complete',\n  at: '2026-07-22T11:38:19.779Z',\n  durationMs: 49\n}\n[bamsignal] member_memory_throttle_used {\n  event: 'member_memory_throttle_used',\n  at: '2026-07-22T11:38:20.003Z',\n  action: 'pin_login'\n}\n[pin-login] raw username received _***\n[pin-login] normalized username _***\n[pin-login] user found false\n[pin-login] sourceTable null\n[pin-login] profile found false\n[pin-login] normalized username _***\n[pin-login] user found false\n[pin-login] profile found false\n[pin-login] session created false\n[pin-login] pin compare false\n[bamsignal] member_memory_throttle_used {\n  event: 'member_memory_throttle_used',\n  at: '2026-07-22T11:38:20.008Z',\n  action: 'pin_login'\n}\n[bamsignal] pin_login_failed {\n  event: 'pin_login_failed',\n  at: '2026-07-22T11:38:20.009Z',\n  requestId: 'f7144eb1-5a18-4637-91d3-d4c97f4c9853',\n  correlationId: 'f7144eb1-5a18-4637-91d3-d4c97f4c9853',\n  identifierHash: '77d940ef2b3848d0',\n  identifierMask: '_***',\n  attempts: 1,\n  locked: false,\n  lockedUntil: null\n}\nserver ok\n",
+      "stderr": "[bamsignal] smoke import ok: server/production.js (998ms)\n[bamsignal] GET /ready returns 503 until CRITICAL services and database are available.\n[bamsignal] smoke boot ok: startServer() (55ms)\n[bamsignal] diagnostics_access_denied { path: '/ready', at: '2026-07-22T11:38:19.959Z' }\n[bamsignal] diagnostics_access_failed {\n  event: 'diagnostics_access_failed',\n  at: '2026-07-22T11:38:19.960Z',\n  path: '/ready'\n}\n[bamsignal] ready_check_failed {\n  event: 'ready_check_failed',\n  at: '2026-07-22T11:38:19.961Z',\n  requestId: 'fa839aca-1d53-47bf-8660-7c6e162bef2c',\n  correlationId: 'fa839aca-1d53-47bf-8660-7c6e162bef2c',\n  path: '/ready',\n  detailed: false,\n  ready: false\n}\n[bamsignal] throttle_db_unavailable {\n  event: 'throttle_db_unavailable',\n  at: '2026-07-22T11:38:20.003Z',\n  action: 'pin_login',\n  scope: 'member'\n}\n[bamsignal] infrastructure_fallback_activated {\n  event: 'infrastructure_fallback_activated',\n  at: '2026-07-22T11:38:20.003Z',\n  kind: 'pin_auth_memory',\n  action: 'pin_login'\n}\n[bamsignal] infrastructure_fallback_activated {\n  event: 'infrastructure_fallback_activated',\n  at: '2026-07-22T11:38:20.008Z',\n  kind: 'pin_auth_memory',\n  action: 'pin_login'\n}\n[bamsignal] payment_webhook_failed {\n  event: 'payment_webhook_failed',\n  at: '2026-07-22T11:38:20.043Z',\n  requestId: '1bf499fa-3d36-4c6f-bf50-079716f9e30f',\n  correlationId: '1bf499fa-3d36-4c6f-bf50-079716f9e30f',\n  ledgerSource: 'webhook',\n  reason: 'invalid_signature'\n}\n",
+      "exitCode": 0
+    },
+    {
+      "id": "source-integrity",
+      "label": "Source Integrity",
+      "command": "npm run test:source-integrity:web",
+      "passed": true,
+      "durationMs": 956,
+      "stdout": "\n> bamsignal@0.1.0 test:source-integrity:web\n> node scripts/source-integrity-check.mjs --web\n\nsource integrity ok\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "diagnostics",
+      "label": "Diagnostics",
+      "command": "npm run test:diagnostics-access",
+      "passed": true,
+      "durationMs": 4700,
+      "stdout": "\n> bamsignal@0.1.0 test:diagnostics-access\n> node scripts/test-diagnostics-access.mjs\n\n◇ injected env (45) from .env.local // tip: ⌁ auth for agents [www.vestauth.com]\n◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }\n◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }\n◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]\n==============================\nBamSignal Startup Report\n\nEnvironment: smoke\n\nCritical\n  ✕ Database\n  ✕ Supabase\n  ✓ Application URL\n  ✕ Paystack\n  ✕ Command Center\n  ✓ Cron & Diagnostics\n\nImportant\n  ✕ Resend Email\n  ✕ Sendchamp WhatsApp\n  ✕ Firebase Push\n  ✕ Photo Storage\n\nOptional\n  ✕ Google Calendar\n  ✕ Zoom\n  ✕ Google Meet\n  ✕ OpenAI\n  ✕ Telegram\n\nEnabled Features\n  • Application URL\n  • Cron & Diagnostics\n\nDisabled Features\n  • Database\n  • Supabase\n  • Paystack\n  • Command Center\n  • Resend Email\n  • Sendchamp WhatsApp\n  • Firebase Push\n  • Photo Storage\n  • Google Calendar\n  • Zoom\n  • Google Meet\n  • OpenAI\n  • Telegram\n\nOverall: READY\n==============================\n[bamsignal] infrastructure_migration_complete {\n  event: 'infrastructure_migration_complete',\n  at: '2026-07-22T11:38:24.643Z',\n  durationMs: 0\n}\n[bamsignal] Route inventory: 82 registered; critical config APIs=ok\n[bamsignal] startup application=BamSignal version=0.1.0 environment=unknown platform=coolify provider=hetzner commit=local port=39453 host=0.0.0.0 node=v25.9.0 startedAt=2026-07-22T11:38:24.677Z\n[bamsignal] infrastructure_startup_complete {\n  event: 'infrastructure_startup_complete',\n  at: '2026-07-22T11:38:24.678Z',\n  durationMs: 43\n}\ndiagnostics access tests ok\n",
+      "stderr": "[bamsignal] diagnostics_cron_secret_deprecated {\n  event: 'diagnostics_cron_secret_deprecated',\n  at: '2026-07-22T11:38:23.648Z',\n  path: 'unknown'\n}\n[bamsignal] GET /ready returns 503 until CRITICAL services and database are available.\n[bamsignal] diagnostics_access_denied {\n  path: '/api/diagnostics/view-security',\n  at: '2026-07-22T11:38:24.830Z'\n}\n[bamsignal] diagnostics_access_failed {\n  event: 'diagnostics_access_failed',\n  at: '2026-07-22T11:38:24.830Z',\n  path: '[redacted_storage_detail]'\n}\n[bamsignal] diagnostics_access_denied { response: 'empty_404', at: '2026-07-22T11:38:24.831Z' }\n[bamsignal] diagnostics_access_denied {\n  path: '/api/diagnostics/view-security',\n  at: '2026-07-22T11:38:24.847Z'\n}\n[bamsignal] diagnostics_access_failed {\n  event: 'diagnostics_access_failed',\n  at: '2026-07-22T11:38:24.847Z',\n  path: '[redacted_storage_detail]'\n}\n[bamsignal] diagnostics_access_denied { response: 'empty_404', at: '2026-07-22T11:38:24.848Z' }\n[bamsignal] diagnostics_access_denied {\n  path: '/api/diagnostics/function-security',\n  at: '2026-07-22T11:38:24.854Z'\n}\n[bamsignal] diagnostics_access_failed {\n  event: 'diagnostics_access_failed',\n  at: '2026-07-22T11:38:24.856Z',\n  path: '[redacted_storage_detail]'\n}\n[bamsignal] diagnostics_access_denied { response: 'empty_404', at: '2026-07-22T11:38:24.858Z' }\n[bamsignal] diagnostics_access_denied {\n  path: '/api/diagnostics/function-security',\n  at: '2026-07-22T11:38:24.864Z'\n}\n[bamsignal] diagnostics_access_failed {\n  event: 'diagnostics_access_failed',\n  at: '2026-07-22T11:38:24.864Z',\n  path: '[redacted_storage_detail]'\n}\n[bamsignal] diagnostics_access_denied { response: 'empty_404', at: '2026-07-22T11:38:24.864Z' }\n[bamsignal] diagnostics_access_denied {\n  path: '/api/diagnostics/paystack-connectivity',\n  at: '2026-07-22T11:38:24.869Z'\n}\n[bamsignal] diagnostics_access_failed {\n  event: 'diagnostics_access_failed',\n  at: '2026-07-22T11:38:24.870Z',\n  path: '[redacted_storage_detail]'\n}\n[bamsignal] diagnostics_access_denied { response: 'empty_404', at: '2026-07-22T11:38:24.870Z' }\n[bamsignal] diagnostics_cron_secret_deprecated {\n  event: 'diagnostics_cron_secret_deprecated',\n  at: '2026-07-22T11:38:24.878Z',\n  path: '[redacted_storage_detail]'\n}\n",
+      "exitCode": 0
+    },
+    {
+      "id": "readiness",
+      "label": "Readiness",
+      "command": "npm run test:readiness-health",
+      "passed": true,
+      "durationMs": 1594,
+      "stdout": "\n> bamsignal@0.1.0 test:readiness-health\n> node scripts/test-readiness-health.mjs\n\n◇ injected env (46) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }\n◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]\n◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]\n◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]\n==============================\nBamSignal Startup Report\n\nEnvironment: smoke\n\nCritical\n  ✕ Database\n  ✕ Supabase\n  ✓ Application URL\n  ✕ Paystack\n  ✕ Command Center\n  ✕ Cron & Diagnostics\n\nImportant\n  ✕ Resend Email\n  ✕ Sendchamp WhatsApp\n  ✕ Firebase Push\n  ✕ Photo Storage\n\nOptional\n  ✕ Google Calendar\n  ✕ Zoom\n  ✕ Google Meet\n  ✕ OpenAI\n  ✕ Telegram\n\nEnabled Features\n  • Application URL\n\nDisabled Features\n  • Database\n  • Supabase\n  • Paystack\n  • Command Center\n  • Cron & Diagnostics\n  • Resend Email\n  • Sendchamp WhatsApp\n  • Firebase Push\n  • Photo Storage\n  • Google Calendar\n  • Zoom\n  • Google Meet\n  • OpenAI\n  • Telegram\n\nOverall: READY\n==============================\n[bamsignal] infrastructure_migration_complete {\n  event: 'infrastructure_migration_complete',\n  at: '2026-07-22T11:38:27.071Z',\n  durationMs: 0\n}\n[bamsignal] Route inventory: 82 registered; critical config APIs=ok\n[bamsignal] startup application=BamSignal version=0.1.0 environment=unknown platform=coolify provider=hetzner commit=local port=39455 host=0.0.0.0 node=v25.9.0 startedAt=2026-07-22T11:38:27.097Z\n[bamsignal] infrastructure_startup_complete {\n  event: 'infrastructure_startup_complete',\n  at: '2026-07-22T11:38:27.097Z',\n  durationMs: 29\n}\nreadiness health tests ok\n",
+      "stderr": "[bamsignal] GET /ready returns 503 until CRITICAL services and database are available.\n[bamsignal] diagnostics_access_denied { path: '/ready', at: '2026-07-22T11:38:27.202Z' }\n[bamsignal] diagnostics_access_failed {\n  event: 'diagnostics_access_failed',\n  at: '2026-07-22T11:38:27.202Z',\n  path: '/ready'\n}\n[bamsignal] ready_check_failed {\n  event: 'ready_check_failed',\n  at: '2026-07-22T11:38:27.203Z',\n  requestId: 'e0ce26ad-1314-4feb-aa14-3df6f72033b1',\n  correlationId: 'e0ce26ad-1314-4feb-aa14-3df6f72033b1',\n  path: '/ready',\n  detailed: false,\n  ready: false\n}\n",
+      "exitCode": 0
+    },
+    {
+      "id": "hardening",
+      "label": "Production Hardening",
+      "command": "npm run test:production-hardening",
+      "passed": true,
+      "durationMs": 767,
+      "stdout": "\n> bamsignal@0.1.0 test:production-hardening\n> node scripts/test-production-hardening.mjs\n\n◇ injected env (46) from .env.local // tip: ◈ encrypted .env [www.dotenvx.com]\n◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]\n[bamsignal] member_memory_throttle_used {\n  event: 'member_memory_throttle_used',\n  at: '2026-07-22T11:38:28.112Z',\n  action: 'rate_limit:discover'\n}\nproduction hardening tests ok\n",
+      "stderr": "[bamsignal] throttle_db_unavailable {\n  event: 'throttle_db_unavailable',\n  at: '2026-07-22T11:38:28.105Z',\n  action: 'rate_limit:discover',\n  scope: 'rate_limit'\n}\n[bamsignal] infrastructure_fallback_activated {\n  event: 'infrastructure_fallback_activated',\n  at: '2026-07-22T11:38:28.112Z',\n  kind: 'rate_limit_memory',\n  endpoint: 'discover'\n}\n",
+      "exitCode": 0
+    },
+    {
+      "id": "auth-lifecycle",
+      "label": "Auth Lifecycle",
+      "command": "npm run test:auth-lifecycle",
+      "passed": true,
+      "durationMs": 826,
+      "stdout": "\n> bamsignal@0.1.0 test:auth-lifecycle\n> node scripts/test-auth-lifecycle.mjs\n\n◇ injected env (46) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }\n◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }\nauth lifecycle tests ok\n",
+      "stderr": "",
+      "exitCode": 0
+    },
+    {
+      "id": "fortress",
+      "label": "Fortress Suite",
+      "command": "npm run test:fortress",
+      "passed": true,
+      "durationMs": 13133,
+      "stdout": " provider=hetzner commit=local port=39454 host=0.0.0.0 node=v25.9.0 startedAt=2026-07-22T11:38:37.629Z\n[bamsignal] infrastructure_startup_complete {\n  event: 'infrastructure_startup_complete',\n  at: '2026-07-22T11:38:37.629Z',\n  durationMs: 22\n}\n[bamsignal] admin_bootstrap_attempt {\n  event: 'admin_bootstrap_attempt',\n  at: '2026-07-22T11:38:37.713Z',\n  requestId: '11a4c021-4532-4fde-aa48-ed35990b6b4e',\n  correlationId: '11a4c021-4532-4fde-aa48-ed35990b6b4e'\n}\n[bamsignal] admin_bootstrap_attempt {\n  event: 'admin_bootstrap_attempt',\n  at: '2026-07-22T11:38:37.731Z',\n  requestId: '261fe24b-fad3-4728-9d5d-4d718eda48d7',\n  correlationId: '261fe24b-fad3-4728-9d5d-4d718eda48d7'\n}\n[bamsignal] admin_bootstrap_attempt {\n  event: 'admin_bootstrap_attempt',\n  at: '2026-07-22T11:38:37.734Z',\n  requestId: '254788ac-f058-4b2d-9aa0-d899b76e77aa',\n  correlationId: '254788ac-f058-4b2d-9aa0-d899b76e77aa'\n}\n[bamsignal] admin_bootstrap_attempt {\n  event: 'admin_bootstrap_attempt',\n  at: '2026-07-22T11:38:37.738Z',\n  requestId: '5d706dca-ec71-4f8a-be34-dddd91ece128',\n  correlationId: '5d706dca-ec71-4f8a-be34-dddd91ece128'\n}\n[bamsignal] admin_bootstrap_success {\n  event: 'admin_bootstrap_success',\n  at: '2026-07-22T11:38:37.742Z',\n  requestId: '5d706dca-ec71-4f8a-be34-dddd91ece128',\n  correlationId: '5d706dca-ec71-4f8a-be34-dddd91ece128',\n  adminHash: 'cdefe7da6e7f58f7',\n  adminMask: 'o***@bamsignal.com',\n  userId: 'bootstrap-user-id',\n  created: true\n}\nadmin bootstrap tests ok\n◇ injected env (45) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }\n◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }\n◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]\n◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }\n==============================\nBamSignal Startup Report\n\nEnvironment: smoke\n\nCritical\n  ✕ Database\n  ✕ Supabase\n  ✓ Application URL\n  ✕ Paystack\n  ✕ Command Center\n  ✕ Cron & Diagnostics\n\nImportant\n  ✕ Resend Email\n  ✕ Sendchamp WhatsApp\n  ✕ Firebase Push\n  ✕ Photo Storage\n\nOptional\n  ✕ Google Calendar\n  ✕ Zoom\n  ✕ Google Meet\n  ✕ OpenAI\n  ✕ Telegram\n\nEnabled Features\n  • Application URL\n\nDisabled Features\n  • Database\n  • Supabase\n  • Paystack\n  • Command Center\n  • Cron & Diagnostics\n  • Resend Email\n  • Sendchamp WhatsApp\n  • Firebase Push\n  • Photo Storage\n  • Google Calendar\n  • Zoom\n  • Google Meet\n  • OpenAI\n  • Telegram\n\nOverall: READY\n==============================\n[bamsignal] infrastructure_migration_complete {\n  event: 'infrastructure_migration_complete',\n  at: '2026-07-22T11:38:38.289Z',\n  durationMs: 0\n}\n[bamsignal] Route inventory: 82 registered; critical config APIs=ok\n[bamsignal] startup application=BamSignal version=0.1.0 environment=unknown platform=coolify provider=hetzner commit=local port=39456 host=0.0.0.0 node=v25.9.0 startedAt=2026-07-22T11:38:38.313Z\n[bamsignal] infrastructure_startup_complete {\n  event: 'infrastructure_startup_complete',\n  at: '2026-07-22T11:38:38.313Z',\n  durationMs: 27\n}\nlegacy setup hardening tests ok\nadb app-link verification skipped (no device attached)\n◇ injected env (46) from .env.local // tip: ⌘ multiple files { path: ['.env.local', '.env'] }\n◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }\n◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }\n◇ injected env (0) from .env // tip: ⌘ override existing { override: true }\nandroid app-links tests ok\n[bamsignal] payment_initialized {\n  event: 'payment_initialized',\n  at: '2026-07-22T11:38:39.945Z',\n  reference: 'bs_demo_ref'\n}\nobservability tests ok\nPASS: runbook tests\nAll production performance tests passed.\n[bamsignal] timer_cleanup {\n  event: 'timer_cleanup',\n  at: '2026-07-22T11:38:40.562Z',\n  name: 'test_interval',\n  kind: 'interval'\n}\n[bamsignal] listener_cleanup {\n  event: 'listener_cleanup',\n  at: '2026-07-22T11:38:40.562Z',\n  name: 'test_listener',\n  scope: 'test'\n}\nstability tests ok\n",
+      "stderr": "y',\n  action: 'pin_login'\n}\n[bamsignal] infrastructure_fallback_activated {\n  event: 'infrastructure_fallback_activated',\n  at: '2026-07-22T11:38:36.261Z',\n  kind: 'pin_auth_memory',\n  action: 'pin_login'\n}\n[bamsignal] throttle_db_unavailable {\n  event: 'throttle_db_unavailable',\n  at: '2026-07-22T11:38:36.261Z',\n  action: 'admin_action_pin',\n  scope: 'admin'\n}\n[bamsignal] GET /ready returns 503 until CRITICAL services and database are available.\n[bamsignal] throttle_db_unavailable {\n  event: 'throttle_db_unavailable',\n  at: '2026-07-22T11:38:37.104Z',\n  action: 'pin_login',\n  scope: 'member'\n}\n[bamsignal] infrastructure_fallback_activated {\n  event: 'infrastructure_fallback_activated',\n  at: '2026-07-22T11:38:37.104Z',\n  kind: 'pin_auth_memory',\n  action: 'pin_login'\n}\n[bamsignal] infrastructure_fallback_activated {\n  event: 'infrastructure_fallback_activated',\n  at: '2026-07-22T11:38:37.106Z',\n  kind: 'pin_auth_memory',\n  action: 'pin_login'\n}\n[bamsignal] pin_reset_error {\n  event: 'pin_reset_error',\n  at: '2026-07-22T11:38:37.113Z',\n  requestId: 'e5de6e32-93d7-4860-9b83-d44ec78f9842',\n  correlationId: 'e5de6e32-93d7-4860-9b83-d44ec78f9842',\n  action: 'send',\n  code: 'database_disconnected'\n}\n[bamsignal] GET /ready returns 503 until CRITICAL services and database are available.\n[bamsignal] admin_bootstrap_denied {\n  event: 'admin_bootstrap_denied',\n  at: '2026-07-22T11:38:37.714Z',\n  requestId: '11a4c021-4532-4fde-aa48-ed35990b6b4e',\n  correlationId: '11a4c021-4532-4fde-aa48-ed35990b6b4e',\n  reason: 'invalid_or_missing_secret'\n}\n[bamsignal] admin_bootstrap_denied {\n  event: 'admin_bootstrap_denied',\n  at: '2026-07-22T11:38:37.731Z',\n  requestId: '261fe24b-fad3-4728-9d5d-4d718eda48d7',\n  correlationId: '261fe24b-fad3-4728-9d5d-4d718eda48d7',\n  reason: 'invalid_or_missing_secret'\n}\n[bamsignal] admin_bootstrap_denied {\n  event: 'admin_bootstrap_denied',\n  at: '2026-07-22T11:38:37.735Z',\n  requestId: '254788ac-f058-4b2d-9aa0-d899b76e77aa',\n  correlationId: '254788ac-f058-4b2d-9aa0-d899b76e77aa',\n  reason: 'invalid_or_missing_secret'\n}\n[bamsignal] GET /ready returns 503 until CRITICAL services and database are available.\n[bamsignal] legacy_setup_denied {\n  event: 'legacy_setup_denied',\n  at: '2026-07-22T11:38:38.414Z',\n  requestId: '0f2ac207-fdb5-4551-a22d-7d9c1d09a6b9',\n  correlationId: '0f2ac207-fdb5-4551-a22d-7d9c1d09a6b9',\n  reason: 'forbidden_secret_channel'\n}\n[bamsignal] legacy_setup_denied {\n  event: 'legacy_setup_denied',\n  at: '2026-07-22T11:38:38.436Z',\n  requestId: 'b686ae98-4846-44e4-9293-5635033c70b7',\n  correlationId: 'b686ae98-4846-44e4-9293-5635033c70b7',\n  reason: 'forbidden_secret_channel'\n}\n[bamsignal] legacy_setup_denied {\n  event: 'legacy_setup_denied',\n  at: '2026-07-22T11:38:38.442Z',\n  requestId: '9dd50f74-347d-41a6-8d63-cd410badee08',\n  correlationId: '9dd50f74-347d-41a6-8d63-cd410badee08',\n  reason: 'invalid_or_missing_secret'\n}\n[bamsignal] admin_status_hidden {\n  endpoint: 'hard/setup',\n  action: 'status',\n  at: '2026-07-22T11:38:38.446Z'\n}\n[bamsignal] payment_verify_failed {\n  event: 'payment_verify_failed',\n  at: '2026-07-22T11:38:39.933Z',\n  requestId: 'c8ec2da9-298f-41d4-a3a0-add77860d3e2',\n  reference: 'bs_demo_ref',\n  code: 'upstream_error'\n}\n[bamsignal] ready_check_failed {\n  event: 'ready_check_failed',\n  at: '2026-07-22T11:38:39.945Z',\n  ready: false,\n  source: 'test'\n}\n[bamsignal] payment_verify_failed {\n  event: 'payment_verify_failed',\n  at: '2026-07-22T11:38:39.945Z',\n  scope: 'observability_test',\n  reference: 'bs_obs_test'\n}\n[bamsignal] payment_verify_failed {\n  event: 'payment_verify_failed',\n  at: '2026-07-22T11:38:40.550Z',\n  scope: 'test',\n  reference: 'bs_stability'\n}\n[bamsignal] retry_exhausted {\n  event: 'retry_exhausted',\n  at: '2026-07-22T11:38:40.562Z',\n  service: 'test_service',\n  attempts: 3\n}\n[bamsignal] retry_exhausted {\n  event: 'retry_exhausted',\n  at: '2026-07-22T11:38:42.066Z',\n  service: 'test_retry',\n  attempts: 3,\n  attempt: 3,\n  code: null,\n  error: 'network down'\n}\n",
+      "exitCode": 0
+    }
+  ],
+  "summary": "Migrations: PASS · Environment: PASS · Lint: PASS · Typecheck: PASS · Build: PASS · Server Import: PASS · Source Integrity: PASS · Diagnostics: PASS · Readiness: PASS · Production Hardening: PASS · Auth Lifecycle: PASS · Fortress Suite: PASS",
+  "durationMs": 375298
+}

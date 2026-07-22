@@ -203,6 +203,22 @@ If build fails: fix root cause (missing Dockerfile, build env, typecheck, etc.) 
 
 ---
 
+## Production certification (Sprint 1.1+)
+
+Before launch cutover or after infrastructure changes:
+
+```bash
+npm run certify:production
+```
+
+Produces `certification/production/reports/latest.md` and `latest.json` covering migrations, environment validation, build, server import, source integrity, diagnostics, readiness, hardening tests, and fortress suite.
+
+**PR CI** (fast gates only): `.github/workflows/pr-checks.yml` — lint, typecheck, build, server import.
+
+**Branch protection:** see [docs/engineering/BRANCH_GOVERNANCE.md](./docs/engineering/BRANCH_GOVERNANCE.md).
+
+---
+
 ## Common failures
 
 | Symptom | Likely cause | Fix |

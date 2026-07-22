@@ -8,6 +8,7 @@ import {
   logThrottleDbUnavailable,
   recordMemoryMemberThrottleFailure
 } from "./memoryThrottle.js";
+import { recordFallbackActivation } from "./infrastructureObservability.js";
 import { assertSchemaTable } from "./schemaVerification.js";
 import {
   PIN_AUTH_ATTEMPTS_RETENTION_MS,
@@ -17,9 +18,19 @@ import {
 
 export { PIN_AUTH_ATTEMPTS_RETENTION_MS };
 
-const WINDOW_MS = 15 * 60 * 1000;
-const LOCK_MS = 15 * 60 * 1000;
-const MAX_ATTEMPTS = 5;
+function parseEnvMs(name, fallback) {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parseEnvInt(name, fallback) {
+  const parsed = Number.parseInt(String(process.env[name] ?? ""), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const WINDOW_MS = parseEnvMs("PIN_AUTH_WINDOW_MS", 15 * 60 * 1000);
+const LOCK_MS = parseEnvMs("PIN_AUTH_LOCK_MS", 15 * 60 * 1000);
+const MAX_ATTEMPTS = parseEnvInt("PIN_AUTH_MAX_ATTEMPTS", 5);
 
 export async function ensurePinAuthAttemptsTable() {
   if (!isDatabaseReady()) return;
@@ -68,6 +79,7 @@ function useMemberMemoryFallback(action) {
   if (isDatabaseReady()) return false;
   logThrottleDbUnavailable(action, "member");
   logMemberMemoryThrottleUsed(action);
+  recordFallbackActivation("pin_auth_memory", { action });
   return true;
 }
 

@@ -192,6 +192,8 @@ export async function softDeleteMemberAccount({ email, phone }) {
       action: "account_deletion_scheduled",
       details: { scheduledFor: scheduledFor.toISOString() }
     });
+    const { recordAccountDeletionRetention } = await import("./services/auth/observability.js");
+    await recordAccountDeletionRetention(result.rows[0], scheduledFor.toISOString());
   }
   return {
     ok: Boolean(result.rows[0]),
@@ -241,6 +243,8 @@ export async function restoreMemberAccount({ email, phone }) {
       action: "account_restored",
       details: {}
     });
+    const { recordAccountRestored } = await import("./services/auth/observability.js");
+    await recordAccountRestored(result.rows[0]);
   }
   return { ok: Boolean(result.rows[0]), profile: result.rows[0] };
 }
@@ -259,6 +263,11 @@ export async function processExpiredAccountDeletions() {
        and account_delete_scheduled_for <= now()
      returning id`
   );
+
+  const { recordPermanentDeletion } = await import("./services/auth/observability.js");
+  for (const row of result.rows) {
+    await recordPermanentDeletion(row.id);
+  }
 
   return { processed: result.rows.length };
 }

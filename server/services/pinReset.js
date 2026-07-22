@@ -250,6 +250,19 @@ export async function sendPinResetCode(rawEmail = "") {
     text: `Your PIN reset code is ${code}. It expires in 10 minutes.`
   });
 
+  try {
+    const { createRecoveryToken } = await import("./auth/recovery.js");
+    await createRecoveryToken({
+      recoveryKind: "pin_reset",
+      contact: email,
+      rawToken: code,
+      ttlMs: OTP_TTL_MS,
+      metadata: { channel: "email_otp" }
+    });
+  } catch {
+    /* recovery audit must not block PIN reset delivery */
+  }
+
   return { ok: true, sent: true, email };
 }
 
@@ -301,6 +314,17 @@ export async function completePinReset({ email: rawEmail, code, newPin }) {
 
   await repairUserPin({ username: account.username, newPin: pin });
   await clearStored(email);
+
+  try {
+    const { completeRecoveryToken } = await import("./auth/recovery.js");
+    await completeRecoveryToken({
+      recoveryKind: "pin_reset",
+      contact: email,
+      token: submittedCode
+    });
+  } catch {
+    /* recovery audit must not block PIN reset completion */
+  }
 
   return { ok: true, username: account.username, email };
 }

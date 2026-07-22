@@ -11,6 +11,10 @@ import {
   ensureApiRequestContext,
   sendLoggedApiError
 } from "../../server/services/errorResponse.js";
+import {
+  incrementAuthMetric,
+  recordAuthSecurityEvent
+} from "../../server/services/auth/index.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -40,6 +44,12 @@ export default async function handler(req, res) {
     if (action === "send") {
       const email = String(body.email || "").trim();
       const result = await sendPinResetCode(email);
+      incrementAuthMetric("recoveryRequests");
+      await recordAuthSecurityEvent({
+        eventType: "password_reset_requested",
+        userKey: email,
+        summary: "PIN reset code requested"
+      });
       return res.status(200).json(result);
     }
 
@@ -90,6 +100,12 @@ export default async function handler(req, res) {
         "pin_reset_success",
         observabilityContext(req, buildAuthAuditContext({ email }))
       );
+      incrementAuthMetric("passwordReset");
+      await recordAuthSecurityEvent({
+        eventType: "pin_reset",
+        userKey: email,
+        summary: "PIN reset completed"
+      });
       return res.status(200).json(result);
     }
 

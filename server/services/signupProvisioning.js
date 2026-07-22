@@ -723,6 +723,40 @@ export async function runSignupProvisioning(body = {}, provisioning = {}) {
       payload: { memberProfileId: profileRow.id }
     });
 
+    try {
+      const {
+        incrementAuthMetric,
+        recordAuthSecurityEvent,
+        transitionAccountLifecycle
+      } = await import("./auth/index.js");
+      incrementAuthMetric("signup");
+      incrementAuthMetric("verification");
+      await recordAuthSecurityEvent({
+        eventType: "signup",
+        authUserId: authUser.id,
+        profileId: profileRow.id,
+        userKey: userKey || normalizeSignupEmail(body.email),
+        summary: "Account signup completed"
+      });
+      await recordAuthSecurityEvent({
+        eventType: "email_verified",
+        authUserId: authUser.id,
+        profileId: profileRow.id,
+        summary: "Email verified during signup"
+      });
+      await transitionAccountLifecycle({
+        profileId: profileRow.id,
+        authUserId: authUser.id,
+        previousStatus: "email_verification",
+        newStatus: profileRow.onboarding_complete ? "active" : "profile_completion",
+        reasonCode: "signup_complete",
+        reason: "Signup provisioning completed",
+        actorRole: "system"
+      });
+    } catch {
+      /* auth audit must not block signup */
+    }
+
     return {
       ok: true,
       email: normalizeSignupEmail(body.email),

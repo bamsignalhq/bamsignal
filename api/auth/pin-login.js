@@ -8,6 +8,11 @@ import { normalizeLoginUsername } from "../../server/services/loginResolve.js";
 import { buildAuthAuditContext } from "../../server/services/logRedaction.js";
 import { logObservabilityEvent, observabilityContext } from "../../server/services/observability.js";
 import { sendLoggedApiError } from "../../server/services/apiErrorResponse.js";
+import {
+  handlePostLoginAuth,
+  incrementAuthMetric,
+  recordAuthSecurityEvent
+} from "../../server/services/auth/index.js";
 
 function parseBody(req) {
   if (!req.body) return {};
@@ -55,6 +60,15 @@ export default async function handler(req, res) {
 
     const result = await loginWithUsernameAndPin(username, pin);
     if (!result.ok) {
+      incrementAuthMetric("failedLogins");
+      incrementAuthMetric("pinFailures");
+      await recordAuthSecurityEvent({
+        eventType: "failed_login",
+        userKey: username,
+        ip: String(req.headers?.["x-forwarded-for"] || req.ip || "").split(",")[0].trim() || null,
+        userAgent: String(req.headers?.["user-agent"] || ""),
+        summary: "Invalid username or PIN"
+      });
       const record = await recordPinLoginFailure(req, username);
       logObservabilityEvent(
         "pin_login_failed",
@@ -79,6 +93,16 @@ export default async function handler(req, res) {
       "pin_login_success",
       observabilityContext(req, buildAuthAuditContext({ username }))
     );
+
+    const sessionUser = result.session?.user;
+    const authUserId = sessionUser?.id ? String(sessionUser.id) : null;
+    const profileId = result.resolved?.member?.id ? String(result.resolved.member.id) : null;
+    await handlePostLoginAuth(req, {
+      session: result.session,
+      authUserId,
+      profileId,
+      userKey: username
+    });
 
     return res.status(200).json({
       ok: true,

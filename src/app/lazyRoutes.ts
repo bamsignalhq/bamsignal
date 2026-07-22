@@ -96,6 +96,66 @@ export const LazySignalConciergeClientAuthPage = lazy(() =>
   }))
 );
 
+export const LazyConciergeHomePage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergeHomePage
+  }))
+);
+
+export const LazyConciergeAuthRoutePage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergeAuthRoutePage
+  }))
+);
+
+export const LazyConciergeOnboardingPage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergeOnboardingPage
+  }))
+);
+
+export const LazyConciergeDashboardRoutePage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergeDashboardRoutePage
+  }))
+);
+
+export const LazyConciergeStatusRoutePage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergeStatusRoutePage
+  }))
+);
+
+export const LazyConciergeAboutPage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergeAboutPage
+  }))
+);
+
+export const LazyConciergeBenefitsPage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergeBenefitsPage
+  }))
+);
+
+export const LazyConciergePricingPage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergePricingPage
+  }))
+);
+
+export const LazyConciergePrivacyRoutePage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergePrivacyRoutePage
+  }))
+);
+
+export const LazyConciergeFaqRoutePage = lazy(() =>
+  import("../pages/concierge/ConciergePages").then((module) => ({
+    default: module.ConciergeFaqRoutePage
+  }))
+);
+
 export const LazyShareYourStoryPage = lazy(() =>
   import("../pages/signal-concierge/ShareYourStoryPage").then((module) => ({
     default: module.ShareYourStoryPage

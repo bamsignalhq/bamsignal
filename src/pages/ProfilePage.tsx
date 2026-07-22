@@ -56,6 +56,9 @@ import { BUILD_CODE, BUILD_TIME, BUILD_VERSION, CACHE_VERSION } from "../buildIn
 import { getCms } from "../constants/cms";
 import { USER_MESSAGES } from "../constants/userMessages";
 import { navigateToPath } from "../constants/routes";
+import { PassportIdentityPanel } from "../components/identity/PassportIdentityPanel";
+import "../styles/passport-identity.css";
+import { bindPassportIdentity, markWorkspaceAvailable } from "../passport";
 import { getVoiceVibeUrl, hasVoiceVibe } from "../utils/voiceVibe";
 import { getVerificationTier } from "../utils/verification";
 import { normalizeDatingProfile, normalizeMatchPreferences } from "../utils/profile";
@@ -103,7 +106,7 @@ type SaveFeedback = {
   success: boolean;
   source: SaveFeedbackSource;
 };
-type SettingsPanel = "hub" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help" | "about";
+type SettingsPanel = "hub" | "identity" | "account" | "privacy" | "notifications" | "preferences" | "verification" | "subscription" | "help" | "about";
 type EditSection = "basic" | "photos" | "bio" | "interests" | "intent" | "details" | "prompts" | "voice";
 
 const PROFILE_STATE_OPTIONS = NIGERIAN_STATES.map((s) => ({ value: s, label: stateDisplayLabel(s) }));
@@ -234,6 +237,17 @@ export function ProfilePage({
 }: ProfilePageProps) {
   debugRender("ProfilePage", { isPremium, theme });
   const { profile, setProfile, prefs, setPrefs } = useMemberProfileListener();
+  useEffect(() => {
+    markWorkspaceAvailable("member");
+    bindPassportIdentity({
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
+      emailVerified: Boolean(user.email),
+      phoneVerified: Boolean(user.phoneVerified),
+      productId: "bamsignal"
+    });
+  }, [user.username, user.email, user.phone, user.phoneVerified]);
   const [saved, setSaved] = useState(false);
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
@@ -847,6 +861,8 @@ export function ProfilePage({
           <h2 className="profile-screen-title">
             {settingsPanel === "hub"
               ? "Settings"
+              : settingsPanel === "identity"
+                ? "Stankings Identity"
               : settingsPanel === "account"
                 ? "Account"
                 : settingsPanel === "privacy"
@@ -881,6 +897,7 @@ export function ProfilePage({
                   onClick={() => setSettingsPanel("subscription")}
                 />
                 <SettingsRow label="Privacy & Safety" onClick={() => setSettingsPanel("privacy")} />
+                <SettingsRow label="Stankings Identity" onClick={() => setSettingsPanel("identity")} />
                 <SettingsRow label="Notifications" onClick={() => setSettingsPanel("notifications")} />
                 <SettingsRow label="Account" onClick={() => setSettingsPanel("account")} />
                 <SettingsRow label="Safety Center" onClick={() => onOpenSafetyCenter?.()} />
@@ -1132,6 +1149,10 @@ export function ProfilePage({
               onMessage={showModMessage}
               onComplete={() => setSettingsPanel("hub")}
             />
+          )}
+
+          {settingsPanel === "identity" && (
+            <PassportIdentityPanel user={user} profile={profile} isPremium={isPremium} />
           )}
 
           {settingsPanel === "account" && (

@@ -20,7 +20,6 @@ import {
   prevJourneyScreen
 } from "../constants/journey";
 import { navigateToPath } from "../constants/routes";
-import { SIGNAL_CONCIERGE_ROUTES } from "../constants/signalConciergeRoutes";
 import type { ExperienceIntent, JourneyDraft, JourneyScreenId } from "../types/journey";
 import type { Gender, LookingFor } from "../types";
 import {
@@ -162,7 +161,7 @@ export function RelationshipJourneyPage({ onYouChapterComplete, onLogin }: Relat
             onClick={() => {
               if (intent === "concierge") {
                 persist({ experienceIntent: intent, screen: "j2-intent" });
-                navigateToPath(SIGNAL_CONCIERGE_ROUTES.apply);
+                navigateToPath("/concierge/signup");
                 return;
               }
               goNext("j3-name", { celebrate: "Great choice." });

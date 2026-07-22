@@ -46,6 +46,16 @@ import {
   LazySignalConciergeConsultationPage,
   LazySignalConciergeFaqPage,
   LazySignalConciergeClientAuthPage,
+  LazyConciergeHomePage,
+  LazyConciergeAuthRoutePage,
+  LazyConciergeOnboardingPage,
+  LazyConciergeDashboardRoutePage,
+  LazyConciergeStatusRoutePage,
+  LazyConciergeAboutPage,
+  LazyConciergeBenefitsPage,
+  LazyConciergePricingPage,
+  LazyConciergePrivacyRoutePage,
+  LazyConciergeFaqRoutePage,
   LazyShareYourStoryPage,
   LazyProductLandingPage,
   LazySignalConciergeLandingPage,
@@ -252,10 +262,31 @@ import { getNigeriaRoute, type NigeriaRoute } from "./constants/nigeriaRoutes";
 import {
   getSignalConciergeRoute,
   isSignalConciergeAuthenticatedRoute,
+  isSignalConciergeRoute,
   isUnknownSignalConciergeSubroute,
   SIGNAL_CONCIERGE_ROUTES,
   type SignalConciergeRoute
 } from "./constants/signalConciergeRoutes";
+import {
+  CONCIERGE_ROUTES,
+  getConciergeRoute,
+  isConciergeAuthViewRoute,
+  isConciergeAuthenticatedRoute,
+  isConciergeRoute,
+  isUnknownConciergeSubroute,
+  type ConciergeRoute
+} from "./constants/conciergeRoutes";
+import {
+  activateWorkspaceFromAuthSurface,
+  appendPassportAuditEvent,
+  bindPassportIdentity,
+  markWorkspaceAvailable,
+  rememberMemberWorkspacePath,
+  rememberPassportRoute,
+  selectWorkspace,
+  syncPersonaForWorkspace,
+  syncWorkspaceFromPath
+} from "./passport";
 import {
   getProductLandingId,
   redirectProfessionalMatchmakingAlias,
@@ -414,6 +445,7 @@ export function App() {
   const [signalConciergeRoute, setSignalConciergeRoute] = useState<SignalConciergeRoute | null>(() =>
     getSignalConciergeRoute()
   );
+  const [conciergeRoute, setConciergeRoute] = useState<ConciergeRoute | null>(() => getConciergeRoute());
   const [productLandingId, setProductLandingId] = useState<ProductLandingId | null>(() =>
     getProductLandingId()
   );
@@ -663,6 +695,7 @@ export function App() {
       setSeoRoute(getSeoRoute());
       setNigeriaRoute(getNigeriaRoute());
       setSignalConciergeRoute(getSignalConciergeRoute());
+      setConciergeRoute(getConciergeRoute());
       setProductLandingId(getProductLandingId());
       setSignalEventsRoute(getSignalEventsRoute());
       setBamSignalFoundationRoute(getBamSignalFoundationRoute());
@@ -681,6 +714,8 @@ export function App() {
         setMemberAppEntered(true);
       }
       rememberSuccessfulRoute();
+      syncWorkspaceFromPath(window.location.pathname);
+      rememberPassportRoute(window.location.pathname);
       if (hub) {
         const resolved = resolveHardHubPath();
         if (normalizePath(window.location.pathname) !== resolved) {
@@ -696,6 +731,11 @@ export function App() {
   useLayoutEffect(() => {
     if (!isUnknownSignalConciergeSubroute(memberPathname)) return;
     navigateToPath(SIGNAL_CONCIERGE_ROUTES.landing, true);
+  }, [memberPathname]);
+
+  useLayoutEffect(() => {
+    if (!isUnknownConciergeSubroute(memberPathname)) return;
+    navigateToPath(CONCIERGE_ROUTES.landing, true);
   }, [memberPathname]);
 
   useLayoutEffect(() => {
@@ -1448,6 +1488,19 @@ export function App() {
     navigateToPath(SIGNAL_CONCIERGE_ROUTES.signIn);
   }, [memberPathname, authLoading, isAuthed]);
 
+  useLayoutEffect(() => {
+    const route = getConciergeRoute(memberPathname);
+    if (!route || !isConciergeAuthenticatedRoute(route)) return;
+    if (authLoading || isAuthed || getAuthPath()) return;
+    navigateToPath(CONCIERGE_ROUTES.login);
+  }, [memberPathname, authLoading, isAuthed]);
+
+  // Canonical alias: /concierge/forgot-password → forgot-pin
+  useLayoutEffect(() => {
+    if (normalizePath(memberPathname) !== CONCIERGE_ROUTES.forgotPassword) return;
+    navigateToPath(CONCIERGE_ROUTES.forgotPin, true);
+  }, [memberPathname]);
+
   const enterMemberApp = useCallback(() => {
     if (openAppLoading) return;
 
@@ -1600,6 +1653,24 @@ export function App() {
       });
       setUser(withPhone);
       setIsAuthed(true);
+      bindPassportIdentity({
+        username: withPhone.username,
+        email: withPhone.email,
+        phone: withPhone.phone,
+        emailVerified: Boolean(withPhone.email),
+        phoneVerified: Boolean(withPhone.phoneVerified),
+        productId: "bamsignal"
+      });
+      appendPassportAuditEvent({
+        category: "authentication",
+        action: meta?.isNewSignup ? "auth.signup" : "auth.login"
+      });
+      syncPersonaForWorkspace(
+        isConciergeRoute(window.location.pathname) || isSignalConciergeRoute(window.location.pathname)
+          ? "concierge"
+          : "member",
+        false
+      );
       restoreComplianceFromMarker(withPhone);
       setAuthMessage("");
       recordStreakActivity();
@@ -1667,7 +1738,26 @@ export function App() {
         route: needsOnboarding ? "onboarding" : "home",
         reason: appResult.status?.reason ?? (forceOnboarding ? "force_new_signup" : "server_status")
       });
+      // Concierge /signal-concierge auth stays on Concierge workspace — never member home.
+      const stayOnConciergeSurface =
+        isConciergeRoute(window.location.pathname) || isSignalConciergeRoute(window.location.pathname);
+      if (stayOnConciergeSurface) {
+        activateWorkspaceFromAuthSurface(window.location.pathname);
+        setAuthPath(null);
+        setProfileComplete(true);
+        setPendingTab(null);
+        markMemberSessionReady();
+        setMemberHydrating(false);
+        void refreshPremiumStatus(appResult.user).then(() => syncPremiumState());
+        logAuthRoute("REDIRECT_REASON", {
+          reason: "concierge_workspace",
+          route: forceOnboarding ? "concierge_onboarding" : "concierge_dashboard"
+        });
+        return;
+      }
       if (getAuthPath() || isPublicWebRoute()) {
+        markWorkspaceAvailable("member");
+        selectWorkspace("member", { setPreferred: true });
         navigateToPath(needsOnboarding ? "/onboarding" : "/home", true);
         setAuthPath(null);
       }
@@ -2074,7 +2164,9 @@ export function App() {
       setMemberOverlay(null);
       setTab(next);
       if (isAuthed && memberAppEntered && profileComplete === true) {
-        navigateToPath(memberPathForTab(next));
+        const path = memberPathForTab(next);
+        navigateToPath(path);
+        rememberMemberWorkspacePath(path);
       }
     },
     [enterMemberApp, isAuthed, memberAppEntered, showMarketingHome, profileComplete]
@@ -2575,6 +2667,80 @@ export function App() {
           onLogin={() => openAuth("login")}
           onSignup={() => openAuth("signup", "discover")}
         />
+      </Suspense>
+    );
+  }
+
+  if (conciergeRoute) {
+    if (
+      isUnknownConciergeSubroute(currentPathname) ||
+      (isConciergeAuthenticatedRoute(conciergeRoute) && (authLoading || !isAuthed))
+    ) {
+      return (
+        <div className={`app ${theme}`}>
+          <Preloader
+            exiting={false}
+            variant="minimal"
+            subtitle={
+              isUnknownConciergeSubroute(currentPathname)
+                ? "Redirecting…"
+                : authLoading
+                  ? "Restoring your session…"
+                  : "Redirecting to Concierge sign in…"
+            }
+            showReload={bootStalled}
+            onReload={reloadApp}
+          />
+        </div>
+      );
+    }
+
+    const conciergeShellProps = {
+      theme,
+      onToggleTheme: toggleTheme,
+      isAuthed
+    };
+
+    const conciergeAuthView =
+      conciergeRoute === "signup"
+        ? "signup"
+        : conciergeRoute === "forgotPin" || conciergeRoute === "forgotPassword"
+          ? "forgotPin"
+          : conciergeRoute === "forgotUsername"
+            ? "forgotUsername"
+            : conciergeRoute === "verifyEmail"
+              ? "verifyEmail"
+              : "login";
+
+    return (
+      <Suspense fallback={<LazyRouteFallback subtitle="Loading Signal Concierge…" />}>
+        {conciergeRoute === "landing" ? (
+          <LazyConciergeHomePage {...conciergeShellProps} />
+        ) : isConciergeAuthViewRoute(conciergeRoute) ? (
+          <LazyConciergeAuthRoutePage
+            {...conciergeShellProps}
+            view={conciergeAuthView}
+            onAuthenticated={handleAuthenticated}
+            message={authMessage}
+            onMessage={setAuthMessage}
+          />
+        ) : conciergeRoute === "onboarding" ? (
+          <LazyConciergeOnboardingPage {...conciergeShellProps} />
+        ) : conciergeRoute === "dashboard" ? (
+          <LazyConciergeDashboardRoutePage {...conciergeShellProps} />
+        ) : conciergeRoute === "status" ? (
+          <LazyConciergeStatusRoutePage {...conciergeShellProps} />
+        ) : conciergeRoute === "about" ? (
+          <LazyConciergeAboutPage {...conciergeShellProps} />
+        ) : conciergeRoute === "benefits" ? (
+          <LazyConciergeBenefitsPage {...conciergeShellProps} />
+        ) : conciergeRoute === "pricing" ? (
+          <LazyConciergePricingPage {...conciergeShellProps} />
+        ) : conciergeRoute === "privacy" ? (
+          <LazyConciergePrivacyRoutePage {...conciergeShellProps} />
+        ) : (
+          <LazyConciergeFaqRoutePage {...conciergeShellProps} />
+        )}
       </Suspense>
     );
   }

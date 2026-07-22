@@ -4,6 +4,7 @@ import { getLegalPath } from "./footer";
 import { isSeoRoute } from "./seoRoutes";
 import { isNigeriaSeoRoute } from "./nigeriaRoutes";
 import { isSignalConciergeRoute } from "./signalConciergeRoutes";
+import { isConciergeRoute } from "./conciergeRoutes";
 import { isSignalEventsRoute } from "./signalEventsRoutes";
 import { isBamSignalFoundationRoute } from "./bamSignalFoundationRoutes";
 import { isBamSignalInstituteRoute } from "./bamSignalInstituteRoutes";
@@ -114,6 +115,7 @@ export function isPublicWebRoute(pathname = window.location.pathname): boolean {
   if (isSeoRoute(path)) return true;
   if (isNigeriaSeoRoute(path)) return true;
   if (isSignalConciergeRoute(path)) return true;
+  if (isConciergeRoute(path)) return true;
   if (isSignalEventsRoute(path)) return true;
   if (isBamSignalFoundationRoute(path)) return true;
   if (isBamSignalInstituteRoute(path)) return true;

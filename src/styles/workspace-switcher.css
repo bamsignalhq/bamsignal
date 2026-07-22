@@ -1,0 +1,180 @@
+/* Shared Workspace Switcher — Concierge + Member variants */
+
+.workspace-switcher {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  max-width: 100%;
+}
+
+.workspace-switcher__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  min-height: 40px;
+}
+
+.workspace-switcher__trigger:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.workspace-switcher__label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.workspace-switcher__eyebrow {
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  line-height: 1.2;
+}
+
+.workspace-switcher__current {
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-switcher__chevron {
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+}
+
+.workspace-switcher__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.workspace-switcher__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: min(260px, calc(100vw - 24px));
+  max-width: min(320px, calc(100vw - 24px));
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+}
+
+.workspace-switcher__option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.workspace-switcher__option:hover,
+.workspace-switcher__option:focus-visible {
+  background: rgba(15, 23, 42, 0.06);
+  outline: none;
+}
+
+.workspace-switcher__option.is-selected {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.workspace-switcher__option-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.workspace-switcher__option-desc {
+  font-size: 0.75rem;
+  opacity: 0.72;
+  line-height: 1.35;
+}
+
+/* Concierge editorial variant */
+.workspace-switcher--concierge .workspace-switcher__trigger {
+  color: var(--sc-ink, #1a2332);
+  border-color: var(--sc-border, rgba(26, 35, 50, 0.14));
+  background: var(--sc-bg-elevated, rgba(255, 255, 255, 0.55));
+}
+
+.platform-root--signal-concierge.dark .workspace-switcher--concierge .workspace-switcher__trigger,
+.app.dark .workspace-switcher--concierge .workspace-switcher__trigger {
+  color: var(--sc-ink, #f5f1e8);
+  border-color: var(--sc-border, rgba(245, 241, 232, 0.16));
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.workspace-switcher--concierge .workspace-switcher__list {
+  border-color: var(--sc-border, rgba(26, 35, 50, 0.14));
+  background: var(--sc-bg-elevated, #fff);
+  color: var(--sc-ink, #1a2332);
+}
+
+/* Member compact fintech variant — reuse token feel without redesigning chrome */
+.workspace-switcher--member {
+  width: 100%;
+}
+
+.workspace-switcher--member .workspace-switcher__trigger {
+  width: 100%;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: var(--bs-radius-md, 12px);
+  border: 1px solid var(--bs-border, rgba(15, 23, 42, 0.08));
+  background: var(--bs-surface, #fff);
+  color: var(--bs-ink, #0f172a);
+}
+
+.workspace-switcher--member .workspace-switcher__list {
+  left: 0;
+  right: 0;
+  min-width: 0;
+  max-width: none;
+  width: 100%;
+  border-color: var(--bs-border, rgba(15, 23, 42, 0.08));
+  background: var(--bs-surface, #fff);
+  color: var(--bs-ink, #0f172a);
+  box-shadow: var(--bs-shadow-md, 0 8px 24px rgba(15, 23, 42, 0.1));
+}
+
+@media (max-width: 430px) {
+  .workspace-switcher--concierge .workspace-switcher__eyebrow {
+    display: none;
+  }
+
+  .workspace-switcher--concierge .workspace-switcher__trigger {
+    padding: 6px 8px;
+  }
+}
+
+.settings-workspace-switch {
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--bs-border, rgba(15, 23, 42, 0.06));
+  margin-bottom: 4px;
+}

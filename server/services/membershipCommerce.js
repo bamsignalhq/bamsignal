@@ -455,6 +455,22 @@ export async function activateMembershipFromPayment({
     paymentRef: ref,
     actor: "payment_fortress",
     metadata: { ledgerSource, ...metadata }
+  }).then(async (activation) => {
+    if (activation?.ok && ctx.member?.id && !activation.duplicate) {
+      try {
+        const { recordSubscriptionActivatedFromPayment } = await import("./finance/subscriptions.js");
+        await recordSubscriptionActivatedFromPayment({
+          memberId: ctx.member.id,
+          productId,
+          planId,
+          paymentRef: ref,
+          metadata: { experienceMode: mode, ledgerSource }
+        });
+      } catch {
+        /* subscription state must not block fulfillment */
+      }
+    }
+    return activation;
   });
 }
 

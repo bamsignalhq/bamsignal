@@ -55,6 +55,9 @@ function main() {
   const authLifecycle = runNpmScript("test:auth-lifecycle");
   checks.push({ id: "auth-lifecycle", label: "Auth Lifecycle", ...authLifecycle });
 
+  const financialCore = runNpmScript("test:financial-core");
+  checks.push({ id: "financial-core", label: "Financial Core", ...financialCore });
+
   const fortress = runNpmScript("test:fortress");
   checks.push({ id: "fortress", label: "Fortress Suite", ...fortress });
 

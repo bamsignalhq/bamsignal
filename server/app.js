@@ -32,6 +32,8 @@ import loginSecurityHandler from "../api/auth/login-security.js";
 import playReviewerFinishHandler from "../api/auth/play-reviewer-finish.js";
 import authSessionsHandler from "../api/auth/sessions.js";
 import authAccountHandler from "../api/auth/account.js";
+import financeBillingHandler from "../api/finance/billing.js";
+import financeAdminHandler from "../api/finance/admin.js";
 import paystackVerifyHandler from "../api/paystack/verify.js";
 import consultationPaymentsHandler from "./routes/consultationPayments.js";
 import consultationSchedulingHandler from "./routes/consultationScheduling.js";
@@ -176,6 +178,8 @@ export function createApp(options = {}) {
   mountHandler(app, "post", "/api/auth/identity", identityHandler);
   mountHandler(app, "post", "/api/auth/sessions", authSessionsHandler);
   mountHandler(app, "post", "/api/auth/account", authAccountHandler);
+  mountHandler(app, "post", "/api/finance/billing", financeBillingHandler);
+  mountHandler(app, "post", "/api/finance/admin", financeAdminHandler);
   mountHandler(app, "post", "/api/verify/sms/start", smsVerifyStartHandler);
   mountHandler(app, "post", "/api/verify/sms/confirm", smsVerifyConfirmHandler);
   mountHandler(app, "post", "/api/verify/whatsapp/start", whatsappVerifyStartHandler);

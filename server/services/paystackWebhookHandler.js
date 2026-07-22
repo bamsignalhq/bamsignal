@@ -108,7 +108,8 @@ async function fulfillPaystackWebhookEvent(event, { ledgerSource = "webhook" } =
       city: metadata.city || "",
       returnPath,
       sourcePage: returnPath,
-      ledgerSource
+      ledgerSource,
+      webhookEventId: String(event.id || data.id || "").trim() || null
     });
 
     if (result.ok && !result.idempotent) {
@@ -164,6 +165,12 @@ export async function handlePaystackWebhookRequest({
 
   const bodyBuffer = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody || "");
   if (!verifyPaystackWebhookSignature(bodyBuffer, signature, secretKey)) {
+    try {
+      const { incrementFinancialMetric } = await import("./finance/observability.js");
+      incrementFinancialMetric("webhookFailures");
+    } catch {
+      /* observability must not block webhook response */
+    }
     logThresholdedAlert("payment_webhook_failed", {
       ...logContext,
       reason: "invalid_signature"
@@ -203,6 +210,12 @@ export async function handlePaystackWebhookRequest({
         reason: "fulfillment_failed",
         status: result?.status || 422
       });
+      try {
+        const { incrementFinancialMetric } = await import("./finance/observability.js");
+        incrementFinancialMetric("webhookFailures");
+      } catch {
+        /* observability must not block webhook response */
+      }
       return {
         status: result?.status || 422,
         body: errorBody("Unable to fulfill purchase.", "fulfillment_failed")

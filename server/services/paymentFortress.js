@@ -52,7 +52,7 @@ export async function recordPurchaseIntent({
     throw new PaymentDatabaseError("Unable to store purchase intent.", "payment_persistence_failed");
   }
   requireDatabaseReadyForPayments();
-  return claimPaymentFulfillment({
+  const row = await claimPaymentFulfillment({
     reference,
     userId,
     productType: intent.productType,
@@ -73,6 +73,37 @@ export async function recordPurchaseIntent({
       }
     }
   });
+
+  try {
+    const { handlePaymentFinancialEvent } = await import("./finance/index.js");
+    await handlePaymentFinancialEvent({
+      reference,
+      userId,
+      amountKobo: Number(intent.amountKobo || 0),
+      productType: intent.productType,
+      productId: intent.productId,
+      lifecycleStatus: "initialized",
+      previousStatus: "unknown",
+      reasonCode: "purchase_intent",
+      ledgerSource: source
+    });
+    await handlePaymentFinancialEvent({
+      reference,
+      userId,
+      amountKobo: Number(intent.amountKobo || 0),
+      productType: intent.productType,
+      productId: intent.productId,
+      lifecycleStatus: "pending",
+      previousStatus: "initialized",
+      reasonCode: "purchase_pending",
+      entryId: `pay_${reference}_pending`,
+      ledgerSource: source
+    });
+  } catch {
+    /* financial audit must not block payment initialize */
+  }
+
+  return row;
 }
 
 export async function loadVerifiedPurchaseIntent(reference, metadata = {}) {
@@ -670,7 +701,8 @@ export async function completePaymentFulfillment({
   city = "",
   returnPath = "/home",
   sourcePage = "/home",
-  ledgerSource = "verify"
+  ledgerSource = "verify",
+  webhookEventId = null
 }) {
   requireDatabaseReadyForPayments();
 
@@ -690,6 +722,23 @@ export async function completePaymentFulfillment({
   if (!processingClaim.claimed) {
     const existingFulfillment = processingClaim.row || (await getPaymentFulfillment(reference));
     if (existingFulfillment?.status === "fulfilled") {
+      try {
+        const { handlePaymentFinancialEvent } = await import("./finance/index.js");
+        await handlePaymentFinancialEvent({
+          reference,
+          webhookEventId,
+          amountKobo: Number(transaction?.amount || existingFulfillment.amount_kobo || 0),
+          productType: existingFulfillment.product_type,
+          productId: existingFulfillment.product_id,
+          lifecycleStatus: "successful",
+          previousStatus: "processing",
+          reasonCode: "idempotent_fulfillment",
+          duplicateWebhook: ledgerSource === "webhook",
+          ledgerSource
+        });
+      } catch {
+        /* financial audit must not block idempotent fulfillment */
+      }
       return resolveIdempotentFulfillment(existingFulfillment, {
         reference,
         email,
@@ -711,6 +760,26 @@ export async function completePaymentFulfillment({
     };
   }
 
+  try {
+    const { handlePaymentFinancialEvent } = await import("./finance/index.js");
+    await handlePaymentFinancialEvent({
+      reference,
+      webhookEventId,
+      userId: metadata.user_id || metadata.userId || null,
+      amountKobo: Number(transaction?.amount || 0),
+      productType: metadata.product_type || null,
+      productId: metadata.product_id || null,
+      lifecycleStatus: "processing",
+      previousStatus: "pending",
+      reasonCode: "fulfillment_processing",
+      entryId: `pay_${reference}_processing`,
+      ledgerSource,
+      transaction
+    });
+  } catch {
+    /* financial audit must not block fulfillment */
+  }
+
   const amountCheck = await assertVerifiedPurchaseAmount(reference, transaction, metadata);
   if (!amountCheck.ok) {
     await markPaymentFulfillmentStatus(reference, "failed", {
@@ -723,6 +792,22 @@ export async function completePaymentFulfillment({
         amountCheck
       }
     });
+    try {
+      const { handlePaymentFinancialEvent } = await import("./finance/index.js");
+      await handlePaymentFinancialEvent({
+        reference,
+        webhookEventId,
+        amountKobo: Number(transaction?.amount || 0),
+        productType: amountCheck.intent?.productType || metadata.product_type || null,
+        productId: amountCheck.intent?.productId || metadata.product_id || null,
+        lifecycleStatus: "failed",
+        previousStatus: "processing",
+        reasonCode: "amount_mismatch",
+        ledgerSource
+      });
+    } catch {
+      /* financial audit must not block failure response */
+    }
     return {
       ok: false,
       status: 422,
@@ -756,6 +841,22 @@ export async function completePaymentFulfillment({
     });
     if (activation.requiresCity) {
       return { ok: false, status: 422, error: cityBoostError(activation.boostId) };
+    }
+    try {
+      const { handlePaymentFinancialEvent } = await import("./finance/index.js");
+      await handlePaymentFinancialEvent({
+        reference,
+        webhookEventId,
+        amountKobo: Number(transaction?.amount || 0),
+        productType: intent.productType,
+        productId: intent.productId,
+        lifecycleStatus: "failed",
+        previousStatus: "processing",
+        reasonCode: "activation_failed",
+        ledgerSource
+      });
+    } catch {
+      /* financial audit must not block failure response */
     }
     return { ok: false, status: 422, error: "Unable to activate this purchase." };
   }
@@ -802,6 +903,29 @@ export async function completePaymentFulfillment({
       productId: intent.productId,
       reference
     }).catch(() => null);
+  }
+
+  try {
+    const { handlePaymentFinancialEvent } = await import("./finance/index.js");
+    await handlePaymentFinancialEvent({
+      reference,
+      webhookEventId,
+      userId: metadata.user_id || metadata.userId || null,
+      memberId: metadata.profile_id || metadata.profileId || null,
+      userKey: email || phone || null,
+      amountKobo: Number(transaction?.amount || 0),
+      productType: intent.productType,
+      productId: intent.productId,
+      lifecycleStatus: "successful",
+      previousStatus: "processing",
+      reasonCode: "fulfillment_complete",
+      entryId: `pay_${reference}_successful`,
+      ledgerSource,
+      transaction,
+      gatewayReference: transaction?.id || null
+    });
+  } catch {
+    /* financial audit must not block success response */
   }
 
   return {

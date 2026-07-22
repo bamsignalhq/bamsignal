@@ -119,7 +119,7 @@ assert(
   certSource.includes("buildCertificationManifest") && certSource.includes("manifest.json"),
   "certification manifest export"
 );
-assert(PRODUCTION_CERT_VERSION === "1.2.0", "certification version bumped for Sprint 2");
+assert(PRODUCTION_CERT_VERSION === "1.3.0", "certification version bumped for Sprint 3");
 
 const report = buildProductionCertReport([
   { id: "auth-lifecycle", label: "Auth Lifecycle", passed: true, durationMs: 1 }

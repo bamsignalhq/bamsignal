@@ -1,17 +1,17 @@
 # Certification Manifest
 
 **Overall status:** PASS
-**Certification version:** 1.2.0
-**Git commit:** 4bff4e45335051f7b4b1c96f7645ae1c574a70f1
+**Certification version:** 1.3.0
+**Git commit:** 534307068c6167c0db85d621e261f571809855f6
 **Branch:** main
-**Build timestamp:** 2026-07-22T11:38:42.085Z
-**Migration version:** 0058_member_auth_lifecycle
+**Build timestamp:** 2026-07-22T12:35:23.863Z
+**Migration version:** 0059_member_financial_core
 **Environment:** unknown
 **Node version:** v25.9.0
 **Docker image:** n/a
 
 ## Checks
 
-- Executed: 12
-- Passed: 12
+- Executed: 13
+- Passed: 13
 - Failed: 0

@@ -10,6 +10,7 @@ import { getInfrastructureMetrics } from "./infrastructureObservability.js";
 import { registryFeatureSnapshot } from "./serviceRegistry.js";
 import { PRODUCTION_CERT_VERSION } from "../../shared/productionCertification.mjs";
 import { getAuthObservabilityMetrics } from "./auth/observability.js";
+import { getFinancialObservabilityMetrics } from "./finance/observability.js";
 
 export async function buildOperatorDashboardSnapshot() {
   const deploy = getDeploymentMetadata("bamsignal");
@@ -71,7 +72,8 @@ export async function buildOperatorDashboardSnapshot() {
       fallbackActivations: infrastructure.fallbackActivations,
       rateLimitMemoryFallbacks: infrastructure.rateLimitMemoryFallbacks,
       pinAuthMemoryFallbacks: infrastructure.pinAuthMemoryFallbacks,
-      auth: getAuthObservabilityMetrics()
+      auth: getAuthObservabilityMetrics(),
+      finance: getFinancialObservabilityMetrics()
     }
   };
 }

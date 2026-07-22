@@ -47,7 +47,19 @@ export type PassportCapabilityId =
   | "legacyContributions"
   | "legacyTimeline"
   | "legacyBadges"
-  | "legacyApi";
+  | "legacyApi"
+  | "signalRegistry"
+  | "signalContributorRegistry"
+  | "signalValidation"
+  | "signalProvenance"
+  | "signalIngestion"
+  | "signalGovernance"
+  | "reviewQueue"
+  | "operationalMetrics"
+  | "replayDetection"
+  | "contributorHealth"
+  | "signalAlerting"
+  | "adrGovernance";
 
 export type PassportCapabilityDefinition = {
   id: PassportCapabilityId;
@@ -161,7 +173,7 @@ export const PASSPORT_CAPABILITY_REGISTRY: Record<
     id: "trustSignals",
     label: "Trust Signals",
     maturity: "foundation",
-    description: "Signal metadata interfaces — no scoring in this phase"
+    description: "Canonical Trust Signal standard — evidence layer, no scoring"
   },
   explainability: {
     id: "explainability",
@@ -276,6 +288,78 @@ export const PASSPORT_CAPABILITY_REGISTRY: Record<
     label: "Legacy API",
     maturity: "planned",
     description: "Server-side legacy emergence and human-reviewed recognition"
+  },
+  signalRegistry: {
+    id: "signalRegistry",
+    label: "Signal Registry",
+    maturity: "foundation",
+    description: "Canonical Trust Signal type registry and evidence categories"
+  },
+  signalContributorRegistry: {
+    id: "signalContributorRegistry",
+    label: "Signal Contributor Registry",
+    maturity: "foundation",
+    description: "Contributor authorization, domains, and allowed signal types"
+  },
+  signalValidation: {
+    id: "signalValidation",
+    label: "Signal Validation",
+    maturity: "foundation",
+    description: "Ingestion validation contracts — schema, consent, evidence"
+  },
+  signalProvenance: {
+    id: "signalProvenance",
+    label: "Signal Provenance",
+    maturity: "foundation",
+    description: "Who, when, why, and under what consent — provenance interfaces"
+  },
+  signalIngestion: {
+    id: "signalIngestion",
+    label: "Signal Ingestion",
+    maturity: "beta",
+    description: "Server-side receive → validate → consent → persist pipeline"
+  },
+  signalGovernance: {
+    id: "signalGovernance",
+    label: "Signal Governance",
+    maturity: "foundation",
+    description: "Lifecycle management, manual review, revocation, and audit trail"
+  },
+  reviewQueue: {
+    id: "reviewQueue",
+    label: "Review Queue",
+    maturity: "foundation",
+    description: "Admin review queue — pending, escalated, awaiting evidence"
+  },
+  operationalMetrics: {
+    id: "operationalMetrics",
+    label: "Operational Metrics",
+    maturity: "foundation",
+    description: "Pipeline latency, acceptance/rejection counts, storage failures"
+  },
+  replayDetection: {
+    id: "replayDetection",
+    label: "Replay Detection",
+    maturity: "foundation",
+    description: "Duplicate bursts, clock drift, repeated submissions monitoring"
+  },
+  contributorHealth: {
+    id: "contributorHealth",
+    label: "Contributor Health",
+    maturity: "foundation",
+    description: "Operational contributor statistics — never influences trust"
+  },
+  signalAlerting: {
+    id: "signalAlerting",
+    label: "Signal Alerting",
+    maturity: "foundation",
+    description: "Alert publisher contracts for governance and pipeline events"
+  },
+  adrGovernance: {
+    id: "adrGovernance",
+    label: "ADR Governance",
+    maturity: "foundation",
+    description: "Architecture Decision Records framework and Foundation ADRs"
   }
 } as const;
 

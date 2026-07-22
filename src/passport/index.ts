@@ -235,7 +235,19 @@ export {
   PASSPORT_ARCHITECTURE_LAYERS,
   buildPlaceholderLegacySnapshot,
   buildPlaceholderLegacyTimeline,
-  legacyApiClientPlaceholder
+  legacyApiClientPlaceholder,
+  TRUST_SIGNAL_EVIDENCE_CATEGORIES,
+  PRODUCT_SIGNAL_TYPE_REGISTRY,
+  SIGNAL_CONTRIBUTOR_REGISTRY,
+  getSignalContributor,
+  listSignalContributors,
+  getSignalTypeDescriptor,
+  listSignalTypesForContributor,
+  isContributorAllowedSignalType,
+  buildProvenanceQuestions,
+  SIGNAL_CONSENT_GATE_REQUIREMENTS,
+  SIGNAL_INGESTION_PIPELINE,
+  listIngestionStages
 } from "./governance";
 
 export type {
@@ -279,5 +291,13 @@ export type {
   LegacyBadgeId,
   LegacySnapshot,
   LegacyApiClient,
-  PassportArchitectureLayer
+  PassportArchitectureLayer,
+  TrustSignal,
+  ValidatedTrustSignal,
+  TrustSignalEvidenceCategory,
+  SignalContributorDefinition,
+  SignalIngestionStage,
+  SignalIngestionResult,
+  SignalProvenanceRecord,
+  PassportSignalEventType
 } from "./governance";

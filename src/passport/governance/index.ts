@@ -226,3 +226,48 @@ export type {
   LegacyRecognitionSubmission,
   LegacyApiClient
 } from "../legacy";
+
+// Trust Signals — Platform Implementation Phase 1 (evidence layer)
+export {
+  TRUST_SIGNAL_EVIDENCE_CATEGORIES,
+  getSignalEvidenceCategory,
+  listSignalEvidenceCategories,
+  PRODUCT_SIGNAL_TYPE_REGISTRY,
+  SIGNAL_CONTRIBUTOR_REGISTRY,
+  getSignalContributor,
+  listSignalContributors,
+  getSignalTypeDescriptor,
+  listSignalTypesForContributor,
+  listSignalTypesByCategory,
+  isContributorAllowedSignalType,
+  buildProvenanceQuestions,
+  SIGNAL_CONSENT_GATE_REQUIREMENTS
+} from "../signals";
+
+export type {
+  TrustSignalEvidenceCategory,
+  TrustSignal,
+  TrustSignalSubmission,
+  ValidatedTrustSignal,
+  TrustSignalTypeDescriptor,
+  SignalContributorDefinition,
+  SignalValidationReport,
+  SignalProvenanceRecord,
+  PassportSignalEventType,
+  SignalConsentGateResult
+} from "../signals";
+
+// Signal Ingestion — pipeline contracts
+export {
+  SIGNAL_INGESTION_PIPELINE,
+  listIngestionStages,
+  getIngestionStage
+} from "../ingestion";
+
+export type {
+  SignalIngestionStage,
+  SignalIngestionContext,
+  SignalIngestionResult,
+  SignalIngestionClient,
+  SignalIngestionPipeline
+} from "../ingestion";

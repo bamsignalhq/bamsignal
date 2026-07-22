@@ -2,7 +2,10 @@
  * Future Trust Engine contract — inputs the engine may consume.
  * Interfaces only. No algorithms. No calculations in this sprint.
  *
+ * Extended Platform Phase 1 — validated signals, provenance, evolution layers.
+ *
  * @see docs/architecture/TRUST_EVOLUTION_MODEL.md
+ * @see docs/architecture/TRUST_SIGNAL_STANDARD.md
  */
 
 import type { TrustSignalRecord } from "../governance/trustSignals";
@@ -11,6 +14,12 @@ import type { ReputationSnapshot } from "../reputation/types";
 import type { TrustProgressionEventRecord } from "./progression";
 import type { ConsentGrantRecord } from "../governance/consent";
 import type { DisputeRecord } from "../governance/disputes";
+import type { ValidatedTrustSignal } from "../signals/types";
+import type { SignalContributorDefinition } from "../signals/contributors";
+import type { SignalProvenanceRecord } from "../signals/provenance";
+import type { PassportTrustTimeline } from "./timeline";
+import type { PassportJourneySnapshot } from "./journey";
+import type { LegacySnapshot } from "../legacy/model";
 
 /** Human review reference — Trust Engine must not override without this. */
 export type TrustEngineHumanReviewRef = {
@@ -26,8 +35,17 @@ export type TrustEngineHumanReviewRef = {
  */
 export type TrustEngineInputBundle = {
   passportId: string;
-  /** Registered trust signals — metadata only, evidence in products. */
+  /** Foundation v1.0 signal records — backward compatible. */
   signals: TrustSignalRecord[];
+  /** Platform Phase 1 — validated signals from ingestion pipeline. */
+  validatedSignals: ValidatedTrustSignal[];
+  /** Contributor metadata for provenance and authorization context. */
+  contributorMetadata: Pick<
+    SignalContributorDefinition,
+    "contributorId" | "displayName" | "trustDomain" | "verificationLevel" | "status"
+  >[];
+  /** Signal provenance records — who, when, why, under what consent. */
+  provenanceRecords: SignalProvenanceRecord[];
   /** Verification and security progression events. */
   progressionEvents: TrustProgressionEventRecord[];
   /** Audit references — not raw product payloads. */
@@ -42,6 +60,12 @@ export type TrustEngineInputBundle = {
   consentState: ConsentGrantRecord[];
   /** Mandatory human reviews for high-impact derivations. */
   humanReviews: TrustEngineHumanReviewRef[];
+  /** Trust Timeline — curated positive milestones. */
+  timeline: PassportTrustTimeline | null;
+  /** Passport Journey — user narrative architecture. */
+  journey: PassportJourneySnapshot | null;
+  /** Legacy snapshot — emerges over decades, never calculated in engine. */
+  legacy: LegacySnapshot | null;
   assembledAt: string;
 };
 
@@ -54,13 +78,19 @@ export interface TrustEngineClient {
 /** Documented input categories — for architecture reviews and contributor onboarding. */
 export const TRUST_ENGINE_INPUT_CATEGORIES = [
   "trust_signals",
+  "validated_signals",
+  "contributor_metadata",
+  "signal_provenance",
   "verification_events",
   "audit_references",
   "reputation_dimensions",
   "product_participation",
   "dispute_outcomes",
   "consent_state",
-  "human_reviews"
+  "human_reviews",
+  "trust_timeline",
+  "passport_journey",
+  "legacy_snapshot"
 ] as const;
 
 export type TrustEngineInputCategory = (typeof TRUST_ENGINE_INPUT_CATEGORIES)[number];

@@ -28,8 +28,12 @@ export function scoreToSecurityStatus(score, hasCritical) {
 }
 
 export function adminSecretAcceptedViaHeaderOnly(source) {
+  const headerOnly =
+    source.includes("extractHeaderSecret(req, ADMIN_SECRET_HEADER)") ||
+    source.includes("ADMIN_SECRET_HEADER") ||
+    source.includes('req.headers["x-bamsignal-secret"]');
   return (
-    source.includes('req.headers["x-bamsignal-secret"]') &&
+    headerOnly &&
     !source.includes("req.query.secret") &&
     !source.includes("req.body?.secret")
   );

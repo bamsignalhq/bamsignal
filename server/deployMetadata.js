@@ -1,9 +1,35 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+let cachedPackageVersion = null;
+
+function readPackageVersion() {
+  if (cachedPackageVersion) return cachedPackageVersion;
+  try {
+    const pkgPath = join(dirname(fileURLToPath(import.meta.url)), "../package.json");
+    cachedPackageVersion = String(JSON.parse(readFileSync(pkgPath, "utf8")).version || "0.0.0").trim();
+  } catch {
+    cachedPackageVersion = "0.0.0";
+  }
+  return cachedPackageVersion;
+}
+
 /** Ecosystem deployment metadata — identical field names across Stankings products. */
 export function getDeploymentMetadata(application) {
   const version =
     process.env.APP_VERSION?.trim() ||
     process.env.npm_package_version?.trim() ||
-    "0.0.0";
+    readPackageVersion();
+
+  const commit =
+    process.env.GIT_COMMIT_SHA?.trim() ||
+    process.env.COOLIFY_SOURCE_COMMIT?.trim() ||
+    process.env.SOURCE_COMMIT?.trim() ||
+    (process.env.BAMSIGNAL_GIT_COMMIT?.trim() !== "unknown"
+      ? process.env.BAMSIGNAL_GIT_COMMIT?.trim()
+      : "") ||
+    null;
 
   return {
     application,
@@ -11,10 +37,7 @@ export function getDeploymentMetadata(application) {
     environment: process.env.APP_ENV?.trim() || process.env.NODE_ENV || "unknown",
     platform: process.env.DEPLOY_PLATFORM?.trim() || "coolify",
     provider: process.env.DEPLOY_PROVIDER?.trim() || "hetzner",
-    commit:
-      process.env.GIT_COMMIT_SHA?.trim() ||
-      process.env.COOLIFY_SOURCE_COMMIT?.trim() ||
-      null,
+    commit: commit || null,
     buildTime: process.env.BUILD_TIME?.trim() || null,
     nodeEnv: process.env.NODE_ENV || "unknown"
   };

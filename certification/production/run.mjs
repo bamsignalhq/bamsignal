@@ -58,6 +58,12 @@ function main() {
   const financialCore = runNpmScript("test:financial-core");
   checks.push({ id: "financial-core", label: "Financial Core", ...financialCore });
 
+  const messagingCore = runNpmScript("test:messaging-core");
+  checks.push({ id: "messaging-core", label: "Messaging Core", ...messagingCore });
+
+  const messagingJourney = runNpmScript("certify:messaging-journey");
+  checks.push({ id: "messaging-journey", label: "Messaging Journey", ...messagingJourney });
+
   const fortress = runNpmScript("test:fortress");
   checks.push({ id: "fortress", label: "Fortress Suite", ...fortress });
 

@@ -189,6 +189,7 @@ assert(
     operatorSource.includes("certification") &&
     operatorSource.includes("getAuthObservabilityMetrics") &&
     operatorSource.includes("getFinancialObservabilityMetrics") &&
+    operatorSource.includes("getMessagingObservabilityMetrics") &&
     !operatorSource.includes("ADMIN_SECRET"),
   "operator dashboard contract must exist without exposing secrets"
 );

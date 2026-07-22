@@ -71,8 +71,9 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
   ]);
   const senderShadowBanned = Boolean(member.rows[0]?.shadow_banned);
 
+  let spamAnalysis = { flagged: false };
   if (!senderShadowBanned) {
-    await analyzeOutgoingMessage({
+    spamAnalysis = await analyzeOutgoingMessage({
       email,
       phone,
       text: message.text,
@@ -137,6 +138,24 @@ export async function persistMessage({ email, phone, threadId, message, threadMe
   if (!row) return null;
   if (senderShadowBanned) {
     return { ...row, payload: { ...(row.payload || message), suppressed: true }, suppressed: true };
+  }
+
+  try {
+    const { handleMessagingSendEvent } = await import("./messaging/index.js");
+    await handleMessagingSendEvent({
+      messageId: message.id,
+      conversationId: threadId,
+      threadId,
+      message,
+      senderMemberId: member.rows[0]?.id || null,
+      recipientMemberId: peer?.profile_id || null,
+      suppressed: false,
+      spamFlagged: Boolean(spamAnalysis?.flagged),
+      messageHash: spamAnalysis?.messageHash || null,
+      metadata: { recipientProfileId: threadMeta?.recipientProfileId || peer?.profile_id || null }
+    });
+  } catch {
+    /* messaging lifecycle must not block message persist */
   }
 
   // Fan-out to match partner so both sides share the same thread id.

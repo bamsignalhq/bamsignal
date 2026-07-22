@@ -1,25 +1,27 @@
 # Production Ready
 
-**Certification version:** 1.3.0
-**Generated:** 2026-07-22T12:35:23.863Z
+**Certification version:** 1.4.0
+**Generated:** 2026-07-22T13:11:14.253Z
 **Overall:** PASS
 
 ## Results
 
 | Section | Status | Duration |
 |---------|--------|----------|
-| Migrations | PASS | 1364ms |
+| Migrations | PASS | 470ms |
 | Environment | PASS | 0ms |
-| Lint | PASS | 87291ms |
-| Typecheck | PASS | 111006ms |
-| Build | PASS | 90345ms |
-| Server Import | PASS | 1444ms |
-| Source Integrity | PASS | 629ms |
-| Diagnostics | PASS | 1726ms |
-| Readiness | PASS | 673ms |
-| Production Hardening | PASS | 359ms |
-| Auth Lifecycle | PASS | 370ms |
-| Financial Core | PASS | 351ms |
-| Fortress Suite | PASS | 7737ms |
+| Lint | PASS | 48802ms |
+| Typecheck | PASS | 34478ms |
+| Build | PASS | 54285ms |
+| Server Import | PASS | 1593ms |
+| Source Integrity | PASS | 610ms |
+| Diagnostics | PASS | 1662ms |
+| Readiness | PASS | 711ms |
+| Production Hardening | PASS | 375ms |
+| Auth Lifecycle | PASS | 384ms |
+| Financial Core | PASS | 356ms |
+| Messaging Core | PASS | 359ms |
+| Messaging Journey | PASS | 362ms |
+| Fortress Suite | PASS | 8042ms |
 
 All production certification checks passed.

@@ -474,6 +474,18 @@ export async function acceptIncomingSignal({ email, phone, signalId }) {
     match: matchForSender
   });
 
+  try {
+    const { ensureConversationPair } = await import("./services/messaging/conversations.js");
+    await ensureConversationPair({
+      conversationId: matchId,
+      memberIdA: own.id,
+      memberIdB: signal.sender_profile_id,
+      metadata: { source: "signal_acceptance", signalId }
+    });
+  } catch {
+    /* conversation lifecycle must not block match creation */
+  }
+
   return { match: matchForAcceptor, signalId };
 }
 

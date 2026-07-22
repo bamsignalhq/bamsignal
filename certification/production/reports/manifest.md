@@ -1,17 +1,17 @@
 # Certification Manifest
 
 **Overall status:** PASS
-**Certification version:** 1.4.0
-**Git commit:** 65a706aa5fe7b1ae1b71b36eddd8f75869254960
+**Certification version:** 1.7.0
+**Git commit:** 197c192962f88468574ab1b289ef688bad9ea927
 **Branch:** main
-**Build timestamp:** 2026-07-22T13:11:14.253Z
-**Migration version:** 0061_member_messaging_amendments
+**Build timestamp:** 2026-07-22T14:18:54.024Z
+**Migration version:** 0063_passport_integration
 **Environment:** unknown
 **Node version:** v25.9.0
 **Docker image:** n/a
 
 ## Checks
 
-- Executed: 15
-- Passed: 15
+- Executed: 21
+- Passed: 21
 - Failed: 0

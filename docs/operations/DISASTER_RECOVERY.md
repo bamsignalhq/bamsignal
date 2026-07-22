@@ -29,7 +29,19 @@ See `DISASTER_RECOVERY_CHECKLIST` in `server/services/productionReadiness/disast
 | RPO (data loss) | ≤ 24 hours (Supabase daily backup) |
 | RTO (service restore) | ≤ 4 hours (Coolify redeploy + verification) |
 
-## What Not To Do
+## Quarterly Schedule
+
+| Quarter | Activity | Owner |
+|---------|----------|-------|
+| Q3 2026 | PITR restore drill to staging Supabase | Platform |
+| Q4 2026 | Coolify rollback exercise | Platform |
+| Ongoing | Certification manifest archive per deploy | Engineering |
+
+## Live Drill Status
+
+**Last drill:** Not yet executed  
+**Next scheduled:** Q3 2026  
+**Procedure:** See restore procedure above; re-run `npm run smoke:production` after restore.
 
 - Do not run down migrations in production
 - Do not restore stale AAB/APK without fresh web asset verification

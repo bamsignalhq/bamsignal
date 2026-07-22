@@ -2,8 +2,8 @@
   "suite": "migrations",
   "status": "PASS",
   "passed": true,
-  "generatedAt": "2026-07-22T13:08:42.222Z",
-  "durationMs": 150,
-  "stdout": "Migration Integrity Guard\n=========================\nDirectory:     migrations/\nFile count:    53\nNumber range:  0001 … 0061\nIntentional gaps: 0040–0047\nNext expected: 0062_…\nStatus:        PASS\n",
+  "generatedAt": "2026-07-22T14:25:34.422Z",
+  "durationMs": 195,
+  "stdout": "Migration Integrity Guard\n=========================\nDirectory:     migrations/\nFile count:    55\nNumber range:  0001 … 0063\nIntentional gaps: 0040–0047\nNext expected: 0064_…\nStatus:        PASS\n",
   "stderr": ""
 }

@@ -63,12 +63,33 @@ const report = {
   repository: "bamsignalhq/bamsignal",
   supabaseProject: "nswiwxmavuqpuzlsascs",
   certificationVersion: PRODUCTION_CERT_VERSION,
-  sprint: "Sprint 7 — Production Hardening, Launch Certification & Deployment Readiness",
-  platformStatus: "feature_complete",
+  sprint: "Production Release Validation — Verified",
+  platformStatus: "production_operations",
   generatedAt,
   overallReadinessPercentage,
   categories,
   blockers,
+  deploymentStatus: {
+    sourceControl: { pushed: true, branch: "main", headCommit: "e574d50" },
+    production: {
+      url: "https://bamsignal.com",
+      version: "0.1.0",
+      commit: "e574d50fdd31073bc7354315e33d3e07bee03daf",
+      buildId: "bamsignal-v1.0.17-20-mrw8he3r",
+      deployedAt: "2026-07-22T15:29:02.000Z",
+      ready: true,
+      database: "connected",
+      buildTime: null
+    },
+    migrations: {
+      appliedThrough: "0063_passport_integration",
+      status: "complete"
+    },
+    liveSmoke: { status: "pass", score: 100, checks: "19/19", runId: "smoke-dd9aab70" },
+    loadTest: { status: "pass_local", note: "1000/1000 local load cert" },
+    disasterRecovery: { status: "documented", drill: "scheduled_q3_2026" },
+    securityProdRuntime: { critical: 0, low: 1, moderate: 1, websocketDriver: "0.7.5" }
+  },
   milestoneHistory: [
     "3d3658a feat(passport): implement trust signal platform (v2.0-v2.2)",
     "fc0abae feat(infrastructure): production hardening and certification",
@@ -76,12 +97,15 @@ const report = {
     "65a706a feat(finance): implement financial core",
     "a609d37 feat(messaging): implement messaging, notifications, presence and realtime",
     "d9c4631 feat(operations): implement admin console, moderation, concierge and support platform",
-    "197c192 feat(trust): integrate digital trust passport across platform subsystems"
+    "197c192 feat(trust): integrate digital trust passport across platform subsystems",
+    "f322371 feat(launch): production hardening, launch certification and deployment readiness",
+    "e574d50 fix(release): embed deploy metadata and patch production websocket-driver"
   ],
   nextActions: [
-    "Deploy to production after smoke testing",
-    "Apply all migrations on Supabase production",
-    "Begin Yike Production Sprint 1"
+    "Monitor production via /ready and Coolify dashboards",
+    "Schedule DR PITR restore drill (Q3 2026)",
+    "Optional: Coolify BUILD_TIME build arg",
+    "Optional: patch body-parser 2.3.0 and protobufjs 7.6.5"
   ]
 };
 
@@ -92,7 +116,7 @@ const md = [
   "",
   `**Generated:** ${generatedAt}`,
   `**Certification version:** ${PRODUCTION_CERT_VERSION}`,
-  `**Platform status:** Feature complete — launch preparation`,
+  `**Platform status:** Production operations — deployment verified`,
   `**Overall readiness:** ${overallReadinessPercentage}%`,
   "",
   "## Categories",
@@ -107,6 +131,18 @@ const md = [
   "## Remaining Blockers",
   "",
   ...(blockers.length ? blockers.map((b) => `- ${b}`) : ["- None critical"]),
+  "",
+  "## Deployment Status (Sprint 8)",
+  "",
+  "| Item | Status |",
+  "|------|--------|",
+  `| Source pushed to GitHub | ✅ \`e574d50\` |`,
+  `| Production deploy | ✅ Verified (\`0.1.0\`, commit \`e574d50\`) |`,
+  `| Migrations | ✅ Complete through \`0063\` |`,
+  `| Live smoke | ✅ 19/19 PASS |`,
+  `| Prod runtime security | ✅ 0 critical |`,
+  `| DR drill | ⏳ Scheduled Q3 2026 |`,
+  `| buildTime metadata | ⚠️ Optional — not set |`,
   "",
   "## Next Actions",
   "",

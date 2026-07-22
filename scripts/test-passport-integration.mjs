@@ -67,7 +67,7 @@ assert(isValidPassportId(passportId), "generated passport id valid");
 incrementPassportIntegrationMetric("signalsQueued", 1);
 assert(getPassportIntegrationMetrics().signalsQueued >= 1, "integration metrics");
 
-assert(PRODUCTION_CERT_VERSION === "1.6.0", "certification version for Sprint 6");
+assert(PRODUCTION_CERT_VERSION === "1.7.0", "certification version for Sprint 7");
 
 assert(existsSync(join(rootPath, "scripts/certify-passport-journey.mjs")), "passport journey cert");
 

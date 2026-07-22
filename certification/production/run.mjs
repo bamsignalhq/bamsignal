@@ -76,6 +76,12 @@ function main() {
   const passportJourney = runNpmScript("certify:passport-journey");
   checks.push({ id: "passport-journey", label: "Passport Journey", ...passportJourney });
 
+  const productionReadiness = runNpmScript("test:production-readiness");
+  checks.push({ id: "production-readiness", label: "Production Readiness", ...productionReadiness });
+
+  const productionJourneys = runNpmScript("certify:production-journeys");
+  checks.push({ id: "production-journeys", label: "Production Journeys", ...productionJourneys });
+
   const fortress = runNpmScript("test:fortress");
   checks.push({ id: "fortress", label: "Fortress Suite", ...fortress });
 
